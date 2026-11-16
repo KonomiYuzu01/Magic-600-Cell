@@ -2,7 +2,8 @@
 //!
 //! Rows are written out by hand from DET.55 to DET.59 and the module documentation of `c600_run::interp`; the frame
 //! layout and the operation names are M2 drafts. The contract cases named here are covered in part: the frozen traces
-//! themselves replay in `tests/traces.rs`.
+//! themselves replay in `tests/traces.rs`, and the ones the IR draft can express run as programs in
+//! `tests/det65_programs.rs`.
 
 use std::cell::Cell;
 
@@ -82,9 +83,10 @@ fn output(run: &Run) -> &str {
 const ADD: &str = "fn add(x: Nat, y: Nat) -> Nat effects [] {\n    return exact_add(x, y);\n}\n\n\
                    export fn main(a: Nat) -> Nat effects [] {\n    return add(a, 2);\n}\n";
 
-/// CT-DET-28 (part): a call and its return are operations of their own. The callee's frame is 16 + 8·5 bytes
-/// (two parameters, three temporaries), the caller's 16 + 8·4. The return releases the frame and the owned argument
-/// temporary; the top-level result is encoded and emitted (DET.59).
+/// CT-DET-28 (part): a call and its return are operations of their own. The callee's frame is 16 + 8·4 bytes
+/// (two parameters, and two temporaries for the operands of `exact_add`), the caller's 16 + 8·3 (DET.57). The return
+/// releases the frame and the owned argument temporary; the top-level result is one fused output unit, its encoding
+/// work, buffer and bytes in one row, and the row releases the buffer and the result (DET.56, DET.59).
 #[test]
 fn calls_and_returns_keep_their_operations() {
     let (_, loaded) = build(&[&m(ADD)]);
@@ -94,20 +96,19 @@ fn calls_and_returns_keep_their_operations() {
         &r.summary,
         &[
             ("entry#read", 1, 12, 2, 0, 0),
-            ("entry#call", 1, 0, 48, 0, 0),
+            ("entry#call", 1, 0, 40, 0, 0),
             ("m.main:0#visit", 1, 0, 0, 0, 0),
             ("m.main:1#value", 1, 0, 2, 0, 0),
-            ("m.main:root#call", 1, 0, 56, 0, 0),
+            ("m.main:root#call", 1, 0, 48, 0, 0),
             ("m.main:root > m.add:0#visit", 1, 0, 0, 0, 0),
             ("m.main:root > m.add:1#visit", 1, 0, 0, 0, 0),
             ("m.main:root > m.add:root#exact_add", 1, 2, 2, 0, 0),
-            ("m.main:root > m.add:root#return", 1, 0, 0, 0, 56 + 2),
-            ("m.main:root#return", 1, 0, 0, 0, 48 + 2),
-            ("entry#encode", 1, 13, 13, 0, 1),
-            ("entry#emit", 1, 0, 0, 12, 12 + 2),
+            ("m.main:root > m.add:root#return", 1, 0, 0, 0, 48 + 2),
+            ("m.main:root#return", 1, 0, 0, 0, 40 + 2),
+            ("entry#emit", 1, 12, 12, 12, 12 + 2),
         ],
     );
-    assert_eq!(r.summary.used, Amounts { steps: 12, kernel_cost: 27, memory: 110, output: 12 });
+    assert_eq!(r.summary.used, Amounts { steps: 11, kernel_cost: 26, memory: 94, output: 12 });
     assert_eq!((r.summary.live_before_cleanup, r.summary.live_after_cleanup), (0, 0));
     assert_eq!(output(&r), "{\"int\":\"7\"}\n");
 }
@@ -252,14 +253,14 @@ fn published_bytes_are_canonical_and_nested_returns_move() {
             "m.main:root > m.same:root#alias",
             "m.main:root > m.same:root#return",
             "m.main:root#return",
-            "entry#encode",
             "entry#emit",
         ]
     );
     // `make` returns its owned record without an alias; `same` returns a borrow of its parameter, which it retains
-    // first (4 + 2 bytes). Its return releases its frame (16 + 8·2) and the argument it was lent (6).
-    assert_eq!((rows[10].memory, rows[11].released), (6, 32 + 6));
-    assert_eq!(rows[14].output, 18);
+    // first (4 + 2 bytes). Its return releases its frame (16 + 8·1: the parameter, and no temporary) and the argument
+    // it was lent (6).
+    assert_eq!((rows[10].memory, rows[11].released), (6, 24 + 6));
+    assert_eq!((rows[13].kernel_cost, rows[13].memory, rows[13].output), (18, 18, 18));
 
     let mut host = Recorder::default();
     let shown = loaded.run("m", "show", vec![Value::int(5)], &mut host, &options).unwrap();
@@ -388,14 +389,14 @@ fn bindings_alias_borrows_and_release_at_scope_exit() {
     let (_, loaded) = build(&[&source]);
     let options = Options::new(WIDE);
 
-    // `keep`'s frame: one parameter, two `let` slots and three temporaries, 16 + 8·6 bytes.
+    // `keep`'s frame: one parameter, two `let` slots and two temporaries (the operands of `exact_add`), 16 + 8·5 bytes.
     let r = run(&loaded, "keep", vec![Value::int(5)], &options);
     assert_eq!(output(&r), "{\"int\":\"5\"}\n");
     assert_rows(
         &r.summary,
         &[
             ("entry#read", 1, 12, 2, 0, 0),
-            ("entry#call", 1, 0, 64, 0, 0),
+            ("entry#call", 1, 0, 56, 0, 0),
             ("m.keep:0#visit", 1, 0, 0, 0, 0),
             ("m.keep:root#alias", 1, 0, 2, 0, 0),
             ("m.keep:1.0.0#visit", 1, 0, 0, 0, 0),
@@ -405,9 +406,8 @@ fn bindings_alias_borrows_and_release_at_scope_exit() {
             ("m.keep:1.1#visit", 1, 0, 0, 0, 0),
             ("m.keep:1#scope_exit", 1, 0, 0, 0, 2),
             ("m.keep:root#scope_exit", 1, 0, 0, 0, 0),
-            ("m.keep:root#return", 1, 0, 0, 0, 64 + 2),
-            ("entry#encode", 1, 13, 13, 0, 1),
-            ("entry#emit", 1, 0, 0, 12, 12 + 2),
+            ("m.keep:root#return", 1, 0, 0, 0, 56 + 2),
+            ("entry#emit", 1, 12, 12, 12, 12 + 2),
         ],
     );
 

@@ -460,9 +460,9 @@ fn ct_ps1_07_limit_rows_hold_at_their_boundary() {
     assert_eq!(refused.0, "DEFLATE output exceeds its limit");
 }
 
-/// CT-KN3-02 (part: the 6,775-digit integer; not run: synthetic pose entries beyond 2^64, which wait for the jumbling
-/// half's pose store (M5)): the integer round-trips exactly through the exact value, exact arithmetic, the canonical
-/// codec and an interpreted program's output.
+/// CT-KN3-02 (part: the 6,775-digit integer; the synthetic pose entries beyond 2^64 run, with such an integer, through
+/// the jumbling candidate's pose table in `tests/test_jumbling_rust_candidate.py` (M5)): the integer round-trips
+/// exactly through the exact value, exact arithmetic, the canonical codec and an interpreted program's output.
 #[test]
 fn ct_kn3_02_a_6775_digit_integer_round_trips() {
     let digits = large_integer();

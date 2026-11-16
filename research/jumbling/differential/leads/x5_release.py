@@ -29,6 +29,7 @@ import numpy as np
 import rim
 import seams
 import sim
+from sim import api
 from sim.kplus import to_tuple
 import trees
 
@@ -39,8 +40,9 @@ PARTS = ('classification_and_domains', 'cut_sets', 'one_item', 'heights', 'total
 def _height_counts(S, inside, g):
     """Sparse left-height counts, using dist(factors(M)[0]) (no branch work)."""
     st = S.st
-    counts = np.bincount(st.pose_id, minlength=len(st._poses))
-    moved = np.bincount(st.pose_id[inside], minlength=len(st._poses))
+    entries = api.pose_entries(st)
+    counts = np.bincount(st.pose_id, minlength=len(entries))
+    moved = np.bincount(st.pose_id[inside], minlength=len(entries))
     before = dict.fromkeys(COUNT_KEYS, 0)
     after = dict.fromkeys(COUNT_KEYS, 0)
     before['max_above_6'] = after['max_above_6'] = None
@@ -64,8 +66,8 @@ def _height_counts(S, inside, g):
             raise AssertionError(f'I_a pose has unexpected left height {height}')
 
     for pid in np.flatnonzero(counts).tolist():
-        pose = st._poses[pid]
-        matrix = st._pose_matrix(pid)
+        pose = entries[pid]
+        matrix = api.pose_matrix(st, pid)
         height = 0 if pose.kidx >= 0 else left_height(matrix)
         n, k = int(counts[pid]), int(moved[pid])
         add(before, height, n)

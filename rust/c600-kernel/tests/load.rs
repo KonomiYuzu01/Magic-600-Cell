@@ -8,6 +8,8 @@
 //! the changed array into a stored ZIP archive or the changed trees into a gzip member of stored DEFLATE blocks, and a
 //! manifest lists the five files under the model ID of that list. The same copy without a change is the model of
 //! another identity that lead L8 offers the shipped kernel's values to (CT-KN1-01).
+//!
+//! `verify_assets` is the check itself; `Kernel::load` and the jumbling model both load through it.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -17,7 +19,7 @@ use std::sync::OnceLock;
 use c600_digest::sha256_hex;
 use c600_kernel::archive::{self, crc32, Zip};
 use c600_kernel::json::{self, Value};
-use c600_kernel::{codes, Error, Kernel, LoadError, ProtectedSet, Refusal};
+use c600_kernel::{codes, Derivation, Error, Kernel, LoadError, ProtectedSet, Refusal, Verdict};
 
 const NOT_PLAIN: &str = "manifest.json lists a file that is not a plain file name in assets/";
 const NOT_NAMED: &str = "manifest.json's model_id does not match its file list";
@@ -340,6 +342,11 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
     assert_eq!(other.effect(&recipe).unwrap_err(), mismatch);
     assert_eq!(other.effect_by_replay(&recipe).unwrap_err(), mismatch);
     assert_eq!(other.progress(&state).unwrap_err(), refusal);
+    assert_eq!(other.positions(&state, &[0]).unwrap_err(), refusal);
+    let size = std::num::NonZeroUsize::new(5).unwrap();
+    assert_eq!(other.chunks(&recipe, size).err(), Some(refusal.clone()));
+    assert_eq!(other.replay(&state, &none).err(), Some(refusal.clone()));
+    assert_eq!(other.replay_under_ceiling(&state, &none).err(), Some(refusal.clone()));
     // Until the finding of lead L8 was fixed, letters() expanded another model's recipe without a check.
     assert_eq!(other.letters(&recipe).unwrap_err(), refusal);
     assert_eq!(other.letters(&own_recipe).unwrap(), shipped.letters(&recipe).unwrap());
@@ -347,6 +354,107 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
     // The same mechanics under another identity give the same net map and the same labels digest.
     assert_eq!(other.effect(&own_recipe).unwrap(), shipped.effect(&recipe).unwrap());
     assert_eq!(own_state.digest(), state.digest());
+
+    // KN1.4 for protected sets (M4's open item): the checked calls refuse a set of the shipped model's orbits, and
+    // the unchecked `protection` keeps its old signature. The empty set names no orbit, so every kernel accepts it.
+    let (set, own_set) = (shipped.protected_set(&[3]).unwrap(), other.protected_set(&[3]).unwrap());
+    let effect = other.effect(&own_recipe).unwrap();
+    assert_eq!(other.checked_protection(&effect, &set).unwrap_err(), refusal);
+    assert_eq!(other.strict_protection(&own_recipe, &set).unwrap_err(), refusal);
+    assert_eq!(other.strict_protection(&recipe, &own_set).unwrap_err(), refusal);
+    assert_eq!(other.derive(&own_state, &own_recipe, &set).unwrap_err(), mismatch);
+    assert_eq!(other.derive_strict(&own_state, &own_recipe, &set).unwrap_err(), mismatch);
+    assert_eq!(other.replay(&own_state, &set).err(), Some(refusal.clone()));
+    assert_eq!(other.replay_under_ceiling(&own_state, &set).err(), Some(refusal.clone()));
+    assert_eq!(other.checked_protection(&effect, &own_set).unwrap(), other.protection(&effect, &own_set));
+    assert_eq!(other.checked_protection(&effect, &shipped.protected_set(&[]).unwrap()).unwrap().protected, []);
+    assert!(other.derive(&own_state, &own_recipe, &own_set).is_ok());
+}
+
+/// The orbit of every slot of the shipped model, read from `model.npz`.
+fn slot_orbits() -> Vec<i32> {
+    let bytes = fs::read(assets().join("model.npz")).unwrap();
+    let zip = Zip::parse(&bytes).unwrap();
+    let read = |name: &str| archive::read_npy(&zip.read(name, 1 << 30).unwrap()).unwrap().values;
+    let (slot_piece, orbit) = (read("slot_piece.npy"), read("orbit_id.npy"));
+    slot_piece.iter().map(|&piece| orbit[piece as usize]).collect()
+}
+
+/// CT-LG2-12 (part: the kernel half on 600-cell-Full, that literal prefix protection does not follow the key; not run:
+/// R-11's operations, the jumbling fixtures and the peak height) and CT-PS1-12 (part: the Strict clause; the rest in
+/// `tests/kernel.rs`). On the shipped model every generator moves every orbit, so this test changes a copy:
+/// generator 1200 lists its orbit-0 pairs as fixed (each slot to itself), which keeps it a permutation of its listed
+/// slots and lets it leave orbit 0 alone. With orbit 0 protected, `[1200]` and `[1200, 1, -1]` have the same net map
+/// and the same freely reduced key, and Net accepts both; Strict accepts the first and refuses the second at prefix 2.
+/// The first refused prefix of a 150,001-letter word is 150,001 in every chunking into word steps.
+#[test]
+fn strict_protection_judges_each_literal_prefix() {
+    let orbits = slot_orbits();
+    let mut members = primitive_members().to_vec();
+    let index = |name: &str| members.iter().position(|(member, _)| member == name).unwrap();
+    let (o, s, d) = (index("offsets.npy"), index("src.npy"), index("dst.npy"));
+    let mut offsets = members[o].1.clone();
+    let offsets = Values::of(&mut offsets);
+    let mut source = members[s].1.clone();
+    let source = Values::of(&mut source);
+    let mut destination = Values::of(&mut members[d].1);
+    let mut fixed = 0;
+    for i in offsets.get(1199) as usize..offsets.get(1200) as usize {
+        let slot = source.get(i);
+        if orbits[slot as usize] == 0 && destination.get(i) != slot {
+            destination.set(i, slot);
+            fixed += 1;
+        }
+    }
+    assert!(fixed > 0, "generator 1200 moves orbit 0 in the shipped model");
+    let (folder, _) = model_folder("strict-prefix", &[("primitives.npz", stored_zip(&members))]);
+    let kernel = Kernel::load(&folder).unwrap();
+    let _ = fs::remove_dir_all(&folder);
+
+    let (base, protected) = (kernel.solved(), kernel.protected_set(&[0]).unwrap());
+    let (short, long) = (kernel.word(&[1200]).unwrap(), kernel.word(&[1200, 1, -1]).unwrap());
+    assert_eq!(kernel.effect(&short).unwrap().net_sha256, kernel.effect(&long).unwrap().net_sha256);
+    let state = |derivation: Derivation| match derivation {
+        Derivation::Derived(derived) => derived,
+        Derivation::Refused(refused) => panic!("refused at {:?}", refused.first_refused_prefix),
+    };
+    let net = state(kernel.derive(&base, &long, &protected).unwrap());
+    assert_eq!(net.state.digest(), state(kernel.derive(&base, &short, &protected).unwrap()).state.digest());
+    let strict = state(kernel.derive_strict(&base, &short, &protected).unwrap());
+    assert_eq!((strict.state.digest(), strict.protection.verdict), (net.state.digest(), Verdict::Clear));
+    let Derivation::Refused(refused) = kernel.derive_strict(&base, &long, &protected).unwrap() else {
+        panic!("Strict accepted [1200, 1, -1]");
+    };
+    assert_eq!(refused.first_refused_prefix, Some(2));
+    assert_eq!(refused.effect, net.effect);
+    // The certificate is a move of letter 1 in orbit 0, and the conflict is letter 1's orbit-0 row.
+    let one = kernel.effect(&kernel.word(&[1]).unwrap()).unwrap();
+    let [certificate] = refused.certificates[..] else { panic!("{:?}", refused.certificates) };
+    assert_eq!((certificate.orbit, orbits[certificate.source as usize]), (0, 0));
+    let at = one.source().binary_search(&certificate.source).unwrap();
+    assert_eq!(one.destination()[at], certificate.destination);
+    assert_eq!(certificate.source, *one.source().iter().find(|&&slot| orbits[slot as usize] == 0).unwrap());
+    let rows: Vec<_> = one.support.iter().filter(|row| row.orbit == 0).cloned().collect();
+    assert_eq!(refused.protection.conflicts, rows);
+
+    // Chunking a long word into word steps leaves the first refused prefix where it is.
+    let mut letters = vec![1200i64; 150_000];
+    letters.push(1);
+    let chunked = |sizes: &[usize]| {
+        let mut at = 0;
+        let steps = sizes.iter().map(|&size| {
+            let moves = letters[at..at + size].iter().map(|&m| Value::Int(m)).collect();
+            at += size;
+            json::object([("kind", Value::String("word".into())), ("moves", Value::Array(moves))])
+        });
+        kernel.recipe(&Value::Array(steps.collect())).unwrap()
+    };
+    for sizes in [&[100_000, 50_001][..], &[50_000, 100_000, 1], &[1, 99_999, 50_000, 1]] {
+        let verdict = kernel.strict_protection(&chunked(sizes), &protected).unwrap();
+        assert_eq!((verdict.verdict, verdict.first_refused_prefix), (Verdict::Moves, Some(150_001)), "{sizes:?}");
+    }
+    let clear = kernel.strict_protection(&chunked(&[100_000, 50_000]), &protected).unwrap();
+    assert_eq!((clear.verdict, clear.first_refused_prefix), (Verdict::Clear, None));
 }
 
 /// Lead L10 (M4): the shipped model with one destination of the first primitive repeated is refused.
@@ -396,4 +504,22 @@ fn an_execution_tree_with_a_parent_at_its_child_is_refused() {
     parent[1] = Value::Int(1);
     let text = refused_copy("tree-parent", &[("execution_trees.json.gz", stored_gzip(trees.canonical().as_bytes()))]);
     assert_eq!(text, "An execution tree is malformed");
+}
+
+/// `verify_assets`, through which the jumbling half loads (M5, R3 of its critical-path read): on the shipped folder it
+/// gives the shipped model ID, the manifest's digest, every listed digest and the bytes of exactly the files asked
+/// for; a file asked for that is not listed is refused.
+#[test]
+fn verify_assets_gives_the_checked_files() {
+    let (files, id) = shipped();
+    let verified = c600_kernel::verify_assets(&assets(), &["puzzle_definition.txt"]).unwrap();
+    assert_eq!(verified.model_id, id);
+    assert_eq!(verified.manifest_sha256, sha256_hex(&fs::read(assets().join("manifest.json")).unwrap()));
+    assert_eq!(verified.digests, files);
+    assert_eq!(verified.files.keys().map(String::as_str).collect::<Vec<_>>(), vec!["puzzle_definition.txt"]);
+    assert_eq!(verified.files["puzzle_definition.txt"], fs::read(assets().join("puzzle_definition.txt")).unwrap());
+    match c600_kernel::verify_assets(&assets(), &["absent.bin"]) {
+        Ok(_) => panic!("a file that is not listed was given"),
+        Err(LoadError(text)) => assert_eq!(text, "manifest.json does not list absent.bin"),
+    }
 }

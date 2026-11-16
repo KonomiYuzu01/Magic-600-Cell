@@ -374,15 +374,16 @@ const CLASSES: [(Author, Profile); 4] = [
 
 /// CT-KN5-02 (part: the runtime's half of the table, the IR's operations and the interpreter's host rows; not run: the
 /// session's table rows, which the session store builds (M6), and the command layer's and the overlay's rows (LP3)) and
-/// CT-ONE-02 (part, for the same reason): no operation in the runtime's table returns a token or calls `commit`, and no
-/// row is of kind `commit`, in any profile. The IR's operations, the interpreter's requests and sinks, LG3.1's effects
-/// and the receipt's fields are enumerated from the crates' own types, and none is a commit; the `Host` trait has
-/// three rows, a tariff, a request and a sink, and a fourth required row would not compile here. Every effectful
-/// operation, run through the boundary adapter as a built-in tool and a solver's own tool in a solving session, in tool
-/// authoring and in research, reaches the host exactly as the table classifies it; workspace records and files stay in
-/// the adapter's store, the engine is asked for no row of another kind, the meter records no `commit` operation, and
-/// every receipt the program receives holds the ID and the base only, although the engine's receipt also carries
-/// `token` and `commit` fields.
+/// CT-ONE-02 (part: the runtime's half; the session's rows run in `c600-session/tests/conformance_rows.rs`; not run:
+/// the command layer's and the overlay's rows (LP3)): no operation in the runtime's table returns a token or calls
+/// `commit`, and no row is of kind `commit`, in any profile. The IR's operations, the interpreter's requests and sinks,
+/// LG3.1's effects and the receipt's fields are enumerated from the crates' own types, and none is a commit; the `Host`
+/// trait has three rows, a tariff, a request and a sink, and a fourth required row would not compile here. Every
+/// effectful operation, run through the boundary adapter as a built-in tool and a solver's own tool in a solving
+/// session, in tool authoring and in research, reaches the host exactly as the table classifies it; workspace records
+/// and files stay in the adapter's store, the engine is asked for no row of another kind, the meter records no `commit`
+/// operation, and every receipt the program receives holds the ID and the base only, although the engine's receipt also
+/// carries `token` and `commit` fields.
 #[test]
 fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
     let effects = [
@@ -436,13 +437,14 @@ fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
     }
 }
 
-/// CT-ONE-01 (part: the runtime's half of the table; not run: the session's table rows (M6) and the command layer's
-/// and the overlay's rows (LP3)): no operation takes a state or a digest to adopt. No IR type and no run-time value
-/// holds a state, a revision, a digest or a token, so no operand can carry one. The one row that reaches the engine's
-/// preview, `propose`, takes a word and a target and nothing else: its request carries the letters, the target's name
-/// and the canonical bytes of exactly `{target, word}`; a program that passes the receipt's base in place of the word
-/// is refused by the checker, and the same IR built by hand is refused by the interpreter before the host is asked.
-/// The base a proposal reports comes from the run's context, never from the program.
+/// CT-ONE-01 (part: the runtime's half of the table; the session's rows run in
+/// `c600-session/tests/conformance_rows.rs`; not run: the command layer's and the overlay's rows (LP3)): no operation
+/// takes a state or a digest to adopt. No IR type and no run-time value holds a state, a revision, a digest or a token,
+/// so no operand can carry one. The one row that reaches the engine's preview, `propose`, takes a word and a target and
+/// nothing else: its request carries the letters, the target's name and the canonical bytes of exactly `{target,
+/// word}`; a program that passes the receipt's base in place of the word is refused by the checker, and the same IR
+/// built by hand is refused by the interpreter before the host is asked. The base a proposal reports comes from the
+/// run's context, never from the program.
 #[test]
 fn ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt() {
     let types = [Ty::Unit, Ty::Nat, Ty::Text, Ty::Word, Ty::Target, Ty::Receipt, Ty::Record(vec![])];

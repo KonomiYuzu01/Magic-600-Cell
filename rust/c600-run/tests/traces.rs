@@ -9,15 +9,11 @@
 #[allow(dead_code)]
 mod json;
 
-use c600_check::check;
-use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Run, Sink};
 use c600_run::meter::{
-    code, frame_size, integer_size, Amounts, Dim, IntOp, Meter, Outcome, OwnerId, Position, SourceRange, Stop, Tariffs,
+    code, frame_size, integer_size, Amounts, Dim, IntOp, Meter, OwnerId, Position, SourceRange, Stop, Tariffs,
     GENERATOR_SIZE,
 };
 use c600_run::rng::{stream_key, Cursor};
-use c600_run::value::Value;
-use c600_syntax::{lower, parse};
 use json::Json;
 use num_bigint::{BigInt, BigUint};
 use std::collections::HashMap;
@@ -779,314 +775,12 @@ fn frozen_rows(expected: &Json) -> Vec<Cells> {
         .collect()
 }
 
-fn product_rows(run: &Run) -> Vec<Cells> {
-    run.summary.rows.iter().map(|r| (r.at.clone(), [r.steps, r.kernel_cost, r.memory, r.output, r.released])).collect()
-}
-
 fn cells(at: &str, c: [u128; 5]) -> Cells {
     (at.to_string(), c)
 }
 
-/// Parses, lowers, checks and loads one module `m` that requires the given capabilities; the checker must accept it.
-fn program(requires: &str, declarations: &str) -> Loaded {
-    let source = format!("edition \"6cs-draft-1\";\nmodule m requires [{requires}];\n\n{declarations}");
-    let file = parse(source.as_bytes());
-    assert!(file.diagnostics.is_empty(), "{source}\n{:#?}", file.diagnostics);
-    let lowered = lower(&[file]).unwrap_or_else(|e| panic!("{e}"));
-    let report = check(&lowered.program).unwrap_or_else(|e| panic!("{e}"));
-    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
-    load(&lowered.program).unwrap_or_else(|r| panic!("{r:?}"))
-}
-
-/// The host of the trace programs. The snapshot query `k` is the fixture's kernel row with one item and a two-byte
-/// scratch (CV.4: `1 + 2 * items`): it declares that scratch as its result bound and returns an empty result, so the
-/// reservation is released after the row, as the fixture's scratch is. Published views are delivered and recorded.
-#[derive(Default)]
-struct TraceHost {
-    performed: usize,
-    views: Vec<Vec<u8>>,
-}
-
-impl Host for TraceHost {
-    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
-        match request {
-            Request::Snapshot { query: "k", .. } => Ok(RowTariff { kernel_cost: 3, result_bound: 2 }),
-            _ => Err(code::NOT_GRANTED),
-        }
-    }
-    fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
-        self.performed += 1;
-        match request {
-            Request::Snapshot { query: "k", .. } => Ok(Value::Unit),
-            _ => Err(code::NOT_GRANTED),
-        }
-    }
-    fn sink(&mut self, sink: &Sink, _: &Value, bytes: &[u8]) -> Result<(), &'static str> {
-        match sink {
-            Sink::View => {
-                self.views.push(bytes.to_vec());
-                Ok(())
-            }
-            _ => Err(code::NOT_GRANTED),
-        }
-    }
-}
-
-fn run_with(loaded: &Loaded, function: &str, host: &mut TraceHost, options: &Options) -> Run {
-    loaded.run("m", function, vec![], host, options).unwrap_or_else(|r| panic!("{r:?}"))
-}
-
-/// CT-DET-26, CT-DET-28 and CT-DET-31 (part: RT1 only; not run: RT2 and RT3, which LQ9 did not select (no owner
-/// yet)): the frozen trace `nested-calls` runs as a program, `outer` calling `inner` calling one kernel row. Frozen
-/// row i is program row i, and they differ only where the frozen text allows:
-/// - each frame has one slot more than the fixture's zero-slot frames (CV.2): the M2 draft frame layout gives a body's
-///   result a temporary slot, so `call` reserves and `return` releases 16 + 8 bytes (DET.57);
-/// - the program ends with its top-level output unit, `encode` and `emit` of `null` (DET.59), which a fixture trace
-///   lists only when it models a complete program (CV.2).
-///
-/// The kernel row agrees exactly, nested returns charge no output, and the program completes at exactly the frozen
-/// limits plus those differences.
-#[test]
-fn ct_det_26_nested_calls_runs_as_a_program() {
-    let root = fixtures();
-    let v = vector(&root, "nested-calls");
-    let (given, expected) = (v.get("given").unwrap(), v.get("expected").unwrap());
-    let frozen = frozen_rows(expected);
-    let loaded = program(
-        "",
-        "fn inner() -> Unit effects [snapshot] {\n    return read_snapshot<Unit>(\"k\");\n}\n\n\
-         export fn outer() -> Unit effects [snapshot] {\n    return inner();\n}\n",
-    );
-    let slot = frame_size(1) - frame_size(0);
-    assert_eq!((frame_size(0), slot), (16, 8));
-    for f in ["outer", "inner"] {
-        assert_eq!(loaded.frame_size(loaded.function("m", f).unwrap()), frame_size(1), "{f}: one temporary slot");
-    }
-
-    let mut host = TraceHost::default();
-    let run = run_with(&loaded, "outer", &mut host, &Options::new(WIDE));
-    assert_eq!(run.summary.outcome, Outcome::Completed);
-    assert_eq!(run.output.as_deref(), Some(&b"null\n"[..]));
-    let rows = product_rows(&run);
-    let paths: Vec<&str> = rows.iter().map(|(at, _)| at.as_str()).collect();
-    assert_eq!(
-        paths,
-        [
-            "entry#call",
-            "m.outer:root#call",
-            "m.outer:root > m.inner:root#kernel",
-            "m.outer:root > m.inner:root#return",
-            "m.outer:root#return",
-            "entry#encode",
-            "entry#emit"
-        ]
-    );
-    let one_slot = [[0, 0, slot, 0, 0], [0, 0, slot, 0, 0], [0; 5], [0, 0, 0, 0, slot], [0, 0, 0, 0, slot]];
-    assert_eq!(frozen.len(), one_slot.len());
-    for (i, ((at, row), delta)) in frozen.iter().zip(one_slot).enumerate() {
-        let want: [u128; 5] = std::array::from_fn(|c| row[c] + delta[c]);
-        assert_eq!(rows[i].1, want, "frozen row {at} against program row {}", rows[i].0);
-    }
-    assert_eq!(rows[5..], [cells("entry#encode", [1, 5, 5, 0, 0]), cells("entry#emit", [1, 0, 0, 5, 5])]);
-    assert!(rows[..5].iter().all(|(_, c)| c[3] == 0), "nested returns are internal moves, not output (DET.59)");
-    assert_eq!(host.performed, 1);
-
-    // Under the frozen limits the second frame does not fit: 24 + 24 > 34.
-    let limits = amounts(given.get("limits").unwrap());
-    let cut = run_with(&loaded, "outer", &mut TraceHost::default(), &Options::new(limits));
-    assert_eq!((cut.summary.outcome, cut.summary.code), (Outcome::CutOff, Some(code::MEMORY)));
-    assert_eq!(cut.summary.stop.as_ref().unwrap().at, "m.outer:root#call");
-    assert_eq!(product_rows(&cut).last(), Some(&cells("m.outer:root#call", [1, 0, 0, 0, 0])));
-
-    // At the frozen use plus exactly those differences, every dimension is at equality and the run completes.
-    let used = amounts(expected.get("used").unwrap());
-    let plus = Amounts {
-        steps: used.steps + 2,
-        kernel_cost: used.kernel_cost + 5,
-        memory: used.memory + 2 * slot,
-        output: used.output + 5,
-    };
-    let exact = run_with(&loaded, "outer", &mut TraceHost::default(), &Options::new(plus));
-    assert_eq!((exact.summary.outcome, exact.summary.used), (Outcome::Completed, plus));
-    assert_eq!(product_rows(&exact), rows);
-}
-
-/// The rows of a run before its top-level `entry#encode`: its index, and their steps, kernel cost, output and the
-/// live memory after them.
-fn before_unit(rows: &[Cells]) -> (usize, Amounts) {
-    let at = rows.iter().position(|(path, _)| path == "entry#encode").expect("a top-level unit");
-    let mut before = Amounts::default();
-    for (_, [steps, kernel, memory, output, released]) in &rows[..at] {
-        before.steps += steps;
-        before.kernel_cost += kernel;
-        before.memory = before.memory + memory - released;
-        before.output += output;
-    }
-    (at, before)
-}
-
-/// CT-DET-31 and CT-DET-27 (part: RT1 only; not run: RT2 and RT3 (no owner yet)): the frozen traces
-/// `output-equality`, `simultaneous-exhaustion`, `simultaneous-memory-output` and `step-precedence` run as programs
-/// that return a text as their top-level output unit.
-///
-/// The fixture's `emit` is a fused, size-known encoding and publication row (CV.5). A program value carries no
-/// retained byte length, so RT1 runs DET.59's other form: a preceding encoding pass priced on the value's retained
-/// bound, then the publication of the exact bytes. The fixture's one row is the program's `encode` and `emit` rows,
-/// and its byte count is a different profile's (CV.5): PS1.2 retained JSON escapes "é" as six ASCII characters
-/// between quotes, 8 bytes; the product profile writes its UTF-8 between quotes and a line feed, 5 bytes. What DET.56
-/// and DET.59 pin holds: equality is admitted, a unit one byte short is
-/// not published and its row keeps only its step, and each simultaneous case stops in the frozen trace's dimension,
-/// with the frozen denied row's cells.
-#[test]
-fn ct_det_31_output_equality_runs_as_a_program() {
-    let root = fixtures();
-    let expected = vector(&root, "output-equality").get("expected").unwrap();
-    assert_eq!(frozen_rows(expected), [cells("emit", [1, 8, 8, 8, 8])]);
-    assert_eq!(hex(text(expected.get("values").unwrap(), "emit")), b"\x22\x5cu00e9\x22");
-
-    let loaded = program("", "export fn e() -> Text effects [] {\n    return \"é\";\n}\n");
-    let run = run_with(&loaded, "e", &mut TraceHost::default(), &Options::new(WIDE));
-    assert_eq!(run.output.as_deref(), Some("\"é\"\n".as_bytes()));
-    let rows = product_rows(&run);
-    // `encode`: the work and the buffer on the retained bound (two quotes, six bytes per scalar, the line feed), the
-    // buffer shrunk to the 5 bytes; `emit`: the 5 bytes, then the buffer and the 4-byte text are released.
-    let (at, _) = before_unit(&rows);
-    assert_eq!(rows[at..], [cells("entry#encode", [1, 9, 9, 0, 4]), cells("entry#emit", [1, 0, 0, 5, 9])]);
-
-    let used = run.summary.used;
-    let exact = run_with(&loaded, "e", &mut TraceHost::default(), &Options::new(used));
-    assert_eq!((exact.summary.outcome, exact.summary.used), (Outcome::Completed, used));
-    let short = run_with(&loaded, "e", &mut TraceHost::default(), &Options::new(Amounts { output: 4, ..used }));
-    assert_eq!((short.summary.outcome, short.summary.code), (Outcome::CutOff, Some(code::OUTPUT)));
-    let stop = short.summary.stop.as_ref().unwrap();
-    assert_eq!((stop.at.as_str(), stop.phase, stop.scope.as_str()), ("entry#emit", "output", "root"));
-    assert_eq!(short.output, None);
-    assert_eq!(product_rows(&short), [&rows[..at + 1], &[cells("entry#emit", [1, 0, 0, 0, 0])]].concat());
-    assert_eq!(short.summary.used.output, 0, "no byte of the denied unit is charged");
-
-    // The simultaneous cases. A ten-letter text makes the unit's encoding reservation the largest live request of the
-    // run, so a memory limit can fall short at the unit alone. Each dimension the frozen trace leaves short of its
-    // `emit` (one step; `"x"`: three bytes of work, buffer and output) is made one short at the program's unit.
-    let loaded = program("", "export fn x() -> Text effects [] {\n    return \"xxxxxxxxxx\";\n}\n");
-    let rows = product_rows(&run_with(&loaded, "x", &mut TraceHost::default(), &Options::new(WIDE)));
-    let (at, before) = before_unit(&rows);
-    let (encode, emit) = (rows[at].1, rows[at + 1].1);
-    let peak = rows[..at]
-        .iter()
-        .scan(0u128, |live, (_, c)| {
-            let peak = *live + c[2];
-            *live = peak - c[4];
-            Some(peak)
-        })
-        .max()
-        .unwrap();
-    assert!(before.memory + encode[2] > peak, "the unit's reservation is the largest live request");
-    for id in ["simultaneous-exhaustion", "simultaneous-memory-output", "step-precedence"] {
-        let v = vector(&root, id);
-        let (given, expected) = (v.get("given").unwrap(), v.get("expected").unwrap());
-        let frozen = amounts(given.get("limits").unwrap());
-        let short = |limit: u128, need: u128| u128::from(limit < need);
-        let limits = Amounts {
-            steps: before.steps + 2 - 2 * short(frozen.steps, 1),
-            kernel_cost: before.kernel_cost + encode[1] - short(frozen.kernel_cost, 3),
-            memory: before.memory + encode[2] - short(frozen.memory, 3),
-            output: before.output + emit[3] - short(frozen.output, 3),
-        };
-        let run = run_with(&loaded, "x", &mut TraceHost::default(), &Options::new(limits));
-        assert_eq!(run.summary.outcome, Outcome::CutOff, "{id}");
-        assert_eq!(run.summary.code, Some(text(expected, "code")), "{id}");
-        let stop = run.summary.stop.as_ref().unwrap();
-        let frozen_stop = expected.get("stop").unwrap();
-        assert_eq!((stop.at.as_str(), stop.phase), ("entry#encode", text(frozen_stop, "phase")), "{id}");
-        let denied = frozen_rows(expected).pop().unwrap().1;
-        assert_eq!(product_rows(&run), [&rows[..at], &[cells("entry#encode", denied)]].concat(), "{id}");
-    }
-}
-
-/// CT-DET-31 (part: RT1 only; not run: RT2 and RT3 (no owner yet)): the frozen trace `output-retained-at-cutoff` runs
-/// as a program that publishes `"é"` and then `0`, the second unit one byte short. As in the frozen trace, the first
-/// unit is published and stays charged, and the second is denied in phase `output` with the frozen `denied` row's
-/// cells: one step and nothing else, and none of its bytes reach the host (DET.59). Each unit has its own priced
-/// encoding pass before its publication, as in `ct_det_31_output_equality_runs_as_a_program`.
-#[test]
-fn ct_det_31_output_retained_at_cutoff_runs_as_a_program() {
-    let root = fixtures();
-    let expected = vector(&root, "output-retained-at-cutoff").get("expected").unwrap();
-    let frozen = frozen_rows(expected);
-    assert_eq!(frozen, [cells("first", [1, 8, 8, 8, 8]), cells("denied", [1, 0, 0, 0, 0])]);
-    assert_eq!(uint(expected.get("used").unwrap(), "output"), 8, "the first unit stays charged");
-
-    let loaded = program(
-        "",
-        "export fn two() -> Unit effects [view] {\n    let a = publish_view(\"é\");\n    return publish_view(0);\n}\n",
-    );
-    let mut host = TraceHost::default();
-    let all = run_with(&loaded, "two", &mut host, &Options::new(WIDE));
-    assert_eq!(host.views, [&b"\"\xc3\xa9\"\n"[..], &b"{\"int\":\"0\"}\n"[..]]);
-    let rows = product_rows(&all);
-    let second = rows.iter().position(|(at, _)| at == "m.two:1#publish_view").expect("the second publication");
-    assert_eq!(rows[second].1[3], 12);
-
-    let mut host = TraceHost::default();
-    let cut = run_with(&loaded, "two", &mut host, &Options::new(Amounts { output: 5 + 12 - 1, ..WIDE }));
-    assert_eq!((cut.summary.outcome, cut.summary.code), (Outcome::CutOff, Some(text(expected, "code"))));
-    let stop = cut.summary.stop.as_ref().unwrap();
-    let frozen_stop = expected.get("stop").unwrap();
-    assert_eq!(
-        (stop.at.as_str(), stop.phase, stop.scope.as_str()),
-        ("m.two:1#publish_view", text(frozen_stop, "phase"), text(frozen_stop, "scope"))
-    );
-    assert_eq!(product_rows(&cut), [&rows[..second], &[cells("m.two:1#publish_view", frozen[1].1)]].concat());
-    assert_eq!(host.views, [&b"\"\xc3\xa9\"\n"[..]], "only the admitted unit reaches the host");
-    assert_eq!(cut.summary.used.output, 5, "the published unit stays charged");
-    assert_eq!(cut.summary.live_after_cleanup, 0);
-}
-
-/// CT-DET-29 (part: RT1 only; not run: RT2 and RT3 (no owner yet), and child stream paths, since the IR has no child
-/// construct yet): the frozen trace `generator` runs as a program with the fixture's seed and stream path, drawing
-/// three times. Its `rng_init` and draw rows equal the frozen rows; the program adds its entry `call` between the
-/// initialization and the first draw. At the frozen limits plus that row's step and frame, the third draw is denied
-/// on kernel cost with the frozen denied row, and the admitted draws are the frozen blocks.
-#[test]
-fn ct_det_29_generator_runs_as_a_program() {
-    let root = fixtures();
-    let v = vector(&root, "generator");
-    let (given, expected) = (v.get("given").unwrap(), v.get("expected").unwrap());
-    let init = &arr(given, "trace")[0];
-    assert_eq!(text(init, "op"), "rng_init");
-    let seed = hex(text(init, "seed"));
-    let path: Vec<&str> = arr(init, "path").iter().map(|s| s.str().expect("a segment")).collect();
-    let frozen = frozen_rows(expected);
-
-    let loaded = program(
-        "random",
-        "export fn three() -> record { a: Nat, b: Nat, c: Nat } effects [random] {\n    \
-         return record { a = random_draw(), b = random_draw(), c = random_draw() };\n}\n",
-    );
-    let frame = loaded.frame_size(loaded.function("m", "three").unwrap());
-    let options = |limits| Options { seed: Some((&seed[..], &path[..])), ..Options::new(limits) };
-    let all = run_with(&loaded, "three", &mut TraceHost::default(), &options(WIDE));
-    let rows = product_rows(&all);
-    assert_eq!(rows[0], cells("entry#rng_init", frozen[0].1));
-    assert_eq!(rows[1], cells("entry#call", [1, 0, frame, 0, 0]));
-    assert_eq!(rows[2], cells("m.three:0#rng_draw", frozen[1].1));
-    assert_eq!(rows[3], cells("m.three:1#rng_draw", frozen[2].1));
-    let values = expected.get("values").unwrap();
-    let output = std::str::from_utf8(all.output.as_deref().unwrap()).unwrap();
-    for (field, at) in [("a", "draw-0"), ("b", "draw-1")] {
-        let block = BigUint::from_bytes_be(&hex(text(values, at)));
-        assert!(output.contains(&format!("\"{field}\":{{\"int\":\"{block}\"}}")), "{at}: {output}");
-    }
-
-    let frozen_limits = amounts(given.get("limits").unwrap());
-    let limits = Amounts { steps: frozen_limits.steps + 1, memory: frozen_limits.memory + frame, ..frozen_limits };
-    let cut = run_with(&loaded, "three", &mut TraceHost::default(), &options(limits));
-    assert_eq!((cut.summary.outcome, cut.summary.code), (Outcome::CutOff, Some(text(expected, "code"))));
-    assert_eq!(cut.summary.stop.as_ref().unwrap().at, "m.three:2#rng_draw");
-    assert_eq!(product_rows(&cut), [&rows[..4], &[cells("m.three:2#rng_draw", frozen[3].1)]].concat());
-    let used = amounts(expected.get("used").unwrap());
-    assert_eq!(cut.summary.used, Amounts { steps: used.steps + 1, memory: used.memory + frame, ..used });
-}
+// The traces the IR draft can express also run as programs through `Loaded::run`, each program row against its
+// frozen row and each cutoff against the frozen stop: `tests/det65_programs.rs`.
 
 // The frozen traces under other limits. The reference model runs a trace again under limits it was not frozen with,
 // and each run is checked against what DET.56 predicts from the rows of a run that completed.
@@ -1335,7 +1029,7 @@ fn ct_det_20_every_trace_ends_typed_and_releases_everything() {
 }
 
 /// CT-DET-26 (part: the reference model over the library meter, for the frozen traces without children; RT1's frames
-/// are in `ct_det_26_nested_calls_runs_as_a_program`; not run: moved child results in a program, since the IR has no
+/// are in `det65_programs.rs`; not run: moved child results in a program, since the IR has no
 /// child construct (child jobs, M6), cached owning handles, which wait for the kernel's cached rows (no owner yet),
 /// and RT2 and RT3 (no owner yet)): in each child-free frozen trace under its own limits, the meter's memory use is
 /// the highest live memory its rows reach, and the live memory at the end is what the rows reserve minus what they
@@ -1459,7 +1153,7 @@ fn ct_det_28_operations_keep_their_rows_and_operand_sized_tariffs() {
 }
 
 /// CT-DET-29 (part: the reference model over the library meter; RT1's draws are in
-/// `ct_det_29_generator_runs_as_a_program` and `conformance_det.rs`; not run: child stream paths in a program, since
+/// `det65_programs.rs` and `conformance_det.rs`; not run: child stream paths in a program, since
 /// the IR has no child construct (child jobs, M6)): the frozen trace `generator` runs under every limit from zero to
 /// its full use in each dimension. A denied initialization leaves no generator; afterwards the generator keeps its
 /// key, its counter is the number of admitted draws, and each admitted draw is the block of its index: a draw denied

@@ -56,6 +56,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_jumbling_observations.py"],
     ["tests/test_jumbling_word_check.py"],
     ["tests/test_jumbling_session.py"],
+    # J1's public API (JI.52) and the source scan of the harness bindings (LP2, M5).
+    ["tests/test_jumbling_api.py"],
     ["tests/test_scramble.py"],
     ["tests/test_piece_filters.py"],
     ["tests/test_frame_preferences.py"],
@@ -122,6 +124,12 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_lp3_loop.py"],
     # The 600-cell-Full tool (LP3, C5) replays O01 to O07 on the source route through the host bridge.
     ["tests/test_lp3_source_route.py"],
+    # The Rust jumbling candidate (LP2, M5) against J1 through the differential harness (CT-KN2-01 and others).
+    ["tests/test_jumbling_rust_candidate.py"],
+    # Fable's M5 attack leads as tests (LP2): the candidate's refusals, and J1's faults as expected failures.
+    ["tests/test_jumbling_rust_attacks.py"],
+    # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
+    ["tests/test_ct_index.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
@@ -221,6 +229,8 @@ SECONDS = {
     "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family
     "tests/test_lp3_loop.py": 120,  # an estimate until a CI run measures it
     "tests/test_lp3_source_route.py": 120,  # an estimate until a CI run measures it
+    "tests/test_jumbling_rust_candidate.py": 420,  # an estimate until a CI run measures it
+    "tests/test_jumbling_rust_attacks.py": 150,  # an estimate: 18 s locally with a warm release build
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

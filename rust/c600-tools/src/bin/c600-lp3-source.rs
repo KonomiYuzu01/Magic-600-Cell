@@ -3,28 +3,35 @@
 //!
 //! ```text
 //! c600-lp3-source build
-//! c600-lp3-source trace --assets <dir> [--receipts <file>] [--tamper <case>:<index>] <case> <trace> [<case> <trace> ...]
+//! c600-lp3-source trace --assets <dir> [--host in-process|process] [--runtime <file>] [--receipts <file>]
+//!                       [--tamper <case>:<index>] <case> <trace> [<case> <trace> ...]
 //! ```
 //!
 //! `trace` opens one session per case at the case's initial state, as `c600-lp3-oracle` does, with the same session
 //! name and the same shell. For each step the runner expands the step's recipe to its literal word through the kernel,
-//! outside any program and without a state read ([`c600_tools::expand`]). The tool then runs on `c600-run` in the
-//! solving profile with that word as its pinned absolute argument; its one proposal reaches the command layer through
-//! the host bridge ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program receives
-//! only the fixed acknowledgement. The layer runs the preview job; the shell presents the built preview and commits it
+//! outside any program and without a state read ([`c600_tools::expand`]). The tool then runs in the solving profile
+//! with that word as its pinned absolute argument, on the host `--host` names: `in-process` (the default) runs it on
+//! `c600-run` inside this process, and `process` runs it in `c600-runtime`'s child process
+//! ([`c600_tools::process`]), started from `--runtime` or from the `c600-runtime` binary beside this one. On either
+//! host the same boundary and bridge answer the program in this process: its one proposal reaches the command layer
+//! through the host bridge ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program
+//! receives only the fixed acknowledgement. The layer runs the preview job; the shell presents the built preview and commits it
 //! by the key route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo
 //! follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion
-//! with the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps.
+//! with the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps. On the
+//! process host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is
+//! refused at the job's start stage: it is an `invalid-input` step with no invocation and no receipt.
 //!
 //! The trace has `c600-lp3-oracle`'s form and candidate block, so the two routes' traces compare byte for byte.
-//! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the literal digest
-//! the tool proposed, the kernel's refusal of a recipe with no literal word, and the preview's result digest rebased
-//! onto the case recipe's draft. `--tamper <case>:<index>` negates the first letter of that step's literal word before
+//! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the host the
+//! literal word was given to, the literal digest the tool proposed, the kernel's refusal of a recipe with no literal
+//! word, the start-stage refusal of a word with no transfer encoding, and the preview's result digest rebased onto the
+//! case recipe's draft. The summary line, each case and each step record name the host. `--tamper <case>:<index>` negates the first letter of that step's literal word before
 //! the tool runs, as a negative control. Exit codes and the summary line follow `c600-lp3-oracle`; the timings are
 //! informational.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Instant;
@@ -34,20 +41,23 @@ use c600_command::{
     Status, Table,
 };
 use c600_kernel::json::{self, Value};
-use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Snapshot, SupportRow};
+use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refusal, Snapshot, SupportRow};
 use c600_run::boundary::Store as RunStore;
 use c600_run::meter::Outcome as RunOutcome;
+use c600_runtime::Refused;
 use c600_tools::bridge::{base, word_args, Bridge};
 use c600_tools::case::{read_document, CASE_FORMAT};
 use c600_tools::expand::{expand, literal_digest, Expansion};
-use c600_tools::tool::{Tool, ROW};
+use c600_tools::process::{runtime_beside, stage_name, Cause, ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::tool::{Tool, ROW, SOURCE};
 
 const TRACE_FORMAT: &str = "C600-ORACLE-TRACE-draft";
 /// The trace's candidate: the command layer's loop, as `c600-lp3-oracle` names it, so the traces compare byte for byte.
 const CANDIDATE: &str = "c600-command-lp3-loop";
 const ROUTE: &str = "source";
-const USAGE: &str = "usage: c600-lp3-source build | trace --assets <dir> [--receipts <file>] \
-                     [--tamper <case>:<index>] <case> <trace> [<case> <trace> ...]";
+const USAGE: &str = "usage: c600-lp3-source build | trace --assets <dir> [--host in-process|process] \
+                     [--runtime <file>] [--receipts <file>] [--tamper <case>:<index>] <case> <trace> \
+                     [<case> <trace> ...]";
 /// 0.4's word limit; the initial word enters the kernel in words of at most this many letters.
 const WORD_CHUNK: usize = 100_000;
 
@@ -81,6 +91,10 @@ fn main() -> ExitCode {
 
 struct Options {
     assets: String,
+    /// Whether the tool runs on the process host.
+    process: bool,
+    /// The runtime's binary, for the process host; None for the one beside this binary.
+    runtime: Option<String>,
     receipts: Option<String>,
     tamper: Option<(String, i64)>,
     files: Vec<String>,
@@ -93,22 +107,26 @@ fn tamper(value: &str) -> Option<(String, i64)> {
 }
 
 fn options(rest: &[String]) -> Result<Options, Failure> {
-    let (mut assets, mut receipts, mut tampered) = (None, None, None);
+    let (mut assets, mut receipts, mut tampered, mut host, mut runtime) = (None, None, None, None, None);
     let mut index = 0;
     while index + 1 < rest.len() && rest[index].starts_with("--") {
         let value = rest[index + 1].clone();
         match rest[index].as_str() {
             "--assets" if assets.is_none() => assets = Some(value),
             "--receipts" if receipts.is_none() => receipts = Some(value),
+            "--runtime" if runtime.is_none() => runtime = Some(value),
+            "--host" if host.is_none() && value == IN_PROCESS => host = Some(false),
+            "--host" if host.is_none() && value == PROCESS => host = Some(true),
             "--tamper" if tampered.is_none() => tampered = Some(tamper(&value).ok_or_else(|| malformed(USAGE))?),
             _ => return Err(malformed(USAGE)),
         }
         index += 2;
     }
     let files = rest[index..].to_vec();
+    let process = host.unwrap_or(false);
     match assets {
-        Some(assets) if !files.is_empty() && files.len() % 2 == 0 => {
-            Ok(Options { assets, receipts, tamper: tampered, files })
+        Some(assets) if !files.is_empty() && files.len() % 2 == 0 && (process || runtime.is_none()) => {
+            Ok(Options { assets, process, runtime, receipts, tamper: tampered, files })
         }
         _ => Err(malformed(USAGE)),
     }
@@ -137,12 +155,21 @@ fn trace(options: &Options) -> Result<(), Failure> {
     let load_seconds = seconds(start);
     let tool = Tool::full_600_cell().map_err(|error| malformed(format!("the tool does not load: {error}")))?;
     let build = c600_command::build();
+    let host = if options.process { PROCESS } else { IN_PROCESS };
+    let mut process = match (options.process, &options.runtime) {
+        (false, _) => None,
+        (true, Some(path)) => Some(ProcessHost::new(PathBuf::from(path))),
+        (true, None) => {
+            let own = std::env::current_exe().map_err(|_| malformed("cannot find the runtime's binary"))?;
+            Some(ProcessHost::new(runtime_beside(&own)))
+        }
+    };
     let mut cases = Vec::new();
     let mut receipts = Vec::new();
     for pair in options.files.chunks(2) {
         let started = Instant::now();
         let case = read_document(Path::new(&pair[0])).map_err(malformed)?;
-        let replayed = replay(&kernel, &tool, &case, &build, options.tamper.as_ref())?;
+        let replayed = replay(&kernel, &tool, process.as_mut(), &case, &build, options.tamper.as_ref())?;
         let mut text = replayed.trace.canonical();
         text.push('\n');
         std::fs::write(&pair[1], text).map_err(|_| malformed("cannot write a trace file"))?;
@@ -153,11 +180,13 @@ fn trace(options: &Options) -> Result<(), Failure> {
             ("undone", Value::Int(replayed.undone as i64)),
             ("redone", Value::Int(replayed.redone as i64)),
             ("runs", Value::Int(replayed.runs as i64)),
+            ("start_refused", Value::Int(replayed.start_refused as i64)),
             ("receipts", Value::Int(replayed.receipts.len() as i64)),
             ("seconds", seconds(started)),
         ]));
         receipts.push(json::object([
             ("case_id", Value::String(replayed.case_id)),
+            ("host", Value::String(host.into())),
             ("receipts", Value::Array(replayed.receipts)),
             ("callers", Value::Array(replayed.callers)),
             ("steps", Value::Array(replayed.records)),
@@ -175,7 +204,8 @@ fn trace(options: &Options) -> Result<(), Failure> {
         ("route", Value::String(ROUTE.into())),
         ("build", Value::String(build)),
         ("tools", Value::String(c600_tools::build())),
-        ("host", Value::String("in-process".into())),
+        ("host", Value::String(host.into())),
+        ("runtime_spawns", process.as_ref().map_or(Value::Null, |process| Value::Int(process.spawns() as i64))),
         ("load_seconds", load_seconds),
         ("cases", Value::Array(cases)),
         ("total_seconds", seconds(start)),
@@ -269,19 +299,38 @@ enum Outcome {
 struct Record {
     literal: Option<(String, usize)>,
     refusal: Option<Value>,
+    /// The start-stage refusal of a word with no transfer encoding, on the process host.
+    start: Option<Value>,
     draft: Option<String>,
     rebased: Option<String>,
 }
 
-/// One session of the source route: the layer, its shell, the tool, and every receipt in order with its caller.
+/// What became of one literal word given to the host.
+enum Proposed {
+    /// The tool ran and its one proposal was sent; the layer's receipt.
+    Sent(Receipt),
+    /// The process host refused the job at its start stage because the word has no transfer encoding. The tool did
+    /// not run and nothing reached the command layer.
+    NoTransfer(Refused),
+}
+
+fn refusal(refusal: &Refusal) -> Value {
+    json::object([("code", Value::String(refusal.code.into())), ("detail", Value::String(refusal.message.clone()))])
+}
+
+/// One session of the source route: the layer, its shell, the tool, its host, and every receipt in order with its
+/// caller.
 struct Session<'k> {
     kernel: &'k Kernel,
     tool: &'k Tool,
+    /// The process host; None runs the tool in process.
+    process: Option<&'k mut ProcessHost>,
     case_id: String,
     layer: CommandLayer,
     shell: Shell,
     tamper: Option<i64>,
     runs: usize,
+    start_refused: usize,
     receipts: Vec<Value>,
     callers: Vec<Value>,
 }
@@ -308,16 +357,41 @@ impl Session<'_> {
         Ok(receipt)
     }
 
-    /// Runs the tool on `word` through the bridge; returns the one invocation's receipt.
-    fn propose(&mut self, index: i64, word: &[i32]) -> Result<Receipt, Failure> {
+    /// Runs the tool on `word` on the session's host, through the bridge; returns the one invocation's receipt, or
+    /// the process host's start-stage refusal of a word with no transfer encoding.
+    fn propose(&mut self, index: i64, word: &[i32]) -> Result<Proposed, Failure> {
         let run = format!("{}-{index}", self.case_id);
         let read = base(self.layer.revision());
         let mut store = RunStore::default();
         let mut bridge = Bridge::new(&mut self.layer, &run);
-        let ran = self
-            .tool
-            .run(word, &run, &read, &mut bridge, &mut store)
-            .map_err(|refusal| disagree(format!("the tool's run was refused: {}", refusal.code)))?;
+        let ran = match self.process.as_deref_mut() {
+            None => self
+                .tool
+                .run(word, &run, &read, &mut bridge, &mut store)
+                .map_err(|refusal| disagree(format!("the tool's run was refused: {}", refusal.code)))?,
+            Some(host) => match host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store) {
+                Ok(ran) => ran,
+                Err(stopped) => {
+                    let reached = !bridge.sent.is_empty() || !stopped.shell.is_empty();
+                    let no_transfer = stopped.cause.no_transfer();
+                    return match stopped.cause {
+                        Cause::Refused(refused) if no_transfer && !reached => {
+                            self.start_refused += 1;
+                            Ok(Proposed::NoTransfer(refused))
+                        }
+                        Cause::Refused(refused) => Err(disagree(format!(
+                            "the runtime refused the tool's job at the {} stage: {}",
+                            stage_name(refused.stage),
+                            refused.codes.join(" ")
+                        ))),
+                        Cause::OtherSource => Err(disagree("the process host was given another source")),
+                        Cause::Lost(fault) => {
+                            Err(disagree(format!("the runtime's process was lost: {}", fault.code())))
+                        }
+                    };
+                }
+            },
+        };
         let sent = std::mem::take(&mut bridge.sent);
         drop(bridge);
         self.runs += 1;
@@ -341,18 +415,16 @@ impl Session<'_> {
             return Err(disagree("the bridge's invocation is not the runtime's preview of the literal word"));
         }
         self.keep(&sent.receipt, &invocation.caller);
-        Ok(sent.receipt.clone())
+        Ok(Proposed::Sent(sent.receipt.clone()))
     }
 
     /// Expands `recipe`, runs the tool on its literal word, and presents and commits the preview the run proposed.
     fn step(&mut self, index: i64, recipe: &Value, record: &mut Record) -> Result<Outcome, Failure> {
-        let mut word = match expand(self.kernel, recipe) {
-            Expansion::Literal(letters) | Expansion::Unchecked { letters, .. } => letters,
-            Expansion::Refused(refusal) => {
-                record.refusal = Some(json::object([
-                    ("code", Value::String(refusal.code.into())),
-                    ("detail", Value::String(refusal.message.clone())),
-                ]));
+        let (mut word, unchecked) = match expand(self.kernel, recipe) {
+            Expansion::Literal(letters) => (letters, None),
+            Expansion::Unchecked { letters, refusal: kernel } => (letters, Some(refusal(&kernel))),
+            Expansion::Refused(kernel) => {
+                record.refusal = Some(refusal(&kernel));
                 return Ok(Outcome::Invalid);
             }
         };
@@ -363,7 +435,22 @@ impl Session<'_> {
             }
         }
         record.literal = Some((literal_digest(&word), word.len()));
-        let admitted = self.propose(index, &word)?;
+        let admitted = match (self.propose(index, &word)?, unchecked) {
+            (Proposed::Sent(receipt), _) => receipt,
+            // Only a word the kernel already refused may stop here: every letter of a literal word is a generator.
+            // The record keeps the kernel's refusal of the recipe beside the start-stage refusal.
+            (Proposed::NoTransfer(refused), Some(kernel)) => {
+                record.start = Some(json::object([
+                    ("stage", Value::String(stage_name(refused.stage).into())),
+                    ("codes", Value::Array(refused.codes.into_iter().map(Value::String).collect())),
+                    ("recipe_refusal", kernel),
+                ]));
+                return Ok(Outcome::Invalid);
+            }
+            (Proposed::NoTransfer(_), None) => {
+                return Err(disagree("a literal word the kernel expanded has no transfer encoding"));
+            }
+        };
         let id = match &admitted.status {
             Status::Running(id) => *id,
             Status::Refused(error) if error.code.starts_with("KN2:") => return Ok(Outcome::Invalid),
@@ -426,6 +513,7 @@ struct Replayed {
     undone: usize,
     redone: usize,
     runs: usize,
+    start_refused: usize,
     trace: Value,
     receipts: Vec<Value>,
     callers: Vec<Value>,
@@ -436,6 +524,7 @@ struct Replayed {
 fn replay(
     kernel: &Arc<Kernel>,
     tool: &Tool,
+    process: Option<&mut ProcessHost>,
     case: &Value,
     build: &str,
     tamper: Option<&(String, i64)>,
@@ -506,14 +595,17 @@ fn replay(
     );
     let shell = Shell::new(secret, &case_id);
     let tamper = tamper.filter(|(case, _)| *case == case_id).map(|&(_, index)| index);
+    let host = if process.is_some() { PROCESS } else { IN_PROCESS };
     let mut session = Session {
         kernel,
         tool,
+        process,
         case_id: case_id.clone(),
         layer,
         shell,
         tamper,
         runs: 0,
+        start_refused: 0,
         receipts: Vec::new(),
         callers: Vec::new(),
     };
@@ -559,6 +651,7 @@ fn replay(
         };
         out.push(row);
         let text_or_null = |value: Option<String>| value.map_or(Value::Null, Value::String);
+        let given = record.literal.is_some();
         let (literal, letters) = match record.literal {
             Some((digest, letters)) => (Value::String(digest), Value::Int(letters as i64)),
             None => (Value::Null, Value::Null),
@@ -566,9 +659,11 @@ fn replay(
         records.push(json::object([
             ("index", Value::Int(index)),
             ("receipts", Value::Int((session.receipts.len() - first) as i64)),
+            ("host", if given { Value::String(host.into()) } else { Value::Null }),
             ("literal", literal),
             ("letters", letters),
             ("expansion_refusal", record.refusal.unwrap_or(Value::Null)),
+            ("start_refusal", record.start.unwrap_or(Value::Null)),
             ("draft", text_or_null(record.draft)),
             ("case_draft", Value::String(digest(&word_draft(recipe)))),
             ("rebased_result", text_or_null(record.rebased)),
@@ -610,6 +705,7 @@ fn replay(
         undone,
         redone,
         runs: session.runs,
+        start_refused: session.start_refused,
         trace,
         receipts: session.receipts,
         callers: session.callers,

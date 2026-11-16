@@ -21,8 +21,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, Expr, FnKind, FnTy, Lit, Prim, Program, QTy,
-    ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
+    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, Expr, FnKind, FnTy, Function, Lit, Prim, Program,
+    QTy, ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
 };
 
 /// `LG2:type.mismatch` (LG2.1).
@@ -89,8 +89,8 @@ impl fmt::Display for IrError {
 
 impl std::error::Error for IrError {}
 
-/// The three profiles of LG3.9. `Solving` is the column of a solver's own, forked or imported tool; built-in tools
-/// keep their reviewed classes and are not checked here.
+/// The three profiles of LG3.9. In [`admit`], `Solving` is the column of a solver's own, forked or imported tool; a
+/// built-in tool in the solving profile keeps its reviewed class and is admitted by [`admit_built_in`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Profile {
     Solving,
@@ -144,6 +144,28 @@ pub enum StateRead {
     Declassifier(String),
 }
 
+/// One row of chapter 07's grant table that a host-reaching operation uses, named by the operation's literal data:
+/// the rows a built-in tool's class lists (BND.57). Draft naming (LP2): the IR draft has no class table, no `derive`
+/// operation and no display plan, so the derived-state row does not arise and a view change is one row.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Row {
+    /// A snapshot read of the query (snapshot read row).
+    Read(String),
+    /// A read of a preview outcome (BND.42).
+    Outcome,
+    /// A read through the fixed declassifier (LG3.11, BND.53).
+    Declassified(String),
+    /// A published view (view change row).
+    View,
+    /// A write of the workspace record (workspace change row).
+    Workspace(String),
+    /// A proposal to the literal target (prepare a preview row).
+    Preview(String),
+    /// A row the checker cannot name: a proposal whose target is not a literal, or a call of a callable known only by
+    /// a bound that allows a snapshot read, a view or workspace change or a preview.
+    Unknown,
+}
+
 /// What a function needs, inferred through its calls (LG3.2).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Summary {
@@ -157,9 +179,18 @@ pub struct Summary {
     pub exact_sinks: BTreeSet<(ExactRole, String)>,
     /// Calls the checker could not resolve; they are neither exact nor pure (LG2.19, LG3.2).
     pub unresolved: BTreeSet<String>,
-    /// The named functions, by module and function name, that evaluating this may call directly or through a
-    /// function reference. Recursion control reads it (LG2.20).
+    /// The named functions, by module and function name, that evaluating this may call directly, through a function
+    /// reference or through a callable it passes to a callee. Recursion control reads it (LG2.20).
     pub reaches: BTreeSet<(String, String)>,
+    /// The grant-table rows that evaluating this may use (BND.57). Open effect variables and unresolved calls add none:
+    /// they stay in `vars` and `unresolved`.
+    pub rows: BTreeSet<Row>,
+    /// On a callable: it is a view, so whatever its effect variables take, it changes no workspace and prepares no
+    /// preview (LG3.5, LG3.6). Needs that a caller accumulates do not inherit it.
+    view: bool,
+    /// On a callable: it computes or selects its result under approximate control (LG2.20, LG2.22), as a named
+    /// function's control bit says. Needs that a caller accumulates do not inherit it.
+    control: bool,
 }
 
 impl Summary {
@@ -171,6 +202,7 @@ impl Summary {
         self.exact_sinks.extend(other.exact_sinks.iter().cloned());
         self.unresolved.extend(other.unresolved.iter().cloned());
         self.reaches.extend(other.reaches.iter().cloned());
+        self.rows.extend(other.rows.iter().cloned());
     }
 
     /// Whether the summary has an effect, a capability requirement or an open effect variable.
@@ -187,6 +219,10 @@ impl Summary {
         };
         if s.effects.contains(&Effect::ReadSnapshot) {
             s.state_reads.insert(StateRead::Callable);
+        }
+        let rowed = [Effect::ReadSnapshot, Effect::ChangeView, Effect::ChangeWorkspace, Effect::PreparePreview];
+        if rowed.iter().any(|e| s.effects.contains(e)) {
+            s.rows.insert(Row::Unknown);
         }
         s
     }
@@ -368,8 +404,216 @@ pub fn admit(
             // What an own tool may read in a solving session is open (BND.59).
             open_cells.push("BND.59");
         }
+        // A workspace change occurs only inside a command the solver invokes (LG3.5; chapter 07 section 8, own
+        // column). A view entry's effect is reported at the view.
+        let f =
+            entry_fn(program, module, function).ok_or_else(|| IrError(format!("no function `{module}.{function}`")))?;
+        if f.kind == FnKind::Helper && summary.effects.contains(&Effect::ChangeWorkspace) {
+            let mut d = refuse(
+                "the entry is no command, and a workspace change occurs only inside a command the solver invokes \
+                 (LG3.5)"
+                    .into(),
+            );
+            d.code = EFFECT_UNDECLARED;
+            diagnostics.push(d);
+        }
     }
     Ok(Admission { diagnostics, separation, open_cells })
+}
+
+fn entry_fn<'p>(program: &'p Program, module: &str, function: &str) -> Option<&'p Function> {
+    program.modules.iter().filter(|m| m.name == module).flat_map(|m| &m.functions).find(|f| f.name == function)
+}
+
+/// Check a program and admit one entry of a built-in tool for a run in the solving profile: the built-in column of
+/// chapter 07 section 8 (draft, LP2; LP3 asked for it). `class_rows` are the rows the tool's reviewed class lists
+/// (BND.37, BND.57); the IR has no manifest, so the caller supplies them. In the tool-authoring and research
+/// profiles [`admit`] applies to every author.
+///
+/// The admission keeps the checker's diagnostics. It refuses with `LG3:effect.undeclared` at path `entry` an entry
+/// that is no command and changes the workspace or prepares a preview (LG3.5, LG3.6; a view's own effect is reported
+/// at the view), and with `LG3:capability.not_granted`:
+///
+/// - at `entry`: an entry that is not exported; a capability that is never granted (LG3.8) or that `grant` does not
+///   hold (LG3.9); an entry that both reads state-derived data and prepares previews (LG3.13, BND.39); a row the
+///   entry may use that `class_rows` does not list, and a row the checker cannot name (`Row::Unknown`, an unresolved
+///   call or an open effect variable), because a built-in tool's rows are listed by its class (BND.57); a preview or
+///   a word-carrying workspace write in a function the entry reaches, because the solver names a word to the entry;
+/// - at the proposal's or write's path: a proposal whose word, or a workspace write of a word-carrying type whose
+///   value, is not a `Word` parameter of the entry as given, unshadowed (a word the solver named), or for a write a
+///   read through a declassifier the policy enables (chapter 07 section 8, built-in column).
+///
+/// A type is word-carrying when it is `Word`, a type variable (which may stand for a word), or a record or a callable
+/// type holding one in a field, a parameter or the result. The rule is conservative: a callee that proposes or writes
+/// the word the solver named is refused, as is a write of a record or a closure built from named words.
+///
+/// Not built: the column's two exceptions (setup search for a named target, the repair list: CT-BND-17, CT-BND-18),
+/// the derived-state row (`derive`: the IR draft has no such operation, ONE.23), rule 6's check of the facts a view
+/// shows, and the review of the class against the entry (CT-BND-15). The open cells are left empty: they are the own
+/// column's.
+pub fn admit_built_in(
+    program: &Program,
+    module: &str,
+    function: &str,
+    class_rows: &BTreeSet<Row>,
+    grant: &Grant,
+    policy: &Policy,
+) -> Result<Admission, IrError> {
+    let report = check(program)?;
+    if report.diagnostics.iter().any(|d| d.code == IR_VERSION_UNSUPPORTED) {
+        return Ok(Admission {
+            diagnostics: report.diagnostics,
+            separation: Separation::default(),
+            open_cells: Vec::new(),
+        });
+    }
+    let f = entry_fn(program, module, function).ok_or_else(|| IrError(format!("no function `{module}.{function}`")))?;
+    let summary = report
+        .summary(module, function)
+        .cloned()
+        .ok_or_else(|| IrError(format!("no function `{module}.{function}`")))?;
+    let mut diagnostics = report.diagnostics;
+    let mut refuse = |code: &'static str, path: &str, note: String| {
+        diagnostics.push(Diagnostic {
+            code,
+            module: module.to_string(),
+            function: function.to_string(),
+            path: path.to_string(),
+            value_type: None,
+            display_control: false,
+            qualifier_erasure: false,
+            mismatch: None,
+            note,
+        })
+    };
+    if f.kind == FnKind::Helper {
+        for (e, rule) in [(Effect::ChangeWorkspace, "LG3.5"), (Effect::PreparePreview, "LG3.6")] {
+            if summary.effects.contains(&e) {
+                let note = format!("the entry is no command, and a {e:?} effect occurs only inside a command the solver invokes ({rule})");
+                refuse(EFFECT_UNDECLARED, "entry", note);
+            }
+        }
+    }
+    if !f.exported {
+        refuse(NOT_GRANTED, "entry", "a run starts at an exported entry".into());
+    }
+    for cap in &summary.capabilities {
+        if NEVER_GRANTED.contains(cap) {
+            refuse(NOT_GRANTED, "entry", format!("{cap:?} access is never granted in 1.0 (LG3.8)"));
+        } else if !grant.capabilities.contains(cap) {
+            refuse(NOT_GRANTED, "entry", format!("the run grants no {cap:?} capability (LG3.9)"));
+        }
+    }
+    let separation = separation(&summary, policy);
+    if separation.reads_state && separation.prepares_previews {
+        let note = "a program in the solving profile reads state-derived data or prepares previews, never both \
+                    (capability separation, LG3.13, BND.39)";
+        refuse(NOT_GRANTED, "entry", note.into());
+    }
+    for row in &summary.rows {
+        if *row == Row::Unknown {
+            let note = "the entry may use a row the checker cannot name, and a built-in tool's rows are listed by its \
+                        class (BND.57)";
+            refuse(NOT_GRANTED, "entry", note.into());
+        } else if !class_rows.contains(row) {
+            refuse(
+                NOT_GRANTED,
+                "entry",
+                format!("the class lists no row {row:?}, and a built-in tool's rows are listed by its class (BND.57)"),
+            );
+        }
+    }
+    if !summary.unresolved.is_empty() || !summary.vars.is_empty() {
+        let note = "an unresolved call or an open effect variable may use any row, and a built-in tool's rows are \
+                    listed by its class (BND.57)";
+        refuse(NOT_GRANTED, "entry", note.into());
+    }
+    for (m, name) in &summary.reaches {
+        let Some(callee) = entry_fn(program, m, name) else { continue };
+        if !unnamed_words(&callee.body, &BTreeSet::new(), policy).is_empty() {
+            refuse(
+                NOT_GRANTED,
+                "entry",
+                format!(
+                    "`{m}.{name}` proposes or writes a word, and the built-in column admits only a word the solver \
+                     named to the entry (chapter 07 section 8)"
+                ),
+            );
+        }
+    }
+    let words: BTreeSet<&str> = f.params.iter().filter(|p| p.ty.ty == Ty::Word).map(|p| p.name.as_str()).collect();
+    for (path, what) in unnamed_words(&f.body, &words, policy) {
+        refuse(
+            NOT_GRANTED,
+            &path,
+            format!(
+                "{what} of a word the solver did not name: the built-in column takes a `Word` parameter of the entry \
+                 as given, or for a write a read through an enabled declassifier (chapter 07 section 8)"
+            ),
+        );
+    }
+    Ok(Admission { diagnostics, separation, open_cells: Vec::new() })
+}
+
+/// The proposals and word-carrying workspace writes in `body` whose word is not one the solver named, with their
+/// paths: the word must be one of `words` as given, a parameter that no `let` or closure parameter shadows, or for a
+/// write a read through a declassifier the policy enables.
+fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(String, &'static str)> {
+    fn named(e: &Expr, words: &BTreeSet<&str>, bound: &[String]) -> bool {
+        matches!(e, Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v))
+    }
+    fn walk(
+        e: &Expr,
+        words: &BTreeSet<&str>,
+        policy: &Policy,
+        path: &mut Vec<u32>,
+        bound: &mut Vec<String>,
+        out: &mut Vec<(String, &'static str)>,
+    ) {
+        match e {
+            Expr::Propose { word, .. } if !named(word, words, bound) => out.push((path_text(path), "a preview")),
+            Expr::WriteWorkspace { ty, value, .. } if carries_word(&ty.ty) => {
+                let declassified = matches!(&**value, Expr::Declassified { id, .. }
+                    if policy.enabled_declassifiers.contains(id));
+                if !named(value, words, bound) && !declassified {
+                    out.push((path_text(path), "a workspace write"));
+                }
+            }
+            _ => {}
+        }
+        let (scoped, names): (usize, Vec<String>) = match e {
+            Expr::Let { name, .. } => (1, vec![name.clone()]),
+            Expr::Closure { params, .. } => (0, params.iter().map(|p| p.name.clone()).collect()),
+            _ => (usize::MAX, Vec::new()),
+        };
+        for (i, child) in e.children().into_iter().enumerate() {
+            let enters = i == scoped;
+            if enters {
+                bound.extend(names.iter().cloned());
+            }
+            path.push(i as u32);
+            walk(child, words, policy, path, bound, out);
+            path.pop();
+            if enters {
+                bound.truncate(bound.len() - names.len());
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(body, words, policy, &mut Vec::new(), &mut Vec::new(), &mut out);
+    out
+}
+
+/// Whether a value of a type may hold a word, itself, in a record field or in a callable's parameters or result, at any
+/// depth. A type variable, the unknown type included, may stand for a word, so it counts as one. A callable counts by
+/// its parameters too, conservatively: one that takes a callback may hand the callback a word it holds.
+fn carries_word(ty: &Ty) -> bool {
+    match ty {
+        Ty::Word | Ty::Var(_) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| carries_word(&f.ty)),
+        Ty::Fn(f) => carries_word(&f.result.ty) || f.params.iter().any(|p| carries_word(&p.ty)),
+        _ => false,
+    }
 }
 
 /// A type in the vectors' notation.
@@ -540,6 +784,22 @@ fn admits(slot: &QTy, value: &QTy, own: bool) -> bool {
 /// are the callable's own and take anything.
 fn signature_keeps(s: &FnTy, t: &FnTy, own: bool) -> bool {
     s.params.iter().zip(&t.params).all(|(sp, tp)| admits(tp, sp, false)) && admits(&s.result, &t.result, own)
+}
+
+/// A storage read's value `v`, declared as `slot`, of a value the program stores as `stored`: a type variable of the
+/// declared type stands for the stored type and keeps its qualifier, at any depth of a record, since decoding retains
+/// the qualifier (LG2.19). A record holding such a field is display-qualified as a whole.
+fn decoded(v: Val, slot: &QTy, stored: &QTy) -> Val {
+    match (&slot.ty, &stored.ty) {
+        (Ty::Var(_), _) => Val { qual: v.qual.join(declared_qual(stored)), ..v },
+        (Ty::Record(s), Ty::Record(t)) if s.len() == t.len() => {
+            let fields: Vec<Val> =
+                s.iter().zip(t).enumerate().map(|(i, ((_, sf), (_, tf)))| decoded(v.field(i), sf, tf)).collect();
+            let qual = fields.iter().fold(v.qual, |q, f| q.join(f.qual.container()));
+            Val { qual, fields: Some(fields), ..v }
+        }
+        _ => v,
+    }
 }
 
 fn is_integer(ty: &Ty) -> bool {
@@ -819,6 +1079,9 @@ fn merge(a: Val, b: Val) -> Option<Val> {
     let callable = match (a.callable, b.callable) {
         (Some(mut x), Some(y)) => {
             x.add(&y);
+            // Either callable may be called: a view's rule and a control bit hold for the merged one.
+            x.view |= y.view;
+            x.control |= y.control;
             Some(x)
         }
         _ => None,
@@ -933,6 +1196,18 @@ fn instantiated(q: &QTy, params: &[QTy], vals: &[Val]) -> Val {
             Val { ty: Ty::Record(tys), qual: declared_qual(q), callable: None, fields: Some(field_vals) }
         }
         _ => Val::declared(q),
+    }
+}
+
+/// The named functions that the callables in a value, itself or in a record field at any depth, may call (LG2.20).
+fn reached(v: &Val, out: &mut BTreeSet<(String, String)>) {
+    if let Some(callable) = &v.callable {
+        out.extend(callable.reaches.iter().cloned());
+    }
+    if let Some(fields) = &v.fields {
+        for f in fields {
+            reached(f, out);
+        }
     }
 }
 
@@ -1401,8 +1676,25 @@ impl<'p> Checker<'p> {
         let vals: &[Val] = vals;
         let needs = match summary {
             Some(summary) => {
-                let needs = substitute(summary, params, vals);
+                let mut needs = substitute(summary, params, vals);
                 let call = format!("the call of {what}");
+                if summary.view {
+                    // A view's effect variable takes what the call site passes; the view still has no workspace or
+                    // preview effect. An effect of the view's own body is reported at the view.
+                    for e in [Effect::ChangeWorkspace, Effect::PreparePreview] {
+                        if needs.effects.contains(&e) && !summary.effects.contains(&e) {
+                            self.effect(format!(
+                                "{call}: an effect variable of the view takes a {e:?} effect, and a view has none, \
+                                 also through callees (LG3.5, LG3.6)"
+                            ));
+                        }
+                    }
+                }
+                // The callee may call any callable it is passed, whatever the slot's bound: recursion through it is
+                // recursion (LG2.20).
+                for v in vals.iter() {
+                    reached(v, &mut needs.reaches);
+                }
                 if callee != Qual::Exact {
                     // A display-qualified callable runs a display body, which is pure (LG2.19, LG2.20).
                     let call = format!("{call}, a display-qualified callable,");
@@ -1554,6 +1846,8 @@ impl<'p> Checker<'p> {
                 let f = &program.modules[mi].functions[fi];
                 let mut summary = self.table[mi][fi].clone();
                 summary.reaches.insert((program.modules[mi].name.clone(), f.name.clone()));
+                summary.view = f.kind == FnKind::View;
+                summary.control = self.controls[mi][fi];
                 let ty = Ty::Fn(Box::new(FnTy {
                     params: f.params.iter().map(|p| p.ty.clone()).collect(),
                     result: f.result.clone(),
@@ -1591,9 +1885,12 @@ impl<'p> Checker<'p> {
                     // A pattern has no path of its own, so the match is the offending range; a pattern compares with
                     // the scrutinee as an exact equality does.
                     let pattern = lit_type(lit);
+                    let what = format!("the pattern of arm {i} of a match");
                     if !fits(&pattern, &sv.ty) && !fits(&sv.ty, &pattern) {
-                        let what = format!("the pattern of arm {i} of a match");
                         self.mismatch(type_text(&sv.ty), type_text(&pattern), &what);
+                    } else if let Lit::Approx { .. } = lit {
+                        // An approximate literal is never read as exact (LG1.7), so it is no operand of that equality.
+                        self.exact_use(Site::Operand, &Val::new(pattern, Qual::Approx), &what);
                     }
                     let (av, a_s) = self.at(i + 1, |c| c.expr(arm, env))?;
                     s.add(&a_s);
@@ -1642,6 +1939,7 @@ impl<'p> Checker<'p> {
                         let params: Vec<QTy> = f.params.iter().map(|p| p.ty.clone()).collect();
                         let mut summary = self.table[mi][fi].clone();
                         summary.reaches.insert((program.modules[mi].name.clone(), f.name.clone()));
+                        summary.view = f.kind == FnKind::View;
                         let control = self.controls[mi][fi];
                         let what = format!("`{name}`");
                         let (v, needs) =
@@ -1667,13 +1965,16 @@ impl<'p> Checker<'p> {
                             }
                         };
                         let callable = fv.callable.as_ref();
+                        // A function value of a named function or closure keeps its control bit; a callable known
+                        // only by its declared type has none the checker can see (LG2.20, LG2.22).
+                        let control = callable.is_some_and(|c| c.control);
                         let (v, needs) = self.call(
                             &fty.params,
                             &fty.result,
                             callable,
                             &mut vals,
                             fv.qual,
-                            false,
+                            control,
                             "a function value",
                         )?;
                         s.add(&needs);
@@ -1730,10 +2031,15 @@ impl<'p> Checker<'p> {
                     self.at(0, |c| c.expr(body, &mut inner))
                 };
                 self.steer = steer;
-                let (bv, bs) = walked?;
+                let (bv, mut bs) = walked?;
                 let mut at = vec![0];
                 at.extend(returned(body));
-                self.result(&result, &bv, display_input.as_ref(), "the closure's result", &at);
+                let fit = self.result(&result, &bv, display_input.as_ref(), "the closure's result", &at);
+                // The closure's control bit, as a named function's (LG2.20, LG2.22).
+                bs.control = fit
+                    && !result.display
+                    && !exact_slot(&result, true)
+                    && bv.qual == (Qual::Display { control: true });
                 // With an exact result slot a display capture was refused above; the value carries no second finding.
                 let qual = if exact_slot(&result, true) { Qual::Exact } else { captured };
                 let ty = Ty::Fn(Box::new(FnTy { params: param_tys, result, effects: bs.bound() }));
@@ -1794,6 +2100,7 @@ impl<'p> Checker<'p> {
                 let mut s = Summary::default();
                 let mut own = needs(&[Effect::ReadSnapshot], &[]);
                 own.state_reads.insert(StateRead::Snapshot);
+                own.rows.insert(Row::Read(query.clone()));
                 self.operation(&mut s, own, "a snapshot read");
                 let mut v = Val::declared(ty);
                 let stored = self.stored.get(query.as_str()).cloned().unwrap_or_default();
@@ -1813,15 +2120,18 @@ impl<'p> Checker<'p> {
                     if !admits(ty, field, false) {
                         v.qual = v.qual.join(declared_qual(field).container());
                     }
+                    v = decoded(v, ty, field);
                 }
                 Ok((v, s))
             }
             Expr::PublishView { value } => {
                 let (_, mut s) = self.at(0, |c| c.expr(value, env))?;
-                self.operation(&mut s, needs(&[Effect::ChangeView], &[]), "publish_view");
+                let mut own = needs(&[Effect::ChangeView], &[]);
+                own.rows.insert(Row::View);
+                self.operation(&mut s, own, "publish_view");
                 Ok((Val::exact(Ty::Unit), s))
             }
-            Expr::WriteWorkspace { ty, value, .. } => {
+            Expr::WriteWorkspace { record, ty, value } => {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
                 if fits(&ty.ty, &v.ty) {
                     // Display values may be stored only in typed display fields (LG2.19).
@@ -1829,7 +2139,9 @@ impl<'p> Checker<'p> {
                 } else {
                     self.at(0, |c| c.misfit(&type_text(&ty.ty), &v, "a workspace field"));
                 }
-                self.operation(&mut s, needs(&[Effect::ChangeWorkspace], &[]), "a workspace write");
+                let mut own = needs(&[Effect::ChangeWorkspace], &[]);
+                own.rows.insert(Row::Workspace(record.clone()));
+                self.operation(&mut s, own, "a workspace write");
                 Ok((Val::exact(Ty::Unit), s))
             }
             Expr::Propose { word, target } => {
@@ -1846,7 +2158,12 @@ impl<'p> Checker<'p> {
                         self.at(i, |c| c.misfit(&type_text(&ty), v, what));
                     }
                 }
-                self.operation(&mut s, needs(&[Effect::PreparePreview], &[]), "a preview");
+                let mut own = needs(&[Effect::PreparePreview], &[]);
+                own.rows.insert(match &**target {
+                    Expr::Lit(Lit::Target(t)) => Row::Preview(t.clone()),
+                    _ => Row::Unknown,
+                });
+                self.operation(&mut s, own, "a preview");
                 Ok((Val::exact(Ty::Receipt), s))
             }
             Expr::ReadReceipt { receipt, field } => {
@@ -1863,6 +2180,7 @@ impl<'p> Checker<'p> {
                     // A preview's outcome is state-derived data (BND.42).
                     let mut own = needs(&[Effect::ReadSnapshot], &[]);
                     own.state_reads.insert(StateRead::Outcome);
+                    own.rows.insert(Row::Outcome);
                     self.operation(&mut s, own, "a preview outcome read");
                 }
                 let qual = if rv.ty == Ty::Receipt { rv.qual } else { Qual::Exact };
@@ -1906,6 +2224,7 @@ impl<'p> Checker<'p> {
                 let mut s = Summary::default();
                 let mut own = needs(&[Effect::ReadSnapshot], &[]);
                 own.state_reads.insert(StateRead::Declassifier(id.clone()));
+                own.rows.insert(Row::Declassified(id.clone()));
                 self.operation(&mut s, own, "a declassified read");
                 Ok((Val::declared(&QTy { ty: ty.clone(), display: false }), s))
             }

@@ -29,7 +29,7 @@ from differential.leads.x5_release import COUNT_KEYS
 from exact import dot, identity, matvec
 import numpy as np
 import rim
-import seams
+from sim import api
 from sim.kernel import rows_form, sign5
 from sim.kplus import to_tuple
 import trees
@@ -154,10 +154,11 @@ def observe(state, *, caps=None, rim_route='rim'):
     heights = {}
     counts = Counter()
     pose_counts = Counter()
+    entries = api.pose_entries(state)
     for pid, count in zip(*np.unique(state.pose_id, return_counts=True)):
         pid = int(pid)
-        pose = state._poses[pid]
-        matrix = state._pose_matrix(pid)
+        pose = entries[pid]
+        matrix = api.pose_matrix(state, pid)
         keys[pid] = LATTICE_KEY if pose.kidx >= 0 else domain_key(to_tuple(matrix))
         dl, dr = ((0, 0) if pose.kidx >= 0 else
                   tuple(trees.dist(factor) for factor in trees.factors(matrix)))
@@ -165,14 +166,14 @@ def observe(state, *, caps=None, rim_route='rim'):
         pose_counts[pose_key(matrix)] += int(count)
         counts[dl] += int(count)
     domains = rim.Domains(state)
-    route = seams.SeamRestorer(state, state.menu or census.menu()) if rim_route == 'seams' else None
-    if route is not None:
-        route._dom = domains
+    inside_sets = {}
+    route = (api.seam_restorer(state, state.menu or census.menu(), domains, inside_sets)
+             if rim_route == 'seams' else None)
     rows, grip_n = {}, 0
     for c in range(600):
         cl = state.classify(c, need_inside=True, stop_at_straddle=True)
         if route is not None:
-            route._cls[c] = cl.inside if cl.status == 'admissible' else None
+            inside_sets[c] = cl.inside if cl.status == 'admissible' else None
         row = _rim_value(domains, c, cl, route)
         if c in selected:
             rows[c] = row
@@ -187,7 +188,7 @@ def height_histograms(state, observation):
     """Both recorded trees-fixtures histograms (only occupied pose classes)."""
     pieces, classes = Counter(), Counter()
     for pid, count in zip(*np.unique(state.pose_id, return_counts=True)):
-        dl, dr = observation.heights[pose_key(state._pose_matrix(int(pid)))]
+        dl, dr = observation.heights[pose_key(api.pose_matrix(state, int(pid)))]
         key = f'{dl},{dr}'
         pieces[key] += int(count)
         classes[key] += 1
