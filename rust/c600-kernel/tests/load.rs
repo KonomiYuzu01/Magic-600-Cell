@@ -342,6 +342,7 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
     assert_eq!(other.effect(&recipe).unwrap_err(), mismatch);
     assert_eq!(other.effect_by_replay(&recipe).unwrap_err(), mismatch);
     assert_eq!(other.progress(&state).unwrap_err(), refusal);
+    assert_eq!(other.positions(&state, &[0]).unwrap_err(), refusal);
     // Until the finding of lead L8 was fixed, letters() expanded another model's recipe without a check.
     assert_eq!(other.letters(&recipe).unwrap_err(), refusal);
     assert_eq!(other.letters(&own_recipe).unwrap(), shipped.letters(&recipe).unwrap());

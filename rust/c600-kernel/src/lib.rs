@@ -285,6 +285,34 @@ impl fmt::Debug for Snapshot {
     }
 }
 
+/// The `positions` row of KN2.4 for one named piece: where its stickers are in a state.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PiecePosition {
+    /// The named piece, by its home position, 0 to 177,119.
+    pub piece: usize,
+    /// Its orbit; -1 for a fixed cell centre.
+    pub orbit: i32,
+    /// Its home slots in increasing order, 0.4's `Model.slots(piece)`.
+    pub home: Vec<i32>,
+    /// `slots[i]` is the slot that now holds the sticker whose home slot is `home[i]`: the slots and orientation.
+    pub slots: Vec<i32>,
+    /// The position whose slots hold all of the piece's stickers, 0.4's `where[piece]`. `None` when the stickers are
+    /// split over positions, which no twist does but a label array read back by `state_from_labels` can hold.
+    pub position: Option<usize>,
+}
+
+impl PiecePosition {
+    /// The piece is in its home position (0.4's `position_correct`).
+    pub fn position_correct(&self) -> bool {
+        self.position == Some(self.piece)
+    }
+
+    /// Every sticker of the piece is in its home slot (0.4's `correct`).
+    pub fn solved(&self) -> bool {
+        self.slots == self.home
+    }
+}
+
 /// A star step: the orbit's seed relocated and set up by the path to a frame node of the orbit's execution tree.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Star {
@@ -635,6 +663,32 @@ impl Kernel {
             }
         }
         Some(Snapshot::new(&self.model.model_id, labels))
+    }
+
+    /// The `positions` row of KN2.4: where each named piece's stickers are in `state`. A piece is named by its home
+    /// position, as 0.4's `PuzzleState.piece` names positions, with 0.4's refusal text; repeats are allowed.
+    pub fn positions(&self, state: &Snapshot, pieces: &[i64]) -> Result<Vec<PiecePosition>, Refusal> {
+        self.same_model(state.model_id())?;
+        let named = |p: &i64| usize::try_from(*p).ok().filter(|&p| p < PIECES);
+        let Some(pieces) = pieces.iter().map(named).collect::<Option<Vec<usize>>>() else {
+            let text = format!("Position must be an integer in 0..{}", PIECES - 1);
+            return Err(Refusal::new(codes::NAMED_OBJECT_INVALID, text));
+        };
+        let mut now = vec![0i32; SLOTS];
+        for (slot, &label) in state.labels().iter().enumerate() {
+            now[label as usize] = slot as i32;
+        }
+        let piece_of = |slot: i32| self.model.slot_piece[slot as usize] as usize;
+        let rows = pieces.into_iter().map(|piece| {
+            let home = self.model.home_slots(piece).to_vec();
+            let slots: Vec<i32> = home.iter().map(|&h| now[h as usize]).collect();
+            let place = piece_of(slots[0]);
+            let together =
+                self.model.home_slots(place).len() == slots.len() && slots.iter().all(|&slot| piece_of(slot) == place);
+            let orbit = self.model.piece_orbit[piece];
+            PiecePosition { piece, orbit, home, slots, position: together.then_some(place) }
+        });
+        Ok(rows.collect())
     }
 
     /// The number of frame nodes in `orbit`'s execution tree.

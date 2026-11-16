@@ -10,7 +10,7 @@ use std::sync::OnceLock;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
     archive, codes, Derivation, Effect, IdentityBlock, Kernel, Level, ProtectedSet, ProtectionMode, Puzzle, Recipe,
-    Snapshot, Step, SupportRow, Verdict, PROTECTED_MESSAGE,
+    Snapshot, Step, SupportRow, Verdict, PIECES, PROTECTED_MESSAGE, SLOTS,
 };
 
 /// `Digest<literal word>` of `[1, -1]`, which O06 records.
@@ -455,6 +455,72 @@ fn ct_lb2_02_strict_refuses_a_word_that_net_accepts() {
     };
     assert_eq!((strict.state.digest(), &strict.effect), (net.state.digest(), &net.effect));
     assert_eq!((strict.protection.mode, net.protection.mode), (ProtectionMode::Strict, ProtectionMode::Net));
+}
+
+/// CT-LB2-04 (part: the kernel's `positions` row on 600-cell-Full, which reads identities, slots and orientations;
+/// exact completion, empty candidates, permitted residuals and colours are LP3's library rows, not run here). On O03's
+/// scrambled initial state every piece's row agrees with the label array and with the progress rows that the oracle
+/// replays check: the pieces out of position and those in position but turned are counted per orbit as 0.4 counts them.
+#[test]
+fn ct_lb2_04_positions_read_identities_slots_and_orientations() {
+    let kernel = kernel();
+    let every: Vec<i64> = (0..PIECES as i64).collect();
+    let solved = kernel.positions(&kernel.solved(), &every).unwrap();
+    assert!(solved.iter().all(|row| row.solved() && row.position_correct() && row.slots == row.home));
+    assert_eq!(solved.iter().map(|row| row.home.len()).sum::<usize>(), SLOTS);
+    assert_eq!(solved.iter().filter(|row| row.orbit < 0).count(), 600);
+    let mut piece_of = vec![usize::MAX; SLOTS];
+    for row in &solved {
+        assert!(row.home.windows(2).all(|pair| pair[0] < pair[1]));
+        for &slot in &row.home {
+            piece_of[slot as usize] = row.piece;
+        }
+    }
+
+    let initial = case("O03").get("initial").cloned().unwrap();
+    let state = derived(&kernel.solved(), &integers(initial.get("moves")));
+    let rows = kernel.positions(&state, &every).unwrap();
+    let (mut position_wrong, mut orientation_wrong) = ([0usize; 35], [0usize; 35]);
+    for row in &rows {
+        for (&home, &slot) in row.home.iter().zip(&row.slots) {
+            assert_eq!(state.labels()[slot as usize], home);
+        }
+        let place = row.position.expect("a twisted state keeps every piece together");
+        assert!(row.slots.iter().all(|&slot| piece_of[slot as usize] == place));
+        assert_eq!(solved[place].orbit, row.orbit);
+        if row.orbit >= 0 && !row.position_correct() {
+            position_wrong[row.orbit as usize] += 1;
+        } else if row.orbit >= 0 && !row.solved() {
+            orientation_wrong[row.orbit as usize] += 1;
+        }
+    }
+    let progress = kernel.progress(&state).unwrap().rows;
+    assert!(progress.iter().any(|row| row.position_wrong > 0) && progress.iter().any(|row| row.orientation_wrong > 0));
+    for row in progress {
+        let counted = (position_wrong[row.orbit], orientation_wrong[row.orbit]);
+        assert_eq!((row.position_wrong, row.orientation_wrong), counted);
+    }
+
+    // Repeats are answered in order; a label array with one piece's stickers split has no position for it.
+    let pair = kernel.positions(&state, &[7, 7]).unwrap();
+    assert_eq!((&pair[0], &pair[1]), (&rows[7], &rows[7]));
+    let mut multi = solved.iter().filter(|row| row.home.len() > 1);
+    let (x, y) = (multi.next().unwrap(), multi.next().unwrap());
+    let (a, b) = (x.home[0], y.home[0]);
+    let mut labels: Vec<i32> = (0..SLOTS as i32).collect();
+    labels.swap(a as usize, b as usize);
+    let split = kernel.state_from_labels(labels).unwrap();
+    let named = [x.piece as i64, y.piece as i64];
+    let [first, second] = &kernel.positions(&split, &named).unwrap()[..] else { panic!("two rows") };
+    assert_eq!((first.position, second.position, first.slots[0], second.slots[0]), (None, None, b, a));
+    for bad in [-1, PIECES as i64] {
+        let refusal = kernel.positions(&state, &[3, bad]).unwrap_err();
+        assert_eq!(
+            (refusal.code, refusal.message.as_str()),
+            (codes::NAMED_OBJECT_INVALID, "Position must be an integer in 0..177119")
+        );
+    }
+    assert!(kernel.positions(&state, &[]).unwrap().is_empty());
 }
 
 #[test]
