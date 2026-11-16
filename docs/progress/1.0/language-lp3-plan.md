@@ -48,7 +48,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 |
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
 | The runtime in its own process | In progress (C3) | Nothing: route RT1 (LQ9) |
-| Module closure | In progress (C4) | Nothing |
+| Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
@@ -101,7 +101,7 @@ One pull request per milestone; each names the checks that ran.
 | C1 | Command layer, shell tokens and key routes; O01 to O07 through it on two routes, with undo and redo | M4 (on main) | Built; this plan's pull request |
 | C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | Built |
 | C3 | The runtime in its own process (`c600-runtime`) | M2 and M3 | In progress |
-| C4 | Module closure (`c600-module`) | M2 and M7 (on main) | In progress |
+| C4 | Module closure (`c600-module`) | M2 and M7 (on main) | Built |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Next |
 | C6 | Representations tool, headless half | C2, C5 | Next |
 | C7 | Durable receipts and undo through the session store | M6 (on main) and C1 | In progress |
@@ -146,8 +146,9 @@ acceptance check and stop condition.
   CT-RPI-07, CT-RPI-36 and CT-RPI-37, the limit half of CT-RPI-22 and rows 1, 2, 7 and 9 of CT-RM-09.
 - C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`): the runtime in a process of its own, a client of the
   command layer (ADR-L02); CT-RTE-04's execution-contract mapping and the headless fault half of CT-RTE-10.
-- C4 (`rust/c600-module`, branch `claude/lp3-module-closure`): module closure; CT-RTE-07 and the closure part of
-  CT-RTE-08 (persisted words wait for M6).
+- C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
+  to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full.
+  CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
 - Next, in C2's crates: CT-RPI-14, CT-RPI-18, CT-RPI-19, CT-RPI-23 and CT-RPI-32, the semantics of CT-EV3-08 and the
   counter half of CT-RPI-26.
 
@@ -208,8 +209,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row.
-33 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 21 have a part that can
-run now, and 28 wait entirely. The milestone is in parentheses.
+32 tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 22 have a part that can run now, and 28
+wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
 | --- | --- | --- | --- |
@@ -282,7 +283,7 @@ run now, and 28 wait entirely. The milestone is in parentheses.
 | CT-BND-19 | source | Now (C5) | - |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Now (C3) | - |
-| CT-RTE-07 | source | Now, with a Linux run (C4) | - |
+| CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 36 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
 | CT-RTE-11 | performance | Owner runs: LX-2 (C9) | - |
