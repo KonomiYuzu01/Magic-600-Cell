@@ -13,6 +13,11 @@ export command effect_scope(scope: Text) -> Unit effects [view] {
     return publish_view(scope);
 }
 
+export command save_set(kind: Text, members: List<Nat>, name: Text) -> Unit effects [workspace] {
+    let saved = record { kind = kind, members = members, name = name };
+    return write_workspace<record { kind: Text, members: List<Nat>, name: Text }>("set.save", saved);
+}
+
 export command compare_cells(first: Nat, second: Nat) -> Unit effects [snapshot, view] {
     return publish_view(read_snapshot<Nat>("structure.compare"));
 }

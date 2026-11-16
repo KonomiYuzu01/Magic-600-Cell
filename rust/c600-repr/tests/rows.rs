@@ -16,9 +16,10 @@ use c600_tools::tool::lower_source;
 use common::*;
 
 /// The requirement list names the tool's six rows, each as H-08 stores it: kind, lane, undo class, preview rule,
-/// gates and arguments with their types, none of them a user-action token. A row's entry is one of the shipped entries, bound to that row, and the one
-/// row without an entry is the one the tool lists as not expressible. Covers no conformance ID: it keeps the list of
-/// item 7 from drifting from the stored table.
+/// gates and arguments with their types, none of them a user-action token. A row's entry is one of the shipped
+/// entries, bound to that row, and a row without an entry would be one the tool lists as not expressible; since the IR
+/// draft gained lists, every row has an entry. Covers no conformance ID: it keeps the list of item 7 from drifting from
+/// the stored table.
 #[test]
 fn the_row_requirements_name_the_stored_rows_as_h08_has_them() {
     let table = Table::h08();

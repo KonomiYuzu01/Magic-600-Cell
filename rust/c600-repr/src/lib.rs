@@ -21,13 +21,14 @@
 //!
 //! - LB6.5, BND.27: the tool's manifest is Rust data in [`tool::manifest`], because the IR draft and the syntax carry
 //!   no manifest yet (LG5.2, PS1.15). It declares the one class `view_aid`.
-//! - LB6.5: one module, `representations`, with five entries. `filter_counts` is a view; the other four are commands,
-//!   because the solver invokes their rows with arguments. `set.save` has no entry: its `members` argument is a list,
-//!   and `c600-ir-draft-1` has no list type.
-//! - LG2.2, KN1.5: an entry takes a natural where its row takes a cell, a layer or a filter-preview reference, and
-//!   text where its row takes one of two named values, because the IR draft has no identity or reference type. The
-//!   snapshot queries and workspace records the entries name (`filter.preview`, `structure.compare`, `filter.apply`,
-//!   `structure.layer`) are the rows' own IDs; no host answers them yet.
+//! - LB6.5: one module, `representations`, with six entries, one for each row. `filter_counts` is a view; the other
+//!   five are commands, because the solver invokes their rows with arguments. `set.save`'s entry takes the members as
+//!   `List<Nat>`, the list type the IR draft gained in LP2 (pull request 176).
+//! - LG2.2, KN1.5: an entry takes a natural where its row takes a cell, a layer or a filter-preview reference, a list
+//!   of naturals where its row takes canonical object references, and text where its row takes one of two named
+//!   values, because the IR draft has no identity or reference type. The snapshot queries and workspace records the
+//!   entries name (`filter.preview`, `structure.compare`, `filter.apply`, `set.save`, `structure.layer`) are the rows'
+//!   own IDs; no host answers them yet.
 //! - BND.37, BND.63: the class review in [`tool::review_class`] reads `view_aid` as: no entry prepares a preview or
 //!   calls what the checker cannot resolve; no entry requests a capability or has a file, randomness or budget effect;
 //!   a workspace change sits in a command that serves a workspace row and reads no state-derived data, so that what
@@ -36,8 +37,9 @@
 //!   body: "reads no state" is the checker's summary of the whole entry.
 //! - BND.57: BND.57's rows by class do not exist as data, so the class lists the grant-table rows the shipped entries
 //!   use ([`tool::class_rows`]): the snapshot reads `filter.preview` and `structure.compare`, a published view, and the
-//!   workspace records `filter.apply` and `structure.layer`. The built-in column refuses an entry that uses another
-//!   row, and it refuses a store of a word the solver did not name at the write (LP2's column, pull request 170).
+//!   workspace records `filter.apply`, `set.save` and `structure.layer`. The built-in column refuses an entry that
+//!   uses another row, and it refuses a store of a word the solver did not name at the write (LP2's column, pull
+//!   request 170).
 //! - BND.37, KN5: the row test in [`tool::row_within_view_aid`] reads a row's kind, token and preview rule and
 //!   nothing else. The stored table has no field that says a query row prepares a commit preview, so
 //!   `operation.preview` passes the row test, and an entry that proposes to it is found by the entry review instead.

@@ -29,7 +29,7 @@ PHS.23's six acceptance items:
 
 | Acceptance item | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Same result through all routes | Command and key routes (C1); source route (C5) | The representations tool's rows: KN5's one implementation (LP2) and an IR list type (C6, section 7); the actual key route (C9); the jumbling tool's rows: Jumble in the command layer, KN5's one implementation (LP2; C8, section 8) |
+| Same result through all routes | Command and key routes (C1); source route (C5) | The representations tool's rows: KN5's one implementation (LP2; C6, section 7); the actual key route (C9); the jumbling tool's rows: Jumble in the command layer, KN5's one implementation (LP2; C8, section 8) |
 | Oracle equality at every committed step | 600-cell-Full: O01 to O07, 3,201 steps per route, with undo and redo (C1) | Jumbling: M5's oracle through the command layer with Jumble on, KN5's one implementation (LP2; C8) |
 | Presented-preview binding in the selected renderer | The token binds the presented preview, headless (C1) | The renderer freeze and Windows (C9) |
 | Charter E2 with the tools' views active | Nothing: a timing here would be no evidence | The owner-machine runs (C9) |
@@ -50,7 +50,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves for M5 (C8) |
-| Representations tool, headless half | Built in part (C6, section 7) | Its six rows: command-layer work in KN5's one implementation (LP2), and a list type in the IR draft for `set.save` |
+| Representations tool, headless half | Built in part (C6, section 7) | Its six rows: command-layer work in KN5's one implementation (LP2) |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part on M6's store (C7, section 8) | C7's tests through the command layer over `JournalStore` (KN5's stages 1 and 2 landed: pull request 174); KN5.26, the view rows, LB7.2's work sheets and the session lock: KN5's later stages (LP2) |
 | The jumbling tool and every jumbling half | Built in part (C8, section 8) | Jumble in the command layer: KN5's one implementation (LP2); M8's items (LP2); collection types in the IR draft (LP2); a slot action of K⁺ and label-level protection rows for every piece in `c600-jumble` (LP2) |
 | Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel: LP2 deliverables, not built yet (the table below) |
@@ -88,9 +88,10 @@ as data.
 Found with C6, the same day. The representations tool's six rows need command-layer work that KN5's one implementation
 now owns: a dispatch from a stored row to a built-in tool's entry, the runtime's view and workspace sinks as a job's
 result, argument forms for the rows' reference types, and a workspace revision that moves (`c600_repr::rows`);
-`set.save` also needs a list type in the IR draft. CT-EV3-07's explicit workspace command joins the durable action order
-on M6's store (C7), but through the command layer it needs KN5's shared `session.undo` order (KN5.20, EV4.15), so the
-test moves from "whole now" to "part now". Sent to the LP2 integrator the same day.
+`set.save` also needed a list type in the IR draft, which LP2 added (pull request 176). CT-EV3-07's explicit workspace
+command joins the durable action order on M6's store (C7), but through the command layer it needs KN5's shared
+`session.undo` order (KN5.20, EV4.15), so the test moves from "whole now" to "part now". Sent to the LP2 integrator the
+same day.
 
 Found with C8, the same day. `c600-jumble` offers no slot action of K⁺, so the slot of a piece at a non-identity lattice
 pose is not computed (the answer is `undefined` with its own reason, distinct from `off_lattice`), and it names no
@@ -276,15 +277,15 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   region test and section membership on the posed vertices, boundary cases included, a chart whose domain fails inside
   refused, and domain and injectivity each established by their own check); the counter half of CT-EV3-06; the
   view-cannot-write half of CT-EV3-07 at the command layer; and the representations parts of CT-LB6-03 and CT-BND-15.
-  The tool is a `.6cs` module with five entries admitted under the built-in column, with a Rust manifest of the class
+  The tool is a `.6cs` module with six entries admitted under the built-in column, with a Rust manifest of the class
   `view_aid`; the class review covers every exported function and only the source bytes the manifest names. C6 changed
   no file in `c600-command` (C1's item 5).
 - C6, not built: the six rows, so they do not meet C5's item 1 yet. The command layer refuses them as not built, and LP3
   changed no layer code before KN5's one implementation landed; `c600_repr::rows` writes what each needs from the layer
-  (section 2), and `set.save` has no entry until the IR draft has a list type. Also not built: the checkers for
-  homomorphism, embedding, isometry and full-dimensional injectivity (KN3's exact polytope operations, LP2), the stage
-  checker and every device step (the renderer freeze, C9), the relationship strip (C8 computes one of its typed
-  relations, a slot's current occupant, at pose level), and a BM5 review record, which the tool gets when it ships.
+  (section 2). Also not built: the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
+  (KN3's exact polytope operations, LP2), the stage checker and every device step (the renderer freeze, C9), the
+  relationship strip (C8 computes one of its typed relations, a slot's current occupant, at pose level), and a BM5
+  review record, which the tool gets when it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.
