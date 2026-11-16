@@ -295,20 +295,37 @@ pub struct Tool {
     pub manifest: Manifest,
     pub program: Program,
     pub admission: Admission,
+    /// The SHA-256 of the module's source: the producer's module digest.
+    module: [u8; 32],
     loaded: Loaded,
 }
 
 impl Tool {
-    /// The 600-cell-Full tool. It fails if the source does not parse, lower, check, admit or load.
-    pub fn full_600_cell() -> Result<Tool, String> {
-        let program = lower_source(SOURCE)?;
-        let admission = admit_built_in(&program, MODULE, ENTRY, &Grant::none(), &Policy::interim())
+    /// A built-in tool from its module's source and its manifest. It fails if the manifest names another source, if
+    /// the source does not parse, lower, check or load, if the built-in column does not admit the entry, or if the rows
+    /// the entry's proposals name are not the manifest's rows.
+    pub fn new(source: &str, manifest: Manifest) -> Result<Tool, String> {
+        if manifest.source_sha256 != sha256_hex(source.as_bytes()) {
+            return Err("the manifest names another source".into());
+        }
+        let program = lower_source(source)?;
+        let (module, entry) = (manifest.module, manifest.entry);
+        let admission = admit_built_in(&program, module, entry, &Grant::none(), &Policy::interim())
             .map_err(|error| error.to_string())?;
         if !admission.is_admitted() {
             return Err(format!("the tool is not admitted: {:?}", admission.diagnostics));
         }
+        let rows: BTreeSet<String> = manifest.rows.iter().map(|row| row.to_string()).collect();
+        if targets(&program, module, entry)? != rows {
+            return Err(format!("the entry's proposals do not name the manifest's rows {:?}", manifest.rows));
+        }
         let loaded = load(&program).map_err(|refusal| format!("{}: {}", refusal.code, refusal.detail))?;
-        Ok(Tool { manifest: manifest(), program, admission, loaded })
+        Ok(Tool { manifest, program, admission, module: sha256(source.as_bytes()), loaded })
+    }
+
+    /// The 600-cell-Full tool.
+    pub fn full_600_cell() -> Result<Tool, String> {
+        Tool::new(SOURCE, manifest())
     }
 
     /// The producer of everything a run stores or proposes (BND.22).
@@ -317,7 +334,7 @@ impl Tool {
             contract: contract(),
             checker: Some(checker()),
             author: Author::BuiltIn,
-            module: sha256(SOURCE.as_bytes()),
+            module: self.module,
             entry: self.manifest.entry.into(),
             profile: Profile::Solving,
         }

@@ -8,7 +8,7 @@ use c600_digest::sha256_hex;
 use c600_ir::{Effect, Expr, FnKind, Lit, Ty};
 use c600_syntax::{format, lower, parse};
 use c600_tools::tool::{
-    admit_built_in, lower_source, manifest, targets, BoundaryClass, Tool, ENTRY, MODULE, ROW, SOURCE,
+    admit_built_in, lower_source, manifest, targets, BoundaryClass, Manifest, Tool, ENTRY, MODULE, ROW, SOURCE,
 };
 
 /// The tool with `body` in place of its entry's body and `effects` as its effect list.
@@ -156,4 +156,10 @@ fn the_tool_declares_its_class_and_its_rows() {
     assert_eq!(manifest.source_sha256, sha256_hex(SOURCE.as_bytes()));
     assert!(!manifest.principle_record);
     assert_eq!(Tool::full_600_cell().unwrap().manifest, manifest);
+
+    // A tool loads only with a manifest that names its source and the rows its proposals name.
+    let other_source = Manifest { source_sha256: sha256_hex(b"another module"), ..manifest.clone() };
+    assert!(Tool::new(SOURCE, other_source).is_err());
+    let other_rows = Manifest { rows: &["operation.execute"], ..manifest };
+    assert!(Tool::new(SOURCE, other_rows).err().is_some_and(|error| error.contains("rows")));
 }
