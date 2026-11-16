@@ -25,7 +25,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
-| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source` and the tool's views (LP3, C5) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
@@ -39,9 +39,10 @@ The module crate depends on the syntax, IR, checker, interpreter and digest crat
 layer.
 The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
 path to the command layer.
-The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates and on the command layer: its
-host bridge connects the in-process interpreter to the command layer as the runtime's host. The runtime's own process
-(C3) is not connected to the bridge yet.
+The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates, on the command layer, and on
+the runtime, display and view crates: its host bridge connects the interpreter, in process or in the runtime's own
+process (C3), to the command layer as the runtime's host, and its views build on the display contract and the view
+model.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
@@ -898,3 +899,51 @@ run or not applicable is no pass (PHS.63).
   tests use, its branch ports them.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C5 next: the process host and the tool's views
+
+- The process host, `c600_tools::process::ProcessHost`, runs the 600-cell-Full tool in `c600-runtime`'s child (C3; route
+  RT1, RTE.21). The child gets the source bytes, the manifest's module and entry, the literal word and the limits, and
+  no token, secret, grant or command layer; the boundary and the bridge stay in the caller's process as the runtime's
+  host, so the program still receives only the fixed acknowledgement. One child serves every run, and after a fault the
+  next run starts a fresh one (KN7.13). The child admits the job as tool authoring and the built-in column stays the
+  caller's, because `c600_check::admit` has no author or column parameter.
+- `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
+  compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
+  records, receipts and callers equal across the hosts. Four O07 steps (0, 1, 2 and 8) have a letter outside 1 to 1200
+  in magnitude, which the runtime's wire cannot encode: on the process host the job is refused at the start stage
+  (`PS1:input.noncanonical_value`) and has no receipt, and the step record keeps the kernel's refusal, which the check
+  compares with the in-process receipt's error.
+- The tool's views: `c600_tools::views` is host code, since the tool publishes no view (LQ21, LG3.13, charter E6). It
+  builds the display contract's publication of a proposal and its preview on `c600-display`, the content the headless
+  view model installs on `c600-view`, and the presentation report to the shell, which calls `present` only for a frame
+  the built-in chain drew.
+- Tests (`c600-tools/tests/`), each naming its part:
+  - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
+    fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
+    installed bytes hold only the word the solver named); CT-ONE-29's user-stage part at the adapter (a user-stage frame
+    mints no token and the commit chord finds no fresh preview; a built-in-chain frame's token commits).
+  - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts; the job
+    carries only the admitted source; a word with no transfer encoding is refused at the start stage; a runtime that
+    does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and CT-BND-07,
+    parts).
+  - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
+    previews clear in Net mode and commits as one transaction, and the prefix alone is refused); CT-LB2-03's oversize
+    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part on
+    the command route.
+  - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
+    state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
+  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, confirmed. A refused envelope that reuses a genuine
+    `operation.execute` envelope's command ID, arguments and binding (a token minted with another secret, or a runtime
+    caller) is stored as that command ID's outcome, so the genuine envelope never commits under it; a fresh command ID
+    still commits. The test records today's behaviour; the requirement went to LP2's KN5 implementation.
+- Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
+  `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
+  word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
+  `Declared` holds one class); receipts on the process host for words with no transfer encoding; CT-LB2-02's Strict half
+  (the kernel has Net only); named work-sheet reuse; chunked recipes over 100,000 letters on the source route (the
+  tool's entry takes one flat word); CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides
+  neither); the child's own built-in admission.
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
+  informational. The checks ran on Windows only; the Linux leg was not run.
