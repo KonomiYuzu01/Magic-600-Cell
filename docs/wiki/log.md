@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | EN3's jumbling interfaces: the engine half is approved, M5 may start
+The owner approved the engine half of EN3's jumbling interfaces (JI.1 to JI.16, the public J1 API of JI.52, the domain ID of JI.53 and two engine codes) as the input of LP2's M5, after a fresh Claude read found four major problems and a scoped re-check confirmed their fixes ([decision](decisions/owner-decisions-2026-11-16-en3-engine-half.md)). The contract pin is `state-contract 2026-11-15 A1-A6`; the format packet's pin of the draft was refreshed twice under FP.1 with no frozen meaning changed, and the store, command and view halves stay drafts.
+
 ## [2026-11-16] update | The language: M2 to M4, the interpreter, the run-time boundary and the kernel
 `rust/c600-run` runs the IR draft under the `lp1-exec-draft-1` reference meter, which replays the 40 frozen traces exactly, and its run-time boundary gives stored words their provenance blocks, refuses a tool's saved word at preview admission (the saved-word half of CT-LG3-07) and gives a solving run one fixed acknowledgement (BND.43); `rust/c600-kernel` reads 600-cell-Full from `assets/` and replays the oracle cases O01 to O07 exactly through chapter 01's API (`tests/test_kernel_oracle.py`). At the owner's request the three milestones share one pull request; the drafts and what is not built are listed in `rust/README.md`.
 

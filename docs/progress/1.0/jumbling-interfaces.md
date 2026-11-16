@@ -1,7 +1,7 @@
 # EN3: jumbling interfaces
 
-Status: **draft, 5 November 2026, revised 16 November 2026 for LP2's M5 (JI.52 to JI.54); not a freeze or an owner
-decision.** This is the EN3 part of
+Status: **draft, 5 November 2026, revised 16 November 2026 for LP2's M5 (JI.52 to JI.54); the owner approved its
+engine half as M5's input on 16 November 2026 (JI.54). Not a freeze.** This is the EN3 part of
 ENG-0J revision 2. It supplies four portable layer contracts and the H2 command delta in
 `docs/progress/1.0/command-rows-jumbling.json`. It contains no implementation or new measurement.
 
@@ -654,4 +654,5 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   go to LP3, and the relationship-strip fields of the view model go to LP4. A scoped re-check found the fixes in JI.3,
   JI.35 and JI.53 complete and JI.52 short of its aim: its table missed the state copy and the fixture replay, and
   its source scan reached lead scripts that are records, not bindings. JI.52 now names both entry points and scans
-  the bindings only.
+  the bindings only. The owner approved this engine half as M5's input on 16 November 2026
+  (`docs/wiki/decisions/owner-decisions-2026-11-16-en3-engine-half.md`); the other halves stay drafts.
