@@ -106,6 +106,8 @@ fn a_pattern_must_compare_with_its_scrutinee() {
     assert!(report(&tool(vec![helper("f", n(), exact(Ty::Word), int_pattern)])).is_admitted());
 }
 
+/// CT-LG2-04 (part: an exact operand of an approximate operation needs an explicit conversion, and the first
+/// approximate operand fixes the precision).
 #[test]
 fn primitive_operands_must_fit() {
     let numbers = "Nat | Int | Rat | Q5 | Budget";
@@ -138,6 +140,8 @@ fn a_field_read_needs_a_record_with_that_field() {
     assert_only(&f(Ty::Nat, other), "f", "0", "record { a: _, .. }", "record { b: Nat }");
 }
 
+/// CT-LG2-11 (part: a proposal takes a Word, in IR; not run: the WordEqualityKey type, LG2.13, and the other
+/// bindings, which wait for M4).
 #[test]
 fn state_and_preview_operations_take_their_types() {
     assert_only(&cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), nat(1))), "f", "0", "Word", "Nat");

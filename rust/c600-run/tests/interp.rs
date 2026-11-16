@@ -317,6 +317,7 @@ fn a_stop_names_the_call_path_and_the_source_range() {
     assert_eq!(over.summary.code, Some(code::HOST_EXHAUSTED));
 }
 
+/// CT-LG4-01 (part: a cut-off run repeats with the same stop point) and CT-LG4-04 (part: steps).
 /// CT-DET-20, PHS.19: unbounded recursion ends at a budget without exhausting the host stack, and repeats
 /// identically. The quiet meter keeps no rows, so a deep run's bookkeeping stays proportional to its live owners.
 #[test]
@@ -355,6 +356,8 @@ impl Cancel for After {
     }
 }
 
+/// CT-LG4-06 (part: a replaced revision stops a run before its next operation with its own code; the view queue
+/// waits for LP3).
 /// DET.56, KN7.6: an interruption is observed before each operation, before its step check, and adds no row.
 #[test]
 fn an_interruption_is_observed_before_each_operation() {
