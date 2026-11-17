@@ -9,9 +9,11 @@ mod support;
 
 use std::collections::BTreeSet;
 
-use c600_check::{admit_built_in, class_covers, Admission, Grant, Policy, Row, Separation, NOT_GRANTED};
+use c600_check::{
+    admit_built_in, class_covers, Admission, Grant, Policy, Row, Separation, EFFECT_UNDECLARED, NOT_GRANTED,
+};
 use c600_ir::build::*;
-use c600_ir::{Expr, Param, Prim, Program, Ty};
+use c600_ir::{ChildCaps, Expr, Lit, Param, Prim, Program, Ty};
 use support::tool;
 
 /// The engine row of the repair-list tests: M8's repair list at a cap (JI.12).
@@ -168,8 +170,9 @@ fn bnd_2_the_repair_list_runs_only_for_a_named_cap() {
 ///
 /// A condition that reads state or names a `let` binding steers its branches, and the list each delivers is refused
 /// there, once; a condition on the solver's own arguments chooses nothing. A branch inside a view's or a `let`'s value
-/// is a use. An entry that calls itself names a cap to itself, so it is refused at the entry, also when it only
-/// publishes the list.
+/// is a use. A view of the list is refused wherever the program chooses whether it runs: under a steered branch at any
+/// depth, after a steered short-circuit operand, in a closure's body and in a child scope. An entry that calls itself
+/// names a cap to itself, so it is refused at the entry, also when it only publishes the list.
 #[test]
 fn bnd_2_the_program_does_not_choose_the_cap() {
     let class = rows(&[Row::RepairList(REPAIR.into()), Row::Read("goal_state".into()), Row::View]);
@@ -197,6 +200,39 @@ fn bnd_2_the_program_does_not_choose_the_cap() {
     assert_eq!(refusals(&either(Ty::Unit, in_view), &class), not_granted_at(&["0.1", "0.2", "root"]));
     let in_let = let_("l", if_(var("flag"), at_a(), at_b()), var("l"));
     assert_eq!(refusals(&either(pairs(), in_let), &class), not_granted_at(&["0.1", "0.2", "1"]));
+
+    // Whether a view runs is the program's choice under a branch that state steers, wherever the branch is, after a
+    // short-circuit operand that state steers, in a closure's body, which runs when its caller chooses, and in a child
+    // scope, whose budget chooses whether its body finishes or its stop branch runs.
+    let view_either = |cond: Expr| let_("v", if_(cond, publish_view(at_a()), publish_view(at_b())), var("v"));
+    assert_eq!(refusals(&either(Ty::Unit, view_either(state())), &class), not_granted_at(&["0.1.0", "0.2.0"]));
+    assert!(built_in(&either(Ty::Unit, view_either(var("flag"))), &class).is_admitted());
+    let view_after = |op: Prim, first: Expr| {
+        let shown = let_("u", publish_view(at_a()), Expr::Lit(Lit::Bool(true)));
+        let_("t", prim(op, vec![first, shown]), unit())
+    };
+    assert_eq!(refusals(&either(Ty::Unit, view_after(Prim::And, state())), &class), not_granted_at(&["0.1.0.0"]));
+    assert_eq!(refusals(&either(Ty::Unit, view_after(Prim::Or, state())), &class), not_granted_at(&["0.1.0.0"]));
+    assert!(built_in(&either(Ty::Unit, view_after(Prim::And, var("flag"))), &class).is_admitted());
+    let nested = |first: Expr| {
+        let shown = let_("u", publish_view(at_a()), Expr::Lit(Lit::Bool(true)));
+        let_("t", prim(Prim::And, vec![var("flag"), prim(Prim::Or, vec![first, shown])]), unit())
+    };
+    assert_eq!(refusals(&either(Ty::Unit, nested(state())), &class), not_granted_at(&["0.1.1.0.0"]));
+    assert!(built_in(&either(Ty::Unit, nested(var("flag"))), &class).is_admitted());
+    // A draw from a generator the entry takes reads the stream, which the solver does not give, so it steers. The
+    // column refuses the draw itself too (no class row grants randomness); the delivery's refusal is at "1".
+    let drawn = vec![param("a", exact(Ty::Nat)), param("g", exact(Ty::Generator))];
+    let by_draw = if_(prim(Prim::ExactLess, vec![rng_draw(var("g")), nat(5)]), at_a(), list(exact(pair()), vec![]));
+    let by_draw = tool(vec![command("go", drawn, exact(pairs()), by_draw).exported()]);
+    let mut expected = vec![(EFFECT_UNDECLARED, "root".to_string())];
+    expected.extend(not_granted_at(&["entry", "1", "2"]));
+    assert_eq!(refusals(&by_draw, &class), expected);
+    let later = let_("f", closure(vec![], exact(Ty::Unit), publish_view(at_a())), call_value(var("f"), vec![]));
+    assert_eq!(refusals(&either(Ty::Unit, later), &class), not_granted_at(&["0.0.0"]));
+    let caps = ChildCaps { steps: Some(100), kernel_cost: None, memory: None, output: None };
+    let in_child = child(caps, exact(Ty::Unit), publish_view(at_a()), None, publish_view(at_b()));
+    assert_eq!(refusals(&either(Ty::Unit, in_child), &class), not_granted_at(&["0.0", "1.0"]));
 
     let below = prim(Prim::ExactLess, vec![var("cap"), nat(3)]);
     let deeper = if_(below, call("go", vec![exact_add(var("cap"), nat(1))]), publish_view(named_list()));

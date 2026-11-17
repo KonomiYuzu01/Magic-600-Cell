@@ -255,7 +255,9 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   or `length`, a call, a field, a record or a collection, a condition or a match, a write, a proposal, a closure's
   result), so the list keeps the engine's neutral order, marks no row best, and no entry tests a list for emptiness
   to read another cap; the solver chooses among the setups (BND.1). A branch delivers to the result only when its
-  condition reads nothing but literals and the entry's parameters as given, so the program chooses neither the cap,
+  condition reads nothing but literals and the entry's parameters as given, and nothing is delivered where the
+  program chooses whether it runs: under a branch whose condition reads more, at any depth, after a short-circuit
+  `and` or `or` operand that does, in a closure's body or in a child scope. So the program chooses neither the cap,
   also not among caps the solver named, nor whether to show the list (BND.2, BND.64); a branch inside a view's or a
   `let`'s value is a use. A value so delivered is the exception's output, so the shown-facts rule does not refuse its
   words. Previews keep their rules: an entry that reads the list or the setups prepares no preview. A class that lists

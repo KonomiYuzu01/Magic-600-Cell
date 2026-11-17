@@ -957,12 +957,15 @@ impl Exception {
         )
     }
 
-    /// The refusal's note at a delivery under a branch whose condition reads more than what the solver named.
+    /// The refusal's note at a delivery where the program chooses whether it runs: under a branch whose condition
+    /// reads more than what the solver named, after a short-circuit operand that does, in a closure's body or in a
+    /// child scope.
     fn steered_note(self) -> String {
         let (named, rule) = self.named();
         format!(
-            "{} delivered under a branch whose condition reads more than literals and the entry's parameters as \
-             given: the program would choose the {named} or whether to show it, and the solver names the {named} \
+            "{} delivered where the program chooses whether it runs, under a branch or after a short-circuit operand \
+             that reads more than literals and the entry's parameters as given, in a closure's body or in a child \
+             scope: the program would choose the {named} or whether to show it, and the solver names the {named} \
              ({rule}, BND.64)",
             self.what()
         )
@@ -1024,18 +1027,21 @@ enum Place {
 
 /// The exceptions' rules over an entry's body ([`admit_built_in`]): each read of an exception's query is for one of
 /// `params` as given, and its value is only delivered as read. A `let` binds the value under its name until another
-/// `let` or a closure parameter shadows the name; a branch of an `if`, a `display_if` or a `match` delivers it only to
-/// the result, and only when its condition reads nothing but literals and `params` as given; a closure's result is no
-/// delivery.
+/// `let`, a closure parameter or a child's status shadows the name; a branch of an `if`, a `display_if` or a `match`
+/// delivers it only to the result; a closure's result and a child's are no delivery. Nothing is delivered where the
+/// program chooses whether it runs: under a branch whose condition reads more than literals and `params` as given,
+/// wherever the branch is, in a short-circuit operand after such an operand, in a closure's body, which runs when its
+/// caller chooses, and in a child scope, whose budget chooses whether its body finishes or its stop branch runs.
 fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, Exception>) -> Deliveries {
     struct Walk<'a> {
         params: &'a BTreeSet<&'a str>,
         exceptions: &'a BTreeMap<&'a str, Exception>,
-        /// The names `let` and closure parameters bind, innermost last, with the exception whose value a name holds as
-        /// read.
+        /// The names `let`, closure parameters and a child's status bind, innermost last, with the exception whose
+        /// value a name holds as read.
         scope: Vec<(&'a str, Option<Exception>)>,
-        /// How many of the branches around the current expression a condition steers that reads more than literals
-        /// and `params` as given.
+        /// How many of the constructs around the current expression choose whether it runs: branches whose condition
+        /// reads more than literals and `params` as given, short-circuit operands after such an operand, closure
+        /// bodies and child scopes.
         steered: u32,
         path: Vec<u32>,
         out: Deliveries,
@@ -1108,10 +1114,34 @@ fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, 
                     None
                 }
                 Expr::Closure { params, body, .. } => {
+                    // Its caller chooses when, and whether, the body runs.
                     let depth = self.scope.len();
                     self.scope.extend(params.iter().map(|p| (p.name.as_str(), None)));
+                    self.steered += 1;
                     self.child(0, body, Place::Other);
+                    self.steered -= 1;
                     self.scope.truncate(depth);
+                    None
+                }
+                Expr::Child { body, status, otherwise, .. } => {
+                    // Its budget chooses whether the body finishes or the stop branch runs (DET.60).
+                    self.steered += 1;
+                    self.child(0, body, Place::Other);
+                    let depth = self.scope.len();
+                    self.scope.extend(status.as_deref().map(|s| (s, None)));
+                    self.child(1, otherwise, Place::Other);
+                    self.scope.truncate(depth);
+                    self.steered -= 1;
+                    None
+                }
+                Expr::Prim { op: Prim::And | Prim::Or, args } => {
+                    // A short-circuit operand runs only when the operands before it leave the result open (LG2.20).
+                    for (i, arg) in args.iter().enumerate() {
+                        let steers = u32::from(!args[..i].iter().all(|before| self.by_solver(before)));
+                        self.steered += steers;
+                        self.child(i as u32, arg, Place::Other);
+                        self.steered -= steers;
+                    }
                     None
                 }
                 _ => {
@@ -1135,21 +1165,23 @@ fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, 
         }
 
         /// Where the branches of a condition `cond` at `place` deliver, and whether `cond` steers them: a branch
-        /// delivers only to the result, and its condition chooses unless it reads nothing but literals and `params`
-        /// as given.
+        /// delivers only to the result, and its condition chooses which branch runs unless it reads nothing but
+        /// literals and `params` as given, wherever the branch is.
         fn branch(&self, cond: &Expr, place: Place) -> (Place, u32) {
+            let steers = u32::from(!self.by_solver(cond));
             match place {
-                Place::Result => (Place::Result, u32::from(!self.by_solver(cond))),
-                _ => (Place::Other, 0),
+                Place::Result => (Place::Result, steers),
+                _ => (Place::Other, steers),
             }
         }
 
-        /// Whether `e` reads nothing but literals and `params` as given, through primitive operations and fields.
+        /// Whether `e` reads nothing but literals and `params` as given, through primitive operations and fields. A
+        /// draw reads a generator's stream, which the solver does not give.
         fn by_solver(&self, e: &Expr) -> bool {
             match e {
                 Expr::Lit(_) => true,
                 Expr::Var(v) => self.params.contains(v.as_str()) && !self.binds(v),
-                Expr::Prim { args, .. } => args.iter().all(|arg| self.by_solver(arg)),
+                Expr::Prim { op, args } => *op != Prim::RngDraw && args.iter().all(|arg| self.by_solver(arg)),
                 Expr::Field { value, .. } => self.by_solver(value),
                 _ => false,
             }
