@@ -156,6 +156,7 @@ impl Fixture {
 #[test]
 #[ignore = "B5: fails on 4c20ce30, a round trip through Jumble moves a protected orbit with no refusal or release"]
 fn b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit() {
+    let mut bypassed = Vec::new();
     for policy in ["net", "strict"] {
         let mut f = fixture(&[0]);
         if policy == "strict" {
@@ -174,14 +175,16 @@ fn b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit() {
         let entered = log.iter().find(|t| t.kind == TransactionKind::Crossing);
         let released = entered.is_some_and(|t| t.confirm || !t.orbits.contains(&0));
         let round_trip = committed(&entry) && committed(&moved) && committed(&exit);
-        assert!(
-            !round_trip || released,
-            "{policy}: the entry, the move and the exit committed, the entry recorded no release, the head went from \
-             {solved} to {} and the protected set is {:?}",
-            f.layer.revision().digest,
-            f.layer.protected().orbits(),
-        );
+        if round_trip && !released {
+            bypassed.push(format!(
+                "{policy}: the entry, the move and the exit committed, the entry recorded no release, the head went \
+                 from {solved} to {} and the protected set is {:?}",
+                f.layer.revision().digest,
+                f.layer.protected().orbits(),
+            ));
+        }
     }
+    assert!(bypassed.is_empty(), "{bypassed:#?}");
 }
 
 /// Guard (refuted, class D). A commit that moved orbit 0 before the orbit was protected cannot be undone past the
