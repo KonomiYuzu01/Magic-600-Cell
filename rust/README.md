@@ -1229,6 +1229,9 @@ run or not applicable is no pass (PHS.63).
     `KN5:stale.no_fresh_preview` a token whose frame lies outside the preview's current presentation: one device
     epoch, surface and surface generation, from the first frame that showed it to the newest. `HeadlessFrames` stamps a
     headless adapter's frames for the tests and the LP3 runners.
+  - The shell's binding (draft): `Shell::send` drops the preview the shell presented when a committed receipt moved the
+    state or a cancel completed. A committed receipt that keeps the state, such as a record write's undo or redo,
+    keeps it, as the layer keeps the preview, so a press prepared after it commits.
   - Tests: `c600-command/tests/kn5_stages.rs` (parts of CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-13, CT-ONE-04 and
     CT-ONE-29), a record write and its undo over the journal in `c600-session/tests/kn5_command.rs` (CT-KN5-04, part),
     and a frame outside the presentation in `kn5.rs`'s token matrix (CT-ONE-03, part).
