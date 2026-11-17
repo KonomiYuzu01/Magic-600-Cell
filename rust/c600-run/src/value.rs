@@ -96,14 +96,20 @@ impl Drop for List {
 /// A compressed word (LG2.16, KN2.10; LP2 draft): a straight-line program. Each part is a leaf of literal letters or
 /// the concatenation of two earlier parts, and the last part is the word. Its exact length, an unbounded integer, is
 /// known without expansion. Only the word itself may be empty: a concatenation never takes an empty part, so every
-/// part a reading visits holds letters. The parts' lengths and heights are derived host metadata, not payload.
+/// part a reading visits holds letters. Each part keeps its exact length, which a reading needs to find a position, so
+/// the lengths are payload: a chain of n doublings keeps about n²/2 bits of them, and its logical size counts them. A
+/// word and its joins share the stored lengths, and each still counts them in full (DET.57 gives sharing no discount).
+/// The heights are derived host metadata of fixed width, not payload.
 #[derive(Debug)]
 pub struct Compressed {
     parts: Vec<Part>,
-    lengths: Vec<BigInt>,
+    /// Each part's exact length. A join copies the handles of its operands' lengths and adds one, so its work is one
+    /// step per part, as `concat` is priced, and not one per bit kept.
+    lengths: Vec<Arc<BigInt>>,
     heights: Vec<u128>,
     /// DET.57's payload of the parts: per part a 4-byte variant tag, then for a leaf its 8-byte letter count and two
-    /// bytes per letter, as a word stores them, and for a concatenation its two 8-byte part numbers.
+    /// bytes per letter, as a word stores them, and for a concatenation its two 8-byte part numbers, and then the
+    /// part's exact length as an unbounded integer.
     parts_size: u128,
 }
 
@@ -115,7 +121,7 @@ pub enum Part {
     Concat(usize, usize),
 }
 
-/// The logical payload of a concatenation part (DET.57): its tag and two part numbers.
+/// The logical payload of a concatenation part (DET.57) before its length: its tag and two part numbers.
 const CONCAT_PART: u128 = 20;
 
 impl Compressed {
@@ -128,6 +134,7 @@ impl Compressed {
 
     /// `a` then `b`, without expansion. An empty operand gives the other. Otherwise the result holds the parts of `a`,
     /// then those of `b` unless the two are one value, then their concatenation: a word joined to itself adds one part.
+    /// The result shares the operands' stored lengths and computes only its new part's.
     pub fn concat(a: &Arc<Compressed>, b: &Arc<Compressed>) -> Arc<Compressed> {
         if a.length().is_zero() {
             return b.clone();
@@ -221,13 +228,13 @@ impl Compressed {
         let (length, height, size) = match &part {
             Part::Leaf(l) => (BigInt::from(l.len()), 0, 12 + 2 * l.len() as u128),
             Part::Concat(i, j) => {
-                (&self.lengths[*i] + &self.lengths[*j], 1 + self.heights[*i].max(self.heights[*j]), CONCAT_PART)
+                (&*self.lengths[*i] + &*self.lengths[*j], 1 + self.heights[*i].max(self.heights[*j]), CONCAT_PART)
             }
         };
+        self.parts_size = self.parts_size.saturating_add(size).saturating_add(int_size(&length));
         self.parts.push(part);
-        self.lengths.push(length);
+        self.lengths.push(Arc::new(length));
         self.heights.push(height);
-        self.parts_size = self.parts_size.saturating_add(size);
     }
 
     /// The exact expanded length (LG2.16).
@@ -250,10 +257,11 @@ impl Compressed {
         *self.heights.last().expect("a compressed word has a part")
     }
 
-    /// DET.57's logical size: a 4-byte variant tag, the parts and the exact length as an unbounded integer. The part
-    /// count's 8-byte length is counted where the word is stored, as for a list.
+    /// DET.57's logical size: a 4-byte variant tag and the parts, each with its exact length as an unbounded integer;
+    /// the last part's length is the word's. The part count's 8-byte length is counted where the word is stored, as
+    /// for a list.
     pub fn size(&self) -> u128 {
-        4u128.saturating_add(self.parts_size).saturating_add(int_size(self.length()))
+        4u128.saturating_add(self.parts_size)
     }
 
     /// The size of `concat(a, b)` when neither is empty and the two are different values: a bound for any
@@ -278,12 +286,12 @@ impl Compressed {
         let (mut at, mut offset) = (self.parts.len() - 1, start.clone());
         let (leaf, from) = loop {
             match &self.parts[at] {
-                Part::Concat(i, j) if offset < self.lengths[*i] => {
+                Part::Concat(i, j) if offset < *self.lengths[*i] => {
                     pending.push(*j);
                     at = *i;
                 }
                 Part::Concat(i, j) => {
-                    offset -= &self.lengths[*i];
+                    offset -= &*self.lengths[*i];
                     at = *j;
                 }
                 Part::Leaf(l) => break (l, usize::try_from(&offset).expect("an offset within its leaf")),
@@ -1022,4 +1030,30 @@ pub fn literal(lit: &c600_ir::Lit) -> Option<Value> {
         Lit::Tag(s) => Value::tag(s),
         Lit::Colour(s) => Value::colour(s),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The meter's regression for a doubling chain (LP2 draft): a join keeps the handles of its operands' stored
+    /// lengths and computes only its new part's, so its work is one step per part, as `concat` is priced, and not one
+    /// per bit kept. A join of two different words shares the lengths of both.
+    #[test]
+    fn a_join_shares_its_operands_stored_lengths() {
+        let shared = |a: &Compressed, b: &Compressed| a.lengths.iter().zip(&b.lengths).all(|(x, y)| Arc::ptr_eq(x, y));
+        let mut c = Arc::new(Compressed::leaf([1].into()));
+        for _ in 0..64 {
+            let next = Compressed::concat(&c, &c);
+            assert_eq!(next.lengths.len(), c.lengths.len() + 1);
+            assert!(shared(&c, &next));
+            c = next;
+        }
+        let u = Arc::new(Compressed::leaf([2, -3].into()));
+        let joined = Compressed::concat(&u, &c);
+        assert_eq!(joined.lengths.len(), u.lengths.len() + c.lengths.len() + 1);
+        assert!(shared(&u, &joined));
+        assert!(c.lengths.iter().zip(&joined.lengths[u.lengths.len()..]).all(|(x, y)| Arc::ptr_eq(x, y)));
+        assert_eq!(**joined.lengths.last().unwrap(), (BigInt::from(1) << 64) + 2);
+    }
 }
