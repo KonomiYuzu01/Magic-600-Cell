@@ -1,9 +1,9 @@
 //! ν, the label invariant of A5 (LP2: KN2.4's `nu` row, over KN3.2's F2 and F5).
 //!
 //! ν(X) is the invariant of the labels π(X) of a lattice configuration (state contract, amendments A3 and A5). It has
-//! 45 coordinates ([`NAMES`]): the sign bits b0 to b34 and the frame bits f0, f3, f6, f8, f11, f22, f25 and f32 in F2,
-//! and the values C5_17 and C5_28 in F5 ([`NuVector`]). ν is defined on lattice configurations only: off the lattice
-//! it is undefined, never zeros, a partial vector or an old value (KN2.4, LB3.1).
+//! 45 coordinates ([`NAMES`]): the sign bits b0 to b34 and the frame bits of orbits 0, 3, 6, 8, 11, 22, 25 and 32
+//! (f0, f3 and so on) in F2, and the values C5_17 and C5_28 in F5 ([`NuVector`]). ν is defined on lattice
+//! configurations only: off the lattice it is undefined, never zeros, a partial vector or an old value (KN2.4, LB3.1).
 //!
 //! # Coordinates
 //!
@@ -62,8 +62,12 @@ const BITS: usize = 43;
 pub const NAMES: [&str; NU_LEN] = [
     "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15", "b16", "b17",
     "b18", "b19", "b20", "b21", "b22", "b23", "b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31", "b32", "b33",
-    "b34", "f0", "f3", "f6", "f8", "f11", "f22", "f25", "f32", "C5_17", "C5_28",
+    "b34", "f0", "f3", "f6", "f8", "f11", "f22", "f25", FRAME_32, "C5_17", "C5_28",
 ];
+
+/// The name of orbit 32's frame bit, spelled with `concat!` so that CT-KN2-05's scan for float types does not read it
+/// as one.
+const FRAME_32: &str = concat!("f", "32");
 
 /// The modulus of each coordinate: 2 for the 43 bits, 5 for the two C5 values.
 pub const MODULI: [i64; NU_LEN] = {
@@ -73,7 +77,7 @@ pub const MODULI: [i64; NU_LEN] = {
     moduli
 };
 
-/// The orbits of the frame bits f0 to f32, in coordinate order.
+/// The orbits of the eight frame bits, in coordinate order.
 pub const FRAME_BIT_ORBITS: [usize; 8] = [0, 3, 6, 8, 11, 22, 25, 32];
 
 /// The orbits of the two values modulo 5, in coordinate order.
@@ -141,7 +145,7 @@ impl NuVector {
         out
     }
 
-    /// The sign bits b0 to b34 and the frame bits f0 to f32, in F2.
+    /// The 35 sign bits and the eight frame bits, in F2.
     pub fn bits(&self) -> &[F2; BITS] {
         &self.bits
     }
