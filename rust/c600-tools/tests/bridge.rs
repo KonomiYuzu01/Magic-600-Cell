@@ -88,9 +88,10 @@ fn run_on(
 /// Acceptance item 3, the bridge. The tool's proposal becomes one invocation of `operation.preview` with
 /// `Caller::Runtime` for the run, the fresh command ID `<run>/1`, the layer's current epoch, the literal word as the
 /// absolute argument `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program receives only
-/// the fixed acknowledgement whether the layer admits the preview, the layer refuses the word, or preview admission
-/// refuses the proposal before the layer sees it; the charges are the same, and only the shell sees the layer's answer.
-/// A preview changes no state, revision or journal.
+/// the fixed acknowledgement whether the layer admits the preview, the layer refuses the word (the empty word, a recipe
+/// of the wrong shape), or preview admission refuses the proposal before the layer sees it; on the same word the
+/// charges are the same whatever the answer, and only the shell sees the layer's answer. A preview changes no state,
+/// revision or journal.
 ///
 /// CT-BND-11 (part, the 600-cell-Full tool on the command layer: in the solving profile its preview outcome is withheld)
 /// and CT-BND-07 (part, the 600-cell-Full tool on the command layer: whatever the engine answers, the program gets the
@@ -100,20 +101,21 @@ fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowled
     let tool = Tool::full_600_cell().unwrap();
     let mut summaries = Vec::new();
     for (case, word, run) in [
-        ("admitted", [1, -2], "run-a"),
-        ("refused by the layer", [0, -2], "run-b"),
-        ("refused at admission", [1, -2], "run-c"),
+        ("admitted", &[1, -2][..], "run-a"),
+        ("refused by the layer", &[][..], "run-b"),
+        ("refused at admission", &[1, -2][..], "run-c"),
+        ("refused at admission", &[][..], "run-d"),
     ] {
         let (mut layer, _) = session();
         let read = base(layer.revision());
         assert_eq!(read, "bridge@1/e0");
         let before = fingerprint(&layer);
         let pins = (case == "refused at admission").then(Pins::default);
-        let (ran, sent) = run_on(&tool, &mut layer, &word, run, pins);
+        let (ran, sent) = run_on(&tool, &mut layer, word, run, pins);
         assert_eq!(ran.run.summary.outcome, Outcome::Completed, "{case}");
         assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, run)[..]), "{case}");
         let [shown] = &ran.shell[..] else { panic!("{case}: one proposal") };
-        assert_eq!((shown.id.clone(), &shown.word[..], shown.target.as_str()), (format!("{run}/1"), &word[..], ROW));
+        assert_eq!((shown.id.clone(), &shown.word[..], shown.target.as_str()), (format!("{run}/1"), word, ROW));
         if case == "refused at admission" {
             assert!(sent.is_empty(), "the layer never sees a proposal that preview admission refused");
             assert!(matches!(&shown.answer, Answer::Refused(r) if r.code == INCOMPATIBLE), "{:?}", shown.answer);
@@ -124,7 +126,7 @@ fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowled
             assert_eq!(one.caller, Caller::Runtime { run: run.into() }, "{case}");
             assert_eq!(invocation.epoch, layer.revision().epoch, "{case}");
             assert!(invocation.token.is_none(), "{case}");
-            assert_eq!(invocation.args.canonical(), word_args(&word).canonical(), "{case}");
+            assert_eq!(invocation.args.canonical(), word_args(word).canonical(), "{case}");
             let moves = r#"{"draft":{"recipe":[{"kind":"word","moves":["#;
             assert!(invocation.args.canonical().starts_with(moves), "{case}");
             match (case, &one.receipt.status, &shown.answer) {
@@ -143,7 +145,8 @@ fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowled
         assert_eq!(fingerprint(&layer), before, "{case}: a preview changes no state");
         summaries.push(ran.run.summary);
     }
-    assert!(summaries.iter().all(|summary| summary == &summaries[0]), "the charges do not depend on the answer");
+    assert_eq!(summaries[0], summaries[2], "the charges on a word do not depend on the answer");
+    assert_eq!(summaries[1], summaries[3], "the charges on the empty word do not depend on the answer");
 }
 
 /// ADR-L02 and KN5.15: the runtime reaches no commit or app row. Every commit and app row of H-08, invoked by the
