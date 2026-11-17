@@ -185,6 +185,7 @@ dependencies = [
  "c600-check",
  "c600-command",
  "c600-digest",
+ "c600-evidence",
  "c600-ir",
  "c600-kernel",
  "c600-run",

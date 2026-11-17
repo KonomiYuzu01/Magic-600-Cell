@@ -16,6 +16,7 @@
 pub mod command_store;
 pub mod disk;
 pub mod journal;
+pub mod persist;
 
 mod jobs;
 mod session;
