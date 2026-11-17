@@ -286,6 +286,7 @@ fn ct_ps1_09_flat_words_keep_literal_chunks_and_relations_generate_nothing() {
     assert_eq!(word::read_chunks(&chunks, n, &digest, "order-a", "order-a"), Ok(letters.clone()));
     assert_eq!(outcome(word::read_chunks(&chunks, n, &digest, "order-a", "order-b")), IDENTITY);
     assert_eq!(outcome(word::read_chunks(&chunks, n - 1, &digest, "a", "a")), CANON);
+    assert_eq!(outcome(word::read_chunks(&chunks, i128::MAX, &digest, "a", "a")), CANON, "a length past i128::MAX / 2");
     assert_eq!(outcome(word::decode_ia16(&36_000u16.to_le_bytes())), CANON);
     assert_eq!(outcome(word::decode_ia16(&[0])), CANON);
 
@@ -303,6 +304,9 @@ fn ct_ps1_09_flat_words_keep_literal_chunks_and_relations_generate_nothing() {
     let Json::List(chunks) = at(&mut short, &["payload", "chunks"]) else { panic!("chunks") };
     chunks.pop();
     assert_eq!(outcome(word::admit(&short, &store)), CANON, "a dropped chunk shortens the literal word");
+    let mut huge = written.clone();
+    set(at(&mut huge, &["payload"]), "length", Json::text(&"9".repeat(50)));
+    assert_eq!(outcome(word::admit(&huge, &store)), CANON, "a length no literal word has, refused without overflow");
 }
 
 // ------------------------------------------------------------------------------------------------- CT-PS1-10

@@ -6,12 +6,15 @@
 //! - [`record`]: FP.4's catalogue, FP.10's dispatch and unknown-field rules, FP.11's references, and chapter 05's
 //!   `read_record` and `write_record` (PS1.11 to PS1.13, PS2.2).
 //! - [`word`]: FP.13's flat menu words: ia16 letters in mandatory chunks, local and external annotations, and the X3
-//!   expansion bound (PS1.18 to PS1.22).
+//!   expansion bound (PS1.18 to PS1.22); a stored word's admission into the current session, under the session's whole
+//!   identity block and with Jumble off for retained letters only ([`word::admit_in`]).
 //! - [`facts`]: FP.19 and FP.20's facts envelope, admitted and read into `c600-evidence`'s graph (PS1.35 to PS1.37);
 //!   the display word per recorded function edition and the edition note (FP.19, PS2.6).
 //! - [`migrate`]: FP.29's migration record, the function-edition change, and FP.28's publication, which validates
 //!   everything, writes a new generation and only then switches the active pointer (PS2.1 to PS2.9).
 //! - [`legacy`]: 0.4's preview certificate (PS1.39) and its import states (PS3.7).
+//! - [`run`]: the run record (PS1.31) with chapter 09's `ReproKey` (DET.1), its reading (DET.30, KN7.4) and the store's
+//!   half of reproduction (DET.7).
 //!
 //! Each reader refuses with the code of PS1.42; nothing here guesses a meaning, relinks a reference or truncates a
 //! word. The vectors these modules answer are read in place from the frozen packet by the crate's tests.
@@ -43,12 +46,27 @@
 //!   changed during the conversion is `PS1:input.digest_mismatch` (R-08).
 //! - An imported 0.4 certificate is state B, a recorded claim with check mode "stated: not replayed"; `conflicts`
 //!   (state C) and `token` (state D) are dropped, and the other later fields stay as context.
+//! - The run record is a draft of the payload FP.4 reserves as `c600-run-draft`, and `read_record` keeps it recorded.
+//!   The key's parameters hold the entry and its arguments, the captured inputs, the grants, the profile and the policy
+//!   identity. The captured inputs, the grants and the checkers are sets: written sorted, each once (one capture per
+//!   kind and name), and compared as sets at admission. An input whose bytes change while it is captured is
+//!   `PS1:input.digest_mismatch` (R-08).
+//! - A draft policy identity is the pin `c600-policy-draft-1` over the sorted declassifier names. The profile and the
+//!   policy identity are the run's and apply to every grant.
+//! - Only a completed run or a `KN7:budget.*` cut-off is re-run: a safety stop, a cancellation, an error and a run
+//!   under a clock grant give `not run`. A cut-off covers the outputs it published before its stop, and its stop
+//!   boundary. A safety stop's wall-clock time is kept apart from the key and the exact payload. Evidence references
+//!   are not in the payload yet. A key's identity block may be a jumbling block in free mode: no menu, a contract
+//!   revision.
+//! - [`word::admit_in`] takes whether a letter is retained from its caller, which computes it from the pinned menu, and
+//!   refuses a jumble letter with Jumble off with the command layer's code.
 
 pub mod codec;
 pub mod facts;
 pub mod legacy;
 pub mod migrate;
 pub mod record;
+pub mod run;
 pub mod word;
 
 use std::fmt;
@@ -64,6 +82,8 @@ pub mod codes {
     pub const SCOPE: &str = "PS1:evidence.scope_not_immutable";
     pub const PROVENANCE: &str = "PS1:capability.provenance_incompatible";
     pub const IDENTITY: &str = "KN1:input.identity_mismatch";
+    /// A stored word holding a jumble letter while Jumble is off (PS1.21; the command layer's code for the same rule).
+    pub const NEEDS_JUMBLE_ON: &str = "KN5:input.menu_word_needs_jumble_on";
 }
 
 /// FP.9's row, its largest admitted amount and the amount that was refused.

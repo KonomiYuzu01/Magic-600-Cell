@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use c600_digest::sha256_hex;
 
 use super::codec::{canonical, charge, content_ref, int_value, nat, read_blob, sha_of, store_blob, Json};
-use super::codes::{CANON, DIGEST, EXPANSION, FORMAT, IDENTITY};
+use super::codes::{CANON, DIGEST, EXPANSION, FORMAT, IDENTITY, NEEDS_JUMBLE_ON};
 use super::record::{has_exactly, supported};
 use super::{require, Refusal};
 
@@ -84,7 +84,8 @@ pub fn read_chunks(
         decode_ia16(part)?;
     }
     let raw = chunks.concat();
-    require(raw.len() as i128 == 2 * length, CANON)?;
+    // A stored length past i128::MAX / 2 is refused like any other wrong length, never overflowed.
+    require(length.checked_mul(2) == Some(raw.len() as i128), CANON)?;
     require(sha256_hex(&raw) == digest, DIGEST)?;
     decode_ia16(&raw)
 }
@@ -114,6 +115,27 @@ fn truthy(value: &Json) -> bool {
 /// FP.13's admission: the record's literal letters, or the refusal of the first rule it breaks.
 pub fn admit(record: &Json, store: &Store) -> Result<Vec<Letter>, Refusal> {
     admit_within(record, store, &[])
+}
+
+/// The session a stored menu word is admitted into (PS1.18, PS1.21).
+pub struct Current<'a> {
+    /// Chapter 01's identity block of the session's pinned menu, as [`super::record::identity_json`] writes it.
+    pub identity: &'a Json,
+    pub jumble_on: bool,
+    /// Whether a letter is a retained item of that menu (JI.35): with Jumble off only those replay.
+    pub retained: &'a dyn Fn(Letter) -> bool,
+}
+
+/// [`admit`] into the current session. The word's identity block must be the session's, whole: a word recorded under
+/// another model, contract revision, menu or item order is refused (`KN1:input.identity_mismatch`) before a letter is
+/// read, and its letters are never read under the current menu instead. With Jumble off, a word holding a jumble letter
+/// is refused (`KN5:input.menu_word_needs_jumble_on`).
+pub fn admit_in(record: &Json, store: &Store, current: &Current) -> Result<Vec<Letter>, Refusal> {
+    supported(record)?;
+    require(record.get("identity") == Some(current.identity), IDENTITY)?;
+    let letters = admit(record, store)?;
+    require(current.jumble_on || letters.iter().all(|&letter| (current.retained)(letter)), NEEDS_JUMBLE_ON)?;
+    Ok(letters)
 }
 
 fn admit_within(record: &Json, store: &Store, visiting: &[String]) -> Result<Vec<Letter>, Refusal> {
