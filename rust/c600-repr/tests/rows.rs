@@ -1,6 +1,7 @@
 //! The six rows of the representations tool at the command layer (LP3 plan, C6 item 7): `rows::NEEDS` against the
-//! stored H-08 table, the shipped entries and the layer's refusals. Nothing here builds a row; the layer has the one
-//! implementation of tokens, receipts, undo and outcomes, and it refuses all six as not built.
+//! stored H-08 table, the shipped entries, the layer's refusals and the rows it serves. Nothing here builds a row; the
+//! layer has the one implementation of tokens, receipts, undo and outcomes. It refuses all six as not built until a
+//! host serves them, and it serves five; `served_rows.rs` runs those five.
 
 mod common;
 
@@ -25,7 +26,7 @@ fn the_row_requirements_name_the_stored_rows_as_h08_has_them() {
     let table = Table::h08();
     assert_eq!(NEEDS.iter().map(|n| n.row).collect::<BTreeSet<_>>(), ROWS.iter().copied().collect::<BTreeSet<_>>());
     assert_eq!(NEEDS.len(), ROWS.len());
-    assert!(COMMON.iter().all(|need| !need.is_empty()));
+    assert!(COMMON.iter().all(|common| !common.need.is_empty() && !common.met.is_empty()));
     for need in &NEEDS {
         let row = table.row(need.row).unwrap_or_else(|| panic!("{} is a stored row", need.row));
         assert!(row.overlay.is_none(), "{}", need.row);
@@ -34,7 +35,7 @@ fn the_row_requirements_name_the_stored_rows_as_h08_has_them() {
         let stored: Vec<(&str, &str)> = row.arguments.iter().map(|(name, ty)| (name.as_str(), ty.as_str())).collect();
         assert_eq!(stored, need.arguments, "{}", need.row);
         assert!(!row.takes_token(), "{}: H-08 gives none of the six a user-action token", need.row);
-        for text in [need.receipt, need.undo_entry, need.layer] {
+        for text in [need.receipt, need.undo_entry, need.met, need.remains] {
             assert!(!text.is_empty(), "{}", need.row);
         }
         match need.entry {
@@ -72,11 +73,13 @@ fn the_effect_class_of_each_row_is_the_one_its_entry_has() {
     }
 }
 
-/// The command layer builds none of the six rows and nothing else may stand in for one. Its availability answer and
-/// its receipt for an invocation, from the shell and from a running program, carry the layer's not-built code; an
-/// overlay under a stored row's ID is refused as a conflict; and none of it moves the revision, the durable log or
-/// the undo target of a committed action. Covers no conformance ID in full: it is the evidence for item 7 that the
-/// rows are listed, not built.
+/// The command layer builds none of the six rows itself. Until a host serves them, its availability answer and its
+/// receipt for an invocation, from the shell and from a running program, carry the layer's not-built code; an overlay
+/// under a stored row's ID is refused as a conflict, so an overlay cannot replace a row; and none of it moves the
+/// revision, the durable log or the undo target of a committed action. The layer's `serve_row` accepts exactly the rows
+/// the list marks served and refuses `filter.apply` with `KN5:input.overlay_row_kind`. Covers no conformance ID in
+/// full: it is item 7's evidence that the layer builds none of the rows itself, and it keeps the list's `served` from
+/// drifting from the layer.
 #[test]
 fn the_layer_refuses_all_six_rows_and_an_overlay_cannot_replace_one() {
     let mut session = session();
@@ -104,4 +107,14 @@ fn the_layer_refuses_all_six_rows_and_an_overlay_cannot_replace_one() {
         assert_eq!(session.fixed(), before, "{}", need.row);
     }
     assert_eq!(session.layer.table().row("filter.apply").map(|row| row.overlay.is_none()), Some(true));
+
+    let mut table = Table::h08();
+    for need in &NEEDS {
+        let overlay = Overlay { module: MODULE.to_owned(), entry: need.entry.expect("an entry").to_owned() };
+        match table.serve_row(need.row, overlay) {
+            Ok(_) => assert!(need.served, "{} is served", need.row),
+            Err(error) => assert_eq!((need.served, error.code), (false, code::OVERLAY_ROW_KIND), "{}", need.row),
+        }
+    }
+    assert_eq!(NEEDS.iter().filter(|need| need.served).count(), 5);
 }
