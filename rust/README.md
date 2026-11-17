@@ -692,8 +692,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   centre) and L16's `KN2:stale.revision_gone` (the candidate has no snapshot handles). L15's `repair_list` and
   `covers` rows (J1's pinned pair order, no rank, a cap outside 0..599) and L2's `release_check` agreement run in
   M8's comparison with J1 (below).
-- Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
-  informational, not performance evidence.
+- Evidence kind: source and fixture. The comparison ran on Windows; its headless Linux leg runs in CI (the Linux Rust
+  workflow's J1 job). The timings the check prints are informational, not performance evidence.
 - KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
   integers, refuses malformed, noncanonical and oversize bytes, and compares the re-encoded bytes. `resolve` builds the
   exact rotation in A1's frame at the binding's cap and chooses: free mode over A1's grid with A1's tie order, half-turn
@@ -749,7 +749,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     the check needed `nu` and the 36-row correction catalogue; both came later (the ν and correction catalogue bullets
     below).
   - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
-    source and fixture; the comparison ran on Windows only, and its timings are informational.
+    source and fixture; the comparison ran on Windows, its headless Linux leg runs in CI's J1 job, and its timings are
+    informational.
 - M8 levels (LP2 plan, section 11; chapter 01, KN1.7 to KN1.11, KN1.14, KN1.17 and KN2.11 to KN2.14; chapter 08,
   ONE.21 to ONE.28; state contract A3 to A5): `c600-jumble/src/levels.rs` builds KN1.7's level crossings, each map
   one way from poses down, and KN1.9's projections, total or partial with what is missing (the pieces off the lattice
@@ -792,7 +793,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
     marker naming what it leaves out. Not built with them: `nu` and `correction_set_check` (the ν and correction
     catalogue bullets below), and the session store's checkpoint and import records (M6). No J1 fault was found.
-    Evidence kind: source and fixture; the comparison ran on Windows only.
+    Evidence kind: source and fixture; the comparison ran on Windows, and its headless Linux leg runs in CI's J1 job.
 - The kernel pieces for LP3's C8 (LP2):
   - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
     `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
@@ -1190,7 +1191,12 @@ run or not applicable is no pass (PHS.63).
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
-  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 still run on the Windows shards only.
+  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
+  cross-platform item). These are the six `tests/test_jumbling_rust_*.py` checks that the Windows shards run
+  (candidate, attacks, M8's observations and levels, ν and the correction catalogue), one runner each. They use the
+  same pinned CPython and hash-checked NumPy wheels and build the release adapter offline. Each system compares the
+  candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared byte for byte. A
+  pass is headless Linux source and fixture evidence only.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the
