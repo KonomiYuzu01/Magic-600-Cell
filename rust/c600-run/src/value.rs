@@ -15,6 +15,7 @@ use num_traits::{One, Signed, Zero};
 use crate::approx::{self, Approx};
 use crate::menu::{MenuIdentity, MENU_INDEX_LIMIT};
 use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs};
+use crate::trace::{tokens_order, TraceKey};
 
 /// The most decimal digits an exact literal may have: PS1.5's limit for persisted integers, applied to IR literals.
 pub const MAX_DIGITS: usize = 10_000;
@@ -57,6 +58,10 @@ pub enum Value {
     /// An end test's verdict (LB3.2; LP2 draft): the test it answers and its outcome. A program reads it from the
     /// test's engine row and uses it through a `match` on its outcome only (LG2.9).
     EndTest(EndTest, EndTestOutcome),
+    /// LB1.10's trace equality key of a Full word (LP2 draft): its letters in the least topological order under the
+    /// run's pinned independence relation, with that relation's header (LG2.23). It is never a `Word` or a
+    /// `WordEqualityKey`.
+    TraceEqualityKey(Arc<TraceKey>),
 }
 
 /// A list: its elements in order, its logical size and an upper bound of its canonical encoding (LP2 draft).
@@ -424,6 +429,7 @@ fn kind(v: &Value) -> u8 {
         Value::Compressed(_) => 18,
         Value::MenuWord(_) => 19,
         Value::EndTest(..) => 20,
+        Value::TraceEqualityKey(_) => 21,
     }
 }
 
@@ -445,7 +451,11 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 | (Value::Target(x), Value::Target(y))
                 | (Value::Tag(x), Value::Tag(y))
                 | (Value::Colour(x), Value::Colour(y)) => x.as_str().cmp(y.as_str()),
-                (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x.cmp(y),
+                (Value::Word(x), Value::Word(y)) => x.cmp(y),
+                // LG2.23's token order: absolute generator ID, then sign, the inverse first.
+                (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => tokens_order(x, y),
+                // Headers first, then LG2.23's token order. A run pins one relation, so its trace keys share a header.
+                (Value::TraceEqualityKey(x), Value::TraceEqualityKey(y)) => x.cmp(y),
                 (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
                     parts(&mut stack, &x.items, &y.items);
                     Ordering::Equal
@@ -799,6 +809,8 @@ impl Value {
             Value::Text(t) | Value::Target(t) => t.scalars.saturating_mul(4),
             Value::Tag(_) | Value::Colour(_) => 4,
             Value::Word(w) | Value::WordEqualityKey(w) => 2 * w.len() as u128,
+            // Its letters, as a word's; the header is shared with the run's relation.
+            Value::TraceEqualityKey(k) => 2 * k.letters().len() as u128,
             Value::Record(r) | Value::Receipt(r) => r.size,
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,
@@ -823,6 +835,7 @@ impl Value {
                 | Value::Map(_)
                 | Value::Compressed(_)
                 | Value::MenuWord(_)
+                | Value::TraceEqualityKey(_)
         )
     }
 
@@ -856,11 +869,14 @@ impl Value {
             Value::EndTest(test, outcome) => 24 + (test.row().len() + outcome.tag().len()) as u128,
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
-            // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13). Nor has a
-            // compressed word, whose output would be its expansion (DET.59).
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
-                0
-            }
+            // A word key or a trace key has no canonical form in the LP2 draft: it is never output as letters (LG2.13,
+            // LB1.10). Nor has a compressed word, whose output would be its expansion (DET.59).
+            Value::Closure(_)
+            | Value::Fn(_)
+            | Value::Receipt(_)
+            | Value::WordEqualityKey(_)
+            | Value::TraceEqualityKey(_)
+            | Value::Compressed(_) => 0,
         }
     }
 }
@@ -1012,6 +1028,8 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             | (Value::Tag(x), Value::Tag(y))
             | (Value::Colour(x), Value::Colour(y)) => x.as_str() == y.as_str(),
             (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x == y,
+            // Matching headers and token sequences, not only matching hashes (LG2.23).
+            (Value::TraceEqualityKey(x), Value::TraceEqualityKey(y)) => x == y,
             (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
                 stack.extend(x.items.iter().zip(&y.items));
                 x.items.len() == y.items.len()

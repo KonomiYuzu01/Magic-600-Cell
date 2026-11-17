@@ -11,6 +11,7 @@ use c600_ir::Capability;
 use c600_run::interp::{load, Cancel, Host, Options, Run, SourceRanges};
 use c600_run::menu::MenuAlphabet;
 use c600_run::meter::{Amounts, DraftTariffs, SourceRange, Tariffs};
+use c600_run::trace::Relation;
 use c600_run::value::Value;
 use c600_syntax::{lower, parse, Lowered};
 
@@ -38,11 +39,14 @@ pub struct JobOptions {
     pub built_in: Option<BTreeSet<Row>>,
     /// The menu alphabet the run pins for its menu words (LB1.8; LP2 draft): `c600_run::interp::Options::menu`.
     pub menu: Option<MenuAlphabet>,
+    /// The independence relation the run pins for its trace keys (LB1.10; LP2 draft):
+    /// `c600_run::interp::Options::relation`.
+    pub relation: Option<Relation>,
 }
 
 impl JobOptions {
     /// Test tariffs, rows kept, no seed, the tool-authoring profile, no capability, the interim policy, source ranges
-    /// on, no built-in column and no menu alphabet.
+    /// on, no built-in column, no menu alphabet and no trace relation.
     pub fn new(limits: Amounts) -> JobOptions {
         JobOptions {
             limits,
@@ -56,6 +60,7 @@ impl JobOptions {
             source_ranges: true,
             built_in: None,
             menu: None,
+            relation: None,
         }
     }
 }
@@ -173,6 +178,7 @@ pub fn run_in_process(job: &Job, host: &mut dyn Host, cancel: Option<&dyn Cancel
         cancel,
         sources: if o.source_ranges { Some(&ranges) } else { None },
         menu: o.menu.as_ref(),
+        relation: o.relation.as_ref(),
     };
     match loaded.run(&job.module, &job.entry, job.args.clone(), host, &options) {
         Ok(run) => Ended::Ran(run),

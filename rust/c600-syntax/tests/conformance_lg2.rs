@@ -92,6 +92,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::ApproxBool
         | Ty::Receipt
         | Ty::WordEqualityKey
+        | Ty::TraceEqualityKey
         | Ty::CompressedWord
         | Ty::MenuWord
         | Ty::EndTest(_)
@@ -103,8 +104,8 @@ fn base_types_only(ty: &Ty) -> bool {
     }
 }
 
-/// The family of every reserved operation, matched without a wildcard. Only `word_key` makes a key, and no operation
-/// takes one back to letters (`ct_lg2_11_*`).
+/// The family of every reserved operation, matched without a wildcard. Only `word_key` and `trace_key` make a key, and
+/// no operation takes one back to letters (`ct_lg2_11_*`, `ct_lb1_06_*`).
 fn prim_family(op: Prim) -> &'static str {
     match op {
         Prim::ExactAdd | Prim::ExactLess | Prim::ExactEq | Prim::And | Prim::Or | Prim::Not => "arithmetic",
@@ -115,7 +116,7 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",
         Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose => "word",
         Prim::Compress | Prim::Expand => "word",
-        Prim::WordKey => "word key",
+        Prim::WordKey | Prim::TraceKey => "word key",
     }
 }
 
@@ -412,6 +413,103 @@ fn ct_lg2_11_a_word_equality_key_is_never_literal_letters() {
     for literal in ["word[]", "\"k\"", "1"] {
         let declaration = format!("fn f() -> WordEqualityKey effects [] {{\n    return {literal};\n}}\n");
         assert_eq!(only(&declaration).0, TYPE_MISMATCH, "{literal}");
+    }
+}
+
+/// CT-LB1-06 (part: LB1.10's `TraceEqualityKey` and `trace_key` (LP2 drafts) in source, against the proposal binding,
+/// the word operations, a `Word` parameter and the word key; the run-time half is `c600-run`'s `ct_lb1_06_*`; not run:
+/// the jumbling key, which waits for `jumble-locality/1`'s relation): a trace key is never literal letters and never a
+/// word key, and no source form converts one into the other.
+#[test]
+fn ct_lb1_06_a_trace_key_is_neither_letters_nor_a_word_key() {
+    let key = "trace_key(word[+1, -2])";
+    let uses = [
+        format!(
+            "fn f() -> Receipt effects [preview] {{
+    return propose({key}, target(\"t\"));
+}}
+"
+        ),
+        format!(
+            "fn f() -> Word effects [] {{
+    return inverse({key});
+}}
+"
+        ),
+        format!(
+            "fn f() -> Word effects [] {{
+    return compose(word[+1], {key});
+}}
+"
+        ),
+        format!(
+            "fn g(w: Word) -> Word effects [] {{
+    return w;
+}}
+
+fn f() -> Word effects [] {{
+    return g({key});
+}}
+"
+        ),
+        format!(
+            "fn f() -> Word effects [] {{
+    return {key};
+}}
+"
+        ),
+        format!(
+            "fn f() -> Unit effects [workspace] {{
+    return write_workspace<Word>(\"w\", {key});
+}}
+"
+        ),
+        "fn f(w: Word) -> WordEqualityKey effects [] {
+    return word_key(trace_key(w));
+}
+"
+        .to_string(),
+    ];
+    for declaration in &uses {
+        let (code, types) = only(declaration);
+        assert_eq!(code, WORD_KEY_NOT_EXECUTABLE, "{declaration}");
+        assert_eq!(types, Some(("Word".to_string(), "TraceEqualityKey".to_string())), "{declaration}");
+    }
+    admitted(
+        "fn f(w: Word) -> TraceEqualityKey effects [] {
+    return trace_key(inverse(w));
+}
+",
+    );
+    admitted(
+        "fn f(a: TraceEqualityKey, b: TraceEqualityKey) -> Bool effects [] {
+    return exact_eq(a, b);
+}
+",
+    );
+    // A trace key takes literal letters, not a word key; and neither key is the other.
+    let (code, types) = only(
+        "fn f(w: Word) -> TraceEqualityKey effects [] {
+    return trace_key(word_key(w));
+}
+",
+    );
+    assert_eq!((code, types), (WORD_KEY_NOT_EXECUTABLE, Some(("Word".to_string(), "WordEqualityKey".to_string()))));
+    for declaration in [
+        "fn f(w: Word) -> WordEqualityKey effects [] {
+    return trace_key(w);
+}
+",
+        "fn f(w: Word) -> TraceEqualityKey effects [] {
+    return word_key(w);
+}
+",
+        "fn f(w: Word) -> Bool effects [] {
+    return exact_eq(word_key(w), trace_key(w));
+}
+",
+    ] {
+        assert_eq!(only(declaration).0, TYPE_MISMATCH, "{declaration}");
     }
 }
 

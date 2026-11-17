@@ -15,6 +15,8 @@
 //! - [`workspace`] is the host's provenance reader on the command layer (KN5's stage 3): it reads a workspace record's
 //!   block before `workspace.set` writes the record (PS1.16), and admits or refuses a draft that names a record
 //!   (KN5.26, BND.84, BND.85).
+//! - [`supports`] reads the 1,200 generators' complete supports from the kernel and builds LB1.10's independence
+//!   relation `full-disjoint-support/1`, which a host pins for a run's trace keys (LP2 draft).
 //! - The binary `c600-lp3-source` replays O01 to O07 on the source route: each step's proposal comes from a run of the
 //!   tool, and the shell presents and commits the preview on the key route.
 //!
@@ -181,13 +183,14 @@ pub mod bridge;
 pub mod case;
 pub mod expand;
 pub mod process;
+pub mod supports;
 pub mod tool;
 pub mod views;
 pub mod workspace;
 
-/// The sources of the built-in tools, the bridge, the provenance reader and the source route's runner, hashed into
-/// [`build`].
-pub const SOURCES: [(&str, &[u8]); 11] = [
+/// The sources of the built-in tools, the bridge, the provenance reader, the trace relation's supports and the source
+/// route's runner, hashed into [`build`].
+pub const SOURCES: [(&str, &[u8]); 12] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
@@ -196,6 +199,7 @@ pub const SOURCES: [(&str, &[u8]); 11] = [
     ("c600-tools/src/full_600_cell.6cs", include_bytes!("full_600_cell.6cs")),
     ("c600-tools/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-tools/src/process.rs", include_bytes!("process.rs")),
+    ("c600-tools/src/supports.rs", include_bytes!("supports.rs")),
     ("c600-tools/src/tool.rs", include_bytes!("tool.rs")),
     ("c600-tools/src/views.rs", include_bytes!("views.rs")),
     ("c600-tools/src/workspace.rs", include_bytes!("workspace.rs")),

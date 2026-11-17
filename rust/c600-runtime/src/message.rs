@@ -85,6 +85,7 @@ pub const SCHEMA: [MessageSchema; 6] = [
             "source_ranges",
             "built_in",
             "menu",
+            "relation",
         ],
     },
     MessageSchema {
@@ -297,6 +298,14 @@ pub fn encode_run(run: u64, job: &Job, e: &mut Enc) -> Result<(), Unencodable> {
             codec::encode_alphabet(menu, e)?;
         }
     }
+    e.field("relation");
+    match &o.relation {
+        None => e.u8(0),
+        Some(relation) => {
+            e.u8(1);
+            codec::encode_relation(relation, e);
+        }
+    }
     Ok(())
 }
 
@@ -397,6 +406,11 @@ pub fn decode_to_child(bytes: &[u8]) -> Result<ToChild, Malformed> {
                 1 => Some(codec::decode_alphabet(&mut d)?),
                 _ => return Err(Malformed::new("an option flag other than 0 or 1")),
             };
+            let relation = match d.u8()? {
+                0 => None,
+                1 => Some(codec::decode_relation(&mut d)?),
+                _ => return Err(Malformed::new("an option flag other than 0 or 1")),
+            };
             let options = JobOptions {
                 limits,
                 tariffs,
@@ -409,6 +423,7 @@ pub fn decode_to_child(bytes: &[u8]) -> Result<ToChild, Malformed> {
                 source_ranges,
                 built_in,
                 menu,
+                relation,
             };
             ToChild::Run { run, job: Job { sources, module, entry, args, options } }
         }
