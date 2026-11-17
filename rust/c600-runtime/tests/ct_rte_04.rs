@@ -24,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 17 of 40
+//! # Realised: 20 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -36,6 +36,9 @@
 //! | `simultaneous-memory-output` | DET.56 | the same unit, kernel cost admitted at its limit, refused on memory |
 //! | `equal-to-limit` | DET.56 | `limit(7)`: a host read priced as the trace's kernel row, released at scope exit |
 //! | `generator` | DET.61 | `draws()` from the trace's seed and path: two draws, published, then a refused draw |
+//! | `generator-alias-cursor` | DET.61 | `twins()`: `g` started at `root`, aliased as `h`; both draws published |
+//! | `generator-returned-owner` | DET.61 | `owner()`: `make()` starts a generator at `root` and returns it |
+//! | `generator-child-paths` | DET.61 | `children()`: streams at `root/0` and `root/1`, one draw from each |
 //! | `nested-calls` | DET.58 | `outer()` calls `inner()`, which reads `k`; neither frame has a slot (16 bytes) |
 //! | `output-equality` | DET.59 | `equal("abcde")`: one eight-byte unit at equality |
 //! | `output-retained-at-cutoff` | DET.59 | `retain("abcde", "")`: one unit published, the second refused on output |
@@ -63,7 +66,11 @@
 //! with the trace's refused row.
 //!
 //! The trace's generator key and counter are not observable through a run; the drawn values are, through the
-//! published view.
+//! published view. `generator` draws with `random_draw` from the run's own generator, which the job starts at the
+//! trace's seed and path. The other three start generators of their own with `rng_init` (LP2 draft), whose stream path
+//! is the run's path followed by its segments: their job has the trace's seed and the empty path, so that each
+//! `rng_init` names the trace's path in full, and the run's own start on the empty path is overhead. `make`'s frame
+//! has no slot, as the trace's call has none; the child paths are named streams, since child jobs wait for M6.
 //!
 //! The exact-arithmetic traces price `exact_mul` with the test tariffs: eight-bit limbs, one kernel unit per pair of
 //! limbs, and a reservation of one byte plus the operands' bits in bytes; the product is the published view.
@@ -78,11 +85,12 @@
 //! runs `check(1)`, whose comparison holds; the run's argument `7` reads alike (one digit), so every row before the
 //! assertion is the same.
 //!
-//! # Not realised: 23 of 40
+//! # Not realised: 20 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no child scope (6 traces), loop, text order, byte decoding or streaming cursor; a run has one generator,
-//! seeded at the entry; and the region contract `lp1-exec-region-draft-1` has no executor yet.
+//! has no child scope (6 traces), loop, text order, byte decoding or streaming cursor; no call frame without a slot
+//! holds a binding (`generator-nested-same-name`); and the region contract `lp1-exec-region-draft-1` has no executor
+//! yet.
 
 mod support;
 
@@ -113,6 +121,14 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     export fn limit(y: Nat) -> Nat effects [snapshot] {\n    let u = hold();\n    return y;\n}\n\n\
     export fn draws() -> Nat effects [random, view] {\n    let a = random_draw();\n    let b = random_draw();\n    \
     let v = publish_view(record { a = a, b = b });\n    let c = random_draw();\n    return a;\n}\n\n\
+    export fn twins() -> Unit effects [random, view] {\n    let g = rng_init(\"root\");\n    let h = g;\n    \
+    return publish_view(record { a = rng_draw(g), b = rng_draw(h) });\n}\n\n\
+    fn make() -> Generator effects [random] {\n    return rng_init(\"root\");\n}\n\n\
+    export fn owner() -> Unit effects [random, view] {\n    let h = make();\n    \
+    return publish_view(rng_draw(h));\n}\n\n\
+    export fn children() -> Unit effects [random, view] {\n    let g0 = rng_init(\"root\", \"0\");\n    \
+    let a = rng_draw(g0);\n    let g1 = rng_init(\"root\", \"1\");\n    \
+    return publish_view(record { a = a, b = rng_draw(g1) });\n}\n\n\
     fn inner() -> Unit effects [snapshot] {\n    return read_snapshot<Unit>(\"k\");\n}\n\n\
     export fn outer() -> Unit effects [snapshot] {\n    return inner();\n}\n\n\
     export fn equal(t: Text) -> Unit effects [view] {\n    return publish_view(t);\n}\n\n\
@@ -129,17 +145,18 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     export fn check(n: Nat) -> Unit effects [] {\n    let p = exact_less(n, 5);\n    return assert(p);\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 23] = [
+const UNREALISED: [(&str, &str); 20] = [
     ("child-allowances", "the IR has no child scope (DET.60 runs on the meter's traces only)"),
     ("child-return-owner", "the IR has no child scope"),
     ("root-before-child", "the IR has no child scope"),
     ("dimension-before-scope", "the IR has no child scope"),
     ("nested-child-ledger", "the IR has no child scope"),
     ("child-decode-error-releases-reservation", "the IR has no child scope and no byte decoding"),
-    ("generator-child-paths", "a run has one generator, seeded at the entry; the IR cannot start another"),
-    ("generator-alias-cursor", "the generator is not a value: the IR cannot alias it"),
-    ("generator-returned-owner", "the generator is seeded before the entry call, never inside a call"),
-    ("generator-nested-same-name", "a run has one generator; the IR cannot start a second in a call"),
+    (
+        "generator-nested-same-name",
+        "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
+         a name with `let`, which takes a frame slot and releases at its scope's exit",
+    ),
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
@@ -207,23 +224,30 @@ fn seeded(given: &Json, limits: Amounts) -> JobOptions {
     JobOptions { seed: Some((seed, path.collect())), grant: vec![Capability::Randomness], ..JobOptions::new(limits) }
 }
 
-/// The trace's kernel operation, at any depth.
-fn kernel_op(given: &Json) -> &Json {
-    fn find(ops: &[Json]) -> Option<&Json> {
-        ops.iter().find_map(|op| {
-            if op.get("op").and_then(Json::str) == Some("kernel") {
-                return Some(op);
+/// The job's seed is the trace's first `rng_init`, at any depth, and its path is empty: a program that starts its own
+/// generators names the trace's stream paths in full (module docs).
+fn streams(given: &Json, limits: Amounts) -> JobOptions {
+    let seed = hex(text(first_of(given, "rng_init"), "seed"));
+    JobOptions { seed: Some((seed, Vec::new())), grant: vec![Capability::Randomness], ..JobOptions::new(limits) }
+}
+
+/// The trace's first operation `op`, at any depth.
+fn first_of<'a>(given: &'a Json, op: &str) -> &'a Json {
+    fn find<'a>(ops: &'a [Json], op: &str) -> Option<&'a Json> {
+        ops.iter().find_map(|o| {
+            if o.get("op").and_then(Json::str) == Some(op) {
+                return Some(o);
             }
-            ["body", "then", "else"].iter().find_map(|k| op.get(k).and_then(Json::arr).and_then(|b| find(b)))
+            ["body", "then", "else"].iter().find_map(|k| o.get(k).and_then(Json::arr).and_then(|b| find(b, op)))
         })
     }
-    find(given.get("trace").and_then(Json::arr).expect("a trace")).expect("a kernel operation")
+    find(given.get("trace").and_then(Json::arr).expect("a trace"), op).unwrap_or_else(|| panic!("a `{op}` operation"))
 }
 
 /// The snapshot `k` is priced as the trace's kernel row, at any depth: the batch's kernel cost, a reservation of its
 /// result and scratch bytes, and a result of exactly the trace's result size (`Unit` for none, else an empty record).
 fn kernel_snapshot(given: &Json, session: &mut Session) {
-    let k = kernel_op(given);
+    let k = first_of(given, "kernel");
     let bytes = k.get("result_bytes").map_or(0, |_| uint(k, "result_bytes"));
     let result = if bytes == 0 { Value::Unit } else { Value::record(vec![]) };
     assert_eq!(result.size(), bytes, "a result of the trace's size");
@@ -232,16 +256,21 @@ fn kernel_snapshot(given: &Json, session: &mut Session) {
     session.snapshots.push(("k", tariff, result));
 }
 
-/// `draws` publishes `record { a = draw-0, b = draw-1 }` before its refused draw.
+/// A generator realisation publishes the trace's drawn values in the trace's order, one as itself and two as
+/// `record { a, b }`: `draws` publishes `record { a = draw-0, b = draw-1 }` before its refused draw.
 fn published_draws(values: &[(String, Json)], session: &Session) {
-    assert_eq!(values.len(), 2);
-    let draw = |name: &str| {
-        let hex = values.iter().find(|(k, _)| k == name).and_then(|(_, v)| v.str()).expect("a drawn block");
-        Value::int(BigInt::parse_bytes(hex.as_bytes(), 16).expect("hex"))
+    let drawn: Vec<Value> = values
+        .iter()
+        .map(|(_, v)| v.str().expect("a drawn block"))
+        .map(|hex| Value::int(BigInt::parse_bytes(hex.as_bytes(), 16).expect("hex")))
+        .collect();
+    let view = match drawn.as_slice() {
+        [one] => one.clone(),
+        [a, b] => Value::record(vec![("a", a.clone()), ("b", b.clone())]),
+        _ => panic!("one or two drawn values: {values:?}"),
     };
     let mut bytes = Vec::new();
-    c600_run::encode::encode(&Value::record(vec![("a", draw("draw-0")), ("b", draw("draw-1"))]), &mut bytes)
-        .expect("a canonical record");
+    c600_run::encode::encode(&view, &mut bytes).expect("a canonical value");
     assert_eq!(session.views, vec![bytes], "the drawn values are the trace's");
 }
 
@@ -345,6 +374,48 @@ fn realisations() -> Vec<Realisation> {
                 ("denied", "m.draws:1.1.1.0#rng_draw"),
             ],
             stop_would: Some([1, 3, 33, 0]),
+            values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "generator-alias-cursor",
+            entry: "twins",
+            args: Vec::new,
+            options: streams,
+            map: &[
+                ("init", "m.twins:0#rng_init"),
+                ("alias", "m.twins:1#alias"),
+                ("draw-g", "m.twins:1.1.0.0#rng_draw"),
+                ("draw-h", "m.twins:1.1.0.1#rng_draw"),
+            ],
+            values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "generator-returned-owner",
+            entry: "owner",
+            args: Vec::new,
+            options: streams,
+            map: &[
+                ("make/call", "m.owner:0#call"),
+                ("make/init", "m.owner:0 > m.make:root#rng_init"),
+                ("make/return", "m.owner:0 > m.make:root#return"),
+                ("draw-h", "m.owner:1.0#rng_draw"),
+            ],
+            values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "generator-child-paths",
+            entry: "children",
+            args: Vec::new,
+            options: streams,
+            map: &[
+                ("init-0", "m.children:0#rng_init"),
+                ("draw-0", "m.children:1.0#rng_draw"),
+                ("init-1", "m.children:1.1.0#rng_init"),
+                ("draw-1", "m.children:1.1.1.0.1#rng_draw"),
+            ],
             values: published_draws,
             ..base
         },
@@ -666,8 +737,8 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     (r.values)(&trace.values, &session);
 }
 
-/// CT-RTE-04 in part: seventeen DET.65 traces realised as programs keep their exact results, charges, stopping points
-/// and source associations on both executors; the other 23 are listed with the reason they are not realised.
+/// CT-RTE-04 in part: twenty DET.65 traces realised as programs keep their exact results, charges, stopping points
+/// and source associations on both executors; the other 20 are listed with the reason they are not realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
     let text_of = std::fs::read_to_string(VECTORS).unwrap_or_else(|e| panic!("cannot read {VECTORS}: {e}"));

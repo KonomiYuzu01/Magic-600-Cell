@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 64] = [
+const BUILTINS: [&str; 66] = [
     "if",
     "display_if",
     "exact_add",
@@ -91,6 +91,9 @@ const BUILTINS: [&str; 64] = [
     // Exact multiplication and the pointwise assertion (LP2 drafts; DET.57, DET.55).
     "exact_mul",
     "assert",
+    // Generators as values (LP2 drafts; DET.61).
+    "rng_init",
+    "rng_draw",
 ];
 
 /// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
@@ -99,7 +102,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 21] = [
+const BASE_TYPES: [&str; 22] = [
     "Unit",
     "Bool",
     "Nat",
@@ -122,6 +125,8 @@ const BASE_TYPES: [&str; 21] = [
     "RetainedCheckpointVerdict",
     "LabelCheckpointVerdict",
     "StickerTestVerdict",
+    // DET.61's generator (LP2 draft).
+    "Generator",
 ];
 
 fn reserved(name: &str) -> bool {
@@ -693,6 +698,8 @@ impl Body<'_> {
             // `list<T>(a, b, ...)` and `set<T>(a, b, ...)` take their items, `map<K, V>(k, v, ...)` its keys and values
             // in turn (LP2 drafts).
             "list" | "set" | "map" => args.len(),
+            // `rng_init("a", "b", ...)` names its stream path's segments, none or more (LP2 draft).
+            "rng_init" => args.len(),
             _ => 1,
         };
         self.takes(op, arity, args, span)?;
@@ -748,6 +755,7 @@ impl Body<'_> {
             "exact_add" => Some(Prim::ExactAdd),
             "exact_mul" => Some(Prim::ExactMul),
             "assert" => Some(Prim::Assert),
+            "rng_draw" => Some(Prim::RngDraw),
             "exact_less" => Some(Prim::ExactLess),
             "exact_eq" => Some(Prim::ExactEq),
             "and" => Some(Prim::And),
@@ -836,6 +844,7 @@ impl Body<'_> {
             }
             "random_draw" => Ir::RandomDraw,
             "read_clock" => Ir::ReadClock,
+            "rng_init" => Ir::RngInit { path: args.iter().map(|a| self.text(op, a)).collect::<R<Vec<_>>>()? },
             _ => return Err(self.err(span, format!("`{op}` is reserved and has no lowering"))),
         })
     }
@@ -970,6 +979,7 @@ impl Body<'_> {
                             "TraceEqualityKey" => Ty::TraceEqualityKey,
                             "CompressedWord" => Ty::CompressedWord,
                             "MenuWord" => Ty::MenuWord,
+                            "Generator" => Ty::Generator,
                             _ => match EndTest::of_type_name(n) {
                                 Some(test) => Ty::EndTest(test),
                                 None => Ty::Var(n.into()),
@@ -1051,6 +1061,7 @@ mod tests {
                 "write_workspace" => format!("{op}<Nat>(\"r\", 1)"),
                 "file_write" => format!("{op}(\"p\", 1)"),
                 "tag" | "colour" | "target" => format!("{op}(\"x\")"),
+                "rng_init" => format!("{op}(\"root\", \"0\")"),
                 "if" | "display_if" => format!("{op}(true, 1, 2)"),
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"

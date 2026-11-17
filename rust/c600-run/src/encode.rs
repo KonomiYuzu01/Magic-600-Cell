@@ -186,13 +186,14 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
             }
             // A word key or a trace key is never output as letters (LG2.13, LB1.10); the LP2 draft gives neither a
             // canonical form. Nor does it give one to a compressed word, whose output would be its priced expansion
-            // (DET.59).
+            // (DET.59), or to a generator, a stream's cursor (DET.61).
             Value::Closure(_)
             | Value::Fn(_)
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
             | Value::TraceEqualityKey(_)
-            | Value::Compressed(_) => return Err(Noncanonical),
+            | Value::Compressed(_)
+            | Value::Generator(_) => return Err(Noncanonical),
         }
     }
     out.push(b'\n');
