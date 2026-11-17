@@ -92,6 +92,9 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::RandomDraw => ("random_draw", Kind::Draw, &[]),
         Expr::RngInit { path: _ } => ("rng_init", Kind::Draw, &[]),
         Expr::ReadClock => ("read_clock", Kind::ClockRead, &[]),
+        Expr::Child { caps: _, result: _, body: _, status: _, otherwise: _ } => {
+            ("child", Kind::Pure, &["body", "otherwise"])
+        }
     }
 }
 

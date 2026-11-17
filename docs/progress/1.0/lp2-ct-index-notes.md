@@ -22,7 +22,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-KN2-04 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |
 | CT-KN2-05 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |
 | CT-KN1-04 | whole by union | M4's 600-cell-Full half (`c600-kernel/tests/kernel.rs`) and M8's jumbling half (`c600-jumble/tests/levels.rs`) (`rust/README.md`, the count line) |
-| CT-KN5-08 | missing despite name | only the documentation in `c600-command/src/layer.rs` names it (`rust/README.md`, the count line) |
 | CT-PS1-11 | waiting | the session store's jumbling records, with M6 (`rust/README.md`, missing list) |
 | CT-PS1-22 | waiting | the session store's jumbling records, with M6 (`rust/README.md`, missing list) |
 | CT-LG2-15 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
@@ -32,7 +31,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-DET-21 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-22 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-LG4-05 | waiting | a pointwise or whole-state contract form in the IR, no milestone named; named only as not built (`rust/README.md`, missing list) |
-| CT-KN5-05 | waiting | the display refresh after a commit (R-02), which KN5's one implementation, `c600-command`, does not build yet (`rust/README.md`, missing list) |
 | CT-PS1-08 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
 | CT-PS1-09 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
 | CT-PS1-10 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
@@ -52,7 +50,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-ONE-14 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-15 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-16 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
-| CT-ONE-17 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-18 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-19 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-LI-01 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |

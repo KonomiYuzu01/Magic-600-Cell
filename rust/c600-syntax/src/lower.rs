@@ -10,8 +10,8 @@ use std::fmt;
 
 use c600_ir::Expr as Ir;
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, EndTest, ExactRole, FnKind, FnTy, Function, Lit, Module,
-    Order, Param, Prim, Program, QTy, ReceiptField, Ty,
+    Accounting, Callee, Capability, ChildCaps, Effect, EffectBound, EndTest, ExactRole, FnKind, FnTy, Function, Lit,
+    Module, Order, Param, Prim, Program, QTy, ReceiptField, Ty,
 };
 
 use crate::ast::*;
@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 66] = [
+const BUILTINS: [&str; 67] = [
     "if",
     "display_if",
     "exact_add",
@@ -94,6 +94,8 @@ const BUILTINS: [&str; 66] = [
     // Generators as values (LP2 drafts; DET.61).
     "rng_init",
     "rng_draw",
+    // Child scopes (LP2 draft; DET.60).
+    "child",
 ];
 
 /// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
@@ -694,6 +696,8 @@ impl Body<'_> {
             "insert" => 2,
             // `expand(c, start, count)` (LP2 draft).
             "expand" => 3,
+            // `child(caps, body, otherwise)` (LP2 draft; DET.60).
+            "child" => 3,
             "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => 0,
             // `list<T>(a, b, ...)` and `set<T>(a, b, ...)` take their items, `map<K, V>(k, v, ...)` its keys and values
             // in turn (LP2 drafts).
@@ -845,6 +849,7 @@ impl Body<'_> {
             "random_draw" => Ir::RandomDraw,
             "read_clock" => Ir::ReadClock,
             "rng_init" => Ir::RngInit { path: args.iter().map(|a| self.text(op, a)).collect::<R<Vec<_>>>()? },
+            "child" => self.child_scope(args, path)?,
             _ => return Err(self.err(span, format!("`{op}` is reserved and has no lowering"))),
         })
     }
@@ -859,6 +864,74 @@ impl Body<'_> {
         let result = self.ty(result)?;
         let body = self.at(path, 0, |b, p| b.block(body, p))?;
         Ok(Ir::Closure { params: out, result, body: Box::new(body) })
+    }
+
+    /// `child(record { steps = 8 }, fn() -> T { ... }, fn(s: Status) -> T { ... })` (LP2 draft; DET.60): the requested
+    /// caps as literal naturals, the body, and what runs in the parent when the body stops on a cap or an error of its
+    /// own, with the stop's status if the stop branch names one (`fn() -> T { ... }` names none). The record and the
+    /// closures are no IR nodes: the body's block lowers at child 0 and the other block at child 1, with the status
+    /// bound.
+    fn child_scope(&mut self, args: &[Expr], path: &mut Vec<u32>) -> R<Ir> {
+        const CAPS: &str = "a child scope's caps are a record of literal naturals named `steps`, `kernel_cost`, \
+                            `memory` and `output`, each at most once and any of them omitted (DET.60)";
+        const BODY: &str = "a child scope's body is a closure without parameters, `fn() -> T { ... }` (DET.60)";
+        const OTHERWISE: &str = "a child scope's last argument is a closure with the body's result type and no \
+                                 parameter or one `Status` parameter, `fn() -> T { ... }` or \
+                                 `fn(s: Status) -> T { ... }` (DET.60)";
+        let ExprKind::Record(fields) = &args[0].kind else { return Err(self.err(args[0].loc.0, CAPS)) };
+        let mut caps = ChildCaps::default();
+        for (name, value) in fields {
+            let slot = match name.text.as_str() {
+                "steps" => &mut caps.steps,
+                "kernel_cost" => &mut caps.kernel_cost,
+                "memory" => &mut caps.memory,
+                "output" => &mut caps.output,
+                _ => return Err(self.err(name.loc.0, CAPS)),
+            };
+            let cap = match &value.kind {
+                ExprKind::Int(n) if !n.starts_with('-') => n.parse::<u128>().ok(),
+                _ => None,
+            };
+            match cap {
+                Some(cap) if slot.is_none() => *slot = Some(cap),
+                Some(_) => return Err(self.err(name.loc.0, CAPS)),
+                None => return Err(self.err(value.loc.0, CAPS)),
+            }
+        }
+        let ExprKind::Closure { params, result, body } = &args[1].kind else {
+            return Err(self.err(args[1].loc.0, BODY));
+        };
+        if !params.is_empty() {
+            return Err(self.err(args[1].loc.0, BODY));
+        }
+        let ExprKind::Closure { params, result: other, body: otherwise } = &args[2].kind else {
+            return Err(self.err(args[2].loc.0, OTHERWISE));
+        };
+        let result = self.ty(result)?;
+        let status = match params.as_slice() {
+            [] if self.ty(other)? == result => None,
+            [status]
+                if self.ty(other)? == result && self.ty(&status.ty)? == (QTy { ty: Ty::Status, display: false }) =>
+            {
+                Some(status)
+            }
+            _ => return Err(self.err(args[2].loc.0, OTHERWISE)),
+        };
+        let body = self.at(path, 0, |b, p| b.block(body, p))?;
+        let depth = self.locals.len();
+        let bound = match status {
+            Some(status) => self.bind(&status.name),
+            None => Ok(()),
+        };
+        let otherwise = bound.and_then(|()| self.at(path, 1, |b, p| b.block(otherwise, p)));
+        self.locals.truncate(depth);
+        Ok(Ir::Child {
+            caps,
+            result,
+            body: Box::new(body),
+            status: status.map(|s| s.name.text.clone()),
+            otherwise: Box::new(otherwise?),
+        })
     }
 
     /// A match on literals with a final `_` arm: the scrutinee at child 0, arm `i` at child `i + 1` and the `_` arm
@@ -1071,6 +1144,9 @@ mod tests {
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
                 "expand" => format!("{op}(1, 2, 3)"),
+                "child" => format!(
+                    "{op}(record {{ steps = 2 }}, fn() -> Nat {{ return 1; }}, fn(s: Status) -> Nat {{ return 2; }})"
+                ),
                 _ => format!("{op}(1)"),
             };
             let source =

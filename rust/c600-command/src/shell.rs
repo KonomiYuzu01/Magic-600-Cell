@@ -7,6 +7,10 @@
 //! of the newest frame that presented one, with that frame's stamp (ONE.41), which may differ from the engine's pending
 //! preview (CT-ONE-04).
 //!
+//! After a command the shell reports its receipt and the display's refresh apart (KN5.22, R-02): a command that
+//! applied is never reported as failed, and when the display's refresh fails the report says "Applied, display out of
+//! date" ([`report`]). The display itself is the host's ([`Refresh`]).
+//!
 //! The keymap is a draft: G6 has no keymap table yet. It follows 0.4 where 0.4 has a key (`Ctrl+Enter`,
 //! `Ctrl+Shift+Enter`) and uses `Ctrl+Z`, `Ctrl+Y` and `Escape` for undo, redo and cancel.
 
@@ -14,7 +18,7 @@ use c600_kernel::json::{self, Value};
 
 use crate::frame::{PresentedFrame, ShownPreview};
 use crate::layer::{Caller, CommandLayer, Invocation};
-use crate::receipt::{code, ActionHint, Direction, Error, Receipt, Status};
+use crate::receipt::{code, ActionHint, CompletionKind, Direction, Error, Receipt, Revision, Status};
 use crate::store::Store;
 use crate::table::{PreviewRule, Row};
 use crate::token::{args_digest, PreviewBinding, Secret, Token, TokenBinding};
@@ -218,6 +222,17 @@ impl Shell {
         receipt
     }
 
+    /// [`Shell::send`], then the report with the display's status ([`report`]).
+    pub fn send_reported<S: Store>(
+        &mut self,
+        layer: &mut CommandLayer<S>,
+        invocation: Invocation,
+        display: &mut impl Refresh,
+    ) -> Report {
+        let receipt = self.send(layer, invocation);
+        report(layer, receipt, display)
+    }
+
     /// The command route: [`Shell::prepare`], then [`Shell::send`].
     pub fn invoke<S: Store>(&mut self, layer: &mut CommandLayer<S>, row: &str, args: Value) -> Result<Receipt, Error> {
         let invocation = self.prepare(layer, row, args)?;
@@ -265,6 +280,81 @@ impl Shell {
         }
         let args = Value::Object(args.into_iter().collect());
         self.invoke(layer, &binding.row, args).map(Some)
+    }
+}
+
+/// R-02's message for a command that applied while the display's refresh failed (ONE.12).
+pub const DISPLAY_OUT_OF_DATE: &str = "Applied, display out of date";
+
+/// The display's side of the refresh after a command (KN5.22, R-02): the host adopts the engine's bundle of `revision`
+/// into LP3's view model and presents it, and an error says why it could not. This crate depends on the kernel only,
+/// so it names neither the view model nor the renderer.
+pub trait Refresh {
+    fn refresh(&mut self, revision: &Revision) -> Result<(), Error>;
+}
+
+/// The display's status after a command, which the shell reports apart from the command's receipt (KN5.22).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DisplayStatus {
+    /// No refresh was due: the command did not apply ([`Report::applied`]).
+    NotDue,
+    /// The display adopted `revision`, the head.
+    Current(Revision),
+    /// The display's refresh to `revision`, the head, failed with `error`: "Applied, display out of date" (R-02). The
+    /// command's receipt keeps its terminal success. The continuation refreshes the display ([`refresh_display`]) and
+    /// never sends the command again.
+    OutOfDate { revision: Revision, error: Error },
+}
+
+/// A command's report: its receipt as the layer returned it, and the display's status (KN5.22).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Report {
+    pub receipt: Receipt,
+    pub display: DisplayStatus,
+}
+
+impl Report {
+    /// Whether the command applied: it committed, or completed as a workspace write, a view publication or a file
+    /// publication (KN5.22). It follows the receipt alone, whatever the display, as 0.4's send route did.
+    pub fn applied(&self) -> bool {
+        applied(&self.receipt.status)
+    }
+
+    /// R-02's message, when the command applied and the display's refresh failed. It offers no retry (ONE.12).
+    pub fn message(&self) -> Option<&'static str> {
+        matches!(self.display, DisplayStatus::OutOfDate { .. }).then_some(DISPLAY_OUT_OF_DATE)
+    }
+}
+
+/// Whether a receipt says that its command applied (KN5.22). A query's answer and a preview's creation change nothing
+/// that a refresh adopts; a preview reaches the display through the frames ([`Shell::present`]).
+fn applied(status: &Status) -> bool {
+    match status {
+        Status::Committed(_) => true,
+        Status::Completed(completion) => {
+            matches!(completion.kind, CompletionKind::Workspace | CompletionKind::ViewPublished | CompletionKind::File)
+        }
+        _ => false,
+    }
+}
+
+/// Reports `receipt` with the display's status (KN5.22, R-02). When its command applied, the display refreshes to the
+/// head ([`refresh_display`]); otherwise no refresh is due. A refresh failure never changes the receipt: a committed
+/// command is never reported as failed, the layer's outcome lookup returns the same receipt, and the pending preview
+/// and the jobs are as after any commit (ONE.70). `receipt` may come from any route: a send, a key press, or a program
+/// job's terminal receipt.
+pub fn report<S: Store>(layer: &CommandLayer<S>, receipt: Receipt, display: &mut impl Refresh) -> Report {
+    let display = if applied(&receipt.status) { refresh_display(layer, display) } else { DisplayStatus::NotDue };
+    Report { receipt, display }
+}
+
+/// Refreshes the display to the head: the continuation of "Applied, display out of date", as RPI.47's recovery reads
+/// the current bundle. It sends no command, so it can never commit again (ONE.71).
+pub fn refresh_display<S: Store>(layer: &CommandLayer<S>, display: &mut impl Refresh) -> DisplayStatus {
+    let revision = layer.revision().clone();
+    match display.refresh(&revision) {
+        Ok(()) => DisplayStatus::Current(revision),
+        Err(error) => DisplayStatus::OutOfDate { revision, error },
     }
 }
 
