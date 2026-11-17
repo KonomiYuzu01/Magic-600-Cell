@@ -4,20 +4,25 @@
 //! kernel API, the facts the library entry would return: the kernel half; the library entry waits for the IR draft's
 //! collections. None of these IDs runs whole here; each test's comment names the part that runs. Milestone M8's
 //! `levels` end tests and `observe::cuts::repair_list` carry CT-LB3-01, the sticker-test sentence of CT-LB3-03, and
-//! CT-LB3-05 with CT-BND-17.
+//! CT-LB3-05 with CT-BND-17. LP2's ν row and correction catalogue (`c600_jumble::nu`, `c600_jumble::corrections`)
+//! carry CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07; `tests/ct_lb3_04.rs` runs
+//! CT-LB3-04 on them.
 //!
 //! The states come from the repository's fixtures: the pinned I_a and S4 menus and the first records of the W-J
 //! journals (`research/jumbling/fixtures/`), the first letters of the X1 witness H6030
-//! (`research/jumbling/restoration/10-x1-unbounded/witnesses/H6030.json`), retained words, and raw pose tables that
-//! `levels::state_of` and `levels::import` read. A pass is source and fixture evidence.
+//! (`research/jumbling/restoration/10-x1-unbounded/witnesses/H6030.json`), retained words, the words of LP2's
+//! correction catalogue, and raw pose tables that `levels::state_of` and `levels::import` read. A pass is source and
+//! fixture evidence.
 
 use std::collections::{BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_digest::sha256_hex;
-use c600_jumble::levels::{self, ReachKind, Reachability, Verdict, Witness};
+use c600_jumble::corrections;
+use c600_jumble::levels::{self, Base, Partial, ReachKind, Reachability, Snapshot, Verdict, Witness};
 use c600_jumble::model::NP;
+use c600_jumble::nu::{self, NuVector};
 use c600_jumble::observe::cuts::{release_check, repair_list, rim_summary};
 use c600_jumble::observe::{
     cayley_record, heights, prefix_observations, tables, units, word_check, Batch, Fields, PrefixRequest,
@@ -250,9 +255,9 @@ fn evidence<'a>(verdict: &'a Verdict, key: &str) -> Option<&'a str> {
 
 /// CT-LB3-01 (part: the kernel half of "separate fixtures distinguish retained checkpoint, label checkpoint and sticker
 /// test" and of "an imported table without reachability stays unestablished", on M8's `levels` end tests; the library
-/// entry waits for the IR draft's collections. Not run: "a reachable nonzero-ν lattice state fails the label
-/// checkpoint". M8 computes no ν: the label checkpoint reads ν from the identity labels, a retained witness or the
-/// caller, and no reachable state with a nonzero ν can be built before LP2's F2 and F5).
+/// entry waits for the IR draft's collections. The next test runs the kernel half of "a reachable nonzero-ν lattice
+/// state fails the label checkpoint". The checker half, the end tests' typed verdicts, is LP2's (`c600-check`, pull
+/// request 213)).
 ///
 /// Ten fixtures in the pinned I_a menu, each read by the sticker test, the retained checkpoint and the label
 /// checkpoint: solved under its witnessed claim (yes, yes, yes); a raw table with a centre turned by a third-turn about
@@ -263,10 +268,10 @@ fn evidence<'a>(verdict: &'a Verdict, key: &str) -> Option<&'a str> {
 /// lattice (no, no, no). Each pair of the three tests answers differently on some fixture. An imported table stays
 /// unestablished at the label checkpoint, at ν = 0 too and with the poses of a retained word, and it cannot enter with
 /// a witnessed claim. A nonzero ν that the caller supplies makes the label checkpoint answer no on the retained word's
-/// state under an open claim (no, yes, no), with the supplied ν as its source: a known nonzero ν, not the reachable
-/// state above. A supplied ν that the identity labels contradict is an engine error, not a verdict. The retained
-/// checkpoint answers yes on an imported table only by replaying the word its caller supplies (its source is
-/// `supplied`); with no word, the retained word's imported table is unknown there.
+/// state under an open claim (no, yes, no), with the supplied ν as its source: the checkpoint takes a supplied ν as
+/// given, and the next test reaches a state whose ν is nonzero. A supplied ν that the identity labels contradict is an
+/// engine error, not a verdict. The retained checkpoint answers yes on an imported table only by replaying the word its
+/// caller supplies (its source is `supplied`); with no word, the retained word's imported table is unknown there.
 #[test]
 fn ct_lb3_01_separate_fixtures_distinguish_the_three_end_tests() {
     let ctx = ctx();
@@ -389,6 +394,79 @@ fn ct_lb3_01_separate_fixtures_distinguish_the_three_end_tests() {
     // A supplied ν that the identity labels contradict is an engine error.
     let contradicted = levels::label_checkpoint(ctx, solved_open.state(), solved_open.reachability(), Some(one));
     assert!(contradicted.is_err(), "{contradicted:?}");
+}
+
+/// The retained word [1, 3, −5] of signed 1-based primitive ids, as twists.
+fn retained_word() -> Vec<Twist> {
+    [1, 3, -5].iter().map(|&id| levels::primitive(ctx(), id).expect("a retained generator")).collect()
+}
+
+/// The literal word of correction `id` of LP2's catalogue under the fixture's menu (I_a), selected by its id.
+fn correction(fixture: &Fixture, id: u32) -> Vec<Twist> {
+    let catalogue = corrections::catalogue().expect("the catalogue reads");
+    catalogue.twists(ctx(), &fixture.menu, id).expect("no engine error").expect("the word reads")
+}
+
+/// `journal` played from solved under the fixture's menu, every letter admissible, with the claim its replay witnesses.
+fn played(fixture: &Fixture, journal: &[Twist]) -> Snapshot {
+    let mut state = fixture.solved();
+    for (index, twist) in journal.iter().enumerate() {
+        let status = state.apply(ctx(), twist, None, &[]).expect("no engine error").status;
+        assert_eq!(status, Status::Admissible, "letter {index}");
+    }
+    Snapshot::witnessed(ctx(), state, journal, None).expect("no engine error").expect("the journal witnesses the state")
+}
+
+/// ν from LP2's `nu` row, on a snapshot it neither refuses nor leaves undefined.
+fn nu_of(snapshot: &Snapshot) -> NuVector {
+    match nu::nu(ctx(), Base::Snapshot(snapshot)).expect("no engine error").expect("the row does not refuse") {
+        Partial::Total(value) => value,
+        other => panic!("ν is not total: {other:?}"),
+    }
+}
+
+/// CT-LB3-01 (part: the kernel half of "a reachable nonzero-ν lattice state fails the label checkpoint", on M8's
+/// `levels` end tests with ν from LP2's `nu` row; the library entry waits for the IR draft's collections. The checker
+/// half, the end tests' typed verdicts, is LP2's (`c600-check`, pull request 213)).
+///
+/// The retained word [1, 3, −5] followed by correction 2 of LP2's catalogue, played from solved under I_a, is a
+/// lattice configuration that its journal witnesses. Its ν, from the `nu` row, is correction 2's row (b34 = 1), and
+/// with that ν supplied the label checkpoint answers no, with the sticker test no and the retained checkpoint unknown,
+/// since the retained word reaches another configuration: (no, unknown, no). Correction 2, the retained word and
+/// correction 2 again reach another lattice configuration, whose ν is 0: there the label checkpoint answers yes, with
+/// the supplied ν as its source (no, unknown, yes). Neither journal is a retained word, so the retained checkpoint
+/// shown from the journal is unknown too; with no ν supplied the label checkpoint answers unknown on both, since it
+/// reads ν and the ν row computes it.
+#[test]
+fn ct_lb3_01_a_reachable_nonzero_nu_lattice_state_fails_the_label_checkpoint() {
+    let ctx = ctx();
+    let fixture = fixture("I_a");
+    let word: &[i64] = &[1, 3, -5];
+    let w2 = correction(&fixture, 2);
+    let row2 = *corrections::catalogue().expect("the catalogue reads").lookup(2).expect("a shipped id").row();
+    assert_eq!(row2.nonzero(), vec![("b34", 1)]);
+    let nonzero = [retained_word(), w2.clone()].concat();
+    let zero = [w2.clone(), retained_word(), w2].concat();
+    let cases = [(&nonzero, row2, ["no", "unknown", "no"]), (&zero, NuVector::ZERO, ["no", "unknown", "yes"])];
+    let mut digests = BTreeSet::new();
+    for (journal, value, expected) in cases {
+        let snapshot = played(&fixture, journal);
+        let (state, claim) = (snapshot.state(), snapshot.reachability());
+        assert_eq!(state.off_lattice_count(), 0);
+        assert!(claim.kind() == ReachKind::Witnessed && !claim.retained(), "{claim:?}");
+        assert_eq!(nu_of(&snapshot), value);
+        let verdicts = end_tests(state, word, claim, Some(&value.values()));
+        assert_eq!(verdicts.each_ref().map(|verdict| verdict.name()), expected, "{verdicts:?}");
+        let fact = if value.is_zero() { None } else { Some("nu_nonzero") };
+        assert_eq!((evidence(&verdicts[2], "fact"), evidence(&verdicts[2], "nu_source")), (fact, Some("supplied")));
+        assert_eq!(evidence(&verdicts[0], "fact"), Some("labels_differ"));
+        let from_journal = levels::retained_checkpoint(ctx, state, Witness::Journal(journal)).expect("no engine error");
+        assert_eq!(from_journal.name(), "unknown", "{from_journal:?}");
+        let [_, _, unshown] = end_tests(state, word, claim, None);
+        assert_eq!(unshown.name(), "unknown", "{unshown:?}");
+        digests.insert(state.digest(ctx));
+    }
+    assert_eq!(digests.len(), 2, "two configurations");
 }
 
 /// The `[left, right]` heights of a row of JI.6's pose table.
@@ -968,11 +1046,14 @@ fn holds_a_table(value: &Value) -> bool {
     }
 }
 
+/// Parts of a field name that would name a recommendation, a next cap, a ranking or a correction.
+const LEAKS: [&str; 9] = ["recommend", "suggest", "next", "skip", "best", "rank", "correction", "repair", "target"];
+
 /// CT-LB3-07 (part: the jumbling half, on the kernel: "named-word checks answer only their named word; no
 /// recommendation, next-cap skip or correction combination leaks", checked on the whole-word check the tool's entries
 /// reach and on the per-revision height and unit facts; the inspector library entries wait for the IR draft's
-/// collections. Not run: the per-revision rim and survey rows' "no all-items outcome table", not taken up yet, and the
-/// correction catalogue, which M8 does not have).
+/// collections. The correction part runs in the last test of this file. Not run: the per-revision rim and survey rows'
+/// "no all-items outcome table", not taken up yet).
 ///
 /// A run of each entry proposes the word the solver named once, as given; read as literal letters, the kernel's check
 /// answers for that word: its digest and length are the named word's, the cap is the named cap (cap 0 for the word,
@@ -1043,7 +1124,7 @@ fn ct_lb3_07_a_named_word_check_answers_only_its_named_word() {
     }
     for value in answers.iter().chain(&facts) {
         for key in fields(value) {
-            for leak in ["recommend", "suggest", "next", "skip", "best", "rank", "correction", "repair", "target"] {
+            for leak in LEAKS {
                 assert!(!key.contains(leak), "field `{key}`");
             }
         }
@@ -1060,4 +1141,78 @@ fn ct_lb3_07_a_named_word_check_answers_only_its_named_word() {
         Some(WordError::NotOneLetter { letters: 2 })
     );
     assert_eq!(word::twist(ctx, &fixture.menu, &[0, a]).expect("one letter").0, [0, i64::from(a)]);
+}
+
+/// CT-LB3-07 (part: the correction part, on the kernel: "no correction combination leaks through the inspector
+/// entries", checked on LP2's `nu` and `correction_set_check` rows, the label checkpoint and the whole-word check the
+/// tool's entries reach; the inspector library entries wait for the IR draft's collections).
+///
+/// The base is the retained word [1, 3, −5] followed by correction 2 under I_a, a witnessed lattice configuration whose
+/// ν is correction 2's row. The solver selects correction 2 by its id, and a run of the word entry proposes its
+/// literal word from the catalogue once, as given; the kernel's check answers for that word only: its letters, its
+/// start at the base and its end at the retained word's configuration, with the fields of the empty word's check. The
+/// ν row and the drafted check answer with ν's 45 values: the empty draft with ν itself, not a set that would cancel
+/// it, and the solver's set with its predicted value. The label checkpoint's no carries ν and its source. No answer
+/// holds a list of lists, and no field's name is a recommendation, a next cap, a ranking or a correction.
+#[test]
+fn ct_lb3_07_no_correction_combination_or_recommendation_leaks() {
+    let ctx = ctx();
+    let fixture = fixture("I_a");
+    let catalogue = corrections::catalogue().expect("the catalogue reads");
+    let base = played(&fixture, &[retained_word(), correction(&fixture, 2)].concat());
+    let start = base.state().clone();
+    let digest = start.digest(ctx);
+    let reached = played(&fixture, &retained_word()).state().digest(ctx);
+    let value = nu_of(&base);
+    assert_eq!(&value, catalogue.lookup(2).expect("a shipped id").row());
+
+    // The solver's selection, by id: the entry proposes the named correction's literal word once, as given.
+    let letters = catalogue.lookup(2).expect("a shipped id").letters();
+    let named: Vec<[i32; 2]> = letters.iter().map(|&(cap, item)| [i32::from(cap), i32::from(item)]).collect();
+    let word = word::word_of(&named);
+    let mut host =
+        Checker { state: start.clone(), menu: fixture.menu.clone(), proposed: Vec::new(), checks: Vec::new() };
+    let ran = tool(CHECK_WORD).expect("the entry loads").run(&word, "c8", "base", &mut host, &mut Store::default());
+    assert_eq!(ran.expect("the run starts").shell.len(), 1, "one proposal");
+    assert_eq!(host.proposed, [word.clone()], "the named word, once, as given");
+    assert_eq!(host.state.digest(ctx), digest, "a check changes nothing");
+    let check = host.checks.pop().expect("one check").expect("the word is letters of the menu");
+    assert_eq!((int(&check, "letters"), flag(&check, "admissible")), (named.len() as i64, Some(true)));
+    assert_eq!((text(&check, "start_digest"), text(&check, "end_digest")), (&*digest, &*reached));
+    let empty = checked(&start, &[], None, None);
+    let fields = |value: &Value| {
+        let mut out = BTreeSet::new();
+        keys(value, &mut out);
+        out
+    };
+    assert_eq!(fields(&check), fields(&empty), "the named word's check has the empty word's fields");
+
+    // The rows answer with ν's 45 values; the label checkpoint's no with ν and its source.
+    let drafted = |set: &[(u32, i64)]| {
+        let answer = corrections::correction_set_check(ctx, Base::Snapshot(&base), set);
+        match answer.expect("no engine error").expect("the check does not refuse") {
+            Partial::Total(value) => value,
+            other => panic!("the check is not total: {other:?}"),
+        }
+    };
+    assert_eq!(drafted(&[]), value, "the empty draft is ν, not a set that cancels it");
+    assert_eq!(drafted(&[(2, 1)]), NuVector::ZERO);
+    let label = levels::label_checkpoint(ctx, base.state(), base.reachability(), Some(&value.values()))
+        .expect("no engine error");
+    let Verdict::No(label) = label else { panic!("a nonzero ν fails the label checkpoint: {label:?}") };
+    assert_eq!(fields(&label), BTreeSet::from(["fact", "nu", "nu_source"].map(String::from)));
+    for answer in [value.to_json(), drafted(&[]).to_json(), drafted(&[(2, 1)]).to_json()] {
+        let Value::Array(values) = &answer else { panic!("ν is a list: {}", answer.canonical()) };
+        assert!(values.len() == levels::NU_LEN && values.iter().all(|v| matches!(v, Value::Int(_))));
+    }
+    for answer in [&check, &empty, &label] {
+        let lists = answer.as_object().expect("an answer").iter().filter(|(_, value)| holds_a_table(value));
+        let lists: Vec<&str> = lists.map(|(key, _)| key.as_str()).collect();
+        assert!(lists.is_empty(), "fields {lists:?} hold a list of lists");
+        for key in fields(answer) {
+            for leak in LEAKS {
+                assert!(!key.contains(leak), "field `{key}`");
+            }
+        }
+    }
 }

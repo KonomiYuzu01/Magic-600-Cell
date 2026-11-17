@@ -474,8 +474,9 @@ fn a_retried_entry_answers_its_receipt_and_enters_once() {
 /// LG2.8 and the draft rulings in `src/lib.rs`: with Jumble on, `operation.preview`, `operation.execute` and
 /// `twist.apply` are `KN5:input.retained_tool_needs_jumble_off` and change nothing: a preview before its draft is read,
 /// a commit after its token's binding, a twist after its token, so a jumble item answers the mode too. Availability
-/// says the same. The protection, policy and record rows and a program row stay, their actions' `pre` and `post` are
-/// the pose digest, and a program job reads the revision with its mode.
+/// says the same, and so does KN2.4's `positions` read at the head (draft; CT-LB2-04), whose retained state is the one
+/// the crossing entered from. The protection, policy and record rows and a program row stay, their actions' `pre` and
+/// `post` are the pose digest, and a program job reads the revision with its mode.
 #[test]
 fn the_retained_workflow_needs_jumble_off() {
     let mut f = fixture(&[]);
@@ -495,6 +496,9 @@ fn the_retained_workflow_needs_jumble_off() {
     for row in ["protection.orbit.set", POLICY_ROW, RECORD_ROW, "tool.full.note", "session.undo"] {
         assert_eq!(f.layer.availability(row), Ok(()), "{row}");
     }
+    let kept = f.fixed();
+    assert_eq!(f.layer.positions(&[0, 177_119]).unwrap_err().code, needs_off);
+    assert_eq!(f.fixed(), kept);
     let asked = f.shell.prepare(&f.layer, "operation.preview", draft_args(&word(&[2]))).unwrap();
     f.refused(asked, needs_off, "a preview");
     let asked = f.shell.prepare(&f.layer, "operation.preview", json::object([("draft", text("none"))])).unwrap();
@@ -562,6 +566,8 @@ fn undo_and_redo_restore_the_entry_s_own_sides() {
     assert_eq!((r.state, r.workspace, r.protection), (on.state + 1, on.workspace, on.protection));
     assert!(f.layer.jumbled().is_none());
     assert_eq!(f.layer.availability(TWIST_ROW), Ok(()));
+    let pieces = [0, 177_119];
+    assert_eq!(f.layer.positions(&pieces), Ok(kernel().positions(f.layer.snapshot(), &pieces).unwrap()));
 
     let redone = f.step(Direction::Redo);
     let Status::Committed(record) = &redone.status else { panic!("{:?}", redone.status) };

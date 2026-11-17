@@ -109,7 +109,7 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   of a record, list, set, map or callable type that holds a word or a type variable, counts as one that may carry a
   word. The rule is conservative: it also refuses a named word passed to a helper that proposes or writes it, a write
   of a record, collection or closure built from named words, and a proposal to a `Target` parameter (a row the
-  checker cannot name). Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the derived-state row (the IR
+  checker cannot name). The column's two exceptions are below. Not built: the derived-state row outside them (the IR
   draft has no `derive`), rule 6's check of the facts a view shows and the class review (CT-BND-15). `c600-runtime`'s
   job options carry the class rows (`JobOptions::built_in`), so its child admits a built-in entry itself.
 - An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
@@ -243,6 +243,28 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   those (no prefetch for an unnamed cap), and a function the entry reaches that reads for anything but a literal. A
   selection that is no word, such as a cap the method chose, is not told from a per-cap fact
   (`c600-check/tests/built_in.rs`: CT-LB3-07's checker half for recommendations and reads).
+- The built-in column's two exceptions (LP2 draft; BND.1, BND.2, BND.69; chapter 07 section 8). A class grants one by
+  listing `Row::RepairList(query)` (the pairs at a cap the solver names) or `Row::SetupSearch(query)` (the setups for
+  a target the solver names); the IR draft has no `derive`, so the derived state is read as that engine row, for the
+  cap or the target. `class_covers` lets such a row cover the entry's `Row::Read(query)`. Every read of the query,
+  also one the class lists as `Row::Read`, follows the exception's rules, each refused with
+  `LG3:capability.not_granted`: the read is in the entry's own body, for a parameter of the entry as given (a read
+  with no argument, for a literal or for anything computed is refused at the read, and a function the entry reaches
+  that reads the query at `entry`; BND.2, BND.64); and its value is only delivered as read: returned, published as a
+  view, or bound by `let` to a name used only so. Any other use is refused at the use (an operation such as `index`
+  or `length`, a call, a field, a record or a collection, a condition or a match, a write, a proposal, a closure's
+  result), so the list keeps the engine's neutral order, marks no row best, and no entry tests a list for emptiness
+  to read another cap; the solver chooses among the setups (BND.1). A branch delivers to the result only when its
+  condition reads nothing but literals and the entry's parameters as given, and nothing is delivered where the
+  program chooses whether it runs: under a branch whose condition reads more, at any depth, after a short-circuit
+  `and` or `or` operand that does, in a closure's body or in a child scope. So the program chooses neither the cap,
+  also not among caps the solver named, nor whether to show the list (BND.2, BND.64); a branch inside a view's or a
+  `let`'s value is a use. A value so delivered is the exception's output, so the shown-facts rule does not refuse its
+  words. Previews keep their rules: an entry that reads the list or the setups prepares no preview. A class that lists
+  one query as both exceptions is refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
+  Outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty list's wording (BND.2), the
+  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
+  (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves).
 - Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
   gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word under the independence
   relation the run pins. A menu word given to it is `LB1:input.incompatible_alphabet`, since the menu's relation,
@@ -779,8 +801,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   centre) and L16's `KN2:stale.revision_gone` (the candidate has no snapshot handles). L15's `repair_list` and
   `covers` rows (J1's pinned pair order, no rank, a cap outside 0..599) and L2's `release_check` agreement run in
   M8's comparison with J1 (below).
-- Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
-  informational, not performance evidence.
+- Evidence kind: source and fixture. The comparison ran on Windows; its headless Linux leg runs in CI (the Linux Rust
+  workflow's J1 job). The timings the check prints are informational, not performance evidence.
 - KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
   integers, refuses malformed, noncanonical and oversize bytes, and compares the re-encoded bytes. `resolve` builds the
   exact rotation in A1's frame at the binding's cap and chooses: free mode over A1's grid with A1's tie order, half-turn
@@ -836,7 +858,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     the check needed `nu` and the 36-row correction catalogue; both came later (the ν and correction catalogue bullets
     below).
   - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
-    source and fixture; the comparison ran on Windows only, and its timings are informational.
+    source and fixture; the comparison ran on Windows, its headless Linux leg runs in CI's J1 job, and its timings are
+    informational.
 - M8 levels (LP2 plan, section 11; chapter 01, KN1.7 to KN1.11, KN1.14, KN1.17 and KN2.11 to KN2.14; chapter 08,
   ONE.21 to ONE.28; state contract A3 to A5): `c600-jumble/src/levels.rs` builds KN1.7's level crossings, each map
   one way from poses down, and KN1.9's projections, total or partial with what is missing (the pieces off the lattice
@@ -879,7 +902,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
     marker naming what it leaves out. Not built with them: `nu` and `correction_set_check` (the ν and correction
     catalogue bullets below), and the session store's checkpoint and import records (M6). No J1 fault was found.
-    Evidence kind: source and fixture; the comparison ran on Windows only.
+    Evidence kind: source and fixture; the comparison ran on Windows, and its headless Linux leg runs in CI's J1 job.
 - The kernel pieces for LP3's C8 (LP2):
   - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
     `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
@@ -1227,7 +1250,8 @@ run or not applicable is no pass (PHS.63).
 
 - Where they are:
   - `c600-check/tests/`: the checker's own tests carry their IDs (`effects.rs`, `exactness.rs`, `mismatch.rs`,
-    `vectors.rs`, and the built-in column's `built_in.rs`, M7 attack leads' `leads.rs` and M1 limits' `limits.rs`).
+    `vectors.rs`, the built-in column's `built_in.rs` and its exceptions' `exceptions.rs`, M7 attack leads' `leads.rs`
+    and M1 limits' `limits.rs`).
   - `c600-syntax/tests/`: `conformance_lg1.rs` to `conformance_lg3.rs` write the LG tests in source; `errors.rs` holds
     CT-ERR-05's encoding half (ERR.10's raw context for each malformed shape); `syntax.rs`, `format.rs` and
     `lowering.rs` mark M7's tests.
@@ -1272,13 +1296,18 @@ run or not applicable is no pass (PHS.63).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 67 whole, nine of them by the union of their parts (CT-KN1-04,
-  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 132 part; 4 named only
+  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 133 part; 4 named only
   by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing
-  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 44 waiting, each with
+  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 43 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
-  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 still run on the Windows shards only.
+  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
+  cross-platform item). These are the six `tests/test_jumbling_rust_*.py` checks that the Windows shards run
+  (candidate, attacks, M8's observations and levels, ν and the correction catalogue), one runner each. They use the
+  same pinned CPython and hash-checked NumPy wheels and build the release adapter offline. Each system compares the
+  candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared byte for byte. A
+  pass is headless Linux source and fixture evidence only.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the
@@ -1351,8 +1380,9 @@ run or not applicable is no pass (PHS.63).
   - The session store's jumbling records (2): CT-PS1-11 (a session with a reversed I_a order, another contract or model,
     or jumble letters with Jumble off is refused) and CT-PS1-22 (the optional jumbling section, and an interrupted
     episode's recovery), with M6.
-  - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
-    and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
+  - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
+    (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part in `c600-command`'s Jumble tests
+    (`jumble_on.rs`, `jumble_off.rs`; not run: a snapshot opened before it keeps its level, which is the runtime's).
   - KN5's command layer, `c600-command` (2): CT-KN5-05, which needs the display refresh after a commit (R-02) that it
     does not build yet, and CT-KN5-08, which only the documentation in `c600-command/src/layer.rs` names.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
@@ -2003,8 +2033,9 @@ run or not applicable is no pass (PHS.63).
   safe" through the tool's route (the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`
   are LP3's library rows over kernel rows, which need a snapshot read with an argument that no host answers yet);
   named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with
-  another field (its literal word over 100,000 letters goes in one word step and is refused whole); CT-LB3-01's
-  checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in admission.
+  another field (its literal word over 100,000 letters goes in one word step and is refused whole); the child's
+  own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
+  request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -2104,13 +2135,17 @@ run or not applicable is no pass (PHS.63).
     first letter and the empty word is admitted; prefix protection reads literal letters), CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
-    word its caller supplies; a nonzero ν only as the caller supplies it), CT-LB3-03 (heights (0,0) off the lattice in
+    word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
+    is nonzero fails the label checkpoint, and one whose ν is 0 passes it), CT-LB3-03 (heights (0,0) off the lattice in
     free mode; domain IDs by exact coset tests; Φ = 0 with height-2 pieces fails M8's sticker test), CT-LB3-05 with
     CT-BND-17 (M8's repair list at a named cap: its pairs in pinned order, then by cap; rows of five integers with no
     mark and no ranking field; every pair's delta read again from its own word, and y and z recomputed for one pair; a
     stopped list has no rows, and an empty list speaks only of its cap), CT-LB3-06 (prefix peak, excursion, tameness and
     the step flag recomputed apart from the kernel's batch; a false flag refuses nothing) and CT-LB3-07 (a named-word
-    check answers only its named word, with no word, outcome table or recommendation field).
+    check answers only its named word, with no word, outcome table or recommendation field; its correction part: a
+    correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
+    rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
+    or a recommendation, ranking or correction field).
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -2123,6 +2158,15 @@ run or not applicable is no pass (PHS.63).
     again inside Jumble, and the turn Jumble on replays shows only at pose level; each verdict refused at the other
     level with `KN1:input.level_not_held`; each level finds both clear and moving cases). M5's
     `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03.
+  - `c600-jumble-tool/tests/ct_lb3_04.rs`: CT-LB3-04 whole at C8's level, on LP2's `nu` and `correction_set_check`
+    rows (`c600_jumble::nu`, `c600_jumble::corrections`): ν undefined (`off_lattice`) at every off-lattice prefix of a
+    correction's word and after one letter outside K⁺, never stale, zero or partial; the C5 convention (r0 the least
+    element of order 5, r0^i of class i), correction 27's value read in r0, unchanged through its 45 values, JSON and
+    the label checkpoint's evidence, and the manual's rule "make correction 27 v times" checking to 0 in r0 only; a
+    planted nonzero fixed I_a coordinate (b5, on the I_b menu with I_a's identity written over its own) refused by the
+    row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
+    drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
+    unshipped id refused whole. No 600 Cell Script program calls the rows: the IR draft has no F2 or F5 number kinds.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2139,17 +2183,18 @@ run or not applicable is no pass (PHS.63).
     whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
     sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
     projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
-- Not built: Jumble on in the command layer and oracle equality against M5's fixtures (KN5's one implementation, LP2);
-  ν, the F2 and F5 number kinds and the correction catalogue (LP2), which CT-LB3-04, CT-LB3-01's reachable nonzero-ν
-  state and CT-LB3-07's correction part need; the producers of the rows J01 and J06 to J12 (J10 needs exposed-face
-  geometry, J12 needs ν); the jumbling library entries, which need menu words in the IR draft; CT-LB1-02's key half
-  (LG2.18); BM5's review records; a comparison of the posed arrays with the J1 fixture's later stages; the relationship
-  strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): a whole word's Net
-  and Strict protection at pose level for CT-LB3-06, and the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has
-  no swept preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also
-  waiting: the repair list through the command layer, with a job that names its cap (KN5), the built-in column's
-  repair-list exception in `c600-check`, the BND.2 wording of an empty list and no key that skips caps with an empty
-  list (LP2).
+- Not taken up yet from LP2: Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle
+  route through the command layer (pull requests 212, 217, 218 and 220), and menu words in the IR draft (pull request
+  210), for the jumbling library entries.
+- Not built: the producers of the rows J01 and J06 to J12 (J10 needs exposed-face geometry, J12 needs ν); the jumbling
+  library entries as language code, and LB3's ν and correction-set entry as language code, which needs the F2 and F5
+  number kinds in the IR draft; CT-LB1-02's key half (LG2.18); BM5's review records; a comparison of the posed arrays
+  with the J1 fixture's later stages; the relationship strip's data contract (chapter 06, RPI.65). Not taken up yet from
+  M8 (pull requests 176 and 182): a whole word's Net and Strict protection at pose level for CT-LB3-06, and the rim and
+  survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its
+  twists, and which engine names one is not settled. Also waiting: the repair list through the command layer, with a job
+  that names its cap (KN5), the built-in column's repair-list exception in `c600-check`, the BND.2 wording of an empty
+  list and no key that skips caps with an empty list (LP2).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

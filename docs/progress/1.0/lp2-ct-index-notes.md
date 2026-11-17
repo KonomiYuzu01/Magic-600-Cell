@@ -52,7 +52,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-ONE-14 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-15 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-16 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
-| CT-ONE-17 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-18 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-19 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-LI-01 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |

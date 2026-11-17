@@ -1,7 +1,7 @@
 //! The built-in tool column of chapter 07's grant table in the solving profile ([`admit_built_in`], draft, LP2), the
 //! class's rows (BND.57), the entry rule for previews and workspace changes (LG3.5, LG3.6) and the shown facts of an
 //! entry that reads state-derived data (LB3.5, LP2 draft). Each test names the part of a conformance row it covers.
-//! The two exceptions of the column (CT-BND-17, CT-BND-18) are not built.
+//! The two exceptions of the column (CT-BND-17, CT-BND-18) are tested in `exceptions.rs`.
 
 mod support;
 
