@@ -26,7 +26,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5) |
-| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and what its six rows need from the command layer (LP3, C6) |
+| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and five of them served there by a test host through the command and source routes, with a stand-in engine that answers the two snapshot reads with the state number (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) with their catalogue row, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
@@ -1832,10 +1832,12 @@ run or not applicable is no pass (PHS.63).
     `view_aid`; the review of the class against the exact entry definitions and the row set, which also finds an
     exported function the manifest does not list and source bytes other than the ones the manifest names; and the form
     of a review record that names every entry digest (BND.37).
-  - `rows`: what each of the six rows needs from the command layer, which refuses them as not built: a dispatch from a
-    stored row to a built-in tool's entry, the runtime's view and workspace sinks as the job's result, argument forms
-    for the rows' reference types, and a workspace revision that moves. LP3 changes no layer code until KN5's one
-    implementation lands.
+  - `rows`: what each of the six rows needs from the command layer, what the layer meets of it and what remains. LP2
+    built the four common needs in the layer: a dispatch from a stored row to a built-in tool's entry
+    (`CommandLayer::serve_row`, pull request 200), argument forms (pull request 202), the runtime's view and workspace
+    sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves five
+    rows with their entries; the layer refuses to serve `filter.apply`, which stays not built. C6 changed no file in
+    `c600-command`.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -1852,13 +1854,26 @@ run or not applicable is no pass (PHS.63).
     counted, never timed); CT-EV3-07's view half at the command layer (the checker refuses a view that writes the
     workspace or proposes; after a commit, program calls to the six rows and to `session.undo` are refused, a view
     overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
-  - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, and the layer
-    refuses all six rows; an overlay cannot replace one.
-- Not built: the six rows; the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
-  (CT-LB4-01's rest, which needs KN3's exact polytope operations beyond `dd`'s vertices); the stage checker, HLSL compilation and every device
-  step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of its typed relations, a slot's
-  current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record; an explicit workspace
-  command through the command layer (KN5's one implementation).
+  - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, the layer
+    refuses all six rows until a host serves them, an overlay cannot replace one, and `serve_row` accepts exactly the
+    five rows the list marks served.
+  - `served_rows.rs`: a test host serves the five rows with the tool's entries and C5's provenance reader, and runs each
+    job's entry in process through `c600-run`'s boundary. Invoked from the shell, `filter.preview` and
+    `structure.compare` complete as `completed(query)` and `view.effect.scope` as `completed(view_published)`, at the
+    job's revision and with nothing written; `set.save` and `structure.layer` each complete as one durable workspace
+    action that writes the entry's record through the reader, at a workspace revision one higher and with no undo
+    entry. The source route (the same entry run in process on the same arguments and state, without the layer; not
+    C5's runner) gives the same value, views and records; on both routes a stand-in engine answers the two snapshot
+    reads with the state number. The layer refuses malformed and stale arguments before any job, `filter.apply` stays
+    refused, and a running program's job fails at the host, which has no provenance block for its arguments.
+- Not built: `filter.apply` (its gate, the `filter` preview rule, the `FilterPreviewRef` form and a workspace inverse
+  in the command layer); the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's
+  job arguments; kernel rows for the `filter.preview` and `structure.compare` snapshot reads; a record and an exact-set
+  digest for each saved set; a display that applies the published scope (the APIs are in the crate documentation under
+  "Not built"); the checkers for homomorphism, embedding, isometry and full-dimensional injectivity (CT-LB4-01's rest,
+  which needs KN3's exact polytope operations beyond `dd`'s vertices); the stage checker, HLSL compilation and every
+  device step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of its typed relations,
+  a slot's current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
