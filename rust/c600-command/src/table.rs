@@ -3,7 +3,8 @@
 //! The stored table is `docs/progress/1.0/command-table.json`, compiled in. It freezes at LP3 (PHS.53); until then
 //! this module reads only the fields the command layer uses and ignores the rest. A language-defined command is an
 //! overlay row of kind view, workspace, query or file, never commit or app. A view overlay runs on the `view` lane and
-//! every other overlay on the `program` lane.
+//! every other overlay on the `program` lane. A stored row that a built-in tool's entry serves ([`Table::serve_row`])
+//! keeps H-08's lane.
 
 use std::collections::BTreeMap;
 
@@ -71,7 +72,8 @@ pub struct Row {
     /// Argument names and their H-08 types.
     pub arguments: BTreeMap<String, String>,
     pub action_guard: Option<String>,
-    /// Set for a language-defined row.
+    /// Set for a language-defined row, and for a stored row that a built-in tool's entry serves
+    /// ([`Table::serve_row`]).
     pub overlay: Option<Overlay>,
 }
 
@@ -257,4 +259,55 @@ impl Table {
         };
         Ok(self.rows.entry(id.to_owned()).or_insert(row))
     }
+
+    /// Serves a stored row with a built-in tool's entry (draft; LP3's C6). An invocation of the row admits a program
+    /// job that runs `overlay`'s entry, as for a language-defined row. The row keeps H-08's kind, lane, undo class,
+    /// gates and argument types.
+    ///
+    /// Only a row whose admission and completion the layer can check without the entry is served: a view, workspace,
+    /// query or file row on the `none`, `view` or `program` lane, with no gate, preview rule, action guard, token or
+    /// undo entry. The undo class must be `none` because the layer holds no inverse of a program's write.
+    ///
+    /// Refused:
+    /// - an ID that names no row, with `KN5:input.unknown_row`;
+    /// - a row of any other shape, with `KN5:input.overlay_row_kind`;
+    /// - a row the layer builds itself, or one an entry already serves, with the draft code
+    ///   `KN5:input.overlay_row_conflict`.
+    ///
+    /// A refusal leaves the row as it was.
+    pub fn serve_row(&mut self, id: &str, overlay: Overlay) -> Result<&Row, Error> {
+        let Some(row) = self.rows.get_mut(id) else {
+            return Err(Error::new(code::UNKNOWN_ROW, format!("no row `{id}`")));
+        };
+        if LAYER_ROWS.contains(&id) {
+            return Err(Error::new(code::OVERLAY_ROW_CONFLICT, format!("the command layer builds `{id}` itself")));
+        }
+        if row.overlay.is_some() {
+            return Err(Error::new(code::OVERLAY_ROW_CONFLICT, format!("an entry already serves `{id}`")));
+        }
+        let checkable = !matches!(row.kind, Kind::Commit | Kind::App)
+            && matches!(row.lane, Lane::None | Lane::View | Lane::Program)
+            && row.undo == UndoClass::None
+            && row.preview == PreviewRule::None
+            && row.gates.is_empty()
+            && row.action_guard.is_none()
+            && !row.takes_token();
+        if !checkable {
+            return Err(Error::new(code::OVERLAY_ROW_KIND, format!("no entry can serve `{id}` in this layer")));
+        }
+        row.overlay = Some(overlay);
+        Ok(row)
+    }
 }
+
+/// The stored rows the command layer builds itself; no entry serves them.
+const LAYER_ROWS: [&str; 8] = [
+    "operation.preview",
+    "operation.execute",
+    "operation.preview.cancel",
+    "session.undo",
+    "session.redo",
+    "protection.orbit.set",
+    crate::layer::POLICY_ROW,
+    crate::workspace::RECORD_ROW,
+];

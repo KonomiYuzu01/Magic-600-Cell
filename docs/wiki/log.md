@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: stored rows served by a built-in tool's entry
+The command layer (`rust/c600-command`) lets a built-in tool's entry serve a stored H-08 row (`CommandLayer::serve_row`, LP3's C6, its first common need): an invocation admits a program job for the entry, as for an overlay row, and the entry's result completes the row, a workspace row as one durable action, while the row keeps H-08's kind, lane, undo class, gates and argument types. Only rows whose admission and completion the layer can check without the entry are served, so five of the representations tool's six rows can be served now and `filter.apply` waits for its gate and its inverse; the refusal codes and the unjournaled serving are drafts for LP3's amendment list under PHS.52.
+
 ## [2026-11-17] update | The language: Strict protection in the command route
 The command layer (`rust/c600-command`) builds H-08's `protection.policy.set`: a session starts under Net, and the row switches it to Strict or back as a durable workspace action that keeps the state and advances the workspace and protection revisions, so an open preview goes stale, and it undoes and redoes as a workspace inverse; the preview, execute's step 8 and the undo walk judge under the policy in force, a Strict preview's summary names the mode and the first refused prefix, and the journal carries the policy as an 18th key, so CT-LB2-02's route half runs. The row takes no token or confirmation (H-08 gives it no gate) and the runtime may not invoke it; these drafts go to LP3's amendment list under PHS.52.
 

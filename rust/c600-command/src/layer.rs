@@ -677,6 +677,13 @@ impl<S: Store> CommandLayer<S> {
         self.table.register_overlay(id, kind, arguments, overlay).map(|_| ())
     }
 
+    /// Serves stored row `id` with a built-in tool's entry (draft; LP3's C6). An invocation of the row admits a program
+    /// job for the entry, as for an overlay row, and the row keeps H-08's shape. [`Table::serve_row`] says which rows
+    /// can be served and what is refused.
+    pub fn serve_row(&mut self, id: &str, overlay: Overlay) -> Result<(), Error> {
+        self.table.serve_row(id, overlay).map(|_| ())
+    }
+
     pub fn store(&self) -> &S {
         &self.store
     }
