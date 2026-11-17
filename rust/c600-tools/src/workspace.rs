@@ -34,6 +34,7 @@ impl Reader {
     }
 
     /// Keeps every block a run's store holds: the blocks of the run's inputs and of what it proposed or stored.
+    /// Kept blocks are never dropped.
     pub fn keep_run(&self, run: &RunStore) {
         let mut kept = self.kept();
         for (digest, block) in &run.blocks {

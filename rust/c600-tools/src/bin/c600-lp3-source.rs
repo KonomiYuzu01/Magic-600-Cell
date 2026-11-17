@@ -11,16 +11,16 @@
 //! name and the same shell. For each step the runner expands the step's recipe to its literal word through the kernel,
 //! outside any program and without a state read ([`c600_tools::expand`]). The tool then runs in the solving profile
 //! with that word as its pinned absolute argument, on the host `--host` names: `in-process` (the default) runs it on
-//! `c600-run` inside this process, and `process` runs it in `c600-runtime`'s child process
-//! ([`c600_tools::process`]), started from `--runtime` or from the `c600-runtime` binary beside this one. On either
-//! host the same boundary and bridge answer the program in this process: its one proposal reaches the command layer
-//! through the host bridge ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program
-//! receives only the fixed acknowledgement. The layer runs the preview job; the shell presents the built preview and commits it
-//! by the key route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo
-//! follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion
-//! with the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps. On either
-//! host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is refused
-//! at the run's start stage: it is an `invalid-input` step with no invocation and no receipt.
+//! `c600-run` inside this process, and `process` runs it in `c600-runtime`'s child process ([`c600_tools::process`]),
+//! started from `--runtime` or from the `c600-runtime` binary beside this one. On either host the same boundary and
+//! bridge answer the program in this process: its one proposal reaches the command layer through the host bridge
+//! ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program receives only the fixed
+//! acknowledgement. The layer runs the preview job; the shell presents the built preview and commits it by the key
+//! route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo follow
+//! `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion with
+//! the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps. On either host
+//! a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is refused at the
+//! run's start stage: it is an `invalid-input` step with no invocation and no receipt.
 //!
 //! Each session's layer serves H-08 with the command layer's draft rows and holds the host's provenance reader
 //! ([`c600_tools::workspace`]), which keeps every run's blocks, so a host can write and preview workspace records. The
@@ -30,9 +30,9 @@
 //! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the host the
 //! literal word was given to, the literal digest the tool proposed, the kernel's refusal of a recipe with no literal
 //! word, the start-stage refusal of a word with no transfer encoding, and the preview's result digest rebased onto the
-//! case recipe's draft. The summary line, each case and each step record name the host. `--tamper <case>:<index>` negates the first letter of that step's literal word before
-//! the tool runs, as a negative control. Exit codes and the summary line follow `c600-lp3-oracle`; the timings are
-//! informational.
+//! case recipe's draft. The summary line, each case and each step record name the host. `--tamper <case>:<index>`
+//! negates the first letter of that step's literal word before the tool runs, as a negative control. Exit codes and the
+//! summary line follow `c600-lp3-oracle`; the timings are informational.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
