@@ -1444,23 +1444,30 @@ run or not applicable is no pass (PHS.63).
   The journal keeps the resolution's record as `rotation` (`Transaction::rotation`), an 18th key on a twist only, and a
   reopen replays the recipe without a menu (KN3.9). Tests: `c600-command/tests/twist_apply.rs` (the command layer's
   parts of CT-EV4-04 and CT-BND-19; KN3.8, JI.35, LI.6, LI.32).
-- `jumble.on` (A5; ONE.54, ONE.55, ONE.80, ONE.81, JI.25, JI.27; the drafts are in the crate documentation), the entry
-  into Jumble on from the solved witness. It needs the pinned twist menu (`KN5:input.row_not_built` without one) and
-  takes `revision`, the current `RevisionRef`, with a token that binds the state and protection revisions. Until the
-  entry from an exit root is built, the witness is the chronological literal retained path from the session's start to
-  the head, which must start at solved and cross no exit. The layer replays it from solved in the jumbling engine
-  under the pinned menu and enters only when the replay's labels are the current labels, so labels alone are
-  `KN5:input.jumble_on_labels_only`. The crossing commits with no preview: the revision's mode becomes `jumble_on`,
-  its state revision advances and its digest is the pose digest (`CommandLayer::jumbled` holds the poses), and like a
-  commit it ends the pending preview and cancels the jobs
-  that read the replaced revision, except file jobs. With Jumble on, `operation.preview`, `operation.execute`,
+- `jumble.on` (A5; ONE.54, ONE.55, ONE.80, ONE.81, JI.25 to JI.27, JI.29, FP.31, FP.32; the drafts are in the crate
+  documentation), the entry into Jumble on from an active exit's root or the solved witness. It needs the pinned twist
+  menu (`KN5:input.row_not_built` without one) and takes `revision`, the current `RevisionRef`, with a token that binds
+  the state and protection revisions. An exit is active while the path from the head climbs through retained commits
+  only to it (JI.26; no void is built). The entry then replays that retained suffix from the exit's own poses in the
+  jumbling engine under the pinned menu (FP.32), and an empty suffix (FP.31) keeps the exit's poses. Poses made under a
+  menu with another identity block are `KN1:input.identity_mismatch`, and the solved witness is not tried while an exit
+  is active. With no active exit the witness is the chronological literal retained path from the session's start to
+  the head, which must start at solved, replayed from solved. The entry enters only when the replay's labels are the
+  current labels, so labels alone, or a suffix that does not replay, are `KN5:input.jumble_on_labels_only`. At the
+  layer's bound of 64 chained derivations an entry replays the jumbling journal flat from solved instead. The crossing
+  commits with no preview: the revision's mode becomes `jumble_on`, its state revision advances and its digest is the
+  pose digest (`CommandLayer::jumbled` holds the poses), and like a commit it ends the pending preview and cancels the
+  jobs that read the replaced revision, except file jobs. With Jumble on, `operation.preview`, `operation.execute`,
   `twist.apply` and `jumble.on` itself are `KN5:input.retained_tool_needs_jumble_off`, while the protection, policy,
-  record and program rows stay. An undo of the entry returns to the exact Jumble off state before it, and a redo replays
-  the witness under a menu with the same identity block (`KN1:input.identity_mismatch` otherwise). The journal keeps the
-  crossing as the action kind `crossing` with its record (`Transaction::crossing`: the entrance, the identity block, and
-  the witness's letter count and `Digest<literal word>`), an 18th key on a crossing only. A reopen with the menu pinned
-  (`CommandLayer::open_with_menu`) replays the witness; without it the layer stays in read-only recovery before the
-  crossing. Tests: `c600-command/tests/jumble_on.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
+  record and program rows stay. An undo of the entry returns to the exact Jumble off state before it (JI.29), and a
+  redo makes the same entry under a menu with the same identity block (`KN1:input.identity_mismatch` otherwise), which
+  must reach the entry's recorded poses and record. The journal keeps the crossing as the action kind `crossing` with
+  its record (`Transaction::crossing`), an 18th key on a crossing only: the entrance, the identity block, and the
+  witness's letter count and `Digest<literal word>`; from an exit root also the exit's event (`crossing`) and the
+  SHA-256 of its canonical record (`exit`), with the suffix as the witness. A reopen with the menu pinned
+  (`CommandLayer::open_with_menu`) replays the entry and must make the same record; without it the layer stays in
+  read-only recovery before the crossing. Tests: `c600-command/tests/jumble_on.rs` and, for the entry from an exit
+  root, `c600-command/tests/jumble_off.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
   CT-JI-08).
 - `jumble.twist.menu` (JI.27, JI.35, FP.31, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live
   twist of an exact item of the pinned twist menu, committed at once with no preview. It needs the pinned menu
@@ -1491,7 +1498,8 @@ run or not applicable is no pass (PHS.63).
   reachable (no witnessed chain, or a displaced centre) `KN5:input.jumble_off_not_shown_reachable`; each names counts
   only and changes nothing. An exit commits with no preview and no protection gate: the labels' state of 600-cell-Full
   becomes the retained state, the revision's mode becomes `jumble_off`, its state revision advances and its digest is
-  the label digest. Like a commit it cancels the jobs that read the replaced revision, except file jobs. An undo
+  the label digest. Like a commit it cancels the jobs that read the replaced revision, except file jobs. While only
+  retained commits follow the exit it stays active, and `jumble.on` enters again from its poses (JI.26). An undo
   restores the exact poses before the exit and the entry's retained state; a redo runs the checkpoint again and must
   reach the same labels and record. The journal keeps the exit as the action kind `exit` (FP.31) with its record under
   `crossing`, an 18th key: the episode, the jumbling identity block, the journal's letter count and word digest, the
@@ -1511,13 +1519,12 @@ run or not applicable is no pass (PHS.63).
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
   budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
-- KN5 not built yet: the entry from an exit root (with an exit on the path from the start, `jumble.on` is
-  `KN5:input.jumble_on_labels_only`); KN5.26's admission matrix (L1, L2)
-  beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime proposal's block; a `file`
-  overlay without a granted file capability), L12 to L14, L16 and L17; the typed workspace rows and limits on a record's
-  payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built: callers
-  are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session
-  lock, so a second opener of a held session is refused with `KN4:busy.session_locked`.
+- KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
+  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
+  and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for
+  which `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the shell's and
+  LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session
+  is refused with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
