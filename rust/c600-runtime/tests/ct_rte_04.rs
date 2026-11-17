@@ -24,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 17 of 40
+//! # Realised: 25 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -36,6 +36,9 @@
 //! | `simultaneous-memory-output` | DET.56 | the same unit, kernel cost admitted at its limit, refused on memory |
 //! | `equal-to-limit` | DET.56 | `limit(7)`: a host read priced as the trace's kernel row, released at scope exit |
 //! | `generator` | DET.61 | `draws()` from the trace's seed and path: two draws, published, then a refused draw |
+//! | `generator-alias-cursor` | DET.61 | `twins()`: `g` started at `root`, aliased as `h`; both draws published |
+//! | `generator-returned-owner` | DET.61 | `owner()`: `make()` starts a generator at `root` and returns it |
+//! | `generator-child-paths` | DET.61 | `children()`: streams at `root/0` and `root/1`, one draw from each |
 //! | `nested-calls` | DET.58 | `outer()` calls `inner()`, which reads `k`; neither frame has a slot (16 bytes) |
 //! | `output-equality` | DET.59 | `equal("abcde")`: one eight-byte unit at equality |
 //! | `output-retained-at-cutoff` | DET.59 | `retain("abcde", "")`: one unit published, the second refused on output |
@@ -45,6 +48,11 @@
 //! | `alias-release` | DET.58 | `release()`: `mk()` aliases `a` as `b` and returns `b`, so `a` is released first |
 //! | `alias-still-live` | DET.58 | `live()`: the same alias, then a five-byte literal refused on memory |
 //! | `pointwise-failure` | DET.55 | `check(7)`: `assert` of a false comparison ends the run with its error code |
+//! | `child-allowances` | DET.60 | `allow()`: a two-step child, cut off at its `return`; the root cuts its kernel cap |
+//! | `child-return-owner` | DET.60 | `owned()`: a child's four-byte text moves to the parent, which drops it |
+//! | `root-before-child` | DET.60 | `early()`: the root and the child run out of steps at the body's `return` |
+//! | `dimension-before-scope` | DET.60 | `dim()`: a child's `k`, over its kernel cap while the root lacks memory |
+//! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
 //!
 //! The trace's `display_if` condition is a given value that holds no memory. `pick` binds its comparison with `let`,
 //! so the `display_if` row visits a borrowed condition and releases nothing; the comparison's byte is released at the
@@ -63,7 +71,24 @@
 //! with the trace's refused row.
 //!
 //! The trace's generator key and counter are not observable through a run; the drawn values are, through the
-//! published view.
+//! published view. `generator` draws with `random_draw` from the run's own generator, which the job starts at the
+//! trace's seed and path. The other three start generators of their own with `rng_init` (LP2 draft), whose stream path
+//! is the run's path followed by its segments: their job has the trace's seed and the empty path, so that each
+//! `rng_init` names the trace's path in full, and the run's own start on the empty path is overhead. `make`'s frame
+//! has no slot, as the trace's call has none. The child paths are named streams here; a child scope's own stream
+//! path (DET.61) is `c600-run`'s `child_scopes.rs`'s.
+//!
+//! The child traces run `child` scopes (DET.60; LP2 draft). Each body is one operation, so its frame has no slot
+//! and its `call` and `return` reserve and release the trace's 16 bytes; each stop branch names no status, so after
+//! an unwind it costs its own frame only. A trace's tick is the body's literal, its `return` or the parent's `let`
+//! binding; its `alloc` is a four-byte text literal, and `parent-drop` the scope exit that releases it. A trace that
+//! completes with child records takes its limits at its first `child` row instead: the program's charges before
+//! that row plus the trace's headroom there, so the root leaves the child what the trace's root leaves it and each
+//! requested cap is cut as the trace's is. A dimension that the overhead after the child needs more of is raised to
+//! the probe's use. Each child record is compared field by field, the trace's scope names mapped to the program's
+//! locators through the `child` rows. In `dimension-before-scope`, `k`'s ten bytes do not fit in the root either,
+//! as in the trace, so the child's kernel-cost stop shows DET.56's dimension order before the scope order; its
+//! result is never delivered.
 //!
 //! The exact-arithmetic traces price `exact_mul` with the test tariffs: eight-bit limbs, one kernel unit per pair of
 //! limbs, and a reservation of one byte plus the operands' bits in bytes; the product is the published view.
@@ -78,11 +103,11 @@
 //! runs `check(1)`, whose comparison holds; the run's argument `7` reads alike (one digit), so every row before the
 //! assertion is the same.
 //!
-//! # Not realised: 23 of 40
+//! # Not realised: 15 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no child scope (6 traces), loop, text order, byte decoding or streaming cursor; a run has one generator,
-//! seeded at the entry; and the region contract `lp1-exec-region-draft-1` has no executor yet.
+//! has no loop, text order, byte decoding or streaming cursor; no call frame without a slot holds a binding
+//! (`generator-nested-same-name`); and the region contract `lp1-exec-region-draft-1` has no executor yet.
 
 mod support;
 
@@ -113,6 +138,14 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     export fn limit(y: Nat) -> Nat effects [snapshot] {\n    let u = hold();\n    return y;\n}\n\n\
     export fn draws() -> Nat effects [random, view] {\n    let a = random_draw();\n    let b = random_draw();\n    \
     let v = publish_view(record { a = a, b = b });\n    let c = random_draw();\n    return a;\n}\n\n\
+    export fn twins() -> Unit effects [random, view] {\n    let g = rng_init(\"root\");\n    let h = g;\n    \
+    return publish_view(record { a = rng_draw(g), b = rng_draw(h) });\n}\n\n\
+    fn make() -> Generator effects [random] {\n    return rng_init(\"root\");\n}\n\n\
+    export fn owner() -> Unit effects [random, view] {\n    let h = make();\n    \
+    return publish_view(rng_draw(h));\n}\n\n\
+    export fn children() -> Unit effects [random, view] {\n    let g0 = rng_init(\"root\", \"0\");\n    \
+    let a = rng_draw(g0);\n    let g1 = rng_init(\"root\", \"1\");\n    \
+    return publish_view(record { a = a, b = rng_draw(g1) });\n}\n\n\
     fn inner() -> Unit effects [snapshot] {\n    return read_snapshot<Unit>(\"k\");\n}\n\n\
     export fn outer() -> Unit effects [snapshot] {\n    return inner();\n}\n\n\
     export fn equal(t: Text) -> Unit effects [view] {\n    return publish_view(t);\n}\n\n\
@@ -126,20 +159,36 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     fn yz() -> Nat effects [] {\n    let p = ();\n    let q = ();\n    return 16777216;\n}\n\n\
     fn late() -> Nat effects [] {\n    let b = mk();\n    return yz();\n}\n\n\
     export fn live() -> Unit effects [] {\n    let c = late();\n    return ();\n}\n\n\
-    export fn check(n: Nat) -> Unit effects [] {\n    let p = exact_less(n, 5);\n    return assert(p);\n}\n";
+    export fn check(n: Nat) -> Unit effects [] {\n    let p = exact_less(n, 5);\n    return assert(p);\n}\n\n\
+    export fn allow() -> Unit effects [budget] {\n    \
+    let u = child(record { steps = 2, kernel_cost = 99, memory = 99, output = 99 }, \
+    fn() -> Unit { return (); }, fn() -> Unit { return (); });\n    return ();\n}\n\n\
+    export fn owned() -> Unit effects [budget] {\n    \
+    let r = child(record { steps = 5, kernel_cost = 5, memory = 24, output = 5 }, \
+    fn() -> Text { return \"x\"; }, fn() -> Text { return \"y\"; });\n    return ();\n}\n\n\
+    export fn early() -> Unit effects [budget] {\n    \
+    let u = child(record { steps = 10, kernel_cost = 10, memory = 40, output = 10 }, \
+    fn() -> Unit { return (); }, fn() -> Unit { return (); });\n    return ();\n}\n\n\
+    export fn dim() -> Unit effects [budget, snapshot] {\n    \
+    let u = child(record { steps = 8, kernel_cost = 2, memory = 20, output = 10 }, \
+    fn() -> Unit { return read_snapshot<Unit>(\"k\"); }, fn() -> Unit { return (); });\n    return ();\n}\n\n\
+    export fn nest() -> Unit effects [budget] {\n    \
+    let u = child(record { steps = 10, kernel_cost = 10, memory = 60, output = 0 }, fn() -> Unit {\n        \
+    return child(record { steps = 4, kernel_cost = 4, memory = 20, output = 0 }, \
+    fn() -> Unit { return (); }, fn() -> Unit { return (); });\n    \
+    }, fn() -> Unit { return (); });\n    return ();\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 23] = [
-    ("child-allowances", "the IR has no child scope (DET.60 runs on the meter's traces only)"),
-    ("child-return-owner", "the IR has no child scope"),
-    ("root-before-child", "the IR has no child scope"),
-    ("dimension-before-scope", "the IR has no child scope"),
-    ("nested-child-ledger", "the IR has no child scope"),
-    ("child-decode-error-releases-reservation", "the IR has no child scope and no byte decoding"),
-    ("generator-child-paths", "a run has one generator, seeded at the entry; the IR cannot start another"),
-    ("generator-alias-cursor", "the generator is not a value: the IR cannot alias it"),
-    ("generator-returned-owner", "the generator is seeded before the entry call, never inside a call"),
-    ("generator-nested-same-name", "a run has one generator; the IR cannot start a second in a call"),
+const UNREALISED: [(&str, &str); 15] = [
+    (
+        "child-decode-error-releases-reservation",
+        "the IR has no byte decoding: arguments and host results cross as values",
+    ),
+    (
+        "generator-nested-same-name",
+        "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
+         a name with `let`, which takes a frame slot and releases at its scope's exit",
+    ),
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
@@ -207,23 +256,30 @@ fn seeded(given: &Json, limits: Amounts) -> JobOptions {
     JobOptions { seed: Some((seed, path.collect())), grant: vec![Capability::Randomness], ..JobOptions::new(limits) }
 }
 
-/// The trace's kernel operation, at any depth.
-fn kernel_op(given: &Json) -> &Json {
-    fn find(ops: &[Json]) -> Option<&Json> {
-        ops.iter().find_map(|op| {
-            if op.get("op").and_then(Json::str) == Some("kernel") {
-                return Some(op);
+/// The job's seed is the trace's first `rng_init`, at any depth, and its path is empty: a program that starts its own
+/// generators names the trace's stream paths in full (module docs).
+fn streams(given: &Json, limits: Amounts) -> JobOptions {
+    let seed = hex(text(first_of(given, "rng_init"), "seed"));
+    JobOptions { seed: Some((seed, Vec::new())), grant: vec![Capability::Randomness], ..JobOptions::new(limits) }
+}
+
+/// The trace's first operation `op`, at any depth.
+fn first_of<'a>(given: &'a Json, op: &str) -> &'a Json {
+    fn find<'a>(ops: &'a [Json], op: &str) -> Option<&'a Json> {
+        ops.iter().find_map(|o| {
+            if o.get("op").and_then(Json::str) == Some(op) {
+                return Some(o);
             }
-            ["body", "then", "else"].iter().find_map(|k| op.get(k).and_then(Json::arr).and_then(|b| find(b)))
+            ["body", "then", "else"].iter().find_map(|k| o.get(k).and_then(Json::arr).and_then(|b| find(b, op)))
         })
     }
-    find(given.get("trace").and_then(Json::arr).expect("a trace")).expect("a kernel operation")
+    find(given.get("trace").and_then(Json::arr).expect("a trace"), op).unwrap_or_else(|| panic!("a `{op}` operation"))
 }
 
 /// The snapshot `k` is priced as the trace's kernel row, at any depth: the batch's kernel cost, a reservation of its
 /// result and scratch bytes, and a result of exactly the trace's result size (`Unit` for none, else an empty record).
 fn kernel_snapshot(given: &Json, session: &mut Session) {
-    let k = kernel_op(given);
+    let k = first_of(given, "kernel");
     let bytes = k.get("result_bytes").map_or(0, |_| uint(k, "result_bytes"));
     let result = if bytes == 0 { Value::Unit } else { Value::record(vec![]) };
     assert_eq!(result.size(), bytes, "a result of the trace's size");
@@ -232,16 +288,30 @@ fn kernel_snapshot(given: &Json, session: &mut Session) {
     session.snapshots.push(("k", tariff, result));
 }
 
-/// `draws` publishes `record { a = draw-0, b = draw-1 }` before its refused draw.
+/// `dimension-before-scope`'s `k`, priced as the trace's kernel row: the batch's kernel cost and a reservation of its
+/// ten result bytes. The child's kernel cap refuses it, so its result, a placeholder here, is never delivered.
+fn refused_snapshot(given: &Json, session: &mut Session) {
+    let k = first_of(given, "kernel");
+    let tariff =
+        RowTariff { kernel_cost: Tariffs::TEST.kernel(uint(k, "items")), result_bound: uint(k, "result_bytes") };
+    session.snapshots.push(("k", tariff, Value::Unit));
+}
+
+/// A generator realisation publishes the trace's drawn values in the trace's order, one as itself and two as
+/// `record { a, b }`: `draws` publishes `record { a = draw-0, b = draw-1 }` before its refused draw.
 fn published_draws(values: &[(String, Json)], session: &Session) {
-    assert_eq!(values.len(), 2);
-    let draw = |name: &str| {
-        let hex = values.iter().find(|(k, _)| k == name).and_then(|(_, v)| v.str()).expect("a drawn block");
-        Value::int(BigInt::parse_bytes(hex.as_bytes(), 16).expect("hex"))
+    let drawn: Vec<Value> = values
+        .iter()
+        .map(|(_, v)| v.str().expect("a drawn block"))
+        .map(|hex| Value::int(BigInt::parse_bytes(hex.as_bytes(), 16).expect("hex")))
+        .collect();
+    let view = match drawn.as_slice() {
+        [one] => one.clone(),
+        [a, b] => Value::record(vec![("a", a.clone()), ("b", b.clone())]),
+        _ => panic!("one or two drawn values: {values:?}"),
     };
     let mut bytes = Vec::new();
-    c600_run::encode::encode(&Value::record(vec![("a", draw("draw-0")), ("b", draw("draw-1"))]), &mut bytes)
-        .expect("a canonical record");
+    c600_run::encode::encode(&view, &mut bytes).expect("a canonical value");
     assert_eq!(session.views, vec![bytes], "the drawn values are the trace's");
 }
 
@@ -285,6 +355,42 @@ const ALIAS: &[(&str, &str)] = &[
     ("c", "m.release:0 > m.mid:1#value"),
     ("drop-b", "m.release:0 > m.mid:root#scope_exit"),
     ("drop-c", "m.release:root#scope_exit"),
+];
+const ALLOW: &[(&str, &str)] = &[
+    ("c/child", "m.allow:0#child"),
+    ("c/run/call", "m.allow:0#call"),
+    ("c/run/a", "m.allow:0 > m.allow:0.0#value"),
+    ("c/run/b", "m.allow:0 > m.allow:0.0#return"),
+    ("parent", "m.allow:root#visit"),
+];
+const OWNED: &[(&str, &str)] = &[
+    ("c/child", "m.owned:0#child"),
+    ("c/run/call", "m.owned:0#call"),
+    ("c/run/a", "m.owned:0 > m.owned:0.0#value"),
+    ("c/run/return", "m.owned:0 > m.owned:0.0#return"),
+    ("parent-drop", "m.owned:root#scope_exit"),
+];
+const EARLY: &[(&str, &str)] = &[
+    ("c/child", "m.early:0#child"),
+    ("c/run/call", "m.early:0#call"),
+    ("c/run/a", "m.early:0 > m.early:0.0#value"),
+    ("c/run/b", "m.early:0 > m.early:0.0#return"),
+];
+const DIM: &[(&str, &str)] = &[
+    ("c/child", "m.dim:0#child"),
+    ("c/run/call", "m.dim:0#call"),
+    ("c/run/k", "m.dim:0 > m.dim:0.0#kernel"),
+    ("parent", "m.dim:root#visit"),
+];
+const NEST: &[(&str, &str)] = &[
+    ("outer/child", "m.nest:0#child"),
+    ("outer/run/call", "m.nest:0#call"),
+    ("outer/run/inner/child", "m.nest:0 > m.nest:0.0#child"),
+    ("outer/run/inner/run/call", "m.nest:0 > m.nest:0.0#call"),
+    ("outer/run/inner/run/work", "m.nest:0 > m.nest:0.0 > m.nest:0.0.0#value"),
+    ("outer/run/inner/run/return", "m.nest:0 > m.nest:0.0 > m.nest:0.0.0#return"),
+    ("outer/run/return", "m.nest:0 > m.nest:0.0#return"),
+    ("parent", "m.nest:root#visit"),
 ];
 const STILL_LIVE: &[(&str, &str)] = &[
     ("a", "m.live:0 > m.late:0 > m.mk:0#value"),
@@ -345,6 +451,48 @@ fn realisations() -> Vec<Realisation> {
                 ("denied", "m.draws:1.1.1.0#rng_draw"),
             ],
             stop_would: Some([1, 3, 33, 0]),
+            values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "generator-alias-cursor",
+            entry: "twins",
+            args: Vec::new,
+            options: streams,
+            map: &[
+                ("init", "m.twins:0#rng_init"),
+                ("alias", "m.twins:1#alias"),
+                ("draw-g", "m.twins:1.1.0.0#rng_draw"),
+                ("draw-h", "m.twins:1.1.0.1#rng_draw"),
+            ],
+            values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "generator-returned-owner",
+            entry: "owner",
+            args: Vec::new,
+            options: streams,
+            map: &[
+                ("make/call", "m.owner:0#call"),
+                ("make/init", "m.owner:0 > m.make:root#rng_init"),
+                ("make/return", "m.owner:0 > m.make:root#return"),
+                ("draw-h", "m.owner:1.0#rng_draw"),
+            ],
+            values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "generator-child-paths",
+            entry: "children",
+            args: Vec::new,
+            options: streams,
+            map: &[
+                ("init-0", "m.children:0#rng_init"),
+                ("draw-0", "m.children:1.0#rng_draw"),
+                ("init-1", "m.children:1.1.0#rng_init"),
+                ("draw-1", "m.children:1.1.1.0.1#rng_draw"),
+            ],
             values: published_draws,
             ..base
         },
@@ -424,6 +572,25 @@ fn realisations() -> Vec<Realisation> {
             stop_would: Some([1, 0, 0, 0]),
             ..base
         },
+        Realisation { trace: "child-allowances", entry: "allow", args: Vec::new, map: ALLOW, ..base },
+        Realisation { trace: "child-return-owner", entry: "owned", args: Vec::new, map: OWNED, ..base },
+        Realisation {
+            trace: "root-before-child",
+            entry: "early",
+            args: Vec::new,
+            map: EARLY,
+            stop_would: Some([1, 0, 0, 0]),
+            ..base
+        },
+        Realisation {
+            trace: "dimension-before-scope",
+            entry: "dim",
+            args: Vec::new,
+            setup: refused_snapshot,
+            map: DIM,
+            ..base
+        },
+        Realisation { trace: "nested-child-ledger", entry: "nest", args: Vec::new, map: NEST, ..base },
     ]
 }
 
@@ -460,6 +627,33 @@ struct TraceStop {
     source: Option<(String, usize, usize)>,
 }
 
+fn trace_stop(stop: Option<&Json>) -> Option<TraceStop> {
+    match stop {
+        Some(Json::Null) | None => None,
+        Some(s) => Some(TraceStop {
+            at: text(s, "at").into(),
+            phase: text(s, "phase").into(),
+            scope: text(s, "scope").into(),
+            source: s
+                .get("source")
+                .map(|r| (text(r, "source").into(), uint(r, "start") as usize, uint(r, "end") as usize)),
+        }),
+    }
+}
+
+/// A frozen child record (DET.60).
+struct TraceChild {
+    at: String,
+    requested: Amounts,
+    effective: Amounts,
+    outcome: String,
+    code: Option<String>,
+    stop: Option<TraceStop>,
+    used: Amounts,
+    returned_memory: u128,
+    live_after_return: u128,
+}
+
 struct Trace {
     limits: Amounts,
     outcome: String,
@@ -468,6 +662,7 @@ struct Trace {
     used: Amounts,
     rows: Vec<(String, [u128; 5])>,
     values: Vec<(String, Json)>,
+    children: Vec<TraceChild>,
     source_text: Option<String>,
 }
 
@@ -475,17 +670,7 @@ impl Trace {
     fn read(vector: &Json) -> Trace {
         let given = vector.get("given").expect("given");
         let expected = vector.get("expected").expect("expected");
-        let stop = match expected.get("stop") {
-            Some(Json::Null) | None => None,
-            Some(s) => Some(TraceStop {
-                at: text(s, "at").into(),
-                phase: text(s, "phase").into(),
-                scope: text(s, "scope").into(),
-                source: s
-                    .get("source")
-                    .map(|r| (text(r, "source").into(), uint(r, "start") as usize, uint(r, "end") as usize)),
-            }),
-        };
+        let stop = trace_stop(expected.get("stop"));
         let rows = expected.get("charges").and_then(Json::arr).expect("charges");
         let rows = rows
             .iter()
@@ -499,7 +684,21 @@ impl Trace {
             Some(Json::Obj(fields)) => fields.clone(),
             other => panic!("values: {other:?}"),
         };
-        assert_eq!(expected.get("children").and_then(Json::arr).map(<[Json]>::len), Some(0), "no child records");
+        let children = expected.get("children").and_then(Json::arr).expect("child records");
+        let children = children
+            .iter()
+            .map(|c| TraceChild {
+                at: text(c, "at").into(),
+                requested: amounts(c.get("requested").expect("requested caps")),
+                effective: amounts(c.get("effective").expect("effective caps")),
+                outcome: text(c, "outcome").into(),
+                code: c.get("code").and_then(Json::str).map(str::to_string),
+                stop: trace_stop(c.get("stop")),
+                used: amounts(c.get("used").expect("a child's use")),
+                returned_memory: uint(c, "returned_memory"),
+                live_after_return: uint(c, "live_after_return"),
+            })
+            .collect();
         Trace {
             limits: amounts(given.get("limits").expect("limits")),
             outcome: text(expected, "outcome").into(),
@@ -508,8 +707,14 @@ impl Trace {
             used: amounts(expected.get("used").expect("used")),
             rows,
             values,
+            children,
             source_text: given.get("source_text").and_then(Json::str).map(str::to_string),
         }
+    }
+
+    /// The index of the trace's row `name`.
+    fn row(&self, name: &str) -> usize {
+        self.rows.iter().position(|(at, _)| at == name).unwrap_or_else(|| panic!("no frozen row `{name}`"))
     }
 }
 
@@ -552,6 +757,18 @@ fn headroom(id: &str, limit: u128, before: u128) -> u128 {
 fn limits(id: &str, trace: &Trace, probe: &Summary, mapped: &[usize], kernel_extra: u128) -> Amounts {
     let Some(stop) = &trace.stop else {
         let (l, u) = (trace.limits, trace.used);
+        // A trace with child records: the trace's headroom at its first `child` row, raised to the probe's use.
+        let first = trace.children.iter().map(|c| trace.row(&format!("{}/child", c.at))).min();
+        if let Some(a) = first {
+            let t = Before::of(trace.rows[..a].iter().map(|(_, c)| *c));
+            let p = Before::of(probe.rows[..mapped[a]].iter().map(charges));
+            return Amounts {
+                steps: (p.steps + headroom(id, l.steps, t.steps)).max(probe.used.steps),
+                kernel_cost: (p.kernel + headroom(id, l.kernel_cost, t.kernel)).max(probe.used.kernel_cost),
+                memory: (p.live + headroom(id, l.memory, t.live)).max(probe.used.memory),
+                output: (p.output + headroom(id, l.output, t.output)).max(probe.used.output),
+            };
+        }
         return Amounts {
             steps: probe.used.steps + headroom(id, l.steps, u.steps),
             kernel_cost: probe.used.kernel_cost + headroom(id, l.kernel_cost, u.kernel_cost),
@@ -629,7 +846,33 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
         let row = &summary.rows[mapped[i]];
         assert_eq!(charges(row), *want, "{id}: trace row `{at}` and program row `{}`", row.at);
     }
-    assert!(summary.children.is_empty());
+    // Child records (DET.60): a trace's scope is named by its `child` row, a program's by that row's locator.
+    let program_at = |name: &str| {
+        r.map.iter().find(|(at, _)| *at == name).unwrap_or_else(|| panic!("{id}: no mapped row `{name}`")).1
+    };
+    let scope = |name: &str| match name {
+        "root" => "root",
+        _ => program_at(&format!("{name}/child")).strip_suffix("#child").expect("a child row"),
+    };
+    assert_eq!(summary.children.len(), trace.children.len(), "{id}: child records");
+    for (got, want) in summary.children.iter().zip(&trace.children) {
+        let at = want.at.as_str();
+        assert_eq!(got.at, scope(at), "{id}: child `{at}`");
+        let caps = (got.requested, got.effective, got.used);
+        assert_eq!(caps, (want.requested, want.effective, want.used), "{id}: child `{at}`'s caps and use");
+        let outcome = (got.outcome.name(), got.code, got.returned_memory, got.live_after_return);
+        let frozen = (want.outcome.as_str(), want.code.as_deref(), want.returned_memory, want.live_after_return);
+        assert_eq!(outcome, frozen, "{id}: child `{at}`'s outcome and memory");
+        match (&got.stop, &want.stop) {
+            (None, None) => {}
+            (Some(g), Some(w)) => {
+                let frozen = (program_at(&w.at), w.phase.as_str(), scope(&w.scope));
+                assert_eq!((g.at.as_str(), g.phase, g.scope.as_str()), frozen, "{id}: child `{at}`'s stop");
+                assert_eq!(w.source, None, "{id}: a frozen child stop with a source association");
+            }
+            (g, w) => panic!("{id}: child `{at}` stops at {g:?}, the trace's at {:?}", w.as_ref().map(|w| &w.at)),
+        }
+    }
     assert_eq!(summary.live_after_cleanup, 0, "{id}: cleanup releases everything");
 
     match (&trace.stop, &summary.stop) {
@@ -666,8 +909,9 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     (r.values)(&trace.values, &session);
 }
 
-/// CT-RTE-04 in part: seventeen DET.65 traces realised as programs keep their exact results, charges, stopping points
-/// and source associations on both executors; the other 23 are listed with the reason they are not realised.
+/// CT-RTE-04 in part: 25 DET.65 traces realised as programs keep their exact results, charges, stopping points,
+/// child records and source associations on both executors; the other 15 are listed with the reason they are not
+/// realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
     let text_of = std::fs::read_to_string(VECTORS).unwrap_or_else(|e| panic!("cannot read {VECTORS}: {e}"));

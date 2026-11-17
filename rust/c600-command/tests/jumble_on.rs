@@ -280,7 +280,7 @@ impl Fixture {
 }
 
 /// CT-ONE-03 (part: a crossing commits with no preview object), CT-JI-08 (part: the solved-witness entry with both of
-/// its sides; not run: the exit-root entry, which needs `jumble.off`), JI.25, ONE.55, ONE.80. After a word commit and
+/// its sides; the exit-root entry is in `tests/jumble_off.rs`), JI.25, ONE.55, ONE.80. After a word commit and
 /// a twist from solved, `jumble.on` enters at the jumbling engine's replay of their literal letters from solved, whose
 /// labels are the current labels. The revision's mode becomes `jumble_on`, its state revision advances, its head is the
 /// crossing's event and its digest the pose digest; the retained state stays; the journal keeps the crossing's record
@@ -474,8 +474,9 @@ fn a_retried_entry_answers_its_receipt_and_enters_once() {
 /// LG2.8 and the draft rulings in `src/lib.rs`: with Jumble on, `operation.preview`, `operation.execute` and
 /// `twist.apply` are `KN5:input.retained_tool_needs_jumble_off` and change nothing: a preview before its draft is read,
 /// a commit after its token's binding, a twist after its token, so a jumble item answers the mode too. Availability
-/// says the same. The protection, policy and record rows and a program row stay, their actions' `pre` and `post` are
-/// the pose digest, and a program job reads the revision with its mode.
+/// says the same, and so does KN2.4's `positions` read at the head (draft; CT-LB2-04), whose retained state is the one
+/// the crossing entered from. The protection, policy and record rows and a program row stay, their actions' `pre` and
+/// `post` are the pose digest, and a program job reads the revision with its mode.
 #[test]
 fn the_retained_workflow_needs_jumble_off() {
     let mut f = fixture(&[]);
@@ -495,6 +496,9 @@ fn the_retained_workflow_needs_jumble_off() {
     for row in ["protection.orbit.set", POLICY_ROW, RECORD_ROW, "tool.full.note", "session.undo"] {
         assert_eq!(f.layer.availability(row), Ok(()), "{row}");
     }
+    let kept = f.fixed();
+    assert_eq!(f.layer.positions(&[0, 177_119]).unwrap_err().code, needs_off);
+    assert_eq!(f.fixed(), kept);
     let asked = f.shell.prepare(&f.layer, "operation.preview", draft_args(&word(&[2]))).unwrap();
     f.refused(asked, needs_off, "a preview");
     let asked = f.shell.prepare(&f.layer, "operation.preview", json::object([("draft", text("none"))])).unwrap();
@@ -532,12 +536,12 @@ fn the_retained_workflow_needs_jumble_off() {
     assert_eq!((r.state, r.head.as_str(), r.digest.as_str()), (on.state, on.head.as_str(), on.digest.as_str()));
 }
 
-/// CT-JI-08 (part: the solved-witness entry survives undo and redo using its own sides; not run: the exit-root entry
-/// and branch navigation), ONE.81, JI.27. An undo of the entry returns to the exact Jumble off state before it and a
-/// redo replays the solved witness again, each with a new state revision and a committed receipt; the retained workflow
-/// works again after the undo, and a retained commit there clears the entry's redo. The draft rulings: while Jumble is
-/// on, a pin of a menu with another identity block is `KN1:input.identity_mismatch`, and so is a redo of the entry
-/// under one; both change nothing.
+/// CT-JI-08 (part: the solved-witness entry survives undo and redo using its own sides; the exit-root entry is in
+/// `tests/jumble_off.rs`; not run: branch navigation), ONE.81, JI.27. An undo of the entry returns to the exact Jumble
+/// off state before it and a redo replays the solved witness again, each with a new state revision and a committed
+/// receipt; the retained workflow works again after the undo, and a retained commit there clears the entry's redo.
+/// The draft rulings: while Jumble is on, a pin of a menu with another identity block is
+/// `KN1:input.identity_mismatch`, and so is a redo of the entry under one; both change nothing.
 #[test]
 fn undo_and_redo_restore_the_entry_s_own_sides() {
     let mut f = fixture(&[]);
@@ -562,6 +566,8 @@ fn undo_and_redo_restore_the_entry_s_own_sides() {
     assert_eq!((r.state, r.workspace, r.protection), (on.state + 1, on.workspace, on.protection));
     assert!(f.layer.jumbled().is_none());
     assert_eq!(f.layer.availability(TWIST_ROW), Ok(()));
+    let pieces = [0, 177_119];
+    assert_eq!(f.layer.positions(&pieces), Ok(kernel().positions(f.layer.snapshot(), &pieces).unwrap()));
 
     let redone = f.step(Direction::Redo);
     let Status::Committed(record) = &redone.status else { panic!("{:?}", redone.status) };

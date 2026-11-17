@@ -7,6 +7,14 @@
 # A pass is headless Linux evidence only, not Windows/DirectX, input, long-session or performance
 # evidence. The runner has no personal data and gets no secrets. `--no-fail-fast` runs every test
 # target after a failure, so one run reports every failing target.
+#
+# The J1 job runs the Python comparisons of the Rust jumbling candidate with J1 on Linux as well
+# (PHS.19's cross-platform item). They are the six `tests/test_jumbling_rust_*.py` checks that
+# tools/ci/run_headless.py runs on the Windows shards, here one runner per check. Each runner uses
+# the Windows shards' pinned CPython, hash-checked NumPy wheels, environment and time limit for one
+# check, and builds the release adapter with the locked, vendored crates. Each system compares the
+# candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared
+# with each other.
 name: Linux Rust tests
 
 on:
@@ -44,3 +52,47 @@ jobs:
 
       - name: Run the Rust tests with the locked, vendored crates
         run: cargo test --locked --offline --no-fail-fast
+
+  j1:
+    name: J1 comparison, ${{ matrix.check }} (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      # The environment tools/ci/run_headless.py gives each check on the Windows shards.
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUTF8: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [candidate, attacks, m8_observations, m8_levels, nu, corrections]
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the pinned CPython
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+          architecture: x64
+
+      - name: Install the pinned engine environment (hash-checked wheels only)
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes -r tools/python/engine.txt
+
+      - name: Print the toolchain identity
+        run: |
+          uname -srm
+          python -c "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
+          rustc --version --verbose
+          cargo --version
+
+      - name: Build the release adapter with the locked, vendored crates
+        working-directory: rust
+        run: cargo build --release --locked --offline -p c600-jumble --bin c600-jumble-adapter
+
+      - name: Compare the candidate with J1
+        # The Windows shards' limit for one check (TIME_LIMIT_SECONDS in tools/ci/run_headless.py).
+        timeout-minutes: 20
+        run: python tests/test_jumbling_rust_${{ matrix.check }}.py

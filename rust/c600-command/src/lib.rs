@@ -87,15 +87,20 @@
 //!     the mode; the named revision and the token's revisions (`KN5:stale.revision_changed`); the head hash; A5's
 //!     witness; one durable transaction; the adoption. With Jumble on already, `jumble.on` is refused with
 //!     `KN5:input.retained_tool_needs_jumble_off`, since an already-on position needs no new entry.
-//!   - The witness. The entry from an exit root is not built yet, so the only witness is JI.25's solved witness: the
-//!     chronological literal retained path from the session's start to the head, the kernel's literal expansion of
-//!     every commit on the move tree's path. The start must be solved: a session that started elsewhere holds no
-//!     retained word from solved, even at a solved head, and is refused with `KN5:input.jumble_on_labels_only`, as is
-//!     a word whose replay does not reach the current labels. A head after an exit is refused the same way in this
-//!     edition, since its path crosses nodes that hold no retained recipe. The layer replays the word from solved in
-//!     the jumbling engine under the pinned menu, with Net protection and no protected piece, and enters at the
-//!     replay's poses. No protection gate applies: H-08 gives the row `model_match` only, and a crossing moves no
-//!     piece.
+//!   - The witness (JI.25, JI.26). An exit is active while the move tree's path from the head climbs through retained
+//!     commits only to it; a pose move cannot supply that path, and no void is built. With an active exit the
+//!     witness is its root: the retained suffix, the kernel's literal expansion of every commit from the exit to the
+//!     head, replayed from the exit's own poses (FP.32; the empty suffix FP.31 admits keeps them). Poses made
+//!     under a menu with another identity block are refused with `KN1:input.identity_mismatch`, and a suffix whose
+//!     replay does not reach the current labels with `KN5:input.jumble_on_labels_only`, with no fall-back to the
+//!     solved witness, which applies only when no exit is active. With no active exit the witness is JI.25's solved
+//!     witness: the chronological literal retained path from the session's start to the head. The start must be
+//!     solved: a session that started elsewhere holds no retained word from solved, even at a solved head, and is
+//!     refused with `KN5:input.jumble_on_labels_only`, as is a word whose replay does not reach the current labels.
+//!     Either replay runs in the jumbling engine under the pinned menu, with Net protection and no protected piece,
+//!     and the entry enters at its poses. A suffix's derivation nests on the exit's poses, so at the 64th chained
+//!     derivation the layer replays the jumbling journal flat from solved instead, as for a pose move. No protection
+//!     gate applies: H-08 gives the row `model_match` only, and a crossing moves no piece.
 //!   - The crossing is a node of the move tree that holds no retained recipe. The revision's mode becomes `jumble_on`
 //!     ([`layer::JUMBLE_ON_MODE`]), its state revision advances and its digest is the pose digest
 //!     ([`CommandLayer::jumbled`] is the head's value). Like a commit, it answers `committed`, ends the pending preview
@@ -104,16 +109,22 @@
 //!     `KN5:input.retained_tool_needs_jumble_off` (LG2.8): a preview before its draft is read, a commit after its token's
 //!     binding. `jumble.twist.menu` and the protection, policy and record rows stay; their `pre` and `post` are the
 //!     pose digest. A program job's revision names the mode, so a built-in tool decides for itself.
-//!   - An undo of the entry returns to the exact Jumble off state before it, and a redo replays the solved witness
-//!     again, under a pinned menu with the identity block the entry was made under (`KN1:input.identity_mismatch`
-//!     otherwise; ONE.81, JI.27). Each advances the state revision. While Jumble is on, a pin of a menu with another
-//!     identity block is refused with `KN1:input.identity_mismatch`.
-//!   - The journal names the action's kind `crossing`. It keeps the crossing's record (`Transaction::crossing`): the
-//!     entrance `solved_witness`, the jumbling identity block, and the witness's letter count and `Digest<literal word>`.
-//!     The letters are the move tree's. A reopen with [`CommandLayer::open_with_menu`] replays the witness and must
-//!     make the same record; [`CommandLayer::open`] leaves the layer in read-only recovery before a crossing.
-//!   - Drafts for LP3's amendment list (PHS.52): the journal kind and key `crossing` and the record's form, the
-//!     refusal of `jumble.on` with Jumble on, the order of the mode check before the revision checks, and the pin rule.
+//!   - An undo of the entry returns to the exact Jumble off state before it, after any retained suffix and not at the
+//!     exit's labels (JI.29), and a redo makes the same entry again from the same witness, which must reach the
+//!     entry's poses and record, under a pinned menu with the identity block the entry was made under
+//!     (`KN1:input.identity_mismatch` otherwise; ONE.81, JI.27, FP.31). Each advances the state revision. While Jumble
+//!     is on, a pin of a menu with another identity block is refused with `KN1:input.identity_mismatch`.
+//!   - The journal names the action's kind `crossing`. It keeps the crossing's record (`Transaction::crossing`): from
+//!     the solved witness, the entrance `solved_witness`, the jumbling identity block, and the witness's letter count
+//!     and `Digest<literal word>`; from an exit root, the entrance `exit_root`, the exit's event as `crossing`, the
+//!     SHA-256 of the exit's record in canonical JSON as `exit`, the jumbling identity block, and the suffix's letter
+//!     count and `Digest<literal word>` (FP.31's `exit:Ref`, `crossing:Text` and suffix digest). The letters are the
+//!     move tree's. A reopen with [`CommandLayer::open_with_menu`] replays the witness and must make the same record;
+//!     [`CommandLayer::open`] leaves the layer in read-only recovery before a crossing.
+//!   - Drafts for LP3's amendment list (PHS.52): the journal kind and key `crossing` and both record forms, the
+//!     refusal of `jumble.on` with Jumble on, the order of the mode check before the revision checks, the pin rule,
+//!     the identity refusal of an exit root made under another menu, and no fall-back to the solved witness while an
+//!     exit is active.
 //! - `jumble.off` ([`JUMBLE_OFF_ROW`]; A5, ONE.54, ONE.80, JI.27), the exit from Jumble on ([`jumble`]).
 //!   - The row takes `revision` and a token, as `jumble.on` does, needs the pinned menu (`KN5:input.row_not_built`)
 //!     and checks the `revision` argument's form before the token (`KN5:input.argument_form`). ONE.80's order follows
@@ -130,8 +141,7 @@
 //!     preview and cancels the jobs that read the replaced revision, except file jobs. No protection gate applies:
 //!     H-08 gives the row `model_match` only. The protected set and the policy stay.
 //!   - The retained rows work from the exit's state, and the jumbling journal runs on through the exit, which moves
-//!     no piece. `jumble.on` after an exit is refused with `KN5:input.jumble_on_labels_only` in this edition: the
-//!     entry from an exit root is not built yet.
+//!     no piece. While only retained commits follow it, the exit stays active, and `jumble.on` enters from its root.
 //!   - An undo of the exit returns to the exact poses before it, Jumble on, with the retained state the entry left;
 //!     a redo checks the checkpoint again, which must reach the exit's recorded labels and record (JI.27). Each
 //!     advances the state revision. Reset, import and restore, which would void exits, are not built.
@@ -142,8 +152,7 @@
 //!     [`CommandLayer::open_with_menu`] replays the journal to the exit, checks the checkpoint again and must make
 //!     the same record.
 //!   - Drafts for LP3's amendment list (PHS.52): the journal kind `exit` and the record's form under the key
-//!     `crossing`, the three refusal codes, the code of `jumble.off` with Jumble off, the absent protection check, and
-//!     the refusal of an entry after an exit until the exit-root entry is built.
+//!     `crossing`, the three refusal codes, the code of `jumble.off` with Jumble off, and the absent protection check.
 //! - `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]; JI.35, FP.31, JI.27, ONE.78), a live menu twist with no preview.
 //!   - The argument form. `cap` is KN3.7's cap, as for `twist.apply`. `letter`, H-08's `PinnedMenuLetter`, is KN3.7's
 //!     binding without its cap, exactly `request`, `operation` and `menu`, the form of `twist.apply`'s `rotation`, so
@@ -282,6 +291,25 @@
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them `FilterRef`,
 //!     `FilterPreviewRef` and `CanonicalObjectRefs`, which the representations tool's rows take, and a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
+//! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
+//!   language-defined row's [`Metadata`]: the static check's first failed diagnostic, and the kernel rows its program
+//!   may invoke, each required or optional and bound [`Binding::Static`] with captured arguments or
+//!   [`Binding::Computed`]. [`CommandLayer::availability`] answers such a row from that data and the layer's state
+//!   alone, in LI.20's order. No language code runs, no program starts and no lane is reserved. Draft choices:
+//!   - A required row that the runtime may not invoke is the missing grant, `LG3:capability.not_granted`, although an
+//!     invocation of a commit or app row is refused with `KN5:capability.commit_row_refused`. The program's other
+//!     grants (chapter 09's profile) are the host's until they are stored as data; the host can declare their failure
+//!     as the diagnostic.
+//!   - A required row that is not a kernel row, absent or itself language-defined, is
+//!     `KN5:input.overlay_dependency_missing`.
+//!   - A static binding keeps the captured arguments themselves, where LI.20 keeps their digest, so that the layer can
+//!     check them. It answers as [`CommandLayer::availability_for`] does, LI.18's argument-aware hint without its
+//!     revision: the row's argument-independent gates first, then an invocation's argument checks (an object,
+//!     `confirm`, the names, the forms and a named revision's currency). It is computed when asked, not cached:
+//!     LI.19's table, keyed by row and argument digest, is not built.
+//!   - Only a language-defined row takes metadata; a stored row an entry serves answers by its own gates. Metadata is
+//!     not journaled: after a reopen the host declares it again, as it registers its overlays again.
+//!   - The generation advances when an overlay row is registered, a stored row served or metadata declared (LI.21).
 //! - Job output (LP3's C6, its second common need). The host reports a program job's output as the runtime's sinks
 //!   gave it ([`CommandLayer::finish_program_job_with`], [`JobOutput`]): the value the entry returned, the views it
 //!   published (`publish_view`) and the workspace records it wrote (`write_workspace`), each record with its
@@ -332,7 +360,7 @@ pub use store::{
     identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
     Store, Transaction, TransactionKind,
 };
-pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
+pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};

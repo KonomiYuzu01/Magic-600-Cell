@@ -16,7 +16,8 @@
 //! its test's and its outcome's indices in their declared orders, and its type with the test's index. A trace key
 //! (LB1.10; LP2 draft) crosses with its header and its letters, and a pinned trace relation with its contract, its
 //! identity block, its generator count and its independence bits; the receiver recomputes the relation's digest, and
-//! the run checks a key against its relation, since the codec cannot order letters without one.
+//! the run checks a key against its relation, since the codec cannot order letters without one. A generator (DET.61;
+//! LP2 draft) has no transfer form, since a copy would be a second cursor on its stream; its type is type tag 27.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -480,6 +481,9 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(tag::FN);
                 e.u64(*f as u64);
             }
+            // A generator is one owner's cursor on a sealed stream (DET.61; LP2 draft). It stays in its run: a copy
+            // in another process would be a second cursor, which only DET.61's alias makes.
+            Value::Generator(_) => return Err(Unencodable("a generator, which stays in its run")),
             Value::List(l) => {
                 e.u8(tag::LIST);
                 e.count(l.items().len());
@@ -989,6 +993,8 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         }
         // LP2's draft trace key (LB1.10).
         Ty::TraceEqualityKey => e.u8(25),
+        // LP2's draft generator (DET.61). Tag 26 stays free for KN3.2's draft type.
+        Ty::Generator => e.u8(27),
     }
     Ok(())
 }
@@ -1072,6 +1078,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         23 => Ty::MenuWord,
         24 => Ty::EndTest(end_test_from(d.u8()?)?),
         25 => Ty::TraceEqualityKey,
+        27 => Ty::Generator,
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }

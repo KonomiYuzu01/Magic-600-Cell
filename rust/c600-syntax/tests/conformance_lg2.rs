@@ -73,7 +73,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
 /// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. So has the menu word (LP2 draft):
 /// `menu_words.rs` here and in `c600-run`. So has an end test's verdict (LP2 draft): CT-LG2-09's unknown that never
-/// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`.
+/// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`. So has the generator (LP2 draft;
+/// DET.61): `generators.rs` here and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -96,6 +97,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::CompressedWord
         | Ty::MenuWord
         | Ty::EndTest(_)
+        | Ty::Generator
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
@@ -118,6 +120,7 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose => "word",
         Prim::Compress | Prim::Expand => "word",
         Prim::WordKey | Prim::TraceKey => "word key",
+        Prim::RngDraw => "granted input or output",
     }
 }
 
@@ -129,10 +132,12 @@ fn family(e: &Ir) -> &'static str {
         Ir::Lit(_) | Ir::Var(_) | Ir::FnRef { .. } | Ir::Closure { .. } | Ir::Record(_) | Ir::Field { .. } => "value",
         Ir::Collection { .. } => "value",
         Ir::Let { .. } | Ir::If { .. } | Ir::Match { .. } | Ir::DisplayIf { .. } | Ir::Call { .. } => "control",
+        Ir::Child { .. } => "control",
         Ir::Prim { op, .. } => prim_family(*op),
         Ir::ReadSnapshot { .. } | Ir::ReadSnapshotWith { .. } | Ir::Declassified { .. } => "snapshot read",
         Ir::PublishView { .. } | Ir::WriteWorkspace { .. } => "view or workspace",
         Ir::FileRead { .. } | Ir::FileWrite { .. } | Ir::RandomDraw | Ir::ReadClock => "granted input or output",
+        Ir::RngInit { .. } => "granted input or output",
         Ir::Propose { .. } | Ir::ReadReceipt { .. } => "preview",
         Ir::UseExact { .. } | Ir::Accounting(_) => "exact sink or accounting",
     }
@@ -165,7 +170,9 @@ const EVERYTHING: &str = "edition \"6cs-draft-1\";\nmodule tool requires [file, 
     command go(w: Word, b: Budget) -> Text effects [snapshot, workspace, preview, budget, file, random] {\n    \
     let n = read_snapshot<Nat>(\"n\");\n    let s = write_workspace<Word>(\"saved\", w);\n    \
     let f = file_write(\"out\", file_read<Nat>(\"in\"));\n    let c = read_clock();\n    let r = random_draw();\n    \
-    let u = use_budget(b);\n    let k = used_steps();\n    return receipt_id(propose(w, target(\"t\")));\n}\n";
+    let u = use_budget(b);\n    let k = used_steps();\n    \
+    let h = child(record { steps = 8 }, fn() -> Nat { return 1; }, fn(x: Status) -> Nat { return 0; });\n    \
+    return receipt_id(propose(w, target(\"t\")));\n}\n";
 
 // CT-LG2-01: algebraic matches account for every constructor; generics and inference cannot erase a model, level,
 // mode, precision, unit or effect requirement.
