@@ -22,10 +22,13 @@ The source route then runs a second time on the process host (`c600-lp3-source -
 runs in the child process of `c600-runtime` (`rust/c600-runtime`, built here too), and the same boundary and host
 bridge answer it on the command layer. All seven cases run on it. compare.py must again report every trace equal, the
 traces must be byte-identical to the in-process host's, and the receipts file must equal the in-process host's but
-for the host's name and four steps of O07: a word with a letter outside 1 to 1200 in magnitude has no transfer
-encoding, so the process host refuses its job at the start stage and no invocation is made, where the in-process host
-gets the command layer's refusal receipt. For those steps the kernel's refusal of the recipe, kept in the step record,
-must be the error of the in-process host's receipt. The summary line, each case and each step record name the host.
+for the host's name. The summary line, each case and each step record name the host.
+
+Four steps of O07 give the tool a word with a letter outside 1 to 1200 in magnitude. Such a word has no transfer
+encoding, so on both hosts the run is refused at its start stage with `PS1:input.noncanonical_value` and no invocation
+is made: on the process host its job never reaches the child, and in process the run is refused the same way before
+the tool runs. For those steps the kernel's refusal of the recipe, kept in the step record, must be the error of the
+command route's receipt.
 
 Standard library only. A missing Rust toolchain fails the check: a test that did not run is no pass (PHS.63). A pass is
 headless source and fixture evidence for the source route's draft, not Windows/DirectX, input, long-session or
@@ -60,8 +63,10 @@ TOTAL_STEPS = 3201
 # The steps whose recipe has no literal word: the kernel refuses the recipe, and it is not one word of integer moves.
 NO_LITERAL = {("O07", index) for index in (3, 4, 5, 6, 7, 9)}
 # The steps whose recipe is one word with a letter outside 1 to 1200 in magnitude: the word has no transfer encoding,
-# so the process host refuses its job at the start stage; in process the tool proposes it and the layer refuses it.
+# so on both hosts the run is refused at its start stage and nothing is proposed (on the process host its job never
+# reaches the child).
 NO_TRANSFER = {("O07", index) for index in (0, 1, 2, 8)}
+NONCANONICAL = "PS1:input.noncanonical_value"
 TAMPERED_CASE, TAMPERED_INDEX = "O06", 3
 # Below the CI runner's limit per check (tools/ci/run_headless.py), so a slow step is reported here.
 BUILD_LIMIT_SECONDS = 900
@@ -204,11 +209,11 @@ def check_source_traces(cases: list[Path], traces: dict[str, Path], summary: dic
         expected = (accepted, accepted, 0) if name in INDEPENDENT else (accepted, accepted, accepted)
         got = (counts[name]["committed"], counts[name]["undone"], counts[name]["redone"])
         require(got == expected, f"{name} on the source route: committed, undone, redone {got}, expected {expected}")
-        refused = sum(1 for case_id, _ in NO_TRANSFER if case_id == name) if host == PROCESS else 0
+        refused = sum(1 for case_id, _ in NO_TRANSFER if case_id == name)
         runs = STEPS[name] - sum(1 for case_id, _ in NO_LITERAL if case_id == name) - refused
         require(counts[name]["runs"] == runs, f"{name}: the tool ran {counts[name]['runs']} times instead of {runs}")
         require(counts[name]["start_refused"] == refused,
-                f"{name}: {counts[name]['start_refused']} jobs refused at the start stage instead of {refused}")
+                f"{name}: {counts[name]['start_refused']} runs refused at the start stage instead of {refused}")
         print(f"  {name}: equal, {report['steps']} steps; {runs} tool runs; committed {got[0]}, undone {got[1]}, "
               f"redone {got[2]}; {counts[name]['receipts']} receipts")
         loaded[name] = trace
@@ -229,7 +234,7 @@ def check_traces_identical(command: dict[str, Path], source: dict[str, Path], co
 
 def check_hosts_agree(in_traces: dict[str, Path], process_traces: dict[str, Path], in_file: Path,
                       process_file: Path) -> None:
-    """The process host's traces and receipts are the in-process host's but for the host's name and NO_TRANSFER."""
+    """The process host's traces and receipts file are the in-process host's but for the host's name."""
     for name in STEPS:
         require(in_traces[name].read_bytes() == process_traces[name].read_bytes(),
                 f"{name}: the process host's trace differs from the in-process host's")
@@ -241,46 +246,27 @@ def check_hosts_agree(in_traces: dict[str, Path], process_traces: dict[str, Path
     for name in STEPS:
         a, b = in_cases[name], process_cases[name]
         require(a["host"] == IN_PROCESS and b["host"] == PROCESS, f"{name}: a case record names another host")
-        require(set(a) == set(b) and a["tail"] == b["tail"] and len(a["steps"]) == len(b["steps"]) == STEPS[name],
+        require(set(a) == set(b) and len(a["steps"]) == len(b["steps"]) == STEPS[name],
                 f"{name}: the hosts' case records differ in form")
-        ia = ib = 0
         for ra, rb in zip(a["steps"], b["steps"]):
             where = f"{name} step {ra['index']}"
             given = ra["literal"] is not None
             require(ra["host"] == (IN_PROCESS if given else None) and rb["host"] == (PROCESS if given else None),
                     f"{where}: the step record does not name the host its word was given to")
             named += given
-            require(ra["start_refusal"] is None, f"{where}: a start-stage refusal on the in-process host")
-            start = rb["start_refusal"]
-            skipped = {"host", "start_refusal"} | ({"receipts"} if start is not None else set())
-            require({key: v for key, v in ra.items() if key not in skipped}
-                    == {key: v for key, v in rb.items() if key not in skipped},
+            require({key: v for key, v in ra.items() if key != "host"}
+                    == {key: v for key, v in rb.items() if key != "host"},
                     f"{where}: the hosts' step records differ")
-            na, nb = ra["receipts"], rb["receipts"]
-            if start is None:
-                require(a["receipts"][ia:ia + na] == b["receipts"][ib:ib + nb]
-                        and a["callers"][ia:ia + na] == b["callers"][ib:ib + nb],
-                        f"{where}: the hosts' receipts or callers differ")
-                receipts += na
-            else:
+            if ra["start_refusal"] is not None:
                 seen.add((name, ra["index"]))
-                require((na, nb) == (1, 0) and start.get("stage") == "start" and len(start.get("codes", [])) == 1,
-                        f"{where}: not one start-stage refusal in place of one receipt")
-                status = a["receipts"][ia]["status"]
-                require(status == {"name": "refused", "error": start["recipe_refusal"]}
-                        and str(start["recipe_refusal"].get("code", "")).startswith("KN2:"),
-                        f"{where}: the in-process receipt is not the kernel's refusal of the recipe")
-            ia += na
-            ib += nb
-        tail = a["tail"]
-        require(len(a["receipts"]) - ia == tail and len(b["receipts"]) - ib == tail
-                and a["receipts"][ia:] == b["receipts"][ib:] and a["callers"][ia:] == b["callers"][ib:],
-                f"{name}: the hosts' undo and redo receipts differ")
-        receipts += tail
+        require({key: v for key, v in a.items() if key not in ("host", "steps")}
+                == {key: v for key, v in b.items() if key not in ("host", "steps")},
+                f"{name}: the hosts' receipts, callers or undo and redo counts differ")
+        receipts += len(a["receipts"])
     require(seen == NO_TRANSFER, f"the start-stage refusals are at {sorted(seen)}, expected {sorted(NO_TRANSFER)}")
-    print(f"PASS: the process host's traces are byte-identical to the in-process host's, and its receipts are the same "
-          f"({receipts} receipts with their callers; {named} step records name each host); {len(seen)} words of O07 "
-          f"with no transfer encoding are refused at the job's start stage instead of by the command layer")
+    print(f"PASS: the process host's traces are byte-identical to the in-process host's, and its receipts file is the "
+          f"same but for the host's name ({receipts} receipts with their callers; {named} step records name each "
+          f"host; {len(seen)} words of O07 with no transfer encoding refused at the run's start stage on both hosts)")
 
 
 def single_word_literal(recipe: object) -> str | None:
@@ -306,7 +292,7 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
     command = {c["case_id"]: c["receipts"] for c in json.loads(command_file.read_text(encoding="utf-8"))["cases"]}
     source = {c["case_id"]: c for c in json.loads(source_file.read_text(encoding="utf-8"))["cases"]}
     require(set(command) == set(source) == set(STEPS), "the receipts files name other cases")
-    pairs = rebased = withheld = requests = 0
+    pairs = rebased = withheld = start_refused = requests = 0
     for name in STEPS:
         a, record_case = command[name], source[name]
         b, callers = record_case["receipts"], record_case["callers"]
@@ -338,8 +324,7 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
                 withheld += 1
                 continue
             require(record["literal"] is not None and record["expansion_refusal"] is None,
-                    f"{where}: the tool proposed no literal word")
-            require(record["receipts"] == count, f"{where}: {record['receipts']} receipts instead of {count}")
+                    f"{where}: the tool was given no literal word")
             literal, single = record["literal"], single_word_literal(recipe)
             require(step["expansion_sha256"] is not None or single is not None, f"{where}: no literal to check")
             require(step["expansion_sha256"] in (None, literal), f"{where}: the literal is not the trace's expansion")
@@ -347,6 +332,20 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
             letters = step["primitive_count"] if step["primitive_count"] is not None else len(recipe[0]["moves"])
             require(record["letters"] == letters, f"{where}: {record['letters']} letters instead of {letters}")
             require(record["case_draft"] == draft_digest(recipe), f"{where}: the case draft's digest differs")
+            start = record["start_refusal"]
+            if (name, index) in NO_TRANSFER:
+                require(record["receipts"] == 0 and count == 1 and isinstance(start, dict)
+                        and start.get("stage") == "start" and start.get("codes") == [NONCANONICAL],
+                        f"{where}: the run on a word with no transfer encoding was not refused at its start stage")
+                kernel = start.get("recipe_refusal")
+                require(isinstance(kernel, dict) and str(kernel.get("code", "")).startswith("KN2:")
+                        and a[ia]["status"] == {"name": "refused", "error": kernel} and a[ia]["job"] is None,
+                        f"{where}: the command route's refusal is not the kernel's refusal of the recipe")
+                ia += 1
+                start_refused += 1
+                continue
+            require(start is None, f"{where}: a start-stage refusal of a word with a transfer encoding")
+            require(record["receipts"] == count, f"{where}: {record['receipts']} receipts instead of {count}")
             for k in range(count):
                 ra, rb, caller = a[ia + k], b[ib + k], callers[ib + k]
                 expected = {"caller": "runtime", "run": run} if k < 2 else {"caller": "shell"}
@@ -385,7 +384,9 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
             pairs += 1
     print(f"PASS: the routes' receipts agree on status, job, error code and revision after ({pairs} pairs; "
           f"{rebased} preview-ready digests compared after rebasing onto the case draft; {requests} request digests "
-          f"differ; {withheld} recipes with no literal word refused by the kernel on both routes)")
+          f"differ; {withheld} recipes with no literal word refused by the kernel on both routes; {start_refused} "
+          f"words with no transfer encoding refused at the run's start stage, where the command route has the kernel's "
+          f"refusal)")
 
 
 def check_tampered_literal(runner: Path, cases: list[Path], folder: Path) -> None:

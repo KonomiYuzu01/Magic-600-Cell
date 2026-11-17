@@ -470,8 +470,9 @@ impl Runtime {
     /// interrupted, and a deadline it passes is noticed after it returns.
     ///
     /// A job that cannot be sent never reaches the child: arguments without a canonical transfer form are refused
-    /// at the start stage with `PS1:input.noncanonical_value`, as `Loaded::run` refuses them in process, and a job
-    /// above the frame bound is refused at the start stage without a code.
+    /// at the start stage with `PS1:input.noncanonical_value`, and a job above the frame bound is refused at the
+    /// start stage without a code. In process `Loaded::run` refuses with that code the arguments it has no form
+    /// for; a word letter of 0 has a form there but none on the wire.
     pub fn run(&mut self, job: &Job, host: &mut dyn Host, deadline: Option<Duration>) -> Result<Ended, Fault> {
         let started = Instant::now();
         let run = self.next_run + 1;

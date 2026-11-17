@@ -74,7 +74,8 @@
 //!    start or names another protocol also ends as `runtime_lost`: no clause names a failure to start.
 //! 7. **Values that cannot cross** (PS1, `PS1:input.noncanonical_value`): a host value without a canonical form is
 //!    answered as a refusal with that code; a call the child cannot encode stops the run with it; a job whose
-//!    arguments cannot be encoded is refused at the start stage with it, as `Loaded::run` refuses them in process.
+//!    arguments cannot be encoded is refused at the start stage with it. In process `Loaded::run` refuses with it
+//!    the arguments it has no form for; a word letter of 0 has a form in process but none on the wire.
 //! 8. **Stop codes** (KN7, ERR chapter 13): a host refusal crosses as text. The child interns it as the
 //!    `&'static str` the interpreter needs; the parent resolves a summary's codes against the meter's and the
 //!    interpreter's static codes and the codes its host returned during the run, and any other code is malformed.

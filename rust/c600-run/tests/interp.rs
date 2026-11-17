@@ -526,3 +526,43 @@ fn load_refuses_ir_it_cannot_run() {
     let ok = loaded.run("m", "f", vec![Value::int(3)], &mut NoHost, &options).unwrap();
     assert_eq!(ok.output.as_deref(), Some(&b"{\"int\":\"3\"}\n"[..]));
 }
+
+/// No alphabet has a letter of magnitude above 1200 (chapter 01: a generator is ±1 to ±1200, a jumbling menu letter's
+/// indices are below 600). A literal outside 1 to 1200 is refused when it is read, and a `Word` argument is captured
+/// input: a word with a letter of magnitude above 1200, also inside a list, has no canonical form, so the run is
+/// refused with `PS1:input.noncanonical_value` before it starts, and `i32::MIN` never reaches an inverse. Other words
+/// run unchanged, the empty word among them, and so does a letter of 0, which the kernel refuses as a generator when it
+/// acts and `c600-jumble-tool` reads as a grip or item index.
+#[test]
+fn a_word_argument_with_a_letter_of_magnitude_above_1200_is_refused() {
+    let words = exact(Ty::List(Box::new(exact(Ty::Word))));
+    let echo = program(vec![module(
+        "m",
+        vec![
+            c600_ir::build::helper("word", vec![param("w", exact(Ty::Word))], exact(Ty::Word), var("w")),
+            c600_ir::build::helper("words", vec![param("l", words.clone())], words, var("l")),
+        ],
+    )]);
+    let loaded = load(&echo).unwrap();
+    let options = Options::new(WIDE);
+    let run = |f: &str, arg: Value| loaded.run("m", f, vec![arg], &mut NoHost, &options);
+    let bad: [&[i32]; 5] = [&[1201], &[-1201], &[1, 1201, -1], &[i32::MIN], &[i32::MAX]];
+    for letters in bad {
+        let word = Value::word(letters);
+        assert!(c600_run::encode::encode(&word, &mut Vec::new()).is_err(), "{letters:?}");
+        assert_eq!(run("word", word.clone()).map(|_| ()).unwrap_err().code, code::NONCANONICAL_VALUE, "{letters:?}");
+        let listed = Value::list(vec![Value::word(&[1]), word]);
+        assert_eq!(run("words", listed).map(|_| ()).unwrap_err().code, code::NONCANONICAL_VALUE, "{letters:?}");
+    }
+    let good: [(&[i32], &str); 5] = [
+        (&[], "[]"),
+        (&[1, -1200, 600], "[1,-1200,600]"),
+        (&[-1, 1200], "[-1,1200]"),
+        (&[0], "[0]"),
+        (&[0, 12, 0, 45], "[0,12,0,45]"),
+    ];
+    for (letters, text) in good {
+        let ran = run("word", Value::word(letters)).unwrap();
+        assert_eq!(ran.output, Some(format!("{text}\n").into_bytes()), "{letters:?}");
+    }
+}
