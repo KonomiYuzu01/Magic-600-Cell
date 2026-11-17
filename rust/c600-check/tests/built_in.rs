@@ -88,6 +88,15 @@ fn a_built_in_refuses_a_word_the_solver_did_not_name() {
     let prepare = helper("prepare", w(), exact(Ty::Receipt), propose_to(var("w")));
     let through_callee = tool(vec![prepare, go(call("prepare", vec![var("w")]))]);
     assert_eq!(found(&built_in(&through_callee, &class, &Policy::interim())), [(NOT_GRANTED, "entry")]);
+    // In a loop's body (LP2 draft) the value so far is not the solver's word, also under its name; after the loop the
+    // name is the solver's again.
+    let looped = |acc: &str| {
+        let body = let_("r", propose_to(var("w")), var(acc));
+        tool(vec![go(let_("x", repeat(nat(1), var("w"), acc, exact(Ty::Word), body), propose_to(var("w"))))])
+    };
+    let a = built_in(&looped("acc"), &class, &Policy::interim());
+    assert!(a.is_admitted(), "{a:#?}");
+    assert_eq!(found(&built_in(&looped("w"), &class, &Policy::interim())), [(NOT_GRANTED, "0.2.0")]);
 }
 
 /// CT-LG3-07 (part: the built-in column previews a menu word the solver named in the pinned menu's letters, LB1.8;
@@ -313,6 +322,14 @@ fn lb3_5_a_reading_built_in_returns_no_word_but_the_one_the_solver_named() {
     assert_eq!(refusals(&go(Ty::Word, let_("w", best(), var("w"))), &class), not_granted_at(&["1"]));
     let held = Ty::Record(vec![("next".into(), exact(Ty::Word))]);
     assert_eq!(refusals(&go(held, record(vec![("next", best())])), &class), not_granted_at(&["root"]));
+    // A loop's value (LP2 draft) is its initial value or its body's last one. The value so far is no word as given,
+    // also under the name of the solver's word, since the body may have computed it.
+    let count = || read_snapshot("best", exact(Ty::Nat));
+    let looped = |init: Expr, acc: &str, body: Expr| go(Ty::Word, repeat(count(), init, acc, exact(Ty::Word), body));
+    assert_eq!(refusals(&looped(var("w"), "acc", var("acc")), &class), not_granted_at(&["2"]));
+    assert_eq!(refusals(&looped(var("w"), "w", var("w")), &class), not_granted_at(&["2"]));
+    assert_eq!(refusals(&looped(best(), "acc", var("w")), &class), not_granted_at(&["1"]));
+    assert!(built_in(&looped(var("w"), "acc", var("w")), &class, &Policy::interim()).is_admitted());
 
     let after_a_read = go(Ty::Word, let_("n", read_snapshot("best", exact(Ty::Nat)), var("w")));
     assert!(built_in(&after_a_read, &class, &Policy::interim()).is_admitted());

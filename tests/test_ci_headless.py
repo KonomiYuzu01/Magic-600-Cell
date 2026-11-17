@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -93,6 +94,21 @@ class ShardTests(unittest.TestCase):
         heavy = sorted(rh.SECONDS, key=rh.SECONDS.get)[-3:]
         homes = {n for n, part in enumerate(parts) for c in part if c[0] in heavy}
         self.assertEqual(len(homes), 3)
+
+    def test_a_long_check_has_its_own_limit(self):
+        self.assertEqual(rh.time_limit(["tests/test_core.py"]), rh.TIME_LIMIT_SECONDS)
+        listed = {check[0] for check in rh.CHECKS}
+        for path, limit in rh.LONG_CHECK_SECONDS.items():
+            with self.subTest(path=path):
+                self.assertIn(path, listed)
+                self.assertGreater(limit, rh.TIME_LIMIT_SECONDS)
+                self.assertEqual(rh.time_limit([path]), limit)
+                # The check stops itself first, so a slow run is reported by the check, and its measured
+                # time is below both limits.
+                text = (ROOT / path).read_text(encoding="utf-8")
+                own = int(re.search(r"^TIME_LIMIT_SECONDS = (\d+)$", text, re.M).group(1))
+                self.assertLess(own, limit)
+                self.assertLess(rh.SECONDS[path], own)
 
     def test_more_shards_than_checks_leave_empty_shards(self):
         parts = rh.shards([["tests/a.py"], ["tests/b.py"]], 3)

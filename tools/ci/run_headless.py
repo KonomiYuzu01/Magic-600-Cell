@@ -143,6 +143,15 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
 ]
 
 TIME_LIMIT_SECONDS = 1200
+# A check that needs longer, with its own limit. `cargo test` on the whole Rust workspace took 1045 s on the
+# Windows runner on 17 November 2026 (main e5cbf494), and it grows with every crate and test file.
+LONG_CHECK_SECONDS = {"tests/test_language_rust.py": 2400}
+
+
+def time_limit(check: list[str]) -> int:
+    """The seconds the runner gives `check` before it stops it."""
+    return LONG_CHECK_SECONDS.get(check[0], TIME_LIMIT_SECONDS)
+
 
 # The checks that read the documentation trees below: the wiki and its lint,
 # the agent rules and briefing, the review wrapper, the Stop gate and the
@@ -234,7 +243,7 @@ SECONDS = {
     "tests/test_stop_gate.py": 16, "tests/test_checkout_bytes.py": 15,
     "tests/test_print_identity.py": 14, "tests/test_b412_fixture.py": 13,
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
-    "tests/test_language_rust.py": 60,  # an estimate until a CI run measures it
+    "tests/test_language_rust.py": 1045,  # the full run on main of 17 November 2026
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
     "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family
     "tests/test_lp3_loop.py": 120,  # an estimate until a CI run measures it
@@ -319,12 +328,12 @@ def main() -> int:
         name = " ".join(check)
         print(f"::group::{name}", flush=True)
         start = time.monotonic()
+        limit = time_limit(check)
         try:
-            code = subprocess.run([sys.executable, *check], cwd=ROOT, env=env,
-                                  timeout=TIME_LIMIT_SECONDS).returncode
+            code = subprocess.run([sys.executable, *check], cwd=ROOT, env=env, timeout=limit).returncode
             outcome = "pass" if code == 0 else f"fail (exit {code})"
         except subprocess.TimeoutExpired:
-            outcome = f"fail (over {TIME_LIMIT_SECONDS} s)"
+            outcome = f"fail (over {limit} s)"
         elapsed = time.monotonic() - start
         print("::endgroup::", flush=True)
         results.append((name, outcome, elapsed))

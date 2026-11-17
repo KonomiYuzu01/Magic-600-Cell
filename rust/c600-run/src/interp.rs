@@ -45,6 +45,7 @@
 //! | display accounting | `accounting`, read after its own step |
 //! | random draw | `rng_draw` (DET.61) |
 //! | child scope (LP2 draft) | `child`, one step in the enclosing scopes; then, in a scope of its own under the effective caps (DET.60), the body's `call`, the body and its `return`, whose result moves to the parent. A stop the child absorbs unwinds it; then, when the stop branch names a status, `status` (4 bytes), and the stop branch's `call`, body and `return` run in the parent |
+//! | `repeat` (LP2 draft) | the count, the initial value, then `visit` (moves an owned initial value into the loop's slot) or `alias` (retains a borrowed one); per iteration k from 0, `loop_test:k`, the body, and `visit` or `alias` to refill the slot, the old value released after admission; then the final false test `loop_test:n` and `scope_exit`, which releases the count and moves the slot's value out. A count that is no natural number stops with `LG4:input.ir_rejected` at `loop_test:0` |
 //!
 //! A run is entered with `rng_init` when a seed is given, one `read` per argument, and the entry `call`. Its result
 //! is the top-level output unit: one fused `emit` row (DET.59).
@@ -83,6 +84,16 @@
 //! The run's own generator is shared. `rng_init` inside a child takes the child's stream path (DET.61): its parent's,
 //! followed by the decimal index of the child among the children its parent has started, from 0. The `status` row,
 //! the stop branch's frame and optional status, the shared generator and the index's base are drafts.
+//!
+//! # Loops (DET.55; LP2 draft)
+//!
+//! `repeat(n, init, fn(acc: T) -> T { … })` runs its body n times, each time with `acc` bound to the value so far, in
+//! a `let` slot of the enclosing frame: there is no call per iteration. Every test costs one step, the final false one
+//! too (DET.55). An operation inside an iteration's body names it in its locator as `label:path#body:k > `, after the
+//! call sites and loops that enclose it, so the stop position names the loop path and the iteration (DET.56). The
+//! count is an operand held for the whole loop: it takes one temporary of the frame, and its handle is released at
+//! the loop's `scope_exit`. The surface form, the operation names `loop_test:k`, the `#body:k` locator, the refill's
+//! `visit` or `alias` and the loop's `scope_exit` are drafts.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
@@ -384,6 +395,8 @@ enum Kind {
         otherwise: usize,
         otherwise_captures: Vec<SlotRef>,
     },
+    /// A bounded loop (DET.55; LP2 draft): the `let` slot that holds the value so far.
+    Repeat(usize),
 }
 
 #[derive(Debug)]
@@ -742,6 +755,18 @@ impl Compiler {
                 steps.push(Step::Visit { expr: value, parent: Some((id, 0)), attach: true });
                 Kind::Let(slot)
             }
+            Expr::Repeat { count, init, acc, body, .. } => {
+                // The value so far is a `let` slot of this frame, bound over the body only (DET.55; LP2 draft).
+                let ctx = self.contexts.last_mut().expect("a context");
+                let slot = ctx.lets;
+                ctx.lets += 1;
+                steps.push(Step::Unbind);
+                steps.push(Step::Visit { expr: body, parent: Some((id, 2)), attach: true });
+                steps.push(Step::Bind { name: acc, slot });
+                steps.push(Step::Visit { expr: init, parent: Some((id, 1)), attach: true });
+                steps.push(Step::Visit { expr: count, parent: Some((id, 0)), attach: true });
+                Kind::Repeat(slot)
+            }
             Expr::If { .. } => {
                 kids(steps, expr.children());
                 Kind::If
@@ -956,6 +981,8 @@ impl Compiler {
                 Kind::Closure { .. } | Kind::Child { .. } => 0,
                 _ if kids.is_empty() => 0,
                 Kind::Let(_) => t(kids[0]).max(t(kids[1])),
+                // The count is held while the initial value and every iteration run; the value so far has its slot.
+                Kind::Repeat(_) => t(kids[0]).max(1 + t(kids[1])).max(1 + t(kids[2])),
                 // The condition is the operand of `branch` or `display_if`; the selected branch runs after it.
                 Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Prim(Prim::And | Prim::Or) => {
                     kids.iter().map(|&k| t(k)).max().unwrap_or(0).max(1)
@@ -998,6 +1025,19 @@ struct Frame {
     owner: OwnerId,
     /// Owned argument and callee temporaries, released at the return.
     temps: Vec<OwnerId>,
+    /// The loops running in this frame, innermost last (DET.55; LP2 draft).
+    loops: Vec<Loop>,
+}
+
+/// A running loop (DET.55; LP2 draft): its node, its count and the count's owners, which its `scope_exit` releases,
+/// the index of its next test, and whether the body of iteration `k` is running, which the locator names.
+#[derive(Debug)]
+struct Loop {
+    node: NodeId,
+    count: u128,
+    owners: Vec<OwnerId>,
+    k: u128,
+    body: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1010,6 +1050,12 @@ enum Task {
     Return,
     /// The innermost open child's body has returned (DET.60).
     ChildDone,
+    /// A loop's count and initial value are evaluated (DET.55; LP2 draft).
+    LoopEnter(NodeId),
+    /// A loop's next test.
+    LoopTest(NodeId),
+    /// An iteration's body has its value.
+    LoopNext(NodeId),
 }
 
 /// An open child scope (DET.60; LP2 draft): its meter scope and node, the depths its unwinding restores, and its
@@ -1049,8 +1095,9 @@ struct Machine<'a> {
     children: u64,
 }
 
-/// The stop locator of an operation: the call path from the entry (each caller's call site), then the operation's
-/// node path and name; `entry#…` for the operations around the entry call. The source range is the node's.
+/// The stop locator of an operation: the call path from the entry (each caller's call site, and each running loop's
+/// iteration as `label:path#body:k`), then the operation's node path and name; `entry#…` for the operations around
+/// the entry call. The source range is the node's.
 fn locate(
     loaded: &Loaded,
     frames: &[Frame],
@@ -1062,8 +1109,14 @@ fn locate(
         return (format!("entry#{op}"), None);
     };
     let mut at = String::new();
-    for site in frames.iter().filter_map(|f| f.site) {
-        at.push_str(&format!("{}:{} > ", loaded.functions[loaded.nodes[site].function].label, loaded.path(site)));
+    for frame in frames {
+        if let Some(site) = frame.site {
+            at.push_str(&format!("{}:{} > ", loaded.functions[loaded.nodes[site].function].label, loaded.path(site)));
+        }
+        for l in frame.loops.iter().filter(|l| l.body) {
+            let label = &loaded.functions[loaded.nodes[l.node].function].label;
+            at.push_str(&format!("{label}:{}#body:{} > ", loaded.path(l.node), l.k));
+        }
     }
     let function = &loaded.functions[loaded.nodes[node].function];
     let path = loaded.path(node);
@@ -1158,6 +1211,9 @@ impl<'a> Machine<'a> {
                 Task::ScopeExit(n) => self.scope_exit(n),
                 Task::Return => self.ret(),
                 Task::ChildDone => self.child_done(),
+                Task::LoopEnter(n) => self.loop_enter(n),
+                Task::LoopTest(n) => self.loop_test(n),
+                Task::LoopNext(n) => self.loop_next(n),
             };
             if let Err(stop) = done {
                 self.unwind(stop)?;
@@ -1270,6 +1326,11 @@ impl<'a> Machine<'a> {
                 self.tasks.push(Task::Bind(n));
                 self.tasks.push(Task::Eval(node.kids[0]));
             }
+            Kind::Repeat(_) => {
+                self.tasks.push(Task::LoopEnter(n));
+                self.tasks.push(Task::Eval(node.kids[1]));
+                self.tasks.push(Task::Eval(node.kids[0]));
+            }
             Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Prim(Prim::And | Prim::Or) => {
                 self.tasks.push(Task::Branch(n));
                 self.tasks.push(Task::Eval(node.kids[0]));
@@ -1306,18 +1367,93 @@ impl<'a> Machine<'a> {
     fn bind(&mut self, n: NodeId) -> Result<(), Stop> {
         let Kind::Let(slot) = self.loaded.nodes[n].kind else { unreachable!("a let") };
         let held = self.values.pop().expect("the let value");
-        let (value, owners) = if held.origin == Origin::Owned {
+        let filled = self.fill(n, held)?;
+        self.frames.last_mut().expect("a frame").lets[slot] = Some(filled);
+        self.tasks.push(Task::ScopeExit(n));
+        self.tasks.push(Task::Eval(self.loaded.nodes[n].kids[1]));
+        Ok(())
+    }
+
+    /// What a slot holds once filled with a value: `visit` moves an owned value in, and `alias` retains a borrowed
+    /// one with a charged owner (DET.55, DET.58).
+    fn fill(&mut self, n: NodeId, held: Held) -> Result<(Value, Vec<OwnerId>), Stop> {
+        if held.origin == Origin::Owned {
             self.charge(Some(n), "visit", 0, 0, 0)?;
-            (held.value, held.owners)
+            Ok((held.value, held.owners))
         } else {
             let size = held.value.size();
             self.charge(Some(n), "alias", 0, size, 0)?;
             // An aliased generator draws from a cursor of its own (DET.61).
-            (held.value.alias(), self.own(size))
+            Ok((held.value.alias(), self.own(size)))
+        }
+    }
+
+    /// A loop's start (DET.55; LP2 draft): the initial value fills the loop's slot as a `let`'s value fills its own,
+    /// and the count is held until the loop's `scope_exit`. A count that is no natural number is refused at the first
+    /// test, which would read it, after the initial value fills the slot; the cleanup releases both. A count beyond
+    /// `u128` saturates, since no budget admits that many tests.
+    fn loop_enter(&mut self, n: NodeId) -> Result<(), Stop> {
+        let Kind::Repeat(slot) = self.loaded.nodes[n].kind else { unreachable!("a loop") };
+        let init = self.values.pop().expect("the initial value");
+        let count = self.values.pop().expect("the count");
+        let times = match &count.value {
+            Value::Int(i) if i.sign() != Sign::Minus => Some(u128::try_from(&**i).unwrap_or(u128::MAX)),
+            _ => None,
         };
-        self.frames.last_mut().expect("a frame").lets[slot] = Some((value, owners));
-        self.tasks.push(Task::ScopeExit(n));
-        self.tasks.push(Task::Eval(self.loaded.nodes[n].kids[1]));
+        let filled = self.fill(n, init)?;
+        self.frames.last_mut().expect("a frame").lets[slot] = Some(filled);
+        let Some(times) = times else { return Err(self.fail(Some(n), "loop_test:0", code::IR_REJECTED)) };
+        let frame = self.frames.last_mut().expect("a frame");
+        frame.loops.push(Loop { node: n, count: times, owners: count.owners, k: 0, body: false });
+        self.tasks.push(Task::LoopTest(n));
+        Ok(())
+    }
+
+    /// `loop_test` (DET.55): every test costs one step, the final false one too. A true test runs the body of
+    /// iteration k; the final one ends the loop with `scope_exit`, which releases the count after admission and moves
+    /// the value so far out of its slot, as a `let` whose body returns its slot.
+    fn loop_test(&mut self, n: NodeId) -> Result<(), Stop> {
+        let Kind::Repeat(slot) = self.loaded.nodes[n].kind else { unreachable!("a loop") };
+        let running = self.frame().loops.last().expect("a running loop");
+        debug_assert_eq!(running.node, n, "the innermost running loop");
+        let (k, count) = (running.k, running.count);
+        self.charge(Some(n), &format!("loop_test:{k}"), 0, 0, 0)?;
+        if k < count {
+            self.frames.last_mut().expect("a frame").loops.last_mut().expect("a running loop").body = true;
+            self.tasks.push(Task::LoopNext(n));
+            self.tasks.push(Task::Eval(self.loaded.nodes[n].kids[2]));
+            return Ok(());
+        }
+        self.charge(Some(n), "scope_exit", 0, 0, 0)?;
+        let frame = self.frames.last_mut().expect("a frame");
+        let done = frame.loops.pop().expect("a running loop");
+        let (value, owners) = frame.lets[slot].take().expect("a filled loop slot");
+        for owner in done.owners {
+            self.meter.drop_owner(owner, true);
+        }
+        self.push(value, owners);
+        Ok(())
+    }
+
+    /// The end of an iteration (DET.55; LP2 draft): the body's value refills the loop's slot, with `visit` for an
+    /// owned value or the slot's own, and `alias` for any other borrow. The old value is released after admission,
+    /// so it cannot fund its replacement (DET.56).
+    fn loop_next(&mut self, n: NodeId) -> Result<(), Stop> {
+        let Kind::Repeat(slot) = self.loaded.nodes[n].kind else { unreachable!("a loop") };
+        let held = self.values.pop().expect("the body's value");
+        if held.origin == (Origin::Let { slot, whole: true }) {
+            self.charge(Some(n), "visit", 0, 0, 0)?;
+        } else {
+            let filled = self.fill(n, held)?;
+            let old = self.frames.last_mut().expect("a frame").lets[slot].replace(filled);
+            for owner in old.expect("a filled loop slot").1 {
+                self.meter.drop_owner(owner, true);
+            }
+        }
+        let running = self.frames.last_mut().expect("a frame").loops.last_mut().expect("a running loop");
+        running.k += 1;
+        running.body = false;
+        self.tasks.push(Task::LoopTest(n));
         Ok(())
     }
 
@@ -1486,7 +1622,8 @@ impl<'a> Machine<'a> {
             temps.extend(a.owners);
         }
         temps.extend(callee);
-        self.frames.push(Frame { code, site, params, captures, lets: vec![None; c.lets], owner, temps });
+        let lets = vec![None; c.lets];
+        self.frames.push(Frame { code, site, params, captures, lets, owner, temps, loops: Vec::new() });
         self.tasks.push(Task::Return);
         self.tasks.push(Task::Eval(c.body));
         Ok(())
