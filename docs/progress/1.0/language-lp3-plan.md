@@ -69,7 +69,7 @@ runnable") cover the kernel rows. LP3 builds nothing in LP2's crates. Each row s
 | Strict protection on 600-cell-Full. Built in the kernel (pull request 170: `strict_protection`, `derive_strict`, `replay`) and in the command layer (pull request 198: `protection.policy.set` switches a session between Net and Strict, and the runtime may not invoke it) | KN2.4, KN2.7 | CT-LB2-02's Strict half in the command layer (`c600-command/tests/strict_policy.rs`); CT-KN2-03 and CT-LG2-12 use the `protection` row | None: CT-LB2-02's Strict half runs through the tool's route (C5) and at the kernel (C5's library) |
 | Streaming words. Built in the kernel (pull request 170: `chunks`, `replay`, `replay_under_ceiling`), with a compressed word's part list (pull request 185). Not built: LB7.2's work sheets (KN5) | KN2.10 | CT-KN2-07, CT-LG2-14 | CT-LB2-03's named work-sheet reuse |
 | The `positions` row. Built in the kernel (pull request 170: `Kernel::positions`). Not built: a host row that serves it to a program (KN5) | KN2.4 | None names it | CT-LB2-04 |
-| Exact rotations and `twist.apply` (amendment A6). The exact requests are built (pull request 176: `c600_jumble::rotation`, `c600_kernel::request`). Not built: `twist.apply` in the command layer (KN5) and the shell's gesture producer (CT-KN3-06) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | CT-EV4-04's twist leg, CT-BND-19's live-twist part |
+| Exact rotations and `twist.apply` (amendment A6). The exact requests are built (pull request 176: `c600_jumble::rotation`, `c600_kernel::request`), and so is `twist.apply` in the command layer (pull request 207). Not built: the shell's gesture producer (CT-KN3-06) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | None: CT-EV4-04's twist leg and CT-BND-19's live-twist part run in `c600-input` (C5) |
 | Exact polytope operations. Built: KN3.3's exact double description (pull request 176: `c600_jumble::dd`, the exact vertices of a bounded region) and the other operations with the exact core of LB4.1's map property checks (pull request 209: `c600_jumble::polytope`) | KN3.3 | CT-KN3-01, CT-KN3-03 | None; CT-LB4-01's injectivity, embedding, isometry and homomorphism checks run on them (C6) |
 | The F2 and F5 number kinds. Built in the kernel (pull request 201: `c600_kernel::exact`), with ν (`c600_jumble::nu`, pull request 201) and the correction catalogue with `correction_set_check` (`c600_jumble::corrections`, pull request 206). Not built: F2 and F5 as number kinds of the IR draft, for library code | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator. Built (pull request 176), with `compose`, `length` and `word_key`, Full's free reduction. Not built: these operations on compressed words, a jumbling key, LB1.10's trace key | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-06 (the owner answer on word keys, section 10); the library entries of CT-LB2-01 and CT-BND-18 are not written yet |
@@ -246,8 +246,8 @@ host ran it. Acceptance:
    after, differing only in their envelopes (command ID, caller, request digest).
 2. The parts of CT-LB2-02 (the Net half), CT-LB2-03 (the oversize refusal), CT-LB3-01 and CT-LB3-07 (the checker
    halves), CT-LB6-03 (the 600-cell-Full tool), CT-BND-15 (the 600-cell-Full tool), CT-BND-19, CT-EV3-01 to CT-EV3-04
-   with the tool's views, CT-EV4-02, CT-EV4-04 (the append, preview and commit legs) and CT-ONE-29 that the tool and
-   the bridge make reachable, each naming its part.
+   with the tool's views, CT-EV4-02, CT-EV4-04 (the append, preview, commit and twist legs) and CT-ONE-29 that the
+   tool and the bridge make reachable, each naming its part.
 3. A change to `c600-command` gets C1's fresh read; C1's item 5 holds.
 
 - C5 (`rust/c600-tools`, branch `claude/lp3-source-route`), built: item 1 (compare.py equality on all 3,201 steps,
@@ -256,9 +256,12 @@ host ran it. Acceptance:
   and CT-BND-15, the headless part of CT-ONE-29 and the command-layer parts of CT-BND-07 and CT-BND-11. The tool runs
   in process.
 - C5, input router (`rust/c600-input`, branch `claude/lp3-input-routing`), built: of item 2, CT-EV4-02 and CT-EV4-04's
-  append, preview and commit legs and its busy leg, on synthetic events through the shell's public API; ahead of LP4,
-  CT-EV4-06's synthetic half. CT-EV4-04's twist leg waits for `twist.apply` in the command layer (KN5, section 2);
-  KN3.7's exact rotation requests are built (pull request 176).
+  append, preview, commit and twist legs and its busy leg, on synthetic events through the shell's public API; ahead of
+  LP4, CT-EV4-06's synthetic half. The twist keys type exact requests of the twist menu the host pins (A6, KN3.7) and
+  reach `twist.apply` (pull request 207); which key types which request is a draft that settles nothing in the chapters.
+  With the router joined to the tool's view model and views, CT-BND-19's live-twist part runs: until the twist key's
+  key-down commits the twist, no field of the view model holds a value of any twist a key could release at the fixture's
+  four grip slots, since the view model's only input is the layer's bundle and the layer has not moved.
 - C5 next, the process host (`rust/c600-tools`, branch `claude/lp3-c5-process`), built: the tool on C3's runtime process
   (`c600-runtime`'s child), with the same boundary and bridge in the caller. `c600-lp3-source --host process` replays
   O01 to O07 with traces byte-identical to the in-process host's, and every record names its host; four O07 steps whose
@@ -273,8 +276,8 @@ host ran it. Acceptance:
   CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, with its imported half on a fixture import record, since the
   Rust layers have no import row; CT-BND-19's part for the tool's views; CT-ONE-29's user-stage part at the host's
   adapter, whole since LP2's stage 5 (pull request 194) gave the layer the presented-frame input to `present` that the
-  shell's own refusal of a user-stage frame needs; CT-BND-19's live-twist part waits for `twist.apply` in the command
-  layer (KN5, section 2).
+  shell's own refusal of a user-stage frame needs; CT-BND-19's live-twist part runs in `c600-input` on this view model
+  and these views (the input router's item above).
 - C5, the host's provenance reader (`rust/c600-tools`, `workspace`), built: the reader KN5's stage 3 asks of the host
   (PS1.16, KN5.26, BND.84, BND.85), which reads a record's block and admits a record draft with the boundary's preview
   admission over the blocks the host keeps; `c600-lp3-source` installs it, and C7's tests on the layer run with it.
@@ -404,8 +407,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 9. Section 15.4's 82 tests
 
-"Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row. 34
-tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 28 have a part that can run now, and 20 wait
+"Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row. 36
+tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 26 have a part that can run now, and 20 wait
 entirely. The milestone is in parentheses; "next" marks a part that can run now and is not built yet.
 
 | Test | Class | Whole run | Part now |
@@ -441,7 +444,7 @@ entirely. The milestone is in parentheses; "next" marks a part that can run now 
 | CT-EV3-07 | source | EV3.2's view rows in the command layer (KN5, LP2) | A view cannot write, at the command layer (C6) and on a language overlay row standing in for a view (C7); the durable action order, in the shared `session.undo` order through the command layer over `JournalStore` and on M6's store (C7) |
 | CT-EV3-08 | source | The renderer freeze: RM.39's measured ceilings (C9) | The admission semantics (C2) |
 | CT-EV4-02 | synthetic | Now, on the draft keymap (C5) | - |
-| CT-EV4-04 | synthetic | `twist.apply` in the command layer, for the twist leg (KN5, LP2); KN3.7's exact rotation requests are built (pull request 176) | The append, preview and commit legs (C5) |
+| CT-EV4-04 | synthetic | Now, on the draft keymap (C5; the twist leg through `twist.apply`, LP2's pull request 207) | - |
 | CT-ONE-25 | performance | Owner runs: charter E2 (C9) | - |
 | CT-ONE-26 | windows | The renderer freeze (C9) | The token binds the presented preview (C1) |
 | CT-ONE-29 | source | Now (C5, through the layer's `present`, LP2's pull request 194) | - |
@@ -476,7 +479,7 @@ entirely. The milestone is in parentheses; "next" marks a part that can run now 
 | CT-BND-15 | source | The review record naming each entry digest: BM5's review, when the tools ship | The 600-cell-Full, representations and jumbling tools (C5, C6, C8) |
 | CT-BND-17 | source | The built-in column's repair-list exception in `c600-check` (LP2); a job that names its cap through the command layer (KN5, LP2). The repair list is built (pull request 176) | The kernel half on `observe::cuts::repair_list` (C8) |
 | CT-BND-18 | source | The built-in column's setup-search exception in `c600-check` (LP2); the setup-search library entry, not written yet (collection types and word operations are in the IR draft, pull request 176) | - |
-| CT-BND-19 | source | A live twist's release, which needs `twist.apply` in the command layer (KN5, LP2); KN3.7's exact rotation requests are built (pull request 176) | The tool's views (C5) |
+| CT-BND-19 | source | Now (C5: the tool's views, and the live twist through the input router on the tool's view model) | - |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Child scopes, more than one generator per run, text order, byte decoding, loops and flow checks, streaming cursors and LP1's region executor in the IR draft (LP2) | 17 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216) |
 | CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 39 of LX-3's 75 frozen keys on 600-cell-Full (C4) |

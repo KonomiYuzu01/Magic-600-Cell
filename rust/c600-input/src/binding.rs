@@ -52,6 +52,9 @@ pub enum Arg {
     SlotFrame(usize),
     /// The cap of the current grip.
     GripCap,
+    /// Item `n` of the pinned twist menu, as KN3.7's exact binding without its cap: the rotation that `twist.apply`
+    /// and `operation.phase.append_twist` take, resolved against the menu the context pins at the press.
+    MenuItem(u64),
     /// The selected draft phase.
     Phase,
     /// The preview's scrub position moved by this many letters, never below zero.

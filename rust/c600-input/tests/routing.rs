@@ -11,7 +11,7 @@ use c600_input::{
 };
 use c600_kernel::json::{self, Value};
 
-use common::{code_of, fixture, list, row, sent, slots, text, word, TOOL, TOOL_KEY};
+use common::{code_of, fixture, list, pin, rotation, row, sent, slots, text, word, TOOL, TOOL_KEY};
 
 fn chords(texts: &[&str]) -> Vec<Chord> {
     texts.iter().map(|t| Chord::parse(t).unwrap()).collect()
@@ -204,19 +204,19 @@ fn a_global_key_reaches_its_row_whatever_has_focus() {
     assert_eq!(f.reached(), 12);
 }
 
-/// CT-EV4-02, the argument leg (EV4.3, EV4.4, EV4.8): relative names (the current grip, a slot, a list row, the
-/// editor's draft) are resolved at the press. A later camera, focus, hover or filter change neither reinterprets an
-/// invocation already sent nor changes what the same global key sends next; only the rebind command changes the
-/// applied slot map, and a list row number names the row shown at its own press.
+/// CT-EV4-02, the argument leg (EV4.3, EV4.4, EV4.8): relative names (the current grip, a slot, a twist key's menu
+/// item, a list row, the editor's draft) are resolved at the press. A later camera, focus, hover or filter change
+/// neither reinterprets an invocation already sent nor changes what the same global key sends next; only the rebind
+/// command changes the applied slot map, and a list row number names the row shown at its own press.
 #[test]
 fn resolved_arguments_survive_later_camera_focus_hover_and_filter_changes() {
     let mut f = fixture("key", "us-qwerty");
     f.router.context.grip = Some(1);
+    f.router.context.menu = Some(pin());
     let grip = f.tap("KeyW");
     let twist = f.tap("KeyJ");
     assert_eq!(sent(&grip).1, json::object([("cap", text("c1")), ("frame", text("f1"))]));
-    let rotation = json::object([("axis", Value::Int(0)), ("inverse", Value::Bool(false))]);
-    assert_eq!(sent(&twist).1, json::object([("cap", text("c1")), ("rotation", rotation.clone())]));
+    assert_eq!(sent(&twist).1, json::object([("cap", text("c1")), ("rotation", rotation(1))]));
     let first = f.router.log().to_vec();
 
     f.router.context.camera = json::object([("yaw", Value::Int(40))]);
@@ -236,7 +236,7 @@ fn resolved_arguments_survive_later_camera_focus_hover_and_filter_changes() {
     // The rebind command alone changes the applied map; what was sent keeps the old caps.
     f.router.context.rebind(slots("r"));
     assert_eq!(sent(&f.tap("KeyW")).1, json::object([("cap", text("rc1")), ("frame", text("rf1"))]));
-    assert_eq!(sent(&f.tap("KeyJ")).1, json::object([("cap", text("rc1")), ("rotation", rotation)]));
+    assert_eq!(sent(&f.tap("KeyJ")).1, json::object([("cap", text("rc1")), ("rotation", rotation(1))]));
     assert_eq!(f.router.log()[0].invocation.args, first[0].invocation.args);
     assert_eq!(f.router.log()[1].invocation.args, first[1].invocation.args);
 
@@ -268,6 +268,8 @@ fn resolved_arguments_survive_later_camera_focus_hover_and_filter_changes() {
 fn the_key_route_and_the_command_route_give_the_same_receipts() {
     let mut keys = fixture("key", "us-qwerty");
     let mut cmds = fixture("cmd", "us-qwerty");
+    keys.pin_menu();
+    cmds.pin_menu();
     keys.router.context.grip = Some(2);
     keys.shell.draft = Some(word_draft(&word(&[1, 3])));
     let mut pairs: Vec<(Receipt, Receipt)> = Vec::new();
@@ -296,9 +298,8 @@ fn the_key_route_and_the_command_route_give_the_same_receipts() {
         pairs.push((dispatch.receipt, receipt));
     }
     let statuses: Vec<&str> = pairs.iter().map(|(key, _)| key.status.name()).collect();
-    assert_eq!(statuses, ["running", "committed", "committed", "committed", "refused", "refused", "running"]);
+    assert_eq!(statuses, ["running", "committed", "committed", "committed", "refused", "committed", "running"]);
     assert_eq!(code_of(&pairs[4].0), code::ROW_NOT_BUILT);
-    assert_eq!(code_of(&pairs[5].0), code::ROW_NOT_BUILT);
     // The journals agree on every field but the command ID and the request digest.
     let journal = |f: &common::Fixture| {
         let log = &f.layer.store().log;
@@ -306,7 +307,7 @@ fn the_key_route_and_the_command_route_give_the_same_receipts() {
             .map(|t| (t.kind, t.event.clone(), t.order, t.target, t.row.clone(), t.literal.clone(), t.post.clone()))
             .collect::<Vec<_>>()
     };
-    assert_eq!(journal(&keys).len(), 3);
+    assert_eq!(journal(&keys).len(), 4);
     assert_eq!(journal(&keys), journal(&cmds));
 }
 

@@ -63,9 +63,27 @@
 //!   select grip slots 0 to 3; `KeyJ`, `KeyK` and `KeyL`, with Shift for the inverse, are three twist keys, which run
 //!   `twist.apply` in the live destination and `operation.phase.append_twist` in the draft one (C4, C7). The full slot
 //!   block and the seven axis keys (K2) wait for G6.
-//! - Placeholder values: the camera rotations and zoom steps, the camera's view (`"global"`) and a twist key's
-//!   rotation (`{"axis": n, "inverse": b}`, until the twist rows take A6's exact requests under KN3.7) are fixed JSON
+//! - Placeholder values: the camera rotations and zoom steps and the camera's view (`"global"`) are fixed JSON
 //!   placeholders.
+//! - The twist keys' exact requests (A6; KN3.7): a twist key types one item of the twist menu the host pins, pressed
+//!   directly ([`Arg::MenuItem`]). It sends the grip's cap as `cap` and KN3.7's binding without its cap as
+//!   `rotation`: the request `LX9B1|M|<set>|<order>|<index>`, the operation `menu_direct` and the menu's two digests,
+//!   in `Binding::to_json`'s form. The host sets those digests in [`Context::menu`] when it pins the menu in the layer
+//!   (`CommandLayer::pin_menu`), since the layer gives no read of its pin; with none, a twist key is refused before
+//!   any envelope with `KN5:input.argument_form`. [`TWIST_KEYS`] maps `KeyJ`, `KeyK` and `KeyL` to items 1, 2 and 3
+//!   and their Shift chords to the inverse items 1, 5 and 9: under the I_a menu's order, at every cap c, the
+//!   half-turn `[2c+1]` and the third-turns `[2c+2]` and `[2c+1, 2c+2]`, and their inverses. An item number names a
+//!   rotation only under the order the binding names. The keys act in the cap's fixed frame, not in a slot's
+//!   transported frame (D11), and K2's other four axes (items 4 and 7 with their inverses 8 and 6, and the half-turns
+//!   10 and 11) have no key. Which key types which exact request settles nothing in the chapters: G6 owns the keys,
+//!   K2's seven axis keys among them.
+//! - Jumble on (EV4.4; DT-M1 C6): the router reads no Jumble mode, since EV4.4 names the destination as the one input
+//!   mode. With Jumble on, a twist key still sends `twist.apply`, which the layer refuses
+//!   (`KN5:input.retained_tool_needs_jumble_off`). C6's menu-twist row, `jumble.twist.menu`, takes the same rotation
+//!   as its `letter`, with the cap and the revision, but no key binds that row yet.
+//! - A live twist's release (BND.4, BND.5; no preview for a live twist, owner answer of 6 November 2026): the solver
+//!   releases a live twist with the twist key's key-down, the one deliberate action that commits it. Its key-up and
+//!   its repeats release nothing more, and a refused key-down (busy lane, no menu, no grip) releases nothing.
 //! - A relative name with nothing to resolve to (no draft, grip, phase, list, entry or row) refuses the press before
 //!   any envelope with `KN5:input.argument_form`, as `Shell::press` does for a missing draft; no presented preview is
 //!   `KN5:stale.no_fresh_preview` and no undo target `KN5:stale.undo_superseded`.
@@ -90,7 +108,7 @@ pub mod router;
 
 pub use binding::{resolve_binding, Arg, Binding, Destination, Resolution, RoutingClass, RoutingContext};
 pub use chord::{Chord, Key, Mods};
-pub use keymap::{check, default_specs, BindingSpec, ChordIntent, Finding, KeyMap, LIST_ROWS};
+pub use keymap::{check, default_specs, BindingSpec, ChordIntent, Finding, KeyMap, LIST_ROWS, TWIST_KEYS};
 pub use layout::Layout;
 pub use router::{Context, Dispatch, DropReason, Entry, Focus, KeyEvent, ListFocus, Routed, Router, Slot};
 

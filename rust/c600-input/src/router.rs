@@ -9,7 +9,8 @@
 use std::collections::BTreeMap;
 
 use c600_command::{code, CommandLayer, Direction, Error, Invocation, Kind, Receipt, Shell, Store};
-use c600_kernel::json::Value;
+use c600_kernel::json::{self, Value};
+use c600_kernel::request::{menu_request, MenuPin};
 
 use crate::binding::{resolve_binding, Arg, Binding, Destination, Resolution, RoutingClass, RoutingContext};
 use crate::chord::{Chord, Key};
@@ -118,6 +119,10 @@ pub struct Context {
     slots: Vec<Slot>,
     /// The current grip: an index into the applied slot map.
     pub grip: Option<usize>,
+    /// The twist menu's two digests (KN3.7). The host sets them with the menu it pins in the command layer
+    /// (`CommandLayer::pin_menu`); a twist key's [`Arg::MenuItem`] resolves against them, and with none a twist key is
+    /// refused before any envelope.
+    pub menu: Option<MenuPin>,
     /// The selected draft phase (`PhaseId`).
     pub phase: Option<Value>,
     /// The preview's scrub position (`WordPosition`).
@@ -133,6 +138,7 @@ impl Context {
             destination: Destination::Live,
             slots,
             grip: None,
+            menu: None,
             phase: None,
             scrub: 0,
             camera: Value::Null,
@@ -446,6 +452,9 @@ impl Router {
                 Arg::SlotCap(n) => slot(*n)?.cap.clone(),
                 Arg::SlotFrame(n) => slot(*n)?.frame.clone(),
                 Arg::GripCap => slot(self.context.grip.ok_or_else(|| missing("no grip"))?)?.cap.clone(),
+                Arg::MenuItem(index) => {
+                    menu_item(self.context.menu.as_ref().ok_or_else(|| missing("no twist menu is pinned"))?, *index)
+                }
                 Arg::Phase => self.context.phase.clone().ok_or_else(|| missing("no draft phase is selected"))?,
                 Arg::Scrub(step) => Value::Int((self.context.scrub + step).max(0)),
                 Arg::List => list()?.list.clone(),
@@ -470,4 +479,17 @@ impl Router {
         }
         Ok(Value::Object(args))
     }
+}
+
+/// Item `index` of the pinned menu, pressed directly, as KN3.7's binding without the cap the row names: the
+/// `{request, operation, menu}` object of `twist.apply`'s `rotation` argument, in `Binding::to_json`'s form. The
+/// request bytes are ASCII: two hexadecimal digests and a decimal index.
+fn menu_item(pin: &MenuPin, index: u64) -> Value {
+    let request = String::from_utf8_lossy(&menu_request(&pin.set, &pin.order, index)).into_owned();
+    let text = |s: &str| Value::String(s.to_owned());
+    json::object([
+        ("request", Value::String(request)),
+        ("operation", json::object([("kind", text("menu_direct"))])),
+        ("menu", json::object([("set", text(&pin.set)), ("order", text(&pin.order))])),
+    ])
 }

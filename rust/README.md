@@ -1820,15 +1820,24 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-input/tests/`), on synthetic events only:
   - `routing.rs`: CT-EV4-02, among them arguments resolved at the press surviving later camera, focus, hover and
     filter changes, and the key route giving the same receipts as `Shell::invoke` with the same rows and arguments.
-  - `repeat.rs`: CT-EV4-04's append, preview and commit legs and its busy leg, with repeat events flagged and
-    unflagged, counting the invocations that reach the layer. The twist leg waits for `twist.apply` in the command
-    layer (KN5, LP2); KN3.7's exact rotation requests are built (pull request 176).
+  - `repeat.rs`: CT-EV4-04's append, preview, commit and twist legs and its busy leg, with repeat events flagged and
+    unflagged, counting the invocations that reach the layer. A held twist key commits once through `twist.apply`
+    against the pinned menu; a twist key-down that meets a held commit lane gets the layer's refusal, and nothing
+    commits on its behalf when the lane frees.
+  - `twist.rs`: the twist keys' exact requests (A6, KN3.7) at four caps and in the draft destination; with Jumble on,
+    the key's rotation is `jumble.twist.menu`'s letter; CT-BND-19's live-twist part, with the router joined to the view
+    model and the tool's view of `c600-tools`: until the twist key's key-down commits the twist, no field of the view
+    model holds a value of any twist a key could release at the fixture's four grip slots (the view model's only input
+    is the layer's bundle, and the layer has not moved), and after it Global, Local and the tool's view show the
+    committed state.
   - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
     layout counterexample.
 - Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
   documentation, among them the routing class names, the chord form (W3C `code` names with Ctrl, Shift, Alt and
-  Meta), the two layout tables, the default global map, the repeat flag's source, and placeholder camera and twist
-  values. Escape closes a pending prefix group or the innermost transient layer and never cancels a preview (DT-M1 C4).
+  Meta), the two layout tables, the default global map, the repeat flag's source, placeholder camera values, and the
+  twist keys: `KeyJ`, `KeyK` and `KeyL`, with Shift for the inverse, type items 1, 2 and 3 of the pinned menu in the
+  cap's fixed frame, which settles nothing in the chapters (G6 owns the keys). Escape closes a pending prefix group or
+  the innermost transient layer and never cancels a preview (DT-M1 C4).
 - Open:
   - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
     `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
@@ -1836,6 +1845,9 @@ run or not applicable is no pass (PHS.63).
   - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
     default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
     which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
+  - The host gives the router the pinned menu's two digests, since the command layer gives no read of its pin; a read
+    in `c600-command` would remove the copy. No key binds `jumble.twist.menu`, and K2's other four axes, a slot's
+    transported frame (D11) and C6's seat keys have no key.
 - Evidence kind: source and synthetic. No Windows, IME, device or timing claim; CT-EV4-05 stays a windows test (LP4).
 
 ## Status of LP3, C7: durable receipts on the session store
@@ -1914,10 +1926,11 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
     fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
-    installed bytes hold only the word the solver named); CT-ONE-29, whole, at the host's adapter through the layer's
-    `present` (the layer refuses a user-stage frame, a frame with no preview and a frame with another preview, so no
-    token is minted and the commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and
-    commits; a later user-stage frame ends the presentation and a delayed older report changes nothing).
+    installed bytes hold only the word the solver named; its live-twist part runs in `c600-input`'s `tests/twist.rs`
+    on this view model and view); CT-ONE-29, whole, at the host's adapter through the layer's `present` (the layer
+    refuses a user-stage frame, a frame with no preview and a frame with another preview, so no token is minted and
+    the commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and commits; a later
+    user-stage frame ends the presentation and a delayed older report changes nothing).
   - `workspace.rs`: a record write whose block the reader refuses is refused with the reader's error and writes nothing,
     and a block that reads is written whatever its admission would say (PS1.16, BND.21); a record draft is admitted or
     refused by the reader's admission: a hand-entered word passes, a solver tool's word is refused, and a built-in
@@ -1944,15 +1957,14 @@ run or not applicable is no pass (PHS.63).
     and binding (a token minted with another secret, or the same envelope on a runtime's channel) no longer becomes
     that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
     and neither retry commits anything more.
-- Not built: CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece
-  objects for a word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes
-  (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock and "an incomplete prefix check never returns
-  safe" through the tool's route (the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`
-  are LP3's library rows over kernel rows, which need a snapshot read with an argument that no host answers yet);
-  named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with
-  another field (its literal word over 100,000 letters goes in one word step and is refused whole); the child's
-  own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
-  request 213).
+- Not built: an import row; grip, cell or piece objects for a word's letters (the kernel has no letter-to-grip map); a
+  view declaring both of the manifest's classes (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock
+  and "an incomplete prefix check never returns safe" through the tool's route (the captured lock, LB2.3's coverage
+  report and `LB2:protection.incomplete_coverage` are LP3's library rows over kernel rows, which need a snapshot read
+  with an argument that no host answers yet); named work-sheet reuse; chunked transport on the source route for a recipe
+  with a star step or a word step with another field (its literal word over 100,000 letters goes in one word step and is
+  refused whole); the child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are
+  `c600-check`'s (LP2, pull request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
