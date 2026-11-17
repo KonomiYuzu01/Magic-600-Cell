@@ -7,10 +7,11 @@
 //! What runs: the pose-level verdict of H_0 at grip 0 with centre piece 0 protected, which moves, and the label-level
 //! verdict of the kernel word `[1]` from solved, which is clear, each read at its own level and refused at the other
 //! with `KN1:input.level_not_held`; a label verdict that moves and a pose verdict that is clear, so no finding follows
-//! from the level alone; and the digest each verdict names. Not run: Strict protection at either level, since M5 has
-//! no protection of a whole word; the kernel's own label protection of a piece, which covers moving orbits 0 to 34
-//! only, so the label verdict is composed from KN2.4's `positions` rows (LP2); and the pose-to-label crossing
-//! projection with its checkpoints (M8). A pass is source and fixture evidence.
+//! from the level alone; and the digest each verdict names. Not run: Strict protection of a whole word, which M8's
+//! `levels::derive` has at pose level and this test does not take up yet, and which waits at label level; the kernel's
+//! own label protection of a piece, which covers moving orbits 0 to 34 only, so the label verdict is composed from
+//! KN2.4's `positions` rows (LP2); and the pose-to-label crossing projection with its checkpoints, which M8's `levels`
+//! has and this test does not take up yet. A pass is source and fixture evidence.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
