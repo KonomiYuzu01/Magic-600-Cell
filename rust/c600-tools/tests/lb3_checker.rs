@@ -2,8 +2,8 @@
 //! C5's next piece, the last item). The fixtures are programs of this test, not tools of the crate. The other half
 //! (the facts themselves, per revision and per named cap) waits for M5's jumbling engine (C8).
 //!
-//! CT-LB3-01 has no checker half today: the checker and the IR know no end test, so no fixture can tell a retained
-//! checkpoint, a label checkpoint and a sticker test apart, and it is not built here.
+//! CT-LB3-01's checker half, LB3.2's typed end-test verdicts, is LP2's draft in `c600-check` and is tested there and
+//! in `c600-syntax` and `c600-run` (`end_tests.rs`), so it is not built here.
 
 use std::collections::BTreeSet;
 
@@ -42,13 +42,12 @@ return read_snapshot<Word>(\"lowering_word\");\n}\n";
 ///   reads nothing; the built-in column admits it with no open cell.
 /// - A named-word check that also previews a word the solver did not name (a next-cap skip or a correction
 ///   combination would be one) is refused by the built-in column at that proposal.
+/// - A recommendation, `recommend`, returns a word read from state through an entry that prepares no preview. The
+///   solving column leaves it to the open cell BND.59; the built-in column refuses it at its result, since no word the
+///   method derived or selected from state leaves an inspector (LB3.5; `c600-check`'s LP2 draft rule).
 ///
-/// Not decided by the checker, so not built: a recommendation. `recommend` returns a word read from state through an
-/// entry that prepares no preview; the solving column leaves it to the open cell BND.59 and the built-in column
-/// admits it when the class lists its read. The checker has no rule that tells a fact about the solver's named object
-/// from a selection the method made, and the IR draft has no list type, so an all-items table can only be written as a
-/// fixed record as above. The fixture's class lists every row its entries use (preview, outcome read, snapshot read),
-/// so each refusal shown is the rule under test and not a missing row (BND.57).
+/// The fixture's class lists every row its entries use (preview, outcome read, snapshot read), so each refusal shown
+/// is the rule under test and not a missing row (BND.57).
 #[test]
 fn ct_lb3_07_checker_half_outcome_tables_and_named_word_checks() {
     let program = lower_source(INSPECTOR).expect("the fixture lowers");
@@ -83,9 +82,15 @@ fn ct_lb3_07_checker_half_outcome_tables_and_named_word_checks() {
     assert!(!skipped.is_admitted() && skipped.codes().iter().all(|&code| code == NOT_GRANTED));
     assert!(skipped.diagnostics.iter().all(|diagnostic| diagnostic.path != "entry"), "{:#?}", skipped.diagnostics);
 
-    // The part the checker does not decide: a recommendation through a reading entry.
+    // A recommendation through a reading entry (LB3.5).
     assert_eq!(facts("recommend"), reads);
     let open = solving("recommend");
     assert_eq!((open.codes(), open.open_cells), (Vec::<&str>::new(), vec!["BND.59"]));
-    assert!(built_in("recommend").is_admitted());
+    let recommended = built_in("recommend");
+    assert_eq!(recommended.codes(), vec![NOT_GRANTED], "{:#?}", recommended.diagnostics);
+    assert!(
+        recommended.diagnostics.iter().all(|diagnostic| diagnostic.path != "entry"),
+        "{:#?}",
+        recommended.diagnostics
+    );
 }

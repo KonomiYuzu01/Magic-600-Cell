@@ -68,7 +68,9 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
 use std::sync::Arc;
 
-use c600_ir::{self as ir, Accounting, Callee, ExactRole, Expr, FnKind, Order, Prim, QTy, ReceiptField, Ty};
+use c600_ir::{
+    self as ir, Accounting, Callee, EndTestOutcome, ExactRole, Expr, FnKind, Order, Prim, QTy, ReceiptField, Ty,
+};
 use num_bigint::{BigInt, Sign};
 
 use crate::approx;
@@ -1141,6 +1143,17 @@ impl<'a> Machine<'a> {
                 node.kids[if *b { 1 } else { 2 }]
             }
             (Kind::Match(arms), v) => {
+                // A match on an end test's verdict names `unestablished` in an arm of its own, or both established
+                // outcomes, so its `_` arm never takes unknown together with yes or no (LG2.9; LP2 draft). The checker
+                // refuses such a match on a verdict's type; behind a type variable, the run refuses it here.
+                if let Value::EndTest(..) = v {
+                    let named =
+                        |o: EndTestOutcome| arms.iter().any(|a| matches!(a, Value::Tag(t) if t.as_str() == o.tag()));
+                    let taken: Vec<EndTestOutcome> = EndTestOutcome::ALL.into_iter().filter(|o| !named(*o)).collect();
+                    if taken.len() > 1 && taken.contains(&EndTestOutcome::Unestablished) {
+                        return Err(self.fail(Some(n), "branch", code::IR_REJECTED));
+                    }
+                }
                 let kernel = arms
                     .iter()
                     .fold(0u128, |s, a| s.saturating_add(value::equal_price(v, a, &self.tariffs, &self.draft)));
@@ -1313,8 +1326,16 @@ impl<'a> Machine<'a> {
         let price = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add_price(a, b, &t, &d),
             (Prim::ExactLess, a, Some(b)) => value::compare_price(a, b, &d).map(|k| (k, 1)),
-            // A compressed word has no exact equality (LP2 draft).
-            (Prim::ExactEq, a, Some(b)) if !is_approx(a) && !is_approx(b) && !is_compressed(a) && !is_compressed(b) => {
+            // A compressed word has no exact equality, and an end test's verdict is matched on its outcomes only, so
+            // an equality of verdicts behind a type variable stops here (LP2 drafts; LG2.9).
+            (Prim::ExactEq, a, Some(b))
+                if !is_approx(a)
+                    && !is_approx(b)
+                    && !is_compressed(a)
+                    && !is_compressed(b)
+                    && !a.holds_end_test()
+                    && !b.holds_end_test() =>
+            {
                 Some((value::equal_price(a, b, &t, &d), 1))
             }
             (Prim::Not, Value::Bool(_), None) => Some((0, 1)),
@@ -2001,10 +2022,12 @@ impl<'a> Machine<'a> {
 
 /// Whether a scrutinee equals a match pattern as an exact equality does. A menu-word pattern is a literal, which names
 /// no alphabet of its own; every menu word of a run is a word of its pinned alphabet, so the letters decide (LP2
-/// draft).
+/// draft). An end test's verdict matches the status tag of its outcome, and no other pattern (LP2 draft).
 fn pattern_matches(v: &Value, pattern: &Value) -> bool {
     match (v, pattern) {
         (Value::MenuWord(x), Value::MenuWord(y)) => x.letters() == y.letters(),
+        (Value::EndTest(_, outcome), Value::Tag(tag)) => outcome.tag() == tag.as_str(),
+        (Value::EndTest(..), _) => false,
         _ => value::equal(v, pattern),
     }
 }

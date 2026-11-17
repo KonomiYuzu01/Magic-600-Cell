@@ -72,7 +72,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// sticker class, a state, a verdict, a goal or an equality key) fails to compile here until its CT-LG2 tests exist.
 /// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
 /// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. So has the menu word (LP2 draft):
-/// `menu_words.rs` here and in `c600-run`.
+/// `menu_words.rs` here and in `c600-run`. So has an end test's verdict (LP2 draft): CT-LG2-09's unknown that never
+/// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -93,6 +94,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::WordEqualityKey
         | Ty::CompressedWord
         | Ty::MenuWord
+        | Ty::EndTest(_)
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
@@ -341,9 +343,10 @@ fn ct_lg2_08_fixture_menu_letters_and_modes_do_not_lower() {
     assert_types_wait(&["Mode", "Revision"], "M4, M5");
 }
 
-/// CT-LG2-09 (part, guard only: the draft has exact booleans only, and an approximate comparison or a status is no
-/// condition; not run: unknown passing as false, an off-lattice projection passing as unknown and a goal weakening
-/// its level, which wait for the IR's domain families of verdicts, partial projections and goals).
+/// CT-LG2-09 (part, guard: the draft has exact booleans only, an approximate comparison or a status is no condition,
+/// and KN0.5's general verdict with its constructor patterns waits for M4; LB3.2's end tests' verdicts (LP2 draft)
+/// run unknown that never passes as false in `end_tests.rs`; not run: an off-lattice projection passing as unknown
+/// and a goal weakening its level, which wait for the IR's domain families of partial projections and goals).
 #[test]
 fn ct_lg2_09_verdicts_wait_and_a_condition_is_an_exact_boolean() {
     assert_types_wait(&["Verdict", "Unknown", "Goal"], "M4");
