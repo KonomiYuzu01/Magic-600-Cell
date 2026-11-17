@@ -5,7 +5,7 @@
 //! stack, and equality walks one, so a deep value cannot overflow the host stack.
 
 use std::cmp::Ordering;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use c600_ir::{EndTest, EndTestOutcome};
 use num_bigint::{BigInt, Sign};
@@ -14,7 +14,8 @@ use num_traits::{One, Signed, Zero};
 
 use crate::approx::{self, Approx};
 use crate::menu::{MenuIdentity, MENU_INDEX_LIMIT};
-use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs};
+use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs, GENERATOR_SIZE};
+use crate::rng::Cursor;
 use crate::trace::{tokens_order, TraceKey};
 
 /// The most decimal digits an exact literal may have: PS1.5's limit for persisted integers, applied to IR literals.
@@ -62,6 +63,36 @@ pub enum Value {
     /// run's pinned independence relation, with that relation's header (LG2.23). It is never a `Word` or a
     /// `WordEqualityKey`.
     TraceEqualityKey(Arc<TraceKey>),
+    /// DET.61's generator (LP2 draft): one owner's cursor on a sealed stream. A clone shares the cursor, as a visit, a
+    /// borrow or a move does; [`Value::alias`] copies it into an independent cursor, as DET.61's alias does.
+    Generator(Arc<Generator>),
+}
+
+/// A generator's cursor (DET.61; LP2 draft). The checker keeps a generator a bare value, so no record, collection or
+/// closure capture shares one.
+#[derive(Debug)]
+pub struct Generator {
+    cursor: Mutex<Cursor>,
+}
+
+impl Generator {
+    pub fn new(cursor: Cursor) -> Generator {
+        Generator { cursor: Mutex::new(cursor) }
+    }
+
+    fn lock(&self) -> MutexGuard<'_, Cursor> {
+        self.cursor.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// The stream's next block, which advances the shared cursor; `None` once the stream is exhausted.
+    pub fn draw(&self) -> Option<[u8; 32]> {
+        self.lock().draw()
+    }
+
+    /// The cursor as it stands: the stream key and the counter of the next draw.
+    pub fn state(&self) -> Cursor {
+        self.lock().clone()
+    }
 }
 
 /// A list: its elements in order, its logical size and an upper bound of its canonical encoding (LP2 draft).
@@ -430,6 +461,7 @@ fn kind(v: &Value) -> u8 {
         Value::MenuWord(_) => 19,
         Value::EndTest(..) => 20,
         Value::TraceEqualityKey(_) => 21,
+        Value::Generator(_) => 22,
     }
 }
 
@@ -477,6 +509,11 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 (Value::Compressed(x), Value::Compressed(y)) => x.parts.cmp(&y.parts),
                 (Value::MenuWord(x), Value::MenuWord(y)) => x.cmp(y),
                 (Value::EndTest(tx, ox), Value::EndTest(ty, oy)) => (tx, ox).cmp(&(ty, oy)),
+                // By their cursors, each read on its own: no key or equality of a checked program holds a generator.
+                (Value::Generator(x), Value::Generator(y)) => {
+                    let (x, y) = (x.state(), y.state());
+                    (x.key, x.counter).cmp(&(y.key, y.counter))
+                }
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -819,6 +856,17 @@ impl Value {
             Value::MenuWord(w) => 4 * w.letters.len() as u128,
             // One byte for the test and one for its outcome.
             Value::EndTest(..) => 2,
+            // The 32-byte key, the 8-byte counter and the exhausted flag (DET.61).
+            Value::Generator(_) => GENERATOR_SIZE,
+        }
+    }
+
+    /// DET.61's alias of a value: a generator's cursor copied into an independent one, which draws the same stream on
+    /// its own. Any other value is shared as it is.
+    pub fn alias(&self) -> Value {
+        match self {
+            Value::Generator(g) => Value::Generator(Arc::new(Generator::new(g.state()))),
+            other => other.clone(),
         }
     }
 
@@ -870,13 +918,15 @@ impl Value {
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
             // A word key or a trace key has no canonical form in the LP2 draft: it is never output as letters (LG2.13,
-            // LB1.10). Nor has a compressed word, whose output would be its expansion (DET.59).
+            // LB1.10). Nor has a compressed word, whose output would be its expansion (DET.59), or a generator, which
+            // is a stream's cursor (DET.61).
             Value::Closure(_)
             | Value::Fn(_)
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
             | Value::TraceEqualityKey(_)
-            | Value::Compressed(_) => 0,
+            | Value::Compressed(_)
+            | Value::Generator(_) => 0,
         }
     }
 }
@@ -1077,6 +1127,8 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::MenuWord(x), Value::MenuWord(y)) => x == y,
             (Value::EndTest(tx, ox), Value::EndTest(ty, oy)) => tx == ty && ox == oy,
             (Value::Approx(x), Value::Approx(y)) => x == y,
+            // Each cursor read on its own; the checker gives a generator no equality (LP2 draft).
+            (Value::Generator(x), Value::Generator(y)) => x.state() == y.state(),
             _ => compare(a, b) == Some(Ordering::Equal),
         };
         if !same {

@@ -44,6 +44,7 @@
 //! | exact sink | `encode` of the value, then `use_exact`; the host gets the canonical bytes, and the buffer is released after the hand-over (PHS.52, owner decision of 16 November 2026) |
 //! | display accounting | `accounting`, read after its own step |
 //! | random draw | `rng_draw` (DET.61) |
+//! | child scope (LP2 draft) | `child`, one step in the enclosing scopes; then, in a scope of its own under the effective caps (DET.60), the body's `call`, the body and its `return`, whose result moves to the parent. A stop the child absorbs unwinds it; then, when the stop branch names a status, `status` (4 bytes), and the stop branch's `call`, body and `return` run in the parent |
 //!
 //! A run is entered with `rng_init` when a seed is given, one `read` per argument, and the entry `call`. Its result
 //! is the top-level output unit: one fused `emit` row (DET.59).
@@ -69,8 +70,19 @@
 //! a word, and a value's canonical byte length as retained metadata (so an output unit is one fused row, DET.59) are
 //! drafts that change freely until the IR freeze. A preview request keeps DET.59's other form: a priced `encode` pass
 //! on the retained bound, then `invoke`. A snapshot read with an argument (LP2 draft) takes the same form, and the
-//! request record [`Request::SnapshotWith`] with its argument as canonical bytes is a draft too. The IR has no child
-//! construct yet: DET.60's children are exercised through the meter's traces only.
+//! request record [`Request::SnapshotWith`] with its argument as canonical bytes is a draft too.
+//!
+//! # Child scopes (DET.60; LP2 draft)
+//!
+//! A child scope's body and its stop branch are code units of their own, as a closure's body is. Each borrows the
+//! slots it names from the enclosing frame, without an `alias`: the child borrows its parent's inputs. The child's
+//! meter scope is named by its locator without `#child`. A stop ends the scope the meter names
+//! ([`Meter::leave_child`]): the innermost open child unwinds, its tasks, frames and values above its entry go, and the
+//! meter drops the owners it counts. A child absorbs a stop of its own, and its stop branch runs; a stop of an
+//! enclosing scope, an interruption, or a stop in the stop branch goes on to the next open child, or ends the run.
+//! The run's own generator is shared. `rng_init` inside a child takes the child's stream path (DET.61): its parent's,
+//! followed by the decimal index of the child among the children its parent has started, from 0. The `status` row,
+//! the stop branch's frame and optional status, the shared generator and the index's base are drafts.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
@@ -91,8 +103,8 @@ use crate::meter::{
 use crate::rng::{self, Cursor};
 use crate::trace::{self, Relation};
 use crate::value::{
-    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed, List,
-    MenuWord, Record, Text, Value,
+    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed,
+    Generator, List, MenuWord, Record, Text, Value,
 };
 
 /// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
@@ -321,32 +333,64 @@ enum Kind {
     Match(Vec<Value>),
     Call(usize),
     CallValue,
-    Closure { code: usize, captures: Vec<SlotRef> },
+    Closure {
+        code: usize,
+        captures: Vec<SlotRef>,
+    },
     Prim(Prim),
     Record(Vec<Arc<Text>>),
     Field(Box<str>),
     List,
     Set,
     Map,
-    ReadSnapshot { query: String, ty: QTy },
-    ReadSnapshotWith { query: String, ty: QTy },
+    ReadSnapshot {
+        query: String,
+        ty: QTy,
+    },
+    ReadSnapshotWith {
+        query: String,
+        ty: QTy,
+    },
     PublishView,
-    WriteWorkspace { record: String, ty: QTy },
+    WriteWorkspace {
+        record: String,
+        ty: QTy,
+    },
     Propose,
     ReadReceipt(ReceiptField),
     UseExact(ExactRole),
     Accounting(Accounting),
-    Declassified { id: String, ty: Ty },
-    FileRead { path: String, ty: Ty },
-    FileWrite { path: String },
+    Declassified {
+        id: String,
+        ty: Ty,
+    },
+    FileRead {
+        path: String,
+        ty: Ty,
+    },
+    FileWrite {
+        path: String,
+    },
     RandomDraw,
     ReadClock,
+    /// `rng_init`'s path segments after the run's stream path (DET.61; LP2 draft).
+    RngInit(Vec<String>),
+    /// A child scope (DET.60; LP2 draft): its caps in [`meter::Dim::ALL`]'s order, then its body's and its stop
+    /// branch's code units, each with the enclosing frame's slots it borrows.
+    Child {
+        caps: [Option<u128>; 4],
+        body: usize,
+        body_captures: Vec<SlotRef>,
+        otherwise: usize,
+        otherwise_captures: Vec<SlotRef>,
+    },
 }
 
 #[derive(Debug)]
 struct Node {
     kind: Kind,
-    /// The operands, in evaluation order. A closure's body is not one: it runs in its own frame.
+    /// The operands, in evaluation order. A closure's body is not one, nor are a child scope's body and stop branch:
+    /// each runs in its own frame.
     kids: Vec<NodeId>,
     /// The parent and this node's index among the IR children, which give the node's path.
     parent: Option<(NodeId, u32)>,
@@ -354,7 +398,7 @@ struct Node {
     function: usize,
 }
 
-/// A code unit: a named function's body or a closure's.
+/// A code unit: a named function's body, a closure's, or a child scope's body or stop branch.
 #[derive(Debug)]
 struct Code {
     params: usize,
@@ -437,13 +481,29 @@ struct Context {
     lets: usize,
     /// Nodes that name this context's captures, patched once the captures are sorted.
     uses: Vec<NodeId>,
-    closure: Option<NodeId>,
+    /// The closure or child scope whose code unit this is, and which: 0 for a closure's body or a child's body, 1 for
+    /// a child's stop branch.
+    closure: Option<(NodeId, u32)>,
 }
 
 enum Step<'e> {
-    Visit { expr: &'e Expr, parent: Option<(NodeId, u32)>, attach: bool },
-    Bind { name: &'e str, slot: usize },
+    Visit {
+        expr: &'e Expr,
+        parent: Option<(NodeId, u32)>,
+        attach: bool,
+    },
+    Bind {
+        name: &'e str,
+        slot: usize,
+    },
     Unbind,
+    /// Opens a child scope's code unit, whose body is the next node visited.
+    Enter {
+        code: usize,
+        param: Option<&'e str>,
+        node: NodeId,
+        unit: u32,
+    },
     Leave,
 }
 
@@ -534,7 +594,7 @@ fn arity(op: Prim) -> Option<usize> {
         | Prim::ApproxAdd
         | Prim::ApproxLess
         | Prim::ApproxAnd => Some(2),
-        Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) | Prim::Assert => Some(1),
+        Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) | Prim::Assert | Prim::RngDraw => Some(1),
         Prim::ToExact => None,
         Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => Some(1),
         Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
@@ -622,6 +682,16 @@ impl Compiler {
                 }
                 Step::Unbind => {
                     self.contexts.last_mut().expect("a context").scope.pop();
+                }
+                Step::Enter { code, param, node, unit } => {
+                    self.loaded.codes[code].body = self.loaded.nodes.len();
+                    let mut scope = Vec::new();
+                    if let Some(name) = param {
+                        let id = self.id();
+                        scope.push(Binding { name: name.to_string(), slot: SlotRef::Param(0), id });
+                    }
+                    let (captures, uses, closure) = (Vec::new(), Vec::new(), Some((node, unit)));
+                    self.contexts.push(Context { code, scope, captures, lets: 0, uses, closure });
                 }
                 Step::Leave => self.leave(),
             }
@@ -720,11 +790,32 @@ impl Compiler {
                     captures: Vec::new(),
                     lets: 0,
                     uses: Vec::new(),
-                    closure: Some(id),
+                    closure: Some((id, 0)),
                 });
                 steps.push(Step::Leave);
                 steps.push(Step::Visit { expr: body, parent: Some((id, 0)), attach: false });
                 Kind::Closure { code, captures: Vec::new() }
+            }
+            Expr::Child { caps, body, status, otherwise, .. } => {
+                // The body takes no parameter, the stop branch the status if it names one; each body is set when its
+                // unit opens.
+                let code = self.loaded.codes.len();
+                for params in [0, usize::from(status.is_some())] {
+                    self.loaded.codes.push(Code { params, captures: 0, lets: 0, slots: 0, body: 0 });
+                }
+                steps.push(Step::Leave);
+                steps.push(Step::Visit { expr: otherwise, parent: Some((id, 1)), attach: false });
+                steps.push(Step::Enter { code: code + 1, param: status.as_deref(), node: id, unit: 1 });
+                steps.push(Step::Leave);
+                steps.push(Step::Visit { expr: body, parent: Some((id, 0)), attach: false });
+                steps.push(Step::Enter { code, param: None, node: id, unit: 0 });
+                Kind::Child {
+                    caps: [caps.steps, caps.kernel_cost, caps.memory, caps.output],
+                    body: code,
+                    body_captures: Vec::new(),
+                    otherwise: code + 1,
+                    otherwise_captures: Vec::new(),
+                }
             }
             Expr::Prim { op, args } => {
                 match (arity(*op), op) {
@@ -797,15 +888,16 @@ impl Compiler {
             }
             Expr::RandomDraw => Kind::RandomDraw,
             Expr::ReadClock => Kind::ReadClock,
+            Expr::RngInit { path } => Kind::RngInit(path.clone()),
         };
         self.loaded.nodes[id].kind = kind;
         Ok(())
     }
 
-    /// Closes a closure body: its captures take declaration order, and the closure node reads each from the
-    /// enclosing frame.
+    /// Closes a closure body, or a child scope's body or stop branch: its captures take declaration order, and the
+    /// closure or child node reads each from the enclosing frame.
     fn leave(&mut self) {
-        let ctx = self.contexts.pop().expect("a closure context");
+        let ctx = self.contexts.pop().expect("a closure or child context");
         let mut order: Vec<usize> = (0..ctx.captures.len()).collect();
         order.sort_by_key(|&i| ctx.captures[i].id);
         let mut perm = vec![0; order.len()];
@@ -821,19 +913,31 @@ impl Compiler {
             match &mut self.loaded.nodes[u].kind {
                 Kind::Var(s) => remap(s),
                 Kind::Closure { captures, .. } => captures.iter_mut().for_each(remap),
-                _ => unreachable!("only variables and closures name captures"),
+                Kind::Child { body_captures, otherwise_captures, .. } => {
+                    body_captures.iter_mut().chain(otherwise_captures.iter_mut()).for_each(remap)
+                }
+                _ => unreachable!("only variables, closures and child scopes name captures"),
             }
         }
         let outer: Vec<SlotRef> = order.iter().map(|&i| ctx.captures[i].outer).collect();
         let code = &mut self.loaded.codes[ctx.code];
         code.captures = outer.len();
         code.lets = ctx.lets;
-        let node = ctx.closure.expect("a closure context");
-        if outer.iter().any(|s| matches!(s, SlotRef::Capture(_))) {
+        let (node, unit) = ctx.closure.expect("a closure or child context");
+        let named = |s: &[SlotRef]| s.iter().any(|s| matches!(s, SlotRef::Capture(_)));
+        // A child scope's node is patched once for both of its units: the stop branch adds it only if the body did not.
+        let listed = match &self.loaded.nodes[node].kind {
+            Kind::Child { body_captures, .. } if unit == 1 => named(body_captures),
+            _ => false,
+        };
+        if named(&outer) && !listed {
             self.contexts.last_mut().expect("an enclosing context").uses.push(node);
         }
-        if let Kind::Closure { captures, .. } = &mut self.loaded.nodes[node].kind {
-            *captures = outer;
+        match &mut self.loaded.nodes[node].kind {
+            Kind::Closure { captures, .. } => *captures = outer,
+            Kind::Child { body_captures, .. } if unit == 0 => *body_captures = outer,
+            Kind::Child { otherwise_captures, .. } => *otherwise_captures = outer,
+            _ => unreachable!("a closure or a child scope"),
         }
     }
 
@@ -849,7 +953,7 @@ impl Compiler {
             let kids = &nodes[id].kids;
             let t = |k: NodeId| temps[k];
             temps[id] = match &nodes[id].kind {
-                Kind::Closure { .. } => 0,
+                Kind::Closure { .. } | Kind::Child { .. } => 0,
                 _ if kids.is_empty() => 0,
                 Kind::Let(_) => t(kids[0]).max(t(kids[1])),
                 // The condition is the operand of `branch` or `display_if`; the selected branch runs after it.
@@ -904,6 +1008,23 @@ enum Task {
     Bind(NodeId),
     ScopeExit(NodeId),
     Return,
+    /// The innermost open child's body has returned (DET.60).
+    ChildDone,
+}
+
+/// An open child scope (DET.60; LP2 draft): its meter scope and node, the depths its unwinding restores, and its
+/// stream path.
+#[derive(Debug)]
+struct Open {
+    child: meter::Child,
+    node: NodeId,
+    tasks: usize,
+    frames: usize,
+    values: usize,
+    /// The child's stream path after the run's: its parent's, then its invocation index (DET.61).
+    path: Vec<String>,
+    /// The children this one has started.
+    children: u64,
 }
 
 struct Machine<'a> {
@@ -920,6 +1041,12 @@ struct Machine<'a> {
     values: Vec<Held>,
     tasks: Vec<Task>,
     generator: Option<Cursor>,
+    /// The run's seed and stream path, for `rng_init` (DET.61; LP2 draft).
+    seed: Option<(&'a [u8], &'a [&'a str])>,
+    /// The open child scopes, innermost last (DET.60; LP2 draft).
+    open: Vec<Open>,
+    /// The children the root has started.
+    children: u64,
 }
 
 /// The stop locator of an operation: the call path from the entry (each caller's call site), then the operation's
@@ -1023,16 +1150,89 @@ impl<'a> Machine<'a> {
 
     fn execute(&mut self) -> Result<(), Stop> {
         while let Some(task) = self.tasks.pop() {
-            match task {
-                Task::Eval(n) => self.eval(n)?,
-                Task::Apply(n) => self.apply(n)?,
-                Task::Branch(n) => self.branch(n)?,
-                Task::Bind(n) => self.bind(n)?,
-                Task::ScopeExit(n) => self.scope_exit(n)?,
-                Task::Return => self.ret()?,
+            let done = match task {
+                Task::Eval(n) => self.eval(n),
+                Task::Apply(n) => self.apply(n),
+                Task::Branch(n) => self.branch(n),
+                Task::Bind(n) => self.bind(n),
+                Task::ScopeExit(n) => self.scope_exit(n),
+                Task::Return => self.ret(),
+                Task::ChildDone => self.child_done(),
+            };
+            if let Err(stop) = done {
+                self.unwind(stop)?;
             }
         }
         Ok(())
+    }
+
+    /// `child` (DET.60; LP2 draft): one step in the enclosing scopes, then the body runs in a scope of its own under
+    /// the effective caps, in a frame of its own that borrows the slots it names from the enclosing frame.
+    fn child(&mut self, n: NodeId, caps: [Option<u128>; 4], code: usize, captures: &[SlotRef]) -> Result<(), Stop> {
+        self.charge(Some(n), "child", 0, 0, 0)?;
+        let (at, _) = locate(self.loaded, &self.frames, self.sources, Some(n), "child");
+        let child = self.meter.open_child(at.strip_suffix("#child").expect("a child locator"), caps);
+        let (index, mut path) = match self.open.last_mut() {
+            Some(parent) => {
+                parent.children += 1;
+                (parent.children - 1, parent.path.clone())
+            }
+            None => {
+                self.children += 1;
+                (self.children - 1, Vec::new())
+            }
+        };
+        path.push(index.to_string());
+        let captures = captures.iter().map(|&s| self.read_slot(s).0).collect();
+        let (tasks, frames, values) = (self.tasks.len(), self.frames.len(), self.values.len());
+        self.open.push(Open { child, node: n, tasks, frames, values, path, children: 0 });
+        self.tasks.push(Task::ChildDone);
+        self.enter(Some(n), code, Vec::new(), captures, Vec::new())
+    }
+
+    /// The innermost child's body returned: the child closes, and its result moves to the parent (DET.60).
+    fn child_done(&mut self) -> Result<(), Stop> {
+        let open = self.open.pop().expect("an open child");
+        let result = self.values.last().expect("the child's result");
+        let returned = result.owners.iter().map(|&o| self.meter.size(o)).sum();
+        self.meter.leave_child(open.child, Ok(returned))
+    }
+
+    /// Unwinds the open children a stop ends, innermost first (DET.60): each one's tasks, frames and values above its
+    /// entry go, and the meter drops the owners it counts. The child whose own scope the stop ends absorbs it, and its
+    /// stop branch runs in the parent; a stop of the stop branch goes on in the same way. With no child left, the stop
+    /// ends the run.
+    fn unwind(&mut self, mut stop: Stop) -> Result<(), Stop> {
+        while let Some(open) = self.open.pop() {
+            self.tasks.truncate(open.tasks);
+            self.frames.truncate(open.frames);
+            self.values.truncate(open.values);
+            let status = stop.outcome.name();
+            stop = match self.meter.leave_child(open.child, Err(stop)) {
+                Err(stop) => stop,
+                Ok(()) => match self.otherwise(open.node, status) {
+                    Ok(()) => return Ok(()),
+                    Err(stop) => stop,
+                },
+            };
+        }
+        Err(stop)
+    }
+
+    /// A child's stop branch (DET.60; LP2 draft): when the branch names a status, `status` settles the stop's outcome,
+    /// `cut_off` or `error`, as a `Status` owned by the parent; the branch's code unit then runs with it, borrowing the
+    /// enclosing frame's slots.
+    fn otherwise(&mut self, n: NodeId, status: &'static str) -> Result<(), Stop> {
+        let loaded = self.loaded;
+        let Kind::Child { otherwise, otherwise_captures, .. } = &loaded.nodes[n].kind else { unreachable!("a child") };
+        let mut args = Vec::new();
+        if loaded.codes[*otherwise].params == 1 {
+            self.charge(Some(n), "status", 0, 4, 0)?;
+            self.settle(4, Value::tag(status));
+            args.push(self.values.pop().expect("the status"));
+        }
+        let captures = otherwise_captures.iter().map(|&s| self.read_slot(s).0).collect();
+        self.enter(Some(n), *otherwise, args, captures, Vec::new())
     }
 
     fn eval(&mut self, n: NodeId) -> Result<(), Stop> {
@@ -1093,6 +1293,8 @@ impl<'a> Machine<'a> {
             Kind::ReadClock => self.host_read(n, "read", Request::Clock, 0)?,
             Kind::Accounting(a) => self.accounting(n, *a)?,
             Kind::RandomDraw => self.draw(n)?,
+            Kind::RngInit(segments) => self.rng_init(n, segments)?,
+            Kind::Child { caps, body, body_captures, .. } => self.child(n, *caps, *body, body_captures)?,
             _ => {
                 self.tasks.push(Task::Apply(n));
                 self.tasks.extend(node.kids.iter().rev().map(|&k| Task::Eval(k)));
@@ -1104,15 +1306,16 @@ impl<'a> Machine<'a> {
     fn bind(&mut self, n: NodeId) -> Result<(), Stop> {
         let Kind::Let(slot) = self.loaded.nodes[n].kind else { unreachable!("a let") };
         let held = self.values.pop().expect("the let value");
-        let owners = if held.origin == Origin::Owned {
+        let (value, owners) = if held.origin == Origin::Owned {
             self.charge(Some(n), "visit", 0, 0, 0)?;
-            held.owners
+            (held.value, held.owners)
         } else {
             let size = held.value.size();
             self.charge(Some(n), "alias", 0, size, 0)?;
-            self.own(size)
+            // An aliased generator draws from a cursor of its own (DET.61).
+            (held.value.alias(), self.own(size))
         };
-        self.frames.last_mut().expect("a frame").lets[slot] = Some((held.value, owners));
+        self.frames.last_mut().expect("a frame").lets[slot] = Some((value, owners));
         self.tasks.push(Task::ScopeExit(n));
         self.tasks.push(Task::Eval(self.loaded.nodes[n].kids[1]));
         Ok(())
@@ -1132,6 +1335,7 @@ impl<'a> Machine<'a> {
                 if origin == (Origin::Let { slot, whole: false }) {
                     let size = result.value.size();
                     self.charge(Some(n), "alias", 0, size, 0)?;
+                    result.value = result.value.alias();
                     result.owners = self.own(size);
                     result.origin = Origin::Owned;
                 }
@@ -1251,6 +1455,26 @@ impl<'a> Machine<'a> {
 
     /// The `call` operation and the callee's frame. Arguments are borrowed; owned temporaries wait for the return.
     fn call(&mut self, site: Option<NodeId>, code: usize, args: Vec<Held>, callee: Option<Held>) -> Result<(), Stop> {
+        let (mut captures, mut owners) = (Vec::new(), Vec::new());
+        if let Some(h) = callee {
+            if let Value::Closure(closure) = &h.value {
+                captures = closure.captures().to_vec();
+            }
+            owners = h.owners;
+        }
+        self.enter(site, code, args, captures, owners)
+    }
+
+    /// The `call` operation and a code unit's frame (DET.57): its arguments, its captures (a closure's, or the slots
+    /// a child scope borrows from the enclosing frame) and the callee's owners, which are released at the return.
+    fn enter(
+        &mut self,
+        site: Option<NodeId>,
+        code: usize,
+        args: Vec<Held>,
+        captures: Vec<Value>,
+        callee: Vec<OwnerId>,
+    ) -> Result<(), Stop> {
         let c = &self.loaded.codes[code];
         let bytes = frame_size(c.slots);
         self.charge(site, "call", 0, bytes, 0)?;
@@ -1261,13 +1485,7 @@ impl<'a> Machine<'a> {
             params.push(a.value);
             temps.extend(a.owners);
         }
-        let mut captures = Vec::new();
-        if let Some(h) = callee {
-            if let Value::Closure(closure) = &h.value {
-                captures = closure.captures().to_vec();
-            }
-            temps.extend(h.owners);
-        }
+        temps.extend(callee);
         self.frames.push(Frame { code, site, params, captures, lets: vec![None; c.lets], owner, temps });
         self.tasks.push(Task::Return);
         self.tasks.push(Task::Eval(c.body));
@@ -1282,6 +1500,7 @@ impl<'a> Machine<'a> {
         if result.origin != Origin::Owned {
             let size = result.value.size();
             self.charge(Some(body), "alias", 0, size, 0)?;
+            result.value = result.value.alias();
             result.owners = self.own(size);
             result.origin = Origin::Owned;
         }
@@ -1307,6 +1526,7 @@ impl<'a> Machine<'a> {
             Prim::ExactAdd => "exact_add",
             Prim::ExactMul => "exact_mul",
             Prim::Assert => "assert",
+            Prim::RngDraw => "rng_draw",
             Prim::ExactLess => "exact_less",
             Prim::ExactEq => "exact_eq",
             Prim::Not => "not",
@@ -1348,6 +1568,8 @@ impl<'a> Machine<'a> {
             (Prim::ExactMul, a, Some(b)) => value::mul_price(a, b, &t, &d),
             // One step and no memory: the predicate was evaluated before, with ordinary operations (DET.55).
             (Prim::Assert, Value::Bool(_), None) => Some((0, 0)),
+            // One block of the generator's stream and its 256-bit integer, as the run's own draw (DET.61).
+            (Prim::RngDraw, Value::Generator(_), None) => Some((t.rng_block, integer_size(256))),
             (Prim::ExactLess, a, Some(b)) => value::compare_price(a, b, &d).map(|k| (k, 1)),
             // A compressed word has no exact equality, and an end test's verdict is matched on its outcomes only, so
             // an equality of verdicts behind a type variable stops here (LP2 drafts; LG2.9).
@@ -1384,6 +1606,11 @@ impl<'a> Machine<'a> {
                 return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
             }
             (Prim::Assert, Value::Bool(true), None) => Value::Unit,
+            // The draw advances the cursor the operand shares with its owner; only a successful draw does.
+            (Prim::RngDraw, Value::Generator(g), None) => match g.draw() {
+                Some(block) => Value::int(BigInt::from_bytes_be(Sign::Plus, &block)),
+                None => return Err(self.fail(Some(n), name, meter::code::GENERATOR_EXHAUSTED)),
+            },
             (Prim::ExactLess, a, Some(b)) => Value::Bool(value::compare(a, b) == Some(std::cmp::Ordering::Less)),
             (Prim::ExactEq, a, Some(b)) => Value::Bool(value::equal(a, b)),
             (Prim::Not, Value::Bool(x), None) => Value::Bool(!x),
@@ -2039,6 +2266,25 @@ impl<'a> Machine<'a> {
         Ok(())
     }
 
+    /// `rng_init` (DET.61; LP2 draft): a generator on the run's seed, its stream path being the run's path, then the
+    /// innermost open child's path, then the node's segments. It is priced as the run's own generator is; without a
+    /// seed it is not granted, and a seed or path the stream key refuses stops the run after the charge.
+    fn rng_init(&mut self, n: NodeId, segments: &[String]) -> Result<(), Stop> {
+        let Some((seed, base)) = self.seed else {
+            self.charge(Some(n), "rng_init", 0, 0, 0)?;
+            return Err(self.fail(Some(n), "rng_init", meter::code::NOT_GRANTED));
+        };
+        let child = self.open.last().map(|o| o.path.clone()).unwrap_or_default();
+        let path: Vec<&str> = base.iter().copied().chain(child.iter().chain(segments).map(String::as_str)).collect();
+        let len = rng::key_input_len(seed.len(), &path);
+        self.charge(Some(n), "rng_init", self.tariffs.rng_init_per_byte.saturating_mul(len), GENERATOR_SIZE, 0)?;
+        let Some((key, _)) = rng::stream_key(seed, &path) else {
+            return Err(self.fail(Some(n), "rng_init", meter::code::GENERATOR_INPUT));
+        };
+        self.settle(GENERATOR_SIZE, Value::Generator(Arc::new(Generator::new(Cursor::new(key)))));
+        Ok(())
+    }
+
     /// Enters the run, runs the entry function and emits its result as the top-level output unit.
     fn start(
         &mut self,
@@ -2127,6 +2373,9 @@ impl Loaded {
             values: Vec::new(),
             tasks: Vec::new(),
             generator: None,
+            seed: options.seed,
+            open: Vec::new(),
+            children: 0,
         };
         let outcome = machine.start(f, input, options.seed);
         let Machine { meter, frames, values, .. } = machine;

@@ -8,6 +8,8 @@
 //! - [`bridge`] is the runtime's host on `c600-command`: each proposal the boundary admits becomes one runtime
 //!   invocation of `operation.preview` with the literal word as its absolute argument and no token, in one word step
 //!   or, for the input recipe's literal word longer than one chunk, in the solver's word steps.
+//! - [`kernel_rows`] holds the kernel rows that [`bridge`] serves to a program's snapshot read with an argument (KN5,
+//!   LP2 draft): KN2.4's `positions`, which library entries read (CT-LB2-04).
 //! - [`expand`] is the source route's recipe expansion: a case step's recipe to its literal word, through the kernel,
 //!   outside the program and without a state read.
 //! - [`case`] reads the frozen oracle cases O01 to O07.
@@ -201,6 +203,7 @@
 pub mod bridge;
 pub mod case;
 pub mod expand;
+pub mod kernel_rows;
 pub mod process;
 pub mod supports;
 pub mod tool;

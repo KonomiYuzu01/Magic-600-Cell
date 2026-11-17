@@ -20,6 +20,7 @@ use c600_run::meter::Outcome;
 use c600_run::provenance::INCOMPATIBLE;
 use c600_run::value::{equal, Value};
 use c600_tools::bridge::{base, word_args, Bridge};
+use c600_tools::kernel_rows::{positions_type, POSITIONS};
 use c600_tools::tool::{manifest, Manifest, Tool, ROW, SOURCE};
 
 const SESSION: &str = "bridge";
@@ -319,16 +320,19 @@ fn only_a_token_the_shell_mints_commits_the_pending_preview() {
     assert_eq!(layer.preview_state(id), Some(PreviewState::Committed));
 }
 
-/// The bridge grants a run nothing but proposals: no state read, no declassified value, no workspace or file read or
-/// write, no view, no exact sink and no clock.
+/// The bridge grants a run nothing but proposals and one state read, KN2.4's `positions` row for an argument
+/// (`tests/positions_row.rs`; KN5, LP2 draft): no other state read, `positions` without an argument and another row
+/// with one included, no declassified value, no workspace or file read or write, no view, no exact sink and no clock.
 #[test]
-fn the_bridge_grants_nothing_but_a_proposal() {
+fn the_bridge_grants_only_proposals_and_the_positions_read() {
     let (mut layer, _) = session();
     let before = fingerprint(&layer);
     let mut bridge = Bridge::new(&mut layer, "nothing");
-    let (ty, qty) = (Ty::Word, QTy { ty: Ty::Word, display: false });
+    let (ty, qty, positions) = (Ty::Word, QTy { ty: Ty::Word, display: false }, positions_type());
     let requests = [
         Request::Snapshot { query: "best_word", ty: &qty },
+        Request::Snapshot { query: POSITIONS, ty: &positions },
+        Request::SnapshotWith { query: "protection", arg: b"[{\"int\":\"1\"}]\n", ty: &positions },
         Request::Declassified { id: "best_word", ty: &ty },
         Request::FileRead { path: "notes.txt", ty: &ty },
         Request::Clock,

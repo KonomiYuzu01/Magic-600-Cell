@@ -44,14 +44,17 @@
 //! revision, except file jobs (LI.32).
 //!
 //! `jumble.on` ([`JUMBLE_ON_ROW`]) is A5's entry (ONE.54, ONE.55, ONE.80; draft): a crossing commit from Jumble off
-//! into Jumble on under the pinned menu ([`crate::jumble`]). Its witness is JI.25's solved witness, the chronological
-//! literal retained path from the session's start, which must be solved, to the head, replayed in the jumbling engine;
-//! labels alone are refused (`KN5:input.jumble_on_labels_only`). The crossing is a node of the move tree that holds no
-//! retained recipe; the revision's mode becomes [`JUMBLE_ON_MODE`] and its digest the pose digest. With Jumble on, the
-//! retained workflow's rows (`operation.preview`, `operation.execute`, `twist.apply`) and `jumble.on` itself are
-//! refused with `KN5:input.retained_tool_needs_jumble_off` (LG2.8); `jumble.twist.menu` and the protection, policy and
-//! record rows stay. An undo of the entry returns to the exact Jumble off state before it, and a redo replays the
-//! witness again (ONE.81, JI.27).
+//! into Jumble on under the pinned menu ([`crate::jumble`]). Its witness (JI.25, JI.26) is the active exit's root when
+//! the path from the head climbs through retained commits only to an exit: the retained suffix from the exit to the
+//! head, replayed in the jumbling engine from the exit's own poses, which must have been made under the pinned menu
+//! (`KN1:input.identity_mismatch`). With no active exit it is the solved witness, the chronological literal retained
+//! path from the session's start, which must be solved, to the head, replayed from solved. Labels alone are refused
+//! (`KN5:input.jumble_on_labels_only`). The crossing is a node of the move tree that holds no retained recipe; the
+//! revision's mode becomes [`JUMBLE_ON_MODE`] and its digest the pose digest. With Jumble on, the retained workflow's
+//! rows (`operation.preview`, `operation.execute`, `twist.apply`) and `jumble.on` itself are refused with
+//! `KN5:input.retained_tool_needs_jumble_off` (LG2.8); `jumble.twist.menu` and the protection, policy and record rows
+//! stay. An undo of the entry returns to the exact Jumble off state before it, and a redo makes the same entry again,
+//! which must reach the same poses and record (ONE.81, JI.27, JI.29, FP.31).
 //!
 //! `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]) is JI.35's menu twist (FP.31, JI.27; draft), live like `twist.apply`: its
 //! `letter` carries KN3.7's binding without its cap, resolved against the pinned menu. With Jumble off a retained item
@@ -72,9 +75,9 @@
 //! has the exit's label digest: the poses' labels become the retained state, the revision's mode becomes [`MODE`],
 //! and the journal keeps the exit's record, not the poses. The retained rows work from the exit's state again, and the
 //! jumbling journal runs on through the exit, which moves no piece. An undo of the exit returns to the exact poses
-//! before it with the retained state the entry left, and a redo checks the checkpoint again. In this edition
-//! `jumble.on` after an exit is refused (`KN5:input.jumble_on_labels_only`): the entry from an exit root is not built
-//! yet. The exit checks no protected orbit; the protected set and the policy stay.
+//! before it with the retained state the entry left, and a redo checks the checkpoint again. While only retained
+//! commits follow it on the path to the head, the exit stays active, and the next `jumble.on` enters from its root
+//! (JI.26). The exit checks no protected orbit; the protected set and the policy stay.
 //!
 //! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
 //! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
@@ -92,8 +95,8 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step,
-    SupportRow, Verdict,
+    Derivation, Effect, IdentityBlock, Kernel, PiecePosition, ProtectedSet, Protection, ProtectionMode, Recipe,
+    Snapshot, Step, SupportRow, Verdict,
 };
 
 use crate::forms;
@@ -357,12 +360,13 @@ enum Change {
         before: ProtectionMode,
         after: ProtectionMode,
     },
-    /// A crossing into Jumble on: the head before it, its own node, and the jumbling identity block it was made under,
-    /// which a redo needs pinned again.
+    /// A crossing into Jumble on: the head before it, its own node, the jumbling identity block it was made under,
+    /// which a redo needs pinned again, and its crossing record, which a redo must make again (FP.31).
     Crossing {
         before: u64,
         after: u64,
         identity: IdentityBlock,
+        record: Value,
     },
     /// A pose move with Jumble on (`jumble.twist.menu`; draft): the head before it and its own node, which holds the
     /// move's twist.
@@ -944,6 +948,15 @@ impl<S: Store> CommandLayer<S> {
     /// The jumbling engine's value at the head with Jumble on, under the pinned menu; `None` with Jumble off (draft).
     pub fn jumbled(&self) -> Option<&Derived> {
         self.jumbled.as_ref().map(|jumbled| &jumbled.derived)
+    }
+
+    /// KN2.4's `positions` row at the head (draft; CT-LB2-04): where each named piece's stickers are, as
+    /// [`Kernel::positions`] reads them, with its refusal of a piece outside 0 to 177,119. It is a row of the retained
+    /// workflow, so Jumble on refuses it (LG2.8): the retained state is then the one the crossing entered from. A read
+    /// changes nothing.
+    pub fn positions(&self, pieces: &[i64]) -> Result<Vec<PiecePosition>, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.positions(&self.current, pieces)?)
     }
 
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
@@ -2181,9 +2194,10 @@ impl<S: Store> CommandLayer<S> {
                 transaction.revision.protection += 1;
                 Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
             }
-            // An undo of a crossing returns to the exact Jumble off state before the entry; a redo replays its solved
-            // witness again, under a pinned menu with the identity block the entry was made under (ONE.81, JI.27).
-            Change::Crossing { before, after, identity } => {
+            // An undo of a crossing returns to the exact Jumble off state before the entry (JI.29); a redo makes the
+            // entry again from the same witness, under a pinned menu with the identity block the entry was made under,
+            // and must reach the crossing's recorded poses and record (ONE.81, JI.27, FP.31).
+            Change::Crossing { before, after, identity, record } => {
                 let (from, to) = if direction == Direction::Undo { (after, before) } else { (before, after) };
                 if self.head != from || self.state_digest() != self.nodes[&from].digest {
                     let detail = "the head hash differs from the head's recorded state";
@@ -2207,14 +2221,13 @@ impl<S: Store> CommandLayer<S> {
                             let detail = "the pinned twist menu is not the one the crossing was made under";
                             return Err(Error::new(c600_kernel::codes::IDENTITY_MISMATCH, detail));
                         }
-                        let letters = self.solved_witness()?;
-                        let entry = jumble::replay_from_solved(twists, &letters, self.current.digest())?;
-                        if entry.digest != self.nodes[&to].digest {
-                            let detail = "the witness does not reach the crossing's recorded poses";
+                        let (entry, depth) = self.entry_at_head(twists)?;
+                        if entry.digest != self.nodes[&to].digest || entry.record != record {
+                            let detail = "the witness does not reach the crossing's recorded poses and record";
                             return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
                         }
                         let digest = entry.digest.clone();
-                        let jumbled = Jumbled { derived: entry.derived, digest: entry.digest, depth: 0 };
+                        let jumbled = Jumbled { derived: entry.derived, digest: entry.digest, depth };
                         (JUMBLE_ON_MODE, digest, Side::On(jumbled))
                     }
                 };
@@ -2578,11 +2591,12 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// A crossing into Jumble on (A5, JI.25, JI.27; draft): the head hash, then the solved witness replayed from solved
-    /// in the jumbling engine under the pinned menu, which must reach the current labels ([`jumble::replay_from_solved`]).
-    /// The crossing is a new node under the head that holds no retained recipe and has the pose digest; the revision's
-    /// mode becomes [`JUMBLE_ON_MODE`], its state revision advances and its digest is the pose digest. The retained
-    /// state, the protected set and the policy stay.
+    /// A crossing into Jumble on (A5, JI.25 to JI.27; draft): the head hash, then the witness at the head
+    /// ([`CommandLayer::entry_at_head`]): the active exit's root, or with no active exit the solved witness, replayed
+    /// in the jumbling engine under the pinned menu, which must reach the current labels. The crossing is a new node
+    /// under the head that holds no retained recipe and has the pose digest; the revision's mode becomes
+    /// [`JUMBLE_ON_MODE`], its state revision advances and its digest is the pose digest. The retained state, the
+    /// protected set and the policy stay.
     fn plan_entry(&self, meta: Meta) -> Result<Adoption, Error> {
         let Some(twists) = &self.twists else {
             return Err(Error::new(
@@ -2593,8 +2607,7 @@ impl<S: Store> CommandLayer<S> {
         if self.current.digest() != self.nodes[&self.head].digest {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
         }
-        let letters = self.solved_witness()?;
-        let entry = jumble::replay_from_solved(twists, &letters, self.current.digest())?;
+        let (entry, chain) = self.entry_at_head(twists)?;
         let order = self.order + 1;
         let event = format!("e{order}");
         let revision = Revision {
@@ -2628,17 +2641,67 @@ impl<S: Store> CommandLayer<S> {
             policy: None,
             records: Vec::new(),
             rotation: None,
-            crossing: Some(entry.record),
+            crossing: Some(entry.record.clone()),
         };
-        let change = Change::Crossing { before: self.head, after: order, identity: entry.identity };
+        let (identity, record) = (entry.identity, entry.record);
+        let change = Change::Crossing { before: self.head, after: order, identity, record };
         let tree = Tree::Push { node: Some((order, node)), change };
-        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest, depth: 0 });
+        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest, depth: chain });
         Ok(Adoption { transaction, state: None, protected: None, head: order, tree, preview: None, side })
     }
 
-    /// JI.25's solved witness while the session has no exit: the chronological literal retained path from the session's
-    /// start to the head, as 600-cell-Full's signed primitive letters. The start must be solved and every node on the
-    /// path a retained commit; otherwise there is no witness, and labels alone are refused
+    /// The entry at the head with Jumble off (JI.25 to JI.27; draft), with the chain depth of its value: from the
+    /// active exit's root ([`CommandLayer::active_exit`], [`jumble::replay_from_exit`]) when there is one, and
+    /// otherwise from the solved witness ([`jumble::replay_from_solved`]), whose value is replayed from solved. A
+    /// non-empty suffix nests one more derivation on the exit's poses, so after [`POSE_CHAIN`] chained derivations the
+    /// value is the jumbling journal to the head replayed flat from solved ([`jumble::replay_poses`]), which must reach
+    /// the same poses.
+    fn entry_at_head(&self, twists: &Twists) -> Result<(jumble::Entry, usize), Error> {
+        let labels = self.current.digest();
+        let Some((exit, point, suffix)) = self.active_exit()? else {
+            let letters = self.solved_witness()?;
+            return Ok((jumble::replay_from_solved(twists, &letters, labels)?, 0));
+        };
+        let (root, crossing) = (&point.poses.derived, format!("e{exit}"));
+        let mut entry = jumble::replay_from_exit(twists, root, &point.record, &crossing, &suffix, labels)?;
+        let chain = point.poses.depth + usize::from(!suffix.is_empty());
+        if chain < POSE_CHAIN {
+            return Ok((entry, chain));
+        }
+        let (derived, digest) = jumble::replay_poses(twists, &self.jumble_journal(self.head)?)?;
+        if digest != entry.digest {
+            let detail = "the jumbling journal's replay from solved does not reach the exit root's replay";
+            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+        }
+        entry.derived = derived;
+        Ok((entry, 0))
+    }
+
+    /// The active exit at the head with Jumble off (JI.26; draft): the exit that the path from the head reaches through
+    /// retained commits only, with its order, what its undo restores ([`ExitPoint`], whose poses are the exit's own)
+    /// and the retained suffix from the exit to the head as 600-cell-Full's signed primitive letters, in chronological
+    /// order. `None` when the path reaches the start first, where the solved witness applies. A pose move cannot
+    /// supply a suffix: with Jumble on the path climbs to an entry. No void is built, so none names an exit.
+    fn active_exit(&self) -> Result<Option<(u64, &ExitPoint, Vec<i32>)>, Error> {
+        let mut suffix = Vec::new();
+        let mut node = self.head;
+        while let Some(recipe) = &self.nodes[&node].recipe {
+            suffix.push(recipe);
+            node = self.nodes[&node].parent;
+        }
+        let Some(Change::Exit { point, .. }) = self.changes.get(&node) else {
+            return Ok(None);
+        };
+        let mut letters = Vec::new();
+        for recipe in suffix.iter().rev() {
+            letters.extend(self.kernel.letters(recipe)?);
+        }
+        Ok(Some((node, point.as_ref(), letters)))
+    }
+
+    /// JI.25's solved witness, when no exit is active (JI.26): the chronological literal retained path from the
+    /// session's start to the head, as 600-cell-Full's signed primitive letters. The start must be solved and every node
+    /// on the path a retained commit; otherwise there is no witness, and labels alone are refused
     /// (`KN5:input.jumble_on_labels_only`).
     fn solved_witness(&self) -> Result<Vec<i32>, Error> {
         let labels_only = |detail: &str| Error::new(code::JUMBLE_ON_LABELS_ONLY, detail);
