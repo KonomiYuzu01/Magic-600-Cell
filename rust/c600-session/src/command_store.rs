@@ -200,7 +200,7 @@ impl JournalStore {
     /// The store of the session a disk holds, for [`c600_command::CommandLayer::open`]. The journal is settled first: a
     /// torn final frame is cut off and what was written is synced (as M6's `Session::open`). An empty journal opens, and
     /// its history is refused with `KN4:input.unknown_session`. A session whose lock another opener holds is refused
-    /// with `KN4:busy.session_locked` (draft) before anything is read (KN4.1).
+    /// with `KN4:busy.session_locked` (draft) before its journal is read (KN4.1).
     pub fn open(disk: Box<dyn Disk>) -> Result<JournalStore, Error> {
         let opened = journal::Store::open(disk).map_err(open_io)?;
         let mut store = opened.store;

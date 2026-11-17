@@ -295,7 +295,7 @@ impl Session {
 
     /// Opens the session a disk holds and replays its journal under a new epoch. A damaged frame or a frame that does
     /// not replay puts the session into read-only recovery (KN5.23). A session whose lock another opener holds is
-    /// refused with `KN4:busy.session_locked` (draft) before anything is read (KN4.1).
+    /// refused with `KN4:busy.session_locked` (draft) before its journal is read (KN4.1).
     pub fn open(kernel: Arc<Kernel>, disk: Box<dyn Disk>, options: Options) -> Result<Session, Error> {
         let opened = Store::open(disk).map_err(open_error)?;
         let mut records = opened.records.into_iter();

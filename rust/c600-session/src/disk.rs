@@ -3,7 +3,7 @@
 //! A store keeps two kinds of file, named with `/` separators: the journal `journal` and the state objects
 //! `objects/<sha256>`. Nothing written is durable until [`Disk::sync`] returns for that file.
 //!
-//! A store takes the session lock ([`Disk::lock`]) before it reads anything, so one process opens a session at
+//! A store takes the session lock ([`Disk::lock`]) before it reads the journal, so one process opens a session at
 //! a time (KN4.1). [`FsDisk`] locks the file [`LOCK`] in its directory. [`MemDisk`] lives in one process and
 //! takes no lock.
 
@@ -27,8 +27,8 @@ pub trait Disk: Send {
     /// Makes the file's current contents and its name durable.
     fn sync(&mut self, name: &str) -> io::Result<()>;
     /// Takes the session lock, which the disk holds until it is dropped: one process opens a session at a time
-    /// (KN4.1). A lock that another opener holds is refused with `io::ErrorKind::WouldBlock`, and nothing is
-    /// written. A disk that lives in one process, as [`MemDisk`] does, takes no lock.
+    /// (KN4.1). A lock that another opener holds is refused with `io::ErrorKind::WouldBlock`. A disk that lives in
+    /// one process, as [`MemDisk`] does, takes no lock.
     fn lock(&mut self) -> io::Result<()> {
         Ok(())
     }
@@ -43,7 +43,9 @@ pub const LOCK: &str = "lock";
 /// Its session lock is an exclusive lock on the file [`LOCK`], taken with std's `File::try_lock` (`LockFileEx` on
 /// Windows, `flock` on Unix). Its open handle holds the lock until the disk is dropped, and the operating system
 /// releases it when the process ends, a hard exit included. A second handle conflicts even in the same process,
-/// so a second `FsDisk` on the same directory is refused too.
+/// so a second `FsDisk` on the same directory is refused too. Before the lock is decided, [`FsDisk::new`] creates
+/// the directory and its `objects` folder and [`Disk::lock`] creates the empty lock file, each only if it is
+/// missing; a refused disk reads and writes no journal and no state object.
 pub struct FsDisk {
     root: PathBuf,
     lock: Option<fs::File>,
