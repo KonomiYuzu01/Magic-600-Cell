@@ -11,7 +11,7 @@ use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Kernel, ProtectedSet};
 use c600_run::boundary::Store;
 use c600_tools::bridge::{base, Bridge, Sent};
-use c600_tools::process::{ProcessHost, Stopped, IN_PROCESS, PROCESS, RUNTIME_BINARY};
+use c600_tools::process::{run_in_process, ProcessHost, Stopped, IN_PROCESS, PROCESS, RUNTIME_BINARY};
 use c600_tools::tool::{Ran, Tool, SOURCE};
 
 pub fn repository() -> PathBuf {
@@ -109,7 +109,7 @@ pub fn on<'p>(host: &str, process: &'p mut ProcessHost) -> Option<&'p mut Proces
 }
 
 /// Runs `tool` on `word` as run `run` through a bridge onto `layer`, in process when `host` is `None` and in the
-/// runtime's child otherwise; returns the run, or why the process host left none, and the bridge's invocations.
+/// runtime's child otherwise; returns the run, or why the host left none, and the bridge's invocations.
 pub fn run_on(
     host: Option<&mut ProcessHost>,
     tool: &Tool,
@@ -121,7 +121,7 @@ pub fn run_on(
     let mut bridge = Bridge::new(layer, run);
     let mut store = Store::default();
     let ran = match host {
-        None => Ok(tool.run(word, run, &read, &mut bridge, &mut store).expect("the run starts")),
+        None => run_in_process(tool, word, run, &read, &mut bridge, &mut store),
         Some(host) => host.run(tool, SOURCE, word, run, &read, &mut bridge, &mut store),
     };
     (ran, bridge.sent)

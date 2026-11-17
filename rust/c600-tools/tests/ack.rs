@@ -3,6 +3,7 @@
 
 use c600_digest::sha256;
 use c600_run::boundary::{Answer, Pins, Store};
+use c600_run::interp::code::NONCANONICAL_VALUE;
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::meter::Outcome;
@@ -110,18 +111,26 @@ fn the_program_receives_only_the_fixed_acknowledgement() {
     assert!(summaries.iter().all(|summary| summary == &summaries[0]), "the charges do not depend on the answer");
 }
 
-/// The tool proposes whatever literal word it is given, letter for letter, including a word the kernel would refuse:
-/// it adds, drops and reorders nothing (the source route relies on this for O07's invalid words).
+/// The tool proposes whatever literal word it is given, letter for letter, including the empty word and a word the
+/// kernel would refuse, such as one with a letter of 0: it adds, drops and reorders nothing. A word with a letter of
+/// magnitude above 1200 has no canonical form, so `Loaded::run` refuses the run at its start with
+/// `PS1:input.noncanonical_value` and nothing is proposed. (The source route's in-process host refuses every word
+/// outside 1 to 1200 before the tool runs, as the process host does: `tests/process.rs`.)
 #[test]
 fn the_tool_proposes_its_argument_unchanged() {
     let tool = Tool::full_600_cell().unwrap();
-    for word in
-        [vec![1], vec![0], vec![1201], vec![-1201], vec![1, 0], (1..=1200).chain((1..=1200).map(|l| -l)).collect()]
-    {
+    let all: Vec<i32> = (1..=1200).chain((1..=1200).map(|l| -l)).collect();
+    for word in [vec![1], vec![], vec![7, -7], vec![0], vec![1, 0], all] {
         let mut engine = Recorder::default();
         let ran = tool.run(&word, "run", "base", &mut engine, &mut Store::default()).unwrap();
         assert_eq!(ran.run.summary.outcome, Outcome::Completed);
         let [(seen, target, _)] = &engine.proposals[..] else { panic!("one proposal") };
         assert_eq!((seen, target.as_str()), (&word, ROW));
+    }
+    for word in [vec![1201], vec![-1201], vec![1, 1201], vec![i32::MIN], vec![i32::MAX]] {
+        let mut engine = Recorder::default();
+        let refusal = tool.run(&word, "run", "base", &mut engine, &mut Store::default()).map(|_| ()).unwrap_err();
+        assert_eq!(refusal.code, NONCANONICAL_VALUE, "{word:?}");
+        assert!(engine.proposals.is_empty(), "{word:?}");
     }
 }

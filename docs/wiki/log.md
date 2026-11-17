@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | M6's origin under the host rule
+M6's session store follows PHS.52 ruling 4 like the command layer: its envelope names no origin, and `Session::invoke` takes the origin of the channel the envelope came on, which the request digest and the program gates read (commit `a12ba67b`, [decision](decisions/owner-decisions-2026-11-16-phs52.md)). Tests that sent a program's envelope now send it on the program's channel.
+
 ## [2026-11-16] decision | Renderer selection signed: S-A2, W-J option A
 The owner signed the renderer selection ("Sign; choose A.", translated): [ADR-R01](../architecture/1.0/renderer/ADR-R01-renderer-selection.md) is accepted, so the 1.0 renderer is S-A2, the S-B Direct3D 12 core as a shared native library hosted by Godot 4.7.2 .NET, with Godot 4.7.2 .NET and a supported .NET release as product dependencies; the [freeze record](decisions/renderer-freeze.md) is signed and H-10 goes to the design track. W-J on the selected candidate becomes LP3 acceptance runs at C9 with unchanged bars, the renderer line is closed, and the vertical slice and the living test stay with the design line.
 

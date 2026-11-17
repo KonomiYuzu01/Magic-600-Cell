@@ -9,9 +9,11 @@
 //! program and its word and nothing else: no token and no secret has a field on the wire (KN5.15), the command layer
 //! stays in this process, and the program's answer to a proposal is the boundary's fixed acknowledgement (BND.42).
 //!
-//! The two hosts differ in one place. A word with a letter outside 1 to 1200 in magnitude has no transfer encoding,
-//! so its job is refused at the start stage and never reaches the child or the engine side ([`Cause::Refused`]); in
-//! process the same word runs, and the command layer refuses its proposal.
+//! Both hosts refuse the same words at the start stage. A word with a letter outside 1 to 1200 in magnitude, chapter
+//! 01's generators, has no transfer encoding: on the process host the parent refuses its job before it reaches the
+//! child, and in process [`run_in_process`] refuses it the same way before the tool runs. `Loaded::run` itself refuses
+//! only a letter of magnitude above 1200, which no alphabet has. Neither run reaches the engine side
+//! ([`Cause::Refused`]).
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -21,6 +23,8 @@ use c600_digest::sha256_hex;
 use c600_run::boundary::{Boundary, Context, Shown, Store};
 use c600_run::interp::{code, Host};
 use c600_run::value::Value;
+use c600_runtime::codec::encode_value;
+use c600_runtime::wire::Enc;
 use c600_runtime::{Config, Ended, Fault, Job, JobOptions, Refused, Runtime, Stage};
 
 use crate::tool::{Ran, Tool, LIMITS};
@@ -32,21 +36,21 @@ pub const PROCESS: &str = "process";
 /// The file stem of the runtime's binary.
 pub const RUNTIME_BINARY: &str = "c600-runtime";
 
-/// Why a run on the process host left no interpreter run.
+/// Why a run left no interpreter run.
 #[derive(Debug)]
 pub enum Cause {
     /// The source handed over is not the one the tool was admitted from. Nothing was sent.
     OtherSource,
-    /// The job was refused before its first metered operation: by the parent at the start stage (a word with no
-    /// transfer encoding, or a job above the frame bound) or by the child's compile stage.
+    /// The run was refused before its first metered operation: at the start stage (on either host a word with no
+    /// transfer encoding, and on the process host a job above the frame bound) or by the child's compile stage.
     Refused(Refused),
     /// The child was lost or passed its deadline; it has been killed and reaped (KN7.13).
     Lost(Fault),
 }
 
 impl Cause {
-    /// Whether the job was refused because an argument has no transfer encoding: the parent's start-stage refusal
-    /// with the interpreter's non-canonical value code. The job never reached the child.
+    /// Whether the run was refused because an argument has no transfer encoding: the start-stage refusal with the
+    /// interpreter's non-canonical value code. The run reached neither the child nor the engine side.
     pub fn no_transfer(&self) -> bool {
         matches!(self, Cause::Refused(refused) if refused.stage == Stage::Start
             && refused.codes.len() == 1 && refused.codes[0] == code::NONCANONICAL_VALUE)
@@ -64,12 +68,35 @@ pub fn stage_name(stage: Stage) -> &'static str {
     }
 }
 
-/// A run on the process host that left no interpreter run. `shell` still holds what the boundary recorded for each
-/// proposal that reached it before the run stopped.
+/// A run that left no interpreter run. `shell` still holds what the boundary recorded for each proposal that reached it
+/// before the run stopped.
 #[derive(Debug)]
 pub struct Stopped {
     pub cause: Cause,
     pub shell: Vec<Shown>,
+}
+
+/// Runs the tool's entry on a literal word in this process ([`Tool::run`]) and stops at the start stage, before any
+/// host call, where [`ProcessHost::run`] stops. A word the process host cannot send, one with a letter outside 1 to
+/// 1200 in magnitude, is refused with the interpreter's non-canonical value code before the tool runs, as the parent
+/// refuses its job (`c600_runtime::Runtime::run`); an entry or argument that `Loaded::run` refuses stops there too.
+pub fn run_in_process(
+    tool: &Tool,
+    word: &[i32],
+    name: &str,
+    base: &str,
+    engine: &mut dyn Host,
+    store: &mut Store,
+) -> Result<Ran, Stopped> {
+    let refused = |codes: Vec<String>, detail: String| Stopped {
+        cause: Cause::Refused(Refused { stage: Stage::Start, codes, detail }),
+        shell: Vec::new(),
+    };
+    if encode_value(&Value::word(word), &mut Enc::new()).is_err() {
+        let detail = "an argument has no canonical transfer form".to_owned();
+        return Err(refused(vec![code::NONCANONICAL_VALUE.into()], detail));
+    }
+    tool.run(word, name, base, engine, store).map_err(|refusal| refused(vec![refusal.code.into()], refusal.detail))
 }
 
 /// The job of one run of `tool` on a literal word: the source bytes, the manifest's module and entry, the word as the

@@ -300,7 +300,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   charging the selected branch only (DET.64). A stop names the call path, the operation and its source range.
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
-  forms. Deep values compare, encode and drop without recursion.
+  forms. Deep values compare, encode and drop without recursion. A word literal's letters are generators, of
+  magnitude 1 to 1200 (chapter 01), and a literal with another letter is refused. No alphabet has a letter of
+  magnitude above 1200, so a word with one, also inside an aggregate, has no canonical form, and `Loaded::run` refuses
+  an argument that holds one with `PS1:input.noncanonical_value` before the run starts (`c600-run/tests/interp.rs`).
+  A letter of 0 still runs: the kernel refuses it as a generator when it acts, and `c600-jumble-tool` reads a `Word`
+  as flattened grip and item indices, which start at 0, until menu words reach the IR draft.
 - Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout (parameters,
   captures, `let` slots and operand temporaries; a body's own result has no slot), a value's canonical byte length as
   retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a word (LG2.18's
@@ -452,6 +457,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Streaming words (KN2.10): `chunks(recipe, size)` streams a recipe's literal letters with their positions, one
     step's expansion at a time; `replay(base, set)` takes letters in chunks of any size, judges Strict prefix by
     prefix and gives no verdict before `finish`; `replay_under_ceiling` counts the 3,000,000 ceiling over all chunks.
+  - Label-level protection of named pieces (for LP3's C8 and LB3.4): `protected_pieces` names any of the 177,120
+    pieces, fixed cell centres included, as `positions` names them, and a nonempty set is bound to its model as a
+    `ProtectedSet` is. `piece_protection` (Net, on an effect's net map) and `strict_piece_protection` (Strict, every
+    executed prefix of the literal expansion) give one row per piece: the slots of its stickers in the base, which are
+    the base's `positions` slots, and after the judged map. A centre's row is computed like any other, and since no
+    letter moves a centre's sticker it comes out clear. The calls judge only: `derive` still takes a `ProtectedSet`,
+    and a refusal for pieces stays the caller's, with no new code. `c600-kernel/tests/pieces.rs` checks the rows
+    against `positions` before and after `derive`, the centre of cell 0 under H_0 (CT-LB3-02's label half from the
+    kernel), all 600 centres under every generator, Strict against a scan that derives every prefix, and the set's
+    refusals; `tests/load.rs` checks KN1.4 for both piece calls on a second model. The critical-path read is recorded
+    with the slot action (M5's section).
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
@@ -663,6 +679,29 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
     marker naming what it leaves out. Not built: `nu`, `correction_set_check`, and the session store's checkpoint and
     import records (M6). No J1 fault was found. Evidence kind: source and fixture; the comparison ran on Windows only.
+- The kernel pieces for LP3's C8 (LP2):
+  - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
+    `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
+    of its home slots; `labels` now runs on them with unchanged results.
+  - The engine-named rotation plane: `twist::rotation_plane` (and `Twist::plane`) names a rotation's plane exactly
+    for a swept preview (render/1, section 4). u is the first nonzero column of g − I; v is g u − cos θ·u for θ < π,
+    and for a half-turn the first later column independent of u made orthogonal to u, which is the engine's naming of
+    the half-turn's direction. u and v are unnormalized, and R(θ) built from them is g exactly. The identity, a
+    rotation that turns two planes and a matrix that is not a rotation get none. The display's `f32` plane is LP3's to
+    fill from it in `c600-display`.
+  - `c600-jumble/tests/slots_planes.rs` tests the left action on 21 elements, the agreement with `labels` after a
+    retained word, the refusals, and the planes of the 12 elements fixing pole 0, every retained generator, every
+    seventh element of K⁺, H_0 and an off-lattice Cayley rotation, each rebuilt exactly.
+  - Nothing more was built for LB3.4: its projection from poses to labels with the checkpoints, and a whole word's Net
+    and Strict protection at pose level, are M8's levels (above: `project`, `retained_checkpoint`, `label_checkpoint`,
+    `derive` with `WordProtection`); CT-LB3-06's peak, excursion, tameness and step flag are M5's `observe`; label-level
+    protection of a piece is the kernel's (M4's section).
+  - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the slot action,
+    the plane and the kernel's piece protection with the acceptance check and found no blocker or major finding. Its
+    two minor points were fixed before the pull request: KN1.4 for the piece calls is now tested on a second model,
+    and Strict is compared with a scan that derives every prefix. No action on its two nits: an effect names no model,
+    as M4 decided, and the identity pose skips the frame check, as before.
+  - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store
 
@@ -790,8 +829,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (ruling 3; `commit.rs` asserts it during a held write); its request digest includes the origin and the
   authenticator (the layer's excludes the authenticator, LI.5); command IDs are one space for the shell and programs;
   an `epoch_changed` refusal is not kept; and its shell stub mints for a fresh preview that need not be presented
-  (LP3's L4). It also takes its origin from the envelope, which the owner's host rule of 16 November 2026 (PHS.52)
-  excludes: the host stamps the caller from the channel the envelope came on.
+  (LP3's L4). Under the owner's host rule of 16 November 2026 (PHS.52 ruling 4) its envelope names no origin:
+  `Session::invoke(origin, envelope)` takes the origin of the channel the envelope came on, and the request digest
+  and the program gates read that origin (`tests/kn5_command.rs` sends the shell's genuine envelope on a program's
+  channel first).
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
 
@@ -932,8 +973,7 @@ run or not applicable is no pass (PHS.63).
     only in memory, with public fields.
   - KN5 has one implementation: LP3's `c600-command`, durable over M6's journal through `c600_session::JournalStore`
     (KN5's stages 1 and 2; LP3's C7 section below). The CT-KN5 parts that run, run against it; M6's `Session::invoke`
-    follows ruling 4's order until its tests move to `c600-command`, but takes its origin from the envelope (M6's
-    section).
+    follows ruling 4's order and the host rule until its tests move to `c600-command` (M6's section).
   - `Kernel::protection` itself checks no model; `Kernel::checked_protection` adds KN1.4's check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
@@ -1330,9 +1370,10 @@ run or not applicable is no pass (PHS.63).
 - `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
   compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
   records, receipts and callers equal across the hosts. Four O07 steps (0, 1, 2 and 8) have a letter outside 1 to 1200
-  in magnitude, which the runtime's wire cannot encode: on the process host the job is refused at the start stage
-  (`PS1:input.noncanonical_value`) and has no receipt, and the step record keeps the kernel's refusal, which the check
-  compares with the in-process receipt's error.
+  in magnitude, which the runtime's wire cannot encode: on both hosts the run is refused at its start stage
+  (`PS1:input.noncanonical_value`; in process `run_in_process` refuses such a word as the parent does) and has no
+  receipt, and the step record keeps the kernel's refusal, which the check compares with the command route's
+  receipt's error.
 - The tool's views: `c600_tools::views` is host code, since the tool publishes no view (LQ21, LG3.13, charter E6). It
   builds the display contract's publication of a proposal and its preview on `c600-display`, the content the headless
   view model installs on `c600-view`, and the presentation report to the shell, which calls `present` only for a frame
@@ -1343,9 +1384,9 @@ run or not applicable is no pass (PHS.63).
     installed bytes hold only the word the solver named); CT-ONE-29's user-stage part at the adapter (a user-stage frame
     mints no token and the commit chord finds no fresh preview; a built-in-chain frame's token commits).
   - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts; the job
-    carries only the admitted source; a word with no transfer encoding is refused at the start stage; a runtime that
-    does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and CT-BND-07,
-    parts).
+    carries only the admitted source; both hosts refuse a word with no transfer encoding at the start stage; a runtime
+    that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
+    CT-BND-07, parts).
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
     previews clear in Net mode and commits as one transaction, and the prefix alone is refused); CT-LB2-03's oversize
     refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part on
@@ -1360,7 +1401,7 @@ run or not applicable is no pass (PHS.63).
 - Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
   `present`); CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
-  `Declared` holds one class); receipts on the process host for words with no transfer encoding; CT-LB2-02's Strict half
+  `Declared` holds one class); CT-LB2-02's Strict half
   through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named
   work-sheet reuse; chunked recipes over 100,000 letters on the source route (the tool's entry takes one flat word,
   though the IR draft now has lists and the kernel chunks words);
