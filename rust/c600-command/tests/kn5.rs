@@ -676,6 +676,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
     }
     let expected = [
         ("register_overlay", false),
+        ("serve_row", false),
         ("store_mut", true),
         ("set_program_capacity", false),
         ("present", false),

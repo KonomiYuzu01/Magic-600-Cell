@@ -1129,6 +1129,18 @@ run or not applicable is no pass (PHS.63).
   change, undo and redo, a retry across a restart and a reopen, the journal form, a reopen, a commit under Strict
   replayed with its undo and redo, the runtime and the argument form) and a policy change and its undo over the journal
   in `c600-session/tests/kn5_command.rs` (CT-ONE-21, part).
+- Stored rows served by a built-in tool's entry (LP3's C6, its first common need; the drafts are in the crate
+  documentation). `CommandLayer::serve_row(id, overlay)` lets an entry serve a stored row. An invocation of the row then
+  admits a program job for the entry, as for an overlay row, and the entry's result completes it: a query, view or file
+  row transiently, a workspace row as one durable workspace action with its result reference. The row keeps H-08's
+  kind, lane, undo class, gates and argument types, so a `none`-lane row has no occupancy limit (KN7.2) and a
+  `view`-lane row supersedes its own waiting invocation. Only a view, workspace, query or file row on the `none`,
+  `view` or `program` lane, with no gate, preview rule, action guard, token or undo entry, is served; any other is
+  refused with `KN5:input.overlay_row_kind`, and a row the layer builds itself or one already served with
+  `KN5:input.overlay_row_conflict`. Serving is not journaled, so after a reopen the host serves its rows again. Five of
+  the representations tool's six rows can be served now; `filter.apply` waits for its gate, its filter preview rule
+  and its workspace inverse. The layer checks argument names only; the forms of H-08's argument types, and the view and
+  workspace sinks as a job's result, are C6's next needs. Tests: `c600-command/tests/served_rows.rs`.
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
   and L17; the provenance reader over `c600-run` (LP3's host), the typed workspace rows and limits on a record's
