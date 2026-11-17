@@ -74,7 +74,7 @@ runnable") cover the kernel rows. LP3 builds nothing in LP2's crates. Each row s
 | The F2 and F5 number kinds. Built in the kernel (pull request 201: `c600_kernel::exact`), with ν (`c600_jumble::nu`, pull request 201) and the correction catalogue with `correction_set_check` (`c600_jumble::corrections`, pull request 206). Not built: F2 and F5 as number kinds of the IR draft, for library code | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator. Built (pull request 176), with `compose`, `length` and `word_key`, Full's free reduction. Not built: these operations on compressed words, a jumbling key, LB1.10's trace key | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-06 (the owner answer on word keys, section 10); the library entries of CT-LB2-01 and CT-BND-18 are not written yet |
 | Collection types in the IR draft: lists, maps, sets. Built (pull request 176); they cross the runtime's wire (C3, pull request 180) | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | None |
-| The IR features CT-RTE-04's other 29 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
+| The IR features CT-RTE-04's other 23 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in `c600-command`, takes two LP3
 requirements the LP2 integrator accepted: LP3's KN5.21 lead, closed in its stages 1 and 2 (pull request 174), and the
@@ -204,9 +204,10 @@ acceptance check and stop condition.
 - C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`), built: the runtime in a process of its own; 8 of
   DET.65's 40 traces of CT-RTE-04 and the headless fault half of CT-RTE-10. C5's host bridge makes it a client of the
   command layer (ADR-L02). Under LP2's M2 meter (PR 170) three more traces run on both executors (`nested-calls`,
-  `output-equality`, `output-retained-at-cutoff`): 11 of 40. CT-RTE-04's other 29 traces wait for the IR draft's
-  features (LP2). A compressed word crosses as its parts, within one frame's bound on the lengths they derive (crate
-  draft 15, on LP2's pull request 185).
+  `output-equality`, `output-retained-at-cutoff`): 11 of 40. With LP2's `exact_mul` and `assert` (pull request 216) six
+  more run (the three exact-multiplication traces, `alias-release`, `alias-still-live` and `pointwise-failure`): 17 of
+  40. CT-RTE-04's other 23 traces wait for the IR draft's features (LP2). A compressed word crosses as its parts, within
+  one frame's bound on the lengths they derive (crate draft 15, on LP2's pull request 185).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full;
   three more (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176),
@@ -477,7 +478,7 @@ entirely. The milestone is in parentheses; "next" marks a part that can run now 
 | CT-BND-18 | source | The built-in column's setup-search exception in `c600-check` (LP2); the setup-search library entry, not written yet (collection types and word operations are in the IR draft, pull request 176) | - |
 | CT-BND-19 | source | A live twist's release, which needs `twist.apply` in the command layer (KN5, LP2); KN3.7's exact rotation requests are built (pull request 176) | The tool's views (C5) |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
-| CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 11 of DET.65's 40 traces (C3, three after LP2's M2 meter) |
+| CT-RTE-04 | source | Child scopes, more than one generator per run, text order, byte decoding, loops and flow checks, streaming cursors and LP1's region executor in the IR draft (LP2) | 17 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216) |
 | CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 39 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
