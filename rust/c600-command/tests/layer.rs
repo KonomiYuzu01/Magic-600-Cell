@@ -12,7 +12,7 @@ use c600_command::{
     Receipt, Secret, Shell, Status, Table, Token, TokenBinding,
 };
 use c600_kernel::json::{self, Value};
-use c600_kernel::{archive, Derivation, Kernel, ProtectedSet, Snapshot, Verdict};
+use c600_kernel::{archive, Derivation, Kernel, ProtectedSet, Snapshot, Verdict, PIECES};
 
 const SECRET: [u8; 32] = [7; 32];
 
@@ -713,4 +713,33 @@ fn an_unknown_commit_fate_enters_read_only_recovery() {
         }
         assert_ne!(f.layer.revision().epoch, 1);
     }
+}
+
+/// CT-LB2-04 (part: the layer's half of the host row that serves KN2.4's `positions`; LP2 draft).
+/// `CommandLayer::positions` answers the kernel's rows for the head's state: at solved, after a commit and after its
+/// undo, one row per named piece in the asked order, repeats included, and no row for no piece. A piece outside 0 to
+/// 177,119 is the kernel's `KN2:input.named_object_invalid` with its text. A read changes nothing.
+#[test]
+fn the_positions_read_answers_the_kernel_s_rows_at_the_head() {
+    let mut f = fixture(&[]);
+    let all: Vec<i64> = (0..PIECES as i64).collect();
+    assert!(f.layer.positions(&all).unwrap().iter().all(|row| row.solved()));
+    assert!(matches!(f.commit(&word(&[1, 2, -1])).status, Status::Committed(_)));
+
+    let before = f.fixed();
+    let rows = f.layer.positions(&all).unwrap();
+    assert_eq!(rows, kernel().positions(f.layer.snapshot(), &all).unwrap());
+    let moved = rows.iter().find(|row| !row.solved()).expect("the word moves a piece").piece;
+    let asked = f.layer.positions(&[moved as i64, 0, moved as i64]).unwrap();
+    assert_eq!(asked, [rows[moved].clone(), rows[0].clone(), rows[moved].clone()]);
+    assert_eq!(f.layer.positions(&[]), Ok(Vec::new()));
+    for bad in [-1, PIECES as i64, i64::MAX] {
+        let error = f.layer.positions(&[0, bad]).unwrap_err();
+        let expected = (code::NAMED_OBJECT_INVALID, "Position must be an integer in 0..177119");
+        assert_eq!((error.code, error.detail.as_str()), expected, "{bad}");
+    }
+    assert_eq!(f.fixed(), before);
+
+    assert!(matches!(f.undo(Direction::Undo).status, Status::Committed(_)));
+    assert!(f.layer.positions(&all).unwrap().iter().all(|row| row.solved()));
 }

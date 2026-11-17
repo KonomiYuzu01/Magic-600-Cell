@@ -7,8 +7,11 @@
 //! `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}`, and no token. The bridge filters no row: the command
 //! layer refuses a runtime invocation of a commit or app row, and any runtime invocation that carries a token
 //! (ADR-L02, KN5.15). The bridge answers the boundary with a short form of the layer's receipt, which only the shell
-//! sees; the program gets the boundary's fixed acknowledgement (BND.42, BND.43). The bridge grants no other request:
-//! no state read, no workspace or file write and no clock.
+//! sees; the program gets the boundary's fixed acknowledgement (BND.42, BND.43). Besides proposals, the bridge serves
+//! one state read: KN2.4's `positions` row to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2
+//! draft, CT-LB2-04). Capability separation keeps an entry that reads it from also proposing: admission refuses an
+//! entry that does both (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no workspace
+//! or file write and no clock.
 //!
 //! The draft carries the word in one word step, with one exception (LB2.3, LB2.4, LB1.11). For one run a host may give
 //! the bridge the solver's word steps of the run's input recipe ([`Steps`]). A proposal of exactly their literal word
@@ -21,6 +24,8 @@ use c600_kernel::json::{self, Value as Json};
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::value::Value;
+
+use crate::kernel_rows;
 
 /// The result bound of a proposal's answer (a draft; the command table prices the row when it freezes).
 pub const RESULT_BOUND: u128 = 4096;
@@ -170,11 +175,19 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::Propose { word, .. } => {
                 Ok(RowTariff { kernel_cost: word.len() as u128, result_bound: RESULT_BOUND })
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::POSITIONS => {
+                kernel_rows::tariff(arg, ty)
+            }
             _ => Err(NOT_GRANTED),
         }
     }
 
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
+        if let Request::SnapshotWith { query, arg, ty } = request {
+            if *query == kernel_rows::POSITIONS {
+                return kernel_rows::positions(self.layer, arg, ty);
+            }
+        }
         let Request::Propose { word, target, .. } = request else {
             return Err(NOT_GRANTED);
         };
