@@ -2,6 +2,10 @@
 //!
 //! A store keeps two kinds of file, named with `/` separators: the journal `journal` and the state objects
 //! `objects/<sha256>`. Nothing written is durable until [`Disk::sync`] returns for that file.
+//!
+//! A store takes the session lock ([`Disk::lock`]) before it reads anything, so one process opens a session at
+//! a time (KN4.1). [`FsDisk`] locks the file [`LOCK`] in its directory. [`MemDisk`] lives in one process and
+//! takes no lock.
 
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
@@ -9,8 +13,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 
-/// The operations a store needs. Every call but [`Disk::read`] is a write and counts toward the write index of a
-/// [`MemDisk`].
+/// The operations a store needs. Every call but [`Disk::read`] and [`Disk::lock`] is a write and counts toward the
+/// write index of a [`MemDisk`].
 pub trait Disk: Send {
     /// The whole file, or `None` if it does not exist.
     fn read(&mut self, name: &str) -> io::Result<Option<Vec<u8>>>;
@@ -22,19 +26,34 @@ pub trait Disk: Send {
     fn truncate(&mut self, name: &str, len: u64) -> io::Result<()>;
     /// Makes the file's current contents and its name durable.
     fn sync(&mut self, name: &str) -> io::Result<()>;
+    /// Takes the session lock, which the disk holds until it is dropped: one process opens a session at a time
+    /// (KN4.1). A lock that another opener holds is refused with `io::ErrorKind::WouldBlock`, and nothing is
+    /// written. A disk that lives in one process, as [`MemDisk`] does, takes no lock.
+    fn lock(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
+
+/// The name of a directory's lock file, which [`FsDisk`] creates empty and never removes.
+pub const LOCK: &str = "lock";
 
 /// A directory on the file system. On Windows the directory entry of a new file is not synced separately; NTFS
 /// journals it (an M6 gap, recorded in `rust/README.md`).
+///
+/// Its session lock is an exclusive lock on the file [`LOCK`], taken with std's `File::try_lock` (`LockFileEx` on
+/// Windows, `flock` on Unix). Its open handle holds the lock until the disk is dropped, and the operating system
+/// releases it when the process ends, a hard exit included. A second handle conflicts even in the same process,
+/// so a second `FsDisk` on the same directory is refused too.
 pub struct FsDisk {
     root: PathBuf,
+    lock: Option<fs::File>,
 }
 
 impl FsDisk {
     /// A store in `root`, which is created if missing.
     pub fn new(root: &Path) -> io::Result<FsDisk> {
         fs::create_dir_all(root.join("objects"))?;
-        Ok(FsDisk { root: root.to_path_buf() })
+        Ok(FsDisk { root: root.to_path_buf(), lock: None })
     }
 
     fn path(&self, name: &str) -> PathBuf {
@@ -71,6 +90,23 @@ impl Disk for FsDisk {
             fs::File::open(parent)?.sync_all()?;
         }
         Ok(())
+    }
+
+    fn lock(&mut self) -> io::Result<()> {
+        if self.lock.is_some() {
+            return Ok(());
+        }
+        let file = OpenOptions::new().read(true).write(true).create(true).truncate(false).open(self.path(LOCK))?;
+        match file.try_lock() {
+            Ok(()) => {
+                self.lock = Some(file);
+                Ok(())
+            }
+            Err(fs::TryLockError::WouldBlock) => {
+                Err(io::Error::new(io::ErrorKind::WouldBlock, "another opener holds the session lock"))
+            }
+            Err(fs::TryLockError::Error(e)) => Err(e),
+        }
     }
 }
 

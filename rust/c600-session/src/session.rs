@@ -235,6 +235,17 @@ fn io_error(e: std::io::Error) -> Error {
     Error::new(code::DISK_FULL, format!("the session storage failed: {e}"))
 }
 
+/// An I/O error at open. A session lock that another opener holds is `KN4:busy.session_locked` (draft). Only the
+/// lock answers `WouldBlock`, since a regular file's read, cut or sync never does.
+fn open_error(e: std::io::Error) -> Error {
+    match e.kind() {
+        std::io::ErrorKind::WouldBlock => {
+            Error::new(code::SESSION_LOCKED, format!("the session is open elsewhere: {e}"))
+        }
+        _ => io_error(e),
+    }
+}
+
 /// A state object's bytes: the labels as little-endian 32-bit integers, so its name is the state's digest.
 fn object_bytes(state: &Snapshot) -> Vec<u8> {
     state.labels().iter().flat_map(|label| label.to_le_bytes()).collect()
@@ -260,9 +271,10 @@ fn record_letters(payload: &Json) -> Option<Vec<i32>> {
 impl Session {
     /// Creates a session on an empty disk: the journal starts with the session's header, at the solved state. A disk
     /// that holds a whole or a damaged frame is refused before anything is written; the torn remnant of a header
-    /// whose append did not finish is cut off.
+    /// whose append did not finish is cut off. A disk whose session lock another opener holds is refused first, with
+    /// `KN4:busy.session_locked` (draft).
     pub fn create(kernel: Arc<Kernel>, disk: Box<dyn Disk>, id: &str, options: Options) -> Result<Session, Error> {
-        let mut opened = Store::read_journal(disk).map_err(io_error)?;
+        let mut opened = Store::read_journal(disk).map_err(open_error)?;
         if !opened.records.is_empty() || opened.damaged.is_some() {
             return Err(Error::new(code::PERSISTENCE_FORMAT, "the disk already holds a journal"));
         }
@@ -282,9 +294,10 @@ impl Session {
     }
 
     /// Opens the session a disk holds and replays its journal under a new epoch. A damaged frame or a frame that does
-    /// not replay puts the session into read-only recovery (KN5.23).
+    /// not replay puts the session into read-only recovery (KN5.23). A session whose lock another opener holds is
+    /// refused with `KN4:busy.session_locked` (draft) before anything is read (KN4.1).
     pub fn open(kernel: Arc<Kernel>, disk: Box<dyn Disk>, options: Options) -> Result<Session, Error> {
-        let opened = Store::open(disk).map_err(io_error)?;
+        let opened = Store::open(disk).map_err(open_error)?;
         let mut records = opened.records.into_iter();
         let header = match records.next().as_deref().and_then(wire::read_record) {
             Some(Stored::Header(header)) => header,
