@@ -626,8 +626,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   16 November 2026, `docs/wiki/decisions/owner-decisions-2026-11-16-lp2-questions.md`). J1 still stamps
   `state-contract 2026-10-09 A1-A4`, a known J1 defect that stays in J1; `tests/test_jumbling_rust_m8_observations.py`
   maps J1's stamp to the engine's in its comparison and nowhere else, and KN1.4 refuses J1's stamp at the candidate
-  (`tests/test_jumbling_rust_attacks.py`, `StampTests`). KN3.3's exact double description is `dd`; no separate
-  polytope API was added.
+  (`tests/test_jumbling_rust_attacks.py`, `StampTests`). KN3.3's exact double description is `dd`; the polytope
+  operations over it came later (`polytope`, the KN3.3 bullet below).
 - M8 observations (LP2 plan, section 11; JI.6, JI.7 and JI.12): `c600-jumble/src/observe/cuts.rs` builds
   `rim_summary`, `release_check`, `covers` and `repair_list`, exact and read-only. The adapter serves them and
   `rust_jumble.py` calls them. `tests/test_jumbling_rust_m8_observations.py` compares each with J1 on the states J1's
@@ -817,6 +817,50 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
       answers undefined off the lattice; KN2.4's row sets no order, and the rows are I_a's;
     - the off-lattice tests use eight journal records, which reach the off-lattice states they assert;
     - `twists: true` before `start` is an input error, as for the other ops that need a started state.
+  - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
+- KN3.3's polytope operations and the exact core of LB4.1's map property checks (LP2, for LP3's C6 and CT-LB4-01;
+  chapter 01, KN3.3; chapter 03, LB4.1's map property row and LB4.2):
+  - `c600_jumble::polytope` builds on `dd`. A `Polytope` is the hull of exact points of any dimension in any ambient
+    space: its vertices in the order they first appear, the equations of its affine hull, its facets within the hull
+    with the vertices on each, and a basis of its directions. The facets are `dd`'s vertices of the polar about the
+    points' centroid. `from_constraints` takes `dd`'s inequalities.
+  - Region operations, exact over the whole region: `locate` (the relative interior, the facets a point is on, or the
+    first equation or facet it breaks), `contains`, `line_meet` and `ray_meet` (a line's interval of parameters, a
+    closed ray's first point), `intersect`, `edges`, `relative_interior_point`, and `positive_functional` (an h with
+    h·x > 0 on the region, which exists when the origin is outside).
+  - `ProjectiveMap` is x ↦ (M·x + t)/(c·x + d), defined where c·x + d > 0: `new`, `affine` and `central(h)`
+    (x ↦ x/(h·x)), with `apply`, `defined_on` and `image`. `Metric` is a symmetric positive definite Gram matrix
+    (`euclidean`, `gram`) with exact squared distances.
+  - The four checks each decide their own property over the whole region, never on the vertices alone (LB4.2), and
+    give `Check::Holds` or `Check::Fails` with exact points that verify the failure. None reports another's property
+    (LB4.1).
+    - `injective(map, region)`: the homogeneous map's kernel on the span of the centroid and the directions. The
+      witness is the two ends of a chord whose points share one image.
+    - `embedding(map, cells)`: injective on each cell, and f(σ) ∩ f(τ) = f(σ ∩ τ) for each pair. The witness is the
+      two preimages of a vertex of f(σ) ∩ f(τ) outside f(σ ∩ τ).
+    - `isometry(map, region, source, target)`: a map that is not affine on the region changes one half of a chord
+      through the centroid; an affine one is checked on the chords along the directions and their pairwise sums
+      (polarization).
+    - `homomorphism(map, cells, codomain)`: each cell's image is a cell of the codomain, by vertex set. Faces count
+      when they are listed as cells. The witness is the first cell that is not, with its image.
+  - Radial and stereographic charts reduce to `central(h)` for injectivity and embedding, with one h positive on the
+    cells, and a pole's domain test is `ray_meet` from the origin along the pole. The module documentation states the
+    reduction, and a caller that uses it cites it. The checks take no budget: a language entry that wraps one keeps its
+    own (LB4.1). No float type is used.
+  - `c600-jumble/tests/polytope.rs` and the module's unit tests test:
+    - the faces of the 4-simplex, the 16-cell, the tesseract and the 24-cell (vertices, facets, edges, incidences and
+      edge lengths), repeated and inner points, and a triangle, a segment and a point in 4-space;
+    - lines and rays on the unit square, and a cell of the 600-cell with edges 1/φ: with a stereographic pole on its
+      axis, no vertex is on the pole's ray and the region test finds the centroid on it (LB4.2, CT-LB4-01);
+    - intersections, among them 2·(16-cell) ∩ tesseract = 24-cell and two tetrahedra that no face of either
+      separates;
+    - each check holding and failing, every witness checked again from its points;
+    - failures that no vertex test sees (LB4.2): a central projection that is not injective on a full-dimensional
+      region although its vertices' images all differ, two disjoint segments whose images cross although their four
+      vertex images differ, and x ↦ 2x/(1 + x) on [0, 1], which keeps the vertices' distance and changes the halves;
+    - malformed regions, maps and metrics.
+  - Not built: the language entries over these checks and their results, and CT-LB4-01 itself (LP3's C6). The checks
+    take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store

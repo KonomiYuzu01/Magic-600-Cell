@@ -41,6 +41,7 @@ pub mod levels;
 pub mod model;
 pub mod nu;
 pub mod observe;
+pub mod polytope;
 pub mod q5;
 pub mod regions;
 pub mod rotation;
