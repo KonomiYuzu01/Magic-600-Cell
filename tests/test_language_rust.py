@@ -15,8 +15,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "rust"
-# Below the CI runner's limit per check (tools/ci/run_headless.py), so a slow run is reported here.
-TIME_LIMIT_SECONDS = 1100
+# Below the CI runner's limit for this check (LONG_CHECK_SECONDS in tools/ci/run_headless.py), so a slow run is
+# reported here. The run took 1045 s on the Windows runner on 17 November 2026.
+TIME_LIMIT_SECONDS = 2300
 
 
 def version(tool: str) -> str:
