@@ -1335,7 +1335,8 @@ impl<S: Store> CommandLayer<S> {
     /// whose first failure is reported in this order:
     /// 1. the static check's first failed diagnostic;
     /// 2. a required row the runtime may not invoke (a commit or app row, one that takes a token, or one that
-    ///    [`CommandLayer::invoke`] grants no program), `LG3:capability.not_granted`;
+    ///    [`CommandLayer::invoke`] grants no program, a served workspace or file row among them),
+    ///    `LG3:capability.not_granted`;
     /// 3. the row's own gates: read-only recovery for a row that changes the session, then a full program lane;
     /// 4. the first failing required row in sorted row ID order, ties in stored order. A row that is not a kernel row
     ///    (absent, or language-defined) is `KN5:input.overlay_dependency_missing`; a static binding answers as
@@ -1531,7 +1532,11 @@ impl<S: Store> CommandLayer<S> {
     /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), not `protection.orbit.set`, whose
     /// release confirmation is the solver's, not `protection.policy.set`, since the protection a commit is judged under
     /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
-    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2).
+    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2). Of the rows an entry
+    /// runs, an overlay row or a served row, only a query or view row: a run alone causes no durable action, so it
+    /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (draft;
+    /// findings B3 and B4 of the KN5 boundary attack). Whether a run that a solver command started may (ONE.52) is the
+    /// owner's.
     fn runtime_may(row: &Row) -> bool {
         !matches!(row.kind, Kind::Commit | Kind::App)
             && row.id != "protection.orbit.set"
@@ -1539,6 +1544,7 @@ impl<S: Store> CommandLayer<S> {
             && row.id != RECORD_ROW
             && row.id != WORKSHEET_SAVE_ROW
             && row.id != WORKSHEET_LOAD_ROW
+            && (row.overlay.is_none() || matches!(row.kind, Kind::Query | Kind::View))
     }
 
     /// Whether the envelope authenticates: its row exists, its caller may invoke the row and hold what it holds, and
