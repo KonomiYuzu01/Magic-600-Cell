@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 70] = [
+const BUILTINS: [&str; 72] = [
     "if",
     "display_if",
     "exact_add",
@@ -88,6 +88,9 @@ const BUILTINS: [&str; 70] = [
     // Compressed words (LP2 drafts).
     "compress",
     "expand",
+    // Exact multiplication and the pointwise assertion (LP2 drafts; DET.57, DET.55).
+    "exact_mul",
+    "assert",
     // Finite fields (KN3.2; LP2 drafts).
     "to_f2",
     "to_f5",
@@ -687,7 +690,7 @@ impl Body<'_> {
         let arity = match op {
             "if" | "display_if" => 3,
             "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less" | "approx_and"
-            | "write_workspace" | "propose" | "file_write" => 2,
+            | "write_workspace" | "propose" | "file_write" | "exact_mul" => 2,
             "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
             "field_add" | "field_sub" | "field_mul" => 2,
             // An ordered result names its order (LG4.3).
@@ -756,6 +759,8 @@ impl Body<'_> {
             "compress" => Some(Prim::Compress),
             "expand" => Some(Prim::Expand),
             "exact_add" => Some(Prim::ExactAdd),
+            "exact_mul" => Some(Prim::ExactMul),
+            "assert" => Some(Prim::Assert),
             "exact_less" => Some(Prim::ExactLess),
             "exact_eq" => Some(Prim::ExactEq),
             "and" => Some(Prim::And),
@@ -1073,7 +1078,9 @@ mod tests {
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"
                 | "approx_and" | "propose" | "index" | "push" | "concat" | "conjugate" | "commutator" | "compose"
-                | "contains" | "insert" | "lookup" | "field_add" | "field_sub" | "field_mul" => format!("{op}(1, 2)"),
+                | "contains" | "insert" | "lookup" | "exact_mul" | "field_add" | "field_sub" | "field_mul" => {
+                    format!("{op}(1, 2)")
+                }
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),

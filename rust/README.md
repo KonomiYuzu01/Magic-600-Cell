@@ -207,11 +207,12 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   literal (LG1.6): `ToField` reduces an exact `Nat` or `Int` into one, `FieldAdd`, `FieldSub`, `FieldNeg`, `FieldMul`
   and `FieldInverse` stay in one field, and `Residue` gives an element's residue as a `Nat`. Nothing widens into or
   out of a field: mixing the two fields, or a field and another number kind, is `LG2:type.mismatch` at the operand,
-  and an approximate operand of `ToField` is `LG2:type.exact_required`. `ExactAdd` and `ExactLess` refuse elements,
-  since a finite field has no order; `ExactEq` compares two of one field. An element may be a set element or a map
-  key (LP2's choice): its key order is the field, F2 first, then the residue. It holds no word, so the built-in
-  column's rules treat it as plain data. It has no canonical form (FP.6 wraps only int, rat and q5), so a goal, an
-  evidence sink or a snapshot read's argument refuses it, also inside a record or a collection, and takes its residue.
+  and an approximate operand of `ToField` is `LG2:type.exact_required`. `ExactAdd`, `ExactMul` and `ExactLess`
+  refuse elements, which stay apart from the widening, and a finite field has no order; `ExactEq` compares two of
+  one field. An element may be a set element or a map key (LP2's choice): its key order is the field, F2 first, then
+  the residue. It holds no word, so the built-in column's rules treat it as plain data. It has no canonical form (FP.6
+  wraps only int, rat and q5), so a goal, an evidence sink or a snapshot read's argument refuses it, also inside a
+  record or a collection, and takes its residue.
   CT-LB1-01's F2 and F5 ranks and solutions stay LP3's library code (LB1.8) (`c600-check/tests/fields.rs`).
 - Snapshot reads with an argument (LP2 draft until the IR freeze; LP3's plan, section 2). `ReadSnapshotWith` reads
   the engine's row `query` for an argument, such as a word's protection, for LB2's star and recipe construction and
@@ -344,6 +345,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (`c600-syntax/tests/end_tests.rs`).
 - Trace keys (LP2 draft). `TraceEqualityKey` is a type, and `trace_key` is a reserved operation called like a
   function (`c600-syntax/tests/conformance_lg2.rs`).
+- Exact products and assertions (LP2 drafts). `exact_mul(a, b)` multiplies two exact numbers, widened as
+  `exact_add`'s operands are; a `Budget` operand is `LG2:type.mismatch`, since the draft multiplies numbers, not
+  costs. `assert(p)` is `Unit`, and its predicate is an exact `Bool`, as an `if` condition is (LG2.20)
+  (`c600-check/tests/mismatch.rs`, `c600-check/tests/exactness.rs`).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -353,15 +358,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 11 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 17 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, generator, the three display
-  traces, output-equality and output-retained-at-cutoff. Each frozen row and each cutoff (dimension, phase, scope, denied row,
-  source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28
-  (synthetic), 29, 31 and 32, all in part, on RT1 only.
-- The other 29 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
-  aliased or returned in a call (4), a `let` released before its alias (2), text order (1), byte decoding (2), loops,
-  assertions and flow checks (3), exact multiplication (3), streaming cursors (3) and display form 2 (5). They still
-  replay through the meter.
+  traces, output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release,
+  alias-still-live and pointwise-failure. Each frozen row and each cutoff or stop (dimension or phase, scope, denied
+  row, source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27,
+  28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest.
+- The other 23 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
+  aliased or returned in a call (4), text order (1), byte decoding (2), loops and flow checks (2), streaming cursors
+  (3) and display form 2 (5). They still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -371,6 +376,13 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (DET.58), each output unit as one fused row of encoding work, buffer and bytes (DET.56, DET.59), a preview
   request's priced `encode` pass before `invoke`, the generator `sha256-counter-draft-1` (DET.61) and `display_if`
   charging the selected branch only (DET.64). A stop names the call path, the operation and its source range.
+- Exact products and assertions (LP2 drafts). An integer `exact_mul` charges the tariffs' integer product: under
+  `Tariffs::TEST` one kernel unit per pair of eight-bit limbs, and a reservation of one byte plus the operands' bits
+  in bytes (DET.57). A `Rat` or `Q5` product charges one unit per pair of the operands' widened bytes and reserves
+  what the unreduced product could need; the reduced product settles the reservation. `assert` is one step with no
+  memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
+  phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
+  `det65_programs.rs`).
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
   forms. Deep values compare, encode and drop without recursion. A word literal's letters are generators, of
@@ -980,8 +992,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
       region although its vertices' images all differ, two disjoint segments whose images cross although their four
       vertex images differ, and x ↦ 2x/(1 + x) on [0, 1], which keeps the vertices' distance and changes the halves;
     - malformed regions, maps and metrics.
-  - Not built: the language entries over these checks and their results, and CT-LB4-01 itself (LP3's C6). The checks
-    take projective maps; another class of map needs its own exact check.
+  - Not built: the language entries over these checks and their results. CT-LB4-01 is built on these checks in LP3's C6
+    (`c600-display`'s chart checks). The checks take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store
@@ -1174,8 +1186,8 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 11 of DET.65's 40
-    traces as programs and lists why the other 29 do not run.
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 17 of DET.65's 40
+    traces as programs and lists why the other 23 do not run.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
@@ -1461,12 +1473,13 @@ run or not applicable is no pass (PHS.63).
   parts of CT-EV4-04 and CT-BND-19; KN3.8, JI.35, LI.6, LI.32).
 - `jumble.on` (A5; ONE.54, ONE.55, ONE.80, ONE.81, JI.25, JI.27; the drafts are in the crate documentation), the entry
   into Jumble on from the solved witness. It needs the pinned twist menu (`KN5:input.row_not_built` without one) and
-  takes `revision`, the current `RevisionRef`, with a token that binds the state and protection revisions. With no exit
-  built, the witness is the chronological literal retained path from the session's start to the head, which must start
-  at solved. The layer replays it from solved in the jumbling engine under the pinned menu and enters only when the
-  replay's labels are the current labels, so labels alone are `KN5:input.jumble_on_labels_only`. The crossing commits
-  with no preview: the revision's mode becomes `jumble_on`, its state revision advances and its digest is the pose
-  digest (`CommandLayer::jumbled` holds the poses), and like a commit it ends the pending preview and cancels the jobs
+  takes `revision`, the current `RevisionRef`, with a token that binds the state and protection revisions. Until the
+  entry from an exit root is built, the witness is the chronological literal retained path from the session's start to
+  the head, which must start at solved and cross no exit. The layer replays it from solved in the jumbling engine
+  under the pinned menu and enters only when the replay's labels are the current labels, so labels alone are
+  `KN5:input.jumble_on_labels_only`. The crossing commits with no preview: the revision's mode becomes `jumble_on`,
+  its state revision advances and its digest is the pose digest (`CommandLayer::jumbled` holds the poses), and like a
+  commit it ends the pending preview and cancels the jobs
   that read the replaced revision, except file jobs. With Jumble on, `operation.preview`, `operation.execute`,
   `twist.apply` and `jumble.on` itself are `KN5:input.retained_tool_needs_jumble_off`, while the protection, policy,
   record and program rows stay. An undo of the entry returns to the exact Jumble off state before it, and a redo replays
@@ -1495,6 +1508,24 @@ run or not applicable is no pass (PHS.63).
   jumble move under another row, or a retained commit while Jumble is on, leaves the layer in read-only recovery. Tests:
   `c600-command/tests/jumble_twist_menu.rs` (the command layer's parts of CT-EV4-04, CT-ONE-03, CT-ONE-11, CT-JI-06 and
   CT-KN5-04).
+- `jumble.off` (A5; ONE.54, ONE.80, ONE.81, JI.27, FP.31; the drafts are in the crate documentation), the exit from
+  Jumble on at A5's label checkpoint. It needs the pinned twist menu (`KN5:input.row_not_built` without one) and takes
+  `revision`, the current `RevisionRef`, with a token that binds the state and protection revisions; with Jumble off it
+  is `KN5:input.menu_word_needs_jumble_on`. The named revision must be current in every field (EV4.14). The jumbling
+  engine's checkpoint (`levels::label_checkpoint`) judges the head's poses along the jumbling journal from solved, and
+  ν = 0 shows from the identity labels, a retained witness or ν as computed (`nu::nu`). Pieces off the lattice are
+  `KN5:input.jumble_off_pieces_off_lattice`, a nonzero ν `KN5:input.jumble_off_nu_nonzero`, and poses not shown
+  reachable (no witnessed chain, or a displaced centre) `KN5:input.jumble_off_not_shown_reachable`; each names counts
+  only and changes nothing. An exit commits with no preview and no protection gate: the labels' state of 600-cell-Full
+  becomes the retained state, the revision's mode becomes `jumble_off`, its state revision advances and its digest is
+  the label digest. Like a commit it cancels the jobs that read the replaced revision, except file jobs. An undo
+  restores the exact poses before the exit and the entry's retained state; a redo runs the checkpoint again and must
+  reach the same labels and record. The journal keeps the exit as the action kind `exit` (FP.31) with its record under
+  `crossing`, an 18th key: the episode, the jumbling identity block, the journal's letter count and word digest, the
+  pose and label digests and A5's certificate. A reopen with the menu pinned replays the checkpoint and compares the
+  record; a record or row that differs leaves the layer in read-only recovery at Jumble on. Tests:
+  `c600-command/tests/jumble_off.rs` (the command layer's parts of CT-EV4-04, CT-ONE-03, CT-ONE-11, CT-ONE-17,
+  CT-JI-01, CT-JI-09 and CT-KN5-04).
 - The jumbling oracle route `c600-jumble-route` (LP3 plan, PHS.23's "Oracle equality at every committed step", its
   jumbling half: M5's oracle through the command layer with Jumble on, C8) serves M5's adapter protocol: `start` pins
   the menu and presses `jumble.on`, each `apply` presses `jumble.twist.menu` with the item the harness names at the
@@ -1507,7 +1538,8 @@ run or not applicable is no pass (PHS.63).
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
   budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
-- KN5 not built yet: the other jumbling row (`jumble.off` with its exit witness); KN5.26's admission matrix (L1, L2)
+- KN5 not built yet: the entry from an exit root (with an exit on the path from the start, `jumble.on` is
+  `KN5:input.jumble_on_labels_only`); KN5.26's admission matrix (L1, L2)
   beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime proposal's block; a `file`
   overlay without a granted file capability), L12 to L14, L16 and L17; the typed workspace rows and limits on a record's
   payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built: callers
@@ -1568,35 +1600,39 @@ run or not applicable is no pass (PHS.63).
   map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
   Each slot projection holds one level: a subject at the other level gets no slot, with reason
   `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
-- Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and
-  its exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test and `admit_chart`, which
-  admits a chart only on established check results and refuses it on a refutation with
-  `EV3:evidence.chart_check_failed` (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact
-  fields (`reference.rs`); and the stage output rules and their composition order (`stage.rs`).
+- Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and its
+  exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test, and injectivity, embedding,
+  isometry and homomorphism each decided by its own check on `c600_jumble::polytope` (C6), and `admit_chart`, which
+  admits a chart only on established check results and refuses it on a refutation with `EV3:evidence.chart_check_failed`
+  (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact fields (`reference.rs`); and the
+  stage output rules and their composition order (`stage.rs`).
 - Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
   CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
   Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
   digests. C2's next display piece adds CT-RPI-14 over the drafted chart repertoire (RPI.34 is open), CT-RPI-18 on
   the CPU reference (its device version, CT-RPI-33, waits for the renderer), CT-RPI-19's Windows leg, CT-RPI-22's
-  chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32.
-- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
-  set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
-  after acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the
-  drafted chart repertoire (stereographic charts declared by their pole, over convex hulls of exact vertices, with the
-  properties domain, injective and section; RPI.34), exact poses only (every float pose is refused, never rounded;
-  RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own precision rule (1e-4 absolute,
-  with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only, and the stage output rules
-  as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is `not_established` now holds
-  only when the validator's context carries no check result for it (RPI.48).
+  chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32. C6 adds CT-LB4-01,
+  whole over the drafted repertoire (`ct_lb4_01.rs`): the domain with its boundary cases, and injectivity, embedding,
+  isometry and homomorphism each decided by its own check, for stereographic and projective charts.
+- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys, set
+  digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error after
+  acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the drafted chart
+  repertoire (stereographic charts declared by their pole, over convex hulls of exact vertices, with the properties
+  domain, injective and section; RPI.34), which C6 extends with projective charts x ↦ (M·x + t)/(c·x + d), regions that
+  are unions of cells, and the properties embedding, isometry and homomorphism; exact poses only (every float pose is
+  refused, never rounded; RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own
+  precision rule (1e-4 absolute, with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only,
+  and the stage output rules as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is
+  `not_established` now holds only when the validator's context carries no check result for it (RPI.48).
 - Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the stage
   module's parser and checker (RPI.69 to RPI.71, RPI.77, RM.38's weight table) and a backend for HLSL compilation, the
-  raster bound and frame reports (RPI.72, RPI.78, RM.41); KN3's polytope operations beyond `c600_jumble::dd`'s exact
-  vertices, so the region test is local to this crate; charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
-  production precision rule (RPI.36). CT-RPI-08's jumbling rows and the posed producer wait for M5; a decoder from the
-  interpreter's values (the IR draft has list types since pull request 176); F05 and F26 stay unsupported until the stage checker exists;
-  CT-RM-09's rows 3 to 6, 8 and 10 (the raster bound, frame-report stops and device-fault quarantine) need a stage
-  checker or a device; RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its
-  backend.
+  raster bound and frame reports (RPI.72, RPI.78, RM.41); an exact checker of isometry and homomorphism for the
+  stereographic chart, which is not a projective map (both stay `not_established`); charts and properties outside the
+  drafted repertoire, the GPU agreement check (RPI.35) and a production precision rule (RPI.36). CT-RPI-08's jumbling
+  rows and the posed producer wait for M5; a decoder from the interpreter's values (the IR draft has list types since
+  pull request 176); F05 and F26 stay unsupported until the stage checker exists; CT-RM-09's rows 3 to 6, 8 and 10
+  (the raster bound, frame-report stops and device-fault quarantine) need a stage checker or a device; RM.38's weight
+  table, device loss and `display_unsupported` belong to the renderer and its backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 
@@ -1677,8 +1713,9 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
-  executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 17 of DET.65's 40 traces as `.6cs` programs on both
+  executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication,
+  alias and pointwise-failure traces since LP2's `exact_mul` and `assert`); the protocol's bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
   or unknown, the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu
   word's, a menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
@@ -1694,10 +1731,9 @@ run or not applicable is no pass (PHS.63).
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 29 traces need
-  what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
-  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
-  `lp1-exec-region-draft-1` (LP2).
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 23 traces need
+  what the IR draft lacks: child scopes, more than one generator per run, text order, byte decoding, loops and flow
+  checks, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
@@ -1944,10 +1980,13 @@ run or not applicable is no pass (PHS.63).
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
     preserves the analysed set. The jumbling half, at pose level, is C8's (`c600-jumble-tool/tests/ct_lb4_03.rs`).
-  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference (a declared domain decided by an exact region test and section
-    membership on the posed vertices, boundary cases included; a chart whose vertices pass and whose domain fails inside
-    is refused; an established domain establishes no injectivity); CT-LB4-02, whole (synthetic: replacing the decisions
-    between exact poses changes only display data); CT-LB4-04's admission half and CPU half.
+  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference through the survey and the admission (a declared domain decided by an
+    exact region test and section membership on the posed vertices, boundary cases included; a chart whose vertices pass
+    and whose domain fails inside is refused; an established domain establishes no injectivity; a flat cell's embedding
+    is established by its own check while the stereographic chart's isometry and homomorphism stay `not_established`; a
+    full-dimensional region whose vertices all pass the vertex test fails injectivity inside, and the chart is refused);
+    CT-LB4-02, whole (synthetic: replacing the decisions between exact poses changes only display data); CT-LB4-04's
+    admission half and CPU half.
   - `tool.rs`: the source parses and lowers, and every entry is admitted; CT-BND-15's representations part; CT-LB6-03's
     representations part (a stash-and-relay, a state-chosen target, a writing view and an exported function the manifest
     does not list are each found). The record is checked with a fixture reviewer: BM5's review of the tool happens when
@@ -1972,10 +2011,9 @@ run or not applicable is no pass (PHS.63).
   in the command layer); the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's
   job arguments; kernel rows for the `filter.preview` and `structure.compare` snapshot reads; a record and an exact-set
   digest for each saved set; a display that applies the published scope (the APIs are in the crate documentation under
-  "Not built"); the checkers for homomorphism, embedding, isometry and full-dimensional injectivity (CT-LB4-01's rest,
-  which needs KN3's exact polytope operations beyond `dd`'s vertices); the stage checker, HLSL compilation and every
-  device step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of its typed relations,
-  a slot's current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
+  "Not built"); the stage checker, HLSL compilation and every device step (CT-LB4-04's rest, the renderer freeze); the
+  relationship strip (C8 computes one of its typed relations, a slot's current occupant, at pose level); filters of
+  trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

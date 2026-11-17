@@ -11,9 +11,10 @@
 //! overhead: reading the arguments, the entry call and its frame, a `display_if` condition, binding results to names,
 //! returns, and encoding and emitting the entry's result.
 //!
-//! The limits give every mapped row the trace's headroom. A probe run with wide limits measures the overhead. For a
-//! trace that completes, each limit is the program's use plus the trace's slack (limit minus use; memory's use is the
-//! peak). For a trace that stops at a row, each cumulative limit is the program's charges before the mapped row plus
+//! The limits give every mapped row the trace's headroom. A probe run with wide limits measures the overhead (with
+//! other arguments only where the trace stops on a value: below). For a trace that completes, each limit is the
+//! program's use plus the trace's slack (limit minus use; memory's use is the peak), and the run uses what the probe
+//! used. For a trace that stops at a row, each cumulative limit is the program's charges before the mapped row plus
 //! the trace's headroom before its row; the memory limit is the program's live memory before that row plus the trace's
 //! memory headroom, raised to the program's earlier peak unless the trace stops on memory (a realisation that would
 //! need the raise there is refused). The stopped operation, admitted in the probe, must charge what the trace's
@@ -23,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 11 of 40
+//! # Realised: 17 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -38,6 +39,12 @@
 //! | `nested-calls` | DET.58 | `outer()` calls `inner()`, which reads `k`; neither frame has a slot (16 bytes) |
 //! | `output-equality` | DET.59 | `equal("abcde")`: one eight-byte unit at equality |
 //! | `output-retained-at-cutoff` | DET.59 | `retain("abcde", "")`: one unit published, the second refused on output |
+//! | `oversized-arithmetic` | DET.57 | `mul(2^80, 2^80)`: `exact_mul` of 11 limbs by 11, refused on kernel cost |
+//! | `oversized-admitted` | DET.57 | the same product admitted at its limits, published, released at the scope's exit |
+//! | `arithmetic-reservation` | DET.57 | `mul(0, 2^80)`: 12 bytes reserved, 10 released as the product's 2 settle |
+//! | `alias-release` | DET.58 | `release()`: `mk()` aliases `a` as `b` and returns `b`, so `a` is released first |
+//! | `alias-still-live` | DET.58 | `live()`: the same alias, then a five-byte literal refused on memory |
+//! | `pointwise-failure` | DET.55 | `check(7)`: `assert` of a false comparison ends the run with its error code |
 //!
 //! The trace's `display_if` condition is a given value that holds no memory. `pick` binds its comparison with `let`,
 //! so the `display_if` row visits a borrowed condition and releases nothing; the comparison's byte is released at the
@@ -58,12 +65,24 @@
 //! The trace's generator key and counter are not observable through a run; the drawn values are, through the
 //! published view.
 //!
-//! # Not realised: 29 of 40
+//! The exact-arithmetic traces price `exact_mul` with the test tariffs: eight-bit limbs, one kernel unit per pair of
+//! limbs, and a reservation of one byte plus the operands' bits in bytes; the product is the published view.
+//!
+//! `let` scopes nest, so the alias traces, which release `a` before its alias `b`, cross a call: `mk` binds `a`,
+//! aliases it as `b` and returns `b`, which leaves with its own owner while `mk`'s scope exit releases `a`. The
+//! trace's `c` is a literal of the caller, or in `alias-still-live` of a further callee `yz` whose frame has as many
+//! slots as `mk`'s (two unit `let`s): the overhead's memory peak inside `mk` is then exactly the live memory at `c`
+//! plus the trace's headroom, so the memory stop needs no raise.
+//!
+//! A trace that ends in a domain error stops on a value, while the probe must complete. `pointwise-failure`'s probe
+//! runs `check(1)`, whose comparison holds; the run's argument `7` reads alike (one digit), so every row before the
+//! assertion is the same.
+//!
+//! # Not realised: 23 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no child scope (6 traces), loop, pointwise assertion, exact multiplication, text order, byte decoding or
-//! streaming cursor; `let` scopes nest; a run has one generator, seeded at the entry; and the region contract
-//! `lp1-exec-region-draft-1` has no executor yet.
+//! has no child scope (6 traces), loop, text order, byte decoding or streaming cursor; a run has one generator,
+//! seeded at the entry; and the region contract `lp1-exec-region-draft-1` has no executor yet.
 
 mod support;
 
@@ -98,12 +117,19 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     export fn outer() -> Unit effects [snapshot] {\n    return inner();\n}\n\n\
     export fn equal(t: Text) -> Unit effects [view] {\n    return publish_view(t);\n}\n\n\
     export fn retain(t: Text, u: Text) -> Unit effects [view] {\n    let a = publish_view(t);\n    \
-    return publish_view(u);\n}\n";
+    return publish_view(u);\n}\n\n\
+    export fn mul(a: Int, b: Int) -> Unit effects [view] {\n    let x = exact_mul(a, b);\n    \
+    let v = publish_view(x);\n    return ();\n}\n\n\
+    fn mk() -> Nat effects [] {\n    let a = 65536;\n    let b = a;\n    return b;\n}\n\n\
+    fn mid() -> Nat effects [] {\n    let b = mk();\n    return 65537;\n}\n\n\
+    export fn release() -> Unit effects [] {\n    let c = mid();\n    return ();\n}\n\n\
+    fn yz() -> Nat effects [] {\n    let p = ();\n    let q = ();\n    return 16777216;\n}\n\n\
+    fn late() -> Nat effects [] {\n    let b = mk();\n    return yz();\n}\n\n\
+    export fn live() -> Unit effects [] {\n    let c = late();\n    return ();\n}\n\n\
+    export fn check(n: Nat) -> Unit effects [] {\n    let p = exact_less(n, 5);\n    return assert(p);\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 29] = [
-    ("alias-release", "`let` scopes nest: `a` outlives its alias `b`, so it cannot be released first"),
-    ("alias-still-live", "`let` scopes nest: `a` outlives its alias `b`, so it cannot be released first"),
+const UNREALISED: [(&str, &str); 23] = [
     ("child-allowances", "the IR has no child scope (DET.60 runs on the meter's traces only)"),
     ("child-return-owner", "the IR has no child scope"),
     ("root-before-child", "the IR has no child scope"),
@@ -117,12 +143,8 @@ const UNREALISED: [(&str, &str); 29] = [
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
-    ("abstract-trace-charges", "the IR has no loop, pointwise assertion or flow check"),
+    ("abstract-trace-charges", "the IR has no loop or flow check"),
     ("final-loop-test", "the IR has no loop; recursion adds call frames the trace's loop does not have"),
-    ("pointwise-failure", "the IR has no pointwise assertion"),
-    ("oversized-arithmetic", "the IR has no exact multiplication"),
-    ("oversized-admitted", "the IR has no exact multiplication"),
-    ("arithmetic-reservation", "the IR has no exact multiplication"),
     ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
@@ -137,6 +159,9 @@ struct Realisation {
     trace: &'static str,
     entry: &'static str,
     args: fn() -> Vec<Value>,
+    /// The probe's arguments where they differ from the run's: a trace that ends in a domain error stops on a value,
+    /// while the probe must complete. The rows before the stop must be the same (module docs).
+    probe_args: Option<fn() -> Vec<Value>>,
     /// The job options for the given limits, from the trace's `given`.
     options: fn(&Json, Amounts) -> JobOptions,
     /// Prepares the caller's session from the trace's `given`.
@@ -220,6 +245,21 @@ fn published_draws(values: &[(String, Json)], session: &Session) {
     assert_eq!(session.views, vec![bytes], "the drawn values are the trace's");
 }
 
+/// `2^n`, an integer argument of `n + 1` bits.
+fn power(n: u32) -> Value {
+    Value::int(BigInt::from(1u8) << n)
+}
+
+/// `mul` publishes its product, the trace's one value.
+fn published_product(values: &[(String, Json)], session: &Session) {
+    let [(name, product)] = values else { panic!("one value in the trace's values: {values:?}") };
+    assert_eq!(name, "mul");
+    let product = BigInt::parse_bytes(product.num().expect("a number").as_bytes(), 10).expect("decimal digits");
+    let mut bytes = Vec::new();
+    c600_run::encode::encode(&Value::int(product), &mut bytes).expect("a canonical integer");
+    assert_eq!(session.views, vec![bytes], "the product is the trace's");
+}
+
 /// The program's unit has the trace's byte count (module docs): `"abcde"` and a line feed for the trace's
 /// `"\u00e9"`. Only an admitted unit reaches the host.
 fn eight_byte_unit(values: &[(String, Json)], session: &Session) {
@@ -237,12 +277,28 @@ const PICK_TRUE: &[(&str, &str)] = &[
 ];
 const PICK_FALSE: &[(&str, &str)] = &[("display", "m.pick:1#display_if"), ("display/else/a", "m.pick:1.2#visit")];
 const SHOW: &[(&str, &str)] = &[("emit", "m.show:root#publish_view")];
+const MUL: &[(&str, &str)] = &[("mul", "m.mul:0#exact_mul"), ("drop", "m.mul:root#scope_exit")];
+const ALIAS: &[(&str, &str)] = &[
+    ("a", "m.release:0 > m.mid:0 > m.mk:0#value"),
+    ("b", "m.release:0 > m.mid:0 > m.mk:1#alias"),
+    ("drop-a", "m.release:0 > m.mid:0 > m.mk:root#scope_exit"),
+    ("c", "m.release:0 > m.mid:1#value"),
+    ("drop-b", "m.release:0 > m.mid:root#scope_exit"),
+    ("drop-c", "m.release:root#scope_exit"),
+];
+const STILL_LIVE: &[(&str, &str)] = &[
+    ("a", "m.live:0 > m.late:0 > m.mk:0#value"),
+    ("b", "m.live:0 > m.late:0 > m.mk:1#alias"),
+    ("drop-a", "m.live:0 > m.late:0 > m.mk:root#scope_exit"),
+    ("c", "m.live:0 > m.late:1 > m.yz:1.1#value"),
+];
 
 fn realisations() -> Vec<Realisation> {
     let base = Realisation {
         trace: "",
         entry: "pick",
         args: || pick_args(1, 2),
+        probe_args: None,
         options: plain,
         setup: untouched,
         map: PICK_TRUE,
@@ -322,6 +378,50 @@ fn realisations() -> Vec<Realisation> {
             stop_would: Some([1, 3, 3, 3]),
             kernel_extra: 3 - 1,
             values: eight_byte_unit,
+            ..base
+        },
+        // 2^80 · 2^80: eleven limbs by eleven, and a reservation of 1 + ceil(162 / 8) bytes (DET.57).
+        Realisation {
+            trace: "oversized-arithmetic",
+            entry: "mul",
+            args: || vec![power(80), power(80)],
+            map: &MUL[..1],
+            stop_would: Some([1, 121, 22, 0]),
+            ..base
+        },
+        Realisation {
+            trace: "oversized-admitted",
+            entry: "mul",
+            args: || vec![power(80), power(80)],
+            map: MUL,
+            values: published_product,
+            ..base
+        },
+        // 0 · 2^80: one limb by eleven; the reservation of 12 bytes settles on the product's 2.
+        Realisation {
+            trace: "arithmetic-reservation",
+            entry: "mul",
+            args: || vec![Value::int(0), power(80)],
+            map: MUL,
+            values: published_product,
+            ..base
+        },
+        Realisation { trace: "alias-release", entry: "release", args: Vec::new, map: ALIAS, ..base },
+        Realisation {
+            trace: "alias-still-live",
+            entry: "live",
+            args: Vec::new,
+            map: STILL_LIVE,
+            stop_would: Some([1, 0, 5, 0]),
+            ..base
+        },
+        Realisation {
+            trace: "pointwise-failure",
+            entry: "check",
+            args: || vec![Value::int(7)],
+            probe_args: Some(|| vec![Value::int(1)]),
+            map: &[("predicate", "m.check:1.0#visit"), ("assert", "m.check:1#assert")],
+            stop_would: Some([1, 0, 0, 0]),
             ..base
         },
     ]
@@ -481,13 +581,13 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     let id = r.trace;
     let given = vector.get("given").expect("given");
     let trace = Trace::read(vector);
-    let job_with = |limits| job(source, r.entry, (r.args)(), (r.options)(given, limits));
+    let job_with = |args: fn() -> Vec<Value>, limits| job(source, r.entry, args(), (r.options)(given, limits));
     let setup = |s: &mut Session| (r.setup)(given, s);
 
     // The probe: wide limits, in process.
     let mut session = Session::default();
     setup(&mut session);
-    let probe = match run_in_process(&job_with(WIDE), &mut session, None) {
+    let probe = match run_in_process(&job_with(r.probe_args.unwrap_or(r.args), WIDE), &mut session, None) {
         Ended::Ran(run) => run.summary,
         Ended::Refused(refused) => panic!("{id}: {refused:#?}"),
     };
@@ -510,10 +610,16 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     assert!(r.kernel_extra == 0 || r.stop_would.is_some(), "{id}: extra kernel-cost headroom for a stop only");
 
     let limits = limits(id, &trace, &probe, &mapped, r.kernel_extra);
-    let (end, session) = compare(rt, &job_with(limits), setup);
+    let (end, session) = compare(rt, &job_with(r.args, limits), setup);
     let summary = &ran(&end).summary;
 
-    assert_eq!(summary.outcome.name(), trace.outcome, "{id}: outcome");
+    let run = summary.rows.iter().map(|row| format!("\n  {} {:?}", row.at, charges(row))).collect::<String>();
+    assert_eq!(
+        summary.outcome.name(),
+        trace.outcome,
+        "{id}: outcome, stop {:?}, limits {limits:?}:{run}",
+        summary.stop
+    );
     assert_eq!(summary.code, trace.code.as_deref(), "{id}: code");
     let length = if trace.stop.is_some() { mapped[mapped.len() - 1] + 1 } else { probe.rows.len() };
     assert_eq!(summary.rows.len(), length, "{id}: the run ends at the mapped row:{listing}");
@@ -527,7 +633,8 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     assert_eq!(summary.live_after_cleanup, 0, "{id}: cleanup releases everything");
 
     match (&trace.stop, &summary.stop) {
-        (None, None) => assert_eq!(summary.used, limits, "{id}: the run uses its limits exactly: equality is admitted"),
+        // Each limit is the probe's use plus the trace's slack: where the trace has none, equality is admitted.
+        (None, None) => assert_eq!(summary.used, probe.used, "{id}: the run uses what the probe used"),
         (Some(want), Some(got)) => {
             let program_at = r.map.iter().find(|(at, _)| *at == want.at).expect("the stop row is mapped").1;
             assert_eq!(got.at, program_at, "{id}: stop position");
@@ -559,8 +666,8 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     (r.values)(&trace.values, &session);
 }
 
-/// CT-RTE-04 in part: eleven DET.65 traces realised as programs keep their exact results, charges, stopping points
-/// and source associations on both executors; the other 29 are listed with the reason they are not realised.
+/// CT-RTE-04 in part: seventeen DET.65 traces realised as programs keep their exact results, charges, stopping points
+/// and source associations on both executors; the other 23 are listed with the reason they are not realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
     let text_of = std::fs::read_to_string(VECTORS).unwrap_or_else(|e| panic!("cannot read {VECTORS}: {e}"));

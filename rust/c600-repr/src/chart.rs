@@ -99,7 +99,8 @@ pub fn survey(
     Ok(Survey { checks, frames })
 }
 
-/// `admit_chart` over a survey's exact verdicts (RPI.48). The frames are not an input.
+/// `admit_chart` over a survey's exact verdicts (RPI.48): a claimed property is admitted only when its own check
+/// established it at every exact pose and region the survey checked. The frames are not an input.
 pub fn admit(chart: &Chart, survey: &Survey) -> (Admission, Vec<(String, PropertyStatus)>) {
     chart::admit_chart(chart, &survey.checks)
 }
@@ -125,8 +126,9 @@ pub enum UserChartError {
 }
 
 /// Admits a user chart: the stage's outputs are checked first, the stage must be a vertex stage, the chart must name
-/// the stage's digest as a stage definition, and then `admit_chart` reads `checks`. Passing the stage rules establishes no property: with no
-/// established check for a claimed property the admission is `not_established` (LB4.3).
+/// the stage's digest as a stage definition, and then `admit_chart` reads `checks`. Passing the stage rules
+/// establishes no property: with no established check for a claimed property the admission is `not_established`
+/// (LB4.3).
 pub fn admit_user_chart(
     description: &StageDescription,
     chart: &Chart,

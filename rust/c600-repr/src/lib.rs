@@ -75,8 +75,9 @@
 //!   base state, and the map's entries) and kept; [`layout::LinkedSelection::frame`] reads it and computes nothing.
 //! - LB4.2: between exact poses a survey takes the display decision for each vertex as a caller-supplied function,
 //!   whose default is the CPU reference's own exclusion neighbourhood. The repertoire is `c600-display`'s draft
-//!   (RPI.34 [O]): the stereographic chart over convex hulls of exact vertices in Q(√5), with the properties domain,
-//!   injectivity and section membership.
+//!   (RPI.34 [O]): stereographic and projective charts over unions of cells with exact vertices in Q(√5), with the
+//!   properties domain, injectivity, embedding, isometry, homomorphism and section membership. A survey checks the
+//!   stereographic chart only, the chart the CPU reference evaluates.
 //! - LB4.3: a user chart is bound to its stage when one of the chart's stages names the stage description's digest as
 //!   its definition ([`chart::admit_user_chart`]), and the stage must be a vertex stage, since a chart maps positions.
 //!   The description stands for what the stage checker would read from a checked stage module; that checker, HLSL

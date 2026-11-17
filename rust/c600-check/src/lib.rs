@@ -2919,7 +2919,7 @@ impl<'p> Checker<'p> {
 
     fn prim(&mut self, op: Prim, vals: &[Val]) -> Result<Val, IrError> {
         let arity = match op {
-            Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot => 1,
+            Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot | Prim::Assert => 1,
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
             Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => 1,
@@ -2931,23 +2931,25 @@ impl<'p> Checker<'p> {
         }
         let what = format!("an operand of {op:?}");
         match op {
-            Prim::ExactAdd | Prim::ExactLess => {
+            Prim::ExactAdd | Prim::ExactLess | Prim::ExactMul => {
                 // The result widens along Nat, Int, Rat and Q5; a budget is a cost and mixes with integers only, so an
-                // operand that mixes it with a rational or a Q(√5) value does not fit (LG2.6).
+                // operand that mixes it with a rational or a Q(√5) value does not fit (LG2.6). A product of costs is no
+                // cost, so a product takes no budget at all (LP2 draft).
+                let costs = op != Prim::ExactMul;
                 let mut exact: Vec<&Ty> = Vec::new();
                 let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {
                     let budget = exact.contains(&&Ty::Budget);
                     let field = exact.iter().any(|t| matches!(t, Ty::Rat | Ty::Q5));
                     let fit = match &v.ty {
-                        Ty::Budget => !field,
+                        Ty::Budget => costs && !field,
                         Ty::Rat | Ty::Q5 => !budget,
                         t => is_exact_number(t) || matches!(t, Ty::Approx(_)) || is_unknown(t),
                     };
                     if !fit {
                         let expected = if budget {
                             "Nat | Int | Budget"
-                        } else if field {
+                        } else if field || !costs {
                             "Nat | Int | Rat | Q5"
                         } else {
                             "Nat | Int | Rat | Q5 | Budget"
@@ -3012,6 +3014,18 @@ impl<'p> Checker<'p> {
                     }
                 }
                 Ok(Val::exact(Ty::Bool))
+            }
+            Prim::Assert => {
+                // A pointwise assertion decides whether the run goes on, so its predicate is exact control, as an
+                // ordinary condition is (LG2.20; DET.55): an approximate or display-qualified boolean cannot stop a
+                // run, and an end test's verdict is no boolean (LG2.9).
+                let v = &vals[0];
+                if fits(&Ty::Bool, &v.ty) {
+                    self.at(0, |c| c.exact_use(Site::Control, v, "a pointwise assertion's predicate"));
+                } else {
+                    self.at(0, |c| c.misfit("Bool", v, "a pointwise assertion's predicate"));
+                }
+                Ok(Val::exact(Ty::Unit))
             }
             Prim::ToApprox(p) => {
                 let v = &vals[0];

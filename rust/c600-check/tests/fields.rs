@@ -74,6 +74,7 @@ fn nothing_widens_into_or_out_of_a_field() {
         (f("result", F2, to_f5(var("x"))), "root", "F2", "F5"),
         (f("residue", Ty::Nat, op(Prim::Residue, vec![var("x")])), "0", "F2 | F5", "Int"),
         (f("exact", Ty::Int, exact_add(to_f2(var("x")), var("y"))), "0", "Nat | Int | Rat | Q5 | Budget", "F2"),
+        (f("product", Ty::Int, exact_mul(var("x"), to_f5(var("y")))), "1", "Nat | Int | Rat | Q5", "F5"),
         (f("equal", Ty::Bool, op(Prim::ExactEq, vec![to_f2(var("x")), to_f5(var("y"))])), "1", "F2", "F5"),
         (
             f("ratio", F5, to_f5(Expr::Lit(c600_ir::Lit::Rat { num: "1".into(), den: "2".into() }))),

@@ -33,7 +33,8 @@
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
 //! | `compress`, `expand`, and `concat` and `length` of compressed words (LP2 drafts) | one step each: `compress` costs `expand_per_letter` per letter; `concat` an equality walk over both words, the integer row's addition of their lengths and [`LIST_PER_ELEMENT`] per part of both plus one, and it reserves the parts of both and settles to the built word; `length` reserves its integer and expands nothing; `expand` costs `expand_per_letter` per letter out and [`LIST_PER_ELEMENT`] per part it may visit, 2·(height + count) + 1, and a range past the word's end stops with `LG4:input.pointwise_failed` before its step |
-//! | exact arithmetic | `exact_add`, `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not` |
+//! | exact arithmetic | `exact_add`, `exact_mul` (LP2 draft), `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not`; an integer sum or product is priced by the vectors' integer rows (DET.57), a rational or Q(√5) one by `field_per_unit_pair` per pair of widened operand bytes |
+//! | `assert` (LP2 draft) | the predicate, then one step `assert` with no memory; a false predicate stops the run with `LG4:input.pointwise_failed` after that step, before the guarded operation (DET.55) |
 //! | snapshot read, declassifier | `kernel` with the host row's tariff and result bound |
 //! | snapshot read with an argument (LP2 draft) | `encode` of the argument, then `kernel` with the host row's tariff and result bound and the argument bytes as output; the host gets the canonical bytes, and the buffer is released after the answer; an approximate argument stops with `LG4:input.ir_rejected` before the encoding |
 //! | file read, clock | `read` with the host row's tariff and result bound |
@@ -527,6 +528,7 @@ fn log2_ceil(n: u128) -> u128 {
 fn arity(op: Prim) -> Option<usize> {
     match op {
         Prim::ExactAdd
+        | Prim::ExactMul
         | Prim::ExactLess
         | Prim::ExactEq
         | Prim::And
@@ -534,7 +536,7 @@ fn arity(op: Prim) -> Option<usize> {
         | Prim::ApproxAdd
         | Prim::ApproxLess
         | Prim::ApproxAnd => Some(2),
-        Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) => Some(1),
+        Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) | Prim::Assert => Some(1),
         Prim::ToExact => None,
         Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => Some(1),
         Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
@@ -1307,6 +1309,8 @@ impl<'a> Machine<'a> {
         let (a, b) = (&args[0].value, args.get(1).map(|h| &h.value));
         let name = match op {
             Prim::ExactAdd => "exact_add",
+            Prim::ExactMul => "exact_mul",
+            Prim::Assert => "assert",
             Prim::ExactLess => "exact_less",
             Prim::ExactEq => "exact_eq",
             Prim::Not => "not",
@@ -1352,6 +1356,9 @@ impl<'a> Machine<'a> {
         let exact = |v: &Value| matches!(v, Value::Int(_) | Value::Rat(_) | Value::Q5(_));
         let price = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add_price(a, b, &t, &d),
+            (Prim::ExactMul, a, Some(b)) => value::mul_price(a, b, &t, &d),
+            // One step and no memory: the predicate was evaluated before, with ordinary operations (DET.55).
+            (Prim::Assert, Value::Bool(_), None) => Some((0, 0)),
             (Prim::ExactLess, a, Some(b)) => value::compare_price(a, b, &d).map(|k| (k, 1)),
             // A compressed word has no exact equality, and an end test's verdict is matched on its outcomes only, so
             // an equality of verdicts behind a type variable stops here (LP2 drafts; LG2.9).
@@ -1381,6 +1388,13 @@ impl<'a> Machine<'a> {
         self.charge(Some(n), name, kernel, memory, 0)?;
         let result = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add(a, b).expect("priced operands add"),
+            (Prim::ExactMul, a, Some(b)) => value::mul(a, b).expect("priced operands multiply"),
+            // A false predicate ends the run before the guarded operation, and the assertion keeps its admitted step
+            // (DET.55, DET.56).
+            (Prim::Assert, Value::Bool(false), None) => {
+                return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
+            }
+            (Prim::Assert, Value::Bool(true), None) => Value::Unit,
             (Prim::ExactLess, a, Some(b)) => Value::Bool(value::compare(a, b) == Some(std::cmp::Ordering::Less)),
             (Prim::ExactEq, a, Some(b)) => Value::Bool(value::equal(a, b)),
             (Prim::Not, Value::Bool(x), None) => Value::Bool(!x),

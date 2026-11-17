@@ -112,7 +112,8 @@ fn prim_family(op: Prim) -> &'static str {
     match op {
         Prim::ExactAdd | Prim::ExactLess | Prim::ExactEq | Prim::And | Prim::Or | Prim::Not => "arithmetic",
         Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxAdd | Prim::ApproxLess | Prim::ApproxAnd => "arithmetic",
-        Prim::ApproxNot => "arithmetic",
+        Prim::ApproxNot | Prim::ExactMul => "arithmetic",
+        Prim::Assert => "resource control",
         Prim::ToField(_) | Prim::Residue | Prim::FieldAdd | Prim::FieldSub | Prim::FieldNeg | Prim::FieldMul => {
             "arithmetic"
         }
