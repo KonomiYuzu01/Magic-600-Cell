@@ -35,8 +35,8 @@ The checker depends on the IR crate only, and the syntax crate on the IR and dig
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR, digest and
-evidence crates and on the command layer; its job tests run checked source programs too. The evidence library depends
-on the digest crate only.
+evidence crates and on the command layer; its job tests run checked source programs too, and its jumbling tests read
+the twist menu through the jumbling crate, a dev-dependency. The evidence library depends on the digest crate only.
 The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
 view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
@@ -1248,13 +1248,23 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (`word`); FP.19's facts envelope, read into `c600-evidence`'s graph, with the display word for each recorded
   function edition (`facts`); FP.29's migration record, the function-edition change and FP.28's publication, which
   validates a whole generation before it writes anything, writes it durably and only then appends the active pointer
-  (`migrate`); and 0.4's preview certificate as a recorded claim (`legacy`, PS3.7). Its draft choices are listed in
-  `src/persist/mod.rs`. The session's journal does not store through this layer yet; it keeps its own draft frames
-  (above).
+  (`migrate`); 0.4's preview certificate as a recorded claim (`legacy`, PS3.7); and the run record (`run`, PS1.31):
+  chapter 09's `ReproKey` with every DET.1 field, the consulted inputs captured by digest before the key is sealed,
+  the grants, the profile and the policy identity, and the exact payload. A run record reads DET.30's coverage, counts
+  a published witness once a check record confirms it (KN7.4), and admits a reproduction before execution, which
+  stays the caller's: LP3's runtime in a session, the interpreter in the tests. A stored menu word is admitted into a
+  session only under the session's whole identity block, and with Jumble off only with retained letters
+  (`word::admit_in`). Its draft choices are listed in `src/persist/mod.rs`. The session's journal does not store
+  through this layer yet; it keeps its own draft frames (above), and the jumbling episodes are KN5's records in them.
 - Tests: `persist_ps1.rs` runs CT-PS1-08 to CT-PS1-10, CT-PS1-19, CT-PS1-21 and CT-PS1-23 whole, and `persist_ps2.rs`
   runs CT-PS2-01 to CT-PS2-05 whole, over the packet's vectors read in place (shared helpers in
   `tests/persist_support/`). The publication runs on `MemDisk`, with each write failing in turn and with an outage
-  from each write on, so a pass is no power-loss evidence (FP.28).
+  from each write on, so a pass is no power-loss evidence (FP.28). `persist_run.rs` runs CT-PS1-16, CT-DET-04,
+  CT-DET-14 and CT-BND-23 whole: the test parses, checks and runs each program on RT1's interpreter and plays the
+  executor's half that LP3's runtime plays in a session (capture, seal, run, `run::exact`). `persist_jumble.rs` runs
+  CT-PS1-11 and CT-PS1-22 whole by the union of their parts: stored menu words and the journal's replay under the
+  I_a menu for CT-PS1-11; the never-on journal, and a failure at each append of an entry, a pose move and an exit
+  with a power loss after it or after the step sent again, for CT-PS1-22, on `MemDisk` again.
 - Critical-path read of the record layer (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model
   read `src/persist/` and its tests with the acceptance check. Its two major findings were fixed before the pull
   request: R1, a publication after a torn pointer line wrote a line feed first, so a failure after that byte completed
@@ -1268,6 +1278,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   notes, one is fixed: a `c600-` record given under another format name is refused. Deferred: a damaged last pointer
   line stops every later publication, and the store has no repair path; `reconcile` reads a missing pointer log after
   a failed append as no switch, which holds while a failed append leaves no unreadable file.
+- Critical-path read of the run record and the jumbling tests (second pull request): a fresh Claude subagent on a
+  smaller model read `src/persist/run.rs`, the word admission, `persist_run.rs` and `persist_jumble.rs` and found no
+  blocker or major. Its minor findings are fixed: a result whose outcome and code disagree is refused; a key names
+  each module once; a check that reads open itself, as under a clock grant, confirms no witness; `reproduce` says
+  that a record that cannot repeat answers `not run` before admission; a seeded run reproduces from its seed, fetched
+  by digest; and a step sent again after a rolled-back append commits and survives the power loss. Each source fix
+  has a case that fails without it. Deferred: a reproduction with a `pick` or `provenance` capture, since CT-DET-04
+  names a workspace, a protection input, a grant and a file. Two review notes on the first pull request are fixed
+  too: a stored word length past `i128::MAX / 2` is refused instead of overflowing, and `record::follow` says that its
+  caller checks the expected kind and the Ref's format and version, as the packet's reference does.
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test and the
   session-lock tests, so a pass is no evidence of a real disk's behaviour in a crash. The checks ran on Windows
   only.
@@ -1351,11 +1371,11 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool):
-  79 whole, nine of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
-  CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 134 part; 4 named only by LP3's command-layer tests, as parts
-  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 31 waiting, each with what it
-  waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  M6's record layer with its run record and jumbling records, as `tools/language/ct_index.py --summary` prints it
+  (`tests/test_ct_index.py` checks the tool): 85 whole, eleven of them by the union of their parts (CT-KN1-04,
+  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22);
+  134 part; 4 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and
+  CT-LI-10); none missing; 25 waiting, each with what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1430,11 +1450,6 @@ run or not applicable is no pass (PHS.63).
 - Missing, by what they wait for:
   - LP3's lanes, views and shell (16): CT-ONE-13 to CT-ONE-16, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07,
     CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
-  - M6's run record (4): CT-PS1-16, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for
-    CT-DET-04 and CT-BND-23).
-  - The session store's jumbling records (2): CT-PS1-11 (a session with a reversed I_a order, another contract or model,
-    or jumble letters with Jumble off is refused) and CT-PS1-22 (the optional jumbling section, and an interrupted
-    episode's recovery), with M6.
   - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
     (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.

@@ -191,6 +191,7 @@ dependencies = [
  "c600-digest",
  "c600-evidence",
  "c600-ir",
+ "c600-jumble",
  "c600-kernel",
  "c600-run",
  "c600-syntax",

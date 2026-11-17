@@ -22,8 +22,8 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-KN2-04 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |
 | CT-KN2-05 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |
 | CT-KN1-04 | whole by union | M4's 600-cell-Full half (`c600-kernel/tests/kernel.rs`) and M8's jumbling half (`c600-jumble/tests/levels.rs`) (`rust/README.md`, the count line) |
-| CT-PS1-11 | waiting | the session store's jumbling records, with M6 (`rust/README.md`, missing list) |
-| CT-PS1-22 | waiting | the session store's jumbling records, with M6 (`rust/README.md`, missing list) |
+| CT-PS1-11 | whole by union | the stored-word half and the journal half in `c600-session/tests/persist_jumble.rs` together run the whole definition (`rust/README.md`, the count line) |
+| CT-PS1-22 | whole by union | the never-on half and the interrupted-crossing half in `c600-session/tests/persist_jumble.rs` together run the whole definition (`rust/README.md`, the count line) |
 | CT-LG2-15 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
 | CT-LG3-10 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
 | CT-LG5-08 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
@@ -31,10 +31,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-DET-21 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-22 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-LG4-05 | waiting | a pointwise or whole-state contract form in the IR, no milestone named; named only as not built (`rust/README.md`, missing list) |
-| CT-PS1-16 | waiting | the run record, M6 (`rust/README.md`, missing list) |
-| CT-DET-04 | waiting | the run record, M6, with LP3's grants (`rust/README.md`, missing list) |
-| CT-DET-14 | waiting | the run record, M6 (`rust/README.md`, missing list) |
-| CT-BND-23 | waiting | the run record, M6, with LP3's grants (`rust/README.md`, missing list) |
 | CT-ONE-13 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-14 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-15 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |

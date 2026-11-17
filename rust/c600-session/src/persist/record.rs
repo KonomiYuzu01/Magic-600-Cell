@@ -8,6 +8,8 @@
 
 use std::collections::BTreeMap;
 
+use c600_kernel::{IdentityBlock, Puzzle};
+
 use super::codec::{canonical, read_canonical, sha_of, Json};
 use super::codes::{CANON, FORMAT, PROVENANCE, VERSION};
 use super::{require, Refusal};
@@ -172,6 +174,12 @@ pub fn supported(header: &Json) -> Result<(), Refusal> {
 /// `PS2:input.persistence_version`.
 pub fn record_header(record: &Json) -> Result<(), Refusal> {
     supported(record)?;
+    header_fields(record)
+}
+
+/// [`record_header`] after dispatch: the fields and extensions, for a format whose own reader dispatched it, such as a
+/// reserved draft ([`super::run`]).
+pub(crate) fn header_fields(record: &Json) -> Result<(), Refusal> {
     let k = keys(record).ok_or(Refusal::new(FORMAT))?;
     require(HEADER.iter().all(|f| k.contains(f)), FORMAT)?;
     require(k.iter().all(|f| HEADER.contains(f) || *f == "extensions"), FORMAT)?;
@@ -197,7 +205,10 @@ pub fn record_header(record: &Json) -> Result<(), Refusal> {
 }
 
 /// FP.10 (MFF-02) and FP.11: dispatch a Ref, follow its content digest, dispatch the record it resolves to, and only
-/// then check the Ref's shape. A known Ref whose digest names no record gives `missing`.
+/// then check the Ref's shape. A known Ref whose digest names no record gives `missing`. As in the format packet's
+/// reference `follow`, the caller then checks the expected kind and FP.11's equality of the record's `format` and
+/// `version` with the Ref's, since the refusal is the caller's: `FORMAT` for a receipt or a playback record,
+/// `PROVENANCE` for a pick.
 pub fn follow<'a>(
     reference: &Json,
     records: &'a BTreeMap<String, Json>,
@@ -237,7 +248,7 @@ pub enum Read {
 
 /// FP.17's block, dispatched by its own version first: a block of another wire version is an unknown nested
 /// version, which the record cannot hide (FP.10).
-fn check_provenance(record: &Json, kind: &str) -> Result<(), Refusal> {
+pub(crate) fn check_provenance(record: &Json, kind: &str) -> Result<(), Refusal> {
     match record.get("provenance") {
         Some(Json::Null) => require(!PROVENANCE_REQUIRED.contains(&kind), FORMAT),
         Some(block) => {
@@ -267,7 +278,7 @@ pub fn read_record(bytes: &[u8], expected: &str) -> Result<Read, Refusal> {
 }
 
 /// FP.5's value rules a writer must keep: integers within ±(2^53 − 1) and nesting within `json_depth`.
-fn check_value(value: &Json, depth: u128) -> Result<(), Refusal> {
+pub(crate) fn check_value(value: &Json, depth: u128) -> Result<(), Refusal> {
     match value {
         Json::Int(n) => require(n.unsigned_abs() <= 9_007_199_254_740_991, CANON),
         Json::List(items) => {
@@ -297,4 +308,21 @@ pub fn write_record(record: &Json) -> Result<Vec<u8>, Refusal> {
     let bytes = canonical(record);
     super::codec::charge("record_decoded", bytes.len() as u128)?;
     Ok(bytes)
+}
+
+/// KN0.1's identity block as the FP.5 value a record's `identity` holds: the jumbling fields are null for
+/// 600-cell-Full, and the menu fields for a jumbling state in free mode.
+pub fn identity_json(block: &IdentityBlock) -> Json {
+    let optional = |field: &Option<String>| field.as_deref().map_or(Json::Null, Json::text);
+    let puzzle = match block.puzzle {
+        Puzzle::Full => "full",
+        Puzzle::Jumbling => "jumbling",
+    };
+    Json::object([
+        ("puzzle", Json::text(puzzle)),
+        ("model_id", Json::text(&block.model_id)),
+        ("menu_id", optional(&block.menu_id)),
+        ("menu_order", optional(&block.menu_order)),
+        ("contract_rev", optional(&block.contract_rev)),
+    ])
 }
