@@ -661,6 +661,8 @@ impl Body<'_> {
             "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
             // An ordered result names its order (LG4.3).
             "contains" | "lookup" | "elements" | "keys" | "entries" => 2,
+            // `read_snapshot<T>("q", x)` reads the engine's row `q` for `x` (LP2 draft).
+            "read_snapshot" if args.len() == 2 => 2,
             // `insert(s, x)` adds to a set, `insert(m, k, v)` to a map (LP2 drafts).
             "insert" if args.len() == 3 => 3,
             "insert" => 2,
@@ -777,6 +779,11 @@ impl Body<'_> {
             "tag" => Ir::Lit(Lit::Tag(self.text(op, &args[0])?)),
             "colour" => Ir::Lit(Lit::Colour(self.text(op, &args[0])?)),
             "target" => Ir::Lit(Lit::Target(self.text(op, &args[0])?)),
+            "read_snapshot" if args.len() == 2 => {
+                let (query, ty) = (self.text(op, &args[0])?, self.ty(&type_args[0])?);
+                let arg = self.at(path, 0, |b, p| b.expr(&args[1], p))?;
+                Ir::ReadSnapshotWith { query, arg: Box::new(arg), ty }
+            }
             "read_snapshot" => Ir::ReadSnapshot { query: self.text(op, &args[0])?, ty: self.ty(&type_args[0])? },
             "publish_view" => Ir::PublishView { value: Box::new(self.at(path, 0, |b, p| b.expr(&args[0], p))?) },
             "write_workspace" => {

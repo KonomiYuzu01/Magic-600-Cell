@@ -202,6 +202,15 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   (LG4.6); the position and the count are exact natural numbers (LG2.20). A compressed word has no exact equality,
   alone or held in a record or a collection, and is no set element or map key, so no checked program compares two.
   CT-LG2-14's language half, static part (`c600-syntax/tests/collections.rs`).
+- Snapshot reads with an argument (LP2 draft until the IR freeze; LP3's plan, section 2). `ReadSnapshotWith` reads
+  the engine's row `query` for an argument, such as a word's protection, for LB2's star and recipe construction and
+  Net and Strict protection. The argument is portable exact data, as a goal or evidence is (owner decision of 16
+  November 2026 under PHS.52): a function, closure, receipt, word equality key or compressed word is
+  `LG2:type.mismatch`, and a display-qualified or approximate value, also inside a record or a collection, is
+  `LG2:type.exactness_violation` (LG2.19, LG2.20). The read has the literal read's effect, `Read(query)` row and
+  state-read fact, so the built-in column and capability separation count it, and its declared type stands: the
+  engine answers it, never a workspace record. The literal `ReadSnapshot` keeps its shape
+  (`c600-run/tests/snapshot_arg.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -271,6 +280,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `ascending` or `descending`, which are reserved words.
 - Compressed words (LP2 drafts). `CompressedWord` is a type, refused as a set element or a map key at lowering;
   `compress` and `expand` are reserved operations called like functions.
+- Snapshot reads with an argument (LP2 draft). `read_snapshot<T>("q", x)` lowers to the read with an argument;
+  `read_snapshot<T>("q")` stays the literal read.
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -355,6 +366,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
   and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
   and admission bounds; CT-LG4-03, M4).
+- Snapshot reads with an argument (LP2 draft): the argument's canonical bytes are priced in DET.59's `encode` row
+  before the `kernel` row, as a preview request's are, and the kernel row counts them as output. An argument with
+  no canonical form stops with `PS1:input.noncanonical_value` and an approximate one with `LG4:input.ir_rejected`,
+  both before the host is asked. The host gets `Request::SnapshotWith { query, arg, ty }` with `arg` the canonical
+  bytes, which `provenance::parse` reads; a literal read stays `Request::Snapshot` (`c600-run/tests/snapshot_arg.rs`).
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -373,8 +389,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Tests (`c600-run/tests/boundary.rs`): the saved-word half of CT-LG3-07, and parts of CT-FP-02, CT-BND-01 to
   CT-BND-04, CT-BND-07, CT-BND-11 to CT-BND-14, CT-BND-22 and CT-BND-26 to CT-BND-30, each naming its part.
 - Drafts, which freeze with the IR and the command table: the acknowledgement is `{base, id}`, with the proposal
-  number `<run>/<n>` as `id`; records are per run; the adapter serves a read of a name it stores as a workspace record
-  and passes any other read to the engine; the engine's preview call does not take the block yet (KN5.9); the store is
+  number `<run>/<n>` as `id`; records are per run; the adapter serves a literal read of a name it stores as a
+  workspace record and passes any other read to the engine, and a read with an argument always reaches the engine
+  and counts as state-derived data for the block's `may_read_state` (LG3.13); the engine's preview call does not take the block yet (KN5.9); the store is
   in memory and returns a stored value as written, and M6's session store decodes by the reader's type.
 - Open: a built-in repair-list pick (CT-BND-29's third case) is refused with `PS1:capability.provenance_incompatible`
   until the session store resolves `c600-pick` records (M6). The command layer is LP3's `c600-command` (below); the
@@ -1319,7 +1336,8 @@ run or not applicable is no pass (PHS.63).
   owner's decision of 16 November 2026 (PHS.52).
 - Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 36 keys: 6 jumbling keys (M5); 6
   keys that need the session store (C7); 12 keys the IR draft cannot express (early stop, exact multiplication and
-  remainder, and a run's input as a query argument; LP2); and 12 budget keys, whose amounts follow LX-3's
+  remainder; LP2) or that pass a run's input as a query argument, which LP2's `read_snapshot<T>("q", x)` now
+  expresses and no host answers yet; and 12 budget keys, whose amounts follow LX-3's
   experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need host events inside a
   loop, the host's row cache or the command layer's rows. The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
@@ -1337,7 +1355,8 @@ run or not applicable is no pass (PHS.63).
   call must acknowledge the last answer, so at most one answer is open (KI.5). No message has a field for a token
   or any other authority (KN5.15). LP2's draft collections cross with one encoding each: lists, word keys (freely
   reduced), and sets and maps in canonical key order. A compressed word crosses as its parts and is rebuilt with the
-  checked `from_parts` (LP2's pull request 185). The lengths that a frame's compressed words derive are bounded
+  checked `from_parts` (LP2's pull request 185). A snapshot read with an argument crosses as
+  `request.snapshot_with`, its argument as canonical bytes. The lengths that a frame's compressed words derive are bounded
   together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses. Above the bound a host's
   answer reaches the run in process but stops the child's run with `PS1:input.noncanonical_value`, a known
   difference (crate draft 15).
@@ -1348,7 +1367,9 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
-  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); LP2's draft collections and compressed
+  canonical encodings, KI.5's record, KN5.15's field list and each host
+  request's round trip and its refusal when cut or unknown (`protocol.rs`); a snapshot read with an argument through
+  the child (`equivalence.rs`); LP2's draft collections and compressed
   words, their canonical forms and refusals on both sides, and their runs through the child (`collections.rs`);
   CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang
   the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
@@ -1734,7 +1755,8 @@ run or not applicable is no pass (PHS.63).
   module manifest; no incompatible-alphabet refusal is built.
 - Not built: jumbling menu letters in the language, which wait for menu words in the IR draft (M5, LP2; C8 builds
   literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction or Net
-  and Strict protection with captured locks, because the IR draft cannot pass a run's input as a query's argument; the
+  and Strict protection with captured locks: the IR draft passes a run's input as a query's argument since LP2's
+  `read_snapshot<T>("q", x)`, and no host answers such a read yet; the
   command layer's preview in Strict mode (KN5, LP2), so CT-LB2-02's Strict half does not run through the tool's route;
   the other entries of LB1.8's table, the word and trace keys among them.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.

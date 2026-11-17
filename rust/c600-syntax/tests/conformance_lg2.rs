@@ -123,7 +123,7 @@ fn family(e: &Ir) -> &'static str {
         Ir::Collection { .. } => "value",
         Ir::Let { .. } | Ir::If { .. } | Ir::Match { .. } | Ir::DisplayIf { .. } | Ir::Call { .. } => "control",
         Ir::Prim { op, .. } => prim_family(*op),
-        Ir::ReadSnapshot { .. } | Ir::Declassified { .. } => "snapshot read",
+        Ir::ReadSnapshot { .. } | Ir::ReadSnapshotWith { .. } | Ir::Declassified { .. } => "snapshot read",
         Ir::PublishView { .. } | Ir::WriteWorkspace { .. } => "view or workspace",
         Ir::FileRead { .. } | Ir::FileWrite { .. } | Ir::RandomDraw | Ir::ReadClock => "granted input or output",
         Ir::Propose { .. } | Ir::ReadReceipt { .. } => "preview",
