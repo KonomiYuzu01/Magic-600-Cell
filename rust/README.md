@@ -25,7 +25,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
-| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and five of them served there by a test host through the command and source routes, with a stand-in engine that answers the two snapshot reads with the state number (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
@@ -243,6 +243,14 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   those (no prefetch for an unnamed cap), and a function the entry reaches that reads for anything but a literal. A
   selection that is no word, such as a cap the method chose, is not told from a per-cap fact
   (`c600-check/tests/built_in.rs`: CT-LB3-07's checker half for recommendations and reads).
+- Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
+  gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word under the independence
+  relation the run pins. A menu word given to it is `LB1:input.incompatible_alphabet`, since the menu's relation,
+  `jumble-locality/1`, is not built. Like a word equality key, a trace key is never literal letters: a proposal, word
+  operation, word slot or result that takes one is `LG2:type.word_key_not_executable`, not a mismatch. It holds its
+  word's letters for the built-in column, and it is no portable data, so a goal, an evidence sink or a snapshot
+  read's argument that holds one is `LG2:type.mismatch` (`c600-check/tests/mismatch.rs`, `exactness.rs` and
+  `built_in.rs`; `c600-syntax/tests/conformance_lg2.rs`: CT-LB1-06's language half, part).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -321,6 +329,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - End tests' verdicts (LP2 draft). `RetainedCheckpointVerdict`, `LabelCheckpointVerdict` and `StickerTestVerdict`
   are types; one as a set element or a map key, alone or in a record, is refused at lowering
   (`c600-syntax/tests/end_tests.rs`).
+- Trace keys (LP2 draft). `TraceEqualityKey` is a type, and `trace_key` is a reserved operation called like a
+  function (`c600-syntax/tests/conformance_lg2.rs`).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -372,7 +382,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   CT-LG4-01 for lists and words, parts) and the key halves of CT-LG2-11 and CT-LG2-13 in `conformance_lg2.rs`.
 - Sets and maps (LP2 drafts): `Value::Set` and `Value::Map` (`Value::set`, `Value::map`) keep their elements, or
   their `{ key, value }` entries, in the canonical key order `value::key_order` (DET.9): exact numbers by value,
-  texts by scalar values, words by letters, aggregates part by part, kinds by a fixed rank, and for equal numbers in
+  texts by scalar values, words by letters, word keys by LG2.23's token order (the generator, then the sign, the
+  inverse first), aggregates part by part, kinds by a fixed rank, and for equal numbers in
   different representations the explicit secondary key `Int`, `Rat`, `Q5`. Equal keys are one key; the lowest
   representation stays, and a map's later value replaces an earlier one. They are sized as lists and encode as JSON
   arrays in that order; a host value out of that order has no canonical form. Draft prices: `set` and `map` are one
@@ -431,9 +442,31 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (`c600-run/tests/end_tests.rs`). Where the checker cannot see a verdict, behind a type variable or in an unchecked
   program, the run stops with `LG4:input.ir_rejected` before the step at an exact equality whose operand is or holds
   a verdict, and at a match on a verdict whose `_` arm takes `unestablished` together with another outcome.
+- Trace keys (LP2 draft; LB1.10, LG2.23): `trace::Relation` is the independence relation `full-disjoint-support/1`
+  of one pinned 600-cell-Full model, built from the 1,200 generators' complete supports
+  (`Relation::full_disjoint_support`: two distinct generators are independent exactly when their supports are
+  disjoint, whatever the signs, and a generator depends on itself) or from its wire parts (`Relation::from_parts`,
+  which recomputes the digest). A run pins at most one, `Options::relation`. `trace_key` gives
+  `Value::TraceEqualityKey`, a `trace::TraceKey`: the relation's header (puzzle, model ID, generator count, the key
+  `trace-key/1`, the contract and the digest, in LG2.23's order) and the word's least topological order under
+  LG2.23's token order, every occurrence kept, so nothing cancels or merges. It is priced before it is built,
+  `expand_per_letter` per unit its scan reads (`Relation::reads`: each generator once; per letter one unit, a heap
+  push and pop of 11 units each, and two units per generator its generator depends on), and its size is 2 bytes per
+  letter. Without a pinned relation the run stops with `LB1:input.key_contract_mismatch`, and at a letter outside 1
+  to 1200 with `LB1:input.incompatible_alphabet`. Keys compare by header, then token by token. A key has no
+  canonical form, so an argument that holds one is refused, and a run that would emit one stops, with
+  `PS1:input.noncanonical_value`; a host answer that holds one under another header, or whose letters are not their
+  own key, stops the run after its kernel row with `LB1:input.key_contract_mismatch`. That check is not metered (open
+  until the IR freeze): it does the work of `trace_key` on the answer's keys, which the row's result bound limits,
+  since a key's size is 2 bytes per letter. `c600_tools::supports` reads the loaded model's supports from the kernel,
+  and `full_relation` builds its relation once per model in a process.
+  Tests: `c600-run/tests/trace_keys.rs` (CT-LB1-06's run-time half on synthetic supports, part) and
+  `c600-tools/tests/supports.rs` (the relation of the model in `assets/`, and CT-LB1-06 on it).
 - Open for menu words: the jumbling library entries that use them (LP3: the jumbling halves of CT-LB1-03 and
-  CT-LB1-06), their trace key (LB1.10), and the alphabet a jumbling host pins, which it builds from
-  `c600_kernel::IdentityBlock` and the inverse items of its menu (`menu::MenuAlphabet::new`).
+  CT-LB1-06), their trace key (LB1.10), which waits for `jumble-locality/1`'s relation and an exact Δ(c,d) entry in
+  `c600-jumble`, and the alphabet a jumbling host pins, which it builds from `c600_kernel::IdentityBlock` and the
+  inverse items of its menu (`menu::MenuAlphabet::new`). Not built for trace keys: the operations on compressed
+  words, which LP3 does not need, and EV4.9's report of a key's contract.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -1594,11 +1627,17 @@ run or not applicable is no pass (PHS.63).
   (`JobOptions::built_in`, LP2's draft), a trailing field of the run: the child then admits the entry with
   `c600_check::admit_built_in`, and both executors refuse class rows outside the solving profile at the admission
   stage. A menu word (LP2's draft, LB1.8) crosses with its identity block (value tag 21, type tag 23), a menu-word
-  preview as `request.propose_menu` (request tag 6), and a job may pin a menu alphabet (`JobOptions::menu`), the
-  run's last field, after the class rows: the identity block, the cap count and the inverse items, which the decoder
+  preview as `request.propose_menu` (request tag 6), and a job may pin a menu alphabet (`JobOptions::menu`), a
+  trailing field after the class rows: the identity block, the cap count and the inverse items, which the decoder
   checks as `MenuAlphabet::new` does. `LB1:input.incompatible_alphabet` is one of the interpreter's own stop codes
   (`codec::STATIC_CODES`). An end test's verdict (LP2's draft, LB3.2) crosses as value tag 22 with its test's and
-  its outcome's indices, and its type as type tag 24 with the test's index. The lengths that a frame's compressed
+  its outcome's indices, and its type as type tag 24 with the test's index. A trace key (LP2's draft, LB1.10)
+  crosses as value tag 23 with its header in LG2.23's order and its letters, and its type as type tag 25; a job may
+  pin a trace relation (`JobOptions::relation`), the run's last field, after the pinned menu: the contract, the
+  puzzle and model ID, the generator count and the independence bits, from which the decoder recomputes the digest,
+  refusing what `Relation::from_parts` refuses. The codec cannot order a key's letters without the relation, so the
+  run checks a decoded key against its pinned relation, and `LB1:input.key_contract_mismatch` is one of the
+  interpreter's own stop codes. The lengths that a frame's compressed
   words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
@@ -1610,8 +1649,8 @@ run or not applicable is no pass (PHS.63).
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
-  or unknown, the class rows and the pinned menu as strict trailing fields, and a menu word's and a menu-word
-  preview's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
+  or unknown, the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu
+  word's, a menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
   entry admitted, refused for a row its class does not list and refused outside the solving profile, and a pinned
   menu's words, refusals and preview, alike on both executors (`equivalence.rs`); LP2's draft collections and
   compressed words, their canonical forms and refusals on both sides, and their runs through the child

@@ -28,6 +28,7 @@
 //! | list (LP2 draft) | `value` (the header), then per element `visit` (a move) or `alias` (a borrow), as a record is built |
 //! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
+//! | `trace_key` (LB1.10; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per read of the least topological scan ([`crate::trace::Relation::reads`]) and 2 bytes reserved per letter; a run that pins no trace relation, or a letter outside its alphabet, stops with `LB1:input.key_contract_mismatch` before its step |
 //! | `length`, `concat`, `inverse`, `conjugate`, `commutator`, `compose` of menu words (LB1.8; LP2 drafts) | as on words: `expand_per_letter` per letter built and 4 bytes reserved per letter; an inverse reads the pinned menu's inverse items, and a word of another alphabet stops with `LB1:input.incompatible_alphabet` before its step |
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
@@ -52,6 +53,12 @@
 //! before the run; a host's answer that holds one stops the run after its row. Each has the code
 //! `LB1:input.incompatible_alphabet`. A menu-word match pattern compares letters, since a literal names no alphabet of
 //! its own ([`crate::menu`]).
+//!
+//! A run pins at most one trace relation ([`Options::relation`]; LB1.10, LP2 draft), and every trace key in it is a
+//! key under that relation: `trace_key` stops the run before its step when it pins none, and a host's answer that
+//! holds a key under another header, or letters that are not the key of their trace, stops the run after its row.
+//! Each has the code `LB1:input.key_contract_mismatch`. A trace key has no canonical form, so no argument or result
+//! holds one ([`crate::trace`]).
 //!
 //! # Drafts (M2)
 //!
@@ -81,6 +88,7 @@ use crate::meter::{
     Tariffs, GENERATOR_SIZE,
 };
 use crate::rng::{self, Cursor};
+use crate::trace::{self, Relation};
 use crate::value::{
     self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed, List,
     MenuWord, Record, Text, Value,
@@ -104,6 +112,8 @@ pub mod code {
     pub const HOST_EXHAUSTED: &str = "KN7:resource_limit.host_exhausted";
     /// A menu word that is not a word of the run's pinned alphabet (LB1.8; LP2 draft).
     pub use crate::menu::INCOMPATIBLE_ALPHABET;
+    /// A trace key under another header than the run's pinned relation, or none pinned (LB1.10; LP2 draft).
+    pub use crate::trace::KEY_CONTRACT_MISMATCH;
 }
 
 /// A refusal before any operation is metered.
@@ -259,10 +269,13 @@ pub struct Options<'a> {
     pub sources: Option<&'a dyn SourceRanges>,
     /// The menu alphabet the run pins for its menu words (LB1.8; LP2 draft). Without one the run holds no menu word.
     pub menu: Option<&'a MenuAlphabet>,
+    /// The independence relation the run pins for its trace keys (LB1.10; LP2 draft). Without one the run holds no
+    /// trace key.
+    pub relation: Option<&'a Relation>,
 }
 
 impl<'a> Options<'a> {
-    /// Test tariffs, rows kept, no seed, no interruption, no source ranges and no menu alphabet.
+    /// Test tariffs, rows kept, no seed, no interruption, no source ranges, no menu alphabet and no trace relation.
     pub fn new(limits: Amounts) -> Options<'a> {
         Options {
             limits,
@@ -273,6 +286,7 @@ impl<'a> Options<'a> {
             cancel: None,
             sources: None,
             menu: None,
+            relation: None,
         }
     }
 }
@@ -520,7 +534,7 @@ fn arity(op: Prim) -> Option<usize> {
         | Prim::ApproxAnd => Some(2),
         Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) => Some(1),
         Prim::ToExact => None,
-        Prim::Length | Prim::Inverse | Prim::WordKey | Prim::Compress => Some(1),
+        Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => Some(1),
         Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => Some(1),
         Prim::Contains | Prim::Insert | Prim::Lookup => Some(2),
@@ -897,6 +911,7 @@ struct Machine<'a> {
     cancel: Option<&'a dyn Cancel>,
     sources: Option<&'a dyn SourceRanges>,
     menu: Option<&'a MenuAlphabet>,
+    relation: Option<&'a Relation>,
     host: &'a mut dyn Host,
     meter: Meter,
     frames: Vec<Frame>,
@@ -1306,6 +1321,7 @@ impl<'a> Machine<'a> {
             | Prim::Commutator
             | Prim::Compose
             | Prim::WordKey
+            | Prim::TraceKey
             | Prim::Compress
             | Prim::Expand => return self.sequence(n, op, args),
             Prim::Contains
@@ -1432,6 +1448,7 @@ impl<'a> Machine<'a> {
             Prim::Compose => "compose",
             Prim::Compress => "compress",
             Prim::Expand => "expand",
+            Prim::TraceKey => "trace_key",
             _ => "word_key",
         };
         if op == Prim::Expand {
@@ -1487,6 +1504,24 @@ impl<'a> Machine<'a> {
                     2 * read,
                     Box::new(move || Value::WordEqualityKey(free_reduction(&w).into())),
                 )
+            }
+            // LB1.10's trace key under the run's pinned relation, priced by what its scan reads. Without a relation no
+            // key is built (LG2.23), and a letter outside the relation's alphabet, such as a letter 0, is not of a Full
+            // word (LB1.3).
+            (Prim::TraceKey, Some(ws), _) => {
+                let w = ws[0].clone();
+                let Some(relation) = self.relation.cloned() else {
+                    return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
+                };
+                if !w.iter().all(|&l| relation.holds(l)) {
+                    return Err(self.fail(Some(n), name, code::INCOMPATIBLE_ALPHABET));
+                }
+                let (reads, size) = (relation.reads(&w), 2 * w.len() as u128);
+                let build = move || {
+                    let key = relation.key(&w).expect("letters of the relation's alphabet");
+                    Value::TraceEqualityKey(Arc::new(key))
+                };
+                (per_letter.saturating_mul(reads), size, Box::new(build))
             }
             (Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::Concat, Some(ws), _) => {
                 let (x, y) = (ws[0].clone(), ws.get(1).cloned().unwrap_or_else(|| Arc::from(Vec::new())));
@@ -1836,7 +1871,8 @@ impl<'a> Machine<'a> {
     }
 
     /// A host row: a refused tariff costs the step only; an admitted one reserves its result bound, and the `sent`
-    /// bytes it hands the host count as output, as a preview's request bytes do.
+    /// bytes it hands the host count as output, as a preview's request bytes do. The answer's menu words and trace keys
+    /// are checked against the run's pinned alphabet and relation at the boundary, after the row.
     fn host_read(&mut self, n: NodeId, op: &str, request: Request, sent: u128) -> Result<(), Stop> {
         let tariff = match self.host.tariff(&request) {
             Ok(t) => t,
@@ -1855,6 +1891,9 @@ impl<'a> Machine<'a> {
         }
         if menu::check_words(&value, self.menu).is_err() {
             return Err(self.fail(Some(n), op, code::INCOMPATIBLE_ALPHABET));
+        }
+        if trace::check_keys(&value, self.relation).is_err() {
+            return Err(self.fail(Some(n), op, code::KEY_CONTRACT_MISMATCH));
         }
         self.settle(tariff.result_bound, value);
         Ok(())
@@ -2067,6 +2106,7 @@ impl Loaded {
             cancel: options.cancel,
             sources: options.sources,
             menu: options.menu,
+            relation: options.relation,
             host,
             meter,
             frames: Vec::new(),
