@@ -106,7 +106,8 @@ impl Host for Session {
     fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
         self.log.push(format!("tariff {request:?}"));
         match request {
-            Request::Snapshot { query, .. } => {
+            // A read with an argument (LP2 draft) answers from the same rows; the log keeps its bytes.
+            Request::Snapshot { query, .. } | Request::SnapshotWith { query, .. } => {
                 self.snapshots.iter().find(|s| s.0 == *query).map(|s| s.1).ok_or(NOT_GRANTED)
             }
             Request::Propose { .. } => Ok(RowTariff { kernel_cost: 11, result_bound: 4096 }),
@@ -124,7 +125,7 @@ impl Host for Session {
             return Err(code);
         }
         match request {
-            Request::Snapshot { query, .. } => {
+            Request::Snapshot { query, .. } | Request::SnapshotWith { query, .. } => {
                 self.snapshots.iter().find(|s| s.0 == *query).map(|s| s.2.clone()).ok_or(NOT_GRANTED)
             }
             Request::FileRead { path, .. } => {

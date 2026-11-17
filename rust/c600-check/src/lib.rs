@@ -2331,6 +2331,24 @@ impl<'p> Checker<'p> {
                 }
                 Ok((v, s))
             }
+            Expr::ReadSnapshotWith { query, arg, ty } => {
+                let (av, mut s) = self.at(0, |c| c.expr(arg, env))?;
+                // The argument crosses to the host as its canonical bytes (DET.59): portable data, as a goal or
+                // evidence takes (owner decision of 16 November 2026 under PHS.52), with no qualifier to erase
+                // (LG2.19, LG2.20). An approximation would otherwise reach an exact read's answer.
+                let what = format!("the argument of a read of `{query}`");
+                if portable(&av.ty) {
+                    self.at(0, |c| c.exact_use(Site::Boundary, &av, &what));
+                } else {
+                    self.at(0, |c| c.misfit(PORTABLE, &av, &what));
+                }
+                let mut own = needs(&[Effect::ReadSnapshot], &[]);
+                own.state_reads.insert(StateRead::Snapshot);
+                own.rows.insert(Row::Read(query.clone()));
+                self.operation(&mut s, own, "a snapshot read");
+                // An engine row, never a workspace record the program stores, so the declared type stands.
+                Ok((Val::declared(ty), s))
+            }
             Expr::PublishView { value } => {
                 let (_, mut s) = self.at(0, |c| c.expr(value, env))?;
                 let mut own = needs(&[Effect::ChangeView], &[]);

@@ -673,14 +673,14 @@ fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
 
 // ----- CT-ONE-29
 
-/// CT-ONE-29 (ONE.41, RPI.76), its user-stage part, synthetic, at the adapter: a frame that draws the tool's preview
-/// through a user stage composes it as an extra display, and its presented report names no preview. The adapter
-/// reports each frame with its stamp; the layer refuses a frame that draws the preview through a user stage, one that
-/// shows no preview and one that shows a preview the layer does not hold, so the shell holds no presented preview,
-/// mints no commit token and the commit chord stops at its gate; nothing changes. A frame in which the built-in chain
-/// draws the preview, here over a view drawn by a user stage, presents it, and the shell's token binds exactly that
-/// preview and that frame's stamp. A later user-stage frame ends the presentation, a delayed report older than it
-/// changes nothing, and the next built-in frame presents the preview again; the chord commits it.
+/// CT-ONE-29 (source, whole; ONE.41, RPI.76), synthetic, at the host's adapter through the layer's `present`: a frame
+/// that draws the tool's preview through a user stage composes it as an extra display, and its presented report names
+/// no preview. The adapter reports each frame with its stamp; the layer refuses a frame that draws the preview through
+/// a user stage, one that shows no preview and one that shows a preview the layer does not hold, so the shell holds no
+/// presented preview, mints no commit token and the commit chord stops at its gate; nothing changes. A frame in which
+/// the built-in chain draws the preview, here over a view drawn by a user stage, presents it, and the shell's token
+/// binds exactly that preview and that frame's stamp. A later user-stage frame ends the presentation, a delayed report
+/// older than it changes nothing, and the next built-in frame presents the preview again; the chord commits it.
 #[test]
 fn ct_one_29_a_preview_drawn_through_a_user_stage_binds_no_commit_token() {
     let (mut layer, mut shell, _) = proposed(&[1, -2], "one-29");

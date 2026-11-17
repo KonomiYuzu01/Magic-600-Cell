@@ -34,7 +34,7 @@ pub struct MessageSchema {
     pub fields: &'static [&'static str],
 }
 
-const REQUEST_FIELDS: [&str; 14] = [
+const REQUEST_FIELDS: [&str; 18] = [
     "request.snapshot",
     "request.snapshot.query",
     "request.snapshot.type",
@@ -49,6 +49,10 @@ const REQUEST_FIELDS: [&str; 14] = [
     "request.propose.word",
     "request.propose.target",
     "request.propose.request",
+    "request.snapshot_with",
+    "request.snapshot_with.query",
+    "request.snapshot_with.arg",
+    "request.snapshot_with.type",
 ];
 
 /// Every message and field of the protocol. Values and IR types inside a field are data, not fields: a value has no
@@ -105,6 +109,10 @@ pub const SCHEMA: [MessageSchema; 6] = [
             REQUEST_FIELDS[11],
             REQUEST_FIELDS[12],
             REQUEST_FIELDS[13],
+            REQUEST_FIELDS[14],
+            REQUEST_FIELDS[15],
+            REQUEST_FIELDS[16],
+            REQUEST_FIELDS[17],
             "sink.view",
             "sink.workspace",
             "sink.workspace.record",

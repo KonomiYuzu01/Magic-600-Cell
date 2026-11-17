@@ -49,6 +49,7 @@ fn samples() -> Vec<Enc> {
         Request::FileRead { path: "p", ty: &ty },
         Request::Clock,
         Request::Propose { word: &[1, -2], target: "t", request: b"r" },
+        Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
     ];
     let sinks = [
         Sink::View,
@@ -150,6 +151,42 @@ fn unknown_protocols_and_kinds_are_refused() {
     let mut trailing = hello.bytes.clone();
     trailing.push(0);
     assert!(message::decode_to_parent(&trailing, &Codes::default()).is_err());
+}
+
+/// Every host request decodes to the request it was encoded from. Tags 0 to 4 keep their bytes, and LP2's snapshot
+/// read with an argument is tag 5 (LP2 draft); a cut request and an unknown tag are refused.
+#[test]
+fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
+    let qty = QTy { ty: Ty::Nat, display: false };
+    let ty = Ty::Word;
+    let requests = [
+        Request::Snapshot { query: "pieces", ty: &qty },
+        Request::Declassified { id: "d", ty: &ty },
+        Request::FileRead { path: "p", ty: &ty },
+        Request::Clock,
+        Request::Propose { word: &[1, -2], target: "t", request: b"r" },
+        Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
+    ];
+    for (tag, r) in requests.iter().enumerate() {
+        let mut e = Enc::new();
+        codec::encode_request(r, &mut e).unwrap();
+        assert_eq!(usize::from(e.bytes[0]), tag, "{r:?}");
+        let mut d = Dec::new(&e.bytes);
+        let owned = codec::decode_request(&mut d).unwrap();
+        d.end().unwrap();
+        let mut again = Enc::new();
+        codec::encode_request(&owned.as_request(), &mut again).unwrap();
+        assert_eq!(again.bytes, e.bytes, "{r:?}");
+        for cut in 0..e.bytes.len() {
+            let mut d = Dec::new(&e.bytes[..cut]);
+            assert!(codec::decode_request(&mut d).and_then(|_| d.end()).is_err(), "{r:?} cut at {cut}");
+        }
+    }
+    let mut with = Enc::new();
+    codec::encode_request(&requests[5], &mut with).unwrap();
+    assert_eq!(with.bytes[0], 5);
+    with.bytes[0] = 6;
+    assert!(codec::decode_request(&mut Dec::new(&with.bytes)).is_err(), "an unknown tag");
 }
 
 /// The work job of the KI.5 rehearsals: five host calls.

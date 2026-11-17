@@ -98,13 +98,62 @@
 //! - [`CommandLayer::outcome`] is the shell's lookup and answers `None` for an ID the shell never used in this layer's
 //!   life; [`CommandLayer::kernel_outcome`] is `kernel.outcome` for any caller.
 //! - `protection.orbit.set` is a workspace row with no token; the runtime may not invoke it.
-//! - An action that does not move the puzzle (a protection change, a record write, the undo or redo of either, a
-//!   workspace completion) keeps the state revision, the preview slot and the jobs (KN5.18).
+//! - Strict protection in the command layer (KN2.4, KN2.7, LB2.3). `protection.policy.set` ([`POLICY_ROW`]) takes
+//!   `policy`, `net` or `strict`, as H-08 has it; the session starts Net ([`CommandLayer::policy`]). Under Strict a
+//!   preview is built with the kernel's `derive_strict`, step 8 judges the preview's recipe again with
+//!   `strict_protection`, and an undo or redo derives its path with `derive_strict`, so every executed literal prefix
+//!   is judged; a Strict preview's summary adds `mode` and `first_refused_prefix`, and a Net preview's summary is
+//!   unchanged. The row is a workspace row with no token and, as H-08 gives it no gate, no confirmation in either
+//!   direction; the runtime may not invoke it. A policy change advances the workspace and protection revisions, so a
+//!   pending preview built under the old policy is stale (H-08's note), and it is undoable as a workspace inverse. The
+//!   journal names it `policy`, and it and its undo or redo carry the policy after the action
+//!   (`Transaction::policy`).
+//! - An action that does not move the puzzle (a protection or policy change, a record write, the undo or redo of any
+//!   of them, a workspace completion) keeps the state revision, the preview slot and the jobs (KN5.18).
 //! - A record write answers `completed(workspace)`, and its undo and redo answer `committed` with equal puzzle hashes,
 //!   advancing the workspace revision and the record's version (KN5.20). An undo of a record's first write leaves the
 //!   record with no value. The journal keeps the record's value after each of these actions (`Transaction::record`).
 //! - A workspace overlay's completion is one durable action with its receipt (KN5.23) but is not undoable: the layer
 //!   holds no inverse of a program's write. A rolled-back transaction's `failed` receipt is transient.
+//! - A built-in tool's entry may serve a stored row ([`CommandLayer::serve_row`]; LP3's C6, its first common need).
+//!   - An invocation of a served row admits a program job for the entry, as for an overlay row.
+//!   - The row keeps H-08's kind, lane, undo class, gates and argument types. The runtime may invoke it, as it may an
+//!     overlay row.
+//!   - A row on the `none` lane has no occupancy limit (KN7.2), so a full program lane does not hold it back, and
+//!     nothing in the layer bounds how many of its jobs wait. A commit still ends its job, as it ends an overlay
+//!     row's (KN5.18), although KN7.2 gives the `none` lane no background work to cancel. Whether such a row should
+//!     count against the program lane, and whether a workspace entry that reads no snapshot should keep its job
+//!     across a commit as file jobs do, is LP3's call.
+//!   - H-08 marks the representations tool's rows `job: false`. A served row still answers `running` first, since
+//!     its entry runs in the runtime's process (LQ9), and completes when the host reports the entry's result.
+//!   - The layer checks the arguments' forms, as below.
+//!   - The layer does not read a row's `contexts`, for a served row as for any other: the shell's key route resolves
+//!     a binding in the focused context.
+//!   - The layer serves only a view, workspace, query or file row on the `none`, `view` or `program` lane, with no
+//!     gate, preview rule, action guard, token or undo entry. It can check such a row's admission and completion
+//!     without the entry.
+//!   - Any other row is refused with `KN5:input.overlay_row_kind`. A row the layer builds itself, or one already
+//!     served, is refused with `KN5:input.overlay_row_conflict`.
+//!   - A served workspace row completes like a workspace overlay, as above.
+//!   - Serving is not journaled. After a reopen the host serves its rows again, as it registers its overlays again.
+//! - Argument forms (LP3's C6, its third common need).
+//!   - An argument of an optional type, one ending in `?` (H-08), may be left out of any row. Every other argument
+//!     must be given, and no other name may be. None of the layer's own rows takes an optional argument. The names
+//!     are checked before the row's arm, so a row the layer does not build is refused with `KN5:input.row_not_built`
+//!     once its names fit, with an optional argument left out or given.
+//!   - For a row it admits as a program job, a served row or an overlay row, the layer checks the forms of the types
+//!     it knows before it admits the job. `Nat` is an integer of at least 0. `Text` is a string. A choice of words,
+//!     such as `body|complete`, is one of its words. `CellId` is an integer from 0 to 599, as the kernel's model
+//!     numbers the cells, and `CellIdPair` is a list of two. `RevisionRef` is KN0.2's nine-key object
+//!     ([`Revision::to_json`]): its text fields are text and its counters naturals, in any mode. An optional type has
+//!     its type's form when given.
+//!   - A malformed argument is refused with `KN5:input.argument_form`. After every form check, a well-formed
+//!     `RevisionRef` that is not the layer's current revision in every field is refused with
+//!     `KN5:stale.revision_changed` (EV4.14), so a malformed request is never answered as stale. Both refusals come
+//!     before the lane's capacity is checked and take no job.
+//!   - The forms of the other types are not written down yet, and they pass unchecked: among them `FilterRef`,
+//!     `FilterPreviewRef` and `CanonicalObjectRefs`, which the representations tool's rows take, and a union of types
+//!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
 //! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
 //!   or the `test-hooks` feature (L15).
 //! - The per-launch secret comes from the standard library's random hasher keys, the clock and the process ID, hashed
@@ -112,6 +161,7 @@
 
 #![forbid(unsafe_code)]
 
+mod forms;
 pub mod frame;
 pub mod layer;
 pub mod receipt;
@@ -122,14 +172,15 @@ pub mod token;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
-pub use layer::{Caller, CommandLayer, Invocation, Preview, PreviewState, ProgramJob};
+pub use layer::{Caller, CommandLayer, Invocation, Preview, PreviewState, ProgramJob, POLICY_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
 };
 pub use shell::{draft_args, word_draft, ArgSource, KeyBinding, Shell};
 pub use store::{
-    identity_from_json, identity_json, Fate, Genesis, History, MemoryStore, Reopen, Store, Transaction, TransactionKind,
+    identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
+    Store, Transaction, TransactionKind,
 };
 pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};

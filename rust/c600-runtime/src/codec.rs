@@ -825,17 +825,38 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
 /// the interpreter built.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OwnedRequest {
-    Snapshot { query: String, ty: QTy },
-    Declassified { id: String, ty: Ty },
-    FileRead { path: String, ty: Ty },
+    Snapshot {
+        query: String,
+        ty: QTy,
+    },
+    Declassified {
+        id: String,
+        ty: Ty,
+    },
+    FileRead {
+        path: String,
+        ty: Ty,
+    },
     Clock,
-    Propose { word: Vec<i32>, target: String, request: Vec<u8> },
+    Propose {
+        word: Vec<i32>,
+        target: String,
+        request: Vec<u8>,
+    },
+    /// A read whose query takes an argument (LP2 draft): the argument's canonical bytes, as the interpreter encoded
+    /// them. Neither side parses them; a host that answers the read reads them with `c600_run::provenance::parse`.
+    SnapshotWith {
+        query: String,
+        arg: Vec<u8>,
+        ty: QTy,
+    },
 }
 
 impl OwnedRequest {
     pub fn as_request(&self) -> Request<'_> {
         match self {
             OwnedRequest::Snapshot { query, ty } => Request::Snapshot { query, ty },
+            OwnedRequest::SnapshotWith { query, arg, ty } => Request::SnapshotWith { query, arg, ty },
             OwnedRequest::Declassified { id, ty } => Request::Declassified { id, ty },
             OwnedRequest::FileRead { path, ty } => Request::FileRead { path, ty },
             OwnedRequest::Clock => Request::Clock,
@@ -910,6 +931,16 @@ pub fn encode_request(r: &Request, e: &mut Enc) -> Result<(), Unencodable> {
             e.field("request.propose.request");
             e.bytes(request);
         }
+        Request::SnapshotWith { query, arg, ty } => {
+            e.field("request.snapshot_with");
+            e.u8(5);
+            e.field("request.snapshot_with.query");
+            e.text(query);
+            e.field("request.snapshot_with.arg");
+            e.bytes(arg);
+            e.field("request.snapshot_with.type");
+            encode_qty(ty, e)?;
+        }
     }
     Ok(())
 }
@@ -928,6 +959,7 @@ pub fn decode_request(d: &mut Dec) -> Result<OwnedRequest, Malformed> {
             }
             OwnedRequest::Propose { word, target: d.text()?.to_string(), request: d.bytes()?.to_vec() }
         }
+        5 => OwnedRequest::SnapshotWith { query: d.text()?.to_string(), arg: d.bytes()?.to_vec(), ty: decode_qty(d)? },
         _ => return Err(Malformed::new("an unknown request")),
     })
 }
