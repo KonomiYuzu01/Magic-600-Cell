@@ -149,14 +149,22 @@ impl Transaction {
         value
     }
 
-    /// Reads the journal form strictly: every field, no other, and `record` only as a record write.
+    /// Reads the journal form strictly: every field and no other. `record` belongs to a record write, which carries one
+    /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty; a
+    /// transaction of another kind that carries one does not read, so the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
+        let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
         let record = match value.get("record") {
             None => None,
             Some(record) => Some(RecordWrite::from_json(record)?),
         };
-        (object.len() == 17 + usize::from(record.is_some())).then_some(())?;
+        let carries = match kind {
+            TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()),
+            TransactionKind::Undo | TransactionKind::Redo => true,
+            _ => record.is_none(),
+        };
+        (carries && object.len() == 17 + usize::from(record.is_some())).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
         let optional = |key: &str| match value.get(key)? {
@@ -173,7 +181,7 @@ impl Transaction {
         };
         let Value::Bool(confirm) = value.get("confirm")? else { return None };
         Some(Transaction {
-            kind: TransactionKind::from_name(value.get("kind")?.as_str()?)?,
+            kind,
             event: text("event")?,
             order: nat("order")?,
             target: optional("target")?,

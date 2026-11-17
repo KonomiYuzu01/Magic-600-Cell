@@ -1164,7 +1164,8 @@ impl<S: Store> CommandLayer<S> {
     /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6
     /// (`KN2:input.named_object_invalid`), and the host's provenance reader must admit the record's block in this
     /// session, or the draft is refused with the reader's error (`LG3:capability.not_granted` without a reader). The
-    /// read set holds the record's content digest and version.
+    /// record is checked before the reader, so a session without a reader answers `named_object_invalid` for a record
+    /// that holds no letters. The read set holds the record's content digest and version.
     fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
         let record = self.records.get(name);
         let Some(value) = record.and_then(|record| record.value.as_ref()) else {

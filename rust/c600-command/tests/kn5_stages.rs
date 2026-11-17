@@ -531,7 +531,8 @@ fn a_token_binds_the_frame_run_that_presents_its_preview() {
 
 /// The journal form (draft): a commit's transaction has its 17 keys and no `record`, a record write's and its undo's
 /// have `record` as an 18th key (an undo of a first write with a `null` value), each reads back to itself, and a
-/// transaction whose `record` is `null` is refused, so a 17-key journal reads as before.
+/// transaction whose `record` is `null` is refused, so a 17-key journal reads as before. A commit that carries a
+/// record, and a record write without one or with a `null` value, do not read.
 #[test]
 fn a_record_write_journals_its_record_and_a_commit_does_not() {
     let mut f = fixture(true);
@@ -552,4 +553,57 @@ fn a_record_write_journals_its_record_and_a_commit_does_not() {
     let Value::Object(mut fields) = log[0].to_json() else { panic!("a transaction is an object") };
     fields.insert("record".into(), Value::Null);
     assert_eq!(Transaction::from_json(&Value::Object(fields)), None);
+
+    let object_of = |transaction: &Transaction| match transaction.to_json() {
+        Value::Object(fields) => fields,
+        _ => panic!("a transaction is an object"),
+    };
+    let (mut commit, mut bare, mut empty) = (object_of(&log[0]), object_of(&log[1]), object_of(&log[1]));
+    commit.insert("record".into(), undone.clone());
+    bare.remove("record");
+    empty.insert("record".into(), undone);
+    let malformed = [(commit, "a commit with a record"), (bare, "a record write without one"), (empty, "a null write")];
+    for (fields, what) in malformed {
+        assert_eq!(Transaction::from_json(&Value::Object(fields)), None, "{what}");
+    }
+}
+
+/// CT-KN5-09 (part: a reopen restores the undo and redo of record writes, so a reopened layer undoes and redoes them
+/// as the live layer does, whether the reopen falls between an undo and its redo or after the redo), KN5.20, KN5.23,
+/// LI.26.
+#[test]
+fn a_reopened_layer_undoes_and_redoes_record_writes_as_the_live_layer_does() {
+    let mut live = fixture(true);
+    assert!(completed(&live.write("w", letters(&[1]), "block")));
+    assert!(completed(&live.write("w", letters(&[2]), "block")));
+    assert!(committed(&live.step(Direction::Undo)));
+    let reopened = |live: &Fixture| Fixture {
+        layer: reopen(&live.layer),
+        shell: Shell::new(Secret::fixed(SECRET), "shell"),
+        frames: HeadlessFrames::new(),
+    };
+    let same = |a: &Fixture, b: &Fixture, what: &str| {
+        let (x, y) = (a.layer.revision(), b.layer.revision());
+        assert_eq!(a.layer.records(), b.layer.records(), "{what}");
+        let puzzle = (&y.head, y.state, &y.digest, y.workspace, y.protection);
+        assert_eq!((&x.head, x.state, &x.digest, x.workspace, x.protection), puzzle, "{what}");
+    };
+
+    let mut between = reopened(&live);
+    same(&between, &live, "reopened between the undo and its redo");
+    for direction in [Direction::Redo, Direction::Undo, Direction::Undo, Direction::Redo] {
+        assert!(committed(&live.step(direction)), "live {direction:?}");
+        assert!(committed(&between.step(direction)), "reopened {direction:?}");
+        same(&between, &live, &format!("{direction:?}"));
+    }
+    let value = RecordValue { payload: letters(&[1]), provenance: "block".into() };
+    assert_eq!((live.layer.record("w"), live.layer.records()["w"].version), (Some(&value), 7));
+
+    let mut after = reopened(&live);
+    for (direction, expected) in [(Direction::Undo, None), (Direction::Redo, Some(&value))] {
+        assert!(committed(&live.step(direction)), "live {direction:?}");
+        assert!(committed(&after.step(direction)), "reopened after the redo, {direction:?}");
+        same(&after, &live, &format!("after the redo, {direction:?}"));
+        assert_eq!(after.layer.record("w"), expected, "{direction:?}");
+    }
 }
