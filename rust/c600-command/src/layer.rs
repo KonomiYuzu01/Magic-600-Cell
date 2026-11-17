@@ -95,8 +95,8 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step,
-    SupportRow, Verdict,
+    Derivation, Effect, IdentityBlock, Kernel, PiecePosition, ProtectedSet, Protection, ProtectionMode, Recipe,
+    Snapshot, Step, SupportRow, Verdict,
 };
 
 use crate::forms;
@@ -948,6 +948,15 @@ impl<S: Store> CommandLayer<S> {
     /// The jumbling engine's value at the head with Jumble on, under the pinned menu; `None` with Jumble off (draft).
     pub fn jumbled(&self) -> Option<&Derived> {
         self.jumbled.as_ref().map(|jumbled| &jumbled.derived)
+    }
+
+    /// KN2.4's `positions` row at the head (draft; CT-LB2-04): where each named piece's stickers are, as
+    /// [`Kernel::positions`] reads them, with its refusal of a piece outside 0 to 177,119. It is a row of the retained
+    /// workflow, so Jumble on refuses it (LG2.8): the retained state is then the one the crossing entered from. A read
+    /// changes nothing.
+    pub fn positions(&self, pieces: &[i64]) -> Result<Vec<PiecePosition>, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.positions(&self.current, pieces)?)
     }
 
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
