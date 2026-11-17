@@ -4,11 +4,12 @@
 //! returns safe. The words are built by language code, `words.power` and the IR draft's `concat` and `inverse`, run on
 //! `c600-run` with no host; the protected set is the kernel's set of protected orbits.
 //!
-//! The Net half runs through the command layer in `rust/c600-tools/tests/net_oversize.rs`, and LP2's
-//! `rust/c600-kernel/tests/kernel.rs` runs the kernel's own half on the literal word `[1, -1]`. Not built: the
-//! command layer's preview in Strict mode (KN5, LP2), so no Strict preview runs through the tool's route; the captured
-//! lock of LB2's row "Net and Strict protection" (block, identity and position locks) and LB2.3's coverage report with
-//! `LB2:protection.incomplete_coverage`, which are library entries over kernel rows that the IR draft cannot express.
+//! Both halves also run through the command layer in `rust/c600-tools/tests/net_oversize.rs` (the Strict half on the
+//! layer's Strict policy, LP2's pull request 198), and LP2's `rust/c600-kernel/tests/kernel.rs` runs the kernel's own
+//! half on the literal word `[1, -1]`. Not built: the captured lock of LB2's row "Net and Strict protection" (block,
+//! identity and position locks) and LB2.3's coverage report with `LB2:protection.incomplete_coverage`, which are
+//! library entries over kernel rows; the IR draft's snapshot read with an argument (LP2's pull request 199) has no LP3
+//! host that answers it yet.
 //! A pass is source and fixture evidence.
 
 mod common;

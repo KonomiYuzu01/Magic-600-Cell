@@ -33,6 +33,16 @@ pub mod code {
     pub const PROVENANCE_INCOMPATIBLE: &str = "PS1:capability.provenance_incompatible";
     /// A draft that names a record that does not exist or does not hold a list of letters (M6's code).
     pub const NAMED_OBJECT_INVALID: &str = c600_kernel::codes::NAMED_OBJECT_INVALID;
+    /// Jumble on without a valid retained witness: labels alone (A5, ONE.54, JI.25).
+    pub const JUMBLE_ON_LABELS_ONLY: &str = "KN5:input.jumble_on_labels_only";
+    /// A row of the retained workflow, or `jumble.on`, with Jumble on (LG2.8; draft for `jumble.on`).
+    pub const RETAINED_TOOL_NEEDS_JUMBLE_OFF: &str = "KN5:input.retained_tool_needs_jumble_off";
+    /// Jumble off with a piece off the lattice: N > 0 (A5, JI.27).
+    pub const JUMBLE_OFF_PIECES_OFF_LATTICE: &str = "KN5:input.jumble_off_pieces_off_lattice";
+    /// Jumble off on a lattice configuration whose ν is not zero (A5, JI.27).
+    pub const JUMBLE_OFF_NU_NONZERO: &str = "KN5:input.jumble_off_nu_nonzero";
+    /// Jumble off where the poses are not shown reachable: no witnessed chain, or a displaced centre (A5, JI.27).
+    pub const JUMBLE_OFF_NOT_SHOWN_REACHABLE: &str = "KN5:input.jumble_off_not_shown_reachable";
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";
@@ -76,7 +86,7 @@ pub struct Revision {
     pub state: u64,
     pub workspace: u64,
     pub protection: u64,
-    /// The label digest of the state at `head`.
+    /// The digest of the state at `head`: the labels' digest with Jumble off, the pose digest with Jumble on.
     pub digest: String,
 }
 
@@ -96,17 +106,19 @@ impl Revision {
         ])
     }
 
-    /// Reads [`Revision::to_json`]'s form strictly; the mode must be this layer's.
+    /// Reads [`Revision::to_json`]'s form strictly; the mode must be one of this layer's, Jumble off
+    /// ([`crate::layer::MODE`]) or Jumble on ([`crate::layer::JUMBLE_ON_MODE`]).
     pub fn from_json(value: &Value) -> Option<Revision> {
         (value.as_object()?.len() == 9).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
-        (value.get("mode")?.as_str()? == crate::layer::MODE).then_some(())?;
+        let mode = [crate::layer::MODE, crate::layer::JUMBLE_ON_MODE];
+        let mode = mode.into_iter().find(|mode| Some(*mode) == value.get("mode").and_then(Value::as_str))?;
         Some(Revision {
             session: text("session")?,
             epoch: nat("epoch")?,
             identity: text("identity")?,
-            mode: crate::layer::MODE,
+            mode,
             head: text("head")?,
             state: nat("state")?,
             workspace: nat("workspace")?,

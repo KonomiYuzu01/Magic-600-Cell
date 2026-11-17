@@ -194,8 +194,9 @@ fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_na
 /// row the checker cannot name. The column's checks here use a class that also lists the variants' rows, so that each
 /// refusal shown is the rule under test; under the tool's own class ([`class_rows`]) the store's rows are refused too.
 /// The review finds each as choosing a target. An exported function the manifest does not list is found, so no entry
-/// escapes the review by being left out of the manifest. Not run: LX-3's correction solve, which is the 600-cell-Full tool's
-/// case, and any run of an entry, since no route leads from the rows to the entries yet.
+/// escapes the review by being left out of the manifest. Not run: LX-3's correction solve, which is the 600-cell-Full
+/// tool's case, and any run of a variant; the shipped entries run through the command and source routes in
+/// `served_rows.rs`.
 #[test]
 fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_laundering_refused() {
     let table = Table::h08();

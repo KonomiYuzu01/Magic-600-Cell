@@ -24,7 +24,7 @@ use common::*;
 const RULE: PrecisionRule = PrecisionRule { absolute: 1e-4, exclusion: 0.05 };
 
 fn region(name: &str, vertices: Vec<V4>) -> Region {
-    Region { name: name.to_owned(), vertices }
+    Region::hull(name, vertices)
 }
 
 /// x ↦ −x, an element of K⁺.
@@ -88,9 +88,8 @@ fn mechanical() -> (String, bool) {
 /// A cell whose four vertices all pass the per-vertex test and whose centroid, an interior point, lies on the chart's
 /// singular ray: the vertex test establishes nothing, the exact region test refutes the domain with the exact point,
 /// and a chart claiming the domain is refused. The boundary cases are decided as closed: a singular ray through an
-/// edge's midpoint or through a vertex refutes the domain, and a ray that misses the region establishes it. Not run:
-/// KN3's exact polytope operations are not in the kernel, so the region test is `c600-display`'s convex-hull test over
-/// four independent vertices and nothing more general.
+/// edge's midpoint or through a vertex refutes the domain, and a ray that misses the region establishes it. The region
+/// test is `c600-display`'s: KN3.3's `ray_meet` from the origin along the pole over the hull of the posed vertices.
 #[test]
 fn ct_lb4_01_cpu_reference_domain_by_exact_region_test_and_refusal_at_an_interior_point() {
     let cell = cell();
@@ -210,10 +209,11 @@ fn ct_lb4_01_cpu_reference_section_membership_on_the_posed_vertices_with_boundar
 
 /// CT-LB4-01 (part, the CPU reference: each property requires its own check). A chart that claims the domain,
 /// injectivity, embedding, isometry and homomorphism is surveyed at an exact pose where its domain holds. An
-/// established domain establishes nothing else; injectivity is established only by its own check; the three
-/// properties with no checker stay `not_established`, so the chart is not admitted as claimed. Not built: checkers for
-/// homomorphism, embedding and isometry, and the injectivity of a full-dimensional region; each such claim stays
-/// `not_established` and none is refuted or passed.
+/// established domain establishes nothing else; injectivity and the embedding are each established only by their own
+/// check, through `c600-display`'s reduction to a central projection; isometry and homomorphism have no exact checker
+/// for a stereographic chart and stay `not_established`, neither refuted nor passed, so the chart is not admitted as
+/// claimed. A full-dimensional region whose five vertices all pass the per-vertex test fails injectivity inside: its
+/// own check refutes it with two points on the ray through the region's centroid, and the chart is refused.
 #[test]
 fn ct_lb4_01_cpu_reference_each_property_requires_its_own_check() {
     let cell = cell();
@@ -222,7 +222,8 @@ fn ct_lb4_01_cpu_reference_each_property_requires_its_own_check() {
     let base = revision(12);
     let claimed = claiming(1, &["domain", "injective", "embedding", "isometry", "homomorphism"]);
     let rep = shown(&base, claimed.clone());
-    let pose = [CameraPose::Exact(antipodal())];
+    let turned = CameraPose::Exact(antipodal());
+    let pose = [turned.clone()];
     let run = |properties: &[Property], region: &Region| {
         let subject =
             Subject { plan: &rep.plan, chart: &claimed, declaration: &declaration, region, properties, rule: RULE };
@@ -238,7 +239,7 @@ fn ct_lb4_01_cpu_reference_each_property_requires_its_own_check() {
         assert_eq!(status(&statuses, other), &PropertyStatus::NotEstablished, "{other}");
     }
 
-    // With its own check, injectivity is established; the three properties without a checker are not.
+    // With its own check, injectivity is established, and the other three are not.
     let (admission, statuses) = run(&[Property::Domain, Property::Injective], &flat);
     assert!(matches!(admission, Admission::NotEstablished(_)), "{admission:?}");
     assert!(established(status(&statuses, "domain")) && established(status(&statuses, "injective")));
@@ -246,17 +247,48 @@ fn ct_lb4_01_cpu_reference_each_property_requires_its_own_check() {
         assert_eq!(status(&statuses, other), &PropertyStatus::NotEstablished, "{other}");
     }
 
-    // A full-dimensional region has no injectivity checker: unknown, neither refuted nor passed, beside an
-    // established domain.
+    // Every property with its own check: the embedding is established too; isometry and homomorphism have no checker
+    // for a stereographic chart and are not.
+    let unit: Vec<Vec<Q5>> =
+        (0..4).map(|i| (0..4).map(|j| if i == j { Q5::ONE } else { Q5::ZERO }).collect()).collect();
+    let isometry = Property::Isometry { source: unit.clone(), target: unit };
+    let homomorphism = Property::Homomorphism { codomain: Vec::new() };
+    let all = [Property::Domain, Property::Injective, Property::Embedding, isometry.clone(), homomorphism.clone()];
+    let (admission, statuses) = run(&all, &flat);
+    assert!(matches!(admission, Admission::NotEstablished(_)), "{admission:?}");
+    for property in ["domain", "injective", "embedding"] {
+        assert!(established(status(&statuses, property)), "{property}");
+    }
+    for (name, property) in [("isometry", &isometry), ("homomorphism", &homomorphism)] {
+        assert_eq!(status(&statuses, name), &PropertyStatus::NotEstablished, "{name}");
+        let verdict = chart::check(&declaration, property, &flat, &turned).expect("an exact pose");
+        assert!(matches!(verdict, Verdict::NotEstablished { .. }), "{verdict:?}");
+    }
+
+    // A full-dimensional region whose five vertices all pass the per-vertex test, beside a domain that holds. Its own
+    // check refutes injectivity with two distinct points on the ray through the centroid, an interior point, so the
+    // chart is refused and every status is withheld.
     let mut solid = flat.clone();
     solid.name = "solid".to_owned();
     let off_the_flat =
         exact::add(&exact::scale(Q5::int(2), &E1).expect("small values"), &cell[1]).expect("small values");
     solid.vertices.push(off_the_flat);
+    let vertices = chart::vertex_test(&declaration, &Property::Injective, &solid, &turned).expect("an exact pose");
+    assert!(matches!(vertices, Verdict::NotEstablished { .. }), "{vertices:?}");
+    let domain = chart::check(&declaration, &Property::Domain, &solid, &turned).expect("an exact pose");
+    assert!(matches!(domain, Verdict::Established { .. }), "{domain:?}");
+    let verdict = chart::check(&declaration, &Property::Injective, &solid, &turned).expect("an exact pose");
+    let Verdict::Refuted { method: Method::Reduction(_), witness: Witness::PointsOnOneRay(x, y), .. } = verdict else {
+        panic!("{verdict:?}")
+    };
+    let centroid = exact::scale(Q5::int(-1), &vertex_sum(&solid.vertices)).expect("small values");
+    assert!(x != y && exact::same_ray(&x, &y) == Some(true), "{x:?} {y:?}");
+    assert_eq!(exact::same_ray(&x, &centroid), Some(true), "the posed centroid's ray");
     let (admission, statuses) = run(&[Property::Domain, Property::Injective], &solid);
-    assert!(matches!(admission, Admission::NotEstablished(_)), "{admission:?}");
-    assert!(established(status(&statuses, "domain")));
-    assert_eq!(status(&statuses, "injective"), &PropertyStatus::NotEstablished);
+    let Admission::Refused(error) = admission else { panic!("{admission:?}") };
+    assert_eq!(error.code, codes::CHART_CHECK_FAILED);
+    assert_eq!(error.context["property"], "injective");
+    assert!(statuses.iter().all(|(_, s)| s == &PropertyStatus::NotEstablished), "{statuses:?}");
 }
 
 /// CT-LB4-02 (synthetic, whole definition over this crate's drafted survey). A chart is surveyed over exact poses with
