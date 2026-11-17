@@ -673,3 +673,21 @@ fn lg2_22_an_approx_selected_under_approximate_control_keeps_its_precedence_thro
     let d = only(&tool(vec![pick, add]));
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("add", "0", (V, Some("Approx"), true, false)));
 }
+
+/// CT-LG2-05 (part: LG2.20 for the LP2 draft `assert`, DET.55): an assertion decides whether the run goes on, so its
+/// predicate is exact control, as an ordinary if condition is. An approximate or a display-qualified boolean is
+/// refused as the condition would be, and an exact comparison is admitted.
+#[test]
+fn lg2_20_an_assertion_takes_an_exact_predicate_as_an_if_does() {
+    let shown = || display_if(less(), Expr::Lit(Lit::Bool(true)), Expr::Lit(Lit::Bool(false)));
+    let predicates: [fn() -> Expr; 2] = [less, shown];
+    for predicate in predicates {
+        let assertion = only(&tool(vec![helper("f", xy(), exact(Ty::Unit), prim(Prim::Assert, vec![predicate()]))]));
+        let condition = only(&tool(vec![helper("f", xy(), exact(Ty::Unit), if_(predicate(), unit(), unit()))]));
+        assert_eq!(assertion.code, V, "{assertion:#?}");
+        assert_eq!((fields(&assertion), assertion.path.as_str()), (fields(&condition), condition.path.as_str()));
+    }
+    let n = vec![param("n", exact(Ty::Nat))];
+    let held = prim(Prim::Assert, vec![prim(Prim::ExactLess, vec![var("n"), nat(5)])]);
+    assert!(report(&tool(vec![helper("f", n, exact(Ty::Unit), held)])).is_admitted());
+}

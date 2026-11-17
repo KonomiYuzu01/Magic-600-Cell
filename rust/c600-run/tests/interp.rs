@@ -160,6 +160,34 @@ fn exact_arithmetic_is_exact_end_to_end() {
     assert_eq!((r.summary.live_before_cleanup, r.summary.live_after_cleanup), (0, 0));
 }
 
+/// Exact products widen as sums do and stay exact (the LP2 draft `exact_mul`): φ² = φ + 1 in Q(√5), and a product of
+/// ratios reduces. A rational or Q(√5) product costs one unit per pair of the operands' widened bytes, and reserves
+/// what the unreduced product could need, which settles on the reduced one.
+#[test]
+fn exact_products_are_exact_end_to_end() {
+    let source = m("export fn products(x: Int) -> record { n: Int, phi: Q5, r: Rat } effects [] {\n    \
+                    let phi = q5(1/2, 1/2);\n    \
+                    return record { n = exact_mul(x, -3), phi = exact_mul(phi, phi), r = exact_mul(2/3, 3/4) };\n}\n");
+    let (_, loaded) = build(&[&source]);
+    let r = run(&loaded, "products", vec![Value::int(-5)], &Options::new(WIDE));
+    assert_eq!(
+        output(&r),
+        "{\"n\":{\"int\":\"15\"},\"phi\":{\"q5\":[\"3\",\"1\",\"2\"]},\"r\":{\"rat\":[\"1\",\"2\"]}}\n"
+    );
+    let row = |path: &str| {
+        let row =
+            r.summary.rows.iter().find(|row| row.at == format!("m.products:1.{path}#exact_mul")).expect("a product");
+        (row.kernel_cost, row.memory, row.released)
+    };
+    // (1/2, 1/2, 1) widens to three two-byte integers, so 6 · 6 units; the unreduced (6, 2, 4) reserves 2 + 2 + 2.
+    // Both operands visit the `let`, so the product releases nothing.
+    assert_eq!(row("1"), (36, 6, 0));
+    // 2/3 and 3/4 are two two-byte integers each: 4 · 4 units; the unreduced 6/12 reserves 2 + 2. The product
+    // consumes its two literal operands and releases their 4 + 4 bytes.
+    assert_eq!(row("2"), (16, 4, 8));
+    assert_eq!((r.summary.live_before_cleanup, r.summary.live_after_cleanup), (0, 0));
+}
+
 /// CT-DET-29 (part): draws come from the counter-addressed generator `sha256-counter-draft-1` (DET.61). `rng_init`
 /// charges the key input bytes and the 41-byte owner; each draw charges a block and reserves 33 bytes.
 #[test]

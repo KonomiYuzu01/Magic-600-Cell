@@ -10,10 +10,12 @@
 //! overhead: reading the arguments, the entry call and its frame, a `display_if` condition, `let` bindings, scope
 //! exits, returns and the top-level output unit, which a fixture trace lists only when it models a complete program
 //! (CV.2). The limits follow LP3's mapping (`c600-runtime/tests/ct_rte_04.rs`): a probe with wide limits measures the
-//! overhead. A trace that completes gets the program's use plus the trace's slack (none, in every trace realised here),
-//! and the run must use exactly its limits: equality is admitted in all four dimensions. A trace that stops gets, on
-//! top of the program's charges before its stopped row, the trace's headroom before that row, and the run must stop
-//! there, in the frozen phase and scope, with the frozen denied row.
+//! overhead. A trace that completes gets the program's use plus the trace's slack, and the run must use what the probe
+//! used: where the trace has no slack, as in all but `alias-release` (four steps), that is exactly its limits, and
+//! equality is admitted in all four dimensions. A trace that stops gets, on top of the program's charges before its
+//! stopped row, the trace's headroom before that row, and the run must stop there, in the frozen phase and scope, with
+//! the frozen denied row. The probe must complete, so a trace that stops on a value probes with other arguments that
+//! read alike (`probe_args`).
 //!
 //! The output profile differs (CV.5): the fixture's bytes are PS1.2's retained JSON, the product's are `c600-json-1`'s,
 //! UTF-8 with a terminal line feed. A realisation publishes a value whose product bytes are as many as the fixture's:
@@ -23,7 +25,7 @@
 //! product unit is shorter than three. Its kernel-cost headroom gets the two bytes of difference, so its stop stays on
 //! output with the frozen denied row.
 //!
-//! # Realised: 11 of 40
+//! # Realised: 17 of 40
 //!
 //! | Trace | Clause | Program |
 //! | --- | --- | --- |
@@ -38,12 +40,33 @@
 //! | `display-stop-source-range` | DET.56 | `pick(1, 2, r)` stopped on steps at `r.v`, after a non-BMP character |
 //! | `output-equality` | DET.59 | `equal("abcde")`: one eight-byte unit at equality |
 //! | `output-retained-at-cutoff` | DET.59 | `retain("abcde", "")`: one unit published, the second refused on output |
+//! | `oversized-arithmetic` | DET.57 | `mul(2^80, 2^80)`: `exact_mul` of 11 limbs by 11, refused on kernel cost |
+//! | `oversized-admitted` | DET.57 | the same product admitted at its limits, published, released at the scope's exit |
+//! | `arithmetic-reservation` | DET.57 | `mul(0, 2^80)`: 12 bytes reserved, 10 released as the product's 2 settle |
+//! | `alias-release` | DET.58 | `release()`: `mk()` aliases `a` as `b` and returns `b`, so `a` is released first |
+//! | `alias-still-live` | DET.58 | `live()`: the same alias, then a five-byte literal refused on memory |
+//! | `pointwise-failure` | DET.55 | `check(7)`: `assert` of a false comparison ends the run with its error code |
 //!
 //! The snapshot `k` is priced as the trace's kernel row (CV.4): the batch's kernel cost, a reservation of the result
 //! and the scratch, and a result of exactly the trace's result size, so the scratch is released after the row as the
 //! fixture's is.
 //!
-//! # Not realised: 29 of 40
+//! The exact-arithmetic traces price `exact_mul` with the test tariffs (DET.57): eight-bit limbs, one kernel unit per
+//! pair of limbs, and a reservation of one byte plus the operands' bits in bytes. The product is published, and the
+//! published unit is the trace's value.
+//!
+//! `let` scopes nest, so the alias traces, which release `a` before its alias `b`, cross a call: `mk` binds `a`,
+//! aliases it as `b` and returns `b`, which leaves with its own owner while `mk`'s scope exit releases `a`. The
+//! trace's `c` is a literal of the caller, or in `alias-still-live` of a further callee `yz` whose frame has as many
+//! slots as `mk`'s (two unit `let`s): the overhead's memory peak inside `mk` is then exactly the live memory at `c`
+//! plus the trace's headroom, so the memory stop needs no raise.
+//!
+//! `pointwise-failure` stops on a value: its probe runs `check(1)`, whose comparison holds, and the run's `7` reads
+//! alike (one digit), so every row before the assertion is the same. `check` binds the comparison with `let`, so the
+//! assertion visits a borrowed predicate and releases nothing, as the trace's does; the comparison's byte goes at the
+//! scope's exit, or with the cleanup after the failure.
+//!
+//! # Not realised: 23 of 40
 //!
 //! [`NOT_EXPRESSIBLE`] lists each with its reason, and `every_frozen_trace_is_realised_or_listed_once` holds the two
 //! lists to the 40 frozen vectors.
@@ -58,7 +81,7 @@ use c600_run::meter::{code, frame_size, Amounts, Outcome, Row, SourceRange, Summ
 use c600_run::value::Value;
 use c600_syntax::{lower, parse, sha256_hex, Lowered};
 use json::Json;
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint};
 
 const VECTORS: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/architecture/1.0/language/contract-vectors/vectors.json");
@@ -66,7 +89,7 @@ const VECTORS: &str =
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
 /// The frozen traces no program of the IR draft can express, and why.
-const NOT_EXPRESSIBLE: [(&str, &str); 29] = [
+const NOT_EXPRESSIBLE: [(&str, &str); 23] = [
     ("child-allowances", "the IR has no child scope (child jobs, M6)"),
     ("child-return-owner", "the IR has no child scope"),
     ("root-before-child", "the IR has no child scope"),
@@ -77,17 +100,11 @@ const NOT_EXPRESSIBLE: [(&str, &str); 29] = [
     ("generator-alias-cursor", "the generator is not a value: the IR cannot alias it"),
     ("generator-returned-owner", "the generator is seeded before the entry call, so no call returns it"),
     ("generator-nested-same-name", "a run has one generator; the IR cannot start a second in a call"),
-    ("alias-release", "`let` scopes nest: `a` outlives its alias `b`, so it cannot be released first"),
-    ("alias-still-live", "`let` scopes nest: `a` outlives its alias `b`, so it cannot be released first"),
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
-    ("abstract-trace-charges", "the IR has no loop, pointwise assertion or flow check"),
+    ("abstract-trace-charges", "the IR has no loop or flow check"),
     ("final-loop-test", "the IR has no loop; recursion adds call frames the trace's loop does not have"),
-    ("pointwise-failure", "the IR has no pointwise assertion"),
-    ("oversized-arithmetic", "the IR has no exact multiplication"),
-    ("oversized-admitted", "the IR has no exact multiplication"),
-    ("arithmetic-reservation", "the IR has no exact multiplication"),
     ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
@@ -315,6 +332,9 @@ struct Realisation {
     declarations: &'static str,
     entry: &'static str,
     args: fn() -> Vec<Value>,
+    /// The probe's arguments, where they differ: a trace that stops on a value probes with arguments that read alike
+    /// and let the probe complete (module docs).
+    probe_args: Option<fn() -> Vec<Value>>,
     /// Every row of the program's completed run, in order: its operation path, and the frozen row it is, if any.
     rows: &'static [(&'static str, Option<&'static str>)],
     /// For a stopping trace: steps, kernel cost, memory and output of the program's stopped operation, admitted.
@@ -402,6 +422,17 @@ struct Realised {
 }
 
 fn run(p: &Program, r: &Realisation, trace: &Trace, limits: Amounts, host: &mut TraceHost) -> Run {
+    run_with(p, r, r.args, trace, limits, host)
+}
+
+fn run_with(
+    p: &Program,
+    r: &Realisation,
+    args: fn() -> Vec<Value>,
+    trace: &Trace,
+    limits: Amounts,
+    host: &mut TraceHost,
+) -> Run {
     let seed = trace.seed();
     let ranges = Ranges(&p.lowered);
     let mut options = Options::new(limits);
@@ -411,7 +442,7 @@ fn run(p: &Program, r: &Realisation, trace: &Trace, limits: Amounts, host: &mut 
     if r.source_node.is_some() {
         options.sources = Some(&ranges);
     }
-    p.loaded.run("m", r.entry, (r.args)(), host, &options).unwrap_or_else(|e| panic!("{}: {e:?}", r.trace))
+    p.loaded.run("m", r.entry, args(), host, &options).unwrap_or_else(|e| panic!("{}: {e:?}", r.trace))
 }
 
 /// Runs one realisation against its frozen trace and checks every row and the cutoff (module docs).
@@ -420,7 +451,7 @@ fn realise(root: &Json, r: &Realisation) -> Realised {
     let trace = Trace::read(vector(root, id));
     let p = program(r.requires, r.declarations);
 
-    let probe = run(&p, r, &trace, WIDE, &mut TraceHost::for_trace(&trace));
+    let probe = run_with(&p, r, r.probe_args.unwrap_or(r.args), &trace, WIDE, &mut TraceHost::for_trace(&trace));
     let list = listing(&probe.summary);
     assert_eq!(probe.summary.outcome, Outcome::Completed, "{id}: the probe completes:{list}");
     let paths: Vec<&str> = probe.summary.rows.iter().map(|row| row.at.as_str()).collect();
@@ -439,7 +470,7 @@ fn realise(root: &Json, r: &Realisation) -> Realised {
             let row = charges(&probe.summary.rows[mapped[admitted]]);
             assert_eq!(row[..4], would, "{id}: the stopped operation's charges, admitted");
         }
-        (None, None) => assert_eq!(trace.used, trace.limits, "{id}: the trace completes at its limits"),
+        (None, None) => {}
         (stop, would) => panic!("{id}: a stop {} realised with {would:?}", stop.is_some()),
     }
 
@@ -459,7 +490,8 @@ fn realise(root: &Json, r: &Realisation) -> Realised {
         assert_eq!(charges(row), *want, "{id}: frozen row `{at}` and program row `{}`", row.at);
     }
     match (&trace.stop, &s.stop) {
-        (None, None) => assert_eq!(s.used, limits, "{id}: the run uses its limits exactly: equality is admitted"),
+        // Each limit is the probe's use plus the trace's slack: where the trace has none, equality is admitted.
+        (None, None) => assert_eq!(s.used, probe.summary.used, "{id}: the run uses what the probe used"),
         (Some(want), Some(got)) => {
             assert_eq!(got.at, r.rows[mapped[admitted]].0, "{id}: the stop is the frozen stop's row");
             assert_eq!(want.at, trace.rows[admitted].0, "{id}: the frozen stop is its last row");
@@ -506,6 +538,7 @@ const NESTED_CALLS: Realisation = Realisation {
     declarations: NESTED,
     entry: "outer",
     args: NO_ARGS,
+    probe_args: None,
     rows: &[
         ("entry#call", Some("outer/call")),
         ("m.outer:root#call", Some("outer/inner/call")),
@@ -562,6 +595,7 @@ fn ct_det_27_equal_to_limit_runs_as_a_program() {
                            export fn limit(y: Nat) -> Nat effects [snapshot] {\n    let u = hold();\n    return y;\n}\n",
             entry: "limit",
             args: || vec![Value::int(7)],
+            probe_args: None,
             rows: &[
                 ("entry#read", None),
                 ("entry#call", None),
@@ -605,6 +639,7 @@ fn ct_det_27_simultaneous_short_dimensions_run_as_programs() {
                 declarations: SHOW,
                 entry: "show",
                 args: NO_ARGS,
+                probe_args: None,
                 rows: &[
                     ("entry#call", None),
                     ("m.show:0#value", None),
@@ -637,6 +672,7 @@ fn ct_det_29_generator_runs_as_a_program() {
                            return record { a = random_draw(), b = random_draw(), c = random_draw() };\n}\n",
             entry: "three",
             args: NO_ARGS,
+            probe_args: None,
             rows: &[
                 ("entry#rng_init", Some("init")),
                 ("entry#call", None),
@@ -729,6 +765,7 @@ fn ct_det_32_display_traces_run_as_programs() {
         declarations: PICK,
         entry: "pick",
         args: || pick_args(1, 2),
+        probe_args: None,
         rows: PICK_THEN,
         stop_would: None,
         kernel_extra: 0,
@@ -757,6 +794,7 @@ const OUTPUT_EQUALITY: Realisation = Realisation {
     declarations: OUTPUT,
     entry: "equal",
     args: || vec![Value::text("abcde")],
+    probe_args: None,
     rows: &[
         ("entry#read", None),
         ("entry#call", None),
@@ -834,6 +872,220 @@ fn ct_det_31_output_traces_run_as_programs() {
     assert_eq!(retained.run.summary.used.output, trace.used.output, "the published unit stays charged");
 }
 
+const MUL: &str = "export fn mul(a: Int, b: Int) -> Unit effects [view] {\n    let x = exact_mul(a, b);\n    \
+                   let v = publish_view(x);\n    return ();\n}\n";
+
+fn power(n: u32) -> Value {
+    Value::int(BigInt::from(1u8) << n)
+}
+
+/// `mk` binds `a`, aliases it as `b` and returns `b`; `yz`'s frame has as many slots as `mk`'s (module docs).
+const ALIAS: &str = "fn mk() -> Nat effects [] {\n    let a = 65536;\n    let b = a;\n    return b;\n}\n\n\
+                     fn mid() -> Nat effects [] {\n    let b = mk();\n    return 65537;\n}\n\n\
+                     export fn release() -> Unit effects [] {\n    let c = mid();\n    return ();\n}\n\n\
+                     fn yz() -> Nat effects [] {\n    let p = ();\n    let q = ();\n    return 16777216;\n}\n\n\
+                     fn late() -> Nat effects [] {\n    let b = mk();\n    return yz();\n}\n\n\
+                     export fn live() -> Unit effects [] {\n    let c = late();\n    return ();\n}\n";
+
+const CHECK: &str =
+    "export fn check(n: Nat) -> Unit effects [] {\n    let p = exact_less(n, 5);\n    return assert(p);\n}\n";
+
+/// `mul`'s rows where the trace completes: the product is the frozen `mul` and its scope's exit the frozen `drop`.
+const MUL_ROWS: &[(&str, Option<&str>)] = &[
+    ("entry#read", None),
+    ("entry#read", None),
+    ("entry#call", None),
+    ("m.mul:0.0#visit", None),
+    ("m.mul:0.1#visit", None),
+    ("m.mul:0#exact_mul", Some("mul")),
+    ("m.mul:root#visit", None),
+    ("m.mul:1.0.0#visit", None),
+    ("m.mul:1.0#publish_view", None),
+    ("m.mul:1#visit", None),
+    ("m.mul:1.1#value", None),
+    ("m.mul:1#scope_exit", None),
+    ("m.mul:root#scope_exit", Some("drop")),
+    ("m.mul:root#return", None),
+    ("entry#emit", None),
+];
+
+/// `mul`'s rows where the trace stops at the product, its only row.
+const MUL_STOP_ROWS: &[(&str, Option<&str>)] = &[
+    ("entry#read", None),
+    ("entry#read", None),
+    ("entry#call", None),
+    ("m.mul:0.0#visit", None),
+    ("m.mul:0.1#visit", None),
+    ("m.mul:0#exact_mul", Some("mul")),
+    ("m.mul:root#visit", None),
+    ("m.mul:1.0.0#visit", None),
+    ("m.mul:1.0#publish_view", None),
+    ("m.mul:1#visit", None),
+    ("m.mul:1.1#value", None),
+    ("m.mul:1#scope_exit", None),
+    ("m.mul:root#scope_exit", None),
+    ("m.mul:root#return", None),
+    ("entry#emit", None),
+];
+
+/// CT-DET-28 (synthetic, part: oversized arithmetic on RT1; not run: text work, loop tests and flow checks, since the
+/// IR has no text order, loop or flow check, and RT2 and RT3 (no owner yet)): the frozen traces `oversized-arithmetic`,
+/// `oversized-admitted` and `arithmetic-reservation` run as one program, which binds `exact_mul(a, b)` and publishes
+/// it. The product's row is the frozen `mul` row, priced from its operands' sizes (DET.57): 2^80 by itself is refused
+/// on kernel cost one unit short and admitted at its limits, and a product by zero reserves for the operands' bits and
+/// releases all but the product's two bytes in its own row. The scope's exit that releases the product is the frozen
+/// `drop`, and the published product is the trace's value.
+#[test]
+fn ct_det_28_oversized_arithmetic_runs_as_programs() {
+    let root = fixtures();
+    let refused = Realisation {
+        trace: "oversized-arithmetic",
+        requires: "",
+        declarations: MUL,
+        entry: "mul",
+        args: || vec![power(80), power(80)],
+        probe_args: None,
+        rows: MUL_STOP_ROWS,
+        stop_would: Some([1, 121, 22, 0]),
+        kernel_extra: 0,
+        source_node: None,
+    };
+    assert!(realise(&root, &refused).run_host.views.is_empty(), "a refused product publishes nothing");
+    let admitted = Realisation { trace: "oversized-admitted", rows: MUL_ROWS, stop_would: None, ..refused };
+    let reservation =
+        Realisation { trace: "arithmetic-reservation", args: || vec![Value::int(0), power(80)], ..admitted };
+    for r in [admitted, reservation] {
+        let done = realise(&root, &r);
+        let trace = Trace::read(vector(&root, r.trace));
+        let [(name, product)] = &trace.values[..] else { panic!("{}: one value", r.trace) };
+        assert_eq!(name, "mul");
+        let product = BigInt::parse_bytes(product.num().expect("a number").as_bytes(), 10).expect("decimal digits");
+        let unit = format!("{{\"int\":\"{product}\"}}\n");
+        assert_eq!(done.run_host.views, [unit.as_bytes()], "{}: the published product is the trace's", r.trace);
+    }
+}
+
+/// CT-DET-26 (part: alias and drop across calls on RT1; not run: moved child results, since the IR has no child
+/// construct (child jobs, M6), and RT2 and RT3 (no owner yet)): the frozen traces `alias-release` and
+/// `alias-still-live` run as programs (module docs). `mk`'s alias reserves an owner of its own, its scope's exit
+/// releases `a` while `b` leaves as the result, and the caller releases `b` after its own `c`. With `b` still live,
+/// `alias-still-live`'s five-byte `c` is refused on memory with the frozen denied row.
+#[test]
+fn ct_det_26_alias_traces_run_as_programs() {
+    let root = fixtures();
+    let release = Realisation {
+        trace: "alias-release",
+        requires: "",
+        declarations: ALIAS,
+        entry: "release",
+        args: NO_ARGS,
+        probe_args: None,
+        rows: &[
+            ("entry#call", None),
+            ("m.release:0#call", None),
+            ("m.release:0 > m.mid:0#call", None),
+            ("m.release:0 > m.mid:0 > m.mk:0#value", Some("a")),
+            ("m.release:0 > m.mid:0 > m.mk:root#visit", None),
+            ("m.release:0 > m.mid:0 > m.mk:1.0#visit", None),
+            ("m.release:0 > m.mid:0 > m.mk:1#alias", Some("b")),
+            ("m.release:0 > m.mid:0 > m.mk:1.1#visit", None),
+            ("m.release:0 > m.mid:0 > m.mk:1#scope_exit", None),
+            ("m.release:0 > m.mid:0 > m.mk:root#scope_exit", Some("drop-a")),
+            ("m.release:0 > m.mid:0 > m.mk:root#return", None),
+            ("m.release:0 > m.mid:root#visit", None),
+            ("m.release:0 > m.mid:1#value", Some("c")),
+            ("m.release:0 > m.mid:root#scope_exit", Some("drop-b")),
+            ("m.release:0 > m.mid:root#return", None),
+            ("m.release:root#visit", None),
+            ("m.release:1#value", None),
+            ("m.release:root#scope_exit", Some("drop-c")),
+            ("m.release:root#return", None),
+            ("entry#emit", None),
+        ],
+        stop_would: None,
+        kernel_extra: 0,
+        source_node: None,
+    };
+    realise(&root, &release);
+    realise(
+        &root,
+        &Realisation {
+            trace: "alias-still-live",
+            entry: "live",
+            rows: &[
+                ("entry#call", None),
+                ("m.live:0#call", None),
+                ("m.live:0 > m.late:0#call", None),
+                ("m.live:0 > m.late:0 > m.mk:0#value", Some("a")),
+                ("m.live:0 > m.late:0 > m.mk:root#visit", None),
+                ("m.live:0 > m.late:0 > m.mk:1.0#visit", None),
+                ("m.live:0 > m.late:0 > m.mk:1#alias", Some("b")),
+                ("m.live:0 > m.late:0 > m.mk:1.1#visit", None),
+                ("m.live:0 > m.late:0 > m.mk:1#scope_exit", None),
+                ("m.live:0 > m.late:0 > m.mk:root#scope_exit", Some("drop-a")),
+                ("m.live:0 > m.late:0 > m.mk:root#return", None),
+                ("m.live:0 > m.late:root#visit", None),
+                ("m.live:0 > m.late:1#call", None),
+                ("m.live:0 > m.late:1 > m.yz:0#value", None),
+                ("m.live:0 > m.late:1 > m.yz:root#visit", None),
+                ("m.live:0 > m.late:1 > m.yz:1.0#value", None),
+                ("m.live:0 > m.late:1 > m.yz:1#visit", None),
+                ("m.live:0 > m.late:1 > m.yz:1.1#value", Some("c")),
+                ("m.live:0 > m.late:1 > m.yz:1#scope_exit", None),
+                ("m.live:0 > m.late:1 > m.yz:root#scope_exit", None),
+                ("m.live:0 > m.late:1 > m.yz:root#return", None),
+                ("m.live:0 > m.late:root#scope_exit", None),
+                ("m.live:0 > m.late:root#return", None),
+                ("m.live:root#visit", None),
+                ("m.live:1#value", None),
+                ("m.live:root#scope_exit", None),
+                ("m.live:root#return", None),
+                ("entry#emit", None),
+            ],
+            stop_would: Some([1, 0, 5, 0]),
+            ..release
+        },
+    );
+}
+
+/// CT-DET-28 (synthetic, part: assertions on RT1; not run: loop tests and flow checks, since the IR has no loop or flow
+/// check, and RT2 and RT3 (no owner yet)): the frozen trace `pointwise-failure` runs as a program, `check(n)`, which
+/// binds `exact_less(n, 5)` and asserts it. The predicate's visit is the frozen `predicate` row and the assertion the
+/// frozen `assert` row, one step after the predicate (DET.55); `check(7)` ends there with `LG4:input.pointwise_failed`
+/// in the effect phase, emits nothing, and the cleanup releases the comparison's byte.
+#[test]
+fn ct_det_28_pointwise_failure_runs_as_a_program() {
+    let done = realise(
+        &fixtures(),
+        &Realisation {
+            trace: "pointwise-failure",
+            requires: "",
+            declarations: CHECK,
+            entry: "check",
+            args: || vec![Value::int(7)],
+            probe_args: Some(|| vec![Value::int(1)]),
+            rows: &[
+                ("entry#read", None),
+                ("entry#call", None),
+                ("m.check:0.0#visit", None),
+                ("m.check:0.1#value", None),
+                ("m.check:0#exact_less", None),
+                ("m.check:root#visit", None),
+                ("m.check:1.0#visit", Some("predicate")),
+                ("m.check:1#assert", Some("assert")),
+                ("m.check:root#scope_exit", None),
+                ("m.check:root#return", None),
+                ("entry#emit", None),
+            ],
+            stop_would: Some([1, 0, 0, 0]),
+            kernel_extra: 0,
+            source_node: None,
+        },
+    );
+    assert!(done.run.output.is_none(), "a failed assertion emits nothing");
+    assert_eq!(done.probe.output.as_deref(), Some(&b"null\n"[..]), "a held assertion is the unit");
+}
+
 /// Every frozen trace is realised in this file or listed in [`NOT_EXPRESSIBLE`] with its reason, exactly once.
 #[test]
 fn every_frozen_trace_is_realised_or_listed_once() {
@@ -850,6 +1102,12 @@ fn every_frozen_trace_is_realised_or_listed_once() {
         "display-stop-source-range",
         "output-equality",
         "output-retained-at-cutoff",
+        "oversized-arithmetic",
+        "oversized-admitted",
+        "arithmetic-reservation",
+        "alias-release",
+        "alias-still-live",
+        "pointwise-failure",
     ];
     let mut ids: Vec<&str> = all(&root).iter().map(|v| text(v, "id")).collect();
     let mut accounted: Vec<&str> = realised.iter().copied().chain(NOT_EXPRESSIBLE.iter().map(|n| n.0)).collect();
