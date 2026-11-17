@@ -1478,7 +1478,10 @@ run or not applicable is no pass (PHS.63).
 - The host bridge, `c600_tools::bridge::Bridge`, is the runtime's host on `c600-command`. Each proposal the boundary
   admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
   `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
-  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program still receives only the fixed
+  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. For one run the host may give the bridge
+  the solver's word steps of a recipe of plain word steps only: a proposal of exactly that recipe's literal word longer
+  than 100,000 letters then goes in those word steps, in order, in the one invocation, and every other proposal in one
+  word step; the bridge never chooses where to cut (LB2.3, LB2.4). The program still receives only the fixed
   acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
   workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
   app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
@@ -1637,8 +1640,11 @@ run or not applicable is no pass (PHS.63).
     CT-BND-07, parts).
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
     previews clear in Net mode and commits as one transaction, and the prefix alone is refused); CT-LB2-03's oversize
-    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part on
-    the command route.
+    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part:
+    on the command route, and on the source route a recipe of two full chunks previews in the solver's two word steps
+    with the command route's digests and end state and commits as one transaction, while a word of 200,000 letters that
+    is not the input recipe's literal word, or comes without the solver's word steps, is refused whole with the
+    recipe-shape code.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
   - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (ruling 4, owner decision of
@@ -1650,8 +1656,8 @@ run or not applicable is no pass (PHS.63).
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
   `Declared` holds one class); CT-LB2-02's Strict half
   through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named
-  work-sheet reuse; chunked recipes over 100,000 letters on the source route (the tool's entry takes one flat word,
-  though the IR draft now has lists and the kernel chunks words);
+  work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with another
+  field (its literal word over 100,000 letters goes in one word step and is refused whole);
   CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in
   admission.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".

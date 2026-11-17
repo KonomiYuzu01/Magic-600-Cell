@@ -10,7 +10,7 @@ use c600_command::{CommandLayer, Secret, Shell, Table};
 use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Kernel, ProtectedSet};
 use c600_run::boundary::Store;
-use c600_tools::bridge::{base, Bridge, Sent};
+use c600_tools::bridge::{base, Bridge, Sent, Steps};
 use c600_tools::process::{run_in_process, ProcessHost, Stopped, IN_PROCESS, PROCESS, RUNTIME_BINARY};
 use c600_tools::tool::{Ran, Tool, SOURCE};
 
@@ -117,8 +117,20 @@ pub fn run_on(
     word: &[i32],
     run: &str,
 ) -> (Result<Ran, Stopped>, Vec<Sent>) {
+    run_with(host, tool, layer, word, run, None)
+}
+
+/// [`run_on`] through a bridge given `steps`, the solver's word steps of the run's input recipe.
+pub fn run_with(
+    host: Option<&mut ProcessHost>,
+    tool: &Tool,
+    layer: &mut CommandLayer,
+    word: &[i32],
+    run: &str,
+    steps: Option<Steps>,
+) -> (Result<Ran, Stopped>, Vec<Sent>) {
     let read = base(layer.revision());
-    let mut bridge = Bridge::new(layer, run);
+    let mut bridge = Bridge::new(layer, run).with_steps(steps);
     let mut store = Store::default();
     let ran = match host {
         None => run_in_process(tool, word, run, &read, &mut bridge, &mut store),
