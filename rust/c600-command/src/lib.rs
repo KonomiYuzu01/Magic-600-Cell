@@ -272,9 +272,10 @@
 //! - A run reaches no workspace-kind row (draft; findings B3 and B4 of the KN5 boundary attack). Of the rows an entry
 //!   runs, an overlay row or a served row, the runtime may invoke a query or view row only. A workspace or file row is
 //!   refused with `LG3:capability.not_granted`, as `workspace.set` is, before read-only recovery, the arguments and
-//!   the row's own gates are checked: no job is admitted, nothing is journaled and no history is cut. So a run alone causes no durable action, and a run's write never
-//!   takes the solver's record writes out of the undo order. Whether a run that a solver command started may invoke a
-//!   workspace row, as a change inside a command the solver invokes (ONE.52), is open and is the owner's.
+//!   the row's own gates are checked: no job is admitted, nothing is journaled and no history is cut. So a run alone
+//!   causes no durable action, and a run's write never takes the solver's record writes out of the undo order. Whether
+//!   a run that a solver command started may invoke a workspace row, as a change inside a command the solver invokes
+//!   (ONE.52), is open and is the owner's.
 //! - A built-in tool's entry may serve a stored row ([`CommandLayer::serve_row`]; LP3's C6, its first common need).
 //!   - An invocation of a served row admits a program job for the entry, as for an overlay row.
 //!   - The row keeps H-08's kind, lane, undo class, gates and argument types. The runtime may invoke it only when it
