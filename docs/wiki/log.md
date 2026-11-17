@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: Strict protection in the command route
+The command layer (`rust/c600-command`) builds H-08's `protection.policy.set`: a session starts under Net, and the row switches it to Strict or back as a durable workspace action that keeps the state and advances the workspace and protection revisions, so an open preview goes stale, and it undoes and redoes as a workspace inverse; the preview, execute's step 8 and the undo walk judge under the policy in force, a Strict preview's summary names the mode and the first refused prefix, and the journal carries the policy as an 18th key, so CT-LB2-02's route half runs. The row takes no token or confirmation (H-08 gives it no gate) and the runtime may not invoke it; these drafts go to LP3's amendment list under PHS.52.
+
 ## [2026-11-17] update | The language: the session lock
 M6's session store (`rust/c600-session`) takes the session lock before it reads a journal, so one process opens a session at a time (KN4.1; 1.0-A3's V03.4 keeps 0.4's rule that a lock conflict is a typed error, not a crash): `FsDisk` holds an exclusive lock on the file `lock` in its directory until it is dropped or its process ends, and a second opener, in the same process or another, is refused with `KN4:busy.session_locked` before it reads or writes the journal or a state object, which closes Fable lead L9 (commit `5d1a7de2`). The code and the lock file's name are drafts for LP3's amendment list (a chapter-13 row under PHS.52), and KN4.2's lock (R-15, the in-process core lock) is unchanged.
 

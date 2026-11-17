@@ -6,10 +6,10 @@ mod common;
 
 use c600_command::{
     code, draft_args, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames, Invocation,
-    Kind, Overlay, Provenance, Receipt, Reopen, Revision, Secret, Shell, Status, Table, RECORD_ROW,
+    Kind, Overlay, Provenance, Receipt, Reopen, Revision, Secret, Shell, Status, Table, POLICY_ROW, RECORD_ROW,
 };
 use c600_kernel::json::{self, Value};
-use c600_kernel::ProtectedSet;
+use c600_kernel::{ProtectedSet, ProtectionMode};
 use c600_session::disk::{Fault, MemDisk};
 use c600_session::JournalStore;
 
@@ -193,6 +193,33 @@ fn a_protection_change_is_durable_and_its_release_needs_confirmation() {
     drop(g);
     let h = reopen(&disk, SECRET);
     assert_eq!(h.kept(), kept);
+    assert!(h.layer.undo_hint(Direction::Redo).is_some());
+}
+
+/// CT-ONE-21 (part: the protection policy, its change's receipt and its undo survive a reopen from the journal, so a
+/// reopened session judges under the policy the live one had and redoes the change), KN5.20, LB2.3 (draft).
+#[test]
+fn a_policy_change_and_its_undo_are_durable_in_the_journal() {
+    let disk = MemDisk::new();
+    let mut f = create(&disk);
+    f.commit(&word(&[1]));
+    assert_eq!(f.layer.policy(), ProtectionMode::Net);
+    let args = json::object([("policy", Value::String("strict".into()))]);
+    let set = f.shell.invoke(&mut f.layer, POLICY_ROW, args).unwrap();
+    assert!(matches!(set.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })));
+    let kept = (f.kept(), f.layer.policy());
+    assert_eq!(kept.1, ProtectionMode::Strict);
+    drop(f);
+    let mut g = reopen(&disk, SECRET);
+    assert_eq!((g.kept(), g.layer.policy()), kept);
+    assert_eq!(g.layer.outcome(&set.command, &set.request), Some(set));
+    let undone = g.step(Direction::Undo, false);
+    assert!(matches!(undone.status, Status::Committed(_)), "{:?}", undone.status);
+    assert_eq!(g.layer.policy(), ProtectionMode::Net);
+    let kept = (g.kept(), g.layer.policy());
+    drop(g);
+    let h = reopen(&disk, SECRET);
+    assert_eq!((h.kept(), h.layer.policy()), kept);
     assert!(h.layer.undo_hint(Direction::Redo).is_some());
 }
 

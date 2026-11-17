@@ -10,19 +10,25 @@
 //!
 //! `session.undo` and `session.redo` take LI.9's hint and a token and use the commit lane with no `not_busy` gate
 //! (KN5.20). They follow M6's move tree: every commit adds a node (keyed by its action order) under the head, every
-//! undoable action (a commit, a `protection.orbit.set` or a record write) pushes its order on the undo stack and drops
-//! the redo stack, and an undo or redo inverts or repeats the change on top of its stack. A head change derives the
-//! inverse of the node's recipe, or the recipe again, from the current state through the kernel under the protection
-//! set in force (LI.26's normal permission path) and adopts the result only when it reaches the recorded node; a
-//! protection change that releases an orbit needs `confirm`. The journal keeps recipes, digests, protected orbits and
-//! record values, not states.
+//! undoable action (a commit, a `protection.orbit.set`, a `protection.policy.set` or a record write) pushes its order
+//! on the undo stack and drops the redo stack, and an undo or redo inverts or repeats the change on top of its stack. A
+//! head change derives the inverse of the node's recipe, or the recipe again, from the current state through the kernel
+//! under the protection set and policy in force (LI.26's normal permission path) and adopts the result only when it
+//! reaches the recorded node; a protection change that releases an orbit needs `confirm`. The journal keeps recipes,
+//! digests, protected orbits, policies and record values, not states.
+//!
+//! The protection policy ([`CommandLayer::policy`]) is Net from a session's start; `protection.policy.set`
+//! ([`POLICY_ROW`]) switches it. Net judges the end of the complete operation; Strict judges every executed literal
+//! prefix, so a word with an identity net map can pass Net and fail Strict (KN2.7, LB2.3). The policy in force decides
+//! how a preview is built, how step 8 judges it again, and how an undo or redo derives its path.
 //!
 //! Only an action that moves the puzzle advances the state revision, ends the pending preview and cancels the jobs that
-//! read the revision it replaces, except file jobs (KN5.18). A protection change advances the workspace and protection
-//! revisions, and a record write or a workspace completion the workspace revision; they keep the preview slot and the
-//! jobs, and every durable action takes the next action order (LI.9). The inverse of a protection change or a record
-//! write is a workspace inverse (`UndoClass::Workspace`): it answers `committed` with equal puzzle hashes, the head and
-//! the state revision unchanged, and advances the workspace revision and the versions it touches (KN5.20, LI.26).
+//! read the revision it replaces, except file jobs (KN5.18). A protection or policy change advances the workspace and
+//! protection revisions, and a record write or a workspace completion the workspace revision; they keep the preview
+//! slot and the jobs, and every durable action takes the next action order (LI.9). The inverse of a protection or
+//! policy change or of a record write is a workspace inverse (`UndoClass::Workspace`): it answers `committed` with
+//! equal puzzle hashes, the head and the state revision unchanged, and advances the workspace revision and the versions
+//! it touches (KN5.20, LI.26).
 //!
 //! KN5's stage 3, the workspace store ([`crate::workspace`]): `workspace.set` ([`RECORD_ROW`]) writes one record, and
 //! a draft `{"record": name}` previews the letters the record holds, with the record's content digest and version in
@@ -38,20 +44,27 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
 use c600_kernel::json::{self, Value};
-use c600_kernel::{Derivation, Effect, Kernel, ProtectedSet, Protection, Recipe, Snapshot, Step, SupportRow, Verdict};
+use c600_kernel::{
+    Derivation, Effect, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
+};
 
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
 };
-use crate::store::{identity_json, Fate, Genesis, MemoryStore, Reopen, Store, Transaction, TransactionKind};
+use crate::store::{
+    identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Reopen, Store, Transaction,
+    TransactionKind,
+};
 use crate::table::{Kind, Lane, Overlay, Row, Table};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The mode of every revision here: the jumbling engine joins when M5 is on main.
 pub const MODE: &str = "jumble_off";
+/// H-08's row that sets the protection policy, Net or Strict.
+pub const POLICY_ROW: &str = "protection.policy.set";
 /// A star certificate failure has no registered code yet (draft).
 pub const CERTIFICATE: &str = "KN2:consistency.star_certificate";
 
@@ -155,13 +168,15 @@ fn rows_json(rows: &[SupportRow]) -> Value {
 }
 
 impl Preview {
-    /// The preview's typed result: what the shell shows, and what its result digest covers.
+    /// The preview's typed result: what the shell shows, and what its result digest covers. A Strict preview also names
+    /// its mode and its first refused prefix (`null` when clear), whose net map its conflicts are; a Net preview's
+    /// summary has neither, so its digest is what it was before the Strict mode (draft).
     pub fn summary(&self) -> Value {
         let verdict = match self.protection.verdict {
             Verdict::Clear => "clear",
             Verdict::Moves => "moves",
         };
-        json::object([
+        let mut summary = json::object([
             ("id", Value::Int(self.id as i64)),
             ("literal", Value::String(self.literal.clone())),
             ("deps", self.deps.to_json()),
@@ -174,7 +189,13 @@ impl Preview {
             ("support", rows_json(&self.effect.support)),
             ("conflicts", rows_json(&self.protection.conflicts)),
             ("verdict", Value::String(verdict.into())),
-        ])
+        ]);
+        if let (Value::Object(fields), ProtectionMode::Strict) = (&mut summary, self.protection.mode) {
+            fields.insert("mode".to_owned(), Value::String(policy_name(ProtectionMode::Strict).to_owned()));
+            let prefix = self.protection.first_refused_prefix.map_or(Value::Null, |n| Value::Int(n as i64));
+            fields.insert("first_refused_prefix".to_owned(), prefix);
+        }
+        summary
     }
 }
 
@@ -233,6 +254,11 @@ enum Change {
         name: String,
         before: Option<RecordValue>,
         after: Option<RecordValue>,
+    },
+    /// A protection-policy change: the policy before and after it.
+    Policy {
+        before: ProtectionMode,
+        after: ProtectionMode,
     },
 }
 
@@ -348,6 +374,7 @@ fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
         && planned.job == stored.job
         && planned.result == stored.result
         && planned.record == stored.record
+        && planned.policy == stored.policy
         && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
@@ -373,6 +400,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     secret: Secret,
     store: S,
     protected: ProtectedSet,
+    /// The protection policy in force: Net from a session's start, then what the last policy action left.
+    policy: ProtectionMode,
     revision: Revision,
     current: Snapshot,
     /// The digest of the identity block's canonical JSON, which a token binds (L9).
@@ -432,6 +461,7 @@ impl<S: Store> CommandLayer<S> {
             secret,
             store,
             protected,
+            policy: ProtectionMode::Net,
             epochs: BTreeSet::from([revision.epoch]),
             revision,
             current: initial,
@@ -590,6 +620,10 @@ impl<S: Store> CommandLayer<S> {
                 Some(RecordWrite { name, value: Some(value) }) => self.plan_record(meta, name, value),
                 _ => return Err(broken("a record write names no record and value")),
             },
+            TransactionKind::Policy => match stored.policy {
+                Some(policy) => self.plan_policy(meta, policy),
+                None => return Err(broken("a policy change names no policy")),
+            },
         };
         if !agrees(&planned.transaction, stored) {
             return Err(broken("the replay does not reach the recorded action"));
@@ -665,6 +699,26 @@ impl<S: Store> CommandLayer<S> {
 
     pub fn protected(&self) -> &ProtectedSet {
         &self.protected
+    }
+
+    /// The protection policy in force, Net or Strict: Net from a session's start, then what the last
+    /// `protection.policy.set`, or the undo or redo of one, left.
+    pub fn policy(&self) -> ProtectionMode {
+        self.policy
+    }
+
+    /// Derives `recipe` from `base` under `protected` in the policy in force: Net judges the end of the complete
+    /// operation, Strict every executed literal prefix (KN2.7, LB2.3).
+    fn derive(
+        &self,
+        base: &Snapshot,
+        recipe: &Recipe,
+        protected: &ProtectedSet,
+    ) -> Result<Derivation, c600_kernel::Error> {
+        match self.policy {
+            ProtectionMode::Net => self.kernel.derive(base, recipe, protected),
+            ProtectionMode::Strict => self.kernel.derive_strict(base, recipe, protected),
+        }
     }
 
     /// The pending preview.
@@ -935,7 +989,13 @@ impl<S: Store> CommandLayer<S> {
                 if p.deps != self.deps(&self.draft_now(p)) {
                     return Err(Error::new(code::REVISION_CHANGED, "the preview is stale"));
                 }
-                if self.kernel.protection(&p.effect, &self.protected).verdict == Verdict::Moves {
+                let moves = match self.policy {
+                    ProtectionMode::Net => self.kernel.protection(&p.effect, &self.protected).verdict,
+                    // The build judged every prefix under the set and the policy in force: a change of either advances
+                    // the protection revision, and the preview's dependencies are current.
+                    ProtectionMode::Strict => p.protection.verdict,
+                };
+                if moves == Verdict::Moves {
                     return Err(Error::new(code::ORBIT_WOULD_MOVE, c600_kernel::PROTECTED_MESSAGE));
                 }
                 Ok(())
@@ -958,7 +1018,7 @@ impl<S: Store> CommandLayer<S> {
                     None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
                 }
             }
-            "protection.orbit.set" => Ok(()),
+            "protection.orbit.set" | POLICY_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
                 None => {
@@ -1019,9 +1079,13 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), not `protection.orbit.set`, whose
-    /// release confirmation is the solver's, and not `workspace.set`, which M6 does not grant a program (draft).
+    /// release confirmation is the solver's, not `protection.policy.set`, since the protection a commit is judged under
+    /// is the solver's too, and not `workspace.set`, which M6 does not grant a program (draft).
     fn runtime_may(row: &Row) -> bool {
-        !matches!(row.kind, Kind::Commit | Kind::App) && row.id != "protection.orbit.set" && row.id != RECORD_ROW
+        !matches!(row.kind, Kind::Commit | Kind::App)
+            && row.id != "protection.orbit.set"
+            && row.id != POLICY_ROW
+            && row.id != RECORD_ROW
     }
 
     /// Whether the envelope authenticates: its row exists, its caller may invoke the row and hold what it holds, and
@@ -1125,6 +1189,7 @@ impl<S: Store> CommandLayer<S> {
             "session.undo" => self.undo(caller, invocation, request, Direction::Undo),
             "session.redo" => self.undo(caller, invocation, request, Direction::Redo),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
+            POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
             _ if row.overlay.is_some() => self.admit_program(caller, invocation, &row),
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
@@ -1222,7 +1287,7 @@ impl<S: Store> CommandLayer<S> {
     ) {
         let key = (caller.scope(), command.to_owned());
         let base = self.current.clone();
-        let status = match self.kernel.derive(&base, &recipe, &self.protected) {
+        let status = match self.derive(&base, &recipe, &self.protected) {
             Err(error) => Status::Failed(kernel_error(error)),
             Ok(derivation) => {
                 let (end, effect, protection) = match derivation {
@@ -1384,7 +1449,12 @@ impl<S: Store> CommandLayer<S> {
         if self.current.digest() != p.base.digest() {
             return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the preview's start");
         }
-        let protection = self.kernel.protection(&p.effect, &self.protected);
+        // Step 8 judges the operation again under the policy in force: Net its effect, Strict every executed prefix of
+        // its recipe's literal expansion.
+        let protection = match self.policy {
+            ProtectionMode::Net => self.kernel.protection(&p.effect, &self.protected),
+            ProtectionMode::Strict => self.kernel.strict_protection(&p.recipe, &self.protected)?,
+        };
         let end = match (&p.end, protection.verdict) {
             (Some(end), Verdict::Clear) => end.clone(),
             _ => return refused(code::ORBIT_WOULD_MOVE, c600_kernel::PROTECTED_MESSAGE),
@@ -1433,6 +1503,7 @@ impl<S: Store> CommandLayer<S> {
             job: None,
             result: None,
             record: None,
+            policy: None,
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -1482,6 +1553,10 @@ impl<S: Store> CommandLayer<S> {
             let record = self.records.entry(name.clone()).or_default();
             record.version += 1;
             record.value = value.clone();
+        }
+        // A policy change, or its undo or redo.
+        if let Some(policy) = transaction.policy {
+            self.policy = policy;
         }
         match tree {
             Tree::Push { node, change } => {
@@ -1579,8 +1654,9 @@ impl<S: Store> CommandLayer<S> {
         Ok(self.kernel.recipe(&Value::Array(steps))?)
     }
 
-    /// The state at node `to`, derived from the current state along the path under `protected` (LI.26's normal
-    /// permission path); it must reach the node's recorded digest. Returns the state and the path's literal digest.
+    /// The state at node `to`, derived from the current state along the path under `protected` in the policy in force
+    /// (LI.26's normal permission path); it must reach the node's recorded digest. Returns the state and the path's
+    /// literal digest.
     fn walk(&self, to: u64, protected: &ProtectedSet) -> Result<(Snapshot, String), Error> {
         if self.current.digest() != self.nodes[&self.head].digest {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
@@ -1589,7 +1665,7 @@ impl<S: Store> CommandLayer<S> {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head is the action's target already"));
         }
         let recipe = self.path(to)?;
-        let derived = match self.kernel.derive(&self.current, &recipe, protected).map_err(kernel_error)? {
+        let derived = match self.derive(&self.current, &recipe, protected).map_err(kernel_error)? {
             Derivation::Derived(derived) => derived,
             Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
         };
@@ -1636,6 +1712,7 @@ impl<S: Store> CommandLayer<S> {
             job: None,
             result: None,
             record: None,
+            policy: None,
         };
         match change {
             Change::Head { before, after } => {
@@ -1669,6 +1746,15 @@ impl<S: Store> CommandLayer<S> {
                 let to = if direction == Direction::Undo { before } else { after };
                 transaction.record = Some(RecordWrite { name, value: to });
                 transaction.revision.workspace += 1;
+                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None })
+            }
+            // A workspace inverse: the policy before or after the change is in force again, and the workspace and
+            // protection revisions advance, as for a protection change. H-08 gives the row no `confirm` gate.
+            Change::Policy { before, after } => {
+                let to = if direction == Direction::Undo { before } else { after };
+                transaction.policy = Some(to);
+                transaction.revision.workspace += 1;
+                transaction.revision.protection += 1;
                 Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None })
             }
         }
@@ -1735,6 +1821,7 @@ impl<S: Store> CommandLayer<S> {
             job: None,
             result: None,
             record: None,
+            policy: None,
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -1754,6 +1841,57 @@ impl<S: Store> CommandLayer<S> {
         };
         let set = self.kernel.protected_set(&orbits)?;
         let adoption = self.plan_orbits(Meta::of(caller, invocation, request), set)?;
+        self.transact(adoption)
+    }
+
+    // ----- protection.policy.set -----
+
+    /// A change of the protection policy (draft): as for a protection change, the workspace and protection revisions
+    /// advance, so a pending preview built under the old policy is stale (H-08: "invalidates any open preview"), and
+    /// the state and the preview slot stay. It is undoable as a workspace inverse. H-08 gives the row no `confirm`
+    /// gate, so no direction needs a confirmation.
+    fn plan_policy(&self, meta: Meta, policy: ProtectionMode) -> Adoption {
+        let order = self.order + 1;
+        let digest = self.current.digest().to_owned();
+        let mut revision = self.revision.clone();
+        revision.workspace += 1;
+        revision.protection += 1;
+        let transaction = Transaction {
+            kind: TransactionKind::Policy,
+            event: format!("e{order}"),
+            order,
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: digest.clone(),
+            post: digest,
+            revision,
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: false,
+            job: None,
+            result: None,
+            record: None,
+            policy: Some(policy),
+        };
+        let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
+        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
+    }
+
+    fn set_policy(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let policy = invocation.args.get("policy").and_then(Value::as_str).and_then(policy_from_name);
+        let Some(policy) = policy else {
+            return refused(code::ARGUMENT_FORM, "`policy` is `net` or `strict`");
+        };
+        let adoption = self.plan_policy(Meta::of(caller, invocation, request), policy);
         self.transact(adoption)
     }
 
@@ -1783,6 +1921,7 @@ impl<S: Store> CommandLayer<S> {
             job: Some(job),
             result: Some(result),
             record: None,
+            policy: None,
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree: Tree::None, preview: None }
     }
@@ -1840,6 +1979,7 @@ impl<S: Store> CommandLayer<S> {
             job: None,
             result: None,
             record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
+            policy: None,
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }

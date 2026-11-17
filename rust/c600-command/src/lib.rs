@@ -98,8 +98,18 @@
 //! - [`CommandLayer::outcome`] is the shell's lookup and answers `None` for an ID the shell never used in this layer's
 //!   life; [`CommandLayer::kernel_outcome`] is `kernel.outcome` for any caller.
 //! - `protection.orbit.set` is a workspace row with no token; the runtime may not invoke it.
-//! - An action that does not move the puzzle (a protection change, a record write, the undo or redo of either, a
-//!   workspace completion) keeps the state revision, the preview slot and the jobs (KN5.18).
+//! - Strict protection in the command layer (KN2.4, KN2.7, LB2.3). `protection.policy.set` ([`POLICY_ROW`]) takes
+//!   `policy`, `net` or `strict`, as H-08 has it; the session starts Net ([`CommandLayer::policy`]). Under Strict a
+//!   preview is built with the kernel's `derive_strict`, step 8 judges the preview's recipe again with
+//!   `strict_protection`, and an undo or redo derives its path with `derive_strict`, so every executed literal prefix
+//!   is judged; a Strict preview's summary adds `mode` and `first_refused_prefix`, and a Net preview's summary is
+//!   unchanged. The row is a workspace row with no token and, as H-08 gives it no gate, no confirmation in either
+//!   direction; the runtime may not invoke it. A policy change advances the workspace and protection revisions, so a
+//!   pending preview built under the old policy is stale (H-08's note), and it is undoable as a workspace inverse. The
+//!   journal names it `policy`, and it and its undo or redo carry the policy after the action
+//!   (`Transaction::policy`).
+//! - An action that does not move the puzzle (a protection or policy change, a record write, the undo or redo of any
+//!   of them, a workspace completion) keeps the state revision, the preview slot and the jobs (KN5.18).
 //! - A record write answers `completed(workspace)`, and its undo and redo answer `committed` with equal puzzle hashes,
 //!   advancing the workspace revision and the record's version (KN5.20). An undo of a record's first write leaves the
 //!   record with no value. The journal keeps the record's value after each of these actions (`Transaction::record`).
@@ -122,14 +132,15 @@ pub mod token;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
-pub use layer::{Caller, CommandLayer, Invocation, Preview, PreviewState, ProgramJob};
+pub use layer::{Caller, CommandLayer, Invocation, Preview, PreviewState, ProgramJob, POLICY_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
 };
 pub use shell::{draft_args, word_draft, ArgSource, KeyBinding, Shell};
 pub use store::{
-    identity_from_json, identity_json, Fate, Genesis, History, MemoryStore, Reopen, Store, Transaction, TransactionKind,
+    identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
+    Store, Transaction, TransactionKind,
 };
 pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
