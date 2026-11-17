@@ -12,7 +12,8 @@
 //! journal form names `record` only for them, so a journal written before KN5's stage 3 reads unchanged. In the same
 //! way a protection-policy change and the undo or redo of one carry the policy after the action
 //! ([`Transaction::policy`]), and only they name `policy` (draft), so a journal written before the Strict mode reads
-//! unchanged.
+//! unchanged. A `twist.apply` commit carries its exact rotation's record ([`Transaction::rotation`]), and only it
+//! names `rotation` (draft), so a journal without twists reads unchanged.
 
 use std::collections::VecDeque;
 
@@ -21,6 +22,7 @@ use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
 use crate::layer::Caller;
 use crate::receipt::{CommitRecord, Completion, CompletionKind, Error, Receipt, ResultRef, Revision, Status};
+use crate::twist::{record_reads, TWIST_ROW};
 use crate::workspace::RecordWrite;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -124,6 +126,9 @@ pub struct Transaction {
     /// A workspace row's record writes, as its job's output gave them, in the order of their names (LP3's C6, its
     /// second common need; draft). Empty for every other action.
     pub records: Vec<RecordWrite>,
+    /// A `twist.apply` commit's exact rotation: its resolution's record, with the request binding, the request digest,
+    /// the choice and the exact rotation at the cap (KN3.8, KN3.9; draft). `None` for every other action.
+    pub rotation: Option<Value>,
 }
 
 impl Transaction {
@@ -153,7 +158,7 @@ impl Transaction {
     }
 
     /// The journal form (draft). `record` appears only when the action carries a record write, `policy` only when it
-    /// carries a policy, and `records` only when a workspace row's job wrote records.
+    /// carries a policy, `records` only when a workspace row's job wrote records, and `rotation` only on a twist.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
@@ -186,14 +191,19 @@ impl Transaction {
             let records = self.records.iter().map(RecordWrite::to_json).collect();
             fields.insert("records".to_owned(), Value::Array(records));
         }
+        if let (Value::Object(fields), Some(rotation)) = (&mut value, &self.rotation) {
+            fields.insert("rotation".to_owned(), rotation.clone());
+        }
         value
     }
 
     /// Reads the journal form strictly: every field and no other. `record` belongs to a record write, which carries one
     /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty.
     /// `policy` belongs to a policy change and to the undo or redo of one. `records` belongs to a workspace row's
-    /// completion: a non-empty list of writes with values, their names strictly increasing. A transaction that carries
-    /// one where it does not belong, or both `record` and `policy`, does not read, so the history stops there (KN5.23).
+    /// completion: a non-empty list of writes with values, their names strictly increasing. `rotation` belongs to a
+    /// commit of `twist.apply`, which always carries one in the form [`crate::twist`] reads. A transaction that carries
+    /// one where it does not belong, or both `record` and `policy`, or a twist without its rotation, does not read, so
+    /// the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
         let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
@@ -215,14 +225,23 @@ impl Transaction {
                 (!records.is_empty() && ordered && written).then_some(records)?
             }
         };
+        let rotation = match value.get("rotation") {
+            None => None,
+            Some(rotation) => Some(record_reads(rotation).then(|| rotation.clone())?),
+        };
+        let twist = kind == TransactionKind::Commit && value.get("row")?.as_str()? == TWIST_ROW;
         let carries = match kind {
             TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()) && policy.is_none(),
             TransactionKind::Policy => policy.is_some() && record.is_none(),
             TransactionKind::Undo | TransactionKind::Redo => record.is_none() || policy.is_none(),
             _ => record.is_none() && policy.is_none(),
-        } && (records.is_empty() || kind == TransactionKind::Workspace);
-        let keys =
-            17 + usize::from(record.is_some()) + usize::from(policy.is_some()) + usize::from(!records.is_empty());
+        } && (records.is_empty() || kind == TransactionKind::Workspace)
+            && rotation.is_some() == twist;
+        let keys = 17
+            + usize::from(record.is_some())
+            + usize::from(policy.is_some())
+            + usize::from(!records.is_empty())
+            + usize::from(rotation.is_some());
         (carries && object.len() == keys).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
@@ -260,6 +279,7 @@ impl Transaction {
             record,
             policy,
             records,
+            rotation,
         })
     }
 }

@@ -36,6 +36,13 @@
 //! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
 //! preview through the built-in chain presents it, and a word commit's token binds that frame's stamp (ONE.41).
 //!
+//! `twist.apply` ([`TWIST_ROW`]) is a live twist (ONE.46, ONE.78): a commit with no preview whose token binds the state
+//! and protection revisions (LI.6). Its `cap` and `rotation` carry KN3.7's exact request binding ([`crate::twist`]),
+//! which the layer resolves against the twist menu the host pinned ([`CommandLayer::pin_menu`]); on 600-cell-Full the
+//! resolved item becomes its retained word, which the kernel derives under the protection policy in force at the
+//! current revision. Like a word commit it ends the pending preview and cancels the jobs that read the replaced
+//! revision, except file jobs (LI.32).
+//!
 //! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
 //! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
 //! epoch (KN5.23, L10).
@@ -43,6 +50,9 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+use c600_jumble::rotation;
+use c600_jumble::twist::Menu;
+use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
     Derivation, Effect, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
@@ -60,6 +70,7 @@ use crate::store::{
 };
 use crate::table::{Kind, Lane, Overlay, Row, Table};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
+use crate::twist::{self, Twists, TWIST_ROW};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The mode of every revision here: the jumbling engine joins when M5 is on main.
@@ -467,6 +478,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     records: BTreeMap<String, WorkspaceRecord>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
     provenance: Option<Box<dyn Provenance>>,
+    /// The twist menu the host pinned (KN3.8). Without one, `twist.apply` is refused.
+    twists: Option<Twists>,
     history: BTreeMap<u64, PreviewState>,
     used: BTreeSet<u64>,
     receipts: BTreeMap<Key, Record>,
@@ -519,6 +532,7 @@ impl<S: Store> CommandLayer<S> {
             run: None,
             records: BTreeMap::new(),
             provenance: None,
+            twists: None,
             history: BTreeMap::new(),
             used: BTreeSet::new(),
             receipts: BTreeMap::new(),
@@ -623,6 +637,8 @@ impl<S: Store> CommandLayer<S> {
         }
         let meta = Meta::replay(stored);
         let planned = match stored.kind {
+            // A twist's rotation record is adopted as stored: the replay derives the recorded recipe and runs neither
+            // the producer nor the chooser again (KN3.9).
             TransactionKind::Commit => {
                 let recipe = self.kernel.recipe(&stored.recipe)?;
                 let none = ProtectedSet::none();
@@ -946,6 +962,22 @@ impl<S: Store> CommandLayer<S> {
         self.generation += 1;
     }
 
+    /// Pins the twist menu that `twist.apply` resolves its exact requests against (KN3.8; draft), with the exact model
+    /// `context` it is read in, which must be the session's model (`KN1:input.identity_mismatch`). A pin replaces the
+    /// one before. Without a pin, `twist.apply` is refused with `KN5:input.row_not_built`. The pin is a host setting:
+    /// the journal does not keep it, and a reopened layer needs it again.
+    pub fn pin_menu(&mut self, context: Arc<Context>, menu: Menu) -> Result<(), Error> {
+        if context.model.model_id != self.revision.identity {
+            return Err(Error::new(
+                c600_kernel::codes::IDENTITY_MISMATCH,
+                "the twist menu's model is not the session's model",
+            ));
+        }
+        self.twists = Some(Twists { context, menu });
+        self.generation += 1;
+        Ok(())
+    }
+
     /// The workspace records by name, each with its version and value (KN5's stage 3).
     pub fn records(&self) -> &BTreeMap<String, WorkspaceRecord> {
         &self.records
@@ -1064,6 +1096,13 @@ impl<S: Store> CommandLayer<S> {
                     None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
                 }
             }
+            TWIST_ROW => match (&self.twists, self.commit_held) {
+                (None, _) => {
+                    Err(Error::new(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu")))
+                }
+                (Some(_), true) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
+                (Some(_), false) => Ok(()),
+            },
             "protection.orbit.set" | POLICY_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
@@ -1237,6 +1276,7 @@ impl<S: Store> CommandLayer<S> {
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
+            TWIST_ROW => self.twist(caller, invocation, request),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
                 self.admit_program(caller, invocation, &row)
@@ -1554,6 +1594,7 @@ impl<S: Store> CommandLayer<S> {
             record: None,
             policy: None,
             records: Vec::new(),
+            rotation: None,
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -1686,6 +1727,53 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
+    // ----- twist.apply -----
+
+    /// `twist.apply` (A6; ONE.46, ONE.78): a live twist, committed at once with no preview, under the protection in
+    /// force at the current revision. Before the token is spent, the arguments must form KN3.7's binding
+    /// (`KN2:input.rotation_request_malformed`), which must resolve against the pinned menu (`KN2:input.*`, KN3.8: a free
+    /// binding is `menu_binding_mismatch`, as is a menu pin other than the pinned menu's; a direct rotation off the menu
+    /// is `twist_off_menu`), and the item must be a retained one (`KN5:input.menu_word_needs_jumble_on` for a jumble
+    /// item, JI.35) that moves a piece (`KN2:input.recipe_shape` for the identity). Then the commit steps run: the token
+    /// (step 3), the commit lane (step 4), its binding to this invocation and to the state and protection revisions
+    /// (step 5 and LI.6: `KN5:stale.revision_changed`), the head hash (step 7), the kernel's derivation under the
+    /// policy in force (step 8: `KN2:protection.orbit_would_move`), the durable transaction with its rotation record
+    /// (step 9) and the adoption (step 10, LI.32). A refusal changes nothing.
+    fn twist(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let Some(twists) = &self.twists else {
+            return refused(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu"));
+        };
+        let binding = twist::binding(&invocation.args)?;
+        let resolution = rotation::resolve(&twists.context, Some(&twists.menu), &binding)?;
+        let word = rotation::retained_word(&twists.context, &resolution)?;
+        if word.is_empty() {
+            return refused(c600_kernel::codes::RECIPE_SHAPE, "the menu's identity item moves no piece");
+        }
+        let recipe = self.kernel.word(&word)?;
+        let token = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&token, invocation)?;
+        if token.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        if self.current.digest() != self.nodes[&self.head].digest {
+            return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state");
+        }
+        let derived = match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
+            Derivation::Derived(derived) => derived,
+            Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
+        };
+        let meta = Meta::of(caller, invocation, request);
+        let mut adoption = self.commit_adoption(meta, recipe, derived.state, derived.word, None);
+        adoption.transaction.rotation = Some(resolution.to_json());
+        self.transact(adoption)
+    }
+
     // ----- session.undo and session.redo -----
 
     /// The recipe from the head to node `to`: the inverses of the nodes up to their common ancestor, then the nodes
@@ -1778,6 +1866,7 @@ impl<S: Store> CommandLayer<S> {
             record: None,
             policy: None,
             records: Vec::new(),
+            rotation: None,
         };
         match change {
             Change::Head { before, after } => {
@@ -1888,6 +1977,7 @@ impl<S: Store> CommandLayer<S> {
             record: None,
             policy: None,
             records: Vec::new(),
+            rotation: None,
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -1943,6 +2033,7 @@ impl<S: Store> CommandLayer<S> {
             record: None,
             policy: Some(policy),
             records: Vec::new(),
+            rotation: None,
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
@@ -1990,6 +2081,7 @@ impl<S: Store> CommandLayer<S> {
             record: None,
             policy: None,
             records,
+            rotation: None,
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree: Tree::None, preview: None }
     }
@@ -2049,6 +2141,7 @@ impl<S: Store> CommandLayer<S> {
             record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
             policy: None,
             records: Vec::new(),
+            rotation: None,
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }

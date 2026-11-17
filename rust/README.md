@@ -1229,6 +1229,9 @@ run or not applicable is no pass (PHS.63).
     `KN5:stale.no_fresh_preview` a token whose frame lies outside the preview's current presentation: one device
     epoch, surface and surface generation, from the first frame that showed it to the newest. `HeadlessFrames` stamps a
     headless adapter's frames for the tests and the LP3 runners.
+  - The shell's binding (draft): `Shell::send` drops the preview the shell presented when a committed receipt moved the
+    state or a cancel completed. A committed receipt that keeps the state, such as a record write's undo or redo,
+    keeps it, as the layer keeps the preview, so a press prepared after it commits.
   - Tests: `c600-command/tests/kn5_stages.rs` (parts of CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-13, CT-ONE-04 and
     CT-ONE-29), a record write and its undo over the journal in `c600-session/tests/kn5_command.rs` (CT-KN5-04, part),
     and a frame outside the presentation in `kn5.rs`'s token matrix (CT-ONE-03, part).
@@ -1277,6 +1280,20 @@ run or not applicable is no pass (PHS.63).
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
   and take no job. Other types, among them `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs`, pass unchecked
   until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+- `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
+  committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
+  without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and
+  `rotation` (KN3.7's binding without its cap: exactly `request`, `operation` and `menu`) form the exact request, which
+  resolves against the pinned menu. A malformed binding is `KN2:input.rotation_request_malformed`, a free binding or
+  another menu pin `KN2:input.menu_binding_mismatch`, a direct rotation off the menu `KN2:input.twist_off_menu`, a
+  jumble item `KN5:input.menu_word_needs_jumble_on` and the identity item `KN2:input.recipe_shape`, all before the
+  token, so they spend no press. A retained item commits its shortest retained word as a one-word recipe under the
+  protection policy in force. The token binds the state and protection revisions (LI.6), so a press from before a
+  commit, a protection change or a policy change is `KN5:stale.revision_changed`. Like a word commit, the twist undoes
+  and redoes, ends the pending preview and cancels the jobs that read the replaced revision, except file jobs (LI.32).
+  The journal keeps the resolution's record as `rotation` (`Transaction::rotation`), an 18th key on a twist only, and a
+  reopen replays the recipe without a menu (KN3.9). Tests: `c600-command/tests/twist_apply.rs` (the command layer's
+  parts of CT-EV4-04 and CT-BND-19; KN3.8, JI.35, LI.6, LI.32).
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16 and
   L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for which

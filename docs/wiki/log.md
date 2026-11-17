@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: twist.apply in the command layer
+The command layer (`rust/c600-command`) builds H-08's `twist.apply` (amendment A6): the host pins the twist menu, the row's `cap` and `rotation` form KN3.7's exact request, which resolves against the pinned menu (KN3.8), and a retained item commits its shortest retained word at once with no preview, under the protection policy in force, journaled with the resolution's record as `rotation` so that a reopen replays it without a menu (KN3.9). A jumble item stays refused until Jumble on, the token binds the state and protection revisions (LI.6), and the argument form, the input refusals before the token, the identity item's code and the journal key are drafts for LP3's amendment list under PHS.52.
+
 ## [2026-11-17] update | The language: a program job's views and workspace records as its result
 The command layer (`rust/c600-command`) takes a program job's output as the runtime's sinks give it (`CommandLayer::finish_program_job_with` and `JobOutput`, LP3's C6, its second common need): the entry's value, the views it published and the workspace records it wrote, the completion's result reference carrying the digest of all three, while a value alone keeps its own digest. Only a workspace row's job writes records, each block passing the host's provenance reader, and they are written in the completion's one durable action and kept in the journal, with earlier writes of the same records leaving the undo and redo stacks so that no undo writes over them; the digest's form, the refusal code, that cut and the journal key are drafts for LP3's amendment list under PHS.52.
 
