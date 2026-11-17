@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 61] = [
+const BUILTINS: [&str; 62] = [
     "if",
     "display_if",
     "exact_add",
@@ -74,6 +74,8 @@ const BUILTINS: [&str; 61] = [
     "commutator",
     "compose",
     "word_key",
+    // LB1.10's trace key (LP2 draft).
+    "trace_key",
     // Sets and maps (LP2 drafts).
     "set",
     "map",
@@ -94,7 +96,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 20] = [
+const BASE_TYPES: [&str; 21] = [
     "Unit",
     "Bool",
     "Nat",
@@ -110,6 +112,7 @@ const BASE_TYPES: [&str; 20] = [
     "ApproxBool",
     "Receipt",
     "WordEqualityKey",
+    "TraceEqualityKey",
     "CompressedWord",
     "MenuWord",
     // The verdicts of LB3.2's three end tests (LP2 draft); the tests' own names stay the goals' (LG2.10).
@@ -732,6 +735,7 @@ impl Body<'_> {
             "commutator" => Some(Prim::Commutator),
             "compose" => Some(Prim::Compose),
             "word_key" => Some(Prim::WordKey),
+            "trace_key" => Some(Prim::TraceKey),
             "contains" => Some(Prim::Contains),
             "lookup" => Some(Prim::Lookup),
             "insert" if args.len() == 3 => Some(Prim::InsertEntry),
@@ -958,6 +962,7 @@ impl Body<'_> {
                             "ApproxBool" => Ty::ApproxBool,
                             "Receipt" => Ty::Receipt,
                             "WordEqualityKey" => Ty::WordEqualityKey,
+                            "TraceEqualityKey" => Ty::TraceEqualityKey,
                             "CompressedWord" => Ty::CompressedWord,
                             "MenuWord" => Ty::MenuWord,
                             _ => match EndTest::of_type_name(n) {

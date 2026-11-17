@@ -801,13 +801,13 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
 
 /// Whether a value of a type may hold a word, itself, in a record field, in a collection's elements, keys or values or
 /// in a callable's parameters or result, at any depth. A type variable, the unknown type included, may stand for a
-/// word, so it counts as one; a compressed word, a word equality key and a menu word hold a word's letters (LP2
-/// drafts). A callable counts by its parameters too, conservatively: one that takes a callback may hand the callback
-/// a word it holds. Every type is named, so a type added later is a compile error here rather than a silent "holds
-/// no word".
+/// word, so it counts as one; a compressed word, a word equality key, a trace equality key and a menu word hold a
+/// word's letters (LP2 drafts). A callable counts by its parameters too, conservatively: one that takes a callback may
+/// hand the callback a word it holds. Every type is named, so a type added later is a compile error here rather than a
+/// silent "holds no word".
 fn carries_word(ty: &Ty) -> bool {
     match ty {
-        Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::MenuWord | Ty::Var(_) => true,
+        Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::MenuWord | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| carries_word(&f.ty)),
         Ty::Fn(f) => carries_word(&f.result.ty) || f.params.iter().any(|p| carries_word(&p.ty)),
         Ty::List(_) | Ty::Set(_) | Ty::Map(..) => ty.elements().into_iter().any(|e| carries_word(&e.ty)),
@@ -852,6 +852,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Var(name) => name.clone(),
         Ty::List(_) => "List".into(),
         Ty::WordEqualityKey => "WordEqualityKey".into(),
+        Ty::TraceEqualityKey => "TraceEqualityKey".into(),
         Ty::Set(_) => "Set".into(),
         Ty::Map(..) => "Map".into(),
         Ty::CompressedWord => "CompressedWord".into(),
@@ -1065,17 +1066,18 @@ fn holds_callable(ty: &Ty) -> bool {
 }
 
 /// What a goal or an evidence sink takes, in a mismatch's `expected`.
-const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord or a type variable";
+const PORTABLE: &str =
+    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord or a type variable";
 
 /// Whether a goal or an evidence sink takes a value of this type (owner decision of 16 November 2026 under PHS.52):
-/// portable data with a canonical encoding, so no callable, receipt, word equality key (LG2.13) or compressed word
-/// (DET.59) at any depth, and no type variable, which may stand for one of them (the checker does not unify type
-/// variables, M1). An unknown type fits. Whether an approximate value may enter is the exactness rules' question
-/// (LG2.22).
+/// portable data with a canonical encoding, so no callable, receipt, word equality key (LG2.13), trace equality key
+/// (LB1.10) or compressed word (DET.59) at any depth, and no type variable, which may stand for one of them (the
+/// checker does not unify type variables, M1). An unknown type fits. Whether an approximate value may enter is the
+/// exactness rules' question (LG2.22).
 fn portable(ty: &Ty) -> bool {
     match ty {
         _ if is_unknown(ty) => true,
-        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::CompressedWord => false,
+        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::CompressedWord => false,
         Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
         other => other.elements().into_iter().all(|e| portable(&e.ty)),
     }
@@ -1804,9 +1806,10 @@ impl<'p> Checker<'p> {
 
     /// `LG2:type.mismatch` at the current position (LG2.1).
     fn mismatch(&mut self, expected: String, supplied: String, what: &str) {
-        // A word equality key where literal letters are required has a code of its own (LG2.13, CT-LG2-11).
-        if supplied == "WordEqualityKey" && expected == "Word" {
-            let note = format!("{what}: a word equality key is never literal letters (LG2.13, LG2.17)");
+        // A word equality key where literal letters are required has a code of its own (LG2.13, CT-LG2-11), and so
+        // has a trace equality key (LB1.10; LP2 draft).
+        if (supplied == "WordEqualityKey" || supplied == "TraceEqualityKey") && expected == "Word" {
+            let note = format!("{what}: a {supplied} is never literal letters (LG2.13, LG2.17, LB1.10)");
             return self.record(WORD_KEY_NOT_EXECUTABLE, None, Some(Mismatch { expected, supplied }), note);
         }
         // A Full word and a menu word are words of two alphabets, which no operation mixes (LB1.8; LP2 draft).
@@ -2907,7 +2910,7 @@ impl<'p> Checker<'p> {
     fn prim(&mut self, op: Prim, vals: &[Val]) -> Result<Val, IrError> {
         let arity = match op {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot => 1,
-            Prim::Length | Prim::Inverse | Prim::WordKey | Prim::Compress => 1,
+            Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
             Prim::InsertEntry | Prim::Expand => 3,
             _ => 2,
@@ -3123,11 +3126,12 @@ impl<'p> Checker<'p> {
                 };
                 Ok(Val::new(ty.unwrap_or_else(unknown), a.qual.join(b.qual)))
             }
-            Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey => {
+            Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey | Prim::TraceKey => {
                 // One well-formed word domain for every word operation (LG2.15): Full words, or menu words of the
                 // run's pinned alphabet (LB1.8; LP2 draft), never a mix. The first operand of a known type sets the
-                // domain; a word key takes Full words only.
-                let mut domain = (op == Prim::WordKey).then_some(Ty::Word);
+                // domain; a word key and a trace key take Full words only (the menu's trace key waits for its
+                // relation, LB1.10).
+                let mut domain = matches!(op, Prim::WordKey | Prim::TraceKey).then_some(Ty::Word);
                 let mut q = Qual::Exact;
                 let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {
@@ -3144,7 +3148,11 @@ impl<'p> Checker<'p> {
                     }
                     q = q.join(v.qual);
                 }
-                let ty = if op == Prim::WordKey { Ty::WordEqualityKey } else { domain.unwrap_or(Ty::Word) };
+                let ty = match op {
+                    Prim::WordKey => Ty::WordEqualityKey,
+                    Prim::TraceKey => Ty::TraceEqualityKey,
+                    _ => domain.unwrap_or(Ty::Word),
+                };
                 Ok(if unknown_operand { Val::unknown() } else { Val::new(ty, q) })
             }
             Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => {

@@ -3,8 +3,9 @@
 //! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
 //! refuses the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is
 //! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; an end
-//! test's verdict (LB3.2) is value tag 22 and type tag 24; the built-in column and the pinned menu are strict
-//! trailing fields of the run, in that order.
+//! test's verdict (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; the
+//! built-in column, the pinned menu and the pinned trace relation are strict trailing fields of the run, in that
+//! order.
 
 mod support;
 
@@ -18,6 +19,7 @@ use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
 use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
 use c600_run::meter::code::STEPS;
 use c600_run::meter::{Amounts, ChildRecord, Interruption, Outcome, Position, SourceRange};
+use c600_run::trace::{Relation, RelationError, TraceKey, FULL_DISJOINT_SUPPORT};
 use c600_run::value::{Closure, Quad, Ratio, Value};
 use c600_runtime::codec::{self, Codes};
 use c600_runtime::message::{self, Answer, Call, ToChild, SCHEMA};
@@ -42,6 +44,12 @@ fn identity(menu_id: &str) -> MenuIdentity {
 /// A pinned alphabet of four caps and a menu of three items whose last two are each other's inverses.
 fn alphabet() -> MenuAlphabet {
     MenuAlphabet::new(identity("menu"), 4, vec![0, 2, 1]).expect("an alphabet")
+}
+
+/// A relation of 1,200 generators (LB1.10; LP2 draft) in which only generators 1 and 3 share a slot.
+fn relation(model_id: &str) -> Relation {
+    let supports: Vec<Vec<i32>> = (1..=1200).map(|g| if g == 3 { vec![1, 3] } else { vec![g] }).collect();
+    Relation::full_disjoint_support("600-cell-Full", model_id, &supports).expect("a relation")
 }
 
 fn recorded(f: impl FnOnce(&mut Enc)) -> Enc {
@@ -245,12 +253,11 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
     assert_eq!(written(&[[0, 1]], unnamed).unwrap_err(), "a menu word that names no alphabet");
 }
 
-/// A built-in tool's class rows (LP2 draft) cross as a trailing field of the run, before the pinned menu: a flag, then
-/// the rows strictly increasing in their own order, so a class has one encoding and an empty class differs from none.
-/// A flag other than 0 or 1, an
-/// unknown row, rows out of order or repeated, a count beyond the payload, a cut message and a trailing byte are
-/// refused. The wire does not read the profile: both executors refuse class rows outside the solving profile at the
-/// admission stage (`equivalence.rs`).
+/// A built-in tool's class rows (LP2 draft) cross as a trailing field of the run, before the pinned menu and the pinned
+/// relation: a flag, then the rows strictly increasing in their own order, so a class has one encoding and an empty
+/// class differs from none. A flag other than 0 or 1, an unknown row, rows out of order or repeated, a count beyond the
+/// payload, a cut message and a trailing byte are refused. The wire does not read the profile: both executors refuse
+/// class rows outside the solving profile at the admission stage (`equivalence.rs`).
 #[test]
 fn the_built_in_column_is_a_strict_trailing_field() {
     let all: BTreeSet<Row> = [
@@ -277,13 +284,14 @@ fn the_built_in_column_is_a_strict_trailing_field() {
         Err(m) => Err(m.to_string()),
     };
     for profile in [Profile::Solving, Profile::ToolAuthoring] {
-        // The run ends with the column's flag, then the pinned menu's: none here.
+        // The run ends with the column's flag, then the pinned menu's and the pinned relation's: none here.
         let none = run(profile, None);
-        let (head, flags) = none.split_at(none.len() - 2);
-        assert_eq!((flags, decoded(&none).unwrap().options.built_in), (&[0, 0][..], None));
+        let (head, flags) = none.split_at(none.len() - 3);
+        assert_eq!((flags, decoded(&none).unwrap().options.built_in), (&[0, 0, 0][..], None));
         for rows in [BTreeSet::new(), all.clone()] {
             let bytes = run(profile, Some(rows.clone()));
-            assert_eq!((&bytes[..head.len()], bytes[head.len()], bytes.last()), (head, 1, Some(&0)));
+            let last = &bytes[bytes.len() - 2..];
+            assert_eq!((&bytes[..head.len()], bytes[head.len()], last), (head, 1, &[0, 0][..]));
             let job = decoded(&bytes).unwrap();
             assert_eq!(job.options.built_in.as_ref(), Some(&rows));
             let mut again = Enc::new();
@@ -297,7 +305,7 @@ fn the_built_in_column_is_a_strict_trailing_field() {
     }
 
     let none = run(Profile::Solving, None);
-    let head = &none[..none.len() - 2];
+    let head = &none[..none.len() - 3];
     let tail = |f: &dyn Fn(&mut Enc)| {
         let mut e = Enc::new();
         f(&mut e);
@@ -310,6 +318,8 @@ fn the_built_in_column_is_a_strict_trailing_field() {
             for row in rows {
                 codec::encode_row(row, e);
             }
+            // No pinned menu and no pinned relation.
+            e.u8(0);
             e.u8(0);
         })
     };
@@ -342,11 +352,11 @@ fn the_built_in_column_is_a_strict_trailing_field() {
     }
 }
 
-/// A pinned menu alphabet (LB1.8; LP2 draft) crosses as the run's last field: a flag, then the identity block in
-/// KN1.4's order, the cap count, the item count and the item of each item's inverse rotation, so an alphabet has one
-/// encoding and no alphabet differs from every one. A flag other than 0 or 1, an empty identity field, more than 600
-/// caps or items, inverse items that are no involution, a count beyond the payload, a cut message and a trailing byte
-/// are refused, each with `MenuAlphabet::new`'s reason where it has one.
+/// A pinned menu alphabet (LB1.8; LP2 draft) crosses as a trailing field of the run, before the pinned relation: a
+/// flag, then the identity block in KN1.4's order, the cap count, the item count and the item of each item's inverse
+/// rotation, so an alphabet has one encoding and no alphabet differs from every one. A flag other than 0 or 1, an
+/// empty identity field, more than 600 caps or items, inverse items that are no involution, a count beyond the payload,
+/// a cut message and a trailing byte are refused, each with `MenuAlphabet::new`'s reason where it has one.
 #[test]
 fn the_pinned_menu_is_a_strict_trailing_field() {
     let run = |menu: Option<MenuAlphabet>| {
@@ -360,13 +370,14 @@ fn the_pinned_menu_is_a_strict_trailing_field() {
         Ok(other) => panic!("{other:?}"),
         Err(m) => Err(m.to_string()),
     };
+    // The run ends with the pinned menu's flag, then the pinned relation's: none here.
     let none = run(None);
-    let (flag, head) = none.split_last().unwrap();
-    assert_eq!((*flag, decoded(&none).unwrap().options.menu), (0, None));
+    let (head, flags) = none.split_at(none.len() - 2);
+    assert_eq!((flags, decoded(&none).unwrap().options.menu), (&[0, 0][..], None));
     let lettered = MenuAlphabet::new(identity("empty"), 0, vec![]).expect("an alphabet without letters");
     for menu in [alphabet(), lettered] {
         let bytes = run(Some(menu.clone()));
-        assert_eq!((&bytes[..head.len()], bytes[head.len()]), (head, 1));
+        assert_eq!((&bytes[..head.len()], bytes[head.len()], bytes.last()), (head, 1, Some(&0)));
         let job = decoded(&bytes).unwrap();
         assert_eq!(job.options.menu.as_ref(), Some(&menu));
         let mut again = Enc::new();
@@ -394,6 +405,8 @@ fn the_pinned_menu_is_a_strict_trailing_field() {
             for item in inverse {
                 e.u32(*item);
             }
+            // No pinned relation.
+            e.u8(0);
         })
     };
     let control = decoded(&pinned(NAMED, 600, 3, &[1, 0, 2])).unwrap();
@@ -414,6 +427,167 @@ fn the_pinned_menu_is_a_strict_trailing_field() {
     for (bytes, why) in refusals {
         assert_eq!(decoded(&bytes).unwrap_err(), why);
     }
+}
+
+/// A pinned trace relation (LB1.10; LP2 draft) crosses as the run's last field: a flag, then its contract, its
+/// identity block's puzzle and model ID, its generator count and its independence bits; the child recomputes the
+/// digest, so a relation has one encoding. A flag other than 0 or 1, another contract, an empty identity field,
+/// another generator count than 1,200, bits of another length, a count beyond the payload, a cut message and a
+/// trailing byte are refused, each with `Relation::from_parts`'s reason where it has one.
+#[test]
+fn the_pinned_relation_is_a_strict_trailing_field() {
+    let run = |relation: Option<Relation>| {
+        let mut e = Enc::new();
+        let options = JobOptions { relation, ..JobOptions::new(WIDE) };
+        message::encode_run(1, &job("source", "f", vec![], options), &mut e).unwrap();
+        e.bytes
+    };
+    let decoded = |bytes: &[u8]| match message::decode_to_child(bytes) {
+        Ok(ToChild::Run { job, .. }) => Ok(job),
+        Ok(other) => panic!("{other:?}"),
+        Err(m) => Err(m.to_string()),
+    };
+    let none = run(None);
+    let (flag, head) = none.split_last().unwrap();
+    assert_eq!((*flag, decoded(&none).unwrap().options.relation), (0, None));
+    let pinned = relation("model");
+    let bytes = run(Some(pinned.clone()));
+    assert_eq!((&bytes[..head.len()], bytes[head.len()]), (head, 1));
+    let job = decoded(&bytes).unwrap();
+    let back = job.options.relation.clone().expect("the pinned relation");
+    assert_eq!((&back, back.digest()), (&pinned, pinned.digest()));
+    assert!(back.independent(2, 3) && !back.independent(1, 3) && !back.independent(-3, 1));
+    let mut again = Enc::new();
+    message::encode_run(1, &job, &mut again).unwrap();
+    assert_eq!(again.bytes, bytes);
+    // Every cut through the head and the relation's fields, and a sample through its 89,925 bytes of bits.
+    let fields = head.len() + 80;
+    for cut in (0..fields).chain((fields..bytes.len()).step_by(4093)).chain([bytes.len() - 1]) {
+        assert!(decoded(&bytes[..cut]).is_err(), "cut at {cut}");
+    }
+    assert!(decoded(&[&bytes[..], &[0]].concat()).is_err(), "a trailing byte");
+
+    let tail = |f: &dyn Fn(&mut Enc)| {
+        let mut e = Enc::new();
+        f(&mut e);
+        [head, &e.bytes[..]].concat()
+    };
+    let parts = |contract: &str, puzzle: &str, model_id: &str, generators: u32, bits: &[u8]| {
+        tail(&|e: &mut Enc| {
+            e.u8(1);
+            e.text(contract);
+            e.text(puzzle);
+            e.text(model_id);
+            e.u32(generators);
+            e.bytes(bits);
+        })
+    };
+    let bits = pinned.bits();
+    let control = decoded(&parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "model", 1200, bits)).unwrap();
+    assert_eq!(control.options.relation.as_ref(), Some(&pinned));
+    let longer = [bits, &[0]].concat();
+    let refusals = [
+        (tail(&|e: &mut Enc| e.u8(2)), "an option flag other than 0 or 1".to_string()),
+        (parts("other/1", "600-cell-Full", "model", 1200, bits), RelationError::Contract("other/1".into()).to_string()),
+        (parts(FULL_DISJOINT_SUPPORT, "", "model", 1200, bits), RelationError::Identity("puzzle").to_string()),
+        (
+            parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "", 1200, bits),
+            RelationError::Identity("model_id").to_string(),
+        ),
+        (
+            parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "model", 1199, bits),
+            RelationError::Generators(1199).to_string(),
+        ),
+        (parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "model", 1200, &bits[1..]), RelationError::Bits.to_string()),
+        (parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "model", 1200, &longer), RelationError::Bits.to_string()),
+        (
+            tail(&|e: &mut Enc| {
+                e.u8(1);
+                e.text(FULL_DISJOINT_SUPPORT);
+                e.text("600-cell-Full");
+                e.text("model");
+                e.u32(1200);
+                e.count(8);
+            }),
+            "a length beyond the payload".to_string(),
+        ),
+    ];
+    for (bytes, why) in refusals {
+        assert_eq!(decoded(&bytes).unwrap_err(), why);
+    }
+}
+
+/// A trace key (LB1.10, LG2.23; LP2 draft) crosses as value tag 23 with its header in LG2.23's order (puzzle, model ID,
+/// generator count, key, contract, digest), then its letters, so keys under two relations have two encodings. A header
+/// with an empty field and a letter outside 1 to 1200 are refused on both sides, and a digest of other than 32 bytes
+/// when decoded. The codec cannot order letters without the relation: a run checks a decoded key against its pinned
+/// relation (`c600-run`'s `trace_keys` tests). The type `TraceEqualityKey` is type tag 25.
+#[test]
+fn a_trace_key_crosses_with_its_header() {
+    let (one, other) = (relation("model"), relation("other"));
+    let keys = [
+        Value::TraceEqualityKey(Arc::new(one.key(&[]).expect("a key"))),
+        Value::TraceEqualityKey(Arc::new(one.key(&[3, 2, -1200]).expect("a key"))),
+        Value::TraceEqualityKey(Arc::new(other.key(&[3, 2, -1200]).expect("a key"))),
+    ];
+    let mut seen = BTreeSet::new();
+    for v in &keys {
+        let bytes = codec::value_bytes(v).unwrap_or_else(|e| panic!("{v:?}: {e:?}"));
+        assert_eq!(bytes[0], 23);
+        let back = codec::value_from_bytes(&bytes).unwrap_or_else(|e| panic!("{v:?}: {e}"));
+        assert_eq!(format!("{v:?}"), format!("{back:?}"));
+        assert_eq!(codec::value_bytes(&back).unwrap(), bytes);
+        assert!(seen.insert(bytes), "{v:?} shares an encoding");
+    }
+    let header = Arc::new(one.header().clone());
+    for letters in [&[0][..], &[1201], &[-1201], &[i32::MIN]] {
+        let v = Value::TraceEqualityKey(Arc::new(TraceKey::from_parts(header.clone(), letters)));
+        assert!(codec::value_bytes(&v).is_err(), "{letters:?}");
+    }
+    let mut blank = one.header().clone();
+    blank.key = String::new();
+    let v = Value::TraceEqualityKey(Arc::new(TraceKey::from_parts(Arc::new(blank), &[1])));
+    assert!(codec::value_bytes(&v).is_err(), "a header with an empty field");
+
+    let written = |fields: [&str; 4], digest: &[u8], letters: &[i32]| {
+        let mut e = Enc::new();
+        e.u8(23);
+        e.text(fields[0]);
+        e.text(fields[1]);
+        e.u32(1200);
+        e.text(fields[2]);
+        e.text(fields[3]);
+        e.bytes(digest);
+        e.count(letters.len());
+        for l in letters {
+            e.i32(*l);
+        }
+        codec::value_from_bytes(&e.bytes).map(|_| ()).map_err(|m| m.to_string())
+    };
+    let h = one.header();
+    let fields = [h.puzzle.as_str(), h.model_id.as_str(), h.key.as_str(), h.contract.as_str()];
+    assert_eq!(written(fields, &h.digest, &[3, 2]), Ok(()), "a canonical control");
+    // The letters are taken as written; their order is the run's to check against its relation.
+    assert_eq!(written(fields, &h.digest, &[2, 3]), Ok(()));
+    for i in 0..4 {
+        let mut empty = fields;
+        empty[i] = "";
+        assert_eq!(written(empty, &h.digest, &[1]).unwrap_err(), "a trace key header with an empty field");
+    }
+    let longer = [&h.digest[..], &[0]].concat();
+    for digest in [&h.digest[..31], &longer[..]] {
+        assert_eq!(written(fields, digest, &[1]).unwrap_err(), "a relation digest of other than 32 bytes");
+    }
+    for letter in [0, 1201, -1201] {
+        assert_eq!(written(fields, &h.digest, &[1, letter]).unwrap_err(), "a letter outside 1 to 1200");
+    }
+
+    let mut e = Enc::new();
+    codec::encode_ty(&Ty::TraceEqualityKey, &mut e).unwrap();
+    assert_eq!(e.bytes, [25]);
+    let mut d = Dec::new(&e.bytes);
+    assert_eq!(codec::decode_ty(&mut d).unwrap(), Ty::TraceEqualityKey);
+    d.end().unwrap();
 }
 
 /// The work job of the KI.5 rehearsals: five host calls.
