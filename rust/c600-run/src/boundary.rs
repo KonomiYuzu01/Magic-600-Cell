@@ -35,17 +35,21 @@
 //!   BND.84 (CT-BND-29) once the session store resolves pick records (M6). Then it refuses with
 //!   `LG3:capability.not_granted` author `unknown`, research output and a solver-authored program's output.
 //! - The engine's preview call does not take the block yet (KN5.9); the shell record keeps it beside the answer.
+//! - A menu-word proposal ([`Request::ProposeMenu`], LB1.8) is admitted, answered and captured as a literal-word one;
+//!   its shell record and capture hold the menu word in `menu` and leave `word` empty.
 //! - The store is in memory and returns the stored value as written; M6's session store persists records and decodes
 //!   them by the reader's type.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 use c600_digest::sha256;
 
 use crate::interp::{Host, Refusal, Request, RowTariff, Sink};
+use crate::menu::{MenuIdentity, INCOMPATIBLE_ALPHABET};
 use crate::meter::code::NOT_GRANTED;
 use crate::provenance::{self, field, Pin, Producer, Profile, INCOMPATIBLE};
-use crate::value::Value;
+use crate::value::{MenuWord, Value};
 
 /// Where a stored value lives.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -158,6 +162,9 @@ pub struct Context {
 pub struct Shown {
     pub id: String,
     pub word: Vec<i32>,
+    /// A menu-word proposal's word (LB1.8; LP2 draft): its letters and the identity block of its alphabet. `word` is
+    /// then empty.
+    pub menu: Option<MenuWord>,
     pub target: String,
     pub block: [u8; 32],
     pub answer: Answer,
@@ -176,6 +183,8 @@ pub enum Answer {
 pub struct Capture {
     pub id: String,
     pub word: Vec<i32>,
+    /// A menu-word proposal's word (LB1.8; LP2 draft); `word` is then empty.
+    pub menu: Option<MenuWord>,
     pub target: String,
     pub block: [u8; 32],
 }
@@ -226,7 +235,7 @@ impl<'a> Boundary<'a> {
         }
     }
 
-    fn propose(&mut self, request: &Request, word: &[i32], target: &str) -> Value {
+    fn propose(&mut self, request: &Request, word: &[i32], menu: Option<MenuWord>, target: &str) -> Value {
         self.proposals += 1;
         let id = format!("{}/{}", self.context.run, self.proposals);
         let block = self.block();
@@ -240,9 +249,9 @@ impl<'a> Boundary<'a> {
                     Err(code) => Answer::Refused(Refusal { code, detail: "the engine refused the preview".into() }),
                 },
             };
-            self.shell.push(Shown { id: id.clone(), word, target, block: digest, answer });
+            self.shell.push(Shown { id: id.clone(), word, menu, target, block: digest, answer });
         } else {
-            self.captures.push(Capture { id: id.clone(), word, target, block: digest });
+            self.captures.push(Capture { id: id.clone(), word, menu, target, block: digest });
         }
         Value::receipt(vec![("base", Value::text(&self.context.base)), ("id", Value::text(&id))])
     }
@@ -257,7 +266,15 @@ impl Host for Boundary<'_> {
         let place = match request {
             Request::Snapshot { query, .. } => Place::Workspace(query.to_string()),
             Request::FileRead { path, .. } => Place::File(path.to_string()),
-            Request::Propose { word, target, .. } => return Ok(self.propose(request, word, target)),
+            Request::Propose { word, target, .. } => return Ok(self.propose(request, word, None, target)),
+            Request::ProposeMenu { letters, menu, target, .. } => {
+                // The interpreter builds the request from a word of the pinned alphabet; a request built otherwise
+                // with an index of 600 or more is refused before it is shown or captured.
+                let Some(word) = MenuWord::new(Arc::new(MenuIdentity::clone(menu)), letters) else {
+                    return Err(INCOMPATIBLE_ALPHABET);
+                };
+                return Ok(self.propose(request, &[], Some(word), target));
+            }
             // An engine row for an argument is state-derived data whatever the program stores (LG3.13).
             Request::SnapshotWith { .. } => {
                 self.reads_state = true;

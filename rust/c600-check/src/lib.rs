@@ -41,6 +41,9 @@ pub const EXACTNESS_VIOLATION: &str = "LG2:type.exactness_violation";
 pub const EXACT_REQUIRED: &str = "LG2:type.exact_required";
 /// `LG2:type.word_key_not_executable` (LG2.13, LG2.17).
 pub const WORD_KEY_NOT_EXECUTABLE: &str = "LG2:type.word_key_not_executable";
+/// `LB1:input.incompatible_alphabet` (LB1.3, LB1.8; LP2 draft): a menu word where a Full word is expected, or the
+/// reverse.
+pub const INCOMPATIBLE_ALPHABET: &str = "LB1:input.incompatible_alphabet";
 /// `LG3:effect.undeclared` (LG3.2, LG3.5, LG3.6).
 pub const EFFECT_UNDECLARED: &str = "LG3:effect.undeclared";
 /// `LG3:capability.not_granted` (LG3.8, LG3.9; chapter 07 section 8).
@@ -571,14 +574,15 @@ pub fn admit_built_in(
             );
         }
     }
-    let words: BTreeSet<&str> = f.params.iter().filter(|p| p.ty.ty == Ty::Word).map(|p| p.name.as_str()).collect();
+    let words: BTreeSet<&str> =
+        f.params.iter().filter(|p| matches!(p.ty.ty, Ty::Word | Ty::MenuWord)).map(|p| p.name.as_str()).collect();
     for (path, what) in unnamed_words(&f.body, &words, policy) {
         refuse(
             NOT_GRANTED,
             &path,
             format!(
-                "{what} of a word the solver did not name: the built-in column takes a `Word` parameter of the entry \
-                 as given, or for a write a read through an enabled declassifier (chapter 07 section 8)"
+                "{what} of a word the solver did not name: the built-in column takes a `Word` or `MenuWord` parameter \
+                 of the entry as given, or for a write a read through an enabled declassifier (chapter 07 section 8)"
             ),
         );
     }
@@ -586,8 +590,9 @@ pub fn admit_built_in(
 }
 
 /// The proposals and word-carrying workspace writes in `body` whose word is not one the solver named, with their
-/// paths: the word must be one of `words` as given, a parameter that no `let` or closure parameter shadows, or for a
-/// write a read through a declassifier the policy enables.
+/// paths: the word must be one of `words` as given, a parameter that no `let` or closure parameter shadows (a `Word`
+/// or, LP2 draft, a `MenuWord` the solver names in the pinned menu's letters), or for a write a read through a
+/// declassifier the policy enables.
 fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(String, &'static str)> {
     fn named(e: &Expr, words: &BTreeSet<&str>, bound: &[String]) -> bool {
         matches!(e, Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v))
@@ -636,12 +641,13 @@ fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(S
 
 /// Whether a value of a type may hold a word, itself, in a record field, in a collection's elements, keys or values or
 /// in a callable's parameters or result, at any depth. A type variable, the unknown type included, may stand for a
-/// word, so it counts as one; a compressed word and a word equality key hold a word's letters (LP2 drafts). A callable
+/// word, so it counts as one; a compressed word, a word equality key and a menu word hold a word's letters (LP2
+/// drafts). A callable
 /// counts by its parameters too, conservatively: one that takes a callback may hand the callback a word it holds.
 /// Every type is named, so a type added later is a compile error here rather than a silent "holds no word".
 fn carries_word(ty: &Ty) -> bool {
     match ty {
-        Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::Var(_) => true,
+        Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::MenuWord | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| carries_word(&f.ty)),
         Ty::Fn(f) => carries_word(&f.result.ty) || f.params.iter().any(|p| carries_word(&p.ty)),
         Ty::List(_) | Ty::Set(_) | Ty::Map(..) => ty.elements().into_iter().any(|e| carries_word(&e.ty)),
@@ -688,6 +694,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Set(_) => "Set".into(),
         Ty::Map(..) => "Map".into(),
         Ty::CompressedWord => "CompressedWord".into(),
+        Ty::MenuWord => "MenuWord".into(),
     }
 }
 
@@ -728,6 +735,23 @@ fn replace_var(ty: &Ty, name: &str, with: &Ty) -> Ty {
     let q = |q: &QTy| QTy { ty: replace_var(&q.ty, name, with), display: q.display };
     match ty {
         Ty::Var(n) if n == name => with.clone(),
+        Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), q(f))).collect()),
+        Ty::Fn(f) => Ty::Fn(Box::new(FnTy {
+            params: f.params.iter().map(q).collect(),
+            result: q(&f.result),
+            effects: f.effects.clone(),
+        })),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
+        other => other.clone(),
+    }
+}
+
+/// The type with every menu word read as a Full word, at any depth: the type it would have if the two alphabets
+/// were one (LB1.8; LP2 draft). A mismatch that this removes is one of alphabets only.
+fn one_alphabet(ty: &Ty) -> Ty {
+    let q = |q: &QTy| QTy { ty: one_alphabet(&q.ty), display: q.display };
+    match ty {
+        Ty::MenuWord => Ty::Word,
         Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), q(f))).collect()),
         Ty::Fn(f) => Ty::Fn(Box::new(FnTy {
             params: f.params.iter().map(q).collect(),
@@ -1061,6 +1085,7 @@ fn lit_type(lit: &Lit) -> Ty {
         Lit::Target(_) => Ty::Target,
         Lit::Tag(_) => Ty::Status,
         Lit::Colour(_) => Ty::Colour,
+        Lit::MenuWord(_) => Ty::MenuWord,
     }
 }
 
@@ -1585,6 +1610,11 @@ impl<'p> Checker<'p> {
             let note = format!("{what}: a word equality key is never literal letters (LG2.13, LG2.17)");
             return self.record(WORD_KEY_NOT_EXECUTABLE, None, Some(Mismatch { expected, supplied }), note);
         }
+        // A Full word and a menu word are words of two alphabets, which no operation mixes (LB1.8; LP2 draft).
+        if matches!((expected.as_str(), supplied.as_str()), ("Word", "MenuWord") | ("MenuWord", "Word")) {
+            let note = format!("{what}: a {supplied} is not a word of the {expected} alphabet (LB1.8)");
+            return self.record(INCOMPATIBLE_ALPHABET, None, Some(Mismatch { expected, supplied }), note);
+        }
         let note = format!("{what}: {supplied} where {expected} is expected (LG2.1)");
         self.record(TYPE_MISMATCH, None, Some(Mismatch { expected, supplied }), note);
     }
@@ -1593,6 +1623,30 @@ impl<'p> Checker<'p> {
     /// both would apply, the base type comes first. The caller goes on with [`Val::unknown`] in its place.
     fn misfit(&mut self, expected: &str, v: &Val, what: &str) {
         self.mismatch(expected.to_string(), type_text(&v.ty), what);
+    }
+
+    /// A value whose type does not fit a slot of type `slot`, as [`Checker::misfit`] reports it.
+    fn misfit_slot(&mut self, slot: &Ty, v: &Val, what: &str) {
+        self.mismatch_of(slot, &v.ty, fits, what);
+    }
+
+    /// A mismatch between two known types, which do not `agree` (the test that found it). When they would agree with
+    /// every menu word read as a Full word, a menu word stands where a Full word is expected or the reverse, at some
+    /// depth, as in a list of menu words given for a list of Full words: the mismatch is one of alphabets only, and
+    /// its code is `LB1:input.incompatible_alphabet` (LB1.8; LP2 draft). Otherwise it is [`Checker::mismatch`]'s.
+    fn mismatch_of(&mut self, expected: &Ty, supplied: &Ty, agree: fn(&Ty, &Ty) -> bool, what: &str) {
+        let (one_expected, one_supplied) = (one_alphabet(expected), one_alphabet(supplied));
+        let (expected_text, supplied_text) = (type_text(expected), type_text(supplied));
+        let alphabets = &one_expected != expected || &one_supplied != supplied;
+        if alphabets && agree(&one_expected, &one_supplied) {
+            let note = format!(
+                "{what}: {supplied_text} where {expected_text} is expected: a Full word and a menu word are words of \
+                 two alphabets (LB1.8)"
+            );
+            let mismatch = Mismatch { expected: expected_text, supplied: supplied_text };
+            return self.record(INCOMPATIBLE_ALPHABET, None, Some(mismatch), note);
+        }
+        self.mismatch(expected_text, supplied_text, what);
     }
 
     fn record(
@@ -1816,7 +1870,7 @@ impl<'p> Checker<'p> {
             if fits(&slot.ty, &v.ty) {
                 self.at(i, |c| c.slot(slot, v, &arg, false));
             } else {
-                self.at(i, |c| c.misfit(&type_text(&slot.ty), v, &arg));
+                self.at(i, |c| c.misfit_slot(&slot.ty, v, &arg));
                 *v = Val::unknown();
             }
         }
@@ -1915,7 +1969,7 @@ impl<'p> Checker<'p> {
     /// whether its base type fits. An approximate or display input requires a display-qualified result (LG2.19).
     fn result(&mut self, slot: &QTy, v: &Val, display_input: Option<&Ty>, what: &str, at: &[u32]) -> bool {
         if !fits(&slot.ty, &v.ty) {
-            self.within(at, |c| c.misfit(&type_text(&slot.ty), v, what));
+            self.within(at, |c| c.misfit_slot(&slot.ty, v, what));
             return false;
         }
         if is_unknown(&v.ty) {
@@ -1941,7 +1995,7 @@ impl<'p> Checker<'p> {
     fn join(&mut self, a: Val, b: Val, at: usize, what: &str) -> Val {
         let (ta, tb) = (a.ty.clone(), b.ty.clone());
         merge(a, b).unwrap_or_else(|| {
-            self.at(at, |c| c.mismatch(type_text(&ta), type_text(&tb), what));
+            self.at(at, |c| c.mismatch_of(&ta, &tb, |a, b| widen(a, b).is_some(), what));
             Val::unknown()
         })
     }
@@ -2052,7 +2106,7 @@ impl<'p> Checker<'p> {
                     let pattern = lit_type(lit);
                     let what = format!("the pattern of arm {i} of a match");
                     if !fits(&pattern, &sv.ty) && !fits(&sv.ty, &pattern) {
-                        self.mismatch(type_text(&sv.ty), type_text(&pattern), &what);
+                        self.mismatch_of(&sv.ty, &pattern, |a, b| fits(a, b) || fits(b, a), &what);
                     } else if let Lit::Approx { .. } = lit {
                         // An approximate literal is never read as exact (LG1.7), so it is no operand of that equality.
                         self.exact_use(Site::Operand, &Val::new(pattern, Qual::Approx), &what);
@@ -2268,7 +2322,7 @@ impl<'p> Checker<'p> {
                         _ => (&elements[1], "a map value", false),
                     };
                     if !fits(&element.ty, &v.ty) {
-                        self.at(i, |c| c.misfit(&type_text(&element.ty), &v, what));
+                        self.at(i, |c| c.misfit_slot(&element.ty, &v, what));
                     }
                     if key {
                         // An exact collection index accepts exact inputs only (LG2.20).
@@ -2317,7 +2371,7 @@ impl<'p> Checker<'p> {
                         // The read is reported once, against the first write it does not fit.
                         if !reported {
                             let what = format!("a read of `{query}`, which a workspace write of the program stores");
-                            self.mismatch(type_text(&field.ty), type_text(&ty.ty), &what);
+                            self.mismatch_of(&field.ty, &ty.ty, |stored, read| fits(read, stored), &what);
                             reported = true;
                         }
                         continue;
@@ -2362,7 +2416,7 @@ impl<'p> Checker<'p> {
                     // Display values may be stored only in typed display fields (LG2.19).
                     self.at(0, |c| c.slot(ty, &v, "a workspace field", true));
                 } else {
-                    self.at(0, |c| c.misfit(&type_text(&ty.ty), &v, "a workspace field"));
+                    self.at(0, |c| c.misfit_slot(&ty.ty, &v, "a workspace field"));
                 }
                 let mut own = needs(&[Effect::ChangeWorkspace], &[]);
                 own.rows.insert(Row::Workspace(record.clone()));
@@ -2373,14 +2427,16 @@ impl<'p> Checker<'p> {
                 let (wv, mut s) = self.at(0, |c| c.expr(word, env))?;
                 let (tv, t_s) = self.at(1, |c| c.expr(target, env))?;
                 s.add(&t_s);
-                for (i, (v, ty, what)) in [(&wv, Ty::Word, "a preview's word"), (&tv, Ty::Target, "a preview's target")]
+                // A menu word is proposed in its own alphabet (LB1.8; LP2 draft).
+                let word_ty = if wv.ty == Ty::MenuWord { Ty::MenuWord } else { Ty::Word };
+                for (i, (v, ty, what)) in [(&wv, word_ty, "a preview's word"), (&tv, Ty::Target, "a preview's target")]
                     .into_iter()
                     .enumerate()
                 {
                     if fits(&ty, &v.ty) {
                         self.at(i, |c| c.exact_use(Site::Boundary, v, what));
                     } else {
-                        self.at(i, |c| c.misfit(&type_text(&ty), v, what));
+                        self.at(i, |c| c.misfit_slot(&ty, v, what));
                     }
                 }
                 let mut own = needs(&[Effect::PreparePreview], &[]);
@@ -2570,7 +2626,7 @@ impl<'p> Checker<'p> {
                 if fits(&a.ty, &b.ty) || fits(&b.ty, &a.ty) {
                     self.at(1, |c| c.exact_use(Site::Operand, b, what));
                 } else {
-                    self.at(1, |c| c.misfit(&type_text(&a.ty), b, what));
+                    self.at(1, |c| c.mismatch_of(&a.ty, &b.ty, |a, b| fits(a, b) || fits(b, a), what));
                 }
                 Ok(Val::exact(Ty::Bool))
             }
@@ -2646,9 +2702,13 @@ impl<'p> Checker<'p> {
             }
             Prim::Length => {
                 let v = &vals[0];
-                let measured = matches!(v.ty, Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Word | Ty::CompressedWord);
+                let measured = matches!(
+                    v.ty,
+                    Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Word | Ty::CompressedWord | Ty::MenuWord
+                );
                 if !measured && !is_unknown(&v.ty) {
-                    self.at(0, |c| c.misfit("List<_> | Set<_> | Map<_, _> | Word | CompressedWord", v, "a length"));
+                    let wanted = "List<_> | Set<_> | Map<_, _> | Word | CompressedWord | MenuWord";
+                    self.at(0, |c| c.misfit(wanted, v, "a length"));
                 }
                 // A length cannot extract an exact result from a display-qualified value (LG2.19).
                 Ok(Val::new(Ty::Nat, project(v.qual, Qual::Exact)))
@@ -2680,7 +2740,7 @@ impl<'p> Checker<'p> {
                     return Ok(Val::unknown());
                 };
                 if !fits(&element.ty, &x.ty) {
-                    self.at(1, |c| c.misfit(&type_text(&element.ty), x, "a pushed element"));
+                    self.at(1, |c| c.misfit_slot(&element.ty, x, "a pushed element"));
                 }
                 Ok(Val::new(list.ty.clone(), list.qual.join(x.qual.container())))
             }
@@ -2688,35 +2748,44 @@ impl<'p> Checker<'p> {
                 let (a, b) = (&vals[0], &vals[1]);
                 let ty = match (&a.ty, &b.ty) {
                     (x, y) if is_unknown(x) || is_unknown(y) => return Ok(Val::unknown()),
-                    (Ty::Word, _) | (Ty::List(_), _) | (Ty::CompressedWord, _) => {
+                    (Ty::Word, _) | (Ty::List(_), _) | (Ty::CompressedWord, _) | (Ty::MenuWord, _) => {
                         let common = if fits(&a.ty, &b.ty) { widen(&a.ty, &b.ty) } else { None };
                         if common.is_none() {
-                            self.at(1, |c| c.misfit(&type_text(&a.ty), b, "a concatenation"));
+                            let agree = |a: &Ty, b: &Ty| fits(a, b) && widen(a, b).is_some();
+                            self.at(1, |c| c.mismatch_of(&a.ty, &b.ty, agree, "a concatenation"));
                             return Ok(Val::unknown());
                         }
                         common
                     }
                     _ => {
-                        self.at(0, |c| c.misfit("Word | List<_> | CompressedWord", a, "a concatenation"));
+                        self.at(0, |c| c.misfit("Word | List<_> | CompressedWord | MenuWord", a, "a concatenation"));
                         return Ok(Val::unknown());
                     }
                 };
                 Ok(Val::new(ty.unwrap_or_else(unknown), a.qual.join(b.qual)))
             }
             Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey => {
-                // One well-formed word domain for every word operation (LG2.15).
+                // One well-formed word domain for every word operation (LG2.15): Full words, or menu words of the
+                // run's pinned alphabet (LB1.8; LP2 draft), never a mix. The first operand of a known type sets the
+                // domain; a word key takes Full words only.
+                let mut domain = (op == Prim::WordKey).then_some(Ty::Word);
                 let mut q = Qual::Exact;
                 let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {
                     if is_unknown(&v.ty) {
                         unknown_operand = true;
-                    } else if v.ty != Ty::Word {
-                        self.at(i, |c| c.misfit("Word", v, &what));
-                        unknown_operand = true;
+                    } else {
+                        let wanted =
+                            domain.get_or_insert_with(|| if v.ty == Ty::MenuWord { Ty::MenuWord } else { Ty::Word });
+                        if v.ty != *wanted {
+                            let wanted = type_text(wanted);
+                            self.at(i, |c| c.misfit(&wanted, v, &what));
+                            unknown_operand = true;
+                        }
                     }
                     q = q.join(v.qual);
                 }
-                let ty = if op == Prim::WordKey { Ty::WordEqualityKey } else { Ty::Word };
+                let ty = if op == Prim::WordKey { Ty::WordEqualityKey } else { domain.unwrap_or(Ty::Word) };
                 Ok(if unknown_operand { Val::unknown() } else { Val::new(ty, q) })
             }
             Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => {
@@ -2738,7 +2807,7 @@ impl<'p> Checker<'p> {
                 };
                 let k = &vals[1];
                 if !fits(&key.ty, &k.ty) {
-                    self.at(1, |c| c.misfit(&type_text(&key.ty), k, "a collection key"));
+                    self.at(1, |c| c.misfit_slot(&key.ty, k, "a collection key"));
                 }
                 // An exact collection index accepts exact inputs only (LG2.20).
                 self.at(1, |c| c.exact_use(Site::Control, k, "an exact collection key"));
@@ -2749,7 +2818,7 @@ impl<'p> Checker<'p> {
                     (Prim::InsertEntry, Some(value)) => {
                         let v = &vals[2];
                         if !fits(&value.ty, &v.ty) {
-                            self.at(2, |c| c.misfit(&type_text(&value.ty), v, "a map value"));
+                            self.at(2, |c| c.misfit_slot(&value.ty, v, "a map value"));
                         }
                         Ok(Val::new(coll.ty.clone(), coll.qual.join(k.qual.container()).join(v.qual.container())))
                     }

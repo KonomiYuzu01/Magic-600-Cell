@@ -9,6 +9,8 @@
 //! - [`provenance`] reads, checks and builds FP.17's provenance blocks (milestone M3).
 //! - [`boundary`] is the run-time boundary under capability separation: stored words keep their blocks, preview
 //!   admission reads them, and a solving run gets one fixed acknowledgement (chapter 07, milestone M3).
+//! - [`menu`] is the menu alphabet a run pins for LB1.8's literal words of one menu, and its identity block (LP2
+//!   draft).
 
 #![forbid(unsafe_code)]
 
@@ -16,6 +18,7 @@ pub mod approx;
 pub mod boundary;
 pub mod encode;
 pub mod interp;
+pub mod menu;
 pub mod meter;
 pub mod provenance;
 pub mod rng;

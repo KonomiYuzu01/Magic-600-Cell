@@ -72,7 +72,7 @@ fn ct_lg3_02_no_request_commits_or_obtains_a_token() {
         match r {
             Request::Snapshot { .. } | Request::SnapshotWith { .. } | Request::Declassified { .. } => "state read",
             Request::FileRead { .. } | Request::Clock => "granted input",
-            Request::Propose { .. } => "preview",
+            Request::Propose { .. } | Request::ProposeMenu { .. } => "preview",
         }
     }
     fn sink(s: &Sink) -> &'static str {

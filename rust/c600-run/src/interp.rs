@@ -28,6 +28,7 @@
 //! | list (LP2 draft) | `value` (the header), then per element `visit` (a move) or `alias` (a borrow), as a record is built |
 //! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
+//! | `length`, `concat`, `inverse`, `conjugate`, `commutator`, `compose` of menu words (LB1.8; LP2 drafts) | as on words: `expand_per_letter` per letter built and 4 bytes reserved per letter; an inverse reads the pinned menu's inverse items, and a word of another alphabet stops with `LB1:input.incompatible_alphabet` before its step |
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
 //! | `compress`, `expand`, and `concat` and `length` of compressed words (LP2 drafts) | one step each: `compress` costs `expand_per_letter` per letter; `concat` an equality walk over both words, the integer row's addition of their lengths and [`LIST_PER_ELEMENT`] per part of both plus one, and it reserves the parts of both and settles to the built word; `length` reserves its integer and expands nothing; `expand` costs `expand_per_letter` per letter out and [`LIST_PER_ELEMENT`] per part it may visit, 2·(height + count) + 1, and a range past the word's end stops with `LG4:input.pointwise_failed` before its step |
@@ -36,7 +37,7 @@
 //! | snapshot read with an argument (LP2 draft) | `encode` of the argument, then `kernel` with the host row's tariff and result bound and the argument bytes as output; the host gets the canonical bytes, and the buffer is released after the answer; an approximate argument stops with `LG4:input.ir_rejected` before the encoding |
 //! | file read, clock | `read` with the host row's tariff and result bound |
 //! | view, workspace and file output | `publish_view` or `emit`: one fused row per output unit, its encoding work, buffer and bytes in one admission (DET.56, DET.59); the buffer is released after the publication |
-//! | `propose` | `encode` of the request, then `invoke` with the host row's tariff and the request bytes as output |
+//! | `propose` | `encode` of the request, then `invoke` with the host row's tariff and the request bytes as output; a menu word is proposed as [`Request::ProposeMenu`] (LP2 draft) |
 //! | receipt field | `read_receipt`; a field the host withheld stops with `LG3:capability.not_granted` (BND.42) |
 //! | exact sink | `encode` of the value, then `use_exact`; the host gets the canonical bytes, and the buffer is released after the hand-over (PHS.52, owner decision of 16 November 2026) |
 //! | display accounting | `accounting`, read after its own step |
@@ -44,6 +45,13 @@
 //!
 //! A run is entered with `rng_init` when a seed is given, one `read` per argument, and the entry `call`. Its result
 //! is the top-level output unit: one fused `emit` row (DET.59).
+//!
+//! A run pins at most one menu alphabet ([`Options::menu`]; LB1.8, LP2 draft), and every menu word in it is a word of
+//! that alphabet. A menu-word literal takes the alphabet when it is read, and it stops the run before its step when a
+//! letter is outside it or the run pins none; an argument that holds a menu word of another alphabet is refused
+//! before the run; a host's answer that holds one stops the run after its row. Each has the code
+//! `LB1:input.incompatible_alphabet`. A menu-word match pattern compares letters, since a literal names no alphabet of
+//! its own ([`crate::menu`]).
 //!
 //! # Drafts (M2)
 //!
@@ -65,6 +73,7 @@ use num_bigint::{BigInt, Sign};
 
 use crate::approx;
 use crate::encode;
+use crate::menu::{self, MenuAlphabet, MenuIdentity};
 use crate::meter::{
     self, frame_size, integer_size, Amounts, DraftTariffs, Interruption, Meter, OwnerId, SourceRange, Stop, Summary,
     Tariffs, GENERATOR_SIZE,
@@ -72,7 +81,7 @@ use crate::meter::{
 use crate::rng::{self, Cursor};
 use crate::value::{
     self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed, List,
-    Record, Text, Value,
+    MenuWord, Record, Text, Value,
 };
 
 /// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
@@ -91,6 +100,8 @@ pub mod code {
     pub const IR_REJECTED: &str = "LG4:input.ir_rejected";
     pub const NONCANONICAL_VALUE: &str = "PS1:input.noncanonical_value";
     pub const HOST_EXHAUSTED: &str = "KN7:resource_limit.host_exhausted";
+    /// A menu word that is not a word of the run's pinned alphabet (LB1.8; LP2 draft).
+    pub use crate::menu::INCOMPATIBLE_ALPHABET;
 }
 
 /// A refusal before any operation is metered.
@@ -141,6 +152,23 @@ pub enum Request<'a> {
         target: &'a str,
         request: &'a [u8],
     },
+    /// A menu-word preview (LB1.8; LP2 draft) with its canonical request bytes: the letters `[cap, item]` and the
+    /// identity block of their alphabet, the run's pinned one, so the engine refuses a word played at a state of
+    /// another alphabet by the first field in which the blocks differ (KN1.4). A host that gates previews gates this
+    /// one as it gates [`Request::Propose`]; [`Request::is_proposal`] names both.
+    ProposeMenu {
+        letters: &'a [[u32; 2]],
+        menu: &'a MenuIdentity,
+        target: &'a str,
+        request: &'a [u8],
+    },
+}
+
+impl Request<'_> {
+    /// Whether the request is a preview: [`Request::Propose`] or [`Request::ProposeMenu`].
+    pub fn is_proposal(&self) -> bool {
+        matches!(self, Request::Propose { .. } | Request::ProposeMenu { .. })
+    }
 }
 
 /// Where a value goes.
@@ -227,10 +255,12 @@ pub struct Options<'a> {
     pub record: bool,
     pub cancel: Option<&'a dyn Cancel>,
     pub sources: Option<&'a dyn SourceRanges>,
+    /// The menu alphabet the run pins for its menu words (LB1.8; LP2 draft). Without one the run holds no menu word.
+    pub menu: Option<&'a MenuAlphabet>,
 }
 
 impl<'a> Options<'a> {
-    /// Test tariffs, rows kept, no seed, no interruption and no source ranges.
+    /// Test tariffs, rows kept, no seed, no interruption, no source ranges and no menu alphabet.
     pub fn new(limits: Amounts) -> Options<'a> {
         Options {
             limits,
@@ -240,6 +270,7 @@ impl<'a> Options<'a> {
             record: true,
             cancel: None,
             sources: None,
+            menu: None,
         }
     }
 }
@@ -863,6 +894,7 @@ struct Machine<'a> {
     draft: DraftTariffs,
     cancel: Option<&'a dyn Cancel>,
     sources: Option<&'a dyn SourceRanges>,
+    menu: Option<&'a MenuAlphabet>,
     host: &'a mut dyn Host,
     meter: Meter,
     frames: Vec<Frame>,
@@ -989,10 +1021,21 @@ impl<'a> Machine<'a> {
         let node = &loaded.nodes[n];
         match &node.kind {
             Kind::Lit(v) => {
+                // A menu-word literal takes the run's pinned alphabet; a letter outside it, or no alphabet, stops the
+                // run before the step (LB1.8).
+                let v = match v {
+                    Value::MenuWord(w) => match self.menu {
+                        Some(menu) if w.letters().iter().all(|&l| menu.holds(l)) => {
+                            Value::MenuWord(Arc::new(w.named(menu.shared_identity().clone())))
+                        }
+                        _ => return Err(self.fail(Some(n), "value", code::INCOMPATIBLE_ALPHABET)),
+                    },
+                    v => v.clone(),
+                };
                 let size = v.size();
                 self.charge(Some(n), "value", 0, size, 0)?;
                 let owners = self.own(size);
-                self.push(v.clone(), owners);
+                self.push(v, owners);
             }
             Kind::Var(slot) => {
                 self.charge(Some(n), "visit", 0, 0, 0)?;
@@ -1102,7 +1145,7 @@ impl<'a> Machine<'a> {
                     .iter()
                     .fold(0u128, |s, a| s.saturating_add(value::equal_price(v, a, &self.tariffs, &self.draft)));
                 self.charge(Some(n), "branch", kernel, 0, 0)?;
-                let arm = arms.iter().position(|a| value::equal(v, a)).unwrap_or(arms.len());
+                let arm = arms.iter().position(|a| pattern_matches(v, a)).unwrap_or(arms.len());
                 node.kids[1 + arm]
             }
             (Kind::Prim(op), Value::Bool(b)) => {
@@ -1386,6 +1429,9 @@ impl<'a> Machine<'a> {
             self.release(index);
             return self.take_part(n, name, 0, list, element);
         }
+        if op != Prim::Length && args.iter().any(|h| matches!(h.value, Value::MenuWord(_))) {
+            return self.menu_sequence(n, op, name, args);
+        }
         let letters = |h: &Held| match &h.value {
             Value::Word(w) => Some(w.clone()),
             _ => None,
@@ -1396,6 +1442,7 @@ impl<'a> Machine<'a> {
             (Prim::Length, _, [h]) => {
                 let result = match &h.value {
                     Value::Word(w) => Value::int(w.len()),
+                    Value::MenuWord(w) => Value::int(w.letters().len()),
                     Value::List(l) | Value::Set(l) | Value::Map(l) => Value::int(l.items().len()),
                     // A compressed word's exact length is retained metadata: no part is expanded (LG2.16).
                     Value::Compressed(c) => Value::int(c.length().clone()),
@@ -1474,6 +1521,57 @@ impl<'a> Machine<'a> {
         };
         self.charge(Some(n), name, kernel, memory, 0)?;
         self.settle(memory, result());
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// A word operation on menu words (LB1.8, LB1.9; LP2 draft), one step priced as on words: `expand_per_letter` per
+    /// letter built and 4 bytes reserved per letter. Every operand is a menu word of the pinned alphabet: an operand of
+    /// another kind stops the run with `LG4:input.ir_rejected` (the checker refuses the mix first), and a word of
+    /// another alphabet, or a run with none, stops it with `LB1:input.incompatible_alphabet`, both before the step. An
+    /// inverse reverses the letters, each at its own cap with the item of the inverse rotation in the pinned menu.
+    fn menu_sequence(&mut self, n: NodeId, op: Prim, name: &str, args: Vec<Held>) -> Result<(), Stop> {
+        let words: Option<Vec<Arc<MenuWord>>> = args
+            .iter()
+            .map(|h| match &h.value {
+                Value::MenuWord(w) => Some(w.clone()),
+                _ => None,
+            })
+            .collect();
+        let builds = matches!(op, Prim::Concat | Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose);
+        let Some(words) = words.filter(|_| builds) else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        let Some(menu) = self.menu.filter(|m| words.iter().all(|w| w.identity() == m.identity())) else {
+            return Err(self.fail(Some(n), name, code::INCOMPATIBLE_ALPHABET));
+        };
+        let (x, y) = (words[0].letters(), words.get(1).map_or(&[][..], |w| w.letters()));
+        let (lx, ly) = (x.len() as u128, y.len() as u128);
+        let built = match op {
+            Prim::Inverse => lx,
+            Prim::Conjugate => 2 * lx + ly,
+            Prim::Commutator => 2 * lx + 2 * ly,
+            _ => lx + ly,
+        };
+        let memory = 4 * built;
+        self.charge(Some(n), name, self.tariffs.expand_per_letter.saturating_mul(built), memory, 0)?;
+        // Every menu word of the run is a word of the pinned alphabet, so the inverse and the bound hold; the stop
+        // below guards the invariant.
+        let inverse = |w: &[[u32; 2]]| menu.inverse_word(w);
+        let letters: Option<Vec<[u32; 2]>> = match op {
+            Prim::Inverse => inverse(x),
+            Prim::Conjugate => inverse(x).map(|xi| [x, y, &xi].concat()),
+            Prim::Commutator => inverse(x).zip(inverse(y)).map(|(xi, yi)| [x, y, &xi, &yi].concat()),
+            _ => Some([x, y].concat()),
+        };
+        let Some(word) = letters.and_then(|l| MenuWord::new(menu.shared_identity().clone(), &l)) else {
+            return Err(self.fail(Some(n), name, code::INCOMPATIBLE_ALPHABET));
+        };
+        self.settle(memory, Value::MenuWord(Arc::new(word)));
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);
@@ -1732,6 +1830,9 @@ impl<'a> Machine<'a> {
         if value.size() > tariff.result_bound {
             return Err(self.fail(Some(n), op, code::HOST_EXHAUSTED));
         }
+        if menu::check_words(&value, self.menu).is_err() {
+            return Err(self.fail(Some(n), op, code::INCOMPATIBLE_ALPHABET));
+        }
         self.settle(tariff.result_bound, value);
         Ok(())
     }
@@ -1799,12 +1900,18 @@ impl<'a> Machine<'a> {
     fn propose(&mut self, n: NodeId, mut args: Vec<Held>) -> Result<(), Stop> {
         let target = args.pop().expect("a target");
         let word = args.pop().expect("a word");
-        let (Value::Word(letters), Value::Target(t)) = (&word.value, &target.value) else {
+        let (Value::Word(_) | Value::MenuWord(_), Value::Target(t)) = (&word.value, &target.value) else {
             return Err(self.fail(Some(n), "invoke", code::IR_REJECTED));
         };
         let request = Value::record(vec![("target", target.value.clone()), ("word", word.value.clone())]);
         let (bytes, buffer) = self.encode(Some(n), &request)?;
-        let request = Request::Propose { word: letters, target: t.as_str(), request: &bytes };
+        let request = match &word.value {
+            Value::MenuWord(w) => {
+                Request::ProposeMenu { letters: w.letters(), menu: w.identity(), target: t.as_str(), request: &bytes }
+            }
+            Value::Word(letters) => Request::Propose { word: letters, target: t.as_str(), request: &bytes },
+            _ => return Err(self.fail(Some(n), "invoke", code::IR_REJECTED)),
+        };
         let tariff = match self.host.tariff(&request) {
             Ok(t) => t,
             Err(c) => {
@@ -1890,6 +1997,16 @@ impl<'a> Machine<'a> {
     }
 }
 
+/// Whether a scrutinee equals a match pattern as an exact equality does. A menu-word pattern is a literal, which names
+/// no alphabet of its own; every menu word of a run is a word of its pinned alphabet, so the letters decide (LP2
+/// draft).
+fn pattern_matches(v: &Value, pattern: &Value) -> bool {
+    match (v, pattern) {
+        (Value::MenuWord(x), Value::MenuWord(y)) => x.letters() == y.letters(),
+        _ => value::equal(v, pattern),
+    }
+}
+
 impl Loaded {
     /// Runs `module.function` with the given arguments. The arguments are captured input: each must have a canonical
     /// form, which prices its `read` (DET.57).
@@ -1912,6 +2029,9 @@ impl Loaded {
             if encode::encode(&value, &mut bytes).is_err() {
                 return Err(refuse(code::NONCANONICAL_VALUE, "an argument has no canonical form"));
             }
+            if let Err(why) = menu::check_words(&value, options.menu) {
+                return Err(refuse(code::INCOMPATIBLE_ALPHABET, format!("an argument: {why}")));
+            }
             input.push((value, bytes.len()));
         }
         let meter = if options.record { Meter::new(options.limits) } else { Meter::quiet(options.limits) };
@@ -1921,6 +2041,7 @@ impl Loaded {
             draft: options.draft,
             cancel: options.cancel,
             sources: options.sources,
+            menu: options.menu,
             host,
             meter,
             frames: Vec::new(),

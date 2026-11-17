@@ -10,6 +10,7 @@ use std::time::Duration;
 use c600_check::{Profile, Row};
 use c600_ir::Capability;
 use c600_run::interp::{code, CancelFlag};
+use c600_run::menu::{MenuAlphabet, MenuIdentity};
 use c600_run::meter::code::{CANCELLED_BY_USER, KERNEL_COST, MEMORY, NOT_GRANTED, OUTPUT, STEPS};
 use c600_run::meter::{Amounts, Interruption, Outcome};
 use c600_run::value::Value;
@@ -44,6 +45,14 @@ const TOOL: &str = "export fn save(w: Word) -> Unit effects [workspace, file] {\
 
 const PREVIEWER: &str = "export fn go(w: Word) -> Text effects [preview] {\n    \
     return receipt_id(propose(w, target(\"t\")));\n}\n";
+
+/// Menu words of a pinned menu (LB1.8; LP2 draft): one built from a literal and an argument, a literal letter at cap
+/// 4, and a preview.
+const MENU: &str = "export fn built(x: MenuWord) -> MenuWord effects [] {\n    \
+    return concat(menu[2:1], inverse(x));\n}\n\n\
+    export fn outside() -> MenuWord effects [] {\n    return menu[4:0];\n}\n\n\
+    export fn offer(x: MenuWord) -> Text effects [preview] {\n    \
+    return receipt_id(propose(x, target(\"t\")));\n}\n";
 
 const RANDOM: &str = "export fn two() -> record { a: Nat, b: Nat } effects [random] {\n    \
     return record { a = random_draw(), b = random_draw() };\n}\n";
@@ -236,6 +245,58 @@ fn the_built_in_column_admits_alike_on_both_executors() {
         assert!(r.detail.contains("solving profile"), "{}", r.detail);
         assert!(session.log.is_empty());
     }
+    assert_eq!(rt.spawns(), 1);
+}
+
+/// A job that pins a menu alphabet (LB1.8; LP2 draft) runs alike on both executors: a word built from a literal and an
+/// argument is a word of the pinned menu, with its inverse items; a literal letter outside the menu, or a literal in a
+/// run that pins none, stops the run with `LB1:input.incompatible_alphabet`; an argument of another alphabet or with a
+/// letter outside the menu is refused at the start; and a menu-word preview reaches the host once, with the identity
+/// block of its alphabet, and its receipt crosses back.
+#[test]
+fn a_pinned_menu_runs_alike_on_both_executors() {
+    let mut rt = runtime();
+    let source = format!("{}{MENU}", header(""));
+    let identity = |menu_id: &str| MenuIdentity {
+        puzzle: "600-cell-jumbled".into(),
+        model_id: "model".into(),
+        menu_id: menu_id.into(),
+        menu_order: "order".into(),
+        contract_rev: "rev".into(),
+    };
+    let alphabet = MenuAlphabet::new(identity("menu"), 4, vec![0, 2, 1]).expect("an alphabet");
+    let pinned = || JobOptions { menu: Some(alphabet.clone()), ..JobOptions::new(WIDE) };
+    let word = |menu_id: &str, letters: &[[u32; 2]]| {
+        Value::menu_word(&Arc::new(identity(menu_id)), letters).expect("letters below 600")
+    };
+    let start = |end: Ended| match end {
+        Ended::Refused(r) => (r.stage, r.codes),
+        other => panic!("{other:#?}"),
+    };
+
+    // The inverse of [0:1, 3:2] is [3:1, 0:2]: the letters reversed, each item replaced by its inverse.
+    let (end, session) =
+        compare(&mut rt, &job(&source, "built", vec![word("menu", &[[0, 1], [3, 2]])], pinned()), |_| {});
+    let menu = "{\"contract_rev\":\"rev\",\"menu_id\":\"menu\",\"menu_order\":\"order\",\"model_id\":\"model\",\"puzzle\":\"600-cell-jumbled\"}";
+    assert_eq!(output(&end), format!("{{\"letters\":[[2,1],[3,1],[0,2]],\"menu\":{menu}}}\n"));
+    assert!(session.log.is_empty());
+
+    for options in [pinned(), JobOptions::new(WIDE)] {
+        let (end, session) = compare(&mut rt, &job(&source, "outside", vec![], options), |_| {});
+        assert_eq!(ran(&end).summary.code, Some(code::INCOMPATIBLE_ALPHABET));
+        assert!(session.log.is_empty());
+    }
+
+    for x in [word("other", &[[0, 1]]), word("menu", &[[4, 0]]), word("menu", &[[0, 3]])] {
+        let (end, session) = compare(&mut rt, &job(&source, "built", vec![x], pinned()), |_| {});
+        assert_eq!(start(end), (Stage::Start, vec![code::INCOMPATIBLE_ALPHABET.to_string()]));
+        assert!(session.log.is_empty());
+    }
+
+    let (end, session) = compare(&mut rt, &job(&source, "offer", vec![word("menu", &[[3, 2]])], pinned()), |_| {});
+    assert_eq!(output(&end), "\"preview-menu-1\"\n");
+    assert_eq!(session.menu_proposals, [(vec![[3, 2]], identity("menu"), "t".to_string())]);
+    assert_eq!((session.proposals.len(), &session.preview), (0, &Session::default().preview));
     assert_eq!(rt.spawns(), 1);
 }
 

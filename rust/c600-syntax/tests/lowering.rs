@@ -249,15 +249,15 @@ fn a_call_of_a_module_function_gives_one_argument_per_parameter_and_an_import_ne
 }
 
 /// CT-LG2-01 (part: guard; constructor matches wait for M4), CT-LG2-02 (part: guard; puzzle and level indices
-/// wait for M4), CT-LG2-08 (part: guard; menu words wait for M5) and CT-LG2-09 (part: guard; verdicts wait for
-/// M4): each construct is refused at lowering and names what it waits for.
+/// wait for M4), CT-LG2-08 (part: guard; LX-8's fixture menu letters do not lower) and CT-LG2-09 (part: guard;
+/// verdicts wait for M4): each construct is refused at lowering and names what it waits for or what to write.
 #[test]
 fn lowering_refuses_what_the_ir_draft_cannot_hold_yet_and_names_what_it_waits_for() {
     let refusals = [
         ("fn f() -> Int effects [] charge [12, 0, 0, 0] {\n    return 1;\n}\n", "LG4.8"),
         ("command c() -> Unit effects [] row \"x\" kind k contexts [] permits [] {\n    return ();\n}\n", "LP3"),
         ("fn f(v: Nat) -> Text effects [] {\n    return match v {\n        yes(p) => \"y\";\n        _ => \"n\";\n    };\n}\n", "M4"),
-        ("fn f() -> Word effects [] {\n    return menu[2:spin];\n}\n", "M5"),
+        ("fn f() -> Word effects [] {\n    return menu[2:spin];\n}\n", "cap:item"),
         ("fn f(w: Word<Full,Retained>) -> Int effects [] {\n    return 1;\n}\n", "M4"),
         ("fn f(v: Verdict) -> Int effects [] {\n    return 1;\n}\n", "M4"),
     ];
