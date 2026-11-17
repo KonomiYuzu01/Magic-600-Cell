@@ -6,7 +6,8 @@
 //! through `session.undo` and `session.redo` with LI.9's action hint. The shell ([`shell`]) mints the user-action
 //! tokens from a per-launch secret the runtime never receives (KN5.14, KN5.15) and resolves key bindings before the
 //! invocation envelope (EV4.3), so a key bound to a kernel row reaches the engine with no interpreter step (ONE.48).
-//! This crate depends on the kernel only: it has no path to the language runtime at all.
+//! This crate depends on the kernel only, `c600-kernel` and its jumbling half `c600-jumble` for KN3's exact rotations:
+//! it has no path to the language runtime at all.
 //!
 //! Step 9's durable transaction sits behind [`store::Store`], and [`CommandLayer::open`] replays a store's history
 //! through the kernel ([`store::Reopen`]) to restore the revision, the protected set, the undo and redo history and the
@@ -50,9 +51,32 @@
 //!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
 //!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and admits a record's
 //!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused.
-//! - `twist.apply`'s `rotation` is A6's exact request (KN3.7). Matching it to a cap's generator needs KN3's exact
-//!   rotations, which the kernel does not build yet, so the row is refused with `KN5:input.row_not_built`, as is every
-//!   other row this crate does not build yet. The loop uses the operation rows, which are kernel rows too.
+//! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
+//!   rows, which are kernel rows too.
+//! - `twist.apply` ([`TWIST_ROW`]; A6, ONE.46, ONE.78), a live twist with no preview.
+//!   - The argument form. `cap` is KN3.7's cap, an integer from 0 to 599. `rotation` is KN3.7's binding without its
+//!     cap: exactly `request`, `operation` and `menu`. The row's `cap` completes it to the canonical binding, so the
+//!     request digest and the token's argument digest cover the whole binding. A malformed binding, a `rotation` that
+//!     is not an object of exactly those fields included, is refused with `KN2:input.rotation_request_malformed`.
+//!   - The host pins the twist menu with its exact model ([`CommandLayer::pin_menu`]). Without a pin the row is
+//!     refused with `KN5:input.row_not_built` before its arguments are read. The pin is not journaled.
+//!   - The request resolves against the pinned menu (KN3.8). A free binding is refused with
+//!     `KN2:input.menu_binding_mismatch`, since the session pins a menu (free mode is research-only, JI.35), as is a
+//!     menu pin other than the pinned menu's. A direct rotation off the menu is `KN2:input.twist_off_menu`. A jumble
+//!     item is `KN5:input.menu_word_needs_jumble_on`, and the identity item, which moves no piece,
+//!     `KN2:input.recipe_shape`. These checks come before the token, so they spend no press.
+//!   - A retained item commits its shortest retained word (`c600_jumble::rotation::retained_word`) as a one-word
+//!     recipe, derived under the protection policy in force, so Strict judges every prefix of the word. The token binds
+//!     the state and protection revisions (LI.6): a twist whose token names an older revision is refused with
+//!     `KN5:stale.revision_changed`, so a press queued behind another commits nothing.
+//!   - The commit is a node of the move tree like a word commit: undo and redo derive the word's inverse or the word
+//!     again. It ends the pending preview and cancels the jobs that read the replaced revision, except file jobs
+//!     (LI.32).
+//!   - The journal keeps the resolution's record as `rotation` (`Transaction::rotation`) beside the recipe, on a twist
+//!     and only there. A reopen replays the recipe and runs neither the producer nor the chooser again (KN3.9), so it
+//!     needs no pinned menu.
+//!   - Drafts for LP3's amendment list (PHS.52): the argument form, the input refusals before the token, the identity
+//!     item's code and the journal key `rotation`.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
 //!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
 //!   `KN2:consistency.star_certificate`.
@@ -188,6 +212,7 @@ pub mod shell;
 pub mod store;
 pub mod table;
 pub mod token;
+pub mod twist;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
@@ -203,6 +228,7 @@ pub use store::{
 };
 pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
+pub use twist::TWIST_ROW;
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].

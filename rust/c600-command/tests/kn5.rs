@@ -681,6 +681,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("set_program_capacity", false),
         ("present", false),
         ("set_provenance", false),
+        ("pin_menu", false),
         ("hold_commit_lane", true),
         ("fault_replace_head", true),
         ("restart", false),
