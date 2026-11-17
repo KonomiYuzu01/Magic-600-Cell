@@ -146,6 +146,11 @@ pub enum Ty {
     /// draw counter. `rng_init` starts one and `rng_draw` draws from it. A generator stays a bare value: no record,
     /// collection, closure capture or type variable holds one, and it has no equality, key order or canonical form.
     Generator,
+    /// An element of the finite field F2 or F5, an exact number kind of KN3.2 and ADR-L03.2 (LP2 draft until the IR
+    /// freeze, PHS.49). It has no literal (LG1.6): a value comes from `to_f2` or `to_f5` of an `Int`. It never widens
+    /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
+    /// program stores its `residue`.
+    Field(Field),
 }
 
 /// LB3.2's end tests (LP2 draft): three independently named tests with different premises and conclusions (state
@@ -221,6 +226,31 @@ impl EndTestOutcome {
     /// The outcome the status tag `tag` names, if any.
     pub fn of_tag(tag: &str) -> Option<EndTestOutcome> {
         EndTestOutcome::ALL.into_iter().find(|o| o.tag() == tag)
+    }
+}
+
+/// The finite fields of KN3.2: F2 and F5 (LP2 draft).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Field {
+    F2,
+    F5,
+}
+
+impl Field {
+    /// The field's prime.
+    pub fn modulus(self) -> u8 {
+        match self {
+            Field::F2 => 2,
+            Field::F5 => 5,
+        }
+    }
+
+    /// The field's type name in source.
+    pub fn name(self) -> &'static str {
+        match self {
+            Field::F2 => "F2",
+            Field::F5 => "F5",
+        }
     }
 }
 
@@ -413,6 +443,23 @@ pub enum Prim {
     /// `rng_draw(g)`: the next 256-bit block of the generator `g`'s stream as `Nat` (LP2 draft; DET.61). It advances
     /// `g`'s own cursor, which a borrow of `g` shares and an alias of `g` copies.
     RngDraw,
+    // Finite fields (KN3.2; LP2 drafts until the IR freeze, PHS.49). They take operands of one field only and stay
+    // apart from `ExactAdd`'s widening.
+    /// `to_f2(n)`, `to_f5(n)`: the residue of the `Int` (or `Nat`) `n` modulo the field's prime, as a field element.
+    ToField(Field),
+    /// `residue(x)`: the field element's representative in `0..p` as a `Nat`.
+    Residue,
+    /// `field_add(x, y)`: the sum in the field.
+    FieldAdd,
+    /// `field_sub(x, y)`: the difference in the field.
+    FieldSub,
+    /// `field_neg(x)`: the additive inverse in the field.
+    FieldNeg,
+    /// `field_mul(x, y)`: the product in the field.
+    FieldMul,
+    /// `field_inverse(x)`: the multiplicative inverse in the field. Zero has none: the operation is guarded by a
+    /// pointwise assertion that `x` is not zero (DET.55), and its failure is `LG4:input.pointwise_failed`.
+    FieldInverse,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -739,6 +786,9 @@ pub mod build {
     /// A bounded loop (LP2 draft; DET.55): `body` runs `count` times with `acc` bound to the value so far, from `init`.
     pub fn repeat(count: Expr, init: Expr, acc: &str, result: QTy, body: Expr) -> Expr {
         Expr::Repeat { count: Box::new(count), init: Box::new(init), acc: acc.into(), result, body: Box::new(body) }
+    }
+    pub fn to_field(field: Field, e: Expr) -> Expr {
+        prim(Prim::ToField(field), vec![e])
     }
     pub fn call(name: &str, args: Vec<Expr>) -> Expr {
         Expr::Call { callee: Callee::Fn { module: None, name: name.into() }, args }

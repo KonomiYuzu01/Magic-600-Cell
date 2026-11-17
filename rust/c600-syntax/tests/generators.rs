@@ -14,7 +14,8 @@ const PROFILES: [Profile; 3] = [Profile::Solving, Profile::ToolAuthoring, Profil
 
 /// The text of the checker's `PORTABLE` expectation, which a host read's argument must meet.
 const PORTABLE: &str =
-    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, Generator or a type variable";
+    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, Generator, F2, F5 \
+     or a type variable";
 
 /// One module `tool` with the given capability list and declarations.
 fn source(requires: &str, declarations: &str) -> String {

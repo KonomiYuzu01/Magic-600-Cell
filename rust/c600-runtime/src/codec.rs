@@ -17,14 +17,15 @@
 //! (LB1.10; LP2 draft) crosses with its header and its letters, and a pinned trace relation with its contract, its
 //! identity block, its generator count and its independence bits; the receiver recomputes the relation's digest, and
 //! the run checks a key against its relation, since the codec cannot order letters without one. A generator (DET.61;
-//! LP2 draft) has no transfer form, since a copy would be a second cursor on its stream; its type is type tag 27.
+//! LP2 draft) has no transfer form, since a copy would be a second cursor on its stream; its type is type tag 27. An
+//! F2 or F5 element (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::Row as ClassRow;
-use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, FnTy, QTy, Ty};
+use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::menu::{MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
@@ -81,6 +82,25 @@ mod tag {
     /// LP2's draft trace key (LB1.10): its header, the puzzle, the model ID, the generator count, the key kind, the
     /// independence contract and the 32 digest bytes, then its letters as a word's.
     pub const TRACE_KEY: u8 = 23;
+    /// LP2's draft F2 or F5 element (KN3.2): its field's byte (`field_byte`), then its residue's byte, below the field's
+    /// prime.
+    pub const FIELD: u8 = 24;
+}
+
+/// A finite field's byte in a value or a type (LP2 draft): 0 for F2, 1 for F5.
+fn field_byte(field: Field) -> u8 {
+    match field {
+        Field::F2 => 0,
+        Field::F5 => 1,
+    }
+}
+
+fn field_from(byte: u8) -> Result<Field, Malformed> {
+    match byte {
+        0 => Ok(Field::F2),
+        1 => Ok(Field::F5),
+        _ => Err(Malformed::new("an unknown field")),
+    }
 }
 
 /// The tags of a compressed word's parts.
@@ -458,6 +478,14 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                     e.i32(*l);
                 }
             }
+            Value::Field(field, residue) => {
+                if *residue >= field.modulus() {
+                    return Err(Unencodable("a residue outside its field"));
+                }
+                e.u8(tag::FIELD);
+                e.u8(field_byte(*field));
+                e.u8(*residue);
+            }
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -644,6 +672,14 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
             tag::TRACE_KEY => {
                 let header = Arc::new(decode_trace_header(d)?);
                 Value::TraceEqualityKey(Arc::new(TraceKey::from_parts(header, &decode_letters(d)?)))
+            }
+            tag::FIELD => {
+                let field = field_from(d.u8()?)?;
+                let residue = d.u8()?;
+                if residue >= field.modulus() {
+                    return Err(Malformed::new("a residue outside its field"));
+                }
+                Value::Field(field, residue)
             }
             tag::WORD_KEY => {
                 let letters = decode_letters(d)?;
@@ -997,7 +1033,12 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         }
         // LP2's draft trace key (LB1.10).
         Ty::TraceEqualityKey => e.u8(25),
-        // LP2's draft generator (DET.61). Tag 26 stays free for KN3.2's draft type.
+        // LP2's draft F2 or F5 element (KN3.2): the tag, then the field's byte.
+        Ty::Field(field) => {
+            e.u8(26);
+            e.u8(field_byte(*field));
+        }
+        // LP2's draft generator (DET.61).
         Ty::Generator => e.u8(27),
     }
     Ok(())
@@ -1082,6 +1123,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         23 => Ty::MenuWord,
         24 => Ty::EndTest(end_test_from(d.u8()?)?),
         25 => Ty::TraceEqualityKey,
+        26 => Ty::Field(field_from(d.u8()?)?),
         27 => Ty::Generator,
         _ => return Err(Malformed::new("an unknown type tag")),
     })

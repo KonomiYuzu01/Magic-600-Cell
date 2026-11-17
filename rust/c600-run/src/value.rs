@@ -7,7 +7,7 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use c600_ir::{EndTest, EndTestOutcome};
+use c600_ir::{EndTest, EndTestOutcome, Field};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -66,6 +66,9 @@ pub enum Value {
     /// DET.61's generator (LP2 draft): one owner's cursor on a sealed stream. A clone shares the cursor, as a visit, a
     /// borrow or a move does; [`Value::alias`] copies it into an independent cursor, as DET.61's alias does.
     Generator(Arc<Generator>),
+    /// An element of F2 or F5 (KN3.2; LP2 draft): the field and its residue, which is below the field's prime. Build
+    /// one with [`Value::field`].
+    Field(Field, u8),
 }
 
 /// A generator's cursor (DET.61; LP2 draft). The checker keeps a generator a bare value, so no record, collection or
@@ -418,7 +421,8 @@ pub fn inverse(letters: &[i32]) -> Vec<i32> {
 /// before `true`, texts compare by their scalar values, words and word keys by their letters, and lists, sets, maps,
 /// records and closures by their parts in order, each lexicographically with a prefix first; values of different
 /// kinds compare by kind. Equal numbers in different representations, an `Int` and a `Rat` of one value, have their
-/// representation as the explicit secondary key: `Int`, then `Rat`, then `Q5`.
+/// representation as the explicit secondary key: `Int`, then `Rat`, then `Q5`. An F2 or F5 element is no such number:
+/// elements compare by their field, F2 first, then by their residue (LP2 draft).
 pub fn key_order(a: &Value, b: &Value) -> Ordering {
     walk_order(a, b, false).then_with(|| walk_order(a, b, true))
 }
@@ -462,6 +466,7 @@ fn kind(v: &Value) -> u8 {
         Value::EndTest(..) => 20,
         Value::TraceEqualityKey(_) => 21,
         Value::Generator(_) => 22,
+        Value::Field(..) => 23,
     }
 }
 
@@ -514,6 +519,7 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                     let (x, y) = (x.state(), y.state());
                     (x.key, x.counter).cmp(&(y.key, y.counter))
                 }
+                (Value::Field(f, x), Value::Field(g, y)) => (f, x).cmp(&(g, y)),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -792,6 +798,13 @@ impl Value {
         MenuWord::new(identity.clone(), letters).map(|w| Value::MenuWord(Arc::new(w)))
     }
 
+    /// The element of `field` that the integer `n` reduces to: its residue modulo the field's prime, which is in
+    /// `0..p` for a negative `n` too (KN3.2; LP2 draft).
+    pub fn field(field: Field, n: &BigInt) -> Value {
+        let residue = n.mod_floor(&BigInt::from(field.modulus()));
+        Value::Field(field, u8::try_from(&residue).expect("a residue below the prime"))
+    }
+
     pub fn record(fields: Vec<(&str, Value)>) -> Value {
         Value::Record(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
     }
@@ -858,6 +871,7 @@ impl Value {
             Value::EndTest(..) => 2,
             // The 32-byte key, the 8-byte counter and the exhausted flag (DET.61).
             Value::Generator(_) => GENERATOR_SIZE,
+            Value::Field(..) => 1,
         }
     }
 
@@ -918,15 +932,16 @@ impl Value {
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
             // A word key or a trace key has no canonical form in the LP2 draft: it is never output as letters (LG2.13,
-            // LB1.10). Nor has a compressed word, whose output would be its expansion (DET.59), or a generator, which
-            // is a stream's cursor (DET.61).
+            // LB1.10). Nor has a compressed word, whose output would be its expansion (DET.59), a generator, which is
+            // a stream's cursor (DET.61), or an F2 or F5 element, which FP.6 does not wrap.
             Value::Closure(_)
             | Value::Fn(_)
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
             | Value::TraceEqualityKey(_)
             | Value::Compressed(_)
-            | Value::Generator(_) => 0,
+            | Value::Generator(_)
+            | Value::Field(..) => 0,
         }
     }
 }
@@ -1129,6 +1144,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::Approx(x), Value::Approx(y)) => x == y,
             // Each cursor read on its own; the checker gives a generator no equality (LP2 draft).
             (Value::Generator(x), Value::Generator(y)) => x.state() == y.state(),
+            (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
         };
         if !same {
@@ -1152,14 +1168,16 @@ pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 
             | Value::Tag(_)
             | Value::Colour(_)
             | Value::Fn(_)
-            | Value::EndTest(..),
+            | Value::EndTest(..)
+            | Value::Field(..),
             Value::Unit
             | Value::Bool(_)
             | Value::ApproxBool(_)
             | Value::Tag(_)
             | Value::Colour(_)
             | Value::Fn(_)
-            | Value::EndTest(..),
+            | Value::EndTest(..)
+            | Value::Field(..),
         ) => 0,
         _ => d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size())),
     }

@@ -74,7 +74,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. So has the menu word (LP2 draft):
 /// `menu_words.rs` here and in `c600-run`. So has an end test's verdict (LP2 draft): CT-LG2-09's unknown that never
 /// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`. So has the generator (LP2 draft;
-/// DET.61): `generators.rs` here and in `c600-run`.
+/// DET.61): `generators.rs` here and in `c600-run`. F2 and F5 (LP2 draft) are number kinds of KN3.2, not domain
+/// families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -98,6 +99,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::MenuWord
         | Ty::EndTest(_)
         | Ty::Generator
+        | Ty::Field(_)
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
@@ -114,6 +116,10 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxAdd | Prim::ApproxLess | Prim::ApproxAnd => "arithmetic",
         Prim::ApproxNot | Prim::ExactMul => "arithmetic",
         Prim::Assert => "resource control",
+        Prim::ToField(_) | Prim::Residue | Prim::FieldAdd | Prim::FieldSub | Prim::FieldNeg | Prim::FieldMul => {
+            "arithmetic"
+        }
+        Prim::FieldInverse => "arithmetic",
         Prim::Length | Prim::Index | Prim::Push | Prim::Concat => "collection",
         Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => "collection",
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",

@@ -204,6 +204,17 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   (LG4.6); the position and the count are exact natural numbers (LG2.20). A compressed word has no exact equality,
   alone or held in a record or a collection, and is no set element or map key, so no checked program compares two.
   CT-LG2-14's language half, static part (`c600-syntax/tests/collections.rs`).
+- F2 and F5 (KN3.2, ADR-L03.2; LP2 drafts until the IR freeze). `F2` and `F5` are exact number kinds without a
+  literal (LG1.6): `ToField` reduces an exact `Nat` or `Int` into one, `FieldAdd`, `FieldSub`, `FieldNeg`, `FieldMul`
+  and `FieldInverse` stay in one field, and `Residue` gives an element's residue as a `Nat`. Nothing widens into or
+  out of a field: mixing the two fields, or a field and another number kind, is `LG2:type.mismatch` at the operand,
+  and an approximate operand of `ToField` is `LG2:type.exact_required`. `ExactAdd`, `ExactMul` and `ExactLess`
+  refuse elements, which stay apart from the widening, and a finite field has no order; `ExactEq` compares two of
+  one field. An element may be a set element or a map key (LP2's choice): its key order is the field, F2 first, then
+  the residue. It holds no word, so the built-in column's rules treat it as plain data. It has no canonical form (FP.6
+  wraps only int, rat and q5), so a goal, an evidence sink or a snapshot read's argument refuses it, also inside a
+  record or a collection, and takes its residue.
+  CT-LB1-01's F2 and F5 ranks and solutions stay LP3's library code (LB1.8) (`c600-check/tests/fields.rs`).
 - Snapshot reads with an argument (LP2 draft until the IR freeze; LP3's plan, section 2). `ReadSnapshotWith` reads
   the engine's row `query` for an argument, such as a word's protection, for LB2's star and recipe construction and
   Net and Strict protection. The argument is portable exact data, as a goal or evidence is (owner decision of 16
@@ -370,6 +381,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `ascending` or `descending`, which are reserved words.
 - Compressed words (LP2 drafts). `CompressedWord` is a type, refused as a set element or a map key at lowering;
   `compress` and `expand` are reserved operations called like functions.
+- F2 and F5 (LP2 drafts). `F2` and `F5` are base types; `to_f2`, `to_f5`, `residue`, `field_add`, `field_sub`,
+  `field_neg`, `field_mul` and `field_inverse` are reserved operations called like functions, and no literal is an
+  element (`c600-syntax/tests/fields.rs`).
 - Snapshot reads with an argument (LP2 draft). `read_snapshot<T>("q", x)` lowers to the read with an argument;
   `read_snapshot<T>("q")` stays the literal read.
 - Menu words (LP2 draft). `MenuWord` is a type, and `menu[cap:item, ...]` is a word of the run's pinned menu: each
@@ -527,6 +541,19 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
   and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
   and admission bounds; CT-LG4-03, M4).
+- F2 and F5 (LP2 drafts): `Value::Field` holds the field and a residue below its prime, and `Value::field` reduces an
+  integer of any size. Draft prices, one step each and charged before the work, with a mistyped operand rejected as
+  malformed IR before any charge: `to_f2` and `to_f5` at the integer row's price for adding the prime, one walk over
+  the integer's limbs, so a reduction is priced by the integer's size (DET.55: no unmetered big-integer operation),
+  reserving one byte; `field_add`, `field_sub`, `field_neg` and `field_mul` at no kernel units, reserving one byte;
+  `residue` reserves its integer. `field_inverse` is guarded by a pointwise assertion (DET.55): the predicate
+  `field_nonzero` reserves its `Bool`, the `assert` step consumes it, and the inverse follows. The inverse of zero
+  stops at the `assert` step with `LG4:input.pointwise_failed` and keeps the admitted charges; chapter 13 has no
+  arithmetic domain code, so the code is a draft. In the key order an element is the last kind, by its field, F2
+  first, then its residue, and the equality of two elements costs no kernel units. An element has no canonical form,
+  so a run that would emit one or write one to the workspace, a view or a file stops before the host is asked, and an
+  argument that holds one is refused, with `PS1:input.noncanonical_value`; the checker admits such a write, as it
+  admits one of a compressed word, and a program outputs or stores the residue. Tests: `c600-run/tests/fields.rs`.
 - Snapshot reads with an argument (LP2 draft): the argument's canonical bytes are priced in DET.59's `encode` row
   before the `kernel` row, as a preview request's are, and the kernel row counts them as output. An argument with
   no canonical form stops with `PS1:input.noncanonical_value` and an approximate one with `LG4:input.ir_rejected`,
@@ -731,7 +758,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   KN3.5, CT-KN3-03 and state contract A2 and found no blocker or major. Its minor point, that halving E would pass
   the tests, is the margin the proof allows; the author's deliberate faults (a zero bound, the bound over 2^20, no
   non-finite check, the summation count left out of K, √5 off by one ulp) each fail them.
-- Not built: the shell's gesture producer, F2 and F5 (ν), the cost of an exact operation by operand size (KN3.6),
+- Not built: the shell's gesture producer, the cost of an exact operation by operand size (KN3.6),
   and a call of the filter from either kernel crate; an accessor for `SumOfProducts`'s terms would let the filter
   take the kernel's sum directly.
 
@@ -1849,11 +1876,16 @@ run or not applicable is no pass (PHS.63).
   refusing what `Relation::from_parts` refuses. The codec cannot order a key's letters without the relation, so the
   run checks a decoded key against its pinned relation, and `LB1:input.key_contract_mismatch` is one of the
   interpreter's own stop codes. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a value that
-  holds one is refused whole, and its type crosses as type tag 27 (tag 26 is kept for KN3.2's draft type). The
+  holds one is refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The
   lengths that a frame's compressed
   words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
+- LP2's draft F2 and F5: an element crosses as value tag 24, its field's byte (0 for F2, 1 for F5) and its residue's
+  byte, and the field types as type tag 26 and the field's byte. An unknown field byte or a residue at or above the
+  prime is refused on both sides. As an argument an element reaches the child, which refuses it as the run in process
+  does, and a result stops both runs alike (`fields.rs`). The transfer form is no stored form: FP.6 has none for an
+  element, and a host's answer to a read declared `F2` or `F5` crosses only in the transfer form.
 - Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh

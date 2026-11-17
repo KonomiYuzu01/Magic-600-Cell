@@ -3,9 +3,10 @@
 //! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
 //! refuses the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is
 //! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; an end
-//! test's verdict (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; a
-//! generator (DET.61) has no value tag and is type tag 27; the built-in column, the pinned menu and the pinned trace
-//! relation are strict trailing fields of the run, in that order.
+//! test's verdict (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; an
+//! F2 or F5 element (KN3.2) is value tag 24 and type tag 26; a generator (DET.61) has no value tag and is type tag 27;
+//! the built-in column, the pinned menu and the pinned trace relation are strict trailing fields of the run, in that
+//! order.
 
 mod support;
 
@@ -755,7 +756,7 @@ fn a_menu_word_crosses_with_its_alphabet() {
 
 /// A generator (DET.61; LP2 draft) stays in its run: a copy in another process would be a second cursor on its stream,
 /// which only DET.61's alias makes, so it has no value tag and a value that holds one is refused whole. The type
-/// `Generator` is type tag 27; tag 26 stays free for KN3.2's draft type.
+/// `Generator` is type tag 27; tag 26 is an F2 or F5 element's type (KN3.2; `fields.rs`).
 #[test]
 fn a_generator_has_no_transfer_form_and_its_type_is_tag_27() {
     let g = Value::Generator(Arc::new(Generator::new(Cursor::new([1; 32]))));
