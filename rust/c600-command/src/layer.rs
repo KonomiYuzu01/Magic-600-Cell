@@ -48,6 +48,7 @@ use c600_kernel::{
     Derivation, Effect, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
+use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
@@ -1180,7 +1181,7 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::ARGUMENT_FORM, "`confirm` is a boolean");
         }
         let names = args.keys().map(String::as_str).filter(|name| !(confirmable && *name == "confirm"));
-        if !names.eq(row.plain_arguments()) {
+        if !forms::names_fit(&row, names) {
             return refused(code::ARGUMENT_FORM, format!("`{}` takes {:?}", row.id, row.arguments));
         }
         if row.takes_token() != invocation.token.is_some() {
@@ -1198,7 +1199,10 @@ impl<S: Store> CommandLayer<S> {
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
-            _ if row.overlay.is_some() => self.admit_program(caller, invocation, &row),
+            _ if row.overlay.is_some() => {
+                forms::check(&row, args, &self.revision)?;
+                self.admit_program(caller, invocation, &row)
+            }
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
         }
     }
