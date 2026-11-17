@@ -31,7 +31,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-DET-21 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-22 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-LG4-05 | waiting | a pointwise or whole-state contract form in the IR, no milestone named; named only as not built (`rust/README.md`, missing list) |
-| CT-KN5-05 | waiting | the display refresh after a commit (R-02), which KN5's one implementation, `c600-command`, does not build yet (`rust/README.md`, missing list) |
 | CT-PS1-08 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
 | CT-PS1-09 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
 | CT-PS1-10 | waiting | M6's remaining rows (`rust/README.md`, missing list) |

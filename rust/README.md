@@ -1248,11 +1248,11 @@ run or not applicable is no pass (PHS.63).
     `tests/test_jumbling_rust_nu.py` compares ν with the ν reference, and `tests/test_jumbling_rust_corrections.py`
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
-  KN5's stages 1 to 5 and its overlay availability, the Linux Rust job and M8's levels, as
-  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 68 whole, nine of them
-  by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04
-  and CT-LG5-06); 133 part; 4 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07,
-  CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 43 waiting, each with what it waits for in
+  KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job and M8's levels,
+  as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 68 whole, nine of
+  them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
+  CT-LG3-04 and CT-LG5-06); 134 part; 4 named only by LP3's command-layer tests, as parts without a marker
+  (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 42 waiting, each with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1337,8 +1337,6 @@ run or not applicable is no pass (PHS.63).
   - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
     (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
-  - KN5's command layer, `c600-command` (1): CT-KN5-05, which needs the display refresh after a commit (R-02) that it
-    does not build yet.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
     part (M4's section).
@@ -1504,6 +1502,14 @@ run or not applicable is no pass (PHS.63).
   declaration advances the generation (LI.21). Metadata is not journaled, so after a reopen the host declares it again.
   Tests: `c600-command/tests/availability.rs`, which also reads the crate's dependency closure from the manifests: the
   kernel's crates and no language crate.
+- The report after a command (KN5.22, R-02, ONE.70; the drafts are in the crate documentation). `report` pairs a
+  receipt with the display's status, and `Shell::send_reported` sends and reports. When the command applied
+  (committed, or completed as a workspace write, a view publication or a file publication), the display refreshes to
+  the head through the host's `Refresh`; a failed refresh reports "Applied, display out of date"
+  (`DISPLAY_OUT_OF_DATE`) and leaves the receipt, the outcome lookup, the preview and the jobs as after any commit. The
+  continuation, `refresh_display`, sends no command. The host's `Refresh` over LP3's view model and the message on
+  screen are LP3's (CT-KN5-05 in part). Tests: `c600-command/tests/refresh.rs`, a port of 0.4's
+  `tests/test_native_reply_after_commit.py`.
 - `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
   committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
   without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and
