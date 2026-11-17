@@ -11,6 +11,8 @@
 //!   admission reads them, and a solving run gets one fixed acknowledgement (chapter 07, milestone M3).
 //! - [`menu`] is the menu alphabet a run pins for LB1.8's literal words of one menu, and its identity block (LP2
 //!   draft).
+//! - [`trace`] is LB1.10's trace key `trace-key/1` of a Full word under the independence relation a run pins (LP2
+//!   draft).
 
 #![forbid(unsafe_code)]
 
@@ -22,4 +24,5 @@ pub mod menu;
 pub mod meter;
 pub mod provenance;
 pub mod rng;
+pub mod trace;
 pub mod value;

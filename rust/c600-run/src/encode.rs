@@ -184,13 +184,15 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                     }
                 }
             }
-            // A word key is never output as letters (LG2.13); the LP2 draft gives it no canonical form. Nor does it give
-            // one to a compressed word, whose output would be its priced expansion (DET.59), or to an F2 or F5 element:
-            // FP.6 wraps only int, rat and q5 (PS1.5), so a program outputs the element's residue.
+            // A word key or a trace key is never output as letters (LG2.13, LB1.10); the LP2 draft gives neither a
+            // canonical form. Nor does it give one to a compressed word, whose output would be its priced expansion
+            // (DET.59), or to an F2 or F5 element: FP.6 wraps only int, rat and q5 (PS1.5), so a program outputs the
+            // element's residue.
             Value::Closure(_)
             | Value::Fn(_)
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
+            | Value::TraceEqualityKey(_)
             | Value::Compressed(_)
             | Value::Field(..) => return Err(Noncanonical),
         }

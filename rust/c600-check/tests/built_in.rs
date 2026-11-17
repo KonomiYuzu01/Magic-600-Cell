@@ -222,10 +222,11 @@ fn a_workspace_write_of_a_callable_may_carry_a_word() {
     assert!(built_in(&tool(vec![keep(Ty::Nat, nat(1))]), &kept, &Policy::interim()).is_admitted());
 }
 
-/// CT-BND-15 (part: the workspace-change row of the built-in column for a write of a collection, a compressed word or a
-/// word equality key, LP2 drafts). A list, set or map with a word among its elements, keys or values holds the word,
-/// and a compressed word or a key holds its letters, so their write is refused at the write; conservatively also when
-/// they are built from the word the solver named. A collection whose type holds no word is written.
+/// CT-BND-15 (part: the workspace-change row of the built-in column for a write of a collection, a compressed word, a
+/// word equality key or a trace equality key, LP2 drafts). A list, set or map with a word among its elements, keys or
+/// values holds the word, and a compressed word or a key holds its letters, so their write is refused at the write;
+/// conservatively also when they are built from the word the solver named. A collection whose type holds no word is
+/// written.
 #[test]
 fn a_workspace_write_of_a_collection_or_compressed_word_may_carry_a_word() {
     let kept = rows(&[Row::Workspace("kept".into())]);
@@ -241,6 +242,7 @@ fn a_workspace_write_of_a_collection_or_compressed_word_may_carry_a_word() {
         (Ty::Map(words(), Box::new(exact(Ty::Nat))), map(exact(Ty::Word), exact(Ty::Nat), vec![(var("w"), nat(1))])),
         (Ty::CompressedWord, prim(Prim::Compress, vec![var("w")])),
         (Ty::WordEqualityKey, prim(Prim::WordKey, vec![var("w")])),
+        (Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![var("w")])),
     ];
     for (ty, value) in cases {
         let p = tool(vec![keep(ty.clone(), value)]);

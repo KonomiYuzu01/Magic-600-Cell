@@ -175,6 +175,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::CompressedWord => "letters as parts of literal letters, with their exact length",
         Ty::MenuWord => "letters of a pinned menu, with the name of their alphabet",
         Ty::EndTest(_) => "the outcome of the end test it names",
+        Ty::TraceEqualityKey => "a trace equality key under the run's relation, which is never letters",
     }
 }
 
@@ -194,6 +195,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::Compressed(_) => "letters as parts of literal letters, with their exact length",
         Value::MenuWord(_) => "letters of a pinned menu, with the name of their alphabet",
         Value::EndTest(..) => "the outcome of the end test it names",
+        Value::TraceEqualityKey(_) => "a trace equality key under the run's relation, which is never letters",
     }
 }
 

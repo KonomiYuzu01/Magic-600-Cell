@@ -13,7 +13,8 @@ use support::{codes, fields, less, mismatch, only, report, tint, tool, xy};
 
 const V: &str = EXACTNESS_VIOLATION;
 /// What a goal or an evidence sink expects, in a mismatch (PHS.52, 16 November 2026).
-const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord, F2, F5 or a type variable";
+const PORTABLE: &str =
+    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, F2, F5 or a type variable";
 
 fn boolean(b: bool) -> Expr {
     Expr::Lit(Lit::Bool(b))
@@ -579,6 +580,7 @@ fn phs52_goal_and_evidence_sinks_take_portable_data() {
             (fn_ref("h"), "fn() -> Nat"),
             (receipt(), "Receipt"),
             (prim(Prim::WordKey, vec![word(&[1])]), "WordEqualityKey"),
+            (prim(Prim::TraceKey, vec![word(&[1])]), "TraceEqualityKey"),
             (prim(Prim::Compress, vec![word(&[1])]), "CompressedWord"),
             (record(vec![("f", fn_ref("h"))]), "record { f: fn() -> Nat }"),
             (list(exact(Ty::Receipt), vec![receipt()]), "List<Receipt>"),

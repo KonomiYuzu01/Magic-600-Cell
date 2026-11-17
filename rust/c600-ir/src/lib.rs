@@ -138,6 +138,10 @@ pub enum Ty {
     /// read from the engine row of the test's name. It is used through a `match` on its outcomes only, never as a
     /// `Bool` (LG2.9), and one test's verdict never stands for another's.
     EndTest(EndTest),
+    /// LB1.10's trace equality key of a Full word (`trace-key/1`, LP2 draft; EV4.9's name): the word's letters in the
+    /// least topological order of its trace under the independence relation a run pins, with that relation's header
+    /// (LG2.23). It is never a `Word` or a `WordEqualityKey` and never converts to either.
+    TraceEqualityKey,
     /// An element of the finite field F2 or F5, an exact number kind of KN3.2 and ADR-L03.2 (LP2 draft until the IR
     /// freeze, PHS.49). It has no literal (LG1.6): a value comes from `to_f2` or `to_f5` of an `Int`. It never widens
     /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
@@ -422,6 +426,9 @@ pub enum Prim {
     /// `expand(c, start, count)`: the `count` letters of the compressed word `c` from the exact position `start`,
     /// counted from 0, as a `Word` in chronological order (LG4.6). A range past the word's end is a pointwise failure.
     Expand,
+    /// `trace_key(w)`: LB1.10's trace key of a Full word under the run's pinned independence relation (LP2 draft):
+    /// its lexicographically least topological word, every occurrence kept.
+    TraceKey,
     // Finite fields (KN3.2; LP2 drafts until the IR freeze, PHS.49). They take operands of one field only and stay
     // apart from `ExactAdd`'s widening.
     /// `to_f2(n)`, `to_f5(n)`: the residue of the `Int` (or `Nat`) `n` modulo the field's prime, as a field element.
