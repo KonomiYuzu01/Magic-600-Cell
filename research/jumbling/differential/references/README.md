@@ -49,7 +49,7 @@ the labels are undefined (`NuUndefined`).
   `centre_displaced`, `nu_nonzero`) and the kind of action, never a twist or a
   correction. Reachability is the caller's check.
 
-## Corrections and recorded ν (`corrections.py`, `nu_refs.py`)
+## Corrections and recorded ν (`corrections.py`, `nu_refs.py`, `catalogue.py`)
 
 `load_library()` checks the SHA-256 of the decompressed correction library
 (`research/jumbling/restoration/09-general-method/data/library-merged.json.gz`)
@@ -77,10 +77,17 @@ letters in the pinned I_a order and 45-coordinate ν row.
   matched by the SHA-256 of the decompressed table) and with `nu_input` of
   `research/jumbling/restoration/09-general-method/earlier/x-e3-solved/restore-summary.json`
   (EH-10). `--cert-lb` replays the 40 words of CERT-LB-V2 from solved.
+- `catalogue.py` writes the Rust engine's shipped catalogue
+  (`rust/c600-jumble/data/corrections-I_a.json`; DT-J1 O7 (a)) from the
+  library: each correction's id, family, letters and row, bound to the model
+  ID, the I_a menu identity and order digest, and the engine's contract
+  revision. `tests/test_jumbling_rust_corrections.py` compares the shipped
+  bytes with `catalogue_bytes()`.
 
 ```sh
 python -B research/jumbling/differential/references/corrections.py --out DIR [--from solved|E3|I1|I2] [--ids ID ...] [--literal]
 python -B research/jumbling/differential/references/nu_refs.py --out DIR [--cert-lb]
+python -B research/jumbling/differential/references/catalogue.py --out DIR
 ```
 
 ## Observations (`observations.py`, `obs_refs.py`)

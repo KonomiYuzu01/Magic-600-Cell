@@ -33,6 +33,7 @@
 #![forbid(unsafe_code)]
 
 pub mod b64;
+pub mod corrections;
 pub mod dd;
 pub mod eval;
 pub mod kplus;
