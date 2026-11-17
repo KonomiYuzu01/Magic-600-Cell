@@ -688,6 +688,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("run_jobs", false),
         ("take_program_job", false),
         ("finish_program_job", false),
+        ("finish_program_job_with", false),
     ];
     let expected: Vec<(String, bool)> = expected.iter().map(|(name, hook)| ((*name).to_owned(), *hook)).collect();
     assert_eq!(found, expected);

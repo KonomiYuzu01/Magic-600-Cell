@@ -154,6 +154,25 @@
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them `FilterRef`,
 //!     `FilterPreviewRef` and `CanonicalObjectRefs`, which the representations tool's rows take, and a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
+//! - Job output (LP3's C6, its second common need). The host reports a program job's output as the runtime's sinks
+//!   gave it ([`CommandLayer::finish_program_job_with`], [`JobOutput`]): the value the entry returned, the views it
+//!   published (`publish_view`) and the workspace records it wrote (`write_workspace`), each record with its
+//!   provenance block. [`CommandLayer::finish_program_job`] reports a value alone, as before.
+//!   - The completion's result reference carries [`JobOutput::digest`]: the value's own digest when the job published
+//!     no view and wrote no record, so a value alone keeps its digest, and otherwise the digest of the records, the
+//!     value and the views together. The layer keeps no view or value; the host keeps the output.
+//!   - Only a workspace row's job writes records. A record from any other row's job fails the job with
+//!     `LG3:capability.not_granted`. Views pass from every row.
+//!   - The host's provenance reader checks every record's block, as for `workspace.set` (PS1.16). A block it refuses
+//!     fails the job with the reader's error, and without a reader the job fails with `KN5:input.row_not_built`.
+//!   - A job whose output fails a check writes nothing.
+//!   - A workspace row's records are written in its completion's one durable action, in the order of their names:
+//!     each record's version advances, and the workspace revision advances once. The journal keeps them
+//!     (`Transaction::records`), so a reopen writes them again.
+//!   - No undo reaches a job's writes. So that an undo or redo of an earlier write of the same record cannot write
+//!     over them, those earlier writes leave the undo and redo stacks.
+//!   - Drafts for LP3's amendment list (PHS.52): the digest's form, the code for a record from another row, the
+//!     history cut and the journal key `records`.
 //! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
 //!   or the `test-hooks` feature (L15).
 //! - The per-launch secret comes from the standard library's random hasher keys, the clock and the process ID, hashed
@@ -172,7 +191,7 @@ pub mod token;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
-pub use layer::{Caller, CommandLayer, Invocation, Preview, PreviewState, ProgramJob, POLICY_ROW};
+pub use layer::{Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, POLICY_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
