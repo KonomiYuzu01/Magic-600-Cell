@@ -146,10 +146,10 @@ pub struct Transaction {
     /// resolution's record, with the request binding, the request digest, the choice and the exact rotation at the cap
     /// (KN3.8, KN3.9; draft). `None` for every other action.
     pub rotation: Option<Value>,
-    /// A crossing's record: for an entry, its entrance, the jumbling identity block it was made under and its witness's
-    /// letter count and `Digest<literal word>`; for an exit, the episode it ends, the identity block, the jumbling
-    /// journal, the pose and label digests and A5's certificate ([`crate::jumble`]; draft). `None` for every other
-    /// action.
+    /// A crossing's record: for an entry, its entrance, from an exit root the exit's event and its record's SHA-256,
+    /// the jumbling identity block it was made under, and its witness's or suffix's letter count and
+    /// `Digest<literal word>`; for an exit, the episode it ends, the identity block, the jumbling journal, the pose
+    /// and label digests and A5's certificate ([`crate::jumble`]; draft). `None` for every other action.
     pub crossing: Option<Value>,
 }
 

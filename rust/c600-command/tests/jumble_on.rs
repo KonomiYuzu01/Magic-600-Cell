@@ -280,7 +280,7 @@ impl Fixture {
 }
 
 /// CT-ONE-03 (part: a crossing commits with no preview object), CT-JI-08 (part: the solved-witness entry with both of
-/// its sides; not run: the exit-root entry, which needs `jumble.off`), JI.25, ONE.55, ONE.80. After a word commit and
+/// its sides; the exit-root entry is in `tests/jumble_off.rs`), JI.25, ONE.55, ONE.80. After a word commit and
 /// a twist from solved, `jumble.on` enters at the jumbling engine's replay of their literal letters from solved, whose
 /// labels are the current labels. The revision's mode becomes `jumble_on`, its state revision advances, its head is the
 /// crossing's event and its digest the pose digest; the retained state stays; the journal keeps the crossing's record
@@ -532,12 +532,12 @@ fn the_retained_workflow_needs_jumble_off() {
     assert_eq!((r.state, r.head.as_str(), r.digest.as_str()), (on.state, on.head.as_str(), on.digest.as_str()));
 }
 
-/// CT-JI-08 (part: the solved-witness entry survives undo and redo using its own sides; not run: the exit-root entry
-/// and branch navigation), ONE.81, JI.27. An undo of the entry returns to the exact Jumble off state before it and a
-/// redo replays the solved witness again, each with a new state revision and a committed receipt; the retained workflow
-/// works again after the undo, and a retained commit there clears the entry's redo. The draft rulings: while Jumble is
-/// on, a pin of a menu with another identity block is `KN1:input.identity_mismatch`, and so is a redo of the entry
-/// under one; both change nothing.
+/// CT-JI-08 (part: the solved-witness entry survives undo and redo using its own sides; the exit-root entry is in
+/// `tests/jumble_off.rs`; not run: branch navigation), ONE.81, JI.27. An undo of the entry returns to the exact Jumble
+/// off state before it and a redo replays the solved witness again, each with a new state revision and a committed
+/// receipt; the retained workflow works again after the undo, and a retained commit there clears the entry's redo.
+/// The draft rulings: while Jumble is on, a pin of a menu with another identity block is
+/// `KN1:input.identity_mismatch`, and so is a redo of the entry under one; both change nothing.
 #[test]
 fn undo_and_redo_restore_the_entry_s_own_sides() {
     let mut f = fixture(&[]);

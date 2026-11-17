@@ -1,14 +1,16 @@
-//! Jumble on and Jumble off (A5; ONE.54, ONE.55, ONE.80, ONE.81; JI.25, JI.27; draft): the crossings between
-//! 600-cell-Full's retained labels and the jumbling engine's poses, through H-08's `jumble.on` ([`JUMBLE_ON_ROW`]) and
-//! `jumble.off` ([`JUMBLE_OFF_ROW`]).
+//! Jumble on and Jumble off (A5; ONE.54, ONE.55, ONE.80, ONE.81; JI.25 to JI.27; FP.31, FP.32; draft): the
+//! crossings between 600-cell-Full's retained labels and the jumbling engine's poses, through H-08's `jumble.on`
+//! ([`JUMBLE_ON_ROW`]) and `jumble.off` ([`JUMBLE_OFF_ROW`]).
 //!
-//! An entry needs a retained witness. In this edition it is JI.25's solved witness, since an entry from an exit root
-//! is not built yet: the chronological literal retained path from the session's start to the head, which must start
-//! at solved.
-//! The layer replays it from solved in the jumbling engine under the pinned menu ([`replay_from_solved`]) and enters only
-//! when the replay's labels are the current labels. Labels alone are refused with `KN5:input.jumble_on_labels_only`:
-//! no witness is generated from labels (ONE.54, JI.25). The journal keeps the crossing's record ([`entry_record`]), not
-//! the poses; a reopen replays the witness again.
+//! An entry needs a retained witness (JI.25, JI.26). While an exit is active, that is while the path from the head
+//! climbs through retained commits only to an exit, the witness is that exit's root: the retained suffix, the
+//! chronological literal retained path from the exit to the head, replayed from the exit's own poses
+//! ([`replay_from_exit`]). With no active exit it is the solved witness, the chronological literal retained path from
+//! the session's start, which must be solved, to the head, replayed from solved ([`replay_from_solved`]). Either
+//! replay runs in the jumbling engine under the pinned menu, and the layer enters only when its labels are the current
+//! labels. Labels alone are refused with `KN5:input.jumble_on_labels_only`: no witness is generated from labels
+//! (ONE.54, JI.25). The journal keeps the crossing's record ([`entry_record`], [`exit_root_record`]), not the poses; a
+//! reopen replays the witness again.
 //!
 //! With Jumble on, `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]) moves the poses (JI.35, FP.31; draft). The layer derives
 //! each pose move from the head's value, and replays the jumbling journal flat from solved ([`replay_poses`]) when the
@@ -26,7 +28,7 @@ use c600_jumble::twist::Twist;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{IdentityBlock, Kernel, ProtectionMode, Puzzle, Snapshot};
 
-use crate::receipt::{code, Error};
+use crate::receipt::{code, digest, Error};
 use crate::store::{identity_from_json, identity_json};
 use crate::twist::Twists;
 
@@ -43,8 +45,14 @@ pub const JUMBLE_TWIST_ROW: &str = "jumble.twist.menu";
 /// The entrance of an entry from the solved witness: JI.27's `solved_witness`.
 const SOLVED_WITNESS: &str = "solved_witness";
 
-/// The fields of an entry's crossing record.
+/// The entrance of an entry from an active exit's root: JI.27's `exit_root`.
+const EXIT_ROOT: &str = "exit_root";
+
+/// The fields of an entry's crossing record from the solved witness.
 const ENTRY_FIELDS: [&str; 4] = ["entrance", "identity", "letters", "word"];
+
+/// The fields of an entry's crossing record from an exit root.
+const EXIT_ROOT_FIELDS: [&str; 6] = ["crossing", "entrance", "exit", "identity", "letters", "word"];
 
 /// The fields of an exit's record.
 const EXIT_FIELDS: [&str; 6] = ["certificate", "episode", "identity", "journal", "labels", "poses"];
@@ -66,6 +74,11 @@ fn fields_are(value: &Value, names: &[&str]) -> bool {
     value.as_object().is_some_and(|fields| fields.len() == names.len() && names.iter().all(|n| fields.contains_key(*n)))
 }
 
+/// Whether `name` is an event name `e<order>`.
+fn event(name: &str) -> bool {
+    name.strip_prefix('e').is_some_and(|order| !order.is_empty() && order.bytes().all(|b| b.is_ascii_digit()))
+}
+
 /// `Digest<literal word>` of 600-cell-Full's primitive letters, the kernel's convention: the SHA-256 of the letters as
 /// little-endian int32.
 pub(crate) fn word_digest(letters: &[i32]) -> String {
@@ -73,9 +86,10 @@ pub(crate) fn word_digest(letters: &[i32]) -> String {
     c600_digest::sha256_hex(&bytes)
 }
 
-/// An entry's crossing record (draft): `{"entrance": "solved_witness", "identity", "letters", "word"}`, with the
-/// jumbling identity block the entry was made under, which names the pinned menu, and the solved witness's letter count
-/// and `Digest<literal word>`. The witness's letters are the move tree's, which the journal keeps already.
+/// An entry's crossing record from the solved witness (draft): `{"entrance": "solved_witness", "identity", "letters",
+/// "word"}`, with the jumbling identity block the entry was made under, which names the pinned menu, and the solved
+/// witness's letter count and `Digest<literal word>`. The witness's letters are the move tree's, which the journal
+/// keeps already.
 pub(crate) fn entry_record(identity: &IdentityBlock, letters: &[i32]) -> Value {
     json::object([
         ("entrance", Value::String(SOLVED_WITNESS.to_owned())),
@@ -85,18 +99,42 @@ pub(crate) fn entry_record(identity: &IdentityBlock, letters: &[i32]) -> Value {
     ])
 }
 
-/// Whether `value` reads as a crossing record: [`entry_record`]'s four fields and no other, a jumbling identity block, a
-/// natural letter count and a SHA-256 in lower-case hex.
-pub(crate) fn crossing_reads(value: &Value) -> bool {
-    fields_are(value, &ENTRY_FIELDS)
-        && value.get("entrance").and_then(Value::as_str) == Some(SOLVED_WITNESS)
-        && value.get("identity").and_then(identity_from_json).is_some_and(|block| block.puzzle == Puzzle::Jumbling)
-        && value.get("letters").and_then(Value::as_i64).is_some_and(|n| n >= 0)
-        && value.get("word").and_then(Value::as_str).is_some_and(hex)
+/// An entry's crossing record from an active exit's root (draft; JI.25, FP.31's `exit_root`): `{"crossing",
+/// "entrance": "exit_root", "exit", "identity", "letters", "word"}`, with the exit's event, the SHA-256 of the exit's
+/// record in canonical JSON, which names the exit's poses, labels and certificate, the jumbling identity block the
+/// entry was made under, and the retained suffix's letter count and `Digest<literal word>`. An empty suffix has no
+/// letters. The suffix's letters are the move tree's, which the journal keeps already.
+pub(crate) fn exit_root_record(identity: &IdentityBlock, exit: &Value, crossing: &str, letters: &[i32]) -> Value {
+    json::object([
+        ("crossing", Value::String(crossing.to_owned())),
+        ("entrance", Value::String(EXIT_ROOT.to_owned())),
+        ("exit", Value::String(digest(exit))),
+        ("identity", identity_json(identity)),
+        ("letters", Value::Int(letters.len() as i64)),
+        ("word", Value::String(word_digest(letters))),
+    ])
 }
 
-/// A solved witness replayed in the jumbling engine: the derived value at its end, that value's pose digest, the
-/// identity block of the pinned menu and the entry's crossing record.
+/// Whether `value` reads as an entry's crossing record: by its entrance, [`entry_record`]'s four fields or
+/// [`exit_root_record`]'s six and no other, an exit root's crossing an event name `e<order>` and its exit a SHA-256 in
+/// lower-case hex; a jumbling identity block, a natural letter count and a SHA-256 in lower-case hex. The values are
+/// checked where the entry is replayed.
+pub(crate) fn crossing_reads(value: &Value) -> bool {
+    let text = |key: &str| value.get(key).and_then(Value::as_str);
+    let form = match text("entrance") {
+        Some(SOLVED_WITNESS) => fields_are(value, &ENTRY_FIELDS),
+        Some(EXIT_ROOT) => {
+            fields_are(value, &EXIT_ROOT_FIELDS) && text("crossing").is_some_and(event) && text("exit").is_some_and(hex)
+        }
+        _ => false,
+    };
+    form && value.get("identity").and_then(identity_from_json).is_some_and(|block| block.puzzle == Puzzle::Jumbling)
+        && value.get("letters").and_then(Value::as_i64).is_some_and(|n| n >= 0)
+        && text("word").is_some_and(hex)
+}
+
+/// A witness replayed in the jumbling engine: the derived value at its end, that value's pose digest, the identity
+/// block of the pinned menu and the entry's crossing record.
 pub(crate) struct Entry {
     pub(crate) derived: Derived,
     pub(crate) digest: String,
@@ -126,14 +164,68 @@ pub(crate) fn replay_from_solved(twists: &Twists, letters: &[i32], labels: &str)
         }
         Ok(Derivation::Derived(derived)) => derived,
     };
-    match levels::labels(ctx, derived.state()).map_err(engine)? {
-        Partial::Total(total) if total.digest() == labels => {}
-        Partial::Total(_) => return Err(labels_only("the witness's replay does not reach the current labels".into())),
-        _ => return Err(labels_only("the witness's replay has no total labels".into())),
-    }
+    reaches_labels(twists, &derived, labels, "the witness's replay")?;
     let digest = derived.digest(ctx);
     let record = entry_record(&identity, letters);
     Ok(Entry { derived, digest, identity, record })
+}
+
+/// Replays `suffix`, the retained suffix's signed primitive letters, from `root`, the active exit's own poses, in the
+/// jumbling engine under the pinned menu (`levels::derive` with no protected piece), and checks that the replay's
+/// labels have the digest `labels`, the current labels' (JI.25 to JI.27, FP.32). An empty suffix keeps the exit's
+/// poses and their digest. Poses made under another menu are `KN1:input.identity_mismatch`. A suffix that does not
+/// replay, or whose labels are not total or are not the current ones, is not a valid witness, and with an active exit
+/// the solved witness does not apply: `KN5:input.jumble_on_labels_only`. `exit` is the exit's record and `crossing`
+/// its event, which the entry's record names ([`exit_root_record`]). An engine fault is
+/// `KN5:consistency.state_hash_mismatch`.
+pub(crate) fn replay_from_exit(
+    twists: &Twists,
+    root: &Derived,
+    exit: &Value,
+    crossing: &str,
+    suffix: &[i32],
+    labels: &str,
+) -> Result<Entry, Error> {
+    let ctx = &*twists.context;
+    let engine = |error: EngineError| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
+    let identity = ctx.identity(Some(&twists.menu));
+    if *root.identity() != identity {
+        let detail = "the exit's poses were made under another twist menu";
+        return Err(Error::new(c600_kernel::codes::IDENTITY_MISMATCH, detail));
+    }
+    let derived = if suffix.is_empty() {
+        root.clone()
+    } else {
+        let word = suffix.iter().map(|&letter| levels::primitive(ctx, i64::from(letter)));
+        let word = word.collect::<Result<Vec<_>, _>>().map_err(engine)?;
+        let derivation = levels::derive(ctx, Base::Derived(root), &identity, &word, ProtectionMode::Net, &[]);
+        match derivation.map_err(engine)? {
+            Err(refusal) => return Err(refusal.into()),
+            Ok(Derivation::Refused(refused)) => {
+                let message = refused.refusal.message;
+                let detail = format!("the retained suffix does not replay from the exit's poses: {message}");
+                return Err(Error::new(code::JUMBLE_ON_LABELS_ONLY, detail));
+            }
+            Ok(Derivation::Derived(derived)) => derived,
+        }
+    };
+    reaches_labels(twists, &derived, labels, "the exit root's replay")?;
+    let digest = derived.digest(ctx);
+    let record = exit_root_record(&identity, exit, crossing, suffix);
+    Ok(Entry { derived, digest, identity, record })
+}
+
+/// Checks that `derived`'s labels are total and have the digest `labels`, the current labels': otherwise `what` is no
+/// valid witness, `KN5:input.jumble_on_labels_only` (A5, JI.25). An engine fault is
+/// `KN5:consistency.state_hash_mismatch`.
+fn reaches_labels(twists: &Twists, derived: &Derived, labels: &str, what: &str) -> Result<(), Error> {
+    let engine = |error: EngineError| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
+    let labels_only = |detail: String| Error::new(code::JUMBLE_ON_LABELS_ONLY, detail);
+    match levels::labels(&twists.context, derived.state()).map_err(engine)? {
+        Partial::Total(total) if total.digest() == labels => Ok(()),
+        Partial::Total(_) => Err(labels_only(format!("{what} does not reach the current labels"))),
+        _ => Err(labels_only(format!("{what} has no total labels"))),
+    }
 }
 
 /// Replays `word`, the jumbling engine's journal from solved to a pose move (draft), flat from solved under the pinned
@@ -200,9 +292,6 @@ pub(crate) fn exit_record(
 pub(crate) fn exit_reads(value: &Value) -> bool {
     fn text<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
         value.get(key).and_then(Value::as_str)
-    }
-    fn event(name: &str) -> bool {
-        name.strip_prefix('e').is_some_and(|order| !order.is_empty() && order.bytes().all(|b| b.is_ascii_digit()))
     }
     let (Some(certificate), Some(journal)) = (value.get("certificate"), value.get("journal")) else {
         return false;
@@ -398,5 +487,38 @@ mod tests {
             assert!(!exit_reads(&changed), "{path:?}: {}", changed.canonical());
         }
         assert!(!exit_reads(&with(&record, &["certificate"], None)));
+    }
+
+    #[test]
+    fn an_exit_root_record_reads_and_no_other_form_does() {
+        let jumbling = block(Puzzle::Jumbling);
+        let digest = "0123456789abcdef".repeat(4);
+        let exit = exit_record(&jumbling, "e7", &[], &digest, &digest, "supplied", "contract");
+        let record = exit_root_record(&jumbling, &exit, "e9", &[1, -2, 1]);
+        assert!(crossing_reads(&record) && !exit_reads(&record), "{}", record.canonical());
+        assert_eq!(record.get("exit").and_then(Value::as_str), Some(crate::receipt::digest(&exit).as_str()));
+        assert_eq!(record.get("word").and_then(Value::as_str), Some(word_digest(&[1, -2, 1]).as_str()));
+        assert!(crossing_reads(&exit_root_record(&jumbling, &exit, "e9", &[])), "an empty suffix");
+        let text = |text: &str| Some(Value::String(text.to_owned()));
+        let cases: [(&[&str], Option<Value>); 12] = [
+            (&["crossing"], text("9")),
+            (&["crossing"], text("e")),
+            (&["crossing"], text("e9x")),
+            (&["crossing"], None),
+            (&["exit"], text(&digest.to_uppercase())),
+            (&["exit"], Some(exit.clone())),
+            (&["letters"], Some(Value::Int(-1))),
+            (&["word"], text("abc")),
+            (&["entrance"], text("solved_witness")),
+            (&["entrance"], text("exit")),
+            (&["identity"], Some(identity_json(&block(Puzzle::Full)))),
+            (&["extra"], Some(Value::Null)),
+        ];
+        for (path, new) in cases {
+            let changed = with(&record, path, new);
+            assert!(!crossing_reads(&changed), "{path:?}: {}", changed.canonical());
+        }
+        let solved = entry_record(&jumbling, &[1, -2]);
+        assert!(!crossing_reads(&with(&solved, &["entrance"], text(EXIT_ROOT))), "the solved witness's four fields");
     }
 }
