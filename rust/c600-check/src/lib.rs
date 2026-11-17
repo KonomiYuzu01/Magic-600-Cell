@@ -802,9 +802,9 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
 /// Whether a value of a type may hold a word, itself, in a record field, in a collection's elements, keys or values or
 /// in a callable's parameters or result, at any depth. A type variable, the unknown type included, may stand for a
 /// word, so it counts as one; a compressed word, a word equality key and a menu word hold a word's letters (LP2
-/// drafts). A callable
-/// counts by its parameters too, conservatively: one that takes a callback may hand the callback a word it holds.
-/// Every type is named, so a type added later is a compile error here rather than a silent "holds no word".
+/// drafts). A callable counts by its parameters too, conservatively: one that takes a callback may hand the callback
+/// a word it holds. Every type is named, so a type added later is a compile error here rather than a silent "holds
+/// no word".
 fn carries_word(ty: &Ty) -> bool {
     match ty {
         Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::MenuWord | Ty::Var(_) => true,

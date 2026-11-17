@@ -7,6 +7,8 @@ publish.workspace = true
 
 [dependencies]
 c600-digest = { path = "../c600-digest" }
+# The kernel API's jumbling half: KN3's exact rotation requests and the twist menu that `twist.apply` resolves against.
+c600-jumble = { path = "../c600-jumble" }
 c600-kernel = { path = "../c600-kernel" }
 
 [features]

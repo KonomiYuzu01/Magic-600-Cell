@@ -1,6 +1,6 @@
 //! The argument forms of H-08's types (draft; LP3's C6, its third common need). The layer checks them for a row it
-//! admits as a program job: a stored row an entry serves, or an overlay row. The layer's own rows check their arguments
-//! where they are built.
+//! admits as a program job: a stored row an entry serves, or an overlay row, and for `jumble.on`'s `revision`. The
+//! layer's other rows check their arguments where they are built.
 
 use std::collections::BTreeMap;
 
@@ -75,24 +75,39 @@ fn form(ty: &str, value: &Value) -> Option<bool> {
     })
 }
 
-/// Checks `args` against `row`'s argument types.
+/// Every argument of `args` that `row` types, with its name and type.
+fn typed<'a>(row: &'a Row, args: &'a BTreeMap<String, Value>) -> impl Iterator<Item = (&'a str, &'a str, &'a Value)> {
+    args.iter().filter_map(|(name, value)| Some((name.as_str(), row.arguments.get(name)?.as_str(), value)))
+}
+
+/// Checks `args` against `row`'s argument types: [`check_forms`], then [`check_revisions`], so a malformed request is
+/// never answered as stale.
+pub(crate) fn check(row: &Row, args: &BTreeMap<String, Value>, current: &Revision) -> Result<(), Error> {
+    check_forms(row, args)?;
+    check_revisions(row, args, current)
+}
+
+/// Checks the forms of `args` against `row`'s argument types.
 ///
 /// - `Nat` is an integer of at least 0, `Text` a string, a choice of words one of its words, `CellId` an integer from
 ///   0 to 599, `CellIdPair` a list of two `CellId`s, and `RevisionRef` KN0.2's nine-key object, its text fields text
 ///   and its counters naturals. An optional type `T?` has `T`'s form when it is given.
 /// - A type whose form the layer does not know yet passes unchecked.
-/// - A malformed argument is refused with `KN5:input.argument_form`. Then a `RevisionRef` that names a revision other
-///   than `current` is refused with `KN5:stale.revision_changed` (EV4.14: a named revision is current only if every
-///   field is equal), so a malformed request is never answered as stale.
-pub(crate) fn check(row: &Row, args: &BTreeMap<String, Value>, current: &Revision) -> Result<(), Error> {
-    let typed = || args.iter().filter_map(|(name, value)| Some((name, row.arguments.get(name)?.as_str(), value)));
-    for (name, ty, value) in typed() {
+/// - A malformed argument is refused with `KN5:input.argument_form`.
+pub(crate) fn check_forms(row: &Row, args: &BTreeMap<String, Value>) -> Result<(), Error> {
+    for (name, ty, value) in typed(row, args) {
         if form(ty, value) == Some(false) {
             return Err(Error::new(code::ARGUMENT_FORM, format!("`{name}` is not a {ty}")));
         }
     }
+    Ok(())
+}
+
+/// A `RevisionRef` argument that names a revision other than `current` is refused with `KN5:stale.revision_changed`
+/// (EV4.14: a named revision is current only if every field is equal).
+pub(crate) fn check_revisions(row: &Row, args: &BTreeMap<String, Value>, current: &Revision) -> Result<(), Error> {
     let now = current.to_json();
-    for (name, ty, value) in typed() {
+    for (name, ty, value) in typed(row, args) {
         if ty.strip_suffix('?').unwrap_or(ty) == "RevisionRef" && *value != now {
             return Err(Error::new(code::REVISION_CHANGED, format!("`{name}` names a revision that is not current")));
         }

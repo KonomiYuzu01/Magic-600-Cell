@@ -289,3 +289,19 @@ class RustJumbleEngine:
     def nu_constants(self):
         """The coordinates, the fixed ones under I_a, the pinned convention and digests, and the frame groups."""
         return self.call('nu_constants')
+
+    # ------------------------------------------------------------------- correction catalogue (EH-11)
+    def corrections(self):
+        """The shipped catalogue: format, binding, source, coordinate names and the 36 corrections in id order."""
+        return self.call('corrections')
+
+    def correction_lookup(self, correction_id, *, twists=False):
+        """One correction by id, or the refusal of an unknown id; `twists` adds its literal word as twists of
+        the started state's menu, which must be I_a by identity and order digest."""
+        return self.call('correction_lookup', id=correction_id, twists=twists)
+
+    def correction_set_check(self, corrections, *, state=None, journal=None, derived=None):
+        """KN2.4's row of the current or a stored `state`, with a `journal` of records from solved that
+        witnesses it, or of a `derived` value, plus the rows of the drafted set: (id, m) pairs, m any integer."""
+        pairs = [[int(i), int(m)] for i, m in corrections]
+        return self.call('correction_set_check', corrections=pairs, state=state, journal=journal, derived=derived)

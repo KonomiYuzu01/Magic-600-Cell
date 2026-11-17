@@ -36,20 +36,43 @@
 //! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
 //! preview through the built-in chain presents it, and a word commit's token binds that frame's stamp (ONE.41).
 //!
+//! `twist.apply` ([`TWIST_ROW`]) is a live twist (ONE.46, ONE.78): a commit with no preview whose token binds the state
+//! and protection revisions (LI.6). Its `cap` and `rotation` carry KN3.7's exact request binding ([`crate::twist`]),
+//! which the layer resolves against the twist menu the host pinned ([`CommandLayer::pin_menu`]); on 600-cell-Full the
+//! resolved item becomes its retained word, which the kernel derives under the protection policy in force at the
+//! current revision. Like a word commit it ends the pending preview and cancels the jobs that read the replaced
+//! revision, except file jobs (LI.32).
+//!
+//! `jumble.on` ([`JUMBLE_ON_ROW`]) is A5's entry (ONE.54, ONE.55, ONE.80; draft): a crossing commit from Jumble off
+//! into Jumble on under the pinned menu ([`crate::jumble`]). Its witness is JI.25's solved witness, the chronological
+//! literal retained path from the session's start, which must be solved, to the head, replayed in the jumbling engine;
+//! labels alone are refused (`KN5:input.jumble_on_labels_only`). The crossing is a node of the move tree that holds no
+//! retained recipe; the revision's mode becomes [`JUMBLE_ON_MODE`] and its digest the pose digest. With Jumble on, the
+//! retained workflow's rows (`operation.preview`, `operation.execute`, `twist.apply`) and `jumble.on` itself are
+//! refused with `KN5:input.retained_tool_needs_jumble_off` (LG2.8); protection, policy and record rows stay. An undo of
+//! the entry returns to the exact Jumble off state before it, and a redo replays the witness again (ONE.81, JI.27).
+//!
 //! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
 //! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
-//! epoch (KN5.23, L10).
+//! epoch (KN5.23, L10). A session that crossed into Jumble on reopens with [`CommandLayer::open_with_menu`], which pins
+//! the menu before the replay.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+use c600_jumble::levels::Derived;
+use c600_jumble::rotation;
+use c600_jumble::twist::Menu;
+use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    Derivation, Effect, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
+    Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Protection, ProtectionMode, Recipe, Snapshot, Step,
+    SupportRow, Verdict,
 };
 
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
+use crate::jumble::{self, JUMBLE_ON_ROW};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
@@ -60,10 +83,13 @@ use crate::store::{
 };
 use crate::table::{Kind, Lane, Overlay, Row, Table};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
+use crate::twist::{self, Twists, TWIST_ROW};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
-/// The mode of every revision here: the jumbling engine joins when M5 is on main.
+/// The mode of a revision with Jumble off: a session starts with Jumble off.
 pub const MODE: &str = "jumble_off";
+/// The mode of a revision with Jumble on, after [`JUMBLE_ON_ROW`]'s crossing (KN0.2).
+pub const JUMBLE_ON_MODE: &str = "jumble_on";
 /// H-08's row that sets the protection policy, Net or Strict.
 pub const POLICY_ROW: &str = "protection.policy.set";
 /// A star certificate failure has no registered code yet (draft).
@@ -215,6 +241,42 @@ pub struct ProgramJob {
     pub overlay: Overlay,
 }
 
+/// A program job's output as the runtime's sinks gave it (LP3's C6, its second common need; draft): the value its
+/// entry returned, the views it published, in order, and the workspace records it wrote, by name. The runtime's
+/// boundary keeps a record's last write, so a name appears once.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JobOutput {
+    pub value: Value,
+    pub views: Vec<Value>,
+    pub records: BTreeMap<String, RecordValue>,
+}
+
+impl JobOutput {
+    /// An output that publishes no view and writes no record: what [`CommandLayer::finish_program_job`] reports.
+    pub fn of(value: Value) -> JobOutput {
+        JobOutput { value, views: Vec::new(), records: BTreeMap::new() }
+    }
+
+    /// The digest a completion's result reference carries (draft): the value's own digest when the job published no
+    /// view and wrote no record, so [`CommandLayer::finish_program_job`]'s receipts keep their digest; otherwise the
+    /// SHA-256 of the canonical `{"records", "value", "views"}`, each record in [`RecordWrite::to_json`]'s form.
+    pub fn digest(&self) -> String {
+        if self.views.is_empty() && self.records.is_empty() {
+            return digest(&self.value);
+        }
+        let records = self
+            .records
+            .iter()
+            .map(|(name, value)| RecordWrite { name: name.clone(), value: Some(value.clone()) }.to_json())
+            .collect();
+        digest(&json::object([
+            ("records", Value::Array(records)),
+            ("value", self.value.clone()),
+            ("views", Value::Array(self.views.clone())),
+        ]))
+    }
+}
+
 enum JobKind {
     Preview { recipe: Recipe, draft: String, resolved: Option<ResolvedDraft>, caller: Caller },
     Program(ProgramJob),
@@ -261,6 +323,13 @@ enum Change {
         before: ProtectionMode,
         after: ProtectionMode,
     },
+    /// A crossing into Jumble on: the head before it, its own node, and the jumbling identity block it was made under,
+    /// which a redo needs pinned again.
+    Crossing {
+        before: u64,
+        after: u64,
+        identity: IdentityBlock,
+    },
 }
 
 /// What an adoption does to the move tree and the stacks.
@@ -277,6 +346,24 @@ enum Tree {
     None,
 }
 
+/// The jumbling engine's value at the head while Jumble is on, with its pose digest.
+#[derive(Clone, Debug)]
+struct Jumbled {
+    derived: Derived,
+    digest: String,
+}
+
+/// What an adoption does to the mode.
+#[derive(Clone, Debug)]
+enum Side {
+    /// The mode stays.
+    Stay,
+    /// Jumble turns on at this value.
+    On(Jumbled),
+    /// Jumble turns off: the retained state is the current one again.
+    Off,
+}
+
 /// Everything step 10 applies, computed before step 9.
 struct Adoption {
     transaction: Transaction,
@@ -288,6 +375,8 @@ struct Adoption {
     tree: Tree,
     /// The preview a word commit commits.
     preview: Option<u64>,
+    /// What the action does to the mode: a crossing turns Jumble on, and its undo turns it off.
+    side: Side,
 }
 
 /// Who asked for an action, as its transaction records it.
@@ -376,6 +465,8 @@ fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
         && planned.result == stored.result
         && planned.record == stored.record
         && planned.policy == stored.policy
+        && planned.records == stored.records
+        && planned.crossing == stored.crossing
         && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
@@ -430,6 +521,10 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     records: BTreeMap<String, WorkspaceRecord>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
     provenance: Option<Box<dyn Provenance>>,
+    /// The twist menu the host pinned (KN3.8). Without one, `twist.apply` and `jumble.on` are refused.
+    twists: Option<Twists>,
+    /// The jumbling engine's value at the head while Jumble is on (draft; [`crate::jumble`]). `None` with Jumble off.
+    jumbled: Option<Jumbled>,
     history: BTreeMap<u64, PreviewState>,
     used: BTreeSet<u64>,
     receipts: BTreeMap<Key, Record>,
@@ -482,6 +577,8 @@ impl<S: Store> CommandLayer<S> {
             run: None,
             records: BTreeMap::new(),
             provenance: None,
+            twists: None,
+            jumbled: None,
             history: BTreeMap::new(),
             used: BTreeSet::new(),
             receipts: BTreeMap::new(),
@@ -535,8 +632,41 @@ impl<S: Store> CommandLayer<S> {
     /// move tree, the stacks and the durable receipts are restored, and the layer starts a fresh random epoch that no
     /// earlier open of the session drew (L10). A transaction that does not replay, or a record the store could not
     /// read, leaves the layer in read-only recovery after the last transaction that replayed. A command ID the store
-    /// does not hold answers `unknown_outcome` ([`CommandLayer::kernel_outcome`], LI.30).
-    pub fn open(kernel: Arc<Kernel>, table: Table, secret: Secret, mut store: S) -> Result<CommandLayer<S>, Error>
+    /// does not hold answers `unknown_outcome` ([`CommandLayer::kernel_outcome`], LI.30). A crossing into Jumble on
+    /// replays only under its twist menu ([`CommandLayer::open_with_menu`]); here it leaves the layer in read-only
+    /// recovery before it.
+    pub fn open(kernel: Arc<Kernel>, table: Table, secret: Secret, store: S) -> Result<CommandLayer<S>, Error>
+    where
+        S: Reopen,
+    {
+        Self::open_inner(kernel, table, secret, store, None)
+    }
+
+    /// [`CommandLayer::open`] with the twist menu `menu`, read in the exact model `context`, pinned before the replay
+    /// ([`CommandLayer::pin_menu`]; draft), so a crossing into Jumble on replays its witness under it. A crossing made
+    /// under another menu does not replay, and the layer stays in read-only recovery before it. A `context` of another
+    /// model is refused as `pin_menu` refuses it (`KN1:input.identity_mismatch`), and the layer does not open.
+    pub fn open_with_menu(
+        kernel: Arc<Kernel>,
+        table: Table,
+        secret: Secret,
+        store: S,
+        context: Arc<Context>,
+        menu: Menu,
+    ) -> Result<CommandLayer<S>, Error>
+    where
+        S: Reopen,
+    {
+        Self::open_inner(kernel, table, secret, store, Some((context, menu)))
+    }
+
+    fn open_inner(
+        kernel: Arc<Kernel>,
+        table: Table,
+        secret: Secret,
+        mut store: S,
+        pin: Option<(Arc<Context>, Menu)>,
+    ) -> Result<CommandLayer<S>, Error>
     where
         S: Reopen,
     {
@@ -564,6 +694,9 @@ impl<S: Store> CommandLayer<S> {
             digest: initial.digest().to_owned(),
         };
         let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        if let Some((context, menu)) = pin {
+            layer.pin_menu(context, menu)?;
+        }
         layer.epochs.extend(history.epochs.iter().copied());
         for transaction in &history.transactions {
             if let Err(error) = layer.replay(transaction) {
@@ -586,6 +719,8 @@ impl<S: Store> CommandLayer<S> {
         }
         let meta = Meta::replay(stored);
         let planned = match stored.kind {
+            // A twist's rotation record is adopted as stored: the replay derives the recorded recipe and runs neither
+            // the producer nor the chooser again (KN3.9).
             TransactionKind::Commit => {
                 let recipe = self.kernel.recipe(&stored.recipe)?;
                 let none = ProtectedSet::none();
@@ -614,7 +749,8 @@ impl<S: Store> CommandLayer<S> {
                     return Err(broken("a workspace completion names no job and result"));
                 };
                 self.jobs_issued = self.jobs_issued.max(job);
-                self.workspace_adoption(meta, job, result)
+                // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
+                self.workspace_adoption(meta, job, result, stored.records.clone())
             }
             // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
             TransactionKind::Record => match stored.record.clone() {
@@ -625,6 +761,17 @@ impl<S: Store> CommandLayer<S> {
                 Some(policy) => self.plan_policy(meta, policy),
                 None => return Err(broken("a policy change names no policy")),
             },
+            // A crossing replays its witness under the menu pinned before the replay, and its record must be the one
+            // the replay makes ([`agrees`]).
+            TransactionKind::Crossing => {
+                if stored.row != JUMBLE_ON_ROW || self.jumbled.is_some() {
+                    return Err(broken("a crossing is not an entry from Jumble off"));
+                }
+                if self.twists.is_none() {
+                    return Err(broken("a crossing replays only under its twist menu (open_with_menu)"));
+                }
+                self.plan_entry(meta)?
+            }
         };
         if !agrees(&planned.transaction, stored) {
             return Err(broken("the replay does not reach the recorded action"));
@@ -701,8 +848,32 @@ impl<S: Store> CommandLayer<S> {
         &self.revision
     }
 
+    /// The retained state at the head. With Jumble on, the retained state the crossing entered from;
+    /// [`CommandLayer::jumbled`] is the head's value.
     pub fn snapshot(&self) -> &Snapshot {
         &self.current
+    }
+
+    /// The jumbling engine's value at the head with Jumble on, under the pinned menu; `None` with Jumble off (draft).
+    pub fn jumbled(&self) -> Option<&Derived> {
+        self.jumbled.as_ref().map(|jumbled| &jumbled.derived)
+    }
+
+    /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
+    /// revision's digest and an action's `pre` and `post` are this digest.
+    fn state_digest(&self) -> &str {
+        match &self.jumbled {
+            Some(jumbled) => &jumbled.digest,
+            None => self.current.digest(),
+        }
+    }
+
+    /// LG2.8: the retained workflow's rows need Jumble off (`KN5:input.retained_tool_needs_jumble_off`).
+    fn retained_mode(&self) -> Result<(), Error> {
+        match self.jumbled {
+            Some(_) => Err(Error::new(code::RETAINED_TOOL_NEEDS_JUMBLE_OFF, "the retained workflow needs Jumble off")),
+            None => Ok(()),
+        }
     }
 
     pub fn protected(&self) -> &ProtectedSet {
@@ -766,7 +937,7 @@ impl<S: Store> CommandLayer<S> {
         PreviewDeps {
             epoch: self.revision.epoch,
             identity: self.revision.identity.clone(),
-            mode: MODE,
+            mode: self.revision.mode,
             state: self.revision.state,
             protection: self.revision.protection,
             draft: draft.to_owned(),
@@ -908,6 +1079,28 @@ impl<S: Store> CommandLayer<S> {
         self.generation += 1;
     }
 
+    /// Pins the twist menu that `twist.apply` resolves its exact requests against and that `jumble.on` enters under
+    /// (KN3.8; draft), with the exact model `context` it is read in, which must be the session's model
+    /// (`KN1:input.identity_mismatch`). A pin replaces the one before; with Jumble on, only by a menu with the
+    /// identity block the session entered under (`KN1:input.identity_mismatch` otherwise). Without a pin, `twist.apply`
+    /// and `jumble.on` are refused with `KN5:input.row_not_built`. The pin is a host setting: the journal does not keep
+    /// it, and a reopened layer needs it again ([`CommandLayer::open_with_menu`]).
+    pub fn pin_menu(&mut self, context: Arc<Context>, menu: Menu) -> Result<(), Error> {
+        if context.model.model_id != self.revision.identity {
+            return Err(Error::new(
+                c600_kernel::codes::IDENTITY_MISMATCH,
+                "the twist menu's model is not the session's model",
+            ));
+        }
+        let menu = Arc::new(menu);
+        if self.jumbled.as_ref().is_some_and(|jumbled| context.identity(Some(&menu)) != *jumbled.derived.identity()) {
+            return Err(Error::new(c600_kernel::codes::IDENTITY_MISMATCH, "Jumble is on under another twist menu"));
+        }
+        self.twists = Some(Twists { context, menu });
+        self.generation += 1;
+        Ok(())
+    }
+
     /// The workspace records by name, each with its version and value (KN5's stage 3).
     pub fn records(&self) -> &BTreeMap<String, WorkspaceRecord> {
         &self.records
@@ -986,11 +1179,15 @@ impl<S: Store> CommandLayer<S> {
             return Err(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"));
         }
         match row.id.as_str() {
-            "operation.preview" => self.exclusive_free(),
+            "operation.preview" => {
+                self.retained_mode()?;
+                self.exclusive_free()
+            }
             "operation.execute" => {
                 if self.commit_held {
                     return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
                 }
+                self.retained_mode()?;
                 let Some(p) = self.slot.as_ref().filter(|p| p.state == PreviewState::Presented) else {
                     return Err(Error::new(code::NO_FRESH_PREVIEW, "no presented preview"));
                 };
@@ -1026,6 +1223,24 @@ impl<S: Store> CommandLayer<S> {
                     None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
                 }
             }
+            TWIST_ROW => match (&self.twists, self.commit_held) {
+                (None, _) => {
+                    Err(Error::new(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu")))
+                }
+                (Some(_), true) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
+                (Some(_), false) => self.retained_mode(),
+            },
+            JUMBLE_ON_ROW => match (&self.twists, self.commit_held, &self.jumbled) {
+                (None, _, _) => Err(Error::new(
+                    code::ROW_NOT_BUILT,
+                    format!("`{JUMBLE_ON_ROW}` needs the host's pinned twist menu"),
+                )),
+                (Some(_), true, _) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
+                (Some(_), false, Some(_)) => {
+                    Err(Error::new(code::RETAINED_TOOL_NEEDS_JUMBLE_OFF, "Jumble is on already"))
+                }
+                (Some(_), false, None) => Ok(()),
+            },
             "protection.orbit.set" | POLICY_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
@@ -1199,6 +1414,8 @@ impl<S: Store> CommandLayer<S> {
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
+            TWIST_ROW => self.twist(caller, invocation, request),
+            JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
                 self.admit_program(caller, invocation, &row)
@@ -1218,6 +1435,7 @@ impl<S: Store> CommandLayer<S> {
     /// `{"record": name}`, a `ResolvedDraftRef` to a workspace record that holds a word's letters, resolved now
     /// ([`CommandLayer::resolve_record`]). A refused draft takes no job and leaves the slot as it was (KN5.11).
     fn admit_preview(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        self.retained_mode()?;
         let draft = invocation.args.get("draft").expect("the form check saw the draft");
         let only = |key: &str| draft.get(key).filter(|_| draft.as_object().is_some_and(|o| o.len() == 1));
         let (recipe, digested, resolved) = if let Some(recipe) = only("recipe") {
@@ -1426,6 +1644,7 @@ impl<S: Store> CommandLayer<S> {
         let binding = self.authenticate(invocation)?;
         self.commit_lane()?;
         self.bound(&binding, invocation)?;
+        self.retained_mode()?;
         let Some(bound) = binding.preview.as_ref() else {
             return refused(code::TOKEN_MISMATCH, "a word commit's token binds the presented preview");
         };
@@ -1515,6 +1734,9 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: None,
+            records: Vec::new(),
+            rotation: None,
+            crossing: None,
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -1524,6 +1746,7 @@ impl<S: Store> CommandLayer<S> {
             head: order,
             tree: Tree::Push { node: Some((order, node)), change },
             preview,
+            side: Side::Stay,
         }
     }
 
@@ -1548,8 +1771,13 @@ impl<S: Store> CommandLayer<S> {
     /// puzzle ends the pending preview (committed when it is the one committed, discarded otherwise) and cancels the
     /// jobs on the replaced revision, except file jobs (KN5.18).
     fn adopt(&mut self, adoption: Adoption) -> Receipt {
-        let Adoption { transaction, state, protected, head, tree, preview } = adoption;
-        let moved = state.is_some();
+        let Adoption { transaction, state, protected, head, tree, preview, side } = adoption;
+        let moved = state.is_some() || !matches!(side, Side::Stay);
+        match side {
+            Side::Stay => {}
+            Side::On(jumbled) => self.jumbled = Some(jumbled),
+            Side::Off => self.jumbled = None,
+        }
         if let Some(state) = state {
             self.current = state;
         }
@@ -1559,11 +1787,25 @@ impl<S: Store> CommandLayer<S> {
         self.revision = transaction.revision.clone();
         self.order = transaction.order;
         self.head = head;
-        // A record write, or its undo or redo: the record's version advances and never goes back (KN0.8).
-        if let Some(RecordWrite { name, value }) = &transaction.record {
+        // A record write, or its undo or redo, or a workspace row's writes: each record's version advances and never
+        // goes back (KN0.8).
+        for RecordWrite { name, value } in transaction.record.iter().chain(&transaction.records) {
             let record = self.records.entry(name.clone()).or_default();
             record.version += 1;
             record.value = value.clone();
+        }
+        // No undo reaches a workspace row's writes, so an undo or redo of an earlier write of one of its records would
+        // write over them. Those earlier writes leave both stacks (draft).
+        if !transaction.records.is_empty() {
+            let written: BTreeSet<&str> = transaction.records.iter().map(|write| write.name.as_str()).collect();
+            let rewrites = |order: &u64| matches!(self.changes.get(order), Some(Change::Record { name, .. }) if written.contains(name.as_str()));
+            let dropped: Vec<u64> =
+                self.undo.iter().chain(&self.redo).filter(|order| rewrites(order)).copied().collect();
+            self.undo.retain(|order| !dropped.contains(order));
+            self.redo.retain(|order| !dropped.contains(order));
+            for order in dropped {
+                self.changes.remove(&order);
+            }
         }
         // A policy change, or its undo or redo.
         if let Some(policy) = transaction.policy {
@@ -1633,6 +1875,60 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
+    // ----- twist.apply -----
+
+    /// `twist.apply` (A6; ONE.46, ONE.78): a live twist, committed at once with no preview, under the protection in
+    /// force at the current revision. Before the token is spent, the arguments must form KN3.7's binding
+    /// (`KN2:input.rotation_request_malformed`), which must resolve against the pinned menu (`KN2:input.*`, KN3.8: a free
+    /// binding is `menu_binding_mismatch`, as is a menu pin other than the pinned menu's; a direct rotation off the menu
+    /// is `twist_off_menu`), and the item must be a retained one (`KN5:input.menu_word_needs_jumble_on` for a jumble
+    /// item, JI.35) that moves a piece (`KN2:input.recipe_shape` for the identity). Then the commit steps run: the token
+    /// (step 3), the commit lane (step 4), its binding to this invocation and to the state and protection revisions
+    /// (step 5 and LI.6: `KN5:stale.revision_changed`), the head hash (step 7), the kernel's derivation under the
+    /// policy in force (step 8: `KN2:protection.orbit_would_move`), the durable transaction with its rotation record
+    /// (step 9) and the adoption (step 10, LI.32). A refusal changes nothing.
+    fn twist(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let Some(twists) = &self.twists else {
+            return refused(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu"));
+        };
+        let binding = twist::binding(&invocation.args)?;
+        let resolution = rotation::resolve(&twists.context, Some(&*twists.menu), &binding)?;
+        // With Jumble on, the mode check after the token refuses the row (LG2.8), so the item's level is judged only
+        // with Jumble off.
+        let word = match self.jumbled {
+            Some(_) => None,
+            None => Some(rotation::retained_word(&twists.context, &resolution)?),
+        };
+        if word.as_ref().is_some_and(Vec::is_empty) {
+            return refused(c600_kernel::codes::RECIPE_SHAPE, "the menu's identity item moves no piece");
+        }
+        let recipe = word.map(|word| self.kernel.word(&word)).transpose()?;
+        let token = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&token, invocation)?;
+        self.retained_mode()?;
+        let recipe = recipe.expect("with Jumble off, the item's retained word is a recipe");
+        if token.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        if self.current.digest() != self.nodes[&self.head].digest {
+            return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state");
+        }
+        let derived = match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
+            Derivation::Derived(derived) => derived,
+            Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
+        };
+        let meta = Meta::of(caller, invocation, request);
+        let mut adoption = self.commit_adoption(meta, recipe, derived.state, derived.word, None);
+        adoption.transaction.rotation = Some(resolution.to_json());
+        self.transact(adoption)
+    }
+
     // ----- session.undo and session.redo -----
 
     /// The recipe from the head to node `to`: the inverses of the nodes up to their common ancestor, then the nodes
@@ -1654,13 +1950,17 @@ impl<S: Store> CommandLayer<S> {
             down.push(b);
             b = self.nodes[&b].parent;
         }
-        let recipe = |node: &u64| self.nodes[node].recipe.as_ref().expect("every node but the start is a commit");
+        // Every node but the start is a commit or a crossing, and only a commit holds a retained recipe.
+        let recipe = |node: &u64| {
+            let detail = "the path crosses a node that holds no retained recipe";
+            self.nodes[node].recipe.as_ref().ok_or_else(|| Error::new(code::STATE_HASH_MISMATCH, detail))
+        };
         let mut steps = Vec::new();
         for node in &up {
-            steps.extend(steps_json(recipe(node), true));
+            steps.extend(steps_json(recipe(node)?, true));
         }
         for node in down.iter().rev() {
-            steps.extend(steps_json(recipe(node), false));
+            steps.extend(steps_json(recipe(node)?, false));
         }
         Ok(self.kernel.recipe(&Value::Array(steps))?)
     }
@@ -1669,7 +1969,7 @@ impl<S: Store> CommandLayer<S> {
     /// (LI.26's normal permission path); it must reach the node's recorded digest. Returns the state and the path's
     /// literal digest.
     fn walk(&self, to: u64, protected: &ProtectedSet) -> Result<(Snapshot, String), Error> {
-        if self.current.digest() != self.nodes[&self.head].digest {
+        if self.state_digest() != self.nodes[&self.head].digest {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
         }
         if to == self.head {
@@ -1703,7 +2003,7 @@ impl<S: Store> CommandLayer<S> {
         };
         let change = self.changes.get(&target).expect("a stacked action keeps its change").clone();
         let order = self.order + 1;
-        let digest = self.current.digest().to_owned();
+        let digest = self.state_digest().to_owned();
         let mut transaction = Transaction {
             kind,
             event: format!("e{order}"),
@@ -1724,7 +2024,11 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: None,
+            records: Vec::new(),
+            rotation: None,
+            crossing: None,
         };
+        let side = Side::Stay;
         match change {
             Change::Head { before, after } => {
                 let to = if direction == Direction::Undo { before } else { after };
@@ -1734,7 +2038,7 @@ impl<S: Store> CommandLayer<S> {
                 transaction.revision.head = format!("e{to}");
                 transaction.revision.state += 1;
                 transaction.revision.digest = state.digest().to_owned();
-                Ok(Adoption { transaction, state: Some(state), protected: None, head: to, tree, preview: None })
+                Ok(Adoption { transaction, state: Some(state), protected: None, head: to, tree, preview: None, side })
             }
             Change::Protection { before, after } => {
                 let to = if direction == Direction::Undo { before } else { after };
@@ -1749,7 +2053,8 @@ impl<S: Store> CommandLayer<S> {
                 transaction.orbits = to;
                 transaction.revision.workspace += 1;
                 transaction.revision.protection += 1;
-                Ok(Adoption { transaction, state: None, protected: Some(set), head: self.head, tree, preview: None })
+                let protected = Some(set);
+                Ok(Adoption { transaction, state: None, protected, head: self.head, tree, preview: None, side })
             }
             // A workspace inverse: the record takes its value before or after the write again, and its version and the
             // workspace revision advance (KN5.20, LI.26).
@@ -1757,7 +2062,7 @@ impl<S: Store> CommandLayer<S> {
                 let to = if direction == Direction::Undo { before } else { after };
                 transaction.record = Some(RecordWrite { name, value: to });
                 transaction.revision.workspace += 1;
-                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None })
+                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
             }
             // A workspace inverse: the policy before or after the change is in force again, and the workspace and
             // protection revisions advance, as for a protection change. H-08 gives the row no `confirm` gate.
@@ -1766,7 +2071,50 @@ impl<S: Store> CommandLayer<S> {
                 transaction.policy = Some(to);
                 transaction.revision.workspace += 1;
                 transaction.revision.protection += 1;
-                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None })
+                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
+            }
+            // An undo of a crossing returns to the exact Jumble off state before the entry; a redo replays its solved
+            // witness again, under a pinned menu with the identity block the entry was made under (ONE.81, JI.27).
+            Change::Crossing { before, after, identity } => {
+                let (from, to) = if direction == Direction::Undo { (after, before) } else { (before, after) };
+                if self.head != from || self.state_digest() != self.nodes[&from].digest {
+                    let detail = "the head hash differs from the head's recorded state";
+                    return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                }
+                let (mode, digest, side) = match direction {
+                    Direction::Undo => {
+                        // The retained state does not move while Jumble is on.
+                        if self.current.digest() != self.nodes[&to].digest {
+                            let detail = "the retained state is not the one the crossing entered from";
+                            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                        }
+                        (MODE, self.current.digest().to_owned(), Side::Off)
+                    }
+                    Direction::Redo => {
+                        let Some(twists) = &self.twists else {
+                            let detail = format!("`{JUMBLE_ON_ROW}` needs the host's pinned twist menu");
+                            return Err(Error::new(code::ROW_NOT_BUILT, detail));
+                        };
+                        if twists.context.identity(Some(&*twists.menu)) != identity {
+                            let detail = "the pinned twist menu is not the one the crossing was made under";
+                            return Err(Error::new(c600_kernel::codes::IDENTITY_MISMATCH, detail));
+                        }
+                        let letters = self.solved_witness()?;
+                        let entry = jumble::replay_from_solved(twists, &letters, self.current.digest())?;
+                        if entry.digest != self.nodes[&to].digest {
+                            let detail = "the witness does not reach the crossing's recorded poses";
+                            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                        }
+                        let digest = entry.digest.clone();
+                        (JUMBLE_ON_MODE, digest, Side::On(Jumbled { derived: entry.derived, digest: entry.digest }))
+                    }
+                };
+                transaction.post = digest.clone();
+                transaction.revision.mode = mode;
+                transaction.revision.head = format!("e{to}");
+                transaction.revision.state += 1;
+                transaction.revision.digest = digest;
+                Ok(Adoption { transaction, state: None, protected: None, head: to, tree, preview: None, side })
             }
         }
     }
@@ -1809,7 +2157,7 @@ impl<S: Store> CommandLayer<S> {
             return Err(Error::new(code::CONFIRMATION_REQUIRED, "releasing a protected orbit needs confirmation"));
         }
         let order = self.order + 1;
-        let digest = self.current.digest().to_owned();
+        let digest = self.state_digest().to_owned();
         let mut revision = self.revision.clone();
         revision.workspace += 1;
         revision.protection += 1;
@@ -1833,10 +2181,14 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: None,
+            records: Vec::new(),
+            rotation: None,
+            crossing: None,
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
-        Ok(Adoption { transaction, state: None, protected: Some(set), head: self.head, tree, preview: None })
+        let (protected, side) = (Some(set), Side::Stay);
+        Ok(Adoption { transaction, state: None, protected, head: self.head, tree, preview: None, side })
     }
 
     fn set_orbits(
@@ -1863,7 +2215,7 @@ impl<S: Store> CommandLayer<S> {
     /// gate, so no direction needs a confirmation.
     fn plan_policy(&self, meta: Meta, policy: ProtectionMode) -> Adoption {
         let order = self.order + 1;
-        let digest = self.current.digest().to_owned();
+        let digest = self.state_digest().to_owned();
         let mut revision = self.revision.clone();
         revision.workspace += 1;
         revision.protection += 1;
@@ -1887,9 +2239,12 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: Some(policy),
+            records: Vec::new(),
+            rotation: None,
+            crossing: None,
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
-        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
+        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
 
     fn set_policy(
@@ -1906,11 +2261,11 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// A language-defined workspace row's completion: one durable action that advances the workspace revision and
-    /// keeps the state, the preview slot and the jobs (KN5.23).
-    fn workspace_adoption(&self, meta: Meta, job: u64, result: String) -> Adoption {
+    /// A language-defined workspace row's completion: one durable action that advances the workspace revision, writes
+    /// the job's records and keeps the state, the preview slot and the jobs (KN5.23). No undo reaches it.
+    fn workspace_adoption(&self, meta: Meta, job: u64, result: String, records: Vec<RecordWrite>) -> Adoption {
         let order = self.order + 1;
-        let digest = self.current.digest().to_owned();
+        let digest = self.state_digest().to_owned();
         let mut revision = self.revision.clone();
         revision.workspace += 1;
         let transaction = Transaction {
@@ -1933,8 +2288,12 @@ impl<S: Store> CommandLayer<S> {
             result: Some(result),
             record: None,
             policy: None,
+            records,
+            rotation: None,
+            crossing: None,
         };
-        Adoption { transaction, state: None, protected: None, head: self.head, tree: Tree::None, preview: None }
+        let tree = Tree::None;
+        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
 
     // ----- workspace.set -----
@@ -1967,7 +2326,7 @@ impl<S: Store> CommandLayer<S> {
     /// slot and the jobs stay (KN5.18). It is undoable as a workspace inverse.
     fn plan_record(&self, meta: Meta, name: String, value: RecordValue) -> Adoption {
         let order = self.order + 1;
-        let digest = self.current.digest().to_owned();
+        let digest = self.state_digest().to_owned();
         let mut revision = self.revision.clone();
         revision.workspace += 1;
         let before = self.records.get(&name).and_then(|record| record.value.clone());
@@ -1991,9 +2350,134 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
             policy: None,
+            records: Vec::new(),
+            rotation: None,
+            crossing: None,
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
-        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
+        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
+    }
+
+    // ----- jumble.on -----
+
+    /// `jumble.on` (A5; ONE.54, ONE.55, ONE.80; draft): a crossing commit from Jumble off into Jumble on. Before the
+    /// token is spent: the pinned menu (`KN5:input.row_not_built`) and the `revision` argument's form
+    /// (`KN5:input.argument_form`). Then ONE.80's order: the token (step 3), the commit lane (step 4), its binding to
+    /// this invocation and the session's identity block (step 5); the mode (`KN5:input.retained_tool_needs_jumble_off`:
+    /// an already-on position needs no new entry); the named revision and the token's state and protection revisions
+    /// (`KN5:stale.revision_changed`); the head hash (`KN5:consistency.state_hash_mismatch`); A5's witness
+    /// ([`CommandLayer::plan_entry`]); the durable transaction with its crossing record; the adoption. A refusal
+    /// changes nothing.
+    fn jumble_on(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+        row: &Row,
+    ) -> Result<(Option<u64>, Status), Error> {
+        if self.twists.is_none() {
+            return refused(code::ROW_NOT_BUILT, format!("`{JUMBLE_ON_ROW}` needs the host's pinned twist menu"));
+        }
+        let args = invocation.args.as_object().expect("the dispatch checked that the arguments are an object");
+        forms::check_forms(row, args)?;
+        let binding = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&binding, invocation)?;
+        if self.jumbled.is_some() {
+            return refused(
+                code::RETAINED_TOOL_NEEDS_JUMBLE_OFF,
+                "Jumble is on already: the position needs no new entry",
+            );
+        }
+        forms::check_revisions(row, args, &self.revision)?;
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        let adoption = self.plan_entry(Meta::of(caller, invocation, request))?;
+        self.transact(adoption)
+    }
+
+    /// A crossing into Jumble on (A5, JI.25, JI.27; draft): the head hash, then the solved witness replayed from solved
+    /// in the jumbling engine under the pinned menu, which must reach the current labels ([`jumble::replay_from_solved`]).
+    /// The crossing is a new node under the head that holds no retained recipe and has the pose digest; the revision's
+    /// mode becomes [`JUMBLE_ON_MODE`], its state revision advances and its digest is the pose digest. The retained
+    /// state, the protected set and the policy stay.
+    fn plan_entry(&self, meta: Meta) -> Result<Adoption, Error> {
+        let Some(twists) = &self.twists else {
+            return Err(Error::new(
+                code::ROW_NOT_BUILT,
+                format!("`{JUMBLE_ON_ROW}` needs the host's pinned twist menu"),
+            ));
+        };
+        if self.current.digest() != self.nodes[&self.head].digest {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
+        }
+        let letters = self.solved_witness()?;
+        let entry = jumble::replay_from_solved(twists, &letters, self.current.digest())?;
+        let order = self.order + 1;
+        let event = format!("e{order}");
+        let revision = Revision {
+            mode: JUMBLE_ON_MODE,
+            head: event.clone(),
+            state: self.revision.state + 1,
+            digest: entry.digest.clone(),
+            ..self.revision.clone()
+        };
+        let depth = self.nodes[&self.head].depth + 1;
+        let node = Node { parent: self.head, recipe: None, digest: entry.digest.clone(), depth };
+        let transaction = Transaction {
+            kind: TransactionKind::Crossing,
+            event,
+            order,
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: self.current.digest().to_owned(),
+            post: entry.digest.clone(),
+            revision,
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: false,
+            job: None,
+            result: None,
+            record: None,
+            policy: None,
+            records: Vec::new(),
+            rotation: None,
+            crossing: Some(entry.record),
+        };
+        let change = Change::Crossing { before: self.head, after: order, identity: entry.identity };
+        let tree = Tree::Push { node: Some((order, node)), change };
+        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest });
+        Ok(Adoption { transaction, state: None, protected: None, head: order, tree, preview: None, side })
+    }
+
+    /// JI.25's solved witness while the session has no exit: the chronological literal retained path from the session's
+    /// start to the head, as 600-cell-Full's signed primitive letters. The start must be solved and every node on the
+    /// path a retained commit; otherwise there is no witness, and labels alone are refused
+    /// (`KN5:input.jumble_on_labels_only`).
+    fn solved_witness(&self) -> Result<Vec<i32>, Error> {
+        let labels_only = |detail: &str| Error::new(code::JUMBLE_ON_LABELS_ONLY, detail);
+        if self.nodes[&0].digest != self.kernel.solved().digest() {
+            return Err(labels_only("the session did not start at solved, so it holds no retained word from solved"));
+        }
+        let mut path = Vec::new();
+        let mut node = self.head;
+        while node != 0 {
+            path.push(node);
+            node = self.nodes[&node].parent;
+        }
+        let mut letters = Vec::new();
+        for node in path.iter().rev() {
+            let Some(recipe) = &self.nodes[node].recipe else {
+                return Err(labels_only("the path from the start crosses a node that holds no retained recipe"));
+            };
+            letters.extend(self.kernel.letters(recipe)?);
+        }
+        Ok(letters)
     }
 
     // ----- language-defined rows -----
@@ -2056,16 +2540,29 @@ impl<S: Store> CommandLayer<S> {
 
     /// Reports a program job's result: the host's interface. A job a commit or undo cancelled meanwhile stays
     /// cancelled, and its result is dropped (`None`). A workspace row's completion is one durable action, written with
-    /// its receipt (KN5.23, L8); in read-only recovery it fails. Other completions stay transient.
+    /// its receipt (KN5.23, L8); in read-only recovery it fails. Other completions stay transient. The same as
+    /// [`CommandLayer::finish_program_job_with`] with an output that publishes no view and writes no record.
     pub fn finish_program_job(&mut self, job: u64, result: Result<Value, Error>) -> Option<Receipt> {
+        self.finish_program_job_with(job, result.map(JobOutput::of))
+    }
+
+    /// Reports a program job's output as the runtime's sinks gave it: the value its entry returned, the views it
+    /// published and the workspace records it wrote (LP3's C6, its second common need; draft). The output becomes the
+    /// receipt: the completion's result reference carries [`JobOutput::digest`].
+    ///
+    /// Before the layer takes the output, it checks it: only a workspace row's job writes records
+    /// (`LG3:capability.not_granted` otherwise), and every record's provenance block passes the host's reader, as for
+    /// `workspace.set` (PS1.16). A job whose output fails a check fails with that error and leaves nothing written. A
+    /// workspace row's records are written in its completion's one durable action, and no undo reaches them.
+    pub fn finish_program_job_with(&mut self, job: u64, result: Result<JobOutput, Error>) -> Option<Receipt> {
         let program = self.running.remove(&job)?;
         let key = (program.caller.scope(), program.command.clone());
-        let status = match result {
+        let status = match result.and_then(|output| self.admit_output(&program, output)) {
             Err(error) => Status::Failed(error),
             Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
                 Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
             }
-            Ok(value) if program.kind == Kind::Workspace => {
+            Ok(output) if program.kind == Kind::Workspace => {
                 let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
                 let meta = Meta {
                     caller: program.caller.clone(),
@@ -2074,13 +2571,16 @@ impl<S: Store> CommandLayer<S> {
                     request,
                     confirm: false,
                 };
-                let adoption = self.workspace_adoption(meta, job, digest(&value));
+                let result = output.digest();
+                let records =
+                    output.records.into_iter().map(|(name, value)| RecordWrite { name, value: Some(value) }).collect();
+                let adoption = self.workspace_adoption(meta, job, result, records);
                 match self.transact(adoption) {
                     Ok((_, status)) => status,
                     Err(error) => Status::Failed(error),
                 }
             }
-            Ok(value) => {
+            Ok(output) => {
                 let kind = match program.kind {
                     Kind::Query => CompletionKind::Query,
                     Kind::File => CompletionKind::File,
@@ -2091,12 +2591,32 @@ impl<S: Store> CommandLayer<S> {
                         )
                     }
                 };
-                let result = Some(ResultRef { job: Some(job), digest: digest(&value) });
+                let result = Some(ResultRef { job: Some(job), digest: output.digest() });
                 Status::Completed(Completion { kind, revision: program.revision.clone(), result })
             }
         };
         self.settle(&key, status);
         self.generation += 1;
         self.receipts.get(&key).map(|record| record.receipt.clone())
+    }
+
+    /// The checks a job's output passes before the layer takes it (draft): only a workspace row's job writes records,
+    /// and the host's reader admits every record's provenance block (PS1.16). Views pass from every row.
+    fn admit_output(&self, program: &ProgramJob, output: JobOutput) -> Result<JobOutput, Error> {
+        if output.records.is_empty() {
+            return Ok(output);
+        }
+        if program.kind != Kind::Workspace {
+            let detail = format!("`{}` is not a workspace row, so its job writes no record", program.row);
+            return Err(Error::new(code::NOT_GRANTED, detail));
+        }
+        let Some(reader) = &self.provenance else {
+            let detail = format!("`{}`'s records need the host's provenance reader", program.row);
+            return Err(Error::new(code::ROW_NOT_BUILT, detail));
+        };
+        for value in output.records.values() {
+            reader.check(value.provenance.as_bytes())?;
+        }
+        Ok(output)
     }
 }
