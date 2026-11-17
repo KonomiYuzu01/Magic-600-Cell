@@ -19,6 +19,12 @@
 //! - A fault with no source diagnostic is an [`IrError`]: a module or function defined twice, an unbound name, an
 //!   unknown or unexported function, a named function called with a wrong number of arguments, or effect inference
 //!   that does not converge. Lowering refuses all but the last before the checker sees them (`rust/README.md`).
+//! - An end test's verdict (LB3.2; LP2 draft: `RetainedCheckpointVerdict`, `LabelCheckpointVerdict`,
+//!   `StickerTestVerdict`) is used through a `match` on its outcomes `holds`, `fails` and `unestablished` only (LG2.9).
+//!   A verdict in a boolean condition or given for a `Bool` at any depth, an exact equality of verdicts, a read of an
+//!   end test's row declared `Bool`, and a match whose `_` arm takes `unestablished` together with another outcome are
+//!   `LG2:type.verdict_required`. A read of an end test's row declared as any other type, another test's verdict
+//!   included, is `LG2:type.mismatch`.
 //! - The flow rule (BND.33) stays off until LQ2 sets it, so the checker never emits `LG3:capability.flow_refused`
 //!   (CT-BND-24, CT-ERR-15). [`separation`] computes how capability separation sees a program (BND.41).
 //! - Static success never replaces the engine's run-time checks (LG3.10).
@@ -29,8 +35,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, Expr, FnKind, FnTy, Function, Lit, Prim, Program,
-    QTy, ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
+    Accounting, Callee, Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Expr, FnKind, FnTy,
+    Function, Lit, Prim, Program, QTy, ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
 };
 
 /// `LG2:type.mismatch` (LG2.1).
@@ -41,6 +47,10 @@ pub const EXACTNESS_VIOLATION: &str = "LG2:type.exactness_violation";
 pub const EXACT_REQUIRED: &str = "LG2:type.exact_required";
 /// `LG2:type.word_key_not_executable` (LG2.13, LG2.17).
 pub const WORD_KEY_NOT_EXECUTABLE: &str = "LG2:type.word_key_not_executable";
+/// `LG2:type.verdict_required` (LG2.9; LP2 draft for LB3.2's end tests): an end test's verdict used as a boolean (in
+/// a condition, for a `Bool`, read from its row as a `Bool`), compared by exact equality, or matched with a `_` arm
+/// that takes `unestablished` together with another outcome.
+pub const VERDICT_REQUIRED: &str = "LG2:type.verdict_required";
 /// `LB1:input.incompatible_alphabet` (LB1.3, LB1.8; LP2 draft): a menu word where a Full word is expected, or the
 /// reverse.
 pub const INCOMPATIBLE_ALPHABET: &str = "LB1:input.incompatible_alphabet";
@@ -72,7 +82,9 @@ pub struct Diagnostic {
     pub value_type: Option<String>,
     pub display_control: bool,
     pub qualifier_erasure: bool,
-    /// The types of an `LG2:type.mismatch`; `None` for every other code.
+    /// The types of an `LG2:type.mismatch`, and of a code that refines one where a type is expected: a word equality
+    /// key for literal letters, a word of the other alphabet, an end test's verdict used as a boolean. `None` for
+    /// every other finding.
     pub mismatch: Option<Mismatch>,
     pub note: String,
 }
@@ -209,6 +221,9 @@ pub struct Summary {
     /// On a callable: it computes or selects its result under approximate control (LG2.20, LG2.22), as a named
     /// function's control bit says. Needs that a caller accumulates do not inherit it.
     control: bool,
+    /// The paths, in the function's own body, of the views that publish a value of a word-carrying type (LB3.5; LP2
+    /// draft). Only a report's summary of a function holds them; needs that a caller accumulates do not inherit them.
+    word_views: BTreeSet<String>,
 }
 
 impl Summary {
@@ -469,21 +484,31 @@ fn entry_fn<'p>(program: &'p Program, module: &str, function: &str) -> Option<&'
 ///   hold (LG3.9), which is `LG3:capability.ambient_read` where [`Summary::ungranted`] says so; an entry that both
 ///   reads state-derived data and prepares previews (LG3.13, BND.39); a row the entry may use that `class_rows` does
 ///   not list, and a row the checker cannot name (`Row::Unknown`, an unresolved call or an open effect variable),
-///   because a built-in tool's rows are listed by its class (BND.57); a preview or a word-carrying workspace write in a
-///   function the entry reaches, because the solver names a word to the entry;
+///   because a built-in tool's rows are listed by its class (BND.57); in a function the entry reaches, because the
+///   solver names a word or a cap to the entry and never to a function it reaches: a preview, a word-carrying
+///   workspace write, a snapshot read whose argument is not a literal, and, when the entry reads state-derived data,
+///   a view that publishes a word-carrying value;
 /// - at the proposal's or write's path: a proposal whose word, or a workspace write of a word-carrying type whose
-///   value, is not a `Word` parameter of the entry as given, unshadowed (a word the solver named), or for a write a
-///   read through a declassifier the policy enables (chapter 07 section 8, built-in column).
+///   value, is not a `Word` or `MenuWord` parameter of the entry as given, unshadowed (a word the solver named), or
+///   for a write a read through a declassifier the policy enables (chapter 07 section 8, built-in column);
+/// - shown facts (LB3.5, DT-J1 rule 6; LP2 draft): when the entry reads state-derived data, at the path of each
+///   expression its body may return, if its result type is word-carrying, and of each view that publishes a
+///   word-carrying value, unless it is such a parameter as given, so that no word the method derived or selected from
+///   state leaves an inspector; and at a snapshot read's path, when its argument is not a parameter of the entry as
+///   given, a literal, or a record or a collection built from those alone, so that nothing is read for an unnamed
+///   cap or for a cap or a word the method computed.
 ///
-/// A type is word-carrying when it is `Word`, a compressed word, a word equality key, a type variable (which may stand
-/// for a word), or a record, a list, a set, a map or a callable type holding one in a field, an element, a key, a
-/// value, a parameter or the result. The rule is conservative: a callee that proposes or writes the word the solver
-/// named is refused, as is a write of a record, a collection or a closure built from named words.
+/// A type is word-carrying when it is `Word`, a compressed word, a word equality key, a menu word, a type variable
+/// (which may stand for a word), or a record, a list, a set, a map or a callable type holding one in a field, an
+/// element, a key, a value, a parameter or the result. The rules are conservative: a callee that proposes, writes or
+/// publishes the word the solver named is refused, as is a write, a view or a result of a record, a collection or a
+/// closure built from named words, and a callee's snapshot read for its own parameter.
 ///
 /// Not built: the column's two exceptions (setup search for a named target, the repair list: CT-BND-17, CT-BND-18),
-/// the derived-state row (`derive`: the IR draft has no such operation, ONE.23), rule 6's check of the facts a view
-/// shows, and the review of the class against the entry (CT-BND-15). The open cells are left empty: they are the own
-/// column's.
+/// the derived-state row (`derive`: the IR draft has no such operation, ONE.23), the rest of rule 6's check of the
+/// facts a view shows (a selection that is not word-carrying, such as a cap the method chose, is not told from a
+/// per-cap fact), and the review of the class against the entry (CT-BND-15). BND.33's flow rule stays LQ2's. The open
+/// cells are left empty: they are the own column's.
 pub fn admit_built_in(
     program: &Program,
     module: &str,
@@ -505,7 +530,7 @@ pub fn admit_built_in(
         .summary(module, function)
         .cloned()
         .ok_or_else(|| IrError(format!("no function `{module}.{function}`")))?;
-    let mut diagnostics = report.diagnostics;
+    let Report { mut diagnostics, summaries } = report;
     let mut refuse = |code: &'static str, path: &str, note: String| {
         diagnostics.push(Diagnostic {
             code,
@@ -561,60 +586,160 @@ pub fn admit_built_in(
                     listed by its class (BND.57)";
         refuse(NOT_GRANTED, "entry", note.into());
     }
+    // A view of a word-carrying value counts only when the entry reads state-derived data (LB3.5).
+    let views = |m: &str, name: &str| -> BTreeSet<String> {
+        match summaries.get(&(m.to_string(), name.to_string())) {
+            Some(s) if separation.reads_state => s.word_views.clone(),
+            _ => BTreeSet::new(),
+        }
+    };
     for (m, name) in &summary.reaches {
         let Some(callee) = entry_fn(program, m, name) else { continue };
-        if !unnamed_words(&callee.body, &BTreeSet::new(), policy).is_empty() {
+        let callee_views = views(m, name);
+        let named = Named { words: BTreeSet::new(), params: BTreeSet::new(), views: &callee_views, policy };
+        let found: BTreeSet<Unnamed> = unnamed(&callee.body, &named).into_iter().map(|(_, what)| what).collect();
+        let verbs: Vec<&str> = found.iter().filter_map(|what| what.verb()).collect();
+        if !verbs.is_empty() {
             refuse(
                 NOT_GRANTED,
                 "entry",
                 format!(
-                    "`{m}.{name}` proposes or writes a word, and the built-in column admits only a word the solver \
-                     named to the entry (chapter 07 section 8)"
+                    "`{m}.{name}` {} a word, and the built-in column admits only a word the solver named to the entry \
+                     (chapter 07 section 8, LB3.5)",
+                    verbs.join(" or ")
+                ),
+            );
+        }
+        if found.contains(&Unnamed::ReadArgument) {
+            refuse(
+                NOT_GRANTED,
+                "entry",
+                format!(
+                    "`{m}.{name}` reads a row for an argument other than a literal, and a built-in tool reads only for \
+                     what the solver named to the entry (LB3.5: no prefetch for an unnamed cap)"
                 ),
             );
         }
     }
     let words: BTreeSet<&str> =
         f.params.iter().filter(|p| matches!(p.ty.ty, Ty::Word | Ty::MenuWord)).map(|p| p.name.as_str()).collect();
-    for (path, what) in unnamed_words(&f.body, &words, policy) {
-        refuse(
-            NOT_GRANTED,
-            &path,
-            format!(
-                "{what} of a word the solver did not name: the built-in column takes a `Word` or `MenuWord` parameter \
-                 of the entry as given, or for a write a read through an enabled declassifier (chapter 07 section 8)"
-            ),
-        );
+    let entry_views = views(module, function);
+    let named = Named {
+        words: words.clone(),
+        params: f.params.iter().map(|p| p.name.as_str()).collect(),
+        views: &entry_views,
+        policy,
+    };
+    for (path, what) in unnamed(&f.body, &named) {
+        refuse(NOT_GRANTED, &path, what.note().into());
+    }
+    if separation.reads_state && carries_word(&f.result.ty) {
+        for path in unnamed_results(&f.body, &words) {
+            let note = "the result of an entry that reads state-derived data, of a word-carrying type, other than a \
+                        `Word` or `MenuWord` parameter of the entry as given: no word the method derived or selected \
+                        from state leaves an inspector (LB3.5, DT-J1 rule 6)";
+            refuse(NOT_GRANTED, &path, note.into());
+        }
     }
     Ok(Admission { diagnostics, separation, open_cells: Vec::new() })
 }
 
-/// The proposals and word-carrying workspace writes in `body` whose word is not one the solver named, with their
-/// paths: the word must be one of `words` as given, a parameter that no `let` or closure parameter shadows (a `Word`
-/// or, LP2 draft, a `MenuWord` the solver names in the pinned menu's letters), or for a write a read through a
-/// declassifier the policy enables.
-fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(String, &'static str)> {
-    fn named(e: &Expr, words: &BTreeSet<&str>, bound: &[String]) -> bool {
-        matches!(e, Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v))
+/// What the built-in column checks a body against (chapter 07 section 8; LB3.5): for the entry, the words and the
+/// caps the solver named to it; for a function the entry reaches, nothing, since the solver names nothing to it.
+struct Named<'a> {
+    /// The entry's `Word` parameters and, LP2 draft, its `MenuWord` parameters, which the solver names in the pinned
+    /// menu's letters.
+    words: BTreeSet<&'a str>,
+    /// The entry's parameters of every type.
+    params: BTreeSet<&'a str>,
+    /// The paths of the body's views that publish a word-carrying value, when the entry reads state-derived data.
+    views: &'a BTreeSet<String>,
+    policy: &'a Policy,
+}
+
+/// A delivery or a request in a body that is not what the solver named (chapter 07 section 8, built-in column; LB3.5).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Unnamed {
+    /// A proposal of a word.
+    Preview,
+    /// A workspace write of a word-carrying value.
+    Write,
+    /// A view, at one of [`Named::views`], that publishes a word-carrying value.
+    View,
+    /// A snapshot read's argument.
+    ReadArgument,
+}
+
+impl Unnamed {
+    /// What a function the entry reaches does with a word, if this is a word's delivery.
+    fn verb(self) -> Option<&'static str> {
+        match self {
+            Unnamed::Preview => Some("proposes"),
+            Unnamed::Write => Some("writes"),
+            Unnamed::View => Some("publishes"),
+            Unnamed::ReadArgument => None,
+        }
     }
-    fn walk(
-        e: &Expr,
-        words: &BTreeSet<&str>,
-        policy: &Policy,
-        path: &mut Vec<u32>,
-        bound: &mut Vec<String>,
-        out: &mut Vec<(String, &'static str)>,
-    ) {
+
+    /// The refusal's note at the entry's own expression.
+    fn note(self) -> &'static str {
+        match self {
+            Unnamed::Preview => {
+                "a preview of a word the solver did not name: the built-in column takes a `Word` or `MenuWord` \
+                 parameter of the entry as given (chapter 07 section 8)"
+            }
+            Unnamed::Write => {
+                "a workspace write of a word the solver did not name: the built-in column takes a `Word` or \
+                 `MenuWord` parameter of the entry as given, or a read through an enabled declassifier (chapter 07 \
+                 section 8)"
+            }
+            Unnamed::View => {
+                "a view of an entry that reads state-derived data publishes a word-carrying value other than a `Word` \
+                 or `MenuWord` parameter of the entry as given: no word the method derived or selected from state \
+                 leaves an inspector (LB3.5, DT-J1 rule 6)"
+            }
+            Unnamed::ReadArgument => {
+                "a snapshot read for an argument the solver did not name: the built-in column reads for a parameter of \
+                 the entry as given, a literal, or a record or a collection built from those alone (LB3.5: no prefetch \
+                 for an unnamed cap, no query over a cap or a word the method computed)"
+            }
+        }
+    }
+}
+
+/// The proposals, word-carrying workspace writes, views and snapshot reads in `body` that `named` does not allow, with
+/// their paths, in body order. A word the solver named is one of `named.words` as given, a parameter that no `let` or
+/// closure parameter shadows; a write may also store a read through a declassifier the policy enables. A read's
+/// argument may be one of `named.params` as given, a literal, or a record or a collection built from those alone.
+fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
+    fn word(e: &Expr, named: &Named, bound: &[String]) -> bool {
+        matches!(e, Expr::Var(v) if named.words.contains(v.as_str()) && !bound.contains(v))
+    }
+    fn given(e: &Expr, named: &Named, bound: &[String]) -> bool {
         match e {
-            Expr::Propose { word, .. } if !named(word, words, bound) => out.push((path_text(path), "a preview")),
+            Expr::Lit(_) => true,
+            Expr::Var(v) => named.params.contains(v.as_str()) && !bound.contains(v),
+            Expr::Record(fields) => fields.iter().all(|(_, field)| given(field, named, bound)),
+            Expr::Collection { items, .. } => items.iter().all(|item| given(item, named, bound)),
+            _ => false,
+        }
+    }
+    fn walk(e: &Expr, named: &Named, path: &mut Vec<u32>, bound: &mut Vec<String>, out: &mut Vec<(String, Unnamed)>) {
+        let found = match e {
+            Expr::Propose { word: w, .. } if !word(w, named, bound) => Some(Unnamed::Preview),
             Expr::WriteWorkspace { ty, value, .. } if carries_word(&ty.ty) => {
                 let declassified = matches!(&**value, Expr::Declassified { id, .. }
-                    if policy.enabled_declassifiers.contains(id));
-                if !named(value, words, bound) && !declassified {
-                    out.push((path_text(path), "a workspace write"));
-                }
+                    if named.policy.enabled_declassifiers.contains(id));
+                (!word(value, named, bound) && !declassified).then_some(Unnamed::Write)
             }
-            _ => {}
+            Expr::PublishView { value } if !named.views.is_empty() && !word(value, named, bound) => {
+                named.views.contains(&path_text(path)).then_some(Unnamed::View)
+            }
+            Expr::ReadSnapshotWith { arg, .. } if !given(arg, named, bound) => Some(Unnamed::ReadArgument),
+            _ => None,
+        };
+        if let Some(found) = found {
+            out.push((path_text(path), found));
         }
         let (scoped, names): (usize, Vec<String>) = match e {
             Expr::Let { name, .. } => (1, vec![name.clone()]),
@@ -627,7 +752,7 @@ fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(S
                 bound.extend(names.iter().cloned());
             }
             path.push(i as u32);
-            walk(child, words, policy, path, bound, out);
+            walk(child, named, path, bound, out);
             path.pop();
             if enters {
                 bound.truncate(bound.len() - names.len());
@@ -635,7 +760,42 @@ fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(S
         }
     }
     let mut out = Vec::new();
-    walk(body, words, policy, &mut Vec::new(), &mut Vec::new(), &mut out);
+    walk(body, named, &mut Vec::new(), &mut Vec::new(), &mut out);
+    out
+}
+
+/// The paths of the expressions `body` may return that are not one of `words` as given, unshadowed (LB3.5): the rest
+/// of each `let`, both branches of an `if` or a `display_if`, and every arm of a `match`, its `_` arm included.
+fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
+    fn walk(e: &Expr, words: &BTreeSet<&str>, path: &mut Vec<u32>, bound: &mut Vec<String>, out: &mut Vec<String>) {
+        match e {
+            Expr::Let { name, body, .. } => {
+                bound.push(name.clone());
+                path.push(1);
+                walk(body, words, path, bound, out);
+                path.pop();
+                bound.pop();
+            }
+            Expr::If { then, els, .. } | Expr::DisplayIf { then, els, .. } => {
+                for (i, branch) in [(1, then), (2, els)] {
+                    path.push(i);
+                    walk(branch, words, path, bound, out);
+                    path.pop();
+                }
+            }
+            Expr::Match { arms, default, .. } => {
+                for (i, arm) in arms.iter().map(|(_, arm)| arm).chain([&**default]).enumerate() {
+                    path.push(i as u32 + 1);
+                    walk(arm, words, path, bound, out);
+                    path.pop();
+                }
+            }
+            Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v) => {}
+            _ => out.push(path_text(path)),
+        }
+    }
+    let mut out = Vec::new();
+    walk(body, words, &mut Vec::new(), &mut Vec::new(), &mut out);
     out
 }
 
@@ -664,7 +824,8 @@ fn carries_word(ty: &Ty) -> bool {
         | Ty::Colour
         | Ty::Approx(_)
         | Ty::ApproxBool
-        | Ty::Receipt => false,
+        | Ty::Receipt
+        | Ty::EndTest(_) => false,
     }
 }
 
@@ -695,6 +856,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Map(..) => "Map".into(),
         Ty::CompressedWord => "CompressedWord".into(),
         Ty::MenuWord => "MenuWord".into(),
+        Ty::EndTest(test) => test.type_name().into(),
     }
 }
 
@@ -760,6 +922,32 @@ fn one_alphabet(ty: &Ty) -> Ty {
         })),
         c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
         other => other.clone(),
+    }
+}
+
+/// The type with every end test's verdict read as a `Bool`, at any depth: the type it would have if a verdict were a
+/// boolean (LG2.9; LP2 draft). A mismatch that this removes is one of a verdict used as a boolean.
+fn verdicts_as_bool(ty: &Ty) -> Ty {
+    let q = |q: &QTy| QTy { ty: verdicts_as_bool(&q.ty), display: q.display };
+    match ty {
+        Ty::EndTest(_) => Ty::Bool,
+        Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), q(f))).collect()),
+        Ty::Fn(f) => Ty::Fn(Box::new(FnTy {
+            params: f.params.iter().map(q).collect(),
+            result: q(&f.result),
+            effects: f.effects.clone(),
+        })),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
+        other => other.clone(),
+    }
+}
+
+/// Whether a type is or holds an end test's verdict in a record or a collection (LP2 draft).
+fn holds_verdict(ty: &Ty) -> bool {
+    match ty {
+        Ty::EndTest(_) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_verdict(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_verdict(&e.ty)),
     }
 }
 
@@ -835,14 +1023,19 @@ fn declared_qual(q: &QTy) -> Qual {
 }
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
-/// at any depth, and without a callable, a receipt, `Unit`, a type variable or a compressed word, so that its
-/// canonical key order (DET.9) is defined.
+/// at any depth, and without a callable, a receipt, `Unit`, a type variable, a compressed word or an end test's verdict,
+/// so that its canonical key order (DET.9) is defined and a verdict is only ever matched (LG2.9).
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
-            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::CompressedWord => {
-                false
-            }
+            Ty::Unit
+            | Ty::Approx(_)
+            | Ty::ApproxBool
+            | Ty::Fn(_)
+            | Ty::Receipt
+            | Ty::Var(_)
+            | Ty::CompressedWord
+            | Ty::EndTest(_) => false,
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
         }
@@ -1468,6 +1661,9 @@ struct Checker<'p> {
     controls: Vec<Vec<bool>>,
     /// The typed fields the program's own workspace writes store, by record (LG2.19, storage row).
     stored: BTreeMap<&'p str, Vec<&'p QTy>>,
+    /// The paths of the views that publish a word-carrying value, by module and function index, found while
+    /// emitting ([`Summary::word_views`]).
+    word_views: BTreeMap<(usize, usize), BTreeSet<String>>,
     emitting: bool,
     /// How many display contexts enclose the current expression: display branches, and the bodies of functions and
     /// closures with an approximate or display input or capture (LG2.19, LG2.20).
@@ -1509,6 +1705,7 @@ impl<'p> Checker<'p> {
             table,
             controls,
             stored,
+            word_views: BTreeMap::new(),
             emitting: false,
             display: 0,
             steer: 0,
@@ -1581,7 +1778,9 @@ impl<'p> Checker<'p> {
         let mut summaries = BTreeMap::new();
         for (mi, module) in program.modules.iter().enumerate() {
             for (fi, f) in module.functions.iter().enumerate() {
-                summaries.insert((module.name.clone(), f.name.clone()), self.table[mi][fi].clone());
+                let mut summary = self.table[mi][fi].clone();
+                summary.word_views = self.word_views.get(&(mi, fi)).cloned().unwrap_or_default();
+                summaries.insert((module.name.clone(), f.name.clone()), summary);
             }
         }
         Report { diagnostics: self.found.into_iter().map(|f| f.diagnostic).collect(), summaries }
@@ -1615,6 +1814,22 @@ impl<'p> Checker<'p> {
             let note = format!("{what}: a {supplied} is not a word of the {expected} alphabet (LB1.8)");
             return self.record(INCOMPATIBLE_ALPHABET, None, Some(Mismatch { expected, supplied }), note);
         }
+        // An end test's verdict is matched on its outcomes and never used as a boolean (LG2.9; LP2 draft).
+        if matches!(expected.as_str(), "Bool" | "ApproxBool") && EndTest::of_type_name(&supplied).is_some() {
+            let note = format!(
+                "{what}: a {supplied} verdict is matched on its outcomes and never used as a boolean, so \
+                 `unestablished` never reads as `fails` (LG2.9)"
+            );
+            return self.record(VERDICT_REQUIRED, None, Some(Mismatch { expected, supplied }), note);
+        }
+        // A boolean where a verdict is expected has no `unestablished` (LG2.9; LP2 draft).
+        if EndTest::of_type_name(&expected).is_some() && matches!(supplied.as_str(), "Bool" | "ApproxBool") {
+            let note = format!(
+                "{what}: a {supplied} where a {expected} verdict is expected, which a boolean never stands for: it has \
+                 no `unestablished` (LG2.9)"
+            );
+            return self.record(VERDICT_REQUIRED, None, Some(Mismatch { expected, supplied }), note);
+        }
         let note = format!("{what}: {supplied} where {expected} is expected (LG2.1)");
         self.record(TYPE_MISMATCH, None, Some(Mismatch { expected, supplied }), note);
     }
@@ -1633,7 +1848,11 @@ impl<'p> Checker<'p> {
     /// A mismatch between two known types, which do not `agree` (the test that found it). When they would agree with
     /// every menu word read as a Full word, a menu word stands where a Full word is expected or the reverse, at some
     /// depth, as in a list of menu words given for a list of Full words: the mismatch is one of alphabets only, and
-    /// its code is `LB1:input.incompatible_alphabet` (LB1.8; LP2 draft). Otherwise it is [`Checker::mismatch`]'s.
+    /// its code is `LB1:input.incompatible_alphabet` (LB1.8; LP2 draft). When they would agree with every end test's
+    /// verdict supplied read as a `Bool`, a verdict stands where a boolean is expected, at some depth, and when they
+    /// would agree with every verdict expected read as a `Bool`, a boolean stands where a verdict is expected: the
+    /// code is `LG2:type.verdict_required` (LG2.9; LP2 draft), whichever branch of a join comes first. Otherwise it is
+    /// [`Checker::mismatch`]'s.
     fn mismatch_of(&mut self, expected: &Ty, supplied: &Ty, agree: fn(&Ty, &Ty) -> bool, what: &str) {
         let (one_expected, one_supplied) = (one_alphabet(expected), one_alphabet(supplied));
         let (expected_text, supplied_text) = (type_text(expected), type_text(supplied));
@@ -1646,7 +1865,137 @@ impl<'p> Checker<'p> {
             let mismatch = Mismatch { expected: expected_text, supplied: supplied_text };
             return self.record(INCOMPATIBLE_ALPHABET, None, Some(mismatch), note);
         }
+        let (supplied_as_bool, expected_as_bool) = (verdicts_as_bool(supplied), verdicts_as_bool(expected));
+        if (&supplied_as_bool != supplied && agree(expected, &supplied_as_bool))
+            || (&expected_as_bool != expected && agree(&expected_as_bool, supplied))
+        {
+            let note = format!(
+                "{what}: {supplied_text} where {expected_text} is expected: an end test's verdict is matched on its \
+                 outcomes, never used as a boolean, and a boolean never stands for it (LG2.9)"
+            );
+            let mismatch = Mismatch { expected: expected_text, supplied: supplied_text };
+            return self.record(VERDICT_REQUIRED, None, Some(mismatch), note);
+        }
         self.mismatch(expected_text, supplied_text, what);
+    }
+
+    /// A read of an end test's row declares that test's verdict (LB3.2; LP2 draft). A `Bool` would let `unestablished`
+    /// read as `fails` and is `LG2:type.verdict_required` (LG2.9); any other type, another test's verdict included, is
+    /// `LG2:type.mismatch`: one test's verdict never stands for another's. A read of another row that declares a
+    /// verdict is `LG2:type.mismatch` too: only the test's own row answers its verdict.
+    fn end_test_read(&mut self, query: &str, ty: &QTy) {
+        let Some(test) = EndTest::of_row(query) else {
+            if let Ty::EndTest(declared) = &ty.ty {
+                let note = format!(
+                    "a read of `{query}` declared {}: only the end test's own row `{}` answers that verdict (LB3.2)",
+                    declared.type_name(),
+                    declared.row()
+                );
+                self.record(TYPE_MISMATCH, None, None, note);
+            }
+            return;
+        };
+        if ty.ty == Ty::EndTest(test) {
+            return;
+        }
+        let mismatch = Mismatch { expected: test.type_name().into(), supplied: type_text(&ty.ty) };
+        let (expected, supplied) = (&mismatch.expected, &mismatch.supplied);
+        if matches!(ty.ty, Ty::Bool | Ty::ApproxBool) {
+            let note = format!(
+                "a read of `{query}` declared {supplied}: the end test answers a {expected} verdict, matched on its \
+                 outcomes and never used as a boolean (LB3.2, LG2.9)"
+            );
+            self.record(VERDICT_REQUIRED, None, Some(mismatch), note);
+        } else {
+            let note = format!(
+                "a read of `{query}` declared {supplied}: the end test answers a {expected} verdict, and one test's \
+                 verdict never stands for another's (LB3.2)"
+            );
+            self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+        }
+    }
+
+    // The end-test rules below run inside `expr` and `prim` but live apart from them: `expr` recurses once per nested
+    // expression, and every local of its arms is part of each recursion's stack frame in a debug build.
+
+    /// The pattern of a match arm on an end test's verdict is the tag of one of its outcomes (LG2.9; LP2 draft): a
+    /// boolean pattern is `LG2:type.verdict_required`, any other tag or literal `LG2:type.mismatch`.
+    fn verdict_pattern(&mut self, test: EndTest, lit: &Lit, pattern: &Ty, what: &str) {
+        let expected = test.type_name().to_string();
+        match lit {
+            Lit::Tag(t) if EndTestOutcome::of_tag(t).is_some() => {}
+            Lit::Bool(_) => {
+                let note = format!(
+                    "{what}: a boolean pattern for a {expected} verdict, which is matched on its outcomes and never \
+                     used as a boolean (LG2.9)"
+                );
+                let mismatch = Mismatch { expected, supplied: "Bool".into() };
+                self.record(VERDICT_REQUIRED, None, Some(mismatch), note);
+            }
+            Lit::Tag(t) => {
+                let note = format!(
+                    "{what}: tag(\"{t}\") is no outcome of a {expected} verdict, which is `holds`, `fails` or \
+                     `unestablished` (LG2.9)"
+                );
+                let mismatch = Mismatch { expected, supplied: type_text(pattern) };
+                self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+            }
+            _ => self.mismatch(expected, type_text(pattern), what),
+        }
+    }
+
+    /// The `_` arm of a match on an end test's verdict takes `unestablished` alone, never together with another
+    /// outcome: unknown never reads as no, or as yes (LG2.9; LP2 draft). A type variable may stand for a verdict, so a
+    /// match of one with an outcome's tag among its patterns is held to the same rule.
+    fn verdict_default_arm(&mut self, scrutinee: &Ty, arms: &[(Lit, Expr)]) {
+        let outcome = |lit: &Lit| match lit {
+            Lit::Tag(t) => EndTestOutcome::of_tag(t),
+            _ => None,
+        };
+        let whose = match scrutinee {
+            Ty::EndTest(test) => test.type_name(),
+            Ty::Var(_) if !is_unknown(scrutinee) && arms.iter().any(|(lit, _)| outcome(lit).is_some()) => {
+                "type variable's"
+            }
+            _ => return,
+        };
+        let named: BTreeSet<EndTestOutcome> = arms.iter().filter_map(|(lit, _)| outcome(lit)).collect();
+        let taken: Vec<&str> =
+            EndTestOutcome::ALL.into_iter().filter(|o| !named.contains(o)).map(EndTestOutcome::tag).collect();
+        if taken.len() > 1 && taken.contains(&EndTestOutcome::Unestablished.tag()) {
+            let note = format!(
+                "the `_` arm of a match on a {whose} verdict takes `{}` together: name `unestablished` in an arm of its \
+                 own, or both `holds` and `fails`, so unknown never reads as no (LG2.9)",
+                taken.join("` and `")
+            );
+            self.record(VERDICT_REQUIRED, None, None, note);
+        }
+    }
+
+    /// While emitting, a view that publishes a word-carrying value is recorded by its path: the built-in column asks
+    /// whether it publishes a word the solver named (LB3.5; LP2 draft; [`Summary::word_views`]).
+    fn note_word_view(&mut self, ty: &Ty) {
+        if self.emitting && carries_word(ty) {
+            let path = path_text(&self.path);
+            self.word_views.entry(self.cur).or_default().insert(path);
+        }
+    }
+
+    /// An end test's verdict is matched on its outcomes (LG2.9; LP2 draft): an exact equality would make a boolean of
+    /// it, with `unestablished` one value among the others. The refusal is recorded at the first operand that holds a
+    /// verdict, and the answer says whether one did. A type variable's operand may hold a verdict that only the run
+    /// sees; `c600-run` refuses that equality before its step.
+    fn verdict_equality(&mut self, vals: &[Val]) -> bool {
+        let Some(i) = vals.iter().position(|v| holds_verdict(&v.ty)) else {
+            return false;
+        };
+        let note = format!(
+            "an operand of an exact equality holds a {} verdict, which is matched on its outcomes and never compared \
+             (LG2.9)",
+            type_text(&vals[i].ty)
+        );
+        self.at(i, |c| c.record(VERDICT_REQUIRED, None, None, note));
+        true
     }
 
     fn record(
@@ -2105,7 +2454,10 @@ impl<'p> Checker<'p> {
                     // the scrutinee as an exact equality does.
                     let pattern = lit_type(lit);
                     let what = format!("the pattern of arm {i} of a match");
-                    if !fits(&pattern, &sv.ty) && !fits(&sv.ty, &pattern) {
+                    if let Ty::EndTest(test) = sv.ty {
+                        // An end test's verdict is matched on the tags of its outcomes (LG2.9; LP2 draft).
+                        self.verdict_pattern(test, lit, &pattern, &what);
+                    } else if !fits(&pattern, &sv.ty) && !fits(&sv.ty, &pattern) {
                         self.mismatch_of(&sv.ty, &pattern, |a, b| fits(a, b) || fits(b, a), &what);
                     } else if let Lit::Approx { .. } = lit {
                         // An approximate literal is never read as exact (LG1.7), so it is no operand of that equality.
@@ -2124,6 +2476,7 @@ impl<'p> Checker<'p> {
                     None => dv,
                     Some(o) => self.join(o, dv, arms.len() + 1, "the `_` arm of a match"),
                 };
+                self.verdict_default_arm(&sv.ty, arms);
                 Ok((v, s))
             }
             Expr::DisplayIf { cond, then, els } => {
@@ -2363,6 +2716,7 @@ impl<'p> Checker<'p> {
                 own.state_reads.insert(StateRead::Snapshot);
                 own.rows.insert(Row::Read(query.clone()));
                 self.operation(&mut s, own, "a snapshot read");
+                self.end_test_read(query, ty);
                 let mut v = Val::declared(ty);
                 let stored = self.stored.get(query.as_str()).cloned().unwrap_or_default();
                 let mut reported = false;
@@ -2400,11 +2754,13 @@ impl<'p> Checker<'p> {
                 own.state_reads.insert(StateRead::Snapshot);
                 own.rows.insert(Row::Read(query.clone()));
                 self.operation(&mut s, own, "a snapshot read");
+                self.end_test_read(query, ty);
                 // An engine row, never a workspace record the program stores, so the declared type stands.
                 Ok((Val::declared(ty), s))
             }
             Expr::PublishView { value } => {
-                let (_, mut s) = self.at(0, |c| c.expr(value, env))?;
+                let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
+                self.note_word_view(&v.ty);
                 let mut own = needs(&[Effect::ChangeView], &[]);
                 own.rows.insert(Row::View);
                 self.operation(&mut s, own, "publish_view");
@@ -2620,6 +2976,9 @@ impl<'p> Checker<'p> {
                     let note =
                         "an operand of an exact equality, which a compressed word does not have (compare letters)";
                     self.at(i, |c| c.misfit("a type without CompressedWord", &vals[i], note));
+                    return Ok(Val::exact(Ty::Bool));
+                }
+                if self.verdict_equality(vals) {
                     return Ok(Val::exact(Ty::Bool));
                 }
                 self.at(0, |c| c.exact_use(Site::Operand, a, what));

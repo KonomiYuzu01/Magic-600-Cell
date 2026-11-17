@@ -222,6 +222,27 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   that differ in more than the alphabet stay a mismatch. A menu word is proposed as a word is, with the `preview`
   effect, and the built-in column takes a `MenuWord` parameter as a word the solver named
   (`c600-check/tests/built_in.rs`, `c600-syntax/tests/menu_words.rs`).
+- End tests' verdicts (LP2 draft until the IR freeze; LB3.2, LG2.9; LP3's plan, section 2). `Ty::EndTest` is the
+  type of the verdict of one of LB3.2's three end tests, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict` or
+  `StickerTestVerdict` in source, which a program reads from the test's engine row `retained_checkpoint`,
+  `label_checkpoint` or `sticker_test` (KN2.4), with or without an argument. The end tests' bare names stay chapter
+  02's goal names (LG2.10). A verdict's outcome is `holds`, `fails` or `unestablished`, and a program uses it
+  through a `match` on those tags only: a verdict used as a boolean (a condition, an operand of `and`, `or` or
+  `not`, a `Bool` argument, result, element or field), a boolean where a verdict is expected, an exact equality
+  that holds one, a boolean pattern, a read of an end test's row declared `Bool`, and a `_` arm that takes
+  `unestablished` together with another outcome are `LG2:type.verdict_required`; one test's verdict where another's
+  is expected, a read of another row declared a verdict, a status tag given for a verdict and another literal pattern
+  are `LG2:type.mismatch`. No literal makes a verdict, and a verdict is no set element or map key
+  (`c600-syntax/tests/end_tests.rs`: CT-LG2-09's part for end tests, CT-LB3-01's checker half). The checker does
+  not unify type variables, so a generic function may compare a verdict it cannot see; M2 refuses that at run time.
+- Shown facts (LP2 draft; LB3.5, DT-J1 rule 6). In an entry that reads state-derived data, `admit_built_in`
+  refuses with `LG3:capability.not_granted` each expression the body may return, when the result type is
+  word-carrying, and each view of a word-carrying value, unless it is a `Word` or `MenuWord` parameter of the entry
+  as given; a function the entry reaches that publishes a word is refused at the entry. In every entry it refuses a
+  snapshot read whose argument is not a parameter of the entry as given, a literal, or a record or a collection of
+  those (no prefetch for an unnamed cap), and a function the entry reaches that reads for anything but a literal. A
+  selection that is no word, such as a cap the method chose, is not told from a per-cap fact
+  (`c600-check/tests/built_in.rs`: CT-LB3-07's checker half for recommendations and reads).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -297,6 +318,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Menu words (LP2 draft). `MenuWord` is a type, and `menu[cap:item, ...]` is a word of the run's pinned menu: each
   letter two naturals below 600, counted from 0 and laid out in canonical decimals. A letter out of range is refused
   at its source text (`c600-syntax/tests/menu_words.rs`).
+- End tests' verdicts (LP2 draft). `RetainedCheckpointVerdict`, `LabelCheckpointVerdict` and `StickerTestVerdict`
+  are types; one as a set element or a map key, alone or in a record, is refused at lowering
+  (`c600-syntax/tests/end_tests.rs`).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -401,6 +425,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `Request::ProposeMenu { letters, menu, target, request }`, a request of its own, so a host that knows only
   `Request::Propose` refuses it; `Request::is_proposal` names both, and a host that gates previews gates both
   (`c600-run/tests/menu_words.rs`).
+- End tests' verdicts (LP2 draft; LB3.2): `Value::EndTest(test, outcome)`, which a host answers for its test's
+  row. A match arm's status tag matches the verdict of that outcome, and no other pattern matches a verdict. Its
+  size is 2 bytes, and its JSON form is `{"outcome":"...","test":"..."}`, the outcome's tag and the test's row
+  (`c600-run/tests/end_tests.rs`). Where the checker cannot see a verdict, behind a type variable or in an unchecked
+  program, the run stops with `LG4:input.ir_rejected` before the step at an exact equality whose operand is or holds
+  a verdict, and at a match on a verdict whose `_` arm takes `unestablished` together with another outcome.
 - Open for menu words: the jumbling library entries that use them (LP3: the jumbling halves of CT-LB1-03 and
   CT-LB1-06), their trace key (LB1.10), and the alphabet a jumbling host pins, which it builds from
   `c600_kernel::IdentityBlock` and the inverse items of its menu (`menu::MenuAlphabet::new`).
@@ -1396,9 +1426,11 @@ run or not applicable is no pass (PHS.63).
   preview as `request.propose_menu` (request tag 6), and a job may pin a menu alphabet (`JobOptions::menu`), the
   run's last field, after the class rows: the identity block, the cap count and the inverse items, which the decoder
   checks as `MenuAlphabet::new` does. `LB1:input.incompatible_alphabet` is one of the interpreter's own stop codes
-  (`codec::STATIC_CODES`). The lengths that a frame's compressed words derive are bounded together by one frame's
-  bits, so one word of up to 16,382 doublings of a letter crosses. Above the bound a host's answer reaches the run in
-  process but stops the child's run with `PS1:input.noncanonical_value`, a known difference (crate draft 15).
+  (`codec::STATIC_CODES`). An end test's verdict (LP2's draft, LB3.2) crosses as value tag 22 with its test's and
+  its outcome's indices, and its type as type tag 24 with the test's index. The lengths that a frame's compressed
+  words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
+  Above the bound a host's answer reaches the run in process but stops the child's run with
+  `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
