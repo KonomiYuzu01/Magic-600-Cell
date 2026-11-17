@@ -46,10 +46,11 @@
 //! - RPI.15, J02 (render/1 section 3): a posed row is validated only for a jumbling identity and a pose-level subject
 //!   (a Jumble-on revision or a derived state at level poses): 177120 pose indices inside the table, finite row-major
 //!   d x d matrices with the identity at pose 0, and one lattice entry per pose, -1 or a K+ index below 7200
-//!   ([`validate::K_PLUS`]), pose 0's being index 0. A malformed row in a program publication is `EV3:input.display_plan_invalid` under
-//!   RM.12's precedence; `EV3:input.display_bundle_mismatch` stays the engine bundle's code (RPI.9). The row's array
-//!   hashes are its array descriptors. Its exact state digest is the plan subject's digest, which the validator
-//!   cannot recompute from binary32 arrays: the producer binds it ([`jumble::revision`], [`jumble::bundle`]).
+//!   ([`validate::K_PLUS`]), pose 0's being index 0. A malformed row in a program publication is
+//!   `EV3:input.display_plan_invalid` under RM.12's precedence; `EV3:input.display_bundle_mismatch` stays the engine
+//!   bundle's code (RPI.9). The row's array hashes are its array descriptors. Its exact state digest is the plan
+//!   subject's digest, which the validator cannot recompute from binary32 arrays: the producer binds it
+//!   ([`jumble::revision`], [`jumble::bundle`]).
 //! - RPI.15, J02: a pose entry (a + b sqrt 5)/d is evaluated in binary64, each operation rounded, and then rounded
 //!   to binary32 ([`jumble::approximate`]). The solved state's three arrays equal the hashes the J1 fixture records;
 //!   the arrays of a later J1 stage (`mid`, `end`) are not compared here, so a non-identity pose matrix's orientation
@@ -59,12 +60,15 @@
 //!   and F04 unsupported (the jumbling puzzle uses J02, J03 and J05 in their place) and omits J01 and J06 to J12.
 //!   The jumbling context binds the unchanged geometry digests of [`produce::GeometryInput`]; J01's area-weighted
 //!   shrink anchors are not an asset and are not bound.
-//! - J03: a jumbling transform is built only from an admissible outcome's certified inside set and the plane the
-//!   engine names for the outcome's twist ([`jumble::transform`]; `c600_jumble::twist::Twist::plane`). The engine's u,
-//!   v and cos θ are exact and u and v unnormalized; the display normalizes them in binary64, rounds to binary32 and
-//!   takes θ = acos(cos θ) ([`jumble::swept_plane`]), so R(θ) of render/1 section 4 is the twist up to rounding. A
-//!   half-turn sweeps in the direction the engine names, and the identity has no plane and no swept preview. A twist
-//!   of another grip than the outcome's is [`jumble::Missing::OtherGrip`].
+//! - J03: a jumbling transform is built only from an admissible outcome's certified inside set and the plane the engine
+//!   names for the outcome's twist ([`jumble::transform`]; `c600_jumble::twist::Twist::plane`). The engine's u, v and
+//!   cos θ are exact and u and v unnormalized; the display normalizes them in binary64, rounds to binary32 and takes
+//!   θ = acos(cos θ) ([`jumble::swept_plane`]), so R(θ) of render/1 section 4 is the twist up to rounding. A half-turn
+//!   sweeps in the direction the engine names, and the identity has no plane and no swept preview. A twist of another
+//!   grip than the outcome's is [`jumble::Missing::OtherGrip`]. Only the grip is checked, since an outcome holds no
+//!   matrix. Render/1 section 4, which the J03 row cites, is a draft and RM.6 sets no tolerance, so the rounded plane
+//!   is not checked for unit length or orthogonality. A twist other than the identity with no engine-named plane is
+//!   [`jumble::Missing::NoPlane`], never shown as the identity.
 //! - J04: a full named-cap set is the engine's whole `straddler_set`, each piece with both exact points as compact
 //!   `[a,b,d]` text and their binary32 vectors; a set its budget left incomplete is [`jumble::Missing::Uncertain`],
 //!   never a shorter set. The cap-map witness is a classification's one certificate. The named cut's plane is the
@@ -82,7 +86,8 @@
 //!   the pose projection poses ([`plan::StateRef::level`]). A subject at the other level is
 //!   `undefined(KN1:input.level_not_held)` before any digest is compared, so nothing is lifted from labels into poses.
 //! - RM.6, F03: a transform without the engine's plane has no swept preview ([`validate::swept_preview`]); its
-//!   endpoints are state revisions with `to > from`.
+//!   endpoints are state revisions with `to > from`. On 600-cell-Full no engine names a twist's plane yet: the retained
+//!   kernel names none, and which engine names it is not settled, so F03 has no swept preview there.
 //! - RM.6: exact-set digests are the SHA-256 of sorted piece IDs as little-endian u32, or of canonical object text
 //!   one per line ([`plan::piece_set_digest`], [`plan::object_set_digest`]).
 //! - RPI.34, RPI.48: a chart property a plan names is established only by check results in

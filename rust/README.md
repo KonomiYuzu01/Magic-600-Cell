@@ -1474,10 +1474,12 @@ run or not applicable is no pass (PHS.63).
   `KN1:input.level_not_held`) and one typed relation of the relationship strip at pose level, a slot's current occupant
   on and off the lattice, each lattice piece placed by M8's slot action of K⁺ (`relation`; EV3.8, EV3.9).
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
-  the certified transform J03, the certified overlays J04 (the full named-cap set, the cap-map witness and the named
-  cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13, with a fixture support report for
-  J02 to J05. Under a jumbling identity the validator now checks a posed row instead of refusing it; 600-cell-Full is
-  unchanged.
+  the certified transform J03 with the plane the engine names for the twist (`twist::Twist::plane`; a jumbling twist has
+  a swept preview, a half-turn at θ = π in the engine's direction), the certified overlays J04 (the full named-cap set,
+  the cap-map witness and the named cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13,
+  which places a sticker at any lattice pose by M8's slot action of K⁺ with A3's frame check
+  (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05. Under a jumbling identity the validator
+  now checks a posed row instead of refusing it; 600-cell-Full is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
     LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
@@ -1498,9 +1500,14 @@ run or not applicable is no pass (PHS.63).
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
     admissibility guarantee and is refused at the prefix that straddles, at the first or a later one).
-  - `c600-jumble-tool/tests/ct_lb3_02.rs`: CT-LB3-02's LP3 side (a pose-level and a label-level verdict, each read at
-    its own level and refused at the other with `KN1:input.level_not_held`; each level finds both clear and moving
-    cases). M5's `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03.
+  - `c600-jumble-tool/tests/ct_lb3_02.rs`: CT-LB3-02 whole (centre piece 0 under retained generator 1, each verdict an
+    engine's own: refused at pose level inside Jumble by M8's protection of a whole word, `levels::derive`, and clear at
+    label level in 600-cell-Full by the kernel's protection of named pieces, centres included,
+    `Kernel::piece_protection` and `strict_piece_protection`, each under Net and Strict; the crossing at solved through
+    M8's label and retained checkpoints and `levels::project`; the label pass replaces nothing, so the word is refused
+    again inside Jumble, and the turn Jumble on replays shows only at pose level; each verdict refused at the other
+    level with `KN1:input.level_not_held`; each level finds both clear and moving cases). M5's
+    `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -1509,26 +1516,25 @@ run or not applicable is no pass (PHS.63).
     five levels on the pose-level subject; a 600-cell-Full label projection holds no pose level, so it answers
     `KN1:input.level_not_held` for it, also under that subject's own digest; a planted chart inverse is never called;
     four layout filters, one by pose, keep the analysed set, the posed row and the subject; at lattice poses other than
-    the identity, a sticker's slot through a test projection on M8's slot action of K⁺, checked against the
-    current-occupant relation, also for two pieces that share one pose index).
-  - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated; unsupported and missing data
-    explicit), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs whole) and
-    CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15).
+    the identity, a sticker's slot through `c600-display`'s pose projection on M8's slot action of K⁺, checked against
+    the current-occupant relation, also for two pieces that share one pose index).
+  - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
+    preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
+    plane among them), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs
+    whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
+    sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
+    projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
 - Not built: Jumble on in the command layer and oracle equality against M5's fixtures (KN5's one implementation, LP2);
   ν, the F2 and F5 number kinds and the correction catalogue (LP2), which CT-LB3-04, CT-LB3-01's reachable nonzero-ν
   state and CT-LB3-07's correction part need; the producers of the rows J01 and J06 to J12 (J10 needs exposed-face
   geometry, J12 needs ν); the jumbling library entries, which need menu words in the IR draft; CT-LB1-02's key half
   (LG2.18); BM5's review records; a comparison of the posed arrays with the J1 fixture's later stages; the relationship
-  strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): LB3.4's projection
-  from poses to labels with its checkpoints (CT-LB3-02), a whole word's Net and Strict protection at pose level
-  (CT-LB3-02, CT-LB3-06), and the rim and survey rows of CT-LB3-07. Not taken up yet from LP2's kernel pieces for C8
-  (pull request 190): the slot action of K⁺ with its frame check (`levels::Tables::slot_image`, `piece_slots`) inside
-  `c600-display`'s pose projection (J13), which CT-LB4-03 supplies in a test projection; the engine-named rotation plane
-  (`twist::rotation_plane`), so a jumbling transform still has no swept preview (J03); and the kernel's label-level
-  protection of named pieces, centres included (`Kernel::piece_protection`, `strict_piece_protection`), so CT-LB3-02's
-  label verdict is still composed from `positions` rows. Also waiting: the repair list through the command layer, with a
-  job that names its cap (KN5), the built-in column's repair-list exception in `c600-check`, the BND.2 wording of an
-  empty list and no key that skips caps with an empty list (LP2).
+  strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): a whole word's Net
+  and Strict protection at pose level for CT-LB3-06, and the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has
+  no swept preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also
+  waiting: the repair list through the command layer, with a job that names its cap (KN5), the built-in column's
+  repair-list exception in `c600-check`, the BND.2 wording of an empty list and no key that skips caps with an empty
+  list (LP2).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

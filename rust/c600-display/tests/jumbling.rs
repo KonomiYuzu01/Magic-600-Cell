@@ -221,11 +221,12 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
     assert_eq!(host.instances(V1), [InstanceId(1), InstanceId(2)]);
 }
 
-/// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no
-/// J02, a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a twist that is not
-/// the outcome's letter, a transform without the engine's plane, the identity, which turns no plane, a named-cap set
-/// its budget left incomplete and an absent exposed-face geometry (the refusal path; M5 supplies none) each give their
-/// explicit outcome, and nothing is guessed, truncated or installed. Not run: a backend's own refusals.
+/// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no J02,
+/// a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a twist that is not the
+/// outcome's letter, a transform without the engine's plane, the identity, which turns no plane, a twist other than the
+/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (the refusal
+/// path; M5 supplies none) each give their explicit outcome, and nothing is guessed, truncated or installed. Not run: a
+/// backend's own refusals.
 #[test]
 fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let world = world();
@@ -311,6 +312,11 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     assert!(!swept_preview(&TransformInput { plane: None, ..certified }), "no plane, no swept preview");
     let identity = c600_jumble::twist::kplus_twist(engine, 0, 0).expect("the identity fixes pole 0");
     assert_eq!(jumble::swept_plane(&identity), Ok(None), "the identity turns no plane");
+    // The central inversion turns two planes, so the engine names none; built unchecked, since `Twist::new` refuses
+    // a matrix that moves the grip's pole, it is missing data and never shown as the identity.
+    let minus = std::array::from_fn(|i| std::array::from_fn(|j| if i == j { Q5::int(-1) } else { Q5::zero() }));
+    let inversion = Twist { grip: 0, matrix: Arc::new(minus), kidx: None };
+    assert_eq!(jumble::swept_plane(&inversion), Err(Missing::NoPlane { grip: 0 }), "no plane, yet not the identity");
     let unmoved = State::new(None).apply(engine, &identity, None, &[]).expect("no engine error");
     let row = jumble::transform(&unmoved, &identity, (0, 1)).expect("no plane to convert").expect("admissible");
     assert!(row.plane.is_none() && row.angle == 0.0 && !swept_preview(&row), "the identity has no swept preview");

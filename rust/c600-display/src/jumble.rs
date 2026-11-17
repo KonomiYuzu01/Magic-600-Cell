@@ -15,7 +15,7 @@
 
 use c600_jumble::levels;
 use c600_jumble::model::NP;
-use c600_jumble::q5::{Vec4, Q5};
+use c600_jumble::q5::{identity4, Vec4, Q5};
 use c600_jumble::state::{Certificate, Classification, Outcome, State, Status};
 use c600_jumble::twist::Twist;
 use c600_jumble::Context as Engine;
@@ -47,6 +47,10 @@ pub enum Missing {
     Engine(String),
     /// The plane the engine names for the twist at this grip has no finite binary32 value (J03).
     NonFinitePlane { grip: u32 },
+    /// The twist at this grip is not the identity, yet the engine names no plane for it: a matrix that is not
+    /// exactly a rotation, or one that turns two planes. It has no swept preview and is never shown as the identity
+    /// (J03). `Twist::new` admits neither, since a twist fixes its grip's pole.
+    NoPlane { grip: u32 },
     /// The twist given for an outcome turns another grip, so it is not the letter the outcome certified, and no plane
     /// is taken from it (J03).
     OtherGrip { outcome: u32, twist: u32 },
@@ -150,12 +154,13 @@ pub struct SweptPlane {
 /// The display values of `twist`'s engine-named plane ([`SweptPlane`], `Twist::plane`). The engine names u, v and
 /// cos θ exactly, and u and v unnormalized; here each coordinate is evaluated in binary64 as [`approximate`] does,
 /// each vector is normalized in binary64 and rounded to binary32, and θ is the binary64 arccosine of cos θ (clamped
-/// to [−1, 1]) rounded to binary32. `Ok(None)` for the identity, which turns no plane; a vector or angle with no
-/// finite value is [`Missing::NonFinitePlane`]. Display data only: no direction is invented and nothing exact is
-/// decided from it.
+/// to [−1, 1]) rounded to binary32. `Ok(None)` for the identity, which turns no plane; another matrix the engine names
+/// no plane for is [`Missing::NoPlane`]; a vector or angle with no finite value is [`Missing::NonFinitePlane`].
+/// Display data only: no direction is invented and nothing exact is decided from it.
 pub fn swept_plane(twist: &Twist) -> Result<Option<SweptPlane>, Missing> {
     let Some(named) = twist.plane() else {
-        return Ok(None);
+        let grip = twist.grip as u32;
+        return if *twist.matrix == identity4() { Ok(None) } else { Err(Missing::NoPlane { grip }) };
     };
     let unit = |v: &Vec4| -> Option<[f32; 4]> {
         let x = [approximate64(&v[0])?, approximate64(&v[1])?, approximate64(&v[2])?, approximate64(&v[3])?];
@@ -170,12 +175,13 @@ pub fn swept_plane(twist: &Twist) -> Result<Option<SweptPlane>, Missing> {
     swept().map(Some).ok_or(Missing::NonFinitePlane { grip: twist.grip as u32 })
 }
 
-/// The certified transform row of an applied twist (J03): the grip, the engine's certified inside set, sorted, and
-/// the display values of the twist's engine-named plane and angle ([`swept_plane`]). `twist` is the letter the
-/// outcome certified; a twist of another grip is [`Missing::OtherGrip`], and no plane is taken from it. Only an
-/// admissible outcome has a row; a blocked, uncertain, refused or protected outcome has no moving set, and none is
-/// guessed. The identity turns no plane: its row has none and the angle 0, so it has no swept preview
-/// ([`crate::validate::swept_preview`]).
+/// The certified transform row of an applied twist (J03): the grip, the engine's certified inside set, sorted, and the
+/// display values of the twist's engine-named plane and angle ([`swept_plane`]). `twist` must be the letter the outcome
+/// certified. The outcome holds no matrix, so only the grip is checked: a twist of another grip is
+/// [`Missing::OtherGrip`], and no plane is taken from it; another twist of the same grip is the caller's error, which
+/// this cannot see. Only an admissible outcome has a row; a blocked, uncertain, refused or protected outcome has no
+/// moving set, and none is guessed. The identity turns no plane: its row has none and the angle 0, so it has no swept
+/// preview ([`crate::validate::swept_preview`]).
 pub fn transform(outcome: &Outcome, twist: &Twist, endpoints: (u64, u64)) -> Result<Option<TransformInput>, Missing> {
     if twist.grip != outcome.grip {
         return Err(Missing::OtherGrip { outcome: outcome.grip as u32, twist: twist.grip as u32 });
