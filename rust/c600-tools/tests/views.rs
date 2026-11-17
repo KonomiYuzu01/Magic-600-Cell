@@ -582,7 +582,8 @@ fn words_in(text: &str) -> Vec<Vec<i32>> {
 /// derivation's word digest, the derived subject, the preview display's literal digest, the frame's preview report and
 /// the view model's installed bytes. Before the solver names a word the view holds nothing; a refused word leaves its
 /// own text and no plan; and a view cannot be built from a preview of another word or of another command. The part of
-/// BND.4 about a live twist that is not released needs the input layer joined to the view model and is not run here.
+/// BND.4 about a live twist that is not released runs in `c600-input`'s `tests/twist.rs`, which joins the input router
+/// to this view model and this view.
 #[test]
 fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
     // Before the solver names a word, the open view has no output.

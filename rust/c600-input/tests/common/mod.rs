@@ -1,5 +1,5 @@
-//! The fixture the routing and repeat tests share: the command layer over the model in `assets/`, its shell, and a
-//! router on the draft default map.
+//! The fixture the routing, repeat and twist tests share: the command layer over the model in `assets/`, its shell, and
+//! a router on the draft default map; for the twist keys, the I_a twist menu that the host pins.
 
 #![allow(dead_code)]
 
@@ -10,10 +10,21 @@ use c600_command::{CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Rec
 use c600_input::{
     default_specs, BindingSpec, Context, Entry, KeyEvent, KeyMap, Layout, ListFocus, Routed, Router, RoutingClass, Slot,
 };
+use c600_jumble::rotation;
+use c600_jumble::twist::Menu;
 use c600_kernel::json::{self, Value};
-use c600_kernel::Kernel;
+use c600_kernel::request::{menu_request, Binding, MenuPin, Operation};
+use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot};
 
 pub const SECRET: [u8; 32] = [7; 32];
+
+/// The I_a twist menu's set and order digests: the menu that `c600-command`'s twist tests pin.
+pub const SET: &str = "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c";
+pub const ORDER: &str = "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c";
+
+/// The grip slots of the twist tests: four caps spread over the model, as integers, the form `twist.apply`'s `cap`
+/// takes.
+pub const CAPS: [u32; 4] = [0, 7, 123, 599];
 
 /// The language-defined tool row the tests bind to a key, and its chord.
 pub const TOOL: &str = "tools.count";
@@ -49,6 +60,66 @@ pub fn text(s: &str) -> Value {
 /// The applied slot map of the tests: slot `n` holds cap `c{n}` in frame `f{n}`.
 pub fn slots(tag: &str) -> Vec<Slot> {
     (0..4).map(|n| Slot { cap: text(&format!("{tag}c{n}")), frame: text(&format!("{tag}f{n}")) }).collect()
+}
+
+/// The applied slot map of the twist tests: slot `n` holds cap `CAPS[n]`, as an integer, in frame `f{n}`.
+pub fn cap_slots() -> Vec<Slot> {
+    CAPS.iter()
+        .enumerate()
+        .map(|(n, cap)| Slot { cap: Value::Int(i64::from(*cap)), frame: text(&format!("f{n}")) })
+        .collect()
+}
+
+/// The jumbling engine's exact model of `assets/`, which a twist menu is read in.
+pub fn exact() -> Arc<c600_jumble::Context> {
+    static EXACT: OnceLock<Arc<c600_jumble::Context>> = OnceLock::new();
+    let load = || Arc::new(c600_jumble::Context::load(&repository().join("assets")).expect("the exact model loads"));
+    EXACT.get_or_init(load).clone()
+}
+
+/// The I_a twist menu of `research/jumbling/fixtures/wj-I_a.json`, read in the exact model.
+pub fn menu() -> Menu {
+    static RECORD: OnceLock<Value> = OnceLock::new();
+    let record = RECORD.get_or_init(|| {
+        let fixture = std::fs::read(repository().join("research/jumbling/fixtures/wj-I_a.json")).unwrap();
+        json::parse(&fixture).unwrap().get("menu").expect("the fixture has a menu").clone()
+    });
+    Menu::from_record(&exact(), record).expect("the I_a menu")
+}
+
+/// The I_a menu's two digests, as the host gives them to the router with the menu it pins in the layer.
+pub fn pin() -> MenuPin {
+    MenuPin { set: SET.to_owned(), order: ORDER.to_owned() }
+}
+
+/// KN3.7's binding of item `index` of the pinned menu at `cap`, pressed directly.
+pub fn item(cap: u32, index: u64) -> Binding {
+    Binding { request: menu_request(SET, ORDER, index), cap, operation: Operation::MenuDirect, menu: Some(pin()) }
+}
+
+/// What a twist key of item `index` must send as `twist.apply`'s `rotation`: KN3.7's binding without its cap, built
+/// with the kernel's own binding form.
+pub fn rotation(index: u64) -> Value {
+    let Value::Object(mut fields) = item(0, index).to_json() else { panic!("a binding is an object") };
+    fields.remove("cap");
+    Value::Object(fields)
+}
+
+/// The retained word of item `index` at `cap`, as KN3's resolution gives it against the pinned menu.
+pub fn retained(cap: u32, index: u64) -> Vec<i64> {
+    static MENU: OnceLock<Menu> = OnceLock::new();
+    let menu = MENU.get_or_init(menu);
+    let resolution = rotation::resolve(&exact(), Some(menu), &item(cap, index)).expect("the item resolves");
+    rotation::retained_word(&exact(), &resolution).expect("a retained item")
+}
+
+/// The state after `letters` from `base`, derived by the kernel outside any session.
+pub fn derived(base: &Snapshot, letters: &[i64]) -> Snapshot {
+    let k = kernel();
+    match k.derive(base, &k.word(letters).unwrap(), &ProtectedSet::none()).unwrap() {
+        Derivation::Derived(derived) => derived.state,
+        Derivation::Refused(refused) => panic!("unexpected refusal: {}", refused.refusal),
+    }
 }
 
 /// A focused list of `n` entries `e0`, `e1`, ... showing pieces `p0`, `p1`, ..., with entry `selected` selected.
@@ -94,6 +165,16 @@ pub fn fixture(prefix: &str, layout: &str) -> Fixture {
 }
 
 impl Fixture {
+    /// Pins the I_a menu as the host does: in the layer (`CommandLayer::pin_menu`) and, by its two digests, in the
+    /// router's context. The applied slot map becomes [`cap_slots`], with the grip on none of them.
+    pub fn pin_menu(&mut self) {
+        let menu = menu();
+        assert_eq!((menu.identity.as_str(), menu.order.as_str()), (SET, ORDER), "the I_a menu's digests");
+        self.layer.pin_menu(exact(), menu).expect("the menu's model is the session's model");
+        self.router.context.menu = Some(pin());
+        self.router.context.rebind(cap_slots());
+    }
+
     pub fn key(&mut self, event: KeyEvent) -> Routed {
         self.router.key(&mut self.shell, &mut self.layer, event)
     }
