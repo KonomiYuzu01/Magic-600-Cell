@@ -70,7 +70,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// Every type of the IR draft, matched without a wildcard. A domain family added to the IR (a piece, a pose, a
 /// sticker class, a state, a verdict, a goal or an equality key) fails to compile here until its CT-LG2 tests exist.
 /// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
-/// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`.
+/// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. F2 and F5 (LP2 draft) are number kinds of
+/// KN3.2, not domain families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -90,6 +91,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::Receipt
         | Ty::WordEqualityKey
         | Ty::CompressedWord
+        | Ty::Field(_)
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
@@ -105,6 +107,10 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::ExactAdd | Prim::ExactLess | Prim::ExactEq | Prim::And | Prim::Or | Prim::Not => "arithmetic",
         Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxAdd | Prim::ApproxLess | Prim::ApproxAnd => "arithmetic",
         Prim::ApproxNot => "arithmetic",
+        Prim::ToField(_) | Prim::Residue | Prim::FieldAdd | Prim::FieldSub | Prim::FieldNeg | Prim::FieldMul => {
+            "arithmetic"
+        }
+        Prim::FieldInverse => "arithmetic",
         Prim::Length | Prim::Index | Prim::Push | Prim::Concat => "collection",
         Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => "collection",
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",

@@ -29,8 +29,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, Expr, FnKind, FnTy, Function, Lit, Prim, Program,
-    QTy, ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
+    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, Expr, Field, FnKind, FnTy, Function, Lit, Prim,
+    Program, QTy, ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
 };
 
 /// `LG2:type.mismatch` (LG2.1).
@@ -658,7 +658,8 @@ fn carries_word(ty: &Ty) -> bool {
         | Ty::Colour
         | Ty::Approx(_)
         | Ty::ApproxBool
-        | Ty::Receipt => false,
+        | Ty::Receipt
+        | Ty::Field(_) => false,
     }
 }
 
@@ -688,6 +689,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Set(_) => "Set".into(),
         Ty::Map(..) => "Map".into(),
         Ty::CompressedWord => "CompressedWord".into(),
+        Ty::Field(f) => f.name().into(),
     }
 }
 
@@ -812,7 +814,8 @@ fn declared_qual(q: &QTy) -> Qual {
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
 /// at any depth, and without a callable, a receipt, `Unit`, a type variable or a compressed word, so that its
-/// canonical key order (DET.9) is defined.
+/// canonical key order (DET.9) is defined. An F2 or F5 element may be a key (LP2 draft): its key order is the field,
+/// then the residue, and `exact_less` still refuses it, since a finite field has no order.
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
@@ -848,17 +851,17 @@ fn holds_callable(ty: &Ty) -> bool {
 }
 
 /// What a goal or an evidence sink takes, in a mismatch's `expected`.
-const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord or a type variable";
+const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord, F2, F5 or a type variable";
 
 /// Whether a goal or an evidence sink takes a value of this type (owner decision of 16 November 2026 under PHS.52):
-/// portable data with a canonical encoding, so no callable, receipt, word equality key (LG2.13) or compressed word
-/// (DET.59) at any depth, and no type variable, which may stand for one of them (the checker does not unify type
-/// variables, M1). An unknown type fits. Whether an approximate value may enter is the exactness rules' question
-/// (LG2.22).
+/// portable data with a canonical encoding, so no callable, receipt, word equality key (LG2.13), compressed word
+/// (DET.59) or F2 or F5 element (FP.6 has no form for one; a program passes its `residue`) at any depth, and no type
+/// variable, which may stand for one of them (the checker does not unify type variables, M1). An unknown type fits.
+/// Whether an approximate value may enter is the exactness rules' question (LG2.22).
 fn portable(ty: &Ty) -> bool {
     match ty {
         _ if is_unknown(ty) => true,
-        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::CompressedWord => false,
+        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::CompressedWord | Ty::Field(_) => false,
         Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
         other => other.elements().into_iter().all(|e| portable(&e.ty)),
     }
@@ -2497,6 +2500,7 @@ impl<'p> Checker<'p> {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot => 1,
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
+            Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => 1,
             Prim::InsertEntry | Prim::Expand => 3,
             _ => 2,
         };
@@ -2805,6 +2809,55 @@ impl<'p> Checker<'p> {
                 }
                 // An expansion cannot extract exact letters from a display-qualified word (LG2.19).
                 Ok(Val::new(Ty::Word, project(c.qual, Qual::Exact)))
+            }
+            Prim::ToField(field) => {
+                // An integer of any size reduces into the field (KN3.2). A budget is a cost, not a number to reduce
+                // (LG2.6); an approximation fits here and is refused by the exactness rules (LG2.22).
+                let v = &vals[0];
+                let what = format!("the integer of to_{}", field.name().to_lowercase());
+                if fits(&Ty::Int, &v.ty) {
+                    self.at(0, |c| c.exact_use(Site::Operand, v, &what));
+                } else {
+                    self.at(0, |c| c.misfit("Nat | Int", v, &what));
+                }
+                Ok(Val::exact(Ty::Field(field)))
+            }
+            Prim::Residue => {
+                let v = &vals[0];
+                let what = "the element of a residue";
+                if matches!(v.ty, Ty::Field(_)) {
+                    self.at(0, |c| c.exact_use(Site::Operand, v, what));
+                } else if !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("F2 | F5", v, what));
+                }
+                Ok(Val::exact(Ty::Nat))
+            }
+            Prim::FieldAdd | Prim::FieldSub | Prim::FieldNeg | Prim::FieldMul | Prim::FieldInverse => {
+                // The operands are elements of one field: none widens from an integer, from a rational or into the
+                // other field (KN3.2; LP2 draft). The first operand of a field type fixes the field.
+                let mut field: Option<Field> = None;
+                let mut unknown_operand = false;
+                for (i, v) in vals.iter().enumerate() {
+                    match (&v.ty, field) {
+                        (Ty::Field(f), None) => field = Some(*f),
+                        (Ty::Field(f), Some(first)) if *f == first => {}
+                        (t, _) if is_unknown(t) => {
+                            unknown_operand = true;
+                            continue;
+                        }
+                        _ => {
+                            let expected = field.map_or("F2 | F5", Field::name);
+                            self.at(i, |c| c.misfit(expected, v, &what));
+                            unknown_operand = true;
+                            continue;
+                        }
+                    }
+                    self.at(i, |c| c.exact_use(Site::Operand, v, &what));
+                }
+                Ok(match field {
+                    Some(f) if !unknown_operand => Val::exact(Ty::Field(f)),
+                    _ => Val::unknown(),
+                })
             }
         }
     }

@@ -145,7 +145,7 @@ fn sink(s: &Sink) -> (Kind, Vec<String>) {
 fn holds(ty: &Ty) -> &'static str {
     match ty {
         Ty::Unit | Ty::Bool | Ty::ApproxBool => "a truth value or nothing",
-        Ty::Nat | Ty::Int | Ty::Rat | Ty::Q5 | Ty::Budget | Ty::Approx(_) => "a number",
+        Ty::Nat | Ty::Int | Ty::Rat | Ty::Q5 | Ty::Budget | Ty::Approx(_) | Ty::Field(_) => "a number",
         Ty::Text | Ty::Status | Ty::Colour => "a text",
         Ty::Word | Ty::Target => "letters or a target's name",
         Ty::Record(_) => "named values of these types",
@@ -164,7 +164,7 @@ fn holds(ty: &Ty) -> &'static str {
 fn value_holds(v: &Value) -> &'static str {
     match v {
         Value::Unit | Value::Bool(_) | Value::ApproxBool(_) => "a truth value or nothing",
-        Value::Int(_) | Value::Rat(_) | Value::Q5(_) | Value::Approx(_) => "a number",
+        Value::Int(_) | Value::Rat(_) | Value::Q5(_) | Value::Approx(_) | Value::Field(..) => "a number",
         Value::Text(_) | Value::Tag(_) | Value::Colour(_) => "a text",
         Value::Word(_) | Value::Target(_) => "letters or a target's name",
         Value::Record(_) => "named values",

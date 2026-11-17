@@ -7,6 +7,7 @@
 use std::cmp::Ordering;
 use std::sync::Arc;
 
+use c600_ir::Field;
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -50,6 +51,9 @@ pub enum Value {
     Map(Arc<List>),
     /// LG2.16's compressed word (LP2 draft): a straight-line program with its exact length.
     Compressed(Arc<Compressed>),
+    /// An element of F2 or F5 (KN3.2; LP2 draft): the field and its residue, which is below the field's prime. Build
+    /// one with [`Value::field`].
+    Field(Field, u8),
 }
 
 /// A list: its elements in order, its logical size and an upper bound of its canonical encoding (LP2 draft).
@@ -330,7 +334,8 @@ pub fn inverse(letters: &[i32]) -> Vec<i32> {
 /// before `true`, texts compare by their scalar values, words and word keys by their letters, and lists, sets, maps,
 /// records and closures by their parts in order, each lexicographically with a prefix first; values of different
 /// kinds compare by kind. Equal numbers in different representations, an `Int` and a `Rat` of one value, have their
-/// representation as the explicit secondary key: `Int`, then `Rat`, then `Q5`.
+/// representation as the explicit secondary key: `Int`, then `Rat`, then `Q5`. An F2 or F5 element is no such number:
+/// elements compare by their field, F2 first, then by their residue (LP2 draft).
 pub fn key_order(a: &Value, b: &Value) -> Ordering {
     walk_order(a, b, false).then_with(|| walk_order(a, b, true))
 }
@@ -370,6 +375,7 @@ fn kind(v: &Value) -> u8 {
         Value::Set(_) => 16,
         Value::Map(_) => 17,
         Value::Compressed(_) => 18,
+        Value::Field(..) => 19,
     }
 }
 
@@ -411,6 +417,7 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 (Value::Fn(x), Value::Fn(y)) => x.cmp(y),
                 // By their parts: no key or equality of a checked program compares compressed words (LP2 draft).
                 (Value::Compressed(x), Value::Compressed(y)) => x.parts.cmp(&y.parts),
+                (Value::Field(f, x), Value::Field(g, y)) => (f, x).cmp(&(g, y)),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -683,6 +690,13 @@ impl Value {
         Value::Word(letters.into())
     }
 
+    /// The element of `field` that the integer `n` reduces to: its residue modulo the field's prime, which is in
+    /// `0..p` for a negative `n` too (KN3.2; LP2 draft).
+    pub fn field(field: Field, n: &BigInt) -> Value {
+        let residue = n.mod_floor(&BigInt::from(field.modulus()));
+        Value::Field(field, u8::try_from(&residue).expect("a residue below the prime"))
+    }
+
     pub fn record(fields: Vec<(&str, Value)>) -> Value {
         Value::Record(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
     }
@@ -742,6 +756,7 @@ impl Value {
             Value::Fn(_) => 32,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.size,
             Value::Compressed(c) => c.size(),
+            Value::Field(..) => 1,
         }
     }
 
@@ -776,10 +791,14 @@ impl Value {
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
             // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13). Nor has a
-            // compressed word, whose output would be its expansion (DET.59).
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
-                0
-            }
+            // compressed word, whose output would be its expansion (DET.59), nor an F2 or F5 element, which FP.6 does
+            // not wrap.
+            Value::Closure(_)
+            | Value::Fn(_)
+            | Value::Receipt(_)
+            | Value::WordEqualityKey(_)
+            | Value::Compressed(_)
+            | Value::Field(..) => 0,
         }
     }
 }
@@ -938,6 +957,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::Fn(x), Value::Fn(y)) => x == y,
             (Value::Compressed(x), Value::Compressed(y)) => x.parts == y.parts,
             (Value::Approx(x), Value::Approx(y)) => x == y,
+            (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
         };
         if !same {
@@ -955,8 +975,20 @@ pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 
             t.text_per_scalar.saturating_mul(x.scalars.saturating_add(y.scalars))
         }
         (
-            Value::Unit | Value::Bool(_) | Value::ApproxBool(_) | Value::Tag(_) | Value::Colour(_) | Value::Fn(_),
-            Value::Unit | Value::Bool(_) | Value::ApproxBool(_) | Value::Tag(_) | Value::Colour(_) | Value::Fn(_),
+            Value::Unit
+            | Value::Bool(_)
+            | Value::ApproxBool(_)
+            | Value::Tag(_)
+            | Value::Colour(_)
+            | Value::Fn(_)
+            | Value::Field(..),
+            Value::Unit
+            | Value::Bool(_)
+            | Value::ApproxBool(_)
+            | Value::Tag(_)
+            | Value::Colour(_)
+            | Value::Fn(_)
+            | Value::Field(..),
         ) => 0,
         _ => d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size())),
     }

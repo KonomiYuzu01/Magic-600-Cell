@@ -129,6 +129,36 @@ pub enum Ty {
     /// LG2.16's compressed word: a straight-line program over literal letters whose exact expanded length is known
     /// before any expansion (KN2.10). It is never a `Word`: its letters come out by an explicit, priced expansion.
     CompressedWord,
+    /// An element of the finite field F2 or F5, an exact number kind of KN3.2 and ADR-L03.2 (LP2 draft until the IR
+    /// freeze, PHS.49). It has no literal (LG1.6): a value comes from `to_f2` or `to_f5` of an `Int`. It never widens
+    /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
+    /// program stores its `residue`.
+    Field(Field),
+}
+
+/// The finite fields of KN3.2: F2 and F5 (LP2 draft).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Field {
+    F2,
+    F5,
+}
+
+impl Field {
+    /// The field's prime.
+    pub fn modulus(self) -> u8 {
+        match self {
+            Field::F2 => 2,
+            Field::F5 => 5,
+        }
+    }
+
+    /// The field's type name in source.
+    pub fn name(self) -> &'static str {
+        match self {
+            Field::F2 => "F2",
+            Field::F5 => "F5",
+        }
+    }
 }
 
 impl Ty {
@@ -297,6 +327,23 @@ pub enum Prim {
     /// `expand(c, start, count)`: the `count` letters of the compressed word `c` from the exact position `start`,
     /// counted from 0, as a `Word` in chronological order (LG4.6). A range past the word's end is a pointwise failure.
     Expand,
+    // Finite fields (KN3.2; LP2 drafts until the IR freeze, PHS.49). They take operands of one field only and stay
+    // apart from `ExactAdd`'s widening.
+    /// `to_f2(n)`, `to_f5(n)`: the residue of the `Int` (or `Nat`) `n` modulo the field's prime, as a field element.
+    ToField(Field),
+    /// `residue(x)`: the field element's representative in `0..p` as a `Nat`.
+    Residue,
+    /// `field_add(x, y)`: the sum in the field.
+    FieldAdd,
+    /// `field_sub(x, y)`: the difference in the field.
+    FieldSub,
+    /// `field_neg(x)`: the additive inverse in the field.
+    FieldNeg,
+    /// `field_mul(x, y)`: the product in the field.
+    FieldMul,
+    /// `field_inverse(x)`: the multiplicative inverse in the field. Zero has none: the operation is guarded by a
+    /// pointwise assertion that `x` is not zero (DET.55), and its failure is `LG4:input.pointwise_failed`.
+    FieldInverse,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -557,6 +604,9 @@ pub mod build {
     }
     pub fn exact_add(a: Expr, b: Expr) -> Expr {
         prim(Prim::ExactAdd, vec![a, b])
+    }
+    pub fn to_field(field: Field, e: Expr) -> Expr {
+        prim(Prim::ToField(field), vec![e])
     }
     pub fn call(name: &str, args: Vec<Expr>) -> Expr {
         Expr::Call { callee: Callee::Fn { module: None, name: name.into() }, args }

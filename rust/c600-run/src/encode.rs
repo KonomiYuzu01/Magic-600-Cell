@@ -22,9 +22,9 @@ use std::cmp::Ordering;
 
 use crate::value::{entry_key, value_order, Text, Value};
 
-/// Why a value has no canonical form: a closure, a function, a receipt, a word equality key, a compressed word, an
-/// approximation that is not exactly a binary64 number, a word with a letter of magnitude above 1200, a record with a
-/// repeated key, or a set or map out of canonical key order.
+/// Why a value has no canonical form: a closure, a function, a receipt, a word equality key, a compressed word, an F2
+/// or F5 element, an approximation that is not exactly a binary64 number, a word with a letter of magnitude above
+/// 1200, a record with a repeated key, or a set or map out of canonical key order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Noncanonical;
 
@@ -149,10 +149,14 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                 }
             }
             // A word key is never output as letters (LG2.13); the LP2 draft gives it no canonical form. Nor does it give
-            // one to a compressed word, whose output would be its priced expansion (DET.59).
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
-                return Err(Noncanonical)
-            }
+            // one to a compressed word, whose output would be its priced expansion (DET.59), or to an F2 or F5 element:
+            // FP.6 wraps only int, rat and q5 (PS1.5), so a program outputs the element's residue.
+            Value::Closure(_)
+            | Value::Fn(_)
+            | Value::Receipt(_)
+            | Value::WordEqualityKey(_)
+            | Value::Compressed(_)
+            | Value::Field(..) => return Err(Noncanonical),
         }
     }
     out.push(b'\n');

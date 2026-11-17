@@ -10,8 +10,8 @@ use std::fmt;
 
 use c600_ir::Expr as Ir;
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, FnKind, FnTy, Function, Lit, Module, Order, Param,
-    Prim, Program, QTy, ReceiptField, Ty,
+    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, Field, FnKind, FnTy, Function, Lit, Module, Order,
+    Param, Prim, Program, QTy, ReceiptField, Ty,
 };
 
 use crate::ast::*;
@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 61] = [
+const BUILTINS: [&str; 69] = [
     "if",
     "display_if",
     "exact_add",
@@ -86,6 +86,15 @@ const BUILTINS: [&str; 61] = [
     // Compressed words (LP2 drafts).
     "compress",
     "expand",
+    // Finite fields (KN3.2; LP2 drafts).
+    "to_f2",
+    "to_f5",
+    "residue",
+    "field_add",
+    "field_sub",
+    "field_neg",
+    "field_mul",
+    "field_inverse",
 ];
 
 /// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
@@ -94,7 +103,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 16] = [
+const BASE_TYPES: [&str; 18] = [
     "Unit",
     "Bool",
     "Nat",
@@ -111,6 +120,8 @@ const BASE_TYPES: [&str; 16] = [
     "Receipt",
     "WordEqualityKey",
     "CompressedWord",
+    "F2",
+    "F5",
 ];
 
 fn reserved(name: &str) -> bool {
@@ -128,7 +139,8 @@ fn holds_callable(ty: &Ty) -> bool {
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
 /// at any depth, and without a function, a receipt, `Unit`, a type parameter or a compressed word, so that its
-/// canonical key order is defined (DET.9).
+/// canonical key order is defined (DET.9). An F2 or F5 element may be a key: its key order is the field, then the
+/// residue (LP2 draft).
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
@@ -659,6 +671,7 @@ impl Body<'_> {
             "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less" | "approx_and"
             | "write_workspace" | "propose" | "file_write" => 2,
             "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
+            "field_add" | "field_sub" | "field_mul" => 2,
             // An ordered result names its order (LG4.3).
             "contains" | "lookup" | "elements" | "keys" | "entries" => 2,
             // `read_snapshot<T>("q", x)` reads the engine's row `q` for `x` (LP2 draft).
@@ -737,6 +750,14 @@ impl Body<'_> {
             "approx_less" => Some(Prim::ApproxLess),
             "approx_and" => Some(Prim::ApproxAnd),
             "approx_not" => Some(Prim::ApproxNot),
+            "to_f2" => Some(Prim::ToField(Field::F2)),
+            "to_f5" => Some(Prim::ToField(Field::F5)),
+            "residue" => Some(Prim::Residue),
+            "field_add" => Some(Prim::FieldAdd),
+            "field_sub" => Some(Prim::FieldSub),
+            "field_neg" => Some(Prim::FieldNeg),
+            "field_mul" => Some(Prim::FieldMul),
+            "field_inverse" => Some(Prim::FieldInverse),
             _ => None,
         };
         if let Some(op) = prim {
@@ -944,6 +965,8 @@ impl Body<'_> {
                             "Receipt" => Ty::Receipt,
                             "WordEqualityKey" => Ty::WordEqualityKey,
                             "CompressedWord" => Ty::CompressedWord,
+                            "F2" => Ty::Field(Field::F2),
+                            "F5" => Ty::Field(Field::F5),
                             _ => Ty::Var(n.into()),
                         }))
                     }
@@ -1026,7 +1049,7 @@ mod tests {
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"
                 | "approx_and" | "propose" | "index" | "push" | "concat" | "conjugate" | "commutator" | "compose"
-                | "contains" | "insert" | "lookup" => format!("{op}(1, 2)"),
+                | "contains" | "insert" | "lookup" | "field_add" | "field_sub" | "field_mul" => format!("{op}(1, 2)"),
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),

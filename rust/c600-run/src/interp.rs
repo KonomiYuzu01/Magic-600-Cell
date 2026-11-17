@@ -60,7 +60,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
 use std::sync::Arc;
 
-use c600_ir::{self as ir, Accounting, Callee, ExactRole, Expr, FnKind, Order, Prim, QTy, ReceiptField, Ty};
+use c600_ir::{self as ir, Accounting, Callee, ExactRole, Expr, Field, FnKind, Order, Prim, QTy, ReceiptField, Ty};
 use num_bigint::{BigInt, Sign};
 
 use crate::approx;
@@ -82,7 +82,9 @@ use crate::value::{
 /// (PHS.49). So are the set and map operations, their prices (a comparison priced as an exact equality walk over two
 /// keys of the bounding size), the canonical key order ([`value::key_order`]), the pointwise stop of a missing key
 /// and their JSON forms. So are the compressed word ([`value::Compressed`]), its parts, its logical layout, its
-/// operations and their prices, and its lack of a JSON form and of an exact equality.
+/// operations and their prices, and its lack of a JSON form and of an exact equality. So are the F2 and F5 elements
+/// (KN3.2), their operations, their prices, the pointwise assertion that guards `field_inverse`, their key order and
+/// their lack of a JSON form and of a canonical one.
 pub const LIST_PER_ELEMENT: u128 = 1;
 
 /// The codes the interpreter raises in addition to the meter's (chapter 13).
@@ -492,6 +494,8 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => Some(1),
         Prim::Contains | Prim::Insert | Prim::Lookup => Some(2),
         Prim::InsertEntry | Prim::Expand => Some(3),
+        Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => Some(1),
+        Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
     }
 }
 
@@ -1259,6 +1263,13 @@ impl<'a> Machine<'a> {
             | Prim::Elements(_)
             | Prim::Keys(_)
             | Prim::Entries(_) => return self.keyed_op(n, op, args),
+            Prim::ToField(_)
+            | Prim::Residue
+            | Prim::FieldAdd
+            | Prim::FieldSub
+            | Prim::FieldNeg
+            | Prim::FieldMul
+            | Prim::FieldInverse => return self.finite_field(n, op, args),
         };
         let display = |v: &Value| match v {
             Value::Bool(x) | Value::ApproxBool(x) => Some(*x),
@@ -1300,6 +1311,78 @@ impl<'a> Machine<'a> {
             }
             (Prim::ApproxAnd, a, Some(b)) => Value::ApproxBool(display(a) == Some(true) && display(b) == Some(true)),
             (Prim::ApproxNot, a, None) => Value::ApproxBool(display(a) == Some(false)),
+            _ => unreachable!("a priced operation"),
+        };
+        self.settle(memory, result);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// The F2 and F5 operations (KN3.2; LP2 drafts; DET.55 names no row for them), one step each, with mistyped
+    /// operands rejected before any charge. `to_f2` and `to_f5` take an integer of any size, so they are priced by it
+    /// (DET.55: no unmetered big-integer operation): the integer row's price for adding the prime to it, one walk over
+    /// its limbs. The others work on residues below 5 and cost no kernel units. `field_inverse` is guarded by a
+    /// pointwise assertion (DET.55): its predicate `field_nonzero` reserves its `Bool`, the `assert` step consumes it,
+    /// and only then does the inverse run. The inverse of zero stops with `LG4:input.pointwise_failed` after the
+    /// `assert` step and keeps the admitted charges (chapter 13).
+    fn finite_field(&mut self, n: NodeId, op: Prim, args: Vec<Held>) -> Result<(), Stop> {
+        let name = match op {
+            Prim::ToField(Field::F2) => "to_f2",
+            Prim::ToField(Field::F5) => "to_f5",
+            Prim::Residue => "residue",
+            Prim::FieldAdd => "field_add",
+            Prim::FieldSub => "field_sub",
+            Prim::FieldNeg => "field_neg",
+            Prim::FieldMul => "field_mul",
+            _ => "field_inverse",
+        };
+        // An element of a field, with its residue below the prime; any other operand is mistyped.
+        let element = |v: Option<&Value>| match v {
+            Some(Value::Field(f, r)) if *r < f.modulus() => Some((*f, *r)),
+            _ => None,
+        };
+        let (a, b) = (args.first().map(|h| &h.value), args.get(1).map(|h| &h.value));
+        let (x, y) = (element(a), element(b));
+        // The row is priced from the operands' metadata before any work.
+        let (kernel, memory) = match (op, a, x, b, y) {
+            (Prim::ToField(field), Some(Value::Int(i)), _, None, _) => {
+                let prime = bits(u128::from(field.modulus()));
+                (self.tariffs.integer(meter::IntOp::Add, i.bits() as u128, prime).0, 1)
+            }
+            // A residue below 5 is an integer of one byte.
+            (Prim::Residue, _, Some(_), None, _) => (0, integer_size(8)),
+            (Prim::FieldNeg | Prim::FieldInverse, _, Some(_), None, _) => (0, 1),
+            (Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul, _, Some((f, _)), _, Some((g, _))) if f == g => (0, 1),
+            _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+        };
+        if op == Prim::FieldInverse {
+            self.charge(Some(n), "field_nonzero", 0, 1, 0)?;
+            self.charge(Some(n), "assert", 0, 0, 0)?;
+            // The assertion consumes the predicate's Bool.
+            self.meter.release(1);
+            if x.is_some_and(|(_, r)| r == 0) {
+                return Err(self.fail(Some(n), "assert", meter::code::POINTWISE_FAILED));
+            }
+        }
+        self.charge(Some(n), name, kernel, memory, 0)?;
+        let result = match (op, a, x, y) {
+            (Prim::ToField(field), Some(Value::Int(i)), _, _) => Value::field(field, i),
+            (Prim::Residue, _, Some((_, r)), _) => Value::int(r),
+            (op, _, Some((f, r)), y) => {
+                let (p, s) = (f.modulus(), y.map_or(0, |(_, s)| s));
+                let residue = match op {
+                    Prim::FieldAdd => (r + s) % p,
+                    Prim::FieldSub => (r + p - s) % p,
+                    Prim::FieldMul => r * s % p,
+                    Prim::FieldNeg => (p - r) % p,
+                    _ => (1..p).find(|t| r * t % p == 1).expect("a nonzero element's inverse"),
+                };
+                Value::Field(f, residue)
+            }
             _ => unreachable!("a priced operation"),
         };
         self.settle(memory, result);

@@ -10,14 +10,15 @@
 //! `Compressed::from_parts` takes them), so equal values have equal bytes. Values are walked with an explicit stack
 //! in both directions, so a deep value cannot overflow either process's stack. A compressed word crosses as its parts
 //! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the lengths that
-//! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15).
+//! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15). An F2 or F5
+//! element (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::Row as ClassRow;
-use c600_ir::{Capability, Effect, EffectBound, ExactRole, FnTy, QTy, Ty};
+use c600_ir::{Capability, Effect, EffectBound, ExactRole, Field, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::meter::{
@@ -63,6 +64,25 @@ mod tag {
     /// LP2's draft compressed word (C3 draft 15): its part count, then each part in order, a leaf as its part tag and
     /// its letters, a concatenation as its part tag and its two part numbers.
     pub const COMPRESSED: u8 = 20;
+    /// LP2's draft F2 or F5 element (KN3.2): its field's byte (`field_byte`), then its residue's byte, below
+    /// the field's prime. Tags 21 to 23 are taken by the IR session's open drafts.
+    pub const FIELD: u8 = 24;
+}
+
+/// A finite field's byte in a value or a type (LP2 draft): 0 for F2, 1 for F5.
+fn field_byte(field: Field) -> u8 {
+    match field {
+        Field::F2 => 0,
+        Field::F5 => 1,
+    }
+}
+
+fn field_from(byte: u8) -> Result<Field, Malformed> {
+    match byte {
+        0 => Ok(Field::F2),
+        1 => Ok(Field::F5),
+        _ => Err(Malformed::new("an unknown field")),
+    }
 }
 
 /// The tags of a compressed word's parts.
@@ -288,6 +308,14 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.text(t.as_str());
             }
             Value::Word(w) => encode_letters(tag::WORD, w, e)?,
+            Value::Field(field, residue) => {
+                if *residue >= field.modulus() {
+                    return Err(Unencodable("a residue outside its field"));
+                }
+                e.u8(tag::FIELD);
+                e.u8(field_byte(*field));
+                e.u8(*residue);
+            }
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -462,6 +490,14 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
             tag::TAG => Value::Tag(text_value(d)?),
             tag::COLOUR => Value::Colour(text_value(d)?),
             tag::WORD => Value::Word(decode_letters(d)?.into()),
+            tag::FIELD => {
+                let field = field_from(d.u8()?)?;
+                let residue = d.u8()?;
+                if residue >= field.modulus() {
+                    return Err(Malformed::new("a residue outside its field"));
+                }
+                Value::Field(field, residue)
+            }
             tag::WORD_KEY => {
                 let letters = decode_letters(d)?;
                 if !freely_reduced(&letters) {
@@ -766,6 +802,11 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             qty(value, e, depth + 1)?;
         }
         Ty::CompressedWord => e.u8(22),
+        // Type tags 23 to 25 are taken by the IR session's open drafts.
+        Ty::Field(field) => {
+            e.u8(26);
+            e.u8(field_byte(*field));
+        }
     }
     Ok(())
 }
@@ -846,6 +887,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
             Ty::Map(Box::new(key), Box::new(decode_qty_at(d, depth + 1)?))
         }
         22 => Ty::CompressedWord,
+        26 => Ty::Field(field_from(d.u8()?)?),
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }

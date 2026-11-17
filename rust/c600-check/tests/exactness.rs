@@ -13,7 +13,7 @@ use support::{codes, fields, less, mismatch, only, report, tint, tool, xy};
 
 const V: &str = EXACTNESS_VIOLATION;
 /// What a goal or an evidence sink expects, in a mismatch (PHS.52, 16 November 2026).
-const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord or a type variable";
+const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord, F2, F5 or a type variable";
 
 fn boolean(b: bool) -> Expr {
     Expr::Lit(Lit::Bool(b))
