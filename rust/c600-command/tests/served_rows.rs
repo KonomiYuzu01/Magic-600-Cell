@@ -8,7 +8,7 @@ use std::sync::{Arc, OnceLock};
 use c600_command::{
     code, digest, draft_args, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction,
     HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, Receipt, ResultRef, Row, Secret, Shell, Status, Table,
-    TransactionKind, POLICY_ROW, RECORD_ROW,
+    TransactionKind, POLICY_ROW, RECORD_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -21,7 +21,7 @@ const SCOPE: &str = "view.effect.scope";
 const PLAY: &str = "recording.play";
 
 /// The stored rows the command layer builds itself.
-const LAYER_ROWS: [&str; 8] = [
+const LAYER_ROWS: [&str; 10] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -30,6 +30,8 @@ const LAYER_ROWS: [&str; 8] = [
     "protection.orbit.set",
     POLICY_ROW,
     RECORD_ROW,
+    WORKSHEET_SAVE_ROW,
+    WORKSHEET_LOAD_ROW,
 ];
 
 /// One row per shape condition, each alone on a row the layer could otherwise serve; the first four are served.

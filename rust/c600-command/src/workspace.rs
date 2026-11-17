@@ -4,8 +4,9 @@
 //! as a durable action whose receipt is `completed(workspace)`: the workspace revision and the record's version
 //! advance, and the state, the preview slot and the jobs stay (KN5.18, KN5.23). Its undo and redo are workspace
 //! inverses through `session.undo` and `session.redo` (LI.26). A draft `{"record": name}` is a `ResolvedDraftRef`: the
-//! preview reads the record's letters at admission and keeps the record's content digest and version in its read set,
-//! so a later write of the record makes the preview stale (KN0.8).
+//! preview reads the record's letters, or a work sheet's complete operation ([`crate::worksheet`]), at admission and
+//! keeps the record's content digest and version in its read set, so a later write of the record makes the preview
+//! stale (KN0.8).
 //!
 //! The layer depends on the kernel only and cannot read a provenance block itself. The host gives it a [`Provenance`]
 //! adapter ([`crate::CommandLayer::set_provenance`]), which reads a block when a record is written (PS1.16) and decides
@@ -15,6 +16,7 @@
 use c600_kernel::json::{self, Value};
 
 use crate::receipt::{digest, Error};
+use crate::worksheet::Worksheet;
 
 /// The row a record write takes: M6's draft name. H-08 has no such row; it joins the command table when the typed
 /// workspace rows freeze with it at LP3 (PHS.53).
@@ -50,6 +52,12 @@ impl RecordValue {
     /// The letters the record holds: its payload when that is a list of integers that fit a letter.
     pub fn letters(&self) -> Option<Vec<i64>> {
         self.payload.as_array()?.iter().map(|item| item.as_i64().filter(|&n| i32::try_from(n).is_ok())).collect()
+    }
+
+    /// The operation a draft `{"record": name}` previews (draft): the record's letters, or a work sheet's complete
+    /// operation, Prepare, Macro and Cleanup in that order ([`Worksheet::letters`]).
+    pub fn operation(&self) -> Option<Vec<i64>> {
+        self.letters().or_else(|| Worksheet::from_payload(&self.payload).map(|sheet| sheet.letters()))
     }
 }
 

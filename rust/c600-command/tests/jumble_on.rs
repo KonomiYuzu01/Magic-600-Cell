@@ -11,7 +11,8 @@ use c600_command::layer::{JUMBLE_ON_MODE, MODE};
 use c600_command::{
     code, draft_args, identity_json, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction, Error,
     HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, Secret, Shell, Status,
-    Table, Transaction, TransactionKind, JUMBLE_ON_ROW, POLICY_ROW, RECORD_ROW, TWIST_ROW,
+    Table, Transaction, TransactionKind, JUMBLE_ON_ROW, POLICY_ROW, RECORD_ROW, TWIST_ROW, WORKSHEET_LOAD_ROW,
+    WORKSHEET_SAVE_ROW,
 };
 use c600_jumble::levels::{self, Base};
 use c600_jumble::twist::Menu;
@@ -473,10 +474,11 @@ fn a_retried_entry_answers_its_receipt_and_enters_once() {
 
 /// LG2.8 and the draft rulings in `src/lib.rs`: with Jumble on, `operation.preview`, `operation.execute` and
 /// `twist.apply` are `KN5:input.retained_tool_needs_jumble_off` and change nothing: a preview before its draft is read,
-/// a commit after its token's binding, a twist after its token, so a jumble item answers the mode too. Availability
-/// says the same, and so does KN2.4's `positions` read at the head (draft; CT-LB2-04), whose retained state is the one
-/// the crossing entered from. The protection, policy and record rows and a program row stay, their actions' `pre` and
-/// `post` are the pose digest, and a program job reads the revision with its mode.
+/// a commit after its token's binding, a twist after its token, so a jumble item answers the mode too. So are LB7.2's
+/// `worksheet.save` and `worksheet.load`, before their arguments are read. Availability says the same, and so does
+/// KN2.4's `positions` read at the head (draft; CT-LB2-04), whose retained state is the one the crossing entered from.
+/// The protection, policy and record rows and a program row stay, their actions' `pre` and `post` are the pose digest,
+/// and a program job reads the revision with its mode.
 #[test]
 fn the_retained_workflow_needs_jumble_off() {
     let mut f = fixture(&[]);
@@ -490,7 +492,9 @@ fn the_retained_workflow_needs_jumble_off() {
     let on = f.layer.revision().clone();
 
     let needs_off = code::RETAINED_TOOL_NEEDS_JUMBLE_OFF;
-    for row in ["operation.preview", "operation.execute", TWIST_ROW, JUMBLE_ON_ROW] {
+    for row in
+        ["operation.preview", "operation.execute", TWIST_ROW, JUMBLE_ON_ROW, WORKSHEET_SAVE_ROW, WORKSHEET_LOAD_ROW]
+    {
         assert_eq!(f.layer.availability(row).unwrap_err().code, needs_off, "{row}");
     }
     for row in ["protection.orbit.set", POLICY_ROW, RECORD_ROW, "tool.full.note", "session.undo"] {
@@ -511,6 +515,12 @@ fn the_retained_workflow_needs_jumble_off() {
     let mut forged = f.shell.prepare(&f.layer, TWIST_ROW, twist_args(&item(12))).unwrap();
     forged.token.as_mut().expect("a token").binding.nonce += 1_000;
     f.refused(forged, code::TOKEN_INVALID, "a jumble item's twist with a forged token");
+    let save = json::object([("draft", json::object([("record", text("w"))])), ("name", text("sheet"))]);
+    let asked = f.shell.prepare(&f.layer, WORKSHEET_SAVE_ROW, save).unwrap();
+    f.refused(asked, needs_off, "a work sheet's save");
+    let named = json::object([("record", text("sheet")), ("version", Value::Int(1))]);
+    let asked = f.shell.prepare(&f.layer, WORKSHEET_LOAD_ROW, json::object([("worksheet", named)])).unwrap();
+    f.refused(asked, needs_off, "a work sheet's reuse");
 
     assert!(completed(&f.protect(&[0])));
     assert!(completed(&f.set_policy("strict")));
