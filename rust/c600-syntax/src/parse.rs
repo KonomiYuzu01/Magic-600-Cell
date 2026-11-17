@@ -4,6 +4,7 @@ use crate::ast::*;
 use crate::code::*;
 use crate::lex::{canonical, is_decimal, is_digest, lex, ratio, unescape, Kind, Token};
 use crate::{sha256_hex, Diagnostic, RawContext, Span, EDITION};
+use c600_ir::MENU_INDEX_LIMIT;
 
 /// Names that begin a declaration in column 1. Recovery resumes at the next one (LG1.5).
 const STARTS: [&str; 5] = ["fn", "view", "command", "import", "export"];
@@ -559,19 +560,29 @@ impl Parser {
         Ok(if n.starts_with('-') { -value } else { value })
     }
 
+    /// A menu letter: `cap:item`, two naturals below [`MENU_INDEX_LIMIT`] (LB1.8; LP2 draft), or LX-8's fixture
+    /// `grip:rotation`, a grip below 120 and `spin`, `unspin` or `identity`, which does not lower.
     fn menu_letter(&mut self) -> R<(u32, String)> {
         let start = self.tok().span;
-        let grip = self.natural()?;
+        let index = |n: &str| if n.len() <= 3 { n.parse::<u32>().unwrap_or(u32::MAX) } else { u32::MAX };
+        let cap = index(&self.natural()?);
         self.expect(":")?;
+        if self.tok().kind == Kind::Int {
+            let item = self.natural()?;
+            if cap >= MENU_INDEX_LIMIT || index(&item) >= MENU_INDEX_LIMIT {
+                return Err(literal(self.since(start), "a menu letter is cap:item, two naturals below 600"));
+            }
+            return Ok((cap, item));
+        }
         let rotation = self.name()?;
-        let grip = if grip.len() <= 3 { grip.parse::<u32>().unwrap_or(u32::MAX) } else { u32::MAX };
-        if grip >= 120 || !["spin", "unspin", "identity"].contains(&rotation.text.as_str()) {
+        if cap >= 120 || !["spin", "unspin", "identity"].contains(&rotation.text.as_str()) {
             return Err(literal(
                 self.since(start),
-                "a menu letter is grip:rotation, a grip below 120 and spin, unspin or identity",
+                "a menu letter is cap:item, two naturals below 600, or LX-8's fixture grip:rotation, a grip below \
+                 120 and spin, unspin or identity",
             ));
         }
-        Ok((grip, rotation.text))
+        Ok((cap, rotation.text))
     }
 
     /// Skips to the next declaration in column 1, taking at least one token.

@@ -49,6 +49,9 @@ fn request_fields(request: &Request) -> (&'static str, &'static [&'static str]) 
         Request::FileRead { path: _, ty: _ } => ("file_read", &["path", "ty"]),
         Request::Clock => ("clock", &[]),
         Request::Propose { word: _, target: _, request: _ } => ("propose", &["word", "target", "request"]),
+        Request::ProposeMenu { letters: _, menu: _, target: _, request: _ } => {
+            ("propose_menu", &["letters", "menu", "target", "request"])
+        }
     }
 }
 

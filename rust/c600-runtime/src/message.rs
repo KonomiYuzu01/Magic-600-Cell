@@ -36,7 +36,7 @@ pub struct MessageSchema {
     pub fields: &'static [&'static str],
 }
 
-const REQUEST_FIELDS: [&str; 18] = [
+const REQUEST_FIELDS: [&str; 23] = [
     "request.snapshot",
     "request.snapshot.query",
     "request.snapshot.type",
@@ -55,6 +55,11 @@ const REQUEST_FIELDS: [&str; 18] = [
     "request.snapshot_with.query",
     "request.snapshot_with.arg",
     "request.snapshot_with.type",
+    "request.propose_menu",
+    "request.propose_menu.letters",
+    "request.propose_menu.menu",
+    "request.propose_menu.target",
+    "request.propose_menu.request",
 ];
 
 /// Every message and field of the protocol. Values and IR types inside a field are data, not fields: a value has no
@@ -79,6 +84,7 @@ pub const SCHEMA: [MessageSchema; 6] = [
             "declassifiers",
             "source_ranges",
             "built_in",
+            "menu",
         ],
     },
     MessageSchema {
@@ -116,6 +122,11 @@ pub const SCHEMA: [MessageSchema; 6] = [
             REQUEST_FIELDS[15],
             REQUEST_FIELDS[16],
             REQUEST_FIELDS[17],
+            REQUEST_FIELDS[18],
+            REQUEST_FIELDS[19],
+            REQUEST_FIELDS[20],
+            REQUEST_FIELDS[21],
+            REQUEST_FIELDS[22],
             "sink.view",
             "sink.workspace",
             "sink.workspace.record",
@@ -278,6 +289,14 @@ pub fn encode_run(run: u64, job: &Job, e: &mut Enc) -> Result<(), Unencodable> {
             }
         }
     }
+    e.field("menu");
+    match &o.menu {
+        None => e.u8(0),
+        Some(menu) => {
+            e.u8(1);
+            codec::encode_alphabet(menu, e)?;
+        }
+    }
     Ok(())
 }
 
@@ -373,6 +392,11 @@ pub fn decode_to_child(bytes: &[u8]) -> Result<ToChild, Malformed> {
                 }
                 _ => return Err(Malformed::new("an option flag other than 0 or 1")),
             };
+            let menu = match d.u8()? {
+                0 => None,
+                1 => Some(codec::decode_alphabet(&mut d)?),
+                _ => return Err(Malformed::new("an option flag other than 0 or 1")),
+            };
             let options = JobOptions {
                 limits,
                 tariffs,
@@ -384,6 +408,7 @@ pub fn decode_to_child(bytes: &[u8]) -> Result<ToChild, Malformed> {
                 declassifiers,
                 source_ranges,
                 built_in,
+                menu,
             };
             ToChild::Run { run, job: Job { sources, module, entry, args, options } }
         }

@@ -1,7 +1,9 @@
 //! The protocol itself: no message can carry a user-action token (KN5.15); a lost acknowledgement causes at most an
 //! identical delivery, answered from the parent's record, never a second host call, and a new call must acknowledge
 //! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
-//! refuses the rest; frames are bounded.
+//! refuses the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is
+//! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; the built-in
+//! column and the pinned menu are strict trailing fields of the run, in that order.
 
 mod support;
 
@@ -12,6 +14,7 @@ use c600_check::{Profile, Row};
 use c600_ir::{Capability, ExactRole, QTy, Ty};
 use c600_run::approx::Approx;
 use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
+use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
 use c600_run::meter::code::STEPS;
 use c600_run::meter::{Amounts, ChildRecord, Interruption, Outcome, Position, SourceRange};
 use c600_run::value::{Closure, Quad, Ratio, Value};
@@ -25,6 +28,20 @@ use support::{assert_same_end, header, job, runtime, Session, WIDE};
 /// Words that would name an authority in a field: a user-action token, a confirmation or a credential.
 const AUTHORITY: [&str; 10] =
     ["token", "auth", "confirm", "commit", "approv", "secret", "credential", "user_action", "signature", "nonce"];
+
+/// The fields of an identity block that names an alphabet (LB1.8; LP2 draft), in KN1.4's order.
+const NAMED: [&str; 5] = ["600-cell-jumbled", "model", "menu", "order", "rev"];
+
+/// The identity block [`NAMED`] with another menu identity.
+fn identity(menu_id: &str) -> MenuIdentity {
+    let [puzzle, model_id, _, menu_order, contract_rev] = NAMED.map(String::from);
+    MenuIdentity { puzzle, model_id, menu_id: menu_id.into(), menu_order, contract_rev }
+}
+
+/// A pinned alphabet of four caps and a menu of three items whose last two are each other's inverses.
+fn alphabet() -> MenuAlphabet {
+    MenuAlphabet::new(identity("menu"), 4, vec![0, 2, 1]).expect("an alphabet")
+}
 
 fn recorded(f: impl FnOnce(&mut Enc)) -> Enc {
     let mut e = Enc::recording();
@@ -44,6 +61,7 @@ fn completed_run() -> Run {
 fn samples() -> Vec<Enc> {
     let qty = QTy { ty: Ty::Nat, display: false };
     let ty = Ty::Word;
+    let menu = identity("menu");
     let requests = [
         Request::Snapshot { query: "pieces", ty: &qty },
         Request::Declassified { id: "d", ty: &ty },
@@ -51,6 +69,7 @@ fn samples() -> Vec<Enc> {
         Request::Clock,
         Request::Propose { word: &[1, -2], target: "t", request: b"r" },
         Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
+        Request::ProposeMenu { letters: &[[0, 1]], menu: &menu, target: "t", request: b"r" },
     ];
     let sinks = [
         Sink::View,
@@ -67,6 +86,7 @@ fn samples() -> Vec<Enc> {
             seed: Some((vec![1; 32], vec!["a".into()])),
             grant: vec![Capability::File],
             declassifiers: vec!["d".into()],
+            menu: Some(alphabet()),
             ..JobOptions::new(WIDE)
         },
     );
@@ -154,12 +174,15 @@ fn unknown_protocols_and_kinds_are_refused() {
     assert!(message::decode_to_parent(&trailing, &Codes::default()).is_err());
 }
 
-/// Every host request decodes to the request it was encoded from. Tags 0 to 4 keep their bytes, and LP2's snapshot
-/// read with an argument is tag 5 (LP2 draft); a cut request and an unknown tag are refused.
+/// Every host request decodes to the request it was encoded from. Tags 0 to 4 keep their bytes; LP2's snapshot read
+/// with an argument is tag 5 and a menu-word preview tag 6 (LP2 drafts). A cut request and an unknown tag are
+/// refused, and so is, on both sides, a menu-word preview with a letter index of 600 or more or an identity block
+/// that names no alphabet.
 #[test]
 fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
     let qty = QTy { ty: Ty::Nat, display: false };
     let ty = Ty::Word;
+    let menu = identity("menu");
     let requests = [
         Request::Snapshot { query: "pieces", ty: &qty },
         Request::Declassified { id: "d", ty: &ty },
@@ -167,6 +190,7 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
         Request::Clock,
         Request::Propose { word: &[1, -2], target: "t", request: b"r" },
         Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
+        Request::ProposeMenu { letters: &[[0, 1], [3, 2]], menu: &menu, target: "t", request: b"r" },
     ];
     for (tag, r) in requests.iter().enumerate() {
         let mut e = Enc::new();
@@ -186,12 +210,43 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
     let mut with = Enc::new();
     codec::encode_request(&requests[5], &mut with).unwrap();
     assert_eq!(with.bytes[0], 5);
-    with.bytes[0] = 6;
+    with.bytes[0] = 7;
     assert!(codec::decode_request(&mut Dec::new(&with.bytes)).is_err(), "an unknown tag");
+
+    let nameless = MenuIdentity::default();
+    for r in [
+        Request::ProposeMenu { letters: &[[600, 0]], menu: &menu, target: "t", request: b"r" },
+        Request::ProposeMenu { letters: &[[0, 600]], menu: &menu, target: "t", request: b"r" },
+        Request::ProposeMenu { letters: &[[0, 1]], menu: &nameless, target: "t", request: b"r" },
+    ] {
+        assert!(codec::encode_request(&r, &mut Enc::new()).is_err(), "{r:?}");
+    }
+    let written = |letters: &[[u32; 2]], fields: [&str; 5]| {
+        let mut e = Enc::new();
+        e.u8(6);
+        e.count(letters.len());
+        for [cap, item] in letters {
+            e.u32(*cap);
+            e.u32(*item);
+        }
+        for text in fields {
+            e.text(text);
+        }
+        e.text("t");
+        e.bytes(b"r");
+        let mut d = Dec::new(&e.bytes);
+        codec::decode_request(&mut d).and_then(|_| d.end()).map_err(|m| m.to_string())
+    };
+    assert_eq!(written(&[[599, 599]], NAMED), Ok(()), "a canonical control");
+    assert_eq!(written(&[[600, 0]], NAMED).unwrap_err(), "a menu index of 600 or more");
+    assert_eq!(written(&[[0, 600]], NAMED).unwrap_err(), "a menu index of 600 or more");
+    let unnamed = ["600-cell-jumbled", "model", "menu", "order", ""];
+    assert_eq!(written(&[[0, 1]], unnamed).unwrap_err(), "a menu word that names no alphabet");
 }
 
-/// A built-in tool's class rows (LP2 draft) cross as the run's last field: a flag, then the rows strictly increasing
-/// in their own order, so a class has one encoding and an empty class differs from none. A flag other than 0 or 1, an
+/// A built-in tool's class rows (LP2 draft) cross as a trailing field of the run, before the pinned menu: a flag, then
+/// the rows strictly increasing in their own order, so a class has one encoding and an empty class differs from none.
+/// A flag other than 0 or 1, an
 /// unknown row, rows out of order or repeated, a count beyond the payload, a cut message and a trailing byte are
 /// refused. The wire does not read the profile: both executors refuse class rows outside the solving profile at the
 /// admission stage (`equivalence.rs`).
@@ -221,12 +276,13 @@ fn the_built_in_column_is_a_strict_trailing_field() {
         Err(m) => Err(m.to_string()),
     };
     for profile in [Profile::Solving, Profile::ToolAuthoring] {
+        // The run ends with the column's flag, then the pinned menu's: none here.
         let none = run(profile, None);
-        let (flag, head) = none.split_last().unwrap();
-        assert_eq!((*flag, decoded(&none).unwrap().options.built_in), (0, None));
+        let (head, flags) = none.split_at(none.len() - 2);
+        assert_eq!((flags, decoded(&none).unwrap().options.built_in), (&[0, 0][..], None));
         for rows in [BTreeSet::new(), all.clone()] {
             let bytes = run(profile, Some(rows.clone()));
-            assert_eq!((&bytes[..head.len()], bytes[head.len()]), (head, 1));
+            assert_eq!((&bytes[..head.len()], bytes[head.len()], bytes.last()), (head, 1, Some(&0)));
             let job = decoded(&bytes).unwrap();
             assert_eq!(job.options.built_in.as_ref(), Some(&rows));
             let mut again = Enc::new();
@@ -240,7 +296,7 @@ fn the_built_in_column_is_a_strict_trailing_field() {
     }
 
     let none = run(Profile::Solving, None);
-    let head = &none[..none.len() - 1];
+    let head = &none[..none.len() - 2];
     let tail = |f: &dyn Fn(&mut Enc)| {
         let mut e = Enc::new();
         f(&mut e);
@@ -253,6 +309,7 @@ fn the_built_in_column_is_a_strict_trailing_field() {
             for row in rows {
                 codec::encode_row(row, e);
             }
+            e.u8(0);
         })
     };
     let control = decoded(&listing(&[Row::Read("a".into()), Row::Outcome, Row::View])).unwrap();
@@ -278,6 +335,80 @@ fn the_built_in_column_is_a_strict_trailing_field() {
             }),
             "a length beyond the payload",
         ),
+    ];
+    for (bytes, why) in refusals {
+        assert_eq!(decoded(&bytes).unwrap_err(), why);
+    }
+}
+
+/// A pinned menu alphabet (LB1.8; LP2 draft) crosses as the run's last field: a flag, then the identity block in
+/// KN1.4's order, the cap count, the item count and the item of each item's inverse rotation, so an alphabet has one
+/// encoding and no alphabet differs from every one. A flag other than 0 or 1, an empty identity field, more than 600
+/// caps or items, inverse items that are no involution, a count beyond the payload, a cut message and a trailing byte
+/// are refused, each with `MenuAlphabet::new`'s reason where it has one.
+#[test]
+fn the_pinned_menu_is_a_strict_trailing_field() {
+    let run = |menu: Option<MenuAlphabet>| {
+        let mut e = Enc::new();
+        let options = JobOptions { menu, ..JobOptions::new(WIDE) };
+        message::encode_run(1, &job("source", "f", vec![], options), &mut e).unwrap();
+        e.bytes
+    };
+    let decoded = |bytes: &[u8]| match message::decode_to_child(bytes) {
+        Ok(ToChild::Run { job, .. }) => Ok(job),
+        Ok(other) => panic!("{other:?}"),
+        Err(m) => Err(m.to_string()),
+    };
+    let none = run(None);
+    let (flag, head) = none.split_last().unwrap();
+    assert_eq!((*flag, decoded(&none).unwrap().options.menu), (0, None));
+    let lettered = MenuAlphabet::new(identity("empty"), 0, vec![]).expect("an alphabet without letters");
+    for menu in [alphabet(), lettered] {
+        let bytes = run(Some(menu.clone()));
+        assert_eq!((&bytes[..head.len()], bytes[head.len()]), (head, 1));
+        let job = decoded(&bytes).unwrap();
+        assert_eq!(job.options.menu.as_ref(), Some(&menu));
+        let mut again = Enc::new();
+        message::encode_run(1, &job, &mut again).unwrap();
+        assert_eq!(again.bytes, bytes);
+        for cut in 0..bytes.len() {
+            assert!(decoded(&bytes[..cut]).is_err(), "{menu:?} cut at {cut}");
+        }
+        assert!(decoded(&[&bytes[..], &[0]].concat()).is_err(), "a trailing byte");
+    }
+
+    let tail = |f: &dyn Fn(&mut Enc)| {
+        let mut e = Enc::new();
+        f(&mut e);
+        [head, &e.bytes[..]].concat()
+    };
+    let pinned = |fields: [&str; 5], caps: u32, count: usize, inverse: &[u32]| {
+        tail(&|e: &mut Enc| {
+            e.u8(1);
+            for text in fields {
+                e.text(text);
+            }
+            e.u32(caps);
+            e.count(count);
+            for item in inverse {
+                e.u32(*item);
+            }
+        })
+    };
+    let control = decoded(&pinned(NAMED, 600, 3, &[1, 0, 2])).unwrap();
+    assert_eq!(control.options.menu.map(|m| (m.caps(), m.items())), Some((600, 3)));
+    let wide: Vec<u32> = (0..601).collect();
+    let refusals = [
+        (tail(&|e: &mut Enc| e.u8(2)), "an option flag other than 0 or 1".to_string()),
+        (
+            pinned(["600-cell-jumbled", "model", "", "order", "rev"], 4, 1, &[0]),
+            MenuError::Identity("menu_id").to_string(),
+        ),
+        (pinned(NAMED, 601, 1, &[0]), MenuError::Caps(601).to_string()),
+        (pinned(NAMED, 4, 601, &wide), MenuError::Items(601).to_string()),
+        (pinned(NAMED, 4, 2, &[1, 1]), MenuError::Inverse { item: 0 }.to_string()),
+        (pinned(NAMED, 4, 2, &[0, 5]), MenuError::Inverse { item: 1 }.to_string()),
+        (pinned(NAMED, 4, 2, &[0]), "a length beyond the payload".to_string()),
     ];
     for (bytes, why) in refusals {
         assert_eq!(decoded(&bytes).unwrap_err(), why);
@@ -387,6 +518,56 @@ fn every_value_variant_round_trips_with_one_encoding() {
     }
     // A Nat and an equal Rat stay apart.
     assert!(!codec::same_value(&Value::int(1), &Value::Rat(Arc::new(Ratio::new(1.into(), 1.into())))));
+}
+
+/// A menu word (LB1.8; LP2 draft) crosses with the identity block of its alphabet: words of two alphabets have two
+/// encodings, a word whose block names no alphabet has none, and a decoded block with an empty field or a letter index
+/// of 600 or more is refused. The type `MenuWord` is type tag 23.
+#[test]
+fn a_menu_word_crosses_with_its_alphabet() {
+    let named = Arc::new(identity("menu"));
+    let words = [
+        Value::menu_word(&named, &[]),
+        Value::menu_word(&named, &[[0, 1], [599, 2]]),
+        Value::menu_word(&Arc::new(identity("other")), &[[0, 1], [599, 2]]),
+    ];
+    let mut seen = BTreeSet::new();
+    for v in words.iter().map(|w| w.as_ref().expect("letters below 600")) {
+        let bytes = codec::value_bytes(v).unwrap_or_else(|e| panic!("{v:?}: {e:?}"));
+        assert_eq!(bytes[0], 21);
+        let back = codec::value_from_bytes(&bytes).unwrap_or_else(|e| panic!("{v:?}: {e}"));
+        assert_eq!(format!("{v:?}"), format!("{back:?}"));
+        assert_eq!(codec::value_bytes(&back).unwrap(), bytes);
+        assert!(seen.insert(bytes), "{v:?} shares an encoding");
+    }
+    let nameless = Value::menu_word(&Arc::new(MenuIdentity::default()), &[[0, 1]]).expect("letters below 600");
+    assert!(codec::value_bytes(&nameless).is_err());
+
+    let decoded = |fields: [&str; 5], letters: &[[u32; 2]]| {
+        let mut e = Enc::new();
+        e.u8(21);
+        for text in fields {
+            e.text(text);
+        }
+        e.count(letters.len());
+        for [cap, item] in letters {
+            e.u32(*cap);
+            e.u32(*item);
+        }
+        codec::value_from_bytes(&e.bytes).map(|_| ()).map_err(|m| m.to_string())
+    };
+    assert_eq!(decoded(NAMED, &[[599, 0]]), Ok(()), "a canonical control");
+    let unnamed = ["600-cell-jumbled", "model", "menu", "", "rev"];
+    assert_eq!(decoded(unnamed, &[[0, 0]]).unwrap_err(), "a menu word that names no alphabet");
+    assert_eq!(decoded(NAMED, &[[600, 0]]).unwrap_err(), "a menu index of 600 or more");
+    assert_eq!(decoded(NAMED, &[[0, 600]]).unwrap_err(), "a menu index of 600 or more");
+
+    let mut e = Enc::new();
+    codec::encode_ty(&Ty::MenuWord, &mut e).unwrap();
+    assert_eq!(e.bytes, [23]);
+    let mut d = Dec::new(&e.bytes);
+    assert_eq!(codec::decode_ty(&mut d).unwrap(), Ty::MenuWord);
+    d.end().unwrap();
 }
 
 /// Values outside their canonical form are refused when encoded and when decoded.
