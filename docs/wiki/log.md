@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: jumble.on in the command layer
+The command layer (`rust/c600-command`) builds H-08's `jumble.on` (A5; ONE.54, ONE.80, ONE.81; JI.25, JI.27): with the twist menu pinned, a session that started at solved enters Jumble on at the jumbling engine's replay of its solved witness, the literal retained path from the start, once the replay's labels are the current labels, and labels alone are refused with `KN5:input.jumble_on_labels_only`. The crossing commits with no preview, sets the revision's mode to `jumble_on` with the pose digest, refuses the retained workflow's preview, commit and twist rows with `KN5:input.retained_tool_needs_jumble_off`, undoes to the exact Jumble off state, redoes under the same identity block and is journaled as the action kind `crossing` with its record, which a reopen with the menu pinned replays; the journal form, the refusal of an entry with Jumble on, the order of the mode check and the pin rule are drafts for LP3's amendment list under PHS.52.
+
 ## [2026-11-17] update | The language: twist.apply in the command layer
 The command layer (`rust/c600-command`) builds H-08's `twist.apply` (amendment A6): the host pins the twist menu, the row's `cap` and `rotation` form KN3.7's exact request, which resolves against the pinned menu (KN3.8), and a retained item commits its shortest retained word at once with no preview, under the protection policy in force, journaled with the resolution's record as `rotation` so that a reopen replays it without a menu (KN3.9). A jumble item stays refused until Jumble on, the token binds the state and protection revisions (LI.6), and the argument form, the input refusals before the token, the identity item's code and the journal key are drafts for LP3's amendment list under PHS.52.
 

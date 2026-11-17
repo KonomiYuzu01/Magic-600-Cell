@@ -32,7 +32,7 @@ const RECORD_FIELDS: [&str; 5] = ["binding", "cap", "choice", "matrix", "request
 /// The twist menu the host pinned, with the exact model it is read in.
 pub(crate) struct Twists {
     pub(crate) context: Arc<Context>,
-    pub(crate) menu: Menu,
+    pub(crate) menu: Arc<Menu>,
 }
 
 /// KN3.7's binding from `twist.apply`'s arguments: `rotation`'s three fields and the row's `cap`. Anything else, a

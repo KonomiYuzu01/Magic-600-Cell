@@ -6,8 +6,8 @@
 //! through `session.undo` and `session.redo` with LI.9's action hint. The shell ([`shell`]) mints the user-action
 //! tokens from a per-launch secret the runtime never receives (KN5.14, KN5.15) and resolves key bindings before the
 //! invocation envelope (EV4.3), so a key bound to a kernel row reaches the engine with no interpreter step (ONE.48).
-//! This crate depends on the kernel only, `c600-kernel` and its jumbling half `c600-jumble` for KN3's exact rotations:
-//! it has no path to the language runtime at all.
+//! This crate depends on the kernel only, `c600-kernel` and its jumbling half `c600-jumble` for KN3's exact rotations
+//! and Jumble on's poses: it has no path to the language runtime at all.
 //!
 //! Step 9's durable transaction sits behind [`store::Store`], and [`CommandLayer::open`] replays a store's history
 //! through the kernel ([`store::Reopen`]) to restore the revision, the protected set, the undo and redo history and the
@@ -41,7 +41,8 @@
 //!
 //! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.
 //!
-//! - One session per layer, Jumble off, 600-cell-Full only. The jumbling engine joins when M5 is on main.
+//! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry is built (below); the rest,
+//!   `jumble.off` among them, is refused with `KN5:input.row_not_built`.
 //! - `WordRef` is an inline literal recipe in 0.4's JSON form, `{"recipe": [...]}`, and `ResolvedDraftRef` is
 //!   `{"record": name}`, a workspace record that holds a word's letters (M6's form); a draft argument in any other form
 //!   is refused with `KN5:input.argument_form`. A record draft's digest is M6's `{"letters", "source", "reads"}`, with
@@ -77,6 +78,40 @@
 //!     needs no pinned menu.
 //!   - Drafts for LP3's amendment list (PHS.52): the argument form, the input refusals before the token, the identity
 //!     item's code and the journal key `rotation`.
+//! - `jumble.on` ([`JUMBLE_ON_ROW`]; A5, ONE.54, ONE.55, ONE.80, JI.25, JI.27), the entry into Jumble on ([`jumble`]).
+//!   - The row takes `revision`, KN0.2's `RevisionRef`, and a token that binds the state and protection revisions
+//!     (LI.6), as `twist.apply`'s does. It needs the pinned menu: without one it is refused with
+//!     `KN5:input.row_not_built` before its arguments are read. The `revision` argument's form comes next, before the
+//!     token (`KN5:input.argument_form`).
+//!   - ONE.80's order follows: the token, the commit lane, the token's binding to the invocation and the identity block;
+//!     the mode; the named revision and the token's revisions (`KN5:stale.revision_changed`); the head hash; A5's
+//!     witness; one durable transaction; the adoption. With Jumble on already, `jumble.on` is refused with
+//!     `KN5:input.retained_tool_needs_jumble_off`, since an already-on position needs no new entry.
+//!   - The witness. No exit is built, so the only witness is JI.25's solved witness: the chronological literal retained
+//!     path from the session's start to the head, the kernel's literal expansion of every commit on the move tree's
+//!     path. The start must be solved: a session that started elsewhere holds no retained word from solved, even at a
+//!     solved head, and is refused with `KN5:input.jumble_on_labels_only`, as is a word whose replay does not reach the
+//!     current labels. The layer replays the word from solved in the jumbling engine under the pinned menu, with Net
+//!     protection and no protected piece, and enters at the replay's poses. No protection gate applies: H-08 gives the
+//!     row `model_match` only, and a crossing moves no piece.
+//!   - The crossing is a node of the move tree that holds no retained recipe. The revision's mode becomes `jumble_on`
+//!     ([`layer::JUMBLE_ON_MODE`]), its state revision advances and its digest is the pose digest
+//!     ([`CommandLayer::jumbled`] is the head's value). Like a commit, it answers `committed`, ends the pending preview
+//!     and cancels the jobs that read the replaced revision, except file jobs.
+//!   - With Jumble on, `operation.preview`, `operation.execute` and `twist.apply` are refused with
+//!     `KN5:input.retained_tool_needs_jumble_off` (LG2.8): a preview before its draft is read, a commit after its token's
+//!     binding. The protection, policy and record rows stay; their `pre` and `post` are the pose digest. A program job's
+//!     revision names the mode, so a built-in tool decides for itself.
+//!   - An undo of the entry returns to the exact Jumble off state before it, and a redo replays the solved witness
+//!     again, under a pinned menu with the identity block the entry was made under (`KN1:input.identity_mismatch`
+//!     otherwise; ONE.81, JI.27). Each advances the state revision. While Jumble is on, a pin of a menu with another
+//!     identity block is refused with `KN1:input.identity_mismatch`.
+//!   - The journal names the action's kind `crossing`. It keeps the crossing's record (`Transaction::crossing`): the
+//!     entrance `solved_witness`, the jumbling identity block, and the witness's letter count and `Digest<literal word>`.
+//!     The letters are the move tree's. A reopen with [`CommandLayer::open_with_menu`] replays the witness and must
+//!     make the same record; [`CommandLayer::open`] leaves the layer in read-only recovery before a crossing.
+//!   - Drafts for LP3's amendment list (PHS.52): the journal kind and key `crossing` and the record's form, the
+//!     refusal of `jumble.on` with Jumble on, the order of the mode check before the revision checks, and the pin rule.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
 //!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
 //!   `KN2:consistency.star_certificate`.
@@ -206,6 +241,7 @@
 
 mod forms;
 pub mod frame;
+pub mod jumble;
 pub mod layer;
 pub mod receipt;
 pub mod shell;
@@ -216,6 +252,7 @@ pub mod twist;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
+pub use jumble::JUMBLE_ON_ROW;
 pub use layer::{Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, POLICY_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
@@ -232,10 +269,12 @@ pub use twist::TWIST_ROW;
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 12] = [
+pub const SOURCES: [(&str, &[u8]); 15] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
+    ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
+    ("c600-command/src/jumble.rs", include_bytes!("jumble.rs")),
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
@@ -243,6 +282,7 @@ pub const SOURCES: [(&str, &[u8]); 12] = [
     ("c600-command/src/store.rs", include_bytes!("store.rs")),
     ("c600-command/src/table.rs", include_bytes!("table.rs")),
     ("c600-command/src/token.rs", include_bytes!("token.rs")),
+    ("c600-command/src/twist.rs", include_bytes!("twist.rs")),
     ("c600-command/src/workspace.rs", include_bytes!("workspace.rs")),
     ("docs/progress/1.0/command-table.json", table::H08.as_bytes()),
 ];

@@ -1172,12 +1172,30 @@ run or not applicable is no pass (PHS.63).
   The journal keeps the resolution's record as `rotation` (`Transaction::rotation`), an 18th key on a twist only, and a
   reopen replays the recipe without a menu (KN3.9). Tests: `c600-command/tests/twist_apply.rs` (the command layer's
   parts of CT-EV4-04 and CT-BND-19; KN3.8, JI.35, LI.6, LI.32).
-- KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
-  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
-  and L17; the provenance reader over `c600-run` (LP3's host), the typed workspace rows and limits on a record's
-  payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built:
-  callers are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes
-  M6's session lock, so a second opener of a held session is refused with `KN4:busy.session_locked`.
+- `jumble.on` (A5; ONE.54, ONE.55, ONE.80, ONE.81, JI.25, JI.27; the drafts are in the crate documentation), the entry
+  into Jumble on from the solved witness. It needs the pinned twist menu (`KN5:input.row_not_built` without one) and
+  takes `revision`, the current `RevisionRef`, with a token that binds the state and protection revisions. With no exit
+  built, the witness is the chronological literal retained path from the session's start to the head, which must start
+  at solved. The layer replays it from solved in the jumbling engine under the pinned menu and enters only when the
+  replay's labels are the current labels, so labels alone are `KN5:input.jumble_on_labels_only`. The crossing commits
+  with no preview: the revision's mode becomes `jumble_on`, its state revision advances and its digest is the pose
+  digest (`CommandLayer::jumbled` holds the poses), and like a commit it ends the pending preview and cancels the jobs
+  that read the replaced revision, except file jobs. With Jumble on, `operation.preview`, `operation.execute`,
+  `twist.apply` and `jumble.on` itself are `KN5:input.retained_tool_needs_jumble_off`, while the protection, policy,
+  record and program rows stay. An undo of the entry returns to the exact Jumble off state before it, and a redo replays
+  the witness under a menu with the same identity block (`KN1:input.identity_mismatch` otherwise). The journal keeps the
+  crossing as the action kind `crossing` with its record (`Transaction::crossing`: the entrance, the identity block, and
+  the witness's letter count and `Digest<literal word>`), an 18th key on a crossing only. A reopen with the menu pinned
+  (`CommandLayer::open_with_menu`) replays the witness; without it the layer stays in read-only recovery before the
+  crossing. Tests: `c600-command/tests/jumble_on.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
+  CT-JI-08).
+- KN5 not built yet: the other jumbling rows (`jumble.off` with its exit witness, and `jumble.twist.menu`); KN5.26's
+  admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime
+  proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16 and L17; the provenance reader
+  over `c600-run` (LP3's host), the typed workspace rows and limits on a record's payload; a display adapter's own frame
+  reports, for which `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the
+  shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held
+  session is refused with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
