@@ -278,3 +278,14 @@ class RustJumbleEngine:
     def read_derived(self, op, name, **fields):
         """`project`, `sticker_test`, `retained_checkpoint` or `label_checkpoint` on the derived value `name`."""
         return self.call(op, derived=name, **fields)
+
+    # ---------------------------------------------------------------------------- ν (A5)
+    def nu(self, *, state=None, journal=None, derived=None):
+        """ν of the current state, a stored `state` or a `derived` value. With a `derived` value or a `journal`
+        of records from solved that witnesses the state it is KN2.4's row, which refuses a nonzero fixed
+        coordinate under I_a; otherwise it is the bare value. Off the lattice it is undefined."""
+        return self.call('nu', state=state, journal=journal, derived=derived)
+
+    def nu_constants(self):
+        """The coordinates, the fixed ones under I_a, the pinned convention and digests, and the frame groups."""
+        return self.call('nu_constants')

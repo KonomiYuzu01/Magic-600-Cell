@@ -132,6 +132,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_jumbling_rust_m8_observations.py"],
     # M8's levels (LP2) against J1: projections, end tests, gauges and derived values.
     ["tests/test_jumbling_rust_m8_levels.py"],
+    # The label invariant nu (LP2, A5) over F2 and F5 against the nu reference: EH-10 and the frame groups.
+    ["tests/test_jumbling_rust_nu.py"],
     # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
     ["tests/test_ct_index.py"],
 ]
@@ -237,6 +239,7 @@ SECONDS = {
     "tests/test_jumbling_rust_attacks.py": 150,  # an estimate: 18 s locally with a warm release build
     "tests/test_jumbling_rust_m8_observations.py": 400,  # an estimate: about 280 s locally with a warm release build
     "tests/test_jumbling_rust_m8_levels.py": 250,  # an estimate: about 170 s locally with a warm release build
+    "tests/test_jumbling_rust_nu.py": 80,  # an estimate: about 40 s locally with a warm release build
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

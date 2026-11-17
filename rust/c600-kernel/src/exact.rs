@@ -1,9 +1,15 @@
-//! Exact sign tests in Q(√5) with fixed-width integers (KN3.1, KN3.2; LP2).
+//! Exact sign tests in Q(√5) with fixed-width integers, and the finite fields F2 and F5 (KN3.1, KN3.2; LP2).
 //!
 //! Every decision is exact (KN3.1). This module holds the fixed-width half of KN3.2's Q(√5): the exact sign of
 //! a + b√5 for any 128-bit a and b, without allocation, and checked evaluation of sums of products of integers, √5
 //! and 5 that says nothing when a value would overflow. Unbounded integers live in `c600-jumble` (`q5`); a caller that
 //! meets an overflow there decides with them.
+//!
+//! It also holds KN3.2's F2 and F5 ([`F2`], [`F5`]), the fields of ν and the 36 corrections (A5): ν's 43 bits live in
+//! F2 and its two values modulo 5 in F5. Their operations are addition, subtraction, negation, multiplication, powers,
+//! the inverse of a nonzero element and division by one, and equality. An element is one residue in 0..p, so every
+//! operation has a constant cost whatever its operands (KN3.2's cost by operand size). Rows over these fields, and
+//! elimination over them, are library code (KN3.3, LB1); they are not here.
 //!
 //! # Draft (LP2)
 //!
@@ -117,6 +123,130 @@ impl SumOfProducts {
     }
 }
 
+/// A prime field F_p for a small prime p: an element is its residue in 0..p, and every operation has a constant cost.
+macro_rules! prime_field {
+    ($(#[$doc:meta])* $name:ident, $p:literal) => {
+        $(#[$doc])*
+        #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct $name(u8);
+
+        impl $name {
+            /// The characteristic p.
+            pub const MODULUS: u8 = $p;
+            pub const ZERO: $name = $name(0);
+            pub const ONE: $name = $name(1);
+
+            /// The residue of an integer, negative ones included.
+            pub const fn new(n: i64) -> $name {
+                $name(n.rem_euclid($p) as u8)
+            }
+
+            /// The residue in 0..p.
+            pub const fn value(self) -> u8 {
+                self.0
+            }
+
+            pub const fn is_zero(self) -> bool {
+                self.0 == 0
+            }
+
+            /// self^e by squaring; self^0 is one, 0^0 included.
+            pub const fn pow(self, mut e: u64) -> $name {
+                let (mut base, mut out) = (self.0, 1u8);
+                while e > 0 {
+                    if e & 1 == 1 {
+                        out = out * base % $p;
+                    }
+                    base = base * base % $p;
+                    e >>= 1;
+                }
+                $name(out)
+            }
+
+            /// The inverse, a^(p − 2) by Fermat; `None` for zero.
+            pub const fn inv(self) -> Option<$name> {
+                if self.0 == 0 {
+                    None
+                } else {
+                    Some(self.pow($p - 2))
+                }
+            }
+
+            /// self / other; `None` when other is zero.
+            pub const fn checked_div(self, other: $name) -> Option<$name> {
+                match other.inv() {
+                    Some(inverse) => Some($name(self.0 * inverse.0 % $p)),
+                    None => None,
+                }
+            }
+        }
+
+        impl std::ops::Add for $name {
+            type Output = $name;
+            fn add(self, other: $name) -> $name {
+                $name((self.0 + other.0) % $p)
+            }
+        }
+
+        impl std::ops::Sub for $name {
+            type Output = $name;
+            fn sub(self, other: $name) -> $name {
+                $name((self.0 + $p - other.0) % $p)
+            }
+        }
+
+        impl std::ops::Neg for $name {
+            type Output = $name;
+            fn neg(self) -> $name {
+                $name(($p - self.0) % $p)
+            }
+        }
+
+        impl std::ops::Mul for $name {
+            type Output = $name;
+            fn mul(self, other: $name) -> $name {
+                $name(self.0 * other.0 % $p)
+            }
+        }
+
+        impl std::ops::AddAssign for $name {
+            fn add_assign(&mut self, other: $name) {
+                *self = *self + other;
+            }
+        }
+
+        impl std::ops::SubAssign for $name {
+            fn sub_assign(&mut self, other: $name) {
+                *self = *self - other;
+            }
+        }
+
+        impl std::ops::MulAssign for $name {
+            fn mul_assign(&mut self, other: $name) {
+                *self = *self * other;
+            }
+        }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+    };
+}
+
+prime_field!(
+    /// F2, the field of ν's 35 sign bits and 8 frame bits (KN3.2, A5).
+    F2,
+    2
+);
+
+prime_field!(
+    /// F5, the field of ν's two values modulo 5, C5_17 and C5_28 (KN3.2, A5).
+    F5,
+    5
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,6 +309,61 @@ mod tests {
         close.push(false, &[Factor::Int((1 << 100) + 1)]);
         close.push(true, &[Factor::Int(1 << 100)]);
         assert_eq!(close.exact_sign(), Some(1));
+    }
+
+    /// KN3.2's F2 and F5 against integer arithmetic reduced mod p: every operation on every pair (and every triple for
+    /// the field laws), inverses, division, powers past p, and residues of negative and extreme integers.
+    macro_rules! field_laws {
+        ($field:ty, $p:literal) => {{
+            let all: Vec<$field> = (0..$p).map(<$field>::new).collect();
+            assert_eq!(<$field>::MODULUS, $p);
+            assert_eq!(<$field>::new($p), <$field>::ZERO);
+            assert_eq!(<$field>::new(-1).value(), $p - 1);
+            assert_eq!(<$field>::new(i64::MIN).value() as i64, i64::MIN.rem_euclid($p));
+            assert_eq!(<$field>::new(i64::MAX).value() as i64, i64::MAX.rem_euclid($p));
+            for &a in &all {
+                let x = a.value() as i64;
+                assert_eq!(-a, <$field>::new(-x));
+                assert_eq!(a + -a, <$field>::ZERO);
+                assert_eq!(a.pow(0), <$field>::ONE);
+                for e in 1..(3 * $p) {
+                    assert_eq!(a.pow(e as u64), <$field>::new(x.pow(e as u32) % $p), "{x}^{e}");
+                }
+                match a.inv() {
+                    None => assert!(a.is_zero()),
+                    Some(inverse) => assert_eq!(a * inverse, <$field>::ONE),
+                }
+                for &b in &all {
+                    let y = b.value() as i64;
+                    assert_eq!(a + b, <$field>::new(x + y));
+                    assert_eq!(a - b, <$field>::new(x - y));
+                    assert_eq!(a * b, <$field>::new(x * y));
+                    match a.checked_div(b) {
+                        None => assert!(b.is_zero()),
+                        Some(q) => assert_eq!(q * b, a),
+                    }
+                    let mut c = a;
+                    c += b;
+                    c -= b;
+                    c *= <$field>::ONE;
+                    assert_eq!(c, a);
+                    for &z in &all {
+                        assert_eq!((a + b) * z, a * z + b * z);
+                        assert_eq!((a * b) * z, a * (b * z));
+                    }
+                }
+            }
+        }};
+    }
+
+    #[test]
+    fn f2_and_f5_are_the_fields_of_nu() {
+        field_laws!(F2, 2);
+        field_laws!(F5, 5);
+        assert_eq!(F5::new(2).inv(), Some(F5::new(3)));
+        assert_eq!(F5::new(4).inv(), Some(F5::new(4)));
+        assert_eq!(F2::new(3).to_string(), "1");
+        assert_eq!(F5::default(), F5::ZERO);
     }
 
     #[test]

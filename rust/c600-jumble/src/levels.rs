@@ -50,8 +50,8 @@
 //!   open or promised reachability answers unknown, at ν = 0 too (CT-ONE-10); by theorem and refuted answer unknown,
 //!   because this edition checks no theorem evidence (a draft). Witnessed with ν unknown, the answer is unknown. The
 //!   certificate carries the pose digest, `Digest<labels>`, the frame agreement, ν with its source, the reachability
-//!   claim and A5's contract revision. The C5 convention and the certificate program's SHA-256 belong to the ν row,
-//!   which reads them; this crate reads `assets/` alone (PHS.18).
+//!   claim and A5's contract revision. The C5 convention and the certificate program's SHA-256 belong to the ν row
+//!   ([`crate::nu`]), which pins them; this crate reads `assets/` alone (PHS.18).
 //!
 //! # Derived states (KN2.7, KN2.8, KN2.11 to KN2.14; ONE.20 to ONE.28)
 //!
