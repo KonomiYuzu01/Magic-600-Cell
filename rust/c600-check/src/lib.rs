@@ -224,6 +224,10 @@ pub struct Summary {
     /// The paths, in the function's own body, of the views that publish a value of a word-carrying type (LB3.5; LP2
     /// draft). Only a report's summary of a function holds them; needs that a caller accumulates do not inherit them.
     word_views: BTreeSet<String>,
+    /// Evaluating this may spend a budget that exact inputs alone do not fix: a `display_if`, a display accounting
+    /// read, a clock read, or a call of a function value, which the draft does not follow. No child scope's body may,
+    /// since the child's outcome continues into exact computation (LG2.20, DET.60; LP2 draft).
+    display_cost: bool,
 }
 
 impl Summary {
@@ -237,6 +241,7 @@ impl Summary {
         self.reaches.extend(other.reaches.iter().cloned());
         self.rows.extend(other.rows.iter().cloned());
         self.reads_file |= other.reads_file;
+        self.display_cost |= other.display_cost;
     }
 
     /// The code that refuses the capability `cap` when the run does not hold it or 1.0 never grants it (LG3.8, LG3.9):
@@ -744,6 +749,7 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
         let (scoped, names): (usize, Vec<String>) = match e {
             Expr::Let { name, .. } => (1, vec![name.clone()]),
             Expr::Closure { params, .. } => (0, params.iter().map(|p| p.name.clone()).collect()),
+            Expr::Child { status, .. } => (1, status.iter().cloned().collect()),
             _ => (usize::MAX, Vec::new()),
         };
         for (i, child) in e.children().into_iter().enumerate() {
@@ -765,7 +771,8 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
 }
 
 /// The paths of the expressions `body` may return that are not one of `words` as given, unshadowed (LB3.5): the rest
-/// of each `let`, both branches of an `if` or a `display_if`, and every arm of a `match`, its `_` arm included.
+/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, and a child
+/// scope's body and stop branch.
 fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
     fn walk(e: &Expr, words: &BTreeSet<&str>, path: &mut Vec<u32>, bound: &mut Vec<String>, out: &mut Vec<String>) {
         match e {
@@ -789,6 +796,17 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
                     walk(arm, words, path, bound, out);
                     path.pop();
                 }
+            }
+            Expr::Child { body, status, otherwise, .. } => {
+                path.push(0);
+                walk(body, words, path, bound, out);
+                path.pop();
+                let depth = bound.len();
+                bound.extend(status.iter().cloned());
+                path.push(1);
+                walk(otherwise, words, path, bound, out);
+                path.pop();
+                bound.truncate(depth);
             }
             Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v) => {}
             _ => out.push(path_text(path)),
@@ -1375,6 +1393,13 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             let depth = bound.len();
             bound.extend(params.iter().map(|p| p.name.as_str()));
             free_names(body, bound, out);
+            bound.truncate(depth);
+        }
+        Expr::Child { body, status, otherwise, .. } => {
+            free_names(body, bound, out);
+            let depth = bound.len();
+            bound.extend(status.as_deref());
+            free_names(otherwise, bound, out);
             bound.truncate(depth);
         }
         other => {
@@ -2572,6 +2597,8 @@ impl<'p> Checker<'p> {
                 let v = self.join(tv, ev, 2, "the else branch of a display_if");
                 s.add(&ts);
                 s.add(&es);
+                // Only the selected branch is charged (DET.64).
+                s.display_cost = true;
                 Ok((v.steered(), s))
             }
             Expr::Call { callee, args } => {
@@ -2629,6 +2656,7 @@ impl<'p> Checker<'p> {
                             "a function value",
                         )?;
                         s.add(&needs);
+                        s.display_cost = true;
                         Ok((v, s))
                     }
                     Callee::Unresolved { name, result } => {
@@ -2958,6 +2986,7 @@ impl<'p> Checker<'p> {
                 };
                 let mut s = Summary::default();
                 self.operation(&mut s, needs(&[Effect::Budgets], &[]), "a display accounting read");
+                s.display_cost = true;
                 Ok((Val::new(ty, Qual::Display { control: true }), s))
             }
             Expr::Declassified { id, ty } => {
@@ -3004,7 +3033,51 @@ impl<'p> Checker<'p> {
                 // budget, an exact decision or an exact sink's value (LG3.8).
                 let mut s = Summary::default();
                 self.operation(&mut s, needs(&[], &[Capability::Clock]), "a clock read");
+                s.display_cost = true;
                 Ok((Val::new(Ty::Nat, Qual::Display { control: false }), s))
+            }
+            Expr::Child { result, body, status, otherwise, .. } => {
+                self.bare(&result.ty, true, "a child scope's result")?;
+                // The body borrows the names in scope (DET.60). Display data would let approximate control, a budget
+                // observation or the clock fix its budget use, and so the child's outcome, which continues into exact
+                // computation (LG2.20).
+                let mut free = BTreeSet::new();
+                free_names(body, &mut Vec::new(), &mut free);
+                for name in free {
+                    if let Some(v) = env.get(name).filter(|v| matches!(v.qual, Qual::Display { .. })) {
+                        let note = format!(
+                            "`{name}`: a child scope's body borrows display data, and the child's outcome continues \
+                             into exact computation (LG2.20, DET.60; LP2 draft)"
+                        );
+                        let ty = v.ty.clone();
+                        self.at(0, |c| c.exactness(EXACTNESS_VIOLATION, &ty, true, false, note));
+                    }
+                }
+                let (bv, mut s) = self.at(0, |c| c.expr(body, env))?;
+                // Reported once, at the innermost child scope whose body holds it.
+                if std::mem::take(&mut s.display_cost) {
+                    let note =
+                        "a child scope's body evaluates display, reads display accounting or the clock, or calls \
+                                a function value, so exact inputs alone would not fix its budget use and the child's \
+                                outcome, which continues into exact computation (LG2.20, DET.60; LP2 draft)";
+                    self.at(0, |c| c.exactness(EXACTNESS_VIOLATION, &result.ty, true, false, note.into()));
+                }
+                let mut at = vec![0];
+                at.extend(returned(body));
+                self.result(result, &bv, None, "a child scope's body", &at);
+                // The stop branch runs in the parent, with the stop's outcome bound as an exact status when it names
+                // one (DET.60).
+                let depth = env.vars.len();
+                env.vars.extend(status.iter().map(|status| (status.clone(), Val::exact(Ty::Status))));
+                let walked = self.at(1, |c| c.expr(otherwise, env));
+                env.vars.truncate(depth);
+                let (ov, os) = walked?;
+                let mut at = vec![1];
+                at.extend(returned(otherwise));
+                self.result(result, &ov, None, "a child scope's stop branch", &at);
+                s.add(&os);
+                self.operation(&mut s, needs(&[Effect::Budgets], &[]), "a child scope");
+                Ok((Val::declared(result), s))
             }
         }
     }

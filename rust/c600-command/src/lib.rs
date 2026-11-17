@@ -291,6 +291,39 @@
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them `FilterRef`,
 //!     `FilterPreviewRef` and `CanonicalObjectRefs`, which the representations tool's rows take, and a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
+//! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
+//!   language-defined row's [`Metadata`]: the static check's first failed diagnostic, and the kernel rows its program
+//!   may invoke, each required or optional and bound [`Binding::Static`] with captured arguments or
+//!   [`Binding::Computed`]. [`CommandLayer::availability`] answers such a row from that data and the layer's state
+//!   alone, in LI.20's order. No language code runs, no program starts and no lane is reserved. Draft choices:
+//!   - A required row that the runtime may not invoke is the missing grant, `LG3:capability.not_granted`, although an
+//!     invocation of a commit or app row is refused with `KN5:capability.commit_row_refused`. The program's other
+//!     grants (chapter 09's profile) are the host's until they are stored as data; the host can declare their failure
+//!     as the diagnostic.
+//!   - A required row that is not a kernel row, absent or itself language-defined, is
+//!     `KN5:input.overlay_dependency_missing`.
+//!   - A static binding keeps the captured arguments themselves, where LI.20 keeps their digest, so that the layer can
+//!     check them. It answers as [`CommandLayer::availability_for`] does, LI.18's argument-aware hint without its
+//!     revision: the row's argument-independent gates first, then an invocation's argument checks (an object,
+//!     `confirm`, the names, the forms and a named revision's currency). It is computed when asked, not cached:
+//!     LI.19's table, keyed by row and argument digest, is not built.
+//!   - Only a language-defined row takes metadata; a stored row an entry serves answers by its own gates. Metadata is
+//!     not journaled: after a reopen the host declares it again, as it registers its overlays again.
+//!   - The generation advances when an overlay row is registered, a stored row served or metadata declared (LI.21).
+//! - The report after a command (KN5.22, R-02, ONE.70; CT-KN5-05's command-layer half). [`report`] pairs a receipt
+//!   with the display's status, [`DisplayStatus`]. When the receipt says that its command applied, the display
+//!   refreshes to the head through the host's [`Refresh`]; when that fails, the status is `OutOfDate`, whose message is
+//!   [`DISPLAY_OUT_OF_DATE`], and the receipt stays as the layer returned it. [`Shell::send_reported`] sends and
+//!   reports. Draft choices:
+//!   - A command applied when it committed or completed as a workspace write, a view publication or a file
+//!     publication, as KN5.22 lists them. An app row's completion, a query's answer and a preview's creation are not
+//!     followed by a refresh; a preview reaches the display through the frames.
+//!   - The refresh asks for the head when the report is made, not the revision the receipt names, since a later
+//!     action may have moved the head; RPI.47's recovery reads the current bundle in the same way.
+//!   - The continuation is [`refresh_display`], which sends no command: no retry is offered (ONE.12), and a press
+//!     sent again returns its first receipt (ONE.71), whose report refreshes the display to the head at that time.
+//!   - The host's [`Refresh`] adopts the engine's bundle into LP3's view model and presents it; the view model's
+//!     refusal (`refresh_required`, RPI.9) is its error. The message on screen is LP3's.
 //! - Job output (LP3's C6, its second common need). The host reports a program job's output as the runtime's sinks
 //!   gave it ([`CommandLayer::finish_program_job_with`], [`JobOutput`]): the value the entry returned, the views it
 //!   published (`publish_view`) and the workspace records it wrote (`write_workspace`), each record with its
@@ -336,12 +369,15 @@ pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
 };
-pub use shell::{draft_args, word_draft, ArgSource, KeyBinding, Shell};
+pub use shell::{
+    draft_args, refresh_display, report, word_draft, ArgSource, DisplayStatus, KeyBinding, Refresh, Report, Shell,
+    DISPLAY_OUT_OF_DATE,
+};
 pub use store::{
     identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
     Store, Transaction, TransactionKind,
 };
-pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
+pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};

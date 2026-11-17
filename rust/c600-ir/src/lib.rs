@@ -505,6 +505,16 @@ pub enum Accounting {
     Status,
 }
 
+/// A child scope's requested caps, one per budget dimension (DET.60; LP2 draft). An omitted cap resolves, when the
+/// child starts, to what the enclosing scopes have left in that dimension, so it creates no allowance.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ChildCaps {
+    pub steps: Option<u128>,
+    pub kernel_cost: Option<u128>,
+    pub memory: Option<u128>,
+    pub output: Option<u128>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expr {
     Lit(Lit),
@@ -617,6 +627,18 @@ pub enum Expr {
     RngInit {
         path: Vec<String>,
     },
+    /// `child` (LP2 draft; DET.60): `body` runs as a serial subrun under `caps`, in a call frame of its own, and
+    /// borrows the names in scope. When it completes, its value is the expression's. When it stops on a cap or an
+    /// error of its own, it is unwound and `otherwise` runs in the parent, in a call frame of its own, with `status`,
+    /// when it names one, a `Status` bound to the stop's outcome, `cut_off` or `error`. A limit of an enclosing scope
+    /// or an interruption stops the enclosing run.
+    Child {
+        caps: ChildCaps,
+        result: QTy,
+        body: Box<Expr>,
+        status: Option<String>,
+        otherwise: Box<Expr>,
+    },
 }
 
 impl Expr {
@@ -650,6 +672,7 @@ impl Expr {
                 out
             }
             Expr::Closure { body, .. } => vec![&**body],
+            Expr::Child { body, otherwise, .. } => vec![&**body, &**otherwise],
             Expr::Prim { args, .. } | Expr::Collection { items: args, .. } => args.iter().collect(),
             Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
             Expr::Field { value, .. }
@@ -741,6 +764,12 @@ pub mod build {
     }
     pub fn rng_draw(g: Expr) -> Expr {
         prim(Prim::RngDraw, vec![g])
+    }
+    /// A child scope (LP2 draft; DET.60): `body` under `caps`, and `otherwise` after its stop, with `status` bound
+    /// when it is named.
+    pub fn child(caps: ChildCaps, result: QTy, body: Expr, status: Option<&str>, otherwise: Expr) -> Expr {
+        let status = status.map(str::to_string);
+        Expr::Child { caps, result, body: Box::new(body), status, otherwise: Box::new(otherwise) }
     }
     pub fn to_field(field: Field, e: Expr) -> Expr {
         prim(Prim::ToField(field), vec![e])
