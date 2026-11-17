@@ -1,7 +1,9 @@
 //! The jumbling half of the display contract (LP3 C8) on M5's real model: CT-RPI-08's jumbling rows, CT-RPI-12's
-//! off-lattice part and the RM.37 vectors of CT-RM-07 that M5 can check. The states are the solved jumbling state
-//! and the state after the first applied twist of the pinned I_a walk (`research/jumbling/fixtures/wj-I_a.json`),
-//! which is off the lattice. Every result is a source fixture outcome over a mock backend, not a backend run.
+//! off-lattice part, RPI.23's slot projection at lattice poses other than the identity and the RM.37 vectors of
+//! CT-RM-07 that M5 can check. The states are the solved jumbling state, the state after the first applied twist of
+//! the pinned I_a walk (`research/jumbling/fixtures/wj-I_a.json`), which is off the lattice, and the state a fixed
+//! retained word makes from solved, which stays on it. Every result is a source fixture outcome over a mock backend,
+//! not a backend run.
 
 mod common;
 
@@ -15,7 +17,10 @@ use c600_display::jumble::{self, Missing, PoseProjection};
 use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested};
 use c600_display::plan::*;
 use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context, K_PLUS};
+use c600_jumble::levels;
+use c600_jumble::model::{CELL_SLOTS, NS};
 use c600_jumble::observe::{seam_facts, Batch, Rows, Scope};
+use c600_jumble::q5::Q5;
 use c600_jumble::regions::near_poles;
 use c600_jumble::state::{Outcome, State, Status};
 use c600_jumble::twist::{Menu, Twist};
@@ -31,8 +36,9 @@ struct World {
     fixture: Value,
     /// The solved state under the pinned I_a menu.
     solved: State,
-    /// The state after the walk's first applied twist, and that twist's outcome.
+    /// The state after the walk's first applied twist, that twist and its outcome.
     twisted: State,
+    twist: Twist,
     outcome: Outcome,
     /// A cap the twisted state blocks.
     blocked: usize,
@@ -59,8 +65,36 @@ fn world() -> &'static World {
                 classified.status() == Status::Blocked
             })
             .expect("a cap near the twisted grip is blocked");
-        World { engine, fixture, solved, twisted, outcome, blocked }
+        World { engine, fixture, solved, twisted, twist, outcome, blocked }
     })
+}
+
+/// The plane of a transform row is the engine's plane of `twist` (J03, render/1 section 4), up to binary32
+/// rounding: its rows are the engine's exact u and v normalized, in that order and with their signs, so they are unit
+/// and orthogonal, and R(θ) = I + (cos θ − 1)(uuᵀ + vvᵀ) + sin θ (vuᵀ − uvᵀ) is the twist's matrix.
+fn assert_engine_plane(transform: &TransformInput, twist: &Twist) {
+    assert!(swept_preview(transform), "an engine-named plane gives a swept preview");
+    let plane = transform.plane.as_ref().expect("a plane").as_f32();
+    let named = twist.plane().expect("the twist turns one plane");
+    let display = |x: &Q5| f64::from(jumble::approximate(x).expect("a finite value"));
+    let (u, v) = (&plane[..4], &plane[4..]);
+    for (row, exact) in [(u, &named.u), (v, &named.v)] {
+        let engine: Vec<f64> = exact.iter().map(display).collect();
+        let norm = engine.iter().map(|x| x * x).sum::<f64>().sqrt();
+        for (&x, e) in row.iter().zip(&engine) {
+            assert!((f64::from(x) - e / norm).abs() < 1e-6, "the engine's vector, normalized: {row:?}");
+        }
+    }
+    let dot = |a: &[f32], b: &[f32]| a.iter().zip(b).map(|(&x, &y)| f64::from(x) * f64::from(y)).sum::<f64>();
+    assert!((dot(u, u) - 1.0).abs() < 1e-6 && (dot(v, v) - 1.0).abs() < 1e-6 && dot(u, v).abs() < 1e-6);
+    let (c, s) = (f64::from(transform.angle).cos(), f64::from(transform.angle).sin());
+    for i in 0..4 {
+        for j in 0..4 {
+            let (ui, uj, vi, vj) = (f64::from(u[i]), f64::from(u[j]), f64::from(v[i]), f64::from(v[j]));
+            let r = f64::from(u8::from(i == j)) + (c - 1.0) * (ui * uj + vi * vj) + s * (vi * uj - ui * vj);
+            assert!((r - display(&twist.matrix[i][j])).abs() < 1e-5, "R(θ) is the twist at ({i}, {j})");
+        }
+    }
 }
 
 fn first_record(fixture: &Value) -> &Value {
@@ -119,8 +153,10 @@ fn home_of(piece: u32) -> u32 {
 /// CT-RPI-08, jumbling rows, produced-and-validated part (RPI.15, RPI.19): the posed row (J02), the certified
 /// transform row (J03), the projection chain (J05) and piece and sticker instances are produced from M5's states and
 /// pass the host validator and installation. The posed arrays of the solved state equal the three array hashes the
-/// J1 fixture records for its start stage; after a twist the lattice entries agree with M5's exact K⁺ test. Not run:
-/// J01's shrink anchors, J06's backend readback, the J07 to J12 payloads and any array hash of a later J1 stage.
+/// J1 fixture records for its start stage; after a twist the lattice entries agree with M5's exact K⁺ test. The
+/// transform row carries the plane the engine names for the twist, so it has a swept preview whose R(θ) is the twist.
+/// Not run: J01's shrink anchors, J06's backend readback, the J07 to J12 payloads and any array hash of a later J1
+/// stage.
 #[test]
 fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
     let world = world();
@@ -158,9 +194,13 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
     assert_eq!((base.mode, base.digest.as_str()), (Mode::JumbleOn, state.digest(engine).as_str()));
     validate_engine_bundle(&jumble::bundle(&base, &posed)).expect("one revision, three arrays");
 
-    let transform = jumble::transform(&world.outcome, None, 72f32.to_radians(), (12, 13)).expect("admissible");
+    let transform = jumble::transform(&world.outcome, &world.twist, (12, 13)).expect("a finite plane");
+    let transform = transform.expect("admissible");
     assert_eq!(transform.moving.as_u32(), world.outcome.inside, "the certified inside set, not a float test");
     assert_eq!(transform.moving.rows() as i64, moved);
+    assert!(!world.twist.plane().expect("a plane").is_half_turn(), "the walk's first twist is no half-turn");
+    assert!(0.0 < transform.angle && transform.angle < std::f32::consts::PI, "θ in (0, π)");
+    assert_engine_plane(&transform, &world.twist);
 
     let piece = world.outcome.inside[0];
     let instances = vec![
@@ -181,11 +221,12 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
     assert_eq!(host.instances(V1), [InstanceId(1), InstanceId(2)]);
 }
 
-/// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no
-/// J02, a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a transform without
-/// the engine's plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (the refusal
-/// path; M5 supplies none) each give their explicit outcome, and nothing is guessed, truncated or installed. Not run:
-/// a backend's own refusals.
+/// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no J02,
+/// a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a twist that is not the
+/// outcome's letter, a transform without the engine's plane, the identity, which turns no plane, a twist other than the
+/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (the refusal
+/// path; M5 supplies none) each give their explicit outcome, and nothing is guessed, truncated or installed. Not run: a
+/// backend's own refusals.
 #[test]
 fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let world = world();
@@ -251,7 +292,8 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let error = validate(&single(Primitive::Posed(posed.clone()), &labels), &ctx).expect_err("label level");
     assert_eq!(error.code, codes::PLAN_INVALID, "a posed row draws a pose-level subject");
 
-    // A twist the engine did not certify has no moving set; a certified one without a plane has no swept preview.
+    // A twist the engine did not certify has no moving set, and no plane is taken from a twist that is not the
+    // outcome's letter. A row without the engine's plane has no swept preview, and the identity turns no plane.
     let mut blocked = state.clone();
     let cap = world.blocked;
     let turn = engine.kplus.a4(cap).into_iter().find(|&k| k != 0).expect("a rotation about the cap");
@@ -261,9 +303,23 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     free.apply(engine, &record, None, &[]).expect("no engine error");
     let refused_twist = free.apply(engine, &twist, None, &[]).expect("no engine error");
     assert_eq!(refused_twist.status, Status::Blocked);
-    assert!(jumble::transform(&refused_twist, None, 1.0, (13, 14)).is_none(), "no moving set is guessed");
-    let certified = jumble::transform(&world.outcome, None, 1.0, (12, 13)).expect("admissible");
-    assert!(!swept_preview(&certified), "no plane, no swept preview");
+    assert_eq!(jumble::transform(&refused_twist, &twist, (13, 14)), Ok(None), "no moving set is guessed");
+    let other = Missing::OtherGrip { outcome: world.outcome.grip as u32, twist: cap as u32 };
+    assert_eq!(jumble::transform(&world.outcome, &twist, (12, 13)), Err(other), "another grip's twist");
+    let certified = jumble::transform(&world.outcome, &world.twist, (12, 13)).expect("a finite plane");
+    let certified = certified.expect("admissible");
+    assert!(swept_preview(&certified), "the engine names the twist's plane");
+    assert!(!swept_preview(&TransformInput { plane: None, ..certified }), "no plane, no swept preview");
+    let identity = c600_jumble::twist::kplus_twist(engine, 0, 0).expect("the identity fixes pole 0");
+    assert_eq!(jumble::swept_plane(&identity), Ok(None), "the identity turns no plane");
+    // The central inversion turns two planes, so the engine names none; built unchecked, since `Twist::new` refuses
+    // a matrix that moves the grip's pole, it is missing data and never shown as the identity.
+    let minus = std::array::from_fn(|i| std::array::from_fn(|j| if i == j { Q5::int(-1) } else { Q5::zero() }));
+    let inversion = Twist { grip: 0, matrix: Arc::new(minus), kidx: None };
+    assert_eq!(jumble::swept_plane(&inversion), Err(Missing::NoPlane { grip: 0 }), "no plane, yet not the identity");
+    let unmoved = State::new(None).apply(engine, &identity, None, &[]).expect("no engine error");
+    let row = jumble::transform(&unmoved, &identity, (0, 1)).expect("no plane to convert").expect("admissible");
+    assert!(row.plane.is_none() && row.angle == 0.0 && !swept_preview(&row), "the identity has no swept preview");
 
     // A named-cap set the budget left incomplete is missing data, never a shorter set.
     match jumble::named_cap_set(engine, &mut blocked, cap, Some(0)) {
@@ -287,8 +343,8 @@ fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, insta
 /// at the identity pose resolves to its home slot; the partial answer differs from another subject's partial answer,
 /// from a projection at the other level (`KN1:input.level_not_held`, both ways, under a planted equal digest), from
 /// an unknown one (a level the occurrence has no target at) and from a stale one, which is checked first. The stale
-/// half itself is C2's test in `picking.rs`; a slot of a piece at a non-identity lattice pose is not computed (no K⁺
-/// slot action in `c600_jumble`).
+/// half itself is C2's test in `picking.rs`; a sticker of a piece at a lattice pose other than the identity is
+/// `rpi_23_a_sticker_at_a_lattice_pose_is_in_the_slot_of_the_slot_action`'s.
 #[test]
 fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     let world = world();
@@ -305,7 +361,7 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     ];
     let mut host = host_with(&base, ctx_for(state));
     install(&mut host, 1, jplan(&base, vec![Primitive::Posed(posed)], vec![], instances));
-    let projection = PoseProjection::new(engine, state);
+    let projection = PoseProjection::new(engine, state).expect("the level tables place every lattice piece");
     let resolve = |instance: u64, mode, requested, projection: &PoseProjection| {
         host.resolve_pick(&reply(&host, instance), mode, requested, projection)
     };
@@ -331,7 +387,7 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
 
     // A projection of another subject is a partial answer with its own reason, not `off_lattice`; a level the
     // occurrence has no target at is unknown.
-    let other = PoseProjection::new(engine, &world.solved);
+    let other = PoseProjection::new(engine, &world.solved).expect("the solved state is on the lattice");
     let Ok(Some(Partial::Partial { missing, .. })) = resolve(1, PickMode::Explicit, Requested::Slot, &other) else {
         panic!("another subject's projection gives a partial answer")
     };
@@ -373,12 +429,107 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     assert_eq!(host.resolve_pick(&delayed, PickMode::Passive, Requested::Slot, &projection), Ok(None));
 }
 
+/// The state the fixed retained word `[1, 3, -5, 2, -7, 11]` (M8's primitive ids) makes from solved under the I_a
+/// menu: on the lattice, with many pieces at poses other than the identity.
+fn retained() -> State {
+    let world = world();
+    let mut state = world.solved.clone();
+    for mid in [1, 3, -5, 2, -7, 11] {
+        let twist = levels::primitive(&world.engine, mid).expect("a retained generator");
+        let outcome = state.apply(&world.engine, &twist, None, &[]).expect("no engine error");
+        assert_eq!(outcome.status, Status::Admissible, "letter {mid}");
+    }
+    state
+}
+
+/// RPI.23 and J13 at lattice poses other than the identity, on [`retained`]'s state: every sticker is in the slot
+/// whose label it is (M8's `levels::labels`, A3's π(X)), and a sticker of a turned piece resolves through the host to
+/// the slot k·s of M8's slot action with its frame check (`levels::Tables::slot_image`), not to its home slot s. A
+/// piece has no single slot, on the lattice as off it, and a label-level subject gets `KN1:input.level_not_held`
+/// before any digest is compared.
+#[test]
+fn rpi_23_a_sticker_at_a_lattice_pose_is_in_the_slot_of_the_slot_action() {
+    let world = world();
+    let engine = &world.engine;
+    let state = retained();
+    let levels::Partial::Total(labels) = levels::labels(engine, &state).expect("no engine error") else {
+        panic!("a retained word from solved stays on the lattice")
+    };
+    let projection = PoseProjection::new(engine, &state).expect("the level tables place every lattice piece");
+    let base = jumble::revision(engine, &state, 21);
+    let subject = StateRef::Snapshot(base.clone());
+    for (slot, &label) in (0u32..).zip(&labels.labels) {
+        let answer = projection.slot(&subject, &ObjectId::Sticker(label as u32));
+        assert_eq!(answer, Partial::Total(slot), "sticker {label} is in the slot whose label it is");
+    }
+
+    let tables = levels::tables(engine).expect("the level tables");
+    let (home, k) = (0..NS as u32)
+        .find_map(|s| {
+            let k = state.pose_of(engine.model.slot_piece[s as usize] as usize).kidx()?;
+            (tables.slot_image(engine, s, k).ok()? != s).then_some((s, k))
+        })
+        .expect("the word moves a sticker");
+    let moved_to = tables.slot_image(engine, home, k).expect("the slot action");
+    assert_eq!(labels.labels[moved_to as usize], home as i32, "the slot whose label is the sticker");
+    let piece = engine.model.slot_piece[home as usize];
+    let posed = jumble::posed(engine, &state).expect("finite poses");
+    let instances = vec![
+        DisplayInstance { piece: Some(piece), ..instance(1, 1, ObjectId::Sticker(home), 0) },
+        instance(2, 1, ObjectId::Piece(piece), 0),
+    ];
+    let mut host = host_with(&base, ctx_for(&state));
+    install(&mut host, 1, jplan(&base, vec![Primitive::Posed(posed)], vec![], instances));
+    let resolve =
+        |instance| host.resolve_pick(&reply(&host, instance), PickMode::Explicit, Requested::Slot, &projection);
+    let Ok(Some(Partial::Total(slot))) = resolve(1) else { panic!("a sticker at a lattice pose has a slot") };
+    assert_eq!(slot.target, ObjectId::Slot(moved_to), "the slot of the slot action, not the home slot {home}");
+    let Ok(Some(Partial::Partial { covered, missing })) = resolve(2) else { panic!("a piece has no single slot") };
+    assert_eq!(
+        (covered.target, missing),
+        (ObjectId::Piece(piece), vec!["slot: a piece has no single slot".to_owned()])
+    );
+
+    let labels_level = StateRef::Snapshot(RevisionRef { mode: Mode::JumbleOff, ..base.clone() });
+    assert_eq!(labels_level.digest(), subject.digest(), "the digest string is the pose subject's own");
+    let answer = projection.slot(&labels_level, &ObjectId::Sticker(home));
+    assert_eq!(answer, Partial::Undefined(codes::LEVEL_NOT_HELD.to_owned()), "no slot from poses at the label level");
+}
+
+/// An engine error of the level tables is an error, never an answer (J13): in a second copy of the model with a
+/// planted wrong frame for one cell (the identity, where the frame of a cell other than cell 0 carries pole 0 to that
+/// cell's pole), A3's frame check refuses a sticker of a turned piece on that cell whose image cell differs, and the
+/// projection of [`retained`]'s state is [`Missing::Engine`] with M8's own error, as `levels::labels` reports it, and
+/// no projection. The defect is planted in the copy's tables only: its model ID is changed, so the level tables of the
+/// shipped model stay as they are.
+#[test]
+fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
+    let state = retained();
+    let mut broken = Engine::load(&assets()).expect("the jumbling model loads");
+    broken.model.model_id.push_str("+planted-frame");
+    let cell = (0..NS)
+        .filter(|&s| s / CELL_SLOTS != 0)
+        .find_map(|s| {
+            let k = state.pose_of(broken.model.slot_piece[s] as usize).kidx().filter(|&k| k != 0)?;
+            let f = s / CELL_SLOTS;
+            (broken.kplus.perms[k as usize][f] as usize != f).then_some(f)
+        })
+        .expect("a turned piece has a sticker off cell 0 whose cell moves");
+    assert_ne!(broken.kplus.frame_idx[cell], 0, "the frame of a cell other than cell 0 is not the identity");
+    broken.kplus.frame_idx[cell] = 0;
+
+    let error = levels::labels(&broken, &state).err().expect("A3's frame check refuses the planted frame");
+    let projection = PoseProjection::new(&broken, &state);
+    assert!(matches!(&projection, Err(Missing::Engine(reason)) if *reason == error.0), "{:?}", projection.err());
+}
+
 /// CT-RM-07, jumbling half on M5's real model (RM.34, RM.37): rows 1 (mixed-revision bundle), 2 (a certified
-/// half-turn without a plane), 3 (full named-cap set against its cap-map witness), 4 and 5 (the full set over a
-/// count ceiling, standalone and scheduled), 6 (an incomplete survey and the named cut's alpha), 7 (an unsupported
-/// projection stage), 8 (complete and interrupted seam totals) and 15 (a certificate-point hit on an off-lattice
-/// piece). Not run on the real model: rows 9 and 11 to 14 (covers and repair, release order, nu and the correction
-/// catalogue), which stay C2's fixture vectors in `crosswalk.rs`; row 10 has no real geometry to check.
+/// half-turn: with the plane the engine names it has a swept preview at angle π in the engine's direction, and the
+/// same row without that plane has none), 3 (full named-cap set against its cap-map witness), 4 and 5 (the full set
+/// over a count ceiling, standalone and scheduled), 6 (an incomplete survey and the named cut's alpha), 7 (an
+/// unsupported projection stage), 8 (complete and interrupted seam totals) and 15 (a certificate-point hit on an
+/// off-lattice piece). Not run on the real model: rows 9 and 11 to 14 (covers and repair, release order, nu and the
+/// correction catalogue), which stay C2's fixture vectors in `crosswalk.rs`; row 10 has no real geometry to check.
 #[test]
 fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let world = world();
@@ -396,14 +547,19 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     assert_eq!(mixed.arrays[0].name, "pose_index");
     assert_eq!(validate_engine_bundle(&mixed).expect_err("a mixed bundle").code, codes::BUNDLE_MISMATCH);
 
-    // Row 2: a certified half-turn has no engine-named plane, so no swept preview.
+    // Row 2: a certified half-turn sweeps only in the direction the engine names (render/1 section 4); the same row
+    // without that plane, the vector's case, has no swept preview, and no direction is invented.
     let half = engine.kplus.a4(0).into_iter().find(|&k| k != 0 && engine.kplus.compose(k, k) == 0).expect("order 2");
     let twist = c600_jumble::twist::kplus_twist(engine, 0, half).expect("it fixes pole 0");
+    assert!(twist.plane().expect("a half-turn turns one plane").is_half_turn());
     let mut free = State::new(None);
     let outcome = free.apply(engine, &twist, None, &[]).expect("no engine error");
     assert_eq!(outcome.status, Status::Admissible);
-    let transform = jumble::transform(&outcome, None, std::f32::consts::PI, (0, 1)).expect("certified");
-    assert!(transform.plane.is_none() && !swept_preview(&transform));
+    let transform = jumble::transform(&outcome, &twist, (0, 1)).expect("a finite plane").expect("certified");
+    assert_eq!(transform.angle, std::f32::consts::PI, "a half-turn turns by π");
+    assert_engine_plane(&transform, &twist);
+    let without = TransformInput { plane: None, ..transform.clone() };
+    assert!(!swept_preview(&without), "a half-turn without the engine's plane has no swept preview");
     assert_eq!(transform.moving.as_u32(), outcome.inside, "the certified set; no guessed plane or legality");
 
     // Row 3: the full named-cap set keeps every piece and both points of each; the witness names one piece.
@@ -490,7 +646,7 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let mut host = host_with(&base, ctx);
     let overlay = Primitive::CertOverlay(full.clone());
     install(&mut host, 1, jplan(&base, vec![overlay], vec![], vec![instance(1, 1, point.clone(), 0)]));
-    let projection = PoseProjection::new(engine, &state);
+    let projection = PoseProjection::new(engine, &state).expect("the level tables place every lattice piece");
     let hit = reply(&host, 1);
     let resolve = |requested| host.resolve_pick(&hit, PickMode::Explicit, requested, &projection).expect("current");
     let Some(Partial::Total(piece)) = resolve(Requested::Piece) else { panic!("the witness piece") };

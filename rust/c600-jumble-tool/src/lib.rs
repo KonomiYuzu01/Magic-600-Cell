@@ -11,18 +11,19 @@
 //! - [`level`] names the level a result reads: poses inside Jumble, labels in 600-cell-Full (KN1.11).
 //! - [`relation`] is one typed relation of the relationship strip at pose level, the current occupant of a sticker
 //!   slot, on and off the lattice (EV3.8, EV3.9).
-//! - [`protection`] holds protection verdicts that carry their level and answer only at it (LB3.4, KN1.11).
+//! - [`protection`] holds protection verdicts that carry their level and answer only at it (LB3.4, KN1.11): M8's
+//!   protection of a whole word at pose level, and the kernel's protection of named pieces at label level.
 //! - `tests/tool.rs` runs the jumbling tool's parts of CT-LB6-03 and CT-BND-15.
 //! - `tests/lb3.rs` runs the kernel halves of CT-LB1-02, CT-LB3-01, CT-LB3-03, CT-LB3-05 with CT-BND-17, CT-LB3-06 and
 //!   CT-LB3-07 on `c600_jumble`'s public API, with milestone M8's end tests (`levels`) and repair list
 //!   (`observe::cuts::repair_list`). The LB1 and LB3 library entries are language code the IR draft cannot express
 //!   yet, so each test checks the facts the library entry would return; the library entries wait for the IR draft's
 //!   collections.
-//! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02's LP3 side (LB3.4),
+//! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02 whole (LB3.4),
 //!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
-//!   over `c600-display`'s jumbling producers (J02, J13), `c600-repr`'s layouts and M8's slot action of K⁺. Each
-//!   test's documentation says what runs and what does not. C6's `c600-repr` runs the 600-cell-Full half of CT-LB4-03
-//!   and the unchanged-frame half of CT-EV3-06 (EV3.10).
+//!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's
+//!   slot action of K⁺, and `c600-repr`'s layouts. Each test's documentation says what runs and what does not. C6's
+//!   `c600-repr` runs the 600-cell-Full half of CT-LB4-03 and the unchanged-frame half of CT-EV3-06 (EV3.10).
 //!
 //! The tool runs in-process, as `c600-tools` runs its tool. Nothing here is a command-layer row: no state of the
 //! jumbled puzzle is previewed, committed or undone through `c600-command`.
@@ -81,22 +82,21 @@
 //!   total empty result, a repeated slot is answered once, and a slot outside the model refuses the whole call with
 //!   `KN2:input.named_object_invalid`. The result names the relation, its level, the identity block and the pose digest
 //!   it read.
-//! - **Protection verdicts (LB3.4, KN1.11, KN2.4).** A [`protection::Verdict`] holds its level, its protected pieces,
-//!   its finding and the digest it read. At pose level it copies `c600-jumble`'s Net report of one twist; at label
-//!   level it is composed from KN2.4's `positions` rows before and after an operation, a piece moving when one of its
-//!   stickers changes slot. It is composed so because the kernel's `ProtectedSet` covers moving orbits 0 to 34 only
-//!   and has no row for a centre piece; the kernel's label-level protection of named pieces, centres included
-//!   (`Kernel::piece_protection`), is not taken up yet. Asked for a puzzle of the other level, a verdict is refused
-//!   with `KN1:input.level_not_held`, both ways; `LG2:type.level_mismatch` stays the checker's static diagnostic.
+//! - **Protection verdicts (LB3.4, KN1.11, KN2.4, KN2.7).** A [`protection::Verdict`] holds its level, its mode, its
+//!   protected pieces, its finding, its first refused prefix under Strict and the digest it read. It copies an
+//!   engine's report and judges nothing itself: at pose level M8's protection of a whole word (`levels::derive`, its
+//!   `WordProtection`), at label level the kernel's protection of named pieces, fixed cell centres included
+//!   (`Kernel::piece_protection` under Net, `Kernel::strict_piece_protection` under Strict). The kernel names a piece
+//!   by its home position, the number `c600_jumble` gives it, which CT-LB3-02 checks for the centre piece of cell 0.
+//!   Asked for a puzzle of the other level, a verdict is refused with `KN1:input.level_not_held`, both ways;
+//!   `LG2:type.level_mismatch` stays the checker's static diagnostic. CT-LB3-02's crossing at solved is M8's end
+//!   tests (`label_checkpoint`, `retained_checkpoint`) and its projection to labels (`levels::project`), from which
+//!   the kernel's label pass starts; the crossing as a command-layer commit row waits for LP2's KN5.
 //! - **CT-LB4-03's jumbling fixture (LB4.4, RPI.15).** `c600-repr`'s layouts carry no posed row, so the test adds
 //!   J02's posed row of the base state as primitive 2 of each plan: the plan then draws a pose-level subject, which
 //!   the validator checks, and a filter, which rebuilds primitive 0 only, keeps it. The mechanically analysed set is
 //!   the certified inside set of the state's last twist, J03's moving set: a set the engine certified, not one a
 //!   display computed.
-//! - **Slot action in CT-LB4-03 (J13, RPI.23).** `c600-display`'s pose projection names no slot for a sticker at a
-//!   lattice pose other than the identity. The test wraps it in a projection of its own: such a sticker is in the slot
-//!   whose M8 label it is (`levels::labels`, computed from the poses), and every other answer is the pose
-//!   projection's.
 //! - **Kernel halves (LB3.1, LB3.5, LB3.6, LB3.7, LB3.8).** The tests take the kernel's answers as the library
 //!   entries' facts: `word_check` for LB3.8's `check_named_word`, `prefix_observations` for the chronological
 //!   observations, `heights` for heights and domain IDs, M8's `levels::sticker_test`, `retained_checkpoint` and
@@ -116,13 +116,8 @@
 //! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
 //!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
 //!   (CT-LB3-05, CT-BND-17): LP2.
-//! - Not taken up yet on M8: the whole-word protection of `levels::derive` for CT-LB3-06, the rim and survey rows of
-//!   CT-LB3-07, and LB3.4's projection from poses to labels with its checkpoints (CT-LB3-02).
-//! - Not taken up yet from LP2's kernel pieces for C8: the slot action of K⁺ with its frame check
-//!   (`levels::Tables::slot_image`, `piece_slots`) inside `c600-display`'s pose projection (J13), which CT-LB4-03
-//!   supplies in a test projection until the display crate has it; and the kernel's label-level protection of named
-//!   pieces, centres included, under Net and Strict (`Kernel::piece_protection`, `strict_piece_protection`, KN1.11),
-//!   for CT-LB3-02's label verdict and Strict protection of a whole word at label level.
+//! - Not taken up yet on M8: the whole-word protection of `levels::derive` for CT-LB3-06, and the rim and survey rows
+//!   of CT-LB3-07.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.

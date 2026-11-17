@@ -5,15 +5,19 @@
 //!
 //! - [`posed`] builds the posed-sticker row (J02, render/1 section 3) from a state's canonical pose table;
 //!   [`revision`] and [`bundle`] bind it to its pose-level revision (RPI.9, render/1 section 7).
-//! - [`transform`] builds the certified transform row (J03) from an applied twist's certified inside set.
+//! - [`transform`] builds the certified transform row (J03) from an applied twist's certified inside set and its
+//!   engine-named plane ([`swept_plane`], render/1 section 4).
 //! - [`named_cap_set`], [`witness`] and [`named_cut`] build the certified overlay row (J04).
 //! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer.
-//! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13).
+//! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13), with M8's slot
+//!   action of K⁺ for a piece at a lattice pose.
 //! - [`support_report`] and [`fixture_context`] are declared fixture values, as in [`crate::produce`] (RPI.50).
 
+use c600_jumble::levels;
 use c600_jumble::model::NP;
-use c600_jumble::q5::{Vec4, Q5};
+use c600_jumble::q5::{identity4, Vec4, Q5};
 use c600_jumble::state::{Certificate, Classification, Outcome, State, Status};
+use c600_jumble::twist::Twist;
 use c600_jumble::Context as Engine;
 use c600_kernel::json::Value;
 use c600_kernel::{IdentityBlock, Puzzle};
@@ -41,6 +45,24 @@ pub enum Missing {
     NoSuchCap { cap: u32 },
     /// The engine reported an error.
     Engine(String),
+    /// The plane the engine names for the twist at this grip has no finite binary32 value (J03).
+    NonFinitePlane { grip: u32 },
+    /// The twist at this grip is not the identity, yet the engine names no plane for it: a matrix that is not
+    /// exactly a rotation, or one that turns two planes. It has no swept preview and is never shown as the identity
+    /// (J03). `Twist::new` admits neither, since a twist fixes its grip's pole.
+    NoPlane { grip: u32 },
+    /// The twist given for an outcome turns another grip, so it is not the letter the outcome certified, and no plane
+    /// is taken from it (J03).
+    OtherGrip { outcome: u32, twist: u32 },
+}
+
+/// The binary64 value of an exact number: (a + b√5)/d, each operation rounded. `None` when a coefficient does not
+/// fit binary64 or the value is not finite.
+fn approximate64(x: &Q5) -> Option<f64> {
+    let part = |n: String| n.parse::<f64>().ok();
+    let (a, b, d) = (part(x.a().to_string())?, part(x.b().to_string())?, part(x.d().to_string())?);
+    let value = (a + b * 5f64.sqrt()) / d;
+    value.is_finite().then_some(value)
 }
 
 /// The binary32 display value of an exact number: (a + b√5)/d evaluated in binary64, each operation rounded, then
@@ -48,9 +70,7 @@ pub enum Missing {
 /// coefficient does not fit binary64 or the value is not finite. It is display data only; nothing exact is decided
 /// from it.
 pub fn approximate(x: &Q5) -> Option<f32> {
-    let part = |n: String| n.parse::<f64>().ok();
-    let (a, b, d) = (part(x.a().to_string())?, part(x.b().to_string())?, part(x.d().to_string())?);
-    let value = ((a + b * 5f64.sqrt()) / d) as f32;
+    let value = approximate64(x)? as f32;
     value.is_finite().then_some(value)
 }
 
@@ -120,28 +140,65 @@ pub fn bundle(revision: &RevisionRef, posed: &PosedInput) -> EngineBundle {
     EngineBundle { revision: revision.clone(), arrays }
 }
 
-/// The certified transform row of an applied twist (J03): the grip and the engine's certified inside set, sorted.
-/// Only an admissible outcome has one; a blocked, uncertain, refused or protected outcome has no moving set, and none
-/// is guessed. The plane is the one the engine names; `c600_jumble` names none, so without it there is no swept
+/// A twist's engine-named plane as display values (J03, render/1 section 4): the rows of RM.6's f32 [2, 4] plane
+/// and the angle. The sweep R(φ) = I + (cos φ − 1)(uuᵀ + vvᵀ) + sin φ (vuᵀ − uvᵀ) built from them turns u toward v
+/// and is the twist at φ = θ, up to binary32 rounding.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SweptPlane {
+    /// u/|u| and v/|v| of `c600_jumble::twist::RotationPlane`.
+    pub plane: [[f32; 4]; 2],
+    /// θ in radians, in (0, π]; π for a half-turn, whose turning direction is the engine's naming of v.
+    pub angle: f32,
+}
+
+/// The display values of `twist`'s engine-named plane ([`SweptPlane`], `Twist::plane`). The engine names u, v and
+/// cos θ exactly, and u and v unnormalized; here each coordinate is evaluated in binary64 as [`approximate`] does,
+/// each vector is normalized in binary64 and rounded to binary32, and θ is the binary64 arccosine of cos θ (clamped
+/// to [−1, 1]) rounded to binary32. `Ok(None)` for the identity, which turns no plane; another matrix the engine names
+/// no plane for is [`Missing::NoPlane`]; a vector or angle with no finite value is [`Missing::NonFinitePlane`].
+/// Display data only: no direction is invented and nothing exact is decided from it.
+pub fn swept_plane(twist: &Twist) -> Result<Option<SweptPlane>, Missing> {
+    let Some(named) = twist.plane() else {
+        let grip = twist.grip as u32;
+        return if *twist.matrix == identity4() { Ok(None) } else { Err(Missing::NoPlane { grip }) };
+    };
+    let unit = |v: &Vec4| -> Option<[f32; 4]> {
+        let x = [approximate64(&v[0])?, approximate64(&v[1])?, approximate64(&v[2])?, approximate64(&v[3])?];
+        let norm = x.iter().map(|c| c * c).sum::<f64>().sqrt();
+        let unit = x.map(|c| (c / norm) as f32);
+        (norm.is_finite() && norm > 0.0 && unit.iter().all(|c| c.is_finite())).then_some(unit)
+    };
+    let swept = || {
+        let (u, v, cos) = (unit(&named.u)?, unit(&named.v)?, approximate64(&named.cos)?);
+        Some(SweptPlane { plane: [u, v], angle: cos.clamp(-1.0, 1.0).acos() as f32 })
+    };
+    swept().map(Some).ok_or(Missing::NonFinitePlane { grip: twist.grip as u32 })
+}
+
+/// The certified transform row of an applied twist (J03): the grip, the engine's certified inside set, sorted, and the
+/// display values of the twist's engine-named plane and angle ([`swept_plane`]). `twist` must be the letter the outcome
+/// certified. The outcome holds no matrix, so only the grip is checked: a twist of another grip is
+/// [`Missing::OtherGrip`], and no plane is taken from it; another twist of the same grip is the caller's error, which
+/// this cannot see. Only an admissible outcome has a row; a blocked, uncertain, refused or protected outcome has no
+/// moving set, and none is guessed. The identity turns no plane: its row has none and the angle 0, so it has no swept
 /// preview ([`crate::validate::swept_preview`]).
-pub fn transform(
-    outcome: &Outcome,
-    plane: Option<[[f32; 4]; 2]>,
-    angle: f32,
-    endpoints: (u64, u64),
-) -> Option<TransformInput> {
-    if outcome.status != Status::Admissible {
-        return None;
+pub fn transform(outcome: &Outcome, twist: &Twist, endpoints: (u64, u64)) -> Result<Option<TransformInput>, Missing> {
+    if twist.grip != outcome.grip {
+        return Err(Missing::OtherGrip { outcome: outcome.grip as u32, twist: twist.grip as u32 });
     }
-    Some(TransformInput {
+    if outcome.status != Status::Admissible {
+        return Ok(None);
+    }
+    let swept = swept_plane(twist)?;
+    Ok(Some(TransformInput {
         grip: outcome.grip as u32,
-        plane: plane.map(|p| Array::f32s(vec![2, 4], &p.concat())),
-        angle,
+        plane: swept.map(|s| Array::f32s(vec![2, 4], &s.plane.concat())),
+        angle: swept.map_or(0.0, |s| s.angle),
         moving_digest: piece_set_digest(&outcome.inside),
         moving: Array::u32s(vec![outcome.inside.len() as u64], &outcome.inside),
         from: endpoints.0,
         to: endpoints.1,
-    })
+    }))
 }
 
 fn pair(certificate: &Certificate) -> Option<PointPair> {
@@ -271,38 +328,51 @@ pub fn seam_table(facts: &Value) -> Option<SeamTable> {
     Some(SeamTable { seams, complete })
 }
 
-/// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the identity pose is
-/// in its home slot. A piece off the lattice has no slot, and none is invented: the answer is `undefined` with reason
-/// `off_lattice`. A piece at another lattice pose has a slot, but `c600_jumble` offers no slot action of K⁺, so the
-/// answer is `undefined` with its own reason, distinct from `off_lattice`. It holds the pose level only: a label-level
-/// subject gets [`codes::LEVEL_NOT_HELD`] before any digest is compared (KN1.8).
+/// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the lattice pose k is
+/// in the slot k·s of its home slot s: M8's slot action of K⁺ with A3's frame check (`levels::Tables::piece_slots`),
+/// which at the identity is the home slot. A piece off the lattice has no slot, and none is invented: the answer is
+/// `undefined` with reason `off_lattice`. A piece, as on 600-cell-Full, has no single slot. It holds the pose level
+/// only: a label-level subject gets [`codes::LEVEL_NOT_HELD`] before any digest is compared (KN1.8).
 pub struct PoseProjection {
     digest: String,
-    slot_piece: Vec<u32>,
-    /// The K⁺ index of each piece's pose, or -1 off the lattice.
-    lattice: Vec<i32>,
+    /// Whether each piece's pose is on the lattice.
+    lattice: Vec<bool>,
+    /// The slot of each sticker, by its home slot; `None` for a sticker of a piece off the lattice.
+    slots: Vec<Option<u32>>,
 }
 
 /// The reason of a slot request for a piece off the lattice.
 pub const OFF_LATTICE: &str = "off_lattice";
 
 impl PoseProjection {
-    /// The projection for `state`, bound to its canonical pose digest.
-    pub fn new(engine: &Engine, state: &State) -> PoseProjection {
-        PoseProjection {
-            digest: state.digest(engine),
-            slot_piece: engine.model.slot_piece.clone(),
-            lattice: (0..NP).map(|piece| state.pose_of(piece).kidx().map_or(-1, i32::from)).collect(),
+    /// The projection for `state`, bound to its canonical pose digest. The slots of a piece at a lattice pose other
+    /// than the identity come from M8's level tables; an engine error there, such as a frame disagreement, is
+    /// [`Missing::Engine`] and no projection, never an answer.
+    pub fn new(engine: &Engine, state: &State) -> Result<PoseProjection, Missing> {
+        let poses: Vec<Option<u16>> = (0..NP).map(|piece| state.pose_of(piece).kidx()).collect();
+        let mut slots: Vec<Option<u32>> = (0u32..)
+            .zip(&engine.model.slot_piece)
+            .map(|(home, &piece)| (poses.get(piece as usize) == Some(&Some(0))).then_some(home))
+            .collect();
+        let turned: Vec<(usize, u16)> =
+            poses.iter().enumerate().filter_map(|(piece, &k)| k.filter(|&k| k != 0).map(|k| (piece, k))).collect();
+        if !turned.is_empty() {
+            let tables = levels::tables(engine).map_err(|error| Missing::Engine(error.0))?;
+            for (piece, k) in turned {
+                let placed = tables.piece_slots(engine, piece, k).map_err(|error| Missing::Engine(error.0))?;
+                for (&home, slot) in tables.slots(piece).iter().zip(placed) {
+                    slots[home as usize] = Some(slot);
+                }
+            }
         }
+        Ok(PoseProjection { digest: state.digest(engine), lattice: poses.iter().map(Option::is_some).collect(), slots })
     }
 
-    fn piece(&self, piece: u32, home: Option<u32>) -> Partial<u32> {
-        match (self.lattice.get(piece as usize), home) {
-            (None, _) => Partial::Undefined("no such piece".to_owned()),
-            (Some(-1), _) => Partial::Undefined(OFF_LATTICE.to_owned()),
-            (Some(0), Some(home)) => Partial::Total(home),
-            (Some(_), Some(_)) => Partial::Undefined("the kernel offers no slot action for a lattice pose".to_owned()),
-            (Some(_), None) => Partial::Undefined("a piece has no single slot".to_owned()),
+    fn piece(&self, piece: u32) -> Partial<u32> {
+        match self.lattice.get(piece as usize) {
+            None => Partial::Undefined("no such piece".to_owned()),
+            Some(false) => Partial::Undefined(OFF_LATTICE.to_owned()),
+            Some(true) => Partial::Undefined("a piece has no single slot".to_owned()),
         }
     }
 }
@@ -317,11 +387,12 @@ impl Projection for PoseProjection {
         }
         match object {
             ObjectId::Slot(slot) => Partial::Total(*slot),
-            ObjectId::Sticker(home) => match self.slot_piece.get(*home as usize) {
-                Some(&piece) => self.piece(piece, Some(*home)),
+            ObjectId::Sticker(home) => match self.slots.get(*home as usize) {
+                Some(Some(slot)) => Partial::Total(*slot),
+                Some(None) => Partial::Undefined(OFF_LATTICE.to_owned()),
                 None => Partial::Undefined("no such sticker".to_owned()),
             },
-            ObjectId::Piece(piece) | ObjectId::Point { witness: piece, .. } => self.piece(*piece, None),
+            ObjectId::Piece(piece) | ObjectId::Point { witness: piece, .. } => self.piece(*piece),
             _ => Partial::Undefined("the object has no slot".to_owned()),
         }
     }

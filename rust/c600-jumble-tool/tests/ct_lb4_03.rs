@@ -9,20 +9,19 @@
 //!
 //! What runs: eight instances of six canonical objects in an atlas of two charts and on a sheet, resolved at the
 //! occurrence, sticker, piece, cell and slot levels on the pose-level subject (Jumble on, the identity block with the
-//! I_a menu, the pose digest); a slot answer at the identity, off the lattice and at another lattice pose, each with
-//! its own reason, and a 600-cell-Full label projection that holds no pose level, so it answers nothing for that
-//! subject even under the subject's own digest; the atlas's occurrences drawn at one point, two pieces sharing one pose
-//! index, and a planted inverse that nothing calls; and four layout filters, one of them by pose, that leave the
-//! analysed set (the engine's certified inside set of the last twist), the posed row, the subject and the base as they
-//! were, validate, install and move no state. At lattice poses other than the identity: the slot of a sticker there,
-//! through a projection of this test on M8's slot action of K⁺ (`c600_jumble::levels::labels`) and checked against
-//! CT-EV3-06's current-occupant relation, since `c600-display`'s pose projection still names no slot there; six
-//! instances on a third plan, with stickers of two such pieces that share one pose index, resolved at the occurrence,
-//! piece and slot levels and checked against CT-EV3-06's current-occupant relation; and a layout filter that keeps
-//! those pieces. Not run: a layout evaluated again at a later revision of a jumbled session, since no command-layer row
-//! commits a jumbling state yet (LP2's KN5); the slot action inside `c600-display`'s pose projection (J13), which this
-//! crate may not edit; derived pose-level subjects; chart properties at exact poses (LB4.2); and any backend, readback
-//! or drawing (J06). A pass is source and fixture evidence over the mock backend, not a backend run.
+//! I_a menu, the pose digest); a slot answer at the identity (the home slot), off the lattice (`off_lattice`, no slot)
+//! and at another lattice pose (the slot of M8's slot action of K⁺, which the pose projection computes with A3's frame
+//! check), and a 600-cell-Full label projection that holds no pose level, so it answers nothing for that subject even
+//! under the subject's own digest; the atlas's occurrences drawn at one point, two pieces sharing one pose index, and a
+//! planted inverse that nothing calls; and four layout filters, one of them by pose, that leave the analysed set (the
+//! engine's certified inside set of the last twist), the posed row, the subject and the base as they were, validate,
+//! install and move no state. At lattice poses other than the identity: the slot of a sticker there, through
+//! `c600-display`'s pose projection and checked against CT-EV3-06's current-occupant relation, which places pieces by
+//! chamber; six instances on a third plan, with stickers of two such pieces that share one pose index, resolved at the
+//! occurrence, piece and slot levels and checked against that relation; and a layout filter that keeps those pieces.
+//! Not run: a layout evaluated again at a later revision of a jumbled session, since no command-layer row commits a
+//! jumbling state yet (LP2's KN5); derived pose-level subjects; chart properties at exact poses (LB4.2); and any
+//! backend, readback or drawing (J06). A pass is source and fixture evidence over the mock backend, not a backend run.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -37,8 +36,7 @@ use c600_display::plan::*;
 use c600_display::produce::GeometryInput;
 use c600_display::receipt::Status;
 use c600_display::validate::{validate, Context, LimitProfile};
-use c600_jumble::levels;
-use c600_jumble::model::{NP, NS};
+use c600_jumble::model::NP;
 use c600_jumble::state::{Outcome, State};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context as Engine;
@@ -49,11 +47,6 @@ use c600_repr::layout::{Header, Occurrence, Representation};
 
 /// The one producing source of the fixture maps.
 const SOURCE: &str = "jumbling representations fixture source";
-
-/// The reason `c600-display`'s pose projection gives for a sticker of a piece at a lattice pose other than the
-/// identity, and the slot reason the host makes of it.
-const NO_SLOT_ACTION_REASON: &str = "the kernel offers no slot action for a lattice pose";
-const NO_SLOT_ACTION: &str = "slot: the kernel offers no slot action for a lattice pose";
 
 /// The slot reason of a projection bound to another subject.
 const ANOTHER_SUBJECT: &str = "slot: the projection is for another subject";
@@ -82,8 +75,9 @@ fn context(base: &RevisionRef) -> Context {
     jumble::fixture_context(geometry(), base.identity.clone(), LimitProfile::uniform("fixture/1", 1 << 40))
 }
 
-/// The state after the first `count` records of the I_a journal from solved, and the outcome of the last.
-fn walk(count: usize) -> (State, Outcome) {
+/// The state after the first `count` records of the I_a journal from solved, the last record's twist and its
+/// outcome.
+fn walk(count: usize) -> (State, Twist, Outcome) {
     let engine = engine();
     let bytes = std::fs::read(repository().join("research/jumbling/fixtures/wj-I_a.json")).expect("the I_a fixture");
     let doc = json::parse(&bytes).expect("the I_a fixture is JSON");
@@ -95,9 +89,10 @@ fn walk(count: usize) -> (State, Outcome) {
         let twist = Twist::from_record(engine, record).expect("a journal record");
         let outcome = state.apply(engine, &twist, None, &[]).expect("no engine error");
         assert_eq!(outcome.status, c600_jumble::state::Status::Admissible, "record {index}");
-        last = Some(outcome);
+        last = Some((twist, outcome));
     }
-    (state, last.expect("at least one record"))
+    let (twist, outcome) = last.expect("at least one record");
+    (state, twist, outcome)
 }
 
 /// The first home slot of `piece`: the canonical ID of one of its stickers.
@@ -216,40 +211,9 @@ impl Projection for PlantedInverse {
     }
 }
 
-/// The slot level with M8's slot action of K⁺. Where `c600-display`'s pose projection names no slot for a sticker of a
-/// piece at a lattice pose other than the identity, this projection answers the slot whose label is that sticker
-/// (`c600_jumble::levels::labels`). Every other answer, the level and subject checks among them, is the pose
-/// projection's. The display crate does not have the action yet, so the test supplies it.
-struct SlotAction {
-    pose: PoseProjection,
-    /// The slot of each sticker of a lattice piece, by its home slot.
-    slot_of: Vec<Option<u32>>,
-}
-
-impl SlotAction {
-    fn new(state: &State) -> SlotAction {
-        let engine = engine();
-        let labels = match levels::labels(engine, state).expect("no engine error") {
-            levels::Partial::Total(labels) | levels::Partial::Partial { covered: labels, .. } => labels,
-            levels::Partial::Undefined(reason) => panic!("no labels: {reason}"),
-        };
-        let mut slot_of = vec![None; NS];
-        for (&slot, &label) in labels.slots.iter().zip(&labels.labels) {
-            slot_of[label as usize] = Some(slot);
-        }
-        SlotAction { pose: PoseProjection::new(engine, state), slot_of }
-    }
-}
-
-impl Projection for SlotAction {
-    fn slot(&self, subject: &StateRef, object: &ObjectId) -> Partial<u32> {
-        match (self.pose.slot(subject, object), object) {
-            (Partial::Undefined(reason), ObjectId::Sticker(home)) if reason == NO_SLOT_ACTION_REASON => {
-                self.slot_of[*home as usize].map_or_else(|| Partial::Undefined(reason), Partial::Total)
-            }
-            (answer, _) => answer,
-        }
-    }
+/// `c600-display`'s pose projection of `state` (J13), with M8's slot action of K⁺ at lattice poses.
+fn pose_projection(state: &State) -> PoseProjection {
+    PoseProjection::new(engine(), state).expect("the level tables place every lattice piece")
 }
 
 fn total(host: &Host<MockBackend>, reply: &PickReply, requested: Requested, projection: &dyn Projection) -> Resolution {
@@ -299,10 +263,11 @@ fn fixture() -> &'static Fixture {
     static FIXTURE: OnceLock<Fixture> = OnceLock::new();
     FIXTURE.get_or_init(|| {
         let engine = engine();
-        let (state, outcome) = walk(2);
+        let (state, twist, outcome) = walk(2);
         assert_eq!((state.moved_count(), state.off_lattice_count()), (5_799, 5_404), "moved and off-lattice pieces");
         let inside = outcome.inside.clone();
-        let transform = jumble::transform(&outcome, None, 1.0, (13, 14)).expect("an admissible twist");
+        let transform = jumble::transform(&outcome, &twist, (13, 14)).expect("a finite plane");
+        let transform = transform.expect("an admissible twist");
         let poses = state.pose_ids();
         let off =
             *inside.iter().find(|&&p| !state.is_lattice_piece(p as usize)).expect("a piece moved off the lattice");
@@ -358,12 +323,11 @@ fn fixture() -> &'static Fixture {
 /// identity block of the jumbled puzzle with the I_a menu, and the pose digest (INV-6). The piece level answers only
 /// where the occurrence states its piece, the cell level for a cell, and the slot level through the pose projection
 /// (J13): a sticker at the identity is in its home slot, a sticker or piece off the lattice has no slot
-/// (`off_lattice`), and a sticker at another lattice pose has no slot in that projection, with its own reason. The
-/// test's projection adds M8's slot action of K⁺, which M8 computes from the poses: there that sticker is in the slot
-/// whose label it is, not its home slot, whose current occupant (CT-EV3-06's relation, read from the chambers of K⁺) is
-/// the sticker's piece, and every other instance answers as before. No slot is lifted from labels: the solved label
-/// state of 600-cell-Full has every sticker at home, and its projection answers `KN1:input.level_not_held` for the
-/// pose-level subject, also when it is bound to that subject's own digest.
+/// (`off_lattice`), and a sticker at another lattice pose is in the slot of M8's slot action of K⁺, which the pose
+/// projection computes from the poses with A3's frame check: not its home slot, and the slot whose current occupant
+/// (CT-EV3-06's relation, read from the chambers of K⁺, not from labels) is the sticker's piece. No slot is lifted from
+/// labels: the solved label state of 600-cell-Full has every sticker at home, and its projection answers
+/// `KN1:input.level_not_held` for the pose-level subject, also when it is bound to that subject's own digest.
 #[test]
 fn ct_lb4_03_jumbling_half_display_instances_map_to_canonical_ids_at_pose_level() {
     let f = fixture();
@@ -414,7 +378,7 @@ fn ct_lb4_03_jumbling_half_display_instances_map_to_canonical_ids_at_pose_level(
     undefined(&host, &reply(&host, 1), Requested::Cell);
 
     // The slot level is the kernel's exact pose projection of the bound subject (J13).
-    let projection = PoseProjection::new(engine, &f.state);
+    let projection = pose_projection(&f.state);
     assert_eq!(total(&host, &reply(&host, 5), Requested::Slot, &projection).target, ObjectId::Slot(still));
     let off_lattice = vec![format!("slot: {OFF_LATTICE}")];
     for (id, target) in [(1, ObjectId::Sticker(off)), (2, ObjectId::Sticker(off)), (3, ObjectId::Sticker(twin))]
@@ -425,31 +389,18 @@ fn ct_lb4_03_jumbling_half_display_instances_map_to_canonical_ids_at_pose_level(
         assert_eq!((covered.target, missing), (target, off_lattice.clone()), "instance {id}: no slot is invented");
         assert_eq!(covered.subject.digest(), f.state.digest(engine), "the partial answer keeps its subject");
     }
-    let (covered, missing) = partial_slot(&host, 4, &projection);
-    assert_eq!((covered.target, missing), (ObjectId::Sticker(turned), vec![NO_SLOT_ACTION.to_owned()]));
-    assert_ne!(NO_SLOT_ACTION, off_lattice[0], "another lattice pose is not off the lattice");
     let (covered, missing) = partial_slot(&host, 6, &projection);
     assert_eq!((covered.target, missing.len()), (ObjectId::Cell(7), 1), "a cell has no slot");
 
-    // On M8's slot action of K⁺ that sticker has a slot: the one whose label it is, not its home slot. The display's
-    // pose projection does not have the action yet; the test's projection adds it and answers as the pose projection
-    // for every other instance.
-    let action = SlotAction::new(&f.state);
-    let moved_to = action.slot_of[turned as usize].expect("a sticker on the lattice is in a slot");
+    // At another lattice pose the sticker has a slot, M8's k·s, and not its home slot. Apart from the slot action the
+    // projection reads, the slot's current occupant, placed by the chambers of K⁺, is the sticker's piece.
+    let r = total(&host, &reply(&host, 4), Requested::Slot, &projection);
+    let ObjectId::Slot(moved_to) = r.target.clone() else { panic!("a slot, not {:?}", r.target) };
+    assert_eq!(r.occurrence, ObjectId::Sticker(turned));
     assert_ne!(moved_to, turned, "the sticker is not in its home slot");
-    // Apart from the labels the projection reads: the slot's current occupant, placed by the chambers of K⁺, is the
-    // sticker's piece.
     let occupant = current_occupants(engine, &f.state, &[moved_to]).expect("no engine error").expect("a model slot");
     assert_eq!(occupant.get(moved_to), Some(Ok(f.turned)), "the slot holds the sticker's piece");
-    let r = total(&host, &reply(&host, 4), Requested::Slot, &action);
-    assert_eq!((r.target, r.occurrence), (ObjectId::Slot(moved_to), ObjectId::Sticker(turned)));
     assert_eq!(r.subject.digest(), f.state.digest(engine), "bound to the pose-level subject");
-    for id in [1, 2, 3, 5, 6, 7, 8] {
-        let slot = |projection: &dyn Projection| {
-            host.resolve_pick(&reply(&host, id), PickMode::Explicit, Requested::Slot, projection)
-        };
-        assert_eq!(slot(&action), slot(&projection), "instance {id}");
-    }
 
     // No lift from labels into poses (KN1.8, KN1.10). In the solved label state of 600-cell-Full every sticker is in
     // its home slot, the old occupant's answer. The label projection holds the label level only, so it answers nothing
@@ -588,11 +539,11 @@ fn slot_of(host: &Host<MockBackend>, id: u64, projection: &dyn Projection) -> Ob
 /// and b sit at lattice poses other than the identity and share one pose index of the posed row, so one pose matrix
 /// moves both. Plan 3, a sheet, draws at one point a sticker of a twice, a sticker of b, piece b, a sticker of a piece
 /// at the identity and one of a piece off the lattice. Each instance resolves by its instance ID to its own canonical
-/// object, plan and subject, and to its piece where the layout states it. At the slot level, through the test's
-/// projection on M8's slot action, the two copies of a's sticker name one slot and b's sticker another, neither its
-/// home slot; the current occupant of each, by CT-EV3-06's relation (which places pieces by chamber, not by label), is
-/// the sticker's piece. Piece b has no single slot, and the other two stickers answer as in the pose projection, which
-/// names no slot for a's or b's sticker. A layout filter that keeps the occurrences of pieces at lattice poses other
+/// object, plan and subject, and to its piece where the layout states it. At the slot level, through `c600-display`'s
+/// pose projection (J13), the two copies of a's sticker name one slot and b's sticker another, neither its home slot;
+/// the current occupant of each, by CT-EV3-06's relation (which places pieces by chamber, not by label), is the
+/// sticker's piece. Piece b has no single slot, the sticker at the identity is in its home slot, and the sticker off
+/// the lattice has none (`off_lattice`). A layout filter that keeps the occurrences of pieces at lattice poses other
 /// than the identity leaves the analysed set, the posed row, the subject and the base as they were, validates with the
 /// same subjects and installs; the engine revision does not move, and each kept instance resolves to the same object
 /// and slot as before.
@@ -647,10 +598,10 @@ fn ct_lb4_03_jumbling_half_stickers_at_other_lattice_poses_map_to_their_slots() 
     }
     undefined(&host, &reply(&host, 9), Requested::Piece);
 
-    // The slot level on M8's slot action.
-    let action = SlotAction::new(&f.state);
-    let (at_a, at_b) = (slot_of(&host, 9, &action), slot_of(&host, 11, &action));
-    assert_eq!(slot_of(&host, 10, &action), at_a, "two copies, one slot");
+    // The slot level: the pose projection on M8's slot action.
+    let projection = pose_projection(&f.state);
+    let (at_a, at_b) = (slot_of(&host, 9, &projection), slot_of(&host, 11, &projection));
+    assert_eq!(slot_of(&host, 10, &projection), at_a, "two copies, one slot");
     assert_ne!(at_a, at_b, "two stickers, two slots");
     let (ObjectId::Slot(da), ObjectId::Slot(db)) = (at_a.clone(), at_b.clone()) else {
         panic!("slots: {at_a:?} and {at_b:?}")
@@ -663,15 +614,11 @@ fn ct_lb4_03_jumbling_half_stickers_at_other_lattice_poses_map_to_their_slots() 
         (Some(Ok(a)), Some(Ok(b))),
         "each slot holds its sticker's piece"
     );
-    assert_eq!(slot_of(&host, 13, &action), ObjectId::Slot(still));
-    let (covered, missing) = partial_slot(&host, 12, &action);
+    assert_eq!(slot_of(&host, 13, &projection), ObjectId::Slot(still));
+    let (covered, missing) = partial_slot(&host, 12, &projection);
     assert_eq!((covered.target, missing), (ObjectId::Piece(b), vec!["slot: a piece has no single slot".to_owned()]));
-    let (covered, missing) = partial_slot(&host, 14, &action);
+    let (covered, missing) = partial_slot(&host, 14, &projection);
     assert_eq!((covered.target, missing), (ObjectId::Sticker(off), vec![format!("slot: {OFF_LATTICE}")]));
-    let pose = PoseProjection::new(engine, &f.state);
-    for id in [9, 10, 11] {
-        assert_eq!(partial_slot(&host, id, &pose).1, [NO_SLOT_ACTION], "instance {id}: the display names no slot");
-    }
 
     // A layout filter that keeps the pieces at lattice poses other than the identity.
     let kept = sheet.filtered(|o: &Occurrence| piece_of(o).is_some_and(other_pose)).expect("filtered");
@@ -690,5 +637,5 @@ fn ct_lb4_03_jumbling_half_stickers_at_other_lattice_poses_map_to_their_slots() 
         let r = total(&host, &reply(&host, *id), Requested::Occurrence, &PlantedInverse);
         assert_eq!(&r.target, object, "instance {id}");
     }
-    assert_eq!((slot_of(&host, 9, &action), slot_of(&host, 11, &action)), (at_a, at_b), "the same slots");
+    assert_eq!((slot_of(&host, 9, &projection), slot_of(&host, 11, &projection)), (at_a, at_b), "the same slots");
 }
