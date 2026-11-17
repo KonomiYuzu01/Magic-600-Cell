@@ -10,8 +10,8 @@ use std::fmt;
 
 use c600_ir::Expr as Ir;
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, FnKind, FnTy, Function, Lit, Module, Order, Param,
-    Prim, Program, QTy, ReceiptField, Ty,
+    Accounting, Callee, Capability, Effect, EffectBound, EndTest, ExactRole, FnKind, FnTy, Function, Lit, Module,
+    Order, Param, Prim, Program, QTy, ReceiptField, Ty,
 };
 
 use crate::ast::*;
@@ -94,7 +94,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 17] = [
+const BASE_TYPES: [&str; 20] = [
     "Unit",
     "Bool",
     "Nat",
@@ -112,6 +112,10 @@ const BASE_TYPES: [&str; 17] = [
     "WordEqualityKey",
     "CompressedWord",
     "MenuWord",
+    // The verdicts of LB3.2's three end tests (LP2 draft); the tests' own names stay the goals' (LG2.10).
+    "RetainedCheckpointVerdict",
+    "LabelCheckpointVerdict",
+    "StickerTestVerdict",
 ];
 
 fn reserved(name: &str) -> bool {
@@ -128,14 +132,19 @@ fn holds_callable(ty: &Ty) -> bool {
 }
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
-/// at any depth, and without a function, a receipt, `Unit`, a type parameter or a compressed word, so that its
-/// canonical key order is defined (DET.9).
+/// at any depth, and without a function, a receipt, `Unit`, a type parameter, a compressed word or an end test's
+/// verdict, so that its canonical key order is defined (DET.9) and a verdict is only ever matched (LG2.9).
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
-            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::CompressedWord => {
-                false
-            }
+            Ty::Unit
+            | Ty::Approx(_)
+            | Ty::ApproxBool
+            | Ty::Fn(_)
+            | Ty::Receipt
+            | Ty::Var(_)
+            | Ty::CompressedWord
+            | Ty::EndTest(_) => false,
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
         }
@@ -576,7 +585,7 @@ impl Body<'_> {
         if kind != "List" && !key_type(&types[0]) {
             let note = format!(
                 "a `{kind}` element or key is exact, without a display qualifier, an approximation, a function, a \
-                 receipt, `Unit`, a type parameter or a compressed word (LG2.20)"
+                 receipt, `Unit`, a type parameter, an end test's verdict or a compressed word (LG2.20)"
             );
             return Err(self.err(span, note));
         }
@@ -951,7 +960,10 @@ impl Body<'_> {
                             "WordEqualityKey" => Ty::WordEqualityKey,
                             "CompressedWord" => Ty::CompressedWord,
                             "MenuWord" => Ty::MenuWord,
-                            _ => Ty::Var(n.into()),
+                            _ => match EndTest::of_type_name(n) {
+                                Some(test) => Ty::EndTest(test),
+                                None => Ty::Var(n.into()),
+                            },
                         }))
                     }
                     _ => {

@@ -144,6 +144,14 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                 }
                 out.extend_from_slice(b"}}");
             }
+            // An end test's verdict: its outcome's tag and its test's row, in key order (LP2 draft).
+            Value::EndTest(test, outcome) => {
+                out.extend_from_slice(b"{\"outcome\":");
+                string(outcome.tag(), out);
+                out.extend_from_slice(b",\"test\":");
+                string(test.row(), out);
+                out.push(b'}');
+            }
             Value::Record(r) => {
                 let fields = r.fields();
                 let mut order: Vec<usize> = (0..fields.len()).collect();
