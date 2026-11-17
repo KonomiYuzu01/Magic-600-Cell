@@ -13,6 +13,7 @@ claims:
   - {id: phs52-exact-sinks, evidence_kind: decision, checked_at: 2026-11-16}
   - {id: phs52-li-frozen, evidence_kind: decision, checked_at: 2026-11-16}
   - {id: layer-stamps-caller, evidence_kind: source, path: rust/c600-command/src/layer.rs, checked_at: 2026-11-16}
+  - {id: m6-session-stamps-origin, evidence_kind: source, path: rust/c600-session/src/session.rs, checked_at: 2026-11-16}
   - {id: checker-capability-codes, evidence_kind: source, path: rust/c600-check/src/lib.rs, checked_at: 2026-11-16}
   - {id: interpreter-encodes-exact-sinks, evidence_kind: source, path: rust/c600-run/src/interp.rs, checked_at: 2026-11-16}
   - {id: checker-portable-sinks, evidence_kind: source, path: rust/c600-check/src/lib.rs, checked_at: 2026-11-16}
@@ -63,8 +64,10 @@ lookup, which changes frozen text.
 covers the stamped caller. The amendment adds that the engine's request digest covers the caller the host stamps from
 the channel, and that the envelope names none.
 
-**Follow-up.** M6's store keeps its own envelope with an `origin` field that the envelope supplies
-(`c600-session`). The same host rule applies to it; M6's session owns that change.
+**Follow-up.** M6's store kept its own envelope with an `origin` field that the envelope supplied (`c600-session`).
+The same host rule now applies to it (commit `a12ba67b`): the envelope names no origin, `Session::invoke` takes the
+origin of the channel the envelope came on, and the request digest and the program gates read it. M6's command IDs
+stay one space for the shell and programs until its `invoke` is removed (`rust/README.md`).
 
 ## 2. LI.33's vector follows ruling 1
 
@@ -164,4 +167,3 @@ One change to frozen text, made by LP3 at its command-table freeze under PHS.52,
 - The run-time answer to an ungranted clock or file read. The answer in section 3 (a) covers the checker's admission;
   a host that grants nothing still answers the request at run time with `LG3:capability.not_granted`
   (`c600_run::interp::Host`), as before.
-- M6's envelope `origin` under the host rule (M6's session).

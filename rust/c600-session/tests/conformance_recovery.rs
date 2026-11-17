@@ -18,7 +18,7 @@ use common::*;
 
 /// An envelope from the shell with a token the shell stub minted for it now.
 fn minted(session: &Session, command: &str, row: Row) -> Envelope {
-    let mut e = envelope(session, command, Origin::Shell, row);
+    let mut e = envelope(session, command, row);
     e.token = Some(session.shell().mint(command, &e.row).unwrap_or_else(|e| panic!("no token: {e}")));
     e
 }
@@ -84,7 +84,7 @@ fn everything(session: &Session, disk: &MemDisk) -> (Overview, Option<PreviewInf
 /// everything as it was, and returns the envelope with its receipt for a retry later.
 fn refused_at(step: u8, session: &Session, disk: &MemDisk, envelope: Envelope, expected: &str) -> (Envelope, Receipt) {
     let before = everything(session, disk);
-    let receipt = session.invoke(envelope.clone());
+    let receipt = session.invoke(Origin::Shell, envelope.clone());
     assert!(matches!(&receipt.status, Status::Refused(e) if e.code == expected), "step {step}: {receipt:?}");
     assert_eq!(everything(session, disk), before, "step {step}: the refusal changed something");
     (envelope, receipt)
@@ -111,7 +111,7 @@ fn ct_one_11_a_commit_refused_at_each_step_changes_nothing() {
     assert_eq!(everything(&session, &disk), before, "step 1");
 
     // Step 3: no token, and a token whose authenticator fails.
-    let tokenless = envelope(&session, "s3.none", Origin::Shell, Row::Execute { preview: p });
+    let tokenless = envelope(&session, "s3.none", Row::Execute { preview: p });
     refusals.push(refused_at(3, &session, &disk, tokenless, code::TOKEN_INVALID));
     let mut forged = minted(&session, "s3.forged", Row::Execute { preview: p });
     forged.token.as_mut().expect("a token").mac[0] ^= 1;
@@ -158,11 +158,11 @@ fn ct_one_11_a_commit_refused_at_each_step_changes_nothing() {
     disk.fail_write(at, Fault::Error);
     let worker = {
         let (session, first) = (session.clone(), first.clone());
-        std::thread::spawn(move || session.invoke(first))
+        std::thread::spawn(move || session.invoke(Origin::Shell, first))
     };
     disk.wait_held();
     let (writes, journal) = (disk.writes(), disk.durable("journal"));
-    let busy = session.invoke(second.clone());
+    let busy = session.invoke(Origin::Shell, second.clone());
     assert!(matches!(&busy.status, Status::Refused(e) if e.code == code::COMMIT_IN_FLIGHT), "step 4: {busy:?}");
     assert_eq!((disk.writes(), disk.durable("journal")), (writes, journal), "step 4 wrote");
     disk.release();
@@ -181,7 +181,7 @@ fn ct_one_11_a_commit_refused_at_each_step_changes_nothing() {
     let record = committed(&c);
     assert_eq!((record.pre.as_str(), Some(record.post.as_str())), (shown.start.as_str(), shown.end.as_deref()));
     for (envelope, receipt) in refusals {
-        assert_eq!(session.invoke(envelope), receipt, "a retry gets the stored answer and nothing else");
+        assert_eq!(session.invoke(Origin::Shell, envelope), receipt, "a retry gets the stored answer and nothing else");
     }
     assert_eq!((session.overview().order, frames(&disk)), (order + 1, journalled + 1), "exactly one commit");
     assert_eq!(digest(&session), record.post);
@@ -242,7 +242,7 @@ fn ct_one_21_a_restart_ends_previews_and_handles_and_revives_no_permission() {
     };
     let shown = session.preview().expect("the pending preview");
     let unused = minted(&session, "X", Row::Execute { preview: p });
-    let refusal = session.invoke(envelope(&session, "R", Origin::Shell, Row::Execute { preview: p }));
+    let refusal = session.invoke(Origin::Shell, envelope(&session, "R", Row::Execute { preview: p }));
     assert_eq!(code(&refusal), code::TOKEN_INVALID);
     let spec = job("state", Vec::new(), vec![Input::Handle(handle.clone())], Lane::Program, JobKind::Query);
     let read = try_submit(&session, "J", spec);
@@ -267,10 +267,10 @@ fn ct_one_21_a_restart_ends_previews_and_handles_and_revives_no_permission() {
 
     let none = reopened.shell().mint("X1", &Row::Execute { preview: p }).unwrap_err();
     assert_eq!(none.code, code::NO_FRESH_PREVIEW, "a fresh preview is needed");
-    assert_eq!(code(&reopened.invoke(unused.clone())), code::EPOCH_CHANGED);
+    assert_eq!(code(&reopened.invoke(Origin::Shell, unused.clone())), code::EPOCH_CHANGED);
     let mut readdressed = unused.clone();
     readdressed.epoch = reopened.epoch();
-    assert_eq!(code(&reopened.invoke(readdressed)), code::TOKEN_INVALID);
+    assert_eq!(code(&reopened.invoke(Origin::Shell, readdressed)), code::TOKEN_INVALID);
     assert_eq!(disk.writes(), writes, "nothing above wrote");
 
     let p2 = propose(&reopened, "Q2", WordSource::Record("draft".into()));
@@ -280,7 +280,7 @@ fn ct_one_21_a_restart_ends_previews_and_handles_and_revives_no_permission() {
     revived.epoch = reopened.epoch();
     revived.command = "X3".into();
     revived.row = Row::Execute { preview: p2 };
-    assert_eq!(code(&reopened.invoke(revived)), code::TOKEN_INVALID, "the old token revives nothing");
+    assert_eq!(code(&reopened.invoke(Origin::Shell, revived)), code::TOKEN_INVALID, "the old token revives nothing");
     assert_eq!(reopened.preview(), Some(again.clone()));
 
     let executed = shell(&reopened, "X4", Row::Execute { preview: p2 });
@@ -362,7 +362,7 @@ fn read_only_holds(route: &str, session: &Session, disk: &MemDisk, commits: Vec<
 
     for envelope in commits {
         let row = envelope.row.name();
-        let r = session.invoke(envelope);
+        let r = session.invoke(Origin::Shell, envelope);
         assert!(matches!(&r.status, Status::Refused(e) if e.code == code::READ_ONLY_RECOVERY), "{route}: {row}: {r:?}");
     }
     for (command, word) in [("propose.literal", literal(&[4])), ("propose.draft", WordSource::Record("draft".into()))] {
@@ -414,7 +414,7 @@ fn ct_one_22_read_only_recovery_refuses_proposals_and_commits_and_answers_reads(
         let at = disk.writes();
         disk.fail_write(at, Fault::Error);
         disk.fail_from(at + 1);
-        let fate = session.invoke(fated);
+        let fate = session.invoke(Origin::Shell, fated);
         assert_eq!(fate.status, Status::UnknownOutcome);
         disk.heal();
         assert_eq!(session.outcome("fated", &fate.request).status, Status::UnknownOutcome, "the lookup answers");

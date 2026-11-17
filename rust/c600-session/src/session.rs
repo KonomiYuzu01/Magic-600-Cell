@@ -69,7 +69,7 @@ pub(crate) struct Admin {
     /// Receipts by command ID: durable ones rebuilt from the journal, transient ones for this epoch (KN5.23).
     receipts: HashMap<String, Receipt>,
     /// Refusals of envelopes that did not authenticate, kept for this epoch by command ID and request digest (KN5.23).
-    /// They never take the command ID (c600-command's draft ruling 4).
+    /// They never take the command ID (PHS.52 ruling 4, as in c600-command's layer).
     retained: HashMap<(String, String), Receipt>,
     used: HashSet<u64>,
     commit_busy: bool,
@@ -402,20 +402,22 @@ impl Session {
         Shell(self)
     }
 
-    /// Delivers one invocation and returns its receipt. A job's receipt is `running`; its terminal receipt comes from
-    /// [`Session::wait_job`] or [`Session::outcome`].
+    /// Delivers one invocation that came on the channel of `origin` and returns its receipt. The host stamps the origin
+    /// from the channel and never takes it from the envelope, which names none (PHS.52 ruling 4, owner decision of 16
+    /// November 2026); the request digest and the program gates read the stamped origin. A job's receipt is `running`;
+    /// its terminal receipt comes from [`Session::wait_job`] or [`Session::outcome`].
     /// Superseded by c600-command's `CommandLayer::invoke` over [`crate::JournalStore`]; removed once its tests run there.
-    pub fn invoke(&self, envelope: Envelope) -> Receipt {
+    pub fn invoke(&self, origin: Origin, envelope: Envelope) -> Receipt {
         let inner = &*self.0;
-        let request = wire::request_digest(&envelope);
+        let request = wire::request_digest(origin, &envelope);
         let answer =
             |status| Receipt { command: envelope.command.clone(), request: request.clone(), job: None, status };
         if envelope.session != inner.id {
             return answer(Status::Refused(Error::new(code::UNKNOWN_SESSION, "another session")));
         }
         let mut admin = lock(&inner.admin);
-        // Draft ruling 4, as in c600-command's layer: an envelope refused earlier in this epoch without authenticating
-        // gets its refusal again. The request digest covers the origin and the authenticator.
+        // PHS.52 ruling 4, as in c600-command's layer: an envelope refused earlier in this epoch without authenticating
+        // gets its refusal again. The request digest covers the stamped origin and the authenticator.
         if let Some(kept) = admin.retained.get(&(envelope.command.clone(), request.clone())) {
             return kept.clone();
         }
@@ -435,7 +437,7 @@ impl Session {
         }
         // An envelope that does not authenticate is refused for the epoch and never takes the command ID, so a forged
         // envelope or a program's commit row sent first under the shell's ID cannot turn the genuine press into a reuse.
-        if let Err(e) = inner.authenticate(&envelope) {
+        if let Err(e) = inner.authenticate(origin, &envelope) {
             let refusal = answer(Status::Refused(e));
             admin.retained.insert((envelope.command.clone(), request.clone()), refusal.clone());
             return refusal;
@@ -556,10 +558,11 @@ impl Session {
 }
 
 impl Inner {
-    /// The gates that decide whether an envelope authenticates: what a program may deliver (KN5.15, ONE.77) and, for a
-    /// commit row, a token that verifies under this epoch's secret (KN5.14). Their refusal never takes the command ID.
-    fn authenticate(&self, envelope: &Envelope) -> Result<(), Error> {
-        if envelope.origin == Origin::Program {
+    /// The gates that decide whether an envelope authenticates: what a program may deliver on its channel (KN5.15,
+    /// ONE.77) and, for a commit row, a token that verifies under this epoch's secret (KN5.14). Their refusal never
+    /// takes the command ID.
+    fn authenticate(&self, origin: Origin, envelope: &Envelope) -> Result<(), Error> {
+        if origin == Origin::Program {
             if envelope.row.is_commit() {
                 return Err(Error::new(code::COMMIT_ROW_REFUSED, "a program cannot deliver a commit row"));
             }

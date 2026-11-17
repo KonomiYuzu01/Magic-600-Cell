@@ -159,7 +159,7 @@ fn uses(row: &Row) -> Vec<(&'static str, Use)> {
 
 /// An envelope from the shell with a token the shell stub minted for it.
 fn minted(session: &Session, command: &str, row: Row) -> Envelope {
-    let mut e = envelope(session, command, Origin::Shell, row);
+    let mut e = envelope(session, command, row);
     e.token = Some(session.shell().mint(command, &e.row).unwrap_or_else(|e| panic!("no token: {e}")));
     e
 }
@@ -169,10 +169,15 @@ fn observed(session: &Session, disk: &MemDisk) -> (Overview, Option<PreviewInfo>
     (session.overview(), session.preview(), disk.writes())
 }
 
-/// Delivers an envelope that must be refused with this code and change nothing.
+/// Delivers an envelope on the shell's channel that must be refused with this code and change nothing.
 fn refused(session: &Session, disk: &MemDisk, envelope: Envelope, expected: &str) -> Receipt {
+    refused_on(session, disk, Origin::Shell, envelope, expected)
+}
+
+/// [`refused`] on the channel of `origin`.
+fn refused_on(session: &Session, disk: &MemDisk, origin: Origin, envelope: Envelope, expected: &str) -> Receipt {
     let before = observed(session, disk);
-    let receipt = session.invoke(envelope);
+    let receipt = session.invoke(origin, envelope);
     assert!(matches!(receipt.status, Status::Refused(_)), "{receipt:?}");
     assert_eq!(code(&receipt), expected, "{receipt:?}");
     assert_eq!(observed(session, disk), before, "a refusal changed the session");
@@ -315,7 +320,7 @@ fn ct_one_01_no_row_takes_a_state_or_a_digest_to_adopt() {
     // A commit of the record's preview adopts the kernel's own end state.
     let before = session.overview();
     let preview = before.pending_preview.expect("the labels-prefix preview");
-    let receipt = session.invoke(minted(&session, "execute labels-prefix", Row::Execute { preview }));
+    let receipt = session.invoke(Origin::Shell, minted(&session, "execute labels-prefix", Row::Execute { preview }));
     let post = committed(&receipt).post.clone();
     assert_eq!(post, derived(&kernel, &start, &prefix).state.digest());
     assert_ne!(post, target_digest);
@@ -333,7 +338,7 @@ fn ct_one_01_no_row_takes_a_state_or_a_digest_to_adopt() {
 }
 
 /// CT-ONE-02 (part: the session half: by an exhaustive enumeration of `c600_session::Row`, every commit row, `Redo`
-/// included, delivered with `Origin::Program` without a token and with a token the shell minted for that very command
+/// included, delivered on a program's channel without a token and with a token the shell minted for that very command
 /// and row, is refused as `KN5:capability.commit_row_refused` and changes neither `overview()` nor `preview()`, and no
 /// other row a program delivers commits; the runtime's half is
 /// `ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile` in `c600-run/tests/tables.rs`; not run: the
@@ -363,13 +368,14 @@ fn ct_one_02_a_program_delivers_no_commit_row() {
             continue;
         }
         commit_rows.push(row.name());
-        refused(&session, &disk, envelope(&session, "bare", Origin::Program, row.clone()), code::COMMIT_ROW_REFUSED);
-        let mut with_token = envelope(&session, "minted", Origin::Program, row.clone());
+        let bare = envelope(&session, "bare", row.clone());
+        refused_on(&session, &disk, Origin::Program, bare, code::COMMIT_ROW_REFUSED);
+        let mut with_token = envelope(&session, "minted", row.clone());
         with_token.token = Some(session.shell().mint("minted", &row).unwrap_or_else(|e| panic!("no token: {e}")));
-        refused(&session, &disk, with_token, code::COMMIT_ROW_REFUSED);
+        refused_on(&session, &disk, Origin::Program, with_token, code::COMMIT_ROW_REFUSED);
         // Can fail: the same row, delivered by the shell with a token of its own, commits.
         let order = session.overview().order;
-        committed(&session.invoke(minted(&session, "shell", row)));
+        committed(&session.invoke(Origin::Shell, minted(&session, "shell", row)));
         assert_eq!(session.overview().order, order + 1);
     }
     assert!(seen.iter().all(|&s| s), "a row variant was not enumerated: {seen:?}");
@@ -464,7 +470,7 @@ fn ct_kn5_10_every_session_row_keeps_every_protected_orbit() {
     // protection.set: a release needs its confirmation.
     let row = Row::ProtectionSet { orbits: vec![], confirm: false };
     deliver(&row);
-    refused(&session, &disk, envelope(&session, "x5", Origin::Shell, row), code::CONFIRMATION_REQUIRED);
+    refused(&session, &disk, envelope(&session, "x5", row), code::CONFIRMATION_REQUIRED);
     // Can fail: every variant was delivered while every orbit was protected.
     assert!(seen.iter().all(|&s| s), "a row variant was not delivered: {seen:?}");
 
@@ -517,7 +523,7 @@ fn ct_kn5_03_one_token_commits_once_under_concurrent_deliveries() {
     disk.hold_write(disk.writes());
     let (first, held, landing) = thread::scope(|s| {
         let (session, c) = (&session, &c);
-        let worker = s.spawn(move || session.invoke(c.clone()));
+        let worker = s.spawn(move || session.invoke(Origin::Shell, c.clone()));
         disk.wait_held();
         // Wave 1: C was admitted and its commit waits in its write.
         let gate = &held_gate;
@@ -528,7 +534,7 @@ fn ct_kn5_03_one_token_commits_once_under_concurrent_deliveries() {
                 let repeat = c.clone();
                 s.spawn(move || {
                     gate.wait();
-                    (session.invoke(other), session.invoke(repeat))
+                    (session.invoke(Origin::Shell, other), session.invoke(Origin::Shell, repeat))
                 })
             })
             .collect();
@@ -542,7 +548,7 @@ fn ct_kn5_03_one_token_commits_once_under_concurrent_deliveries() {
                 let repeat = c.clone();
                 s.spawn(move || {
                     gate.wait();
-                    (session.invoke(other), session.invoke(repeat))
+                    (session.invoke(Origin::Shell, other), session.invoke(Origin::Shell, repeat))
                 })
             })
             .collect();
@@ -577,11 +583,11 @@ fn ct_kn5_03_one_token_commits_once_under_concurrent_deliveries() {
     assert_eq!(disk.writes(), writes + execute_writes());
 
     // Every delivery is answered from its stored outcome.
-    assert_eq!(session.invoke(c.clone()), first);
+    assert_eq!(session.invoke(Origin::Shell, c.clone()), first);
     assert_eq!(session.outcome("C", &first.request), first);
     let stored: Vec<&Receipt> = held.iter().chain(&landing).map(|(other, _)| other).collect();
     for (e, receipt) in held_ids.iter().chain(&landing_ids).zip(stored) {
-        assert_eq!(session.invoke(e.clone()), *receipt);
+        assert_eq!(session.invoke(Origin::Shell, e.clone()), *receipt);
         assert_eq!(session.outcome(&e.command, &receipt.request), *receipt);
     }
     assert_eq!(session.overview().order, before.order + 1);

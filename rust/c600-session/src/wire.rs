@@ -162,9 +162,10 @@ pub(crate) fn args_digest(row: &Row) -> String {
     sha256_hex(&canonical(&args(row)))
 }
 
-/// LI.5's request digest: everything the invocation delivers, the token included.
-pub fn request_digest(envelope: &Envelope) -> String {
-    let origin = match envelope.origin {
+/// LI.5's request digest: everything the invocation delivers, the token included, and the origin the channel stamped
+/// on it (PHS.52 ruling 4).
+pub fn request_digest(origin: Origin, envelope: &Envelope) -> String {
+    let origin = match origin {
         Origin::Shell => "shell",
         Origin::Program => "program",
     };
