@@ -66,6 +66,17 @@ fn io(e: std::io::Error) -> Error {
     Error::new(code::DISK_FULL, format!("the session storage failed: {e}"))
 }
 
+/// An I/O error at open. A session lock that another opener holds is `KN4:busy.session_locked` (draft). Only the
+/// lock answers `WouldBlock`, since a regular file's read, cut or sync never does.
+fn open_io(e: std::io::Error) -> Error {
+    match e.kind() {
+        std::io::ErrorKind::WouldBlock => {
+            Error::new(code::SESSION_LOCKED, format!("the session is open elsewhere: {e}"))
+        }
+        _ => io(e),
+    }
+}
+
 fn text(s: &str) -> Value {
     Value::String(s.to_owned())
 }
@@ -175,9 +186,10 @@ fn load(store: &mut journal::Store, records: Vec<Vec<u8>>, damaged: Option<u64>)
 impl JournalStore {
     /// A store for a new session on an empty disk; [`c600_command::CommandLayer::new`] writes the session's start
     /// through [`Store::begin`]. A disk that holds a whole or a damaged frame is refused before anything is written;
-    /// the torn remnant of a first record whose append did not finish is cut off (as M6's `Session::create`).
+    /// the torn remnant of a first record whose append did not finish is cut off (as M6's `Session::create`). A disk
+    /// whose session lock another opener holds is refused first, with `KN4:busy.session_locked` (draft, KN4.1).
     pub fn create(disk: Box<dyn Disk>) -> Result<JournalStore, Error> {
-        let mut opened = journal::Store::read_journal(disk).map_err(io)?;
+        let mut opened = journal::Store::read_journal(disk).map_err(open_io)?;
         if !opened.records.is_empty() || opened.damaged.is_some() {
             return Err(Error::new(code::PERSISTENCE_FORMAT, "the disk already holds a journal"));
         }
@@ -187,9 +199,10 @@ impl JournalStore {
 
     /// The store of the session a disk holds, for [`c600_command::CommandLayer::open`]. The journal is settled first: a
     /// torn final frame is cut off and what was written is synced (as M6's `Session::open`). An empty journal opens, and
-    /// its history is refused with `KN4:input.unknown_session`.
+    /// its history is refused with `KN4:input.unknown_session`. A session whose lock another opener holds is refused
+    /// with `KN4:busy.session_locked` (draft) before its journal is read (KN4.1).
     pub fn open(disk: Box<dyn Disk>) -> Result<JournalStore, Error> {
-        let opened = journal::Store::open(disk).map_err(io)?;
+        let opened = journal::Store::open(disk).map_err(open_io)?;
         let mut store = opened.store;
         let held = load(&mut store, opened.records, opened.damaged)?;
         Ok(JournalStore(RefCell::new(Inner { journal: store, held, unsettled: false })))

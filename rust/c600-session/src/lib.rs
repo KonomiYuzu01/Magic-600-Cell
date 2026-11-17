@@ -1,4 +1,5 @@
-//! The session store below the language (LP2, M6): one durable journal per session, revisions and their counters
+//! The session store below the language (LP2, M6): one durable journal per session, which one process opens at a
+//! time (KN4.1, the session lock in [`disk`]), revisions and their counters
 //! (KN0.2), previews and their freshness (KN0.8, KN5.9 to KN5.11), commits with a user-action token (KN5.14 to
 //! KN5.17), undo and redo with action hints (KN5.19, KN5.20, LI.9), receipts and outcome lookup (KN5.21 to KN5.23),
 //! branches with one active line (ONE.75), read-only snapshots (ONE.76), workspace records with provenance blocks
