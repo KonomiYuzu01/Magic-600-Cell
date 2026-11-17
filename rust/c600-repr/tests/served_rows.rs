@@ -470,13 +470,13 @@ fn filter_apply_stays_not_built_with_the_other_five_served() {
     }
 }
 
-/// A running program may invoke a served row, as it may an overlay row, and the layer admits its job; but the job
-/// carries no block for the program's arguments, which BND.22 needs as the parts of what the entry stores, so the host
-/// fails it with `LG3:capability.not_granted` without a run, and the workspace row writes nothing and moves nothing.
-/// Covers no conformance ID: it pins this host's draft until a job carries its arguments' blocks.
+/// A running program may not invoke a served workspace row: a run reaches no workspace-kind row (draft; finding B3 of
+/// the KN5 boundary attack), so the layer refuses `set.save` on the program's channel with
+/// `LG3:capability.not_granted`, as it refuses `workspace.set`, admits no job, and nothing is written or moved. The
+/// host's own refusal of a running program's job (its arguments carry no blocks, which BND.22 needs) is no longer
+/// reached for this row. Covers no conformance ID: it pins the layer's draft until the owner reads ONE.52.
 #[test]
-fn a_running_programs_job_fails_at_the_host_and_writes_nothing() {
-    let host = ToolHost::new();
+fn a_running_program_cannot_invoke_a_served_workspace_row() {
     let mut session = session();
     serve(&mut session.layer);
     let before = session.fixed();
@@ -487,12 +487,9 @@ fn a_running_programs_job_fails_at_the_host_and_writes_nothing() {
         token: None,
         epoch: session.layer.revision().epoch,
     };
-    let started = session.layer.invoke(&program_channel(), invocation);
-    assert!(matches!(started.status, Status::Running(_)), "{:?}", started.status);
-    let (job, output, done) = host.serve_next(&mut session.layer).expect("the row's job");
-    assert_eq!(job.caller, program_channel());
-    assert_eq!(output.map_err(|error| error.code), Err(code::NOT_GRANTED));
-    assert_eq!(done.status.code(), Some(code::NOT_GRANTED));
+    let refused = session.layer.invoke(&program_channel(), invocation);
+    assert_eq!(refused.status.code(), Some(code::NOT_GRANTED), "{:?}", refused.status);
+    assert!(session.layer.take_program_job().is_none(), "the refused invocation admitted a job");
     assert_eq!(session.fixed(), before);
     assert!(session.layer.records().is_empty());
 }

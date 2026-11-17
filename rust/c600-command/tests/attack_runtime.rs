@@ -169,15 +169,16 @@ fn b1_the_commit_chord_does_not_commit_a_word_a_run_swapped_in_one_frame_before(
 fn b6_a_run_cannot_cancel_the_solvers_presented_preview() {
     let mut f = fixture();
     let mine = f.solver_preview(&word(&[1]));
-    let receipt = f.runtime("tool-run", "operation.preview.cancel", json::object([("preview", Value::Int(mine as i64))]));
+    let receipt =
+        f.runtime("tool-run", "operation.preview.cancel", json::object([("preview", Value::Int(mine as i64))]));
     assert!(refused(&receipt), "the run's cancel was answered {:?}", receipt.status);
     assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
 }
 
 fn output(records: &[(&str, Value)]) -> JobOutput {
-    let records = records
-        .iter()
-        .map(|(name, payload)| ((*name).to_owned(), RecordValue { payload: payload.clone(), provenance: "run".into() }));
+    let records = records.iter().map(|(name, payload)| {
+        ((*name).to_owned(), RecordValue { payload: payload.clone(), provenance: "run".into() })
+    });
     JobOutput { value: Value::Null, views: Vec::new(), records: records.collect() }
 }
 
@@ -193,8 +194,10 @@ fn output(records: &[(&str, Value)]) -> JobOutput {
 ///
 /// Observed on 4c20ce30: the invocation is `running(1)`, the completion is `completed(workspace)`, the journal gains
 /// one transaction whose caller is the run, and the workspace revision and the action order advance by one.
+///
+/// Fixed: a run reaches no workspace-kind row, so the layer refuses the invocation with `LG3:capability.not_granted`,
+/// as it refuses `workspace.set`, and admits no job.
 #[test]
-#[ignore = "B3: fails on 4c20ce30, a run's own invocation of a workspace row ends in a durable action"]
 fn b3_a_run_alone_causes_no_durable_action() {
     let mut f = fixture();
     let overlay = Overlay { module: "notes".into(), entry: "save".into() };
@@ -202,6 +205,7 @@ fn b3_a_run_alone_causes_no_durable_action() {
     let (before, journal) = (f.layer.revision().clone(), f.transactions());
 
     let receipt = f.runtime("stray-run", "tool.notes.save", draft_args(&word(&[1])));
+    assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "{:?}", receipt.status);
     if let Status::Running(job) = receipt.status {
         let program = f.layer.take_program_job().expect("the job the run started");
         assert_eq!(program.job, job);
@@ -221,15 +225,15 @@ fn b3_a_run_alone_causes_no_durable_action() {
 ///
 /// Observed on 4c20ce30: after the run's job `undo_hint(Undo)` is `None`, the record holds the run's letters at
 /// version 2, and `Ctrl+Z` answers `KN5:stale.undo_superseded` ("no eligible target").
+///
+/// Fixed with B3: the run's invocation is refused, so no job writes `macro` and the history is not cut.
 #[test]
-#[ignore = "B4: fails on 4c20ce30, a run's write removes the solver's undo of their own record write"]
 fn b4_a_run_cannot_take_the_solvers_record_write_out_of_the_undo_order() {
     let mut f = fixture();
     let overlay = Overlay { module: "notes".into(), entry: "save".into() };
     f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[("draft", "Draft")], overlay).unwrap();
     let solvers = Value::Array(vec![Value::Int(1), Value::Int(2)]);
-    let args =
-        json::object([("payload", solvers.clone()), ("provenance", text("solver")), ("record", text("macro"))]);
+    let args = json::object([("payload", solvers.clone()), ("provenance", text("solver")), ("record", text("macro"))]);
     let written = f.shell.invoke(&mut f.layer, RECORD_ROW, args).unwrap();
     assert!(matches!(written.status, Status::Completed(_)), "{:?}", written.status);
     let hint = f.layer.undo_hint(Direction::Undo).expect("the solver's write is undoable");
@@ -247,8 +251,9 @@ fn b4_a_run_cannot_take_the_solvers_record_write_out_of_the_undo_order() {
 }
 
 /// B4, the solver's side of it: after the run's write the undo key finds nothing to undo.
+///
+/// Fixed with B3: the undo key undoes the solver's write.
 #[test]
-#[ignore = "B4: fails on 4c20ce30 with KN5:stale.undo_superseded"]
 fn b4_the_undo_key_still_undoes_the_solvers_write_after_a_runs_write() {
     let mut f = fixture();
     let overlay = Overlay { module: "notes".into(), entry: "save".into() };

@@ -9,12 +9,12 @@
 //! serves program jobs yet, so this is what the layer and the bridge allow once one does. Whether the checker lets a
 //! program name such a row as a proposal target was not examined.
 //!
-//! The test uses a fresh memory disk and no other session. Run it with `-- --include-ignored`.
+//! The test uses a fresh memory disk and no other session.
 
 mod common;
 
 use c600_command::{
-    CommandLayer, Error, JobOutput, Kind, Overlay, Provenance, RecordValue, Secret, Status, Table,
+    code, CommandLayer, Error, JobOutput, Kind, Overlay, Provenance, RecordValue, Secret, Status, Table,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::ProtectedSet;
@@ -64,8 +64,10 @@ fn actions(disk: &MemDisk) -> Vec<Value> {
 /// Observed on 4c20ce30: the bridge's `perform` answers `running`, the journal on the disk gains one `command_action`
 /// record of kind `workspace` whose caller is `{"runtime": "run-1"}`, and after a reopen the record `note` holds the
 /// run's text.
+///
+/// Fixed: a run reaches no workspace-kind row, so the layer refuses the bridge's invocation with
+/// `LG3:capability.not_granted`, the bridge answers the boundary with that code, and nothing is journaled.
 #[test]
-#[ignore = "finding B3: fails while a run's proposal that names a workspace row ends in a durable action"]
 fn b3_a_proposal_that_names_a_workspace_row_writes_nothing_durable() {
     let disk = MemDisk::new();
     let k = common::kernel();
@@ -94,6 +96,7 @@ fn b3_a_proposal_that_names_a_workspace_row_writes_nothing_durable() {
         layer.finish_program_job_with(*job, Ok(output));
     }
     drop(layer);
+    assert_eq!(answer.1.code(), Some(code::NOT_GRANTED), "the bridge answered {answer:?}");
 
     let written = actions(&disk);
     let reopened = JournalStore::open(Box::new(disk.clone())).expect("the journal opens");

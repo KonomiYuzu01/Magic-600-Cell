@@ -109,8 +109,11 @@ fn openers(root: &Path) -> Vec<(&'static str, Option<&'static str>)> {
 /// session, both openers' commit presses were answered `committed` from the same base revision, and after both were
 /// dropped the session reopened in read-only recovery (`KN5:unknown_outcome.read_only_recovery`) at the second
 /// opener's head: the holder's acknowledged commit is not in it. The exact answers are in the assertion's message.
+///
+/// Fixed: `FsDisk` creates the lock file only in a directory that holds no journal, so the second opener finds the
+/// session's journal without a lock file and is refused with `KN4:busy.session_locked`, both ways and on every
+/// platform, and creates no file.
 #[test]
-#[ignore = "finding E1: fails while a deleted or renamed lock file lets a second opener in"]
 fn e1_a_second_opener_is_refused_after_the_held_lock_file_is_deleted_or_renamed() {
     let mut bypassed = Vec::new();
     for way in ["deleted", "renamed"] {

@@ -229,7 +229,8 @@ fn an_edit_that_changes_what_an_action_does_is_caught_at_the_reopen() {
         *field(t, "order") = Value::Int(2);
         *field(field(t, "revision"), "head") = Value::String("e2".into());
     };
-    for (name, edit) in [("another word", another_word), ("another end state", another_end), ("a skipped order", skipped_order)]
+    for (name, edit) in
+        [("another word", another_word), ("another end state", another_end), ("a skipped order", skipped_order)]
     {
         let mut edited = honest.clone();
         edit(transaction(&mut edited[1]));

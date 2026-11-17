@@ -13,6 +13,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 
+use crate::store::JOURNAL;
+
 /// The operations a store needs. Every call but [`Disk::read`] and [`Disk::lock`] is a write and counts toward the
 /// write index of a [`MemDisk`].
 pub trait Disk: Send {
@@ -44,8 +46,20 @@ pub const LOCK: &str = "lock";
 /// Windows, `flock` on Unix). Its open handle holds the lock until the disk is dropped, and the operating system
 /// releases it when the process ends, a hard exit included. A second handle conflicts even in the same process,
 /// so a second `FsDisk` on the same directory is refused too. Before the lock is decided, [`FsDisk::new`] creates
-/// the directory and its `objects` folder and [`Disk::lock`] creates the empty lock file, each only if it is
-/// missing; a refused disk reads and writes no journal and no state object.
+/// the directory and its `objects` folder, only if it is missing, and [`Disk::lock`] creates the empty lock file,
+/// only if it is missing and the directory holds no journal (below); a refused disk reads and writes no journal and
+/// no state object.
+///
+/// A lock on a file holds only while the file keeps its name. The file can be deleted or renamed while it is held,
+/// and a next opener that created a new lock file and locked that one would open a held session (finding E1 of the
+/// KN5 boundary attack). So [`Disk::lock`] creates the lock file only in a directory that holds no journal: a store
+/// takes the lock before it writes the journal and `FsDisk` never removes the lock file, so a journal without a lock
+/// file means that something outside the store removed it, and the opener is refused as a held session is
+/// (`io::ErrorKind::WouldBlock`), changing no file. A disk that holds the lock puts back an empty lock file, if one is
+/// missing, when it is dropped, so the session opens again once its holder is gone. After a hard exit, or when the
+/// lock file is removed while no opener holds the session, the session is refused until an empty `lock` file is
+/// restored. Not covered: a lock file removed and then created again by something outside the store while the
+/// session is held.
 pub struct FsDisk {
     root: PathBuf,
     lock: Option<fs::File>,
@@ -98,7 +112,21 @@ impl Disk for FsDisk {
         if self.lock.is_some() {
             return Ok(());
         }
-        let file = OpenOptions::new().read(true).write(true).create(true).truncate(false).open(self.path(LOCK))?;
+        let path = self.path(LOCK);
+        let file = match OpenOptions::new().read(true).write(true).open(&path) {
+            Ok(file) => file,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                if self.path(JOURNAL).try_exists()? {
+                    let detail = concat!(
+                        "the session has a journal and no lock file: something removed the lock file, and another ",
+                        "opener may hold the session; if none does, an empty file named `lock` lets the session open",
+                    );
+                    return Err(io::Error::new(io::ErrorKind::WouldBlock, detail));
+                }
+                OpenOptions::new().read(true).write(true).create(true).truncate(false).open(&path)?
+            }
+            Err(e) => return Err(e),
+        };
         match file.try_lock() {
             Ok(()) => {
                 self.lock = Some(file);
@@ -108,6 +136,17 @@ impl Disk for FsDisk {
                 Err(io::Error::new(io::ErrorKind::WouldBlock, "another opener holds the session lock"))
             }
             Err(fs::TryLockError::Error(e)) => Err(e),
+        }
+    }
+}
+
+impl Drop for FsDisk {
+    /// Puts back an empty lock file that something outside the store removed while this disk held the session, so
+    /// that the session opens again once the holder is gone. A disk that holds no lock leaves the directory as it is.
+    fn drop(&mut self) {
+        // The held handle is closed first, so that a name it still occupies is free.
+        if self.lock.take().is_some() {
+            let _ = OpenOptions::new().write(true).create_new(true).open(self.path(LOCK));
         }
     }
 }

@@ -153,8 +153,11 @@ impl Session {
             Op::Undo => self.step(Direction::Undo),
             Op::Redo => self.step(Direction::Redo),
             Op::Write(name, value) => {
-                let args =
-                    json::object([("payload", letters(value)), ("provenance", text("block")), ("record", text(NAMES[*name]))]);
+                let args = json::object([
+                    ("payload", letters(value)),
+                    ("provenance", text("block")),
+                    ("record", text(NAMES[*name])),
+                ]);
                 answer(self.shell.invoke(&mut self.layer, RECORD_ROW, args))
             }
             Op::Protect(mask) => {
@@ -171,9 +174,14 @@ impl Session {
                 let Ok(Receipt { status: Status::Running(job), .. }) = receipt else { return answer(receipt) };
                 self.layer.take_program_job().expect("the job the press started");
                 let value = RecordValue { payload: letters(&[*letter]), provenance: "run".into() };
-                let output =
-                    JobOutput { value: Value::Null, views: Vec::new(), records: [(NAMES[*name].to_owned(), value)].into() };
-                answer(self.layer.finish_program_job_with(job, Ok(output)).ok_or_else(|| Error::new("none", "no receipt")))
+                let output = JobOutput {
+                    value: Value::Null,
+                    views: Vec::new(),
+                    records: [(NAMES[*name].to_owned(), value)].into(),
+                };
+                answer(
+                    self.layer.finish_program_job_with(job, Ok(output)).ok_or_else(|| Error::new("none", "no receipt")),
+                )
             }
             Op::CommitRecord(name) => {
                 self.execute(json::object([("draft", json::object([("record", text(NAMES[*name]))]))]))
@@ -217,7 +225,11 @@ fn difference(seed: u64, count: usize, fork: usize) -> Option<String> {
             other = Some(reopened(live.layer.store().clone(), "after-reopen"));
             let other = other.as_ref().unwrap();
             if other.view() != live.view() {
-                return Some(format!("seed {seed}: at the reopen after {fork} actions\nlive:   {}\nreopen: {}", live.view(), other.view()));
+                return Some(format!(
+                    "seed {seed}: at the reopen after {fork} actions\nlive:   {}\nreopen: {}",
+                    live.view(),
+                    other.view()
+                ));
             }
         }
         let answered = live.apply(op);

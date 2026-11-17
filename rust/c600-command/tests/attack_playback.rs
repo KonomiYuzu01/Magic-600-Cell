@@ -4,13 +4,15 @@
 //! row that an entry serves (`CommandLayer::serve_row`), which `tests/served_rows.rs` already exercises with
 //! `recording.play`. These tests attack that door and pin what the layer answers today.
 //!
-//! Each test asserts the rule; a test that fails while a bypass exists is ignored and its comment gives the finding and
-//! what was observed on commit 4c20ce30. Run the ignored one with `-- --include-ignored`.
+//! Each test asserts the rule. The one that failed while its bypass existed gives the finding, what was observed on
+//! commit 4c20ce30 and the fix.
 
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
-use c600_command::{Caller, CommandLayer, Invocation, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table};
+use c600_command::{
+    code, Caller, CommandLayer, Invocation, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table,
+};
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
 
@@ -86,14 +88,17 @@ fn answer(receipt: &Receipt) -> String {
 ///
 /// Observed on 4c20ce30: the run's invocation of the served `recording.play` is answered `Running(1)` and a program
 /// job for the entry is waiting.
+///
+/// Fixed with B3: `recording.play` is a workspace row, which a run does not reach, so the invocation is refused with
+/// `LG3:capability.not_granted` and no job waits.
 #[test]
-#[ignore = "B3 (second instance): fails while a run's own invocation starts a served `recording.play`"]
 fn a_run_cannot_start_a_served_playback() {
     let mut f = fixture();
     let overlay = Overlay { module: "tools/recording".into(), entry: "play".into() };
     f.layer.serve_row("recording.play", overlay).unwrap();
     let receipt = f.runtime("stray-run", "recording.play", args("recording.play"));
     let job = f.layer.take_program_job().map(|program| program.job);
+    assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "{:?}", receipt.status);
     assert!(
         matches!(receipt.status, Status::Refused(_)) && job.is_none(),
         "the run's `recording.play` was answered {}, and the waiting program job is {job:?}",
