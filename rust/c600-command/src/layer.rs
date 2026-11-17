@@ -10,16 +10,25 @@
 //!
 //! `session.undo` and `session.redo` take LI.9's hint and a token and use the commit lane with no `not_busy` gate
 //! (KN5.20). They follow M6's move tree: every commit adds a node (keyed by its action order) under the head, every
-//! undoable action (a commit or a `protection.orbit.set`) pushes its order on the undo stack and drops the redo stack,
-//! and an undo or redo inverts or repeats the change on top of its stack. A head change derives the inverse of the
-//! node's recipe, or the recipe again, from the current state through the kernel under the protection set in force
-//! (LI.26's normal permission path) and adopts the result only when it reaches the recorded node; a protection change
-//! that releases an orbit needs `confirm`. The journal keeps recipes, digests and protected orbits, not states.
+//! undoable action (a commit, a `protection.orbit.set` or a record write) pushes its order on the undo stack and drops
+//! the redo stack, and an undo or redo inverts or repeats the change on top of its stack. A head change derives the
+//! inverse of the node's recipe, or the recipe again, from the current state through the kernel under the protection
+//! set in force (LI.26's normal permission path) and adopts the result only when it reaches the recorded node; a
+//! protection change that releases an orbit needs `confirm`. The journal keeps recipes, digests, protected orbits and
+//! record values, not states.
 //!
 //! Only an action that moves the puzzle advances the state revision, ends the pending preview and cancels the jobs that
 //! read the revision it replaces, except file jobs (KN5.18). A protection change advances the workspace and protection
-//! revisions, and a workspace completion the workspace revision; both keep the preview slot and the jobs, and every
-//! durable action takes the next action order (LI.9).
+//! revisions, and a record write or a workspace completion the workspace revision; they keep the preview slot and the
+//! jobs, and every durable action takes the next action order (LI.9). The inverse of a protection change or a record
+//! write is a workspace inverse (`UndoClass::Workspace`): it answers `committed` with equal puzzle hashes, the head and
+//! the state revision unchanged, and advances the workspace revision and the versions it touches (KN5.20, LI.26).
+//!
+//! KN5's stage 3, the workspace store ([`crate::workspace`]): `workspace.set` ([`RECORD_ROW`]) writes one record, and
+//! a draft `{"record": name}` previews the letters the record holds, with the record's content digest and version in
+//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26). KN5's stage 5
+//! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
+//! preview through the built-in chain presents it, and a word commit's token binds that frame's stamp (ONE.41).
 //!
 //! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
 //! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
@@ -31,6 +40,7 @@ use std::sync::Arc;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Derivation, Effect, Kernel, ProtectedSet, Protection, Recipe, Snapshot, Step, SupportRow, Verdict};
 
+use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
@@ -38,6 +48,7 @@ use crate::receipt::{
 use crate::store::{identity_json, Fate, Genesis, MemoryStore, Reopen, Store, Transaction, TransactionKind};
 use crate::table::{Kind, Lane, Overlay, Row, Table};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
+use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The mode of every revision here: the jumbling engine joins when M5 is on main.
 pub const MODE: &str = "jumble_off";
@@ -114,6 +125,10 @@ pub struct Preview {
     pub command: String,
     pub caller: Caller,
     pub deps: PreviewDeps,
+    /// For a draft that names a workspace record, what its draft digest covers: the draft, the letters the record held
+    /// and the records read, each with its content digest and version at admission (KN0.8). `None` for an inline
+    /// recipe, whose draft digest is the digest of the draft.
+    pub resolved: Option<ResolvedDraft>,
     /// `Digest<literal word>`.
     pub literal: String,
     pub state: PreviewState,
@@ -179,7 +194,7 @@ pub struct ProgramJob {
 }
 
 enum JobKind {
-    Preview { recipe: Recipe, draft: String, caller: Caller },
+    Preview { recipe: Recipe, draft: String, resolved: Option<ResolvedDraft>, caller: Caller },
     Program(ProgramJob),
 }
 
@@ -205,8 +220,20 @@ struct Node {
 /// An undoable action's change, kept by its action order while an undo or redo can reach it.
 #[derive(Clone, Debug)]
 enum Change {
-    Head { before: u64, after: u64 },
-    Protection { before: Vec<usize>, after: Vec<usize> },
+    Head {
+        before: u64,
+        after: u64,
+    },
+    Protection {
+        before: Vec<usize>,
+        after: Vec<usize>,
+    },
+    /// A record write: the record's value before and after it.
+    Record {
+        name: String,
+        before: Option<RecordValue>,
+        after: Option<RecordValue>,
+    },
 }
 
 /// What an adoption does to the move tree and the stacks.
@@ -320,6 +347,7 @@ fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
         && planned.orbits == stored.orbits
         && planned.job == stored.job
         && planned.result == stored.result
+        && planned.record == stored.record
         && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
@@ -364,6 +392,14 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     running: BTreeMap<u64, ProgramJob>,
     program_capacity: usize,
     slot: Option<Preview>,
+    /// The newest frame the adapter reported (RM.26).
+    frame: Option<PresentedFrame>,
+    /// The pending preview's presentation run: its ID and the stamp of the frame that started showing it (ONE.41).
+    run: Option<(u64, FrameStamp)>,
+    /// The workspace records by name (KN5's stage 3).
+    records: BTreeMap<String, WorkspaceRecord>,
+    /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
+    provenance: Option<Box<dyn Provenance>>,
     history: BTreeMap<u64, PreviewState>,
     used: BTreeSet<u64>,
     receipts: BTreeMap<Key, Record>,
@@ -392,7 +428,7 @@ impl<S: Store> CommandLayer<S> {
         let start = Node { parent: 0, recipe: None, digest: initial.digest().to_owned(), depth: 0 };
         CommandLayer {
             kernel,
-            table,
+            table: table.with_drafts(),
             secret,
             store,
             protected,
@@ -411,6 +447,10 @@ impl<S: Store> CommandLayer<S> {
             running: BTreeMap::new(),
             program_capacity: 1,
             slot: None,
+            frame: None,
+            run: None,
+            records: BTreeMap::new(),
+            provenance: None,
             history: BTreeMap::new(),
             used: BTreeSet::new(),
             receipts: BTreeMap::new(),
@@ -545,6 +585,11 @@ impl<S: Store> CommandLayer<S> {
                 self.jobs_issued = self.jobs_issued.max(job);
                 self.workspace_adoption(meta, job, result)
             }
+            // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
+            TransactionKind::Record => match stored.record.clone() {
+                Some(RecordWrite { name, value: Some(value) }) => self.plan_record(meta, name, value),
+                _ => return Err(broken("a record write names no record and value")),
+            },
         };
         if !agrees(&planned.transaction, stored) {
             return Err(broken("the replay does not reach the recorded action"));
@@ -716,18 +761,99 @@ impl<S: Store> CommandLayer<S> {
         answer(request, Status::UnknownOutcome)
     }
 
-    /// The adapter's report that the built-in chain drew the pending preview (RM.26, ONE.41).
-    pub fn present(&mut self, id: u64) -> Result<&Preview, Error> {
-        match &mut self.slot {
-            Some(p) if p.id == id && matches!(p.state, PreviewState::Ready | PreviewState::Presented) => {
-                if p.state == PreviewState::Ready {
-                    p.state = PreviewState::Presented;
-                    self.generation += 1;
-                }
-                Ok(self.slot.as_ref().expect("the slot holds the preview"))
+    /// RM.26's report of a frame whose presentation the adapter confirmed: its stamp, the preview it shows and the chain
+    /// that drew it (ONE.41, RPI.76). Reports are read in frame order. A report older than the newest one is refused and
+    /// changes nothing, and the newest report repeated changes nothing. A newer report takes effect whatever `id` says:
+    /// a frame that shows the pending preview through the built-in chain presents it, and the preview's presentation
+    /// run starts at the first such frame on its device epoch, surface and surface generation; any other frame (one that
+    /// shows no preview, another preview, or the preview drawn through a user stage) ends the presentation, and the
+    /// pending preview is ready again. The answer is the pending preview `id` when the frame presents it, and
+    /// `KN5:stale.no_fresh_preview` otherwise.
+    pub fn present(&mut self, id: u64, frame: &PresentedFrame) -> Result<&Preview, Error> {
+        if self.frame.as_ref() != Some(frame) {
+            if self.frame.as_ref().is_some_and(|newest| frame.stamp.order() <= newest.stamp.order()) {
+                return Err(Error::new(
+                    code::NO_FRESH_PREVIEW,
+                    "the frame is not newer than the newest frame reported",
+                ));
             }
-            _ => Err(Error::new(code::NO_FRESH_PREVIEW, format!("preview {id} is not the pending ready preview"))),
+            self.frame = Some(frame.clone());
+            self.observe(frame);
         }
+        let shown = |p: &Preview| frame.presents(&ShownPreview::of(p));
+        if self.slot.as_ref().is_some_and(|p| p.id == id && p.state == PreviewState::Presented && shown(p)) {
+            return Ok(self.slot.as_ref().expect("the slot holds the presented preview"));
+        }
+        let detail = match (&frame.preview, frame.chain) {
+            (_, FrameChain::UserStage) => "the frame drew a preview through a user stage (RPI.76)".to_owned(),
+            (None, FrameChain::BuiltIn) => "the frame shows no preview".to_owned(),
+            (Some(_), FrameChain::BuiltIn) if self.slot.as_ref().is_some_and(shown) => {
+                format!("preview {id} is not the pending preview")
+            }
+            (Some(_), FrameChain::BuiltIn) => "the frame shows another preview than the pending one".to_owned(),
+        };
+        Err(Error::new(code::NO_FRESH_PREVIEW, detail))
+    }
+
+    /// Applies a newer frame report to the pending preview and its presentation run.
+    fn observe(&mut self, frame: &PresentedFrame) {
+        let Some(p) = self.slot.as_mut() else {
+            self.run = None;
+            return;
+        };
+        if frame.presents(&ShownPreview::of(p)) {
+            if p.state == PreviewState::Ready {
+                p.state = PreviewState::Presented;
+                self.generation += 1;
+            }
+            let continued =
+                self.run.as_ref().is_some_and(|(run, first)| *run == p.id && first.same_surface(&frame.stamp));
+            if !continued {
+                self.run = Some((p.id, frame.stamp.clone()));
+            }
+        } else {
+            if p.state == PreviewState::Presented {
+                p.state = PreviewState::Ready;
+                self.generation += 1;
+            }
+            self.run = None;
+        }
+    }
+
+    /// The newest frame the adapter reported (RM.26).
+    pub fn frame(&self) -> Option<&PresentedFrame> {
+        self.frame.as_ref()
+    }
+
+    /// Whether the frame `stamp` belongs to the presentation run of the pending preview `id`: on the run's device epoch,
+    /// surface and surface generation, no older than the frame that started the run and no newer than the newest frame
+    /// reported (ONE.41).
+    fn in_run(&self, id: u64, stamp: &FrameStamp) -> bool {
+        let (Some((run, first)), Some(newest)) = (&self.run, &self.frame) else {
+            return false;
+        };
+        *run == id
+            && first.same_surface(stamp)
+            && newest.stamp.same_surface(stamp)
+            && first.sequence <= stamp.sequence
+            && stamp.sequence <= newest.stamp.sequence
+    }
+
+    /// Gives the layer the host's provenance reader (PS1.16, KN5.26). Without one, `workspace.set` and a draft that
+    /// names a record are refused.
+    pub fn set_provenance(&mut self, reader: Box<dyn Provenance>) {
+        self.provenance = Some(reader);
+        self.generation += 1;
+    }
+
+    /// The workspace records by name, each with its version and value (KN5's stage 3).
+    pub fn records(&self) -> &BTreeMap<String, WorkspaceRecord> {
+        &self.records
+    }
+
+    /// The value record `name` holds, if any.
+    pub fn record(&self, name: &str) -> Option<&RecordValue> {
+        self.records.get(name).and_then(|record| record.value.as_ref())
     }
 
     /// Holds or releases the commit lane, as an unsettled commit of another invocation would. A test hook: it exists
@@ -749,9 +875,9 @@ impl<S: Store> CommandLayer<S> {
         self.current = state;
     }
 
-    /// Ends the epoch and starts a fresh random one with a new per-launch secret (CT-ONE-21, L10). Previews, jobs and
-    /// handles end; durable receipts stay; other receipts become `unknown_outcome`, and the refusals retained for the
-    /// epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
+    /// Ends the epoch and starts a fresh random one with a new per-launch secret (CT-ONE-21, L10). Previews, jobs,
+    /// handles and the frame reports end; durable receipts stay; other receipts become `unknown_outcome`, and the
+    /// refusals retained for the epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
     /// store answers that it holds it durably and dropped if the store answers that it does not; either answer ends its
     /// recovery. While the store cannot tell, the transaction stays unknown and the layer stays in read-only recovery,
     /// so no later action takes its place in the order; a later restart settles it.
@@ -762,6 +888,8 @@ impl<S: Store> CommandLayer<S> {
         if let Some(p) = self.slot.take() {
             self.history.insert(p.id, PreviewState::Discarded);
         }
+        self.frame = None;
+        self.run = None;
         self.jobs.clear();
         self.running.clear();
         self.commit_held = false;
@@ -804,7 +932,7 @@ impl<S: Store> CommandLayer<S> {
                 let Some(p) = self.slot.as_ref().filter(|p| p.state == PreviewState::Presented) else {
                     return Err(Error::new(code::NO_FRESH_PREVIEW, "no presented preview"));
                 };
-                if p.deps != self.deps(&p.deps.draft) {
+                if p.deps != self.deps(&self.draft_now(p)) {
                     return Err(Error::new(code::REVISION_CHANGED, "the preview is stale"));
                 }
                 if self.kernel.protection(&p.effect, &self.protected).verdict == Verdict::Moves {
@@ -831,6 +959,12 @@ impl<S: Store> CommandLayer<S> {
                 }
             }
             "protection.orbit.set" => Ok(()),
+            RECORD_ROW => match self.provenance {
+                Some(_) => Ok(()),
+                None => {
+                    Err(Error::new(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader")))
+                }
+            },
             _ if row.overlay.is_some() => match row.lane {
                 Lane::Program => self.program_free(),
                 _ => Ok(()),
@@ -884,10 +1018,10 @@ impl<S: Store> CommandLayer<S> {
         digest(&json::object([("request", Value::String(request.to_owned())), ("authenticator", authenticator)]))
     }
 
-    /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), and not `protection.orbit.set`,
-    /// whose release confirmation is the solver's (draft).
+    /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), not `protection.orbit.set`, whose
+    /// release confirmation is the solver's, and not `workspace.set`, which M6 does not grant a program (draft).
     fn runtime_may(row: &Row) -> bool {
-        !matches!(row.kind, Kind::Commit | Kind::App) && row.id != "protection.orbit.set"
+        !matches!(row.kind, Kind::Commit | Kind::App) && row.id != "protection.orbit.set" && row.id != RECORD_ROW
     }
 
     /// Whether the envelope authenticates: its row exists, its caller may invoke the row and hold what it holds, and
@@ -991,6 +1125,7 @@ impl<S: Store> CommandLayer<S> {
             "session.undo" => self.undo(caller, invocation, request, Direction::Undo),
             "session.redo" => self.undo(caller, invocation, request, Direction::Redo),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
+            RECORD_ROW => self.write_record(caller, invocation, request),
             _ if row.overlay.is_some() => self.admit_program(caller, invocation, &row),
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
         }
@@ -1003,19 +1138,60 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- operation.preview -----
 
+    /// Admits a draft: `{"recipe": [...]}`, an inline recipe whose draft digest is the draft's digest, or
+    /// `{"record": name}`, a `ResolvedDraftRef` to a workspace record that holds a word's letters, resolved now
+    /// ([`CommandLayer::resolve_record`]). A refused draft takes no job and leaves the slot as it was (KN5.11).
     fn admit_preview(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
         let draft = invocation.args.get("draft").expect("the form check saw the draft");
-        let Some(recipe) = draft.get("recipe").filter(|_| draft.as_object().is_some_and(|o| o.len() == 1)) else {
-            return refused(code::ARGUMENT_FORM, "a draft is `{\"recipe\": [...]}`; ResolvedDraftRef waits for M6");
+        let only = |key: &str| draft.get(key).filter(|_| draft.as_object().is_some_and(|o| o.len() == 1));
+        let (recipe, digested, resolved) = if let Some(recipe) = only("recipe") {
+            (self.kernel.recipe(recipe)?, digest(draft), None)
+        } else if let Some(name) = only("record").and_then(Value::as_str) {
+            let resolved = self.resolve_record(draft, name)?;
+            (self.kernel.word(&resolved.letters)?, resolved.digest(), Some(resolved))
+        } else {
+            return refused(code::ARGUMENT_FORM, "a draft is `{\"recipe\": [...]}` or `{\"record\": name}`");
         };
-        let recipe = self.kernel.recipe(recipe)?;
         self.exclusive_free()?;
         let id = self.next_job();
-        let kind = JobKind::Preview { recipe, draft: digest(draft), caller: caller.clone() };
+        let kind = JobKind::Preview { recipe, draft: digested, resolved, caller: caller.clone() };
         let (command, scope) = (invocation.command.clone(), caller.scope());
         self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind });
         self.generation += 1;
         Ok((Some(id), Status::Running(id)))
+    }
+
+    /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6
+    /// (`KN2:input.named_object_invalid`), and the host's provenance reader must admit the record's block in this
+    /// session, or the draft is refused with the reader's error (`LG3:capability.not_granted` without a reader). The
+    /// record is checked before the reader, so a session without a reader answers `named_object_invalid` for a record
+    /// that holds no letters. The read set holds the record's content digest and version.
+    fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
+        let record = self.records.get(name);
+        let Some(value) = record.and_then(|record| record.value.as_ref()) else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "no such record"));
+        };
+        let Some(letters) = value.letters() else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "the record does not hold a list of letters"));
+        };
+        let Some(reader) = &self.provenance else {
+            return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
+        };
+        reader.admit(value.provenance.as_bytes())?;
+        Ok(ResolvedDraft { source: draft.clone(), letters, reads: vec![RecordRead::of(name, record)] })
+    }
+
+    /// The draft digest of `p`'s draft as its records stand now (KN0.8). A record draft reads its records again, so a
+    /// write of one, its undo included, makes the preview stale; an inline recipe's digest never changes.
+    fn draft_now(&self, p: &Preview) -> String {
+        match &p.resolved {
+            None => p.deps.draft.clone(),
+            Some(resolved) => {
+                let reads =
+                    resolved.reads.iter().map(|read| RecordRead::of(&read.record, self.records.get(&read.record)));
+                ResolvedDraft { reads: reads.collect(), ..resolved.clone() }.digest()
+            }
+        }
     }
 
     /// Runs every queued preview job at the current revision, in order. Program jobs wait for their host.
@@ -1025,8 +1201,8 @@ impl<S: Store> CommandLayer<S> {
         while let Some(job) = self.jobs.pop_front() {
             match job.kind {
                 JobKind::Program(_) => keep.push_back(job),
-                JobKind::Preview { recipe, draft, caller } => {
-                    self.build_preview(job.id, &job.command, recipe, &draft, caller);
+                JobKind::Preview { recipe, draft, resolved, caller } => {
+                    self.build_preview(job.id, &job.command, recipe, &draft, resolved, caller);
                     ran += 1;
                 }
             }
@@ -1035,7 +1211,15 @@ impl<S: Store> CommandLayer<S> {
         ran
     }
 
-    fn build_preview(&mut self, id: u64, command: &str, recipe: Recipe, draft: &str, caller: Caller) {
+    fn build_preview(
+        &mut self,
+        id: u64,
+        command: &str,
+        recipe: Recipe,
+        draft: &str,
+        resolved: Option<ResolvedDraft>,
+        caller: Caller,
+    ) {
         let key = (caller.scope(), command.to_owned());
         let base = self.current.clone();
         let status = match self.kernel.derive(&base, &recipe, &self.protected) {
@@ -1050,6 +1234,7 @@ impl<S: Store> CommandLayer<S> {
                     command: command.to_owned(),
                     caller,
                     deps: self.deps(draft),
+                    resolved,
                     literal: effect.expansion_sha256.clone(),
                     state: PreviewState::Ready,
                     base,
@@ -1182,12 +1367,17 @@ impl<S: Store> CommandLayer<S> {
         }
         let p = self.slot.as_ref().expect("the slot holds the token's preview");
         if p.state != PreviewState::Presented {
-            return refused(code::NO_FRESH_PREVIEW, format!("preview {id} was never presented"));
+            return refused(code::NO_FRESH_PREVIEW, format!("preview {id} is not presented"));
+        }
+        // The token binds the frame that presented the preview: a frame before its current presentation, on another
+        // device or surface, or never reported does not show it now (ONE.41, RM.26).
+        if !self.in_run(id, &bound.frame) {
+            return refused(code::NO_FRESH_PREVIEW, format!("the token's frame does not present preview {id} now"));
         }
         if p.literal != bound.literal {
             return refused(code::TOKEN_MISMATCH, "the token's literal digest differs from the preview's");
         }
-        let now = self.deps(&p.deps.draft);
+        let now = self.deps(&self.draft_now(p));
         if p.deps != now || bound.deps != now {
             return refused(code::REVISION_CHANGED, "the preview's dependencies changed");
         }
@@ -1242,6 +1432,7 @@ impl<S: Store> CommandLayer<S> {
             confirm: meta.confirm,
             job: None,
             result: None,
+            record: None,
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -1286,6 +1477,12 @@ impl<S: Store> CommandLayer<S> {
         self.revision = transaction.revision.clone();
         self.order = transaction.order;
         self.head = head;
+        // A record write, or its undo or redo: the record's version advances and never goes back (KN0.8).
+        if let Some(RecordWrite { name, value }) = &transaction.record {
+            let record = self.records.entry(name.clone()).or_default();
+            record.version += 1;
+            record.value = value.clone();
+        }
         match tree {
             Tree::Push { node, change } => {
                 for order in std::mem::take(&mut self.redo) {
@@ -1438,6 +1635,7 @@ impl<S: Store> CommandLayer<S> {
             confirm: meta.confirm,
             job: None,
             result: None,
+            record: None,
         };
         match change {
             Change::Head { before, after } => {
@@ -1464,6 +1662,14 @@ impl<S: Store> CommandLayer<S> {
                 transaction.revision.workspace += 1;
                 transaction.revision.protection += 1;
                 Ok(Adoption { transaction, state: None, protected: Some(set), head: self.head, tree, preview: None })
+            }
+            // A workspace inverse: the record takes its value before or after the write again, and its version and the
+            // workspace revision advance (KN5.20, LI.26).
+            Change::Record { name, before, after } => {
+                let to = if direction == Direction::Undo { before } else { after };
+                transaction.record = Some(RecordWrite { name, value: to });
+                transaction.revision.workspace += 1;
+                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None })
             }
         }
     }
@@ -1528,6 +1734,7 @@ impl<S: Store> CommandLayer<S> {
             confirm: meta.confirm,
             job: None,
             result: None,
+            record: None,
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -1575,8 +1782,67 @@ impl<S: Store> CommandLayer<S> {
             confirm: false,
             job: Some(job),
             result: Some(result),
+            record: None,
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree: Tree::None, preview: None }
+    }
+
+    // ----- workspace.set -----
+
+    /// `workspace.set` (M6's record write): writes `payload` with its provenance block under `record` as one durable
+    /// action whose receipt is `completed(workspace)`. The host's provenance reader checks the block first (PS1.16); a
+    /// block it refuses, a missing reader or a bad argument writes nothing.
+    fn write_record(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let args = &invocation.args;
+        let text = |key: &str| args.get(key).and_then(Value::as_str);
+        let (Some(name), Some(payload), Some(provenance)) = (text("record"), args.get("payload"), text("provenance"))
+        else {
+            return refused(code::ARGUMENT_FORM, "`record` and `provenance` are text");
+        };
+        let Some(reader) = &self.provenance else {
+            return refused(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader"));
+        };
+        reader.check(provenance.as_bytes())?;
+        let value = RecordValue { payload: payload.clone(), provenance: provenance.to_owned() };
+        let adoption = self.plan_record(Meta::of(caller, invocation, request), name.to_owned(), value);
+        self.transact(adoption)
+    }
+
+    /// A record write: the record's version and the workspace revision advance, and the state, the head, the preview
+    /// slot and the jobs stay (KN5.18). It is undoable as a workspace inverse.
+    fn plan_record(&self, meta: Meta, name: String, value: RecordValue) -> Adoption {
+        let order = self.order + 1;
+        let digest = self.current.digest().to_owned();
+        let mut revision = self.revision.clone();
+        revision.workspace += 1;
+        let before = self.records.get(&name).and_then(|record| record.value.clone());
+        let transaction = Transaction {
+            kind: TransactionKind::Record,
+            event: format!("e{order}"),
+            order,
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: digest.clone(),
+            post: digest,
+            revision,
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: false,
+            job: None,
+            result: None,
+            record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
+        };
+        let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
+        Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
     }
 
     // ----- language-defined rows -----

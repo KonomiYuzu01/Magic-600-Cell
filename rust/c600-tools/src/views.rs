@@ -16,18 +16,21 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use c600_command::{CommandLayer, Error as CommandError, Preview, PreviewState, Revision as Head, Shell, Store};
+use c600_command::{
+    CommandLayer, Error as CommandError, FrameChain, FrameStamp, PresentedFrame, Preview, PreviewState,
+    Revision as Head, Shell, ShownPreview, Store,
+};
 use c600_digest::sha256_hex;
 use c600_display::array::Array;
 use c600_display::canonical;
-use c600_display::pick::PreviewShown;
+use c600_display::pick::{FrameStamp as DisplayStamp, PreviewShown};
 use c600_display::plan::{
     Content as NodeContent, DerivedRef, DisplayInstance, DisplayPlan, GeometryBinding, InstanceId, LayoutInput,
     LayoutKind, Level, Lineage, MapEntry, MapId, Mode, NodeId, NodeKind, ObjectId, PlanId, PreviewDisplay, PreviewId,
     Primitive, Publication, RevisionRef, SourceLink, SourceMap, StateRef, ViewId, ViewNode,
 };
 use c600_display::produce::{full_set, retained, GeometryInput};
-use c600_display::stage::Composition;
+use c600_display::stage::{Composition, Layer};
 use c600_display::validate::{BoundArray, EngineBundle};
 use c600_ir::Expr;
 use c600_kernel::{IdentityBlock, Snapshot};
@@ -481,21 +484,52 @@ pub fn preview_shown(preview: &Preview) -> PreviewShown {
     PreviewShown { preview: PreviewId(preview.id), literal: preview.literal.clone(), base: preview.deps.state }
 }
 
-/// The adapter's presentation report of one composed frame to the shell (RM.26, ONE.41, RPI.76). The shell is told
-/// that a preview was presented only when the frame's presented report names it, which it does only for a preview the
-/// built-in chain drew. A frame that drew the preview through a user stage, or drew none, reports nothing, so the shell
-/// holds no presented preview to bind a commit token to. Returns the preview reported, if any.
+/// The command layer's stamp of a display frame (RM.24): its device epoch, surface, surface generation and sequence.
+/// The display host keeps one sequence for all its frames, as the layer's frame order needs.
+pub fn frame_stamp(stamp: &DisplayStamp) -> FrameStamp {
+    FrameStamp {
+        device_epoch: stamp.device_epoch,
+        surface: stamp.surface,
+        surface_generation: stamp.surface_generation,
+        sequence: stamp.sequence,
+    }
+}
+
+/// The command layer's report of one composed frame (RM.26): the preview its presented report names, which
+/// `c600-display` gives only for a preview its built-in chain drew, and the chain, a user stage when the frame holds a
+/// preview drawn through user stages, an extra display with no presented-preview identity (RPI.76).
+pub fn presented_frame(composition: &Composition, stamp: FrameStamp) -> PresentedFrame {
+    let preview = composition.commit_binding().map(|shown| ShownPreview {
+        id: shown.preview.0,
+        literal: shown.literal.clone(),
+        base: shown.base,
+    });
+    let extra = composition.layers.iter().any(|layer| matches!(layer, Layer::ExtraPreview));
+    let chain = if extra { FrameChain::UserStage } else { FrameChain::BuiltIn };
+    PresentedFrame { preview, stamp, chain }
+}
+
+/// The adapter's report of one composed frame to the command layer through the shell (RM.26, ONE.41, RPI.76), with the
+/// frame's stamp. The layer decides: a frame that presents the pending preview through the built-in chain binds it with
+/// the frame's stamp; any other frame (one that shows no preview, another preview, or a preview drawn through a user
+/// stage) ends the pending preview's presentation and is refused with `KN5:stale.no_fresh_preview`, and the shell's
+/// binding ends with it, so the shell holds no presented preview to bind a commit token to. A report older than the
+/// newest one is refused and changes nothing. Returns the preview presented. With no preview shown, pending or bound,
+/// there is nothing to present or end, and nothing is reported (`Ok(None)`).
 ///
-/// Minting and verifying tokens stay in `c600-command`; this function only decides whether its `present` is called.
+/// Minting and verifying tokens stay in `c600-command`; this function only maps the display's report to the layer's.
 pub fn report_presented<S: Store>(
     composition: &Composition,
+    stamp: FrameStamp,
     shell: &mut Shell,
     layer: &mut CommandLayer<S>,
 ) -> Result<Option<u64>, CommandError> {
-    let Some(shown) = composition.commit_binding() else { return Ok(None) };
-    let pending = layer.preview().filter(|preview| &preview_shown(preview) == shown).map(|preview| preview.id);
-    match pending {
-        Some(id) => shell.present(layer, id).map(|()| Some(id)),
+    let frame = presented_frame(composition, stamp);
+    let shown = frame.preview.as_ref().map(|shown| shown.id);
+    let pending = layer.preview().map(|preview| preview.id);
+    let bound = shell.presented().map(|binding| binding.id);
+    match shown.or(pending).or(bound) {
+        Some(id) => shell.present(layer, id, &frame).map(|()| Some(id)),
         None => Ok(None),
     }
 }

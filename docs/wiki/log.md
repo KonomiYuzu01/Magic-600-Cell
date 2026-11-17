@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: KN5's stages 3 to 5
+The command layer (`rust/c600-command`) gains its workspace store: `workspace.set` writes a named record with its provenance block as a durable `completed(workspace)` action that keeps the state, the preview and the jobs, a draft `{"record": name}` previews the record's letters and goes stale on any later write of that record (KN0.8), and `session.undo` and `session.redo` reverse a record write as a workspace inverse (KN5.20). Stage 5 replaces `present(id)` with `present(id, &PresentedFrame)`: the layer refuses a frame that shows no preview, another preview or a user stage's drawing, and a word commit's token binds the stamp of the frame that presented its preview (ONE.41, RM.26, RPI.76; commit `8da920c5`); the session lock is the next piece, and `rust/README.md` lists the drafts and the gaps.
+
 ## [2026-11-16] update | M6's origin under the host rule
 M6's session store follows PHS.52 ruling 4 like the command layer: its envelope names no origin, and `Session::invoke` takes the origin of the channel the envelope came on, which the request digest and the program gates read (commit `a12ba67b`, [decision](decisions/owner-decisions-2026-11-16-phs52.md)). Tests that sent a program's envelope now send it on the program's channel.
 

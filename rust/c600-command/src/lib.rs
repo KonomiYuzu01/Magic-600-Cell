@@ -41,8 +41,15 @@
 //! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.
 //!
 //! - One session per layer, Jumble off, 600-cell-Full only. The jumbling engine joins when M5 is on main.
-//! - `WordRef` is an inline literal recipe in 0.4's JSON form, `{"recipe": [...]}`. `ResolvedDraftRef` waits for the
-//!   workspace store; a draft argument in any other form is refused with `KN5:input.argument_form`.
+//! - `WordRef` is an inline literal recipe in 0.4's JSON form, `{"recipe": [...]}`, and `ResolvedDraftRef` is
+//!   `{"record": name}`, a workspace record that holds a word's letters (M6's form); a draft argument in any other form
+//!   is refused with `KN5:input.argument_form`. A record draft's digest is M6's `{"letters", "source", "reads"}`, with
+//!   the record's content digest and version in `reads` (KN0.8).
+//! - The workspace store ([`workspace`]) holds M6's records: `workspace.set` ([`RECORD_ROW`]) takes `record`, `payload`
+//!   and `provenance`, the provenance block's canonical JSON as text. H-08 has no such row yet, so [`Table::with_drafts`]
+//!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
+//!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and admits a record's
+//!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused.
 //! - `twist.apply`'s `rotation` is A6's exact request (KN3.7). Matching it to a cap's generator needs KN3's exact
 //!   rotations, which the kernel does not build yet, so the row is refused with `KN5:input.row_not_built`, as is every
 //!   other row this crate does not build yet. The loop uses the operation rows, which are kernel rows too.
@@ -58,7 +65,14 @@
 //! - The envelope carries its originating epoch (LI.5). A command ID the layer knows is answered by its outcome
 //!   lookup, across a restart too; an unknown envelope from another epoch is refused with `KN2:stale.epoch_changed`,
 //!   and when it authenticates its command ID stays used, so a new press takes a new ID.
-//! - [`CommandLayer::present`] stands in for the adapter's RM.26 report of a frame the built-in chain drew (ONE.41).
+//! - [`CommandLayer::present`] reads the adapter's RM.26 reports ([`frame`]) in the order of their stamps, by device
+//!   epoch, then sequence. A report that is not newer than the newest is refused and changes nothing. The pending
+//!   preview is presented while the newest frame shows it through the built-in chain, and a frame that shows no
+//!   preview, another preview or a user stage's drawing (RPI.76) ends the presentation. A word commit's token binds the
+//!   stamp of the frame that presented its preview, and the commit is refused with `KN5:stale.no_fresh_preview` unless
+//!   that frame belongs to the preview's current presentation: on one device epoch, surface and surface generation,
+//!   from the first frame that showed it to the newest. A restart forgets the frame reports. [`HeadlessFrames`] stamps
+//!   the frames of a headless adapter.
 //! - A program may replace the pending preview: its proposal runs inside a command the solver invoked (KN5.12 stays
 //!   open; LI.38's working form).
 //! - `operation.preview.cancel` changes no revision.
@@ -84,8 +98,11 @@
 //! - [`CommandLayer::outcome`] is the shell's lookup and answers `None` for an ID the shell never used in this layer's
 //!   life; [`CommandLayer::kernel_outcome`] is `kernel.outcome` for any caller.
 //! - `protection.orbit.set` is a workspace row with no token; the runtime may not invoke it.
-//! - An action that does not move the puzzle (a protection change, its undo or redo, a workspace completion) keeps the
-//!   state revision, the preview slot and the jobs (KN5.18).
+//! - An action that does not move the puzzle (a protection change, a record write, the undo or redo of either, a
+//!   workspace completion) keeps the state revision, the preview slot and the jobs (KN5.18).
+//! - A record write answers `completed(workspace)`, and its undo and redo answer `committed` with equal puzzle hashes,
+//!   advancing the workspace revision and the record's version (KN5.20). An undo of a record's first write leaves the
+//!   record with no value. The journal keeps the record's value after each of these actions (`Transaction::record`).
 //! - A workspace overlay's completion is one durable action with its receipt (KN5.23) but is not undoable: the layer
 //!   holds no inverse of a program's write. A rolled-back transaction's `failed` receipt is transient.
 //! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
@@ -95,13 +112,16 @@
 
 #![forbid(unsafe_code)]
 
+pub mod frame;
 pub mod layer;
 pub mod receipt;
 pub mod shell;
 pub mod store;
 pub mod table;
 pub mod token;
+pub mod workspace;
 
+pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
 pub use layer::{Caller, CommandLayer, Invocation, Preview, PreviewState, ProgramJob};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
@@ -113,11 +133,13 @@ pub use store::{
 };
 pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
+pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 10] = [
+pub const SOURCES: [(&str, &[u8]); 12] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
+    ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
@@ -125,6 +147,7 @@ pub const SOURCES: [(&str, &[u8]); 10] = [
     ("c600-command/src/store.rs", include_bytes!("store.rs")),
     ("c600-command/src/table.rs", include_bytes!("table.rs")),
     ("c600-command/src/token.rs", include_bytes!("token.rs")),
+    ("c600-command/src/workspace.rs", include_bytes!("workspace.rs")),
     ("docs/progress/1.0/command-table.json", table::H08.as_bytes()),
 ];
 

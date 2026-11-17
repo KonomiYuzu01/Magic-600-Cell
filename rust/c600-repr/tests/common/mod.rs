@@ -8,7 +8,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    draft_args, ActionHint, Caller, CommandLayer, Direction, Invocation, MemoryStore, Receipt, Secret, Shell, Table,
+    draft_args, ActionHint, Caller, CommandLayer, Direction, HeadlessFrames, Invocation, MemoryStore, Receipt, Secret,
+    Shell, Table,
 };
 use c600_digest::sha256_hex;
 use c600_display::exact::{self, Q5, V4};
@@ -46,6 +47,8 @@ pub const SECRET: [u8; 32] = [7; 32];
 pub struct Session {
     pub layer: CommandLayer,
     pub shell: Shell,
+    /// The headless display's frames, which present the pending preview through the built-in chain.
+    pub frames: HeadlessFrames,
 }
 
 pub fn session() -> Session {
@@ -60,7 +63,7 @@ pub fn session() -> Session {
         start,
         c600_kernel::ProtectedSet::none(),
     );
-    Session { layer, shell: Shell::new(Secret::fixed(SECRET), "shell") }
+    Session { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
 impl Session {
@@ -71,7 +74,7 @@ impl Session {
         let receipt = self.shell.invoke(&mut self.layer, "operation.preview", draft_args(&recipe)).expect("prepared");
         let c600_command::Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
         assert_eq!(self.layer.run_jobs(), 1);
-        self.shell.present(&mut self.layer, job).expect("presented");
+        self.frames.present(&mut self.shell, &mut self.layer, job).expect("presented");
         let args = json::object([("preview", Value::Int(job as i64))]);
         let receipt = self.shell.invoke(&mut self.layer, "operation.execute", args).expect("prepared");
         assert!(matches!(receipt.status, c600_command::Status::Committed(_)), "{:?}", receipt.status);

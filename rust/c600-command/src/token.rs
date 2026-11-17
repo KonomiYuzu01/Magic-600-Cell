@@ -4,8 +4,9 @@
 //! same secret. The runtime never receives a token or the secret (KN5.15): nothing in this crate hands either to a
 //! [`crate::Caller::Runtime`]. A token binds the session, the epoch, the invocation, the row, the absolute arguments
 //! and the whole identity block (model, menu identity, menu-order digest, contract revision; L9). A word commit's
-//! token also binds the presented preview's ID, its literal digest and its dependencies; every other token binds the
-//! state and protection revisions, and an undo or redo token also binds the action hint (LI.6).
+//! token also binds the presented preview's ID, its literal digest, its dependencies and the stamp of the frame that
+//! presented it (ONE.41); every other token binds the state and protection revisions, and an undo or redo token also
+//! binds the action hint (LI.6).
 
 use std::collections::hash_map::RandomState;
 use std::collections::BTreeSet;
@@ -17,6 +18,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use c600_digest::sha256;
 use c600_kernel::json::{self, Value};
 
+use crate::frame::FrameStamp;
 use crate::receipt::{digest, ActionHint, PreviewDeps};
 
 /// The per-launch secret. Its bytes never leave this module; `Debug` does not show them.
@@ -85,13 +87,15 @@ impl Secret {
     }
 }
 
-/// The preview a word commit's token names.
+/// The preview a word commit's token names, and the frame that presented it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PreviewBinding {
     pub id: u64,
     /// `Digest<literal word>` of the preview.
     pub literal: String,
     pub deps: PreviewDeps,
+    /// The stamp of the newest reported frame that presented the preview (ONE.41).
+    pub frame: FrameStamp,
 }
 
 /// What a token binds (LI.6).
@@ -133,6 +137,7 @@ impl TokenBinding {
                         ("id", nat(p.id)),
                         ("literal", Value::String(p.literal.clone())),
                         ("deps", p.deps.to_json()),
+                        ("frame", p.frame.to_json()),
                     ])
                 }),
             ),

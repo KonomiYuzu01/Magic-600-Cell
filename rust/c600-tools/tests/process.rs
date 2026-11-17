@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use c600_check::Profile;
-use c600_command::{Caller, Status};
+use c600_command::{Caller, HeadlessFrames, Status};
 use c600_kernel::codes::RECIPE_SHAPE;
 use c600_kernel::json::{self, Value as Json};
 use c600_run::boundary::{Answer, Boundary, Store};
@@ -62,7 +62,7 @@ fn process_host_runs_the_tool_in_the_runtimes_child_with_the_same_bridge_and_rec
             match &one.receipt.status {
                 Status::Running(id) if case != "refused by the layer" => {
                     assert_eq!(layer.run_jobs(), 1, "{case}");
-                    shell.present(&mut layer, *id).unwrap();
+                    HeadlessFrames::after(&layer).present(&mut shell, &mut layer, *id).unwrap();
                     after.push(layer.preview().expect("the presented preview").summary().canonical());
                     let committed = shell.press(&mut layer, "Ctrl+Shift+Enter", false).unwrap().unwrap();
                     assert!(matches!(committed.status, Status::Committed(_)), "{case}: {committed:?}");

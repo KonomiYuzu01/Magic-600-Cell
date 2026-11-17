@@ -111,10 +111,13 @@
 //! - **Declared class.** The view model's `Declared` holds one class and the manifest declares two (BND.27, RPI.83),
 //!   so the host states one of the manifest's classes when it opens the view; the tests state `checking`. The view's
 //!   source is the built-in source named after the module.
-//! - **Presentation report.** [`views::report_presented`] calls the shell's `present` only when the composed frame's
-//!   presented report names the layer's pending preview, which `c600-display` gives only for a preview its built-in
-//!   chain drew (RM.26, ONE.41, RPI.76). It adds no token logic. `CommandLayer::present` and `Shell::present` take a
-//!   preview ID and no presented-frame identity, so the layer cannot itself refuse a report of a user-stage frame.
+//! - **Presentation report.** [`views::report_presented`] reports each composed frame to the layer through the shell
+//!   as the layer's `PresentedFrame` ([`views::presented_frame`], [`views::frame_stamp`]): the stamp's device epoch,
+//!   surface, surface generation and sequence, the preview the presented report names, which `c600-display` gives only
+//!   for a preview its built-in chain drew, and a user-stage chain when the frame holds an extra preview display (RM.26,
+//!   ONE.41, RPI.76). The layer refuses a frame that shows no preview, another preview or a preview drawn through a
+//!   user stage, and a word commit's token binds the stamp of the frame that presented its preview. It adds no token
+//!   logic. With no preview shown, pending or bound it reports nothing.
 //! - **Process host** (RTE.21, ONE.69, LQ9; KN5.15; BND.42). [`process::ProcessHost`] sends one job per run to
 //!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`],
 //!   the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's. The boundary and
