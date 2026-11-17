@@ -1213,7 +1213,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   executor's half that LP3's runtime plays in a session (capture, seal, run, `run::exact`). `persist_jumble.rs` runs
   CT-PS1-11 and CT-PS1-22 whole by the union of their parts: stored menu words and the journal's replay under the
   I_a menu for CT-PS1-11; the never-on journal, and a failure at each append of an entry, a pose move and an exit
-  with a power loss after it, for CT-PS1-22, on `MemDisk` again.
+  with a power loss after it or after the step sent again, for CT-PS1-22, on `MemDisk` again.
 - Critical-path read of the record layer (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model
   read `src/persist/` and its tests with the acceptance check. Its two major findings were fixed before the pull
   request: R1, a publication after a torn pointer line wrote a line feed first, so a failure after that byte completed

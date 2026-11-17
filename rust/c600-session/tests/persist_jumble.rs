@@ -9,6 +9,7 @@ mod persist_support;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::thread;
 
 use c600_command::layer::{JUMBLE_ON_MODE, MODE};
 use c600_command::{
@@ -24,7 +25,7 @@ use c600_kernel::codes::IDENTITY_MISMATCH;
 use c600_kernel::json::{self, Value};
 use c600_kernel::request::{self as wire, Binding, MenuPin, Operation};
 use c600_kernel::ProtectedSet;
-use c600_session::disk::{Fault, MemDisk};
+use c600_session::disk::{Disk, Fault, MemDisk};
 use c600_session::journal::{self, Tail};
 use c600_session::persist::codec::Json;
 use c600_session::persist::codes::{IDENTITY, NEEDS_JUMBLE_ON};
@@ -59,6 +60,12 @@ fn pinned() -> Menu {
     Menu::from_record(&ctx(), menu_record()).expect("the pinned I_a menu")
 }
 
+/// [`pinned`], read once, for the presses the tests build.
+fn menu() -> &'static Menu {
+    static MENU: OnceLock<Menu> = OnceLock::new();
+    MENU.get_or_init(pinned)
+}
+
 /// The I_a menu with its base reversed: the same set in another order, so another jumbling identity block.
 fn reversed() -> Menu {
     let mut record = menu_record().clone();
@@ -83,7 +90,7 @@ fn press(menu: &Menu, (grip, item): Letter) -> Binding {
 /// Item `index` of the I_a menu at cap 0. At cap 0 item 0 is the identity, items 1 to 11 are retained and 12 to 59
 /// are jumble items.
 fn item(index: u16) -> Binding {
-    press(&pinned(), (0, index))
+    press(menu(), (0, index))
 }
 
 fn recipe(letters: &[i64]) -> Value {
@@ -186,14 +193,15 @@ struct Fixture {
     frames: HeadlessFrames,
 }
 
-/// A new session at the solved state on an empty memory disk, with `menu` pinned or none.
-fn create(disk: &MemDisk, menu: Option<Menu>) -> Fixture {
+/// A new session at the solved state on an empty memory disk, with the I_a menu pinned (`pin`) or none.
+fn create(disk: &MemDisk, pin: bool) -> Fixture {
+    // The kernel loads before the menu's context, so tests that start together load the two in parallel.
     let k = common::kernel();
     let store = JournalStore::create(Box::new(disk.clone())).expect("an empty disk takes a session");
     let (table, secret) = (Table::h08().with_drafts(), Secret::fixed(SECRET));
     let mut layer = CommandLayer::new(k.clone(), table, secret, store, "s1", k.solved(), ProtectedSet::none());
-    if let Some(menu) = menu {
-        layer.pin_menu(ctx(), menu).expect("the I_a menu pins");
+    if pin {
+        layer.pin_menu(ctx(), pinned()).expect("the I_a menu pins");
     }
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
@@ -335,7 +343,7 @@ fn field<'a>(value: &'a mut Value, path: &[&str]) -> &'a mut Value {
 #[test]
 fn ct_ps1_11_a_journaled_episode_replays_only_under_its_menu_model_and_contract() {
     let disk = MemDisk::new();
-    let mut f = create(&disk, Some(pinned()));
+    let mut f = create(&disk, true);
     let writes = disk.writes();
     let receipt = f.twist(&item(12));
     assert_eq!(receipt.status.code(), Some(MENU_WORD_NEEDS_JUMBLE_ON), "{:?}", receipt.status);
@@ -404,8 +412,8 @@ fn ct_ps1_11_a_journaled_episode_replays_only_under_its_menu_model_and_contract(
 #[test]
 fn ct_ps1_22_a_never_on_session_journals_no_jumbling_section() {
     let (with_menu, without) = (MemDisk::new(), MemDisk::new());
-    let mut a = create(&with_menu, Some(pinned()));
-    let mut b = create(&without, None);
+    let mut a = create(&with_menu, true);
+    let mut b = create(&without, false);
     for f in [&mut a, &mut b] {
         assert!(committed(&f.commit(&recipe(&[2]))));
         assert!(committed(&f.commit(&recipe(&[1, -2]))));
@@ -472,7 +480,7 @@ impl Cut {
 /// A session with the I_a menu pinned after a retained commit and the first `n` of: the entry, and a retained item
 /// as a pose move.
 fn episode(disk: &MemDisk, n: usize) -> Fixture {
-    let mut f = create(disk, Some(pinned()));
+    let mut f = create(disk, true);
     assert!(committed(&f.commit(&recipe(&[2]))));
     if n > 0 {
         assert!(committed(&f.enter()));
@@ -483,71 +491,100 @@ fn episode(disk: &MemDisk, n: usize) -> Fixture {
     f
 }
 
+/// A step of an episode: what it is, how many steps of [`episode`] come before it, and the step.
+type Step = (&'static str, usize, fn(&mut Fixture) -> Receipt);
+
+const ENTRY: Step = ("the entry", 0, |f| f.enter());
+const POSE_MOVE: Step = ("a jumble item as a pose move", 1, |f| f.menu_twist(&item(12)));
+const EXIT: Step = ("the exit", 2, |f| f.exit());
+
+/// `step` on a clean disk: what the layer keeps before and after it, and the length of the frame it appends.
+fn clean((what, prefix, step): Step) -> (String, String, usize) {
+    let disk = MemDisk::new();
+    let mut f = episode(&disk, prefix);
+    let before = kept(&f.layer);
+    let (writes, length) = (disk.writes(), disk.durable("journal").expect("a journal").len());
+    assert!(committed(&step(&mut f)), "{what}");
+    let after = kept(&f.layer);
+    assert_ne!(after, before, "{what}");
+    assert_eq!(disk.writes() - writes, 2, "{what}: one append and its sync");
+    (before, after, disk.durable("journal").expect("a journal").len() - length)
+}
+
+/// What the layer keeps when the session `disk` holds after a power loss is reopened under the I_a menu. The layer is
+/// out of recovery and never half crossed: its mode is Jumble on exactly when it holds an episode.
+fn recovered(disk: &MemDisk, what: &str, cut: Cut) -> String {
+    let g = reopen_pinned(disk);
+    assert!(g.layer.recovery().is_none(), "{what}, {cut:?}: {:?}", g.layer.recovery());
+    let on = g.layer.revision().mode == JUMBLE_ON_MODE;
+    assert_eq!(on, g.layer.jumbled().is_some(), "{what}, {cut:?}: no half crossing");
+    kept(&g.layer)
+}
+
+/// Rolled-back appends at `step`: the step fails and its append is cut back, so the layer, the journal and its durable
+/// bytes, which are what a power loss keeps, stay at the last committed revision, and the same step sent again commits
+/// and survives the power loss.
+fn rolled_back(step: Step) {
+    let (what, prefix, run) = step;
+    let (before, after, frame) = clean(step);
+    for cut in [Cut::Error, Cut::Partial(1), Cut::Partial(frame / 2)] {
+        let disk = MemDisk::new();
+        let mut f = episode(&disk, prefix);
+        assert_eq!(kept(&f.layer), before, "{what}, {cut:?}");
+        let journal = disk.durable("journal");
+        cut.inject(&disk);
+        let receipt = run(&mut f);
+        assert!(matches!(receipt.status, Status::Failed(_)), "{what}, {cut:?}: {:?}", receipt.status);
+        assert!(f.layer.recovery().is_none(), "{what}, {cut:?}: {:?}", f.layer.recovery());
+        assert_eq!(kept(&f.layer), before, "{what}, {cut:?}: the layer adopts nothing");
+        assert_eq!(disk.clone().read("journal").expect("a read"), journal, "{what}, {cut:?}: the append is cut back");
+        assert_eq!(disk.durable("journal"), journal, "{what}, {cut:?}: the durable journal is as it was");
+        assert!(committed(&run(&mut f)), "{what}, {cut:?}: the step again");
+        assert_eq!(kept(&f.layer), after, "{what}, {cut:?}: the step again");
+        drop(f);
+        cut.crash(&disk);
+        assert_eq!(recovered(&disk, what, cut), after, "{what}, {cut:?}: the step again, reopened");
+    }
+}
+
+/// Appends of unknown fate at `step`: the layer stops in read-only recovery without adopting the step, and the reopen
+/// after the power loss settles it from the journal: a frame that reached the disk whole is the step, and any shorter
+/// tail is cut.
+fn unknown_fate(step: Step) {
+    let (what, prefix, run) = step;
+    let (before, after, frame) = clean(step);
+    let mut cuts = vec![Cut::Absent, Cut::Written];
+    cuts.extend([1, 8, frame / 2, frame - 1, frame].map(Cut::Torn));
+    for cut in cuts {
+        let disk = MemDisk::new();
+        let mut f = episode(&disk, prefix);
+        assert_eq!(kept(&f.layer), before, "{what}, {cut:?}");
+        cut.inject(&disk);
+        let receipt = run(&mut f);
+        assert_eq!(receipt.status, Status::UnknownOutcome, "{what}, {cut:?}");
+        assert_eq!(f.layer.recovery().map(|error| error.code), Some(code::COMMIT_FATE), "{what}, {cut:?}");
+        assert_eq!(kept(&f.layer), before, "{what}, {cut:?}: the layer adopts nothing unsettled");
+        drop(f);
+        cut.crash(&disk);
+        let done = cut == Cut::Written || cut == Cut::Torn(frame);
+        assert_eq!(&recovered(&disk, what, cut), if done { &after } else { &before }, "{what}, {cut:?}");
+    }
+}
+
 /// CT-PS1-22 (part: an interrupted crossing, whole for the journal's appends and a power loss after each), KN5.23: a
 /// failure at the entry, at a pose move or at the exit recovers with the step done or with the session at its last
 /// committed revision before it, never half crossed: the reopened mode is Jumble on exactly when the layer holds an
-/// episode. A rolled-back append fails the step and is cut back, so the same step sent again commits and survives the
-/// power loss; an unknown fate puts the layer in read-only recovery without adopting the step, and the reopen settles
-/// it from the journal: a frame that reached the disk whole is the step, and any shorter tail is cut. The disk is
-/// `MemDisk`, so a pass is no evidence of a real disk's behaviour in a crash.
+/// episode. A rolled-back append fails the step and is cut back, so the durable journal stays as it was and the same
+/// step sent again commits and survives the power loss ([`rolled_back`]); an unknown fate puts the layer in read-only
+/// recovery without adopting the step, and the reopen settles it from the journal ([`unknown_fate`]). Each step and
+/// each kind of failure runs on a thread of its own. The disk is `MemDisk`, so a pass is no evidence of a real disk's
+/// behaviour in a crash.
 #[test]
 fn ct_ps1_22_an_interrupted_crossing_recovers_on_or_at_the_last_committed_revision() {
-    type Step = fn(&mut Fixture) -> Receipt;
-    let steps: [(&str, usize, Step); 3] = [
-        ("the entry", 0, |f| f.enter()),
-        ("a jumble item as a pose move", 1, |f| f.menu_twist(&item(12))),
-        ("the exit", 2, |f| f.exit()),
-    ];
-    for (what, prefix, step) in steps {
-        let clean = MemDisk::new();
-        let mut f = episode(&clean, prefix);
-        let before = kept(&f.layer);
-        let (writes, length) = (clean.writes(), clean.durable("journal").expect("a journal").len());
-        assert!(committed(&step(&mut f)), "{what}");
-        let after = kept(&f.layer);
-        assert_ne!(after, before, "{what}");
-        assert_eq!(clean.writes() - writes, 2, "{what}: one append and its sync");
-        let frame = clean.durable("journal").expect("a journal").len() - length;
-
-        let mut cuts = vec![Cut::Error, Cut::Partial(1), Cut::Partial(frame / 2), Cut::Absent, Cut::Written];
-        cuts.extend([1, 8, frame / 2, frame - 1, frame].map(Cut::Torn));
-        for cut in cuts {
-            let disk = MemDisk::new();
-            let mut f = episode(&disk, prefix);
-            assert_eq!(kept(&f.layer), before, "{what}, {cut:?}");
-            cut.inject(&disk);
-            let receipt = step(&mut f);
-            assert_eq!(kept(&f.layer), before, "{what}, {cut:?}: the layer adopts nothing unsettled");
-            if matches!(cut, Cut::Error | Cut::Partial(_)) {
-                assert!(matches!(receipt.status, Status::Failed(_)), "{what}, {cut:?}: {:?}", receipt.status);
-                assert!(f.layer.recovery().is_none(), "{what}, {cut:?}: {:?}", f.layer.recovery());
-            } else {
-                assert_eq!(receipt.status, Status::UnknownOutcome, "{what}, {cut:?}");
-                assert_eq!(f.layer.recovery().map(|error| error.code), Some(code::COMMIT_FATE), "{what}, {cut:?}");
-            }
-            drop(f);
-            cut.crash(&disk);
-            let g = reopen_pinned(&disk);
-            assert!(g.layer.recovery().is_none(), "{what}, {cut:?}: {:?}", g.layer.recovery());
-            let done = cut == Cut::Written || cut == Cut::Torn(frame);
-            assert_eq!(kept(&g.layer), if done { after.clone() } else { before.clone() }, "{what}, {cut:?}");
-            let on = g.layer.revision().mode == JUMBLE_ON_MODE;
-            assert_eq!(on, g.layer.jumbled().is_some(), "{what}, {cut:?}: no half crossing");
+    thread::scope(|scope| {
+        for step in [ENTRY, POSE_MOVE, EXIT] {
+            scope.spawn(move || rolled_back(step));
+            scope.spawn(move || unknown_fate(step));
         }
-
-        // A rolled-back append is cut back, so the step sent again commits and survives the power loss.
-        for cut in [Cut::Error, Cut::Partial(1), Cut::Partial(frame / 2)] {
-            let disk = MemDisk::new();
-            let mut f = episode(&disk, prefix);
-            cut.inject(&disk);
-            assert!(matches!(step(&mut f).status, Status::Failed(_)), "{what}, {cut:?}");
-            assert!(committed(&step(&mut f)), "{what}, {cut:?}: the step again");
-            assert_eq!(kept(&f.layer), after, "{what}, {cut:?}: the step again");
-            drop(f);
-            cut.crash(&disk);
-            let g = reopen_pinned(&disk);
-            assert!(g.layer.recovery().is_none(), "{what}, {cut:?}: {:?}", g.layer.recovery());
-            assert_eq!(kept(&g.layer), after, "{what}, {cut:?}: the step again, reopened");
-        }
-    }
+    });
 }
