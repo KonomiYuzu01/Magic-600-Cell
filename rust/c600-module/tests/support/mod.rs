@@ -147,7 +147,10 @@ impl Host for Engine {
                 self.traps += 1;
                 Ok(Value::text(PLANTED[0]))
             }
-            Request::FileRead { .. } | Request::Declassified { .. } | Request::SnapshotWith { .. } => {
+            Request::FileRead { .. }
+            | Request::Declassified { .. }
+            | Request::SnapshotWith { .. }
+            | Request::ProposeMenu { .. } => {
                 self.traps += 1;
                 Ok(Value::text(PLANTED[1]))
             }

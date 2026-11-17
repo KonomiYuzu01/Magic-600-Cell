@@ -1,10 +1,14 @@
-//! CT-LB2-02's Net half and CT-LB2-03's oversize and chunking parts through the 600-cell-Full tool's route (LP3,
-//! C5's next piece, acceptance items 3 and 4). Each test runs the tool on the in-process host and on the process
-//! host. Neither ID runs whole here: each test's comment names the part it covers and the part that is not built.
+//! CT-LB2-02's Net and Strict halves and CT-LB2-03's oversize and chunking parts through the 600-cell-Full tool's
+//! route (LP3, C5's next piece, acceptance items 3 and 4; the Strict half on the command layer's Strict mode, LP2's
+//! pull request 198). Each test runs the tool on the in-process host and on the process host. Neither ID runs whole
+//! here: each test's comment names the part it covers and the part that is not built.
 
 mod process_support;
 
-use c600_command::{code, draft_args, CommandLayer, Error, HeadlessFrames, Preview, Receipt, Shell, Status};
+use c600_command::{
+    code, draft_args, CommandLayer, Completion, CompletionKind, Error, HeadlessFrames, Preview, Receipt, Shell, Status,
+    POLICY_ROW,
+};
 use c600_kernel::codes::{PRIMITIVE_CEILING, RECIPE_SHAPE};
 use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Level, ProtectedSet, ProtectionMode, Verdict};
@@ -55,6 +59,27 @@ fn commit(layer: &mut CommandLayer, shell: &mut Shell) -> Receipt {
     shell.press(layer, "Ctrl+Shift+Enter", false).expect("the chord is sent").expect("not a repeat")
 }
 
+fn text(value: &str) -> Json {
+    Json::String(value.to_owned())
+}
+
+/// A session as [`session_with`] makes it, which the shell then switches to Strict with its own invocation of
+/// `protection.policy.set` (LP2's `POLICY_ROW`, which the runtime may not invoke): a durable workspace action that
+/// answers `completed(workspace)` and keeps the head and the state.
+fn strict_session(name: &str, protected: ProtectedSet) -> (CommandLayer, Shell) {
+    let (mut layer, mut shell) = session_with(name, protected);
+    assert_eq!(layer.policy(), ProtectionMode::Net, "a session starts under Net");
+    let before = fingerprint(&layer);
+    let strict = json::object([("policy", text("strict"))]);
+    let set = shell.invoke(&mut layer, POLICY_ROW, strict).expect("the shell sends a policy change without a token");
+    assert!(matches!(set.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })), "{set:?}");
+    assert_eq!(layer.policy(), ProtectionMode::Strict);
+    let after = fingerprint(&layer);
+    assert_eq!((&after.0, &after.1, after.2), (&before.0, &before.1, before.2), "the head and the state stay");
+    assert_eq!(after.3, before.3 + 1, "one durable workspace action");
+    (layer, shell)
+}
+
 /// CT-LB2-02, the Net half (LB2.3: Net tests the end of the complete operation). With the orbits a generator `g`
 /// moves protected, the words `g -g` and `g h -h -g` have identity net effect while every proper prefix moves a
 /// protected orbit. Through the tool's route, on either host, the whole word previews with no sticker moved, a
@@ -62,9 +87,8 @@ fn commit(layer: &mut CommandLayer, shell: &mut Shell) -> Receipt {
 /// base; the shell's chord commits it as one transaction that leaves the state where it was. The moving prefix `g`
 /// alone previews with verdict moves and no end state, and its commit is refused with the kernel's protection code.
 ///
-/// Not built through the tool's route: the Strict half and "an incomplete prefix check never returns safe", because
-/// the command layer's preview has no Strict mode (KN5, LP2). `c600-library/tests/ct_lb2_02.rs` runs both at the
-/// kernel, on words the library builds.
+/// The Strict half is the next test, on the same words and protected set. Neither test runs "an incomplete prefix
+/// check never returns safe" or the captured lock through the tool's route; the next test says why.
 #[test]
 fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_the_tools_route() {
     let kernel = kernel();
@@ -114,6 +138,114 @@ fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_t
         let refused = commit(&mut layer, &mut shell);
         assert_eq!(refused.status.code(), Some(code::ORBIT_WOULD_MOVE), "{host}: {refused:?}");
         assert_eq!(fingerprint(&layer), before, "{host}: a refused commit changes nothing");
+    }
+}
+
+/// CT-LB2-02 (part: the Strict half through the 600-cell-Full tool's route, on both hosts; not run: the captured lock,
+/// LB2.3's coverage report and `LB2:protection.incomplete_coverage`, which are LP3's library rows), the Strict half
+/// (LB2.3: Strict tests every executed literal prefix; KN2.4, KN2.7). The protected set is the Net half's, the orbits
+/// a generator `g` moves, and the shell sets the session's policy to Strict with `protection.policy.set` before the
+/// tool runs. On either host the tool's proposal of `g -g` or `g h -h -g`, which pass Net above, builds a preview
+/// whose protection row is the kernel's `strict_protection` of the word over the layer's protected set: mode Strict
+/// at level labels, verdict moves, the conflicts of the first refused prefix and its length, 1, the shortest prefix
+/// whose net map moves a protected orbit. The preview's summary adds `mode: "strict"` and `first_refused_prefix: 1`
+/// to verdict `moves` and a null end, and the shell's chord is refused with the kernel's protection code: the state
+/// and the journal stay where they were. The command route's preview of the same recipe under Strict has the same
+/// summary, protection row and operation (literal, expansion and net digests, count and end state), and its commit
+/// gets the same refusal. Without a protected orbit Strict clears every prefix: on either host the word previews
+/// clear with a null `first_refused_prefix` and commits as one transaction that leaves the state where it was.
+///
+/// Not built through the tool's route: "an incomplete prefix check never returns safe" and "the relevant captured
+/// lock". The captured lock of LB2's row "Net and Strict protection", LB2.3's coverage report and
+/// `LB2:protection.incomplete_coverage` are LP3's library rows (the LP3 plan, section 7), as LP2's Strict test in
+/// `c600-command/tests/strict_policy.rs` says: library entries over kernel rows, which wait for a snapshot read that
+/// takes a run's input as its argument. The IR draft has that read since LP2's pull request 199
+/// (`read_snapshot<T>("q", x)`), and no host answers it yet: the bridge grants a run no state read. Here the
+/// session's protected set stands for the lock, as in the Net half. `c600-library/tests/ct_lb2_02.rs` runs the
+/// Strict half at the kernel, on words the library builds.
+#[test]
+fn ct_lb2_02_strict_half_an_identity_word_with_moving_prefixes_fails_strict_through_the_tools_route() {
+    let kernel = kernel();
+    let tool = Tool::full_600_cell().unwrap();
+    let (g, h) = (1i64, 2i64);
+    let effect = |word: &[i64]| kernel.effect(&kernel.word(word).unwrap()).unwrap();
+    let orbits: Vec<i64> = effect(&[g]).support.iter().map(|row| row.orbit as i64).collect();
+    let protected = kernel.protected_set(&orbits).unwrap();
+    let words = [&[g, -g][..], &[g, h, -h, -g]];
+    // The shortest prefix whose net map moves a protected orbit, by Net's verdict on each prefix.
+    let moves = |prefix: &[i64]| kernel.protection(&effect(prefix), &protected).verdict == Verdict::Moves;
+    let first_refused = |word: &[i64]| (1..=word.len()).find(|&end| moves(&word[..end])).map(|end| end as u64);
+    for word in words {
+        assert_eq!(effect(word).moved_stickers(), 0, "{word:?}: identity net effect");
+        assert_eq!(first_refused(word), Some(1), "{word:?}: the first letter moves a protected orbit");
+    }
+
+    let mut process = process_host();
+    for word in words {
+        let first = first_refused(word).map(|prefix| Json::Int(prefix as i64));
+        let (mut layer, mut shell) = strict_session("strict", protected.clone());
+        let before = fingerprint(&layer);
+        let admitted = command_preview(&mut layer, &mut shell, &chunked(&[word]));
+        let command = present(&mut layer, &mut shell, &admitted);
+        let refusal = commit(&mut layer, &mut shell);
+        assert_eq!(refusal.status.code(), Some(code::ORBIT_WOULD_MOVE), "{word:?}: {refusal:?}");
+        assert_eq!(fingerprint(&layer), before, "{word:?}: a refused commit changes nothing");
+
+        for host in HOSTS {
+            let (mut layer, mut shell) = strict_session("strict", protected.clone());
+            let before = fingerprint(&layer);
+            let admitted = tool_preview(on(host, &mut process), &tool, &mut layer, &narrow(word));
+            let preview = present(&mut layer, &mut shell, &admitted);
+            let strict = kernel.strict_protection(&kernel.word(word).unwrap(), layer.protected()).unwrap();
+            assert_eq!(preview.protection, strict, "{host} {word:?}: the kernel's Strict row");
+            let row = &preview.protection;
+            assert_eq!((row.mode, row.level, row.verdict), (ProtectionMode::Strict, Level::Labels, Verdict::Moves));
+            assert_eq!(row.first_refused_prefix, first_refused(word), "{host} {word:?}");
+            assert_eq!(row.protected.len(), orbits.len(), "{host}: the row names the protected orbits");
+            assert!(!row.conflicts.is_empty() && preview.end.is_none(), "{host} {word:?}");
+            assert_eq!(preview.literal, literal_digest(&narrow(word)), "{host} {word:?}");
+            assert_eq!((preview.effect.moved_stickers(), preview.effect.primitive_count), (0, word.len()), "{host}");
+            let summary = preview.summary();
+            let keys = ["mode", "first_refused_prefix", "verdict", "end"].map(|key| summary.get(key).cloned());
+            let expected = [Some(text("strict")), first.clone(), Some(text("moves")), Some(Json::Null)];
+            assert_eq!(keys, expected, "{host} {word:?}: the Strict summary");
+
+            assert_eq!(summary, command.summary(), "{host} {word:?}: the command route's summary");
+            assert_eq!(preview.protection, command.protection, "{host} {word:?}: the command route's row");
+            assert_eq!(whole(&preview), whole(&command), "{host} {word:?}: the command route's operation");
+            let refused = commit(&mut layer, &mut shell);
+            assert_eq!(refused.status, refusal.status, "{host} {word:?}: the command route's refusal");
+            assert_eq!(fingerprint(&layer), before, "{host} {word:?}: a refused commit changes nothing");
+            assert_eq!(layer.policy(), ProtectionMode::Strict, "{host} {word:?}");
+        }
+    }
+
+    // Without a protected orbit Strict clears every prefix.
+    for host in HOSTS {
+        for word in words {
+            let (mut layer, mut shell) = strict_session("strict", ProtectedSet::none());
+            let before = fingerprint(&layer);
+            let admitted = tool_preview(on(host, &mut process), &tool, &mut layer, &narrow(word));
+            let preview = present(&mut layer, &mut shell, &admitted);
+            let strict = kernel.strict_protection(&kernel.word(word).unwrap(), layer.protected()).unwrap();
+            assert_eq!(preview.protection, strict, "{host} {word:?}: the kernel's Strict row");
+            let row = &preview.protection;
+            assert_eq!(
+                (row.mode, row.verdict, row.first_refused_prefix),
+                (ProtectionMode::Strict, Verdict::Clear, None)
+            );
+            assert!(row.protected.is_empty() && row.conflicts.is_empty(), "{host} {word:?}");
+            let summary = preview.summary();
+            let keys = ["mode", "first_refused_prefix", "verdict"].map(|key| summary.get(key).cloned());
+            assert_eq!(keys, [Some(text("strict")), Some(Json::Null), Some(text("clear"))], "{host} {word:?}");
+            let end = preview.end.as_ref().expect("a clear preview has an end state");
+            assert_eq!((preview.base.digest(), end.digest()), (&*before.0, &*before.0), "{host} {word:?}");
+            let committed = commit(&mut layer, &mut shell);
+            let Status::Committed(record) = &committed.status else { panic!("{host} {word:?}: {committed:?}") };
+            assert_eq!((&record.pre, &record.post), (&before.0, &before.0), "{host} {word:?}");
+            assert_eq!(layer.snapshot().digest(), before.0, "{host} {word:?}: the state is where it was");
+            assert_eq!(layer.store().log.len(), before.3 + 1, "{host} {word:?}: one transaction");
+        }
     }
 }
 

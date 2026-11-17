@@ -2,9 +2,10 @@
 //! the part it runs. The IR-level cases are `c600-check`'s; the run-time halves of CT-LG2-05, CT-LG2-08, CT-LG2-11
 //! and CT-LG2-13 are in `c600-run`'s `conformance_lg2.rs`.
 //!
-//! The IR draft has no identity tower, no domain families and no menu words yet (`rust/README.md`, M7). Where a row
-//! needs them, the test runs as a guard: such source does not lower, and the IR's types and operations are matched
-//! without a wildcard, so a family added in M4 or M5 fails to compile here until its tests are written.
+//! The IR draft has no identity tower and no domain families yet (`rust/README.md`, M7); menu words are an LP2 draft
+//! (LB1.8), tested in `menu_words.rs`. Where a row needs what is missing, the test runs as a guard: such source does
+//! not lower, and the IR's types and operations are matched without a wildcard, so a family added in M4 or M5 fails
+//! to compile here until its tests are written.
 
 use c600_check::WORD_KEY_NOT_EXECUTABLE;
 use c600_check::{admit, check, Grant, Policy, Profile, Report};
@@ -70,8 +71,9 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// Every type of the IR draft, matched without a wildcard. A domain family added to the IR (a piece, a pose, a
 /// sticker class, a state, a verdict, a goal or an equality key) fails to compile here until its CT-LG2 tests exist.
 /// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
-/// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. F2 and F5 (LP2 draft) are number kinds of
-/// KN3.2, not domain families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
+/// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. So has the menu word (LP2 draft):
+/// `menu_words.rs` here and in `c600-run`. F2 and F5 (LP2 draft) are number kinds of KN3.2, not domain families;
+/// their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -91,6 +93,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::Receipt
         | Ty::WordEqualityKey
         | Ty::CompressedWord
+        | Ty::MenuWord
         | Ty::Field(_)
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
@@ -334,12 +337,13 @@ fn ct_lg2_07_no_state_enters_from_raw_data_before_the_domain_families() {
     assert_guard(EVERYTHING);
 }
 
-/// CT-LG2-08 (part, static guard: menu words and the session mode wait for the jumbled puzzle's alphabet, M5, and the
-/// command layer, LP3; the run-time refusal at invocation is `c600-run`'s
-/// `ct_lg2_08_a_mode_change_refuses_at_invocation`).
+/// CT-LG2-08 (part, static guard: the session mode waits for the command layer, LP3, and LX-8's fixture menu letters
+/// do not lower; menu words of the run's pinned menu lower as an LP2 draft, `menu_words.rs`; the run-time refusal at
+/// invocation is `c600-run`'s `ct_lg2_08_a_mode_change_refuses_at_invocation`).
 #[test]
-fn ct_lg2_08_menu_words_and_modes_do_not_lower_yet() {
-    assert!(refused_at_lowering("fn f() -> Word effects [] {\n    return menu[2:spin];\n}\n").contains("M5"));
+fn ct_lg2_08_fixture_menu_letters_and_modes_do_not_lower() {
+    let fixture = refused_at_lowering("fn f() -> Word effects [] {\n    return menu[2:spin];\n}\n");
+    assert!(fixture.contains("cap:item"), "{fixture}");
     assert_types_wait(&["Mode", "Revision"], "M4, M5");
 }
 

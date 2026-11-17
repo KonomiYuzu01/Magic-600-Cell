@@ -163,9 +163,15 @@
 //!   are the recipe's own, byte for byte. Not built: a recipe with a star step, or with a word step that has another
 //!   field, keeps the single-step transport, so its literal word longer than one chunk is refused whole on the
 //!   source route.
-//! - **Net check** (LB2.3, CT-LB2-02's Net half). The tests take the Net check to be the layer's preview verdict at
-//!   label level over a session's protected set, here the orbits one generator moves, and the commit's refusal
-//!   when that verdict is not clear. The kernel has no Strict mode, so the Strict half is not built.
+//! - **Net and Strict checks** (LB2.3, CT-LB2-02's Net and Strict halves). The tests take the Net check to be the
+//!   layer's preview verdict at label level over a session's protected set, here the orbits one generator moves, and
+//!   the commit's refusal when that verdict is not clear. The Strict check is the same after the shell sets the
+//!   session's policy to Strict with `protection.policy.set` (LP2's pull request 198; the runtime may not invoke the
+//!   row): the layer judges every executed literal prefix with the kernel's `strict_protection`, the preview's
+//!   summary names the mode and the first refused prefix, and the commit is refused while a prefix moves a protected
+//!   orbit. Not built: the captured lock and "an incomplete prefix check never returns safe" (LB2.3's coverage report
+//!   and `LB2:protection.incomplete_coverage`), which are LP3's library rows over kernel rows and need a snapshot read
+//!   with an argument that no host answers yet.
 //! - **Inspector fixtures** (LB3.5, CT-LB3-07's checker half). No LB3 entry exists in the IR, so the test's
 //!   fixtures stand for them: a fixed record of two preview outcomes for an outcome table, and a previewing entry
 //!   that answers the acknowledgement's two fields for a named-word check. The checker decides them by capability

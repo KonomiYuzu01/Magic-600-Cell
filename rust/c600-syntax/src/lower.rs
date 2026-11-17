@@ -103,7 +103,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 18] = [
+const BASE_TYPES: [&str; 19] = [
     "Unit",
     "Bool",
     "Nat",
@@ -120,6 +120,7 @@ const BASE_TYPES: [&str; 18] = [
     "Receipt",
     "WordEqualityKey",
     "CompressedWord",
+    "MenuWord",
     "F2",
     "F5",
 ];
@@ -361,11 +362,16 @@ fn literal(kind: &ExprKind) -> Option<Lit> {
         ExprKind::Bool(b) => Lit::Bool(*b),
         ExprKind::Unit => Lit::Unit,
         ExprKind::Word(w) => Lit::Word(w.clone()),
+        // Letters of the run's pinned menu (LB1.8; LP2 draft); LX-8's fixture rotation names are no item.
+        ExprKind::Menu(letters) => {
+            Lit::MenuWord(letters.iter().map(|(cap, item)| Some([*cap, item.parse().ok()?])).collect::<Option<_>>()?)
+        }
         _ => return None,
     })
 }
 
-const MENU: &str = "a menu word waits for the jumbled puzzle's alphabet in the IR (M5)";
+const MENU: &str = "LX-8's fixture menu letters do not lower: a letter of the run's pinned menu is cap:item, two \
+                    naturals below 600 (LB1.8)";
 
 /// One declaration being lowered.
 struct Body<'a> {
@@ -965,6 +971,7 @@ impl Body<'_> {
                             "Receipt" => Ty::Receipt,
                             "WordEqualityKey" => Ty::WordEqualityKey,
                             "CompressedWord" => Ty::CompressedWord,
+                            "MenuWord" => Ty::MenuWord,
                             "F2" => Ty::Field(Field::F2),
                             "F5" => Ty::Field(Field::F5),
                             _ => Ty::Var(n.into()),

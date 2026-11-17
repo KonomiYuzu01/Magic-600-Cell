@@ -129,6 +129,11 @@ pub enum Ty {
     /// LG2.16's compressed word: a straight-line program over literal letters whose exact expanded length is known
     /// before any expansion (KN2.10). It is never a `Word`: its letters come out by an explicit, priced expansion.
     CompressedWord,
+    /// LB1.8's literal word of jumbling menu letters (LP2 draft): letters `[cap, item]` in written order, a pole index
+    /// of the model and an index in the pinned order of one menu, each counted from 0. The alphabet is the menu a run
+    /// pins, named by its jumbling identity block (KN0.1); it is not part of the type, and a run pins at most one. A
+    /// menu word is never a `Word`, and a mix of the two is refused with `LB1:input.incompatible_alphabet`.
+    MenuWord,
     /// An element of the finite field F2 or F5, an exact number kind of KN3.2 and ADR-L03.2 (LP2 draft until the IR
     /// freeze, PHS.49). It has no literal (LG1.6): a value comes from `to_f2` or `to_f5` of an `Int`. It never widens
     /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
@@ -267,7 +272,15 @@ pub enum Lit {
     /// A status tag, such as a budget outcome code.
     Tag(String),
     Colour(String),
+    /// A literal menu word (LP2 draft): letters `[cap, item]` in written order, each index counted from 0 and below
+    /// [`MENU_INDEX_LIMIT`]. The run's pinned menu gives them their meaning (LB1.8); a letter outside it stops the
+    /// run.
+    MenuWord(Vec<[u32; 2]>),
 }
+
+/// The bound of a menu letter's indices (LB1.8; LP2 draft): a cap is a pole index of the jumbling model, which has 600
+/// poles (`c600_jumble::model::POLES`), and the draft bounds a menu's items alike.
+pub const MENU_INDEX_LIMIT: u32 = 600;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Prim {
@@ -288,23 +301,25 @@ pub enum Prim {
     ApproxAnd,
     ApproxNot,
     // Collections and words (LP2 drafts until the IR freeze, PHS.49).
-    /// `length(x)`: the element count of a list or a set, the entry count of a map, or the exact length of a word or
-    /// a compressed word (LG2.16), as `Nat`. A compressed word's length needs no expansion.
+    /// `length(x)`: the element count of a list or a set, the entry count of a map, or the exact length of a word, a
+    /// menu word or a compressed word (LG2.16), as `Nat`. A compressed word's length needs no expansion.
     Length,
     /// `index(list, i)`: the element at exact position `i`, counted from 0 (LG2.20).
     Index,
     /// `push(list, x)`: the list with `x` appended.
     Push,
-    /// `concat(a, b)`: two words, two lists or two compressed words joined in order; compressed words join without
-    /// expansion.
+    /// `concat(a, b)`: two words, two menu words, two lists or two compressed words joined in order; compressed words
+    /// join without expansion.
     Concat,
-    /// `inverse(w)`: the letters in reverse order, each negated (LG2.15).
+    /// `inverse(w)`: the letters in reverse order, each negated (LG2.15). A menu word's letters are reversed, each at
+    /// its own cap with the item of the inverse rotation in the run's pinned menu (LB1.8, LB1.9).
     Inverse,
-    /// `conjugate(x, y)`: x · y · x⁻¹ (LG2.15).
+    /// `conjugate(x, y)`: x · y · x⁻¹ (LG2.15), on two words or two menu words.
     Conjugate,
-    /// `commutator(x, y)`: x · y · x⁻¹ · y⁻¹ (LG2.15).
+    /// `commutator(x, y)`: x · y · x⁻¹ · y⁻¹ (LG2.15), on two words or two menu words.
     Commutator,
-    /// `compose(x, y)`: the action of x, then of y; its letters are x's, then y's, in chronological order (LG2.15).
+    /// `compose(x, y)`: the action of x, then of y; its letters are x's, then y's, in chronological order (LG2.15). On
+    /// two words or two menu words.
     Compose,
     /// `word_key(w)`: LG2.13's key of a Full word, LG2.18's stack free reduction of adjacent inverse pairs.
     WordKey,
@@ -571,6 +586,10 @@ pub mod build {
     }
     pub fn word(letters: &[i32]) -> Expr {
         Expr::Lit(Lit::Word(letters.to_vec()))
+    }
+    /// A literal menu word of letters `[cap, item]` (LP2 draft).
+    pub fn menu_word(letters: &[[u32; 2]]) -> Expr {
+        Expr::Lit(Lit::MenuWord(letters.to_vec()))
     }
     pub fn target(t: &str) -> Expr {
         Expr::Lit(Lit::Target(t.into()))

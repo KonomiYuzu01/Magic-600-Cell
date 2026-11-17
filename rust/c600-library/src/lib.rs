@@ -36,9 +36,9 @@
 //! - Jumbling menu letters in the language: they wait for menu words in the IR draft (M5, LP2). C8's
 //!   `c600_jumble_tool::word` builds literal jumbling words of one pinned menu in Rust.
 //! - Library entries over kernel rows, such as LB2's "Star and recipe construction" and "Net and Strict protection":
-//!   the IR draft cannot pass a run's input as a query's argument (a snapshot read names a literal query only), so the
-//!   tests apply a library-built word through the kernel from Rust.
-//! - The command layer's preview in Strict mode (KN5, LP2): CT-LB2-02's Strict half runs at the kernel only.
+//!   the IR draft has a snapshot read with an argument since LP2's pull request 199, but no LP3 host answers it yet,
+//!   so the tests apply a library-built word through the kernel from Rust. CT-LB2-02's Strict half also runs through
+//!   the tool's route (`c600-tools`), on the command layer's Strict policy (LP2's pull request 198).
 //! - The other entries of LB1.8's table, among them the word and trace keys (LB1.9, LB1.10).
 
 #![forbid(unsafe_code)]

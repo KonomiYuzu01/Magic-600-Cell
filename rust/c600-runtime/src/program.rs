@@ -9,6 +9,7 @@ use std::collections::BTreeSet;
 use c600_check::{admit, admit_built_in, Grant, Policy, Profile, Row};
 use c600_ir::Capability;
 use c600_run::interp::{load, Cancel, Host, Options, Run, SourceRanges};
+use c600_run::menu::MenuAlphabet;
 use c600_run::meter::{Amounts, DraftTariffs, SourceRange, Tariffs};
 use c600_run::value::Value;
 use c600_syntax::{lower, parse, Lowered};
@@ -35,11 +36,13 @@ pub struct JobOptions {
     /// The column is the solving profile's, so a job that names class rows in another profile is refused at the
     /// admission stage without a code. `None` admits the entry with `admit` in `profile`.
     pub built_in: Option<BTreeSet<Row>>,
+    /// The menu alphabet the run pins for its menu words (LB1.8; LP2 draft): `c600_run::interp::Options::menu`.
+    pub menu: Option<MenuAlphabet>,
 }
 
 impl JobOptions {
     /// Test tariffs, rows kept, no seed, the tool-authoring profile, no capability, the interim policy, source ranges
-    /// on and no built-in column.
+    /// on, no built-in column and no menu alphabet.
     pub fn new(limits: Amounts) -> JobOptions {
         JobOptions {
             limits,
@@ -52,6 +55,7 @@ impl JobOptions {
             declassifiers: Vec::new(),
             source_ranges: true,
             built_in: None,
+            menu: None,
         }
     }
 }
@@ -168,6 +172,7 @@ pub fn run_in_process(job: &Job, host: &mut dyn Host, cancel: Option<&dyn Cancel
         record: o.record,
         cancel,
         sources: if o.source_ranges { Some(&ranges) } else { None },
+        menu: o.menu.as_ref(),
     };
     match loaded.run(&job.module, &job.entry, job.args.clone(), host, &options) {
         Ok(run) => Ended::Ran(run),

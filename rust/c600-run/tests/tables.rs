@@ -9,6 +9,7 @@
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use c600_check::{admit, check, separation, Grant, Policy, TYPE_MISMATCH};
 use c600_digest::sha256;
@@ -19,6 +20,7 @@ use c600_ir::{Capability, Effect, ExactRole, Expr, Lit, Program, QTy, ReceiptFie
 use c600_run::boundary::{admit_preview, Boundary, Context, Pins, Place, Store, Stored};
 use c600_run::interp::code::{IR_REJECTED, NONCANONICAL_VALUE};
 use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Sink};
+use c600_run::menu::MenuIdentity;
 use c600_run::meter::code::{NOT_GRANTED, OUTPUT};
 use c600_run::meter::{Amounts, Outcome};
 use c600_run::provenance::{self, Author, Json, Pin, Producer, Profile};
@@ -97,6 +99,9 @@ enum Carries<'a> {
     Name(&'a str),
     Type(&'a Ty),
     Letters(&'a [i32]),
+    /// A menu word's letters (LB1.8; LP2 draft), and the identity block that names their alphabet.
+    MenuLetters(&'a [[u32; 2]]),
+    Alphabet(&'a MenuIdentity),
     Bytes(&'a [u8]),
     Role(ExactRole),
 }
@@ -107,6 +112,8 @@ impl Carries<'_> {
             Carries::Name(name) => format!("a name, {name}"),
             Carries::Type(ty) => format!("a type, whose values hold {}", holds(ty)),
             Carries::Letters(word) => format!("letters, {word:?}"),
+            Carries::MenuLetters(letters) => format!("letters of a pinned menu, {letters:?}"),
+            Carries::Alphabet(menu) => format!("a name, the alphabet's identity block, {:?}", menu.fields()),
             Carries::Bytes(bytes) => format!("canonical bytes, {} of them", bytes.len()),
             Carries::Role(role) => format!("an exact role, {role:?}"),
         }
@@ -126,6 +133,15 @@ fn request(r: &Request) -> (Kind, Vec<String>) {
         Request::Propose { word, target, request } => {
             (Kind::Preview, vec![Carries::Letters(word), Carries::Name(target), Carries::Bytes(request)])
         }
+        Request::ProposeMenu { letters, menu, target, request } => (
+            Kind::Preview,
+            vec![
+                Carries::MenuLetters(letters),
+                Carries::Alphabet(menu),
+                Carries::Name(target),
+                Carries::Bytes(request),
+            ],
+        ),
     };
     (kind, fields.iter().map(Carries::describe).collect())
 }
@@ -157,6 +173,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Set(_) => "distinct exact values of its element type, in canonical key order",
         Ty::Map(..) => "exact keys with values of these types, in canonical key order",
         Ty::CompressedWord => "letters as parts of literal letters, with their exact length",
+        Ty::MenuWord => "letters of a pinned menu, with the name of their alphabet",
     }
 }
 
@@ -174,6 +191,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::WordEqualityKey(_) => "a word equality key, which is never letters",
         Value::Set(_) | Value::Map(_) => "distinct exact keys, with values for a map, in canonical key order",
         Value::Compressed(_) => "letters as parts of literal letters, with their exact length",
+        Value::MenuWord(_) => "letters of a pinned menu, with the name of their alphabet",
     }
 }
 
@@ -461,12 +479,15 @@ fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
 /// nothing else: its request carries the letters, the target's name and the canonical bytes of exactly `{target,
 /// word}`; a program that passes the receipt's base in place of the word is refused by the checker, and the same IR
 /// built by hand is refused by the interpreter before the host is asked. The base a proposal reports comes from the
-/// run's context, never from the program.
+/// run's context, never from the program. A menu word (LB1.8; LP2 draft) carries the identity block that names its
+/// alphabet, whose menu-order digest and contract revision name a menu, not a state: no operation reads the block,
+/// and a menu-word proposal hands the engine the word and the target only.
 #[test]
 fn ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt() {
-    let types = [Ty::Unit, Ty::Nat, Ty::Text, Ty::Word, Ty::Target, Ty::Receipt, Ty::Record(vec![])];
+    let types = [Ty::Unit, Ty::Nat, Ty::Text, Ty::Word, Ty::Target, Ty::Receipt, Ty::Record(vec![]), Ty::MenuWord];
     assert!(types.iter().all(|t| !["state", "digest", "token", "revision"].iter().any(|w| holds(t).contains(w))));
-    let values = [Value::Unit, Value::int(1), Value::text("rev-7"), Value::word(&[1]), Value::receipt(vec![])];
+    let menu = Value::menu_word(&Arc::new(MenuIdentity::default()), &[[0, 1]]).expect("bounded");
+    let values = [Value::Unit, Value::int(1), Value::text("rev-7"), Value::word(&[1]), Value::receipt(vec![]), menu];
     assert!(values.iter().all(|v| !["state", "digest", "token"].iter().any(|w| value_holds(v).contains(w))));
     assert_eq!(row(&propose(Expr::Lit(Lit::Word(vec![1])), target("t"))).2, ["word", "target"]);
 
@@ -602,6 +623,7 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
         Request::FileRead { path: "count", ty: &Ty::Nat },
         Request::Clock,
         Request::Propose { word: &[1], target: "t", request: b"{}" },
+        Request::ProposeMenu { letters: &[[0, 1]], menu: &MenuIdentity::default(), target: "t", request: b"{}" },
     ];
     let sinks = [
         Sink::View,

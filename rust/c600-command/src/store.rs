@@ -13,13 +13,15 @@
 //! way a protection-policy change and the undo or redo of one carry the policy after the action
 //! ([`Transaction::policy`]), and only they name `policy` (draft), so a journal written before the Strict mode reads
 //! unchanged. A `twist.apply` commit carries its exact rotation's record ([`Transaction::rotation`]), and only it
-//! names `rotation` (draft), so a journal without twists reads unchanged.
+//! names `rotation` (draft), so a journal without twists reads unchanged. A crossing (`jumble.on`) carries its
+//! crossing record ([`Transaction::crossing`]), and only it names `crossing` (draft).
 
 use std::collections::VecDeque;
 
 use c600_kernel::json::{self, Value};
 use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
+use crate::jumble::crossing_reads;
 use crate::layer::Caller;
 use crate::receipt::{CommitRecord, Completion, CompletionKind, Error, Receipt, ResultRef, Revision, Status};
 use crate::twist::{record_reads, TWIST_ROW};
@@ -38,6 +40,8 @@ pub enum TransactionKind {
     Record,
     /// A change of the protection policy, Net or Strict, through `protection.policy.set` (KN2.4, LB2.3; draft).
     Policy,
+    /// A crossing between the modes: Jumble on through `jumble.on` (ONE.54, ONE.55; draft).
+    Crossing,
 }
 
 impl TransactionKind {
@@ -50,6 +54,7 @@ impl TransactionKind {
             TransactionKind::Workspace => "workspace",
             TransactionKind::Record => "record",
             TransactionKind::Policy => "policy",
+            TransactionKind::Crossing => "crossing",
         }
     }
 
@@ -62,6 +67,7 @@ impl TransactionKind {
             TransactionKind::Workspace,
             TransactionKind::Record,
             TransactionKind::Policy,
+            TransactionKind::Crossing,
         ]
         .into_iter()
         .find(|kind| kind.name() == name)
@@ -129,15 +135,18 @@ pub struct Transaction {
     /// A `twist.apply` commit's exact rotation: its resolution's record, with the request binding, the request digest,
     /// the choice and the exact rotation at the cap (KN3.8, KN3.9; draft). `None` for every other action.
     pub rotation: Option<Value>,
+    /// A crossing's record: for an entry, its entrance, the jumbling identity block it was made under and its witness's
+    /// letter count and `Digest<literal word>` ([`crate::jumble`]; draft). `None` for every other action.
+    pub crossing: Option<Value>,
 }
 
 impl Transaction {
-    /// The terminal receipt the action answers: `committed` for a commit, undo or redo, `completed(workspace)` for a
-    /// protection or policy change, a record write or a workspace row. It is a function of the transaction, so it is
-    /// durable with the effect (KN5.23).
+    /// The terminal receipt the action answers: `committed` for a commit, a crossing, an undo or a redo,
+    /// `completed(workspace)` for a protection or policy change, a record write or a workspace row. It is a function of
+    /// the transaction, so it is durable with the effect (KN5.23).
     pub fn receipt(&self) -> Receipt {
         let status = match self.kind {
-            TransactionKind::Commit | TransactionKind::Undo | TransactionKind::Redo => {
+            TransactionKind::Commit | TransactionKind::Crossing | TransactionKind::Undo | TransactionKind::Redo => {
                 Status::Committed(CommitRecord {
                     event: self.event.clone(),
                     pre: self.pre.clone(),
@@ -158,7 +167,8 @@ impl Transaction {
     }
 
     /// The journal form (draft). `record` appears only when the action carries a record write, `policy` only when it
-    /// carries a policy, `records` only when a workspace row's job wrote records, and `rotation` only on a twist.
+    /// carries a policy, `records` only when a workspace row's job wrote records, `rotation` only on a twist and
+    /// `crossing` only on a crossing.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
@@ -194,6 +204,9 @@ impl Transaction {
         if let (Value::Object(fields), Some(rotation)) = (&mut value, &self.rotation) {
             fields.insert("rotation".to_owned(), rotation.clone());
         }
+        if let (Value::Object(fields), Some(crossing)) = (&mut value, &self.crossing) {
+            fields.insert("crossing".to_owned(), crossing.clone());
+        }
         value
     }
 
@@ -201,9 +214,10 @@ impl Transaction {
     /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty.
     /// `policy` belongs to a policy change and to the undo or redo of one. `records` belongs to a workspace row's
     /// completion: a non-empty list of writes with values, their names strictly increasing. `rotation` belongs to a
-    /// commit of `twist.apply`, which always carries one in the form [`crate::twist`] reads. A transaction that carries
-    /// one where it does not belong, or both `record` and `policy`, or a twist without its rotation, does not read, so
-    /// the history stops there (KN5.23).
+    /// commit of `twist.apply`, which always carries one in the form [`crate::twist`] reads. `crossing` belongs to a
+    /// crossing, which always carries one in the form [`crate::jumble`] reads. A transaction that carries one where it
+    /// does not belong, or both `record` and `policy`, or a twist without its rotation, or a crossing without its record,
+    /// does not read, so the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
         let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
@@ -229,6 +243,10 @@ impl Transaction {
             None => None,
             Some(rotation) => Some(record_reads(rotation).then(|| rotation.clone())?),
         };
+        let crossing = match value.get("crossing") {
+            None => None,
+            Some(crossing) => Some(crossing_reads(crossing).then(|| crossing.clone())?),
+        };
         let twist = kind == TransactionKind::Commit && value.get("row")?.as_str()? == TWIST_ROW;
         let carries = match kind {
             TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()) && policy.is_none(),
@@ -236,12 +254,14 @@ impl Transaction {
             TransactionKind::Undo | TransactionKind::Redo => record.is_none() || policy.is_none(),
             _ => record.is_none() && policy.is_none(),
         } && (records.is_empty() || kind == TransactionKind::Workspace)
-            && rotation.is_some() == twist;
+            && rotation.is_some() == twist
+            && crossing.is_some() == (kind == TransactionKind::Crossing);
         let keys = 17
             + usize::from(record.is_some())
             + usize::from(policy.is_some())
             + usize::from(!records.is_empty())
-            + usize::from(rotation.is_some());
+            + usize::from(rotation.is_some())
+            + usize::from(crossing.is_some());
         (carries && object.len() == keys).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
@@ -280,6 +300,7 @@ impl Transaction {
             policy,
             records,
             rotation,
+            crossing,
         })
     }
 }

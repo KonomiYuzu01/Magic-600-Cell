@@ -7,9 +7,11 @@
 //! - A word is an array of its signed letters, each of magnitude at most 1200; a word with a larger letter has no form.
 //!   No letter of either alphabet is larger (chapter 01): a 600-cell-Full generator is ±1 to ±1200, and a jumbling
 //!   menu letter's grip and item are indices below 600. A letter of 0 is not a generator, but it keeps its form here:
-//!   `c600-jumble-tool` reads a `Word` as flattened `[grip, item]` indices, which start at 0, until menu words reach
-//!   the IR draft, and the kernel refuses a generator of 0 when it acts. This JSON form is an M2 draft; LG2.18's word
-//!   keys stay open.
+//!   `c600-jumble-tool` reads a `Word` as flattened `[grip, item]` indices, which start at 0, and the kernel refuses
+//!   a generator of 0 when it acts. This JSON form is an M2 draft; LG2.18's word keys stay open.
+//! - A menu word (LB1.8; LP2 draft) is `{"letters":[[cap,item],…],"menu":{…}}`: its letters, each a pair of indices
+//!   below 600, and its alphabet's identity block with its five fields under their names, so a stored or crossing
+//!   word names its menu. A menu word whose block is empty names no alphabet and has no form.
 //! - A list is an array of its elements in order (LP2 draft). A word equality key has no form: it is never output as
 //!   letters (LG2.13).
 //! - A set is an array of its distinct elements and a map an array of its `{"key":…,"value":…}` entries, both in
@@ -24,7 +26,7 @@ use crate::value::{entry_key, value_order, Text, Value};
 
 /// Why a value has no canonical form: a closure, a function, a receipt, a word equality key, a compressed word, an F2
 /// or F5 element, an approximation that is not exactly a binary64 number, a word with a letter of magnitude above
-/// 1200, a record with a repeated key, or a set or map out of canonical key order.
+/// 1200, a menu word that names no alphabet, a record with a repeated key, or a set or map out of canonical key order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Noncanonical;
 
@@ -115,6 +117,32 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                     out.extend_from_slice(l.to_string().as_bytes());
                 }
                 out.push(b']');
+            }
+            // The letters are bounded when the word is built (`value::MenuWord::new`). The identity block's fields are
+            // written in key order: `contract_rev`, `menu_id`, `menu_order`, `model_id`, `puzzle`.
+            Value::MenuWord(w) => {
+                if !w.identity().names_alphabet() {
+                    return Err(Noncanonical);
+                }
+                out.extend_from_slice(b"{\"letters\":[");
+                for (k, [cap, item]) in w.letters().iter().enumerate() {
+                    if k > 0 {
+                        out.push(b',');
+                    }
+                    out.extend_from_slice(format!("[{cap},{item}]").as_bytes());
+                }
+                out.extend_from_slice(b"],\"menu\":{");
+                let mut fields = w.identity().fields();
+                fields.sort_by_key(|(name, _)| *name);
+                for (k, (name, text)) in fields.iter().enumerate() {
+                    if k > 0 {
+                        out.push(b',');
+                    }
+                    string(name, out);
+                    out.push(b':');
+                    string(text, out);
+                }
+                out.extend_from_slice(b"}}");
             }
             Value::Record(r) => {
                 let fields = r.fields();

@@ -160,6 +160,7 @@ fn request_name(request: &Request) -> &'static str {
         Request::FileRead { .. } => "file_read",
         Request::Clock => "clock",
         Request::Propose { .. } => "propose",
+        Request::ProposeMenu { .. } => "propose_menu",
     }
 }
 

@@ -13,6 +13,7 @@ use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
 
 use crate::approx::{self, Approx};
+use crate::menu::{MenuIdentity, MENU_INDEX_LIMIT};
 use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs};
 
 /// The most decimal digits an exact literal may have: PS1.5's limit for persisted integers, applied to IR literals.
@@ -51,6 +52,8 @@ pub enum Value {
     Map(Arc<List>),
     /// LG2.16's compressed word (LP2 draft): a straight-line program with its exact length.
     Compressed(Arc<Compressed>),
+    /// LB1.8's literal word of jumbling menu letters (LP2 draft): its letters and its alphabet's identity block.
+    MenuWord(Arc<MenuWord>),
     /// An element of F2 or F5 (KN3.2; LP2 draft): the field and its residue, which is below the field's prime. Build
     /// one with [`Value::field`].
     Field(Field, u8),
@@ -115,6 +118,51 @@ pub struct Compressed {
     /// bytes per letter, as a word stores them, and for a concatenation its two 8-byte part numbers, and then the
     /// part's exact length as an unbounded integer.
     parts_size: u128,
+}
+
+/// A menu word (LB1.8; LP2 draft): letters `[cap, item]` in written order, each index below
+/// [`MENU_INDEX_LIMIT`], and the identity block of the alphabet they belong to ([`crate::menu`]). The identity is the
+/// run's pinned metadata, shared by the run's words, and not payload: a word's logical size is 4 bytes per letter, two
+/// 2-byte indices (DET.57). Words compare by their identity blocks, then by their letters.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MenuWord {
+    identity: Arc<MenuIdentity>,
+    letters: Arc<[[u32; 2]]>,
+}
+
+impl MenuWord {
+    /// The word of `letters` in the alphabet named by `identity`. `None` when an index is not below
+    /// [`MENU_INDEX_LIMIT`]; whether a letter is in the alphabet is the run's check, against its pinned alphabet.
+    pub fn new(identity: Arc<MenuIdentity>, letters: &[[u32; 2]]) -> Option<MenuWord> {
+        let bounded = letters.iter().flatten().all(|&i| i < MENU_INDEX_LIMIT);
+        bounded.then(|| MenuWord { identity, letters: letters.into() })
+    }
+
+    /// The identity block of the word's alphabet.
+    pub fn identity(&self) -> &MenuIdentity {
+        &self.identity
+    }
+
+    /// The letters `[cap, item]`, in order.
+    pub fn letters(&self) -> &[[u32; 2]] {
+        &self.letters
+    }
+
+    /// The same letters in the alphabet named by `identity`: a literal takes the run's alphabet when it is read.
+    pub(crate) fn named(&self, identity: Arc<MenuIdentity>) -> MenuWord {
+        MenuWord { identity, letters: self.letters.clone() }
+    }
+
+    /// An upper bound of the canonical encoding: `{"letters":[[c,i],…],"menu":{…}}` with the identity block's five
+    /// fields under their names, at most 10 bytes per letter and 86 bytes of keys, brackets and punctuation
+    /// (DET.59).
+    fn bound(&self) -> u128 {
+        let fields =
+            self.identity.fields().iter().fold(0u128, |s, (_, v)| {
+                s.saturating_add((v.chars().count() as u128).saturating_mul(6).saturating_add(2))
+            });
+        (self.letters.len() as u128).saturating_mul(10).saturating_add(86).saturating_add(fields)
+    }
 }
 
 /// One part of a compressed word (LP2 draft).
@@ -375,7 +423,8 @@ fn kind(v: &Value) -> u8 {
         Value::Set(_) => 16,
         Value::Map(_) => 17,
         Value::Compressed(_) => 18,
-        Value::Field(..) => 19,
+        Value::MenuWord(_) => 19,
+        Value::Field(..) => 20,
     }
 }
 
@@ -417,6 +466,7 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 (Value::Fn(x), Value::Fn(y)) => x.cmp(y),
                 // By their parts: no key or equality of a checked program compares compressed words (LP2 draft).
                 (Value::Compressed(x), Value::Compressed(y)) => x.parts.cmp(&y.parts),
+                (Value::MenuWord(x), Value::MenuWord(y)) => x.cmp(y),
                 (Value::Field(f, x), Value::Field(g, y)) => (f, x).cmp(&(g, y)),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
@@ -690,6 +740,12 @@ impl Value {
         Value::Word(letters.into())
     }
 
+    /// A menu word of `letters` in the alphabet named by `identity` (LP2 draft); `None` when an index is not below
+    /// [`MENU_INDEX_LIMIT`].
+    pub fn menu_word(identity: &Arc<MenuIdentity>, letters: &[[u32; 2]]) -> Option<Value> {
+        MenuWord::new(identity.clone(), letters).map(|w| Value::MenuWord(Arc::new(w)))
+    }
+
     /// The element of `field` that the integer `n` reduces to: its residue modulo the field's prime, which is in
     /// `0..p` for a negative `n` too (KN3.2; LP2 draft).
     pub fn field(field: Field, n: &BigInt) -> Value {
@@ -756,6 +812,7 @@ impl Value {
             Value::Fn(_) => 32,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.size,
             Value::Compressed(c) => c.size(),
+            Value::MenuWord(w) => 4 * w.letters.len() as u128,
             Value::Field(..) => 1,
         }
     }
@@ -772,6 +829,7 @@ impl Value {
                 | Value::Set(_)
                 | Value::Map(_)
                 | Value::Compressed(_)
+                | Value::MenuWord(_)
         )
     }
 
@@ -788,6 +846,7 @@ impl Value {
             Value::Approx(_) => 26,
             Value::Text(t) | Value::Target(t) | Value::Tag(t) | Value::Colour(t) => text_bound(t),
             Value::Word(w) => 2 + 6 * w.len() as u128,
+            Value::MenuWord(w) => w.bound(),
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
             // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13). Nor has a
@@ -956,6 +1015,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             }
             (Value::Fn(x), Value::Fn(y)) => x == y,
             (Value::Compressed(x), Value::Compressed(y)) => x.parts == y.parts,
+            (Value::MenuWord(x), Value::MenuWord(y)) => x == y,
             (Value::Approx(x), Value::Approx(y)) => x == y,
             (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
@@ -1061,6 +1121,8 @@ pub fn literal(lit: &c600_ir::Lit) -> Option<Value> {
         Lit::Target(s) => Value::target(s),
         Lit::Tag(s) => Value::tag(s),
         Lit::Colour(s) => Value::colour(s),
+        // A menu-word literal names no alphabet until a run reads it with its pinned one (LP2 draft).
+        Lit::MenuWord(letters) => Value::menu_word(&Arc::default(), letters)?,
     })
 }
 
