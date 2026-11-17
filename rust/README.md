@@ -1203,8 +1203,16 @@ run or not applicable is no pass (PHS.63).
   refused with `KN5:input.overlay_row_kind`, and a row the layer builds itself or one already served with
   `KN5:input.overlay_row_conflict`. Serving is not journaled, so after a reopen the host serves its rows again. Five of
   the representations tool's six rows can be served now; `filter.apply` waits for its gate, its filter preview rule
-  and its workspace inverse. The view and workspace sinks as a job's result are C6's next need. Tests:
-  `c600-command/tests/served_rows.rs`.
+  and its workspace inverse. Tests: `c600-command/tests/served_rows.rs`.
+- Job output (LP3's C6, its second common need; the drafts are in the crate documentation).
+  `CommandLayer::finish_program_job_with(job, Result<JobOutput, Error>)` takes a job's output as the runtime's sinks
+  gave it: the entry's value, the views it published and the workspace records it wrote, each with its provenance
+  block. `finish_program_job` reports a value alone, as before. The result reference carries `JobOutput::digest`, which
+  is the value's own digest when there are no views and no records. Only a workspace row's job writes records; a record
+  from any other row fails the job with `LG3:capability.not_granted`. The host's provenance reader checks every
+  record's block, as for `workspace.set`. A job whose output fails a check writes nothing. A workspace row's records are
+  written in its completion's one durable action and kept in the journal (`Transaction::records`). No undo reaches
+  them, so earlier writes of the same records leave the undo and redo stacks. Tests: `c600-command/tests/job_output.rs`.
 - Argument forms (LP3's C6, its third common need; the drafts are in the crate documentation). An argument of an
   optional type (`T?`) may be left out of any row; every other argument must be given. A row the layer does not build
   is refused as not built once its names fit, with an optional argument left out or given. For a row the layer admits

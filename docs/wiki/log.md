@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: a program job's views and workspace records as its result
+The command layer (`rust/c600-command`) takes a program job's output as the runtime's sinks give it (`CommandLayer::finish_program_job_with` and `JobOutput`, LP3's C6, its second common need): the entry's value, the views it published and the workspace records it wrote, the completion's result reference carrying the digest of all three, while a value alone keeps its own digest. Only a workspace row's job writes records, each block passing the host's provenance reader, and they are written in the completion's one durable action and kept in the journal, with earlier writes of the same records leaving the undo and redo stacks so that no undo writes over them; the digest's form, the refusal code, that cut and the journal key are drafts for LP3's amendment list under PHS.52.
+
 ## [2026-11-17] update | The language: argument forms for served and overlay rows
 The command layer (`rust/c600-command`) checks the forms of the H-08 argument types it knows for a row it admits as a program job, a served stored row or an overlay row (LP3's C6, its third common need): `Nat`, `Text`, a choice of words, `CellId`, `CellIdPair` and `RevisionRef`, a malformed argument refused with `KN5:input.argument_form` and then a revision that is not current with `KN5:stale.revision_changed` (EV4.14), and an argument of an optional type may now be left out of any row. `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs` pass unchecked until their forms are written down; the forms and the order of the two refusals are drafts for LP3's amendment list under PHS.52.
 

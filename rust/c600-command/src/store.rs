@@ -121,6 +121,9 @@ pub struct Transaction {
     /// repeat. `None` for every other action: the policy in force is the one the last such action left, Net from a
     /// session's start.
     pub policy: Option<ProtectionMode>,
+    /// A workspace row's record writes, as its job's output gave them, in the order of their names (LP3's C6, its
+    /// second common need; draft). Empty for every other action.
+    pub records: Vec<RecordWrite>,
 }
 
 impl Transaction {
@@ -149,8 +152,8 @@ impl Transaction {
         Receipt { command: self.command.clone(), request: self.request.clone(), job: self.job, status }
     }
 
-    /// The journal form (draft). `record` appears only when the action carries a record write, and `policy` only when
-    /// it carries a policy.
+    /// The journal form (draft). `record` appears only when the action carries a record write, `policy` only when it
+    /// carries a policy, and `records` only when a workspace row's job wrote records.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
@@ -179,13 +182,18 @@ impl Transaction {
         if let (Value::Object(fields), Some(policy)) = (&mut value, self.policy) {
             fields.insert("policy".to_owned(), Value::String(policy_name(policy).to_owned()));
         }
+        if let (Value::Object(fields), false) = (&mut value, self.records.is_empty()) {
+            let records = self.records.iter().map(RecordWrite::to_json).collect();
+            fields.insert("records".to_owned(), Value::Array(records));
+        }
         value
     }
 
     /// Reads the journal form strictly: every field and no other. `record` belongs to a record write, which carries one
     /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty.
-    /// `policy` belongs to a policy change and to the undo or redo of one. A transaction that carries either where it
-    /// does not belong, or both, does not read, so the history stops there (KN5.23).
+    /// `policy` belongs to a policy change and to the undo or redo of one. `records` belongs to a workspace row's
+    /// completion: a non-empty list of writes with values, their names strictly increasing. A transaction that carries
+    /// one where it does not belong, or both `record` and `policy`, does not read, so the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
         let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
@@ -197,13 +205,24 @@ impl Transaction {
             None => None,
             Some(policy) => Some(policy_from_name(policy.as_str()?)?),
         };
+        let records = match value.get("records") {
+            None => Vec::new(),
+            Some(records) => {
+                let records: Vec<RecordWrite> =
+                    records.as_array()?.iter().map(RecordWrite::from_json).collect::<Option<_>>()?;
+                let ordered = records.windows(2).all(|pair| pair[0].name < pair[1].name);
+                let written = records.iter().all(|write| write.value.is_some());
+                (!records.is_empty() && ordered && written).then_some(records)?
+            }
+        };
         let carries = match kind {
             TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()) && policy.is_none(),
             TransactionKind::Policy => policy.is_some() && record.is_none(),
             TransactionKind::Undo | TransactionKind::Redo => record.is_none() || policy.is_none(),
             _ => record.is_none() && policy.is_none(),
-        };
-        let keys = 17 + usize::from(record.is_some()) + usize::from(policy.is_some());
+        } && (records.is_empty() || kind == TransactionKind::Workspace);
+        let keys =
+            17 + usize::from(record.is_some()) + usize::from(policy.is_some()) + usize::from(!records.is_empty());
         (carries && object.len() == keys).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
@@ -240,6 +259,7 @@ impl Transaction {
             result,
             record,
             policy,
+            records,
         })
     }
 }
