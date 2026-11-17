@@ -333,6 +333,7 @@ fn ct_ev3_06_an_off_lattice_slot_never_answers_its_old_occupant() {
     let on_lattice = occupants_of_every_slot(&state);
     against_labels(&state, &on_lattice);
     for &slot in &none {
+        assert!(!state.is_lattice_piece(home(slot) as usize), "slot {slot}: its old occupant stays off the lattice");
         match on_lattice.get(slot) {
             Some(Err(Missing::OffLattice)) => {}
             Some(Ok(piece)) => assert_ne!(piece, home(slot), "slot {slot}: never its old occupant"),

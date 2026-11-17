@@ -254,17 +254,19 @@ fn evidence<'a>(verdict: &'a Verdict, key: &str) -> Option<&'a str> {
 /// checkpoint". M8 computes no ν: the label checkpoint reads ν from the identity labels, a retained witness or the
 /// caller, and no reachable state with a nonzero ν can be built before LP2's F2 and F5).
 ///
-/// Ten fixtures in the pinned I_a menu, each read by the sticker test, the retained checkpoint and the label checkpoint:
-/// solved under its witnessed claim (yes, yes, yes); a raw table with a centre turned by a third-turn about its own
-/// pole, under an open claim (yes, unknown, unknown); the retained word [1, 3, −5] under the claim its journal
+/// Ten fixtures in the pinned I_a menu, each read by the sticker test, the retained checkpoint and the label
+/// checkpoint: solved under its witnessed claim (yes, yes, yes); a raw table with a centre turned by a third-turn about
+/// its own pole, under an open claim (yes, unknown, unknown); the retained word [1, 3, −5] under the claim its journal
 /// witnesses (no, yes, yes) and under an open claim with ν = 0 supplied (no, yes, unknown); the solved table imported
 /// with an open claim, with ν = 0 supplied or not, and with a promised claim (yes, yes, unknown); the retained word's
 /// table imported with an open claim and ν = 0 (no, yes, unknown); and the state after the first I_a record, off the
 /// lattice (no, no, no). Each pair of the three tests answers differently on some fixture. An imported table stays
-/// unestablished at the label checkpoint, at ν = 0 too and with the poses of a retained word, and it cannot enter
-/// with a witnessed claim. A nonzero ν that the caller supplies makes the label checkpoint answer no on the retained
-/// word's state under an open claim (no, yes, no), with the supplied ν as its source: a known nonzero ν, not the
-/// reachable state above. A supplied ν that the identity labels contradict is an engine error, not a verdict.
+/// unestablished at the label checkpoint, at ν = 0 too and with the poses of a retained word, and it cannot enter with
+/// a witnessed claim. A nonzero ν that the caller supplies makes the label checkpoint answer no on the retained word's
+/// state under an open claim (no, yes, no), with the supplied ν as its source: a known nonzero ν, not the reachable
+/// state above. A supplied ν that the identity labels contradict is an engine error, not a verdict. The retained
+/// checkpoint answers yes on an imported table only by replaying the word its caller supplies (its source is
+/// `supplied`); with no word, the retained word's imported table is unknown there.
 #[test]
 fn ct_lb3_01_separate_fixtures_distinguish_the_three_end_tests() {
     let ctx = ctx();
@@ -370,6 +372,13 @@ fn ct_lb3_01_separate_fixtures_distinguish_the_three_end_tests() {
     for verdict in [&off_sticker, &off_retained, &off_label] {
         assert_eq!(evidence(verdict, "fact"), Some("off_lattice"), "{verdict:?}");
     }
+
+    // The retained checkpoint replays the word its caller supplies, so its yes on an imported table rests on that word:
+    // with no word, the retained word's imported table is unknown there.
+    let [_, imported_yes, _] = end_tests(retained_open.state(), word, retained_open.reachability(), Some(zero));
+    assert_eq!(evidence(&imported_yes, "source"), Some("supplied"));
+    let [_, unwitnessed, _] = end_tests(retained_open.state(), empty, retained_open.reachability(), Some(zero));
+    assert_eq!(unwitnessed.name(), "unknown", "{unwitnessed:?}");
 
     // An imported table has no derivation and never enters with a witnessed claim, which is never stated either.
     assert!(solved_open.derivation().is_none() && retained_open.derivation().is_none());
@@ -565,6 +574,14 @@ fn changes(fixture: &Fixture, state: &State, cap: i64) -> Vec<i64> {
         .collect()
 }
 
+/// Whether cap `cap` is blocked or closed on `state`, by JI.6's release check of the identity item there: a blocked cap
+/// leaves the change of N_c undefined, and a closed cap has N_c = 0.
+fn blocked_or_closed(fixture: &Fixture, state: &State, cap: i64) -> bool {
+    let letter = fixture.letters(&[[cap as i32, 0]]).remove(0);
+    let check = release_check(ctx(), state, &letter, None, None).expect("a release check");
+    is_null(&check, "delta_N_c") || int(field(&check, "rim_before"), "N_c") == 0
+}
+
 /// The pinned tie rule, recomputed: the item of the lowest value, then of the smaller pinned index; with the number of
 /// items that reach the lowest value.
 fn lowest(values: &[i64]) -> (i64, usize) {
@@ -582,13 +599,17 @@ fn lowest(values: &[i64]) -> (i64, usize) {
 /// names that cap, the pinned menu and its order, the tie rule and the input digest. It completes with one outcome per
 /// item x other than the identity, in pinned order, and meeting cap d, in cap-ID order (here cap 86 only). Its rows are
 /// the outcomes whose delta is negative, in the same x-then-d order: the deltas rise and fall from row to row, each row
-/// is five integers with no mark, and no field's name ranks, recommends or skips. For item 4, y and z are recomputed
-/// apart from the list with JI.6's release check of every item: both choices tie, the list takes the smaller pinned
-/// index, and the row's delta is the change of N of its three-letter word. A row whose z is the identity item has the
-/// delta of its two-letter word x, y. After the first record alone, no cap meeting cap 57 is misaligned, so the list
-/// completes empty, while the one-letter word that undoes the record lowers N: an empty list speaks only of the pairs
-/// at its cap. A stopped list has no rows, also with no outcomes, so only a completed list is empty. A cap outside
-/// 0..599 is refused with no outcomes; a closed cap, a blocked cap and free mode are errors with no outcomes.
+/// is five integers with no mark, and no field's name ranks, recommends or skips. Every outcome is also read apart from
+/// the list: a pair with a delta has the change of N of its own word x, y, z, read by the word check, so the rows are
+/// the pairs whose own word lowers N; a pair with no delta has its reason by JI.6's release checks (d blocked or closed
+/// after x, no item lowering N_d, or c blocked or closed after x and y). For item 4, y and z are recomputed apart from
+/// the list with JI.6's release check of every item: both choices tie, the list takes the smaller pinned index, and the
+/// delta sums the three changes of the own cuts. The other pairs' y and z are the list's: recomputing them takes the
+/// release check of every item twice per pair. A row whose z is the identity item has the delta of its two-letter word
+/// x, y. After the first record alone, no cap meeting cap 57 is misaligned, so the list completes empty, while the
+/// one-letter word that undoes the record lowers N: an empty list speaks only of the pairs at its cap. A stopped list
+/// has no rows, also with no outcomes, so only a completed list is empty. A cap outside 0..599 is refused with no
+/// outcomes; a closed cap, a blocked cap and free mode are errors with no outcomes.
 #[test]
 fn ct_lb3_05_the_repair_list_runs_at_a_named_cap_in_neutral_order() {
     let ctx = ctx();
@@ -661,10 +682,49 @@ fn ct_lb3_05_the_repair_list_runs_at_a_named_cap_in_neutral_order() {
         }
     }
 
+    // Every outcome apart from the list. A pair with a delta has the change of N of its own literal word x, y, z, read
+    // by the word check, so the rows are the pairs whose own word lowers N, in the same order. A pair with no delta has
+    // its reason read by JI.6's release checks: d blocked or closed after x, no item lowering N_d, or c blocked or
+    // closed after x and y.
+    let letter = |cap: i64, item: i64| fixture.letters(&[[cap as i32, item as i32]]).remove(0);
+    let mut own_words = Vec::new();
+    for outcome in outcomes {
+        let outcome = outcome.as_array().expect("an outcome");
+        let (x, d) = (outcome[0].as_i64().expect("x"), outcome[1].as_i64().expect("d"));
+        match (outcome[2].as_i64(), outcome[3].as_array()) {
+            (Some(delta), Some(chosen)) => {
+                let (y, z) = (chosen[0].as_i64().expect("y"), chosen[1].as_i64().expect("z"));
+                let word = fixture.letters(&[[57, x as i32], [d as i32, y as i32], [57, z as i32]]);
+                assert_eq!(int(&checked(&state, &word, None, None), "delta_N"), delta, "pair ({x}, {d})");
+                if delta < 0 {
+                    own_words.push(vec![x, d, y, z, delta]);
+                }
+            }
+            (None, None) => {
+                let mut after_x = state.clone();
+                assert_eq!(play(&mut after_x, &letter(57, x)), Status::Admissible, "item {x}");
+                match outcome[3].as_str().expect("a reason") {
+                    "d_blocked_or_closed" => assert!(blocked_or_closed(&fixture, &after_x, d), "pair ({x}, {d})"),
+                    "d_no_drop" => {
+                        assert!(changes(&fixture, &after_x, d).iter().all(|&change| change >= 0), "pair ({x}, {d})")
+                    }
+                    "c_blocked_or_closed" => {
+                        let y = lowest(&changes(&fixture, &after_x, d)).0;
+                        let mut after_xy = after_x.clone();
+                        assert_eq!(play(&mut after_xy, &letter(d, y)), Status::Admissible, "pair ({x}, {d})");
+                        assert!(blocked_or_closed(&fixture, &after_xy, 57), "pair ({x}, {d})");
+                    }
+                    reason => panic!("pair ({x}, {d}): the reason {reason}"),
+                }
+            }
+            _ => panic!("pair ({x}, {d}): a delta without its choices, or choices without a delta"),
+        }
+    }
+    assert_eq!(rows, own_words, "the rows are the pairs whose own word lowers N, in their order");
+
     // The tie rule, recomputed for item 4 with the release check of every item at d after x and at c after x and y.
     let row = rows.iter().find(|row| row[0] == 4).expect("a row for item 4");
     let (x, d, y, z, delta) = (row[0], row[1], row[2], row[3], row[4]);
-    let letter = |cap: i64, item: i64| fixture.letters(&[[cap as i32, item as i32]]).remove(0);
     let mut after_x = state.clone();
     assert_eq!(play(&mut after_x, &letter(57, x)), Status::Admissible);
     let at_d = changes(&fixture, &after_x, d);

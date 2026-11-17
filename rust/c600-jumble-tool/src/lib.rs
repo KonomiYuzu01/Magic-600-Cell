@@ -99,10 +99,10 @@
 //! - **Kernel halves (LB3.1, LB3.5, LB3.6, LB3.7, LB3.8).** The tests take the kernel's answers as the library
 //!   entries' facts: `word_check` for LB3.8's `check_named_word`, `prefix_observations` for the chronological
 //!   observations, `heights` for heights and domain IDs, M8's `levels::sticker_test`, `retained_checkpoint` and
-//!   `label_checkpoint` for A5's end tests, and `observe::cuts::repair_list` for LB3.6's repair list, whose y and z the
-//!   test recomputes with JI.6's release check. "No protection conflict" in CT-LB3-06 is a run with no protected
-//!   piece, and prefix protection in CT-LB1-02 is the kernel's pose-level Net protection of one letter
-//!   (`State::apply`).
+//!   `label_checkpoint` for A5's end tests, and `observe::cuts::repair_list` for LB3.6's repair list, each of whose
+//!   deltas the test reads again from the pair's own word, and whose y and z it recomputes for one pair with JI.6's
+//!   release check. "No protection conflict" in CT-LB3-06 is a run with no protected piece, and prefix protection in
+//!   CT-LB1-02 is the kernel's pose-level Net protection of one letter (`State::apply`).
 //!
 //! # What waits
 //!
