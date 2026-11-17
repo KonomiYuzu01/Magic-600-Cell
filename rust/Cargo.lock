@@ -49,12 +49,14 @@ name = "c600-durable"
 version = "0.0.0"
 dependencies = [
  "c600-check",
+ "c600-command",
  "c600-digest",
  "c600-kernel",
  "c600-module",
  "c600-run",
  "c600-session",
  "c600-syntax",
+ "c600-tools",
 ]
 
 [[package]]

@@ -4,7 +4,9 @@
 //! this function with its proxy host, so the compile stage is the same code on both sides and the comparison tests
 //! hold the process boundary itself to account: transfer, forwarding and fault handling.
 
-use c600_check::{admit, Grant, Policy, Profile};
+use std::collections::BTreeSet;
+
+use c600_check::{admit, admit_built_in, Grant, Policy, Profile, Row};
 use c600_ir::Capability;
 use c600_run::interp::{load, Cancel, Host, Options, Run, SourceRanges};
 use c600_run::meter::{Amounts, DraftTariffs, SourceRange, Tariffs};
@@ -12,7 +14,7 @@ use c600_run::value::Value;
 use c600_syntax::{lower, parse, Lowered};
 
 /// How to run a job: the run options of `c600_run::interp::Options` that cross the boundary, and the admission
-/// inputs of `c600_check::admit`.
+/// inputs of `c600_check::admit` or, for a built-in tool, `c600_check::admit_built_in`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JobOptions {
     pub limits: Amounts,
@@ -28,11 +30,16 @@ pub struct JobOptions {
     pub declassifiers: Vec<String>,
     /// Whether stops and rows carry source ranges (LG4.12, DET.56).
     pub source_ranges: bool,
+    /// The built-in column of chapter 07 section 8 (LP2 draft; LP3's plan, section 2): the rows the built-in tool's
+    /// reviewed class lists (BND.57). `Some` admits the entry with `c600_check::admit_built_in` instead of `admit`.
+    /// The column is the solving profile's, so a job that names class rows in another profile is refused at the
+    /// admission stage without a code. `None` admits the entry with `admit` in `profile`.
+    pub built_in: Option<BTreeSet<Row>>,
 }
 
 impl JobOptions {
-    /// Test tariffs, rows kept, no seed, the tool-authoring profile, no capability, the interim policy and source
-    /// ranges on.
+    /// Test tariffs, rows kept, no seed, the tool-authoring profile, no capability, the interim policy, source ranges
+    /// on and no built-in column.
     pub fn new(limits: Amounts) -> JobOptions {
         JobOptions {
             limits,
@@ -44,6 +51,7 @@ impl JobOptions {
             grant: Vec::new(),
             declassifiers: Vec::new(),
             source_ranges: true,
+            built_in: None,
         }
     }
 }
@@ -123,7 +131,17 @@ pub fn run_in_process(job: &Job, host: &mut dyn Host, cancel: Option<&dyn Cancel
     let o = &job.options;
     let declassifiers: Vec<&str> = o.declassifiers.iter().map(String::as_str).collect();
     let policy = Policy::enabling(&declassifiers);
-    let admission = match admit(&lowered.program, &job.module, &job.entry, o.profile, &Grant::of(&o.grant), &policy) {
+    let grant = Grant::of(&o.grant);
+    let admission = match &o.built_in {
+        None => admit(&lowered.program, &job.module, &job.entry, o.profile, &grant, &policy),
+        Some(_) if o.profile != Profile::Solving => {
+            let detail = "the built-in column is the solving profile's: a job that names class rows runs in the \
+                          solving profile (chapter 07 section 8)";
+            return refused(Stage::Admit, Vec::new(), detail.into());
+        }
+        Some(rows) => admit_built_in(&lowered.program, &job.module, &job.entry, rows, &grant, &policy),
+    };
+    let admission = match admission {
         Ok(admission) => admission,
         Err(e) => return refused(Stage::Admit, Vec::new(), e.to_string()),
     };

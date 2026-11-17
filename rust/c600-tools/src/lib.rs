@@ -6,12 +6,16 @@
 //!   previews and reads no state: LG3.13, BND.39) and one run of it on `c600-run` through the run-time boundary, which
 //!   gives the program the fixed acknowledgement (BND.42, BND.43).
 //! - [`bridge`] is the runtime's host on `c600-command`: each proposal the boundary admits becomes one runtime
-//!   invocation of `operation.preview` with the literal word as its absolute argument and no token.
+//!   invocation of `operation.preview` with the literal word as its absolute argument and no token, in one word step
+//!   or, for the input recipe's literal word longer than one chunk, in the solver's word steps.
 //! - [`expand`] is the source route's recipe expansion: a case step's recipe to its literal word, through the kernel,
 //!   outside the program and without a state read.
 //! - [`case`] reads the frozen oracle cases O01 to O07.
 //! - [`views`] builds the tool's views: the display contract's publication of a proposal and its preview, the content
 //!   the headless view model installs for it, and the adapter's presentation report to the shell.
+//! - [`workspace`] is the host's provenance reader on the command layer (KN5's stage 3): it reads a workspace record's
+//!   block before `workspace.set` writes the record (PS1.16), and admits or refuses a draft that names a record
+//!   (KN5.26, BND.84, BND.85).
 //! - The binary `c600-lp3-source` replays O01 to O07 on the source route: each step's proposal comes from a run of the
 //!   tool, and the shell presents and commits the preview on the key route.
 //!
@@ -69,9 +73,12 @@
 //! - **Receipts file.** `--receipts` writes every receipt in order with its caller and, per step, the literal word's
 //!   digest and length, the kernel's refusal of a recipe with no literal word, the preview's draft digest, the case
 //!   recipe's draft digest, and the preview's result digest rebased onto the case recipe's draft. The preview-ready
-//!   result digest covers the draft's digest, so it differs from the command route's for a recipe that is not one word.
+//!   result digest covers the draft's digest, so it differs from the command route's for a recipe that is not one word,
+//!   unless the bridge sent the recipe's own word steps: that draft is the case recipe's draft (see "Oversize and
+//!   chunking").
 //! - **Negative control.** `--tamper <case>:<index>` negates the first letter of that step's literal word before the
-//!   tool runs.
+//!   tool runs. The runner takes the solver's word steps before it, so a tampered word is not the recipe's literal
+//!   word and goes in one word step.
 //! - **Build string.** [`build`] covers this crate's sources and the command layer's build string, which covers the
 //!   kernel's. `c600-run`, `c600-check`, `c600-syntax`, `c600-ir` and `c600-runtime` have no build string yet, so it
 //!   does not cover them.
@@ -111,13 +118,13 @@
 //! - **Declared class.** The view model's `Declared` holds one class and the manifest declares two (BND.27, RPI.83),
 //!   so the host states one of the manifest's classes when it opens the view; the tests state `checking`. The view's
 //!   source is the built-in source named after the module.
-//! - **Presentation report.** [`views::report_presented`] reports each composed frame to the layer through the shell
-//!   as the layer's `PresentedFrame` ([`views::presented_frame`], [`views::frame_stamp`]): the stamp's device epoch,
+//! - **Presentation report.** [`views::report_presented`] reports each composed frame to the layer through the shell as
+//!   the layer's `PresentedFrame` ([`views::presented_frame`], [`views::frame_stamp`]): the stamp's device epoch,
 //!   surface, surface generation and sequence, the preview the presented report names, which `c600-display` gives only
-//!   for a preview its built-in chain drew, and a user-stage chain when the frame holds an extra preview display (RM.26,
-//!   ONE.41, RPI.76). The layer refuses a frame that shows no preview, another preview or a preview drawn through a
-//!   user stage, and a word commit's token binds the stamp of the frame that presented its preview. It adds no token
-//!   logic. With no preview shown, pending or bound it reports nothing.
+//!   for a preview its built-in chain drew, and a user-stage chain when the frame holds an extra preview display
+//!   (RM.26, ONE.41, RPI.76). The layer refuses a frame that shows no preview, another preview or a preview drawn
+//!   through a user stage, and a word commit's token binds the stamp of the frame that presented its preview. It adds
+//!   no token logic. With no preview shown, pending or bound it reports nothing.
 //! - **Process host** (RTE.21, ONE.69, LQ9; KN5.15; BND.42). [`process::ProcessHost`] sends one job per run to
 //!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`],
 //!   the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's. The boundary and
@@ -142,11 +149,20 @@
 //!   the runtime's binary, by default `c600-runtime` beside the runner (packaging decides later). The summary has
 //!   `host` and `runtime_spawns`, each case of the summary `start_refused`, each case of the receipts file `host`,
 //!   and each step record `host` (null when no word was given to a host) and `start_refusal`.
-//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never splits a word: one proposal is one word
-//!   step, whatever its length, so the layer refuses an oversized word whole, as it refuses the same draft on the
-//!   command route. The command route's chunking is the 0.4 recipe's word steps. The tool's entry takes one flat
-//!   word, so a valid chunked recipe of more than 100,000 letters is refused on the source route; carrying one needs
-//!   a list of words in the IR or KN2.10's streaming.
+//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never chooses where to cut a word. The command
+//!   route's chunking is the 0.4 recipe's word steps, and the source route carries the solver's own: for one run the
+//!   host gives the bridge the input recipe's literal word and the length of each of its word steps
+//!   ([`bridge::Steps`]), for a recipe of plain word steps only. A proposal longer than one chunk of 100,000 letters
+//!   ([`bridge::WORD_CHUNK`]) that is exactly that literal word, letter for letter, goes in the solver's word steps,
+//!   in order, in the one invocation ([`bridge::proposal_args`]). Every other proposal is one word step, as before:
+//!   a word of at most one chunk, whatever the solver's steps, so O01 to O07 send the invocations they sent before;
+//!   and a word that is not the input literal, which the layer refuses whole when it is longer than one chunk, as it
+//!   refuses the same draft on the command route. The tariff stays the literal word's length, so the total bound of
+//!   3,000,000 is unchanged, and one proposal stays one invocation, one preview job and one commit. Only a plain word
+//!   step, exactly `{"kind": "word", "moves": [...]}`, counts ([`expand::word_steps`]), so the steps the bridge sends
+//!   are the recipe's own, byte for byte. Not built: a recipe with a star step, or with a word step that has another
+//!   field, keeps the single-step transport, so its literal word longer than one chunk is refused whole on the
+//!   source route.
 //! - **Net check** (LB2.3, CT-LB2-02's Net half). The tests take the Net check to be the layer's preview verdict at
 //!   label level over a session's protected set, here the orbits one generator moves, and the commit's refusal
 //!   when that verdict is not clear. The kernel has no Strict mode, so the Strict half is not built.
@@ -154,6 +170,23 @@
 //!   fixtures stand for them: a fixed record of two preview outcomes for an outcome table, and a previewing entry
 //!   that answers the acknowledgement's two fields for a named-word check. The checker decides them by capability
 //!   separation (LG3.13) and the built-in column only; it has no rule for a recommendation read from state.
+//! - **Provenance reader** (PS1.16, KN5.26; KN5's stage 3). [`workspace::Reader`] is the host's
+//!   `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so `workspace.set`
+//!   refuses a block that is not a canonical FP.17 block with `PS1:capability.provenance_incompatible`. The check reads
+//!   the block alone, so a record may hold a word that no preview admits, such as a solver tool's output (BND.84).
+//!   Its admission is `c600_run::boundary::admit_preview` under [`tool::pins`], so a draft `{"record": name}` is
+//!   refused with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
+//!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader knows no session
+//!   profile: it takes every session to be a solving session, the only profile LP3's host runs, so it applies BND.84
+//!   and BND.85 at every record draft (KN5.26 asks for them in a solving session). It finds a part only among the
+//!   blocks its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]), and a part it does not
+//!   find reads `unknown` and fails closed. No session table of blocks exists (M6's journal holds a record's block
+//!   only as the record's provenance text), so a record write keeps nothing, and after a reopen the host keeps its
+//!   blocks again. The reader drops no block it keeps, so its blocks grow with the runs of the host's session, a
+//!   run's input and output blocks for each run of `c600-lp3-source`.
+//! - **The host's table.** `c600-lp3-source` serves H-08 with the command layer's draft rows ([`workspace::table`])
+//!   and installs a reader ([`workspace::install`]) that keeps each run's blocks, so a host can write and preview
+//!   workspace records. The runner writes none, so its traces and receipts are as before.
 
 #![forbid(unsafe_code)]
 
@@ -163,9 +196,11 @@ pub mod expand;
 pub mod process;
 pub mod tool;
 pub mod views;
+pub mod workspace;
 
-/// The sources of the built-in tools, the bridge and the source route's runner, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 10] = [
+/// The sources of the built-in tools, the bridge, the provenance reader and the source route's runner, hashed into
+/// [`build`].
+pub const SOURCES: [(&str, &[u8]); 11] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
@@ -176,6 +211,7 @@ pub const SOURCES: [(&str, &[u8]); 10] = [
     ("c600-tools/src/process.rs", include_bytes!("process.rs")),
     ("c600-tools/src/tool.rs", include_bytes!("tool.rs")),
     ("c600-tools/src/views.rs", include_bytes!("views.rs")),
+    ("c600-tools/src/workspace.rs", include_bytes!("workspace.rs")),
 ];
 
 /// The build string: the crate version, the SHA-256 of a `sha256sum`-style listing of [`SOURCES`], and the command

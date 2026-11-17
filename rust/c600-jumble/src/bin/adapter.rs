@@ -18,6 +18,10 @@
 //! `use` (`name`) and `release` (`name`); a kept prefix state is named `prefix/<row index>`. `cayley` (`grip`,
 //! `omega`) returns the record of an exact Cayley rotation for free-mode tests.
 //!
+//! The end tests and derived values of `c600_jumble::levels` are listed where the adapter answers them. ν (A5) is
+//! `nu` and `nu_constants`, and the shipped correction catalogue is `corrections`, `correction_lookup` and
+//! `correction_set_check`; both are listed at the end of this file.
+//!
 //! Every request, and the record that `load` reads, may name its `dimension` (JI.3). This edition admits only 4, and
 //! a request or record without one means 4 (a draft: the harness's requests carry none). Any other value is refused
 //! with `KN1:input.unsupported_dimension` before any other field is read, and nothing changes (JI.45).
@@ -470,6 +474,11 @@ impl Adapter {
             }
             "gauge" | "gauge_between" => self.levels(op, request)?,
             "derive" | "import" | "compare" => self.derived_op(op, request)?,
+            "nu" => self.nu(request)?,
+            "nu_constants" => self.nu_constants()?,
+            "corrections" => self.corrections()?,
+            "correction_lookup" => self.correction_lookup(request)?,
+            "correction_set_check" => self.correction_set_check(request)?,
             other => return Err(input(format!("unknown op {other}"))),
         };
         Ok(Some(result))
@@ -1248,4 +1257,258 @@ impl Adapter {
             }
         }
     }
+}
+
+// ------------------------------------------------------------------------------------------------------ ν (A5)
+
+/// ν ([`c600_jumble::nu`]). Neither request changes anything.
+///
+/// - `nu` reads the current state, a stored state (`state`) or a derived value (`derived`). With a derived value, or
+///   with `journal`, records from solved that witness the state, it is KN2.4's row ([`c600_jumble::nu::nu`]): under
+///   I_a a nonzero fixed coordinate is refused with `KN2:consistency.fixed_nu_nonzero`. Without either it is the bare
+///   value ([`c600_jumble::nu::value`]), which makes no claim. The answer is `{result: "total", nu, nonzero, state}`
+///   with the 45 values and the nonzero ones by name, `{result: "undefined", reason, state}` or `{result: "refused",
+///   code, message, state}`. A journal that does not witness the state is an input error.
+/// - `nu_constants`: the coordinates' names and moduli, the fixed coordinates under I_a, the orbits of the frame bits
+///   and of the values modulo 5, the C5 convention, the certificate program's SHA-256, the I_a menu's identity and
+///   order digest, the contract revision, and each orbit's frame group (`groups`: orbit, kind, order, slots, and the
+///   generator r0 of a C5 group).
+impl Adapter {
+    fn nu(&self, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::levels::{Base, Snapshot};
+        use c600_jumble::nu;
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        let journal = self.journal(request.get("journal"))?;
+        let (result, state) = if names_derived(request) {
+            if !matches!(request.get("state"), None | Some(Value::Null)) || journal.is_some() {
+                return Err(input("a derived value names no state and no journal"));
+            }
+            let derived = self.derived_value(request)?;
+            (nu::nu(&self.ctx, Base::Derived(derived)).map_err(engine)?, derived.state())
+        } else {
+            let state = self.read_state(request)?;
+            match journal {
+                None => (Ok(nu::value(&self.ctx, state).map_err(engine)?), state),
+                Some((twists, moved)) => {
+                    let snapshot = Snapshot::witnessed(&self.ctx, state.clone(), &twists, Some(moved.as_slice()))
+                        .map_err(engine)?
+                        .map_err(|reason| input(format!("the journal does not witness the state: {reason}")))?;
+                    (nu::nu(&self.ctx, Base::Snapshot(&snapshot)).map_err(engine)?, state)
+                }
+            }
+        };
+        nu_answer(result, &state.digest(&self.ctx))
+    }
+
+    fn nu_constants(&self) -> Result<Value, Fail> {
+        use c600_jumble::nu;
+        let tables = nu::tables(&self.ctx).map_err(|e| Fail::Engine(e.0))?;
+        let mut groups = Vec::new();
+        for orbit in 0..35 {
+            let group = tables.group(orbit).ok_or_else(|| Fail::Engine(format!("orbit {orbit} has no group")))?;
+            let generator = match group.generator() {
+                Some(r0) => Value::Array(r0.iter().map(|&x| int(x as i64)).collect()),
+                None => Value::Null,
+            };
+            groups.push(json::object([
+                ("orbit", int(orbit as i64)),
+                ("kind", string(group.kind().name())),
+                ("order", int(group.order() as i64)),
+                ("slots", int(group.slots() as i64)),
+                ("generator", generator),
+            ]));
+        }
+        let ints = |values: &[usize]| Value::Array(values.iter().map(|&v| int(v as i64)).collect());
+        Ok(json::object([
+            ("names", Value::Array(nu::NAMES.iter().map(|name| string(name)).collect())),
+            ("moduli", Value::Array(nu::MODULI.iter().map(|&m| int(m)).collect())),
+            ("i_a_fixed", Value::Array(nu::I_A_FIXED.iter().map(|&i| string(nu::NAMES[i])).collect())),
+            ("frame_bit_orbits", ints(&nu::FRAME_BIT_ORBITS)),
+            ("c5_orbits", ints(&nu::C5_ORBITS)),
+            ("c5_convention", string(nu::C5_CONVENTION)),
+            ("certificate_program_sha256", string(nu::CERTIFICATE_PROGRAM_SHA256)),
+            ("i_a_menu_identity", string(nu::I_A_MENU_IDENTITY)),
+            ("i_a_order_digest", string(nu::I_A_ORDER_DIGEST)),
+            ("contract_revision", string(c600_jumble::CONTRACT_REVISION)),
+            ("groups", Value::Array(groups)),
+        ]))
+    }
+}
+
+/// The answer of `nu` and `correction_set_check`: `{result: "total", nu, nonzero, state}` with the 45 values and the
+/// nonzero ones by name, `{result: "undefined", reason, state}` or `{result: "refused", code, message, state}`.
+fn nu_answer(
+    result: Result<c600_jumble::levels::Partial<c600_jumble::nu::NuVector>, c600_kernel::Refusal>,
+    digest: &str,
+) -> Result<Value, Fail> {
+    use c600_jumble::levels::Partial;
+    Ok(match result {
+        Err(refusal) => json::object([
+            ("result", string("refused")),
+            ("code", string(refusal.code)),
+            ("message", string(&refusal.message)),
+            ("state", string(digest)),
+        ]),
+        Ok(Partial::Total(value)) => {
+            let nonzero = value.nonzero().into_iter().map(|(name, v)| (name.to_owned(), int(v))).collect();
+            json::object([
+                ("result", string("total")),
+                ("nu", value.to_json()),
+                ("nonzero", Value::Object(nonzero)),
+                ("state", string(digest)),
+            ])
+        }
+        Ok(Partial::Undefined(reason)) => {
+            json::object([("result", string("undefined")), ("reason", string(&reason)), ("state", string(digest))])
+        }
+        Ok(Partial::Partial { .. }) => return Err(Fail::Engine("ν is never partial".into())),
+    })
+}
+
+// ------------------------------------------------------------------------------------------- correction catalogue
+
+/// The shipped correction catalogue ([`c600_jumble::corrections`]; DT-J1 O7 (a), JI.13, EH-11). None of these
+/// requests previews, applies or changes anything, and none chooses a correction: every id is the caller's.
+///
+/// - `corrections`: the format, the binding (model ID, I_a menu identity and order digest, contract revision), the
+///   source (the research library's path and SHA-256), the coordinate names and the 36 corrections in id order, each
+///   `{id, family, letters, row}` with the letters as [grip, item] pairs.
+/// - `correction_lookup` (`id`, optional `twists`): `{result: "found", correction}`, or `{result: "refused", code,
+///   message}` for an unknown id. With `twists: true`, `word` holds the literal word as twists of the started state's
+///   menu, `{result: "word", twists}` with each twist `{grip, matrix}`, or the refusal of free mode or of a menu that
+///   is not I_a by identity and order digest (`KN2:input.menu_binding_mismatch`).
+/// - `correction_set_check` (`corrections`, [id, m] pairs with m any integer, and a base): KN2.4's row on a derived
+///   value (`derived`), or on the current or a stored state (`state`) with `journal`, records from solved that witness
+///   it. The answer is the `nu` answer for ν plus the drafted set's rows. A journal that does not witness the state,
+///   and a state without a journal, are input errors.
+impl Adapter {
+    fn corrections(&self) -> Result<Value, Fail> {
+        use c600_jumble::corrections;
+        let catalogue = corrections::catalogue().map_err(|e| Fail::Engine(e.0))?;
+        let binding = catalogue.binding();
+        Ok(json::object([
+            ("format", string(corrections::FORMAT)),
+            (
+                "binding",
+                json::object([
+                    ("model_id", string(&binding.model_id)),
+                    ("menu_identity", string(&binding.menu_identity)),
+                    ("menu_order", string(&binding.menu_order)),
+                    ("contract_revision", string(&binding.contract_revision)),
+                ]),
+            ),
+            (
+                "source",
+                json::object([
+                    ("library", string(catalogue.library())),
+                    ("sha256", string(corrections::LIBRARY_SHA256)),
+                ]),
+            ),
+            ("names", Value::Array(c600_jumble::nu::NAMES.iter().map(|name| string(name)).collect())),
+            ("corrections", Value::Array(catalogue.rows().iter().map(correction_json).collect())),
+        ]))
+    }
+
+    fn correction_lookup(&self, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::corrections;
+        let id = correction_id(request.get("id"))?;
+        // With twists, the started state's menu: None in free mode.
+        let menu = match request.get("twists") {
+            None | Some(Value::Null) | Some(Value::Bool(false)) => None,
+            Some(Value::Bool(true)) => {
+                Some(self.state.as_ref().ok_or_else(|| input("start must come first"))?.menu_arc())
+            }
+            _ => return Err(input("twists must be true, false or null")),
+        };
+        let catalogue = corrections::catalogue().map_err(|e| Fail::Engine(e.0))?;
+        let correction = match catalogue.lookup(id) {
+            Ok(correction) => correction,
+            Err(refusal) => return Ok(derived_refusal(&refusal)),
+        };
+        let mut answer = json::object([("result", string("found")), ("correction", correction_json(correction))]);
+        if let Some(menu) = menu {
+            let twists = match &menu {
+                Some(menu) => catalogue.twists(&self.ctx, menu, id).map_err(|e| Fail::Engine(e.0))?,
+                // A word needs a menu, and free mode has none: refused as the check refuses free mode.
+                None => Err(c600_kernel::Refusal {
+                    code: codes::MENU_BINDING_MISMATCH,
+                    message: "The corrections are words of the I_a menu; a state in free mode has no menu".into(),
+                }),
+            };
+            let word = match twists {
+                Ok(word) => {
+                    let twists = word.iter().map(|twist| {
+                        json::object([
+                            ("grip", int(twist.grip as i64)),
+                            ("matrix", c600_jumble::q5::matrix_json(&twist.matrix)),
+                        ])
+                    });
+                    json::object([("result", string("word")), ("twists", Value::Array(twists.collect()))])
+                }
+                Err(refusal) => derived_refusal(&refusal),
+            };
+            if let Value::Object(fields) = &mut answer {
+                fields.insert("word".into(), word);
+            }
+        }
+        Ok(answer)
+    }
+
+    fn correction_set_check(&self, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::corrections;
+        use c600_jumble::levels::{Base, Snapshot};
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        let set = correction_set(request.get("corrections"))?;
+        let journal = self.journal(request.get("journal"))?;
+        if names_derived(request) {
+            if !matches!(request.get("state"), None | Some(Value::Null)) || journal.is_some() {
+                return Err(input("a derived value names no state and no journal"));
+            }
+            let derived = self.derived_value(request)?;
+            let result = corrections::correction_set_check(&self.ctx, Base::Derived(derived), &set).map_err(engine)?;
+            return nu_answer(result, &derived.state().digest(&self.ctx));
+        }
+        let state = self.read_state(request)?;
+        let (twists, moved) =
+            journal.ok_or_else(|| input("the check needs a derived value or a journal that witnesses the state"))?;
+        let snapshot = Snapshot::witnessed(&self.ctx, state.clone(), &twists, Some(moved.as_slice()))
+            .map_err(engine)?
+            .map_err(|reason| input(format!("the journal does not witness the state: {reason}")))?;
+        let result = corrections::correction_set_check(&self.ctx, Base::Snapshot(&snapshot), &set).map_err(engine)?;
+        nu_answer(result, &state.digest(&self.ctx))
+    }
+}
+
+/// One correction as `{id, family, letters, row}`.
+fn correction_json(correction: &c600_jumble::corrections::Correction) -> Value {
+    let letters =
+        correction.letters().iter().map(|&(grip, item)| Value::Array(vec![int(grip as i64), int(item as i64)]));
+    json::object([
+        ("id", int(correction.id() as i64)),
+        ("family", string(correction.family())),
+        ("letters", Value::Array(letters.collect())),
+        ("row", correction.row().to_json()),
+    ])
+}
+
+/// A correction id: an integer in 0..2^32. An id outside the catalogue is the library's refusal, not an input error.
+fn correction_id(value: Option<&Value>) -> Result<u32, Fail> {
+    value
+        .and_then(Value::as_i64)
+        .and_then(|id| u32::try_from(id).ok())
+        .ok_or_else(|| input("a correction id must be an integer in 0..2^32"))
+}
+
+/// A drafted correction set: a list of [id, m] pairs, m any integer.
+fn correction_set(value: Option<&Value>) -> Result<Vec<(u32, i64)>, Fail> {
+    let items = value.and_then(Value::as_array).ok_or_else(|| input("corrections must be a list of [id, m] pairs"))?;
+    items
+        .iter()
+        .map(|item| {
+            let pair = item.as_array().filter(|p| p.len() == 2).ok_or_else(|| input("a correction must be [id, m]"))?;
+            let id = correction_id(Some(&pair[0]))?;
+            let m = pair[1].as_i64().ok_or_else(|| input("a multiplicity must be an integer"))?;
+            Ok((id, m))
+        })
+        .collect()
 }

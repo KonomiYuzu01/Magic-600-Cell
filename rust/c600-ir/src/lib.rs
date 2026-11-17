@@ -403,6 +403,14 @@ pub enum Expr {
         query: String,
         ty: QTy,
     },
+    /// A snapshot read whose query takes an argument (LP2 draft): the engine's row `query` for the argument's value,
+    /// such as a word's protection. It is always an engine read, never a workspace record, and the argument crosses to
+    /// the host as its canonical bytes (DET.59), so it is exact data with a canonical form.
+    ReadSnapshotWith {
+        query: String,
+        arg: Box<Expr>,
+        ty: QTy,
+    },
     PublishView {
         value: Box<Expr>,
     },
@@ -479,6 +487,7 @@ impl Expr {
             | Expr::WriteWorkspace { value, .. }
             | Expr::UseExact { value, .. }
             | Expr::FileWrite { value, .. } => vec![&**value],
+            Expr::ReadSnapshotWith { arg, .. } => vec![&**arg],
             Expr::Propose { word, target } => vec![&**word, &**target],
             Expr::ReadReceipt { receipt, .. } => vec![&**receipt],
         }
@@ -588,6 +597,9 @@ pub mod build {
     }
     pub fn read_snapshot(query: &str, ty: QTy) -> Expr {
         Expr::ReadSnapshot { query: query.into(), ty }
+    }
+    pub fn read_snapshot_with(query: &str, arg: Expr, ty: QTy) -> Expr {
+        Expr::ReadSnapshotWith { query: query.into(), arg: Box::new(arg), ty }
     }
     pub fn publish_view(value: Expr) -> Expr {
         Expr::PublishView { value: Box::new(value) }

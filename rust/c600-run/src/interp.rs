@@ -33,6 +33,7 @@
 //! | `compress`, `expand`, and `concat` and `length` of compressed words (LP2 drafts) | one step each: `compress` costs `expand_per_letter` per letter; `concat` an equality walk over both words, the integer row's addition of their lengths and [`LIST_PER_ELEMENT`] per part of both plus one, and it reserves the parts of both and settles to the built word; `length` reserves its integer and expands nothing; `expand` costs `expand_per_letter` per letter out and [`LIST_PER_ELEMENT`] per part it may visit, 2·(height + count) + 1, and a range past the word's end stops with `LG4:input.pointwise_failed` before its step |
 //! | exact arithmetic | `exact_add`, `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not` |
 //! | snapshot read, declassifier | `kernel` with the host row's tariff and result bound |
+//! | snapshot read with an argument (LP2 draft) | `encode` of the argument, then `kernel` with the host row's tariff and result bound and the argument bytes as output; the host gets the canonical bytes, and the buffer is released after the answer; an approximate argument stops with `LG4:input.ir_rejected` before the encoding |
 //! | file read, clock | `read` with the host row's tariff and result bound |
 //! | view, workspace and file output | `publish_view` or `emit`: one fused row per output unit, its encoding work, buffer and bytes in one admission (DET.56, DET.59); the buffer is released after the publication |
 //! | `propose` | `encode` of the request, then `invoke` with the host row's tariff and the request bytes as output |
@@ -51,8 +52,9 @@
 //! `alias`, the receipt request record, [`DraftTariffs`], the `Status` accounting value `"running"`, the JSON form of
 //! a word, and a value's canonical byte length as retained metadata (so an output unit is one fused row, DET.59) are
 //! drafts that change freely until the IR freeze. A preview request keeps DET.59's other form: a priced `encode` pass
-//! on the retained bound, then `invoke`. The IR has no child construct yet: DET.60's children are exercised through
-//! the meter's traces only.
+//! on the retained bound, then `invoke`. A snapshot read with an argument (LP2 draft) takes the same form, and the
+//! request record [`Request::SnapshotWith`] with its argument as canonical bytes is a draft too. The IR has no child
+//! construct yet: DET.60's children are exercised through the meter's traces only.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
@@ -114,6 +116,14 @@ pub struct RowTariff {
 pub enum Request<'a> {
     Snapshot {
         query: &'a str,
+        ty: &'a QTy,
+    },
+    /// The engine's row `query` for an argument (LP2 draft), such as a word's protection. `arg` holds the argument's
+    /// canonical bytes (DET.59, FP.5), which the run priced before asking; `c600_run::provenance::parse` reads them.
+    /// It is always an engine read, never a workspace record.
+    SnapshotWith {
+        query: &'a str,
+        arg: &'a [u8],
         ty: &'a QTy,
     },
     Declassified {
@@ -271,6 +281,7 @@ enum Kind {
     Set,
     Map,
     ReadSnapshot { query: String, ty: QTy },
+    ReadSnapshotWith { query: String, ty: QTy },
     PublishView,
     WriteWorkspace { record: String, ty: QTy },
     Propose,
@@ -704,6 +715,10 @@ impl Compiler {
                 kind
             }
             Expr::ReadSnapshot { query, ty } => Kind::ReadSnapshot { query: query.clone(), ty: ty.clone() },
+            Expr::ReadSnapshotWith { query, ty, .. } => {
+                kids(steps, expr.children());
+                Kind::ReadSnapshotWith { query: query.clone(), ty: ty.clone() }
+            }
             Expr::PublishView { .. } => {
                 kids(steps, expr.children());
                 Kind::PublishView
@@ -1010,10 +1025,10 @@ impl<'a> Machine<'a> {
                 }
                 self.push(Value::Closure(Arc::new(Closure::new(*code, values))), owners);
             }
-            Kind::ReadSnapshot { query, ty } => self.host_read(n, "kernel", Request::Snapshot { query, ty })?,
-            Kind::Declassified { id, ty } => self.host_read(n, "kernel", Request::Declassified { id, ty })?,
-            Kind::FileRead { path, ty } => self.host_read(n, "read", Request::FileRead { path, ty })?,
-            Kind::ReadClock => self.host_read(n, "read", Request::Clock)?,
+            Kind::ReadSnapshot { query, ty } => self.host_read(n, "kernel", Request::Snapshot { query, ty }, 0)?,
+            Kind::Declassified { id, ty } => self.host_read(n, "kernel", Request::Declassified { id, ty }, 0)?,
+            Kind::FileRead { path, ty } => self.host_read(n, "read", Request::FileRead { path, ty }, 0)?,
+            Kind::ReadClock => self.host_read(n, "read", Request::Clock, 0)?,
             Kind::Accounting(a) => self.accounting(n, *a)?,
             Kind::RandomDraw => self.draw(n)?,
             _ => {
@@ -1139,6 +1154,7 @@ impl<'a> Machine<'a> {
             }
             Kind::FileWrite { path } => self.output(n, Sink::File { path }, args.pop().expect("a value")),
             Kind::Propose => self.propose(n, args),
+            Kind::ReadSnapshotWith { query, ty } => self.read_with(n, query, ty, args.pop().expect("an argument")),
             Kind::UseExact(role) => {
                 let held = args.pop().expect("a value");
                 if is_approx(&held.value) {
@@ -1698,8 +1714,9 @@ impl<'a> Machine<'a> {
         }
     }
 
-    /// A host row: a refused tariff costs the step only; an admitted one reserves its result bound.
-    fn host_read(&mut self, n: NodeId, op: &str, request: Request) -> Result<(), Stop> {
+    /// A host row: a refused tariff costs the step only; an admitted one reserves its result bound, and the `sent`
+    /// bytes it hands the host count as output, as a preview's request bytes do.
+    fn host_read(&mut self, n: NodeId, op: &str, request: Request, sent: u128) -> Result<(), Stop> {
         let tariff = match self.host.tariff(&request) {
             Ok(t) => t,
             Err(c) => {
@@ -1707,7 +1724,7 @@ impl<'a> Machine<'a> {
                 return Err(self.fail(Some(n), op, c));
             }
         };
-        self.charge(Some(n), op, tariff.kernel_cost, tariff.result_bound, 0)?;
+        self.charge(Some(n), op, tariff.kernel_cost, tariff.result_bound, sent)?;
         let value = match self.host.perform(&request) {
             Ok(v) => v,
             Err(c) => return Err(self.fail(Some(n), op, c)),
@@ -1716,6 +1733,23 @@ impl<'a> Machine<'a> {
             return Err(self.fail(Some(n), op, code::HOST_EXHAUSTED));
         }
         self.settle(tariff.result_bound, value);
+        Ok(())
+    }
+
+    /// A snapshot read whose query takes an argument (LP2 draft). DET.59's priced encoding pass gives the argument's
+    /// canonical bytes, and a value with none, a function or a receipt among them, stops the run before the host is
+    /// asked; the row is then a host row like a literal read, whose output is the bytes handed over.
+    fn read_with(&mut self, n: NodeId, query: &str, ty: &QTy, held: Held) -> Result<(), Stop> {
+        if is_approx(&held.value) {
+            return Err(self.fail(Some(n), "kernel", code::IR_REJECTED));
+        }
+        let (bytes, buffer) = self.encode(Some(n), &held.value)?;
+        let sent = bytes.len() as u128;
+        self.host_read(n, "kernel", Request::SnapshotWith { query, arg: &bytes, ty }, sent)?;
+        let answer = self.values.pop().expect("the read's answer");
+        self.meter.drop_owner(buffer, true);
+        self.release(held);
+        self.values.push(answer);
         Ok(())
     }
 

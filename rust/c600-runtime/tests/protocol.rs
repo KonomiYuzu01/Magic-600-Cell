@@ -8,6 +8,7 @@ mod support;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
+use c600_check::{Profile, Row};
 use c600_ir::{Capability, ExactRole, QTy, Ty};
 use c600_run::approx::Approx;
 use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
@@ -15,7 +16,7 @@ use c600_run::meter::code::STEPS;
 use c600_run::meter::{Amounts, ChildRecord, Interruption, Outcome, Position, SourceRange};
 use c600_run::value::{Closure, Quad, Ratio, Value};
 use c600_runtime::codec::{self, Codes};
-use c600_runtime::message::{self, Answer, Call, SCHEMA};
+use c600_runtime::message::{self, Answer, Call, ToChild, SCHEMA};
 use c600_runtime::wire::{self, Dec, Enc, FrameError, MAX_FRAME, PROTOCOL};
 use c600_runtime::{run_in_process, Ended, FaultKind, JobOptions, Refused, Stage, FAULT_VARIABLE};
 use num_bigint::BigInt;
@@ -49,6 +50,7 @@ fn samples() -> Vec<Enc> {
         Request::FileRead { path: "p", ty: &ty },
         Request::Clock,
         Request::Propose { word: &[1, -2], target: "t", request: b"r" },
+        Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
     ];
     let sinks = [
         Sink::View,
@@ -150,6 +152,136 @@ fn unknown_protocols_and_kinds_are_refused() {
     let mut trailing = hello.bytes.clone();
     trailing.push(0);
     assert!(message::decode_to_parent(&trailing, &Codes::default()).is_err());
+}
+
+/// Every host request decodes to the request it was encoded from. Tags 0 to 4 keep their bytes, and LP2's snapshot
+/// read with an argument is tag 5 (LP2 draft); a cut request and an unknown tag are refused.
+#[test]
+fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
+    let qty = QTy { ty: Ty::Nat, display: false };
+    let ty = Ty::Word;
+    let requests = [
+        Request::Snapshot { query: "pieces", ty: &qty },
+        Request::Declassified { id: "d", ty: &ty },
+        Request::FileRead { path: "p", ty: &ty },
+        Request::Clock,
+        Request::Propose { word: &[1, -2], target: "t", request: b"r" },
+        Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
+    ];
+    for (tag, r) in requests.iter().enumerate() {
+        let mut e = Enc::new();
+        codec::encode_request(r, &mut e).unwrap();
+        assert_eq!(usize::from(e.bytes[0]), tag, "{r:?}");
+        let mut d = Dec::new(&e.bytes);
+        let owned = codec::decode_request(&mut d).unwrap();
+        d.end().unwrap();
+        let mut again = Enc::new();
+        codec::encode_request(&owned.as_request(), &mut again).unwrap();
+        assert_eq!(again.bytes, e.bytes, "{r:?}");
+        for cut in 0..e.bytes.len() {
+            let mut d = Dec::new(&e.bytes[..cut]);
+            assert!(codec::decode_request(&mut d).and_then(|_| d.end()).is_err(), "{r:?} cut at {cut}");
+        }
+    }
+    let mut with = Enc::new();
+    codec::encode_request(&requests[5], &mut with).unwrap();
+    assert_eq!(with.bytes[0], 5);
+    with.bytes[0] = 6;
+    assert!(codec::decode_request(&mut Dec::new(&with.bytes)).is_err(), "an unknown tag");
+}
+
+/// A built-in tool's class rows (LP2 draft) cross as the run's last field: a flag, then the rows strictly increasing
+/// in their own order, so a class has one encoding and an empty class differs from none. A flag other than 0 or 1, an
+/// unknown row, rows out of order or repeated, a count beyond the payload, a cut message and a trailing byte are
+/// refused. The wire does not read the profile: both executors refuse class rows outside the solving profile at the
+/// admission stage (`equivalence.rs`).
+#[test]
+fn the_built_in_column_is_a_strict_trailing_field() {
+    let all: BTreeSet<Row> = [
+        Row::Unknown,
+        Row::Preview("t".into()),
+        Row::Workspace("k".into()),
+        Row::View,
+        Row::Declassified("d".into()),
+        Row::Outcome,
+        Row::Read("pieces".into()),
+        Row::Read("best_word".into()),
+    ]
+    .into_iter()
+    .collect();
+    let run = |profile, built_in| {
+        let mut e = Enc::new();
+        let options = JobOptions { profile, built_in, ..JobOptions::new(WIDE) };
+        message::encode_run(1, &job("source", "f", vec![], options), &mut e).unwrap();
+        e.bytes
+    };
+    let decoded = |bytes: &[u8]| match message::decode_to_child(bytes) {
+        Ok(ToChild::Run { job, .. }) => Ok(job),
+        Ok(other) => panic!("{other:?}"),
+        Err(m) => Err(m.to_string()),
+    };
+    for profile in [Profile::Solving, Profile::ToolAuthoring] {
+        let none = run(profile, None);
+        let (flag, head) = none.split_last().unwrap();
+        assert_eq!((*flag, decoded(&none).unwrap().options.built_in), (0, None));
+        for rows in [BTreeSet::new(), all.clone()] {
+            let bytes = run(profile, Some(rows.clone()));
+            assert_eq!((&bytes[..head.len()], bytes[head.len()]), (head, 1));
+            let job = decoded(&bytes).unwrap();
+            assert_eq!(job.options.built_in.as_ref(), Some(&rows));
+            let mut again = Enc::new();
+            message::encode_run(1, &job, &mut again).unwrap();
+            assert_eq!(again.bytes, bytes);
+            for cut in 0..bytes.len() {
+                assert!(decoded(&bytes[..cut]).is_err(), "{profile:?}, {rows:?} cut at {cut}");
+            }
+            assert!(decoded(&[&bytes[..], &[0]].concat()).is_err(), "a trailing byte");
+        }
+    }
+
+    let none = run(Profile::Solving, None);
+    let head = &none[..none.len() - 1];
+    let tail = |f: &dyn Fn(&mut Enc)| {
+        let mut e = Enc::new();
+        f(&mut e);
+        [head, &e.bytes[..]].concat()
+    };
+    let listing = |rows: &[Row]| {
+        tail(&|e: &mut Enc| {
+            e.u8(1);
+            e.count(rows.len());
+            for row in rows {
+                codec::encode_row(row, e);
+            }
+        })
+    };
+    let control = decoded(&listing(&[Row::Read("a".into()), Row::Outcome, Row::View])).unwrap();
+    assert_eq!(control.options.built_in.map(|rows| rows.len()), Some(3));
+    let refusals = [
+        (tail(&|e: &mut Enc| e.u8(2)), "an option flag other than 0 or 1"),
+        (listing(&[Row::View, Row::Outcome]), "class rows out of order or repeated"),
+        (listing(&[Row::View, Row::View]), "class rows out of order or repeated"),
+        (listing(&[Row::Read("b".into()), Row::Read("a".into())]), "class rows out of order or repeated"),
+        (
+            tail(&|e: &mut Enc| {
+                e.u8(1);
+                e.count(1);
+                e.u8(7);
+            }),
+            "an unknown class row",
+        ),
+        (
+            tail(&|e: &mut Enc| {
+                e.u8(1);
+                e.count(2);
+                codec::encode_row(&Row::View, e);
+            }),
+            "a length beyond the payload",
+        ),
+    ];
+    for (bytes, why) in refusals {
+        assert_eq!(decoded(&bytes).unwrap_err(), why);
+    }
 }
 
 /// The work job of the KI.5 rehearsals: five host calls.

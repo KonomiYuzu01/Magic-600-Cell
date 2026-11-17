@@ -11,24 +11,32 @@
 //! name and the same shell. For each step the runner expands the step's recipe to its literal word through the kernel,
 //! outside any program and without a state read ([`c600_tools::expand`]). The tool then runs in the solving profile
 //! with that word as its pinned absolute argument, on the host `--host` names: `in-process` (the default) runs it on
-//! `c600-run` inside this process, and `process` runs it in `c600-runtime`'s child process
-//! ([`c600_tools::process`]), started from `--runtime` or from the `c600-runtime` binary beside this one. On either
-//! host the same boundary and bridge answer the program in this process: its one proposal reaches the command layer
-//! through the host bridge ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program
-//! receives only the fixed acknowledgement. The layer runs the preview job; the shell presents the built preview and commits it
-//! by the key route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo
-//! follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion
-//! with the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps. On either
-//! host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is refused
-//! at the run's start stage: it is an `invalid-input` step with no invocation and no receipt.
+//! `c600-run` inside this process, and `process` runs it in `c600-runtime`'s child process ([`c600_tools::process`]),
+//! started from `--runtime` or from the `c600-runtime` binary beside this one. On either host the same boundary and
+//! bridge answer the program in this process: its one proposal reaches the command layer through the host bridge
+//! ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program receives only the fixed
+//! acknowledgement. The runner gives the bridge the solver's word steps of a recipe of plain word steps only, so a
+//! proposal of exactly that recipe's literal word, when it is longer than one chunk of 100,000 letters, goes in the
+//! recipe's own word steps; every other proposal goes in one word step (LB2.3, LB2.4). The layer runs the preview
+//! job; the shell presents the built preview and commits it by the key route's commit chord, `Ctrl+Shift+Enter`, with
+//! a token bound to the presented preview. Undo and redo follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and
+//! `Ctrl+Y`. A recipe with no literal word stops at the expansion with the kernel's refusal; it and a literal word the
+//! layer refuses at admission are `invalid-input` steps. On either host a word the kernel refused that has no transfer
+//! encoding (a letter outside 1 to 1200 in magnitude) is refused at the run's start stage: it is an `invalid-input`
+//! step with no invocation and no receipt.
+//!
+//! Each session's layer serves H-08 with the command layer's draft rows and holds the host's provenance reader
+//! ([`c600_tools::workspace`]), which keeps every run's blocks, so a host can write and preview workspace records. The
+//! runner writes none.
 //!
 //! The trace has `c600-lp3-oracle`'s form and candidate block, so the two routes' traces compare byte for byte.
 //! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the host the
 //! literal word was given to, the literal digest the tool proposed, the kernel's refusal of a recipe with no literal
 //! word, the start-stage refusal of a word with no transfer encoding, and the preview's result digest rebased onto the
-//! case recipe's draft. The summary line, each case and each step record name the host. `--tamper <case>:<index>` negates the first letter of that step's literal word before
-//! the tool runs, as a negative control. Exit codes and the summary line follow `c600-lp3-oracle`; the timings are
-//! informational.
+//! case recipe's draft. The summary line, each case and each step record name the host. `--tamper <case>:<index>`
+//! negates the first letter of that step's literal word before the tool runs, as a negative control; the tampered word
+//! is not the recipe's literal word, so it goes in one word step. Exit codes and the summary line follow
+//! `c600-lp3-oracle`; the timings are informational.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -38,18 +46,19 @@ use std::time::Instant;
 
 use c600_command::{
     code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Receipt,
-    Secret, Shell, Status, Table,
+    Secret, Shell, Status,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refusal, Snapshot, SupportRow};
 use c600_run::boundary::Store as RunStore;
 use c600_run::meter::Outcome as RunOutcome;
 use c600_runtime::Refused;
-use c600_tools::bridge::{base, word_args, Bridge};
+use c600_tools::bridge::{base, proposal_args, Bridge, Steps, WORD_CHUNK};
 use c600_tools::case::{read_document, CASE_FORMAT};
-use c600_tools::expand::{expand, literal_digest, Expansion};
+use c600_tools::expand::{expand, literal_digest, word_steps, Expansion};
 use c600_tools::process::{run_in_process, runtime_beside, stage_name, Cause, ProcessHost, IN_PROCESS, PROCESS};
 use c600_tools::tool::{Tool, ROW, SOURCE};
+use c600_tools::workspace::{self, Reader};
 
 const TRACE_FORMAT: &str = "C600-ORACLE-TRACE-draft";
 /// The trace's candidate: the command layer's loop, as `c600-lp3-oracle` names it, so the traces compare byte for byte.
@@ -58,8 +67,6 @@ const ROUTE: &str = "source";
 const USAGE: &str = "usage: c600-lp3-source build | trace --assets <dir> [--host in-process|process] \
                      [--runtime <file>] [--receipts <file>] [--tamper <case>:<index>] <case> <trace> \
                      [<case> <trace> ...]";
-/// 0.4's word limit; the initial word enters the kernel in words of at most this many letters.
-const WORD_CHUNK: usize = 100_000;
 
 struct Failure {
     code: u8,
@@ -318,8 +325,8 @@ fn refusal(refusal: &Refusal) -> Value {
     json::object([("code", Value::String(refusal.code.into())), ("detail", Value::String(refusal.message.clone()))])
 }
 
-/// One session of the source route: the layer, its shell, the headless display's frames, the tool, its host, and
-/// every receipt in order with its caller.
+/// One session of the source route: the layer, its provenance reader, its shell, the headless display's frames, the
+/// tool, its host, and every receipt in order with its caller.
 struct Session<'k> {
     kernel: &'k Kernel,
     tool: &'k Tool,
@@ -327,6 +334,8 @@ struct Session<'k> {
     process: Option<&'k mut ProcessHost>,
     case_id: String,
     layer: CommandLayer,
+    /// The layer's provenance reader, which keeps the blocks of every run.
+    reader: Reader,
     shell: Shell,
     frames: HeadlessFrames,
     tamper: Option<i64>,
@@ -358,18 +367,21 @@ impl Session<'_> {
         Ok(receipt)
     }
 
-    /// Runs the tool on `word` on the session's host, through the bridge; returns the one invocation's receipt, or
-    /// the start-stage refusal of a word with no transfer encoding, which both hosts give before the run reaches the
-    /// layer.
-    fn propose(&mut self, index: i64, word: &[i32]) -> Result<Proposed, Failure> {
+    /// Runs the tool on `word` on the session's host, through a bridge given `steps`, the solver's word steps of the
+    /// step's recipe; returns the one invocation's receipt, or the start-stage refusal of a word with no transfer
+    /// encoding, which both hosts give before the run reaches the layer.
+    fn propose(&mut self, index: i64, word: &[i32], steps: Option<Steps>) -> Result<Proposed, Failure> {
         let run = format!("{}-{index}", self.case_id);
         let read = base(self.layer.revision());
         let mut store = RunStore::default();
-        let mut bridge = Bridge::new(&mut self.layer, &run);
+        // The one invocation's arguments: the word in one word step, or in the solver's word steps (LB2.4).
+        let args = proposal_args(word, steps.as_ref());
+        let mut bridge = Bridge::new(&mut self.layer, &run).with_steps(steps);
         let result = match self.process.as_deref_mut() {
             None => run_in_process(self.tool, word, &run, &read, &mut bridge, &mut store),
             Some(host) => host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
         };
+        self.reader.keep_run(&store);
         let ran = match result {
             Ok(ran) => ran,
             Err(stopped) => {
@@ -408,7 +420,7 @@ impl Session<'_> {
         if invocation.row != ROW
             || sent.caller != expected
             || invocation.token.is_some()
-            || invocation.args.canonical() != word_args(word).canonical()
+            || invocation.args.canonical() != args.canonical()
         {
             return Err(disagree("the bridge's invocation is not the runtime's preview of the literal word"));
         }
@@ -426,6 +438,9 @@ impl Session<'_> {
                 return Ok(Outcome::Invalid);
             }
         };
+        // The solver's word steps, for a recipe of plain word steps only, are taken before any tampering: a tampered
+        // word is not the recipe's literal word, so it goes in one word step.
+        let steps = word_steps(recipe).and_then(|lengths| Steps::new(&word, lengths));
         if self.tamper == Some(index) {
             match word.first_mut() {
                 Some(letter) => *letter = -*letter,
@@ -433,7 +448,7 @@ impl Session<'_> {
             }
         }
         record.literal = Some((literal_digest(&word), word.len()));
-        let admitted = match (self.propose(index, &word)?, unchecked) {
+        let admitted = match (self.propose(index, &word, steps)?, unchecked) {
             (Proposed::Sent(receipt), _) => receipt,
             // Only a word the kernel already refused may stop here: every letter of a literal word is a generator.
             // The record keeps the kernel's refusal of the recipe beside the start-stage refusal.
@@ -468,7 +483,8 @@ impl Session<'_> {
         presented.map_err(|error| disagree(format!("present: {}", error.code)))?;
         let preview = self.layer.preview().filter(|p| p.id == id).ok_or_else(|| disagree("the preview is gone"))?;
         // The result digest covers the draft's digest. The command route drafts the case's recipe; the source route
-        // drafts the literal word. The rebased digest is the preview's result over the case recipe's draft.
+        // drafts the literal word, in one word step or, longer than one chunk, in the recipe's word steps. The rebased
+        // digest is the preview's result over the case recipe's draft.
         let mut rebased = preview.clone();
         rebased.deps.draft = digest(&word_draft(recipe));
         record.draft = Some(preview.deps.draft.clone());
@@ -584,15 +600,16 @@ fn replay(
     let initial = start.digest().to_owned();
 
     let secret = Secret::launch();
-    let layer = CommandLayer::new(
+    let mut layer = CommandLayer::new(
         kernel.clone(),
-        Table::h08(),
+        workspace::table(),
         secret.clone(),
         Default::default(),
         &format!("oracle-{case_id}"),
         start,
         protected,
     );
+    let reader = workspace::install(&mut layer);
     let shell = Shell::new(secret, &case_id);
     let tamper = tamper.filter(|(case, _)| *case == case_id).map(|&(_, index)| index);
     let host = if process.is_some() { PROCESS } else { IN_PROCESS };
@@ -602,6 +619,7 @@ fn replay(
         process,
         case_id: case_id.clone(),
         layer,
+        reader,
         shell,
         frames: HeadlessFrames::new(),
         tamper,

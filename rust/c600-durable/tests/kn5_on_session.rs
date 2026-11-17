@@ -1,4 +1,5 @@
 //! The parts of CT-EV3-07 and of CT-LB2-03's work-sheet part that M6's session store shows through its public API.
+//! `kn5_on_layer.rs` runs CT-EV3-07's parts on KN5's command layer over M6's journal.
 //!
 //! - CT-EV3-07 (EV3.2, EV4.15): an explicit workspace command joins the durable action order; a view cannot write
 //!   workspace state or make undo stale.

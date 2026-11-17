@@ -7,7 +7,7 @@ mod support;
 use std::sync::Arc;
 use std::time::Duration;
 
-use c600_check::Profile;
+use c600_check::{Profile, Row};
 use c600_ir::Capability;
 use c600_run::interp::{code, CancelFlag};
 use c600_run::meter::code::{CANCELLED_BY_USER, KERNEL_COST, MEMORY, NOT_GRANTED, OUTPUT, STEPS};
@@ -174,6 +174,69 @@ fn snapshot_reads_and_host_refusals_cross() {
         let summary = &ran(&end).summary;
         assert_eq!((summary.outcome, summary.code), (Outcome::Error, Some(refusal)));
     }
+}
+
+const READER: &str = "export fn guarded(w: Word) -> Nat effects [snapshot] {\n    \
+    return exact_add(read_snapshot<Nat>(\"pieces\", w), 1);\n}\n";
+
+/// A snapshot read with an argument (LP2 draft) crosses as `request.snapshot_with`: the caller's host is asked for
+/// the tariff and the read once each, with the argument's canonical bytes, and the answer crosses back.
+#[test]
+fn a_snapshot_read_with_an_argument_crosses_with_its_bytes() {
+    let mut rt = runtime();
+    let source = format!("{}{READER}", header(""));
+    let word = Value::word(&[1, -2]);
+    let (end, session) = compare(&mut rt, &job(&source, "guarded", vec![word.clone()], JobOptions::new(WIDE)), |_| {});
+    assert_eq!(output(&end), "{\"int\":\"43\"}\n");
+    let mut bytes = Vec::new();
+    c600_run::encode::encode(&word, &mut bytes).expect("a canonical word");
+    let arg = format!("arg: {bytes:?}");
+    assert_eq!(session.log.len(), 2, "one tariff and one read");
+    assert!(session.log.iter().all(|l| l.contains("SnapshotWith") && l.contains(&arg)), "{:?}", session.log);
+}
+
+/// A job that names a built-in tool's class rows (LP2 draft) is admitted under the built-in column by both executors:
+/// an entry whose rows the class lists runs, a read with an argument included; an entry that uses a row the class
+/// does not list is refused at the admission stage with `LG3:capability.not_granted`; and a job that names class rows
+/// outside the solving profile, whose column it is, is refused at that stage without a code.
+#[test]
+fn the_built_in_column_admits_alike_on_both_executors() {
+    let mut rt = runtime();
+    let refused = |end: Ended| match end {
+        Ended::Refused(r) => r,
+        other => panic!("{other:#?}"),
+    };
+    let class = |rows: &[Row], profile| JobOptions {
+        profile,
+        built_in: Some(rows.iter().cloned().collect()),
+        ..JobOptions::new(WIDE)
+    };
+    let pieces = [Row::Read("pieces".into())];
+    let snapshot = format!("{}{SNAPSHOT}", header(""));
+    let (end, _) = compare(&mut rt, &job(&snapshot, "main", vec![], class(&pieces, Profile::Solving)), |_| {});
+    assert_eq!(output(&end), "{\"int\":\"43\"}\n");
+
+    let reader = format!("{}{READER}", header(""));
+    let word = Value::word(&[1, -2]);
+    let options = class(&pieces, Profile::Solving);
+    let (end, session) = compare(&mut rt, &job(&reader, "guarded", vec![word], options), |_| {});
+    assert_eq!((output(&end).as_str(), session.log.len()), ("{\"int\":\"43\"}\n", 2));
+
+    for rows in [&[][..], &[Row::Read("small".into()), Row::View][..]] {
+        let (end, session) = compare(&mut rt, &job(&snapshot, "main", vec![], class(rows, Profile::Solving)), |_| {});
+        let r = refused(end);
+        assert_eq!((r.stage, r.codes), (Stage::Admit, vec![NOT_GRANTED.to_string()]), "{rows:?}");
+        assert!(session.log.is_empty());
+    }
+
+    for profile in [Profile::ToolAuthoring, Profile::Research] {
+        let (end, session) = compare(&mut rt, &job(&snapshot, "main", vec![], class(&pieces, profile)), |_| {});
+        let r = refused(end);
+        assert_eq!((r.stage, r.codes.len()), (Stage::Admit, 0), "{profile:?}");
+        assert!(r.detail.contains("solving profile"), "{}", r.detail);
+        assert!(session.log.is_empty());
+    }
+    assert_eq!(rt.spawns(), 1);
 }
 
 /// Seeded draws give the same values; without a seed the draw is refused at the same operation.

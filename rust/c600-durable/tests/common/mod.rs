@@ -1,8 +1,10 @@
 //! Helpers shared by the C7 tests: the kernel, sessions on memory disks and in fresh directories, envelopes from the
-//! shell or a program, the commit path through M6's shell stub, the fixture's policy pins, a record read back from
-//! the journal, and checked programs for jobs.
+//! shell or a program, the commit path through M6's shell stub, the fixture's policy pins and checked programs for
+//! jobs. [`layer`] sets up KN5's command layer over M6's journal.
 
 #![allow(dead_code)]
+
+pub mod layer;
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
@@ -15,10 +17,9 @@ use c600_run::meter::Amounts;
 use c600_run::provenance::{self, Json, Pin};
 use c600_run::value::Value;
 use c600_session::disk::MemDisk;
-use c600_session::journal;
 use c600_session::{
-    CommitRecord, Envelope, Input, JobKind, JobSpec, Lane, Options, Origin, Overview, Receipt, RecordValue, Row,
-    Session, Status, WordSource,
+    CommitRecord, Envelope, Input, JobKind, JobSpec, Lane, Options, Origin, Overview, Receipt, Row, Session, Status,
+    WordSource,
 };
 use c600_syntax::{lower, parse};
 
@@ -167,30 +168,6 @@ pub fn word_payload(letters: &[i32]) -> Json {
 pub fn set_record(session: &Session, command: &str, record: &str, letters: &[i32]) -> Receipt {
     let row = Row::WorkspaceSet { record: record.to_owned(), payload: word_payload(letters), provenance: manual() };
     shell(session, command, row)
-}
-
-/// The value the last `record` action of a journal sets for a record, read from the journal's bytes in M6's draft
-/// frame form (`c600-session`'s `wire.rs`). Undo and redo actions are not followed. M6 has no public record reader
-/// (crate documentation, Drafts: reading a record back).
-pub fn journal_record(bytes: &[u8], name: &str) -> Option<RecordValue> {
-    let text = |value: Option<&Json>| value.and_then(|v| v.as_text().map(str::to_owned));
-    let mut found = None;
-    for payload in journal::scan(bytes).payloads {
-        let Some(act) = provenance::parse(&payload).and_then(|frame| frame.get("act").cloned()) else {
-            continue;
-        };
-        if text(act.get("type")).as_deref() != Some("record") || text(act.get("name")).as_deref() != Some(name) {
-            continue;
-        }
-        found = match act.get("value") {
-            Some(Json::Null) | None => None,
-            Some(value) => Some(RecordValue {
-                payload: value.get("payload")?.clone(),
-                provenance: text(value.get("provenance"))?.into_bytes(),
-            }),
-        };
-    }
-    found
 }
 
 /// The canonical encoding of a value.

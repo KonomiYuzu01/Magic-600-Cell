@@ -16,6 +16,7 @@ use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
+use c600_check::Row as ClassRow;
 use c600_ir::{Capability, Effect, EffectBound, ExactRole, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
@@ -632,6 +633,37 @@ pub fn capability_from(code: u8) -> Result<Capability, Malformed> {
     })
 }
 
+/// One row of a built-in tool's class (`c600_check::Row`, LP2 draft): a tag in the variants' declared order, then the
+/// variant's text. The tags follow the rows' order, so a set's rows in increasing order are its bytes' order too.
+pub fn encode_row(row: &ClassRow, e: &mut Enc) {
+    let (tag, text) = match row {
+        ClassRow::Read(query) => (0, Some(query)),
+        ClassRow::Outcome => (1, None),
+        ClassRow::Declassified(id) => (2, Some(id)),
+        ClassRow::View => (3, None),
+        ClassRow::Workspace(record) => (4, Some(record)),
+        ClassRow::Preview(target) => (5, Some(target)),
+        ClassRow::Unknown => (6, None),
+    };
+    e.u8(tag);
+    if let Some(text) = text {
+        e.text(text);
+    }
+}
+
+pub fn decode_row(d: &mut Dec) -> Result<ClassRow, Malformed> {
+    Ok(match d.u8()? {
+        0 => ClassRow::Read(d.text()?.to_string()),
+        1 => ClassRow::Outcome,
+        2 => ClassRow::Declassified(d.text()?.to_string()),
+        3 => ClassRow::View,
+        4 => ClassRow::Workspace(d.text()?.to_string()),
+        5 => ClassRow::Preview(d.text()?.to_string()),
+        6 => ClassRow::Unknown,
+        _ => return Err(Malformed::new("an unknown class row")),
+    })
+}
+
 fn role_code(r: ExactRole) -> u8 {
     match r {
         ExactRole::Budget => 0,
@@ -825,17 +857,38 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
 /// the interpreter built.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OwnedRequest {
-    Snapshot { query: String, ty: QTy },
-    Declassified { id: String, ty: Ty },
-    FileRead { path: String, ty: Ty },
+    Snapshot {
+        query: String,
+        ty: QTy,
+    },
+    Declassified {
+        id: String,
+        ty: Ty,
+    },
+    FileRead {
+        path: String,
+        ty: Ty,
+    },
     Clock,
-    Propose { word: Vec<i32>, target: String, request: Vec<u8> },
+    Propose {
+        word: Vec<i32>,
+        target: String,
+        request: Vec<u8>,
+    },
+    /// A read whose query takes an argument (LP2 draft): the argument's canonical bytes, as the interpreter encoded
+    /// them. Neither side parses them; a host that answers the read reads them with `c600_run::provenance::parse`.
+    SnapshotWith {
+        query: String,
+        arg: Vec<u8>,
+        ty: QTy,
+    },
 }
 
 impl OwnedRequest {
     pub fn as_request(&self) -> Request<'_> {
         match self {
             OwnedRequest::Snapshot { query, ty } => Request::Snapshot { query, ty },
+            OwnedRequest::SnapshotWith { query, arg, ty } => Request::SnapshotWith { query, arg, ty },
             OwnedRequest::Declassified { id, ty } => Request::Declassified { id, ty },
             OwnedRequest::FileRead { path, ty } => Request::FileRead { path, ty },
             OwnedRequest::Clock => Request::Clock,
@@ -910,6 +963,16 @@ pub fn encode_request(r: &Request, e: &mut Enc) -> Result<(), Unencodable> {
             e.field("request.propose.request");
             e.bytes(request);
         }
+        Request::SnapshotWith { query, arg, ty } => {
+            e.field("request.snapshot_with");
+            e.u8(5);
+            e.field("request.snapshot_with.query");
+            e.text(query);
+            e.field("request.snapshot_with.arg");
+            e.bytes(arg);
+            e.field("request.snapshot_with.type");
+            encode_qty(ty, e)?;
+        }
     }
     Ok(())
 }
@@ -928,6 +991,7 @@ pub fn decode_request(d: &mut Dec) -> Result<OwnedRequest, Malformed> {
             }
             OwnedRequest::Propose { word, target: d.text()?.to_string(), request: d.bytes()?.to_vec() }
         }
+        5 => OwnedRequest::SnapshotWith { query: d.text()?.to_string(), arg: d.bytes()?.to_vec(), ty: decode_qty(d)? },
         _ => return Err(Malformed::new("an unknown request")),
     })
 }

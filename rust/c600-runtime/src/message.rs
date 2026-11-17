@@ -6,6 +6,8 @@
 //! the current run). No message has a field for a user-action token or any other authority: a token never reaches the
 //! runtime (KN5.15), and `tests/protocol.rs` holds every message against [`SCHEMA`].
 
+use std::collections::BTreeSet;
+
 use c600_check::Profile;
 use c600_digest::sha256;
 use c600_run::interp::{Request, RowTariff, Run, Sink};
@@ -34,7 +36,7 @@ pub struct MessageSchema {
     pub fields: &'static [&'static str],
 }
 
-const REQUEST_FIELDS: [&str; 14] = [
+const REQUEST_FIELDS: [&str; 18] = [
     "request.snapshot",
     "request.snapshot.query",
     "request.snapshot.type",
@@ -49,6 +51,10 @@ const REQUEST_FIELDS: [&str; 14] = [
     "request.propose.word",
     "request.propose.target",
     "request.propose.request",
+    "request.snapshot_with",
+    "request.snapshot_with.query",
+    "request.snapshot_with.arg",
+    "request.snapshot_with.type",
 ];
 
 /// Every message and field of the protocol. Values and IR types inside a field are data, not fields: a value has no
@@ -72,6 +78,7 @@ pub const SCHEMA: [MessageSchema; 6] = [
             "grant",
             "declassifiers",
             "source_ranges",
+            "built_in",
         ],
     },
     MessageSchema {
@@ -105,6 +112,10 @@ pub const SCHEMA: [MessageSchema; 6] = [
             REQUEST_FIELDS[11],
             REQUEST_FIELDS[12],
             REQUEST_FIELDS[13],
+            REQUEST_FIELDS[14],
+            REQUEST_FIELDS[15],
+            REQUEST_FIELDS[16],
+            REQUEST_FIELDS[17],
             "sink.view",
             "sink.workspace",
             "sink.workspace.record",
@@ -256,6 +267,17 @@ pub fn encode_run(run: u64, job: &Job, e: &mut Enc) -> Result<(), Unencodable> {
     }
     e.field("source_ranges");
     e.bool(o.source_ranges);
+    e.field("built_in");
+    match &o.built_in {
+        None => e.u8(0),
+        Some(rows) => {
+            e.u8(1);
+            e.count(rows.len());
+            for row in rows {
+                codec::encode_row(row, e);
+            }
+        }
+    }
     Ok(())
 }
 
@@ -335,8 +357,34 @@ pub fn decode_to_child(bytes: &[u8]) -> Result<ToChild, Malformed> {
             let n = d.count(8)?;
             let declassifiers = (0..n).map(|_| Ok(d.text()?.to_string())).collect::<Result<Vec<_>, Malformed>>()?;
             let source_ranges = d.bool()?;
-            let options =
-                JobOptions { limits, tariffs, draft, seed, record, profile, grant, declassifiers, source_ranges };
+            let built_in = match d.u8()? {
+                0 => None,
+                1 => {
+                    let n = d.count(1)?;
+                    let mut rows = BTreeSet::new();
+                    for _ in 0..n {
+                        let row = codec::decode_row(&mut d)?;
+                        if rows.last().is_some_and(|last| *last >= row) {
+                            return Err(Malformed::new("class rows out of order or repeated"));
+                        }
+                        rows.insert(row);
+                    }
+                    Some(rows)
+                }
+                _ => return Err(Malformed::new("an option flag other than 0 or 1")),
+            };
+            let options = JobOptions {
+                limits,
+                tariffs,
+                draft,
+                seed,
+                record,
+                profile,
+                grant,
+                declassifiers,
+                source_ranges,
+                built_in,
+            };
             ToChild::Run { run, job: Job { sources, module, entry, args, options } }
         }
         kind::ANSWER => {

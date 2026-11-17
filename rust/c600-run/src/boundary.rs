@@ -258,6 +258,11 @@ impl Host for Boundary<'_> {
             Request::Snapshot { query, .. } => Place::Workspace(query.to_string()),
             Request::FileRead { path, .. } => Place::File(path.to_string()),
             Request::Propose { word, target, .. } => return Ok(self.propose(request, word, target)),
+            // An engine row for an argument is state-derived data whatever the program stores (LG3.13).
+            Request::SnapshotWith { .. } => {
+                self.reads_state = true;
+                return self.engine.perform(request);
+            }
             _ => return self.engine.perform(request),
         };
         if let Some(stored) = self.store.records.get(&place) {
