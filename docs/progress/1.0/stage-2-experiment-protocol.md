@@ -160,8 +160,8 @@ The design track and the engineering track run in parallel and meet through numb
 | H-06 | Cost table: measured frame-time cost per visual feature at full detail | day 5 | S-B results | the Look Lab cost meter | open |
 | H-07 | Day-7 go/no-go result and the remaining candidates | day 9 | Astra ruling | Look Lab framework risk; where G6 is built | delivered 10 October 2026: S-B, S-A2 and S-D all go ([day7-go-no-go-ruling](../../wiki/decisions/day7-go-no-go-ruling.md)) |
 | H-08 | Command table and the layer boundaries | day 4 | 2.1 and 2.2 | greybox layouts, keyboard model, flow scripts | first version 1 October: [command-table](command-table.md); final after the 2.2 dispositions |
-| H-09 | Renderer constraints (overlay layers, text in the 3D view, transparency and sorting limits) | day 8 | S-A2 and S-D | which features stay in H-01 | open |
-| H-10 | Selected renderer | day 14 | selection | vertical slice and the framework-neutral rebuild if not Godot | open |
+| H-09 | Renderer constraints (overlay layers, text in the 3D view, transparency and sorting limits) | day 8 | S-A2 and S-D | which features stay in H-01 | delivered 10 October 2026: the H-09 tables of the [S-A2](../../../work/experiments/renderer-sa2/RESULT.md) and [S-D](../../../work/experiments/renderer-sd/RESULT.md) cards |
+| H-10 | Selected renderer | day 14 | selection | vertical slice and the framework-neutral rebuild if not Godot | delivered 16 November 2026: S-A2, the S-B core hosted by Godot 4.7.2 .NET, so no framework-neutral rebuild; signed by the owner ([ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md), [H-10](renderer-handoff-H-10.md)) |
 
 **Language line gives**
 
