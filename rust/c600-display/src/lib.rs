@@ -59,9 +59,12 @@
 //!   and F04 unsupported (the jumbling puzzle uses J02, J03 and J05 in their place) and omits J01 and J06 to J12.
 //!   The jumbling context binds the unchanged geometry digests of [`produce::GeometryInput`]; J01's area-weighted
 //!   shrink anchors are not an asset and are not bound.
-//! - J03: a jumbling transform is built only from an admissible outcome's certified inside set
-//!   ([`jumble::transform`]). `c600_jumble` names no rotation plane, so a transform built from it alone has no swept
-//!   preview.
+//! - J03: a jumbling transform is built only from an admissible outcome's certified inside set and the plane the
+//!   engine names for the outcome's twist ([`jumble::transform`]; `c600_jumble::twist::Twist::plane`). The engine's u,
+//!   v and cos θ are exact and u and v unnormalized; the display normalizes them in binary64, rounds to binary32 and
+//!   takes θ = acos(cos θ) ([`jumble::swept_plane`]), so R(θ) of render/1 section 4 is the twist up to rounding. A
+//!   half-turn sweeps in the direction the engine names, and the identity has no plane and no swept preview. A twist
+//!   of another grip than the outcome's is [`jumble::Missing::OtherGrip`].
 //! - J04: a full named-cap set is the engine's whole `straddler_set`, each piece with both exact points as compact
 //!   `[a,b,d]` text and their binary32 vectors; a set its budget left incomplete is [`jumble::Missing::Uncertain`],
 //!   never a shorter set. The cap-map witness is a classification's one certificate. The named cut's plane is the
@@ -146,8 +149,8 @@
 //! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change) and the
 //! ceilings named above that need a weight table or a backend. For the jumbling puzzle: J01's shrink anchors, J06's
 //! backend readback, plans for the J07 to J12 rows and producers for their payloads other than the seam table (domain
-//! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, an engine-named
-//! plane for a swept preview, and a comparison of the posed arrays with a J1 stage after the start.
+//! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, and a comparison
+//! of the posed arrays with a J1 stage after the start.
 //! For user stages: the stage module's parser and checker (RPI.69's body rules, RPI.70's operation tiers and RPI.71's
 //! costs need the stage language and RM.38's weight table), and HLSL compilation (RPI.78), the raster bound (RPI.72),
 //! quarantine (RPI.77), frame reports (RM.41) and composition on a device, which need a backend; no user stage reaches

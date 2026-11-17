@@ -75,8 +75,9 @@ fn context(base: &RevisionRef) -> Context {
     jumble::fixture_context(geometry(), base.identity.clone(), LimitProfile::uniform("fixture/1", 1 << 40))
 }
 
-/// The state after the first `count` records of the I_a journal from solved, and the outcome of the last.
-fn walk(count: usize) -> (State, Outcome) {
+/// The state after the first `count` records of the I_a journal from solved, the last record's twist and its
+/// outcome.
+fn walk(count: usize) -> (State, Twist, Outcome) {
     let engine = engine();
     let bytes = std::fs::read(repository().join("research/jumbling/fixtures/wj-I_a.json")).expect("the I_a fixture");
     let doc = json::parse(&bytes).expect("the I_a fixture is JSON");
@@ -88,9 +89,10 @@ fn walk(count: usize) -> (State, Outcome) {
         let twist = Twist::from_record(engine, record).expect("a journal record");
         let outcome = state.apply(engine, &twist, None, &[]).expect("no engine error");
         assert_eq!(outcome.status, c600_jumble::state::Status::Admissible, "record {index}");
-        last = Some(outcome);
+        last = Some((twist, outcome));
     }
-    (state, last.expect("at least one record"))
+    let (twist, outcome) = last.expect("at least one record");
+    (state, twist, outcome)
 }
 
 /// The first home slot of `piece`: the canonical ID of one of its stickers.
@@ -261,10 +263,11 @@ fn fixture() -> &'static Fixture {
     static FIXTURE: OnceLock<Fixture> = OnceLock::new();
     FIXTURE.get_or_init(|| {
         let engine = engine();
-        let (state, outcome) = walk(2);
+        let (state, twist, outcome) = walk(2);
         assert_eq!((state.moved_count(), state.off_lattice_count()), (5_799, 5_404), "moved and off-lattice pieces");
         let inside = outcome.inside.clone();
-        let transform = jumble::transform(&outcome, None, 1.0, (13, 14)).expect("an admissible twist");
+        let transform = jumble::transform(&outcome, &twist, (13, 14)).expect("a finite plane");
+        let transform = transform.expect("an admissible twist");
         let poses = state.pose_ids();
         let off =
             *inside.iter().find(|&&p| !state.is_lattice_piece(p as usize)).expect("a piece moved off the lattice");

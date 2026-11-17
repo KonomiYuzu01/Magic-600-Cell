@@ -5,7 +5,8 @@
 //!
 //! - [`posed`] builds the posed-sticker row (J02, render/1 section 3) from a state's canonical pose table;
 //!   [`revision`] and [`bundle`] bind it to its pose-level revision (RPI.9, render/1 section 7).
-//! - [`transform`] builds the certified transform row (J03) from an applied twist's certified inside set.
+//! - [`transform`] builds the certified transform row (J03) from an applied twist's certified inside set and its
+//!   engine-named plane ([`swept_plane`], render/1 section 4).
 //! - [`named_cap_set`], [`witness`] and [`named_cut`] build the certified overlay row (J04).
 //! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer.
 //! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13), with M8's slot
@@ -16,6 +17,7 @@ use c600_jumble::levels;
 use c600_jumble::model::NP;
 use c600_jumble::q5::{Vec4, Q5};
 use c600_jumble::state::{Certificate, Classification, Outcome, State, Status};
+use c600_jumble::twist::Twist;
 use c600_jumble::Context as Engine;
 use c600_kernel::json::Value;
 use c600_kernel::{IdentityBlock, Puzzle};
@@ -43,6 +45,20 @@ pub enum Missing {
     NoSuchCap { cap: u32 },
     /// The engine reported an error.
     Engine(String),
+    /// The plane the engine names for the twist at this grip has no finite binary32 value (J03).
+    NonFinitePlane { grip: u32 },
+    /// The twist given for an outcome turns another grip, so it is not the letter the outcome certified, and no plane
+    /// is taken from it (J03).
+    OtherGrip { outcome: u32, twist: u32 },
+}
+
+/// The binary64 value of an exact number: (a + b√5)/d, each operation rounded. `None` when a coefficient does not
+/// fit binary64 or the value is not finite.
+fn approximate64(x: &Q5) -> Option<f64> {
+    let part = |n: String| n.parse::<f64>().ok();
+    let (a, b, d) = (part(x.a().to_string())?, part(x.b().to_string())?, part(x.d().to_string())?);
+    let value = (a + b * 5f64.sqrt()) / d;
+    value.is_finite().then_some(value)
 }
 
 /// The binary32 display value of an exact number: (a + b√5)/d evaluated in binary64, each operation rounded, then
@@ -50,9 +66,7 @@ pub enum Missing {
 /// coefficient does not fit binary64 or the value is not finite. It is display data only; nothing exact is decided
 /// from it.
 pub fn approximate(x: &Q5) -> Option<f32> {
-    let part = |n: String| n.parse::<f64>().ok();
-    let (a, b, d) = (part(x.a().to_string())?, part(x.b().to_string())?, part(x.d().to_string())?);
-    let value = ((a + b * 5f64.sqrt()) / d) as f32;
+    let value = approximate64(x)? as f32;
     value.is_finite().then_some(value)
 }
 
@@ -122,28 +136,63 @@ pub fn bundle(revision: &RevisionRef, posed: &PosedInput) -> EngineBundle {
     EngineBundle { revision: revision.clone(), arrays }
 }
 
-/// The certified transform row of an applied twist (J03): the grip and the engine's certified inside set, sorted.
-/// Only an admissible outcome has one; a blocked, uncertain, refused or protected outcome has no moving set, and none
-/// is guessed. The plane is the one the engine names; `c600_jumble` names none, so without it there is no swept
-/// preview ([`crate::validate::swept_preview`]).
-pub fn transform(
-    outcome: &Outcome,
-    plane: Option<[[f32; 4]; 2]>,
-    angle: f32,
-    endpoints: (u64, u64),
-) -> Option<TransformInput> {
-    if outcome.status != Status::Admissible {
-        return None;
+/// A twist's engine-named plane as display values (J03, render/1 section 4): the rows of RM.6's f32 [2, 4] plane
+/// and the angle. The sweep R(φ) = I + (cos φ − 1)(uuᵀ + vvᵀ) + sin φ (vuᵀ − uvᵀ) built from them turns u toward v
+/// and is the twist at φ = θ, up to binary32 rounding.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SweptPlane {
+    /// u/|u| and v/|v| of `c600_jumble::twist::RotationPlane`.
+    pub plane: [[f32; 4]; 2],
+    /// θ in radians, in (0, π]; π for a half-turn, whose turning direction is the engine's naming of v.
+    pub angle: f32,
+}
+
+/// The display values of `twist`'s engine-named plane ([`SweptPlane`], `Twist::plane`). The engine names u, v and
+/// cos θ exactly, and u and v unnormalized; here each coordinate is evaluated in binary64 as [`approximate`] does,
+/// each vector is normalized in binary64 and rounded to binary32, and θ is the binary64 arccosine of cos θ (clamped
+/// to [−1, 1]) rounded to binary32. `Ok(None)` for the identity, which turns no plane; a vector or angle with no
+/// finite value is [`Missing::NonFinitePlane`]. Display data only: no direction is invented and nothing exact is
+/// decided from it.
+pub fn swept_plane(twist: &Twist) -> Result<Option<SweptPlane>, Missing> {
+    let Some(named) = twist.plane() else {
+        return Ok(None);
+    };
+    let unit = |v: &Vec4| -> Option<[f32; 4]> {
+        let x = [approximate64(&v[0])?, approximate64(&v[1])?, approximate64(&v[2])?, approximate64(&v[3])?];
+        let norm = x.iter().map(|c| c * c).sum::<f64>().sqrt();
+        let unit = x.map(|c| (c / norm) as f32);
+        (norm.is_finite() && norm > 0.0 && unit.iter().all(|c| c.is_finite())).then_some(unit)
+    };
+    let swept = || {
+        let (u, v, cos) = (unit(&named.u)?, unit(&named.v)?, approximate64(&named.cos)?);
+        Some(SweptPlane { plane: [u, v], angle: cos.clamp(-1.0, 1.0).acos() as f32 })
+    };
+    swept().map(Some).ok_or(Missing::NonFinitePlane { grip: twist.grip as u32 })
+}
+
+/// The certified transform row of an applied twist (J03): the grip, the engine's certified inside set, sorted, and
+/// the display values of the twist's engine-named plane and angle ([`swept_plane`]). `twist` is the letter the
+/// outcome certified; a twist of another grip is [`Missing::OtherGrip`], and no plane is taken from it. Only an
+/// admissible outcome has a row; a blocked, uncertain, refused or protected outcome has no moving set, and none is
+/// guessed. The identity turns no plane: its row has none and the angle 0, so it has no swept preview
+/// ([`crate::validate::swept_preview`]).
+pub fn transform(outcome: &Outcome, twist: &Twist, endpoints: (u64, u64)) -> Result<Option<TransformInput>, Missing> {
+    if twist.grip != outcome.grip {
+        return Err(Missing::OtherGrip { outcome: outcome.grip as u32, twist: twist.grip as u32 });
     }
-    Some(TransformInput {
+    if outcome.status != Status::Admissible {
+        return Ok(None);
+    }
+    let swept = swept_plane(twist)?;
+    Ok(Some(TransformInput {
         grip: outcome.grip as u32,
-        plane: plane.map(|p| Array::f32s(vec![2, 4], &p.concat())),
-        angle,
+        plane: swept.map(|s| Array::f32s(vec![2, 4], &s.plane.concat())),
+        angle: swept.map_or(0.0, |s| s.angle),
         moving_digest: piece_set_digest(&outcome.inside),
         moving: Array::u32s(vec![outcome.inside.len() as u64], &outcome.inside),
         from: endpoints.0,
         to: endpoints.1,
-    })
+    }))
 }
 
 fn pair(certificate: &Certificate) -> Option<PointPair> {
