@@ -12,15 +12,16 @@
 //! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the lengths that
 //! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15). A menu word
 //! (LB1.8; LP2 draft) crosses with the identity block of its alphabet, and a pinned menu alphabet with its inverse
-//! items, so the receiver checks them as the interpreter does. An F2 or F5 element (KN3.2; LP2 draft) crosses as its
-//! field and its residue, which is below the field's prime.
+//! items, so the receiver checks them as the interpreter does. An end test's verdict (LB3.2; LP2 draft) crosses as
+//! its test's and its outcome's indices in their declared orders, and its type with the test's index. An F2 or F5
+//! element (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::Row as ClassRow;
-use c600_ir::{Capability, Effect, EffectBound, ExactRole, Field, FnTy, QTy, Ty};
+use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::menu::{MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
@@ -70,8 +71,11 @@ mod tag {
     /// LP2's draft menu word (LB1.8): the identity block of its alphabet, its five fields in KN1.4's order, then the
     /// letter count and each letter as its cap and its item, both below 600.
     pub const MENU_WORD: u8 = 21;
+    /// LP2's draft end-test verdict (LB3.2): the test's index in `EndTest::ALL`, then the outcome's in
+    /// `EndTestOutcome::ALL`.
+    pub const END_TEST: u8 = 22;
     /// LP2's draft F2 or F5 element (KN3.2): its field's byte (`field_byte`), then its residue's byte, below
-    /// the field's prime. Tags 22 and 23 are taken by the IR session's open drafts.
+    /// the field's prime. Tag 23 is taken by the IR session's open draft.
     pub const FIELD: u8 = 24;
 }
 
@@ -399,6 +403,11 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 encode_identity(w.identity(), e)?;
                 encode_menu_letters(w.letters(), e)?;
             }
+            Value::EndTest(test, outcome) => {
+                e.u8(tag::END_TEST);
+                e.u8(end_test_code(*test));
+                e.u8(verdict_code(*outcome));
+            }
             Value::Field(field, residue) => {
                 if *residue >= field.modulus() {
                     return Err(Unencodable("a residue outside its field"));
@@ -586,6 +595,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 let letters = decode_menu_letters(d)?;
                 Value::menu_word(&identity, &letters).ok_or_else(|| Malformed::new("a menu index of 600 or more"))?
             }
+            tag::END_TEST => Value::EndTest(end_test_from(d.u8()?)?, verdict_from(d.u8()?)?),
             tag::FIELD => {
                 let field = field_from(d.u8()?)?;
                 let residue = d.u8()?;
@@ -813,6 +823,42 @@ fn role_from(code: u8) -> Result<ExactRole, Malformed> {
     })
 }
 
+/// An end test's index in [`EndTest::ALL`] (LP2 draft).
+fn end_test_code(t: EndTest) -> u8 {
+    match t {
+        EndTest::RetainedCheckpoint => 0,
+        EndTest::LabelCheckpoint => 1,
+        EndTest::StickerTest => 2,
+    }
+}
+
+fn end_test_from(code: u8) -> Result<EndTest, Malformed> {
+    Ok(match code {
+        0 => EndTest::RetainedCheckpoint,
+        1 => EndTest::LabelCheckpoint,
+        2 => EndTest::StickerTest,
+        _ => return Err(Malformed::new("an unknown end test")),
+    })
+}
+
+/// An end test's outcome's index in [`EndTestOutcome::ALL`] (LP2 draft).
+fn verdict_code(o: EndTestOutcome) -> u8 {
+    match o {
+        EndTestOutcome::Holds => 0,
+        EndTestOutcome::Fails => 1,
+        EndTestOutcome::Unestablished => 2,
+    }
+}
+
+fn verdict_from(code: u8) -> Result<EndTestOutcome, Malformed> {
+    Ok(match code {
+        0 => EndTestOutcome::Holds,
+        1 => EndTestOutcome::Fails,
+        2 => EndTestOutcome::Unestablished,
+        _ => return Err(Malformed::new("an unknown end-test outcome")),
+    })
+}
+
 pub fn encode_qty(t: &QTy, e: &mut Enc) -> Result<(), Unencodable> {
     qty(t, e, 0)
 }
@@ -899,7 +945,12 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         }
         Ty::CompressedWord => e.u8(22),
         Ty::MenuWord => e.u8(23),
-        // Type tags 24 and 25 are taken by the IR session's open drafts.
+        // LP2's draft end-test verdict (LB3.2): the tag, then the test's index.
+        Ty::EndTest(test) => {
+            e.u8(24);
+            e.u8(end_test_code(*test));
+        }
+        // Type tag 25 is taken by the IR session's open draft.
         Ty::Field(field) => {
             e.u8(26);
             e.u8(field_byte(*field));
@@ -985,6 +1036,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         }
         22 => Ty::CompressedWord,
         23 => Ty::MenuWord,
+        24 => Ty::EndTest(end_test_from(d.u8()?)?),
         26 => Ty::Field(field_from(d.u8()?)?),
         _ => return Err(Malformed::new("an unknown type tag")),
     })

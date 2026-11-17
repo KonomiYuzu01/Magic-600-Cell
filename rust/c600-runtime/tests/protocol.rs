@@ -2,8 +2,9 @@
 //! identical delivery, answered from the parent's record, never a second host call, and a new call must acknowledge
 //! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
 //! refuses the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is
-//! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; the built-in
-//! column and the pinned menu are strict trailing fields of the run, in that order.
+//! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; an end
+//! test's verdict (LB3.2) is value tag 22 and type tag 24; the built-in column and the pinned menu are strict
+//! trailing fields of the run, in that order.
 
 mod support;
 
@@ -11,7 +12,7 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::{Profile, Row};
-use c600_ir::{Capability, ExactRole, QTy, Ty};
+use c600_ir::{Capability, EndTest, EndTestOutcome, ExactRole, QTy, Ty};
 use c600_run::approx::Approx;
 use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
 use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
@@ -568,6 +569,38 @@ fn a_menu_word_crosses_with_its_alphabet() {
     let mut d = Dec::new(&e.bytes);
     assert_eq!(codec::decode_ty(&mut d).unwrap(), Ty::MenuWord);
     d.end().unwrap();
+}
+
+/// An end test's verdict (LB3.2; LP2 draft) crosses as value tag 22, its test's index and its outcome's index, so
+/// each of the nine verdicts has one encoding of its own; an index of 3 or more and a missing byte are refused. The
+/// verdict's type is type tag 24 and the test's index, so one test's verdict type never decodes as another's.
+#[test]
+fn an_end_test_verdict_crosses_with_its_test_and_outcome() {
+    let mut seen = BTreeSet::new();
+    for (i, test) in EndTest::ALL.into_iter().enumerate() {
+        for (j, outcome) in EndTestOutcome::ALL.into_iter().enumerate() {
+            let v = Value::EndTest(test, outcome);
+            let bytes = codec::value_bytes(&v).unwrap_or_else(|e| panic!("{v:?}: {e:?}"));
+            assert_eq!(bytes, [22, i as u8, j as u8]);
+            let back = codec::value_from_bytes(&bytes).unwrap_or_else(|e| panic!("{v:?}: {e}"));
+            assert_eq!(format!("{v:?}"), format!("{back:?}"));
+            assert!(codec::same_value(&v, &back));
+            assert!(seen.insert(bytes), "{v:?} shares an encoding");
+        }
+        let mut e = Enc::new();
+        codec::encode_ty(&Ty::EndTest(test), &mut e).unwrap();
+        assert_eq!(e.bytes, [24, i as u8]);
+        let mut d = Dec::new(&e.bytes);
+        assert_eq!(codec::decode_ty(&mut d).unwrap(), Ty::EndTest(test));
+        d.end().unwrap();
+    }
+    let decoded = |bytes: &[u8]| codec::value_from_bytes(bytes).map(|_| ()).map_err(|m| m.to_string());
+    assert_eq!(decoded(&[22, 3, 0]).unwrap_err(), "an unknown end test");
+    assert_eq!(decoded(&[22, 0, 3]).unwrap_err(), "an unknown end-test outcome");
+    assert!(decoded(&[22, 0]).is_err(), "a verdict without its outcome");
+    assert!(decoded(&[22, 0, 0, 0]).is_err(), "a byte after the verdict");
+    assert!(codec::decode_ty(&mut Dec::new(&[24, 3])).is_err(), "an unknown end test's verdict type");
+    assert!(codec::decode_ty(&mut Dec::new(&[24])).is_err(), "a verdict type without its test");
 }
 
 /// Values outside their canonical form are refused when encoded and when decoded.

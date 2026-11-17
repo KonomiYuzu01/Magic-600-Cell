@@ -15,5 +15,6 @@ c600-tools = { path = "../c600-tools" }
 
 [dev-dependencies]
 c600-kernel = { path = "../c600-kernel" }
+c600-run = { path = "../c600-run" }
 c600-syntax = { path = "../c600-syntax" }
 c600-view = { path = "../c600-view" }

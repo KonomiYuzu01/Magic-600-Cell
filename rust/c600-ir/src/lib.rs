@@ -134,11 +134,91 @@ pub enum Ty {
     /// pins, named by its jumbling identity block (KN0.1); it is not part of the type, and a run pins at most one. A
     /// menu word is never a `Word`, and a mix of the two is refused with `LB1:input.incompatible_alphabet`.
     MenuWord,
+    /// A verdict of one of LB3.2's end tests (LP2 draft): `holds`, `fails` or `unestablished` for that test alone,
+    /// read from the engine row of the test's name. It is used through a `match` on its outcomes only, never as a
+    /// `Bool` (LG2.9), and one test's verdict never stands for another's.
+    EndTest(EndTest),
     /// An element of the finite field F2 or F5, an exact number kind of KN3.2 and ADR-L03.2 (LP2 draft until the IR
     /// freeze, PHS.49). It has no literal (LG1.6): a value comes from `to_f2` or `to_f5` of an `Int`. It never widens
     /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
     /// program stores its `residue`.
     Field(Field),
+}
+
+/// LB3.2's end tests (LP2 draft): three independently named tests with different premises and conclusions (state
+/// contract A5). A retained checkpoint implies a label checkpoint, and the sticker test does for a reachable input;
+/// those implications are kernel facts, not conversions between the types.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EndTest {
+    /// A retained legal witness to the exact pose state.
+    RetainedCheckpoint,
+    /// The reachable-lattice premises and ν = 0 under the pinned C5 convention, certified without a witness word.
+    LabelCheckpoint,
+    /// N = 0 and every labelled slot at home.
+    StickerTest,
+}
+
+impl EndTest {
+    /// The tests in their declared order, which the wire's kind byte counts.
+    pub const ALL: [EndTest; 3] = [EndTest::RetainedCheckpoint, EndTest::LabelCheckpoint, EndTest::StickerTest];
+
+    /// The engine row that answers the test (KN2.4), which is also its library entry's name (LB3.1).
+    pub fn row(self) -> &'static str {
+        match self {
+            EndTest::RetainedCheckpoint => "retained_checkpoint",
+            EndTest::LabelCheckpoint => "label_checkpoint",
+            EndTest::StickerTest => "sticker_test",
+        }
+    }
+
+    /// The test whose engine row is `row`, if any.
+    pub fn of_row(row: &str) -> Option<EndTest> {
+        EndTest::ALL.into_iter().find(|t| t.row() == row)
+    }
+
+    /// The name of the verdict's type in source. The test's own name stays the goal's (LG2.10), which waits for the
+    /// IR's goals; a verdict is the test's answer for one input, not the predicate.
+    pub fn type_name(self) -> &'static str {
+        match self {
+            EndTest::RetainedCheckpoint => "RetainedCheckpointVerdict",
+            EndTest::LabelCheckpoint => "LabelCheckpointVerdict",
+            EndTest::StickerTest => "StickerTestVerdict",
+        }
+    }
+
+    /// The test whose verdict's type `name` names, if any.
+    pub fn of_type_name(name: &str) -> Option<EndTest> {
+        EndTest::ALL.into_iter().find(|t| t.type_name() == name)
+    }
+}
+
+/// An end test's verdict (LP2 draft): KN0.5's yes, no or unknown, named by the status tags a `match` takes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EndTestOutcome {
+    Holds,
+    Fails,
+    /// Unknown, with no evidence either way, such as an imported table without its reachability record. It never
+    /// reads as `Fails` (LG2.9).
+    Unestablished,
+}
+
+impl EndTestOutcome {
+    /// The outcomes in their declared order, which the wire's outcome byte counts.
+    pub const ALL: [EndTestOutcome; 3] = [EndTestOutcome::Holds, EndTestOutcome::Fails, EndTestOutcome::Unestablished];
+
+    /// The status tag that names the outcome in a `match` pattern.
+    pub fn tag(self) -> &'static str {
+        match self {
+            EndTestOutcome::Holds => "holds",
+            EndTestOutcome::Fails => "fails",
+            EndTestOutcome::Unestablished => "unestablished",
+        }
+    }
+
+    /// The outcome the status tag `tag` names, if any.
+    pub fn of_tag(tag: &str) -> Option<EndTestOutcome> {
+        EndTestOutcome::ALL.into_iter().find(|o| o.tag() == tag)
+    }
 }
 
 /// The finite fields of KN3.2: F2 and F5 (LP2 draft).

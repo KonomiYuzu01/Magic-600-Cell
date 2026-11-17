@@ -7,7 +7,7 @@
 use std::cmp::Ordering;
 use std::sync::Arc;
 
-use c600_ir::Field;
+use c600_ir::{EndTest, EndTestOutcome, Field};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -54,6 +54,9 @@ pub enum Value {
     Compressed(Arc<Compressed>),
     /// LB1.8's literal word of jumbling menu letters (LP2 draft): its letters and its alphabet's identity block.
     MenuWord(Arc<MenuWord>),
+    /// An end test's verdict (LB3.2; LP2 draft): the test it answers and its outcome. A program reads it from the
+    /// test's engine row and uses it through a `match` on its outcome only (LG2.9).
+    EndTest(EndTest, EndTestOutcome),
     /// An element of F2 or F5 (KN3.2; LP2 draft): the field and its residue, which is below the field's prime. Build
     /// one with [`Value::field`].
     Field(Field, u8),
@@ -424,7 +427,8 @@ fn kind(v: &Value) -> u8 {
         Value::Map(_) => 17,
         Value::Compressed(_) => 18,
         Value::MenuWord(_) => 19,
-        Value::Field(..) => 20,
+        Value::EndTest(..) => 20,
+        Value::Field(..) => 21,
     }
 }
 
@@ -467,6 +471,7 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 // By their parts: no key or equality of a checked program compares compressed words (LP2 draft).
                 (Value::Compressed(x), Value::Compressed(y)) => x.parts.cmp(&y.parts),
                 (Value::MenuWord(x), Value::MenuWord(y)) => x.cmp(y),
+                (Value::EndTest(tx, ox), Value::EndTest(ty, oy)) => (tx, ox).cmp(&(ty, oy)),
                 (Value::Field(f, x), Value::Field(g, y)) => (f, x).cmp(&(g, y)),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
@@ -813,6 +818,8 @@ impl Value {
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.size,
             Value::Compressed(c) => c.size(),
             Value::MenuWord(w) => 4 * w.letters.len() as u128,
+            // One byte for the test and one for its outcome.
+            Value::EndTest(..) => 2,
             Value::Field(..) => 1,
         }
     }
@@ -833,6 +840,18 @@ impl Value {
         )
     }
 
+    /// Whether the value is or holds an end test's verdict in a record field or a collection's element, key or value,
+    /// at any depth (LB3.2; LP2 draft). A verdict is matched on its outcomes only (LG2.9); the run refuses an equality
+    /// that the checker could not see, behind a type variable.
+    pub fn holds_end_test(&self) -> bool {
+        match self {
+            Value::EndTest(..) => true,
+            Value::Record(r) => r.fields().iter().any(|(_, v)| v.holds_end_test()),
+            Value::List(l) | Value::Set(l) | Value::Map(l) => l.items().iter().any(Value::holds_end_test),
+            _ => false,
+        }
+    }
+
     /// An upper bound of the value's canonical encoding in bytes, without the terminal line feed (FP.5, FP.6). It is
     /// retained metadata, so the encoding pass is priced before it runs (DET.59). A value with no canonical form has
     /// bound 0; its encoding fails.
@@ -847,6 +866,8 @@ impl Value {
             Value::Text(t) | Value::Target(t) | Value::Tag(t) | Value::Colour(t) => text_bound(t),
             Value::Word(w) => 2 + 6 * w.len() as u128,
             Value::MenuWord(w) => w.bound(),
+            // `{"outcome":"...","test":"..."}`: 24 bytes of keys and punctuation, and the two names.
+            Value::EndTest(test, outcome) => 24 + (test.row().len() + outcome.tag().len()) as u128,
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
             // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13). Nor has a
@@ -1016,6 +1037,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::Fn(x), Value::Fn(y)) => x == y,
             (Value::Compressed(x), Value::Compressed(y)) => x.parts == y.parts,
             (Value::MenuWord(x), Value::MenuWord(y)) => x == y,
+            (Value::EndTest(tx, ox), Value::EndTest(ty, oy)) => tx == ty && ox == oy,
             (Value::Approx(x), Value::Approx(y)) => x == y,
             (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
@@ -1041,6 +1063,7 @@ pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 
             | Value::Tag(_)
             | Value::Colour(_)
             | Value::Fn(_)
+            | Value::EndTest(..)
             | Value::Field(..),
             Value::Unit
             | Value::Bool(_)
@@ -1048,6 +1071,7 @@ pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 
             | Value::Tag(_)
             | Value::Colour(_)
             | Value::Fn(_)
+            | Value::EndTest(..)
             | Value::Field(..),
         ) => 0,
         _ => d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size())),

@@ -16,7 +16,7 @@ use c600_digest::sha256;
 use c600_ir::build::{
     exact, fn_ref, helper, module, program, propose, publish_view, target, unit, use_exact, write_workspace,
 };
-use c600_ir::{Capability, Effect, ExactRole, Expr, Lit, Program, QTy, ReceiptField, Ty};
+use c600_ir::{Capability, Effect, EndTest, EndTestOutcome, ExactRole, Expr, Lit, Program, QTy, ReceiptField, Ty};
 use c600_run::boundary::{admit_preview, Boundary, Context, Pins, Place, Store, Stored};
 use c600_run::interp::code::{IR_REJECTED, NONCANONICAL_VALUE};
 use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Sink};
@@ -174,6 +174,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Map(..) => "exact keys with values of these types, in canonical key order",
         Ty::CompressedWord => "letters as parts of literal letters, with their exact length",
         Ty::MenuWord => "letters of a pinned menu, with the name of their alphabet",
+        Ty::EndTest(_) => "the outcome of the end test it names",
     }
 }
 
@@ -192,6 +193,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::Set(_) | Value::Map(_) => "distinct exact keys, with values for a map, in canonical key order",
         Value::Compressed(_) => "letters as parts of literal letters, with their exact length",
         Value::MenuWord(_) => "letters of a pinned menu, with the name of their alphabet",
+        Value::EndTest(..) => "the outcome of the end test it names",
     }
 }
 
@@ -481,13 +483,26 @@ fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
 /// built by hand is refused by the interpreter before the host is asked. The base a proposal reports comes from the
 /// run's context, never from the program. A menu word (LB1.8; LP2 draft) carries the identity block that names its
 /// alphabet, whose menu-order digest and contract revision name a menu, not a state: no operation reads the block,
-/// and a menu-word proposal hands the engine the word and the target only.
+/// and a menu-word proposal hands the engine the word and the target only. An end test's verdict (LB3.2; LP2 draft)
+/// holds its test and its outcome, which no operation can adopt.
 #[test]
 fn ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt() {
-    let types = [Ty::Unit, Ty::Nat, Ty::Text, Ty::Word, Ty::Target, Ty::Receipt, Ty::Record(vec![]), Ty::MenuWord];
+    let types = [
+        Ty::Unit,
+        Ty::Nat,
+        Ty::Text,
+        Ty::Word,
+        Ty::Target,
+        Ty::Receipt,
+        Ty::Record(vec![]),
+        Ty::MenuWord,
+        Ty::EndTest(EndTest::LabelCheckpoint),
+    ];
     assert!(types.iter().all(|t| !["state", "digest", "token", "revision"].iter().any(|w| holds(t).contains(w))));
     let menu = Value::menu_word(&Arc::new(MenuIdentity::default()), &[[0, 1]]).expect("bounded");
-    let values = [Value::Unit, Value::int(1), Value::text("rev-7"), Value::word(&[1]), Value::receipt(vec![]), menu];
+    let verdict = Value::EndTest(EndTest::LabelCheckpoint, EndTestOutcome::Unestablished);
+    let values =
+        [Value::Unit, Value::int(1), Value::text("rev-7"), Value::word(&[1]), Value::receipt(vec![]), menu, verdict];
     assert!(values.iter().all(|v| !["state", "digest", "token"].iter().any(|w| value_holds(v).contains(w))));
     assert_eq!(row(&propose(Expr::Lit(Lit::Word(vec![1])), target("t"))).2, ["word", "target"]);
 

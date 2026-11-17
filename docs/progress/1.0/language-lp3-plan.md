@@ -29,7 +29,7 @@ PHS.23's six acceptance items:
 
 | Acceptance item | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Same result through all routes | Command and key routes (C1); source route (C5) | The representations tool's rows: KN5's one implementation (LP2; C6, section 7); the actual key route (C9); the jumbling tool's rows: Jumble in the command layer, KN5's one implementation (LP2; C8, section 8) |
+| Same result through all routes | Command and key routes (C1); source route (C5); five of the representations tool's six rows through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number (C6, section 7) | `filter.apply`: its gate, filter preview rule and workspace inverse in the command layer (KN5, LP2; C6, section 7); the actual key route (C9); the jumbling tool's rows: Jumble in the command layer, KN5's one implementation (LP2; C8, section 8) |
 | Oracle equality at every committed step | 600-cell-Full: O01 to O07, 3,201 steps per route, with undo and redo (C1) | Jumbling: M5's oracle through the command layer with Jumble on, KN5's one implementation (LP2; C8) |
 | Presented-preview binding in the selected renderer | The token binds the presented preview, headless (C1) | The renderer freeze and Windows (C9) |
 | Charter E2 with the tools' views active | Nothing: a timing here would be no evidence | The owner-machine runs (C9) |
@@ -50,7 +50,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves for M5 (C8) |
-| Representations tool, headless half | Built in part (C6, section 7) | Its six rows: command-layer work in KN5's one implementation (LP2) |
+| Representations tool, headless half | Built in part (C6, section 7): five of its six rows served through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number | `filter.apply` and the rest of the rows' needs: the command layer's gate, filter preview rule, workspace inverse and reference forms (KN5, LP2), and kernel rows for the two snapshot reads (section 7) |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8) | The rest of KN5.26's admission matrix and a durable home for part blocks, EV3.2's view rows and LB7.2's work-sheet structure: KN5's later stages (LP2). M6's session lock covers `JournalStore` (pull request 195) |
 | The jumbling tool and every jumbling half | Built in part (C8, section 8) | Jumble in the command layer: KN5's one implementation (LP2); M8's ν, the F2 and F5 number kinds and the correction check (LP2); menu words in the IR draft, for jumbling library entries (LP2). M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list, and LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel; C5: its Strict half through the tool's route, on the command layer's Strict mode of LP2's pull request 198); the others can start | What the kernel alone does not give: `twist.apply` and host rows (KN5, LP2); polytope operations beyond vertices (LP2) (the table below) |
@@ -317,12 +317,28 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   The tool is a `.6cs` module with six entries admitted under the built-in column, with a Rust manifest of the class
   `view_aid`; the class review covers every exported function and only the source bytes the manifest names. C6 changed
   no file in `c600-command` (C1's item 5).
-- C6, not built: the six rows, so they do not meet C5's item 1 yet. The command layer refuses them as not built, and LP3
-  changed no layer code before KN5's one implementation landed; `c600_repr::rows` writes what each needs from the layer
-  (section 2). Also not built: the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
-  (KN3's exact polytope operations beyond `dd`'s vertices, LP2), the stage checker and every device step (the renderer freeze, C9), the
-  relationship strip (C8 computes one of its typed relations, a slot's current occupant, at pose level), and a BM5
-  review record, which the tool gets when it ships.
+- C6's rows (`rust/c600-repr`, `tests/served_rows.rs`), built: five of the six rows meet C5's item 1 through the
+  source and command routes, on LP2's served rows (pull requests 200, 202 and 203). A test host serves
+  `filter.preview`, `view.effect.scope`, `set.save`, `structure.compare` and `structure.layer` with the entries
+  `c600_repr::rows` names and runs each job's entry in process through `c600-run`'s boundary. Invoked from the shell,
+  the two queries and the view complete transiently at the job's revision; `set.save` and `structure.layer` each
+  complete as one durable workspace action with the output's digest as the result reference and no undo entry. The
+  source route, the entry's own run in process through `c600-run`'s boundary with no layer (not C5's runner or the
+  runtime's own process), gives the same value, views and records for the same arguments and state; a stand-in engine
+  answers the two snapshot reads with the state number on both routes. Only the command route has the receipt, the
+  layer's form and revision checks and, for a workspace row, the durable action.
+  `c600_repr::rows` records what the layer meets and what remains for each row. C6 changed no file in
+  `c600-command`; its tests take `c600-run` as a dev-dependency.
+- C6, not built: `filter.apply`, which the layer refuses to serve; it needs the gate `fresh_filter_preview`, the
+  `filter` preview rule, the `FilterPreviewRef` form and a workspace inverse in the command layer (KN5, LP2). Of the
+  other rows' needs: the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's job
+  arguments, without which the test host fails such a job; kernel rows for the `filter.preview` and
+  `structure.compare` snapshot reads, for which the test host answers the state number; a record and an exact-set
+  digest for each saved set; and a display that applies the published scope. The crate documentation names the API
+  each needs. Also not built: the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
+  (KN3's exact polytope operations beyond `dd`'s vertices, LP2), the stage checker and every device step (the
+  renderer freeze, C9), the relationship strip (C8 computes one of its typed relations, a slot's current occupant, at
+  pose level), and a BM5 review record, which the tool gets when it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.
