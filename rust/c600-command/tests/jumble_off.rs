@@ -1,7 +1,8 @@
 //! `jumble.off` in the command layer (draft; A5, ONE.54, ONE.80, JI.27, FP.31): A5's exit from Jumble on back to Jumble
-//! off at the label checkpoint, where the poses' labels become 600-cell-Full's retained state. Each test names the
-//! conformance rows it covers headless with PHS.62 markers. Where the frozen text is silent, the test follows the draft
-//! rulings recorded in `src/lib.rs` and says so.
+//! off at the label checkpoint, where the poses' labels become 600-cell-Full's retained state, and the entry that
+//! follows it from the exit's root (JI.25, JI.26, FP.32). Each test names the conformance rows it covers headless with
+//! PHS.62 markers. Where the frozen text is silent, the test follows the draft rulings recorded in `src/lib.rs` and
+//! says so.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -9,7 +10,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::layer::{JUMBLE_ON_MODE, MODE};
 use c600_command::{
-    code, draft_args, identity_json, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction,
+    code, digest, draft_args, identity_json, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction,
     HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table, Transaction,
     TransactionKind, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW, TWIST_ROW,
 };
@@ -20,6 +21,7 @@ use c600_jumble::q5::transpose;
 use c600_jumble::rotation;
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
+use c600_kernel::codes::IDENTITY_MISMATCH;
 use c600_kernel::json::{self, Value};
 use c600_kernel::request::{self as wire, Binding, MenuPin, Operation};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, ProtectionMode, Snapshot};
@@ -154,6 +156,25 @@ fn exit_record(episode: &str, journal: &[Twist], poses: &str, labels: &str, sour
         ("journal", derivation),
         ("labels", text(labels)),
         ("poses", text(poses)),
+    ])
+}
+
+/// `Digest<literal word>` of 600-cell-Full's letters: the SHA-256 of the letters as little-endian int32.
+fn literal_digest(letters: &[i64]) -> String {
+    let bytes: Vec<u8> = letters.iter().flat_map(|&letter| (letter as i32).to_le_bytes()).collect();
+    c600_digest::sha256_hex(&bytes)
+}
+
+/// The crossing record (draft; FP.31's `exit_root`) of an entry from the exit with the event `crossing` and the record
+/// `exit`, along the retained suffix `letters`.
+fn exit_root(crossing: &str, exit: &Value, letters: &[i64]) -> Value {
+    json::object([
+        ("crossing", text(crossing)),
+        ("entrance", text("exit_root")),
+        ("exit", text(&digest(exit))),
+        ("identity", identity_json(&ctx().identity(Some(&pinned())))),
+        ("letters", Value::Int(letters.len() as i64)),
+        ("word", text(&literal_digest(letters))),
     ])
 }
 
@@ -876,25 +897,259 @@ fn the_runtime_may_not_exit() {
     }
 }
 
-/// JI.25, JI.27 (draft for this edition): the entry from an exit root is not built, so with an exit on the path from
-/// the start `jumble.on` finds no solved witness and is `KN5:input.jumble_on_labels_only`, at the exit and after a
-/// retained twist on it, and changes nothing, although the row is available. Undone back to the start, the entry
-/// commits again and clears the redo stack.
+/// CT-JI-08 (part: the exit-root entry with an empty suffix; not run: branch navigation, restore, import and the void
+/// facts, which are not built), JI.25, JI.26, JI.27 ("Enter again"), FP.31 (draft: the record; the empty suffix),
+/// FP.32. The exit stays active across a policy change, which is no node of the move tree, and `jumble.on` enters
+/// from its root: at the exit's own poses, with the retained state at the exit's labels, and the journal keeps the
+/// record `exit_root` with the exit's event, the digest of the exit's record and the empty suffix. A pose move and a
+/// second exit end that episode, and the second exit is the active one: the next entry roots at it.
 #[test]
-fn an_entry_after_an_exit_is_refused_in_this_edition() {
+fn an_entry_at_an_exit_enters_at_the_exit_s_poses() {
+    let solved = kernel().solved();
+    let t6 = resolved(&item(6));
     let mut f = fixture(&[]);
     assert!(committed(&f.enter()));
+    assert!(committed(&f.menu_twist(&item(6))));
+    let posed = f.layer.revision().clone();
     assert!(committed(&f.exit()));
-    assert_eq!(f.layer.availability(JUMBLE_ON_ROW), Ok(()));
-    let press = f.enter_press();
-    f.refused(press, code::JUMBLE_ON_LABELS_ONLY, "an entry at an exit");
-    assert!(committed(&f.twist(&item(6))));
-    let press = f.enter_press();
-    f.refused(press, code::JUMBLE_ON_LABELS_ONLY, "an entry after an exit and a retained twist");
-    for _ in 0..3 {
-        assert!(committed(&f.step(Direction::Undo)));
-    }
-    assert_eq!(f.layer.revision().digest, kernel().solved().digest());
+    let labels = derived(&solved, &word(&[1, -2, 1]));
+    assert!(completed(&f.set_policy("strict")));
+    let off = f.layer.revision().clone();
+    let receipt = f.enter();
+    let Status::Committed(record) = &receipt.status else { panic!("{:?}", receipt.status) };
+    assert_eq!((record.pre.as_str(), record.post.as_str()), (labels.digest(), posed.digest.as_str()));
+    let on = f.layer.revision().clone();
+    let at = (on.mode, on.head.as_str(), on.digest.as_str(), on.state);
+    assert_eq!(at, (JUMBLE_ON_MODE, "e5", posed.digest.as_str(), off.state + 1));
+    assert_eq!((on.workspace, on.protection), (off.workspace, off.protection));
+    assert_eq!(f.layer.jumbled().expect("Jumble is on").digest(&ctx()), posed.digest);
+    assert_eq!(f.layer.snapshot().digest(), labels.digest(), "the retained state stays at the exit's labels");
+    let log = f.layer.store().log.clone();
+    let exit = log[2].crossing.clone().expect("the exit's record");
+    let entry = &log[4];
+    assert_eq!((entry.kind, entry.row.as_str()), (TransactionKind::Crossing, JUMBLE_ON_ROW));
+    assert_eq!(entry.crossing.as_ref(), Some(&exit_root("e3", &exit, &[])));
+    assert_eq!(Transaction::from_json(&entry.to_json()).as_ref(), Some(entry));
+
+    assert!(committed(&f.menu_twist(&item(6))));
+    let twice = f.layer.revision().clone();
+    assert_eq!(twice.digest, poses(&[t6.clone(), t6.clone()]));
+    assert!(committed(&f.exit()));
+    let again = derived(&labels, &word(&[1, -2, 1]));
+    assert_eq!(f.layer.snapshot().digest(), again.digest());
+    let second = exit_record("e5", &[t6.clone(), t6], &twice.digest, again.digest(), "retained_witness");
+    assert_eq!(f.layer.store().log[6].crossing.as_ref(), Some(&second));
     assert!(committed(&f.enter()));
+    assert_eq!(f.layer.revision().digest, twice.digest);
+    assert_eq!(f.layer.store().log[7].crossing.as_ref(), Some(&exit_root("e7", &second, &[])));
+}
+
+/// CT-JI-08 (part: the exit-root entry after retained moves, with its undo and redo on its own sides; not run: branch
+/// navigation and the void facts), JI.25 to JI.27, JI.29, FP.31, FP.32. After an exit, a retained twist and a word
+/// commit, `jumble.on` replays their literal letters, the retained suffix, from the exit's own poses: the poses are
+/// the jumbling journal's from solved, and the record names the exit and the suffix's letter count and
+/// `Digest<literal word>`. An undo of the entry restores the Jumble off state after the suffix, not the exit's, and a
+/// redo makes the same entry again. With the word commit undone too, the entry replays the shorter suffix and clears
+/// the redo stack.
+#[test]
+fn an_entry_after_retained_moves_replays_the_suffix_from_the_exit() {
+    let mut f = fixture(&[]);
+    assert!(committed(&f.enter()));
+    assert!(committed(&f.menu_twist(&item(6))));
+    assert!(committed(&f.exit()));
+    assert!(committed(&f.twist(&item(6))));
+    let twisted = f.layer.revision().clone();
+    assert!(committed(&f.commit(&word(&[2]))));
+    let off = f.layer.revision().clone();
+    assert!(committed(&f.enter()));
+    let on = f.layer.revision().clone();
+    let mut moves = vec![resolved(&item(6))];
+    moves.extend(primitives(&[1, -2, 1, 2]));
+    assert_eq!((on.mode, on.head.as_str(), on.digest.clone()), (JUMBLE_ON_MODE, "e6", poses(&moves)));
+    assert_eq!(f.layer.snapshot().digest(), off.digest);
+    let log = f.layer.store().log.clone();
+    let exit = log[2].crossing.clone().expect("the exit's record");
+    assert_eq!(log[5].crossing.as_ref(), Some(&exit_root("e3", &exit, &[1, -2, 1, 2])));
+
+    assert!(committed(&f.step(Direction::Undo)));
+    let r = f.layer.revision().clone();
+    assert_eq!((r.mode, r.head.as_str(), r.digest.as_str()), (MODE, off.head.as_str(), off.digest.as_str()));
+    assert!(f.layer.jumbled().is_none());
+    assert_eq!(f.layer.snapshot().digest(), off.digest, "the state after the suffix, not the exit's");
+    assert!(committed(&f.step(Direction::Redo)));
+    let r = f.layer.revision().clone();
+    assert_eq!((r.mode, r.head.as_str(), r.digest.as_str()), (JUMBLE_ON_MODE, "e6", on.digest.as_str()));
+    assert_eq!(f.layer.jumbled().expect("Jumble is on").digest(&ctx()), on.digest);
+
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert_eq!(f.layer.revision().digest, twisted.digest);
+    assert!(committed(&f.enter()));
+    moves.truncate(4);
+    assert_eq!(f.layer.revision().digest, poses(&moves));
+    let last = f.layer.store().log.last().cloned().expect("the entry");
+    assert_eq!(last.crossing.as_ref(), Some(&exit_root("e3", &exit, &[1, -2, 1])));
     assert!(f.layer.undo_hint(Direction::Redo).is_none());
+}
+
+/// CT-JI-09 (part: an entry from an exit root joins one action chain with the solved-witness entry, pose moves, the
+/// exit and a retained twist, and undo and redo run through both entries both ways; not run: the void facts and the
+/// inverse classes, which are not built), CT-JI-08 (part: each entry's undo and redo use its own sides), ONE.81,
+/// JI.27, JI.29 (draft), KN5.23: every step lands on its recorded mode, head, digest and retained state, and a reopen
+/// under the menu replays the whole chain with the same records.
+#[test]
+fn undo_and_redo_carry_the_exit_root_entry_through_one_chain() {
+    use TransactionKind::{Commit, Crossing, Exit, JumbleMove, Redo, Undo};
+    type Step = fn(&mut Fixture) -> Receipt;
+    let steps: [Step; 6] = [
+        |f| f.enter(),
+        |f| f.menu_twist(&item(6)),
+        |f| f.exit(),
+        |f| f.twist(&item(6)),
+        |f| f.enter(),
+        |f| f.menu_twist(&item(12)),
+    ];
+    let mut f = fixture(&[]);
+    let at = |f: &Fixture| {
+        let r = f.layer.revision();
+        (r.mode, r.head.clone(), r.digest.clone(), f.layer.snapshot().digest().to_owned())
+    };
+    let mut points = vec![at(&f)];
+    for (index, step) in steps.iter().enumerate() {
+        let receipt = step(&mut f);
+        assert!(committed(&receipt), "step {index}: {:?}", receipt.status);
+        points.push(at(&f));
+    }
+    for k in (0..steps.len()).rev() {
+        assert!(committed(&f.step(Direction::Undo)), "the undo to point {k}");
+        assert_eq!(at(&f), points[k], "the undo to point {k}");
+    }
+    assert!(f.layer.undo_hint(Direction::Undo).is_none());
+    for (k, point) in points.iter().enumerate().skip(1) {
+        assert!(committed(&f.step(Direction::Redo)), "the redo to point {k}");
+        assert_eq!(&at(&f), point, "the redo to point {k}");
+    }
+    assert!(f.layer.undo_hint(Direction::Redo).is_none());
+
+    let log = f.layer.store().log.clone();
+    let kinds: Vec<TransactionKind> = log.iter().map(|t| t.kind).collect();
+    let mut chain = vec![Crossing, JumbleMove, Exit, Commit, Crossing, JumbleMove];
+    chain.extend([Undo; 6]);
+    chain.extend([Redo; 6]);
+    assert_eq!(kinds, chain);
+    let g = reopen_with(&f.layer, Some(pinned()));
+    assert!(g.layer.recovery().is_none(), "{:?}", g.layer.recovery());
+    assert_eq!(restored(&g.layer), restored(&f.layer));
+    assert_eq!(g.layer.store().log, log);
+    assert_eq!(at(&g), at(&f));
+}
+
+/// KN5.23, ONE.58 and JI.27's recovery row (draft), FP.31: a reopen under the menu replays an entry from an exit root
+/// from the replayed exit's poses and makes the same record. A stored entry whose record names another letter count,
+/// another suffix, another exit or another crossing event, or the solved witness's form, does not replay: the layer is
+/// in read-only recovery at Jumble off after the retained twist before it, never half-crossed. Without the menu the
+/// first entry does not replay.
+#[test]
+fn a_reopen_replays_the_exit_root_entry_under_its_menu() {
+    let mut f = fixture(&[]);
+    let start = f.layer.revision().clone();
+    assert!(committed(&f.enter()));
+    assert!(committed(&f.menu_twist(&item(6))));
+    assert!(committed(&f.exit()));
+    assert!(committed(&f.twist(&item(6))));
+    let off = f.layer.revision().clone();
+    assert!(committed(&f.enter()));
+    let log = f.layer.store().log.clone();
+    assert_eq!(log[4].kind, TransactionKind::Crossing);
+
+    let g = reopen_with(&f.layer, Some(pinned()));
+    assert!(g.layer.recovery().is_none(), "{:?}", g.layer.recovery());
+    assert_eq!(restored(&g.layer), restored(&f.layer));
+    assert_eq!(g.layer.store().log, log);
+    assert_eq!(g.layer.jumbled().map(|jumbled| jumbled.digest(&ctx())), Some(f.layer.revision().digest.clone()));
+    let h = reopen_with(&f.layer, None);
+    assert_eq!(h.layer.recovery().map(|error| error.code), Some(code::READ_ONLY_RECOVERY), "no menu");
+    let r = h.layer.revision();
+    assert_eq!((r.mode, r.head.as_str(), r.digest.as_str()), (MODE, start.head.as_str(), start.digest.as_str()));
+
+    let record = log[4].crossing.clone().expect("the entry's record");
+    let solved_form = json::object([
+        ("entrance", text("solved_witness")),
+        ("identity", identity_json(&ctx().identity(Some(&pinned())))),
+        ("letters", Value::Int(3)),
+        ("word", text(&literal_digest(&[1, -2, 1]))),
+    ]);
+    let edits = [
+        (with(&record, "letters", Some(Value::Int(2))), "another letter count"),
+        (with(&record, "word", Some(text(&literal_digest(&[1, -2])))), "another suffix"),
+        (with(&record, "exit", Some(text(&"0".repeat(64)))), "another exit"),
+        (with(&record, "crossing", Some(text("e2"))), "another crossing event"),
+        (solved_form, "the solved witness's form"),
+    ];
+    for (edited, what) in edits {
+        let mut store = f.layer.store().clone();
+        store.log[4].crossing = Some(edited);
+        let h = reopen_store(store, Some(pinned()));
+        assert_eq!(h.layer.recovery().map(|error| error.code), Some(code::READ_ONLY_RECOVERY), "{what}");
+        let r = h.layer.revision();
+        let at = (r.mode, r.head.as_str(), r.digest.as_str(), r.state);
+        assert_eq!(at, (MODE, off.head.as_str(), off.digest.as_str(), off.state), "{what}");
+        assert!(h.layer.jumbled().is_none(), "{what}");
+    }
+}
+
+/// JI.27 (draft ruling: an exit's poses keep the jumbling identity block they were made under). With Jumble off a
+/// menu with another identity block may be pinned, but an entry from the exit's root under it is
+/// `KN1:input.identity_mismatch` and changes nothing, at the exit and after a retained commit. With the exit's menu
+/// pinned again, the entry commits.
+#[test]
+fn an_entry_from_an_exit_root_needs_the_exit_s_menu() {
+    let mut f = fixture(&[]);
+    assert!(committed(&f.enter()));
+    assert!(committed(&f.menu_twist(&item(6))));
+    assert!(committed(&f.exit()));
+    f.layer.pin_menu(ctx(), reversed()).unwrap();
+    let press = f.enter_press();
+    f.refused(press, IDENTITY_MISMATCH, "an entry at the exit under another menu");
+    assert!(committed(&f.commit(&word(&[2]))));
+    let press = f.enter_press();
+    f.refused(press, IDENTITY_MISMATCH, "an entry after a retained commit under another menu");
+    f.layer.pin_menu(ctx(), pinned()).unwrap();
+    assert!(committed(&f.enter()));
+    let log = f.layer.store().log.clone();
+    let exit = log[2].crossing.clone().expect("the exit's record");
+    assert_eq!(log.last().and_then(|t| t.crossing.as_ref()), Some(&exit_root("e3", &exit, &[2])));
+}
+
+/// The chain bound (draft): an entry from an exit root nests the suffix's derivation on the exit's poses, so where
+/// that is the 64th chained derivation the layer replays the jumbling journal flat from solved instead, which must
+/// reach the same poses. After 63 pose moves, an exit and a retained twist, the entry's poses are the journal's from
+/// solved, its undo and redo reach them again, a pose move and an exit work from them, and a reopen under the menu
+/// replays the whole chain. Not run: the chain depth itself, which the public API does not show.
+#[test]
+fn an_entry_at_the_chain_bound_replays_the_journal_flat() {
+    let t6 = resolved(&item(6));
+    let mut f = fixture(&[]);
+    assert!(committed(&f.enter()));
+    for index in 0..63 {
+        assert!(committed(&f.menu_twist(&item(6))), "pose move {index}");
+    }
+    assert!(committed(&f.exit()));
+    assert!(committed(&f.twist(&item(6))));
+    assert!(committed(&f.enter()));
+    let mut moves = vec![t6.clone(); 63];
+    moves.extend(primitives(&[1, -2, 1]));
+    let on = f.layer.revision().clone();
+    assert_eq!(on.digest, poses(&moves));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.step(Direction::Redo)));
+    assert_eq!(f.layer.revision().digest, on.digest);
+    assert!(committed(&f.menu_twist(&item(6))));
+    moves.push(t6);
+    assert_eq!(f.layer.revision().digest, poses(&moves));
+    assert!(committed(&f.exit()));
+    let g = reopen_with(&f.layer, Some(pinned()));
+    assert!(g.layer.recovery().is_none(), "{:?}", g.layer.recovery());
+    assert_eq!(restored(&g.layer), restored(&f.layer));
+    assert_eq!(g.layer.store().log, f.layer.store().log);
 }
