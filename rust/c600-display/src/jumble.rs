@@ -8,9 +8,11 @@
 //! - [`transform`] builds the certified transform row (J03) from an applied twist's certified inside set.
 //! - [`named_cap_set`], [`witness`] and [`named_cut`] build the certified overlay row (J04).
 //! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer.
-//! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13).
+//! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13), with M8's slot
+//!   action of K⁺ for a piece at a lattice pose.
 //! - [`support_report`] and [`fixture_context`] are declared fixture values, as in [`crate::produce`] (RPI.50).
 
+use c600_jumble::levels;
 use c600_jumble::model::NP;
 use c600_jumble::q5::{Vec4, Q5};
 use c600_jumble::state::{Certificate, Classification, Outcome, State, Status};
@@ -271,38 +273,51 @@ pub fn seam_table(facts: &Value) -> Option<SeamTable> {
     Some(SeamTable { seams, complete })
 }
 
-/// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the identity pose is
-/// in its home slot. A piece off the lattice has no slot, and none is invented: the answer is `undefined` with reason
-/// `off_lattice`. A piece at another lattice pose has a slot, but `c600_jumble` offers no slot action of K⁺, so the
-/// answer is `undefined` with its own reason, distinct from `off_lattice`. It holds the pose level only: a label-level
-/// subject gets [`codes::LEVEL_NOT_HELD`] before any digest is compared (KN1.8).
+/// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the lattice pose k is
+/// in the slot k·s of its home slot s: M8's slot action of K⁺ with A3's frame check (`levels::Tables::piece_slots`),
+/// which at the identity is the home slot. A piece off the lattice has no slot, and none is invented: the answer is
+/// `undefined` with reason `off_lattice`. A piece, as on 600-cell-Full, has no single slot. It holds the pose level
+/// only: a label-level subject gets [`codes::LEVEL_NOT_HELD`] before any digest is compared (KN1.8).
 pub struct PoseProjection {
     digest: String,
-    slot_piece: Vec<u32>,
-    /// The K⁺ index of each piece's pose, or -1 off the lattice.
-    lattice: Vec<i32>,
+    /// Whether each piece's pose is on the lattice.
+    lattice: Vec<bool>,
+    /// The slot of each sticker, by its home slot; `None` for a sticker of a piece off the lattice.
+    slots: Vec<Option<u32>>,
 }
 
 /// The reason of a slot request for a piece off the lattice.
 pub const OFF_LATTICE: &str = "off_lattice";
 
 impl PoseProjection {
-    /// The projection for `state`, bound to its canonical pose digest.
-    pub fn new(engine: &Engine, state: &State) -> PoseProjection {
-        PoseProjection {
-            digest: state.digest(engine),
-            slot_piece: engine.model.slot_piece.clone(),
-            lattice: (0..NP).map(|piece| state.pose_of(piece).kidx().map_or(-1, i32::from)).collect(),
+    /// The projection for `state`, bound to its canonical pose digest. The slots of a piece at a lattice pose other
+    /// than the identity come from M8's level tables; an engine error there, such as a frame disagreement, is
+    /// [`Missing::Engine`] and no projection, never an answer.
+    pub fn new(engine: &Engine, state: &State) -> Result<PoseProjection, Missing> {
+        let poses: Vec<Option<u16>> = (0..NP).map(|piece| state.pose_of(piece).kidx()).collect();
+        let mut slots: Vec<Option<u32>> = (0u32..)
+            .zip(&engine.model.slot_piece)
+            .map(|(home, &piece)| (poses.get(piece as usize) == Some(&Some(0))).then_some(home))
+            .collect();
+        let turned: Vec<(usize, u16)> =
+            poses.iter().enumerate().filter_map(|(piece, &k)| k.filter(|&k| k != 0).map(|k| (piece, k))).collect();
+        if !turned.is_empty() {
+            let tables = levels::tables(engine).map_err(|error| Missing::Engine(error.0))?;
+            for (piece, k) in turned {
+                let placed = tables.piece_slots(engine, piece, k).map_err(|error| Missing::Engine(error.0))?;
+                for (&home, slot) in tables.slots(piece).iter().zip(placed) {
+                    slots[home as usize] = Some(slot);
+                }
+            }
         }
+        Ok(PoseProjection { digest: state.digest(engine), lattice: poses.iter().map(Option::is_some).collect(), slots })
     }
 
-    fn piece(&self, piece: u32, home: Option<u32>) -> Partial<u32> {
-        match (self.lattice.get(piece as usize), home) {
-            (None, _) => Partial::Undefined("no such piece".to_owned()),
-            (Some(-1), _) => Partial::Undefined(OFF_LATTICE.to_owned()),
-            (Some(0), Some(home)) => Partial::Total(home),
-            (Some(_), Some(_)) => Partial::Undefined("the kernel offers no slot action for a lattice pose".to_owned()),
-            (Some(_), None) => Partial::Undefined("a piece has no single slot".to_owned()),
+    fn piece(&self, piece: u32) -> Partial<u32> {
+        match self.lattice.get(piece as usize) {
+            None => Partial::Undefined("no such piece".to_owned()),
+            Some(false) => Partial::Undefined(OFF_LATTICE.to_owned()),
+            Some(true) => Partial::Undefined("a piece has no single slot".to_owned()),
         }
     }
 }
@@ -317,11 +332,12 @@ impl Projection for PoseProjection {
         }
         match object {
             ObjectId::Slot(slot) => Partial::Total(*slot),
-            ObjectId::Sticker(home) => match self.slot_piece.get(*home as usize) {
-                Some(&piece) => self.piece(piece, Some(*home)),
+            ObjectId::Sticker(home) => match self.slots.get(*home as usize) {
+                Some(Some(slot)) => Partial::Total(*slot),
+                Some(None) => Partial::Undefined(OFF_LATTICE.to_owned()),
                 None => Partial::Undefined("no such sticker".to_owned()),
             },
-            ObjectId::Piece(piece) | ObjectId::Point { witness: piece, .. } => self.piece(*piece, None),
+            ObjectId::Piece(piece) | ObjectId::Point { witness: piece, .. } => self.piece(*piece),
             _ => Partial::Undefined("the object has no slot".to_owned()),
         }
     }

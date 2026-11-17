@@ -70,10 +70,11 @@
 //!   on-grip or off-grip, with a domain and a cell identity local to that table (ranks of the engine's exact domain
 //!   key and chamber pair). It is complete only when the engine's batch was, so an interrupted batch has no total N.
 //!   It is a payload, not a supported row: no J08 plan is produced or published.
-//! - RPI.23, J13: the jumbling slot projection ([`jumble::PoseProjection`]) answers a sticker of a piece at the
-//!   identity pose with its home slot and a piece off the lattice with `undefined(off_lattice)`. `c600_jumble` has no
-//!   slot action of K+, so a sticker of a piece at another lattice pose is `undefined` with its own reason, not a
-//!   computed slot; a piece, as on 600-cell-Full, has no single slot.
+//! - RPI.23, J13: the jumbling slot projection ([`jumble::PoseProjection`]) answers a sticker of a piece at the lattice
+//!   pose k with the slot k·s of its home slot s, from M8's slot action of K+ with A3's frame check
+//!   (`c600_jumble::levels::Tables::piece_slots`; at the identity, the home slot), and a piece off the lattice with
+//!   `undefined(off_lattice)`. An engine error of the level tables is [`jumble::Missing::Engine`] and no projection,
+//!   never an answer. A piece, as on 600-cell-Full, has no single slot.
 //! - KN1.8, KN1.10: each slot projection holds one level, the label projection ([`pick::LabelProjection`]) labels and
 //!   the pose projection poses ([`plan::StateRef::level`]). A subject at the other level is
 //!   `undefined(KN1:input.level_not_held)` before any digest is compared, so nothing is lifted from labels into poses.
@@ -145,9 +146,8 @@
 //! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change) and the
 //! ceilings named above that need a weight table or a backend. For the jumbling puzzle: J01's shrink anchors, J06's
 //! backend readback, plans for the J07 to J12 rows and producers for their payloads other than the seam table (domain
-//! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, the slot of a
-//! piece at a non-identity lattice pose (it needs a slot action of K+ from `c600_jumble`), an engine-named plane for
-//! a swept preview, and a comparison of the posed arrays with a J1 stage after the start.
+//! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, an engine-named
+//! plane for a swept preview, and a comparison of the posed arrays with a J1 stage after the start.
 //! For user stages: the stage module's parser and checker (RPI.69's body rules, RPI.70's operation tiers and RPI.71's
 //! costs need the stage language and RM.38's weight table), and HLSL compilation (RPI.78), the raster bound (RPI.72),
 //! quarantine (RPI.77), frame reports (RM.41) and composition on a device, which need a backend; no user stage reaches

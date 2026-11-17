@@ -1,7 +1,9 @@
 //! The jumbling half of the display contract (LP3 C8) on M5's real model: CT-RPI-08's jumbling rows, CT-RPI-12's
-//! off-lattice part and the RM.37 vectors of CT-RM-07 that M5 can check. The states are the solved jumbling state
-//! and the state after the first applied twist of the pinned I_a walk (`research/jumbling/fixtures/wj-I_a.json`),
-//! which is off the lattice. Every result is a source fixture outcome over a mock backend, not a backend run.
+//! off-lattice part, RPI.23's slot projection at lattice poses other than the identity and the RM.37 vectors of
+//! CT-RM-07 that M5 can check. The states are the solved jumbling state, the state after the first applied twist of
+//! the pinned I_a walk (`research/jumbling/fixtures/wj-I_a.json`), which is off the lattice, and the state a fixed
+//! retained word makes from solved, which stays on it. Every result is a source fixture outcome over a mock backend,
+//! not a backend run.
 
 mod common;
 
@@ -15,6 +17,8 @@ use c600_display::jumble::{self, Missing, PoseProjection};
 use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested};
 use c600_display::plan::*;
 use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context, K_PLUS};
+use c600_jumble::levels;
+use c600_jumble::model::{CELL_SLOTS, NS};
 use c600_jumble::observe::{seam_facts, Batch, Rows, Scope};
 use c600_jumble::regions::near_poles;
 use c600_jumble::state::{Outcome, State, Status};
@@ -287,8 +291,8 @@ fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, insta
 /// at the identity pose resolves to its home slot; the partial answer differs from another subject's partial answer,
 /// from a projection at the other level (`KN1:input.level_not_held`, both ways, under a planted equal digest), from
 /// an unknown one (a level the occurrence has no target at) and from a stale one, which is checked first. The stale
-/// half itself is C2's test in `picking.rs`; a slot of a piece at a non-identity lattice pose is not computed (no K⁺
-/// slot action in `c600_jumble`).
+/// half itself is C2's test in `picking.rs`; a sticker of a piece at a lattice pose other than the identity is
+/// `rpi_23_a_sticker_at_a_lattice_pose_is_in_the_slot_of_the_slot_action`'s.
 #[test]
 fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     let world = world();
@@ -305,7 +309,7 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     ];
     let mut host = host_with(&base, ctx_for(state));
     install(&mut host, 1, jplan(&base, vec![Primitive::Posed(posed)], vec![], instances));
-    let projection = PoseProjection::new(engine, state);
+    let projection = PoseProjection::new(engine, state).expect("the level tables place every lattice piece");
     let resolve = |instance: u64, mode, requested, projection: &PoseProjection| {
         host.resolve_pick(&reply(&host, instance), mode, requested, projection)
     };
@@ -331,7 +335,7 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
 
     // A projection of another subject is a partial answer with its own reason, not `off_lattice`; a level the
     // occurrence has no target at is unknown.
-    let other = PoseProjection::new(engine, &world.solved);
+    let other = PoseProjection::new(engine, &world.solved).expect("the solved state is on the lattice");
     let Ok(Some(Partial::Partial { missing, .. })) = resolve(1, PickMode::Explicit, Requested::Slot, &other) else {
         panic!("another subject's projection gives a partial answer")
     };
@@ -371,6 +375,100 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     let error = host.resolve_pick(&delayed, PickMode::Explicit, Requested::Slot, &projection).expect_err("stale");
     assert_eq!((error.code, error.context["field"].as_str()), (codes::STALE_PICK, "camera"));
     assert_eq!(host.resolve_pick(&delayed, PickMode::Passive, Requested::Slot, &projection), Ok(None));
+}
+
+/// The state the fixed retained word `[1, 3, -5, 2, -7, 11]` (M8's primitive ids) makes from solved under the I_a
+/// menu: on the lattice, with many pieces at poses other than the identity.
+fn retained() -> State {
+    let world = world();
+    let mut state = world.solved.clone();
+    for mid in [1, 3, -5, 2, -7, 11] {
+        let twist = levels::primitive(&world.engine, mid).expect("a retained generator");
+        let outcome = state.apply(&world.engine, &twist, None, &[]).expect("no engine error");
+        assert_eq!(outcome.status, Status::Admissible, "letter {mid}");
+    }
+    state
+}
+
+/// RPI.23 and J13 at lattice poses other than the identity, on [`retained`]'s state: every sticker is in the slot
+/// whose label it is (M8's `levels::labels`, A3's π(X)), and a sticker of a turned piece resolves through the host to
+/// the slot k·s of M8's slot action with its frame check (`levels::Tables::slot_image`), not to its home slot s. A
+/// piece has no single slot, on the lattice as off it, and a label-level subject gets `KN1:input.level_not_held`
+/// before any digest is compared.
+#[test]
+fn rpi_23_a_sticker_at_a_lattice_pose_is_in_the_slot_of_the_slot_action() {
+    let world = world();
+    let engine = &world.engine;
+    let state = retained();
+    let levels::Partial::Total(labels) = levels::labels(engine, &state).expect("no engine error") else {
+        panic!("a retained word from solved stays on the lattice")
+    };
+    let projection = PoseProjection::new(engine, &state).expect("the level tables place every lattice piece");
+    let base = jumble::revision(engine, &state, 21);
+    let subject = StateRef::Snapshot(base.clone());
+    for (slot, &label) in (0u32..).zip(&labels.labels) {
+        let answer = projection.slot(&subject, &ObjectId::Sticker(label as u32));
+        assert_eq!(answer, Partial::Total(slot), "sticker {label} is in the slot whose label it is");
+    }
+
+    let tables = levels::tables(engine).expect("the level tables");
+    let (home, k) = (0..NS as u32)
+        .find_map(|s| {
+            let k = state.pose_of(engine.model.slot_piece[s as usize] as usize).kidx()?;
+            (tables.slot_image(engine, s, k).ok()? != s).then_some((s, k))
+        })
+        .expect("the word moves a sticker");
+    let moved_to = tables.slot_image(engine, home, k).expect("the slot action");
+    assert_eq!(labels.labels[moved_to as usize], home as i32, "the slot whose label is the sticker");
+    let piece = engine.model.slot_piece[home as usize];
+    let posed = jumble::posed(engine, &state).expect("finite poses");
+    let instances = vec![
+        DisplayInstance { piece: Some(piece), ..instance(1, 1, ObjectId::Sticker(home), 0) },
+        instance(2, 1, ObjectId::Piece(piece), 0),
+    ];
+    let mut host = host_with(&base, ctx_for(&state));
+    install(&mut host, 1, jplan(&base, vec![Primitive::Posed(posed)], vec![], instances));
+    let resolve =
+        |instance| host.resolve_pick(&reply(&host, instance), PickMode::Explicit, Requested::Slot, &projection);
+    let Ok(Some(Partial::Total(slot))) = resolve(1) else { panic!("a sticker at a lattice pose has a slot") };
+    assert_eq!(slot.target, ObjectId::Slot(moved_to), "the slot of the slot action, not the home slot {home}");
+    let Ok(Some(Partial::Partial { covered, missing })) = resolve(2) else { panic!("a piece has no single slot") };
+    assert_eq!(
+        (covered.target, missing),
+        (ObjectId::Piece(piece), vec!["slot: a piece has no single slot".to_owned()])
+    );
+
+    let labels_level = StateRef::Snapshot(RevisionRef { mode: Mode::JumbleOff, ..base.clone() });
+    assert_eq!(labels_level.digest(), subject.digest(), "the digest string is the pose subject's own");
+    let answer = projection.slot(&labels_level, &ObjectId::Sticker(home));
+    assert_eq!(answer, Partial::Undefined(codes::LEVEL_NOT_HELD.to_owned()), "no slot from poses at the label level");
+}
+
+/// An engine error of the level tables is an error, never an answer (J13): in a second copy of the model with a
+/// planted wrong frame for one cell (the identity, where the frame of a cell other than cell 0 carries pole 0 to that
+/// cell's pole), A3's frame check refuses a sticker of a turned piece on that cell whose image cell differs, and the
+/// projection of [`retained`]'s state is [`Missing::Engine`] with M8's own error, as `levels::labels` reports it, and
+/// no projection. The defect is planted in the copy's tables only: its model ID is changed, so the level tables of the
+/// shipped model stay as they are.
+#[test]
+fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
+    let state = retained();
+    let mut broken = Engine::load(&assets()).expect("the jumbling model loads");
+    broken.model.model_id.push_str("+planted-frame");
+    let cell = (0..NS)
+        .filter(|&s| s / CELL_SLOTS != 0)
+        .find_map(|s| {
+            let k = state.pose_of(broken.model.slot_piece[s] as usize).kidx().filter(|&k| k != 0)?;
+            let f = s / CELL_SLOTS;
+            (broken.kplus.perms[k as usize][f] as usize != f).then_some(f)
+        })
+        .expect("a turned piece has a sticker off cell 0 whose cell moves");
+    assert_ne!(broken.kplus.frame_idx[cell], 0, "the frame of a cell other than cell 0 is not the identity");
+    broken.kplus.frame_idx[cell] = 0;
+
+    let error = levels::labels(&broken, &state).err().expect("A3's frame check refuses the planted frame");
+    let projection = PoseProjection::new(&broken, &state);
+    assert!(matches!(&projection, Err(Missing::Engine(reason)) if *reason == error.0), "{:?}", projection.err());
 }
 
 /// CT-RM-07, jumbling half on M5's real model (RM.34, RM.37): rows 1 (mixed-revision bundle), 2 (a certified
@@ -490,7 +588,7 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let mut host = host_with(&base, ctx);
     let overlay = Primitive::CertOverlay(full.clone());
     install(&mut host, 1, jplan(&base, vec![overlay], vec![], vec![instance(1, 1, point.clone(), 0)]));
-    let projection = PoseProjection::new(engine, &state);
+    let projection = PoseProjection::new(engine, &state).expect("the level tables place every lattice piece");
     let hit = reply(&host, 1);
     let resolve = |requested| host.resolve_pick(&hit, PickMode::Explicit, requested, &projection).expect("current");
     let Some(Partial::Total(piece)) = resolve(Requested::Piece) else { panic!("the witness piece") };
