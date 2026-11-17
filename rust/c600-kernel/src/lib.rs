@@ -61,7 +61,8 @@
 //! Built: KN1.4 for protected sets ([`Kernel::checked_protection`]); the KN2.4 rows `positions`
 //! ([`Kernel::positions`]), `protection` with Strict ([`Kernel::strict_protection`], [`Kernel::derive_strict`]) and
 //! `replay` for Full ([`Kernel::replay`]); the streaming of KN2.10 ([`Kernel::chunks`], [`Replay`]); KN2.11's refusal
-//! shape ([`Refused`]). Draft choices:
+//! shape ([`Refused`]); `protection` at label level for named pieces, fixed cell centres included, under Net and Strict
+//! ([`Kernel::piece_protection`], [`Kernel::strict_piece_protection`]), which LP3's C8 reads for LB3.4. Draft choices:
 //!
 //! - A nonempty [`ProtectedSet`] is bound to the model that built it. The empty set names no orbit, so it belongs to no
 //!   model, and `ProtectedSet::none()` equals `protected_set(&[])`. Every call that takes a set checks it except the
@@ -81,6 +82,13 @@
 //!   [`Kernel::replay_under_ceiling`] counts the 3,000,000-primitive ceiling over all chunks with 0.4's text. A refused
 //!   chunk changes nothing. A word of no letters derives the base state (LB1: an empty expansion is a zero-letter
 //!   word). `c600-digest` has no incremental hash, so the replay keeps the letters' bytes for `Digest<literal word>`.
+//! - A [`ProtectedPieces`] names pieces as `positions` does and is bound to its model as a [`ProtectedSet`] is. A
+//!   [`ProtectedSet`] names moving orbits only, so a fixed cell centre had no label-level row. A piece's row gives the
+//!   slots of its stickers in the base, which are the base's `positions` slots, and after the judged map, so it depends
+//!   on the base. A centre's row is computed like any other; no letter moves a centre's sticker, so it comes out clear
+//!   (LB3.4: inside Jumble that label-level pass cannot replace the pose-level check). Strict refuses at the first
+//!   letter that moves a slot holding a protected sticker. The piece calls judge only: [`Kernel::derive`] still takes a
+//!   [`ProtectedSet`], and a refusal for pieces stays the caller's, with no new code.
 
 #![forbid(unsafe_code)]
 
@@ -512,6 +520,78 @@ pub struct Protection {
     pub first_refused_prefix: Option<u64>,
 }
 
+/// A set of pieces protected at label level: any of the 177,120 pieces, fixed cell centres included, named by home
+/// position as [`Kernel::positions`] names them. A nonempty set is bound to the model that built it, and the checked
+/// calls refuse it in another model's kernel (KN1.4). The empty set names no piece, so it belongs to no model.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProtectedPieces {
+    pieces: Vec<usize>,
+    model_id: Option<String>,
+}
+
+impl ProtectedPieces {
+    /// The empty set.
+    pub fn none() -> ProtectedPieces {
+        ProtectedPieces::default()
+    }
+
+    /// The protected pieces in increasing order, without repeats.
+    pub fn pieces(&self) -> &[usize] {
+        &self.pieces
+    }
+
+    /// The model whose pieces the set names; `None` for the empty set.
+    pub fn model_id(&self) -> Option<&str> {
+        self.model_id.as_deref()
+    }
+}
+
+/// One protected piece of a [`PieceProtection`]: where its stickers are in the base state and after the judged map.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PieceRow {
+    /// The piece, by its home position.
+    pub piece: usize,
+    /// Its orbit; -1 for a fixed cell centre.
+    pub orbit: i32,
+    /// `before[i]` is the slot that holds, in the base state, the sticker whose home slot is the piece's i-th home slot
+    /// in increasing order: the base's [`PiecePosition::slots`].
+    pub before: Vec<i32>,
+    /// The slots of the same stickers after the judged map: the net map under Net; under Strict, the first refused
+    /// prefix, or the whole word when no prefix is refused.
+    pub after: Vec<i32>,
+}
+
+impl PieceRow {
+    /// The judged map moves a sticker of the piece: its slots or its orientation change.
+    pub fn moves(&self) -> bool {
+        self.before != self.after
+    }
+}
+
+/// The `protection` row of KN2.4 for named pieces, at label level as in 600-cell-Full (LB3.4). Unlike an orbit's, a
+/// piece's row depends on the base state, which says where its stickers are.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PieceProtection {
+    pub level: Level,
+    pub mode: ProtectionMode,
+    /// The protected pieces in increasing order.
+    pub protected: Vec<usize>,
+    /// One row per protected piece, in the order of `protected`.
+    pub rows: Vec<PieceRow>,
+    /// `Moves` when the judged map moves a sticker of a protected piece.
+    pub verdict: Verdict,
+    /// Strict only: the length of the shortest executed literal prefix that moves a sticker of a protected piece.
+    /// `None` for a clear verdict and under Net, which judges only the end of the complete operation.
+    pub first_refused_prefix: Option<u64>,
+}
+
+impl PieceProtection {
+    /// The protected pieces the judged map moves, in increasing order.
+    pub fn moved(&self) -> Vec<usize> {
+        self.rows.iter().filter(|row| row.moves()).map(|row| row.piece).collect()
+    }
+}
+
 /// A certificate of a protection refusal: the judged map moves the sticker in slot `source`, of the protected orbit
 /// `orbit`, to slot `destination`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -554,6 +634,24 @@ pub struct Refused {
 pub enum Derivation {
     Derived(Derived),
     Refused(Refused),
+}
+
+/// The piece protection row from its rows: `Moves` when one of them moves.
+fn piece_verdict(
+    mode: ProtectionMode,
+    protected: &ProtectedPieces,
+    rows: Vec<PieceRow>,
+    first_refused_prefix: Option<u64>,
+) -> PieceProtection {
+    let verdict = if rows.iter().any(PieceRow::moves) { Verdict::Moves } else { Verdict::Clear };
+    PieceProtection {
+        level: Level::Labels,
+        mode,
+        protected: protected.pieces.clone(),
+        rows,
+        verdict,
+        first_refused_prefix,
+    }
 }
 
 /// One row of 0.4's `PuzzleState.progress()`.
@@ -671,6 +769,11 @@ impl Kernel {
 
     /// A nonempty protected set must name this model's orbits; the empty set names none.
     fn same_set(&self, protected: &ProtectedSet) -> Result<(), Refusal> {
+        protected.model_id.as_deref().map_or(Ok(()), |model_id| self.same_model(model_id))
+    }
+
+    /// A nonempty set of protected pieces must name this model's pieces; the empty set names none.
+    fn same_pieces(&self, protected: &ProtectedPieces) -> Result<(), Refusal> {
         protected.model_id.as_deref().map_or(Ok(()), |model_id| self.same_model(model_id))
     }
 
@@ -896,6 +999,103 @@ impl Kernel {
             first_refused_prefix: first.map(|(prefix, _)| prefix),
         };
         (protection, certificates)
+    }
+
+    /// A protected set of pieces, any of 0 to 177,119 with the fixed cell centres; repeats are allowed. A bad piece is
+    /// refused as [`Kernel::positions`] refuses it, with `KN2:input.named_object_invalid` and 0.4's text.
+    pub fn protected_pieces(&self, pieces: &[i64]) -> Result<ProtectedPieces, Refusal> {
+        let named = |p: &i64| usize::try_from(*p).ok().filter(|&p| p < PIECES);
+        let Some(mut set) = pieces.iter().map(named).collect::<Option<Vec<usize>>>() else {
+            let text = format!("Position must be an integer in 0..{}", PIECES - 1);
+            return Err(Refusal::new(codes::NAMED_OBJECT_INVALID, text));
+        };
+        set.sort_unstable();
+        set.dedup();
+        let model_id = (!set.is_empty()).then(|| self.model.model_id.clone());
+        Ok(ProtectedPieces { pieces: set, model_id })
+    }
+
+    /// Net protection of named pieces at label level (KN2.4, LB3.4): each protected piece's stickers in `base` and
+    /// after the effect's net map, and `Moves` when the map moves one of them. A fixed cell centre's sticker is moved by
+    /// no letter, so its row is always clear; that is computed, not assumed. Another model's base or set is refused
+    /// (KN1.4); an effect names no model, so a recipe's model is checked where its effect is computed.
+    pub fn piece_protection(
+        &self,
+        base: &Snapshot,
+        effect: &Effect,
+        protected: &ProtectedPieces,
+    ) -> Result<PieceProtection, Refusal> {
+        self.same_model(base.model_id())?;
+        self.same_pieces(protected)?;
+        let carry = |slot: i32| effect.source.binary_search(&slot).map_or(slot, |at| effect.destination[at]);
+        let rows = self.piece_rows(base, protected, carry);
+        Ok(piece_verdict(ProtectionMode::Net, protected, rows, None))
+    }
+
+    /// Strict protection of named pieces at label level: every executed prefix of the recipe's literal expansion is
+    /// judged (KN2.7, LB2.3). Letters run from source to destination, so while every earlier letter fixes the
+    /// protected stickers they stay in their base slots, and the first refused prefix ends at the first letter that
+    /// moves a slot holding one; the rows give the slots after that prefix. Another model's base, recipe or set is
+    /// refused (KN1.4).
+    pub fn strict_piece_protection(
+        &self,
+        base: &Snapshot,
+        recipe: &Recipe,
+        protected: &ProtectedPieces,
+    ) -> Result<PieceProtection, Refusal> {
+        self.same_model(base.model_id())?;
+        self.same_model(&recipe.model_id)?;
+        self.same_pieces(protected)?;
+        let unmoved = self.piece_rows(base, protected, |slot| slot);
+        let mut held = vec![false; SLOTS];
+        for row in &unmoved {
+            for &slot in &row.before {
+                held[slot as usize] = true;
+            }
+        }
+        // Whether primitive |m| moves a held slot; a letter and its inverse move the same slots.
+        let mut touches: Vec<Option<bool>> = vec![None; GENERATORS];
+        let mut first = None;
+        for (index, &m) in self.expansion(recipe).iter().enumerate() {
+            let seen = &mut touches[(m.unsigned_abs() - 1) as usize];
+            let hit = *seen.get_or_insert_with(|| {
+                let (source, destination) = self.model.pairs(m);
+                source.iter().zip(destination).any(|(&s, &d)| s != d && held[s as usize])
+            });
+            if hit {
+                first = Some((index as u64 + 1, m));
+                break;
+            }
+        }
+        let Some((prefix, letter)) = first else {
+            return Ok(piece_verdict(ProtectionMode::Strict, protected, unmoved, None));
+        };
+        let (source, destination) = self.model.pairs(letter);
+        let mut image = std::collections::HashMap::new();
+        for (&s, &d) in source.iter().zip(destination) {
+            if held[s as usize] {
+                image.insert(s, d);
+            }
+        }
+        let rows = self.piece_rows(base, protected, |slot| image.get(&slot).copied().unwrap_or(slot));
+        Ok(piece_verdict(ProtectionMode::Strict, protected, rows, Some(prefix)))
+    }
+
+    /// The rows of the protected pieces: their stickers' slots in `base`, and where `carry` takes each slot.
+    fn piece_rows(&self, base: &Snapshot, protected: &ProtectedPieces, carry: impl Fn(i32) -> i32) -> Vec<PieceRow> {
+        if protected.pieces.is_empty() {
+            return Vec::new();
+        }
+        let mut now = vec![0i32; SLOTS];
+        for (slot, &label) in base.labels().iter().enumerate() {
+            now[label as usize] = slot as i32;
+        }
+        let rows = protected.pieces.iter().map(|&piece| {
+            let before: Vec<i32> = self.model.home_slots(piece).iter().map(|&home| now[home as usize]).collect();
+            let after = before.iter().map(|&slot| carry(slot)).collect();
+            PieceRow { piece, orbit: self.model.piece_orbit[piece], before, after }
+        });
+        rows.collect()
     }
 
     /// Per protected orbit that a map moves, its smallest moved slot and where that sticker goes.

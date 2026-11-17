@@ -369,6 +369,28 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
     assert_eq!(other.checked_protection(&effect, &own_set).unwrap(), other.protection(&effect, &own_set));
     assert_eq!(other.checked_protection(&effect, &shipped.protected_set(&[]).unwrap()).unwrap().protected, []);
     assert!(other.derive(&own_state, &own_recipe, &own_set).is_ok());
+
+    // KN1.4 for protected pieces: both piece calls refuse another model's base, recipe or set, accept the empty set of
+    // any kernel, and answer for their own values as the shipped kernel answers for its.
+    let (pieces, own_pieces) =
+        (shipped.protected_pieces(&[0, 433]).unwrap(), other.protected_pieces(&[0, 433]).unwrap());
+    assert_eq!(other.piece_protection(&state, &effect, &own_pieces).unwrap_err(), refusal);
+    assert_eq!(other.piece_protection(&own_state, &effect, &pieces).unwrap_err(), refusal);
+    assert_eq!(other.strict_piece_protection(&state, &own_recipe, &own_pieces).unwrap_err(), refusal);
+    assert_eq!(other.strict_piece_protection(&own_state, &recipe, &own_pieces).unwrap_err(), refusal);
+    assert_eq!(other.strict_piece_protection(&own_state, &own_recipe, &pieces).unwrap_err(), refusal);
+    let empty = shipped.protected_pieces(&[]).unwrap();
+    assert_eq!(other.piece_protection(&own_state, &effect, &empty).unwrap().rows, []);
+    assert_eq!(other.strict_piece_protection(&own_state, &own_recipe, &empty).unwrap().rows, []);
+    let shipped_effect = shipped.effect(&recipe).unwrap();
+    assert_eq!(
+        other.piece_protection(&own_state, &effect, &own_pieces).unwrap(),
+        shipped.piece_protection(&state, &shipped_effect, &pieces).unwrap()
+    );
+    assert_eq!(
+        other.strict_piece_protection(&own_state, &own_recipe, &own_pieces).unwrap(),
+        shipped.strict_piece_protection(&state, &recipe, &pieces).unwrap()
+    );
 }
 
 /// The orbit of every slot of the shipped model, read from `model.npz`.

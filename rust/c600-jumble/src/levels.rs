@@ -27,6 +27,13 @@
 //! a chamber when its vertex set equals one (looked up by its vertex centroid, then compared vertex by vertex), so a
 //! region key never depends on which pose produced it.
 //!
+//! # The slot action of K⁺ (A3)
+//!
+//! [`Tables::slot_image`] is A3's k·s for a lattice pose k: the slot that the sticker in home slot s reaches when its
+//! piece turns by k, with the sticker's frame checked against the slot layout. It is a left action of K⁺ on the 259,800
+//! slots, and [`Tables::piece_slots`] gives a piece's slots at a pose in the order of its home slots. The labels of a
+//! state are computed through it. A pose off the lattice has no slot action, so the labels stay partial there.
+//!
 //! # End tests (A5; KN2.4 lists three separate rows)
 //!
 //! Each answers a verdict of KN0.5: yes or no with evidence, or unknown with a reason, never a boolean.
@@ -340,6 +347,66 @@ impl Tables {
     /// The centre pieces, each with its pole.
     pub fn centres(&self) -> &[(u32, u16)] {
         &self.centres
+    }
+
+    /// The slot action of K⁺ (A3): the slot that the sticker whose home slot is `s` occupies when its piece has the
+    /// lattice pose `k`. The slot is its piece's image chamber's slot on the image of its cell, and the sticker's frame
+    /// is checked against the slot layout; a disagreement is an engine error. It is a left action:
+    /// `slot_image(ctx, s, 0)` is `s`, and `slot_image(ctx, s, kp.compose(k1, k2))` is
+    /// `slot_image(ctx, slot_image(ctx, s, k2)?, k1)`. A slot outside 0..NS or an element outside K⁺ is an engine error.
+    pub fn slot_image(&self, ctx: &Context, s: u32, k: u16) -> Result<u32, EngineError> {
+        let p = ctx.model.slot_piece.get(s as usize).ok_or_else(|| engine(format!("slot {s} is outside 0..{NS}")))?;
+        if k as usize >= ORDER {
+            return Err(engine(format!("K+ element {k} is outside 0..{ORDER}")));
+        }
+        if k == 0 {
+            return Ok(s);
+        }
+        self.carry(ctx, s, k, self.image(ctx, *p as usize, k))
+    }
+
+    /// The slots of piece `p` at the lattice pose `k`, in the order of [`Tables::slots`]: entry i is
+    /// [`Tables::slot_image`] of `slots(p)[i]`, so it holds the sticker whose home slot is `slots(p)[i]`.
+    pub fn piece_slots(&self, ctx: &Context, p: usize, k: u16) -> Result<Vec<u32>, EngineError> {
+        if p >= NP {
+            return Err(engine(format!("piece {p} is outside 0..{NP}")));
+        }
+        if k as usize >= ORDER {
+            return Err(engine(format!("K+ element {k} is outside 0..{ORDER}")));
+        }
+        let mut out = Vec::with_capacity(self.slots(p).len());
+        self.place(ctx, p, k, |_, d| out.push(d))?;
+        Ok(out)
+    }
+
+    /// Calls `each(s, k·s)` for every slot s of piece p, in the order of [`Tables::slots`]; p and k are in range.
+    fn place(&self, ctx: &Context, p: usize, k: u16, mut each: impl FnMut(u32, u32)) -> Result<(), EngineError> {
+        if k == 0 {
+            self.slots(p).iter().for_each(|&s| each(s, s));
+            return Ok(());
+        }
+        let to = self.image(ctx, p, k);
+        for &s in self.slots(p) {
+            each(s, self.carry(ctx, s, k, to)?);
+        }
+        Ok(())
+    }
+
+    /// k·s for a slot s whose piece k carries to the chamber `to`, with A3's frame check: the frame change
+    /// l = F(f₂)⁻¹·k·F(f) of the sticker's cell f and its image cell f₂ must lie in the stabiliser of pole 0 and carry
+    /// the sticker's place on its cell to the place of the slot found.
+    fn carry(&self, ctx: &Context, s: u32, k: u16, to: u32) -> Result<u32, EngineError> {
+        let kp = &ctx.kplus;
+        let f = s as usize / CELL_SLOTS;
+        let f2 = kp.perms[k as usize][f];
+        let d = self.slot_of(to, f2).ok_or_else(|| engine(format!("chamber {to} has no slot on cell {f2}")))?;
+        let l = kp.compose(kp.inv[kp.frame_idx[f2 as usize] as usize], kp.compose(k, kp.frame_idx[f]));
+        let orient = self.stab0_pos[l as usize];
+        if orient < 0 || self.base_region_perm[orient as usize][s as usize % CELL_SLOTS] as u32 != d % CELL_SLOTS as u32
+        {
+            return Err(engine(format!("the frame of sticker {s} disagrees with the slot layout (A3)")));
+        }
+        Ok(d)
     }
 
     fn chambers(&self, ctx: &Context) -> Result<&Chambers, EngineError> {
@@ -881,31 +948,10 @@ impl Projection {
 /// Where each sticker sits: for home slot s, the slot it occupies now when its piece is on the lattice (A3). Every
 /// sticker frame is checked against the slot layout; a disagreement is an engine error.
 fn sticker_slots(ctx: &Context, t: &Tables, state: &State) -> Result<Vec<Option<u32>>, EngineError> {
-    let kp = &ctx.kplus;
     let mut dest = vec![None; NS];
     for p in 0..NP {
         let Some(k) = state.pose_of(p).kidx() else { continue };
-        if k == 0 {
-            for &s in t.slots(p) {
-                dest[s as usize] = Some(s);
-            }
-            continue;
-        }
-        let to = t.image(ctx, p, k);
-        let perm = &kp.perms[k as usize];
-        for &s in t.slots(p) {
-            let f = s as usize / CELL_SLOTS;
-            let f2 = perm[f];
-            let d = t.slot_of(to, f2).ok_or_else(|| engine(format!("chamber {to} has no slot on cell {f2}")))?;
-            let l = kp.compose(kp.inv[kp.frame_idx[f2 as usize] as usize], kp.compose(k, kp.frame_idx[f]));
-            let orient = t.stab0_pos[l as usize];
-            if orient < 0
-                || t.base_region_perm[orient as usize][s as usize % CELL_SLOTS] as u32 != d % CELL_SLOTS as u32
-            {
-                return Err(engine(format!("the frame of sticker {s} disagrees with the slot layout (A3)")));
-            }
-            dest[s as usize] = Some(d);
-        }
+        t.place(ctx, p, k, |s, d| dest[s as usize] = Some(d))?;
     }
     Ok(dest)
 }

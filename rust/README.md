@@ -457,6 +457,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Streaming words (KN2.10): `chunks(recipe, size)` streams a recipe's literal letters with their positions, one
     step's expansion at a time; `replay(base, set)` takes letters in chunks of any size, judges Strict prefix by
     prefix and gives no verdict before `finish`; `replay_under_ceiling` counts the 3,000,000 ceiling over all chunks.
+  - Label-level protection of named pieces (for LP3's C8 and LB3.4): `protected_pieces` names any of the 177,120
+    pieces, fixed cell centres included, as `positions` names them, and a nonempty set is bound to its model as a
+    `ProtectedSet` is. `piece_protection` (Net, on an effect's net map) and `strict_piece_protection` (Strict, every
+    executed prefix of the literal expansion) give one row per piece: the slots of its stickers in the base, which are
+    the base's `positions` slots, and after the judged map. A centre's row is computed like any other, and since no
+    letter moves a centre's sticker it comes out clear. The calls judge only: `derive` still takes a `ProtectedSet`,
+    and a refusal for pieces stays the caller's, with no new code. `c600-kernel/tests/pieces.rs` checks the rows
+    against `positions` before and after `derive`, the centre of cell 0 under H_0 (CT-LB3-02's label half from the
+    kernel), all 600 centres under every generator, Strict against a scan that derives every prefix, and the set's
+    refusals; `tests/load.rs` checks KN1.4 for both piece calls on a second model. The critical-path read is recorded
+    with the slot action (M5's section).
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
@@ -668,6 +679,29 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
     marker naming what it leaves out. Not built: `nu`, `correction_set_check`, and the session store's checkpoint and
     import records (M6). No J1 fault was found. Evidence kind: source and fixture; the comparison ran on Windows only.
+- The kernel pieces for LP3's C8 (LP2):
+  - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
+    `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
+    of its home slots; `labels` now runs on them with unchanged results.
+  - The engine-named rotation plane: `twist::rotation_plane` (and `Twist::plane`) names a rotation's plane exactly
+    for a swept preview (render/1, section 4). u is the first nonzero column of g − I; v is g u − cos θ·u for θ < π,
+    and for a half-turn the first later column independent of u made orthogonal to u, which is the engine's naming of
+    the half-turn's direction. u and v are unnormalized, and R(θ) built from them is g exactly. The identity, a
+    rotation that turns two planes and a matrix that is not a rotation get none. The display's `f32` plane is LP3's to
+    fill from it in `c600-display`.
+  - `c600-jumble/tests/slots_planes.rs` tests the left action on 21 elements, the agreement with `labels` after a
+    retained word, the refusals, and the planes of the 12 elements fixing pole 0, every retained generator, every
+    seventh element of K⁺, H_0 and an off-lattice Cayley rotation, each rebuilt exactly.
+  - Nothing more was built for LB3.4: its projection from poses to labels with the checkpoints, and a whole word's Net
+    and Strict protection at pose level, are M8's levels (above: `project`, `retained_checkpoint`, `label_checkpoint`,
+    `derive` with `WordProtection`); CT-LB3-06's peak, excursion, tameness and step flag are M5's `observe`; label-level
+    protection of a piece is the kernel's (M4's section).
+  - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the slot action,
+    the plane and the kernel's piece protection with the acceptance check and found no blocker or major finding. Its
+    two minor points were fixed before the pull request: KN1.4 for the piece calls is now tested on a second model,
+    and Strict is compared with a scan that derives every prefix. No action on its two nits: an effect names no model,
+    as M4 decided, and the identity pose skips the frame check, as before.
+  - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store
 
