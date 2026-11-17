@@ -1406,6 +1406,18 @@ run or not applicable is no pass (PHS.63).
   jumble move under another row, or a retained commit while Jumble is on, leaves the layer in read-only recovery. Tests:
   `c600-command/tests/jumble_twist_menu.rs` (the command layer's parts of CT-EV4-04, CT-ONE-03, CT-ONE-11, CT-JI-06 and
   CT-KN5-04).
+- The jumbling oracle route `c600-jumble-route` (LP3 plan, PHS.23's "Oracle equality at every committed step", its
+  jumbling half: M5's oracle through the command layer with Jumble on, C8) serves M5's adapter protocol: `start` pins
+  the menu and presses `jumble.on`, each `apply` presses `jumble.twist.menu` with the item the harness names at the
+  current revision, and `undo` and `redo` press `session.undo` and `session.redo` back to the crossing at most.
+  `tests/test_jumbling_command_route.py` builds it in release and compares it with J1 through the differential harness
+  step by step on the first 70 records of each W-J fixture (`JUMBLING_FULL_REPLAY=1` runs every record): the status, the
+  moved count, the moved set, the pose digest and the lattice digest. Then every move undoes to the entry and redoes to
+  the end onto J1's states of its prefix, moving its own pieces (JI.27); seventy moves pass the layer's bound of 64
+  chained pose moves, so the moves, the undos and the redos each cross a replay from solved. A blocked item, a record
+  off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
+  with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
+  budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
 - KN5 not built yet: the other jumbling row (`jumble.off` with its exit witness); KN5.26's admission matrix (L1, L2)
   beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime proposal's block; a `file`
   overlay without a granted file capability), L12 to L14, L16 and L17; the typed workspace rows and limits on a record's
