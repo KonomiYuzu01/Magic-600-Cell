@@ -18,6 +18,9 @@
 //! `use` (`name`) and `release` (`name`); a kept prefix state is named `prefix/<row index>`. `cayley` (`grip`,
 //! `omega`) returns the record of an exact Cayley rotation for free-mode tests.
 //!
+//! The end tests and derived values of `c600_jumble::levels` are listed where the adapter answers them. ν (A5) is
+//! `nu` and `nu_constants`, listed at the end of this file.
+//!
 //! Every request, and the record that `load` reads, may name its `dimension` (JI.3). This edition admits only 4, and
 //! a request or record without one means 4 (a draft: the harness's requests carry none). Any other value is refused
 //! with `KN1:input.unsupported_dimension` before any other field is read, and nothing changes (JI.45).
@@ -470,6 +473,8 @@ impl Adapter {
             }
             "gauge" | "gauge_between" => self.levels(op, request)?,
             "derive" | "import" | "compare" => self.derived_op(op, request)?,
+            "nu" => self.nu(request)?,
+            "nu_constants" => self.nu_constants()?,
             other => return Err(input(format!("unknown op {other}"))),
         };
         Ok(Some(result))
@@ -1247,5 +1252,102 @@ impl Adapter {
                 Ok(naming(verdict.to_json_at(levels::LABEL_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
             }
         }
+    }
+}
+
+// ------------------------------------------------------------------------------------------------------ ν (A5)
+
+/// ν ([`c600_jumble::nu`]). Neither request changes anything.
+///
+/// - `nu` reads the current state, a stored state (`state`) or a derived value (`derived`). With a derived value, or
+///   with `journal`, records from solved that witness the state, it is KN2.4's row ([`c600_jumble::nu::nu`]): under
+///   I_a a nonzero fixed coordinate is refused with `KN2:consistency.fixed_nu_nonzero`. Without either it is the bare
+///   value ([`c600_jumble::nu::value`]), which makes no claim. The answer is `{result: "total", nu, nonzero, state}`
+///   with the 45 values and the nonzero ones by name, `{result: "undefined", reason, state}` or `{result: "refused",
+///   code, message, state}`. A journal that does not witness the state is an input error.
+/// - `nu_constants`: the coordinates' names and moduli, the fixed coordinates under I_a, the orbits of the frame bits
+///   and of the values modulo 5, the C5 convention, the certificate program's SHA-256, the I_a menu's identity and
+///   order digest, the contract revision, and each orbit's frame group (`groups`: orbit, kind, order, slots, and the
+///   generator r0 of a C5 group).
+impl Adapter {
+    fn nu(&self, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::levels::{Base, Partial, Snapshot};
+        use c600_jumble::nu;
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        let journal = self.journal(request.get("journal"))?;
+        let (result, state) = if names_derived(request) {
+            if !matches!(request.get("state"), None | Some(Value::Null)) || journal.is_some() {
+                return Err(input("a derived value names no state and no journal"));
+            }
+            let derived = self.derived_value(request)?;
+            (nu::nu(&self.ctx, Base::Derived(derived)).map_err(engine)?, derived.state())
+        } else {
+            let state = self.read_state(request)?;
+            match journal {
+                None => (Ok(nu::value(&self.ctx, state).map_err(engine)?), state),
+                Some((twists, moved)) => {
+                    let snapshot = Snapshot::witnessed(&self.ctx, state.clone(), &twists, Some(moved.as_slice()))
+                        .map_err(engine)?
+                        .map_err(|reason| input(format!("the journal does not witness the state: {reason}")))?;
+                    (nu::nu(&self.ctx, Base::Snapshot(&snapshot)).map_err(engine)?, state)
+                }
+            }
+        };
+        let digest = string(&state.digest(&self.ctx));
+        Ok(match result {
+            Err(refusal) => json::object([
+                ("result", string("refused")),
+                ("code", string(refusal.code)),
+                ("message", string(&refusal.message)),
+                ("state", digest),
+            ]),
+            Ok(Partial::Total(value)) => {
+                let nonzero = value.nonzero().into_iter().map(|(name, v)| (name.to_owned(), int(v))).collect();
+                json::object([
+                    ("result", string("total")),
+                    ("nu", value.to_json()),
+                    ("nonzero", Value::Object(nonzero)),
+                    ("state", digest),
+                ])
+            }
+            Ok(Partial::Undefined(reason)) => {
+                json::object([("result", string("undefined")), ("reason", string(&reason)), ("state", digest)])
+            }
+            Ok(Partial::Partial { .. }) => return Err(Fail::Engine("ν is never partial".into())),
+        })
+    }
+
+    fn nu_constants(&self) -> Result<Value, Fail> {
+        use c600_jumble::nu;
+        let tables = nu::tables(&self.ctx).map_err(|e| Fail::Engine(e.0))?;
+        let mut groups = Vec::new();
+        for orbit in 0..35 {
+            let group = tables.group(orbit).ok_or_else(|| Fail::Engine(format!("orbit {orbit} has no group")))?;
+            let generator = match group.generator() {
+                Some(r0) => Value::Array(r0.iter().map(|&x| int(x as i64)).collect()),
+                None => Value::Null,
+            };
+            groups.push(json::object([
+                ("orbit", int(orbit as i64)),
+                ("kind", string(group.kind().name())),
+                ("order", int(group.order() as i64)),
+                ("slots", int(group.slots() as i64)),
+                ("generator", generator),
+            ]));
+        }
+        let ints = |values: &[usize]| Value::Array(values.iter().map(|&v| int(v as i64)).collect());
+        Ok(json::object([
+            ("names", Value::Array(nu::NAMES.iter().map(|name| string(name)).collect())),
+            ("moduli", Value::Array(nu::MODULI.iter().map(|&m| int(m)).collect())),
+            ("i_a_fixed", Value::Array(nu::I_A_FIXED.iter().map(|&i| string(nu::NAMES[i])).collect())),
+            ("frame_bit_orbits", ints(&nu::FRAME_BIT_ORBITS)),
+            ("c5_orbits", ints(&nu::C5_ORBITS)),
+            ("c5_convention", string(nu::C5_CONVENTION)),
+            ("certificate_program_sha256", string(nu::CERTIFICATE_PROGRAM_SHA256)),
+            ("i_a_menu_identity", string(nu::I_A_MENU_IDENTITY)),
+            ("i_a_order_digest", string(nu::I_A_ORDER_DIGEST)),
+            ("contract_revision", string(c600_jumble::CONTRACT_REVISION)),
+            ("groups", Value::Array(groups)),
+        ]))
     }
 }
