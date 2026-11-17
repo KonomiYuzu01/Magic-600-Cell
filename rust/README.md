@@ -1113,6 +1113,34 @@ run or not applicable is no pass (PHS.63).
   - Tests: `c600-command/tests/kn5_stages.rs` (parts of CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-13, CT-ONE-04 and
     CT-ONE-29), a record write and its undo over the journal in `c600-session/tests/kn5_command.rs` (CT-KN5-04, part),
     and a frame outside the presentation in `kn5.rs`'s token matrix (CT-ONE-03, part).
+- Strict protection in the command route (after KN5's stages; KN2.4, KN2.7, LB2.3; the drafts are in the crate
+  documentation). H-08's `protection.policy.set` (`POLICY_ROW`, `{"policy": "net" | "strict"}`) switches the session's
+  protection policy (`CommandLayer::policy`), which is Net from a session's start. The preview, execute's step 8 and the
+  undo walk derive under the policy in force: Net judges the complete operation's net map, Strict every executed
+  literal prefix (`derive_strict`, `strict_protection`). A preview built under Strict adds `mode: "strict"` and
+  `first_refused_prefix` to its summary; a Net summary is unchanged. The row takes no token and no `confirm` (H-08 gives
+  it no gate), and the runtime may not invoke it. A change is one durable workspace action: the state and the preview
+  slot stay, and the workspace and protection revisions advance, so an open preview goes stale (H-08: "invalidates any
+  open preview"). Its undo and redo are workspace inverses. The journal kind is `policy`; the change, its undo and its
+  redo carry the policy in force after them as `Transaction::policy`, an 18th key, so a journal without it reads
+  unchanged. The stacks are last in, first out, so an undo or redo runs under the policy of its original action. The
+  policy lives in the command layer only: M6's own `Session` in `c600-session` has no policy row and judges under Net.
+  Tests: `c600-command/tests/strict_policy.rs` (CT-LB2-02's route half, the stale preview, a preview queued before a
+  change, undo and redo, a retry across a restart and a reopen, the journal form, a reopen, a commit under Strict
+  replayed with its undo and redo, the runtime and the argument form) and a policy change and its undo over the journal
+  in `c600-session/tests/kn5_command.rs` (CT-ONE-21, part).
+- Stored rows served by a built-in tool's entry (LP3's C6, its first common need; the drafts are in the crate
+  documentation). `CommandLayer::serve_row(id, overlay)` lets an entry serve a stored row. An invocation of the row then
+  admits a program job for the entry, as for an overlay row, and the entry's result completes it: a query, view or file
+  row transiently, a workspace row as one durable workspace action with its result reference. The row keeps H-08's
+  kind, lane, undo class, gates and argument types, so a `none`-lane row has no occupancy limit (KN7.2) and a
+  `view`-lane row supersedes its own waiting invocation. Only a view, workspace, query or file row on the `none`,
+  `view` or `program` lane, with no gate, preview rule, action guard, token or undo entry, is served; any other is
+  refused with `KN5:input.overlay_row_kind`, and a row the layer builds itself or one already served with
+  `KN5:input.overlay_row_conflict`. Serving is not journaled, so after a reopen the host serves its rows again. Five of
+  the representations tool's six rows can be served now; `filter.apply` waits for its gate, its filter preview rule
+  and its workspace inverse. The layer checks argument names only; the forms of H-08's argument types, and the view and
+  workspace sinks as a job's result, are C6's next needs. Tests: `c600-command/tests/served_rows.rs`.
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16 and
   L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for which
