@@ -37,6 +37,12 @@ pub mod code {
     pub const JUMBLE_ON_LABELS_ONLY: &str = "KN5:input.jumble_on_labels_only";
     /// A row of the retained workflow, or `jumble.on`, with Jumble on (LG2.8; draft for `jumble.on`).
     pub const RETAINED_TOOL_NEEDS_JUMBLE_OFF: &str = "KN5:input.retained_tool_needs_jumble_off";
+    /// Jumble off with a piece off the lattice: N > 0 (A5, JI.27).
+    pub const JUMBLE_OFF_PIECES_OFF_LATTICE: &str = "KN5:input.jumble_off_pieces_off_lattice";
+    /// Jumble off on a lattice configuration whose ν is not zero (A5, JI.27).
+    pub const JUMBLE_OFF_NU_NONZERO: &str = "KN5:input.jumble_off_nu_nonzero";
+    /// Jumble off where the poses are not shown reachable: no witnessed chain, or a displaced centre (A5, JI.27).
+    pub const JUMBLE_OFF_NOT_SHOWN_REACHABLE: &str = "KN5:input.jumble_off_not_shown_reachable";
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";
