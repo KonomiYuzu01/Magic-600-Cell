@@ -10,7 +10,9 @@
 //! `Compressed::from_parts` takes them), so equal values have equal bytes. Values are walked with an explicit stack
 //! in both directions, so a deep value cannot overflow either process's stack. A compressed word crosses as its parts
 //! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the lengths that
-//! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15).
+//! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15). A menu word
+//! (LB1.8; LP2 draft) crosses with the identity block of its alphabet, and a pinned menu alphabet with its inverse
+//! items, so the receiver checks them as the interpreter does.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -20,6 +22,7 @@ use c600_check::Row as ClassRow;
 use c600_ir::{Capability, Effect, EffectBound, ExactRole, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
+use c600_run::menu::{MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
@@ -63,6 +66,9 @@ mod tag {
     /// LP2's draft compressed word (C3 draft 15): its part count, then each part in order, a leaf as its part tag and
     /// its letters, a concatenation as its part tag and its two part numbers.
     pub const COMPRESSED: u8 = 20;
+    /// LP2's draft menu word (LB1.8): the identity block of its alphabet, its five fields in KN1.4's order, then the
+    /// letter count and each letter as its cap and its item, both below 600.
+    pub const MENU_WORD: u8 = 21;
 }
 
 /// The tags of a compressed word's parts.
@@ -73,6 +79,86 @@ mod part_tag {
 
 // ---------------------------------------------------------------------------------------------------------------
 // Values
+
+/// A menu alphabet's identity block (LB1.8; LP2 draft): its five fields in KN1.4's order. A block with an empty field
+/// names no alphabet and is refused.
+fn encode_identity(m: &MenuIdentity, e: &mut Enc) -> Result<(), Unencodable> {
+    if !m.names_alphabet() {
+        return Err(Unencodable("a menu word that names no alphabet"));
+    }
+    for (_, text) in m.fields() {
+        e.text(text);
+    }
+    Ok(())
+}
+
+/// An identity block's five fields in KN1.4's order, as written.
+fn read_identity(d: &mut Dec) -> Result<MenuIdentity, Malformed> {
+    let mut field = || Ok::<_, Malformed>(d.text()?.to_string());
+    Ok(MenuIdentity {
+        puzzle: field()?,
+        model_id: field()?,
+        menu_id: field()?,
+        menu_order: field()?,
+        contract_rev: field()?,
+    })
+}
+
+/// A menu word's identity block, refused when it names no alphabet.
+fn decode_identity(d: &mut Dec) -> Result<MenuIdentity, Malformed> {
+    let m = read_identity(d)?;
+    if !m.names_alphabet() {
+        return Err(Malformed::new("a menu word that names no alphabet"));
+    }
+    Ok(m)
+}
+
+/// A menu word's letters: the count, then each letter's cap and item, both below [`MENU_INDEX_LIMIT`].
+fn encode_menu_letters(letters: &[[u32; 2]], e: &mut Enc) -> Result<(), Unencodable> {
+    if letters.iter().flatten().any(|&i| i >= MENU_INDEX_LIMIT) {
+        return Err(Unencodable("a menu index of 600 or more"));
+    }
+    e.count(letters.len());
+    for [cap, item] in letters {
+        e.u32(*cap);
+        e.u32(*item);
+    }
+    Ok(())
+}
+
+fn decode_menu_letters(d: &mut Dec) -> Result<Vec<[u32; 2]>, Malformed> {
+    let n = d.count(8)?;
+    let mut letters = Vec::with_capacity(n);
+    for _ in 0..n {
+        letters.push([d.u32()?, d.u32()?]);
+    }
+    if letters.iter().flatten().any(|&i| i >= MENU_INDEX_LIMIT) {
+        return Err(Malformed::new("a menu index of 600 or more"));
+    }
+    Ok(letters)
+}
+
+/// A pinned menu alphabet (LB1.8, LB1.9; LP2 draft): its identity block, its cap count, then the item count and the
+/// item of each item's inverse rotation, by item.
+pub fn encode_alphabet(m: &MenuAlphabet, e: &mut Enc) -> Result<(), Unencodable> {
+    encode_identity(m.identity(), e)?;
+    e.u32(m.caps());
+    e.count(m.items());
+    for item in m.inverse_items() {
+        e.u32(*item);
+    }
+    Ok(())
+}
+
+/// Reads a pinned menu alphabet and refuses one that `MenuAlphabet::new` refuses, with its reason: the first empty
+/// field of the identity block by name, too many caps or items, or inverse items that are no involution.
+pub fn decode_alphabet(d: &mut Dec) -> Result<MenuAlphabet, Malformed> {
+    let identity = read_identity(d)?;
+    let caps = d.u32()?;
+    let n = d.count(4)?;
+    let inverse = (0..n).map(|_| d.u32()).collect::<Result<Vec<_>, _>>()?;
+    MenuAlphabet::new(identity, caps, inverse).map_err(|why| Malformed::new(why.to_string()))
+}
 
 fn bigint(n: &BigInt, e: &mut Enc) {
     let (sign, magnitude) = n.to_bytes_le();
@@ -288,6 +374,11 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.text(t.as_str());
             }
             Value::Word(w) => encode_letters(tag::WORD, w, e)?,
+            Value::MenuWord(w) => {
+                e.u8(tag::MENU_WORD);
+                encode_identity(w.identity(), e)?;
+                encode_menu_letters(w.letters(), e)?;
+            }
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -462,6 +553,11 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
             tag::TAG => Value::Tag(text_value(d)?),
             tag::COLOUR => Value::Colour(text_value(d)?),
             tag::WORD => Value::Word(decode_letters(d)?.into()),
+            tag::MENU_WORD => {
+                let identity = Arc::new(decode_identity(d)?);
+                let letters = decode_menu_letters(d)?;
+                Value::menu_word(&identity, &letters).ok_or_else(|| Malformed::new("a menu index of 600 or more"))?
+            }
             tag::WORD_KEY => {
                 let letters = decode_letters(d)?;
                 if !freely_reduced(&letters) {
@@ -766,6 +862,7 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             qty(value, e, depth + 1)?;
         }
         Ty::CompressedWord => e.u8(22),
+        Ty::MenuWord => e.u8(23),
     }
     Ok(())
 }
@@ -846,6 +943,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
             Ty::Map(Box::new(key), Box::new(decode_qty_at(d, depth + 1)?))
         }
         22 => Ty::CompressedWord,
+        23 => Ty::MenuWord,
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }
@@ -882,6 +980,14 @@ pub enum OwnedRequest {
         arg: Vec<u8>,
         ty: QTy,
     },
+    /// A menu-word preview (LB1.8; LP2 draft): the letters, the identity block of their alphabet, the target and the
+    /// canonical request bytes.
+    ProposeMenu {
+        letters: Vec<[u32; 2]>,
+        menu: MenuIdentity,
+        target: String,
+        request: Vec<u8>,
+    },
 }
 
 impl OwnedRequest {
@@ -893,6 +999,9 @@ impl OwnedRequest {
             OwnedRequest::FileRead { path, ty } => Request::FileRead { path, ty },
             OwnedRequest::Clock => Request::Clock,
             OwnedRequest::Propose { word, target, request } => Request::Propose { word, target, request },
+            OwnedRequest::ProposeMenu { letters, menu, target, request } => {
+                Request::ProposeMenu { letters, menu, target, request }
+            }
         }
     }
 }
@@ -973,6 +1082,18 @@ pub fn encode_request(r: &Request, e: &mut Enc) -> Result<(), Unencodable> {
             e.field("request.snapshot_with.type");
             encode_qty(ty, e)?;
         }
+        Request::ProposeMenu { letters, menu, target, request } => {
+            e.field("request.propose_menu");
+            e.u8(6);
+            e.field("request.propose_menu.letters");
+            encode_menu_letters(letters, e)?;
+            e.field("request.propose_menu.menu");
+            encode_identity(menu, e)?;
+            e.field("request.propose_menu.target");
+            e.text(target);
+            e.field("request.propose_menu.request");
+            e.bytes(request);
+        }
     }
     Ok(())
 }
@@ -992,6 +1113,11 @@ pub fn decode_request(d: &mut Dec) -> Result<OwnedRequest, Malformed> {
             OwnedRequest::Propose { word, target: d.text()?.to_string(), request: d.bytes()?.to_vec() }
         }
         5 => OwnedRequest::SnapshotWith { query: d.text()?.to_string(), arg: d.bytes()?.to_vec(), ty: decode_qty(d)? },
+        6 => {
+            let letters = decode_menu_letters(d)?;
+            let menu = decode_identity(d)?;
+            OwnedRequest::ProposeMenu { letters, menu, target: d.text()?.to_string(), request: d.bytes()?.to_vec() }
+        }
         _ => return Err(Malformed::new("an unknown request")),
     })
 }
@@ -1144,8 +1270,9 @@ fn outcome_from(code: u8) -> Result<Outcome, Malformed> {
 /// The stop phases a [`Position`] may name (chapter 09: a dimension, `effect` or `interruption`).
 pub const PHASES: [&str; 6] = ["steps", "kernel_cost", "memory", "output", "effect", "interruption"];
 
-/// The stop codes the meter and the interpreter raise themselves. A host adds its own refusal codes.
-pub const STATIC_CODES: [&str; 15] = [
+/// The stop codes the meter and the interpreter raise themselves. A host adds its own refusal codes. LP2's menu words
+/// (LB1.8; draft) add the code of a letter outside the pinned menu.
+pub const STATIC_CODES: [&str; 16] = [
     meter::code::STEPS,
     meter::code::KERNEL_COST,
     meter::code::MEMORY,
@@ -1161,6 +1288,7 @@ pub const STATIC_CODES: [&str; 15] = [
     interp::code::IR_REJECTED,
     interp::code::NONCANONICAL_VALUE,
     interp::code::HOST_EXHAUSTED,
+    interp::code::INCOMPATIBLE_ALPHABET,
 ];
 
 /// The stop codes a summary from the child may name: the static ones and the codes this run's host returned. A code

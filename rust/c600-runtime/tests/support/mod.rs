@@ -5,6 +5,7 @@
 
 use c600_digest::sha256;
 use c600_run::interp::{Host, Request, RowTariff, Sink};
+use c600_run::menu::MenuIdentity;
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::meter::Amounts;
 use c600_run::value::Value;
@@ -49,6 +50,9 @@ pub struct Session {
     pub workspace: Vec<(String, Vec<u8>)>,
     pub written: Vec<(String, Vec<u8>)>,
     pub proposals: Vec<(Vec<i32>, String)>,
+    /// Menu-word previews (LB1.8; LP2 draft): the letters, the identity block of their alphabet and the target. They
+    /// leave the Full word's pending preview as it is.
+    pub menu_proposals: Vec<(Vec<[u32; 2]>, MenuIdentity, String)>,
     pub log: Vec<String>,
     /// Refuses every `perform` with this code.
     pub refuse: Option<&'static str>,
@@ -71,6 +75,7 @@ impl Default for Session {
             workspace: Vec::new(),
             written: Vec::new(),
             proposals: Vec::new(),
+            menu_proposals: Vec::new(),
             log: Vec::new(),
             refuse: None,
             on_perform: None,
@@ -99,6 +104,7 @@ impl Session {
         assert_eq!(self.workspace, other.workspace);
         assert_eq!(self.written, other.written);
         assert_eq!(self.proposals, other.proposals);
+        assert_eq!(self.menu_proposals, other.menu_proposals);
     }
 }
 
@@ -110,7 +116,9 @@ impl Host for Session {
             Request::Snapshot { query, .. } | Request::SnapshotWith { query, .. } => {
                 self.snapshots.iter().find(|s| s.0 == *query).map(|s| s.1).ok_or(NOT_GRANTED)
             }
-            Request::Propose { .. } => Ok(RowTariff { kernel_cost: 11, result_bound: 4096 }),
+            Request::Propose { .. } | Request::ProposeMenu { .. } => {
+                Ok(RowTariff { kernel_cost: 11, result_bound: 4096 })
+            }
             Request::FileRead { .. } => Ok(RowTariff { kernel_cost: 3, result_bound: 4096 }),
             _ => Err(NOT_GRANTED),
         }
@@ -140,6 +148,10 @@ impl Host for Session {
                     ("id", Value::text("preview-1")),
                     ("protection", Value::tag("clear")),
                 ]))
+            }
+            Request::ProposeMenu { letters, menu, target, .. } => {
+                self.menu_proposals.push((letters.to_vec(), MenuIdentity::clone(menu), target.to_string()));
+                Ok(Value::receipt(vec![("id", Value::text("preview-menu-1"))]))
             }
             _ => Err(NOT_GRANTED),
         }

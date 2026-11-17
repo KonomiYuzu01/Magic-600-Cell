@@ -166,7 +166,9 @@ pub enum ExprKind {
     Unit,
     /// `word[+1, -2]`: signed letters of magnitude 1 to 1200.
     Word(Vec<i32>),
-    /// `menu[2:spin]`: LX-8's fixture menu letters, a grip below 120 and a rotation.
+    /// `menu[2:5, 0:1]`: letters of the run's pinned menu (LB1.8; LP2 draft), each a cap and an item, naturals
+    /// below 600 counted from 0; the item is kept as its canonical decimal text. LX-8's fixture letters
+    /// `menu[2:spin]`, a grip below 120 and a rotation name, still parse and do not lower.
     Menu(Vec<(u32, String)>),
     Name(String),
     /// `f(a)`, `f<T>(a)`, `alias.f(a)` or a call of any callable value. Type arguments follow names only.

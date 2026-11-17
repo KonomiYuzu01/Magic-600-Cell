@@ -79,6 +79,23 @@ fn a_built_in_refuses_a_word_the_solver_did_not_name() {
     assert_eq!(found(&built_in(&through_callee, &class, &Policy::interim())), [(NOT_GRANTED, "entry")]);
 }
 
+/// CT-LG3-07 (part: the built-in column previews a menu word the solver named in the pinned menu's letters, LB1.8;
+/// LP2 draft): a `MenuWord` parameter is a word the solver names, and a menu literal is not.
+#[test]
+fn a_built_in_previews_the_menu_word_the_solver_named() {
+    let class = preview_row();
+    let m = || vec![param("m", exact(Ty::MenuWord))];
+    let named = tool(vec![command("go", m(), exact(Ty::Receipt), propose_to(var("m"))).exported()]);
+    let a = built_in(&named, &class, &Policy::interim());
+    assert!(a.is_admitted(), "{a:#?}");
+    assert_eq!(a.separation, Separation { reads_state: false, prepares_previews: true });
+    let literal = tool(vec![command("go", m(), exact(Ty::Receipt), propose_to(menu_word(&[[0, 1]]))).exported()]);
+    assert_eq!(found(&built_in(&literal, &class, &Policy::interim())), [(NOT_GRANTED, "root")]);
+    let built =
+        tool(vec![command("go", m(), exact(Ty::Receipt), propose_to(prim(Prim::Inverse, vec![var("m")]))).exported()]);
+    assert_eq!(found(&built_in(&built, &class, &Policy::interim())), [(NOT_GRANTED, "root")]);
+}
+
 /// CT-BND-15 (part: a row outside the class is refused, BND.57; not run: the class review, LP3).
 #[test]
 fn bnd_57_a_built_in_uses_only_the_rows_its_class_lists() {

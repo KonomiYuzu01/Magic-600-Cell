@@ -212,6 +212,16 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   state-read fact, so the built-in column and capability separation count it, and its declared type stands: the
   engine answers it, never a workspace record. The literal `ReadSnapshot` keeps its shape
   (`c600-run/tests/snapshot_arg.rs`).
+- Menu words (LP2 draft until the IR freeze; LB1.8, LP3's plan, section 2). `MenuWord` is the type of a word of the
+  run's pinned jumbling menu, and `Lit::MenuWord` a literal of letters `[cap, item]`, each index below
+  `MENU_INDEX_LIMIT` (600). `concat`, `inverse`, `conjugate`, `commutator` and `compose` take menu words as they
+  take Full words and give a menu word, and `length` counts its letters; the first operand of a known type sets an
+  operation's alphabet. A Full word and a menu word never meet: an operation, collection, call, return, equality or
+  match that mixes them, also inside a list, record, map or callable type, and a menu word given to `word_key` or
+  `compress`, is `LB1:input.incompatible_alphabet` with the expected and the supplied type, not a mismatch; types
+  that differ in more than the alphabet stay a mismatch. A menu word is proposed as a word is, with the `preview`
+  effect, and the built-in column takes a `MenuWord` parameter as a word the solver named
+  (`c600-check/tests/built_in.rs`, `c600-syntax/tests/menu_words.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -269,8 +279,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the source range of every IR path in each body, so a checker diagnostic's function and path map to source text.
 - What parses but does not lower yet. Lowering refuses each of these with a message naming what it waits for: a
   declared `charge` (LG4.8's tariffs), command metadata (the command table, LP3), binder arms and LX-8's domain types
-  such as `Word<Full,Retained>` (the IR's domain families, M4 and M5), and menu words (the jumbled puzzle's alphabet,
-  M5). Type arguments on a program's own function are refused: the IR draft has no explicit instantiation.
+  such as `Word<Full,Retained>` (the IR's domain families, M4 and M5), and LX-8's fixture menu letters
+  `menu[2:spin]` (a letter of the pinned menu is `cap:item`, below). Type arguments on a program's own function are
+  refused: the IR draft has no explicit instantiation.
 - Lists and words (LP2 drafts). `List<T>` and `WordEqualityKey` are types, and a `List` of a function is refused at
   lowering. `list<T>(a, b, ...)` builds a list; `length`, `index`, `push`, `concat`, `inverse`, `conjugate`,
   `commutator`, `compose` and `word_key` are reserved operations called like functions
@@ -283,6 +294,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `compress` and `expand` are reserved operations called like functions.
 - Snapshot reads with an argument (LP2 draft). `read_snapshot<T>("q", x)` lowers to the read with an argument;
   `read_snapshot<T>("q")` stays the literal read.
+- Menu words (LP2 draft). `MenuWord` is a type, and `menu[cap:item, ...]` is a word of the run's pinned menu: each
+  letter two naturals below 600, counted from 0 and laid out in canonical decimals. A letter out of range is refused
+  at its source text (`c600-syntax/tests/menu_words.rs`).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -317,7 +331,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   magnitude above 1200, so a word with one, also inside an aggregate, has no canonical form, and `Loaded::run` refuses
   an argument that holds one with `PS1:input.noncanonical_value` before the run starts (`c600-run/tests/interp.rs`).
   A letter of 0 still runs: the kernel refuses it as a generator when it acts, and `c600-jumble-tool` reads a `Word`
-  as flattened grip and item indices, which start at 0, until menu words reach the IR draft.
+  as flattened grip and item indices, which start at 0, until it takes menu words (an LP2 draft, below).
 - Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout (parameters,
   captures, `let` slots and operand temporaries; a body's own result has no slot), a value's canonical byte length as
   retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a word (LG2.18's
@@ -372,6 +386,24 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   no canonical form stops with `PS1:input.noncanonical_value` and an approximate one with `LG4:input.ir_rejected`,
   both before the host is asked. The host gets `Request::SnapshotWith { query, arg, ty }` with `arg` the canonical
   bytes, which `provenance::parse` reads; a literal read stays `Request::Snapshot` (`c600-run/tests/snapshot_arg.rs`).
+- Menu words (LP2 draft; LB1.8, LB1.9): `Value::MenuWord` holds letters `[cap, item]` and the jumbling identity block
+  of their alphabet (`menu::MenuIdentity`, KN0.1, its fields in KN1.4's order). A run pins at most one alphabet,
+  `Options::menu` (`menu::MenuAlphabet`: the identity block, the cap count and the inverse item of each item, an
+  involution), and every menu word in the run is a word of it. Loading refuses a literal with an index of 600 or
+  more, as it refuses a Full word's letter above 1200. A literal takes the pinned block when it is read; a letter
+  outside the alphabet, or a literal in a run that pins none, stops the run with `LB1:input.incompatible_alphabet`.
+  `Loaded::run` refuses with that code an argument that holds a menu word of another alphabet or with a letter
+  outside it (one whose block names no alphabet with `PS1:input.noncanonical_value`), and a host answer that holds
+  one stops the run after its kernel row. An inverse reverses the letters and replaces each item with its inverse item;
+  the operations are priced as the Full word operations, `expand_per_letter` per letter built, and a menu word's size is
+  4 bytes per letter. Its JSON form is `{"letters":[[cap,item],...],"menu":{...}}` with the block's fields in key order.
+  A match compares menu words by their letters. A host previews one through
+  `Request::ProposeMenu { letters, menu, target, request }`, a request of its own, so a host that knows only
+  `Request::Propose` refuses it; `Request::is_proposal` names both, and a host that gates previews gates both
+  (`c600-run/tests/menu_words.rs`).
+- Open for menu words: the jumbling library entries that use them (LP3: the jumbling halves of CT-LB1-03 and
+  CT-LB1-06), their trace key (LB1.10), and the alphabet a jumbling host pins, which it builds from
+  `c600_kernel::IdentityBlock` and the inverse items of its menu (`menu::MenuAlphabet::new`).
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -1499,11 +1531,15 @@ run or not applicable is no pass (PHS.63).
   reduced), and sets and maps in canonical key order. A compressed word crosses as its parts and is rebuilt with the
   checked `from_parts` (LP2's pull request 185). A snapshot read with an argument crosses as
   `request.snapshot_with`, its argument as canonical bytes. A job may name a built-in tool's class rows
-  (`JobOptions::built_in`, LP2's draft), the run's last field: the child then admits the entry with
+  (`JobOptions::built_in`, LP2's draft), a trailing field of the run: the child then admits the entry with
   `c600_check::admit_built_in`, and both executors refuse class rows outside the solving profile at the admission
-  stage. The lengths that a frame's compressed words derive are bounded together by one frame's bits, so one word
-  of up to 16,382 doublings of a letter crosses. Above the bound a host's answer reaches the run in process but
-  stops the child's run with `PS1:input.noncanonical_value`, a known difference (crate draft 15).
+  stage. A menu word (LP2's draft, LB1.8) crosses with its identity block (value tag 21, type tag 23), a menu-word
+  preview as `request.propose_menu` (request tag 6), and a job may pin a menu alphabet (`JobOptions::menu`), the
+  run's last field, after the class rows: the identity block, the cap count and the inverse items, which the decoder
+  checks as `MenuAlphabet::new` does. `LB1:input.incompatible_alphabet` is one of the interpreter's own stop codes
+  (`codec::STATIC_CODES`). The lengths that a frame's compressed words derive are bounded together by one frame's
+  bits, so one word of up to 16,382 doublings of a letter crosses. Above the bound a host's answer reaches the run in
+  process but stops the child's run with `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
@@ -1512,10 +1548,12 @@ run or not applicable is no pass (PHS.63).
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
-  or unknown, and the class rows as a strict trailing field (`protocol.rs`); a snapshot read with an argument
-  through the child, and a built-in entry admitted, refused for a row its class does not list and refused outside
-  the solving profile, alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words,
-  their canonical forms and refusals on both sides, and their runs through the child (`collections.rs`);
+  or unknown, the class rows and the pinned menu as strict trailing fields, and a menu word's and a menu-word
+  preview's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
+  entry admitted, refused for a row its class does not list and refused outside the solving profile, and a pinned
+  menu's words, refusals and preview, alike on both executors (`equivalence.rs`); LP2's draft collections and
+  compressed words, their canonical forms and refusals on both sides, and their runs through the child
+  (`collections.rs`);
   CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang
   the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
