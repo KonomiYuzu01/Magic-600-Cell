@@ -296,9 +296,9 @@ pub struct Chart {
     pub stages: Vec<Stage>,
     pub dimension: u32,
     pub precision: String,
-    /// Exact chart properties the plan asks to rely on, by name. Each is established only by a check result for this
-    /// chart in [`crate::validate::Context::checks`] (RPI.48, [`crate::chart::admit_chart`]); otherwise it stays
-    /// `not_established`.
+    /// Exact chart properties the plan asks to rely on, by name. Each is established only by its own check results for
+    /// this chart in [`crate::validate::Context::checks`], at every region and exact pose those checks surveyed
+    /// (RPI.48, [`crate::chart::admit_chart`]); otherwise it stays `not_established`.
     pub properties: Vec<String>,
 }
 

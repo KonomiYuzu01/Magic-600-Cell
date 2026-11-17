@@ -921,8 +921,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
       region although its vertices' images all differ, two disjoint segments whose images cross although their four
       vertex images differ, and x ↦ 2x/(1 + x) on [0, 1], which keeps the vertices' distance and changes the halves;
     - malformed regions, maps and metrics.
-  - Not built: the language entries over these checks and their results, and CT-LB4-01 itself (LP3's C6). The checks
-    take projective maps; another class of map needs its own exact check.
+  - Not built: the language entries over these checks and their results. CT-LB4-01 is built on these checks in LP3's C6
+    (`c600-display`'s chart checks). The checks take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store
@@ -1509,35 +1509,39 @@ run or not applicable is no pass (PHS.63).
   map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
   Each slot projection holds one level: a subject at the other level gets no slot, with reason
   `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
-- Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and
-  its exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test and `admit_chart`, which
-  admits a chart only on established check results and refuses it on a refutation with
-  `EV3:evidence.chart_check_failed` (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact
-  fields (`reference.rs`); and the stage output rules and their composition order (`stage.rs`).
+- Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and its
+  exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test, and injectivity, embedding,
+  isometry and homomorphism each decided by its own check on `c600_jumble::polytope` (C6), and `admit_chart`, which
+  admits a chart only on established check results and refuses it on a refutation with `EV3:evidence.chart_check_failed`
+  (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact fields (`reference.rs`); and the
+  stage output rules and their composition order (`stage.rs`).
 - Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
   CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
   Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
   digests. C2's next display piece adds CT-RPI-14 over the drafted chart repertoire (RPI.34 is open), CT-RPI-18 on
   the CPU reference (its device version, CT-RPI-33, waits for the renderer), CT-RPI-19's Windows leg, CT-RPI-22's
-  chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32.
-- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
-  set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
-  after acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the
-  drafted chart repertoire (stereographic charts declared by their pole, over convex hulls of exact vertices, with the
-  properties domain, injective and section; RPI.34), exact poses only (every float pose is refused, never rounded;
-  RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own precision rule (1e-4 absolute,
-  with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only, and the stage output rules
-  as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is `not_established` now holds
-  only when the validator's context carries no check result for it (RPI.48).
+  chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32. C6 adds CT-LB4-01,
+  whole over the drafted repertoire (`ct_lb4_01.rs`): the domain with its boundary cases, and injectivity, embedding,
+  isometry and homomorphism each decided by its own check, for stereographic and projective charts.
+- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys, set
+  digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error after
+  acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the drafted chart
+  repertoire (stereographic charts declared by their pole, over convex hulls of exact vertices, with the properties
+  domain, injective and section; RPI.34), which C6 extends with projective charts x ↦ (M·x + t)/(c·x + d), regions that
+  are unions of cells, and the properties embedding, isometry and homomorphism; exact poses only (every float pose is
+  refused, never rounded; RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own
+  precision rule (1e-4 absolute, with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only,
+  and the stage output rules as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is
+  `not_established` now holds only when the validator's context carries no check result for it (RPI.48).
 - Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the stage
   module's parser and checker (RPI.69 to RPI.71, RPI.77, RM.38's weight table) and a backend for HLSL compilation, the
-  raster bound and frame reports (RPI.72, RPI.78, RM.41); KN3's polytope operations beyond `c600_jumble::dd`'s exact
-  vertices, so the region test is local to this crate; charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
-  production precision rule (RPI.36). CT-RPI-08's jumbling rows and the posed producer wait for M5; a decoder from the
-  interpreter's values (the IR draft has list types since pull request 176); F05 and F26 stay unsupported until the stage checker exists;
-  CT-RM-09's rows 3 to 6, 8 and 10 (the raster bound, frame-report stops and device-fault quarantine) need a stage
-  checker or a device; RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its
-  backend.
+  raster bound and frame reports (RPI.72, RPI.78, RM.41); an exact checker of isometry and homomorphism for the
+  stereographic chart, which is not a projective map (both stay `not_established`); charts and properties outside the
+  drafted repertoire, the GPU agreement check (RPI.35) and a production precision rule (RPI.36). CT-RPI-08's jumbling
+  rows and the posed producer wait for M5; a decoder from the interpreter's values (the IR draft has list types since
+  pull request 176); F05 and F26 stay unsupported until the stage checker exists; CT-RM-09's rows 3 to 6, 8 and 10
+  (the raster bound, frame-report stops and device-fault quarantine) need a stage checker or a device; RM.38's weight
+  table, device loss and `display_unsupported` belong to the renderer and its backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 
@@ -1874,10 +1878,13 @@ run or not applicable is no pass (PHS.63).
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
     preserves the analysed set. The jumbling half, at pose level, is C8's (`c600-jumble-tool/tests/ct_lb4_03.rs`).
-  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference (a declared domain decided by an exact region test and section
-    membership on the posed vertices, boundary cases included; a chart whose vertices pass and whose domain fails inside
-    is refused; an established domain establishes no injectivity); CT-LB4-02, whole (synthetic: replacing the decisions
-    between exact poses changes only display data); CT-LB4-04's admission half and CPU half.
+  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference through the survey and the admission (a declared domain decided by an
+    exact region test and section membership on the posed vertices, boundary cases included; a chart whose vertices pass
+    and whose domain fails inside is refused; an established domain establishes no injectivity; a flat cell's embedding
+    is established by its own check while the stereographic chart's isometry and homomorphism stay `not_established`; a
+    full-dimensional region whose vertices all pass the vertex test fails injectivity inside, and the chart is refused);
+    CT-LB4-02, whole (synthetic: replacing the decisions between exact poses changes only display data); CT-LB4-04's
+    admission half and CPU half.
   - `tool.rs`: the source parses and lowers, and every entry is admitted; CT-BND-15's representations part; CT-LB6-03's
     representations part (a stash-and-relay, a state-chosen target, a writing view and an exported function the manifest
     does not list are each found). The record is checked with a fixture reviewer: BM5's review of the tool happens when
@@ -1902,10 +1909,9 @@ run or not applicable is no pass (PHS.63).
   in the command layer); the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's
   job arguments; kernel rows for the `filter.preview` and `structure.compare` snapshot reads; a record and an exact-set
   digest for each saved set; a display that applies the published scope (the APIs are in the crate documentation under
-  "Not built"); the checkers for homomorphism, embedding, isometry and full-dimensional injectivity (CT-LB4-01's rest,
-  which needs KN3's exact polytope operations beyond `dd`'s vertices); the stage checker, HLSL compilation and every
-  device step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of its typed relations,
-  a slot's current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
+  "Not built"); the stage checker, HLSL compilation and every device step (CT-LB4-04's rest, the renderer freeze); the
+  relationship strip (C8 computes one of its typed relations, a slot's current occupant, at pose level); filters of
+  trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

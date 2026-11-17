@@ -1,7 +1,7 @@
 //! CT-RPI-14 (synthetic), the whole definition over this crate's drafted repertoire: at exact camera poses an exact
-//! region test or a theorem decides declared chart properties, and a vertex test only refutes them; intervening float
-//! poses cannot create exact verdicts (RPI.29, RPI.30, RPI.34; LB4.2). The repertoire stays RPI.34 [O]: here it is the
-//! stereographic chart over convex hulls of exact 600-cell vertices in Q(√5).
+//! region test or a cited reduction decides declared chart properties, and a vertex test only refutes them;
+//! intervening float poses cannot create exact verdicts (RPI.29, RPI.30, RPI.34; LB4.2). The repertoire stays RPI.34
+//! [O]: here it is the stereographic chart over convex hulls of exact 600-cell vertices in Q(√5).
 
 mod common;
 
@@ -17,7 +17,7 @@ use c600_display::{codes, Form};
 use common::*;
 
 fn region(name: &str, vertices: Vec<V4>) -> Region {
-    Region { name: name.to_owned(), vertices }
+    Region::hull(name, vertices)
 }
 
 fn diagonal(values: [i128; 4]) -> [[Q5; 4]; 4] {
@@ -110,7 +110,13 @@ fn ct_rpi_14_region_test_refutes_where_the_vertex_test_cannot() {
     };
     assert_eq!(Some(point), exact::scale(Q5::new(1, 0, 4).expect("1/4"), &pole));
     assert_eq!(exact::same_ray(&point, &pole), Some(true));
-    assert_eq!(scope, Scope { regions: vec!["cell".to_owned()], vertices: 4, poses: vec!["identity".to_owned()] });
+    let expected = Scope {
+        property: "domain".to_owned(),
+        regions: vec!["cell".to_owned()],
+        vertices: 4,
+        poses: vec!["identity".to_owned()],
+    };
+    assert_eq!(scope, expected);
 }
 
 #[test]
@@ -138,7 +144,7 @@ fn ct_rpi_14_every_exact_pose_of_k_plus_is_decided() {
 }
 
 #[test]
-fn ct_rpi_14_injectivity_by_theorem_and_section_on_posed_vertices() {
+fn ct_rpi_14_injectivity_by_reduction_and_section_on_posed_vertices() {
     let cell = cell();
     let pole = vertex_sum(&cell);
     let chart = Stereographic { pole };
@@ -147,29 +153,31 @@ fn ct_rpi_14_injectivity_by_theorem_and_section_on_posed_vertices() {
 
     let verdict = chart::check(&chart, &Property::Injective, &flat, &at).expect("exact");
     assert!(
-        matches!(verdict, Verdict::Established { method: Method::Theorem(chart::RADIAL_THEOREM), .. }),
+        matches!(verdict, Verdict::Established { method: Method::Reduction(chart::CENTRAL_PROJECTION), .. }),
         "{verdict:?}"
     );
     let vertices = chart::vertex_test(&chart, &Property::Injective, &flat, &at).expect("exact");
     assert!(matches!(vertices, Verdict::NotEstablished { .. }), "{vertices:?}");
 
-    // A full-dimensional region has no checker in the repertoire: unknown, neither false nor a pass.
+    // A region through the origin has no positive functional, so the reduction does not apply and no two vertices
+    // share a ray: unknown, neither false nor a pass.
     let mut solid = cell.clone();
     solid.push(exact::scale(Q5::int(-1), &E1).expect("small values"));
     let verdict = chart::check(&chart, &Property::Injective, &region("solid", solid), &at).expect("exact");
     assert!(matches!(verdict, Verdict::NotEstablished { .. }), "{verdict:?}");
 
-    // Two vertices on one ray: refuted, by the exact check and by the vertex test alike.
+    // Two vertices on one ray: the exact check refutes with two points of the region on one ray, and the vertex test
+    // finds the two vertices.
     let mut shared = cell.clone();
     shared.push(exact::scale(Q5::new(1, 0, 2).expect("1/2"), &E1).expect("small values"));
     let shared = region("shared", shared);
-    for verdict in [
-        chart::check(&chart, &Property::Injective, &shared, &at),
-        chart::vertex_test(&chart, &Property::Injective, &shared, &at),
-    ] {
-        let verdict = verdict.expect("exact");
-        assert!(matches!(verdict, Verdict::Refuted { witness: Witness::SharedRay(0, 4), .. }), "{verdict:?}");
-    }
+    let verdict = chart::check(&chart, &Property::Injective, &shared, &at).expect("exact");
+    let Verdict::Refuted { method: Method::Reduction(_), witness: Witness::PointsOnOneRay(x, y), .. } = verdict else {
+        panic!("{verdict:?}")
+    };
+    assert!(x != y && exact::same_ray(&x, &y) == Some(true), "{x:?} {y:?}");
+    let vertices = chart::vertex_test(&chart, &Property::Injective, &shared, &at).expect("exact");
+    assert!(matches!(vertices, Verdict::Refuted { witness: Witness::SharedRay(0, 4), .. }), "{vertices:?}");
     // Two vertices on the singular ray are outside the domain: they witness nothing, so nothing is refuted.
     let on_axis = region("on the singular ray", vec![pole, exact::scale(Q5::int(2), &pole).expect("small values")]);
     for verdict in [
