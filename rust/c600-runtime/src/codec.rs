@@ -16,6 +16,7 @@ use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
+use c600_check::Row as ClassRow;
 use c600_ir::{Capability, Effect, EffectBound, ExactRole, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
@@ -629,6 +630,37 @@ pub fn capability_from(code: u8) -> Result<Capability, Malformed> {
         4 => Capability::Process,
         5 => Capability::SessionFile,
         _ => return Err(Malformed::new("an unknown capability")),
+    })
+}
+
+/// One row of a built-in tool's class (`c600_check::Row`, LP2 draft): a tag in the variants' declared order, then the
+/// variant's text. The tags follow the rows' order, so a set's rows in increasing order are its bytes' order too.
+pub fn encode_row(row: &ClassRow, e: &mut Enc) {
+    let (tag, text) = match row {
+        ClassRow::Read(query) => (0, Some(query)),
+        ClassRow::Outcome => (1, None),
+        ClassRow::Declassified(id) => (2, Some(id)),
+        ClassRow::View => (3, None),
+        ClassRow::Workspace(record) => (4, Some(record)),
+        ClassRow::Preview(target) => (5, Some(target)),
+        ClassRow::Unknown => (6, None),
+    };
+    e.u8(tag);
+    if let Some(text) = text {
+        e.text(text);
+    }
+}
+
+pub fn decode_row(d: &mut Dec) -> Result<ClassRow, Malformed> {
+    Ok(match d.u8()? {
+        0 => ClassRow::Read(d.text()?.to_string()),
+        1 => ClassRow::Outcome,
+        2 => ClassRow::Declassified(d.text()?.to_string()),
+        3 => ClassRow::View,
+        4 => ClassRow::Workspace(d.text()?.to_string()),
+        5 => ClassRow::Preview(d.text()?.to_string()),
+        6 => ClassRow::Unknown,
+        _ => return Err(Malformed::new("an unknown class row")),
     })
 }
 
