@@ -4,6 +4,9 @@ description = "The session store below the language: journal, revisions, commits
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+# The session lock takes std's `File::try_lock`, stable since Rust 1.89. This is that call's lower bound; the crate is
+# built and tested with the current stable toolchain only.
+rust-version = "1.89"
 
 [dependencies]
 # The command layer's `Store` and `Reopen`, which `JournalStore` implements (KN5 over KN4's journal).

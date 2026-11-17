@@ -90,8 +90,9 @@
 //!   kernel names none, and which engine names it is not settled, so F03 has no swept preview there.
 //! - RM.6: exact-set digests are the SHA-256 of sorted piece IDs as little-endian u32, or of canonical object text
 //!   one per line ([`plan::piece_set_digest`], [`plan::object_set_digest`]).
-//! - RPI.34, RPI.48: a chart property a plan names is established only by check results in
-//!   [`validate::Context::checks`]; with none, it is `not_established`. RPI.36: a plan's precision is an opaque name.
+//! - RPI.34, RPI.48: a chart property a plan names is established only by its own check results in
+//!   [`validate::Context::checks`] at every surveyed exact pose and region; otherwise it is `not_established`. RPI.36:
+//!   a plan's precision is an opaque name.
 //! - RM.11: the counted fields are [`validate::COUNTED`]; the stage, fragment, frame, view-vertex and adapter fields
 //!   need the stage module checker (RPI.71), the weight table or a backend. `overlay_items` counts overlay objects,
 //!   certificate pieces and two points per certificate pair. RPI.50: every ceiling here is a declared fixture value.
@@ -107,28 +108,44 @@
 //! - RPI.10: a publication to a view that is not open is invalid.
 //! - RM.24: one surface per view; the frame stamp lists the host's subject label of every installed plan.
 //! - RPI.55, RM.33: [`host::MockBackend`] stands for an adapter; it says nothing about any candidate backend.
-//! - RPI.34 [O]: the repertoire is the first option, a restricted family with known checkers: the stereographic chart
-//!   declared exactly by its pole ([`chart::Stereographic`]) over regions given as convex hulls of exact vertices, with
-//!   the properties `domain`, `injective` and `section` ([`chart::Property`]). Anything else has no checker, and a
-//!   property without an established check stays `not_established`, never false.
-//! - RPI.30, LB4.2: an exact pose is the identity or a matrix verified to be in K⁺, the 600-cell's rotation group
-//!   (determinant 1, the 120 unit icosians mapped onto themselves). Every float matrix, and every exact matrix outside
-//!   K⁺, is refused with `LB4:type.approximate_property_input` and never rounded. Domain is an exact cone test
-//!   (Carathéodory bases with Cramer signs) with a vertex-sum certificate that the origin is outside; injectivity is a
-//!   theorem for a flat region (four independent vertices, all in their affine hull), refuted by two vertices in the
-//!   domain on one ray; a section is decided on the posed vertices. A verdict's scope names its region, its vertex
-//!   count and its pose.
-//! - KN3.2, KN3.3: the checks compute in Q(√5) with checked i128 parts, local to this crate, because `c600-kernel` has
-//!   neither KN3's polytope operations nor an unbounded Q(√5). An overflow, a zero pole or an unmet precondition
-//!   decides nothing (`not_established`).
+//! - RPI.34 [O]: the repertoire is the first option, a restricted family with known checkers, as a draft that settles
+//!   nothing in the chapters: the stereographic chart declared exactly by its pole ([`chart::Stereographic`]) and the
+//!   projective charts x ↦ (M·x + t)/(c·x + d), affine maps and central projections among them
+//!   ([`chart::Projective`]), over regions that are unions of cells, each the convex hull of exact vertices
+//!   ([`chart::Region`]), with the properties `domain`, `injective`, `embedding`, `isometry`, `homomorphism` and
+//!   `section` ([`chart::Property`]). Injectivity and isometry are decided on each cell, an embedding is injectivity on
+//!   the union of the cells, and a homomorphism maps each cell onto a codomain cell, compared by vertex set. A
+//!   stereographic chart is not a projective map, so its isometry and homomorphism have no checker and stay
+//!   `not_established`, never false; a projective chart has all four checks, and a denominator with a constant
+//!   negative sign is read as the map with every entry negated. Anything else has no checker.
+//! - RPI.30, LB4.1, LB4.2: an exact pose is the identity or a matrix verified to be in K⁺, the 600-cell's rotation
+//!   group (determinant 1, the 120 unit icosians mapped onto themselves). Every float matrix, and every exact matrix
+//!   outside K⁺, is refused with `LB4:type.approximate_property_input` and never rounded. Each property is decided by
+//!   its own check over the whole region, never inferred from another property or established from the vertices; a
+//!   per-vertex test ([`chart::vertex_test`]) only refutes. A stereographic chart's domain is the region test
+//!   `ray_meet` from the origin along the pole, cell by cell; a projective chart's domain and every section are
+//!   decided on the posed vertices, to which convexity reduces them. A stereographic chart's injectivity and embedding
+//!   reduce to a central projection with a functional positive on the region, one for all cells of an embedding
+//!   ([`chart::CENTRAL_PROJECTION`]). The reduction is used one way: an injective central projection establishes the
+//!   property on the part of the region in the domain, also when a cell meets the singular ray, and its pair refutes
+//!   unless the pair lies on the singular ray. Where the reduction decides nothing, as for a region through the
+//!   origin, two vertices on one ray off the singular ray may still refute. A verdict's scope names its property,
+//!   region, vertex count and pose.
+//! - KN3.2, KN3.3: the region checks are `c600_jumble::polytope`'s, in its unbounded Q(√5); poses, vertices and
+//!   witnesses here keep checked i128 parts and convert at that boundary. An overflow, a zero pole, a polytope
+//!   operation that refuses its input or an unmet precondition decides nothing (`not_established`).
 //! - RPI.28, RPI.48: a check result names its chart by content identity ([`chart::identity`]: dimension, precision and
 //!   each stage's name, version, definition and parameter bits, not the claimed properties) and its property by the
 //!   name the plan claims; a property's parameters, such as a section's slab, belong in that name when a plan must tell
-//!   them apart. A check's identity is the digest of its chart, property and scope.
-//! - RPI.48: `admit_chart` admits a chart when each claimed property has an established result for it and none is
-//!   refuted. A refuted result refuses the chart with `EV3:evidence.chart_check_failed`, naming the chart, the property
-//!   and the check, and withholds every claimed property's status; anything else is `not_established`. A chart that
-//!   claims nothing is admitted.
+//!   them apart, after the property's name and a colon (`section:low`). Admission matches the property a check's
+//!   scope names against the part of the claimed name before its first colon. A check's identity is the digest of its
+//!   chart, the claimed property and its scope, which names the property whose check made it.
+//! - RPI.48: `admit_chart` admits a chart when each claimed property has established results of its own check whose
+//!   scopes cover every region and exact pose at which any result for that chart was checked, and none is refuted.
+//!   A scope names its regions by name only, so a survey gives each region a name of its own. A
+//!   refuted result refuses the chart with `EV3:evidence.chart_check_failed`, naming the chart, the property and the
+//!   check, and withholds every claimed property's status; anything else is `not_established`. A chart that claims
+//!   nothing is admitted.
 //! - RPI.48, RM.20: a refused chart does not refuse its publication. The publication installs, that chart's output has
 //!   coverage [`plan::Coverage::Undefined`] with the error's code ([`chart::ChartAdmission`]), the other plans
 //!   continue, and the check results, the session and every receipt are unchanged.
@@ -159,9 +176,9 @@
 //! For user stages: the stage module's parser and checker (RPI.69's body rules, RPI.70's operation tiers and RPI.71's
 //! costs need the stage language and RM.38's weight table), and HLSL compilation (RPI.78), the raster bound (RPI.72),
 //! quarantine (RPI.77), frame reports (RM.41) and composition on a device, which need a backend; no user stage reaches
-//! the host, so F05 and F26 stay unsupported and CT-RPI-32 runs only its headless part. For charts: KN3's polytope
-//! operations, any chart or property outside the drafted repertoire (RPI.34 stays open), the GPU agreement check
-//! (RPI.35) and a production precision rule (RPI.36 stays open). CT-RPI-19's headless Linux leg is not run here.
+//! the host, so F05 and F26 stay unsupported and CT-RPI-32 runs only its headless part. For charts: any chart or
+//! property outside the drafted repertoire (RPI.34 stays open), the GPU agreement check (RPI.35) and a production
+//! precision rule (RPI.36 stays open). CT-RPI-19's headless Linux leg is not run here.
 
 #![forbid(unsafe_code)]
 

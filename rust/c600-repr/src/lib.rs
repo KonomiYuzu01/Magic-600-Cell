@@ -7,7 +7,8 @@
 //!   (LB4.2), and the admission of a user chart as far as `c600-display` reaches it (LB4.3).
 //! - [`tool`]: the tool's 600 Cell Script source, its manifest, the review of its class against the exact entry
 //!   definitions and the row set, and the form of a review record (BND.37).
-//! - [`rows`]: what each of the tool's six rows needs from the command layer, which refuses them as not built.
+//! - [`rows`]: what each of the tool's six rows needs from the command layer, what the layer meets of it and what
+//!   remains. A host serves five of the rows with the tool's entries; the layer refuses `filter.apply` as not built.
 //!
 //! The crate draws nothing and owns no device, renderer, clock or session. It builds on the public APIs of
 //! `c600-display`, `c600-tools`, `c600-check` and `c600-command` and repeats none of their logic: picks are resolved
@@ -28,7 +29,8 @@
 //!   of naturals where its row takes canonical object references, and text where its row takes one of two named
 //!   values, because the IR draft has no identity or reference type. The snapshot queries and workspace records the
 //!   entries name (`filter.preview`, `structure.compare`, `filter.apply`, `set.save`, `structure.layer`) are the rows'
-//!   own IDs; no host answers them yet.
+//!   own IDs. A served row's records reach the command layer as its job's output; no kernel row answers the two
+//!   snapshot queries yet.
 //! - BND.37, BND.63: the class review in [`tool::review_class`] reads `view_aid` as: no entry prepares a preview or
 //!   calls what the checker cannot resolve; no entry requests a capability or has a file, randomness or budget effect;
 //!   a workspace change sits in a command that serves a workspace row and reads no state-derived data, so that what
@@ -43,9 +45,17 @@
 //! - BND.37, KN5: the row test in [`tool::row_within_view_aid`] reads a row's kind, token and preview rule and
 //!   nothing else. The stored table has no field that says a query row prepares a commit preview, so
 //!   `operation.preview` passes the row test, and an entry that proposes to it is found by the entry review instead.
-//! - LP3 plan, C6: [`rows::NEEDS`] writes the completion kind, receipt and undo entry each of the six rows would
-//!   need. They are requirements read from H-08's row fields and EV4.15, not a contract: the command layer decides
-//!   them when it builds the rows.
+//! - LP3 plan, C6: [`rows::NEEDS`] writes the completion kind, receipt and undo entry each of the six rows needs, what
+//!   the command layer meets of them and what remains. They are requirements read from H-08's row fields and EV4.15,
+//!   not a contract: the command layer decides them as it builds the rows. Its serving of five rows is LP2's draft
+//!   (pull requests 200, 202 and 203).
+//! - LP3 plan, C6 and C5's item 1: the host that serves the five rows is a test host (`tests/served_rows.rs`), because
+//!   a host in this crate would make `c600-run` a dependency of the library; the tests take it as a dev-dependency.
+//!   It runs an entry in process through `c600-run`'s boundary, maps a job's arguments to the entry's parameters by
+//!   name, answers the two snapshot reads with the state number of the job's revision, and fails a running program's
+//!   job, whose arguments carry no provenance block (BND.22). The source route runs the same entry in process on the
+//!   same arguments at the same revision without the layer (not C5's runner `c600-lp3-source` or the runtime's own
+//!   process), and the two routes give the same value, views and records.
 //! - BND.37, CT-BND-15: an entry digest is the SHA-256 of a line naming this draft, the module, the entry and the
 //!   SHA-256 of the module's source bytes ([`tool::entry_digest`]). A review record ([`tool::ReviewRecord`]) names the
 //!   tool, the reviewer, the class, the source digest, every entry digest and the row set. BM5's review has not
@@ -65,8 +75,9 @@
 //!   base state, and the map's entries) and kept; [`layout::LinkedSelection::frame`] reads it and computes nothing.
 //! - LB4.2: between exact poses a survey takes the display decision for each vertex as a caller-supplied function,
 //!   whose default is the CPU reference's own exclusion neighbourhood. The repertoire is `c600-display`'s draft
-//!   (RPI.34 [O]): the stereographic chart over convex hulls of exact vertices in Q(√5), with the properties domain,
-//!   injectivity and section membership.
+//!   (RPI.34 [O]): stereographic and projective charts over unions of cells with exact vertices in Q(√5), with the
+//!   properties domain, injectivity, embedding, isometry, homomorphism and section membership. A survey checks the
+//!   stereographic chart only, the chart the CPU reference evaluates.
 //! - LB4.3: a user chart is bound to its stage when one of the chart's stages names the stage description's digest as
 //!   its definition ([`chart::admit_user_chart`]), and the stage must be a vertex stage, since a chart maps positions.
 //!   The description stands for what the stage checker would read from a checked stage module; that checker, HLSL
@@ -75,6 +86,33 @@
 //!   `c600-view`, a view's recomputation counters. Of the relationship strip's typed relations, only a slot's current
 //!   occupant at pose level is built, in `c600_jumble_tool::relation` (C8); the strip's data contract (chapter 06,
 //!   RPI.65) is built nowhere yet.
+//!
+//! # Not built
+//!
+//! What the rows still need, with the API a host would use. C6 changed nothing in `c600-command` or the kernel; each
+//! item is theirs to build (KN5, LP2). [`rows::NEEDS`] gives the same per row.
+//!
+//! - `filter.apply`, in `c600-command`: a filter preview kept for each completed `filter.preview` job,
+//!   `CommandLayer::filter_preview(job: u64) -> Option<&FilterPreview>` with
+//!   `FilterPreview { result: ResultRef, deps: PreviewDeps }` and the predicate's digest as `PreviewDeps::draft`; the
+//!   gate `fresh_filter_preview` and the `filter` preview rule, checked at admission against the current
+//!   dependencies; the `FilterPreviewRef` form, the job ID of such a preview; and the inverse of a workspace
+//!   completion, `session.undo` and `session.redo` inverting and repeating a `TransactionKind::Workspace` action's
+//!   `Transaction::records`, each record back to its value before the write, as they do a `workspace.set` write
+//!   (KN5.20). `Table::serve_row` can then accept a row with a gate, the `filter` preview rule and the undo class
+//!   `workspace`.
+//! - Argument forms in the layer: `FilterRef`, the result reference of a completed `structure.layer` job;
+//!   `FilterPreviewRef`, above; and `CanonicalObjectRefs`, canonical objects of the model, which needs the kernel's
+//!   object ranges. The layer passes all three unchecked.
+//! - A running program's job: `Invocation` and `ProgramJob` carry no blocks for the arguments, so a host cannot give
+//!   the entry's run its inputs' provenance (BND.22). Needed: `inputs: Vec<Vec<u8>>` on both, the arguments' canonical
+//!   blocks, which the host stamps from the calling run's store as it stamps the caller.
+//! - Kernel rows for the two snapshot reads, the counts of the objects a predicate selects (`filter.preview`) and the
+//!   comparison of two cells (`structure.compare`), and entries that pass their arguments to them with
+//!   `read_snapshot<T>(query, x)` (pull request 199). The entries read a literal query with no argument.
+//! - `set.save`: a record for each saved set, where the entry writes the one record `set.save`, and the saved set's
+//!   exact-set digest as the result reference, where the layer gives the output's digest.
+//! - `view.effect.scope`: a display that applies the published scope.
 
 #![forbid(unsafe_code)]
 
