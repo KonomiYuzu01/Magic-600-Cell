@@ -216,6 +216,23 @@ fn the_word_operations_build_words_of_the_pinned_alphabet() {
     }
 }
 
+const PUSHED: &str = "export fn pushed(x: MenuWord) -> List<MenuWord> effects [] {\n    \
+    return push(list<MenuWord>(x), menu[0:1]);\n}\n";
+
+/// A list holds menu words as it holds any value: `push` appends one as a list operation, priced per element, and
+/// only the word operations above build menu words.
+#[test]
+fn push_appends_a_menu_word_to_a_list() {
+    let (_, loaded) = build(&[&m(PUSHED)]);
+    let a = alphabet("menu-a");
+    let ran = loaded.run("m", "pushed", vec![menu(&a, &[[2, 2], [1, 0]])], &mut NoHost, &pinned(&a)).unwrap();
+    completed(&ran);
+    let Some(Value::List(l)) = &ran.value else { panic!("a list: {:?}", ran.value) };
+    let items: Vec<Vec<[u32; 2]>> = l.items().iter().map(letters).collect();
+    assert_eq!(items, [vec![[2, 2], [1, 0]], vec![[0, 1]]]);
+    assert!(ran.summary.rows.iter().any(|r| r.at.ends_with("#push")), "{:?}", ran.summary.rows);
+}
+
 /// A Full word and a menu word never meet in one operation: the checker refuses the mix with LB1's code, and the same
 /// IR built by hand stops the run before the step.
 #[test]
