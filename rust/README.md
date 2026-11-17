@@ -1904,8 +1904,9 @@ run or not applicable is no pass (PHS.63).
   safe" through the tool's route (the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`
   are LP3's library rows over kernel rows, which need a snapshot read with an argument that no host answers yet);
   named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with
-  another field (its literal word over 100,000 letters goes in one word step and is refused whole); CT-LB3-01's
-  checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in admission.
+  another field (its literal word over 100,000 letters goes in one word step and is refused whole); the child's
+  own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
+  request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -2005,13 +2006,17 @@ run or not applicable is no pass (PHS.63).
     first letter and the empty word is admitted; prefix protection reads literal letters), CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
-    word its caller supplies; a nonzero ν only as the caller supplies it), CT-LB3-03 (heights (0,0) off the lattice in
+    word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
+    is nonzero fails the label checkpoint, and one whose ν is 0 passes it), CT-LB3-03 (heights (0,0) off the lattice in
     free mode; domain IDs by exact coset tests; Φ = 0 with height-2 pieces fails M8's sticker test), CT-LB3-05 with
     CT-BND-17 (M8's repair list at a named cap: its pairs in pinned order, then by cap; rows of five integers with no
     mark and no ranking field; every pair's delta read again from its own word, and y and z recomputed for one pair; a
     stopped list has no rows, and an empty list speaks only of its cap), CT-LB3-06 (prefix peak, excursion, tameness and
     the step flag recomputed apart from the kernel's batch; a false flag refuses nothing) and CT-LB3-07 (a named-word
-    check answers only its named word, with no word, outcome table or recommendation field).
+    check answers only its named word, with no word, outcome table or recommendation field; its correction part: a
+    correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
+    rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
+    or a recommendation, ranking or correction field).
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -2024,6 +2029,15 @@ run or not applicable is no pass (PHS.63).
     again inside Jumble, and the turn Jumble on replays shows only at pose level; each verdict refused at the other
     level with `KN1:input.level_not_held`; each level finds both clear and moving cases). M5's
     `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03.
+  - `c600-jumble-tool/tests/ct_lb3_04.rs`: CT-LB3-04 whole at C8's level, on LP2's `nu` and `correction_set_check`
+    rows (`c600_jumble::nu`, `c600_jumble::corrections`): ν undefined (`off_lattice`) at every off-lattice prefix of a
+    correction's word and after one letter outside K⁺, never stale, zero or partial; the C5 convention (r0 the least
+    element of order 5, r0^i of class i), correction 27's value read in r0, unchanged through its 45 values, JSON and
+    the label checkpoint's evidence, and the manual's rule "make correction 27 v times" checking to 0 in r0 only; a
+    planted nonzero fixed I_a coordinate (b5, on the I_b menu with I_a's identity written over its own) refused by the
+    row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
+    drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
+    unshipped id refused whole. No 600 Cell Script program calls the rows: the IR draft has no F2 or F5 number kinds.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2040,17 +2054,18 @@ run or not applicable is no pass (PHS.63).
     whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
     sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
     projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
-- Not built: Jumble on in the command layer and oracle equality against M5's fixtures (KN5's one implementation, LP2);
-  ν, the F2 and F5 number kinds and the correction catalogue (LP2), which CT-LB3-04, CT-LB3-01's reachable nonzero-ν
-  state and CT-LB3-07's correction part need; the producers of the rows J01 and J06 to J12 (J10 needs exposed-face
-  geometry, J12 needs ν); the jumbling library entries, which need menu words in the IR draft; CT-LB1-02's key half
-  (LG2.18); BM5's review records; a comparison of the posed arrays with the J1 fixture's later stages; the relationship
-  strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): a whole word's Net
-  and Strict protection at pose level for CT-LB3-06, and the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has
-  no swept preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also
-  waiting: the repair list through the command layer, with a job that names its cap (KN5), the built-in column's
-  repair-list exception in `c600-check`, the BND.2 wording of an empty list and no key that skips caps with an empty
-  list (LP2).
+- Not taken up yet from LP2: Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle
+  route through the command layer (pull requests 212, 217, 218 and 220), and menu words in the IR draft (pull request
+  210), for the jumbling library entries.
+- Not built: the producers of the rows J01 and J06 to J12 (J10 needs exposed-face geometry, J12 needs ν); the jumbling
+  library entries as language code, and LB3's ν and correction-set entry as language code, which needs the F2 and F5
+  number kinds in the IR draft; CT-LB1-02's key half (LG2.18); BM5's review records; a comparison of the posed arrays
+  with the J1 fixture's later stages; the relationship strip's data contract (chapter 06, RPI.65). Not taken up yet from
+  M8 (pull requests 176 and 182): a whole word's Net and Strict protection at pose level for CT-LB3-06, and the rim and
+  survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its
+  twists, and which engine names one is not settled. Also waiting: the repair list through the command layer, with a job
+  that names its cap (KN5), the built-in column's repair-list exception in `c600-check`, the BND.2 wording of an empty
+  list and no key that skips caps with an empty list (LP2).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
