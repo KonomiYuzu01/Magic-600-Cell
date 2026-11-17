@@ -1,25 +1,26 @@
 //! One typed relation of the relationship strip on the jumbled puzzle (EV3.8, EV3.9): the current occupant of a
 //! sticker slot, at pose level, on and off the lattice.
 //!
-//! The occupant of slot t is the piece sitting in the position of t's home piece A (the glossary's "Occupant"). From
-//! `c600-jumble`'s public facts:
+//! The occupant of slot t is the piece sitting in the position of t's home piece A (the glossary's "Occupant"), that
+//! is, the lattice piece in A's chamber. A piece B at lattice pose k sits in the chamber of signature k(M(B)), which
+//! M8's level tables give (`c600_jumble::levels::Tables::image`, the slot action of K⁺). A piece off the lattice sits
+//! in no chamber, as in `levels::positions`. So the answer for t is:
 //!
-//! - A at the identity pose sits in its own position, so the occupant is A.
-//! - Only a piece of A's K⁺-orbit can sit in A's position on the lattice, and a piece at a lattice pose other than the
-//!   identity sits in the position that pose makes of it. The public API does not say which position that is (no slot
-//!   action), so while A is not at the identity and some piece of its orbit is at such a pose, the answer is
-//!   `unknown(`[`NO_SLOT_ACTION`]`)`.
-//! - Otherwise A is off the lattice and no lattice piece sits in its position: "none: off the lattice".
+//! - the one lattice piece in A's chamber;
+//! - "none: off the lattice" when no lattice piece is in A's chamber. Without a collision, an empty chamber means that
+//!   pieces are off the lattice;
+//! - `unknown(`[`PIECES_COLLIDE`]`)` when two lattice pieces are in A's chamber, or when A's chamber is empty while two
+//!   pieces share another one. Only a raw pose table collides (KN2.14); no twist reaches one.
 //!
-//! The relation reads the pose table, the K⁺-orbit classes and the model's home slots, and no label (EV3.9, KN1.15).
-//! It assumes a configuration free of collisions, as every state reached by admitted twists is (state contract,
-//! section 3); a raw colliding pose table (KN2.14) is outside it.
+//! The relation reads the pose table, the chambers of K⁺ and the model's home slots, and no label (EV3.9, KN1.15).
+//! Where `levels::labels` covers slot t, the occupant is the piece whose sticker the label names (CT-EV3-06).
 
 use std::collections::BTreeMap;
 use std::fmt;
 
-use c600_jumble::model::NS;
-use c600_jumble::state::State;
+use c600_jumble::levels;
+use c600_jumble::model::{NP, NS};
+use c600_jumble::state::{EngineError, State};
 use c600_jumble::{codes, Context};
 use c600_kernel::IdentityBlock;
 
@@ -29,8 +30,8 @@ use crate::level::Level;
 pub const RELATION: &str = "current occupant";
 
 /// The reason of an unknown occupant.
-pub const NO_SLOT_ACTION: &str =
-    "no slot action: the public kernel API does not say which position a lattice pose other than the identity fills";
+pub const PIECES_COLLIDE: &str =
+    "pieces collide: the pose table puts two lattice pieces in one chamber (a raw table, KN2.14), so which piece sits where is not defined";
 
 /// Why a slot has no occupant in a result. "None: off the lattice" and unknown are different values (KN0.4, EV3.9).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -103,29 +104,42 @@ impl fmt::Display for NoSuchSlot {
 impl std::error::Error for NoSuchSlot {}
 
 /// The current occupant of each named slot in `state`, by the rule of the module documentation. A slot outside the
-/// model refuses the whole call; repeats are answered once.
-pub fn current_occupants(ctx: &Context, state: &State, slots: &[u32]) -> Result<Occupants, NoSuchSlot> {
+/// model refuses the whole call; repeats are answered once. The outer error is an engine failure of the level tables,
+/// never a property of the state.
+pub fn current_occupants(
+    ctx: &Context,
+    state: &State,
+    slots: &[u32],
+) -> Result<Result<Occupants, NoSuchSlot>, EngineError> {
     if let Some(&slot) = slots.iter().find(|&&slot| slot as usize >= NS) {
-        return Err(NoSuchSlot(slot));
+        return Ok(Err(NoSuchSlot(slot)));
     }
-    let orbit = |piece: usize| ctx.regions.orbit_of[piece] as usize;
-    // The orbits with a piece at a lattice pose other than the identity.
-    let mut turned = vec![false; ctx.regions.reps.len()];
-    for piece in 0..state.pose_ids().len() {
-        if matches!(state.pose_of(piece).kidx(), Some(k) if k != 0) {
-            turned[orbit(piece)] = true;
+    let tables = levels::tables(ctx)?;
+    // For each chamber, how many lattice pieces sit in it, and the last one counted.
+    let mut claims = vec![0u8; NP];
+    let mut claimant = vec![0u32; NP];
+    for piece in 0..NP {
+        if let Some(k) = state.pose_of(piece).kidx() {
+            let chamber = tables.image(ctx, piece, k) as usize;
+            claims[chamber] = claims[chamber].saturating_add(1);
+            claimant[chamber] = piece as u32;
         }
     }
+    let collided = claims.iter().any(|&n| n > 1);
     let mut covered = BTreeMap::new();
     let mut missing = BTreeMap::new();
     for &slot in slots {
-        let home = ctx.model.slot_piece[slot as usize];
-        if state.pose_of(home as usize).kidx() == Some(0) {
-            covered.insert(slot, home);
-        } else if turned[orbit(home as usize)] {
-            missing.insert(slot, Missing::Unknown(NO_SLOT_ACTION));
-        } else {
-            missing.insert(slot, Missing::OffLattice);
+        let chamber = ctx.model.slot_piece[slot as usize] as usize;
+        match claims[chamber] {
+            1 => {
+                covered.insert(slot, claimant[chamber]);
+            }
+            0 if !collided => {
+                missing.insert(slot, Missing::OffLattice);
+            }
+            _ => {
+                missing.insert(slot, Missing::Unknown(PIECES_COLLIDE));
+            }
         }
     }
     let answer = match (covered.is_empty(), missing.is_empty()) {
@@ -133,11 +147,11 @@ pub fn current_occupants(ctx: &Context, state: &State, slots: &[u32]) -> Result<
         (true, false) => Partial::Undefined(missing),
         (false, false) => Partial::Partial { covered, missing },
     };
-    Ok(Occupants {
+    Ok(Ok(Occupants {
         relation: RELATION,
         level: Level::Poses,
         identity: ctx.identity(state.menu()),
         read: state.digest(ctx),
         answer,
-    })
+    }))
 }

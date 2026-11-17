@@ -1,16 +1,18 @@
 //! CT-LB3-02, LP3's side (LB3.4, KN1.11): a protection verdict carries its level and never crosses it. M5's
 //! `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03: every retained letter of the pinned I_a menu at
-//! grip 0 that turns centre piece 0 is refused at pose level inside Jumble and passes at label level after the crossing
-//! at solved. This test does not repeat them. It builds `c600_jumble_tool::protection`'s verdicts from one such letter,
-//! retained generator 1 (H_0), on each side, and checks that each verdict answers only for a puzzle of its own level.
+//! grip 0 that turns the centre piece of cell 0 is refused at pose level inside Jumble and passes at label level after
+//! the crossing at solved. This test does not repeat them. It builds `c600_jumble_tool::protection`'s verdicts from one
+//! such letter, retained generator 1 (H_0), on each side, and checks that each verdict answers only for a puzzle of its
+//! own level.
 //!
-//! What runs: the pose-level verdict of H_0 at grip 0 with centre piece 0 protected, which moves, and the label-level
-//! verdict of the kernel word `[1]` from solved, which is clear, each read at its own level and refused at the other
-//! with `KN1:input.level_not_held`; a label verdict that moves and a pose verdict that is clear, so no finding follows
-//! from the level alone; and the digest each verdict names. Not run: Strict protection at either level, since M5 has
-//! no protection of a whole word; the kernel's own label protection of a piece, which covers moving orbits 0 to 34
-//! only, so the label verdict is composed from KN2.4's `positions` rows (LP2); and the pose-to-label crossing
-//! projection with its checkpoints (M8). A pass is source and fixture evidence.
+//! What runs: the pose-level verdict of H_0 at grip 0 with the centre piece of cell 0 protected, which moves, and the
+//! label-level verdict of the kernel word `[1]` from solved, which is clear, each read at its own level and refused at
+//! the other with `KN1:input.level_not_held`; a label verdict that moves and a pose verdict that is clear, so no
+//! finding follows from the level alone; and the digest each verdict names. Not run: Strict protection of a whole word,
+//! which M8's `levels::derive` has at pose level and the kernel's `strict_piece_protection` at label level; the
+//! kernel's label-level protection of named pieces, centres included (`piece_protection`), in place of the label
+//! verdict composed from KN2.4's `positions` rows; and the pose-to-label crossing projection with its checkpoints,
+//! which M8's `levels` has. This test does not take them up yet. A pass is source and fixture evidence.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
@@ -75,9 +77,9 @@ fn positions(state: &Snapshot, pieces: &[u32]) -> Vec<PiecePosition> {
 }
 
 /// CT-LB3-02 (part: "a protection verdict carries its level and never crosses it"). The same rotation, H_0 about pole
-/// 0, gets two verdicts for centre piece 0: inside Jumble the pose-level verdict says the piece moves, and in
-/// 600-cell-Full, after the crossing at solved, the label-level verdict says it is clear, because H_0 turns the piece
-/// with its labels unchanged. Each answers for its own puzzle. Asked for the other, each is refused with
+/// 0, gets two verdicts for the centre piece of cell 0: inside Jumble the pose-level verdict says the piece moves, and
+/// in 600-cell-Full, after the crossing at solved, the label-level verdict says it is clear, because H_0 turns the
+/// piece with its labels unchanged. Each answers for its own puzzle. Asked for the other, each is refused with
 /// `KN1:input.level_not_held`: the label pass grants no pose protection inside Jumble, and the pose refusal says
 /// nothing about labels. Each verdict names the digest of the state it judged at its own level.
 #[test]
@@ -118,9 +120,9 @@ fn ct_lb3_02_a_protection_verdict_never_crosses_its_level() {
 }
 
 /// CT-LB3-02 (part: no finding follows from the level). Protecting a piece of cap 0 whose stickers H_0 turns as well,
-/// the label-level verdict finds that piece moving and centre piece 0 still clear; protecting the centre piece of cell
-/// 1 as well, which lies outside cap 0, the pose-level verdict of an admitted H_0 is clear. Label rows of different
-/// pieces before and after give no verdict.
+/// the label-level verdict finds that piece moving and the centre piece of cell 0 still clear; protecting the centre
+/// piece of cell 1 as well, which lies outside cap 0, the pose-level verdict of an admitted H_0 is clear. Label rows of
+/// different pieces before and after give no verdict.
 #[test]
 fn ct_lb3_02_each_level_finds_both_clear_and_moves() {
     let ctx = ctx();
