@@ -155,6 +155,7 @@ fn decimal(block: [u8; 32]) -> String {
 fn request_name(request: &Request) -> &'static str {
     match request {
         Request::Snapshot { .. } => "snapshot",
+        Request::SnapshotWith { .. } => "snapshot_with",
         Request::Declassified { .. } => "declassified",
         Request::FileRead { .. } => "file_read",
         Request::Clock => "clock",

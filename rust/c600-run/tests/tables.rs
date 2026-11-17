@@ -76,6 +76,7 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::Field { value: _, field: _ } => ("field", Kind::Pure, &["value"]),
         Expr::Collection { ty: _, items: _ } => ("collection", Kind::Pure, &["items"]),
         Expr::ReadSnapshot { query: _, ty: _ } => ("read_snapshot", Kind::StateRead, &[]),
+        Expr::ReadSnapshotWith { query: _, arg: _, ty: _ } => ("read_snapshot_with", Kind::StateRead, &["arg"]),
         Expr::PublishView { value: _ } => ("publish_view", Kind::View, &["value"]),
         Expr::WriteWorkspace { record: _, ty: _, value: _ } => ("write_workspace", Kind::Workspace, &["value"]),
         Expr::Propose { word: _, target: _ } => ("propose", Kind::Preview, &["word", "target"]),
@@ -116,6 +117,9 @@ impl Carries<'_> {
 fn request(r: &Request) -> (Kind, Vec<String>) {
     let (kind, fields) = match *r {
         Request::Snapshot { query, ty } => (Kind::StateRead, vec![Carries::Name(query), Carries::Type(&ty.ty)]),
+        Request::SnapshotWith { query, arg, ty } => {
+            (Kind::StateRead, vec![Carries::Name(query), Carries::Bytes(arg), Carries::Type(&ty.ty)])
+        }
         Request::Declassified { id, ty } => (Kind::StateRead, vec![Carries::Name(id), Carries::Type(ty)]),
         Request::FileRead { path, ty } => (Kind::FileRead, vec![Carries::Name(path), Carries::Type(ty)]),
         Request::Clock => (Kind::ClockRead, vec![]),
@@ -341,7 +345,8 @@ fn kinds(e: &Expr, out: &mut Vec<Kind>) {
 const EVERY: &str = "edition \"6cs-draft-1\";\nmodule m requires [file, clock, random];\n\n\
     export fn every(w: Word) -> record { base: Text, id: Text } \
     effects [snapshot, view, workspace, preview, budget, file, random, clock] {\n    \
-    let n = read_snapshot<Nat>(\"n_c0\");\n    let d = declassified<Nat>(\"example\");\n    \
+    let n = read_snapshot<Nat>(\"n_c0\");\n    let q = read_snapshot<Nat>(\"n_for\", w);\n    \
+    let d = declassified<Nat>(\"example\");\n    \
     let f = file_read<Nat>(\"count\");\n    let c = read_clock();\n    let r = random_draw();\n    \
     let v = publish_view(record { used = used_steps(), left = unused_steps(), status = budget_status(), \
     now = c });\n    \
@@ -592,6 +597,7 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
     let qty = QTy { ty: Ty::Word, display: false };
     let requests = [
         Request::Snapshot { query: "n_c0", ty: &qty },
+        Request::SnapshotWith { query: "protection", arg: b"[1]\n", ty: &qty },
         Request::Declassified { id: "example", ty: &Ty::Nat },
         Request::FileRead { path: "count", ty: &Ty::Nat },
         Request::Clock,

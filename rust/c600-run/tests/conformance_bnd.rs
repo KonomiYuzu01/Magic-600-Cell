@@ -44,6 +44,7 @@ const PREVIEWER: &str = "edition \"6cs-draft-1\";\nmodule m requires [file];\n\n
 fn request_fields(request: &Request) -> (&'static str, &'static [&'static str]) {
     match request {
         Request::Snapshot { query: _, ty: _ } => ("snapshot", &["query", "ty"]),
+        Request::SnapshotWith { query: _, arg: _, ty: _ } => ("snapshot_with", &["query", "arg", "ty"]),
         Request::Declassified { id: _, ty: _ } => ("declassified", &["id", "ty"]),
         Request::FileRead { path: _, ty: _ } => ("file_read", &["path", "ty"]),
         Request::Clock => ("clock", &[]),
