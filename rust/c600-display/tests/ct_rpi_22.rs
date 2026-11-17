@@ -32,11 +32,11 @@ fn claiming(id: u64, angle: f64, property: &str) -> Chart {
 }
 
 /// Exact check results on the cell fixture: the domain refuted at the identity (the pole is on the cell's axis), the
-/// domain established at the antipodal pose, and injectivity unknown on a full-dimensional region.
+/// domain established at the antipodal pose, and injectivity unknown on a region through the origin.
 fn verdicts() -> (Verdict, Verdict, Verdict) {
     let cell = cell();
     let declaration = Stereographic { pole: vertex_sum(&cell) };
-    let flat = Region { name: "cell".to_owned(), vertices: cell.clone() };
+    let flat = Region::hull("cell", cell.clone());
     let mut solid = flat.clone();
     solid.name = "solid".to_owned();
     solid.vertices.push(exact::scale(Q5::int(-1), &E1).expect("small values"));

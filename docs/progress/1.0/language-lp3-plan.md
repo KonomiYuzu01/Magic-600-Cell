@@ -70,7 +70,7 @@ runnable") cover the kernel rows. LP3 builds nothing in LP2's crates. Each row s
 | Streaming words. Built in the kernel (pull request 170: `chunks`, `replay`, `replay_under_ceiling`), with a compressed word's part list (pull request 185). Not built: LB7.2's work sheets (KN5) | KN2.10 | CT-KN2-07, CT-LG2-14 | CT-LB2-03's named work-sheet reuse |
 | The `positions` row. Built in the kernel (pull request 170: `Kernel::positions`). Not built: a host row that serves it to a program (KN5) | KN2.4 | None names it | CT-LB2-04 |
 | Exact rotations and `twist.apply` (amendment A6). The exact requests are built (pull request 176: `c600_jumble::rotation`, `c600_kernel::request`). Not built: `twist.apply` in the command layer (KN5) and the shell's gesture producer (CT-KN3-06) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | CT-EV4-04's twist leg, CT-BND-19's live-twist part |
-| Exact polytope operations. KN3.3's exact double description is built (pull request 176: `c600_jumble::dd`, the exact vertices of a bounded region). Not built: the other operations | KN3.3 | CT-KN3-01, CT-KN3-03 | CT-LB4-01's homomorphism, embedding, isometry and injectivity checks |
+| Exact polytope operations. Built: KN3.3's exact double description (pull request 176: `c600_jumble::dd`, the exact vertices of a bounded region) and the other operations with the exact core of LB4.1's map property checks (pull request 209: `c600_jumble::polytope`) | KN3.3 | CT-KN3-01, CT-KN3-03 | None; CT-LB4-01's injectivity, embedding, isometry and homomorphism checks run on them (C6) |
 | The F2 and F5 number kinds. Not built, nor are ν and `correction_set_check` | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator. Built (pull request 176), with `compose`, `length` and `word_key`, Full's free reduction. Not built: these operations on compressed words, a jumbling key, LB1.10's trace key | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-06 (the owner answer on word keys, section 10); the library entries of CT-LB2-01 and CT-BND-18 are not written yet |
 | Collection types in the IR draft: lists, maps, sets. Built (pull request 176); they cross the runtime's wire (C3, pull request 180) | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | None |
@@ -310,9 +310,11 @@ view-cannot-write half of CT-EV3-07 and the representations parts of CT-LB6-03 a
 its rows meet C5's item 1 through the source and command routes; C1's item 5 holds.
 
 - C6 (`rust/c600-repr`, branch `claude/lp3-c6-repr`), built: CT-LB4-02, whole (synthetic); the 600-cell-Full half of
-  CT-LB4-03; the admission and CPU half of CT-LB4-04; CT-LB4-01's CPU reference (a declared domain decided by an exact
-  region test and section membership on the posed vertices, boundary cases included, a chart whose domain fails inside
-  refused, and domain and injectivity each established by their own check); the counter half of CT-EV3-06; the
+  CT-LB4-03; the admission and CPU half of CT-LB4-04; CT-LB4-01, whole over `c600-display`'s drafted chart repertoire
+  (RPI.34 [O]: a declared domain decided by an exact region test and section membership on the posed vertices,
+  boundary cases included, a chart whose vertices all pass and whose region check fails inside refused, and
+  injectivity, embedding, isometry and homomorphism each decided by its own check on `c600_jumble::polytope`, with the
+  stereographic chart's isometry and homomorphism left `not_established`); the counter half of CT-EV3-06; the
   view-cannot-write half of CT-EV3-07 at the command layer; and the representations parts of CT-LB6-03 and CT-BND-15.
   The tool is a `.6cs` module with six entries admitted under the built-in column, with a Rust manifest of the class
   `view_aid`; the class review covers every exported function and only the source bytes the manifest names. C6 changed
@@ -335,10 +337,9 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   arguments, without which the test host fails such a job; kernel rows for the `filter.preview` and
   `structure.compare` snapshot reads, for which the test host answers the state number; a record and an exact-set
   digest for each saved set; and a display that applies the published scope. The crate documentation names the API
-  each needs. Also not built: the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
-  (KN3's exact polytope operations beyond `dd`'s vertices, LP2), the stage checker and every device step (the
-  renderer freeze, C9), the relationship strip (C8 computes one of its typed relations, a slot's current occupant, at
-  pose level), and a BM5 review record, which the tool gets when it ships.
+  each needs. Also not built: the stage checker and every device step (the renderer freeze, C9), the relationship
+  strip (C8 computes one of its typed relations, a slot's current occupant, at pose level), and a BM5 review record,
+  which the tool gets when it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.
@@ -395,8 +396,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 9. Section 15.4's 82 tests
 
-"Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row. 31
-tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 30 have a part that can run now, and 21 wait
+"Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row. 32
+tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 29 have a part that can run now, and 21 wait
 entirely. The milestone is in parentheses; "next" marks a part that can run now and is not built yet.
 
 | Test | Class | Whole run | Part now |
@@ -418,7 +419,7 @@ entirely. The milestone is in parentheses; "next" marks a part that can run now 
 | CT-LB3-05 | source | A job that names its cap through the command layer (KN5, LP2); the built-in column's repair-list exception in `c600-check` (LP2). The named-cap repair list is built (pull request 176) | The kernel half on `observe::cuts::repair_list` (C8) |
 | CT-LB3-06 | source | The library entry: menu words in the IR draft (LP2). A whole word's Net and Strict protection is built (pull request 182); C8 does not use it yet | The kernel half on exact word fixtures (C8) |
 | CT-LB3-07 | source | LB3.5's recommendation rule in `c600-check` (LP2); the inspector library entries, not written yet; the correction catalogue (ν, LP2). The rim summary, covers and release check are built (pull request 176) | The checker half for outcome tables and named-word checks (C5); the jumbling half on the kernel (C8) |
-| CT-LB4-01 | source | The homomorphism, embedding, isometry and injectivity checks: KN3's exact polytope operations beyond `dd`'s vertices (LP2) | The CPU reference (C6) |
+| CT-LB4-01 | source | Now (C6) | - |
 | CT-LB4-02 | synthetic | Now (C6) | - |
 | CT-LB4-03 | source | A layout evaluated again at a later revision of a jumbled session (KN5, LP2) | The 600-cell-Full half (C6); the jumbling half at pose level (C8), at lattice poses other than the identity through `c600-display`'s pose projection on M8's slot action of K⁺ (C8) |
 | CT-LB4-04 | source | The renderer freeze (C9) | Admission and the CPU half (C6) |
