@@ -34,8 +34,9 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
-kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
-crates; its job tests run checked source programs too. The evidence library depends on the digest crate only.
+kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR, digest and
+evidence crates and on the command layer; its job tests run checked source programs too. The evidence library depends
+on the digest crate only.
 The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
 view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
@@ -1167,6 +1168,33 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `Session::invoke(origin, envelope)` takes the origin of the channel the envelope came on, and the request digest
   and the program gates read that origin (`tests/kn5_command.rs` sends the shell's genuine envelope on a program's
   channel first).
+- The record layer (`src/persist/`, M6's remaining rows) reads and writes chapter 05's records over the frozen format
+  packet: FP.5's canonical bytes, FP.7's deterministic gzip and FP.9's limits (`codec`); FP.4's catalogue with
+  `read_record` and `write_record`, where an unknown or newer format, version or required extension stays recorded
+  and never activates (`record`); FP.13's flat menu words with their chunks, annotations and X3's expansion bound
+  (`word`); FP.19's facts envelope, read into `c600-evidence`'s graph, with the display word for each recorded
+  function edition (`facts`); FP.29's migration record, the function-edition change and FP.28's publication, which
+  validates a whole generation before it writes anything, writes it durably and only then appends the active pointer
+  (`migrate`); and 0.4's preview certificate as a recorded claim (`legacy`, PS3.7). Its draft choices are listed in
+  `src/persist/mod.rs`. The session's journal does not store through this layer yet; it keeps its own draft frames
+  (above).
+- Tests: `persist_ps1.rs` runs CT-PS1-08 to CT-PS1-10, CT-PS1-19, CT-PS1-21 and CT-PS1-23 whole, and `persist_ps2.rs`
+  runs CT-PS2-01 to CT-PS2-05 whole, over the packet's vectors read in place (shared helpers in
+  `tests/persist_support/`). The publication runs on `MemDisk`, with each write failing in turn and with an outage
+  from each write on, so a pass is no power-loss evidence (FP.28).
+- Critical-path read of the record layer (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model
+  read `src/persist/` and its tests with the acceptance check. Its two major findings were fixed before the pull
+  request: R1, a publication after a torn pointer line wrote a line feed first, so a failure after that byte completed
+  the torn line and activated a generation never reported as published; a publication now cuts a torn tail durably
+  before it appends. R2, a migration took its source's format, version and identity on trust; a `c600-` source must
+  now carry them in its bytes. Also fixed: R3, a migration's check records are published with it; R4, a generation's
+  head and validation record are read with `read_record`, so a newer one never activates; R5, a damaged last pointer
+  line is refused, not skipped for an older one. Each fix has a case in `persist_ps2.rs` that fails without it.
+  Deferred: R6, a conversion that changes a word's extensions without a note is not refused, since PS2.5's preserved
+  fields do not list them. A scoped re-check found each finding fixed and no new blocking finding. Of its three minor
+  notes, one is fixed: a `c600-` record given under another format name is refused. Deferred: a damaged last pointer
+  line stops every later publication, and the store has no repair path; `reconcile` reads a missing pointer log after
+  a failed append as no switch, which holds while a failed append leaves no unreadable file.
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test and the
   session-lock tests, so a pass is no evidence of a real disk's behaviour in a crash. The checks ran on Windows
   only.
@@ -1248,12 +1276,12 @@ run or not applicable is no pass (PHS.63).
     `tests/test_jumbling_rust_nu.py` compares ν with the ν reference, and `tests/test_jumbling_rust_corrections.py`
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
-  KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job and M8's levels,
-  as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 68 whole, nine of
-  them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
-  CT-LG3-04 and CT-LG5-06); 134 part; 4 named only by LP3's command-layer tests, as parts without a marker
-  (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 42 waiting, each with what it waits for in
-  `docs/progress/1.0/lp2-ct-index-notes.md`.
+  KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
+  M6's record layer, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool):
+  79 whole, nine of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
+  CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 134 part; 4 named only by LP3's command-layer tests, as parts
+  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 31 waiting, each with what it
+  waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1328,9 +1356,8 @@ run or not applicable is no pass (PHS.63).
 - Missing, by what they wait for:
   - LP3's lanes, views and shell (16): CT-ONE-13 to CT-ONE-16, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07,
     CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
-  - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
-    CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
-    CT-BND-23).
+  - M6's run record (4): CT-PS1-16, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for
+    CT-DET-04 and CT-BND-23).
   - The session store's jumbling records (2): CT-PS1-11 (a session with a reversed I_a order, another contract or model,
     or jumble letters with Jumble off is refused) and CT-PS1-22 (the optional jumbling section, and an interrupted
     episode's recovery), with M6.
