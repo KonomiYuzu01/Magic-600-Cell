@@ -24,8 +24,8 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, RM.37's jumbling crosswalk as fixtures (LP3, C2), and the jumbling producers from M5's kernel (LP3, C8) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
-| `c600-durable` | LP3 C7's durable conformance cases on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
-| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source` and the tool's views (LP3, C5) |
+| `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5) |
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and what its six rows need from the command layer (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
@@ -1114,11 +1114,11 @@ run or not applicable is no pass (PHS.63).
     CT-ONE-29), a record write and its undo over the journal in `c600-session/tests/kn5_command.rs` (CT-KN5-04, part),
     and a frame outside the presentation in `kn5.rs`'s token matrix (CT-ONE-03, part).
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
-  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
-  and L17; the provenance reader over `c600-run` (LP3's host), the typed workspace rows and limits on a record's
-  payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built:
-  callers are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes
-  M6's session lock, so a second opener of a held session is refused with `KN4:busy.session_locked`.
+  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16 and
+  L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for which
+  `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the shell's and LP3's
+  runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session is refused
+  with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
@@ -1377,35 +1377,47 @@ run or not applicable is no pass (PHS.63).
 
 ## Status of LP3, C7: durable receipts on the session store
 
-- KN5 has one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026), in `c600-command`, which
-  keeps its `Store` trait, with `c600-session` (KN4) implementing the trait; M6's semantics hold where the frozen text
-  leaves a choice. Its stages 1 and 2 landed in pull request 174 (c1664c3d): `CommandLayer::open` replays a store's
-  history, and `c600_session::JournalStore` is the layer's store over KN4's journal (C1's section above). C7's first
-  piece, `c600-durable`, came before them: a test-only crate that drives M6's session store and C4's module closures
-  through their public APIs and changes neither them nor `c600-command`.
+- KN5 has one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026), in `c600-command`, which keeps
+  its `Store` trait, with `c600-session` (KN4) implementing the trait; M6's semantics hold where the frozen text leaves
+  a choice. Its stages 1 and 2 landed in pull request 174 (c1664c3d): `CommandLayer::open` replays a store's history,
+  and `c600_session::JournalStore` is the layer's store over KN4's journal (C1's section above); stages 3 to 5 landed in
+  pull request 194 (5809dfea). `c600-durable` is a test-only crate that drives the command layer over `JournalStore`,
+  with C5's provenance reader installed, M6's session store and C4's module closures through their public APIs, and
+  changes none of them.
 - Tests (`c600-durable/tests/`):
   - `ct_rte_08_persisted_word.rs`: CT-RTE-08's persisted-word case, its durable leg (BND.22, BND.84, BND.85, LG5.1,
-    LG5.6). An approved own tool stores a word, and the shell persists it through M6's `workspace.set` with the
-    boundary's provenance block. After a power loss on a memory disk, and in a new session on a file-system disk in
-    a fresh folder under Cargo's test directory, the record and its stored receipt come back equal (KN5.23); the
-    block names the module the approval binds and no other; preview admission refuses it; and a solving run that
-    proposes it is refused at admission, with nothing reaching the engine.
-  - `kn5_on_session.rs`: CT-EV3-07's durable action order (a commit, a `workspace.set` and a commit take orders 1 to
-    3, an undo hint taken before the set is refused, the order and all three receipts survive a crash, and undo runs
-    3, 2, 1) and its view part on M6's stand-ins (a query job, an opened snapshot and a preview leave the order, the
-    undo hints, the revision and the journal bytes unchanged, and a program's or a job's workspace write is
-    refused); CT-LB2-03's work-sheet part (setting a named sheet again makes the old preview stale, and a new
+    LG5.6). On the layer over the journal, an approved own tool stores a word, which a program cannot deliver, and the
+    solver writes it through the layer's `workspace.set` with the boundary's provenance block. After a power loss on a
+    memory disk, and in a new session on a file-system disk in a fresh folder under Cargo's test directory, the record
+    and its stored receipt come back equal (KN5.23); the block names the module the approval binds and no other; the
+    layer's preview of the record as a `{"record": name}` draft is refused with the reader's BND.84 refusal and changes
+    nothing (KN5.26); and a solving run that proposes the word is refused at admission, with nothing reaching the
+    engine. The same word stored by the entry approved as a built-in tool fails closed on its missing part (BND.85)
+    until the host keeps the run's blocks again; then its record draft is previewed and presented, a write of another
+    record keeps the preview fresh, and a later write of that record makes it stale (`KN5:stale.revision_changed`), so
+    the press prepared before commits nothing.
+  - `kn5_on_layer.rs`: CT-EV3-07 on the layer over the journal (EV3.2, EV4.15, KN5.20). A commit, the solver's
+    `workspace.set` and a commit take places 1 to 3 of one `session.undo` order; a hint taken before a later action of
+    either kind is superseded; undo, then redo, walk the three actions in order across both kinds, each after a power
+    loss; a program's `workspace.set` and `session.undo` are refused; and a view, a language overlay row of kind `view`,
+    publishes from a program and from the shell without writing the journal or making the undo hint stale.
+  - `kn5_on_session.rs`, on M6's own `Session` API: CT-EV3-07's durable action order (a commit, a `workspace.set` and a
+    commit take orders 1 to 3, an undo hint taken before the set is refused, the order and all three receipts survive a
+    crash, and undo runs 3, 2, 1) and its view part on M6's stand-ins (a query job, an opened snapshot and a preview
+    leave the order, the undo hints, the revision and the journal bytes unchanged, and a program's or a job's workspace
+    write is refused); CT-LB2-03's work-sheet part (setting a named sheet again makes the old preview stale, and a new
     proposal reads the new content, also after a reopen).
-- Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (C5's host
-  bridge decides the real path); reading a record back through `c600_session::journal::scan`, since M6 has no record
-  reader; M6's stand-ins for views; and `c600_run::boundary::admit_preview` standing in for KN5.26.
-- Built by KN5's stages 1 to 5 (LP2): durable receipts and undo through the command layer over `JournalStore`, and
-  since stages 3 to 5 the layer's own `workspace.set` with its undo, record drafts that the host's provenance reader
-  admits (KN5.26's answer for a record's word) and presented frames (C1's section above). The tests above still
-  drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once their tests run
-  against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting for LP2:
-  KN5.26's full admission matrix, EV3.2's view rows and LB7.2's work-sheet structure. M6's session lock covers
-  `JournalStore` too.
+- Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (the word's
+  letters as a JSON list, the boundary's block as text; C5's runner writes no record); C5's reader installed under the
+  fixture's pins, the host keeping a run's blocks again after a reopen; a built-in tool's stored word for the fresh and
+  stale preview, since preview admission refuses a solver tool's word (BND.84); a language overlay row of kind `view`
+  standing in for a view on the layer; and M6's stand-ins for views on M6.
+- Waiting for LP2's KN5 implementation: the rest of KN5.26's admission matrix (L1, L2); a session profile, so the reader
+  applies a solving session's admission in every session; a durable home for a word's part blocks, without which
+  CT-BND-27's recursive parts do not run; EV3.2's view rows (the layer refuses `view.open` and `view.close` with
+  `KN5:input.row_not_built`); and LB7.2's work-sheet structure. M6's session lock covers `JournalStore` too (LP2's pull
+  request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes
+  and LP2 removes once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -1429,13 +1441,25 @@ run or not applicable is no pass (PHS.63).
   view model installs on `c600-view`, and the presentation report: each composed frame goes to the command layer
   through the shell as a `PresentedFrame` with the display's stamp and the chain that drew the preview, and the
   layer presents the pending preview only for a frame the built-in chain drew (KN5's stage 5).
+- The host's provenance reader, `c600_tools::workspace::Reader` (KN5's stage 3; PS1.16, KN5.26, BND.84, BND.85), is the
+  host's `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so
+  `workspace.set` refuses a block that is not a canonical FP.17 block; its admission of a `{"record": name}` draft is
+  `c600_run::boundary::admit_preview` over the block and the blocks the host keeps. It takes every session as a solving
+  session, the only profile LP3's host runs, finds a part only among the blocks the host keeps, fails closed on a part
+  it does not find, and drops no kept block. `c600-lp3-source` serves H-08 with the layer's draft rows and installs the
+  reader, which keeps each run's blocks; the runner writes no record, so its traces and receipts are as before.
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
     fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
-    installed bytes hold only the word the solver named); CT-ONE-29's user-stage part at the adapter (the layer refuses
-    a user-stage frame, a frame with no preview and a frame with another preview, so no token is minted and the
-    commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and commits; a later
-    user-stage frame ends the presentation and a delayed older report changes nothing).
+    installed bytes hold only the word the solver named); CT-ONE-29, whole, at the host's adapter through the layer's
+    `present` (the layer refuses a user-stage frame, a frame with no preview and a frame with another preview, so no
+    token is minted and the commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and
+    commits; a later user-stage frame ends the presentation and a delayed older report changes nothing).
+  - `workspace.rs`: a record write whose block the reader refuses is refused with the reader's error and writes nothing,
+    and a block that reads is written whatever its admission would say (PS1.16, BND.21); a record draft is admitted or
+    refused by the reader's admission: a hand-entered word passes, a solver tool's word is refused, and a built-in
+    tool's word fails closed on its missing part until the host keeps its run's blocks, each refusal installing no
+    preview (KN5.26 and CT-KN5-13, part; CT-BND-29, part).
   - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts; the job
     carries only the admitted source; both hosts refuse a word with no transfer encoding at the start stage; a runtime
     that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
