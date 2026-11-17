@@ -1537,6 +1537,21 @@ run or not applicable is no pass (PHS.63).
   continuation, `refresh_display`, sends no command. The host's `Refresh` over LP3's view model and the message on
   screen are LP3's (CT-KN5-05 in part). Tests: `c600-command/tests/refresh.rs`, a port of 0.4's
   `tests/test_native_reply_after_commit.py`.
+- LB7.2's work sheets (H-08's `worksheet.save` and `worksheet.load`; solving workflow section 4; the drafts are in the
+  crate documentation). A work sheet is a workspace record whose payload is `{"worksheet": {...}}` (`Worksheet`): the
+  phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a position), the reference as
+  given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a sheet previews its complete
+  operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}` whose record holds letters or a
+  sheet, and a `name`; the sheet keeps that record's provenance block, which the reader checks again, and its piece
+  roles are placed at the head through KN2.4's `positions` row. `worksheet.load` takes H-08's `WorksheetRevisionRef`
+  as `{"record": name, "version": n}` (`WorksheetRef`); another version is `KN5:stale.revision_changed`. It places the
+  piece roles again, keeps where each was saved (`Placement::moved` shows a mismatch, and nothing is retargeted) and
+  writes the sheet again, so every preview that read the sheet goes stale, also at the same state, and the reuse needs
+  a fresh engine preview. Each row is one record write, undoable as a workspace inverse (LB7.2; H-08 gives
+  `worksheet.save` `undo: none`). Both rows need the host's provenance reader and Jumble off; the runtime may invoke
+  neither, and no entry can serve them. Not built: `worksheet.compare`, gains and losses, macro versions, and reading
+  a position role's occupant again. Tests: `c600-command/tests/worksheet.rs` (CT-LB2-03's work-sheet part) and the
+  rows with Jumble on in `jumble_on.rs`.
 - `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
   committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
   without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and

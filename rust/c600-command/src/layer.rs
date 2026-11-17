@@ -32,7 +32,9 @@
 //!
 //! KN5's stage 3, the workspace store ([`crate::workspace`]): `workspace.set` ([`RECORD_ROW`]) writes one record, and
 //! a draft `{"record": name}` previews the letters the record holds, with the record's content digest and version in
-//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26). KN5's stage 5
+//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26). LB7.2's work
+//! sheets ([`crate::worksheet`]) are records too: `worksheet.save` writes one from a draft record, and `worksheet.load`
+//! places its piece roles again and writes it again, so a preview of the sheet goes stale (CT-LB2-03). KN5's stage 5
 //! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
 //! preview through the built-in chain presents it, and a word commit's token binds that frame's stamp (ONE.41).
 //!
@@ -113,6 +115,7 @@ use crate::store::{
 use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
+use crate::worksheet::{Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The mode of a revision with Jumble off: a session starts with Jumble off.
@@ -1470,6 +1473,12 @@ impl<S: Store> CommandLayer<S> {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader")))
                 }
             },
+            WORKSHEET_SAVE_ROW | WORKSHEET_LOAD_ROW => match self.provenance {
+                Some(_) => self.retained_mode(),
+                None => {
+                    Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's provenance reader", row.id)))
+                }
+            },
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
     }
@@ -1521,12 +1530,15 @@ impl<S: Store> CommandLayer<S> {
 
     /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), not `protection.orbit.set`, whose
     /// release confirmation is the solver's, not `protection.policy.set`, since the protection a commit is judged under
-    /// is the solver's too, and not `workspace.set`, which M6 does not grant a program (draft).
+    /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
+    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2).
     fn runtime_may(row: &Row) -> bool {
         !matches!(row.kind, Kind::Commit | Kind::App)
             && row.id != "protection.orbit.set"
             && row.id != POLICY_ROW
             && row.id != RECORD_ROW
+            && row.id != WORKSHEET_SAVE_ROW
+            && row.id != WORKSHEET_LOAD_ROW
     }
 
     /// Whether the envelope authenticates: its row exists, its caller may invoke the row and hold what it holds, and
@@ -1621,6 +1633,8 @@ impl<S: Store> CommandLayer<S> {
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
+            WORKSHEET_SAVE_ROW => self.save_worksheet(caller, invocation, request),
+            WORKSHEET_LOAD_ROW => self.load_worksheet(caller, invocation, request),
             TWIST_ROW => self.twist(caller, invocation, request),
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
@@ -1664,18 +1678,20 @@ impl<S: Store> CommandLayer<S> {
         Ok((Some(id), Status::Running(id)))
     }
 
-    /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6
-    /// (`KN2:input.named_object_invalid`), and the host's provenance reader must admit the record's block in this
-    /// session, or the draft is refused with the reader's error (`LG3:capability.not_granted` without a reader). The
-    /// record is checked before the reader, so a session without a reader answers `named_object_invalid` for a record
-    /// that holds no letters. The read set holds the record's content digest and version.
+    /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6, or a work
+    /// sheet, whose complete operation it previews ([`RecordValue::operation`]; `KN2:input.named_object_invalid`
+    /// otherwise), and the host's provenance reader must admit the record's block in this session, or the draft is
+    /// refused with the reader's error (`LG3:capability.not_granted` without a reader). The record is checked before
+    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. The
+    /// read set holds the record's content digest and version.
     fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
         let record = self.records.get(name);
         let Some(value) = record.and_then(|record| record.value.as_ref()) else {
             return Err(Error::new(code::NAMED_OBJECT_INVALID, "no such record"));
         };
-        let Some(letters) = value.letters() else {
-            return Err(Error::new(code::NAMED_OBJECT_INVALID, "the record does not hold a list of letters"));
+        let Some(letters) = value.operation() else {
+            let detail = "the record holds neither a list of letters nor a work sheet";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
         };
         let Some(reader) = &self.provenance else {
             return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
@@ -2640,6 +2656,108 @@ impl<S: Store> CommandLayer<S> {
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
+    }
+
+    // ----- worksheet.save and worksheet.load -----
+
+    /// `worksheet.save` (LB7.2; draft): saves the operation that the draft record `{"record": r}` holds as a work sheet
+    /// under `name`. A record of letters becomes the Macro phase alone; a work sheet keeps its phases, roles and
+    /// reference. The sheet keeps the draft record's provenance block, which the host's reader checks again (PS1.16).
+    /// Its piece roles are placed at the head ([`CommandLayer::place`]), and it is written as one record write,
+    /// undoable as a workspace inverse (LB7.2). Refused, writing nothing, in this order: no reader
+    /// (`KN5:input.row_not_built`), Jumble on (`KN5:input.retained_tool_needs_jumble_off`), a draft of another form or
+    /// a name that is not text or is empty (`KN5:input.argument_form`), a draft record that is missing or holds neither
+    /// letters nor a work sheet (`KN2:input.named_object_invalid`), and a block the reader refuses (its error).
+    fn save_worksheet(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let Some(reader) = &self.provenance else {
+            return refused(code::ROW_NOT_BUILT, format!("`{WORKSHEET_SAVE_ROW}` needs the host's provenance reader"));
+        };
+        self.retained_mode()?;
+        let args = &invocation.args;
+        let draft = args.get("draft").and_then(Value::as_object).filter(|draft| draft.len() == 1);
+        let source = draft.and_then(|draft| draft.get("record")).and_then(Value::as_str);
+        let name = args.get("name").and_then(Value::as_str).filter(|name| !name.is_empty());
+        let (Some(source), Some(name)) = (source, name) else {
+            return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
+        };
+        let Some(value) = self.records.get(source).and_then(|record| record.value.as_ref()) else {
+            return refused(code::NAMED_OBJECT_INVALID, "no such record");
+        };
+        let Some(sheet) = Worksheet::from_draft(&value.payload) else {
+            return refused(code::NAMED_OBJECT_INVALID, "the record holds neither a list of letters nor a work sheet");
+        };
+        reader.check(value.provenance.as_bytes())?;
+        let provenance = value.provenance.clone();
+        let sheet = self.place(sheet, None)?;
+        let value = RecordValue { payload: sheet.to_payload(), provenance };
+        let adoption = self.plan_record(Meta::of(caller, invocation, request), name.to_owned(), value);
+        self.transact(adoption)
+    }
+
+    /// `worksheet.load` (LB7.2, solving workflow section 4; draft): reuses the saved work sheet that `worksheet` names,
+    /// `{"record": name, "version": n}` ([`WorksheetRef`], H-08's `WorksheetRevisionRef` in its draft form). Its piece
+    /// roles are placed again at the head, each keeping where it was saved, so a piece that moved is shown
+    /// ([`Placement::moved`]) and the phases are never retargeted (section 4.1). The sheet is written again as one
+    /// record write, undoable as a workspace inverse. The write advances the record's version, so a preview that read
+    /// the sheet goes stale (KN0.8; CT-LB2-03) and the reuse needs a fresh engine preview, with its fresh exact
+    /// analysis (LB7.2). Refused, writing nothing, in this order: no reader (`KN5:input.row_not_built`), Jumble on
+    /// (`KN5:input.retained_tool_needs_jumble_off`), a reference of another form (`KN5:input.argument_form`), a record
+    /// that is missing or holds no value (`KN2:input.named_object_invalid`), a record at another version
+    /// (`KN5:stale.revision_changed`), a record that holds no saved work sheet (`KN2:input.named_object_invalid`), and
+    /// a block the reader refuses (its error).
+    fn load_worksheet(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let Some(reader) = &self.provenance else {
+            return refused(code::ROW_NOT_BUILT, format!("`{WORKSHEET_LOAD_ROW}` needs the host's provenance reader"));
+        };
+        self.retained_mode()?;
+        let Some(named) = invocation.args.get("worksheet").and_then(WorksheetRef::from_json) else {
+            return refused(code::ARGUMENT_FORM, "a work sheet is named `{\"record\": name, \"version\": n}`");
+        };
+        let record = self.records.get(&named.record);
+        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
+            return refused(code::NAMED_OBJECT_INVALID, "no such record");
+        };
+        if version != named.version {
+            return refused(code::REVISION_CHANGED, "the work sheet changed since it was named");
+        }
+        let saved = Worksheet::from_payload(&value.payload).and_then(|sheet| Some((sheet.resolution.clone()?, sheet)));
+        let Some((saved, sheet)) = saved else {
+            return refused(code::NAMED_OBJECT_INVALID, "the record holds no saved work sheet");
+        };
+        reader.check(value.provenance.as_bytes())?;
+        let provenance = value.provenance.clone();
+        let sheet = self.place(sheet, Some(&saved))?;
+        let value = RecordValue { payload: sheet.to_payload(), provenance };
+        let adoption = self.plan_record(Meta::of(caller, invocation, request), named.record, value);
+        self.transact(adoption)
+    }
+
+    /// `sheet` with its piece roles placed at the head, where KN2.4's `positions` row finds each piece now. A save
+    /// (`saved` is `None`) places them for the first time; a reuse keeps where they were and the digest of the state
+    /// they were saved at. Position roles stay where they are.
+    fn place(&self, sheet: Worksheet, saved: Option<&Resolution>) -> Result<Worksheet, Error> {
+        let roles = sheet.pieces();
+        let pieces: Vec<i64> = roles.iter().map(|(_, piece)| *piece).collect();
+        let found = self.positions(&pieces)?;
+        let digest = self.state_digest().to_owned();
+        let placements = roles.into_iter().zip(found).enumerate().map(|(i, ((name, piece), found))| {
+            let now = found.position.map(|position| position as i64);
+            let saved = saved.map_or(now, |resolution| resolution.pieces[i].saved);
+            Placement { name, piece, saved, now }
+        });
+        let saved = saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone());
+        let resolution = Resolution { saved, now: digest, pieces: placements.collect() };
+        Ok(Worksheet { resolution: Some(resolution), ..sheet })
     }
 
     // ----- jumble.on -----
