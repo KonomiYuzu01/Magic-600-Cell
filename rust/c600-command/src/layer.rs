@@ -110,7 +110,7 @@ use crate::store::{
     identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Reopen, Store, Transaction,
     TransactionKind,
 };
-use crate::table::{Kind, Lane, Overlay, Row, Table};
+use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
@@ -538,6 +538,24 @@ fn refused(code: &'static str, detail: impl Into<String>) -> Result<(Option<u64>
     Err(Error::new(code, detail))
 }
 
+/// The argument checks an invocation makes before its row's own: the arguments are an object, a confirmable row's
+/// `confirm` is a boolean, and the names fit the row's arguments. Returns the arguments.
+fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String, Value>, Error> {
+    let Some(args) = args.as_object() else {
+        return Err(Error::new(code::ARGUMENT_FORM, "the arguments are not an object"));
+    };
+    // A row that confirms a release takes an optional boolean `confirm` beside its table arguments (draft; LI.26).
+    let confirmable = row.has_gate("confirm") || row.action_guard.is_some();
+    if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
+        return Err(Error::new(code::ARGUMENT_FORM, "`confirm` is a boolean"));
+    }
+    let names = args.keys().map(String::as_str).filter(|name| !(confirmable && *name == "confirm"));
+    if !forms::names_fit(row, names) {
+        return Err(Error::new(code::ARGUMENT_FORM, format!("`{}` takes {:?}", row.id, row.arguments)));
+    }
+    Ok(args)
+}
+
 fn kernel_error(error: c600_kernel::Error) -> Error {
     match error {
         c600_kernel::Error::Refusal(refusal) => refusal.into(),
@@ -905,7 +923,8 @@ impl<S: Store> CommandLayer<S> {
         &self.table
     }
 
-    /// Registers a language-defined row (KN5.3).
+    /// Registers a language-defined row (KN5.3). The generation advances, since the overlay rows are an input of
+    /// availability (LI.21); a refusal changes nothing.
     pub fn register_overlay(
         &mut self,
         id: &str,
@@ -913,14 +932,27 @@ impl<S: Store> CommandLayer<S> {
         arguments: &[(&str, &str)],
         overlay: Overlay,
     ) -> Result<(), Error> {
-        self.table.register_overlay(id, kind, arguments, overlay).map(|_| ())
+        self.table.register_overlay(id, kind, arguments, overlay)?;
+        self.generation += 1;
+        Ok(())
     }
 
     /// Serves stored row `id` with a built-in tool's entry (draft; LP3's C6). An invocation of the row admits a program
     /// job for the entry, as for an overlay row, and the row keeps H-08's shape. [`Table::serve_row`] says which rows
-    /// can be served and what is refused.
+    /// can be served and what is refused. The generation advances as for a registration.
     pub fn serve_row(&mut self, id: &str, overlay: Overlay) -> Result<(), Error> {
-        self.table.serve_row(id, overlay).map(|_| ())
+        self.table.serve_row(id, overlay)?;
+        self.generation += 1;
+        Ok(())
+    }
+
+    /// Stores language-defined row `id`'s metadata (draft; KN5.5, KN5.7, LI.20), which its availability reads with no
+    /// language code running ([`CommandLayer::availability`]). [`Table::declare`] says what is refused. The generation
+    /// advances, since the static verdicts are an input of availability (LI.21); a refusal changes nothing.
+    pub fn declare_overlay(&mut self, id: &str, metadata: Metadata) -> Result<(), Error> {
+        self.table.declare(id, metadata)?;
+        self.generation += 1;
+        Ok(())
     }
 
     pub fn store(&self) -> &S {
@@ -1260,12 +1292,85 @@ impl<S: Store> CommandLayer<S> {
         self.generation += 1;
     }
 
-    /// Whether `row` can be invoked now, computed from the table and the layer's state with no language code running
-    /// (CT-KN5-08). `Ok` does not promise acceptance: arguments and the token are checked at invocation.
+    /// Whether `row` can be invoked now, computed from the table and the layer's state with no language code running:
+    /// the row's argument-independent gates (KN5.6, KN5.25). A row an entry runs answers from its stored metadata, as
+    /// LI.20 orders it (KN5.7; CT-KN5-08): see [`CommandLayer::declare_overlay`]. `Ok` does not promise acceptance:
+    /// arguments and the token are checked at invocation.
     pub fn availability(&self, row: &str) -> Result<(), Error> {
-        let Some(row) = self.table.row(row) else {
-            return Err(Error::new(code::UNKNOWN_ROW, format!("no row `{row}`")));
-        };
+        self.gates(self.known(row)?)
+    }
+
+    /// Whether `row` can be invoked now with `args` (draft; LI.18's argument-aware hint without its revision, for one
+    /// binding that LI.19 keys by the arguments' digest): [`CommandLayer::availability`]'s answer, then the argument
+    /// checks an invocation makes before admission. The arguments are an object, a confirmable row's `confirm` is a
+    /// boolean, the names fit the row's arguments, and each argument of a type whose form the layer knows has that
+    /// form and, for a `RevisionRef`, names the current revision. Like every hint it grants nothing: an invocation
+    /// checks its actual arguments and the current inputs again.
+    pub fn availability_for(&self, row: &str, args: &Value) -> Result<(), Error> {
+        self.binding(self.known(row)?, args)
+    }
+
+    fn known(&self, id: &str) -> Result<&Row, Error> {
+        self.table.row(id).ok_or_else(|| Error::new(code::UNKNOWN_ROW, format!("no row `{id}`")))
+    }
+
+    fn binding(&self, row: &Row, args: &Value) -> Result<(), Error> {
+        self.gates(row)?;
+        forms::check(row, argument_names(row, args)?, &self.revision)
+    }
+
+    /// The availability of a row that an entry runs: a data-only conjunction over its stored metadata (KN5.7, LI.20),
+    /// whose first failure is reported in this order:
+    /// 1. the static check's first failed diagnostic;
+    /// 2. a required row the runtime may not invoke (a commit or app row, one that takes a token, or one that
+    ///    [`CommandLayer::invoke`] grants no program), `LG3:capability.not_granted`;
+    /// 3. the row's own gates: read-only recovery for a row that changes the session, then a full program lane;
+    /// 4. the first failing required row in sorted row ID order, ties in stored order. A row that is not a kernel row
+    ///    (absent, or language-defined) is `KN5:input.overlay_dependency_missing`; a static binding answers as
+    ///    [`CommandLayer::availability_for`] does for its arguments, and a computed one as
+    ///    [`CommandLayer::availability`] does.
+    ///
+    /// Optional rows take no part. No language code runs, no program starts and no lane is reserved. A stored row that
+    /// an entry serves has no metadata, so it answers by its own gates.
+    fn entry_availability(&self, row: &Row) -> Result<(), Error> {
+        let none = Metadata::default();
+        let metadata = self.table.metadata(&row.id).unwrap_or(&none);
+        if let Some(diagnostic) = &metadata.diagnostic {
+            return Err(diagnostic.clone());
+        }
+        let mut required: Vec<_> = metadata.requires.iter().filter(|dependency| !dependency.optional).collect();
+        required.sort_by(|a, b| a.row.cmp(&b.row));
+        let kernel_row = |id: &str| self.table.row(id).filter(|_| !self.table.language_defined(id));
+        let ungranted = |row: &Row| !Self::runtime_may(row) || row.takes_token();
+        if let Some(denied) =
+            required.iter().find_map(|dependency| kernel_row(&dependency.row).filter(|r| ungranted(r)))
+        {
+            return Err(Error::new(code::NOT_GRANTED, format!("the runtime may not invoke `{}`", denied.id)));
+        }
+        if self.recovery.is_some() && Self::mutates(row) {
+            return Err(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"));
+        }
+        if row.lane == Lane::Program {
+            self.program_free()?;
+        }
+        for dependency in required {
+            let Some(kernel) = kernel_row(&dependency.row) else {
+                let detail = format!("`{}` requires `{}`, which is not a kernel row", row.id, dependency.row);
+                return Err(Error::new(code::OVERLAY_DEPENDENCY_MISSING, detail));
+            };
+            match &dependency.binding {
+                Binding::Static(args) => self.binding(kernel, args)?,
+                Binding::Computed => self.gates(kernel)?,
+            }
+        }
+        Ok(())
+    }
+
+    /// `row`'s argument-independent gates.
+    fn gates(&self, row: &Row) -> Result<(), Error> {
+        if row.overlay.is_some() {
+            return self.entry_availability(row);
+        }
         if self.recovery.is_some() && Self::mutates(row) {
             return Err(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"));
         }
@@ -1355,10 +1460,6 @@ impl<S: Store> CommandLayer<S> {
                 None => {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader")))
                 }
-            },
-            _ if row.overlay.is_some() => match row.lane {
-                Lane::Program => self.program_free(),
-                _ => Ok(()),
             },
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
@@ -1495,18 +1596,7 @@ impl<S: Store> CommandLayer<S> {
         if self.recovery.is_some() && Self::mutates(&row) {
             return refused(code::READ_ONLY_RECOVERY, "the session is in read-only recovery");
         }
-        let Some(args) = invocation.args.as_object() else {
-            return refused(code::ARGUMENT_FORM, "the arguments are not an object");
-        };
-        // A row that confirms a release takes an optional boolean `confirm` beside its table arguments (draft; LI.26).
-        let confirmable = row.has_gate("confirm") || row.action_guard.is_some();
-        if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
-            return refused(code::ARGUMENT_FORM, "`confirm` is a boolean");
-        }
-        let names = args.keys().map(String::as_str).filter(|name| !(confirmable && *name == "confirm"));
-        if !forms::names_fit(&row, names) {
-            return refused(code::ARGUMENT_FORM, format!("`{}` takes {:?}", row.id, row.arguments));
-        }
+        let args = argument_names(&row, &invocation.args)?;
         if row.takes_token() != invocation.token.is_some() {
             return match invocation.token {
                 None => refused(code::TOKEN_INVALID, format!("`{}` needs a user-action token", row.id)),
