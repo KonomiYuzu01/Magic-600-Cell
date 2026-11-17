@@ -4,7 +4,7 @@
 //! this module reads only the fields the command layer uses and ignores the rest. A language-defined command is an
 //! overlay row of kind view, workspace, query or file, never commit or app. A view overlay runs on the `view` lane and
 //! every other overlay on the `program` lane. A stored row that a built-in tool's entry serves ([`Table::serve_row`])
-//! keeps H-08's lane.
+//! keeps H-08's lane. A language-defined row's stored [`Metadata`] is what its availability reads (KN5.7, LI.20).
 
 use std::collections::BTreeMap;
 
@@ -93,11 +93,43 @@ impl Row {
     }
 }
 
+/// How a language-defined row binds the arguments of a kernel row it may invoke (LI.20).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Binding {
+    /// Arguments the module's check captured: the row's availability for exactly these arguments
+    /// ([`crate::CommandLayer::availability_for`]).
+    Static(Value),
+    /// Arguments the program computes: the row's argument-independent gates only
+    /// ([`crate::CommandLayer::availability`]). Gates that need the arguments wait for the invocation.
+    Computed,
+}
+
+/// A kernel row that a language-defined row's program may invoke (LI.20).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Dependency {
+    pub row: String,
+    pub binding: Binding,
+    /// An optional row takes no part in availability.
+    pub optional: bool,
+}
+
+/// A language-defined row's stored metadata (draft; KN5.5, KN5.7, LI.20): data that availability reads with no
+/// language code running. The default is a passing static verdict and no kernel row.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Metadata {
+    /// The first failed diagnostic of the module's static check; `None` when the static verdict passes.
+    pub diagnostic: Option<Error>,
+    /// The kernel rows the program may invoke, in stored order.
+    pub requires: Vec<Dependency>,
+}
+
 /// The rows by ID.
 #[derive(Clone, Debug)]
 pub struct Table {
     rows: BTreeMap<String, Row>,
     services: Vec<String>,
+    /// The language-defined rows' metadata: a key for each row [`Table::register_overlay`] registered.
+    metadata: BTreeMap<String, Metadata>,
 }
 
 fn word<T: Copy>(value: Option<&Value>, names: &[(&str, T)]) -> Result<T, String> {
@@ -183,7 +215,7 @@ impl Table {
             None => Vec::new(),
             Some(list) => list.iter().filter_map(|s| s.get("id").and_then(Value::as_str).map(str::to_owned)).collect(),
         };
-        Ok(Table { rows, services })
+        Ok(Table { rows, services, metadata: BTreeMap::new() })
     }
 
     pub fn row(&self, id: &str) -> Option<&Row> {
@@ -224,8 +256,9 @@ impl Table {
     }
 
     /// Registers a language-defined row. Its lane follows its kind, it takes no token, it has no gates and it is
-    /// available in every context. A commit or app row is refused with `KN5:input.overlay_row_kind`; an ID that a
-    /// row or service already holds is refused with the draft code `KN5:input.overlay_row_conflict`.
+    /// available in every context. Its metadata starts as the default until [`Table::declare`] stores it. A commit or
+    /// app row is refused with `KN5:input.overlay_row_kind`; an ID that a row or service already holds is refused with
+    /// the draft code `KN5:input.overlay_row_conflict`.
     pub fn register_overlay(
         &mut self,
         id: &str,
@@ -257,7 +290,37 @@ impl Table {
             action_guard: None,
             overlay: Some(overlay),
         };
+        self.metadata.insert(id.to_owned(), Metadata::default());
         Ok(self.rows.entry(id.to_owned()).or_insert(row))
+    }
+
+    /// Whether `id` is a language-defined row: one that [`Table::register_overlay`] registered. A stored row that an
+    /// entry serves is not one.
+    pub fn language_defined(&self, id: &str) -> bool {
+        self.metadata.contains_key(id)
+    }
+
+    /// A language-defined row's stored metadata; `None` for any other row.
+    pub fn metadata(&self, id: &str) -> Option<&Metadata> {
+        self.metadata.get(id)
+    }
+
+    /// Stores language-defined row `id`'s metadata, replacing what it held (draft; KN5.5, LI.20): the host declares
+    /// it from the module's static check and the kernel rows the program may invoke. Refused: an ID that names no row,
+    /// with `KN5:input.unknown_row`, and a stored row, with the draft code `KN5:input.overlay_row_conflict`. A refusal
+    /// leaves the table as it was.
+    pub fn declare(&mut self, id: &str, metadata: Metadata) -> Result<(), Error> {
+        if !self.rows.contains_key(id) {
+            return Err(Error::new(code::UNKNOWN_ROW, format!("no row `{id}`")));
+        }
+        let Some(stored) = self.metadata.get_mut(id) else {
+            return Err(Error::new(
+                code::OVERLAY_ROW_CONFLICT,
+                format!("`{id}` is a stored row, not a language-defined one"),
+            ));
+        };
+        *stored = metadata;
+        Ok(())
     }
 
     /// Serves a stored row with a built-in tool's entry (draft; LP3's C6). An invocation of the row admits a program

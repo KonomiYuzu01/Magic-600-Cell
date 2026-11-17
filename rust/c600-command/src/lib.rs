@@ -291,6 +291,25 @@
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them `FilterRef`,
 //!     `FilterPreviewRef` and `CanonicalObjectRefs`, which the representations tool's rows take, and a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
+//! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
+//!   language-defined row's [`Metadata`]: the static check's first failed diagnostic, and the kernel rows its program
+//!   may invoke, each required or optional and bound [`Binding::Static`] with captured arguments or
+//!   [`Binding::Computed`]. [`CommandLayer::availability`] answers such a row from that data and the layer's state
+//!   alone, in LI.20's order. No language code runs, no program starts and no lane is reserved. Draft choices:
+//!   - A required row that the runtime may not invoke is the missing grant, `LG3:capability.not_granted`, although an
+//!     invocation of a commit or app row is refused with `KN5:capability.commit_row_refused`. The program's other
+//!     grants (chapter 09's profile) are the host's until they are stored as data; the host can declare their failure
+//!     as the diagnostic.
+//!   - A required row that is not a kernel row, absent or itself language-defined, is
+//!     `KN5:input.overlay_dependency_missing`.
+//!   - A static binding keeps the captured arguments themselves, where LI.20 keeps their digest, so that the layer can
+//!     check them. It answers as [`CommandLayer::availability_for`] does, LI.18's argument-aware hint without its
+//!     revision: the row's argument-independent gates first, then an invocation's argument checks (an object,
+//!     `confirm`, the names, the forms and a named revision's currency). It is computed when asked, not cached:
+//!     LI.19's table, keyed by row and argument digest, is not built.
+//!   - Only a language-defined row takes metadata; a stored row an entry serves answers by its own gates. Metadata is
+//!     not journaled: after a reopen the host declares it again, as it registers its overlays again.
+//!   - The generation advances when an overlay row is registered, a stored row served or metadata declared (LI.21).
 //! - Job output (LP3's C6, its second common need). The host reports a program job's output as the runtime's sinks
 //!   gave it ([`CommandLayer::finish_program_job_with`], [`JobOutput`]): the value the entry returned, the views it
 //!   published (`publish_view`) and the workspace records it wrote (`write_workspace`), each record with its
@@ -341,7 +360,7 @@ pub use store::{
     identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
     Store, Transaction, TransactionKind,
 };
-pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
+pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
