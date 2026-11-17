@@ -25,7 +25,7 @@
 //! product unit is shorter than three. Its kernel-cost headroom gets the two bytes of difference, so its stop stays on
 //! output with the frozen denied row.
 //!
-//! # Realised: 25 of 40
+//! # Realised: 26 of 40
 //!
 //! | Trace | Clause | Program |
 //! | --- | --- | --- |
@@ -49,6 +49,7 @@
 //! | `alias-release` | DET.58 | `release()`: `mk()` aliases `a` as `b` and returns `b`, so `a` is released first |
 //! | `alias-still-live` | DET.58 | `live()`: the same alias, then a five-byte literal refused on memory |
 //! | `pointwise-failure` | DET.55 | `check(7)`: `assert` of a false comparison ends the run with its error code |
+//! | `final-loop-test` | DET.55 | `spin()`: `repeat(1, 0, …)` visits `acc` once; the final test is refused on steps |
 //! | `child-allowances` | DET.60 | `allow()`: a two-step child, cut off at its `return`; the root cuts its kernel cap |
 //! | `child-return-owner` | DET.60 | `owned()`: a child's four-byte text moves to the parent, which drops it |
 //! | `root-before-child` | DET.60 | `early()`: the root and the child run out of steps at the body's `return` |
@@ -74,6 +75,11 @@
 //! assertion visits a borrowed predicate and releases nothing, as the trace's does; the comparison's byte goes at the
 //! scope's exit, or with the cleanup after the failure.
 //!
+//! `final-loop-test` runs a loop (DET.55; LP2 draft): `spin` repeats once a body that visits `acc`, the value so
+//! far. The loop's tests are the frozen `loop/test:k` rows and the body's visit is the frozen body tick; the moves
+//! of the initial value into the loop's slot and of the body's result back into it are visits of the program's
+//! own, as is the loop's scope exit, which the stop at the final test never reaches.
+//!
 //! The generator traces seed in two ways. `generator` draws with `random_draw` from the run's own generator, which the
 //! run starts at the trace's seed and path. The other three start generators of their own with `rng_init` (LP2
 //! draft), whose stream path is the run's path followed by its segments: they run at the trace's seed and the empty
@@ -94,7 +100,7 @@
 //! fit in the root either, as in the trace, so the child's kernel-cost stop shows DET.56's dimension order before
 //! the scope order.
 //!
-//! # Not realised: 15 of 40
+//! # Not realised: 14 of 40
 //!
 //! [`NOT_EXPRESSIBLE`] lists each with its reason, and `every_frozen_trace_is_realised_or_listed_once` holds the two
 //! lists to the 40 frozen vectors.
@@ -117,7 +123,7 @@ const VECTORS: &str =
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
 /// The frozen traces no program of the IR draft can express, and why.
-const NOT_EXPRESSIBLE: [(&str, &str); 15] = [
+const NOT_EXPRESSIBLE: [(&str, &str); 14] = [
     (
         "child-decode-error-releases-reservation",
         "the IR has no byte decoding: arguments and host results cross as values",
@@ -130,8 +136,11 @@ const NOT_EXPRESSIBLE: [(&str, &str); 15] = [
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
-    ("abstract-trace-charges", "the IR has no loop or flow check"),
-    ("final-loop-test", "the IR has no loop; recursion adds call frames the trace's loop does not have"),
+    (
+        "abstract-trace-charges",
+        "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR \
+         has no flow check",
+    ),
     ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
@@ -1156,8 +1165,8 @@ const MUL_STOP_ROWS: &[(&str, Option<&str>)] = &[
     ("entry#emit", None),
 ];
 
-/// CT-DET-28 (synthetic, part: oversized arithmetic on RT1; not run: text work, loop tests and flow checks, since the
-/// IR has no text order, loop or flow check, and RT2 and RT3 (no owner yet)): the frozen traces `oversized-arithmetic`,
+/// CT-DET-28 (synthetic, part: oversized arithmetic on RT1; not run: text work and flow checks, since the IR has no
+/// text order or flow check, and RT2 and RT3 (no owner yet)): the frozen traces `oversized-arithmetic`,
 /// `oversized-admitted` and `arithmetic-reservation` run as one program, which binds `exact_mul(a, b)` and publishes
 /// it. The product's row is the frozen `mul` row, priced from its operands' sizes (DET.57): 2^80 by itself is refused
 /// on kernel cost one unit short and admitted at its limits, and a product by zero reserves for the operands' bits and
@@ -1276,8 +1285,8 @@ fn ct_det_26_alias_traces_run_as_programs() {
     );
 }
 
-/// CT-DET-28 (synthetic, part: assertions on RT1; not run: loop tests and flow checks, since the IR has no loop or flow
-/// check, and RT2 and RT3 (no owner yet)): the frozen trace `pointwise-failure` runs as a program, `check(n)`, which
+/// CT-DET-28 (synthetic, part: assertions on RT1; not run: flow checks, since the IR has no flow check, and RT2 and RT3
+/// (no owner yet)): the frozen trace `pointwise-failure` runs as a program, `check(n)`, which
 /// binds `exact_less(n, 5)` and asserts it. The predicate's visit is the frozen `predicate` row and the assertion the
 /// frozen `assert` row, one step after the predicate (DET.55); `check(7)` ends there with `LG4:input.pointwise_failed`
 /// in the effect phase, emits nothing, and the cleanup releases the comparison's byte.
@@ -1312,6 +1321,46 @@ fn ct_det_28_pointwise_failure_runs_as_a_program() {
     );
     assert!(done.run.output.is_none(), "a failed assertion emits nothing");
     assert_eq!(done.probe.output.as_deref(), Some(&b"null\n"[..]), "a held assertion is the unit");
+}
+
+/// `spin` repeats once a body that visits `acc` (DET.55; LP2 draft; module docs).
+const SPIN: &str =
+    "export fn spin() -> Nat effects [] {\n    return repeat(1, 0, fn(acc: Nat) -> Nat { return acc; });\n}\n";
+
+/// CT-DET-28 (synthetic, part: loop tests on RT1; not run: flow checks, since the IR has no flow check, and RT2 and
+/// RT3 (no owner yet)): the frozen trace `final-loop-test` runs as a program, `spin()`, whose loop repeats once a body
+/// that visits `acc` (DET.55; LP2 draft). Each loop test is a one-step row of its own, the final false one included:
+/// at the trace's headroom that test is refused on steps with the frozen denied row, and the cleanup releases the
+/// loop's slot and its count.
+#[test]
+fn ct_det_28_the_final_loop_test_runs_as_a_program() {
+    realise(
+        &fixtures(),
+        &Realisation {
+            trace: "final-loop-test",
+            requires: "",
+            declarations: SPIN,
+            entry: "spin",
+            args: NO_ARGS,
+            probe_args: None,
+            rows: &[
+                ("entry#call", None),
+                ("m.spin:0#value", None),
+                ("m.spin:1#value", None),
+                ("m.spin:root#visit", None),
+                ("m.spin:root#loop_test:0", Some("loop/test:0")),
+                ("m.spin:root#body:0 > m.spin:2#visit", Some("loop/body:0/body")),
+                ("m.spin:root#body:0 > m.spin:root#visit", None),
+                ("m.spin:root#loop_test:1", Some("loop/test:1")),
+                ("m.spin:root#scope_exit", None),
+                ("m.spin:root#return", None),
+                ("entry#emit", None),
+            ],
+            stop_would: Some([1, 0, 0, 0]),
+            kernel_extra: 0,
+            source_node: None,
+        },
+    );
 }
 
 /// The child traces' programs (DET.60; LP2 draft; module docs): each body is one operation, and each stop branch
@@ -1499,6 +1548,7 @@ fn every_frozen_trace_is_realised_or_listed_once() {
         "alias-release",
         "alias-still-live",
         "pointwise-failure",
+        "final-loop-test",
         "child-allowances",
         "child-return-owner",
         "root-before-child",

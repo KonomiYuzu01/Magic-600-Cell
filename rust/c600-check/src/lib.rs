@@ -750,6 +750,7 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
             Expr::Let { name, .. } => (1, vec![name.clone()]),
             Expr::Closure { params, .. } => (0, params.iter().map(|p| p.name.clone()).collect()),
             Expr::Child { status, .. } => (1, status.iter().cloned().collect()),
+            Expr::Repeat { acc, .. } => (2, vec![acc.clone()]),
             _ => (usize::MAX, Vec::new()),
         };
         for (i, child) in e.children().into_iter().enumerate() {
@@ -771,8 +772,8 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
 }
 
 /// The paths of the expressions `body` may return that are not one of `words` as given, unshadowed (LB3.5): the rest
-/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, and a child
-/// scope's body and stop branch.
+/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, a child
+/// scope's body and stop branch, and a loop's initial value and body.
 fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
     fn walk(e: &Expr, words: &BTreeSet<&str>, path: &mut Vec<u32>, bound: &mut Vec<String>, out: &mut Vec<String>) {
         match e {
@@ -807,6 +808,18 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
                 walk(otherwise, words, path, bound, out);
                 path.pop();
                 bound.truncate(depth);
+            }
+            // The loop's value is its initial value or its body's last one. The value so far is no word as given,
+            // since the body may have computed it.
+            Expr::Repeat { init, acc, body, .. } => {
+                path.push(1);
+                walk(init, words, path, bound, out);
+                path.pop();
+                bound.push(acc.clone());
+                path.push(2);
+                walk(body, words, path, bound, out);
+                path.pop();
+                bound.pop();
             }
             Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v) => {}
             _ => out.push(path_text(path)),
@@ -1395,6 +1408,13 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             bound.extend(status.as_deref());
             free_names(otherwise, bound, out);
             bound.truncate(depth);
+        }
+        Expr::Repeat { count, init, acc, body, .. } => {
+            free_names(count, bound, out);
+            free_names(init, bound, out);
+            bound.push(acc);
+            free_names(body, bound, out);
+            bound.pop();
         }
         other => {
             for child in other.children() {
@@ -3071,6 +3091,31 @@ impl<'p> Checker<'p> {
                 self.result(result, &ov, None, "a child scope's stop branch", &at);
                 s.add(&os);
                 self.operation(&mut s, needs(&[Effect::Budgets], &[]), "a child scope");
+                Ok((Val::declared(result), s))
+            }
+            Expr::Repeat { count, init, acc, result, body } => {
+                self.bare(&result.ty, true, "a loop's value")?;
+                // The count bounds the iteration, so approximate data cannot (LG2.20, DET.55; LP2 draft).
+                let (cv, mut s) = self.at(0, |c| c.expr(count, env))?;
+                if fits(&Ty::Nat, &cv.ty) {
+                    self.at(0, |c| c.exact_use(Site::Control, &cv, "a loop bound"));
+                } else {
+                    self.at(0, |c| c.misfit("Nat", &cv, "a loop bound"));
+                }
+                let (iv, is) = self.at(1, |c| c.expr(init, env))?;
+                let mut at = vec![1];
+                at.extend(returned(init));
+                self.result(result, &iv, None, "a loop's initial value", &at);
+                s.add(&is);
+                // Each iteration sees the value so far by its declared type, as a function sees a parameter.
+                env.vars.push((acc.clone(), Val::declared(result)));
+                let walked = self.at(2, |c| c.expr(body, env));
+                env.vars.pop();
+                let (bv, bs) = walked?;
+                let mut at = vec![2];
+                at.extend(returned(body));
+                self.result(result, &bv, None, "a loop's body", &at);
+                s.add(&bs);
                 Ok((Val::declared(result), s))
             }
         }
