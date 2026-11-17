@@ -24,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 25 of 40
+//! # Realised: 26 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -53,6 +53,7 @@
 //! | `root-before-child` | DET.60 | `early()`: the root and the child run out of steps at the body's `return` |
 //! | `dimension-before-scope` | DET.60 | `dim()`: a child's `k`, over its kernel cap while the root lacks memory |
 //! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
+//! | `final-loop-test` | DET.55 | `spin()`: `repeat(1, 0, …)` visits `acc` once; the final test is refused on steps |
 //!
 //! The trace's `display_if` condition is a given value that holds no memory. `pick` binds its comparison with `let`,
 //! so the `display_if` row visits a borrowed condition and releases nothing; the comparison's byte is released at the
@@ -103,10 +104,15 @@
 //! runs `check(1)`, whose comparison holds; the run's argument `7` reads alike (one digit), so every row before the
 //! assertion is the same.
 //!
-//! # Not realised: 15 of 40
+//! `final-loop-test` runs `repeat` (LP2 draft), a loop in its function's frame with no call per iteration, as the
+//! trace's loop has none. Its body's `visit` of `acc` is the trace's tick; filling and refilling `acc`, and the count
+//! and the initial value, are overhead. The run is refused on steps at `loop_test:1`, the final false test, which
+//! would cost one step (DET.55).
+//!
+//! # Not realised: 14 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no loop, text order, byte decoding or streaming cursor; no call frame without a slot holds a binding
+//! has no flow check, text order, byte decoding or streaming cursor; no call frame without a slot holds a binding
 //! (`generator-nested-same-name`); and the region contract `lp1-exec-region-draft-1` has no executor yet.
 
 mod support;
@@ -176,10 +182,11 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     let u = child(record { steps = 10, kernel_cost = 10, memory = 60, output = 0 }, fn() -> Unit {\n        \
     return child(record { steps = 4, kernel_cost = 4, memory = 20, output = 0 }, \
     fn() -> Unit { return (); }, fn() -> Unit { return (); });\n    \
-    }, fn() -> Unit { return (); });\n    return ();\n}\n";
+    }, fn() -> Unit { return (); });\n    return ();\n}\n\n\
+    export fn spin() -> Nat effects [] {\n    return repeat(1, 0, fn(acc: Nat) -> Nat { return acc; });\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 15] = [
+const UNREALISED: [(&str, &str); 14] = [
     (
         "child-decode-error-releases-reservation",
         "the IR has no byte decoding: arguments and host results cross as values",
@@ -192,8 +199,11 @@ const UNREALISED: [(&str, &str); 15] = [
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
-    ("abstract-trace-charges", "the IR has no loop or flow check"),
-    ("final-loop-test", "the IR has no loop; recursion adds call frames the trace's loop does not have"),
+    (
+        "abstract-trace-charges",
+        "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR has \
+         no flow check",
+    ),
     ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
@@ -398,6 +408,11 @@ const STILL_LIVE: &[(&str, &str)] = &[
     ("drop-a", "m.live:0 > m.late:0 > m.mk:root#scope_exit"),
     ("c", "m.live:0 > m.late:1 > m.yz:1.1#value"),
 ];
+const SPIN: &[(&str, &str)] = &[
+    ("loop/test:0", "m.spin:root#loop_test:0"),
+    ("loop/body:0/body", "m.spin:root#body:0 > m.spin:2#visit"),
+    ("loop/test:1", "m.spin:root#loop_test:1"),
+];
 
 fn realisations() -> Vec<Realisation> {
     let base = Realisation {
@@ -591,6 +606,14 @@ fn realisations() -> Vec<Realisation> {
             ..base
         },
         Realisation { trace: "nested-child-ledger", entry: "nest", args: Vec::new, map: NEST, ..base },
+        Realisation {
+            trace: "final-loop-test",
+            entry: "spin",
+            args: Vec::new,
+            map: SPIN,
+            stop_would: Some([1, 0, 0, 0]),
+            ..base
+        },
     ]
 }
 
@@ -909,8 +932,8 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     (r.values)(&trace.values, &session);
 }
 
-/// CT-RTE-04 in part: 25 DET.65 traces realised as programs keep their exact results, charges, stopping points,
-/// child records and source associations on both executors; the other 15 are listed with the reason they are not
+/// CT-RTE-04 in part: 26 DET.65 traces realised as programs keep their exact results, charges, stopping points,
+/// child records and source associations on both executors; the other 14 are listed with the reason they are not
 /// realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
