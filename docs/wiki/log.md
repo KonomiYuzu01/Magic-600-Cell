@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: the jumbling oracle route through the command layer
+`rust/c600-command` gains `c600-jumble-route`, which serves M5's adapter protocol through the command layer with Jumble on (`jumble.on`, then one `jumble.twist.menu` press per step, `session.undo` and `session.redo`), and `tests/test_jumbling_command_route.py` compares it with J1 through the differential harness step by step on the W-J fixtures, with every move undone to the entry and redone onto J1's states, for the jumbling half of the LP3 plan's "Oracle equality at every committed step" (PHS.23, C8). The identity item stays out of the comparison: the command layer refuses it with `KN2:input.recipe_shape`, where J1 moves its inside pieces onto their own poses.
+
 ## [2026-11-17] update | The language: jumble.twist.menu in the command layer
 The command layer (`rust/c600-command`) builds H-08's `jumble.twist.menu` (JI.27, JI.35, FP.31): with the twist menu pinned, the row's `cap` and `letter` form KN3.7's exact request; with Jumble off a retained item commits its retained word as `twist.apply` does and a jumble item stays refused, and with Jumble on every item is a pose move that the jumbling engine derives from the head's poses, committed at once with no preview, undone by its exact inverse, journaled as the action kind `jumble_move` with its rotation record and replayed by a reopen with the menu pinned. The `letter` form, the journal form, the empty pose-protected set, the bound of 64 chained moves with its flat replay, the identity item's code and the check order are drafts for LP3's amendment list under PHS.52.
 
