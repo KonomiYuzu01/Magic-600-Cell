@@ -215,6 +215,42 @@ pub struct ProgramJob {
     pub overlay: Overlay,
 }
 
+/// A program job's output as the runtime's sinks gave it (LP3's C6, its second common need; draft): the value its
+/// entry returned, the views it published, in order, and the workspace records it wrote, by name. The runtime's
+/// boundary keeps a record's last write, so a name appears once.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JobOutput {
+    pub value: Value,
+    pub views: Vec<Value>,
+    pub records: BTreeMap<String, RecordValue>,
+}
+
+impl JobOutput {
+    /// An output that publishes no view and writes no record: what [`CommandLayer::finish_program_job`] reports.
+    pub fn of(value: Value) -> JobOutput {
+        JobOutput { value, views: Vec::new(), records: BTreeMap::new() }
+    }
+
+    /// The digest a completion's result reference carries (draft): the value's own digest when the job published no
+    /// view and wrote no record, so [`CommandLayer::finish_program_job`]'s receipts keep their digest; otherwise the
+    /// SHA-256 of the canonical `{"records", "value", "views"}`, each record in [`RecordWrite::to_json`]'s form.
+    pub fn digest(&self) -> String {
+        if self.views.is_empty() && self.records.is_empty() {
+            return digest(&self.value);
+        }
+        let records = self
+            .records
+            .iter()
+            .map(|(name, value)| RecordWrite { name: name.clone(), value: Some(value.clone()) }.to_json())
+            .collect();
+        digest(&json::object([
+            ("records", Value::Array(records)),
+            ("value", self.value.clone()),
+            ("views", Value::Array(self.views.clone())),
+        ]))
+    }
+}
+
 enum JobKind {
     Preview { recipe: Recipe, draft: String, resolved: Option<ResolvedDraft>, caller: Caller },
     Program(ProgramJob),
@@ -376,6 +412,7 @@ fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
         && planned.result == stored.result
         && planned.record == stored.record
         && planned.policy == stored.policy
+        && planned.records == stored.records
         && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
@@ -614,7 +651,8 @@ impl<S: Store> CommandLayer<S> {
                     return Err(broken("a workspace completion names no job and result"));
                 };
                 self.jobs_issued = self.jobs_issued.max(job);
-                self.workspace_adoption(meta, job, result)
+                // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
+                self.workspace_adoption(meta, job, result, stored.records.clone())
             }
             // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
             TransactionKind::Record => match stored.record.clone() {
@@ -1515,6 +1553,7 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: None,
+            records: Vec::new(),
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -1559,11 +1598,25 @@ impl<S: Store> CommandLayer<S> {
         self.revision = transaction.revision.clone();
         self.order = transaction.order;
         self.head = head;
-        // A record write, or its undo or redo: the record's version advances and never goes back (KN0.8).
-        if let Some(RecordWrite { name, value }) = &transaction.record {
+        // A record write, or its undo or redo, or a workspace row's writes: each record's version advances and never
+        // goes back (KN0.8).
+        for RecordWrite { name, value } in transaction.record.iter().chain(&transaction.records) {
             let record = self.records.entry(name.clone()).or_default();
             record.version += 1;
             record.value = value.clone();
+        }
+        // No undo reaches a workspace row's writes, so an undo or redo of an earlier write of one of its records would
+        // write over them. Those earlier writes leave both stacks (draft).
+        if !transaction.records.is_empty() {
+            let written: BTreeSet<&str> = transaction.records.iter().map(|write| write.name.as_str()).collect();
+            let rewrites = |order: &u64| matches!(self.changes.get(order), Some(Change::Record { name, .. }) if written.contains(name.as_str()));
+            let dropped: Vec<u64> =
+                self.undo.iter().chain(&self.redo).filter(|order| rewrites(order)).copied().collect();
+            self.undo.retain(|order| !dropped.contains(order));
+            self.redo.retain(|order| !dropped.contains(order));
+            for order in dropped {
+                self.changes.remove(&order);
+            }
         }
         // A policy change, or its undo or redo.
         if let Some(policy) = transaction.policy {
@@ -1724,6 +1777,7 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: None,
+            records: Vec::new(),
         };
         match change {
             Change::Head { before, after } => {
@@ -1833,6 +1887,7 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: None,
+            records: Vec::new(),
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -1887,6 +1942,7 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: None,
             policy: Some(policy),
+            records: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
@@ -1906,9 +1962,9 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// A language-defined workspace row's completion: one durable action that advances the workspace revision and
-    /// keeps the state, the preview slot and the jobs (KN5.23).
-    fn workspace_adoption(&self, meta: Meta, job: u64, result: String) -> Adoption {
+    /// A language-defined workspace row's completion: one durable action that advances the workspace revision, writes
+    /// the job's records and keeps the state, the preview slot and the jobs (KN5.23). No undo reaches it.
+    fn workspace_adoption(&self, meta: Meta, job: u64, result: String, records: Vec<RecordWrite>) -> Adoption {
         let order = self.order + 1;
         let digest = self.current.digest().to_owned();
         let mut revision = self.revision.clone();
@@ -1933,6 +1989,7 @@ impl<S: Store> CommandLayer<S> {
             result: Some(result),
             record: None,
             policy: None,
+            records,
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree: Tree::None, preview: None }
     }
@@ -1991,6 +2048,7 @@ impl<S: Store> CommandLayer<S> {
             result: None,
             record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
             policy: None,
+            records: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None }
@@ -2056,16 +2114,29 @@ impl<S: Store> CommandLayer<S> {
 
     /// Reports a program job's result: the host's interface. A job a commit or undo cancelled meanwhile stays
     /// cancelled, and its result is dropped (`None`). A workspace row's completion is one durable action, written with
-    /// its receipt (KN5.23, L8); in read-only recovery it fails. Other completions stay transient.
+    /// its receipt (KN5.23, L8); in read-only recovery it fails. Other completions stay transient. The same as
+    /// [`CommandLayer::finish_program_job_with`] with an output that publishes no view and writes no record.
     pub fn finish_program_job(&mut self, job: u64, result: Result<Value, Error>) -> Option<Receipt> {
+        self.finish_program_job_with(job, result.map(JobOutput::of))
+    }
+
+    /// Reports a program job's output as the runtime's sinks gave it: the value its entry returned, the views it
+    /// published and the workspace records it wrote (LP3's C6, its second common need; draft). The output becomes the
+    /// receipt: the completion's result reference carries [`JobOutput::digest`].
+    ///
+    /// Before the layer takes the output, it checks it: only a workspace row's job writes records
+    /// (`LG3:capability.not_granted` otherwise), and every record's provenance block passes the host's reader, as for
+    /// `workspace.set` (PS1.16). A job whose output fails a check fails with that error and leaves nothing written. A
+    /// workspace row's records are written in its completion's one durable action, and no undo reaches them.
+    pub fn finish_program_job_with(&mut self, job: u64, result: Result<JobOutput, Error>) -> Option<Receipt> {
         let program = self.running.remove(&job)?;
         let key = (program.caller.scope(), program.command.clone());
-        let status = match result {
+        let status = match result.and_then(|output| self.admit_output(&program, output)) {
             Err(error) => Status::Failed(error),
             Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
                 Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
             }
-            Ok(value) if program.kind == Kind::Workspace => {
+            Ok(output) if program.kind == Kind::Workspace => {
                 let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
                 let meta = Meta {
                     caller: program.caller.clone(),
@@ -2074,13 +2145,16 @@ impl<S: Store> CommandLayer<S> {
                     request,
                     confirm: false,
                 };
-                let adoption = self.workspace_adoption(meta, job, digest(&value));
+                let result = output.digest();
+                let records =
+                    output.records.into_iter().map(|(name, value)| RecordWrite { name, value: Some(value) }).collect();
+                let adoption = self.workspace_adoption(meta, job, result, records);
                 match self.transact(adoption) {
                     Ok((_, status)) => status,
                     Err(error) => Status::Failed(error),
                 }
             }
-            Ok(value) => {
+            Ok(output) => {
                 let kind = match program.kind {
                     Kind::Query => CompletionKind::Query,
                     Kind::File => CompletionKind::File,
@@ -2091,12 +2165,32 @@ impl<S: Store> CommandLayer<S> {
                         )
                     }
                 };
-                let result = Some(ResultRef { job: Some(job), digest: digest(&value) });
+                let result = Some(ResultRef { job: Some(job), digest: output.digest() });
                 Status::Completed(Completion { kind, revision: program.revision.clone(), result })
             }
         };
         self.settle(&key, status);
         self.generation += 1;
         self.receipts.get(&key).map(|record| record.receipt.clone())
+    }
+
+    /// The checks a job's output passes before the layer takes it (draft): only a workspace row's job writes records,
+    /// and the host's reader admits every record's provenance block (PS1.16). Views pass from every row.
+    fn admit_output(&self, program: &ProgramJob, output: JobOutput) -> Result<JobOutput, Error> {
+        if output.records.is_empty() {
+            return Ok(output);
+        }
+        if program.kind != Kind::Workspace {
+            let detail = format!("`{}` is not a workspace row, so its job writes no record", program.row);
+            return Err(Error::new(code::NOT_GRANTED, detail));
+        }
+        let Some(reader) = &self.provenance else {
+            let detail = format!("`{}`'s records need the host's provenance reader", program.row);
+            return Err(Error::new(code::ROW_NOT_BUILT, detail));
+        };
+        for value in output.records.values() {
+            reader.check(value.provenance.as_bytes())?;
+        }
+        Ok(output)
     }
 }
