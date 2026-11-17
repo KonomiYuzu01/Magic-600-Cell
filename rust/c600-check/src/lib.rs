@@ -825,6 +825,7 @@ fn carries_word(ty: &Ty) -> bool {
         | Ty::Approx(_)
         | Ty::ApproxBool
         | Ty::Receipt
+        | Ty::Generator
         | Ty::EndTest(_)
         | Ty::Field(_) => false,
     }
@@ -858,6 +859,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Map(..) => "Map".into(),
         Ty::CompressedWord => "CompressedWord".into(),
         Ty::MenuWord => "MenuWord".into(),
+        Ty::Generator => "Generator".into(),
         Ty::EndTest(test) => test.type_name().into(),
         Ty::Field(f) => f.name().into(),
     }
@@ -1026,10 +1028,10 @@ fn declared_qual(q: &QTy) -> Qual {
 }
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
-/// at any depth, and without a callable, a receipt, `Unit`, a type variable, a compressed word or an end test's verdict,
-/// so that its canonical key order (DET.9) is defined and a verdict is only ever matched (LG2.9). An F2 or F5 element
-/// may be a key (LP2 draft): its key order is the field, then the residue, and `exact_less` still refuses it, since a
-/// finite field has no order.
+/// at any depth, and without a callable, a receipt, `Unit`, a type variable, a compressed word, a generator or an end
+/// test's verdict, so that its canonical key order (DET.9) is defined and a verdict is only ever matched (LG2.9). An F2
+/// or F5 element may be a key (LP2 draft): its key order is the field, then the residue, and `exact_less` still
+/// refuses it, since a finite field has no order.
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
@@ -1040,6 +1042,7 @@ fn key_type(q: &QTy) -> bool {
             | Ty::Receipt
             | Ty::Var(_)
             | Ty::CompressedWord
+            | Ty::Generator
             | Ty::EndTest(_) => false,
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
@@ -1071,25 +1074,45 @@ fn holds_callable(ty: &Ty) -> bool {
 
 /// What a goal or an evidence sink takes, in a mismatch's `expected`.
 const PORTABLE: &str =
-    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, F2, F5 or a type variable";
+    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, Generator, F2, F5 \
+     or a type variable";
 
 /// Whether a goal or an evidence sink takes a value of this type (owner decision of 16 November 2026 under PHS.52):
 /// portable data with a canonical encoding, so no callable, receipt, word equality key (LG2.13), trace equality key
-/// (LB1.10), compressed word (DET.59) or F2 or F5 element (FP.6 has no form for one; a program passes its `residue`)
-/// at any depth, and no type variable, which may stand for one of them (the checker does not unify type variables,
-/// M1). An unknown type fits. Whether an approximate value may enter is the exactness rules' question (LG2.22).
+/// (LB1.10), compressed word (DET.59), generator (DET.61) or F2 or F5 element (FP.6 has no form for one; a program
+/// passes its `residue`) at any depth, and no type variable, which may stand for one of them (the checker does not
+/// unify type variables, M1). An unknown type fits. Whether an approximate value may enter is the exactness rules'
+/// question (LG2.22).
 fn portable(ty: &Ty) -> bool {
     match ty {
         _ if is_unknown(ty) => true,
-        Ty::Fn(_)
-        | Ty::Receipt
-        | Ty::Var(_)
-        | Ty::WordEqualityKey
-        | Ty::TraceEqualityKey
-        | Ty::CompressedWord
-        | Ty::Field(_) => false,
+        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::CompressedWord => false,
+        Ty::Generator | Ty::Field(_) => false,
         Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
         other => other.elements().into_iter().all(|e| portable(&e.ty)),
+    }
+}
+
+/// Whether a type is or holds a generator in a record field or a collection (LP2 draft; DET.61). A generator stays a
+/// bare value, so that each owner holds its own cursor: no record, collection, closure capture or type variable holds
+/// one, since copying any of them would share the cursor instead of copying it. A callable's signature holds no value.
+fn holds_generator(ty: &Ty) -> bool {
+    match ty {
+        Ty::Generator => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_generator(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_generator(&e.ty)),
+    }
+}
+
+/// Whether a declared type puts a generator where a value would share its cursor (LP2 draft; DET.61): in a record
+/// field or a collection, also inside a callable's parameter or result types. With `alone`, a generator may stand as
+/// the type itself, as a signature's parameter or result; without it, as for data a host answers with, it may not.
+fn shares_generator(ty: &Ty, alone: bool) -> bool {
+    match ty {
+        Ty::Generator => !alone,
+        Ty::Fn(f) => f.params.iter().any(|p| shares_generator(&p.ty, true)) || shares_generator(&f.result.ty, true),
+        Ty::Record(fields) => fields.iter().any(|(_, f)| shares_generator(&f.ty, false)),
+        other => other.elements().into_iter().any(|e| shares_generator(&e.ty, false)),
     }
 }
 
@@ -1171,7 +1194,8 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
         return true;
     }
     match (slot, value) {
-        (Ty::Var(_), _) => true,
+        // A type variable takes no generator, which stays a bare value (LP2 draft; DET.61); the unknown type takes one.
+        (Ty::Var(name), value) => name == UNKNOWN || !holds_generator(value),
         (Ty::Approx(p), Ty::Approx(q)) => p == q,
         (slot, Ty::Approx(_)) if is_exact_number(slot) => true,
         (Ty::Bool, Ty::ApproxBool) => true,
@@ -2369,6 +2393,10 @@ impl<'p> Checker<'p> {
         let f = &module.functions[fi];
         self.cur = (mi, fi);
         self.path.clear();
+        for p in &f.params {
+            self.bare(&p.ty.ty, true, "a parameter")?;
+        }
+        self.bare(&f.result.ty, true, "the result")?;
         let mut env = Env::default();
         for p in &f.params {
             env.vars.push((p.name.clone(), Val::declared(&p.ty)));
@@ -2410,6 +2438,25 @@ impl<'p> Checker<'p> {
         Ok((s, control))
     }
 
+    /// Refuses a declared type that would share a generator's cursor ([`shares_generator`]; LP2 draft, DET.61).
+    fn bare(&self, ty: &Ty, alone: bool, what: &str) -> Result<(), IrError> {
+        if shares_generator(ty, alone) {
+            let note = "a generator stays a bare value, so no record, collection or host answer holds one";
+            return Err(self.err(format!("{what} of type {}: {note} (LP2 draft; DET.61)", type_text(ty))));
+        }
+        Ok(())
+    }
+
+    /// Refuses a value that holds a generator where a view or a file receives it ([`holds_generator`]; LP2 draft,
+    /// DET.61): it has no canonical form, so the checker refuses it before the run would stop at its encoding.
+    fn sink(&self, ty: &Ty, what: &str) -> Result<(), IrError> {
+        if holds_generator(ty) {
+            let note = "a generator stays a bare value, so no view or file receives one";
+            return Err(self.err(format!("{what} of type {}: {note} (LP2 draft; DET.61)", type_text(ty))));
+        }
+        Ok(())
+    }
+
     fn expr(&mut self, e: &'p Expr, env: &mut Env) -> Result<(Val, Summary), IrError> {
         match e {
             // An approximate literal is display data from the start, like an explicit conversion (LG1.7, LG2.19).
@@ -2436,12 +2483,31 @@ impl<'p> Checker<'p> {
                 }));
                 Ok((Val { ty, qual: Qual::Exact, callable: Some(summary), fields: None }, Summary::default()))
             }
-            Expr::Let { name, value, body } => {
-                let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
-                env.vars.push((name.clone(), v));
-                let r = self.at(1, |c| c.expr(body, env));
-                env.vars.pop();
+            // A chain of lets is checked in a loop, as nested `at(1, ..)` calls would check it, so a long straight-line
+            // body does not deepen the recursion: an unoptimised build gives each level of `expr` a large frame.
+            Expr::Let { .. } => {
+                let (depth, bound) = (self.path.len(), env.vars.len());
+                let mut node = e;
+                let mut values: Option<Summary> = None;
+                let r = loop {
+                    let Expr::Let { name, value, body } = node else { break self.expr(node, env) };
+                    match self.at(0, |c| c.expr(value, env)) {
+                        Ok((v, s)) => {
+                            match &mut values {
+                                None => values = Some(s),
+                                Some(all) => all.add(&s),
+                            }
+                            env.vars.push((name.clone(), v));
+                        }
+                        Err(err) => break Err(err),
+                    }
+                    self.path.push(1);
+                    node = &**body;
+                };
+                self.path.truncate(depth);
+                env.vars.truncate(bound);
                 let (bv, bs) = r?;
+                let mut s = values.expect("a let chain binds at least one value");
                 s.add(&bs);
                 Ok((bv, s))
             }
@@ -2578,12 +2644,20 @@ impl<'p> Checker<'p> {
                 }
             }
             Expr::Closure { params, result, body } => {
+                for p in params {
+                    self.bare(&p.ty.ty, true, "a closure's parameter")?;
+                }
+                self.bare(&result.ty, true, "a closure's result")?;
                 let mut free = BTreeSet::new();
                 let mut bound: Vec<&str> = params.iter().map(|p| p.name.as_str()).collect();
                 free_names(body, &mut bound, &mut free);
                 let mut inner = Env::default();
                 for name in free {
                     match env.get(name) {
+                        Some(v) if holds_generator(&v.ty) => {
+                            let note = "a closure captures no generator, which stays a bare value (LP2 draft; DET.61)";
+                            return Err(self.err(format!("`{name}`: {note}")));
+                        }
                         Some(v) => inner.vars.push((name.to_string(), v.clone())),
                         None => return Err(self.err(format!("unbound name `{name}` in a closure"))),
                     }
@@ -2641,6 +2715,11 @@ impl<'p> Checker<'p> {
                     s.add(&a_s);
                     vals.push(v);
                 }
+                if *op == Prim::RngDraw {
+                    // A draw advances a seeded stream, as a random draw does (DET.37, DET.61; LP2 draft).
+                    let own = needs(&[Effect::SeededRandomness], &[Capability::Randomness]);
+                    self.operation(&mut s, own, "a generator draw");
+                }
                 Ok((self.prim(*op, &vals)?, s))
             }
             Expr::Record(fields) => {
@@ -2650,6 +2729,10 @@ impl<'p> Checker<'p> {
                 let mut qual = Qual::Exact;
                 for (i, (name, fe)) in fields.iter().enumerate() {
                     let (v, f_s) = self.at(i, |c| c.expr(fe, env))?;
+                    if holds_generator(&v.ty) {
+                        let note = "a record holds no generator, which stays a bare value (LP2 draft; DET.61)";
+                        return Err(self.err(format!("field `{name}`: {note}")));
+                    }
                     s.add(&f_s);
                     qual = qual.join(v.qual.container());
                     let display = v.qual != Qual::Exact && !matches!(v.ty, Ty::Approx(_) | Ty::ApproxBool);
@@ -2667,6 +2750,7 @@ impl<'p> Checker<'p> {
                 if elements.iter().any(|e| holds_callable(&e.ty)) {
                     return Err(self.err(format!("{}: a collection holds no callable (LP2 draft)", type_text(ty))));
                 }
+                self.bare(ty, true, "a collection")?;
                 // A set's elements and a map's keys are exact, so that their canonical key order is defined (LG2.20).
                 let keyed = matches!(ty, Ty::Set(_) | Ty::Map(..));
                 if keyed && !key_type(&elements[0]) {
@@ -2724,6 +2808,7 @@ impl<'p> Checker<'p> {
                 Ok((v, s))
             }
             Expr::ReadSnapshot { query, ty } => {
+                self.bare(&ty.ty, false, "a snapshot read")?;
                 let mut s = Summary::default();
                 let mut own = needs(&[Effect::ReadSnapshot], &[]);
                 own.state_reads.insert(StateRead::Snapshot);
@@ -2753,6 +2838,7 @@ impl<'p> Checker<'p> {
                 Ok((v, s))
             }
             Expr::ReadSnapshotWith { query, arg, ty } => {
+                self.bare(&ty.ty, false, "a snapshot read")?;
                 let (av, mut s) = self.at(0, |c| c.expr(arg, env))?;
                 // The argument crosses to the host as its canonical bytes (DET.59): portable data, as a goal or
                 // evidence takes (owner decision of 16 November 2026 under PHS.52), with no qualifier to erase
@@ -2773,6 +2859,7 @@ impl<'p> Checker<'p> {
             }
             Expr::PublishView { value } => {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
+                self.sink(&v.ty, "a published view")?;
                 self.note_word_view(&v.ty);
                 let mut own = needs(&[Effect::ChangeView], &[]);
                 own.rows.insert(Row::View);
@@ -2780,6 +2867,7 @@ impl<'p> Checker<'p> {
                 Ok((Val::exact(Ty::Unit), s))
             }
             Expr::WriteWorkspace { record, ty, value } => {
+                self.bare(&ty.ty, false, "a workspace field")?;
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
                 if fits(&ty.ty, &v.ty) {
                     // Display values may be stored only in typed display fields (LG2.19).
@@ -2873,6 +2961,7 @@ impl<'p> Checker<'p> {
                 Ok((Val::new(ty, Qual::Display { control: true }), s))
             }
             Expr::Declassified { id, ty } => {
+                self.bare(ty, false, "a declassified read")?;
                 let mut s = Summary::default();
                 let mut own = needs(&[Effect::ReadSnapshot], &[]);
                 own.state_reads.insert(StateRead::Declassifier(id.clone()));
@@ -2881,6 +2970,7 @@ impl<'p> Checker<'p> {
                 Ok((Val::declared(&QTy { ty: ty.clone(), display: false }), s))
             }
             Expr::FileRead { ty, .. } => {
+                self.bare(ty, false, "a file read")?;
                 let mut s = Summary::default();
                 let mut own = needs(&[Effect::GrantedFile], &[Capability::File]);
                 own.reads_file = true;
@@ -2889,6 +2979,7 @@ impl<'p> Checker<'p> {
             }
             Expr::FileWrite { value, .. } => {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
+                self.sink(&v.ty, "a file write")?;
                 // Untyped file bytes are no typed display field (LG2.19).
                 self.at(0, |c| c.exact_use(Site::Boundary, &v, "a file write"));
                 self.operation(&mut s, needs(&[Effect::GrantedFile], &[Capability::File]), "a file write");
@@ -2899,6 +2990,13 @@ impl<'p> Checker<'p> {
                 let own = needs(&[Effect::SeededRandomness], &[Capability::Randomness]);
                 self.operation(&mut s, own, "a random draw");
                 Ok((Val::exact(Ty::Nat), s))
+            }
+            Expr::RngInit { .. } => {
+                // A generator on the run's sealed seed and stream path (DET.37, DET.61; LP2 draft).
+                let mut s = Summary::default();
+                let own = needs(&[Effect::SeededRandomness], &[Capability::Randomness]);
+                self.operation(&mut s, own, "a generator's start");
+                Ok((Val::exact(Ty::Generator), s))
             }
             Expr::ReadClock => {
                 // The clock is a declared requirement without an effect family (LG3.8). Seconds are a display unit
@@ -2919,7 +3017,7 @@ impl<'p> Checker<'p> {
 
     fn prim(&mut self, op: Prim, vals: &[Val]) -> Result<Val, IrError> {
         let arity = match op {
-            Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot | Prim::Assert => 1,
+            Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot | Prim::Assert | Prim::RngDraw => 1,
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
             Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => 1,
@@ -2994,6 +3092,12 @@ impl<'p> Checker<'p> {
                     self.at(i, |c| c.misfit("a type without CompressedWord", &vals[i], note));
                     return Ok(Val::exact(Ty::Bool));
                 }
+                // A generator has no equality: it is a stream's cursor, not data (LP2 draft; DET.61).
+                if let Some(i) = vals.iter().position(|v| holds_generator(&v.ty)) {
+                    let note = "an operand of an exact equality, which a generator does not have";
+                    self.at(i, |c| c.misfit("a type without Generator", &vals[i], note));
+                    return Ok(Val::exact(Ty::Bool));
+                }
                 if self.verdict_equality(vals) {
                     return Ok(Val::exact(Ty::Bool));
                 }
@@ -3026,6 +3130,17 @@ impl<'p> Checker<'p> {
                     self.at(0, |c| c.misfit("Bool", v, "a pointwise assertion's predicate"));
                 }
                 Ok(Val::exact(Ty::Unit))
+            }
+            Prim::RngDraw => {
+                // The next block of a generator's stream (DET.61; LP2 draft). The generator is exact data: one chosen
+                // under approximate control or display-qualified draws no exact value.
+                let v = &vals[0];
+                if fits(&Ty::Generator, &v.ty) {
+                    self.at(0, |c| c.exact_use(Site::Operand, v, "the generator of a draw"));
+                } else {
+                    self.at(0, |c| c.misfit("Generator", v, "the generator of a draw"));
+                }
+                Ok(Val::exact(Ty::Nat))
             }
             Prim::ToApprox(p) => {
                 let v = &vals[0];

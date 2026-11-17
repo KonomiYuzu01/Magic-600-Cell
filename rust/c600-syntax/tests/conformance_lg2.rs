@@ -73,8 +73,9 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
 /// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`. So has the menu word (LP2 draft):
 /// `menu_words.rs` here and in `c600-run`. So has an end test's verdict (LP2 draft): CT-LG2-09's unknown that never
-/// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`. F2 and F5 (LP2 draft) are number kinds
-/// of KN3.2, not domain families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
+/// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`. So has the generator (LP2 draft;
+/// DET.61): `generators.rs` here and in `c600-run`. F2 and F5 (LP2 draft) are number kinds of KN3.2, not domain
+/// families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -97,6 +98,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::CompressedWord
         | Ty::MenuWord
         | Ty::EndTest(_)
+        | Ty::Generator
         | Ty::Field(_)
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
@@ -124,6 +126,7 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose => "word",
         Prim::Compress | Prim::Expand => "word",
         Prim::WordKey | Prim::TraceKey => "word key",
+        Prim::RngDraw => "granted input or output",
     }
 }
 
@@ -139,6 +142,7 @@ fn family(e: &Ir) -> &'static str {
         Ir::ReadSnapshot { .. } | Ir::ReadSnapshotWith { .. } | Ir::Declassified { .. } => "snapshot read",
         Ir::PublishView { .. } | Ir::WriteWorkspace { .. } => "view or workspace",
         Ir::FileRead { .. } | Ir::FileWrite { .. } | Ir::RandomDraw | Ir::ReadClock => "granted input or output",
+        Ir::RngInit { .. } => "granted input or output",
         Ir::Propose { .. } | Ir::ReadReceipt { .. } => "preview",
         Ir::UseExact { .. } | Ir::Accounting(_) => "exact sink or accounting",
     }

@@ -262,6 +262,17 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   word's letters for the built-in column, and it is no portable data, so a goal, an evidence sink or a snapshot
   read's argument that holds one is `LG2:type.mismatch` (`c600-check/tests/mismatch.rs`, `exactness.rs` and
   `built_in.rs`; `c600-syntax/tests/conformance_lg2.rs`: CT-LB1-06's language half, part).
+- Generators (LP2 draft until the IR freeze; DET.61; LP3's plan, section 2). `rng_init` (`Expr::RngInit`) starts a
+  `Generator` (`Ty::Generator`) on the run's seed, at the run's stream path followed by its literal segments, none or
+  more, and `rng_draw` (`Prim::RngDraw`) draws its next block as a `Nat`. Both have the `random` effect and need the
+  randomness grant, as `random_draw` does (CT-LG3-04's table). A generator stays a bare value, so that each cursor
+  has one owner and only DET.61's alias copies it: the checker refuses the program when a record, a collection, a
+  closure's capture or a host read's or write's type would hold one, or a declared type would hold one other than as
+  a signature's own parameter or result (also a callable's), and when a view or a file would receive one. An exact
+  equality, a type parameter or a host read's argument that takes one is `LG2:type.mismatch`
+  (`c600-syntax/tests/generators.rs`).
+- A chain of `let`s is checked in a loop, so a long straight-line body does not deepen the checker's recursion, and a
+  finding inside the chain keeps its nested path (`c600-check/tests/let_chains.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -345,6 +356,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (`c600-syntax/tests/end_tests.rs`).
 - Trace keys (LP2 draft). `TraceEqualityKey` is a type, and `trace_key` is a reserved operation called like a
   function (`c600-syntax/tests/conformance_lg2.rs`).
+- Generators (LP2 draft). `Generator` is a type, and `rng_init` and `rng_draw` are reserved operations called like
+  functions; `rng_init`'s arguments are text literals, its stream path's segments, none or more
+  (`c600-syntax/tests/generators.rs`).
 - Exact products and assertions (LP2 drafts). `exact_mul(a, b)` multiplies two exact numbers, widened as
   `exact_add`'s operands are; a `Budget` operand is `LG2:type.mismatch`, since the draft multiplies numbers, not
   costs. `assert(p)` is `Unit`, and its predicate is an exact `Bool`, as an `if` condition is (LG2.20)
@@ -358,15 +372,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 17 of the 40 traces as programs through `Loaded::run`: nested-calls,
-  equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, generator, the three display
-  traces, output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release,
-  alias-still-live and pointwise-failure. Each frozen row and each cutoff or stop (dimension or phase, scope, denied
-  row, source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27,
-  28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest.
-- The other 23 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
-  aliased or returned in a call (4), text order (1), byte decoding (2), loops and flow checks (2), streaming cursors
-  (3) and display form 2 (5). They still replay through the meter.
+- `c600-run/tests/det65_programs.rs` runs 20 of the 40 traces as programs through `Loaded::run`: nested-calls,
+  equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, the four generator traces
+  generator, generator-alias-cursor, generator-returned-owner and generator-child-paths, the three display traces,
+  output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live
+  and pointwise-failure. Each frozen row and each cutoff or stop (dimension or phase, scope, denied row, source range)
+  equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic),
+  29, 31 and 32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest.
+- The other 20 are listed with the reason the IR draft cannot express them: child scopes (6), a call frame without a
+  slot that holds two bindings (1, generator-nested-same-name), text order (1), byte decoding (2), loops and flow
+  checks (2), streaming cursors (3) and display form 2 (5). They still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -383,6 +398,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
   phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
   `det65_programs.rs`).
+- Generators (LP2 drafts; DET.61). `rng_init` is one step priced at the input-byte tariff per byte of the hashed key
+  input (13 bytes of domain, the seed's 32, 4 for the segment count and per segment 4 and its bytes), and it holds a
+  generator's 41 units. Its stream path is the run's assigned path followed by its segments, on the run's seed, so
+  re-initialising a path reproduces that stream, as DET.61 says. Without a seed it charges its step alone and stops
+  with `LG3:capability.not_granted`, as `random_draw` does. `rng_draw` draws the cursor's next block, one step at the
+  block tariff, holding a 256-bit natural's 33 units. A borrowed argument draws from its owner's cursor and a move
+  hands the cursor on; an alias (a borrowed generator bound to a name or returned) copies it at 41 units, so the copy
+  repeats the original's blocks. A generator has no canonical form, so an entry neither takes nor returns one
+  (`PS1:input.noncanonical_value`). The run's own generator still starts at `entry#rng_init` whenever the run has a
+  seed. Child invocation indices wait for child jobs (M6) (`c600-run/tests/generators.rs`, `det65_programs.rs`).
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
   forms. Deep values compare, encode and drop without recursion. A word literal's letters are generators, of
@@ -730,8 +755,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   centre) and L16's `KN2:stale.revision_gone` (the candidate has no snapshot handles). L15's `repair_list` and
   `covers` rows (J1's pinned pair order, no rank, a cap outside 0..599) and L2's `release_check` agreement run in
   M8's comparison with J1 (below).
-- Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
-  informational, not performance evidence.
+- Evidence kind: source and fixture. The comparison ran on Windows; its headless Linux leg runs in CI (the Linux Rust
+  workflow's J1 job). The timings the check prints are informational, not performance evidence.
 - KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
   integers, refuses malformed, noncanonical and oversize bytes, and compares the re-encoded bytes. `resolve` builds the
   exact rotation in A1's frame at the binding's cap and chooses: free mode over A1's grid with A1's tie order, half-turn
@@ -787,7 +812,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     the check needed `nu` and the 36-row correction catalogue; both came later (the ν and correction catalogue bullets
     below).
   - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
-    source and fixture; the comparison ran on Windows only, and its timings are informational.
+    source and fixture; the comparison ran on Windows, its headless Linux leg runs in CI's J1 job, and its timings are
+    informational.
 - M8 levels (LP2 plan, section 11; chapter 01, KN1.7 to KN1.11, KN1.14, KN1.17 and KN2.11 to KN2.14; chapter 08,
   ONE.21 to ONE.28; state contract A3 to A5): `c600-jumble/src/levels.rs` builds KN1.7's level crossings, each map
   one way from poses down, and KN1.9's projections, total or partial with what is missing (the pieces off the lattice
@@ -830,7 +856,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
     marker naming what it leaves out. Not built with them: `nu` and `correction_set_check` (the ν and correction
     catalogue bullets below), and the session store's checkpoint and import records (M6). No J1 fault was found.
-    Evidence kind: source and fixture; the comparison ran on Windows only.
+    Evidence kind: source and fixture; the comparison ran on Windows, and its headless Linux leg runs in CI's J1 job.
 - The kernel pieces for LP3's C8 (LP2):
   - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
     `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
@@ -1186,8 +1212,8 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 17 of DET.65's 40
-    traces as programs and lists why the other 23 do not run.
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 20 of DET.65's 40
+    traces as programs and lists why the other 20 do not run; `generators.rs` runs DET.61's generators.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
@@ -1228,7 +1254,12 @@ run or not applicable is no pass (PHS.63).
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
-  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 still run on the Windows shards only.
+  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
+  cross-platform item). These are the six `tests/test_jumbling_rust_*.py` checks that the Windows shards run
+  (candidate, attacks, M8's observations and levels, ν and the correction catalogue), one runner each. They use the
+  same pinned CPython and hash-checked NumPy wheels and build the release adapter offline. Each system compares the
+  candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared byte for byte. A
+  pass is headless Linux source and fixture evidence only.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the
@@ -1471,23 +1502,30 @@ run or not applicable is no pass (PHS.63).
   The journal keeps the resolution's record as `rotation` (`Transaction::rotation`), an 18th key on a twist only, and a
   reopen replays the recipe without a menu (KN3.9). Tests: `c600-command/tests/twist_apply.rs` (the command layer's
   parts of CT-EV4-04 and CT-BND-19; KN3.8, JI.35, LI.6, LI.32).
-- `jumble.on` (A5; ONE.54, ONE.55, ONE.80, ONE.81, JI.25, JI.27; the drafts are in the crate documentation), the entry
-  into Jumble on from the solved witness. It needs the pinned twist menu (`KN5:input.row_not_built` without one) and
-  takes `revision`, the current `RevisionRef`, with a token that binds the state and protection revisions. Until the
-  entry from an exit root is built, the witness is the chronological literal retained path from the session's start to
-  the head, which must start at solved and cross no exit. The layer replays it from solved in the jumbling engine
-  under the pinned menu and enters only when the replay's labels are the current labels, so labels alone are
-  `KN5:input.jumble_on_labels_only`. The crossing commits with no preview: the revision's mode becomes `jumble_on`,
-  its state revision advances and its digest is the pose digest (`CommandLayer::jumbled` holds the poses), and like a
-  commit it ends the pending preview and cancels the jobs
-  that read the replaced revision, except file jobs. With Jumble on, `operation.preview`, `operation.execute`,
+- `jumble.on` (A5; ONE.54, ONE.55, ONE.80, ONE.81, JI.25 to JI.27, JI.29, FP.31, FP.32; the drafts are in the crate
+  documentation), the entry into Jumble on from an active exit's root or the solved witness. It needs the pinned twist
+  menu (`KN5:input.row_not_built` without one) and takes `revision`, the current `RevisionRef`, with a token that binds
+  the state and protection revisions. An exit is active while the path from the head climbs through retained commits
+  only to it (JI.26; no void is built). The entry then replays that retained suffix from the exit's own poses in the
+  jumbling engine under the pinned menu (FP.32), and an empty suffix (FP.31) keeps the exit's poses. Poses made under a
+  menu with another identity block are `KN1:input.identity_mismatch`, and the solved witness is not tried while an exit
+  is active. With no active exit the witness is the chronological literal retained path from the session's start to
+  the head, which must start at solved, replayed from solved. The entry enters only when the replay's labels are the
+  current labels, so labels alone, or a suffix that does not replay, are `KN5:input.jumble_on_labels_only`. At the
+  layer's bound of 64 chained derivations an entry replays the jumbling journal flat from solved instead. The crossing
+  commits with no preview: the revision's mode becomes `jumble_on`, its state revision advances and its digest is the
+  pose digest (`CommandLayer::jumbled` holds the poses), and like a commit it ends the pending preview and cancels the
+  jobs that read the replaced revision, except file jobs. With Jumble on, `operation.preview`, `operation.execute`,
   `twist.apply` and `jumble.on` itself are `KN5:input.retained_tool_needs_jumble_off`, while the protection, policy,
-  record and program rows stay. An undo of the entry returns to the exact Jumble off state before it, and a redo replays
-  the witness under a menu with the same identity block (`KN1:input.identity_mismatch` otherwise). The journal keeps the
-  crossing as the action kind `crossing` with its record (`Transaction::crossing`: the entrance, the identity block, and
-  the witness's letter count and `Digest<literal word>`), an 18th key on a crossing only. A reopen with the menu pinned
-  (`CommandLayer::open_with_menu`) replays the witness; without it the layer stays in read-only recovery before the
-  crossing. Tests: `c600-command/tests/jumble_on.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
+  record and program rows stay. An undo of the entry returns to the exact Jumble off state before it (JI.29), and a
+  redo makes the same entry under a menu with the same identity block (`KN1:input.identity_mismatch` otherwise), which
+  must reach the entry's recorded poses and record. The journal keeps the crossing as the action kind `crossing` with
+  its record (`Transaction::crossing`), an 18th key on a crossing only: the entrance, the identity block, and the
+  witness's letter count and `Digest<literal word>`; from an exit root also the exit's event (`crossing`) and the
+  SHA-256 of its canonical record (`exit`), with the suffix as the witness. A reopen with the menu pinned
+  (`CommandLayer::open_with_menu`) replays the entry and must make the same record; without it the layer stays in
+  read-only recovery before the crossing. Tests: `c600-command/tests/jumble_on.rs` and, for the entry from an exit
+  root, `c600-command/tests/jumble_off.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
   CT-JI-08).
 - `jumble.twist.menu` (JI.27, JI.35, FP.31, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live
   twist of an exact item of the pinned twist menu, committed at once with no preview. It needs the pinned menu
@@ -1518,7 +1556,8 @@ run or not applicable is no pass (PHS.63).
   reachable (no witnessed chain, or a displaced centre) `KN5:input.jumble_off_not_shown_reachable`; each names counts
   only and changes nothing. An exit commits with no preview and no protection gate: the labels' state of 600-cell-Full
   becomes the retained state, the revision's mode becomes `jumble_off`, its state revision advances and its digest is
-  the label digest. Like a commit it cancels the jobs that read the replaced revision, except file jobs. An undo
+  the label digest. Like a commit it cancels the jobs that read the replaced revision, except file jobs. While only
+  retained commits follow the exit it stays active, and `jumble.on` enters again from its poses (JI.26). An undo
   restores the exact poses before the exit and the entry's retained state; a redo runs the checkpoint again and must
   reach the same labels and record. The journal keeps the exit as the action kind `exit` (FP.31) with its record under
   `crossing`, an 18th key: the episode, the jumbling identity block, the journal's letter count and word digest, the
@@ -1538,13 +1577,12 @@ run or not applicable is no pass (PHS.63).
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
   budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
-- KN5 not built yet: the entry from an exit root (with an exit on the path from the start, `jumble.on` is
-  `KN5:input.jumble_on_labels_only`); KN5.26's admission matrix (L1, L2)
-  beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime proposal's block; a `file`
-  overlay without a granted file capability), L12 to L14, L16 and L17; the typed workspace rows and limits on a record's
-  payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built: callers
-  are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session
-  lock, so a second opener of a held session is refused with `KN4:busy.session_locked`.
+- KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
+  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
+  and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for
+  which `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the shell's and
+  LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session
+  is refused with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
@@ -1699,7 +1737,9 @@ run or not applicable is no pass (PHS.63).
   puzzle and model ID, the generator count and the independence bits, from which the decoder recomputes the digest,
   refusing what `Relation::from_parts` refuses. The codec cannot order a key's letters without the relation, so the
   run checks a decoded key against its pinned relation, and `LB1:input.key_contract_mismatch` is one of the
-  interpreter's own stop codes. The lengths that a frame's compressed
+  interpreter's own stop codes. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a value that
+  holds one is refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The
+  lengths that a frame's compressed
   words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
@@ -1713,9 +1753,10 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 17 of DET.65's 40 traces as `.6cs` programs on both
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 20 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication,
-  alias and pointwise-failure traces since LP2's `exact_mul` and `assert`); the protocol's bounds,
+  alias and pointwise-failure traces since LP2's `exact_mul` and `assert`, three generator traces since LP2's
+  `rng_init` and `rng_draw`); the protocol's bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
   or unknown, the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu
   word's, a menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
@@ -1731,9 +1772,9 @@ run or not applicable is no pass (PHS.63).
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 23 traces need
-  what the IR draft lacks: child scopes, more than one generator per run, text order, byte decoding, loops and flow
-  checks, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 20 traces need
+  what the IR draft lacks: child scopes, a call frame without a slot that holds bindings, text order, byte decoding,
+  loops and flow checks, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
@@ -1947,8 +1988,9 @@ run or not applicable is no pass (PHS.63).
   safe" through the tool's route (the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`
   are LP3's library rows over kernel rows, which need a snapshot read with an argument that no host answers yet);
   named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with
-  another field (its literal word over 100,000 letters goes in one word step and is refused whole); CT-LB3-01's
-  checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in admission.
+  another field (its literal word over 100,000 letters goes in one word step and is refused whole); the child's
+  own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
+  request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -2048,13 +2090,17 @@ run or not applicable is no pass (PHS.63).
     first letter and the empty word is admitted; prefix protection reads literal letters), CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
-    word its caller supplies; a nonzero ν only as the caller supplies it), CT-LB3-03 (heights (0,0) off the lattice in
+    word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
+    is nonzero fails the label checkpoint, and one whose ν is 0 passes it), CT-LB3-03 (heights (0,0) off the lattice in
     free mode; domain IDs by exact coset tests; Φ = 0 with height-2 pieces fails M8's sticker test), CT-LB3-05 with
     CT-BND-17 (M8's repair list at a named cap: its pairs in pinned order, then by cap; rows of five integers with no
     mark and no ranking field; every pair's delta read again from its own word, and y and z recomputed for one pair; a
     stopped list has no rows, and an empty list speaks only of its cap), CT-LB3-06 (prefix peak, excursion, tameness and
     the step flag recomputed apart from the kernel's batch; a false flag refuses nothing) and CT-LB3-07 (a named-word
-    check answers only its named word, with no word, outcome table or recommendation field).
+    check answers only its named word, with no word, outcome table or recommendation field; its correction part: a
+    correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
+    rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
+    or a recommendation, ranking or correction field).
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -2067,6 +2113,15 @@ run or not applicable is no pass (PHS.63).
     again inside Jumble, and the turn Jumble on replays shows only at pose level; each verdict refused at the other
     level with `KN1:input.level_not_held`; each level finds both clear and moving cases). M5's
     `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03.
+  - `c600-jumble-tool/tests/ct_lb3_04.rs`: CT-LB3-04 whole at C8's level, on LP2's `nu` and `correction_set_check`
+    rows (`c600_jumble::nu`, `c600_jumble::corrections`): ν undefined (`off_lattice`) at every off-lattice prefix of a
+    correction's word and after one letter outside K⁺, never stale, zero or partial; the C5 convention (r0 the least
+    element of order 5, r0^i of class i), correction 27's value read in r0, unchanged through its 45 values, JSON and
+    the label checkpoint's evidence, and the manual's rule "make correction 27 v times" checking to 0 in r0 only; a
+    planted nonzero fixed I_a coordinate (b5, on the I_b menu with I_a's identity written over its own) refused by the
+    row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
+    drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
+    unshipped id refused whole. No 600 Cell Script program calls the rows: the IR draft has no F2 or F5 number kinds.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2083,17 +2138,18 @@ run or not applicable is no pass (PHS.63).
     whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
     sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
     projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
-- Not built: Jumble on in the command layer and oracle equality against M5's fixtures (KN5's one implementation, LP2);
-  ν, the F2 and F5 number kinds and the correction catalogue (LP2), which CT-LB3-04, CT-LB3-01's reachable nonzero-ν
-  state and CT-LB3-07's correction part need; the producers of the rows J01 and J06 to J12 (J10 needs exposed-face
-  geometry, J12 needs ν); the jumbling library entries, which need menu words in the IR draft; CT-LB1-02's key half
-  (LG2.18); BM5's review records; a comparison of the posed arrays with the J1 fixture's later stages; the relationship
-  strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): a whole word's Net
-  and Strict protection at pose level for CT-LB3-06, and the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has
-  no swept preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also
-  waiting: the repair list through the command layer, with a job that names its cap (KN5), the built-in column's
-  repair-list exception in `c600-check`, the BND.2 wording of an empty list and no key that skips caps with an empty
-  list (LP2).
+- Not taken up yet from LP2: Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle
+  route through the command layer (pull requests 212, 217, 218 and 220), and menu words in the IR draft (pull request
+  210), for the jumbling library entries.
+- Not built: the producers of the rows J01 and J06 to J12 (J10 needs exposed-face geometry, J12 needs ν); the jumbling
+  library entries as language code, and LB3's ν and correction-set entry as language code, which needs the F2 and F5
+  number kinds in the IR draft; CT-LB1-02's key half (LG2.18); BM5's review records; a comparison of the posed arrays
+  with the J1 fixture's later stages; the relationship strip's data contract (chapter 06, RPI.65). Not taken up yet from
+  M8 (pull requests 176 and 182): a whole word's Net and Strict protection at pose level for CT-LB3-06, and the rim and
+  survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its
+  twists, and which engine names one is not settled. Also waiting: the repair list through the command layer, with a job
+  that names its cap (KN5), the built-in column's repair-list exception in `c600-check`, the BND.2 wording of an empty
+  list and no key that skips caps with an empty list (LP2).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

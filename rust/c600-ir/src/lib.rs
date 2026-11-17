@@ -142,6 +142,10 @@ pub enum Ty {
     /// least topological order of its trace under the independence relation a run pins, with that relation's header
     /// (LG2.23). It is never a `Word` or a `WordEqualityKey` and never converts to either.
     TraceEqualityKey,
+    /// DET.61's generator (LP2 draft): the owner of one stream's cursor, the key of its sealed seed and path and its
+    /// draw counter. `rng_init` starts one and `rng_draw` draws from it. A generator stays a bare value: no record,
+    /// collection, closure capture or type variable holds one, and it has no equality, key order or canonical form.
+    Generator,
     /// An element of the finite field F2 or F5, an exact number kind of KN3.2 and ADR-L03.2 (LP2 draft until the IR
     /// freeze, PHS.49). It has no literal (LG1.6): a value comes from `to_f2` or `to_f5` of an `Int`. It never widens
     /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
@@ -436,6 +440,9 @@ pub enum Prim {
     /// first with ordinary operations; the assertion is one step, and a false predicate ends the run with
     /// `LG4:input.pointwise_failed` before the guarded operation, which follows the assertion in the program.
     Assert,
+    /// `rng_draw(g)`: the next 256-bit block of the generator `g`'s stream as `Nat` (LP2 draft; DET.61). It advances
+    /// `g`'s own cursor, which a borrow of `g` shares and an alias of `g` copies.
+    RngDraw,
     // Finite fields (KN3.2; LP2 drafts until the IR freeze, PHS.49). They take operands of one field only and stay
     // apart from `ExactAdd`'s widening.
     /// `to_f2(n)`, `to_f5(n)`: the residue of the `Int` (or `Nat`) `n` modulo the field's prime, as a field element.
@@ -604,6 +611,12 @@ pub enum Expr {
     },
     RandomDraw,
     ReadClock,
+    /// `rng_init("segment", ...)` (LP2 draft; DET.61): a new generator on the run's granted seed and sealed stream
+    /// path, the run's assigned path followed by these literal segments. The path is fixed before execution, so the
+    /// same seed and path give the same stream again.
+    RngInit {
+        path: Vec<String>,
+    },
 }
 
 impl Expr {
@@ -619,7 +632,8 @@ impl Expr {
             | Expr::Declassified { .. }
             | Expr::FileRead { .. }
             | Expr::RandomDraw
-            | Expr::ReadClock => Vec::new(),
+            | Expr::ReadClock
+            | Expr::RngInit { .. } => Vec::new(),
             Expr::Let { value, body, .. } => vec![&**value, &**body],
             Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => vec![&**cond, &**then, &**els],
             Expr::Match { scrutinee, arms, default } => {
@@ -720,6 +734,13 @@ pub mod build {
     }
     pub fn exact_mul(a: Expr, b: Expr) -> Expr {
         prim(Prim::ExactMul, vec![a, b])
+    }
+    /// A generator on the run's stream path followed by `path` (LP2 draft; DET.61).
+    pub fn rng_init(path: &[&str]) -> Expr {
+        Expr::RngInit { path: path.iter().map(|s| s.to_string()).collect() }
+    }
+    pub fn rng_draw(g: Expr) -> Expr {
+        prim(Prim::RngDraw, vec![g])
     }
     pub fn to_field(field: Field, e: Expr) -> Expr {
         prim(Prim::ToField(field), vec![e])

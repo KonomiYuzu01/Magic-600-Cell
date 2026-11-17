@@ -17,7 +17,8 @@ const F2: Ty = Ty::Field(Field::F2);
 const F5: Ty = Ty::Field(Field::F5);
 /// What a goal, an evidence sink or a snapshot read's argument takes, in a mismatch (PHS.52, 16 November 2026).
 const PORTABLE: &str =
-    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, F2, F5 or a type variable";
+    "a type without Fn, Receipt, WordEqualityKey, TraceEqualityKey, CompressedWord, Generator, F2, F5 \
+     or a type variable";
 
 /// `x: Int` and `y: Int`.
 fn ints() -> Vec<c600_ir::Param> {

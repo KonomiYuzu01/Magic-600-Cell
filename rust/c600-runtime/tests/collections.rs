@@ -560,8 +560,8 @@ fn collection_types_round_trip_under_the_depth_bound() {
     };
     assert_eq!(written(codec::TYPE_DEPTH), Ok(nested(codec::TYPE_DEPTH)));
     assert!(written(codec::TYPE_DEPTH + 1).is_err(), "a set type nested beyond the bound");
-    // The first type tag after an F2 or F5 element's (LP2 draft, KN3.2), which follows a trace key's (LB1.10).
-    assert!(codec::decode_ty(&mut Dec::new(&[27])).is_err());
+    // The first type tag after a generator's (LP2 draft, DET.61), which follows an F2 or F5 element's (KN3.2).
+    assert!(codec::decode_ty(&mut Dec::new(&[28])).is_err());
 }
 
 const COLLECTIONS: &str = "\
