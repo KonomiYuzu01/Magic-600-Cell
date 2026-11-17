@@ -55,6 +55,22 @@ fn single_word(recipe: &Value) -> Option<Vec<i32>> {
     step.get("moves")?.as_array()?.iter().map(|m| m.as_i64().and_then(|m| i32::try_from(m).ok())).collect()
 }
 
+/// The number of moves in each step of a recipe made of plain word steps only, in order: every step is exactly
+/// `{"kind": "word", "moves": [...]}`, as `single_word` reads one. None for a recipe that is not a list, is empty, or
+/// has any other step: a star step, or a word step with another field, which the bridge's steps would not reproduce.
+/// A word step expands to its moves unchanged, so for a recipe the kernel expanded these are the lengths of the
+/// solver's word steps in its literal word ([`crate::bridge::Steps`]).
+pub fn word_steps(recipe: &Value) -> Option<Vec<usize>> {
+    let steps = recipe.as_array().filter(|steps| !steps.is_empty())?;
+    let length = |step: &Value| {
+        if step.as_object()?.len() != 2 || step.get("kind")?.as_str()? != "word" {
+            return None;
+        }
+        Some(step.get("moves")?.as_array()?.len())
+    };
+    steps.iter().map(length).collect()
+}
+
 /// `Digest<literal word>`: the SHA-256, in hex, of the letters as little-endian 32-bit integers. It is the oracle's
 /// `expansion_sha256` and the command layer's literal digest.
 pub fn literal_digest(letters: &[i32]) -> String {

@@ -82,10 +82,10 @@ presented-frame input to `present` that CT-ONE-29's shell-side refusal needs (st
 to the LP2 integrator the same day and not yet confirmed: `c600-check` rules that decide CT-LB3-01's checker half (typed
 checkpoint and sticker-test results, LB3.2) and CT-LB3-07's recommendation rule (LB3.5); a field in `c600-runtime`'s job
 options, so the runtime's child applies the built-in column itself; and a list of words in the IR, or KN2.10's
-streaming, for chunked recipes on the source route, both of which LP2 has since built (pull requests 176 and 170), so
-chunked transport on the source route is LP3's to build. LP2 built the built-in column as `c600_check::admit_built_in`
-(PR 170); the three built-in tools admit their entries with it, under class rows that are an LP3 draft until BND.57's
-rows by class exist as data.
+streaming, for chunked recipes on the source route, both of which LP2 has since built (pull requests 176 and 170).
+LP3 built chunked transport on the source route in the host and the bridge, which carry the solver's own word steps
+(C5, section 7). LP2 built the built-in column as `c600_check::admit_built_in` (PR 170); the three built-in tools admit
+their entries with it, under class rows that are an LP3 draft until BND.57's rows by class exist as data.
 
 Found with C6, the same day. The representations tool's six rows need command-layer work that KN5's one implementation
 now owns: a dispatch from a stored row to a built-in tool's entry, the runtime's view and workspace sinks as a job's
@@ -275,6 +275,13 @@ host ran it. Acceptance:
 - C5, the host's provenance reader (`rust/c600-tools`, `workspace`), built: the reader KN5's stage 3 asks of the host
   (PS1.16, KN5.26, BND.84, BND.85), which reads a record's block and admits a record draft with the boundary's preview
   admission over the blocks the host keeps; `c600-lp3-source` installs it, and C7's tests on the layer run with it.
+- C5, chunked transport on the source route (`rust/c600-tools`, `bridge`), built: of item 2, CT-LB2-03's chunking part
+  on the source route (LB2.3, LB2.4, LB1.11). For one run the host gives the bridge the solver's word steps of a recipe
+  of plain word steps only; a proposal of exactly that recipe's literal word longer than one chunk (100,000 letters)
+  goes in those steps in its one invocation, and every other proposal in one word step, so O01 to O07's invocations do
+  not change. Two full chunks preview on both hosts with the command route's digests and end state and commit as one
+  transaction; a word that is not the input literal is refused whole. A recipe with a star step, or with a word step
+  that has another field, keeps one word step.
 - C5, library (`rust/c600-library`), built: LB1's literal words as language code
   (LB1.1, LB1.8). The module `words` (`words.6cs`) exports a pure `power`; concatenation, inverse, conjugate and
   commutator are the IR draft's own operations (LG2.15); the row's catalogue entry is Rust data. Of the tests:
@@ -379,7 +386,7 @@ entirely. The milestone is in parentheses; "next" marks a part that can run now 
 | CT-LB1-06 | source | An owner answer on LG2.18's word keys: LB1.10's `trace-key/1` (section 10); the IR draft has collection types and word operations (pull request 176) | - |
 | CT-LB2-01 | source | The library's recipes and reports, which are entries over kernel rows: a query that takes a run's input as its argument, in the IR draft (LP2) | - |
 | CT-LB2-02 | source | The command layer's preview in Strict mode (KN5, LP2); the captured lock of LB2's "Net and Strict protection" and LB2.3's coverage report, library entries over kernel rows (section 7) | The Net half (C5); the Strict half at the kernel, on library-built words (C5 library) |
-| CT-LB2-03 | source | Named work-sheet reuse: LB7.2's work sheets (KN5, LP2); chunked transport on the source route (C5, next). Streaming words are built in the kernel (pull request 170) | The oversize refusal (C5); work sheets (C7) |
+| CT-LB2-03 | source | Named work-sheet reuse: LB7.2's work sheets (KN5, LP2) | The oversize refusal and the source route's chunked transport (C5); work sheets (C7) |
 | CT-LB2-04 | source | A host row that serves the kernel's `positions` (pull request 170) to a library entry (KN5, LP2) | - |
 | CT-LB3-01 | source | ν, for the reachable nonzero-ν lattice state (F2 and F5, LP2); for the checker half, typed checkpoint and sticker-test results in `c600-check` (LP2). The checkpoints, the sticker test and `import` are built (pull request 182) | The kernel half on M8's levels, but for the ν case (C8) |
 | CT-LB3-02 | source | Now (C8; M5's `rust/c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03) | - |
