@@ -12,6 +12,7 @@ use c600_command::{Caller, HeadlessFrames, Status};
 use c600_kernel::codes::RECIPE_SHAPE;
 use c600_kernel::json::{self, Value as Json};
 use c600_run::boundary::{Answer, Boundary, Store};
+use c600_run::interp::code::NONCANONICAL_VALUE;
 use c600_run::meter::Outcome;
 use c600_run::value::{equal, Value};
 use c600_runtime::{Config, Ended, FaultKind, Runtime, Stage};
@@ -156,34 +157,29 @@ fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_as_tool_
     assert_eq!((host.spawns(), host.child_id()), (0, None), "no child was started for another source");
 }
 
-/// Acceptance item 2, the one place the hosts differ. A word with a letter outside 1 to 1200 in magnitude has no
-/// transfer encoding (C3's wire: a canonical word), so on the process host its job is refused at the start stage
-/// with the interpreter's non-canonical value code before any child is started: no proposal, no invocation, no
-/// receipt, no change. On the in-process host the same word runs, the tool proposes it, and the command layer
-/// refuses it with the kernel's recipe-shape code. Either way the word previews nothing; these are O07's steps 0, 1,
-/// 2 and 8.
+/// Acceptance item 2, a word both hosts refuse alike. A word with a letter outside 1 to 1200 in magnitude has no
+/// transfer encoding (C3's wire: a canonical word), so on the process host the parent refuses its job before any child
+/// is started, and in process `run_in_process` refuses the run before the tool runs, with the same check. Both stop at
+/// the start stage with the interpreter's non-canonical value code: no proposal, no invocation, no receipt, no
+/// change. These are O07's steps 0, 1, 2 and 8.
 ///
 /// CT-LB2-03 (part: a word the transfer cannot carry is refused whole, never altered or split).
 #[test]
-fn process_host_refuses_a_word_with_no_transfer_encoding_at_the_start_stage() {
+fn both_hosts_refuse_a_word_with_no_transfer_encoding_at_the_start_stage() {
     let tool = Tool::full_600_cell().unwrap();
     let mut host = process_host();
-    for word in [&[0][..], &[1201], &[-1201], &[1, 0]] {
-        let (mut layer, _) = session("process");
-        let before = fingerprint(&layer);
-        let (ran, sent) = run_on(Some(&mut host), &tool, &mut layer, word, "start");
-        let stopped = ran.err().unwrap_or_else(|| panic!("{word:?} ran on the process host"));
-        assert!(stopped.cause.no_transfer(), "{word:?}: {:?}", stopped.cause);
-        let Cause::Refused(refused) = &stopped.cause else { unreachable!() };
-        assert_eq!(refused.stage, Stage::Start);
-        assert!(stopped.shell.is_empty() && sent.is_empty(), "{word:?}: nothing reached the boundary or the layer");
-        assert_eq!(fingerprint(&layer), before);
-
-        let (ran, sent) = run_on(None, &tool, &mut layer, word, "start");
-        assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed);
-        let [one] = &sent[..] else { panic!("{word:?}: one invocation in process") };
-        assert_eq!(one.receipt.status.code(), Some(RECIPE_SHAPE), "{word:?}");
-        assert_eq!(fingerprint(&layer), before);
+    for word in [&[0][..], &[1201], &[-1201], &[1, 0], &[i32::MIN], &[i32::MAX]] {
+        for on_process in [false, true] {
+            let (mut layer, _) = session("process");
+            let before = fingerprint(&layer);
+            let (ran, sent) = run_on(on_process.then_some(&mut host), &tool, &mut layer, word, "start");
+            let stopped = ran.err().unwrap_or_else(|| panic!("{word:?} ran (process host: {on_process})"));
+            assert!(stopped.cause.no_transfer(), "{word:?}: {:?}", stopped.cause);
+            let Cause::Refused(refused) = &stopped.cause else { unreachable!() };
+            assert_eq!(refused.stage, Stage::Start);
+            assert!(stopped.shell.is_empty() && sent.is_empty(), "{word:?}: nothing reached the boundary or the layer");
+            assert_eq!(fingerprint(&layer), before);
+        }
     }
     assert_eq!(host.spawns(), 0, "a job with no transfer encoding starts no child");
 }
@@ -216,9 +212,10 @@ fn read_json(path: &PathBuf) -> Json {
 /// Acceptance item 2, the runner's flag and records. `c600-lp3-source trace --host process` replays O06 (protected
 /// orbits, undo and redo) and O07 (invalid inputs) with the tool in the runtime's child: the traces are
 /// byte-identical to the in-process host's, the summary line, each case and each step given to a host name the host,
-/// and the receipts are the same but for O07's four words with no transfer encoding, which leave the kernel's
-/// refusal of the recipe and the start-stage refusal in the step record instead of a refusal receipt. A host name
-/// the runner does not know, and `--runtime` without the process host, are usage errors.
+/// and the receipts files are the same but for the host's name. On both hosts O07's four words with no canonical
+/// form are refused at the run's start stage: the step record keeps the kernel's refusal of the recipe and the
+/// start-stage refusal, and the step has no receipt. A host name the runner does not know, and `--runtime` without
+/// the process host, are usage errors.
 #[test]
 fn process_host_flag_replays_cases_with_the_same_traces_and_names_the_host_in_every_record() {
     let assets = repository().join("assets");
@@ -257,50 +254,50 @@ fn process_host_flag_replays_cases_with_the_same_traces_and_names_the_host_in_ev
     assert_eq!(in_traces, process_traces, "the traces differ between the hosts");
 
     let cases = |receipts: &Json| receipts.get("cases").and_then(Json::as_array).expect("cases").to_vec();
+    let codes = Json::Array(vec![Json::String(NONCANONICAL_VALUE.into())]).canonical();
     let mut start_refused = Vec::new();
     for (a, b) in cases(in_receipts).iter().zip(cases(process_receipts)) {
         let case = a.get("case_id").and_then(Json::as_str).unwrap().to_owned();
         assert_eq!(a.get("host").and_then(Json::as_str), Some(IN_PROCESS));
         assert_eq!(b.get("host").and_then(Json::as_str), Some(PROCESS));
-        assert_eq!(a.get("tail").map(Json::canonical), b.get("tail").map(Json::canonical));
+        for name in ["case_id", "receipts", "callers", "tail"] {
+            assert_eq!(a.get(name).map(Json::canonical), b.get(name).map(Json::canonical), "{case}: {name}");
+        }
         let list = |value: &Json, name: &str| value.get(name).and_then(Json::as_array).expect(name).to_vec();
-        let (mut ia, mut ib) = (0, 0);
-        for (ra, rb) in list(a, "steps").iter().zip(list(&b, "steps")) {
+        let (steps_a, steps_b) = (list(a, "steps"), list(&b, "steps"));
+        assert_eq!(steps_a.len(), steps_b.len(), "{case}");
+        for (ra, rb) in steps_a.iter().zip(&steps_b) {
             let field = |record: &Json, name: &str| record.get(name).cloned().unwrap_or_else(|| panic!("{name}"));
-            for name in ["index", "literal", "letters", "expansion_refusal", "draft", "case_draft", "rebased_result"] {
-                assert_eq!(field(ra, name).canonical(), field(&rb, name).canonical(), "{case}: {name}");
+            for name in [
+                "index",
+                "receipts",
+                "literal",
+                "letters",
+                "expansion_refusal",
+                "start_refusal",
+                "draft",
+                "case_draft",
+                "rebased_result",
+            ] {
+                assert_eq!(field(ra, name).canonical(), field(rb, name).canonical(), "{case}: {name}");
             }
             let given = !matches!(field(ra, "literal"), Json::Null);
             assert_eq!(field(ra, "host").as_str(), given.then_some(IN_PROCESS), "{case}");
-            assert_eq!(field(&rb, "host").as_str(), given.then_some(PROCESS), "{case}");
-            assert!(matches!(field(ra, "start_refusal"), Json::Null), "{case}: in process every word runs");
-            let (na, nb) = (field(ra, "receipts").as_i64().unwrap(), field(&rb, "receipts").as_i64().unwrap());
-            let (ea, eb) = (ia + na as usize, ib + nb as usize);
-            let (receipts_a, receipts_b) = (&list(a, "receipts")[ia..ea], &list(&b, "receipts")[ib..eb]);
-            let (callers_a, callers_b) = (&list(a, "callers")[ia..ea], &list(&b, "callers")[ib..eb]);
-            match field(&rb, "start_refusal") {
-                Json::Null => {
-                    let same = |x: &[Json], y: &[Json]| {
-                        x.len() == y.len() && x.iter().zip(y).all(|(x, y)| x.canonical() == y.canonical())
-                    };
-                    assert!(same(receipts_a, receipts_b), "{case}: the receipts differ between the hosts");
-                    assert!(same(callers_a, callers_b), "{case}: the callers differ between the hosts");
-                }
-                start => {
-                    // The in-process host's one receipt is the layer's refusal with the kernel's refusal of the recipe.
-                    assert_eq!((na, nb), (1, 0), "{case}");
-                    assert_eq!(start.get("stage").and_then(Json::as_str), Some("start"));
-                    let kernel = start.get("recipe_refusal").expect("the kernel's refusal of the recipe");
-                    let error = receipts_a[0].get("status").and_then(|status| status.get("error"));
-                    assert_eq!(error.map(Json::canonical), Some(kernel.canonical()), "{case}");
-                    start_refused.push((case.clone(), field(ra, "index").as_i64().unwrap()));
-                }
+            assert_eq!(field(rb, "host").as_str(), given.then_some(PROCESS), "{case}");
+            let start = field(ra, "start_refusal");
+            if !matches!(start, Json::Null) {
+                // No receipt: the run stopped before its proposal, and the record keeps the kernel's refusal.
+                assert_eq!(field(ra, "receipts").as_i64(), Some(0), "{case}");
+                assert_eq!(start.get("stage").and_then(Json::as_str), Some("start"), "{case}");
+                assert_eq!(start.get("codes").map(Json::canonical), Some(codes.clone()), "{case}");
+                let kernel = start.get("recipe_refusal").and_then(|kernel| kernel.get("code"));
+                assert!(kernel.and_then(Json::as_str).is_some_and(|code| code.starts_with("KN2:")), "{case}");
+                start_refused.push((case.clone(), field(ra, "index").as_i64().unwrap()));
             }
-            (ia, ib) = (ea, eb);
         }
     }
     let expected: Vec<(String, i64)> = [0, 1, 2, 8].iter().map(|&index| ("O07".to_owned(), index)).collect();
-    assert_eq!(start_refused, expected, "only O07's words with no transfer encoding differ");
+    assert_eq!(start_refused, expected, "only O07's words with no transfer encoding stop at the start stage");
 
     for arguments in [
         &["trace", "--assets", "x", "--host", "elsewhere", "a", "b"][..],

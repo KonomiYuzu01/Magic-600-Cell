@@ -47,10 +47,12 @@
 //!   named it. The producer is the tool's module digest and entry, author `built_in`, profile `solving`.
 //! - **Limits.** One run gets [`tool::LIMITS`]; the run's charges are information only.
 //! - **Expansion.** A recipe the kernel accepts expands to its letters. A recipe the kernel refuses that is exactly one
-//!   word step of integer moves fitting `i32` passes unchanged, so the command layer refuses the literal word as it
-//!   refuses the draft on the command route. Any other refused recipe has no literal word: the tool does not run, and
-//!   the step's record is the kernel's refusal. In O07 that is steps 3 to 7 and 9 (a fractional move, an empty
-//!   recipe, three malformed stars and a recipe whose second step is a malformed star); steps 0, 1, 2 and 8 pass.
+//!   word step of integer moves fitting `i32` passes unchanged as the tool's argument: a word with a letter outside 1
+//!   to 1200 in magnitude is refused at the run's start (see "Words with no transfer encoding"), and the command layer
+//!   refuses any other as it refuses the draft on the command route. Any other refused recipe has no literal word:
+//!   the tool does not run, and the step's record is the kernel's refusal. In O07 that is steps 3 to 7 and 9 (a
+//!   fractional move, an empty recipe, three malformed stars and a recipe whose second step is a malformed star);
+//!   steps 0, 1, 2 and 8 pass.
 //! - **Bridge.** The bridge passes a proposal's target text through as the row ID, so the command layer's own rules
 //!   decide: it refuses a runtime invocation of a commit or app row and any runtime invocation carrying a token
 //!   (ADR-L02, KN5.15). Its command IDs are `<run>/<n>`, `n` counting the bridge's invocations in the run; for a run
@@ -128,13 +130,14 @@
 //!   tool authoring, the built-in column stays the caller's ([`tool::Tool::new`]), and the process host sends only
 //!   the source whose digest is the manifest's. The child's own admission of a built-in tool waits for the API named
 //!   under "Built-in admission", and for a field in `c600-runtime`'s job options to carry it.
-//! - **Words with no transfer encoding** (`c600-runtime`'s draft 7, `PS1:input.noncanonical_value`). A word with a
-//!   letter outside 1 to 1200 in magnitude cannot cross to the child: the job is refused at the start stage and
-//!   nothing is proposed. In process the same word runs and the command layer refuses its proposal. The runner takes
-//!   the start-stage refusal as an `invalid-input` step only for a recipe the kernel already refused, and keeps the
-//!   kernel's refusal in the step record. In O07 that is steps 0, 1, 2 and 8: the traces are the same on both hosts,
-//!   and those four steps have no receipt on the process host. It is the one difference between the hosts' records
-//!   beyond the host's name.
+//! - **Words with no transfer encoding** (`PS1:input.noncanonical_value`; `c600-runtime`'s draft 7). A word with a
+//!   letter outside 1 to 1200 in magnitude cannot cross to the child, so on the process host the parent refuses the
+//!   job at the start stage, and in process [`process::run_in_process`] refuses the run there the same way, before
+//!   the tool runs. (`Loaded::run` itself refuses only a letter of magnitude above 1200: a letter of 0 is a grip or
+//!   item index in `c600-jumble-tool`'s reading of a `Word`.) On both hosts nothing is proposed. The runner takes the
+//!   start-stage refusal as an `invalid-input` step only for a recipe the kernel already refused, and keeps the
+//!   kernel's refusal in the step record. In O07 that is steps 0, 1, 2 and 8, which have no receipt on either host;
+//!   the hosts' traces and records are the same beyond the host's name.
 //! - **Host in the records** (plan section 7). `--host in-process|process`, in-process by default; `--runtime` names
 //!   the runtime's binary, by default `c600-runtime` beside the runner (packaging decides later). The summary has
 //!   `host` and `runtime_spawns`, each case of the summary `start_refused`, each case of the receipts file `host`,

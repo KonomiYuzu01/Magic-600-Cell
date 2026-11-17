@@ -2,7 +2,8 @@
 //!
 //! A twist's matrix is authoritative: it must be an exact rotation that fixes the grip's pole. Records of the
 //! families `menu`, `matrix` and `cayley` are read (selection 2 of the LP2 plan, section 11); another family, or a
-//! float request (`params.requested`), is an adapter error and no refusal.
+//! float request (`params.requested`), is an adapter error and no refusal. A twist's rotation plane, which a swept
+//! preview needs, is named exactly by the engine ([`rotation_plane`]).
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -10,7 +11,7 @@ use std::sync::Arc;
 use c600_kernel::json::Value;
 
 use crate::model::POLES;
-use crate::q5::{is_rotation, matmul, matrix_compact, matrix_from_json, matvec, transpose, Mat4, Vec4, Q5};
+use crate::q5::{dot, is_rotation, matmul, matrix_compact, matrix_from_json, matvec, rank, transpose, Mat4, Vec4, Q5};
 use crate::Context;
 
 /// Why a record or menu cannot be used.
@@ -108,6 +109,67 @@ impl Twist {
         }
         Ok(twist)
     }
+
+    /// The engine-named plane of the twist's rotation ([`rotation_plane`]); `None` for the identity.
+    pub fn plane(&self) -> Option<RotationPlane> {
+        rotation_plane(&self.matrix)
+    }
+}
+
+/// The plane a rotation turns, named by the engine so that its motion can be swept (render/1 section 4, RM.6).
+///
+/// Everything is exact, and the vectors are not normalized: |u| and |v| are square roots that Q(√5) need not hold.
+/// u and v span the plane that g moves, the image of g − I, and u·v = 0. With θ in (0, π] the angle g turns that plane
+/// by, cos θ = (tr g − 2)/2 and g u = cos θ·u + sin θ·(|u|/|v|)·v: the sweep R(φ) of render/1 section 4, built from
+/// u/|u| and v/|v|, turns u toward v and equals g at φ = θ. A display normalizes the vectors and takes θ = acos(cos θ).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RotationPlane {
+    /// The first nonzero column of g − I.
+    pub u: Vec4,
+    /// For θ < π, g u − cos θ·u, so g u = cos θ·u + v and |v| = sin θ·|u|. For a half-turn, the first later column of
+    /// g − I that is independent of u, made orthogonal to u: g alone does not fix a half-turn's direction, so this is
+    /// the engine's naming of it.
+    pub v: Vec4,
+    /// cos θ.
+    pub cos: Q5,
+}
+
+impl RotationPlane {
+    /// θ = π, so the sweep's direction is the engine's naming ([`RotationPlane::v`]).
+    pub fn is_half_turn(&self) -> bool {
+        self.cos == Q5::int(-1)
+    }
+}
+
+/// The engine-named plane of a rotation g that fixes a plane pointwise ([`RotationPlane`]). `None` for the identity,
+/// for a matrix that is not exactly a rotation, and for a rotation that turns two planes (g − I of rank 4), which has
+/// no one plane. A twist fixes its grip's pole, so every twist but the identity has a plane.
+pub fn rotation_plane(g: &Mat4) -> Option<RotationPlane> {
+    if !is_rotation(g) {
+        return None;
+    }
+    let one = Q5::one();
+    let columns: Vec<Vec4> =
+        (0..4).map(|j| std::array::from_fn(|i| if i == j { g[i][j].sub(&one) } else { g[i][j].clone() })).collect();
+    if rank(&columns.iter().map(|c| c.to_vec()).collect::<Vec<_>>()) != 2 {
+        return None;
+    }
+    let trace = (0..4).fold(Q5::zero(), |sum, i| sum.add(&g[i][i]));
+    let cos = trace.sub(&Q5::int(2)).mul(&Q5::of(1, 0, 2));
+    let first = columns.iter().position(|c| c.iter().any(|x| !x.is_zero()))?;
+    let u = columns[first].clone();
+    let v = if cos != Q5::int(-1) {
+        let gu = matvec(g, &u);
+        std::array::from_fn(|i| gu[i].sub(&cos.mul(&u[i])))
+    } else {
+        let uu = dot(&u, &u);
+        columns[first + 1..].iter().find_map(|c| {
+            let t = dot(c, &u).div(&uu)?;
+            let w: Vec4 = std::array::from_fn(|i| c[i].sub(&t.mul(&u[i])));
+            w.iter().any(|x| !x.is_zero()).then_some(w)
+        })?
+    };
+    Some(RotationPlane { u, v, cos })
 }
 
 /// Python truthiness of a JSON value, as the reference reads the `retained` flag.

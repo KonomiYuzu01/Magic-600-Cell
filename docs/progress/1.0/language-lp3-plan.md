@@ -201,7 +201,8 @@ acceptance check and stop condition.
   DET.65's 40 traces of CT-RTE-04 and the headless fault half of CT-RTE-10. C5's host bridge makes it a client of the
   command layer (ADR-L02). Under LP2's M2 meter (PR 170) three more traces run on both executors (`nested-calls`,
   `output-equality`, `output-retained-at-cutoff`): 11 of 40. CT-RTE-04's other 29 traces wait for the IR draft's
-  features (LP2).
+  features (LP2). A compressed word crosses as its parts, within one frame's bound on the lengths they derive (crate
+  draft 15, on LP2's pull request 185).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full;
   three more (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176),

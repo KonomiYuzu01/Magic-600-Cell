@@ -18,9 +18,9 @@
 //! receives only the fixed acknowledgement. The layer runs the preview job; the shell presents the built preview and commits it
 //! by the key route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo
 //! follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion
-//! with the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps. On the
-//! process host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is
-//! refused at the job's start stage: it is an `invalid-input` step with no invocation and no receipt.
+//! with the kernel's refusal; it and a literal word the layer refuses at admission are `invalid-input` steps. On either
+//! host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is refused
+//! at the run's start stage: it is an `invalid-input` step with no invocation and no receipt.
 //!
 //! The trace has `c600-lp3-oracle`'s form and candidate block, so the two routes' traces compare byte for byte.
 //! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the host the
@@ -48,7 +48,7 @@ use c600_runtime::Refused;
 use c600_tools::bridge::{base, word_args, Bridge};
 use c600_tools::case::{read_document, CASE_FORMAT};
 use c600_tools::expand::{expand, literal_digest, Expansion};
-use c600_tools::process::{runtime_beside, stage_name, Cause, ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::process::{run_in_process, runtime_beside, stage_name, Cause, ProcessHost, IN_PROCESS, PROCESS};
 use c600_tools::tool::{Tool, ROW, SOURCE};
 
 const TRACE_FORMAT: &str = "C600-ORACLE-TRACE-draft";
@@ -299,7 +299,7 @@ enum Outcome {
 struct Record {
     literal: Option<(String, usize)>,
     refusal: Option<Value>,
-    /// The start-stage refusal of a word with no transfer encoding, on the process host.
+    /// The start-stage refusal of a word with no transfer encoding, on either host.
     start: Option<Value>,
     draft: Option<String>,
     rebased: Option<String>,
@@ -309,8 +309,8 @@ struct Record {
 enum Proposed {
     /// The tool ran and its one proposal was sent; the layer's receipt.
     Sent(Receipt),
-    /// The process host refused the job at its start stage because the word has no transfer encoding. The tool did
-    /// not run and nothing reached the command layer.
+    /// The host refused the run at its start stage because the word has no transfer encoding. The tool did not run
+    /// and nothing reached the command layer.
     NoTransfer(Refused),
 }
 
@@ -359,39 +359,36 @@ impl Session<'_> {
     }
 
     /// Runs the tool on `word` on the session's host, through the bridge; returns the one invocation's receipt, or
-    /// the process host's start-stage refusal of a word with no transfer encoding.
+    /// the start-stage refusal of a word with no transfer encoding, which both hosts give before the run reaches the
+    /// layer.
     fn propose(&mut self, index: i64, word: &[i32]) -> Result<Proposed, Failure> {
         let run = format!("{}-{index}", self.case_id);
         let read = base(self.layer.revision());
         let mut store = RunStore::default();
         let mut bridge = Bridge::new(&mut self.layer, &run);
-        let ran = match self.process.as_deref_mut() {
-            None => self
-                .tool
-                .run(word, &run, &read, &mut bridge, &mut store)
-                .map_err(|refusal| disagree(format!("the tool's run was refused: {}", refusal.code)))?,
-            Some(host) => match host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store) {
-                Ok(ran) => ran,
-                Err(stopped) => {
-                    let reached = !bridge.sent.is_empty() || !stopped.shell.is_empty();
-                    let no_transfer = stopped.cause.no_transfer();
-                    return match stopped.cause {
-                        Cause::Refused(refused) if no_transfer && !reached => {
-                            self.start_refused += 1;
-                            Ok(Proposed::NoTransfer(refused))
-                        }
-                        Cause::Refused(refused) => Err(disagree(format!(
-                            "the runtime refused the tool's job at the {} stage: {}",
-                            stage_name(refused.stage),
-                            refused.codes.join(" ")
-                        ))),
-                        Cause::OtherSource => Err(disagree("the process host was given another source")),
-                        Cause::Lost(fault) => {
-                            Err(disagree(format!("the runtime's process was lost: {}", fault.code())))
-                        }
-                    };
-                }
-            },
+        let result = match self.process.as_deref_mut() {
+            None => run_in_process(self.tool, word, &run, &read, &mut bridge, &mut store),
+            Some(host) => host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
+        };
+        let ran = match result {
+            Ok(ran) => ran,
+            Err(stopped) => {
+                let reached = !bridge.sent.is_empty() || !stopped.shell.is_empty();
+                let no_transfer = stopped.cause.no_transfer();
+                return match stopped.cause {
+                    Cause::Refused(refused) if no_transfer && !reached => {
+                        self.start_refused += 1;
+                        Ok(Proposed::NoTransfer(refused))
+                    }
+                    Cause::Refused(refused) => Err(disagree(format!(
+                        "the host refused the tool's run at the {} stage: {}",
+                        stage_name(refused.stage),
+                        refused.codes.join(" ")
+                    ))),
+                    Cause::OtherSource => Err(disagree("the process host was given another source")),
+                    Cause::Lost(fault) => Err(disagree(format!("the runtime's process was lost: {}", fault.code()))),
+                };
+            }
         };
         let sent = std::mem::take(&mut bridge.sent);
         drop(bridge);

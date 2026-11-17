@@ -2,9 +2,10 @@
 //! keys, sets and maps round-trip with exactly one encoding each. Lists, sets and maps cross as results, arguments,
 //! a host call's type and its answer, a word key as an answer, and the run in the child equals the run in process.
 //! A set or map outside the canonical key order, a map entry that is not a `{ key, value }` record and a word key
-//! that is not freely reduced are refused on both sides. A compressed word has no transfer form until `c600-run`
-//! lends its parts: both executors refuse it as an argument, and as an answer it stops the child's run only (crate
-//! draft 15). Source and synthetic evidence only.
+//! that is not freely reduced are refused on both sides. A compressed word crosses as its parts (crate draft 15): it
+//! round-trips with one encoding, and as an answer the run in the child equals the run in process. A part list that
+//! `from_parts` refuses and compressed words above the bound on a payload's derived lengths are refused on both sides;
+//! above that bound, an answer stops the child's run only. Source and synthetic evidence only.
 
 mod support;
 
@@ -15,10 +16,12 @@ use c600_ir::{QTy, Ty};
 use c600_run::interp::code::NONCANONICAL_VALUE;
 use c600_run::interp::RowTariff;
 use c600_run::meter::Outcome;
-use c600_run::value::{entry, Compressed, List, Ratio, Value};
-use c600_runtime::codec::{self, Unencodable};
+use c600_run::value::{entry, Compressed, List, Part, Ratio, Value};
+use c600_runtime::codec::{self, Unencodable, COMPRESSED_LENGTH_BITS};
 use c600_runtime::wire::{Dec, Enc};
 use c600_runtime::{run_in_process, Ended, JobOptions, Runtime, Stage};
+use num_bigint::BigInt;
+use num_traits::{One, ToPrimitive, Zero};
 use support::{compare, header, job, ran, runtime, Session, WIDE};
 
 fn rat(num: i64, den: i64) -> Value {
@@ -27,6 +30,45 @@ fn rat(num: i64, den: i64) -> Value {
 
 fn key(letters: &[i32]) -> Value {
     Value::WordEqualityKey(letters.into())
+}
+
+/// The word `letters` as a compressed word of one part.
+fn leaf_word(letters: &[i32]) -> Arc<Compressed> {
+    Arc::new(Compressed::leaf(letters.into()))
+}
+
+/// The letter 1 doubled `n` times: a leaf, then each part joined to itself. By the codec's bound the derived lengths
+/// take (n + 1)(n + 2)/2 bits together, so 16,382 doublings are the most that cross.
+fn doublings(n: usize) -> Arc<Compressed> {
+    let mut parts = vec![Part::Leaf(Arc::from(vec![1]))];
+    parts.extend((0..n).map(|k| Part::Concat(k, k)));
+    Arc::new(Compressed::from_parts(parts).expect("a straight-line program"))
+}
+
+/// A compressed word's leaf as the encoding writes it.
+fn leaf(e: &mut Enc, letters: &[i32]) {
+    e.u8(0);
+    e.count(letters.len());
+    for l in letters {
+        e.i32(*l);
+    }
+}
+
+/// A compressed word's concatenation of parts `i` and `j` as the encoding writes it.
+fn concat(e: &mut Enc, i: u64, j: u64) {
+    e.u8(1);
+    e.u64(i);
+    e.u64(j);
+}
+
+/// The compressed word of `doublings(n)` as the encoding writes it.
+fn chain(e: &mut Enc, n: u64) {
+    e.u8(20);
+    e.count(n as usize + 1);
+    leaf(e, &[1]);
+    for k in 0..n {
+        concat(e, k, k);
+    }
 }
 
 /// Encodes `v`, decodes it and encodes it again: one encoding, and the same value back.
@@ -97,9 +139,105 @@ fn collections_round_trip_with_one_encoding() {
     assert_eq!(round_trip(&Value::set(vec![rat(2, 1), Value::int(2)])), round_trip(&Value::set(vec![Value::int(2)])));
 }
 
+/// A compressed word crosses as its parts (crate draft 15). Each shape that `concat` builds, and one that it never
+/// builds, round-trips with one encoding and comes back with the same parts, length, height, logical size and
+/// letters. Compressed words compare by their parts, so two words of one expansion keep apart and two words built
+/// alike share an encoding. The letter 1 doubled 16,382 times crosses; doubled once more, it is refused when encoded
+/// and when decoded. The bound is shared by a payload's words: two words of 11,583 doublings cross together, and two
+/// of 11,584 are refused.
+#[test]
+fn compressed_words_cross_as_their_parts() {
+    let bytes = |c: &Arc<Compressed>| codec::value_bytes(&Value::Compressed(c.clone()));
+    let back = |c: &Arc<Compressed>| {
+        let written = bytes(c).unwrap_or_else(|e| panic!("{e:?}"));
+        let Ok(Value::Compressed(got)) = codec::value_from_bytes(&written) else { panic!("a compressed word") };
+        assert_eq!(bytes(&got).unwrap(), written);
+        assert_eq!(got.part_list(), c.part_list());
+        assert_eq!((got.length(), got.height(), got.size()), (c.length(), c.height(), c.size()));
+        got
+    };
+
+    let a = leaf_word(&[1, -2]);
+    let b = leaf_word(&[3]);
+    let ab = Compressed::concat(&a, &b);
+    let words = vec![
+        leaf_word(&[]),
+        a.clone(),
+        b.clone(),
+        ab.clone(),
+        // A word joined to itself adds one part.
+        Compressed::concat(&a, &a),
+        Compressed::concat(&ab, &ab),
+        Compressed::concat(&ab, &a),
+        Compressed::concat(&Compressed::concat(&ab, &b), &ab),
+        // A shape `concat` never builds: the later part first.
+        Arc::new(
+            Compressed::from_parts(vec![
+                Part::Leaf(Arc::from(vec![1, -2])),
+                Part::Leaf(Arc::from(vec![3])),
+                Part::Concat(1, 0),
+            ])
+            .unwrap(),
+        ),
+    ];
+    let mut seen = BTreeSet::new();
+    for w in &words {
+        let got = back(w);
+        let length = w.length().to_usize().expect("a short word");
+        assert_eq!(got.expand(&BigInt::zero(), length), w.expand(&BigInt::zero(), length));
+        assert!(seen.insert(bytes(w).unwrap()), "{w:?} shares an encoding");
+    }
+    // `a` joined to another word with its parts is `a` joined to itself.
+    assert_eq!(bytes(&Compressed::concat(&a, &leaf_word(&[1, -2]))), bytes(&Compressed::concat(&a, &a)));
+    // One expansion with other parts is another value with another encoding.
+    let flat = Value::Compressed(leaf_word(&[1, -2, 3]));
+    let built = Value::Compressed(ab.clone());
+    assert!(!c600_run::value::equal(&flat, &built));
+    assert_ne!(codec::value_bytes(&flat), codec::value_bytes(&built));
+    let written = decoded(|e| {
+        e.u8(20);
+        e.count(3);
+        leaf(e, &[1, -2]);
+        leaf(e, &[3]);
+        concat(e, 0, 1);
+    });
+    assert_same(&written.unwrap(), &built);
+
+    // The bound: n doublings of one letter derive (n + 1)(n + 2)/2 bits by the codec's count.
+    let derived = |n: u64| (n + 1) * (n + 2) / 2;
+    assert!(derived(16_382) <= COMPRESSED_LENGTH_BITS && derived(16_383) > COMPRESSED_LENGTH_BITS);
+    let most = doublings(16_382);
+    let got = back(&most);
+    assert_eq!((got.length(), got.height()), (&(BigInt::one() << 16_382u32), 16_382));
+    assert_same(&decoded(|e| chain(e, 16_382)).unwrap(), &Value::Compressed(most));
+    let why = "compressed words above the transfer bound";
+    assert_eq!(bytes(&doublings(16_383)), Err(Unencodable(why)));
+    assert_eq!(decoded(|e| chain(e, 16_383)).err().as_deref(), Some(why));
+
+    // The bound holds for a payload, not for each word: a list of two words of 11,583 doublings crosses, and one of
+    // two words of 11,584, each within the bound alone, is refused when encoded and when decoded.
+    assert!(2 * derived(11_583) <= COMPRESSED_LENGTH_BITS && 2 * derived(11_584) > COMPRESSED_LENGTH_BITS);
+    let twice = |n: usize| Value::List(Arc::new(List::new(vec![Value::Compressed(doublings(n)); 2])));
+    let two = twice(11_583);
+    let written = codec::value_bytes(&two).unwrap_or_else(|e| panic!("{e:?}"));
+    assert_same(&codec::value_from_bytes(&written).unwrap(), &two);
+    assert_eq!(codec::value_bytes(&twice(11_584)), Err(Unencodable(why)));
+    let pair = |n: u64| {
+        decoded(move |e| {
+            e.u8(16);
+            e.count(2);
+            chain(e, n);
+            chain(e, n);
+        })
+    };
+    assert_same(&pair(11_583).unwrap(), &two);
+    assert_eq!(pair(11_584).err().as_deref(), Some(why));
+}
+
 /// A set or a map outside the canonical key order, a map entry that is not a `{ key, value }` record, a word key that
-/// is not freely reduced and a compressed word are refused when encoded. The same faults written by hand are refused
-/// when decoded, and their canonical controls decode.
+/// is not freely reduced and a compressed word with a letter out of range are refused when encoded. The same faults
+/// written by hand are refused when decoded, and so is a compressed word's part list that `from_parts` refuses. Their
+/// canonical controls decode.
 #[test]
 fn collections_outside_their_canonical_form_are_refused_on_both_sides() {
     let set = |items: Vec<Value>| Value::Set(Arc::new(List::new(items)));
@@ -120,10 +258,9 @@ fn collections_outside_their_canonical_form_are_refused_on_both_sides() {
         (key(&[1, -1]), "a word key that is not freely reduced"),
         (key(&[2, 1201]), "a letter outside 1 to 1200"),
         (key(&[i32::MIN, 1]), "a letter outside 1 to 1200"),
-        (
-            Value::Compressed(Arc::new(Compressed::leaf(Arc::from(vec![1, -2])))),
-            "a compressed word without a transfer form",
-        ),
+        // `leaf` checks no letters.
+        (Value::Compressed(leaf_word(&[1, 1201])), "a letter outside 1 to 1200"),
+        (Value::Compressed(Compressed::concat(&leaf_word(&[2]), &leaf_word(&[0]))), "a letter outside 1 to 1200"),
     ] {
         assert_eq!(codec::value_bytes(&v), Err(Unencodable(why)), "{v:?}");
     }
@@ -230,8 +367,89 @@ fn collections_outside_their_canonical_form_are_refused_on_both_sides() {
             }),
             "a length beyond the payload",
         ),
-        // The first tag after a map's: a compressed word's form will take it.
-        (decoded(|e| e.u8(20)), "an unknown value tag"),
+        // A compressed word: a part list that `from_parts` refuses, an unknown part tag, and a part count or a
+        // letter count that the payload cannot hold. A part takes at least nine bytes.
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(0);
+            }),
+            "a compressed word without parts",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(1);
+                e.u64(1);
+            }),
+            "a length beyond the payload",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(1);
+                e.u8(2);
+                e.u64(0);
+            }),
+            "an unknown part tag",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(1);
+                e.u8(0);
+                e.count(3);
+                e.i32(1);
+            }),
+            "a length beyond the payload",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(1);
+                leaf(e, &[1, -1201]);
+            }),
+            "a letter outside 1 to 1200",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(2);
+                leaf(e, &[1]);
+                concat(e, 0, 1);
+            }),
+            "a concatenation of a part not before it",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(2);
+                leaf(e, &[1]);
+                concat(e, u64::MAX, 0);
+            }),
+            "a concatenation of a part not before it",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(3);
+                leaf(e, &[]);
+                leaf(e, &[1]);
+                concat(e, 0, 1);
+            }),
+            "a concatenation of an empty part",
+        ),
+        (
+            decoded(|e| {
+                e.u8(20);
+                e.count(2);
+                leaf(e, &[1]);
+                leaf(e, &[2]);
+            }),
+            "a part the word does not reach",
+        ),
+        // The first tag after a compressed word's.
+        (decoded(|e| e.u8(21)), "an unknown value tag"),
     ] {
         assert_eq!(got.err().as_deref(), Some(why));
     }
@@ -368,7 +586,8 @@ fn field<'a>(v: &'a Value, name: &str) -> &'a Value {
 /// The collections cross the process in both directions: as a result, as arguments, as a snapshot read's type and
 /// as its answer. Each end equals the run in process, and each value the one built here. A word key has no output
 /// form (LG2.13), so neither executor takes it as an argument or a result: it crosses as a host's answer and comes
-/// back as a comparison.
+/// back as a comparison. A compressed word has none either: it crosses as an answer and comes back as its length,
+/// except above the bound on its derived lengths, where the child's run stops at the read (crate draft 15).
 #[test]
 fn collections_cross_the_process_unchanged() {
     let mut rt = runtime();
@@ -417,22 +636,29 @@ fn collections_cross_the_process_unchanged() {
     let (end, _) = run(&mut rt, "given", vec![key(&[1, 3])]);
     refused_at_start(end);
 
-    // Not yet: a compressed word has no transfer form. As an argument both executors refuse it at the start, the
-    // parent before anything is sent (with its own detail).
-    let compressed = Value::Compressed(Arc::new(Compressed::leaf(Arc::from(vec![1, -2]))));
-    let sized = job(&source, "sized", vec![compressed.clone()], JobOptions::new(WIDE));
-    refused_at_start(run_in_process(&sized, &mut Session::default(), None));
-    refused_at_start(rt.run(&sized, &mut Session::default(), None).unwrap_or_else(|f| panic!("{f}")));
-    // As a host's answer it reaches the run in process, while the child's run stops at the read: a known
-    // difference (crate draft 15).
+    // A compressed word crosses as its parts (crate draft 15). As an argument it now reaches the child, which refuses
+    // it as the run in process does, with the same detail: it has no output form.
+    let compressed = Value::Compressed(leaf_word(&[1, -2]));
+    let (end, _) = run(&mut rt, "sized", vec![compressed.clone()]);
+    refused_at_start(end);
+    // As a host's answer it reaches both runs, which end alike.
     let size = job(&source, "size", vec![], JobOptions::new(WIDE));
+    let (end, _) =
+        compare(&mut rt, &size, |s: &mut Session| s.snapshots.push(("compressed", tariff, compressed.clone())));
+    assert_same(ran(&end).value.as_ref().expect("a value"), &Value::int(2));
+    // Above the bound on its derived lengths, the answer reaches the run in process, while the parent answers the
+    // child's call with `PS1:input.noncanonical_value`: a known difference (crate draft 15).
+    let over = Value::Compressed(doublings(16_383));
+    // The result bound must cover the word's logical size, which counts every part's stored length (LP2's pull request
+    // 186), about 17 MB here. One as large as `WIDE`'s memory budget would cut the read off before its answer.
+    let wide = RowTariff { kernel_cost: 5, result_bound: 1 << 30 };
     let session = || {
         let mut s = Session::default();
-        s.snapshots.push(("compressed", tariff, compressed.clone()));
+        s.snapshots.push(("compressed", wide, over.clone()));
         s
     };
     let here = run_in_process(&size, &mut session(), None);
-    assert_same(ran(&here).value.as_ref().expect("a value"), &Value::int(2));
+    assert_same(ran(&here).value.as_ref().expect("a value"), &Value::Int(Arc::new(BigInt::one() << 16_383u32)));
     let there = rt.run(&size, &mut session(), None).unwrap_or_else(|f| panic!("{f}"));
     let summary = &ran(&there).summary;
     assert_eq!((summary.outcome, summary.code), (Outcome::Error, Some(NONCANONICAL_VALUE)));

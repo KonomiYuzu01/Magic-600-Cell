@@ -569,7 +569,9 @@ fn words_in(text: &str) -> Vec<Vec<i32>> {
     while let Some(at) = rest.find("word[") {
         let tail = &rest[at + 5..];
         let close = tail.find(']').expect("a closed word literal");
-        found.push(tail[..close].split(", ").map(|letter| letter.parse().expect("a letter")).collect());
+        let letters = &tail[..close];
+        let parsed = letters.split(", ").filter(|_| !letters.is_empty()).map(|l| l.parse().expect("a letter"));
+        found.push(parsed.collect());
         rest = &tail[close..];
     }
     found
@@ -591,7 +593,8 @@ fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
     assert!(matches!(model.status(&id), Some(view::ViewStatus::Empty { .. })), "{:?}", model.status(&id));
     assert!(layer.preview().is_none());
 
-    for (case, word) in [("admitted", &[1, -2][..]), ("repeated letters", &[5, 5, -3]), ("refused", &[0, -2])] {
+    // The layer refuses the empty word: a word step with no move has the wrong recipe shape.
+    for (case, word) in [("admitted", &[1, -2][..]), ("repeated letters", &[5, 5, -3]), ("refused", &[])] {
         let (mut layer, _) = session();
         let ran = name_word(&mut layer, word, "bnd-19");
         let [shown] = &ran.shell[..] else { panic!("{case}: one proposal") };
