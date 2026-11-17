@@ -128,9 +128,9 @@ fn committed(receipt: &Receipt) -> bool {
 
 /// Finding B7 (class B, the replay of stored data; attacker 2). Rule, under the reading that the boundary holds
 /// against stored data: only the solver's own action commits (KN5.11 [B]), a runtime caller reaches no commit row
-/// (KN5.17 [B]), the active protection gates every commit (ONE.78 [B]) and a release needs the solver's confirmation
-/// (ONE.47 [B], LI.26); so a journal that records the contrary is not the record of a session and does not reopen
-/// intact. The replay derives a stored commit under no protection and compares none of the stored caller, row, command
+/// (KN5.15 [D]), the active protection gates every commit (KN5.16 [B], ONE.78 [B]) and a release needs the solver's
+/// confirmation (LI.26, `KN5:input.confirmation_required`); so a journal that records the contrary is not the record
+/// of a session and does not reopen intact. The replay derives a stored commit under no protection and compares none of the stored caller, row, command
 /// or confirmation (`c600-command/src/layer.rs`, `replay` and `agrees`).
 ///
 /// Three edits of an honest journal, each framed as the store frames it:
