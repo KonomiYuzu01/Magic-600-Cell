@@ -1127,28 +1127,53 @@ fn ct_det_27_one_invoke_admission_checks_kernel_then_memory_then_output() {
     }
 }
 
-/// CT-DET-28 (synthetic, part: exact integer addition and text equality on RT1; not run: multiplication, which the
-/// surface has no operation for, and loop tests and assertions, which the IR has no construct for (their abstract rows
-/// replay in `tests/traces.rs`)): an addition's kernel cost and result reservation follow its operands' bit lengths,
-/// whatever their size, and the reservation shrinks to the result; text equality is priced on both scalar lengths.
+/// CT-DET-28 (synthetic, part: exact integer addition and multiplication (the LP2 draft `exact_mul`), pointwise
+/// assertions (the LP2 draft `assert`) and text equality on RT1; not run: loop tests, which the IR has no construct
+/// for (their abstract rows replay in `tests/traces.rs`)): an addition's or a product's kernel cost and result
+/// reservation follow its operands' bit lengths, whatever their size, and the reservation shrinks to the result; an
+/// assertion is one step after its predicate, and a false one ends the run there with its error code (DET.55); text
+/// equality is priced on both scalar lengths.
 #[test]
 fn ct_det_28_arithmetic_and_text_work_use_operand_sizes() {
     let loaded = build(&[&source(
         "",
         "export fn add(x: Int, y: Int) -> Int effects [] {\n    return exact_add(x, y);\n}\n\n\
+         export fn mul(x: Int, y: Int) -> Int effects [] {\n    return exact_mul(x, y);\n}\n\n\
+         export fn check(n: Nat) -> Unit effects [] {\n    return assert(exact_less(n, 5));\n}\n\n\
          export fn same(a: Text, b: Text) -> Bool effects [] {\n    return exact_eq(a, b);\n}\n",
     )]);
     for (a_bits, b_bits) in [(1u128, 1u128), (8, 9), (64, 1), (65, 64), (1000, 8), (4096, 4096), (20_000, 3)] {
         let a = BigInt::from(1) << (a_bits as usize - 1);
         let b: BigInt = (BigInt::from(1) << (b_bits as usize)) - 1u8;
         assert_eq!((a.bits() as u128, b.bits() as u128), (a_bits, b_bits));
-        let r = run(&loaded, "add", vec![Value::int(a.clone()), Value::int(b.clone())], &Options::new(WIDE));
-        assert_eq!(output(&r), format!("{{\"int\":\"{}\"}}\n", &a + &b));
-        let row = r.summary.rows.iter().find(|row| row.at.ends_with("#exact_add")).expect("the addition");
-        let (cost, reservation) = Tariffs::TEST.integer(IntOp::Add, a_bits, b_bits);
-        let size = Value::int(&a + &b).size();
-        assert_eq!((row.kernel_cost, row.memory, row.released), (cost, reservation, reservation - size), "{a_bits}");
+        for (entry, op, result) in [("add", IntOp::Add, &a + &b), ("mul", IntOp::Mul, &a * &b)] {
+            let r = run(&loaded, entry, vec![Value::int(a.clone()), Value::int(b.clone())], &Options::new(WIDE));
+            assert_eq!(output(&r), format!("{{\"int\":\"{result}\"}}\n"));
+            let row = r.summary.rows.iter().find(|row| row.at == format!("m.{entry}:root#exact_{entry}"));
+            let row = row.expect("the operation");
+            let (cost, reservation) = Tariffs::TEST.integer(op, a_bits, b_bits);
+            let size = Value::int(result).size();
+            let charged = (row.kernel_cost, row.memory, row.released);
+            assert_eq!(charged, (cost, reservation, reservation - size), "{entry} {a_bits} {b_bits}");
+        }
     }
+    // The predicate's operations, then the assertion's one step with no memory, which releases its operand, the
+    // comparison's byte. A false predicate stops the run after that step, before anything else, and the cleanup
+    // releases the operand instead.
+    let held = run(&loaded, "check", vec![Value::int(4)], &Options::new(WIDE));
+    let failed = run(&loaded, "check", vec![Value::int(5)], &Options::new(WIDE));
+    for (r, released) in [(&held, 1), (&failed, 0)] {
+        let i = r.summary.rows.iter().position(|row| row.at == "m.check:root#assert").expect("the assertion");
+        let row = &r.summary.rows[i];
+        assert_eq!((row.steps, row.kernel_cost, row.memory, row.output, row.released), (1, 0, 0, 0, released));
+        assert_eq!(r.summary.rows[i - 1].at, "m.check:0#exact_less", "the predicate comes first");
+        assert_eq!(r.summary.live_after_cleanup, 0);
+    }
+    assert_eq!(output(&held), "null\n");
+    assert_eq!((failed.summary.outcome, failed.summary.code), (Outcome::Error, Some(meter::code::POINTWISE_FAILED)));
+    assert_eq!(failed.summary.rows.last().map(|row| row.at.as_str()), Some("m.check:root#assert"));
+    assert_eq!(failed.summary.stop.as_ref().map(|s| s.at.as_str()), Some("m.check:root#assert"));
+    assert!(failed.output.is_none(), "no result after a failed assertion");
     let text = run(&loaded, "same", vec![Value::text("😀é"), Value::text("abc")], &Options::new(WIDE));
     let row = text.summary.rows.iter().find(|row| row.at.ends_with("#exact_eq")).expect("the comparison");
     assert_eq!(row.kernel_cost, 5, "two scalars and three");

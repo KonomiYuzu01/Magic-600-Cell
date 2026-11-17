@@ -331,6 +331,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (`c600-syntax/tests/end_tests.rs`).
 - Trace keys (LP2 draft). `TraceEqualityKey` is a type, and `trace_key` is a reserved operation called like a
   function (`c600-syntax/tests/conformance_lg2.rs`).
+- Exact products and assertions (LP2 drafts). `exact_mul(a, b)` multiplies two exact numbers, widened as
+  `exact_add`'s operands are; a `Budget` operand is `LG2:type.mismatch`, since the draft multiplies numbers, not
+  costs. `assert(p)` is `Unit`, and its predicate is an exact `Bool`, as an `if` condition is (LG2.20)
+  (`c600-check/tests/mismatch.rs`, `c600-check/tests/exactness.rs`).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -340,15 +344,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 11 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 17 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, generator, the three display
-  traces, output-equality and output-retained-at-cutoff. Each frozen row and each cutoff (dimension, phase, scope, denied row,
-  source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28
-  (synthetic), 29, 31 and 32, all in part, on RT1 only.
-- The other 29 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
-  aliased or returned in a call (4), a `let` released before its alias (2), text order (1), byte decoding (2), loops,
-  assertions and flow checks (3), exact multiplication (3), streaming cursors (3) and display form 2 (5). They still
-  replay through the meter.
+  traces, output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release,
+  alias-still-live and pointwise-failure. Each frozen row and each cutoff or stop (dimension or phase, scope, denied
+  row, source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27,
+  28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest.
+- The other 23 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
+  aliased or returned in a call (4), text order (1), byte decoding (2), loops and flow checks (2), streaming cursors
+  (3) and display form 2 (5). They still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -358,6 +362,13 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (DET.58), each output unit as one fused row of encoding work, buffer and bytes (DET.56, DET.59), a preview
   request's priced `encode` pass before `invoke`, the generator `sha256-counter-draft-1` (DET.61) and `display_if`
   charging the selected branch only (DET.64). A stop names the call path, the operation and its source range.
+- Exact products and assertions (LP2 drafts). An integer `exact_mul` charges the tariffs' integer product: under
+  `Tariffs::TEST` one kernel unit per pair of eight-bit limbs, and a reservation of one byte plus the operands' bits
+  in bytes (DET.57). A `Rat` or `Q5` product charges one unit per pair of the operands' widened bytes and reserves
+  what the unreduced product could need; the reduced product settles the reservation. `assert` is one step with no
+  memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
+  phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
+  `det65_programs.rs`).
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
   forms. Deep values compare, encode and drop without recursion. A word literal's letters are generators, of
@@ -1148,8 +1159,8 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 11 of DET.65's 40
-    traces as programs and lists why the other 29 do not run.
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 17 of DET.65's 40
+    traces as programs and lists why the other 23 do not run.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
@@ -1670,8 +1681,9 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
-  executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 17 of DET.65's 40 traces as `.6cs` programs on both
+  executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication,
+  alias and pointwise-failure traces since LP2's `exact_mul` and `assert`); the protocol's bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
   or unknown, the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu
   word's, a menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
@@ -1687,10 +1699,9 @@ run or not applicable is no pass (PHS.63).
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 29 traces need
-  what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
-  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
-  `lp1-exec-region-draft-1` (LP2).
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 23 traces need
+  what the IR draft lacks: child scopes, more than one generator per run, text order, byte decoding, loops and flow
+  checks, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
