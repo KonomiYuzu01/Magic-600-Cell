@@ -61,9 +61,10 @@ GUARDED_SLUGS = {
 RESERVED_NAMES = (
     ("rust/c600-display/src/error.rs", "PLAN_LIMIT", "KN7:budget.display_plan_limit"),
 )
-# Codes LP3's command layer names as drafts that chapter 13 does not register yet, by path (PHS.53: the command table's
-# drafts settle at LP3; a new registry row is a change to chapter 13, PHS.52). ERR.1 is not run for them, and the list is
-# exact: a code that becomes registered or leaves its source fails the scan until the list follows.
+# Codes that LP3's command layer and LP2's session store name as drafts, which chapter 13 does not register yet, by
+# path (PHS.53: the command table's drafts settle at LP3; a new registry row is a change to chapter 13, PHS.52). ERR.1
+# is not run for them, and the list is exact: a code that becomes registered or leaves its source fails the scan until
+# the list follows.
 UNREGISTERED_DRAFTS = frozenset({
     ("rust/c600-command/src/layer.rs", "KN2:consistency.star_certificate"),
     ("rust/c600-command/src/receipt.rs", "KN5:input.unknown_row"),
@@ -71,6 +72,7 @@ UNREGISTERED_DRAFTS = frozenset({
     ("rust/c600-command/src/receipt.rs", "KN5:input.row_not_built"),
     ("rust/c600-command/src/receipt.rs", "KN5:input.overlay_row_conflict"),
     ("rust/c600-command/src/receipt.rs", "KN4:input.session_exists"),
+    ("rust/c600-session/src/types.rs", "KN4:busy.session_locked"),
 })
 
 CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2,3}[0-9]?):([a-z_]+)\.([a-z0-9_]+)(?![A-Za-z0-9_])")
@@ -525,10 +527,10 @@ class ScanTests(unittest.TestCase):
         the workspace members' sources name in a string literal is an active registry row with its own prefix, and no
         literal drops a registered code's prefix. This is also CT-ERR-04's emitted half (forwarded codes keep their
         full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). Not run either: ERR.1 for the
-        six drafts LP3's command layer names that chapter 13 does not register (UNREGISTERED_DRAFTS, a finding for
-        the owner under PHS.52); the list is exact, and the same code at another path fails. Controls: an
-        unregistered code, a reserved code, a retired code, a short form and a draft outside its path fail; a code in
-        a comment is not read."""
+        seven drafts that LP3's command layer and LP2's session store name and chapter 13 does not register
+        (UNREGISTERED_DRAFTS, a finding for the owner under PHS.52); the list is exact, and the same code at another
+        path fails. Controls: an unregistered code, a reserved code, a retired code, a short form and a draft outside
+        its path fail; a code in a comment is not read."""
         self.assertEqual(emitted_problems(self.sources, self.registry), [])
         self.assertEqual(draft_problems(self.sources, self.registry), [])
         self.assertGreaterEqual(len({e.code for e in self.emitted}), 25)
