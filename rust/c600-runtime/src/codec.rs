@@ -13,7 +13,10 @@
 //! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15). A menu word
 //! (LB1.8; LP2 draft) crosses with the identity block of its alphabet, and a pinned menu alphabet with its inverse
 //! items, so the receiver checks them as the interpreter does. An end test's verdict (LB3.2; LP2 draft) crosses as
-//! its test's and its outcome's indices in their declared orders, and its type with the test's index.
+//! its test's and its outcome's indices in their declared orders, and its type with the test's index. A trace key
+//! (LB1.10; LP2 draft) crosses with its header and its letters, and a pinned trace relation with its contract, its
+//! identity block, its generator count and its independence bits; the receiver recomputes the relation's digest, and
+//! the run checks a key against its relation, since the codec cannot order letters without one.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -27,6 +30,7 @@ use c600_run::menu::{MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
+use c600_run::trace::{Relation, TraceHeader, TraceKey};
 use c600_run::value::{entry, value_order, Closure, Compressed, List, Part, Quad, Ratio, Record, Text, Value};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
@@ -73,6 +77,9 @@ mod tag {
     /// LP2's draft end-test verdict (LB3.2): the test's index in `EndTest::ALL`, then the outcome's in
     /// `EndTestOutcome::ALL`.
     pub const END_TEST: u8 = 22;
+    /// LP2's draft trace key (LB1.10): its header, the puzzle, the model ID, the generator count, the key kind, the
+    /// independence contract and the 32 digest bytes, then its letters as a word's.
+    pub const TRACE_KEY: u8 = 23;
 }
 
 /// The tags of a compressed word's parts.
@@ -140,6 +147,57 @@ fn decode_menu_letters(d: &mut Dec) -> Result<Vec<[u32; 2]>, Malformed> {
         return Err(Malformed::new("a menu index of 600 or more"));
     }
     Ok(letters)
+}
+
+/// A trace key's header (LB1.10, LG2.23; LP2 draft): its text fields, refused when one is empty, as a relation's
+/// header never is, and its generator count and digest.
+fn encode_trace_header(h: &TraceHeader, e: &mut Enc) -> Result<(), Unencodable> {
+    if [&h.puzzle, &h.model_id, &h.key, &h.contract].iter().any(|t| t.is_empty()) {
+        return Err(Unencodable("a trace key header with an empty field"));
+    }
+    e.text(&h.puzzle);
+    e.text(&h.model_id);
+    e.u32(h.generators);
+    e.text(&h.key);
+    e.text(&h.contract);
+    e.bytes(&h.digest);
+    Ok(())
+}
+
+fn decode_trace_header(d: &mut Dec) -> Result<TraceHeader, Malformed> {
+    let puzzle = d.text()?.to_string();
+    let model_id = d.text()?.to_string();
+    let generators = d.u32()?;
+    let key = d.text()?.to_string();
+    let contract = d.text()?.to_string();
+    let digest: [u8; 32] =
+        d.bytes()?.try_into().map_err(|_| Malformed::new("a relation digest of other than 32 bytes"))?;
+    if [&puzzle, &model_id, &key, &contract].iter().any(|t| t.is_empty()) {
+        return Err(Malformed::new("a trace key header with an empty field"));
+    }
+    Ok(TraceHeader { puzzle, model_id, generators, key, contract, digest })
+}
+
+/// A pinned trace relation (LB1.10; LP2 draft): its independence contract, its identity block's puzzle and model ID,
+/// its generator count, then its independence bits as `Relation::bits` gives them. The digest is not sent.
+pub fn encode_relation(r: &Relation, e: &mut Enc) {
+    let h = r.header();
+    e.text(&h.contract);
+    e.text(&h.puzzle);
+    e.text(&h.model_id);
+    e.u32(h.generators);
+    e.bytes(r.bits());
+}
+
+/// Reads a pinned trace relation and refuses one that `Relation::from_parts` refuses, with its reason. The digest is
+/// recomputed from what was read.
+pub fn decode_relation(d: &mut Dec) -> Result<Relation, Malformed> {
+    let contract = d.text()?.to_string();
+    let puzzle = d.text()?.to_string();
+    let model_id = d.text()?.to_string();
+    let generators = d.u32()?;
+    let bits = d.bytes()?.to_vec();
+    Relation::from_parts(&contract, &puzzle, &model_id, generators, bits).map_err(|why| Malformed::new(why.to_string()))
 }
 
 /// A pinned menu alphabet (LB1.8, LB1.9; LP2 draft): its identity block, its cap count, then the item count and the
@@ -388,6 +446,17 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(end_test_code(*test));
                 e.u8(verdict_code(*outcome));
             }
+            Value::TraceEqualityKey(k) => {
+                if !canonical_word(k.letters()) {
+                    return Err(Unencodable("a letter outside 1 to 1200"));
+                }
+                e.u8(tag::TRACE_KEY);
+                encode_trace_header(k.header(), e)?;
+                e.count(k.letters().len());
+                for l in k.letters() {
+                    e.i32(*l);
+                }
+            }
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -568,6 +637,10 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 Value::menu_word(&identity, &letters).ok_or_else(|| Malformed::new("a menu index of 600 or more"))?
             }
             tag::END_TEST => Value::EndTest(end_test_from(d.u8()?)?, verdict_from(d.u8()?)?),
+            tag::TRACE_KEY => {
+                let header = Arc::new(decode_trace_header(d)?);
+                Value::TraceEqualityKey(Arc::new(TraceKey::from_parts(header, &decode_letters(d)?)))
+            }
             tag::WORD_KEY => {
                 let letters = decode_letters(d)?;
                 if !freely_reduced(&letters) {
@@ -914,6 +987,8 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             e.u8(24);
             e.u8(end_test_code(*test));
         }
+        // LP2's draft trace key (LB1.10).
+        Ty::TraceEqualityKey => e.u8(25),
     }
     Ok(())
 }
@@ -996,6 +1071,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         22 => Ty::CompressedWord,
         23 => Ty::MenuWord,
         24 => Ty::EndTest(end_test_from(d.u8()?)?),
+        25 => Ty::TraceEqualityKey,
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }
@@ -1323,8 +1399,9 @@ fn outcome_from(code: u8) -> Result<Outcome, Malformed> {
 pub const PHASES: [&str; 6] = ["steps", "kernel_cost", "memory", "output", "effect", "interruption"];
 
 /// The stop codes the meter and the interpreter raise themselves. A host adds its own refusal codes. LP2's menu words
-/// (LB1.8; draft) add the code of a letter outside the pinned menu.
-pub const STATIC_CODES: [&str; 16] = [
+/// (LB1.8; draft) add the code of a letter outside the pinned menu, and its trace keys (LB1.10; draft) the code of a
+/// key under another header than the pinned relation's.
+pub const STATIC_CODES: [&str; 17] = [
     meter::code::STEPS,
     meter::code::KERNEL_COST,
     meter::code::MEMORY,
@@ -1341,6 +1418,7 @@ pub const STATIC_CODES: [&str; 16] = [
     interp::code::NONCANONICAL_VALUE,
     interp::code::HOST_EXHAUSTED,
     interp::code::INCOMPATIBLE_ALPHABET,
+    interp::code::KEY_CONTRACT_MISMATCH,
 ];
 
 /// The stop codes a summary from the child may name: the static ones and the codes this run's host returned. A code

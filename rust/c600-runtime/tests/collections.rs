@@ -448,8 +448,8 @@ fn collections_outside_their_canonical_form_are_refused_on_both_sides() {
             }),
             "a part the word does not reach",
         ),
-        // The first tag after an end test's verdict (LP2 draft, LB3.2), which follows a menu word's (LB1.8).
-        (decoded(|e| e.u8(23)), "an unknown value tag"),
+        // The first tag after a trace key's (LP2 draft, LB1.10), which follows an end test's verdict (LB3.2).
+        (decoded(|e| e.u8(24)), "an unknown value tag"),
     ] {
         assert_eq!(got.err().as_deref(), Some(why));
     }
@@ -560,8 +560,8 @@ fn collection_types_round_trip_under_the_depth_bound() {
     };
     assert_eq!(written(codec::TYPE_DEPTH), Ok(nested(codec::TYPE_DEPTH)));
     assert!(written(codec::TYPE_DEPTH + 1).is_err(), "a set type nested beyond the bound");
-    // The first type tag after an end test's verdict (LP2 draft, LB3.2), which follows a menu word's (LB1.8).
-    assert!(codec::decode_ty(&mut Dec::new(&[25])).is_err());
+    // The first type tag after a trace key's (LP2 draft, LB1.10), which follows an end test's verdict (LB3.2).
+    assert!(codec::decode_ty(&mut Dec::new(&[26])).is_err());
 }
 
 const COLLECTIONS: &str = "\
