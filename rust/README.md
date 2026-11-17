@@ -253,15 +253,16 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   that reads the query at `entry`; BND.2, BND.64); and its value is only delivered as read: returned, published as a
   view, or bound by `let` to a name used only so. Any other use is refused at the use (an operation such as `index`
   or `length`, a call, a field, a record or a collection, a condition or a match, a write, a proposal, a closure's
-  result), so the list keeps the engine's neutral order, marks no row best, and no entry tests a list for emptiness
-  to read another cap; the solver chooses among the setups (BND.1). A branch delivers to the result only when its
-  condition reads nothing but literals and the entry's parameters as given, and nothing is delivered where the
-  program chooses whether it runs: under a branch whose condition reads more, at any depth, after a short-circuit
-  `and` or `or` operand that does, in a closure's body or in a child scope. So the program chooses neither the cap,
-  also not among caps the solver named, nor whether to show the list (BND.2, BND.64); a branch inside a view's or a
-  `let`'s value is a use. A value so delivered is the exception's output, so the shown-facts rule does not refuse its
-  words. Previews keep their rules: an entry that reads the list or the setups prepares no preview. A class that lists
-  one query as both exceptions is refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
+  result, a loop's count, initial value or body result), so the list keeps the engine's neutral order, marks no row
+  best, and no entry tests a list for emptiness to read another cap; the solver chooses among the setups (BND.1). A
+  branch delivers to the result only when its condition reads nothing but literals and the entry's parameters as
+  given, and nothing is delivered where the program chooses whether it runs: under a branch whose condition reads
+  more, at any depth, after a short-circuit `and` or `or` operand that does, in a loop's body whose count does, in a
+  closure's body or in a child scope. So the program chooses neither the cap, also not among caps the solver named,
+  nor whether to show the list (BND.2, BND.64); a branch inside a view's or a `let`'s value is a use. A value so
+  delivered is the exception's output, so the shown-facts rule does not refuse its words. Previews keep their rules:
+  an entry that reads the list or the setups prepares no preview. A class that lists one query as both exceptions is
+  refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
   Outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty list's wording (BND.2), the
   shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
   (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves).

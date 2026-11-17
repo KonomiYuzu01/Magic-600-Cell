@@ -971,15 +971,15 @@ impl Exception {
     }
 
     /// The refusal's note at a delivery where the program chooses whether it runs: under a branch whose condition
-    /// reads more than what the solver named, after a short-circuit operand that does, in a closure's body or in a
-    /// child scope.
+    /// reads more than what the solver named, after a short-circuit operand that does, in a loop's body whose count
+    /// does, in a closure's body or in a child scope.
     fn steered_note(self) -> String {
         let (named, rule) = self.named();
         format!(
-            "{} delivered where the program chooses whether it runs, under a branch or after a short-circuit operand \
-             that reads more than literals and the entry's parameters as given, in a closure's body or in a child \
-             scope: the program would choose the {named} or whether to show it, and the solver names the {named} \
-             ({rule}, BND.64)",
+            "{} delivered where the program chooses whether it runs: where a branch's condition, an earlier \
+             short-circuit operand or a loop's count reads more than literals and the entry's parameters as given, in \
+             a closure's body or in a child scope: the program would choose the {named} or whether to show it, and \
+             the solver names the {named} ({rule}, BND.64)",
             self.what()
         )
     }
@@ -1040,21 +1040,22 @@ enum Place {
 
 /// The exceptions' rules over an entry's body ([`admit_built_in`]): each read of an exception's query is for one of
 /// `params` as given, and its value is only delivered as read. A `let` binds the value under its name until another
-/// `let`, a closure parameter or a child's status shadows the name; a branch of an `if`, a `display_if` or a `match`
-/// delivers it only to the result; a closure's result and a child's are no delivery. Nothing is delivered where the
-/// program chooses whether it runs: under a branch whose condition reads more than literals and `params` as given,
-/// wherever the branch is, in a short-circuit operand after such an operand, in a closure's body, which runs when its
-/// caller chooses, and in a child scope, whose budget chooses whether its body finishes or its stop branch runs.
+/// `let`, a closure parameter, a child's status or a loop's value so far shadows the name; a branch of an `if`, a
+/// `display_if` or a `match` delivers it only to the result; a closure's result, a child's and a loop's are no
+/// delivery. Nothing is delivered where the program chooses whether it runs: under a branch whose condition reads more
+/// than literals and `params` as given, wherever the branch is, in a short-circuit operand after such an operand, in a
+/// loop's body whose count reads more, in a closure's body, which runs when its caller chooses, and in a child scope,
+/// whose budget chooses whether its body finishes or its stop branch runs.
 fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, Exception>) -> Deliveries {
     struct Walk<'a> {
         params: &'a BTreeSet<&'a str>,
         exceptions: &'a BTreeMap<&'a str, Exception>,
-        /// The names `let`, closure parameters and a child's status bind, innermost last, with the exception whose
-        /// value a name holds as read.
+        /// The names `let`, closure parameters, a child's status and a loop's value so far bind, innermost last, with
+        /// the exception whose value a name holds as read.
         scope: Vec<(&'a str, Option<Exception>)>,
         /// How many of the constructs around the current expression choose whether it runs: branches whose condition
-        /// reads more than literals and `params` as given, short-circuit operands after such an operand, closure
-        /// bodies and child scopes.
+        /// reads more than literals and `params` as given, short-circuit operands after such an operand, loop bodies
+        /// whose count reads more, closure bodies and child scopes.
         steered: u32,
         path: Vec<u32>,
         out: Deliveries,
@@ -1145,6 +1146,19 @@ fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, 
                     self.child(1, otherwise, Place::Other);
                     self.scope.truncate(depth);
                     self.steered -= 1;
+                    None
+                }
+                Expr::Repeat { count, init, acc, body, .. } => {
+                    // Its count chooses whether, and how often, the body runs (DET.55). The loop's value, its initial
+                    // value or the body's last result, is no delivery, and the value so far shadows `acc`.
+                    self.child(0, count, Place::Other);
+                    self.child(1, init, Place::Other);
+                    let steers = u32::from(!self.by_solver(count));
+                    self.scope.push((acc.as_str(), None));
+                    self.steered += steers;
+                    self.child(2, body, Place::Other);
+                    self.steered -= steers;
+                    self.scope.pop();
                     None
                 }
                 Expr::Prim { op: Prim::And | Prim::Or, args } => {
