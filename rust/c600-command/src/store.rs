@@ -12,16 +12,17 @@
 //! journal form names `record` only for them, so a journal written before KN5's stage 3 reads unchanged. In the same
 //! way a protection-policy change and the undo or redo of one carry the policy after the action
 //! ([`Transaction::policy`]), and only they name `policy` (draft), so a journal written before the Strict mode reads
-//! unchanged. A `twist.apply` commit carries its exact rotation's record ([`Transaction::rotation`]), and only it
-//! names `rotation` (draft), so a journal without twists reads unchanged. A crossing (`jumble.on`) carries its
-//! crossing record ([`Transaction::crossing`]), and only it names `crossing` (draft).
+//! unchanged. A twist row's action, a commit of `twist.apply` or `jumble.twist.menu` or a `jumble_move`, carries its
+//! exact rotation's record ([`Transaction::rotation`]), and only it names `rotation` (draft), so a journal without
+//! twists reads unchanged. A crossing (`jumble.on`) carries its crossing record ([`Transaction::crossing`]), and only
+//! it names `crossing` (draft).
 
 use std::collections::VecDeque;
 
 use c600_kernel::json::{self, Value};
 use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
-use crate::jumble::crossing_reads;
+use crate::jumble::{crossing_reads, JUMBLE_TWIST_ROW};
 use crate::layer::Caller;
 use crate::receipt::{CommitRecord, Completion, CompletionKind, Error, Receipt, ResultRef, Revision, Status};
 use crate::twist::{record_reads, TWIST_ROW};
@@ -42,6 +43,8 @@ pub enum TransactionKind {
     Policy,
     /// A crossing between the modes: Jumble on through `jumble.on` (ONE.54, ONE.55; draft).
     Crossing,
+    /// A pose move with Jumble on through `jumble.twist.menu` (FP.31's `jumble_move`, JI.35; draft).
+    JumbleMove,
 }
 
 impl TransactionKind {
@@ -55,6 +58,7 @@ impl TransactionKind {
             TransactionKind::Record => "record",
             TransactionKind::Policy => "policy",
             TransactionKind::Crossing => "crossing",
+            TransactionKind::JumbleMove => "jumble_move",
         }
     }
 
@@ -68,6 +72,7 @@ impl TransactionKind {
             TransactionKind::Record,
             TransactionKind::Policy,
             TransactionKind::Crossing,
+            TransactionKind::JumbleMove,
         ]
         .into_iter()
         .find(|kind| kind.name() == name)
@@ -132,8 +137,9 @@ pub struct Transaction {
     /// A workspace row's record writes, as its job's output gave them, in the order of their names (LP3's C6, its
     /// second common need; draft). Empty for every other action.
     pub records: Vec<RecordWrite>,
-    /// A `twist.apply` commit's exact rotation: its resolution's record, with the request binding, the request digest,
-    /// the choice and the exact rotation at the cap (KN3.8, KN3.9; draft). `None` for every other action.
+    /// A twist row's exact rotation, on a commit of `twist.apply` or `jumble.twist.menu` and on a jumble move: its
+    /// resolution's record, with the request binding, the request digest, the choice and the exact rotation at the cap
+    /// (KN3.8, KN3.9; draft). `None` for every other action.
     pub rotation: Option<Value>,
     /// A crossing's record: for an entry, its entrance, the jumbling identity block it was made under and its witness's
     /// letter count and `Digest<literal word>` ([`crate::jumble`]; draft). `None` for every other action.
@@ -141,19 +147,21 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    /// The terminal receipt the action answers: `committed` for a commit, a crossing, an undo or a redo,
+    /// The terminal receipt the action answers: `committed` for a commit, a crossing, a jumble move, an undo or a redo,
     /// `completed(workspace)` for a protection or policy change, a record write or a workspace row. It is a function of
     /// the transaction, so it is durable with the effect (KN5.23).
     pub fn receipt(&self) -> Receipt {
         let status = match self.kind {
-            TransactionKind::Commit | TransactionKind::Crossing | TransactionKind::Undo | TransactionKind::Redo => {
-                Status::Committed(CommitRecord {
-                    event: self.event.clone(),
-                    pre: self.pre.clone(),
-                    post: self.post.clone(),
-                    revision: self.revision.clone(),
-                })
-            }
+            TransactionKind::Commit
+            | TransactionKind::Crossing
+            | TransactionKind::JumbleMove
+            | TransactionKind::Undo
+            | TransactionKind::Redo => Status::Committed(CommitRecord {
+                event: self.event.clone(),
+                pre: self.pre.clone(),
+                post: self.post.clone(),
+                revision: self.revision.clone(),
+            }),
             TransactionKind::Protection
             | TransactionKind::Workspace
             | TransactionKind::Record
@@ -214,10 +222,12 @@ impl Transaction {
     /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty.
     /// `policy` belongs to a policy change and to the undo or redo of one. `records` belongs to a workspace row's
     /// completion: a non-empty list of writes with values, their names strictly increasing. `rotation` belongs to a
-    /// commit of `twist.apply`, which always carries one in the form [`crate::twist`] reads. `crossing` belongs to a
-    /// crossing, which always carries one in the form [`crate::jumble`] reads. A transaction that carries one where it
-    /// does not belong, or both `record` and `policy`, or a twist without its rotation, or a crossing without its record,
-    /// does not read, so the history stops there (KN5.23).
+    /// commit of `twist.apply` or `jumble.twist.menu` and to a jumble move, which always carry one in the form
+    /// [`crate::twist`] reads. `crossing` belongs to a crossing, which always carries one in the form [`crate::jumble`]
+    /// reads. A crossing and a jumble move derive no retained recipe and confirm nothing, so their `recipe` is `null`
+    /// and their `confirm` false. A transaction that carries one where it does not belong, or both `record` and
+    /// `policy`, or a twist without its rotation, or a crossing without its record, or a crossing or a jumble move with
+    /// a recipe or a confirmation, does not read, so the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
         let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
@@ -247,7 +257,14 @@ impl Transaction {
             None => None,
             Some(crossing) => Some(crossing_reads(crossing).then(|| crossing.clone())?),
         };
-        let twist = kind == TransactionKind::Commit && value.get("row")?.as_str()? == TWIST_ROW;
+        let row = value.get("row")?.as_str()?;
+        let twist = match kind {
+            TransactionKind::Commit => row == TWIST_ROW || row == JUMBLE_TWIST_ROW,
+            TransactionKind::JumbleMove => true,
+            _ => false,
+        };
+        let bare = !matches!(kind, TransactionKind::Crossing | TransactionKind::JumbleMove)
+            || (value.get("recipe")? == &Value::Null && value.get("confirm")? == &Value::Bool(false));
         let carries = match kind {
             TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()) && policy.is_none(),
             TransactionKind::Policy => policy.is_some() && record.is_none(),
@@ -255,7 +272,8 @@ impl Transaction {
             _ => record.is_none() && policy.is_none(),
         } && (records.is_empty() || kind == TransactionKind::Workspace)
             && rotation.is_some() == twist
-            && crossing.is_some() == (kind == TransactionKind::Crossing);
+            && crossing.is_some() == (kind == TransactionKind::Crossing)
+            && bare;
         let keys = 17
             + usize::from(record.is_some())
             + usize::from(policy.is_some())

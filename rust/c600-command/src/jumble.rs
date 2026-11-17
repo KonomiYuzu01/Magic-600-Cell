@@ -7,9 +7,14 @@
 //! when the replay's labels are the current labels. Labels alone are refused with `KN5:input.jumble_on_labels_only`:
 //! no witness is generated from labels (ONE.54, JI.25). The journal keeps the crossing's record ([`entry_record`]), not
 //! the poses; a reopen replays the witness again.
+//!
+//! With Jumble on, `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]) moves the poses (JI.35, FP.31; draft). The layer derives
+//! each pose move from the head's value, and replays the jumbling journal flat from solved ([`replay_poses`]) when the
+//! chain of derivations grows long or an undo's exact inverse is not an item of the menu.
 
 use c600_jumble::levels::{self, Base, Derivation, Derived, Partial};
 use c600_jumble::state::EngineError;
+use c600_jumble::twist::Twist;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
@@ -19,6 +24,10 @@ use crate::twist::Twists;
 
 /// H-08's row that turns Jumble on.
 pub const JUMBLE_ON_ROW: &str = "jumble.on";
+
+/// H-08's row that applies an item of the pinned twist menu (JI.35): a retained commit with Jumble off, a pose move
+/// with Jumble on.
+pub const JUMBLE_TWIST_ROW: &str = "jumble.twist.menu";
 
 /// The entrance of an entry from the solved witness: JI.27's `solved_witness`.
 const SOLVED_WITNESS: &str = "solved_witness";
@@ -99,4 +108,26 @@ pub(crate) fn replay_from_solved(twists: &Twists, letters: &[i32], labels: &str)
     let digest = derived.digest(ctx);
     let record = entry_record(&identity, letters);
     Ok(Entry { derived, digest, identity, record })
+}
+
+/// Replays `word`, the jumbling engine's journal from solved to a pose move (draft), flat from solved under the pinned
+/// menu with no protected piece, and returns the value at its end with that value's pose digest. The word is the
+/// layer's own journal of moves it admitted already, so a refusal or an engine fault is
+/// `KN5:consistency.state_hash_mismatch`.
+pub(crate) fn replay_poses(twists: &Twists, word: &[Twist]) -> Result<(Derived, String), Error> {
+    let ctx = &*twists.context;
+    let mismatch = |detail: String| Error::new(code::STATE_HASH_MISMATCH, detail);
+    let identity = ctx.identity(Some(&twists.menu));
+    let solved = levels::Snapshot::solved(ctx, Some(twists.menu.clone()));
+    let derivation = levels::derive(ctx, Base::Snapshot(&solved), &identity, word, ProtectionMode::Net, &[]);
+    match derivation.map_err(|error| mismatch(format!("the jumbling engine: {error}")))? {
+        Ok(Derivation::Derived(derived)) => {
+            let digest = derived.digest(ctx);
+            Ok((derived, digest))
+        }
+        Ok(Derivation::Refused(refused)) => {
+            Err(mismatch(format!("the journal does not replay from solved: {}", refused.refusal.message)))
+        }
+        Err(refusal) => Err(mismatch(format!("the journal does not replay from solved: {}", refusal.message))),
+    }
 }

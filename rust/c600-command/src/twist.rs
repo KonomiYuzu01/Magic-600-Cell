@@ -7,7 +7,7 @@
 //! `c600_jumble::rotation::resolve`, and on 600-cell-Full a resolved item becomes its retained word
 //! (`c600_jumble::rotation::retained_word`, JI.35). The journal keeps the resolution's record beside the commit's
 //! recipe ([`crate::Transaction::rotation`]); a reopen replays the recipe and runs neither the producer nor the chooser
-//! again (KN3.9).
+//! again (KN3.9). `jumble.twist.menu` carries the same binding in its `letter` argument ([`binding_at`]).
 
 use std::sync::Arc;
 
@@ -35,18 +35,24 @@ pub(crate) struct Twists {
     pub(crate) menu: Arc<Menu>,
 }
 
-/// KN3.7's binding from `twist.apply`'s arguments: `rotation`'s three fields and the row's `cap`. Anything else, a
-/// `rotation` that is not an object of exactly those fields included, is refused with
-/// `KN2:input.rotation_request_malformed`, as [`Binding::from_json`] refuses a malformed binding.
+/// KN3.7's binding from `twist.apply`'s arguments: `rotation`'s three fields and the row's `cap` ([`binding_at`]).
 pub(crate) fn binding(args: &Value) -> Result<Binding, Error> {
-    let rotation = args.get("rotation").and_then(Value::as_object);
+    binding_at(args, "rotation")
+}
+
+/// KN3.7's binding from a twist row's arguments: argument `key`'s three fields (`rotation` for `twist.apply`, `letter`
+/// for `jumble.twist.menu`; draft) and the row's `cap`. Anything else, an argument `key` that is not an object of
+/// exactly those fields included, is refused with `KN2:input.rotation_request_malformed`, as [`Binding::from_json`]
+/// refuses a malformed binding.
+pub(crate) fn binding_at(args: &Value, key: &str) -> Result<Binding, Error> {
+    let rotation = args.get(key).and_then(Value::as_object);
     let fits = |fields: &&std::collections::BTreeMap<String, Value>| {
         fields.len() == ROTATION_FIELDS.len() && ROTATION_FIELDS.iter().all(|field| fields.contains_key(*field))
     };
     let Some(rotation) = rotation.filter(fits) else {
         return Err(Error::new(
             ROTATION_REQUEST_MALFORMED,
-            "`rotation` is KN3.7's binding without its cap: exactly `request`, `operation` and `menu`",
+            format!("`{key}` is KN3.7's binding without its cap: exactly `request`, `operation` and `menu`"),
         ));
     };
     let mut fields = rotation.clone();
