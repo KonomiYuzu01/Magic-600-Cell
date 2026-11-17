@@ -310,6 +310,20 @@
 //!   - Only a language-defined row takes metadata; a stored row an entry serves answers by its own gates. Metadata is
 //!     not journaled: after a reopen the host declares it again, as it registers its overlays again.
 //!   - The generation advances when an overlay row is registered, a stored row served or metadata declared (LI.21).
+//! - The report after a command (KN5.22, R-02, ONE.70; CT-KN5-05's command-layer half). [`report`] pairs a receipt
+//!   with the display's status, [`DisplayStatus`]. When the receipt says that its command applied, the display
+//!   refreshes to the head through the host's [`Refresh`]; when that fails, the status is `OutOfDate`, whose message is
+//!   [`DISPLAY_OUT_OF_DATE`], and the receipt stays as the layer returned it. [`Shell::send_reported`] sends and
+//!   reports. Draft choices:
+//!   - A command applied when it committed or completed as a workspace write, a view publication or a file
+//!     publication, as KN5.22 lists them. An app row's completion, a query's answer and a preview's creation are not
+//!     followed by a refresh; a preview reaches the display through the frames.
+//!   - The refresh asks for the head when the report is made, not the revision the receipt names, since a later
+//!     action may have moved the head; RPI.47's recovery reads the current bundle in the same way.
+//!   - The continuation is [`refresh_display`], which sends no command: no retry is offered (ONE.12), and a press
+//!     sent again returns its first receipt (ONE.71), whose report refreshes the display to the head at that time.
+//!   - The host's [`Refresh`] adopts the engine's bundle into LP3's view model and presents it; the view model's
+//!     refusal (`refresh_required`, RPI.9) is its error. The message on screen is LP3's.
 //! - Job output (LP3's C6, its second common need). The host reports a program job's output as the runtime's sinks
 //!   gave it ([`CommandLayer::finish_program_job_with`], [`JobOutput`]): the value the entry returned, the views it
 //!   published (`publish_view`) and the workspace records it wrote (`write_workspace`), each record with its
@@ -355,7 +369,10 @@ pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
 };
-pub use shell::{draft_args, word_draft, ArgSource, KeyBinding, Shell};
+pub use shell::{
+    draft_args, refresh_display, report, word_draft, ArgSource, DisplayStatus, KeyBinding, Refresh, Report, Shell,
+    DISPLAY_OUT_OF_DATE,
+};
 pub use store::{
     identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
     Store, Transaction, TransactionKind,
