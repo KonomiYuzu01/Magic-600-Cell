@@ -38,6 +38,7 @@ pub mod eval;
 pub mod kplus;
 pub mod levels;
 pub mod model;
+pub mod nu;
 pub mod observe;
 pub mod q5;
 pub mod regions;
@@ -75,6 +76,8 @@ pub mod codes {
     pub use c600_kernel::request::codes::{MENU_BINDING_MISMATCH, ROTATION_REQUEST_MALFORMED, ROTATION_SEARCH_BOUND};
     /// A jumble menu item while Jumble is off: 600-cell-Full takes retained items only (JI.35).
     pub const MENU_WORD_NEEDS_JUMBLE_ON: &str = "KN5:input.menu_word_needs_jumble_on";
+    /// A coordinate that A5 fixes at 0 is nonzero on a state witnessed under I_a ([`crate::nu::nu`]); form freeze.
+    pub const FIXED_NU_NONZERO: &str = "KN2:consistency.fixed_nu_nonzero";
 }
 
 /// The one dimension this edition admits (JI.3).
@@ -87,6 +90,8 @@ pub struct Context {
     pub regions: Regions,
     /// The observation tables, built on first use ([`observe::tables`]).
     observe: OnceLock<Result<observe::Tables, String>>,
+    /// ν's labelling and frame groups, built on first use ([`nu::tables`]).
+    nu: OnceLock<Result<nu::Tables, String>>,
 }
 
 impl Context {
@@ -95,7 +100,7 @@ impl Context {
         let model = Model::load(assets)?;
         let kplus = KPlus::build(&model)?;
         let regions = Regions::build(&model, &kplus)?;
-        Ok(Context { model, kplus, regions, observe: OnceLock::new() })
+        Ok(Context { model, kplus, regions, observe: OnceLock::new(), nu: OnceLock::new() })
     }
 
     /// The jumbling identity block of a state with this menu (free mode: no menu digests).

@@ -7,6 +7,10 @@
 //! The 600 pole normals are stored as binary64 values. Each is read as its exact dyadic rational and matched to the
 //! unique (p + q√5)/2 with |q| ≤ 12 within 10⁻⁹, decided by exact comparisons (selection 1). Every pole then has
 //! |n|² = 12 + 4√5, which is checked.
+//!
+//! ν's labelling ([`crate::nu`]) is read from `execution_trees.json.gz`, `seed_atlas.json` and `census.json`. The model
+//! keeps their bytes from the same asset check, so the labelling, built on first use, comes from the files that the
+//! model ID names.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -31,6 +35,16 @@ pub const SIG_WORDS: usize = 10;
 
 /// The cut offset κ = α|n|² = (1452 + 484√5)/125 as (numerator a, numerator b, denominator).
 pub const KAPPA_FORM: (i64, i64, i64) = (1452, 484, 125);
+
+/// The files the model reads besides the manifest: the model archive, and the three that ν's labelling reads.
+const NEEDED: [&str; 4] = ["model.npz", "execution_trees.json.gz", "seed_atlas.json", "census.json"];
+
+/// The verified bytes of the files ν's labelling is read from ([`crate::nu`]).
+pub(crate) struct LabellingFiles {
+    pub(crate) trees_gz: Vec<u8>,
+    pub(crate) atlas: Vec<u8>,
+    pub(crate) census: Vec<u8>,
+}
 
 #[derive(Debug)]
 pub struct ModelError(pub String);
@@ -75,6 +89,7 @@ pub struct Model {
     cap_offsets: Vec<u32>,
     cap_piece: Vec<u32>,
     sigbits: Vec<[u64; SIG_WORDS]>,
+    pub(crate) labelling: LabellingFiles,
 }
 
 /// The exact value of a binary64 bit pattern as num / 2^shift; `None` for infinities and NaNs.
@@ -184,7 +199,14 @@ impl Model {
     pub fn load(assets: &Path) -> Result<Model, ModelError> {
         // The kernel's asset checks: a manifest naming 600-cell-Full whose model ID is the SHA-256 of its file list,
         // and every listed file with its listed digest. J1's model identity is the digests of the two archives.
-        let verified = c600_kernel::verify_assets(assets, &["model.npz"]).map_err(|e| fail(e.0))?;
+        let mut verified = c600_kernel::verify_assets(assets, &NEEDED).map_err(|e| fail(e.0))?;
+        let mut take =
+            |name: &str| verified.files.remove(name).ok_or_else(|| fail(format!("manifest.json does not list {name}")));
+        let labelling = LabellingFiles {
+            trees_gz: take("execution_trees.json.gz")?,
+            atlas: take("seed_atlas.json")?,
+            census: take("census.json")?,
+        };
         let listed = |name: &str| {
             verified.digests.get(name).cloned().ok_or_else(|| fail(format!("manifest.json does not list {name}")))
         };
@@ -315,6 +337,7 @@ impl Model {
             cap_offsets,
             cap_piece,
             sigbits,
+            labelling,
         })
     }
 

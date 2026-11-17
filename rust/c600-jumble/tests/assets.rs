@@ -1,6 +1,6 @@
 //! The jumbling model is read through the kernel's asset checks (KN0.1): a manifest whose model ID is not the SHA-256
-//! of its file list, or that does not list both archives, is refused before any array is read, so the identity
-//! block's model ID always names the files that were read.
+//! of its file list, or that does not list both archives and ν's three labelling files, is refused before any array
+//! is read, so the identity block's model ID always names the files that were read.
 
 use std::path::{Path, PathBuf};
 
@@ -35,16 +35,25 @@ fn refusal(folder: &Path) -> String {
 #[test]
 fn the_model_id_names_the_files_read() {
     let archive: &[u8] = b"not an archive";
-    let both = [("model.npz", archive), ("primitives.npz", archive)];
+    // ν's three labelling files are kept as verified bytes and parsed on ν's first use, so any bytes pass the load.
+    let all = [
+        ("model.npz", archive),
+        ("execution_trees.json.gz", archive),
+        ("seed_atlas.json", archive),
+        ("census.json", archive),
+        ("primitives.npz", archive),
+    ];
     let other_id = "0".repeat(64);
-    let renamed = scratch_assets("model-id", &both, Some(&other_id));
+    let renamed = scratch_assets("model-id", &all, Some(&other_id));
     assert_eq!(refusal(&renamed), "manifest.json's model_id does not match its file list");
-    let unlisted = scratch_assets("unlisted", &both[..1], None);
+    let unlisted = scratch_assets("unlisted", &all[..4], None);
     assert_eq!(refusal(&unlisted), "manifest.json does not list assets/primitives.npz");
+    let unlabelled = scratch_assets("unlabelled", &[all[0], all[4]], None);
+    assert_eq!(refusal(&unlabelled), "manifest.json does not list execution_trees.json.gz");
     // A manifest that passes the checks reaches the archive, which this one is not.
-    let listed = scratch_assets("listed", &both, None);
+    let listed = scratch_assets("listed", &all, None);
     assert!(refusal(&listed).starts_with("model.npz: "));
-    for folder in [renamed, unlisted, listed] {
+    for folder in [renamed, unlisted, unlabelled, listed] {
         let _ = std::fs::remove_dir_all(folder);
     }
 }
