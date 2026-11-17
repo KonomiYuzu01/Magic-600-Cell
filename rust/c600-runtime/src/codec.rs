@@ -6,9 +6,11 @@
 //! the payload. It accepts only values in their canonical form (a rational in lowest terms with a positive
 //! denominator, an element of Q(√5) with `d > 0` and `gcd(a, b, d) = 1`, a normalised approximation of a supported
 //! precision, letters of magnitude 1 to 1200, records whose field names are distinct, a freely reduced word key, a
-//! set's elements and a map's keys strictly increasing in the canonical key order), so equal values have equal bytes.
-//! Values are walked with an explicit stack in both directions, so a deep value cannot overflow either process's
-//! stack. A compressed word has no transfer form yet: `c600-run` lends no way to read or rebuild its parts.
+//! set's elements and a map's keys strictly increasing in the canonical key order, a compressed word's parts as
+//! `Compressed::from_parts` takes them), so equal values have equal bytes. Values are walked with an explicit stack
+//! in both directions, so a deep value cannot overflow either process's stack. A compressed word crosses as its parts
+//! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the lengths that
+//! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15).
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -20,12 +22,12 @@ use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
-use c600_run::value::{entry, value_order, Closure, List, Quad, Ratio, Record, Text, Value};
+use c600_run::value::{entry, value_order, Closure, Compressed, List, Part, Quad, Ratio, Record, Text, Value};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
 
-use crate::wire::{Dec, Enc, Malformed};
+use crate::wire::{Dec, Enc, Malformed, MAX_FRAME};
 
 /// Why a value or type has no transfer encoding.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -57,6 +59,15 @@ mod tag {
     pub const WORD_KEY: u8 = 17;
     pub const SET: u8 = 18;
     pub const MAP: u8 = 19;
+    /// LP2's draft compressed word (C3 draft 15): its part count, then each part in order, a leaf as its part tag and
+    /// its letters, a concatenation as its part tag and its two part numbers.
+    pub const COMPRESSED: u8 = 20;
+}
+
+/// The tags of a compressed word's parts.
+mod part_tag {
+    pub const LEAF: u8 = 0;
+    pub const CONCAT: u8 = 1;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -164,6 +175,42 @@ fn decode_letters(d: &mut Dec) -> Result<Vec<i32>, Malformed> {
         return Err(Malformed::new("a letter outside 1 to 1200"));
     }
     Ok(letters)
+}
+
+/// The most bits that the derived part lengths of all the compressed words in one payload may take together: as many
+/// as one frame holds (C3 draft 15). `Compressed::from_parts` derives a length for every part, and a chain of n
+/// doublings derives about n²/2 bits in all, so both sides count them in the payload's encoder or decoder before a
+/// word is rebuilt: compressed words above the bound are refused when encoded and when decoded. The bound counts bits:
+/// a length is stored in whole 64-bit limbs, which adds at most one limb per part, and a part takes at least 9 bytes
+/// of the payload. The interpreter builds words without this bound.
+pub const COMPRESSED_LENGTH_BITS: u64 = 8 * MAX_FRAME as u64;
+
+/// The bits of one compressed word's derived lengths, part by part: a leaf's length has its letter count's bits, and
+/// a concatenation's at most one more than its larger operand's.
+#[derive(Default)]
+struct LengthBits {
+    bits: Vec<u32>,
+}
+
+impl LengthBits {
+    /// Adds the next part's bits to `total`, the payload's running count. It refuses a concatenation of a part not
+    /// before it, as `from_parts` does, and a count above [`COMPRESSED_LENGTH_BITS`]; no part's bits can then
+    /// overflow.
+    fn push(&mut self, part: &Part, total: &mut u64) -> Result<(), &'static str> {
+        let bits = match part {
+            Part::Leaf(l) => usize::BITS - l.len().leading_zeros(),
+            Part::Concat(i, j) => match (self.bits.get(*i), self.bits.get(*j)) {
+                (Some(a), Some(b)) => 1 + *a.max(b),
+                _ => return Err("a concatenation of a part not before it"),
+            },
+        };
+        *total += u64::from(bits);
+        if *total > COMPRESSED_LENGTH_BITS {
+            return Err("compressed words above the transfer bound");
+        }
+        self.bits.push(bits);
+        Ok(())
+    }
 }
 
 enum Item<'a> {
@@ -300,9 +347,25 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                     stack.push(Item::Value(k));
                 }
             }
-            // No transfer form until `c600-run` lends a way to read and rebuild the parts. Named, so that a later form
-            // is a compile error here rather than a silent refusal.
-            Value::Compressed(_) => return Err(Unencodable("a compressed word without a transfer form")),
+            // A built word's parts are as `from_parts` takes them, except for letters, which `leaf` does not check, and
+            // the bound, which the interpreter does not apply.
+            Value::Compressed(c) => {
+                let parts = c.part_list();
+                e.u8(tag::COMPRESSED);
+                e.count(parts.len());
+                let mut bound = LengthBits::default();
+                for part in parts {
+                    bound.push(part, &mut e.derived_bits).map_err(Unencodable)?;
+                    match part {
+                        Part::Leaf(l) => encode_letters(part_tag::LEAF, l, e)?,
+                        Part::Concat(i, j) => {
+                            e.u8(part_tag::CONCAT);
+                            e.u64(*i as u64);
+                            e.u64(*j as u64);
+                        }
+                    }
+                }
+            }
         }
     }
     Ok(())
@@ -432,6 +495,22 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 }
             }
             tag::FN => Value::Fn(d.usize()?),
+            tag::COMPRESSED => {
+                // A part takes at least its tag and a letter count or a part number.
+                let n = d.count(9)?;
+                let mut parts = Vec::with_capacity(n.min(64));
+                let mut bound = LengthBits::default();
+                for _ in 0..n {
+                    let part = match d.u8()? {
+                        part_tag::LEAF => Part::Leaf(decode_letters(d)?.into()),
+                        part_tag::CONCAT => Part::Concat(d.usize()?, d.usize()?),
+                        _ => return Err(Malformed::new("an unknown part tag")),
+                    };
+                    bound.push(&part, &mut d.derived_bits).map_err(Malformed::new)?;
+                    parts.push(part);
+                }
+                Value::Compressed(Arc::new(Compressed::from_parts(parts).map_err(Malformed::new)?))
+            }
             tag::LIST | tag::SET | tag::MAP => {
                 // An element takes at least its tag; a map entry, its key's and its value's.
                 let (kind, per) = match tag {
@@ -639,7 +718,7 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             e.u8(17);
             e.text(name);
         }
-        // LP2's draft collection types. A compressed word's type crosses although its value has no transfer form yet.
+        // LP2's draft collection types and the compressed word's.
         Ty::List(element) => {
             e.u8(18);
             qty(element, e, depth + 1)?;

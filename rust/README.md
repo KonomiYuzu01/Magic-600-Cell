@@ -1164,7 +1164,11 @@ run or not applicable is no pass (PHS.63).
   answers a repeated, unacknowledged call from its record and never calls the host twice for one call, and a new
   call must acknowledge the last answer, so at most one answer is open (KI.5). No message has a field for a token
   or any other authority (KN5.15). LP2's draft collections cross with one encoding each: lists, word keys (freely
-  reduced), and sets and maps in canonical key order. A compressed word does not cross yet (crate draft 15).
+  reduced), and sets and maps in canonical key order. A compressed word crosses as its parts and is rebuilt with the
+  checked `from_parts` (LP2's pull request 185). The lengths that a frame's compressed words derive are bounded
+  together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses. Above the bound a host's
+  answer reaches the run in process but stops the child's run with `PS1:input.noncanonical_value`, a known
+  difference (crate draft 15).
 - Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
@@ -1172,19 +1176,17 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
-  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); LP2's draft collections, their
-  canonical forms and refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-10's
-  headless fault half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child
-  while the session keeps its journal, state hash and pending preview (`faults.rs`).
+  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); LP2's draft collections and compressed
+  words, their canonical forms and refusals on both sides, and their runs through the child (`collections.rs`);
+  CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang
+  the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); a compressed word's transfer form (draft 15), which `c600-run`'s part list and checked
-  `from_parts` (LP2's pull request 185) now allow; LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's
-  other 29 traces need
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 29 traces need
   what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
   order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
   `lp1-exec-region-draft-1` (LP2).

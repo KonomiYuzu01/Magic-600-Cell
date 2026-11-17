@@ -87,6 +87,9 @@ impl std::fmt::Display for Malformed {
 #[derive(Default)]
 pub struct Enc {
     pub bytes: Vec<u8>,
+    /// The bits of the lengths that the compressed words written so far derive, which [`crate::codec`] bounds for
+    /// one payload.
+    pub derived_bits: u64,
     fields: Option<Vec<&'static str>>,
 }
 
@@ -97,7 +100,7 @@ impl Enc {
 
     /// An encoder that records field names.
     pub fn recording() -> Enc {
-        Enc { bytes: Vec::new(), fields: Some(Vec::new()) }
+        Enc { fields: Some(Vec::new()), ..Enc::default() }
     }
 
     /// The recorded field names.
@@ -158,11 +161,14 @@ impl Enc {
 pub struct Dec<'a> {
     bytes: &'a [u8],
     at: usize,
+    /// The bits of the lengths that the compressed words read so far derive, which [`crate::codec`] bounds for one
+    /// payload.
+    pub derived_bits: u64,
 }
 
 impl<'a> Dec<'a> {
     pub fn new(bytes: &'a [u8]) -> Dec<'a> {
-        Dec { bytes, at: 0 }
+        Dec { bytes, at: 0, derived_bits: 0 }
     }
 
     /// The bytes not read yet.

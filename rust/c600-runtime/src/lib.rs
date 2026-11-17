@@ -39,7 +39,7 @@
 //!    captures and means something only to the program of the same run. LP2's draft collections cross too: a
 //!    list's elements in order, a word key's letters, freely reduced (LG2.18), and a set's elements and a map's
 //!    `{ key, value }` entries, strictly increasing in the canonical key order without its secondary key (DET.9), so
-//!    a written order never reaches the bytes. A compressed word has no form yet (draft 15).
+//!    a written order never reaches the bytes. A compressed word crosses as its parts (draft 15).
 //! 3. **Acknowledgement and retry** (KI.5; KI.15, "acknowledgement/retry protocol"): every call carries its id and
 //!    the id of the last answer the child received. The child is synchronous, so a new call must acknowledge the
 //!    last answer and at most one answer is open: the parent keeps the open answer's bytes until the next call or the
@@ -55,7 +55,8 @@
 //!    Windows job object with kill-on-close, a restricted or AppContainer token, and filesystem or network
 //!    confinement of the child.
 //! 5. **Resource bounds** (KI.15, "resource bounds"): [`wire::MAX_FRAME`] both ways, checked before any payload
-//!    byte is allocated; [`codec::TYPE_DEPTH`] for transferred IR types; values decode without recursion; every
+//!    byte is allocated; [`codec::TYPE_DEPTH`] for transferred IR types; [`codec::COMPRESSED_LENGTH_BITS`] for the
+//!    lengths that a frame's compressed words derive together (draft 15); values decode without recursion; every
 //!    length is checked against the bytes left before allocation; [`parent::STDERR_TAIL`] bytes of standard error
 //!    are kept; the child keeps at most 1024 distinct host refusal codes of at most 256 bytes. A call above the frame
 //!    bound stops the run with `KN7:resource_limit.host_exhausted`, and so does an answer above it; a job above it is
@@ -102,12 +103,20 @@
 //!     compared, printed and dropped recursively. A request whose type is nested deeper has no transfer encoding: in
 //!     the child the call stops the run with `PS1:input.noncanonical_value`, while in process the same call reaches
 //!     the host. The two executors differ there until the checker bounds type depth.
-//! 15. **Compressed words** (KI.15, "canonical transfer encoding"; LG2.16; a known difference): `c600-run` keeps a
-//!     compressed word's parts private, so the value has no transfer form; its type has one. Both executors refuse
-//!     it as an argument at the start stage, since it has no DET.59 output form either, and so no run returns or
-//!     outputs one. As a host's answer it reaches the run in process, while the parent answers the child's call
-//!     with `PS1:input.noncanonical_value` (draft 7). The two differ there until `c600-run` lends a way to read and
-//!     rebuild the parts.
+//! 15. **Compressed words** (KI.15, "canonical transfer encoding"; LG2.16; LP2's pull request 185; a known difference
+//!     above a bound): a compressed word crosses as its parts in order, as `c600_run::value::Compressed::part_list`
+//!     gives them: a leaf as its letters, a concatenation as its two part numbers. The receiver rebuilds the word with
+//!     the checked `Compressed::from_parts`, which derives the lengths, heights and logical size again. Compressed
+//!     words compare by their parts, so equal words have equal bytes. `from_parts` derives a length for every part,
+//!     and a chain of n doublings derives about n²/2 bits, so both sides first bound the derived lengths' bits of
+//!     all the compressed words in a frame together by [`codec::COMPRESSED_LENGTH_BITS`], a frame's bits: one word
+//!     of up to 16,382 doublings of a letter crosses in a frame, or two of up to 11,583. Compressed words above the
+//!     bound are refused when encoded, and a frame that carries them is malformed. The interpreter builds words
+//!     without that bound, so above it the two executors differ: as a host's answer such words reach the run in
+//!     process, while the parent answers the child's call with `PS1:input.noncanonical_value` (draft 7). Both
+//!     executors refuse a compressed word as an argument at the start stage, since it has no DET.59 output form,
+//!     and so no run returns or outputs one; the parent sends one within the bound, and the child refuses it with
+//!     the same detail as `Loaded::run`.
 
 #![forbid(unsafe_code)]
 
