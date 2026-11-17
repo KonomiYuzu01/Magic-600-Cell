@@ -43,6 +43,8 @@ pub mod code {
     pub const JUMBLE_OFF_NU_NONZERO: &str = "KN5:input.jumble_off_nu_nonzero";
     /// Jumble off where the poses are not shown reachable: no witnessed chain, or a displaced centre (A5, JI.27).
     pub const JUMBLE_OFF_NOT_SHOWN_REACHABLE: &str = "KN5:input.jumble_off_not_shown_reachable";
+    /// A language-defined row whose required kernel row the table does not hold (LI.20).
+    pub const OVERLAY_DEPENDENCY_MISSING: &str = "KN5:input.overlay_dependency_missing";
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";
