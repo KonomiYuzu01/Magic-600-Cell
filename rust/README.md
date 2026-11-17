@@ -632,9 +632,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model found no blocker or
     major finding. Its minor points are the drafts above, which it found defensible, and engine faults that return a
     plain error without a code, as the crate's other engine faults do; no change.
-  - Not built: `nu` and `correction_set_check` (JI.13). `nu` needs the label level of A5's crossings; the check needs
-    `nu` and the 36-row correction catalogue, which only research data holds, and shipping that catalogue as model
-    data is a model-boundary decision.
+  - Not built with them: `nu` and `correction_set_check` (JI.13). `nu` needed the label level of A5's crossings and
+    came after it (the ν bullet below); the check needs `nu` and the 36-row correction catalogue, which only research
+    data holds, and shipping that catalogue as model data is a model-boundary decision.
   - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
     source and fixture; the comparison ran on Windows only, and its timings are informational.
 - M8 levels (LP2 plan, section 11; chapter 01, KN1.7 to KN1.11, KN1.14, KN1.17 and KN2.11 to KN2.14; chapter 08,
@@ -677,8 +677,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     compares).
   - Contract tests: CT-KN1-03, CT-KN2-06 and CT-ONE-10 whole; CT-KN1-04 whole by the union of M4's 600-cell-Full half
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
-    marker naming what it leaves out. Not built: `nu`, `correction_set_check`, and the session store's checkpoint and
-    import records (M6). No J1 fault was found. Evidence kind: source and fixture; the comparison ran on Windows only.
+    marker naming what it leaves out. Not built with them: `nu` (the ν bullet below), `correction_set_check`, and the
+    session store's checkpoint and import records (M6). No J1 fault was found. Evidence kind: source and fixture; the
+    comparison ran on Windows only.
 - The kernel pieces for LP3's C8 (LP2):
   - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
     `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
@@ -701,6 +702,51 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     two minor points were fixed before the pull request: KN1.4 for the piece calls is now tested on a second model,
     and Strict is compared with a scan that derives every prefix. No action on its two nits: an effect names no model,
     as M4 decided, and the identity pose skips the frame check, as before.
+  - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
+- ν, the label invariant of A5, over F2 and F5 (LP2, for LP3's C8; chapter 01, KN2.4's `nu` row and KN3.2; state
+  contract A5):
+  - `c600_kernel::exact` gains `F2` and `F5`, KN3.2's prime fields of ν and the corrections: a residue with the field
+    operations, a checked inverse and division, powers and `Display`. Unit tests check the field laws.
+  - `c600-jumble/src/nu.rs` gives A5's 45 coordinates in their fixed order: b0 to b34, then the frame bits f0, f3, f6,
+    f8, f11, f22, f25 and f32 in F2, then C5_17 and C5_28 in F5. It is a port of restoration stage 03's `nucoords.py`.
+    The labelling and the frame groups are built once from `assets/` (the execution trees, the seed atlas and the
+    census) and checked against the census; every piece but the 600 centres is labelled. The model keeps the three
+    files' verified bytes from its asset check, so the labelling comes from the files that the model ID names, and a
+    manifest that does not list them is refused (`c600-jumble/tests/assets.rs`).
+  - `nu::value` gives ν of any state. It is undefined off the lattice (`off_lattice`) and for a raw table with two
+    pieces in one chamber (`pieces_collide`).
+  - `nu::nu` is the row on a snapshot or a derived value. On a state of the I_a menu whose claim is witnessed at that
+    state, a nonzero coordinate that A5 fixes (b0, b1, b2, b3, b5, b6, f0, f3 and f6) is refused with
+    `KN2:consistency.fixed_nu_nonzero` (chapter 13's form freeze). Open, promised, by-theorem, refuted and imported
+    claims, a witnessed claim made for another state (as for the label checkpoint), other menus and free mode get the
+    value with no check.
+  - The I_a menu is recognised by its order-free identity. Its order digest is pinned with the other constants for a
+    caller that binds the order: the C5 convention (r0, the least frame permutation of order 5 at the third buffer)
+    and the certificate program's SHA-256.
+  - The adapter serves `nu` and `nu_constants`, and `rust_jumble.py` calls them.
+  - `c600-jumble/tests/nu.rs` tests:
+    - the tables against the census;
+    - ν = 0 at solved and after retained words, under I_a and in free mode;
+    - ν undefined off the lattice;
+    - a turned piece of orbit 0 sets f0 alone, and an open claim is not bound;
+    - a collided table is undefined.
+  - `tests/test_jumbling_rust_nu.py` tests EH-10 against the ν reference:
+    - ν = 0 after retained words;
+    - the research tables E3, I1 and I2 equal `nucoords.py`, TABLE-NU and the restore summary;
+    - turned pieces of orbits 0, 6, 17 and 34 reach every frame class, checked through J1's K⁺;
+    - corrections 0 and 2 from solved give their table rows;
+    - the pinned constants and frame groups match `nucoords.py` and the census.
+  - Not run: the refusal on a witnessed I_a state. Stage 04's theorems leave no such state to build, so unit tests
+    cover it with a planted value: the consistency check, and the row's decision on the menu identity, the claim's
+    kind and the state the claim was made at. The language rows that use ν (CT-LB1-01, CT-LB3-01's ν case, CT-LB3-04
+    and render row J12) are LP3's. `correction_set_check` and its catalogue (EH-11) come next.
+  - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model compared the port
+    with `nucoords.py` and found no blocker or major finding. Three minor points were fixed before the pull request:
+    - the row's decision is now unit-tested;
+    - a witnessed claim made for another state now gets the value instead of an engine error;
+    - the retained words now run in free mode too.
+    No action on its two nits: the group test is not tautological, since `order` counts the group's elements as read
+    from the trees, and a label check that is redundant but harmless stays.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store
@@ -886,7 +932,7 @@ run or not applicable is no pass (PHS.63).
     section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads; `kn3.rs` runs
     KN3's exact rotation requests under A6 (CT-KN3-05 whole; CT-KN3-04, CT-KN3-06, CT-DET-16 and CT-LG2-16's kernel
     half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part; `observations.rs` and `levels.rs`
-    run M8's observations and its levels, end tests and derived values (M5's section).
+    run M8's observations and its levels, end tests and derived values, and `nu.rs` runs ν (M5's section).
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-module/tests/conformance_lg5.rs` runs CT-LG5-01 whole and CT-LG5-02 to CT-LG5-07 in part against LP3 C4's
     loader and lockfiles. The parts leave out the boundary class against chapter 07's reviewed classes, the run
@@ -907,7 +953,8 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section); `tests/test_jumbling_rust_m8_observations.py` and
-    `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1 (M5's section).
+    `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1, and
+    `tests/test_jumbling_rust_nu.py` compares ν with the ν reference (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 67 whole, nine of them by the union of their parts (CT-KN1-04,
