@@ -16,9 +16,14 @@
 //! - `tests/tool.rs` runs the jumbling tool's parts of CT-LB6-03 and CT-BND-15.
 //! - `tests/lb3.rs` runs the kernel halves of CT-LB1-02, CT-LB3-01, CT-LB3-03, CT-LB3-05 with CT-BND-17, CT-LB3-06 and
 //!   CT-LB3-07 on `c600_jumble`'s public API, with milestone M8's end tests (`levels`) and repair list
-//!   (`observe::cuts::repair_list`). The LB1 and LB3 library entries are language code the IR draft cannot express
-//!   yet, so each test checks the facts the library entry would return; the library entries wait for the IR draft's
-//!   collections.
+//!   (`observe::cuts::repair_list`), and with LP2's ν row (`c600_jumble::nu`) and correction catalogue
+//!   (`c600_jumble::corrections`) for CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07. The
+//!   LB1 and LB3 library entries are language code the IR draft cannot express yet, so each test checks the facts the
+//!   library entry would return; the library entries wait for the IR draft's collections.
+//! - `tests/ct_lb3_04.rs` runs CT-LB3-04 whole at this crate's level, on LP2's `nu` and `correction_set_check` rows:
+//!   off-lattice ν is undefined, the pinned C5 convention round-trips, a planted nonzero fixed I_a coordinate is a
+//!   consistency error, and a drafted correction set is checked as drafted. No 600 Cell Script program calls the rows,
+//!   since the IR draft has no F2 or F5 number kinds.
 //! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02 whole (LB3.4),
 //!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
 //!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's
@@ -104,15 +109,37 @@
 //!   deltas the test reads again from the pair's own word, and whose y and z it recomputes for one pair with JI.6's
 //!   release check. "No protection conflict" in CT-LB3-06 is a run with no protected piece, and prefix protection in
 //!   CT-LB1-02 is the kernel's pose-level Net protection of one letter (`State::apply`).
+//! - **ν and drafted correction sets (chapter 03's "ν and drafted correction-set check" and "Correction catalogue";
+//!   A5).** The tests read ν with LP2's `c600_jumble::nu::nu` and check drafted sets with
+//!   `c600_jumble::corrections::correction_set_check`, and add no rule of their own. A drafted set is a list of pairs
+//!   (correction id, signed multiplicity) fixed in a test in the solver's place, and a correction's word is taken only
+//!   by an id the test names (`Catalogue::lookup`, `Catalogue::twists`). The check answers ν's 45 values after the
+//!   set; nothing here chooses, ranks, reduces or proposes a set. This settles nothing in the chapters.
+//! - **The C5 round trip (A5, DT-J1 M13).** CT-LB3-04 reads "the pinned C5 convention round-trips" as three facts: in
+//!   each C5 frame group, r0 is the least element of order 5 and r0^i has class i; correction 27's ν, read in r0, is
+//!   its row and comes back unchanged through its 45 values, its JSON list and the label checkpoint's evidence; and
+//!   the manual's rule "make correction 27 v times", with v that value, checks to 0, which a value read in another
+//!   generator does not. This settles nothing in the chapters.
+//! - **CT-LB3-04's plant (A5, DT-J1 A17).** No reachable I_a state has a nonzero fixed coordinate, so the test plants
+//!   one: the pinned I_b menu with I_a's order-free menu identity written over its own, and a six-letter I_b word
+//!   fixed in the test (`MIRROR`) whose lattice configuration has b5 = 1. The ν row and the drafted check refuse it
+//!   with `KN2:consistency.fixed_nu_nonzero`; under the true I_b menu the ν row gives the same configuration's value,
+//!   with no consistency error. This settles nothing in the chapters.
+//! - **CT-LB3-07's correction part.** The inspector library entries are not written, so the test reads as their
+//!   output what the tool's word entry and LP2's rows answer on the kernel: the whole-word check of a correction's
+//!   literal word named by its id, the ν row, the drafted check and the label checkpoint's evidence. A leak is a field
+//!   whose name names a recommendation, a next cap, a ranking or a correction, or a field holding a list of lists; the
+//!   test reads names and shapes, not values. This settles nothing in the chapters.
 //!
 //! # What waits
 //!
-//! - Jumble on in the command layer and oracle equality through it: LP2's KN5 implementation. LP3 changes no
-//!   `c600-command` layer code until it lands. With it waits CT-LB4-03's layout evaluated again at a later revision of
-//!   a jumbled session.
-//! - ν and the correction catalogue: M8 computes no ν (the label checkpoint reads it from the identity labels, a
-//!   retained witness or the caller) and has no correction catalogue. With them wait CT-LB3-04, CT-LB3-01's reachable
-//!   lattice state with a nonzero ν (LP2's F2 and F5) and the correction part of CT-LB3-07.
+//! - Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle route through it, is built
+//!   (LP2's pull requests 212, 217, 218 and 220) and not taken up here yet; CT-LB4-03's layout evaluated again at a
+//!   later revision of a jumbled session waits for that.
+//! - ν and the correction catalogue in 600 Cell Script: the IR draft has no F2 or F5 number kinds, so the tests call
+//!   LP2's `nu` and `correction_set_check` rows in Rust, and LB3's entry "ν and drafted correction-set check" waits as
+//!   language code. The label checkpoint computes no ν itself; the tests supply the `nu` row's value. CT-LB3-01's
+//!   checker half, the end tests' typed verdicts, is LP2's (pull request 213).
 //! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
 //!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
 //!   (CT-LB3-05, CT-BND-17): LP2.
@@ -121,7 +148,8 @@
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
-//! - The LB1 and LB3 library entries as language code: collection types and word operations in the IR draft (LP2).
+//! - The LB1 and LB3 library entries as language code, not written yet. The IR draft has collection types and word
+//!   operations (pull request 176) and menu words (pull request 210); LB3's ν entry also needs F2 and F5.
 //! - The review of the class against the entries and its record (CT-LB6-03, CT-BND-15): BM5.
 
 #![forbid(unsafe_code)]

@@ -142,6 +142,10 @@ pub enum Ty {
     /// least topological order of its trace under the independence relation a run pins, with that relation's header
     /// (LG2.23). It is never a `Word` or a `WordEqualityKey` and never converts to either.
     TraceEqualityKey,
+    /// DET.61's generator (LP2 draft): the owner of one stream's cursor, the key of its sealed seed and path and its
+    /// draw counter. `rng_init` starts one and `rng_draw` draws from it. A generator stays a bare value: no record,
+    /// collection, closure capture or type variable holds one, and it has no equality, key order or canonical form.
+    Generator,
 }
 
 /// LB3.2's end tests (LP2 draft): three independently named tests with different premises and conclusions (state
@@ -406,6 +410,9 @@ pub enum Prim {
     /// first with ordinary operations; the assertion is one step, and a false predicate ends the run with
     /// `LG4:input.pointwise_failed` before the guarded operation, which follows the assertion in the program.
     Assert,
+    /// `rng_draw(g)`: the next 256-bit block of the generator `g`'s stream as `Nat` (LP2 draft; DET.61). It advances
+    /// `g`'s own cursor, which a borrow of `g` shares and an alias of `g` copies.
+    RngDraw,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -557,6 +564,12 @@ pub enum Expr {
     },
     RandomDraw,
     ReadClock,
+    /// `rng_init("segment", ...)` (LP2 draft; DET.61): a new generator on the run's granted seed and sealed stream
+    /// path, the run's assigned path followed by these literal segments. The path is fixed before execution, so the
+    /// same seed and path give the same stream again.
+    RngInit {
+        path: Vec<String>,
+    },
 }
 
 impl Expr {
@@ -572,7 +585,8 @@ impl Expr {
             | Expr::Declassified { .. }
             | Expr::FileRead { .. }
             | Expr::RandomDraw
-            | Expr::ReadClock => Vec::new(),
+            | Expr::ReadClock
+            | Expr::RngInit { .. } => Vec::new(),
             Expr::Let { value, body, .. } => vec![&**value, &**body],
             Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => vec![&**cond, &**then, &**els],
             Expr::Match { scrutinee, arms, default } => {
@@ -673,6 +687,13 @@ pub mod build {
     }
     pub fn exact_mul(a: Expr, b: Expr) -> Expr {
         prim(Prim::ExactMul, vec![a, b])
+    }
+    /// A generator on the run's stream path followed by `path` (LP2 draft; DET.61).
+    pub fn rng_init(path: &[&str]) -> Expr {
+        Expr::RngInit { path: path.iter().map(|s| s.to_string()).collect() }
+    }
+    pub fn rng_draw(g: Expr) -> Expr {
+        prim(Prim::RngDraw, vec![g])
     }
     pub fn call(name: &str, args: Vec<Expr>) -> Expr {
         Expr::Call { callee: Callee::Fn { module: None, name: name.into() }, args }
