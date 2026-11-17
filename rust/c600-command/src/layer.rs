@@ -49,8 +49,20 @@
 //! labels alone are refused (`KN5:input.jumble_on_labels_only`). The crossing is a node of the move tree that holds no
 //! retained recipe; the revision's mode becomes [`JUMBLE_ON_MODE`] and its digest the pose digest. With Jumble on, the
 //! retained workflow's rows (`operation.preview`, `operation.execute`, `twist.apply`) and `jumble.on` itself are
-//! refused with `KN5:input.retained_tool_needs_jumble_off` (LG2.8); protection, policy and record rows stay. An undo of
-//! the entry returns to the exact Jumble off state before it, and a redo replays the witness again (ONE.81, JI.27).
+//! refused with `KN5:input.retained_tool_needs_jumble_off` (LG2.8); `jumble.twist.menu` and the protection, policy and
+//! record rows stay. An undo of the entry returns to the exact Jumble off state before it, and a redo replays the
+//! witness again (ONE.81, JI.27).
+//!
+//! `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]) is JI.35's menu twist (FP.31, JI.27; draft), live like `twist.apply`: its
+//! `letter` carries KN3.7's binding without its cap, resolved against the pinned menu. With Jumble off a retained item
+//! commits its retained word as `twist.apply` does, and a jumble item is refused
+//! (`KN5:input.menu_word_needs_jumble_on`). With Jumble on every item is a pose move, journaled as `jumble_move`
+//! ([`TransactionKind::JumbleMove`]): a node of the move tree that holds the item's exact twist, derived in the
+//! jumbling engine from the head's value. No row sets pose-protected pieces, and a label verdict grants no pose
+//! protection (chapter 03), so a pose move is judged with no protected piece. The engine nests each derivation's
+//! evidence in the next, so after 64 chained moves the layer replays the jumbling journal flat from solved instead. An
+//! undo applies the exact inverse twist when the menu holds it and replays the journal otherwise, a redo applies the
+//! twist again, and each must reach the move's recorded poses.
 //!
 //! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
 //! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
@@ -60,9 +72,10 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
-use c600_jumble::levels::Derived;
+use c600_jumble::levels::{self, Base, Derived};
+use c600_jumble::q5::{identity4, transpose};
 use c600_jumble::rotation;
-use c600_jumble::twist::Menu;
+use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
@@ -72,7 +85,7 @@ use c600_kernel::{
 
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
-use crate::jumble::{self, JUMBLE_ON_ROW};
+use crate::jumble::{self, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
@@ -94,6 +107,11 @@ pub const JUMBLE_ON_MODE: &str = "jumble_on";
 pub const POLICY_ROW: &str = "protection.policy.set";
 /// A star certificate failure has no registered code yet (draft).
 pub const CERTIFICATE: &str = "KN2:consistency.star_certificate";
+
+/// The number of pose moves derived in a chain before the layer replays the jumbling journal flat from solved (draft).
+/// The jumbling engine nests each derivation's reachability evidence in the next, and a chain of some hundreds of
+/// derivations overflows a thread's stack when its value is cloned or dropped.
+const POSE_CHAIN: usize = 64;
 
 /// Who invokes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -291,12 +309,15 @@ struct Job {
     kind: JobKind,
 }
 
-/// A node of the move tree: the start (node 0) or a commit, keyed by its action order. The journal keeps the recipe and
-/// the digest, not the state.
+/// A node of the move tree: the start (node 0), a commit, a crossing or a pose move, keyed by its action order. The
+/// journal keeps the recipe or the twist and the digest, not the state.
 #[derive(Clone, Debug)]
 struct Node {
     parent: u64,
+    /// A commit's retained recipe; `None` for the start, a crossing and a pose move.
     recipe: Option<Recipe>,
+    /// A pose move's exact twist (draft); `None` for every other node.
+    twist: Option<Twist>,
     digest: String,
     depth: u64,
 }
@@ -330,6 +351,12 @@ enum Change {
         after: u64,
         identity: IdentityBlock,
     },
+    /// A pose move with Jumble on (`jumble.twist.menu`; draft): the head before it and its own node, which holds the
+    /// move's twist.
+    Pose {
+        before: u64,
+        after: u64,
+    },
 }
 
 /// What an adoption does to the move tree and the stacks.
@@ -351,6 +378,8 @@ enum Tree {
 struct Jumbled {
     derived: Derived,
     digest: String,
+    /// How many pose moves were derived in a chain since the value was last replayed from solved ([`POSE_CHAIN`]).
+    depth: usize,
 }
 
 /// What an adoption does to the mode.
@@ -358,7 +387,7 @@ struct Jumbled {
 enum Side {
     /// The mode stays.
     Stay,
-    /// Jumble turns on at this value.
+    /// Jumble is on at this value: a crossing turns it on, and a pose move, or its undo or redo, moves the poses.
     On(Jumbled),
     /// Jumble turns off: the retained state is the current one again.
     Off,
@@ -375,7 +404,8 @@ struct Adoption {
     tree: Tree,
     /// The preview a word commit commits.
     preview: Option<u64>,
-    /// What the action does to the mode: a crossing turns Jumble on, and its undo turns it off.
+    /// What the action does to the mode: a crossing turns Jumble on, and its undo turns it off; a pose move moves the
+    /// poses.
     side: Side,
 }
 
@@ -550,7 +580,7 @@ impl<S: Store> CommandLayer<S> {
         protected: ProtectedSet,
     ) -> CommandLayer<S> {
         let identity = digest(&identity_json(&kernel.identity()));
-        let start = Node { parent: 0, recipe: None, digest: initial.digest().to_owned(), depth: 0 };
+        let start = Node { parent: 0, recipe: None, twist: None, digest: initial.digest().to_owned(), depth: 0 };
         CommandLayer {
             kernel,
             table: table.with_drafts(),
@@ -722,6 +752,9 @@ impl<S: Store> CommandLayer<S> {
             // A twist's rotation record is adopted as stored: the replay derives the recorded recipe and runs neither
             // the producer nor the chooser again (KN3.9).
             TransactionKind::Commit => {
+                if self.jumbled.is_some() {
+                    return Err(broken("a retained commit while Jumble is on"));
+                }
                 let recipe = self.kernel.recipe(&stored.recipe)?;
                 let none = ProtectedSet::none();
                 match self.kernel.derive(&self.current, &recipe, &none).map_err(kernel_error)? {
@@ -771,6 +804,22 @@ impl<S: Store> CommandLayer<S> {
                     return Err(broken("a crossing replays only under its twist menu (open_with_menu)"));
                 }
                 self.plan_entry(meta)?
+            }
+            // A pose move replays its recorded exact twist, which must be an item of the pinned menu, from the head's
+            // poses; neither the producer nor the chooser runs again (KN3.9).
+            TransactionKind::JumbleMove => {
+                if stored.row != JUMBLE_TWIST_ROW || self.jumbled.is_none() {
+                    return Err(broken("a jumble move is not a pose move of `jumble.twist.menu` with Jumble on"));
+                }
+                let (Some(twists), Some(record)) = (&self.twists, &stored.rotation) else {
+                    return Err(broken("a jumble move replays only under its twist menu, with its rotation"));
+                };
+                let twist = rotation::replay(&twists.context, record)
+                    .map_err(|error| broken(&format!("the rotation record does not replay: {error}")))?;
+                if !twists.menu.contains(&twists.context, &twist) {
+                    return Err(broken("the recorded rotation is not an item of the pinned menu"));
+                }
+                self.plan_pose(meta, twist, record.clone())?
             }
         };
         if !agrees(&planned.transaction, stored) {
@@ -1241,6 +1290,14 @@ impl<S: Store> CommandLayer<S> {
                 }
                 (Some(_), false, None) => Ok(()),
             },
+            JUMBLE_TWIST_ROW => match (&self.twists, self.commit_held) {
+                (None, _) => Err(Error::new(
+                    code::ROW_NOT_BUILT,
+                    format!("`{JUMBLE_TWIST_ROW}` needs the host's pinned twist menu"),
+                )),
+                (Some(_), true) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
+                (Some(_), false) => Ok(()),
+            },
             "protection.orbit.set" | POLICY_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
@@ -1416,6 +1473,7 @@ impl<S: Store> CommandLayer<S> {
             RECORD_ROW => self.write_record(caller, invocation, request),
             TWIST_ROW => self.twist(caller, invocation, request),
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
+            JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
                 self.admit_program(caller, invocation, &row)
@@ -1713,7 +1771,7 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
-        let node = Node { parent: self.head, recipe: Some(recipe.clone()), digest: post.clone(), depth };
+        let node = Node { parent: self.head, recipe: Some(recipe.clone()), twist: None, digest: post.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Commit,
             event,
@@ -1950,7 +2008,7 @@ impl<S: Store> CommandLayer<S> {
             down.push(b);
             b = self.nodes[&b].parent;
         }
-        // Every node but the start is a commit or a crossing, and only a commit holds a retained recipe.
+        // Every node but the start is a commit, a crossing or a pose move, and only a commit holds a retained recipe.
         let recipe = |node: &u64| {
             let detail = "the path crosses a node that holds no retained recipe";
             self.nodes[node].recipe.as_ref().ok_or_else(|| Error::new(code::STATE_HASH_MISMATCH, detail))
@@ -1992,7 +2050,8 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// An undo or redo of the action on top of its stack, through the original permission path: a head change derives
-    /// its path under `protected`, and a protection change that releases an orbit needs `confirm` (LI.26).
+    /// its path under `protected`, and a protection change that releases an orbit needs `confirm` (LI.26). A pose
+    /// move's undo applies the exact inverse of its twist and its redo the twist again (JI.27; draft).
     fn plan_step(&self, meta: Meta, direction: Direction, protected: &ProtectedSet) -> Result<Adoption, Error> {
         let (stack, kind, tree) = match direction {
             Direction::Undo => (&self.undo, TransactionKind::Undo, Tree::Undo),
@@ -2106,7 +2165,8 @@ impl<S: Store> CommandLayer<S> {
                             return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
                         }
                         let digest = entry.digest.clone();
-                        (JUMBLE_ON_MODE, digest, Side::On(Jumbled { derived: entry.derived, digest: entry.digest }))
+                        let jumbled = Jumbled { derived: entry.derived, digest: entry.digest, depth: 0 };
+                        (JUMBLE_ON_MODE, digest, Side::On(jumbled))
                     }
                 };
                 transaction.post = digest.clone();
@@ -2114,6 +2174,42 @@ impl<S: Store> CommandLayer<S> {
                 transaction.revision.head = format!("e{to}");
                 transaction.revision.state += 1;
                 transaction.revision.digest = digest;
+                Ok(Adoption { transaction, state: None, protected: None, head: to, tree, preview: None, side })
+            }
+            // A pose move (JI.27; draft): an undo applies the exact inverse of the move's twist, a redo the twist
+            // again, from the head's value ([`CommandLayer::pose_value`]); each must reach its target's recorded poses.
+            // The literal is the step's.
+            Change::Pose { before, after } => {
+                let (from, to) = if direction == Direction::Undo { (after, before) } else { (before, after) };
+                if self.jumbled.is_none() || self.head != from || self.state_digest() != self.nodes[&from].digest {
+                    let detail = "the head hash differs from the head's recorded state";
+                    return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                }
+                let Some(twists) = &self.twists else {
+                    let detail = format!("`{JUMBLE_TWIST_ROW}` needs the host's pinned twist menu");
+                    return Err(Error::new(code::ROW_NOT_BUILT, detail));
+                };
+                let twist = self.nodes[&after].twist.clone().expect("a pose move's node holds its twist");
+                let step = match direction {
+                    Direction::Undo => {
+                        let inverse = Twist::new(&twists.context, twist.grip, transpose(&twist.matrix));
+                        let detail = |error| format!("the move's exact inverse: {error}");
+                        inverse.map_err(|error| Error::new(code::STATE_HASH_MISMATCH, detail(error)))?
+                    }
+                    Direction::Redo => twist,
+                };
+                let held = twists.menu.contains(&twists.context, &step).then_some(&step);
+                let jumbled = self.pose_value(held, || self.jumble_journal(to))?;
+                if jumbled.digest != self.nodes[&to].digest {
+                    let detail = "the step does not reach the move's recorded poses";
+                    return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                }
+                transaction.literal = levels::word_digest(std::slice::from_ref(&step));
+                transaction.post = jumbled.digest.clone();
+                transaction.revision.head = format!("e{to}");
+                transaction.revision.state += 1;
+                transaction.revision.digest = jumbled.digest.clone();
+                let side = Side::On(jumbled);
                 Ok(Adoption { transaction, state: None, protected: None, head: to, tree, preview: None, side })
             }
         }
@@ -2424,7 +2520,7 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
-        let node = Node { parent: self.head, recipe: None, digest: entry.digest.clone(), depth };
+        let node = Node { parent: self.head, recipe: None, twist: None, digest: entry.digest.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Crossing,
             event,
@@ -2451,7 +2547,7 @@ impl<S: Store> CommandLayer<S> {
         };
         let change = Change::Crossing { before: self.head, after: order, identity: entry.identity };
         let tree = Tree::Push { node: Some((order, node)), change };
-        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest });
+        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest, depth: 0 });
         Ok(Adoption { transaction, state: None, protected: None, head: order, tree, preview: None, side })
     }
 
@@ -2478,6 +2574,204 @@ impl<S: Store> CommandLayer<S> {
             letters.extend(self.kernel.letters(recipe)?);
         }
         Ok(letters)
+    }
+
+    // ----- jumble.twist.menu -----
+
+    /// `jumble.twist.menu` (JI.35, FP.31, JI.27; draft): a live menu twist, committed at once with no preview (ONE.78).
+    /// Before the token is spent: the pinned menu (`KN5:input.row_not_built`); the `revision` argument's form
+    /// (`KN5:input.argument_form`); `letter`, KN3.7's binding without the cap the row names
+    /// (`KN2:input.rotation_request_malformed`), which must resolve against the pinned menu (`KN2:input.*`, as for
+    /// `twist.apply`); the item, which must not be the menu's identity (`KN2:input.recipe_shape`) and with Jumble off
+    /// must be a retained one (`KN5:input.menu_word_needs_jumble_on`, JI.35). Then the commit steps: the token (step
+    /// 3), the commit lane (step 4), its binding to this invocation and the session's identity block (step 5), the
+    /// named revision and the token's state and protection revisions (`KN5:stale.revision_changed`), the head hash
+    /// (step 7) and the move. With Jumble off the item's retained word is derived by the kernel under the protection
+    /// set and policy in force (step 8: `KN2:protection.orbit_would_move`) and committed as a retained commit; with
+    /// Jumble on the item's exact twist is a pose move ([`CommandLayer::plan_pose`]). The durable transaction carries
+    /// the rotation record (step 9), and the adoption ends the preview and the jobs that read the replaced revision,
+    /// except file jobs (step 10, LI.32). A refusal changes nothing.
+    fn twist_menu(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+        row: &Row,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let Some(twists) = &self.twists else {
+            return refused(code::ROW_NOT_BUILT, format!("`{JUMBLE_TWIST_ROW}` needs the host's pinned twist menu"));
+        };
+        let args = invocation.args.as_object().expect("the dispatch checked that the arguments are an object");
+        forms::check_forms(row, args)?;
+        let binding = twist::binding_at(&invocation.args, "letter")?;
+        let resolution = rotation::resolve(&twists.context, Some(&*twists.menu), &binding)?;
+        if *resolution.twist.matrix == identity4() {
+            return refused(c600_kernel::codes::RECIPE_SHAPE, "the menu's identity item moves no piece");
+        }
+        // With Jumble off a retained item dispatches to its retained word, and a jumble item needs Jumble on; with
+        // Jumble on every item is a pose move (JI.35).
+        let recipe = match self.jumbled {
+            Some(_) => None,
+            None => Some(self.kernel.word(&rotation::retained_word(&twists.context, &resolution)?)?),
+        };
+        let token = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&token, invocation)?;
+        forms::check_revisions(row, args, &self.revision)?;
+        if token.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        if self.state_digest() != self.nodes[&self.head].digest {
+            return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state");
+        }
+        let meta = Meta::of(caller, invocation, request);
+        let adoption = match recipe {
+            Some(recipe) => {
+                let derived = match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
+                    Derivation::Derived(derived) => derived,
+                    Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
+                };
+                let mut adoption = self.commit_adoption(meta, recipe, derived.state, derived.word, None);
+                adoption.transaction.rotation = Some(resolution.to_json());
+                adoption
+            }
+            None => self.plan_pose(meta, resolution.twist.clone(), resolution.to_json())?,
+        };
+        self.transact(adoption)
+    }
+
+    /// A pose move with Jumble on (FP.31's `jumble_move`, JI.27; draft): the head hash, then `twist`, an item of the
+    /// pinned menu, derived from the head's value ([`CommandLayer::pose_value`]). The move is a new node under the head
+    /// that holds the twist and has the new pose digest; the state revision advances and the revision's digest is the
+    /// new pose digest, while the mode, the retained state, the protected set and the policy stay. `rotation` is the
+    /// move's rotation record, which the journal keeps.
+    fn plan_pose(&self, meta: Meta, twist: Twist, rotation: Value) -> Result<Adoption, Error> {
+        if self.state_digest() != self.nodes[&self.head].digest {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
+        }
+        let jumbled = self.pose_value(Some(&twist), || {
+            let mut word = self.jumble_journal(self.head)?;
+            word.push(twist.clone());
+            Ok(word)
+        })?;
+        let order = self.order + 1;
+        let event = format!("e{order}");
+        let revision = Revision {
+            head: event.clone(),
+            state: self.revision.state + 1,
+            digest: jumbled.digest.clone(),
+            ..self.revision.clone()
+        };
+        let literal = levels::word_digest(std::slice::from_ref(&twist));
+        let depth = self.nodes[&self.head].depth + 1;
+        let digest = jumbled.digest.clone();
+        let node = Node { parent: self.head, recipe: None, twist: Some(twist), digest, depth };
+        let transaction = Transaction {
+            kind: TransactionKind::JumbleMove,
+            event,
+            order,
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal,
+            pre: self.state_digest().to_owned(),
+            post: jumbled.digest.clone(),
+            revision,
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: false,
+            job: None,
+            result: None,
+            record: None,
+            policy: None,
+            records: Vec::new(),
+            rotation: Some(rotation),
+            crossing: None,
+        };
+        let change = Change::Pose { before: self.head, after: order };
+        let tree = Tree::Push { node: Some((order, node)), change };
+        let side = Side::On(jumbled);
+        Ok(Adoption { transaction, state: None, protected: None, head: order, tree, preview: None, side })
+    }
+
+    /// The jumbling engine's value after one step from the head's value with Jumble on (draft). `step`, an item of the
+    /// pinned menu, is derived from the head's value with no protected piece under the policy in force: no row sets
+    /// pose-protected pieces, and a label verdict grants no pose protection (chapter 03). A blocked step is refused
+    /// with the engine's code (`KN2:input.word_blocked_prefix`). The engine nests each derivation's evidence in the
+    /// next, so the chain is bounded: after [`POSE_CHAIN`] chained steps, or with no step (an undo whose exact inverse
+    /// the menu does not hold), the value is `journal`, the whole jumbling journal to the step's end, replayed flat
+    /// from solved ([`jumble::replay_poses`]), which must reach the step's poses.
+    fn pose_value(
+        &self,
+        step: Option<&Twist>,
+        journal: impl FnOnce() -> Result<Vec<Twist>, Error>,
+    ) -> Result<Jumbled, Error> {
+        let (Some(twists), Some(head)) = (&self.twists, &self.jumbled) else {
+            let detail = "a pose move needs Jumble on under the pinned twist menu";
+            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+        };
+        let ctx = &*twists.context;
+        let chained = match step {
+            None => None,
+            Some(twist) => {
+                let (base, identity) = (Base::Derived(&head.derived), head.derived.identity());
+                let derivation = levels::derive(ctx, base, identity, std::slice::from_ref(twist), self.policy, &[]);
+                let engine = |error| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
+                match derivation.map_err(engine)? {
+                    Err(refusal) => return Err(refusal.into()),
+                    Ok(levels::Derivation::Refused(refused)) => return Err(refused.refusal.into()),
+                    Ok(levels::Derivation::Derived(derived)) => {
+                        let digest = derived.digest(ctx);
+                        if head.depth + 1 < POSE_CHAIN {
+                            return Ok(Jumbled { derived, digest, depth: head.depth + 1 });
+                        }
+                        Some(digest)
+                    }
+                }
+            }
+        };
+        let (derived, digest) = jumble::replay_poses(twists, &journal()?)?;
+        if chained.is_some_and(|chained| chained != digest) {
+            let detail = "the jumbling journal's replay from solved does not reach the chained poses";
+            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+        }
+        Ok(Jumbled { derived, digest, depth: 0 })
+    }
+
+    /// The jumbling journal from solved to node `to` (draft): along the move tree's path from the start, the primitive
+    /// letters of every retained commit and the twist of every pose move; a crossing moves no piece. The start must be
+    /// solved, as a crossing's witness needs (JI.25). While `jumble.on` is the only crossing, no retained commit
+    /// follows a crossing on a path: the retained rows are refused with Jumble on, and a reopen refuses a retained
+    /// commit while Jumble is on. `jumble.off` (A5's exit) must cut this journal at the path's last crossing.
+    fn jumble_journal(&self, to: u64) -> Result<Vec<Twist>, Error> {
+        let mismatch = |detail: String| Error::new(code::STATE_HASH_MISMATCH, detail);
+        let Some(twists) = &self.twists else {
+            return Err(mismatch(format!("`{JUMBLE_TWIST_ROW}` needs the host's pinned twist menu")));
+        };
+        if self.nodes[&0].digest != self.kernel.solved().digest() {
+            return Err(mismatch(
+                "the session did not start at solved, so its journal does not replay from solved".into(),
+            ));
+        }
+        let mut path = Vec::new();
+        let mut node = to;
+        while node != 0 {
+            path.push(node);
+            node = self.nodes[&node].parent;
+        }
+        let mut word = Vec::new();
+        for node in path.iter().rev().map(|node| &self.nodes[node]) {
+            if let Some(recipe) = &node.recipe {
+                for letter in self.kernel.letters(recipe)? {
+                    let primitive = levels::primitive(&twists.context, i64::from(letter));
+                    word.push(primitive.map_err(|error| mismatch(format!("the jumbling engine: {error}")))?);
+                }
+            }
+            word.extend(node.twist.clone());
+        }
+        Ok(word)
     }
 
     // ----- language-defined rows -----

@@ -41,8 +41,8 @@
 //!
 //! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.
 //!
-//! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry is built (below); the rest,
-//!   `jumble.off` among them, is refused with `KN5:input.row_not_built`.
+//! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry and `jumble.twist.menu` are
+//!   built (below); the rest, `jumble.off` among them, is refused with `KN5:input.row_not_built`.
 //! - `WordRef` is an inline literal recipe in 0.4's JSON form, `{"recipe": [...]}`, and `ResolvedDraftRef` is
 //!   `{"record": name}`, a workspace record that holds a word's letters (M6's form); a draft argument in any other form
 //!   is refused with `KN5:input.argument_form`. A record draft's digest is M6's `{"letters", "source", "reads"}`, with
@@ -100,8 +100,8 @@
 //!     and cancels the jobs that read the replaced revision, except file jobs.
 //!   - With Jumble on, `operation.preview`, `operation.execute` and `twist.apply` are refused with
 //!     `KN5:input.retained_tool_needs_jumble_off` (LG2.8): a preview before its draft is read, a commit after its token's
-//!     binding. The protection, policy and record rows stay; their `pre` and `post` are the pose digest. A program job's
-//!     revision names the mode, so a built-in tool decides for itself.
+//!     binding. `jumble.twist.menu` and the protection, policy and record rows stay; their `pre` and `post` are the
+//!     pose digest. A program job's revision names the mode, so a built-in tool decides for itself.
 //!   - An undo of the entry returns to the exact Jumble off state before it, and a redo replays the solved witness
 //!     again, under a pinned menu with the identity block the entry was made under (`KN1:input.identity_mismatch`
 //!     otherwise; ONE.81, JI.27). Each advances the state revision. While Jumble is on, a pin of a menu with another
@@ -112,6 +112,43 @@
 //!     make the same record; [`CommandLayer::open`] leaves the layer in read-only recovery before a crossing.
 //!   - Drafts for LP3's amendment list (PHS.52): the journal kind and key `crossing` and the record's form, the
 //!     refusal of `jumble.on` with Jumble on, the order of the mode check before the revision checks, and the pin rule.
+//! - `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]; JI.35, FP.31, JI.27, ONE.78), a live menu twist with no preview.
+//!   - The argument form. `cap` is KN3.7's cap, as for `twist.apply`. `letter`, H-08's `PinnedMenuLetter`, is KN3.7's
+//!     binding without its cap, exactly `request`, `operation` and `menu`, the form of `twist.apply`'s `rotation`, so
+//!     the request digest and the token's argument digest cover the whole binding. `revision` is KN0.2's
+//!     `RevisionRef`, as for `jumble.on`, and the token binds the state and protection revisions (LI.6).
+//!   - Before the token, in this order: the pinned menu (`KN5:input.row_not_built`), the `revision` argument's form
+//!     (`KN5:input.argument_form`), the binding (`KN2:input.rotation_request_malformed`) and its resolution against
+//!     the pinned menu (`KN2:input.*`, as for `twist.apply`), the identity item in either mode
+//!     (`KN2:input.recipe_shape`), and with Jumble off a jumble item (`KN5:input.menu_word_needs_jumble_on`). Then the
+//!     token, the commit lane and the token's binding; the named revision and the token's revisions
+//!     (`KN5:stale.revision_changed`); the head hash (`KN5:consistency.state_hash_mismatch`); the move; one durable
+//!     transaction; the adoption, which ends the pending preview and the jobs that read the replaced revision, except
+//!     file jobs (LI.32).
+//!   - With Jumble off a retained item dispatches to the retained action: its retained word is derived under the
+//!     protection set and policy in force (`KN2:protection.orbit_would_move`) and committed as `twist.apply` commits
+//!     it, a `commit` in the journal with the row's name and its `rotation`. Its undo and redo are a word commit's.
+//!   - With Jumble on every item, a retained one too, is a pose move (JI.35): the item's exact twist is derived in the
+//!     jumbling engine from the head's value (`KN2:input.word_blocked_prefix` for a blocked twist). The journal names
+//!     its kind `jumble_move` (FP.31; [`TransactionKind::JumbleMove`]) and keeps its `rotation`, its literal is the
+//!     engine's `Digest<literal word>` of the twist, and its `pre` and `post` are pose digests. The move is a node of
+//!     the move tree that holds the twist; the state revision advances and the mode stays.
+//!   - Pose protection. No row sets pose-protected pieces, and a label verdict grants no pose protection (chapter 03:
+//!     no label-to-pose transport), so a pose move is judged with no protected piece; the protected orbits stay as
+//!     they are and judge retained moves only.
+//!   - The jumbling engine nests each derivation's reachability evidence in the next, and a chain of some hundreds of
+//!     derivations overflows a thread's stack. After 64 chained moves the layer replays the jumbling journal flat from
+//!     solved instead (the retained letters of the path's commits, then the pose moves' twists), which must reach the
+//!     chained poses. Such a replay costs time linear in the journal.
+//!   - An undo applies the exact inverse of the move's twist when the menu holds it and replays the journal to the
+//!     move's parent otherwise; a redo applies the twist again. Each must reach the recorded poses of its target
+//!     (JI.27), and each advances the state revision.
+//!   - A reopen with [`CommandLayer::open_with_menu`] replays each jumble move's recorded exact twist (KN3.9), which
+//!     must be an item of the pinned menu, and must reach its recorded poses; [`CommandLayer::open`] stops before the
+//!     crossing already.
+//!   - Drafts for LP3's amendment list (PHS.52): the `letter` form, the journal kind `jumble_move`, the empty
+//!     pose-protected set, the chain bound and the flat replay, the undo by the exact inverse, the identity item's
+//!     code in both modes, and the order of the checks.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
 //!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
 //!   `KN2:consistency.star_certificate`.
@@ -252,7 +289,7 @@ pub mod twist;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
-pub use jumble::JUMBLE_ON_ROW;
+pub use jumble::{JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 pub use layer::{Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, POLICY_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,

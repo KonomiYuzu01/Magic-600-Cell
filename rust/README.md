@@ -1387,13 +1387,31 @@ run or not applicable is no pass (PHS.63).
   (`CommandLayer::open_with_menu`) replays the witness; without it the layer stays in read-only recovery before the
   crossing. Tests: `c600-command/tests/jumble_on.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
   CT-JI-08).
-- KN5 not built yet: the other jumbling rows (`jumble.off` with its exit witness, and `jumble.twist.menu`); KN5.26's
-  admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime
-  proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16 and L17; the typed workspace
-  rows and limits on a record's payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No
-  host caller is built: callers are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`).
-  `JournalStore` takes M6's session lock, so a second opener of a held session is refused with
-  `KN4:busy.session_locked`.
+- `jumble.twist.menu` (JI.27, JI.35, FP.31, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live
+  twist of an exact item of the pinned twist menu, committed at once with no preview. It needs the pinned menu
+  (`KN5:input.row_not_built` without one) and takes `cap`, `letter` (KN3.7's binding without its cap, the form of
+  `twist.apply`'s `rotation`) and `revision`, the current `RevisionRef`, with a token that binds the state and
+  protection revisions. The binding resolves as for `twist.apply`; its refusals, the identity item's
+  `KN2:input.recipe_shape` in both modes and, with Jumble off, a jumble item's `KN5:input.menu_word_needs_jumble_on`
+  come before the token. The named revision must be current in every field (EV4.14), so unlike a `twist.apply` press a
+  press from before a workspace completion is `KN5:stale.revision_changed`. With Jumble off a retained item commits its
+  retained word as `twist.apply` does, under the protection policy in force. With Jumble on every item is a pose move:
+  the jumbling engine derives the item's exact twist from the head's poses with no pose-protected piece, since no row
+  sets one, so a twist the poses block is `KN2:input.word_blocked_prefix`; the revision's digest becomes the new pose
+  digest and its state revision advances. Like a commit it ends the pending preview and cancels the jobs that read the
+  replaced revision, except file jobs. An undo replays the twist's exact inverse and a redo the twist, each checked
+  against the recorded poses; after 64 chained moves the layer replays the jumbling journal flat from solved and checks
+  it against the chained poses. The journal keeps a pose move as the action kind `jumble_move` (FP.31) with its rotation
+  record (`Transaction::rotation`), and a reopen with the menu pinned (`CommandLayer::open_with_menu`) replays it; a
+  jumble move under another row, or a retained commit while Jumble is on, leaves the layer in read-only recovery. Tests:
+  `c600-command/tests/jumble_twist_menu.rs` (the command layer's parts of CT-EV4-04, CT-ONE-03, CT-ONE-11, CT-JI-06 and
+  CT-KN5-04).
+- KN5 not built yet: the other jumbling row (`jumble.off` with its exit witness); KN5.26's admission matrix (L1, L2)
+  beyond the host reader's answer for a record's word, ruling 6 (the host stamps a runtime proposal's block; a `file`
+  overlay without a granted file capability), L12 to L14, L16 and L17; the typed workspace rows and limits on a record's
+  payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built: callers
+  are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session
+  lock, so a second opener of a held session is refused with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
