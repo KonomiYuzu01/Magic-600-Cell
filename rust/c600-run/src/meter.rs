@@ -454,18 +454,25 @@ impl Meter {
     /// cut to what every active scope has left: its limit less its cumulative use, or less its live memory.
     pub fn enter_child(&mut self, at: &str, source: Option<&SourceRange>, requested: Amounts) -> Result<Child, Stop> {
         self.charge(&format!("{at}/child"), source, 0, 0, 0)?;
-        let mut effective = requested;
-        for dim in Dim::ALL {
-            for &s in &self.active {
-                let scope = &self.scopes[s];
-                let left = scope.limits.get(dim) - scope.current(dim);
-                *effective.slot(dim) = effective.get(dim).min(left);
-            }
+        Ok(self.open_child(at, Dim::ALL.map(|dim| Some(requested.get(dim)))))
+    }
+
+    /// Opens a child scope named `name` once its `child` step is charged (DET.60; the interpreter's entry, LP2 draft).
+    /// Each cap, in [`Dim::ALL`]'s order, is cut to what every active scope has left: its limit less its cumulative
+    /// use, or less its live memory. An omitted cap resolves to that remainder and is recorded as requested, so it
+    /// creates no allowance.
+    pub fn open_child(&mut self, name: &str, caps: [Option<u128>; 4]) -> Child {
+        let (mut requested, mut effective) = (Amounts::default(), Amounts::default());
+        for (dim, cap) in Dim::ALL.into_iter().zip(caps) {
+            let left = self.active.iter().map(|&s| self.scopes[s].limits.get(dim) - self.scopes[s].current(dim)).min();
+            let left = left.expect("the root is always active");
+            *requested.slot(dim) = cap.unwrap_or(left);
+            *effective.slot(dim) = requested.get(dim).min(left);
         }
-        self.scopes.push(Scope::new(at, effective));
+        self.scopes.push(Scope::new(name, effective));
         let scope = self.scopes.len() - 1;
         self.active.push(scope);
-        Ok(Child { scope, at: at.to_string(), requested, effective })
+        Child { scope, at: name.to_string(), requested, effective }
     }
 
     /// Closes a child scope with its body's result: the size of the owner it returned to the parent, or its stop.

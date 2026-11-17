@@ -260,6 +260,13 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   a signature's own parameter or result (also a callable's), and when a view or a file would receive one. An exact
   equality, a type parameter or a host read's argument that takes one is `LG2:type.mismatch`
   (`c600-syntax/tests/generators.rs`).
+- Child scopes (LP2 draft until the IR freeze; DET.60; LP3's plan, section 2). `child` (`Expr::Child`) runs its body
+  under requested caps (`ChildCaps`: steps, kernel cost, memory and output, each a literal natural or omitted) and,
+  when the body stops on a cap or an error of its own, a stop branch in the parent, with `status`, when it names one,
+  a `Status` bound to the outcome. A child needs the `budget` effect and no grant. Its body borrows the names in
+  scope but no display data, and it evaluates no display, reads no display accounting or clock and calls no function
+  value, so exact inputs alone fix its budget use and its outcome (LG2.20; a draft rule). The stop branch is checked
+  as the parent's code (`c600-syntax/tests/child_scopes.rs`).
 - A chain of `let`s is checked in a loop, so a long straight-line body does not deepen the checker's recursion, and a
   finding inside the chain keeps its nested path (`c600-check/tests/let_chains.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -345,6 +352,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Generators (LP2 draft). `Generator` is a type, and `rng_init` and `rng_draw` are reserved operations called like
   functions; `rng_init`'s arguments are text literals, its stream path's segments, none or more
   (`c600-syntax/tests/generators.rs`).
+- Child scopes (LP2 draft). `child(caps, body, stop branch)` is a reserved operation called like a function: `caps`
+  is a record of literal naturals named `steps`, `kernel_cost`, `memory` and `output`, each at most once and any of
+  them omitted, `body` a closure without parameters, and the stop branch a closure with the body's result type and
+  no parameter or one `Status` parameter. Another shape is refused at lowering (`c600-syntax/tests/child_scopes.rs`).
 - Exact products and assertions (LP2 drafts). `exact_mul(a, b)` multiplies two exact numbers, widened as
   `exact_add`'s operands are; a `Budget` operand is `LG2:type.mismatch`, since the draft multiplies numbers, not
   costs. `assert(p)` is `Unit`, and its predicate is an exact `Bool`, as an `if` condition is (LG2.20)
@@ -358,16 +369,19 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 20 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 25 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, the four generator traces
   generator, generator-alias-cursor, generator-returned-owner and generator-child-paths, the three display traces,
-  output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live
-  and pointwise-failure. Each frozen row and each cutoff or stop (dimension or phase, scope, denied row, source range)
-  equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic),
-  29, 31 and 32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest.
-- The other 20 are listed with the reason the IR draft cannot express them: child scopes (6), a call frame without a
-  slot that holds two bindings (1, generator-nested-same-name), text order (1), byte decoding (2), loops and flow
-  checks (2), streaming cursors (3) and display form 2 (5). They still replay through the meter.
+  output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live,
+  pointwise-failure, and the five child traces child-allowances, child-return-owner, root-before-child,
+  dimension-before-scope and nested-child-ledger. Each frozen row, each cutoff or stop (dimension or phase, scope,
+  denied row, source range) and each child record equals the vector, under LP3's limit mapping
+  (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The
+  alias traces cross a call, since `let` scopes nest. A child trace that completes takes its limits at its first
+  `child` row, so that each requested cap is cut as the trace's is.
+- The other 15 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds
+  two bindings (1, generator-nested-same-name), text order (1), byte decoding (3, one of them in a child), loops and
+  flow checks (2), streaming cursors (3) and display form 2 (5). They still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -393,7 +407,21 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   hands the cursor on; an alias (a borrowed generator bound to a name or returned) copies it at 41 units, so the copy
   repeats the original's blocks. A generator has no canonical form, so an entry neither takes nor returns one
   (`PS1:input.noncanonical_value`). The run's own generator still starts at `entry#rng_init` whenever the run has a
-  seed. Child invocation indices wait for child jobs (M6) (`c600-run/tests/generators.rs`, `det65_programs.rs`).
+  seed; in a child scope the path also names the child's invocation (below) (`c600-run/tests/generators.rs`,
+  `det65_programs.rs`).
+- Child scopes (LP2 drafts; DET.60, DET.61). `child` costs one step in every enclosing scope. Its body then runs in
+  a scope of its own under the effective caps: each requested cap cut to what every enclosing scope has left, an
+  omitted cap being that remainder. What the child charges counts in its enclosing scopes too; the body's `call` and
+  `return` are charged in the child, its frame borrows the enclosing frame's slots without charge, and its result
+  moves to the parent. A stop of the child's own scope, a cut-off or a domain error, unwinds the child: its owners
+  and reservations go uncharged, and its stop branch runs in the parent, after a four-byte `status` row when it
+  names a status. A limit of an enclosing scope stops that scope, the root's the whole run, and an interruption
+  stops the whole run; an outer child's cap comes before an inner one's, and DET.56's dimension order before the
+  scope order. The summary records each child with its requested and effective caps, its use, its outcome and stop,
+  and the memory it returned. An `rng_init` in a child streams from the run's path followed by the child's
+  invocation index under its parent, counted from 0 per parent (DET.61). A child borrows its parent's generators as
+  any parent input, so its draws advance their owners' cursors, and a cut-off rolls none back
+  (`c600-run/tests/child_scopes.rs`, `det65_programs.rs`).
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
   forms. Deep values compare, encode and drop without recursion. A word literal's letters are generators, of
@@ -1088,8 +1116,9 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 20 of DET.65's 40
-    traces as programs and lists why the other 20 do not run; `generators.rs` runs DET.61's generators.
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 25 of DET.65's 40
+    traces as programs and lists why the other 15 do not run; `generators.rs` runs DET.61's generators and
+    `child_scopes.rs` DET.60's child scopes.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
@@ -1513,10 +1542,11 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 20 of DET.65's 40 traces as `.6cs` programs on both
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 25 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication,
   alias and pointwise-failure traces since LP2's `exact_mul` and `assert`, three generator traces since LP2's
-  `rng_init` and `rng_draw`); the protocol's bounds,
+  `rng_init` and `rng_draw`, the five child traces, child records included, since LP2's child scopes); the protocol's
+  bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
   or unknown, the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu
   word's, a menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
@@ -1532,9 +1562,9 @@ run or not applicable is no pass (PHS.63).
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 20 traces need
-  what the IR draft lacks: child scopes, a call frame without a slot that holds bindings, text order, byte decoding,
-  loops and flow checks, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 15 traces need
+  what the IR draft lacks: a call frame without a slot that holds bindings, text order, byte decoding, loops and flow
+  checks, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
