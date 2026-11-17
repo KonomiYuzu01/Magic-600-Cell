@@ -843,6 +843,7 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
             Expr::Let { name, .. } => (1, vec![name.clone()]),
             Expr::Closure { params, .. } => (0, params.iter().map(|p| p.name.clone()).collect()),
             Expr::Child { status, .. } => (1, status.iter().cloned().collect()),
+            Expr::Repeat { acc, .. } => (2, vec![acc.clone()]),
             _ => (usize::MAX, Vec::new()),
         };
         for (i, child) in e.children().into_iter().enumerate() {
@@ -864,8 +865,8 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
 }
 
 /// The paths of the expressions `body` may return that are not one of `words` as given, unshadowed (LB3.5): the rest
-/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, and a child
-/// scope's body and stop branch.
+/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, a child
+/// scope's body and stop branch, and a loop's initial value and body.
 fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
     fn walk(e: &Expr, words: &BTreeSet<&str>, path: &mut Vec<u32>, bound: &mut Vec<String>, out: &mut Vec<String>) {
         match e {
@@ -900,6 +901,18 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
                 walk(otherwise, words, path, bound, out);
                 path.pop();
                 bound.truncate(depth);
+            }
+            // The loop's value is its initial value or its body's last one. The value so far is no word as given,
+            // since the body may have computed it.
+            Expr::Repeat { init, acc, body, .. } => {
+                path.push(1);
+                walk(init, words, path, bound, out);
+                path.pop();
+                bound.push(acc.clone());
+                path.push(2);
+                walk(body, words, path, bound, out);
+                path.pop();
+                bound.pop();
             }
             Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v) => {}
             _ => out.push(path_text(path)),
@@ -958,15 +971,15 @@ impl Exception {
     }
 
     /// The refusal's note at a delivery where the program chooses whether it runs: under a branch whose condition
-    /// reads more than what the solver named, after a short-circuit operand that does, in a closure's body or in a
-    /// child scope.
+    /// reads more than what the solver named, after a short-circuit operand that does, in a loop's body whose count
+    /// does, in a closure's body or in a child scope.
     fn steered_note(self) -> String {
         let (named, rule) = self.named();
         format!(
-            "{} delivered where the program chooses whether it runs, under a branch or after a short-circuit operand \
-             that reads more than literals and the entry's parameters as given, in a closure's body or in a child \
-             scope: the program would choose the {named} or whether to show it, and the solver names the {named} \
-             ({rule}, BND.64)",
+            "{} delivered where the program chooses whether it runs: where a branch's condition, an earlier \
+             short-circuit operand or a loop's count reads more than literals and the entry's parameters as given, in \
+             a closure's body or in a child scope: the program would choose the {named} or whether to show it, and \
+             the solver names the {named} ({rule}, BND.64)",
             self.what()
         )
     }
@@ -1027,21 +1040,22 @@ enum Place {
 
 /// The exceptions' rules over an entry's body ([`admit_built_in`]): each read of an exception's query is for one of
 /// `params` as given, and its value is only delivered as read. A `let` binds the value under its name until another
-/// `let`, a closure parameter or a child's status shadows the name; a branch of an `if`, a `display_if` or a `match`
-/// delivers it only to the result; a closure's result and a child's are no delivery. Nothing is delivered where the
-/// program chooses whether it runs: under a branch whose condition reads more than literals and `params` as given,
-/// wherever the branch is, in a short-circuit operand after such an operand, in a closure's body, which runs when its
-/// caller chooses, and in a child scope, whose budget chooses whether its body finishes or its stop branch runs.
+/// `let`, a closure parameter, a child's status or a loop's value so far shadows the name; a branch of an `if`, a
+/// `display_if` or a `match` delivers it only to the result; a closure's result, a child's and a loop's are no
+/// delivery. Nothing is delivered where the program chooses whether it runs: under a branch whose condition reads more
+/// than literals and `params` as given, wherever the branch is, in a short-circuit operand after such an operand, in a
+/// loop's body whose count reads more, in a closure's body, which runs when its caller chooses, and in a child scope,
+/// whose budget chooses whether its body finishes or its stop branch runs.
 fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, Exception>) -> Deliveries {
     struct Walk<'a> {
         params: &'a BTreeSet<&'a str>,
         exceptions: &'a BTreeMap<&'a str, Exception>,
-        /// The names `let`, closure parameters and a child's status bind, innermost last, with the exception whose
-        /// value a name holds as read.
+        /// The names `let`, closure parameters, a child's status and a loop's value so far bind, innermost last, with
+        /// the exception whose value a name holds as read.
         scope: Vec<(&'a str, Option<Exception>)>,
         /// How many of the constructs around the current expression choose whether it runs: branches whose condition
-        /// reads more than literals and `params` as given, short-circuit operands after such an operand, closure
-        /// bodies and child scopes.
+        /// reads more than literals and `params` as given, short-circuit operands after such an operand, loop bodies
+        /// whose count reads more, closure bodies and child scopes.
         steered: u32,
         path: Vec<u32>,
         out: Deliveries,
@@ -1132,6 +1146,19 @@ fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, 
                     self.child(1, otherwise, Place::Other);
                     self.scope.truncate(depth);
                     self.steered -= 1;
+                    None
+                }
+                Expr::Repeat { count, init, acc, body, .. } => {
+                    // Its count chooses whether, and how often, the body runs (DET.55). The loop's value, its initial
+                    // value or the body's last result, is no delivery, and the value so far shadows `acc`.
+                    self.child(0, count, Place::Other);
+                    self.child(1, init, Place::Other);
+                    let steers = u32::from(!self.by_solver(count));
+                    self.scope.push((acc.as_str(), None));
+                    self.steered += steers;
+                    self.child(2, body, Place::Other);
+                    self.steered -= steers;
+                    self.scope.pop();
                     None
                 }
                 Expr::Prim { op: Prim::And | Prim::Or, args } => {
@@ -1795,6 +1822,13 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             bound.extend(status.as_deref());
             free_names(otherwise, bound, out);
             bound.truncate(depth);
+        }
+        Expr::Repeat { count, init, acc, body, .. } => {
+            free_names(count, bound, out);
+            free_names(init, bound, out);
+            bound.push(acc);
+            free_names(body, bound, out);
+            bound.pop();
         }
         other => {
             for child in other.children() {
@@ -3471,6 +3505,31 @@ impl<'p> Checker<'p> {
                 self.result(result, &ov, None, "a child scope's stop branch", &at);
                 s.add(&os);
                 self.operation(&mut s, needs(&[Effect::Budgets], &[]), "a child scope");
+                Ok((Val::declared(result), s))
+            }
+            Expr::Repeat { count, init, acc, result, body } => {
+                self.bare(&result.ty, true, "a loop's value")?;
+                // The count bounds the iteration, so approximate data cannot (LG2.20, DET.55; LP2 draft).
+                let (cv, mut s) = self.at(0, |c| c.expr(count, env))?;
+                if fits(&Ty::Nat, &cv.ty) {
+                    self.at(0, |c| c.exact_use(Site::Control, &cv, "a loop bound"));
+                } else {
+                    self.at(0, |c| c.misfit("Nat", &cv, "a loop bound"));
+                }
+                let (iv, is) = self.at(1, |c| c.expr(init, env))?;
+                let mut at = vec![1];
+                at.extend(returned(init));
+                self.result(result, &iv, None, "a loop's initial value", &at);
+                s.add(&is);
+                // Each iteration sees the value so far by its declared type, as a function sees a parameter.
+                env.vars.push((acc.clone(), Val::declared(result)));
+                let walked = self.at(2, |c| c.expr(body, env));
+                env.vars.pop();
+                let (bv, bs) = walked?;
+                let mut at = vec![2];
+                at.extend(returned(body));
+                self.result(result, &bv, None, "a loop's body", &at);
+                s.add(&bs);
                 Ok((Val::declared(result), s))
             }
         }

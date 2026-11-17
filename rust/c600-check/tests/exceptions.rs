@@ -240,6 +240,44 @@ fn bnd_2_the_program_does_not_choose_the_cap() {
     assert_eq!(refusals(&at_cap(Ty::Unit, deeper), &class), not_granted_at(&["entry", "entry"]));
 }
 
+/// CT-BND-17 (part: the checker half: a loop's count chooses whether, and how often, its body runs (DET.55), so a view
+/// of the list in a loop's body is refused unless the count reads nothing but literals and the entry's parameters as
+/// given; LP2 draft).
+///
+/// The loop's value so far shadows a parameter of the same name, so a read for it is for a cap the method computed.
+/// The loop's value is no delivery: a loop that holds the list uses it.
+#[test]
+fn bnd_2_a_loop_count_chooses_whether_its_body_runs() {
+    let class = rows(&[Row::RepairList(REPAIR.into()), Row::Read("rounds".into()), Row::View]);
+    let two = || vec![param("a", exact(Ty::Nat)), param("n", exact(Ty::Nat))];
+    let go = |result: Ty, body: Expr| tool(vec![command("go", two(), exact(result), body).exported()]);
+    let rounds = || read_snapshot("rounds", exact(Ty::Nat));
+    let shown = || let_("v", publish_view(repair_at(var("a"))), var("u"));
+    let looped = |count: Expr| go(Ty::Unit, repeat(count, unit(), "u", exact(Ty::Unit), shown()));
+    assert_eq!(refusals(&looped(rounds()), &class), not_granted_at(&["2.0.0"]));
+    assert_eq!(refusals(&looped(exact_add(var("n"), rounds())), &class), not_granted_at(&["2.0.0"]));
+    for count in [nat(2), var("n"), exact_add(var("n"), nat(1))] {
+        let at = format!("{count:?}");
+        assert!(built_in(&looped(count), &class).is_admitted(), "{at}");
+    }
+    // A count that names a `let` binding, or an outer loop's value so far, steers; a count is read before its loop
+    // binds the value so far, so it reads the solver's parameter of the same name.
+    let bound = let_("k", var("n"), repeat(var("k"), unit(), "u", exact(Ty::Unit), shown()));
+    assert_eq!(refusals(&go(Ty::Unit, bound), &class), not_granted_at(&["1.2.0.0"]));
+    let inner = repeat(var("u"), unit(), "z", exact(Ty::Unit), let_("v", publish_view(repair_at(var("a"))), var("z")));
+    let outer = repeat(nat(2), nat(1), "u", exact(Ty::Nat), let_("w", inner, var("u")));
+    assert_eq!(refusals(&go(Ty::Nat, outer), &class), not_granted_at(&["2.0.2.0.0"]));
+    let own = repeat(var("n"), unit(), "n", exact(Ty::Unit), let_("v", publish_view(repair_at(var("a"))), var("n")));
+    assert!(built_in(&go(Ty::Unit, own), &class).is_admitted());
+    let shadowed = let_("v", publish_view(repair_at(var("a"))), var("a"));
+    let shadowed = go(Ty::Nat, repeat(nat(1), var("a"), "a", exact(Ty::Nat), shadowed));
+    assert_eq!(refusals(&shadowed, &class), not_granted_at(&["2.0.0"]));
+    // Refused as a use at the initial value, and by the shown-facts rule at both of the loop's possible results, the
+    // initial value and the body's last one, which hold words from state (LB3.5).
+    let held = go(pairs(), repeat(nat(1), repair_at(var("a")), "l", exact(pairs()), var("l")));
+    assert_eq!(refusals(&held, &class), not_granted_at(&["1", "1", "2"]));
+}
+
 /// CT-BND-17 (part: the checker half: the list keeps the engine's neutral order and marks no row best, no entry tests
 /// a list for emptiness to read another cap, and the list makes no twist, since an entry only delivers the list as
 /// read; LP2 draft; not run: the empty list's wording, BND.2, the library's and the display's, and the neutral order
