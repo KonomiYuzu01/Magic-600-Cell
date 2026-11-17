@@ -133,6 +133,30 @@ fn primitive_operands_must_fit() {
     assert_only(&second, "f", "1", "Approx<P53>", "Nat");
 }
 
+/// The LP2 drafts `exact_mul` and `assert` (DET.57, DET.55): a product widens along `Nat`, `Int`, `Rat` and `Q5` as a
+/// sum does but takes no budget, since a product of costs is no cost; an assertion takes a boolean and is of value
+/// `Unit`.
+#[test]
+fn a_product_and_an_assertion_take_their_operands() {
+    let product = |a: Ty, b: Ty, result: Ty| {
+        let ab = vec![param("a", exact(a)), param("b", exact(b))];
+        tool(vec![helper("f", ab, exact(result), exact_mul(var("a"), var("b")))])
+    };
+    let widened = [(Ty::Nat, Ty::Nat, Ty::Nat), (Ty::Nat, Ty::Int, Ty::Int), (Ty::Int, Ty::Rat, Ty::Rat)];
+    for (a, b, result) in widened.into_iter().chain([(Ty::Rat, Ty::Q5, Ty::Q5)]) {
+        let p = product(a, b, result);
+        assert!(report(&p).is_admitted(), "{:#?}", report(&p).diagnostics);
+    }
+    assert_only(&product(Ty::Nat, Ty::Int, Ty::Nat), "f", "root", "Nat", "Int");
+    let numbers = "Nat | Int | Rat | Q5";
+    assert_only(&product(Ty::Budget, Ty::Nat, Ty::Nat), "f", "0", numbers, "Budget");
+    assert_only(&f(Ty::Nat, exact_mul(nat(1), text("a"))), "f", "1", numbers, "Text");
+    let assertion = |predicate: Expr, result: Ty| f(result, prim(Prim::Assert, vec![predicate]));
+    assert!(report(&assertion(boolean(false), Ty::Unit)).is_admitted());
+    assert_only(&assertion(nat(1), Ty::Unit), "f", "0", "Bool", "Nat");
+    assert_only(&assertion(boolean(true), Ty::Bool), "f", "root", "Bool", "Unit");
+}
+
 #[test]
 fn a_field_read_needs_a_record_with_that_field() {
     assert_only(&f(Ty::Nat, field(nat(1), "a")), "f", "0", "record { a: _, .. }", "Nat");

@@ -981,6 +981,44 @@ pub fn add_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> Option<
     Some((cost, reservation))
 }
 
+/// Exact multiplication with widening along Int, Rat and Q5 (LP2 draft); `None` if an operand is not an exact number.
+pub fn mul(a: &Value, b: &Value) -> Option<Value> {
+    let (x, y, rank) = exact_pair(a, b)?;
+    Some(match (rank, &x, &y) {
+        (0, Num::Int(m), Num::Int(n)) => Value::int(*m * *n),
+        _ => {
+            let ((xa, xb, xd), (ya, yb, yd)) = (x.quad(), y.quad());
+            if rank == 1 {
+                Value::Rat(Arc::new(Ratio::new(&xa * &ya, xd * yd)))
+            } else {
+                Value::Q5(Arc::new(Quad::new(&xa * &ya + &xb * &yb * 5u32, &xa * &yb + &xb * &ya, xd * yd)))
+            }
+        }
+    })
+}
+
+/// The kernel cost and the result reservation of an exact multiplication (LP2 draft). Integers use the vectors'
+/// integer row (DET.57); a rational or Q(√5) product costs `field_per_unit_pair` per pair of widened operand bytes, as
+/// a sum does, and reserves the unreduced result.
+pub fn mul_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> Option<(u128, u128)> {
+    let (x, y, rank) = exact_pair(a, b)?;
+    if let (Num::Int(m), Num::Int(n)) = (&x, &y) {
+        return Some(t.integer(IntOp::Mul, m.bits() as u128, n.bits() as u128));
+    }
+    let cost = d.field_per_unit_pair.saturating_mul(x.widened_size(rank)).saturating_mul(y.widened_size(rank));
+    let ((xa, xb, xd), (ya, yb, yd)) = (x.quad(), y.quad());
+    let bits = |n: &BigInt| n.bits() as u128;
+    let mut reservation = integer_size(bits(&xd) + bits(&yd));
+    if rank == 1 {
+        reservation += integer_size(bits(&xa) + bits(&ya));
+    } else {
+        // a·a′ + 5·b·b′ and a·b′ + b·a′: the factor 5 adds at most three bits, and each sum one.
+        reservation += integer_size((bits(&xa) + bits(&ya)).max(bits(&xb) + bits(&yb) + 3) + 1);
+        reservation += integer_size((bits(&xa) + bits(&yb)).max(bits(&xb) + bits(&ya)) + 1);
+    }
+    Some((cost, reservation))
+}
+
 /// The exact order of two numbers; `None` if an operand is not an exact number.
 pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
     let (x, y, rank) = exact_pair(a, b)?;

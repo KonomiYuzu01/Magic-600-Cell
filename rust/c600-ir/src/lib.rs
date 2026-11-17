@@ -399,6 +399,13 @@ pub enum Prim {
     /// `trace_key(w)`: LB1.10's trace key of a Full word under the run's pinned independence relation (LP2 draft):
     /// its lexicographically least topological word, every occurrence kept.
     TraceKey,
+    /// `exact_mul(a, b)`: the exact product of two numbers, widened along `Nat`, `Int`, `Rat` and `Q5` as a sum is
+    /// (LP2 draft; DET.57 prices it). A budget is a cost, and a product of costs is none, so it takes no `Budget`.
+    ExactMul,
+    /// `assert(p)`: a pointwise assertion (LP2 draft; DET.55, LG4.10), of value `Unit`. The predicate `p` is evaluated
+    /// first with ordinary operations; the assertion is one step, and a false predicate ends the run with
+    /// `LG4:input.pointwise_failed` before the guarded operation, which follows the assertion in the program.
+    Assert,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -663,6 +670,9 @@ pub mod build {
     }
     pub fn exact_add(a: Expr, b: Expr) -> Expr {
         prim(Prim::ExactAdd, vec![a, b])
+    }
+    pub fn exact_mul(a: Expr, b: Expr) -> Expr {
+        prim(Prim::ExactMul, vec![a, b])
     }
     pub fn call(name: &str, args: Vec<Expr>) -> Expr {
         Expr::Call { callee: Callee::Fn { module: None, name: name.into() }, args }
