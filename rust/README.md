@@ -709,6 +709,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the tests. `MemDisk` fails a chosen write (an error, a partial write, or a write that persisted but reported
   failure), holds a write so a test can act while it is in flight, tears unsynced appends and loses unsynced data in
   a crash, and counts reads and writes.
+- The session lock (KN4.1: only the engine opens the session files; Fable lead L9). A store takes it before it
+  reads the journal, so one process opens a session at a time. `FsDisk` holds an exclusive lock on the empty file
+  `lock` in its directory (std's `File::try_lock`: `LockFileEx` on Windows, `flock` on Unix) until the disk is
+  dropped. The operating system releases it when the process ends, a hard exit included, as it did for 0.4's
+  `engine.lock` (1.0-A3's V03.4: a lock conflict is a typed error, not a crash). A second opener of a held session,
+  in this process or another, is refused with `KN4:busy.session_locked` before it reads or writes the journal or a
+  state object. That covers `Session::open` and `create` and `JournalStore::open` and `create`. `MemDisk` takes no
+  lock: it lives in one process, and its clones stand for a restart in the crash tests. This is not the lock of
+  KN4.2's R-15, which is the in-process lock that 0.4 held while it wrote a response (B-005); M6 calls that one the
+  core lock. Drafts: the file's name and the code, which chapter 13 does not register (a row for LP3's amendment
+  list, PHS.52).
 - The journal: one durable action is one frame (its length, the length's complement, the payload and its SHA-256),
   appended and synced before the reply (R-06). When the append or its sync fails, the store cuts the journal back and
   syncs the cut; only a cut that succeeds proves the rollback, answered `failed` with `KN4:resource_limit.disk_full`.
@@ -744,6 +755,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - `store.rs`: CT-KN4-02 at every write of seven kinds of durable action, with three kinds of failure, with and
     without a crash, and the unproved fate with each kind of failure at the append and at the sync; CT-KN4-03;
     ONE.70's torn and damaged tails; a session on a directory.
+  - `session_lock.rs`: the session lock. A second opener of a held session is refused with
+    `KN4:busy.session_locked` and changes no file. That holds for all four openers (`Session::open` and `create`,
+    `JournalStore::open` and `create`), whether the holder is in the same process or a child process. The
+    session opens once its holder is dropped, or once the child is killed (Fable lead L9).
   - `commit.rs`: CT-KN5-01 with PHS.19's preview-swap row, CT-KN5-04, CT-KN5-06, CT-KN5-11 and LI.33's gate-order
     trace; KN5.9 to KN5.11; tokens, the row and the revisions a token binds, and the rows a program may deliver; the
     commit lane under a held write; outcome lookup across a reopen.
@@ -781,9 +796,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   not from the operating system's generator; `FsDisk` syncs a directory entry on Unix only, and it opens a new handle
   for each append, cut and sync, so on Linux a sync may miss a write-back error that the writing handle would see,
   and on Windows a scanner that holds the journal without sharing can fail a commit and its rollback alike (Fable
-  lead L8); there is
-  no session lock, so a second opener could cut a frame that another opener acknowledged (Fable lead L9), and no
-  historical workspace version (a snapshot of an earlier revision holds its state only); a proposal takes
+  lead L8); there is no historical workspace version (a snapshot of an earlier revision holds its state only); a
+  proposal takes
   literal letters or a record of letters only; the admission and the end of a durable row share one frame; the IDs of
   proposals, job rows and refusals are not remembered across epochs, and the receipt of a refused or failed durable
   row lasts for its epoch; undo, redo or a switch that would replay more than 100,000 letters is refused; the core
@@ -815,7 +829,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   read-only for good; L3, a checkpoint completed while citing a lost object; L5, an identical retry after a restart
   was refused as stale; L7, `create` reported an unknown header fate as a failure and wrote to a disk it then refused.
   All five are fixed. L4 and L6 became the seeded replay test and its oracle (the durable view, receipts, contents and
-  the undo chain), and L10's rows 1 to 7 are covered. L8 and L9 are deferred.
+  the undo chain), and L10's rows 1 to 7 are covered. L9 is fixed by the session lock (above); L8 is deferred.
 - KN5 (LP2): `JournalStore` (`src/command_store.rs`) implements c600-command's `Store` and `Reopen` over the journal,
   in a draft frame format of its own (`c600-command-journal-draft-1`, not the frozen migration format), so the command
   layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Tests:
@@ -833,8 +847,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `Session::invoke(origin, envelope)` takes the origin of the channel the envelope came on, and the request digest
   and the program gates read that origin (`tests/kn5_command.rs` sends the shell's genuine envelope on a program's
   channel first).
-- Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
-  evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
+- Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test and the
+  session-lock tests, so a pass is no evidence of a real disk's behaviour in a crash. The checks ran on Windows
+  only.
 
 ## Status of the evidence library: chapter 06
 
@@ -1102,8 +1117,8 @@ run or not applicable is no pass (PHS.63).
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
   and L17; the provenance reader over `c600-run` (LP3's host), the typed workspace rows and limits on a record's
   payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built:
-  callers are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). No session lock exists
-  (LP3's L9), so two opens of one journal can interleave.
+  callers are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes
+  M6's session lock, so a second opener of a held session is refused with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
@@ -1389,7 +1404,8 @@ run or not applicable is no pass (PHS.63).
   admits (KN5.26's answer for a record's word) and presented frames (C1's section above). The tests above still
   drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once their tests run
   against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting for LP2:
-  KN5.26's full admission matrix, EV3.2's view rows, LB7.2's work-sheet structure and a session lock.
+  KN5.26's full admission matrix, EV3.2's view rows and LB7.2's work-sheet structure. M6's session lock covers
+  `JournalStore` too.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
