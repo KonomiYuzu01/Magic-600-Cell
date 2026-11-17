@@ -1508,8 +1508,9 @@ run or not applicable is no pass (PHS.63).
   - `ack.rs`: the fixed acknowledgement against an engine double (CT-BND-11 and CT-BND-07, parts).
   - `bridge.rs`: one runtime preview per proposal and the fixed acknowledgement on the command layer (CT-BND-11 and
     CT-BND-07, parts); no commit or app row for the runtime (ADR-L02, KN5.15); a runtime invocation carrying a token is
-    refused (KN5.15); only a token the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge
-    grants nothing but a proposal.
+    refused (KN5.15); the runtime cannot set the protection policy (`protection.policy.set` sent by the bridge, or a
+    tool variant's proposal to it, is refused with `LG3:capability.not_granted`, and the policy stays); only a token
+    the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge grants nothing but a proposal.
   - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
 - Open: the class rows are an LP3 draft until BND.57's rows by class exist as data, and the built-in column's two
   exceptions (setup search for a named target, the repair list) are not built in `c600-check`. The command layer's
@@ -1639,12 +1640,15 @@ run or not applicable is no pass (PHS.63).
     that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
     CT-BND-07, parts).
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
-    previews clear in Net mode and commits as one transaction, and the prefix alone is refused); CT-LB2-03's oversize
-    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part:
-    on the command route, and on the source route a recipe of two full chunks previews in the solver's two word steps
-    with the command route's digests and end state and commits as one transaction, while a word of 200,000 letters that
-    is not the input recipe's literal word, or comes without the solver's word steps, is refused whole with the
-    recipe-shape code.
+    previews clear in Net mode and commits as one transaction, and the prefix alone is refused) and its Strict half
+    (after the shell's `protection.policy.set` to Strict, the same word previews with the kernel's Strict row, verdict
+    moves, `mode: "strict"` and `first_refused_prefix: 1` in its summary and no end state, as on the command route, and
+    its commit is refused with nothing changed; with no orbit protected it previews clear and commits as one
+    transaction); CT-LB2-03's oversize refusal (100,001 letters refused whole on both routes with the same code,
+    100,000 admitted) and its chunking part: on the command route, and on the source route a recipe of two full chunks
+    previews in the solver's two word steps with the command route's digests and end state and commits as one
+    transaction, while a word of 200,000 letters that is not the input recipe's literal word, or comes without the
+    solver's word steps, is refused whole with the recipe-shape code.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
   - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (ruling 4, owner decision of
@@ -1652,14 +1656,14 @@ run or not applicable is no pass (PHS.63).
     and binding (a token minted with another secret, or the same envelope on a runtime's channel) no longer becomes
     that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
     and neither retry commits anything more.
-- Not built: CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece objects for a
-  word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
-  `Declared` holds one class); CT-LB2-02's Strict half
-  through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named
-  work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with another
-  field (its literal word over 100,000 letters goes in one word step and is refused whole);
-  CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in
-  admission.
+- Not built: CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece
+  objects for a word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes
+  (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock and "an incomplete prefix check never returns
+  safe" through the tool's route (the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`
+  are LP3's library rows over kernel rows, which need a snapshot read with an argument that no host answers yet);
+  named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with
+  another field (its literal word over 100,000 letters goes in one word step and is refused whole); CT-LB3-01's
+  checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in admission.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -1819,8 +1823,8 @@ run or not applicable is no pass (PHS.63).
   - `ct_lb2_02.rs`: CT-LB2-02's Strict half at the kernel, on library-built words with identity net effect whose
     intermediate prefixes move a protected orbit: Net derives them and ends at the base; Strict refuses them at the
     first moving prefix with one certificate per protected orbit that prefix moves; a replay gives no verdict before
-    `finish()`, and a replay finished early judges only the letters pushed. The Net half runs through the command
-    layer in `c600-tools/tests/net_oversize.rs`.
+    `finish()`, and a replay finished early judges only the letters pushed. The Net and Strict halves run through the
+    tool's route on the command layer in `c600-tools/tests/net_oversize.rs`.
 - Drafts, in the crate documentation under "Drafts": the exponent is an `Int`, and a negative power is the inverse
   written out; `power` recurses through `exact_add`, because the IR draft has no loop, subtraction or negation; a power
   is a flat word, not a compressed one; the catalogue row is Rust data, because the IR draft and the syntax carry no
@@ -1828,7 +1832,6 @@ run or not applicable is no pass (PHS.63).
 - Not built: jumbling menu letters in the language, which wait for menu words in the IR draft (M5, LP2; C8 builds
   literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction or Net
   and Strict protection with captured locks: the IR draft passes a run's input as a query's argument since LP2's
-  `read_snapshot<T>("q", x)`, and no host answers such a read yet; the
-  command layer's preview in Strict mode (KN5, LP2), so CT-LB2-02's Strict half does not run through the tool's route;
-  the other entries of LB1.8's table, the word and trace keys among them.
+  `read_snapshot<T>("q", x)`, and no host answers such a read yet; the other entries of LB1.8's table, the word and
+  trace keys among them.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
