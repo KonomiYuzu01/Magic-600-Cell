@@ -1,30 +1,30 @@
-//! CT-LB3-02, LP3's side (LB3.4, KN1.11): a protection verdict carries its level and never crosses it. M5's
-//! `c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03: every retained letter of the pinned I_a menu at
-//! grip 0 that turns the centre piece of cell 0 is refused at pose level inside Jumble and passes at label level after
-//! the crossing at solved. This test does not repeat them. It builds `c600_jumble_tool::protection`'s verdicts from one
-//! such letter, retained generator 1 (H_0), on each side, and checks that each verdict answers only for a puzzle of its
-//! own level.
+//! CT-LB3-02, whole (LB3.4, KN1.11): centre piece 0 under retained generator 1 (H_0) distinguishes pose and label
+//! protection, and a pose refusal cannot be replaced by the label pass at a crossing. Every verdict is an engine's own,
+//! held by `c600_jumble_tool::protection` with its level: inside Jumble, M8's protection of a whole word
+//! (`levels::derive`); in 600-cell-Full, the kernel's protection of named pieces, centres included
+//! (`Kernel::piece_protection`, `Kernel::strict_piece_protection`); each under Net and Strict (KN2.7). The crossing at
+//! solved is M8's: the label checkpoint and the retained checkpoint answer at their own levels, and `levels::project`
+//! gives the labels that 600-cell-Full starts from.
 //!
-//! What runs: the pose-level verdict of H_0 at grip 0 with the centre piece of cell 0 protected, which moves, and the
-//! label-level verdict of the kernel word `[1]` from solved, which is clear, each read at its own level and refused at
-//! the other with `KN1:input.level_not_held`; a label verdict that moves and a pose verdict that is clear, so no
-//! finding follows from the level alone; and the digest each verdict names. Not run: Strict protection of a whole word,
-//! which M8's `levels::derive` has at pose level and the kernel's `strict_piece_protection` at label level; the
-//! kernel's label-level protection of named pieces, centres included (`piece_protection`), in place of the label
-//! verdict composed from KN2.4's `positions` rows; and the pose-to-label crossing projection with its checkpoints,
-//! which M8's `levels` has. This test does not take them up yet. A pass is source and fixture evidence.
+//! M5's `c600-jumble/tests/crossing.rs` runs CT-KN2-03, the facts beneath, letter by letter: every retained letter of
+//! the pinned I_a menu at grip 0 that turns the centre piece, through one twist's protection (`State::apply`) and the
+//! kernel's `derive`. This test does not repeat it.
+//!
+//! Not run here: the crossing as a commit row of the command layer (ONE.54, ONE.80), which waits for LP2's KN5. A pass
+//! is source and fixture evidence.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use c600_jumble::model::{NP, NS};
+use c600_jumble::levels::{self, Base, LevelValue, Witness, LABEL_CHECKPOINT_LEVEL, RETAINED_CHECKPOINT_LEVEL};
+use c600_jumble::model::NS;
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_jumble_tool::level::Level;
-use c600_jumble_tool::protection::{Crossing, Finding, RowsDiffer, Verdict, LEVEL_NOT_HELD};
+use c600_jumble_tool::protection::{Crossing, Finding, Verdict, LEVEL_NOT_HELD};
 use c600_kernel::json::{self, Value};
-use c600_kernel::{Derivation, Kernel, PiecePosition, ProtectedSet, Puzzle, Snapshot};
+use c600_kernel::{Derivation, Kernel, PieceProtection, ProtectedSet, ProtectionMode, Puzzle, Snapshot};
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -46,12 +46,11 @@ fn i_a() -> Arc<Menu> {
     Arc::new(Menu::from_record(ctx(), doc.get("menu").expect("a menu")).expect("the pinned I_a menu"))
 }
 
-/// Retained generator 1, H_0, as the menu's letter at grip 0.
-fn h0(menu: &Menu) -> Twist {
-    let ctx = ctx();
-    let twists = menu.for_cap(ctx, 0).expect("the menu's twists at grip 0");
-    let h0 = ctx.kplus.gen_idx[0];
-    twists.into_iter().find(|twist| twist.kidx == Some(h0)).expect("the I_a menu holds H_0 at grip 0")
+/// Retained generator `mid` (signed and 1-based, as the kernel's letters) as a twist of the pinned menu at its grip.
+fn letter(menu: &Menu, mid: i64) -> Twist {
+    let twist = levels::primitive(ctx(), mid).expect("a retained generator");
+    assert!(menu.contains(ctx(), &twist), "the menu holds retained generator {mid}");
+    twist
 }
 
 /// The centre piece of cell `c`.
@@ -60,96 +59,211 @@ fn centre_of(c: u16) -> u32 {
     *model.centre_pieces.iter().find(|&&p| model.signature(p as usize) == [c]).expect("a centre piece")
 }
 
-/// The state after retained generator 1 from solved in 600-cell-Full, through the kernel's word `[1]`.
-fn after_h0() -> (Snapshot, Snapshot) {
+/// M8's derivation of `twists` from `base`, with `protect` protected at pose level under `mode`.
+fn pose_derivation(
+    base: &levels::Snapshot,
+    twists: &[Twist],
+    mode: ProtectionMode,
+    protect: &[u32],
+) -> levels::Derivation {
+    let ctx = ctx();
+    let identity = ctx.identity(base.state().menu());
+    levels::derive(ctx, Base::Snapshot(base), &identity, twists, mode, protect)
+        .expect("no engine error")
+        .expect("the base's own identity and pieces of the model")
+}
+
+/// The pose-level verdict of a derivation, from its value's protection report or its refusal's, on the base whose
+/// pose digest is `read`.
+fn pose_verdict(derivation: &levels::Derivation, read: &str) -> Verdict {
+    let report = match derivation {
+        levels::Derivation::Derived(derived) => derived.protection(),
+        levels::Derivation::Refused(refused) => refused.protection.as_ref(),
+    };
+    Verdict::poses(report.expect("a protection report"), read)
+}
+
+/// The kernel's label-level protection of `pieces` for the word `letters` from `base`, under `mode`.
+fn label_protection(base: &Snapshot, letters: &[i64], mode: ProtectionMode, pieces: &[u32]) -> PieceProtection {
     let kernel = kernel();
-    let solved = kernel.solved();
-    let recipe = kernel.word(&[1]).expect("the kernel reads retained generator 1");
-    match kernel.derive(&solved, &recipe, &ProtectedSet::none()).expect("no star certificate fails") {
-        Derivation::Derived(derived) => (solved, derived.state),
-        Derivation::Refused(refused) => panic!("refused at label level: {}", refused.refusal),
+    let named: Vec<i64> = pieces.iter().map(|&p| i64::from(p)).collect();
+    let set = kernel.protected_pieces(&named).expect("pieces of the model");
+    let recipe = kernel.word(letters).expect("a word of retained generators");
+    match mode {
+        ProtectionMode::Net => {
+            let effect = kernel.effect(&recipe).expect("no star certificate fails");
+            kernel.piece_protection(base, &effect, &set)
+        }
+        ProtectionMode::Strict => kernel.strict_piece_protection(base, &recipe, &set),
+    }
+    .expect("values of the loaded model")
+}
+
+/// M8's labels of a lattice state, total (KN1.9).
+fn total_labels(state: &State) -> levels::Labels {
+    match levels::project(ctx(), state, levels::Level::Labels).expect("no engine error") {
+        levels::Projection::Value(levels::Partial::Total(LevelValue::Labels(labels))) => labels,
+        other => panic!("a lattice state projects to labels totally: {other:?}"),
     }
 }
 
-fn positions(state: &Snapshot, pieces: &[u32]) -> Vec<PiecePosition> {
-    let pieces: Vec<i64> = pieces.iter().map(|&p| i64::from(p)).collect();
-    kernel().positions(state, &pieces).expect("pieces of the model")
+/// The level an end test's verdict names.
+fn level_of(verdict: &Value) -> &str {
+    verdict.get("level").and_then(Value::as_str).expect("a verdict names its level")
 }
 
-/// CT-LB3-02 (part: "a protection verdict carries its level and never crosses it"). The same rotation, H_0 about pole
-/// 0, gets two verdicts for the centre piece of cell 0: inside Jumble the pose-level verdict says the piece moves, and
-/// in 600-cell-Full, after the crossing at solved, the label-level verdict says it is clear, because H_0 turns the
-/// piece with its labels unchanged. Each answers for its own puzzle. Asked for the other, each is refused with
-/// `KN1:input.level_not_held`: the label pass grants no pose protection inside Jumble, and the pose refusal says
-/// nothing about labels. Each verdict names the digest of the state it judged at its own level.
+/// `verdict` answers `finding` for the puzzle of its own level and is refused with `KN1:input.level_not_held` for the
+/// other.
+fn answers_at_its_level_only(verdict: &Verdict, finding: &Finding) {
+    let (own, other) = match verdict.level() {
+        Level::Poses => (Puzzle::Jumbling, Puzzle::Full),
+        Level::Labels => (Puzzle::Full, Puzzle::Jumbling),
+    };
+    assert_eq!(verdict.answer(own), Ok(finding));
+    let crossing = verdict.answer(other).expect_err("a verdict never crosses its level");
+    assert_eq!(crossing, Crossing { held: verdict.level(), asked: Level::of(other) });
+    assert_eq!(crossing.code(), LEVEL_NOT_HELD);
+}
+
+/// CT-LB3-02. Inside Jumble the word [H_0] from solved, with centre piece 0 protected, is refused at pose level under
+/// Net and under Strict, because H_0 turns the piece. Jumble off at solved is a label checkpoint, and from the labels
+/// M8 projects, the kernel's word `[1]` passes at label level under both modes, because H_0 leaves the piece's labels
+/// in place. Each verdict answers only at its own level and is refused at the other with `KN1:input.level_not_held`.
+/// The label pass replaces nothing: inside Jumble the same word is refused again with the same report, and after `[1]`
+/// is committed in 600-cell-Full, the state Jumble on replays has the centre piece turned with its labels unchanged,
+/// which only the pose level sees.
 #[test]
-fn ct_lb3_02_a_protection_verdict_never_crosses_its_level() {
-    let ctx = ctx();
+fn ct_lb3_02_a_pose_refusal_is_not_replaced_by_the_label_pass_at_the_crossing() {
+    let (ctx, kernel) = (ctx(), kernel());
     let menu = i_a();
     let centre = centre_of(0);
-    let h0 = h0(&menu);
+    let h0 = letter(&menu, 1);
     assert_eq!(ctx.kplus.word_matrix(&[1], &ctx.model).as_ref(), Some(h0.matrix.as_ref()), "kernel letter 1 is H_0");
+    let modes = [ProtectionMode::Net, ProtectionMode::Strict];
 
-    let mut state = State::new(Some(menu.clone()));
-    let read = state.digest(ctx);
-    let outcome = state.apply(ctx, &h0, None, &[centre]).expect("no engine error");
-    assert_eq!(outcome.status, Status::Protected);
-    assert_eq!(outcome.refusal.as_ref().map(|refusal| refusal.0), Some(codes::PIECE_WOULD_MOVE));
-    let report = outcome.protection.as_ref().expect("a protection report");
-    assert_eq!(report.to_json().get("level"), Some(&Value::String(Level::Poses.as_str().into())));
-    let pose = Verdict::poses(report, &read);
-    assert_eq!((pose.level(), pose.protected(), pose.read()), (Level::Poses, &[centre][..], read.as_str()));
-    assert_eq!(pose.answer(Puzzle::Jumbling), Ok(&Finding::Moves(vec![centre])));
-    assert_eq!(state.digest(ctx), read, "the refused twist changed nothing");
+    // Inside Jumble, at pose level: Net refuses the whole word, Strict its first letter.
+    let base = levels::Snapshot::solved(ctx, Some(menu.clone()));
+    let read = base.state().digest(ctx);
+    let mut refusals = Vec::new();
+    for (mode, prefix) in modes.into_iter().zip([None, Some(1)]) {
+        let derivation = pose_derivation(&base, &[h0.clone()], mode, &[centre]);
+        let levels::Derivation::Refused(refused) = &derivation else {
+            panic!("H_0 with centre piece 0 protected is admitted at pose level under {mode:?}");
+        };
+        let found = (refused.refusal.code, refused.outcome, refused.first_refused_prefix, refused.base.as_str());
+        assert_eq!(found, (codes::PIECE_WOULD_MOVE, Status::Protected, prefix, read.as_str()));
+        let pose = pose_verdict(&derivation, &read);
+        assert_eq!((pose.level(), pose.mode(), pose.protected()), (Level::Poses, mode, &[centre][..]));
+        assert_eq!((pose.first_refused_prefix(), pose.read()), (prefix, read.as_str()));
+        answers_at_its_level_only(&pose, &Finding::Moves(vec![centre]));
+        refusals.push(refused.clone());
+    }
+    assert_eq!(base.state().digest(ctx), read, "a refused word changes nothing");
 
-    let (solved, turned) = after_h0();
-    let (before, after) = (positions(&solved, &[centre]), positions(&turned, &[centre]));
-    let slots: Vec<i32> = (0..NS).filter(|&s| ctx.model.slot_piece[s] == centre).map(|s| s as i32).collect();
-    assert_eq!(before[0].home, slots, "the kernel's row names the same piece");
-    let label = Verdict::labels(&before, &after, solved.digest()).expect("rows of the same pieces");
-    assert_eq!((label.level(), label.protected(), label.read()), (Level::Labels, &[centre][..], solved.digest()));
-    assert_eq!(label.answer(Puzzle::Full), Ok(&Finding::Clear));
+    // Jumble off at solved (LB3.3, A5): a label checkpoint, with which the retained checkpoint of the empty journal
+    // agrees; each end test's verdict names the level it read.
+    let checkpoint = levels::label_checkpoint(ctx, base.state(), base.reachability(), None).expect("no engine error");
+    let levels::Verdict::Yes(evidence) = &checkpoint else {
+        panic!("solved is a label checkpoint: {checkpoint:?}");
+    };
+    assert_eq!(level_of(&checkpoint.to_json_at(LABEL_CHECKPOINT_LEVEL)), "labels");
+    let retained = levels::retained_checkpoint(ctx, base.state(), Witness::Journal(&[])).expect("no engine error");
+    assert_eq!((retained.name(), level_of(&retained.to_json_at(RETAINED_CHECKPOINT_LEVEL))), ("yes", "poses"));
 
-    let crossing = label.answer(Puzzle::Jumbling).expect_err("a label verdict grants no pose protection");
-    assert_eq!(crossing, Crossing { held: Level::Labels, asked: Level::Poses });
-    assert_eq!(crossing.code(), LEVEL_NOT_HELD);
-    assert_eq!(LEVEL_NOT_HELD, "KN1:input.level_not_held");
-    let crossing = pose.answer(Puzzle::Full).expect_err("a pose verdict answers nothing about labels");
-    assert_eq!(crossing, Crossing { held: Level::Poses, asked: Level::Labels });
-    assert_ne!(pose.answer(Puzzle::Jumbling), label.answer(Puzzle::Full), "the two levels judge H_0 differently");
+    // 600-cell-Full starts from M8's projection of the poses to labels (KN1.9), never from a lift (KN1.10).
+    let labels = total_labels(base.state());
+    let digest = labels.digest();
+    assert_eq!(evidence.get("labels_digest").and_then(Value::as_str), Some(digest.as_str()));
+    let full = kernel.state_from_labels(labels.labels).expect("the labels of a lattice state are a permutation");
+    assert_eq!((full.labels(), full.digest()), (kernel.solved().labels(), digest.as_str()));
+
+    // In 600-cell-Full, at label level: the kernel's word [1] with centre piece 0 protected is clear in both modes.
+    // The kernel's row names the piece by the home slots `c600_jumble` gives it.
+    let home: Vec<i32> = (0..NS).filter(|&s| ctx.model.slot_piece[s] == centre).map(|s| s as i32).collect();
+    let mut passes = Vec::new();
+    for mode in modes {
+        let report = label_protection(&full, &[1], mode, &[centre]);
+        let rows: Vec<_> = report.rows.iter().map(|row| (row.piece, row.orbit, &row.before, &row.after)).collect();
+        assert_eq!(rows, [(centre as usize, -1, &home, &home)], "H_0 leaves the labels of centre piece 0 in place");
+        let label = Verdict::labels(&report, full.digest());
+        assert_eq!((label.level(), label.mode(), label.protected()), (Level::Labels, mode, &[centre][..]));
+        assert_eq!((label.first_refused_prefix(), label.read()), (None, full.digest()));
+        answers_at_its_level_only(&label, &Finding::Clear);
+        passes.push(label);
+    }
+
+    // The label pass replaces nothing: inside Jumble again, the word is refused with the same report.
+    for (mode, refused) in modes.into_iter().zip(&refusals) {
+        match pose_derivation(&base, &[h0.clone()], mode, &[centre]) {
+            levels::Derivation::Refused(again) => assert_eq!(&again, refused, "{mode:?}"),
+            levels::Derivation::Derived(_) => panic!("the label pass admitted H_0 inside Jumble under {mode:?}"),
+        }
+    }
+    assert!(passes.iter().all(|pass| pass.read() != read), "the label pass read Digest<labels>, not the poses");
+
+    // What the label pass cannot see: committed in 600-cell-Full, [1] leaves the centre piece's labels in place, while
+    // Jumble on, which replays the retained moves since the crossing from the stored exit poses, here solved (LB3.3,
+    // ONE.54), turns the piece by H_0. The two states agree at label level, where the turn does not show.
+    let recipe = kernel.word(&[1]).expect("the kernel reads retained generator 1");
+    let committed = match kernel.derive(&full, &recipe, &ProtectedSet::none()).expect("no star certificate fails") {
+        Derivation::Derived(derived) => derived.state,
+        Derivation::Refused(refused) => panic!("refused at label level: {}", refused.refusal),
+    };
+    assert!(home.iter().all(|&s| committed.labels()[s as usize] == s), "a label of centre piece 0 moved");
+    let replayed = levels::replay(ctx, Some(menu), &[h0.clone()], None).expect("no engine error");
+    let replayed = replayed.expect("H_0 is admissible from solved");
+    assert_eq!(replayed.pose_of(centre as usize).kidx(), h0.kidx, "Jumble on turns centre piece 0 by H_0");
+    assert_eq!(total_labels(&replayed).labels.as_slice(), committed.labels());
 }
 
-/// CT-LB3-02 (part: no finding follows from the level). Protecting a piece of cap 0 whose stickers H_0 turns as well,
-/// the label-level verdict finds that piece moving and the centre piece of cell 0 still clear; protecting the centre
-/// piece of cell 1 as well, which lies outside cap 0, the pose-level verdict of an admitted H_0 is clear. Label rows of
-/// different pieces before and after give no verdict.
+/// CT-LB3-02 (part: each level judges both modes, and no finding follows from the level). For a piece of cap 0 whose
+/// stickers H_0 moves, the word [H_0, H_0⁻¹] is clear under Net and refused at prefix 1 under Strict, at pose level
+/// inside Jumble and at label level in 600-cell-Full alike, each verdict answering only at its own level. Protecting
+/// that piece with centre piece 0, the label-level verdict of `[1]` finds it moving and the centre clear; protecting
+/// the centre piece of cell 1, which lies outside cap 0, the pose-level verdict of [H_0] is clear in both modes.
 #[test]
-fn ct_lb3_02_each_level_finds_both_clear_and_moves() {
-    let ctx = ctx();
-    let (solved, turned) = after_h0();
-    let zero = centre_of(0);
-    let moving = (0..NP as u32)
-        .filter(|&p| p != zero && ctx.model.in_sig(p as usize, 0))
-        .find(|&p| positions(&solved, &[p]) != positions(&turned, &[p]))
-        .expect("H_0 turns the stickers of a piece of cap 0");
-    let pieces = [zero, moving];
-    let label = Verdict::labels(&positions(&solved, &pieces), &positions(&turned, &pieces), solved.digest())
-        .expect("rows of the same pieces");
-    assert_eq!(label.protected(), &[zero.min(moving), zero.max(moving)][..]);
-    assert_eq!(label.answer(Puzzle::Full), Ok(&Finding::Moves(vec![moving])));
-    assert_eq!(label.answer(Puzzle::Jumbling), Err(Crossing { held: Level::Labels, asked: Level::Poses }));
-    let other = Verdict::labels(&positions(&solved, &[moving]), &positions(&turned, &[zero]), solved.digest());
-    assert_eq!(other, Err(RowsDiffer));
-
+fn ct_lb3_02_each_level_judges_net_and_strict_and_finds_both_clear_and_moves() {
+    let (ctx, kernel) = (ctx(), kernel());
     let menu = i_a();
-    let mut state = State::new(Some(menu.clone()));
-    let read = state.digest(ctx);
+    let (zero, h0, h0_inverse) = (centre_of(0), letter(&menu, 1), letter(&menu, -1));
+    let base = levels::Snapshot::solved(ctx, Some(menu));
+    let read = base.state().digest(ctx);
+    let full = kernel.solved();
+    let cap = ctx.model.cap_members(0);
+    let moved = label_protection(&full, &[1], ProtectionMode::Net, cap).moved();
+    let moving = *moved.first().expect("H_0 moves the stickers of a piece of cap 0") as u32;
+    assert!(moving != zero && !moved.contains(&(zero as usize)), "H_0 moves no label of centre piece 0");
+
+    let back = [h0.clone(), h0_inverse];
+    for (mode, finding, prefix) in
+        [(ProtectionMode::Net, Finding::Clear, None), (ProtectionMode::Strict, Finding::Moves(vec![moving]), Some(1))]
+    {
+        let pose = pose_verdict(&pose_derivation(&base, &back, mode, &[moving]), &read);
+        let label = Verdict::labels(&label_protection(&full, &[1, -1], mode, &[moving]), full.digest());
+        for verdict in [&pose, &label] {
+            assert_eq!(
+                (verdict.mode(), verdict.protected(), verdict.first_refused_prefix()),
+                (mode, &[moving][..], prefix)
+            );
+            answers_at_its_level_only(verdict, &finding);
+        }
+        assert_eq!((pose.level(), label.level()), (Level::Poses, Level::Labels));
+    }
+
+    let label = Verdict::labels(&label_protection(&full, &[1], ProtectionMode::Net, &[zero, moving]), full.digest());
+    assert_eq!(label.protected(), &[zero.min(moving), zero.max(moving)][..]);
+    answers_at_its_level_only(&label, &Finding::Moves(vec![moving]));
+
     let outside = centre_of(1);
     assert!(!ctx.model.in_sig(outside as usize, 0), "the centre piece of cell 1 lies outside cap 0");
-    let outcome = state.apply(ctx, &h0(&menu), None, &[outside]).expect("no engine error");
-    assert_eq!(outcome.status, Status::Admissible);
-    let pose = Verdict::poses(outcome.protection.as_ref().expect("a protection report"), &read);
-    assert_eq!(pose.answer(Puzzle::Jumbling), Ok(&Finding::Clear));
-    assert_eq!(pose.answer(Puzzle::Full), Err(Crossing { held: Level::Poses, asked: Level::Labels }));
-    assert_ne!(state.digest(ctx), read, "the admitted twist turned cap 0");
+    for mode in [ProtectionMode::Net, ProtectionMode::Strict] {
+        let derivation = pose_derivation(&base, &[h0.clone()], mode, &[outside]);
+        let levels::Derivation::Derived(derived) = &derivation else {
+            panic!("H_0 with the centre piece of cell 1 protected is refused under {mode:?}");
+        };
+        assert_ne!(derived.digest(ctx), read, "the admitted word turned cap 0");
+        let pose = pose_verdict(&derivation, &read);
+        assert_eq!((pose.level(), pose.mode(), pose.protected()), (Level::Poses, mode, &[outside][..]));
+        answers_at_its_level_only(&pose, &Finding::Clear);
+    }
 }
