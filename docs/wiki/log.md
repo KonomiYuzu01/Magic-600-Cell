@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: the session lock
+M6's session store (`rust/c600-session`) takes the session lock before it reads a journal, so one process opens a session at a time (KN4.1; 1.0-A3's V03.4 keeps 0.4's rule that a lock conflict is a typed error, not a crash): `FsDisk` holds an exclusive lock on the file `lock` in its directory until it is dropped or its process ends, and a second opener, in the same process or another, is refused with `KN4:busy.session_locked` before it reads or writes the journal or a state object, which closes Fable lead L9 (commit `5d1a7de2`). The code and the lock file's name are drafts for LP3's amendment list (a chapter-13 row under PHS.52), and KN4.2's lock (R-15, the in-process core lock) is unchanged.
+
 ## [2026-11-17] update | The language: KN5's stages 3 to 5
 The command layer (`rust/c600-command`) gains its workspace store: `workspace.set` writes a named record with its provenance block as a durable `completed(workspace)` action that keeps the state, the preview and the jobs, a draft `{"record": name}` previews the record's letters and goes stale on any later write of that record (KN0.8), and `session.undo` and `session.redo` reverse a record write as a workspace inverse (KN5.20). Stage 5 replaces `present(id)` with `present(id, &PresentedFrame)`: the layer refuses a frame that shows no preview, another preview or a user stage's drawing, and a word commit's token binds the stamp of the frame that presented its preview (ONE.41, RM.26, RPI.76; commit `8da920c5`); the session lock is the next piece, and `rust/README.md` lists the drafts and the gaps.
 

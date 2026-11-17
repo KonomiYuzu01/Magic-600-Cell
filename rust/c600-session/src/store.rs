@@ -65,8 +65,11 @@ impl Store {
         Ok(opened)
     }
 
-    /// Reads the journal and writes nothing.
-    pub(crate) fn read_journal(disk: Box<dyn Disk>) -> io::Result<Opened> {
+    /// Takes the session lock, then reads the journal and writes nothing. A lock that another opener holds refuses
+    /// the open before any read (`io::ErrorKind::WouldBlock`). So a second opener never cuts a frame that the
+    /// holder acknowledged, and never syncs or replays what the holder is writing (KN4.1, Fable lead L9).
+    pub(crate) fn read_journal(mut disk: Box<dyn Disk>) -> io::Result<Opened> {
+        disk.lock()?;
         let mut store = Store { disk, len: 0, reads: 0 };
         let Some(bytes) = store.read(JOURNAL)? else {
             return Ok(Opened { store, records: Vec::new(), damaged: None, tail: None });

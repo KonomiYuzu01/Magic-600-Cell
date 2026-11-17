@@ -17,6 +17,8 @@ use crate::token::Token;
 pub mod code {
     pub const UNKNOWN_SESSION: &str = "KN4:input.unknown_session";
     pub const DISK_FULL: &str = "KN4:resource_limit.disk_full";
+    /// Another opener holds the session lock (KN4.1). This is a draft: chapter 13 registers no KN4 code for it yet.
+    pub const SESSION_LOCKED: &str = "KN4:busy.session_locked";
     pub const EPOCH_CHANGED: &str = "KN2:stale.epoch_changed";
     pub const REVISION_GONE: &str = "KN2:stale.revision_gone";
     pub const COMMAND_ID_REUSED: &str = "KN5:input.command_id_reused";
