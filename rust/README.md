@@ -110,7 +110,8 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   word. The rule is conservative: it also refuses a named word passed to a helper that proposes or writes it, a write
   of a record, collection or closure built from named words, and a proposal to a `Target` parameter (a row the
   checker cannot name). Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the derived-state row (the IR
-  draft has no `derive`), rule 6's check of the facts a view shows and the class review (CT-BND-15).
+  draft has no `derive`), rule 6's check of the facts a view shows and the class review (CT-BND-15). `c600-runtime`'s
+  job options carry the class rows (`JobOptions::built_in`), so its child admits a built-in entry itself.
 - An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
   (LG3.5, LG3.6), on the built-in column and, for a workspace change, in `admit`'s solving profile. This confirms and
   closes LP3's finding of an exported plain `fn` that proposes: `check` admits it, since a command may call such a
@@ -1364,10 +1365,12 @@ run or not applicable is no pass (PHS.63).
   or any other authority (KN5.15). LP2's draft collections cross with one encoding each: lists, word keys (freely
   reduced), and sets and maps in canonical key order. A compressed word crosses as its parts and is rebuilt with the
   checked `from_parts` (LP2's pull request 185). A snapshot read with an argument crosses as
-  `request.snapshot_with`, its argument as canonical bytes. The lengths that a frame's compressed words derive are bounded
-  together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses. Above the bound a host's
-  answer reaches the run in process but stops the child's run with `PS1:input.noncanonical_value`, a known
-  difference (crate draft 15).
+  `request.snapshot_with`, its argument as canonical bytes. A job may name a built-in tool's class rows
+  (`JobOptions::built_in`, LP2's draft), the run's last field: the child then admits the entry with
+  `c600_check::admit_built_in`, and both executors refuse class rows outside the solving profile at the admission
+  stage. The lengths that a frame's compressed words derive are bounded together by one frame's bits, so one word
+  of up to 16,382 doublings of a letter crosses. Above the bound a host's answer reaches the run in process but
+  stops the child's run with `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
@@ -1375,10 +1378,11 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
-  canonical encodings, KI.5's record, KN5.15's field list and each host
-  request's round trip and its refusal when cut or unknown (`protocol.rs`); a snapshot read with an argument through
-  the child (`equivalence.rs`); LP2's draft collections and compressed
-  words, their canonical forms and refusals on both sides, and their runs through the child (`collections.rs`);
+  canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
+  or unknown, and the class rows as a strict trailing field (`protocol.rs`); a snapshot read with an argument
+  through the child, and a built-in entry admitted, refused for a row its class does not list and refused outside
+  the solving profile, alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words,
+  their canonical forms and refusals on both sides, and their runs through the child (`collections.rs`);
   CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang
   the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
