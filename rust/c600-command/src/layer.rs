@@ -64,6 +64,18 @@
 //! undo applies the exact inverse twist when the menu holds it and replays the journal otherwise, a redo applies the
 //! twist again, and each must reach the move's recorded poses.
 //!
+//! `jumble.off` ([`JUMBLE_OFF_ROW`]) is A5's exit (ONE.54, JI.27; draft): a crossing commit from Jumble on back to
+//! Jumble off, allowed exactly at A5's label checkpoint ([`jumble::exit`]): every piece on the lattice, every centre in
+//! its own chamber, ν = 0, and the head's poses witnessed from solved by the jumbling journal. A refusal names the fact
+//! only (`KN5:input.jumble_off_pieces_off_lattice`, `KN5:input.jumble_off_nu_nonzero`,
+//! `KN5:input.jumble_off_not_shown_reachable`). The exit is a node of the move tree that holds no retained recipe and
+//! has the exit's label digest: the poses' labels become the retained state, the revision's mode becomes [`MODE`],
+//! and the journal keeps the exit's record, not the poses. The retained rows work from the exit's state again, and the
+//! jumbling journal runs on through the exit, which moves no piece. An undo of the exit returns to the exact poses
+//! before it with the retained state the entry left, and a redo checks the checkpoint again. In this edition
+//! `jumble.on` after an exit is refused (`KN5:input.jumble_on_labels_only`): the entry from an exit root is not built
+//! yet. The exit checks no protected orbit; the protected set and the policy stay.
+//!
 //! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
 //! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
 //! epoch (KN5.23, L10). A session that crossed into Jumble on reopens with [`CommandLayer::open_with_menu`], which pins
@@ -72,6 +84,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
 use c600_jumble::levels::{self, Base, Derived};
 use c600_jumble::q5::{identity4, transpose};
 use c600_jumble::rotation;
@@ -85,7 +98,7 @@ use c600_kernel::{
 
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
-use crate::jumble::{self, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
+use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
@@ -309,12 +322,12 @@ struct Job {
     kind: JobKind,
 }
 
-/// A node of the move tree: the start (node 0), a commit, a crossing or a pose move, keyed by its action order. The
-/// journal keeps the recipe or the twist and the digest, not the state.
+/// A node of the move tree: the start (node 0), a commit, a crossing, a pose move or an exit, keyed by its action
+/// order. The journal keeps the recipe or the twist and the digest, not the state.
 #[derive(Clone, Debug)]
 struct Node {
     parent: u64,
-    /// A commit's retained recipe; `None` for the start, a crossing and a pose move.
+    /// A commit's retained recipe; `None` for the start, a crossing, a pose move and an exit.
     recipe: Option<Recipe>,
     /// A pose move's exact twist (draft); `None` for every other node.
     twist: Option<Twist>,
@@ -357,6 +370,13 @@ enum Change {
         before: u64,
         after: u64,
     },
+    /// An exit to Jumble off (`jumble.off`; draft): the head before it, its own node, and what an undo restores and a
+    /// redo checks ([`ExitPoint`]).
+    Exit {
+        before: u64,
+        after: u64,
+        point: Box<ExitPoint>,
+    },
 }
 
 /// What an adoption does to the move tree and the stacks.
@@ -382,6 +402,15 @@ struct Jumbled {
     depth: usize,
 }
 
+/// What an exit's undo restores and its redo checks: the head's poses before the exit, the retained state the entry
+/// left, and the exit's record.
+#[derive(Clone, Debug)]
+struct ExitPoint {
+    poses: Jumbled,
+    retained: Snapshot,
+    record: Value,
+}
+
 /// What an adoption does to the mode.
 #[derive(Clone, Debug)]
 enum Side {
@@ -389,7 +418,8 @@ enum Side {
     Stay,
     /// Jumble is on at this value: a crossing turns it on, and a pose move, or its undo or redo, moves the poses.
     On(Jumbled),
-    /// Jumble turns off: the retained state is the current one again.
+    /// Jumble turns off: an undo of an entry keeps the retained state the entry left, and an exit adopts its labels as
+    /// the retained state.
     Off,
 }
 
@@ -404,8 +434,8 @@ struct Adoption {
     tree: Tree,
     /// The preview a word commit commits.
     preview: Option<u64>,
-    /// What the action does to the mode: a crossing turns Jumble on, and its undo turns it off; a pose move moves the
-    /// poses.
+    /// What the action does to the mode: a crossing turns Jumble on and an exit turns it off, and their undos do the
+    /// reverse; a pose move moves the poses.
     side: Side,
 }
 
@@ -820,6 +850,14 @@ impl<S: Store> CommandLayer<S> {
                     return Err(broken("the recorded rotation is not an item of the pinned menu"));
                 }
                 self.plan_pose(meta, twist, record.clone())?
+            }
+            // An exit checks A5's label checkpoint again at the replayed poses, and its record must be the one the
+            // check makes ([`agrees`]).
+            TransactionKind::Exit => {
+                if stored.row != JUMBLE_OFF_ROW || self.jumbled.is_none() {
+                    return Err(broken("an exit is not `jumble.off` with Jumble on"));
+                }
+                self.plan_exit(meta)?
             }
         };
         if !agrees(&planned.transaction, stored) {
@@ -1290,6 +1328,15 @@ impl<S: Store> CommandLayer<S> {
                 }
                 (Some(_), false, None) => Ok(()),
             },
+            JUMBLE_OFF_ROW => match (&self.twists, self.commit_held, &self.jumbled) {
+                (None, _, _) => Err(Error::new(
+                    code::ROW_NOT_BUILT,
+                    format!("`{JUMBLE_OFF_ROW}` needs the host's pinned twist menu"),
+                )),
+                (Some(_), true, _) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
+                (Some(_), false, None) => Err(Error::new(MENU_WORD_NEEDS_JUMBLE_ON, "Jumble is off already")),
+                (Some(_), false, Some(_)) => Ok(()),
+            },
             JUMBLE_TWIST_ROW => match (&self.twists, self.commit_held) {
                 (None, _) => Err(Error::new(
                     code::ROW_NOT_BUILT,
@@ -1473,6 +1520,7 @@ impl<S: Store> CommandLayer<S> {
             RECORD_ROW => self.write_record(caller, invocation, request),
             TWIST_ROW => self.twist(caller, invocation, request),
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
+            JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
@@ -2051,7 +2099,8 @@ impl<S: Store> CommandLayer<S> {
 
     /// An undo or redo of the action on top of its stack, through the original permission path: a head change derives
     /// its path under `protected`, and a protection change that releases an orbit needs `confirm` (LI.26). A pose
-    /// move's undo applies the exact inverse of its twist and its redo the twist again (JI.27; draft).
+    /// move's undo applies the exact inverse of its twist and its redo the twist again; an exit's undo returns to the
+    /// poses before it and its redo checks A5's label checkpoint again (JI.27; draft).
     fn plan_step(&self, meta: Meta, direction: Direction, protected: &ProtectedSet) -> Result<Adoption, Error> {
         let (stack, kind, tree) = match direction {
             Direction::Undo => (&self.undo, TransactionKind::Undo, Tree::Undo),
@@ -2211,6 +2260,42 @@ impl<S: Store> CommandLayer<S> {
                 transaction.revision.digest = jumbled.digest.clone();
                 let side = Side::On(jumbled);
                 Ok(Adoption { transaction, state: None, protected: None, head: to, tree, preview: None, side })
+            }
+            // An undo of an exit returns to the exact poses before it, Jumble on, with the retained state the entry
+            // left. A redo checks A5's label checkpoint again from the head's value, which must reach the exit's
+            // recorded labels and record (JI.27; draft).
+            Change::Exit { before, after, point } => {
+                let (from, to) = if direction == Direction::Undo { (after, before) } else { (before, after) };
+                if self.head != from || self.state_digest() != self.nodes[&from].digest {
+                    let detail = "the head hash differs from the head's recorded state";
+                    return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                }
+                let ExitPoint { poses, retained, record } = *point;
+                let (mode, state, side) = match direction {
+                    Direction::Undo => {
+                        if poses.digest != self.nodes[&to].digest {
+                            let detail = "the exit's poses are not the recorded poses before it";
+                            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                        }
+                        (JUMBLE_ON_MODE, retained, Side::On(poses))
+                    }
+                    Direction::Redo => {
+                        let exit = self.exit_at_head()?;
+                        if exit.state.digest() != self.nodes[&to].digest || exit.record != record {
+                            let detail = "the checkpoint does not reach the exit's recorded labels and record";
+                            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+                        }
+                        (MODE, exit.state, Side::Off)
+                    }
+                };
+                let digest = self.nodes[&to].digest.clone();
+                transaction.post = digest.clone();
+                transaction.revision.mode = mode;
+                transaction.revision.head = format!("e{to}");
+                transaction.revision.state += 1;
+                transaction.revision.digest = digest;
+                let state = Some(state);
+                Ok(Adoption { transaction, state, protected: None, head: to, tree, preview: None, side })
             }
         }
     }
@@ -2576,6 +2661,121 @@ impl<S: Store> CommandLayer<S> {
         Ok(letters)
     }
 
+    // ----- jumble.off -----
+
+    /// `jumble.off` (A5; ONE.54, ONE.80, JI.27; draft): a crossing commit from Jumble on back to Jumble off. Before
+    /// the token is spent: the pinned menu (`KN5:input.row_not_built`) and the `revision` argument's form
+    /// (`KN5:input.argument_form`). Then ONE.80's order, as for `jumble.on`: the token (step 3), the commit lane (step
+    /// 4), its binding to this invocation and the session's identity block (step 5); the mode
+    /// (`KN5:input.menu_word_needs_jumble_on`: with Jumble off there is no episode to exit); the named revision and
+    /// the token's state and protection revisions (`KN5:stale.revision_changed`); the head hash
+    /// (`KN5:consistency.state_hash_mismatch`); A5's label checkpoint ([`CommandLayer::plan_exit`]); the durable
+    /// transaction with its exit record; the adoption. A refusal changes nothing.
+    fn jumble_off(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+        row: &Row,
+    ) -> Result<(Option<u64>, Status), Error> {
+        if self.twists.is_none() {
+            return refused(code::ROW_NOT_BUILT, format!("`{JUMBLE_OFF_ROW}` needs the host's pinned twist menu"));
+        }
+        let args = invocation.args.as_object().expect("the dispatch checked that the arguments are an object");
+        forms::check_forms(row, args)?;
+        let binding = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&binding, invocation)?;
+        if self.jumbled.is_none() {
+            return refused(MENU_WORD_NEEDS_JUMBLE_ON, "Jumble is off already: there is no episode to exit");
+        }
+        forms::check_revisions(row, args, &self.revision)?;
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        let adoption = self.plan_exit(Meta::of(caller, invocation, request))?;
+        self.transact(adoption)
+    }
+
+    /// An exit to Jumble off (A5, JI.27; draft): the head hash, then A5's label checkpoint at the head's poses
+    /// ([`CommandLayer::exit_at_head`]). The exit is a new node under the head that holds no retained recipe and has
+    /// the exit's label digest; the poses' labels become the retained state, the revision's mode becomes [`MODE`], its
+    /// state revision advances and its digest is the label digest. The protected set and the policy stay: the exit
+    /// checks no protected orbit (draft).
+    fn plan_exit(&self, meta: Meta) -> Result<Adoption, Error> {
+        if self.state_digest() != self.nodes[&self.head].digest {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
+        }
+        let Some(head) = &self.jumbled else {
+            return Err(Error::new(MENU_WORD_NEEDS_JUMBLE_ON, "Jumble is off already: there is no episode to exit"));
+        };
+        let exit = self.exit_at_head()?;
+        let post = exit.state.digest().to_owned();
+        let order = self.order + 1;
+        let event = format!("e{order}");
+        let revision = Revision {
+            mode: MODE,
+            head: event.clone(),
+            state: self.revision.state + 1,
+            digest: post.clone(),
+            ..self.revision.clone()
+        };
+        let depth = self.nodes[&self.head].depth + 1;
+        let node = Node { parent: self.head, recipe: None, twist: None, digest: post.clone(), depth };
+        let transaction = Transaction {
+            kind: TransactionKind::Exit,
+            event,
+            order,
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: self.state_digest().to_owned(),
+            post,
+            revision,
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: false,
+            job: None,
+            result: None,
+            record: None,
+            policy: None,
+            records: Vec::new(),
+            rotation: None,
+            crossing: Some(exit.record.clone()),
+        };
+        let point = ExitPoint { poses: head.clone(), retained: self.current.clone(), record: exit.record };
+        let change = Change::Exit { before: self.head, after: order, point: Box::new(point) };
+        let tree = Tree::Push { node: Some((order, node)), change };
+        let state = Some(exit.state);
+        Ok(Adoption { transaction, state, protected: None, head: order, tree, preview: None, side: Side::Off })
+    }
+
+    /// A5's label checkpoint at the head's poses with Jumble on ([`jumble::exit`]): in the episode that the head's
+    /// entry began, named by the entry's event, along the jumbling journal from solved to the head.
+    fn exit_at_head(&self) -> Result<jumble::Exit, Error> {
+        let mismatch = |detail: &str| Error::new(code::STATE_HASH_MISMATCH, detail);
+        let (Some(twists), Some(head)) = (&self.twists, &self.jumbled) else {
+            return Err(mismatch("an exit needs Jumble on under the pinned twist menu"));
+        };
+        // With Jumble on the head's path climbs through pose moves to the entry.
+        let mut entry = self.head;
+        while self.nodes[&entry].twist.is_some() {
+            entry = self.nodes[&entry].parent;
+        }
+        if entry == 0 || self.nodes[&entry].recipe.is_some() {
+            return Err(mismatch("the head's poses do not descend from an entry"));
+        }
+        let journal = self.jumble_journal(self.head)?;
+        let exit = jumble::exit(twists, &self.kernel, &head.derived, &format!("e{entry}"), &journal)?;
+        if exit.record.get("poses").and_then(Value::as_str) != Some(head.digest.as_str()) {
+            return Err(mismatch("the checkpoint's poses are not the head's"));
+        }
+        Ok(exit)
+    }
+
     // ----- jumble.twist.menu -----
 
     /// `jumble.twist.menu` (JI.35, FP.31, JI.27; draft): a live menu twist, committed at once with no preview (ONE.78).
@@ -2741,10 +2941,10 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// The jumbling journal from solved to node `to` (draft): along the move tree's path from the start, the primitive
-    /// letters of every retained commit and the twist of every pose move; a crossing moves no piece. The start must be
-    /// solved, as a crossing's witness needs (JI.25). While `jumble.on` is the only crossing, no retained commit
-    /// follows a crossing on a path: the retained rows are refused with Jumble on, and a reopen refuses a retained
-    /// commit while Jumble is on. `jumble.off` (A5's exit) must cut this journal at the path's last crossing.
+    /// letters of every retained commit and the twist of every pose move; an entry and an exit move no piece. The
+    /// start must be solved, as a crossing's witness needs (JI.25). The journal runs on through an exit: the exit's
+    /// labels are its poses' labels, and a retained commit after it moves those poses as it moves the labels, so the
+    /// journal replays from solved to poses whose labels are the retained state's.
     fn jumble_journal(&self, to: u64) -> Result<Vec<Twist>, Error> {
         let mismatch = |detail: String| Error::new(code::STATE_HASH_MISMATCH, detail);
         let Some(twists) = &self.twists else {
