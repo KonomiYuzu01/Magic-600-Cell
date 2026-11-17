@@ -1128,11 +1128,11 @@ fn ct_det_27_one_invoke_admission_checks_kernel_then_memory_then_output() {
 }
 
 /// CT-DET-28 (synthetic, part: exact integer addition and multiplication (the LP2 draft `exact_mul`), pointwise
-/// assertions (the LP2 draft `assert`) and text equality on RT1; not run: loop tests, which the IR has no construct
-/// for (their abstract rows replay in `tests/traces.rs`)): an addition's or a product's kernel cost and result
-/// reservation follow its operands' bit lengths, whatever their size, and the reservation shrinks to the result; an
-/// assertion is one step after its predicate, and a false one ends the run there with its error code (DET.55); text
-/// equality is priced on both scalar lengths.
+/// assertions (the LP2 draft `assert`) and text equality on RT1, and loop tests in `tests/loops.rs`; not run: flow
+/// checks, which the IR has no construct for (their abstract rows replay in `tests/traces.rs`)): an addition's or a
+/// product's kernel cost and result reservation follow its operands' bit lengths, whatever their size, and the
+/// reservation shrinks to the result; an assertion is one step after its predicate, and a false one ends the run there
+/// with its error code (DET.55); text equality is priced on both scalar lengths.
 #[test]
 fn ct_det_28_arithmetic_and_text_work_use_operand_sizes() {
     let loaded = build(&[&source(

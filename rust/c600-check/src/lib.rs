@@ -174,7 +174,8 @@ pub enum StateRead {
 
 /// One row of chapter 07's grant table that a host-reaching operation uses, named by the operation's literal data:
 /// the rows a built-in tool's class lists (BND.57). Draft naming (LP2): the IR draft has no class table, no `derive`
-/// operation and no display plan, so the derived-state row does not arise and a view change is one row.
+/// operation and no display plan, so a view change is one row, and the derived-state row arises only inside the two
+/// exceptions, as [`Row::RepairList`] and [`Row::SetupSearch`].
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Row {
     /// A snapshot read of the query (snapshot read row).
@@ -192,6 +193,23 @@ pub enum Row {
     /// A row the checker cannot name: a proposal whose target is not a literal, or a call of a callable known only by
     /// a bound that allows a snapshot read, a view or workspace change or a preview.
     Unknown,
+    /// The derived-state row of the repair-list exception (BND.2; chapter 07 section 8, built-in column; LP2 draft):
+    /// the pairs at a cap the solver names, read as the engine row `query` for the cap (the IR draft has no `derive`).
+    /// Only a class lists it. A summary reports such a read as [`Row::Read`], which this row covers (see
+    /// [`class_covers`]), and [`admit_built_in`] then checks every read of `query` under the exception's rules.
+    RepairList(String),
+    /// The derived-state row of the setup-search exception (BND.1; LP2 draft): the setups that keep the buffers fixed,
+    /// for a target the solver names, read as the engine row `query` for the target. As [`Row::RepairList`].
+    SetupSearch(String),
+}
+
+/// Whether the rows a built-in tool's class lists cover a row an entry may use (BND.57): the row itself, or for a read
+/// of a query, the derived-state row of one of the two exceptions on that query ([`Row::RepairList`],
+/// [`Row::SetupSearch`]). [`admit_built_in`] applies it to the entry's rows.
+pub fn class_covers(class_rows: &BTreeSet<Row>, row: &Row) -> bool {
+    let Row::Read(query) = row else { return class_rows.contains(row) };
+    let exceptions = [Row::RepairList(query.clone()), Row::SetupSearch(query.clone())];
+    class_rows.contains(row) || exceptions.iter().any(|x| class_rows.contains(x))
 }
 
 /// What a function needs, inferred through its calls (LG3.2).
@@ -509,11 +527,34 @@ fn entry_fn<'p>(program: &'p Program, module: &str, function: &str) -> Option<&'
 /// publishes the word the solver named is refused, as is a write, a view or a result of a record, a collection or a
 /// closure built from named words, and a callee's snapshot read for its own parameter.
 ///
-/// Not built: the column's two exceptions (setup search for a named target, the repair list: CT-BND-17, CT-BND-18),
-/// the derived-state row (`derive`: the IR draft has no such operation, ONE.23), the rest of rule 6's check of the
-/// facts a view shows (a selection that is not word-carrying, such as a cap the method chose, is not told from a
-/// per-cap fact), and the review of the class against the entry (CT-BND-15). BND.33's flow rule stays LQ2's. The open
-/// cells are left empty: they are the own column's.
+/// The column's two exceptions (BND.1, BND.2, BND.69; LP2 draft): a class that lists [`Row::RepairList`] or
+/// [`Row::SetupSearch`] for a query may read that query's derived state, and every read of it, also one the class
+/// lists as [`Row::Read`], follows the exception's rules, refused with `LG3:capability.not_granted`:
+///
+/// - named: the read is in the entry's own body, for a parameter of the entry as given, the cap or the target the
+///   solver named (BND.2: the program does not choose the cap; BND.1; BND.64: no job for an unnamed cap). A read with
+///   no argument or for any other argument is refused at the read, and a function the entry reaches that reads the
+///   query is refused at `entry`;
+/// - as given: the read's value is only delivered as read, at an expression the entry's body may return, as the value
+///   of a view, or bound by `let` to a name used only so. Any other use is refused at the use: an operation, a call, a
+///   field, a record or a collection holding it, a condition or a match on it, a write, a proposal, a closure's result.
+///   So the list keeps the engine's neutral order and marks no row best, and no entry tests a list for emptiness to
+///   skip to another cap (BND.2, BND.64); the solver chooses among the setups (BND.1). A branch of an `if`, a
+///   `display_if` or a `match` delivers to the result only when its condition reads nothing but literals and the
+///   entry's parameters as given: otherwise the program would choose the cap or the target, or whether to show the
+///   value (BND.2, BND.64). A branch inside a view's or a `let`'s value is a use;
+/// - shown facts: a value so delivered is the exception's output, so the shown-facts rule above does not refuse it.
+///   Previews keep their rules: an entry that reads the list or the setups reads state and prepares no preview, and a
+///   preview is of a word the solver named, in a command the solver invokes.
+///
+/// A class that lists both rows for one query is refused at `entry`: each exception reads a query of its own (BND.69).
+///
+/// Not built: the derived-state row outside the two exceptions (`derive`: the IR draft has no such operation, ONE.23),
+/// the rest of rule 6's check of the facts a view shows (a selection that is not word-carrying, such as a cap the
+/// method chose, is not told from a per-cap fact), and the review of the class against the entry (CT-BND-15). What the
+/// exceptions also need lies outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty
+/// list's wording (BND.2), the shell's keys and the solver's edit of a setup, and a job that names its cap through
+/// the command layer. BND.33's flow rule stays LQ2's. The open cells are left empty: they are the own column's.
 pub fn admit_built_in(
     program: &Program,
     module: &str,
@@ -578,7 +619,7 @@ pub fn admit_built_in(
             let note = "the entry may use a row the checker cannot name, and a built-in tool's rows are listed by its \
                         class (BND.57)";
             refuse(NOT_GRANTED, "entry", note.into());
-        } else if !class_rows.contains(row) {
+        } else if !class_covers(class_rows, row) {
             refuse(
                 NOT_GRANTED,
                 "entry",
@@ -598,10 +639,30 @@ pub fn admit_built_in(
             _ => BTreeSet::new(),
         }
     };
+    let exceptions = Exception::of(class_rows);
+    for row in class_rows {
+        if let Row::SetupSearch(query) = row {
+            if class_rows.contains(&Row::RepairList(query.clone())) {
+                let note = format!(
+                    "the class lists `{query}` as both the repair list and the setup search, and each exception reads \
+                     a query of its own (BND.69)"
+                );
+                refuse(NOT_GRANTED, "entry", note);
+            }
+        }
+    }
+    let none_delivered = BTreeSet::new();
     for (m, name) in &summary.reaches {
         let Some(callee) = entry_fn(program, m, name) else { continue };
         let callee_views = views(m, name);
-        let named = Named { words: BTreeSet::new(), params: BTreeSet::new(), views: &callee_views, policy };
+        let named = Named {
+            words: BTreeSet::new(),
+            params: BTreeSet::new(),
+            views: &callee_views,
+            delivered: &none_delivered,
+            exceptions: &exceptions,
+            policy,
+        };
         let found: BTreeSet<Unnamed> = unnamed(&callee.body, &named).into_iter().map(|(_, what)| what).collect();
         let verbs: Vec<&str> = found.iter().filter_map(|what| what.verb()).collect();
         if !verbs.is_empty() {
@@ -625,14 +686,33 @@ pub fn admit_built_in(
                 ),
             );
         }
+        if let Some((query, x)) = exception_read(&callee.body, &exceptions) {
+            let (named, rule) = x.named();
+            refuse(
+                NOT_GRANTED,
+                "entry",
+                format!(
+                    "`{m}.{name}` reads `{query}`, {}, and the built-in column reads it only in the entry, for the \
+                     {named} the solver named to the entry ({rule}, BND.64)",
+                    x.what()
+                ),
+            );
+        }
     }
     let words: BTreeSet<&str> =
         f.params.iter().filter(|p| matches!(p.ty.ty, Ty::Word | Ty::MenuWord)).map(|p| p.name.as_str()).collect();
+    let params: BTreeSet<&str> = f.params.iter().map(|p| p.name.as_str()).collect();
+    let delivered = deliveries(&f.body, &params, &exceptions);
+    for (path, note) in delivered.refusals {
+        refuse(NOT_GRANTED, &path, note);
+    }
     let entry_views = views(module, function);
     let named = Named {
         words: words.clone(),
-        params: f.params.iter().map(|p| p.name.as_str()).collect(),
+        params,
         views: &entry_views,
+        delivered: &delivered.views,
+        exceptions: &exceptions,
         policy,
     };
     for (path, what) in unnamed(&f.body, &named) {
@@ -640,6 +720,9 @@ pub fn admit_built_in(
     }
     if separation.reads_state && carries_word(&f.result.ty) {
         for path in unnamed_results(&f.body, &words) {
+            if delivered.results.contains(&path) {
+                continue;
+            }
             let note = "the result of an entry that reads state-derived data, of a word-carrying type, other than a \
                         `Word` or `MenuWord` parameter of the entry as given: no word the method derived or selected \
                         from state leaves an inspector (LB3.5, DT-J1 rule 6)";
@@ -659,6 +742,10 @@ struct Named<'a> {
     params: BTreeSet<&'a str>,
     /// The paths of the body's views that publish a word-carrying value, when the entry reads state-derived data.
     views: &'a BTreeSet<String>,
+    /// The paths of the body's views that publish an exception's value as read ([`Deliveries::views`]).
+    delivered: &'a BTreeSet<String>,
+    /// The exceptions the class grants, by query: their reads follow the exceptions' rules ([`deliveries`]).
+    exceptions: &'a BTreeMap<&'a str, Exception>,
     policy: &'a Policy,
 }
 
@@ -714,8 +801,9 @@ impl Unnamed {
 
 /// The proposals, word-carrying workspace writes, views and snapshot reads in `body` that `named` does not allow, with
 /// their paths, in body order. A word the solver named is one of `named.words` as given, a parameter that no `let` or
-/// closure parameter shadows; a write may also store a read through a declassifier the policy enables. A read's
-/// argument may be one of `named.params` as given, a literal, or a record or a collection built from those alone.
+/// closure parameter shadows; a write may also store a read through a declassifier the policy enables, and a view may
+/// publish an exception's value as read. A read's argument may be one of `named.params` as given, a literal, or a
+/// record or a collection built from those alone; a read of an exception's query is [`deliveries`]' to check.
 fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
     fn word(e: &Expr, named: &Named, bound: &[String]) -> bool {
         matches!(e, Expr::Var(v) if named.words.contains(v.as_str()) && !bound.contains(v))
@@ -738,9 +826,14 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
                 (!word(value, named, bound) && !declassified).then_some(Unnamed::Write)
             }
             Expr::PublishView { value } if !named.views.is_empty() && !word(value, named, bound) => {
-                named.views.contains(&path_text(path)).then_some(Unnamed::View)
+                let at = path_text(path);
+                (named.views.contains(&at) && !named.delivered.contains(&at)).then_some(Unnamed::View)
             }
-            Expr::ReadSnapshotWith { arg, .. } if !given(arg, named, bound) => Some(Unnamed::ReadArgument),
+            Expr::ReadSnapshotWith { query, arg, .. }
+                if !named.exceptions.contains_key(query.as_str()) && !given(arg, named, bound) =>
+            {
+                Some(Unnamed::ReadArgument)
+            }
             _ => None,
         };
         if let Some(found) = found {
@@ -750,6 +843,7 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
             Expr::Let { name, .. } => (1, vec![name.clone()]),
             Expr::Closure { params, .. } => (0, params.iter().map(|p| p.name.clone()).collect()),
             Expr::Child { status, .. } => (1, status.iter().cloned().collect()),
+            Expr::Repeat { acc, .. } => (2, vec![acc.clone()]),
             _ => (usize::MAX, Vec::new()),
         };
         for (i, child) in e.children().into_iter().enumerate() {
@@ -771,8 +865,8 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
 }
 
 /// The paths of the expressions `body` may return that are not one of `words` as given, unshadowed (LB3.5): the rest
-/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, and a child
-/// scope's body and stop branch.
+/// of each `let`, both branches of an `if` or a `display_if`, every arm of a `match`, its `_` arm included, a child
+/// scope's body and stop branch, and a loop's initial value and body.
 fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
     fn walk(e: &Expr, words: &BTreeSet<&str>, path: &mut Vec<u32>, bound: &mut Vec<String>, out: &mut Vec<String>) {
         match e {
@@ -808,6 +902,18 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
                 path.pop();
                 bound.truncate(depth);
             }
+            // The loop's value is its initial value or its body's last one. The value so far is no word as given,
+            // since the body may have computed it.
+            Expr::Repeat { init, acc, body, .. } => {
+                path.push(1);
+                walk(init, words, path, bound, out);
+                path.pop();
+                bound.push(acc.clone());
+                path.push(2);
+                walk(body, words, path, bound, out);
+                path.pop();
+                bound.pop();
+            }
             Expr::Var(v) if words.contains(v.as_str()) && !bound.contains(v) => {}
             _ => out.push(path_text(path)),
         }
@@ -815,6 +921,327 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
     let mut out = Vec::new();
     walk(body, words, &mut Vec::new(), &mut Vec::new(), &mut out);
     out
+}
+
+/// One of the built-in column's two exceptions (chapter 07 section 8, BND.69), by the class row that grants it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Exception {
+    /// BND.2: the pairs at a cap the solver names ([`Row::RepairList`]).
+    RepairList,
+    /// BND.1: the setups for a target the solver names ([`Row::SetupSearch`]).
+    SetupSearch,
+}
+
+impl Exception {
+    /// The exceptions a class grants, by the query each reads.
+    fn of(class_rows: &BTreeSet<Row>) -> BTreeMap<&str, Exception> {
+        class_rows
+            .iter()
+            .filter_map(|row| match row {
+                Row::RepairList(query) => Some((query.as_str(), Exception::RepairList)),
+                Row::SetupSearch(query) => Some((query.as_str(), Exception::SetupSearch)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn what(self) -> &'static str {
+        match self {
+            Exception::RepairList => "the repair list",
+            Exception::SetupSearch => "the setup search",
+        }
+    }
+
+    /// What the solver names to it, and the rule that says so.
+    fn named(self) -> (&'static str, &'static str) {
+        match self {
+            Exception::RepairList => ("cap", "BND.2"),
+            Exception::SetupSearch => ("target", "BND.1"),
+        }
+    }
+
+    /// The refusal's note at a read that is not for what the solver named to the entry.
+    fn unnamed_note(self) -> String {
+        let (named, rule) = self.named();
+        format!(
+            "a read of {} for a {named} the solver did not name: the built-in column reads it only in the entry, for \
+             the {named} the solver named, a parameter of the entry as given ({rule}, BND.64)",
+            self.what()
+        )
+    }
+
+    /// The refusal's note at a delivery where the program chooses whether it runs: under a branch whose condition
+    /// reads more than what the solver named, after a short-circuit operand that does, in a loop's body whose count
+    /// does, in a closure's body or in a child scope.
+    fn steered_note(self) -> String {
+        let (named, rule) = self.named();
+        format!(
+            "{} delivered where the program chooses whether it runs: where a branch's condition, an earlier \
+             short-circuit operand or a loop's count reads more than literals and the entry's parameters as given, in \
+             a closure's body or in a child scope: the program would choose the {named} or whether to show it, and \
+             the solver names the {named} ({rule}, BND.64)",
+            self.what()
+        )
+    }
+
+    /// The refusal's note at a use of its value other than its delivery as read.
+    fn used_note(self) -> String {
+        let so = match self {
+            Exception::RepairList => {
+                "the list keeps its neutral order, marks no pair best and skips no cap (BND.2, BND.64)"
+            }
+            Exception::SetupSearch => "the solver chooses among the setups (BND.1, BND.64)",
+        };
+        format!(
+            "{} used other than delivered as read: the entry returns it, publishes it as a view or binds it with \
+             `let` for that, so {so}",
+            self.what()
+        )
+    }
+}
+
+/// The first read in `body`, in body order, of a query one of `exceptions` reads, with its exception.
+fn exception_read<'e>(body: &'e Expr, exceptions: &BTreeMap<&str, Exception>) -> Option<(&'e str, Exception)> {
+    let here = match body {
+        Expr::ReadSnapshot { query, .. } | Expr::ReadSnapshotWith { query, .. } => {
+            exceptions.get(query.as_str()).map(|&x| (query.as_str(), x))
+        }
+        _ => None,
+    };
+    here.or_else(|| body.children().into_iter().find_map(|child| exception_read(child, exceptions)))
+}
+
+/// Where an entry's body delivers an exception's value as read, and the refusals of the exceptions' rules
+/// ([`admit_built_in`]).
+#[derive(Default)]
+struct Deliveries {
+    /// The paths of the views that publish an exception's value, which the exceptions' rules check.
+    views: BTreeSet<String>,
+    /// The paths of the expressions the body may return that are an exception's value, which the exceptions' rules
+    /// check; a read for what the solver did not name is refused at the read, once.
+    results: BTreeSet<String>,
+    /// The refusals, with their paths, in body order.
+    refusals: Vec<(String, String)>,
+}
+
+/// Where an expression's value goes.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Place {
+    /// The entry's body may return it.
+    Result,
+    /// A view publishes it.
+    View,
+    /// A `let` binds it.
+    Bound,
+    /// Anything else: an operation, a call, a field, a record or a collection, a condition, a write, a proposal or a
+    /// closure's result.
+    Other,
+}
+
+/// The exceptions' rules over an entry's body ([`admit_built_in`]): each read of an exception's query is for one of
+/// `params` as given, and its value is only delivered as read. A `let` binds the value under its name until another
+/// `let`, a closure parameter, a child's status or a loop's value so far shadows the name; a branch of an `if`, a
+/// `display_if` or a `match` delivers it only to the result; a closure's result, a child's and a loop's are no
+/// delivery. Nothing is delivered where the program chooses whether it runs: under a branch whose condition reads more
+/// than literals and `params` as given, wherever the branch is, in a short-circuit operand after such an operand, in a
+/// loop's body whose count reads more, in a closure's body, which runs when its caller chooses, and in a child scope,
+/// whose budget chooses whether its body finishes or its stop branch runs.
+fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, Exception>) -> Deliveries {
+    struct Walk<'a> {
+        params: &'a BTreeSet<&'a str>,
+        exceptions: &'a BTreeMap<&'a str, Exception>,
+        /// The names `let`, closure parameters, a child's status and a loop's value so far bind, innermost last, with
+        /// the exception whose value a name holds as read.
+        scope: Vec<(&'a str, Option<Exception>)>,
+        /// How many of the constructs around the current expression choose whether it runs: branches whose condition
+        /// reads more than literals and `params` as given, short-circuit operands after such an operand, loop bodies
+        /// whose count reads more, closure bodies and child scopes.
+        steered: u32,
+        path: Vec<u32>,
+        out: Deliveries,
+    }
+
+    impl<'a> Walk<'a> {
+        /// Check `e` at `place`; the exception whose value `e` is, as read.
+        fn walk(&mut self, e: &'a Expr, place: Place) -> Option<Exception> {
+            let read = match e {
+                Expr::ReadSnapshot { query, .. } => Some((query, None)),
+                Expr::ReadSnapshotWith { query, arg, .. } => Some((query, Some(&**arg))),
+                _ => None,
+            };
+            if let Some((query, arg)) = read {
+                if let Some(&x) = self.exceptions.get(query.as_str()) {
+                    if let Some(arg) = arg {
+                        self.child(0, arg, Place::Other);
+                    }
+                    let named = matches!(arg, Some(Expr::Var(v)) if self.params.contains(v.as_str()) && !self.binds(v));
+                    if named {
+                        self.deliver(x, place);
+                    } else {
+                        self.refuse(x.unnamed_note());
+                        // Refused here once: the shown-facts rule does not report the same result again.
+                        if place == Place::Result {
+                            self.out.results.insert(path_text(&self.path));
+                        }
+                    }
+                    return Some(x);
+                }
+            }
+            match e {
+                Expr::Var(v) => {
+                    let held = self.scope.iter().rev().find(|(name, _)| *name == v.as_str()).and_then(|&(_, x)| x);
+                    if let Some(x) = held {
+                        self.deliver(x, place);
+                    }
+                    held
+                }
+                Expr::Let { name, value, body } => {
+                    let held = self.child(0, value, Place::Bound);
+                    self.scope.push((name.as_str(), held));
+                    let out = self.child(1, body, place);
+                    self.scope.pop();
+                    out
+                }
+                Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => {
+                    self.child(0, cond, Place::Other);
+                    let (branch, steers) = self.branch(cond, place);
+                    self.steered += steers;
+                    self.child(1, then, branch);
+                    self.child(2, els, branch);
+                    self.steered -= steers;
+                    None
+                }
+                Expr::Match { scrutinee, arms, default } => {
+                    self.child(0, scrutinee, Place::Other);
+                    let (branch, steers) = self.branch(scrutinee, place);
+                    self.steered += steers;
+                    for (i, arm) in arms.iter().map(|(_, arm)| arm).chain([&**default]).enumerate() {
+                        self.child(i as u32 + 1, arm, branch);
+                    }
+                    self.steered -= steers;
+                    None
+                }
+                Expr::PublishView { value } => {
+                    if self.child(0, value, Place::View).is_some() {
+                        self.out.views.insert(path_text(&self.path));
+                    }
+                    None
+                }
+                Expr::Closure { params, body, .. } => {
+                    // Its caller chooses when, and whether, the body runs.
+                    let depth = self.scope.len();
+                    self.scope.extend(params.iter().map(|p| (p.name.as_str(), None)));
+                    self.steered += 1;
+                    self.child(0, body, Place::Other);
+                    self.steered -= 1;
+                    self.scope.truncate(depth);
+                    None
+                }
+                Expr::Child { body, status, otherwise, .. } => {
+                    // Its budget chooses whether the body finishes or the stop branch runs (DET.60).
+                    self.steered += 1;
+                    self.child(0, body, Place::Other);
+                    let depth = self.scope.len();
+                    self.scope.extend(status.as_deref().map(|s| (s, None)));
+                    self.child(1, otherwise, Place::Other);
+                    self.scope.truncate(depth);
+                    self.steered -= 1;
+                    None
+                }
+                Expr::Repeat { count, init, acc, body, .. } => {
+                    // Its count chooses whether, and how often, the body runs (DET.55). The loop's value, its initial
+                    // value or the body's last result, is no delivery, and the value so far shadows `acc`.
+                    self.child(0, count, Place::Other);
+                    self.child(1, init, Place::Other);
+                    let steers = u32::from(!self.by_solver(count));
+                    self.scope.push((acc.as_str(), None));
+                    self.steered += steers;
+                    self.child(2, body, Place::Other);
+                    self.steered -= steers;
+                    self.scope.pop();
+                    None
+                }
+                Expr::Prim { op: Prim::And | Prim::Or, args } => {
+                    // A short-circuit operand runs only when the operands before it leave the result open (LG2.20).
+                    for (i, arg) in args.iter().enumerate() {
+                        let steers = u32::from(!args[..i].iter().all(|before| self.by_solver(before)));
+                        self.steered += steers;
+                        self.child(i as u32, arg, Place::Other);
+                        self.steered -= steers;
+                    }
+                    None
+                }
+                _ => {
+                    for (i, child) in e.children().into_iter().enumerate() {
+                        self.child(i as u32, child, Place::Other);
+                    }
+                    None
+                }
+            }
+        }
+
+        fn child(&mut self, i: u32, e: &'a Expr, place: Place) -> Option<Exception> {
+            self.path.push(i);
+            let out = self.walk(e, place);
+            self.path.pop();
+            out
+        }
+
+        fn binds(&self, name: &str) -> bool {
+            self.scope.iter().any(|(bound, _)| *bound == name)
+        }
+
+        /// Where the branches of a condition `cond` at `place` deliver, and whether `cond` steers them: a branch
+        /// delivers only to the result, and its condition chooses which branch runs unless it reads nothing but
+        /// literals and `params` as given, wherever the branch is.
+        fn branch(&self, cond: &Expr, place: Place) -> (Place, u32) {
+            let steers = u32::from(!self.by_solver(cond));
+            match place {
+                Place::Result => (Place::Result, steers),
+                _ => (Place::Other, steers),
+            }
+        }
+
+        /// Whether `e` reads nothing but literals and `params` as given, through primitive operations and fields. A
+        /// draw reads a generator's stream, which the solver does not give.
+        fn by_solver(&self, e: &Expr) -> bool {
+            match e {
+                Expr::Lit(_) => true,
+                Expr::Var(v) => self.params.contains(v.as_str()) && !self.binds(v),
+                Expr::Prim { op, args } => *op != Prim::RngDraw && args.iter().all(|arg| self.by_solver(arg)),
+                Expr::Field { value, .. } => self.by_solver(value),
+                _ => false,
+            }
+        }
+
+        fn deliver(&mut self, x: Exception, place: Place) {
+            match place {
+                Place::Result | Place::View if self.steered > 0 => {
+                    self.refuse(x.steered_note());
+                    // Refused here once: the shown-facts rule does not report the same result again.
+                    if place == Place::Result {
+                        self.out.results.insert(path_text(&self.path));
+                    }
+                }
+                Place::Result => {
+                    self.out.results.insert(path_text(&self.path));
+                }
+                Place::View | Place::Bound => {}
+                Place::Other => self.refuse(x.used_note()),
+            }
+        }
+
+        fn refuse(&mut self, note: String) {
+            self.out.refusals.push((path_text(&self.path), note));
+        }
+    }
+
+    let mut walk =
+        Walk { params, exceptions, scope: Vec::new(), steered: 0, path: Vec::new(), out: Deliveries::default() };
+    if !exceptions.is_empty() {
+        walk.walk(body, Place::Result);
+    }
+    walk.out
 }
 
 /// Whether a value of a type may hold a word, itself, in a record field, in a collection's elements, keys or values or
@@ -1401,6 +1828,13 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             bound.extend(status.as_deref());
             free_names(otherwise, bound, out);
             bound.truncate(depth);
+        }
+        Expr::Repeat { count, init, acc, body, .. } => {
+            free_names(count, bound, out);
+            free_names(init, bound, out);
+            bound.push(acc);
+            free_names(body, bound, out);
+            bound.pop();
         }
         other => {
             for child in other.children() {
@@ -3077,6 +3511,31 @@ impl<'p> Checker<'p> {
                 self.result(result, &ov, None, "a child scope's stop branch", &at);
                 s.add(&os);
                 self.operation(&mut s, needs(&[Effect::Budgets], &[]), "a child scope");
+                Ok((Val::declared(result), s))
+            }
+            Expr::Repeat { count, init, acc, result, body } => {
+                self.bare(&result.ty, true, "a loop's value")?;
+                // The count bounds the iteration, so approximate data cannot (LG2.20, DET.55; LP2 draft).
+                let (cv, mut s) = self.at(0, |c| c.expr(count, env))?;
+                if fits(&Ty::Nat, &cv.ty) {
+                    self.at(0, |c| c.exact_use(Site::Control, &cv, "a loop bound"));
+                } else {
+                    self.at(0, |c| c.misfit("Nat", &cv, "a loop bound"));
+                }
+                let (iv, is) = self.at(1, |c| c.expr(init, env))?;
+                let mut at = vec![1];
+                at.extend(returned(init));
+                self.result(result, &iv, None, "a loop's initial value", &at);
+                s.add(&is);
+                // Each iteration sees the value so far by its declared type, as a function sees a parameter.
+                env.vars.push((acc.clone(), Val::declared(result)));
+                let walked = self.at(2, |c| c.expr(body, env));
+                env.vars.pop();
+                let (bv, bs) = walked?;
+                let mut at = vec![2];
+                at.extend(returned(body));
+                self.result(result, &bv, None, "a loop's body", &at);
+                s.add(&bs);
                 Ok((Val::declared(result), s))
             }
         }

@@ -95,6 +95,9 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::Child { caps: _, result: _, body: _, status: _, otherwise: _ } => {
             ("child", Kind::Pure, &["body", "otherwise"])
         }
+        Expr::Repeat { count: _, init: _, acc: _, result: _, body: _ } => {
+            ("repeat", Kind::Pure, &["count", "init", "body"])
+        }
     }
 }
 

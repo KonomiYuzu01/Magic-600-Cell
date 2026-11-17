@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 75] = [
+const BUILTINS: [&str; 76] = [
     "if",
     "display_if",
     "exact_add",
@@ -96,6 +96,8 @@ const BUILTINS: [&str; 75] = [
     "rng_draw",
     // Child scopes (LP2 draft; DET.60).
     "child",
+    // Bounded loops (LP2 draft; DET.55).
+    "repeat",
     // Finite fields (KN3.2; LP2 drafts).
     "to_f2",
     "to_f5",
@@ -711,6 +713,8 @@ impl Body<'_> {
             "expand" => 3,
             // `child(caps, body, otherwise)` (LP2 draft; DET.60).
             "child" => 3,
+            // `repeat(count, init, body)` (LP2 draft; DET.55).
+            "repeat" => 3,
             "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => 0,
             // `list<T>(a, b, ...)` and `set<T>(a, b, ...)` take their items, `map<K, V>(k, v, ...)` its keys and values
             // in turn (LP2 drafts).
@@ -871,6 +875,7 @@ impl Body<'_> {
             "read_clock" => Ir::ReadClock,
             "rng_init" => Ir::RngInit { path: args.iter().map(|a| self.text(op, a)).collect::<R<Vec<_>>>()? },
             "child" => self.child_scope(args, path)?,
+            "repeat" => self.repeat(args, path)?,
             _ => return Err(self.err(span, format!("`{op}` is reserved and has no lowering"))),
         })
     }
@@ -952,6 +957,34 @@ impl Body<'_> {
             body: Box::new(body),
             status: status.map(|s| s.name.text.clone()),
             otherwise: Box::new(otherwise?),
+        })
+    }
+
+    /// `repeat(n, init, fn(acc: T) -> T { ... })` (LP2 draft; DET.55, LG2.20): a loop whose body runs `n` times, each
+    /// time with `acc` bound to the value so far, from `init`. The closure is no IR node: its block lowers at child 2,
+    /// after the count at child 0 and the initial value at child 1, with `acc` bound.
+    fn repeat(&mut self, args: &[Expr], path: &mut Vec<u32>) -> R<Ir> {
+        const BODY: &str =
+            "a loop's body is a closure with one parameter of its result type, `fn(acc: T) -> T { ... }` (DET.55)";
+        let ExprKind::Closure { params, result, body } = &args[2].kind else {
+            return Err(self.err(args[2].loc.0, BODY));
+        };
+        let result = self.ty(result)?;
+        let [acc] = params.as_slice() else { return Err(self.err(args[2].loc.0, BODY)) };
+        if self.ty(&acc.ty)? != result {
+            return Err(self.err(args[2].loc.0, BODY));
+        }
+        let count = self.at(path, 0, |b, p| b.expr(&args[0], p))?;
+        let init = self.at(path, 1, |b, p| b.expr(&args[1], p))?;
+        let depth = self.locals.len();
+        let body = self.bind(&acc.name).and_then(|()| self.at(path, 2, |b, p| b.block(body, p)));
+        self.locals.truncate(depth);
+        Ok(Ir::Repeat {
+            count: Box::new(count),
+            init: Box::new(init),
+            acc: acc.name.text.clone(),
+            result,
+            body: Box::new(body?),
         })
     }
 
@@ -1172,6 +1205,7 @@ mod tests {
                 "child" => format!(
                     "{op}(record {{ steps = 2 }}, fn() -> Nat {{ return 1; }}, fn(s: Status) -> Nat {{ return 2; }})"
                 ),
+                "repeat" => format!("{op}(2, 0, fn(acc: Nat) -> Nat {{ return acc; }})"),
                 _ => format!("{op}(1)"),
             };
             let source =

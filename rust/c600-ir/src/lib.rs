@@ -639,6 +639,17 @@ pub enum Expr {
         status: Option<String>,
         otherwise: Box<Expr>,
     },
+    /// `repeat` (LP2 draft; DET.55, LG2.20): a bounded loop over an accumulator. `count`, an exact natural, bounds it;
+    /// `init` is bound to `acc`, and `body` runs `count` times, each time with `acc` bound to the value the previous
+    /// iteration left. The loop's value is the last one, `init` itself when `count` is 0. Every test of the count
+    /// costs one step, the final false one included, and the body runs in the enclosing call frame.
+    Repeat {
+        count: Box<Expr>,
+        init: Box<Expr>,
+        acc: String,
+        result: QTy,
+        body: Box<Expr>,
+    },
 }
 
 impl Expr {
@@ -673,6 +684,7 @@ impl Expr {
             }
             Expr::Closure { body, .. } => vec![&**body],
             Expr::Child { body, otherwise, .. } => vec![&**body, &**otherwise],
+            Expr::Repeat { count, init, body, .. } => vec![&**count, &**init, &**body],
             Expr::Prim { args, .. } | Expr::Collection { items: args, .. } => args.iter().collect(),
             Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
             Expr::Field { value, .. }
@@ -770,6 +782,10 @@ pub mod build {
     pub fn child(caps: ChildCaps, result: QTy, body: Expr, status: Option<&str>, otherwise: Expr) -> Expr {
         let status = status.map(str::to_string);
         Expr::Child { caps, result, body: Box::new(body), status, otherwise: Box::new(otherwise) }
+    }
+    /// A bounded loop (LP2 draft; DET.55): `body` runs `count` times with `acc` bound to the value so far, from `init`.
+    pub fn repeat(count: Expr, init: Expr, acc: &str, result: QTy, body: Expr) -> Expr {
+        Expr::Repeat { count: Box::new(count), init: Box::new(init), acc: acc.into(), result, body: Box::new(body) }
     }
     pub fn to_field(field: Field, e: Expr) -> Expr {
         prim(Prim::ToField(field), vec![e])

@@ -267,10 +267,11 @@ fn int(n: i64) -> Value {
     Value::Int(n)
 }
 
-/// A twist key's rotation: a placeholder until the twist rows take A6's exact requests (KN3.7).
-fn rotation(axis: i64, inverse: bool) -> Value {
-    json::object([("axis", int(axis)), ("inverse", Value::Bool(inverse))])
-}
+/// The draft twist keys: each key, and Shift with it, types one item of the pinned twist menu as an exact KN3.7
+/// request ([`Arg::MenuItem`]; see the crate's drafts). Under the I_a menu's order these are, at every cap c, the
+/// half-turn `[2c+1]` (item 1, its own inverse), the third-turn `[2c+2]` (item 2, inverse item 5) and the third-turn
+/// `[2c+1, 2c+2]` (item 3, inverse item 9).
+pub const TWIST_KEYS: [(&str, u64, u64); 3] = [("KeyJ", 1, 1), ("KeyK", 2, 5), ("KeyL", 3, 9)];
 
 fn camera(axis: &str, step: i64) -> Value {
     json::object([(axis, int(step))])
@@ -372,16 +373,14 @@ pub fn default_specs() -> Vec<BindingSpec> {
             vec![("cap", SlotCap(slot)), ("frame", SlotFrame(slot))],
         ));
     }
-    for (axis, key) in ["KeyJ", "KeyK", "KeyL"].iter().enumerate() {
-        for inverse in [false, true] {
-            let chord = if inverse { format!("Shift+{key}") } else { (*key).to_owned() };
-            let r = Fixed(rotation(axis as i64, inverse));
+    for (key, forward, inverse) in TWIST_KEYS {
+        for (chord, item) in [(key.to_owned(), forward), (format!("Shift+{key}"), inverse)] {
             specs.push(
                 BindingSpec::new(
                     &[chord.as_str()],
                     Global,
                     "twist.apply",
-                    vec![("cap", GripCap), ("rotation", r.clone())],
+                    vec![("cap", GripCap), ("rotation", MenuItem(item))],
                 )
                 .only(Destination::Live),
             );
@@ -390,7 +389,7 @@ pub fn default_specs() -> Vec<BindingSpec> {
                     &[chord.as_str()],
                     Global,
                     "operation.phase.append_twist",
-                    vec![("cap", GripCap), ("rotation", r), ("phase", Phase)],
+                    vec![("cap", GripCap), ("rotation", MenuItem(item)), ("phase", Phase)],
                 )
                 .only(Destination::Draft),
             );

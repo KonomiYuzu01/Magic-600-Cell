@@ -259,10 +259,14 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
 /// relation: a flag, then the rows strictly increasing in their own order, so a class has one encoding and an empty
 /// class differs from none. A flag other than 0 or 1, an unknown row, rows out of order or repeated, a count beyond the
 /// payload, a cut message and a trailing byte are refused. The wire does not read the profile: both executors refuse
-/// class rows outside the solving profile at the admission stage (`equivalence.rs`).
+/// class rows outside the solving profile at the admission stage (`equivalence.rs`). The two exceptions' rows (tags 7
+/// and 8, LP2 draft) cross like the others, after `Row::Unknown`.
 #[test]
 fn the_built_in_column_is_a_strict_trailing_field() {
     let all: BTreeSet<Row> = [
+        Row::SetupSearch("setups".into()),
+        Row::RepairList("repair_list".into()),
+        Row::RepairList("pairs".into()),
         Row::Unknown,
         Row::Preview("t".into()),
         Row::Workspace("k".into()),
@@ -332,11 +336,14 @@ fn the_built_in_column_is_a_strict_trailing_field() {
         (listing(&[Row::View, Row::Outcome]), "class rows out of order or repeated"),
         (listing(&[Row::View, Row::View]), "class rows out of order or repeated"),
         (listing(&[Row::Read("b".into()), Row::Read("a".into())]), "class rows out of order or repeated"),
+        (listing(&[Row::SetupSearch("a".into()), Row::RepairList("a".into())]), "class rows out of order or repeated"),
+        (listing(&[Row::RepairList("a".into()), Row::RepairList("a".into())]), "class rows out of order or repeated"),
+        (listing(&[Row::RepairList("a".into()), Row::Unknown]), "class rows out of order or repeated"),
         (
             tail(&|e: &mut Enc| {
                 e.u8(1);
                 e.count(1);
-                e.u8(7);
+                e.u8(9);
             }),
             "an unknown class row",
         ),

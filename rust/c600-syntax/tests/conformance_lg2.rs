@@ -138,7 +138,7 @@ fn family(e: &Ir) -> &'static str {
         Ir::Lit(_) | Ir::Var(_) | Ir::FnRef { .. } | Ir::Closure { .. } | Ir::Record(_) | Ir::Field { .. } => "value",
         Ir::Collection { .. } => "value",
         Ir::Let { .. } | Ir::If { .. } | Ir::Match { .. } | Ir::DisplayIf { .. } | Ir::Call { .. } => "control",
-        Ir::Child { .. } => "control",
+        Ir::Child { .. } | Ir::Repeat { .. } => "control",
         Ir::Prim { op, .. } => prim_family(*op),
         Ir::ReadSnapshot { .. } | Ir::ReadSnapshotWith { .. } | Ir::Declassified { .. } => "snapshot read",
         Ir::PublishView { .. } | Ir::WriteWorkspace { .. } => "view or workspace",
