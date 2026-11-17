@@ -84,9 +84,10 @@
 //! - **Protection verdicts (LB3.4, KN1.11, KN2.4).** A [`protection::Verdict`] holds its level, its protected pieces,
 //!   its finding and the digest it read. At pose level it copies `c600-jumble`'s Net report of one twist; at label
 //!   level it is composed from KN2.4's `positions` rows before and after an operation, a piece moving when one of its
-//!   stickers changes slot, because the kernel's own label protection covers moving orbits 0 to 34 only and has no
-//!   row for a centre piece. Asked for a puzzle of the other level, a verdict is refused with
-//!   `KN1:input.level_not_held`, both ways; `LG2:type.level_mismatch` stays the checker's static diagnostic.
+//!   stickers changes slot. It is composed so because the kernel's `ProtectedSet` covers moving orbits 0 to 34 only
+//!   and has no row for a centre piece; the kernel's label-level protection of named pieces, centres included
+//!   (`Kernel::piece_protection`), is not taken up yet. Asked for a puzzle of the other level, a verdict is refused
+//!   with `KN1:input.level_not_held`, both ways; `LG2:type.level_mismatch` stays the checker's static diagnostic.
 //! - **CT-LB4-03's jumbling fixture (LB4.4, RPI.15).** `c600-repr`'s layouts carry no posed row, so the test adds
 //!   J02's posed row of the base state as primitive 2 of each plan: the plan then draws a pose-level subject, which
 //!   the validator checks, and a filter, which rebuilds primitive 0 only, keeps it. The mechanically analysed set is
@@ -117,12 +118,11 @@
 //!   (CT-LB3-05, CT-BND-17): LP2.
 //! - Not taken up yet on M8: the whole-word protection of `levels::derive` for CT-LB3-06, the rim and survey rows of
 //!   CT-LB3-07, and LB3.4's projection from poses to labels with its checkpoints (CT-LB3-02).
-//! - The slot action inside `c600-display`'s pose projection (J13): CT-LB4-03 supplies it in a test projection until
-//!   the display crate has it. A slot function per sticker in `c600-jumble`'s public API would spare the inversion of
-//!   the label map (LP2).
-//! - A label-level protection row for every piece, centre pieces included (KN1.11): the kernel's `ProtectedSet` covers
-//!   moving orbits 0 to 34, so CT-LB3-02's label verdict is composed from `positions` rows (LP2). Strict protection of
-//!   a whole word at label level waits with it; at pose level M8's `levels::derive` has it.
+//! - Not taken up yet from LP2's kernel pieces for C8: the slot action of K⁺ with its frame check
+//!   (`levels::Tables::slot_image`, `piece_slots`) inside `c600-display`'s pose projection (J13), which CT-LB4-03
+//!   supplies in a test projection until the display crate has it; and the kernel's label-level protection of named
+//!   pieces, centres included, under Net and Strict (`Kernel::piece_protection`, `strict_piece_protection`, KN1.11),
+//!   for CT-LB3-02's label verdict and Strict protection of a whole word at label level.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.

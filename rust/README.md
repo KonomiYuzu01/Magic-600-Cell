@@ -1518,16 +1518,17 @@ run or not applicable is no pass (PHS.63).
   ν, the F2 and F5 number kinds and the correction catalogue (LP2), which CT-LB3-04, CT-LB3-01's reachable nonzero-ν
   state and CT-LB3-07's correction part need; the producers of the rows J01 and J06 to J12 (J10 needs exposed-face
   geometry, J12 needs ν); the jumbling library entries, which need menu words in the IR draft; CT-LB1-02's key half
-  (LG2.18); BM5's review records; an engine-named rotation plane in `c600-jumble`; a comparison of the posed arrays with
-  the J1 fixture's later stages; label-level protection rows for every piece, centre pieces included (the kernel's
-  `ProtectedSet` covers the moving orbits 0 to 34, so CT-LB3-02's label verdict is composed from `positions` rows); the
-  relationship strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): LB3.4's
-  projection from poses to labels with its checkpoints (CT-LB3-02), a whole word's Net and Strict protection at pose
-  level (CT-LB3-02, CT-LB3-06), and the rim and survey rows of CT-LB3-07. Also waiting: the slot action inside
-  `c600-display`'s pose projection (J13), which CT-LB4-03 supplies in a test projection, and a slot function per sticker
-  in `c600-jumble` (LP2); the repair list through the command layer, with a job that names its cap (KN5), the built-in
-  column's repair-list exception in `c600-check`, the BND.2 wording of an empty list and no key that skips caps with an
-  empty list (LP2).
+  (LG2.18); BM5's review records; a comparison of the posed arrays with the J1 fixture's later stages; the relationship
+  strip's data contract (chapter 06, RPI.65). Not taken up yet from M8 (pull requests 176 and 182): LB3.4's projection
+  from poses to labels with its checkpoints (CT-LB3-02), a whole word's Net and Strict protection at pose level
+  (CT-LB3-02, CT-LB3-06), and the rim and survey rows of CT-LB3-07. Not taken up yet from LP2's kernel pieces for C8
+  (pull request 190): the slot action of K⁺ with its frame check (`levels::Tables::slot_image`, `piece_slots`) inside
+  `c600-display`'s pose projection (J13), which CT-LB4-03 supplies in a test projection; the engine-named rotation plane
+  (`twist::rotation_plane`), so a jumbling transform still has no swept preview (J03); and the kernel's label-level
+  protection of named pieces, centres included (`Kernel::piece_protection`, `strict_piece_protection`), so CT-LB3-02's
+  label verdict is still composed from `positions` rows. Also waiting: the repair list through the command layer, with a
+  job that names its cap (KN5), the built-in column's repair-list exception in `c600-check`, the BND.2 wording of an
+  empty list and no key that skips caps with an empty list (LP2).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
