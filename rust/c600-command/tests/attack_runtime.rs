@@ -181,6 +181,10 @@ fn output(records: &[(&str, Value)]) -> JobOutput {
     JobOutput { value: Value::Null, views: Vec::new(), records: records.collect() }
 }
 
+/// The envelope below is the one `c600_tools::bridge::Bridge` sends for a program's `propose(word, target(row))`: the
+/// row the program names, the arguments `{"draft": {"recipe": [...]}}`, no token, the run's channel. The bridge
+/// filters no row, and the row here declares a `draft` argument, so the layer's argument check passes.
+///
 /// B3 (classes A and F, attacker 1 where a language-defined workspace row is registered). ONE.52 [B]: "A workspace
 /// change by a program happens inside a command the solver invokes, as one undoable action"; ONE.36 [D] says the same
 /// of a draft write. A run invokes a language-defined workspace row on its own channel. The layer admits the job with
@@ -194,10 +198,10 @@ fn output(records: &[(&str, Value)]) -> JobOutput {
 fn b3_a_run_alone_causes_no_durable_action() {
     let mut f = fixture();
     let overlay = Overlay { module: "notes".into(), entry: "save".into() };
-    f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[], overlay).unwrap();
+    f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[("draft", "Draft")], overlay).unwrap();
     let (before, journal) = (f.layer.revision().clone(), f.transactions());
 
-    let receipt = f.runtime("stray-run", "tool.notes.save", json::object([]));
+    let receipt = f.runtime("stray-run", "tool.notes.save", draft_args(&word(&[1])));
     if let Status::Running(job) = receipt.status {
         let program = f.layer.take_program_job().expect("the job the run started");
         assert_eq!(program.job, job);
@@ -222,7 +226,7 @@ fn b3_a_run_alone_causes_no_durable_action() {
 fn b4_a_run_cannot_take_the_solvers_record_write_out_of_the_undo_order() {
     let mut f = fixture();
     let overlay = Overlay { module: "notes".into(), entry: "save".into() };
-    f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[], overlay).unwrap();
+    f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[("draft", "Draft")], overlay).unwrap();
     let solvers = Value::Array(vec![Value::Int(1), Value::Int(2)]);
     let args =
         json::object([("payload", solvers.clone()), ("provenance", text("solver")), ("record", text("macro"))]);
@@ -230,7 +234,7 @@ fn b4_a_run_cannot_take_the_solvers_record_write_out_of_the_undo_order() {
     assert!(matches!(written.status, Status::Completed(_)), "{:?}", written.status);
     let hint = f.layer.undo_hint(Direction::Undo).expect("the solver's write is undoable");
 
-    let receipt = f.runtime("stray-run", "tool.notes.save", json::object([]));
+    let receipt = f.runtime("stray-run", "tool.notes.save", draft_args(&word(&[1])));
     if let Status::Running(job) = receipt.status {
         f.layer.take_program_job().expect("the job the run started");
         let theirs = Value::Array(vec![Value::Int(3)]);
@@ -248,12 +252,12 @@ fn b4_a_run_cannot_take_the_solvers_record_write_out_of_the_undo_order() {
 fn b4_the_undo_key_still_undoes_the_solvers_write_after_a_runs_write() {
     let mut f = fixture();
     let overlay = Overlay { module: "notes".into(), entry: "save".into() };
-    f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[], overlay).unwrap();
+    f.layer.register_overlay("tool.notes.save", Kind::Workspace, &[("draft", "Draft")], overlay).unwrap();
     let solvers = Value::Array(vec![Value::Int(1), Value::Int(2)]);
     let args = json::object([("payload", solvers), ("provenance", text("solver")), ("record", text("macro"))]);
     f.shell.invoke(&mut f.layer, RECORD_ROW, args).unwrap();
 
-    let receipt = f.runtime("stray-run", "tool.notes.save", json::object([]));
+    let receipt = f.runtime("stray-run", "tool.notes.save", draft_args(&word(&[1])));
     if let Status::Running(job) = receipt.status {
         f.layer.take_program_job().expect("the job the run started");
         f.layer.finish_program_job_with(job, Ok(output(&[("macro", Value::Array(vec![Value::Int(3)]))])));
