@@ -1676,10 +1676,10 @@ run or not applicable is no pass (PHS.63).
   owner's decision of 16 November 2026 (PHS.52).
 - Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 36 keys: 6 jumbling keys (M5); 6
   keys that need the session store (C7); 12 keys the IR draft cannot express (early stop, exact multiplication and
-  remainder; LP2) or that pass a run's input as a query argument, which LP2's `read_snapshot<T>("q", x)` now
-  expresses and no host answers yet; and 12 budget keys, whose amounts follow LX-3's
-  experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need host events inside a
-  loop, the host's row cache or the command layer's rows. The Linux leg did not run.
+  remainder; LP2) or that pass a run's input as a query argument, which LP2's `read_snapshot<T>("q", x)` now expresses
+  and only the tool's bridge answers, for `positions` only (LP2's pull request 226); and 12 budget keys, whose amounts
+  follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need host events
+  inside a loop, the host's row cache or the command layer's rows. The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -1776,10 +1776,12 @@ run or not applicable is no pass (PHS.63).
   the solver's word steps of a recipe of plain word steps only: a proposal of exactly that recipe's literal word longer
   than 100,000 letters then goes in those word steps, in order, in the one invocation, and every other proposal in one
   word step; the bridge never chooses where to cut (LB2.3, LB2.4). The program still receives only the fixed
-  acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
-  workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
-  app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
-  pending preview the runtime proposed.
+  acknowledgement; the layer's receipt goes to the shell. Besides proposals, the bridge serves one state read since
+  LP2's pull request 226: KN2.4's `positions` row to a snapshot read with an argument (`c600_tools::kernel_rows`), and
+  admission refuses an entry that both reads it and proposes (LQ21). It grants no other state read, declassified value,
+  file or workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a
+  commit or app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints
+  commits the pending preview the runtime proposed.
 - The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
   its literal word, the tool's program runs on that word and proposes it through the bridge, and the shell presents
   the preview, commits it with the commit chord `Ctrl+Shift+Enter`, and undoes and redoes on the command route's
@@ -1966,11 +1968,12 @@ run or not applicable is no pass (PHS.63).
 - Not built: an import row; grip, cell or piece objects for a word's letters (the kernel has no letter-to-grip map); a
   view declaring both of the manifest's classes (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock
   and "an incomplete prefix check never returns safe" through the tool's route (the captured lock, LB2.3's coverage
-  report and `LB2:protection.incomplete_coverage` are LP3's library rows over kernel rows, which need a snapshot read
-  with an argument that no host answers yet); named work-sheet reuse; chunked transport on the source route for a recipe
-  with a star step or a word step with another field (its literal word over 100,000 letters goes in one word step and is
-  refused whole); the child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are
-  `c600-check`'s (LP2, pull request 213).
+  report and `LB2:protection.incomplete_coverage` are LP3's library rows over kernel rows, which need host rows for the
+  kernel rows they read; the tool's bridge answers a snapshot read with an argument for `positions` only, LP2's pull
+  request 226); named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word
+  step with another field (its literal word over 100,000 letters goes in one word step and is refused whole); the
+  child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2,
+  pull request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -2168,8 +2171,9 @@ run or not applicable is no pass (PHS.63).
   is a flat word, not a compressed one; the catalogue row is Rust data, because the IR draft and the syntax carry no
   module manifest; no incompatible-alphabet refusal is built.
 - Not built: jumbling menu letters in the language, which wait for menu words in the IR draft (M5, LP2; C8 builds
-  literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction or Net
-  and Strict protection with captured locks: the IR draft passes a run's input as a query's argument since LP2's
-  `read_snapshot<T>("q", x)`, and no host answers such a read yet; the other entries of LB1.8's table, the word and
-  trace keys among them.
+  literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction, Net and
+  Strict protection with captured locks, or exact completion over `labels` and `positions` (CT-LB2-04): the IR draft
+  passes a run's input as a query's argument since LP2's `read_snapshot<T>("q", x)`, and the tool's bridge answers such
+  a read for `positions` only (LP2's pull request 226); the other entries of LB1.8's table, the word and trace keys
+  among them.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
