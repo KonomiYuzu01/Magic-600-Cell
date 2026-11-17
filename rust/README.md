@@ -1186,8 +1186,17 @@ run or not applicable is no pass (PHS.63).
   refused with `KN5:input.overlay_row_kind`, and a row the layer builds itself or one already served with
   `KN5:input.overlay_row_conflict`. Serving is not journaled, so after a reopen the host serves its rows again. Five of
   the representations tool's six rows can be served now; `filter.apply` waits for its gate, its filter preview rule
-  and its workspace inverse. The layer checks argument names only; the forms of H-08's argument types, and the view and
-  workspace sinks as a job's result, are C6's next needs. Tests: `c600-command/tests/served_rows.rs`.
+  and its workspace inverse. The view and workspace sinks as a job's result are C6's next need. Tests:
+  `c600-command/tests/served_rows.rs`.
+- Argument forms (LP3's C6, its third common need; the drafts are in the crate documentation). An argument of an
+  optional type (`T?`) may be left out of any row; every other argument must be given. A row the layer does not build
+  is refused as not built once its names fit, with an optional argument left out or given. For a row the layer admits
+  as a program job, a served row or an overlay row, it checks the forms of `Nat`, `Text`, a choice of words, `CellId`
+  (0 to 599), `CellIdPair` and `RevisionRef` (KN0.2's nine keys) before it admits the job. A malformed argument is
+  refused with `KN5:input.argument_form`, and after every form check a `RevisionRef` that is not the current revision
+  in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
+  and take no job. Other types, among them `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs`, pass unchecked
+  until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16 and
   L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for which

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-17] update | The language: argument forms for served and overlay rows
+The command layer (`rust/c600-command`) checks the forms of the H-08 argument types it knows for a row it admits as a program job, a served stored row or an overlay row (LP3's C6, its third common need): `Nat`, `Text`, a choice of words, `CellId`, `CellIdPair` and `RevisionRef`, a malformed argument refused with `KN5:input.argument_form` and then a revision that is not current with `KN5:stale.revision_changed` (EV4.14), and an argument of an optional type may now be left out of any row. `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs` pass unchecked until their forms are written down; the forms and the order of the two refusals are drafts for LP3's amendment list under PHS.52.
+
 ## [2026-11-17] update | The language: stored rows served by a built-in tool's entry
 The command layer (`rust/c600-command`) lets a built-in tool's entry serve a stored H-08 row (`CommandLayer::serve_row`, LP3's C6, its first common need): an invocation admits a program job for the entry, as for an overlay row, and the entry's result completes the row, a workspace row as one durable action, while the row keeps H-08's kind, lane, undo class, gates and argument types. Only rows whose admission and completion the layer can check without the entry are served, so five of the representations tool's six rows can be served now and `filter.apply` waits for its gate and its inverse; the refusal codes and the unjournaled serving are drafts for LP3's amendment list under PHS.52.
 

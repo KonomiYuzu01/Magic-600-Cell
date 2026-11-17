@@ -126,8 +126,7 @@
 //!     across a commit as file jobs do, is LP3's call.
 //!   - H-08 marks the representations tool's rows `job: false`. A served row still answers `running` first, since
 //!     its entry runs in the runtime's process (LQ9), and completes when the host reports the entry's result.
-//!   - The layer checks the argument names only, so an optional argument (a type ending in `?`) cannot be left out
-//!     yet. The forms of H-08's argument types are C6's third need.
+//!   - The layer checks the arguments' forms, as below.
 //!   - The layer does not read a row's `contexts`, for a served row as for any other: the shell's key route resolves
 //!     a binding in the focused context.
 //!   - The layer serves only a view, workspace, query or file row on the `none`, `view` or `program` lane, with no
@@ -137,6 +136,24 @@
 //!     served, is refused with `KN5:input.overlay_row_conflict`.
 //!   - A served workspace row completes like a workspace overlay, as above.
 //!   - Serving is not journaled. After a reopen the host serves its rows again, as it registers its overlays again.
+//! - Argument forms (LP3's C6, its third common need).
+//!   - An argument of an optional type, one ending in `?` (H-08), may be left out of any row. Every other argument
+//!     must be given, and no other name may be. None of the layer's own rows takes an optional argument. The names
+//!     are checked before the row's arm, so a row the layer does not build is refused with `KN5:input.row_not_built`
+//!     once its names fit, with an optional argument left out or given.
+//!   - For a row it admits as a program job, a served row or an overlay row, the layer checks the forms of the types
+//!     it knows before it admits the job. `Nat` is an integer of at least 0. `Text` is a string. A choice of words,
+//!     such as `body|complete`, is one of its words. `CellId` is an integer from 0 to 599, as the kernel's model
+//!     numbers the cells, and `CellIdPair` is a list of two. `RevisionRef` is KN0.2's nine-key object
+//!     ([`Revision::to_json`]): its text fields are text and its counters naturals, in any mode. An optional type has
+//!     its type's form when given.
+//!   - A malformed argument is refused with `KN5:input.argument_form`. After every form check, a well-formed
+//!     `RevisionRef` that is not the layer's current revision in every field is refused with
+//!     `KN5:stale.revision_changed` (EV4.14), so a malformed request is never answered as stale. Both refusals come
+//!     before the lane's capacity is checked and take no job.
+//!   - The forms of the other types are not written down yet, and they pass unchecked: among them `FilterRef`,
+//!     `FilterPreviewRef` and `CanonicalObjectRefs`, which the representations tool's rows take, and a union of types
+//!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
 //! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
 //!   or the `test-hooks` feature (L15).
 //! - The per-launch secret comes from the standard library's random hasher keys, the clock and the process ID, hashed
@@ -144,6 +161,7 @@
 
 #![forbid(unsafe_code)]
 
+mod forms;
 pub mod frame;
 pub mod layer;
 pub mod receipt;
