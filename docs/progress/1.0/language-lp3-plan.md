@@ -51,7 +51,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves for M5 (C8) |
 | Representations tool, headless half | Built in part (C6, section 7) | Its six rows: command-layer work in KN5's one implementation (LP2) |
-| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8) | The rest of KN5.26's admission matrix and a durable home for part blocks, EV3.2's view rows, LB7.2's work-sheet structure and the session lock: KN5's later stages (LP2) |
+| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8) | The rest of KN5.26's admission matrix and a durable home for part blocks, EV3.2's view rows and LB7.2's work-sheet structure: KN5's later stages (LP2). M6's session lock covers `JournalStore` (pull request 195) |
 | The jumbling tool and every jumbling half | Built in part (C8, section 8) | Jumble in the command layer: KN5's one implementation (LP2); M8's ν, the F2 and F5 number kinds and the correction check (LP2); menu words in the IR draft, for jumbling library entries (LP2). M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list, and LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel); the others can start | What the kernel alone does not give: the command layer's Strict mode, `twist.apply` and host rows (KN5, LP2); polytope operations beyond vertices (LP2) (the table below) |
 | The on-screen half | Waits | The renderer freeze |
@@ -324,8 +324,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   written again); CT-EV3-07's durable action order in the shared `session.undo` order, and its view part on a language
   overlay row standing in for a view. On M6's public API: the same CT-EV3-07 parts and CT-LB2-03's work-sheet part.
   Waits for KN5's later stages (LP2): the rest of KN5.26's admission matrix (L1, L2), a session profile and a durable
-  home for a word's part blocks (CT-BND-27's recursive parts), EV3.2's view rows, LB7.2's work-sheet structure and a
-  session lock.
+  home for a word's part blocks (CT-BND-27's recursive parts), EV3.2's view rows and LB7.2's work-sheet structure. M6's
+  session lock (LP2, pull request 195) covers `JournalStore` too.
 - **C8, the jumbling tool.** M5 is on main (pull request 167). Built (`rust/c600-jumble-tool`, and `jumble` in
   `c600-display`): the tool's `.6cs` source with two entries admitted under the built-in column and a Rust manifest of
   the class `checking`; the jumbling parts of CT-LB6-03 and CT-BND-15; the kernel halves of CT-LB1-02, CT-LB3-03,
