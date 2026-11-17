@@ -109,7 +109,7 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   of a record, list, set, map or callable type that holds a word or a type variable, counts as one that may carry a
   word. The rule is conservative: it also refuses a named word passed to a helper that proposes or writes it, a write
   of a record, collection or closure built from named words, and a proposal to a `Target` parameter (a row the
-  checker cannot name). Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the derived-state row (the IR
+  checker cannot name). The column's two exceptions are below. Not built: the derived-state row outside them (the IR
   draft has no `derive`), rule 6's check of the facts a view shows and the class review (CT-BND-15). `c600-runtime`'s
   job options carry the class rows (`JobOptions::built_in`), so its child admits a built-in entry itself.
 - An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
@@ -243,6 +243,26 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   those (no prefetch for an unnamed cap), and a function the entry reaches that reads for anything but a literal. A
   selection that is no word, such as a cap the method chose, is not told from a per-cap fact
   (`c600-check/tests/built_in.rs`: CT-LB3-07's checker half for recommendations and reads).
+- The built-in column's two exceptions (LP2 draft; BND.1, BND.2, BND.69; chapter 07 section 8). A class grants one by
+  listing `Row::RepairList(query)` (the pairs at a cap the solver names) or `Row::SetupSearch(query)` (the setups for
+  a target the solver names); the IR draft has no `derive`, so the derived state is read as that engine row, for the
+  cap or the target. `class_covers` lets such a row cover the entry's `Row::Read(query)`. Every read of the query,
+  also one the class lists as `Row::Read`, follows the exception's rules, each refused with
+  `LG3:capability.not_granted`: the read is in the entry's own body, for a parameter of the entry as given (a read
+  with no argument, for a literal or for anything computed is refused at the read, and a function the entry reaches
+  that reads the query at `entry`; BND.2, BND.64); and its value is only delivered as read: returned, published as a
+  view, or bound by `let` to a name used only so. Any other use is refused at the use (an operation such as `index`
+  or `length`, a call, a field, a record or a collection, a condition or a match, a write, a proposal, a closure's
+  result), so the list keeps the engine's neutral order, marks no row best, and no entry tests a list for emptiness
+  to read another cap; the solver chooses among the setups (BND.1). A branch delivers to the result only when its
+  condition reads nothing but literals and the entry's parameters as given, so the program chooses neither the cap,
+  also not among caps the solver named, nor whether to show the list (BND.2, BND.64); a branch inside a view's or a
+  `let`'s value is a use. A value so delivered is the exception's output, so the shown-facts rule does not refuse its
+  words. Previews keep their rules: an entry that reads the list or the setups prepares no preview. A class that lists
+  one query as both exceptions is refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
+  Outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty list's wording (BND.2), the
+  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
+  (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves).
 - Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
   gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word under the independence
   relation the run pins. A menu word given to it is `LB1:input.incompatible_alphabet`, since the menu's relation,
@@ -1151,7 +1171,8 @@ run or not applicable is no pass (PHS.63).
 
 - Where they are:
   - `c600-check/tests/`: the checker's own tests carry their IDs (`effects.rs`, `exactness.rs`, `mismatch.rs`,
-    `vectors.rs`, and the built-in column's `built_in.rs`, M7 attack leads' `leads.rs` and M1 limits' `limits.rs`).
+    `vectors.rs`, the built-in column's `built_in.rs` and its exceptions' `exceptions.rs`, M7 attack leads' `leads.rs`
+    and M1 limits' `limits.rs`).
   - `c600-syntax/tests/`: `conformance_lg1.rs` to `conformance_lg3.rs` write the LG tests in source; `errors.rs` holds
     CT-ERR-05's encoding half (ERR.10's raw context for each malformed shape); `syntax.rs`, `format.rs` and
     `lowering.rs` mark M7's tests.
@@ -1195,9 +1216,9 @@ run or not applicable is no pass (PHS.63).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 67 whole, nine of them by the union of their parts (CT-KN1-04,
-  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 132 part; 4 named only
+  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 133 part; 4 named only
   by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing
-  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 44 waiting, each with
+  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 43 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1274,8 +1295,9 @@ run or not applicable is no pass (PHS.63).
   - The session store's jumbling records (2): CT-PS1-11 (a session with a reversed I_a order, another contract or model,
     or jumble letters with Jumble off is refused) and CT-PS1-22 (the optional jumbling section, and an interrupted
     episode's recovery), with M6.
-  - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
-    and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
+  - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
+    (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part in `c600-command`'s Jumble tests
+    (`jumble_on.rs`, `jumble_off.rs`; not run: a snapshot opened before it keeps its level, which is the runtime's).
   - KN5's command layer, `c600-command` (2): CT-KN5-05, which needs the display refresh after a commit (R-02) that it
     does not build yet, and CT-KN5-08, which only the documentation in `c600-command/src/layer.rs` names.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.

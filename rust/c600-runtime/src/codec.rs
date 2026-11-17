@@ -823,6 +823,8 @@ pub fn encode_row(row: &ClassRow, e: &mut Enc) {
         ClassRow::Workspace(record) => (4, Some(record)),
         ClassRow::Preview(target) => (5, Some(target)),
         ClassRow::Unknown => (6, None),
+        ClassRow::RepairList(query) => (7, Some(query)),
+        ClassRow::SetupSearch(query) => (8, Some(query)),
     };
     e.u8(tag);
     if let Some(text) = text {
@@ -839,6 +841,8 @@ pub fn decode_row(d: &mut Dec) -> Result<ClassRow, Malformed> {
         4 => ClassRow::Workspace(d.text()?.to_string()),
         5 => ClassRow::Preview(d.text()?.to_string()),
         6 => ClassRow::Unknown,
+        7 => ClassRow::RepairList(d.text()?.to_string()),
+        8 => ClassRow::SetupSearch(d.text()?.to_string()),
         _ => return Err(Malformed::new("an unknown class row")),
     })
 }
