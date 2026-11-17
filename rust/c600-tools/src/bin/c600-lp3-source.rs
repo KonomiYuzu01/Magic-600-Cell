@@ -22,6 +22,10 @@
 //! host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in magnitude) is refused
 //! at the run's start stage: it is an `invalid-input` step with no invocation and no receipt.
 //!
+//! Each session's layer serves H-08 with the command layer's draft rows and holds the host's provenance reader
+//! ([`c600_tools::workspace`]), which keeps every run's blocks, so a host can write and preview workspace records. The
+//! runner writes none.
+//!
 //! The trace has `c600-lp3-oracle`'s form and candidate block, so the two routes' traces compare byte for byte.
 //! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the host the
 //! literal word was given to, the literal digest the tool proposed, the kernel's refusal of a recipe with no literal
@@ -38,7 +42,7 @@ use std::time::Instant;
 
 use c600_command::{
     code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Receipt,
-    Secret, Shell, Status, Table,
+    Secret, Shell, Status,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refusal, Snapshot, SupportRow};
@@ -50,6 +54,7 @@ use c600_tools::case::{read_document, CASE_FORMAT};
 use c600_tools::expand::{expand, literal_digest, Expansion};
 use c600_tools::process::{run_in_process, runtime_beside, stage_name, Cause, ProcessHost, IN_PROCESS, PROCESS};
 use c600_tools::tool::{Tool, ROW, SOURCE};
+use c600_tools::workspace::{self, Reader};
 
 const TRACE_FORMAT: &str = "C600-ORACLE-TRACE-draft";
 /// The trace's candidate: the command layer's loop, as `c600-lp3-oracle` names it, so the traces compare byte for byte.
@@ -318,8 +323,8 @@ fn refusal(refusal: &Refusal) -> Value {
     json::object([("code", Value::String(refusal.code.into())), ("detail", Value::String(refusal.message.clone()))])
 }
 
-/// One session of the source route: the layer, its shell, the headless display's frames, the tool, its host, and
-/// every receipt in order with its caller.
+/// One session of the source route: the layer, its provenance reader, its shell, the headless display's frames, the
+/// tool, its host, and every receipt in order with its caller.
 struct Session<'k> {
     kernel: &'k Kernel,
     tool: &'k Tool,
@@ -327,6 +332,8 @@ struct Session<'k> {
     process: Option<&'k mut ProcessHost>,
     case_id: String,
     layer: CommandLayer,
+    /// The layer's provenance reader, which keeps the blocks of every run.
+    reader: Reader,
     shell: Shell,
     frames: HeadlessFrames,
     tamper: Option<i64>,
@@ -370,6 +377,7 @@ impl Session<'_> {
             None => run_in_process(self.tool, word, &run, &read, &mut bridge, &mut store),
             Some(host) => host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
         };
+        self.reader.keep_run(&store);
         let ran = match result {
             Ok(ran) => ran,
             Err(stopped) => {
@@ -584,15 +592,16 @@ fn replay(
     let initial = start.digest().to_owned();
 
     let secret = Secret::launch();
-    let layer = CommandLayer::new(
+    let mut layer = CommandLayer::new(
         kernel.clone(),
-        Table::h08(),
+        workspace::table(),
         secret.clone(),
         Default::default(),
         &format!("oracle-{case_id}"),
         start,
         protected,
     );
+    let reader = workspace::install(&mut layer);
     let shell = Shell::new(secret, &case_id);
     let tamper = tamper.filter(|(case, _)| *case == case_id).map(|&(_, index)| index);
     let host = if process.is_some() { PROCESS } else { IN_PROCESS };
@@ -602,6 +611,7 @@ fn replay(
         process,
         case_id: case_id.clone(),
         layer,
+        reader,
         shell,
         frames: HeadlessFrames::new(),
         tamper,

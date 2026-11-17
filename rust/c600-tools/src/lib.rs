@@ -12,6 +12,9 @@
 //! - [`case`] reads the frozen oracle cases O01 to O07.
 //! - [`views`] builds the tool's views: the display contract's publication of a proposal and its preview, the content
 //!   the headless view model installs for it, and the adapter's presentation report to the shell.
+//! - [`workspace`] is the host's provenance reader on the command layer (KN5's stage 3): it reads a workspace record's
+//!   block before `workspace.set` writes the record (PS1.16), and admits or refuses a draft that names a record
+//!   (KN5.26, BND.84, BND.85).
 //! - The binary `c600-lp3-source` replays O01 to O07 on the source route: each step's proposal comes from a run of the
 //!   tool, and the shell presents and commits the preview on the key route.
 //!
@@ -154,6 +157,22 @@
 //!   fixtures stand for them: a fixed record of two preview outcomes for an outcome table, and a previewing entry
 //!   that answers the acknowledgement's two fields for a named-word check. The checker decides them by capability
 //!   separation (LG3.13) and the built-in column only; it has no rule for a recommendation read from state.
+//! - **Provenance reader** (PS1.16, KN5.26; KN5's stage 3). [`workspace::Reader`] is the host's
+//!   `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so `workspace.set`
+//!   refuses a block that is not a canonical FP.17 block with `PS1:capability.provenance_incompatible`. The check reads
+//!   the block alone, so a record may hold a word that no preview admits, such as a solver tool's output (BND.84).
+//!   Its admission is `c600_run::boundary::admit_preview` under [`tool::pins`], so a draft `{"record": name}` is
+//!   refused with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
+//!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader knows no session
+//!   profile: it takes every session to be a solving session, the only profile LP3's host runs, so it applies BND.84
+//!   and BND.85 at every record draft (KN5.26 asks for them in a solving session). It finds a part only among the
+//!   blocks its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]), and a part it does not
+//!   find reads `unknown` and fails closed. No session table of blocks exists (M6's journal holds a record's block
+//!   only as the record's provenance text), so a record write keeps nothing, and after a reopen the host keeps its
+//!   blocks again.
+//! - **The host's table.** `c600-lp3-source` serves H-08 with the command layer's draft rows ([`workspace::table`])
+//!   and installs a reader ([`workspace::install`]) that keeps each run's blocks, so a host can write and preview
+//!   workspace records. The runner writes none, so its traces and receipts are as before.
 
 #![forbid(unsafe_code)]
 
@@ -163,9 +182,11 @@ pub mod expand;
 pub mod process;
 pub mod tool;
 pub mod views;
+pub mod workspace;
 
-/// The sources of the built-in tools, the bridge and the source route's runner, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 10] = [
+/// The sources of the built-in tools, the bridge, the provenance reader and the source route's runner, hashed into
+/// [`build`].
+pub const SOURCES: [(&str, &[u8]); 11] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
@@ -176,6 +197,7 @@ pub const SOURCES: [(&str, &[u8]); 10] = [
     ("c600-tools/src/process.rs", include_bytes!("process.rs")),
     ("c600-tools/src/tool.rs", include_bytes!("tool.rs")),
     ("c600-tools/src/views.rs", include_bytes!("views.rs")),
+    ("c600-tools/src/workspace.rs", include_bytes!("workspace.rs")),
 ];
 
 /// The build string: the crate version, the SHA-256 of a `sha256sum`-style listing of [`SOURCES`], and the command
