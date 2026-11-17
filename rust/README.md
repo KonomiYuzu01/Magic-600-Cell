@@ -110,7 +110,7 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   of a record, list, set, map or callable type that holds a word or a type variable, counts as one that may carry a
   word. The rule is conservative: it also refuses a named word passed to a helper that proposes or writes it, a write
   of a record, collection or closure built from named words, and a proposal to a `Target` parameter (a row the
-  checker cannot name). Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the derived-state row (the IR
+  checker cannot name). The column's two exceptions are below. Not built: the derived-state row outside them (the IR
   draft has no `derive`), rule 6's check of the facts a view shows and the class review (CT-BND-15). `c600-runtime`'s
   job options carry the class rows (`JobOptions::built_in`), so its child admits a built-in entry itself.
 - An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
@@ -244,6 +244,28 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   those (no prefetch for an unnamed cap), and a function the entry reaches that reads for anything but a literal. A
   selection that is no word, such as a cap the method chose, is not told from a per-cap fact
   (`c600-check/tests/built_in.rs`: CT-LB3-07's checker half for recommendations and reads).
+- The built-in column's two exceptions (LP2 draft; BND.1, BND.2, BND.69; chapter 07 section 8). A class grants one by
+  listing `Row::RepairList(query)` (the pairs at a cap the solver names) or `Row::SetupSearch(query)` (the setups for
+  a target the solver names); the IR draft has no `derive`, so the derived state is read as that engine row, for the
+  cap or the target. `class_covers` lets such a row cover the entry's `Row::Read(query)`. Every read of the query,
+  also one the class lists as `Row::Read`, follows the exception's rules, each refused with
+  `LG3:capability.not_granted`: the read is in the entry's own body, for a parameter of the entry as given (a read
+  with no argument, for a literal or for anything computed is refused at the read, and a function the entry reaches
+  that reads the query at `entry`; BND.2, BND.64); and its value is only delivered as read: returned, published as a
+  view, or bound by `let` to a name used only so. Any other use is refused at the use (an operation such as `index`
+  or `length`, a call, a field, a record or a collection, a condition or a match, a write, a proposal, a closure's
+  result), so the list keeps the engine's neutral order, marks no row best, and no entry tests a list for emptiness
+  to read another cap; the solver chooses among the setups (BND.1). A branch delivers to the result only when its
+  condition reads nothing but literals and the entry's parameters as given, and nothing is delivered where the
+  program chooses whether it runs: under a branch whose condition reads more, at any depth, after a short-circuit
+  `and` or `or` operand that does, in a closure's body or in a child scope. So the program chooses neither the cap,
+  also not among caps the solver named, nor whether to show the list (BND.2, BND.64); a branch inside a view's or a
+  `let`'s value is a use. A value so delivered is the exception's output, so the shown-facts rule does not refuse its
+  words. Previews keep their rules: an entry that reads the list or the setups prepares no preview. A class that lists
+  one query as both exceptions is refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
+  Outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty list's wording (BND.2), the
+  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
+  (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves).
 - Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
   gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word under the independence
   relation the run pins. A menu word given to it is `LB1:input.incompatible_alphabet`, since the menu's relation,
@@ -1253,7 +1275,8 @@ run or not applicable is no pass (PHS.63).
 
 - Where they are:
   - `c600-check/tests/`: the checker's own tests carry their IDs (`effects.rs`, `exactness.rs`, `mismatch.rs`,
-    `vectors.rs`, and the built-in column's `built_in.rs`, M7 attack leads' `leads.rs` and M1 limits' `limits.rs`).
+    `vectors.rs`, the built-in column's `built_in.rs` and its exceptions' `exceptions.rs`, M7 attack leads' `leads.rs`
+    and M1 limits' `limits.rs`).
   - `c600-syntax/tests/`: `conformance_lg1.rs` to `conformance_lg3.rs` write the LG tests in source; `errors.rs` holds
     CT-ERR-05's encoding half (ERR.10's raw context for each malformed shape); `syntax.rs`, `format.rs` and
     `lowering.rs` mark M7's tests.
@@ -1552,6 +1575,21 @@ run or not applicable is no pass (PHS.63).
   continuation, `refresh_display`, sends no command. The host's `Refresh` over LP3's view model and the message on
   screen are LP3's (CT-KN5-05 in part). Tests: `c600-command/tests/refresh.rs`, a port of 0.4's
   `tests/test_native_reply_after_commit.py`.
+- LB7.2's work sheets (H-08's `worksheet.save` and `worksheet.load`; solving workflow section 4; the drafts are in the
+  crate documentation). A work sheet is a workspace record whose payload is `{"worksheet": {...}}` (`Worksheet`): the
+  phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a position), the reference as
+  given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a sheet previews its complete
+  operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}` whose record holds letters or a
+  sheet, and a `name`; the sheet keeps that record's provenance block, which the reader checks again, and its piece
+  roles are placed at the head through KN2.4's `positions` row. `worksheet.load` takes H-08's `WorksheetRevisionRef`
+  as `{"record": name, "version": n}` (`WorksheetRef`); another version is `KN5:stale.revision_changed`. It places the
+  piece roles again, keeps where each was saved (`Placement::moved` shows a mismatch, and nothing is retargeted) and
+  writes the sheet again, so every preview that read the sheet goes stale, also at the same state, and the reuse needs
+  a fresh engine preview. Each row is one record write, undoable as a workspace inverse (LB7.2; H-08 gives
+  `worksheet.save` `undo: none`). Both rows need the host's provenance reader and Jumble off; the runtime may invoke
+  neither, and no entry can serve them. Not built: `worksheet.compare`, gains and losses, macro versions, and reading
+  a position role's occupant again. Tests: `c600-command/tests/worksheet.rs` (CT-LB2-03's work-sheet part) and the
+  rows with Jumble on in `jumble_on.rs`.
 - `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
   committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
   without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and
@@ -1767,10 +1805,10 @@ run or not applicable is no pass (PHS.63).
   owner's decision of 16 November 2026 (PHS.52).
 - Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 36 keys: 6 jumbling keys (M5); 6
   keys that need the session store (C7); 12 keys the IR draft cannot express (early stop, exact multiplication and
-  remainder; LP2) or that pass a run's input as a query argument, which LP2's `read_snapshot<T>("q", x)` now
-  expresses and no host answers yet; and 12 budget keys, whose amounts follow LX-3's
-  experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need host events inside a
-  loop, the host's row cache or the command layer's rows. The Linux leg did not run.
+  remainder; LP2) or that pass a run's input as a query argument, which LP2's `read_snapshot<T>("q", x)` now expresses
+  and only the tool's bridge answers, for `positions` only (LP2's pull request 226); and 12 budget keys, whose amounts
+  follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need host events
+  inside a loop, the host's row cache or the command layer's rows. The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -1868,10 +1906,12 @@ run or not applicable is no pass (PHS.63).
   the solver's word steps of a recipe of plain word steps only: a proposal of exactly that recipe's literal word longer
   than 100,000 letters then goes in those word steps, in order, in the one invocation, and every other proposal in one
   word step; the bridge never chooses where to cut (LB2.3, LB2.4). The program still receives only the fixed
-  acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
-  workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
-  app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
-  pending preview the runtime proposed.
+  acknowledgement; the layer's receipt goes to the shell. Besides proposals, the bridge serves one state read since
+  LP2's pull request 226: KN2.4's `positions` row to a snapshot read with an argument (`c600_tools::kernel_rows`), and
+  admission refuses an entry that both reads it and proposes (LQ21). It grants no other state read, declassified value,
+  file or workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a
+  commit or app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints
+  commits the pending preview the runtime proposed.
 - The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
   its literal word, the tool's program runs on that word and proposes it through the bridge, and the shell presents
   the preview, commits it with the commit chord `Ctrl+Shift+Enter`, and undoes and redoes on the command route's
@@ -1918,15 +1958,24 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-input/tests/`), on synthetic events only:
   - `routing.rs`: CT-EV4-02, among them arguments resolved at the press surviving later camera, focus, hover and
     filter changes, and the key route giving the same receipts as `Shell::invoke` with the same rows and arguments.
-  - `repeat.rs`: CT-EV4-04's append, preview and commit legs and its busy leg, with repeat events flagged and
-    unflagged, counting the invocations that reach the layer. The twist leg waits for `twist.apply` in the command
-    layer (KN5, LP2); KN3.7's exact rotation requests are built (pull request 176).
+  - `repeat.rs`: CT-EV4-04's append, preview, commit and twist legs and its busy leg, with repeat events flagged and
+    unflagged, counting the invocations that reach the layer. A held twist key commits once through `twist.apply`
+    against the pinned menu; a twist key-down that meets a held commit lane gets the layer's refusal, and nothing
+    commits on its behalf when the lane frees.
+  - `twist.rs`: the twist keys' exact requests (A6, KN3.7) at four caps and in the draft destination; with Jumble on,
+    the key's rotation is `jumble.twist.menu`'s letter; CT-BND-19's live-twist part, with the router joined to the view
+    model and the tool's view of `c600-tools`: until the twist key's key-down commits the twist, no field of the view
+    model holds a value of any twist a key could release at the fixture's four grip slots (the view model's only input
+    is the layer's bundle, and the layer has not moved), and after it Global, Local and the tool's view show the
+    committed state.
   - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
     layout counterexample.
 - Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
   documentation, among them the routing class names, the chord form (W3C `code` names with Ctrl, Shift, Alt and
-  Meta), the two layout tables, the default global map, the repeat flag's source, and placeholder camera and twist
-  values. Escape closes a pending prefix group or the innermost transient layer and never cancels a preview (DT-M1 C4).
+  Meta), the two layout tables, the default global map, the repeat flag's source, placeholder camera values, and the
+  twist keys: `KeyJ`, `KeyK` and `KeyL`, with Shift for the inverse, type items 1, 2 and 3 of the pinned menu in the
+  cap's fixed frame, which settles nothing in the chapters (G6 owns the keys). Escape closes a pending prefix group or
+  the innermost transient layer and never cancels a preview (DT-M1 C4).
 - Open:
   - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
     `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
@@ -1934,6 +1983,9 @@ run or not applicable is no pass (PHS.63).
   - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
     default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
     which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
+  - The host gives the router the pinned menu's two digests, since the command layer gives no read of its pin; a read
+    in `c600-command` would remove the copy. No key binds `jumble.twist.menu`, and K2's other four axes, a slot's
+    transported frame (D11) and C6's seat keys have no key.
 - Evidence kind: source and synthetic. No Windows, IME, device or timing claim; CT-EV4-05 stays a windows test (LP4).
 
 ## Status of LP3, C7: durable receipts on the session store
@@ -2012,10 +2064,11 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
     fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
-    installed bytes hold only the word the solver named); CT-ONE-29, whole, at the host's adapter through the layer's
-    `present` (the layer refuses a user-stage frame, a frame with no preview and a frame with another preview, so no
-    token is minted and the commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and
-    commits; a later user-stage frame ends the presentation and a delayed older report changes nothing).
+    installed bytes hold only the word the solver named; its live-twist part runs in `c600-input`'s `tests/twist.rs`
+    on this view model and view); CT-ONE-29, whole, at the host's adapter through the layer's `present` (the layer
+    refuses a user-stage frame, a frame with no preview and a frame with another preview, so no token is minted and
+    the commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and commits; a later
+    user-stage frame ends the presentation and a delayed older report changes nothing).
   - `workspace.rs`: a record write whose block the reader refuses is refused with the reader's error and writes nothing,
     and a block that reads is written whatever its admission would say (PS1.16, BND.21); a record draft is admitted or
     refused by the reader's admission: a hand-entered word passes, a solver tool's word is refused, and a built-in
@@ -2042,15 +2095,15 @@ run or not applicable is no pass (PHS.63).
     and binding (a token minted with another secret, or the same envelope on a runtime's channel) no longer becomes
     that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
     and neither retry commits anything more.
-- Not built: CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece
-  objects for a word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes
-  (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock and "an incomplete prefix check never returns
-  safe" through the tool's route (the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`
-  are LP3's library rows over kernel rows, which need a snapshot read with an argument that no host answers yet);
-  named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with
-  another field (its literal word over 100,000 letters goes in one word step and is refused whole); the child's
-  own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
-  request 213).
+- Not built: an import row; grip, cell or piece objects for a word's letters (the kernel has no letter-to-grip map); a
+  view declaring both of the manifest's classes (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock
+  and "an incomplete prefix check never returns safe" through the tool's route (the captured lock, LB2.3's coverage
+  report and `LB2:protection.incomplete_coverage` are LP3's library rows over kernel rows, which need host rows for the
+  kernel rows they read; the tool's bridge answers a snapshot read with an argument for `positions` only, LP2's pull
+  request 226); named work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word
+  step with another field (its literal word over 100,000 letters goes in one word step and is refused whole); the
+  child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2,
+  pull request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -2248,8 +2301,9 @@ run or not applicable is no pass (PHS.63).
   is a flat word, not a compressed one; the catalogue row is Rust data, because the IR draft and the syntax carry no
   module manifest; no incompatible-alphabet refusal is built.
 - Not built: jumbling menu letters in the language, which wait for menu words in the IR draft (M5, LP2; C8 builds
-  literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction or Net
-  and Strict protection with captured locks: the IR draft passes a run's input as a query's argument since LP2's
-  `read_snapshot<T>("q", x)`, and no host answers such a read yet; the other entries of LB1.8's table, the word and
-  trace keys among them.
+  literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction, Net and
+  Strict protection with captured locks, or exact completion over `labels` and `positions` (CT-LB2-04): the IR draft
+  passes a run's input as a query's argument since LP2's `read_snapshot<T>("q", x)`, and the tool's bridge answers such
+  a read for `positions` only (LP2's pull request 226); the other entries of LB1.8's table, the word and trace keys
+  among them.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.

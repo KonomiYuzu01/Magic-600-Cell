@@ -9,9 +9,11 @@ mod common;
 
 use c600_command::{code, word_draft, Status, Table};
 use c600_input::{Destination, DropReason, Focus, Key, KeyEvent, Routed, REPEAT_ALLOWLIST};
-use c600_kernel::json::Value;
+use c600_kernel::json::{self, Value};
 
-use common::{code_of, fixture, list, row, sent, text, word, Fixture, TOOL, TOOL_KEY};
+use common::{
+    code_of, derived, fixture, list, retained, rotation, row, sent, text, word, Fixture, CAPS, TOOL, TOOL_KEY,
+};
 
 const REPEATS: usize = 20;
 
@@ -114,13 +116,14 @@ fn held_camera_list_and_scrub_keys_repeat_and_each_repeat_resolves_at_its_own_ev
 /// events arrive, flagged by the platform or not.
 ///
 /// Built legs: the preview leg queues one job; the cancel, commit, undo and redo legs settle once in the layer (one
-/// journal transaction each for commit, undo and redo); the tool-command leg queues one program job. Routing-only legs:
-/// the grip, twist, workspace-append (a twist key in the draft destination), toggle and Escape legs reach the layer
-/// once, and the layer refuses those rows as `KN5:input.row_not_built`. The twist leg's layer half waits for KN3.7's
-/// exact rotations in the kernel (LP2).
+/// journal transaction each for commit, undo and redo); each twist key commits once through `twist.apply` against the
+/// pinned menu (one journal transaction each; the twist leg below shows the state it reaches); the tool-command leg
+/// queues one program job. Routing-only legs: the grip, workspace-append (a twist key in the draft destination), toggle
+/// and Escape legs reach the layer once, and the layer refuses those rows as `KN5:input.row_not_built`.
 #[test]
 fn held_state_changing_keys_are_admitted_once_however_many_repeats_arrive() {
     let mut f = fixture("key", "us-qwerty");
+    f.pin_menu();
     f.router.context.grip = Some(0);
     f.router.context.phase = Some(text("phase-1"));
 
@@ -148,9 +151,13 @@ fn held_state_changing_keys_are_admitted_once_however_many_repeats_arrive() {
     let grip = hold_once(&mut f, "KeyQ");
     assert_eq!((row(&grip), code_of(grip.receipt().unwrap())), ("grip.select".into(), code::ROW_NOT_BUILT));
     let twist = hold_once(&mut f, "KeyJ");
-    assert_eq!((row(&twist), code_of(twist.receipt().unwrap())), ("twist.apply".into(), code::ROW_NOT_BUILT));
+    assert_eq!(row(&twist), "twist.apply");
+    assert!(matches!(status(&twist), Status::Committed(_)), "{:?}", status(&twist));
+    assert_eq!(f.layer.store().log.len(), 4);
     let inverse = hold_once(&mut f, "Shift+KeyK");
     assert_eq!(row(&inverse), "twist.apply");
+    assert!(matches!(status(&inverse), Status::Committed(_)), "{:?}", status(&inverse));
+    assert_eq!(f.layer.store().log.len(), 5);
     f.router.context.destination = Destination::Draft;
     let append = hold_once(&mut f, "KeyJ");
     assert_eq!(row(&append), "operation.phase.append_twist");
@@ -168,7 +175,7 @@ fn held_state_changing_keys_are_admitted_once_however_many_repeats_arrive() {
     assert!(f.layer.take_program_job().is_some());
     assert!(f.layer.take_program_job().is_none(), "the repeats queued no program job");
 
-    assert_eq!(f.layer.store().log.len(), 3);
+    assert_eq!(f.layer.store().log.len(), 5);
     assert_eq!(f.layer.run_jobs(), 0);
     // Fourteen held keys, one invocation each; the prefix key `Ctrl+KeyG` reached nothing.
     assert_eq!(f.reached(), 14);
@@ -267,4 +274,53 @@ fn busy_input_is_refused_and_never_queued() {
     assert_eq!(code_of(f.tap(TOOL_KEY).receipt().unwrap()), code::LANE_FULL);
     assert!(f.layer.take_program_job().is_some());
     assert!(f.layer.take_program_job().is_none());
+}
+
+/// CT-EV4-04, the twist leg (EV4.6; R-18; DT-M1 K4 and Q6 (a); KN3.7, KN5.17): a held twist key is admitted once, its
+/// repeat events are not admitted, and busy input is not queued. The key-down reaches the command layer through
+/// `twist.apply` with the grip's cap and KN3.7's exact request of the key's item of the pinned I_a menu, and commits
+/// the item's retained word once, with no preview and no job; no repeat, flagged by the platform or not, reaches the
+/// layer. A twist key-down that meets a held commit lane gets `KN5:busy.commit_in_flight` as its receipt; when the lane
+/// frees, nothing commits on its behalf, and only a fresh press commits, once.
+#[test]
+fn a_held_twist_key_commits_once_and_a_busy_twist_is_not_queued() {
+    let mut f = fixture("key", "us-qwerty");
+    f.pin_menu();
+    f.router.context.grip = Some(1);
+    let start = f.layer.snapshot().clone();
+    let once = derived(&start, &retained(CAPS[1], 2));
+
+    let twist = hold_once(&mut f, "KeyK");
+    let args = json::object([("cap", Value::Int(i64::from(CAPS[1]))), ("rotation", rotation(2))]);
+    assert_eq!(sent(&twist), ("twist.apply".to_owned(), args));
+    assert!(matches!(status(&twist), Status::Committed(_)), "{:?}", status(&twist));
+    assert_eq!(f.layer.snapshot().digest(), once.digest(), "the item's retained word, once");
+    assert_eq!(f.layer.store().log.len(), 1);
+    assert_eq!(f.layer.store().log[0].recipe, word(&retained(CAPS[1], 2)));
+    assert!(f.layer.preview().is_none());
+    assert_eq!(f.layer.run_jobs(), 0, "a live twist queues no job");
+
+    // The commit lane is held, as by an unsettled commit of another invocation (see the busy leg).
+    f.layer.hold_commit_lane(true);
+    let before = f.reached();
+    let busy = f.down("KeyK");
+    assert_eq!((row(&busy), code_of(busy.receipt().unwrap())), ("twist.apply".into(), code::COMMIT_IN_FLIGHT));
+    for _ in 0..REPEATS {
+        let repeat = f.key(KeyEvent::repeat("KeyK"));
+        assert!(matches!(repeat, Routed::Dropped(DropReason::NotRepeatable(Some(_)))), "{repeat:?}");
+    }
+    f.up("KeyK");
+    assert_eq!(f.reached(), before + 1);
+    f.layer.hold_commit_lane(false);
+    assert_eq!(f.layer.run_jobs(), 0);
+    assert_eq!(f.reached(), before + 1);
+    assert_eq!(f.layer.store().log.len(), 1, "the refused twist did not commit when the lane freed");
+    assert_eq!(f.layer.snapshot().digest(), once.digest());
+    let refused = busy.receipt().unwrap();
+    assert_eq!(code_of(&f.layer.outcome(&refused.command, &refused.request).unwrap()), code::COMMIT_IN_FLIGHT);
+
+    let again = hold_once(&mut f, "KeyK");
+    assert!(matches!(status(&again), Status::Committed(_)), "a fresh press commits: {:?}", status(&again));
+    assert_eq!(f.layer.snapshot().digest(), derived(&once, &retained(CAPS[1], 2)).digest());
+    assert_eq!(f.layer.store().log.len(), 2);
 }

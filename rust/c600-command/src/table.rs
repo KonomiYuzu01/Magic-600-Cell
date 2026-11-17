@@ -364,7 +364,7 @@ impl Table {
 }
 
 /// The stored rows the command layer builds itself; no entry serves them.
-const LAYER_ROWS: [&str; 8] = [
+const LAYER_ROWS: [&str; 10] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -373,4 +373,6 @@ const LAYER_ROWS: [&str; 8] = [
     "protection.orbit.set",
     crate::layer::POLICY_ROW,
     crate::workspace::RECORD_ROW,
+    crate::worksheet::WORKSHEET_SAVE_ROW,
+    crate::worksheet::WORKSHEET_LOAD_ROW,
 ];

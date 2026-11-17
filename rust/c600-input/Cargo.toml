@@ -8,3 +8,11 @@ publish.workspace = true
 [dependencies]
 c600-command = { path = "../c600-command" }
 c600-kernel = { path = "../c600-kernel" }
+
+[dev-dependencies]
+# The twist tests pin the I_a menu (c600-jumble) and join the router to the tool's view model and views (c600-tools,
+# c600-view), as the C5 tests of c600-tools build them.
+c600-digest = { path = "../c600-digest" }
+c600-jumble = { path = "../c600-jumble" }
+c600-tools = { path = "../c600-tools" }
+c600-view = { path = "../c600-view" }

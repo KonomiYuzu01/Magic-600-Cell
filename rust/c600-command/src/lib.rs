@@ -44,14 +44,31 @@
 //! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry from solved, `jumble.off`
 //!   and `jumble.twist.menu` are built (below); the rest is refused with `KN5:input.row_not_built`.
 //! - `WordRef` is an inline literal recipe in 0.4's JSON form, `{"recipe": [...]}`, and `ResolvedDraftRef` is
-//!   `{"record": name}`, a workspace record that holds a word's letters (M6's form); a draft argument in any other form
-//!   is refused with `KN5:input.argument_form`. A record draft's digest is M6's `{"letters", "source", "reads"}`, with
-//!   the record's content digest and version in `reads` (KN0.8).
+//!   `{"record": name}`, a workspace record that holds a word's letters (M6's form) or a work sheet (below); a draft
+//!   argument in any other form is refused with `KN5:input.argument_form`. A record draft's digest is M6's
+//!   `{"letters", "source", "reads"}`, with the record's content digest and version in `reads` (KN0.8).
 //! - The workspace store ([`workspace`]) holds M6's records: `workspace.set` ([`RECORD_ROW`]) takes `record`, `payload`
 //!   and `provenance`, the provenance block's canonical JSON as text. H-08 has no such row yet, so [`Table::with_drafts`]
 //!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
 //!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and admits a record's
 //!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused.
+//! - LB7.2's work sheets ([`worksheet`]; CT-LB2-03's work-sheet part), two rows of H-08:
+//!   - A work sheet is a workspace record whose payload is `{"worksheet": {...}}` ([`Worksheet::to_payload`]): the
+//!     phases Prepare, Macro and Cleanup, the named roles (a piece, named by its home position, or a position), the
+//!     reference as the draft gave it, and the piece roles' placements. A draft `{"record": name}` of a sheet previews
+//!     its complete operation ([`RecordValue::operation`]).
+//!   - `worksheet.save` ([`WORKSHEET_SAVE_ROW`]) takes a draft `{"record": r}` that holds letters or a sheet, and a
+//!     `name`. A recipe draft is refused with `KN5:input.argument_form`: the sheet keeps the draft record's provenance
+//!     block, and the layer cannot make one. The save is undoable as a workspace inverse, as LB7.2 orders for every
+//!     workspace change, where H-08 has `undo: none`.
+//!   - `worksheet.load` ([`WORKSHEET_LOAD_ROW`]) takes H-08's `WorksheetRevisionRef` as `{"record": name, "version":
+//!     n}` ([`WorksheetRef`]); a record at another version is `KN5:stale.revision_changed`. It places the piece roles
+//!     again, keeps where each was saved, and writes the sheet again with its phases unchanged, so a reuse makes every
+//!     preview that read the sheet stale, also at the same state, and the reuse needs a fresh preview.
+//!   - Both rows need the host's provenance reader (`KN5:input.row_not_built` without it) and Jumble off, and the
+//!     runtime may invoke neither (`LG3:capability.not_granted`). No entry can serve them.
+//!   - Not built: `worksheet.compare` (LB2's analysis, a program job), gains and losses, macro versions, and reading a
+//!     position role's occupant again.
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
 //! - `twist.apply` ([`TWIST_ROW`]; A6, ONE.46, ONE.78), a live twist with no preview.
@@ -360,6 +377,7 @@ pub mod store;
 pub mod table;
 pub mod token;
 pub mod twist;
+pub mod worksheet;
 pub mod workspace;
 
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
@@ -380,10 +398,11 @@ pub use store::{
 pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
+pub use worksheet::{Placement, Resolution, Role, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 15] = [
+pub const SOURCES: [(&str, &[u8]); 16] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
@@ -397,6 +416,7 @@ pub const SOURCES: [(&str, &[u8]); 15] = [
     ("c600-command/src/table.rs", include_bytes!("table.rs")),
     ("c600-command/src/token.rs", include_bytes!("token.rs")),
     ("c600-command/src/twist.rs", include_bytes!("twist.rs")),
+    ("c600-command/src/worksheet.rs", include_bytes!("worksheet.rs")),
     ("c600-command/src/workspace.rs", include_bytes!("workspace.rs")),
     ("docs/progress/1.0/command-table.json", table::H08.as_bytes()),
 ];
