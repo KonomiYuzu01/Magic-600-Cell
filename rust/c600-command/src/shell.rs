@@ -204,13 +204,15 @@ impl Shell {
         Ok(Invocation { command, row: row.to_owned(), args, token, epoch })
     }
 
-    /// Sends a prepared invocation on the shell's channel, which stamps [`Caller::Shell`] (ruling 4). A commit or a
-    /// completed cancel ends the presented preview.
+    /// Sends a prepared invocation on the shell's channel, which stamps [`Caller::Shell`] (ruling 4). A commit that moves
+    /// the state, or a completed cancel, ends the presented preview. A committed receipt that keeps the state, such as a
+    /// record write's undo or redo (a workspace inverse), keeps it, as the layer keeps the preview (draft).
     pub fn send<S: Store>(&mut self, layer: &mut CommandLayer<S>, invocation: Invocation) -> Receipt {
         let cancel = invocation.row == "operation.preview.cancel";
+        let state = layer.revision().state;
         let receipt = layer.invoke(&Caller::Shell, invocation);
-        if matches!(receipt.status, Status::Committed(_)) || (cancel && matches!(receipt.status, Status::Completed(_)))
-        {
+        let moved = matches!(receipt.status, Status::Committed(_)) && layer.revision().state != state;
+        if moved || (cancel && matches!(receipt.status, Status::Completed(_))) {
             self.presented = None;
         }
         receipt

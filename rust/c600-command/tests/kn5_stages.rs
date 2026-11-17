@@ -607,3 +607,32 @@ fn a_reopened_layer_undoes_and_redoes_record_writes_as_the_live_layer_does() {
         assert_eq!(after.layer.record("w"), expected, "{direction:?}");
     }
 }
+
+/// The shell's presented binding follows the state (KN5 follow-up; draft): a record write's undo and redo answer
+/// `committed` but move no state and keep the preview presented, so the shell keeps its binding and a press prepared
+/// after them commits; a commit and a commit's undo move the state, end the preview and drop the binding, so the shell
+/// itself answers a later press with `KN5:stale.no_fresh_preview`.
+#[test]
+fn the_shell_keeps_its_presented_preview_while_the_state_stays() {
+    let mut f = fixture(true);
+    let p = f.preview(&word(&[2]));
+    f.present(p);
+    assert!(completed(&f.write("w", letters(&[3]), "block")));
+    for direction in [Direction::Undo, Direction::Redo] {
+        let state = f.layer.revision().state;
+        assert!(committed(&f.step(direction)), "{direction:?}");
+        assert_eq!(f.layer.revision().state, state, "{direction:?}");
+        assert_eq!(f.layer.preview_state(p), Some(PreviewState::Presented), "{direction:?}");
+    }
+    let press = f.press(p);
+    assert!(committed(&f.shell.send(&mut f.layer, press)));
+    let error = f.shell.prepare(&f.layer, "operation.execute", preview_args(p)).unwrap_err();
+    assert_eq!(error.code, code::NO_FRESH_PREVIEW, "{error:?}");
+
+    let q = f.preview(&word(&[1]));
+    f.present(q);
+    assert!(committed(&f.step(Direction::Undo)));
+    assert_eq!(f.layer.preview_state(q), Some(PreviewState::Discarded));
+    let error = f.shell.prepare(&f.layer, "operation.execute", preview_args(q)).unwrap_err();
+    assert_eq!(error.code, code::NO_FRESH_PREVIEW, "{error:?}");
+}
