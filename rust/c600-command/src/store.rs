@@ -7,6 +7,9 @@
 //! [`crate::CommandLayer::open`] replays them through the kernel. LP2's session store implements both traits over KN4's
 //! journal (`c600_session::JournalStore`); [`MemoryStore`] keeps them in memory and can be told the fate of the next
 //! ones, for the rollback and unknown-outcome rehearsals.
+//!
+//! A record write and the undo or redo of one carry the record's value after the action ([`Transaction::record`]). The
+//! journal form names `record` only for them, so a journal written before KN5's stage 3 reads unchanged.
 
 use std::collections::VecDeque;
 
@@ -15,6 +18,7 @@ use c600_kernel::{IdentityBlock, Puzzle};
 
 use crate::layer::Caller;
 use crate::receipt::{CommitRecord, Completion, CompletionKind, Error, Receipt, ResultRef, Revision, Status};
+use crate::workspace::RecordWrite;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransactionKind {
@@ -25,6 +29,8 @@ pub enum TransactionKind {
     Protection,
     /// A language-defined workspace row's completion (KN5.23).
     Workspace,
+    /// A workspace record's write through `workspace.set` (KN5's stage 3).
+    Record,
 }
 
 impl TransactionKind {
@@ -35,6 +41,7 @@ impl TransactionKind {
             TransactionKind::Redo => "redo",
             TransactionKind::Protection => "protection",
             TransactionKind::Workspace => "workspace",
+            TransactionKind::Record => "record",
         }
     }
 
@@ -45,6 +52,7 @@ impl TransactionKind {
             TransactionKind::Redo,
             TransactionKind::Protection,
             TransactionKind::Workspace,
+            TransactionKind::Record,
         ]
         .into_iter()
         .find(|kind| kind.name() == name)
@@ -82,11 +90,15 @@ pub struct Transaction {
     pub job: Option<u64>,
     /// A workspace completion's result digest.
     pub result: Option<String>,
+    /// A record write's record and value, or for the undo or redo of one the record's value after the inverse or the
+    /// repeat. `None` for every other action.
+    pub record: Option<RecordWrite>,
 }
 
 impl Transaction {
     /// The terminal receipt the action answers: `committed` for a commit, undo or redo, `completed(workspace)` for a
-    /// workspace row. It is a function of the transaction, so it is durable with the effect (KN5.23).
+    /// protection change, a record write or a workspace row. It is a function of the transaction, so it is durable with
+    /// the effect (KN5.23).
     pub fn receipt(&self) -> Receipt {
         let status = match self.kind {
             TransactionKind::Commit | TransactionKind::Undo | TransactionKind::Redo => {
@@ -97,20 +109,22 @@ impl Transaction {
                     revision: self.revision.clone(),
                 })
             }
-            TransactionKind::Protection | TransactionKind::Workspace => Status::Completed(Completion {
-                kind: CompletionKind::Workspace,
-                revision: self.revision.clone(),
-                result: self.result.clone().map(|digest| ResultRef { job: self.job, digest }),
-            }),
+            TransactionKind::Protection | TransactionKind::Workspace | TransactionKind::Record => {
+                Status::Completed(Completion {
+                    kind: CompletionKind::Workspace,
+                    revision: self.revision.clone(),
+                    result: self.result.clone().map(|digest| ResultRef { job: self.job, digest }),
+                })
+            }
         };
         Receipt { command: self.command.clone(), request: self.request.clone(), job: self.job, status }
     }
 
-    /// The journal form (draft).
+    /// The journal form (draft). `record` appears only when the action carries a record write.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
-        json::object([
+        let mut value = json::object([
             ("kind", text(self.kind.name())),
             ("event", text(&self.event)),
             ("order", nat(self.order)),
@@ -128,13 +142,21 @@ impl Transaction {
             ("confirm", Value::Bool(self.confirm)),
             ("job", self.job.map_or(Value::Null, nat)),
             ("result", self.result.clone().map_or(Value::Null, Value::String)),
-        ])
+        ]);
+        if let (Value::Object(fields), Some(record)) = (&mut value, &self.record) {
+            fields.insert("record".to_owned(), record.to_json());
+        }
+        value
     }
 
-    /// Reads the journal form strictly: every field, no other.
+    /// Reads the journal form strictly: every field, no other, and `record` only as a record write.
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
-        (object.len() == 17).then_some(())?;
+        let record = match value.get("record") {
+            None => None,
+            Some(record) => Some(RecordWrite::from_json(record)?),
+        };
+        (object.len() == 17 + usize::from(record.is_some())).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
         let optional = |key: &str| match value.get(key)? {
@@ -168,6 +190,7 @@ impl Transaction {
             confirm: *confirm,
             job: optional("job")?,
             result,
+            record,
         })
     }
 }

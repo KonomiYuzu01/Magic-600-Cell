@@ -8,8 +8,8 @@ use std::sync::{Arc, OnceLock};
 use c600_command::token::args_digest;
 use c600_command::{
     code, digest, draft_args, identity_json, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction,
-    Invocation, Kind, MemoryStore, Overlay, PreviewBinding, PreviewDeps, PreviewState, Receipt, Secret, Shell, Status,
-    Table, Token, TokenBinding, TransactionKind,
+    HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, PreviewBinding, PreviewDeps, PreviewState, Receipt, Secret,
+    Shell, Status, Table, Token, TokenBinding, TransactionKind,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{archive, Derivation, Kernel, ProtectedSet, Snapshot};
@@ -96,6 +96,7 @@ fn deps(change: fn(&mut PreviewDeps)) -> Edit {
 struct Fixture {
     layer: CommandLayer,
     shell: Shell,
+    frames: HeadlessFrames,
 }
 
 fn fixture(protected: &[i64]) -> Fixture {
@@ -104,7 +105,7 @@ fn fixture(protected: &[i64]) -> Fixture {
     let start = k.solved();
     let layer =
         CommandLayer::new(k, Table::h08(), Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
-    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell") }
+    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
 impl Fixture {
@@ -116,8 +117,9 @@ impl Fixture {
         job
     }
 
+    /// The next headless frame, which shows the pending preview through the built-in chain, reported for `id`.
     fn present(&mut self, id: u64) {
-        self.shell.present(&mut self.layer, id).unwrap();
+        self.frames.present(&mut self.shell, &mut self.layer, id).unwrap();
     }
 
     /// The commit chord for preview `id`, prepared and not sent.
@@ -162,10 +164,12 @@ impl Fixture {
     }
 
     /// A commit chord for the pending preview, minted with the launch's secret and `nonce` and bound as the shell binds
-    /// it, then changed by `change`: a test minter, which skips the shell's gate (L3 (f), L9).
+    /// it, with the newest reported frame's stamp, then changed by `change`: a test minter, which skips the shell's gate
+    /// (L3 (f), L9).
     fn forge(&mut self, nonce: u64, change: impl FnOnce(&mut TokenBinding)) -> Invocation {
+        let frame = self.layer.frame().map(|f| f.stamp.clone()).unwrap_or_else(|| self.frames.next());
         let p = self.layer.preview().expect("a pending preview");
-        let preview = PreviewBinding { id: p.id, literal: p.literal.clone(), deps: p.deps.clone() };
+        let preview = PreviewBinding { id: p.id, literal: p.literal.clone(), deps: p.deps.clone(), frame };
         let args = preview_args(p.id);
         let revision = self.layer.revision().clone();
         let command = self.shell.command_id();
@@ -259,9 +263,9 @@ fn an_envelope_that_does_not_authenticate_never_takes_the_command_id() {
 
 /// CT-KN5-01 (part: a press whose preview ended before its delivery is refused by how the preview ended, and nothing
 /// changes: a slot that holds another preview answers `preview_replaced`, an empty slot `no_fresh_preview`
-/// (ruling 1), and a token for a preview never presented `no_fresh_preview`; not run: the display's frame report),
-/// CT-ONE-04 (part: the same cases; not run: the shell's display), CT-ONE-05 (part: a preview replaced or cancelled
-/// after the press; not run: the input timing), L3.
+/// (ruling 1), and a token for a preview never presented `no_fresh_preview`; not run: a display adapter's own frame
+/// report, for which the headless frames stand in), CT-ONE-04 (part: the same cases; not run: the shell's display),
+/// CT-ONE-05 (part: a preview replaced or cancelled after the press; not run: the input timing), L3.
 #[test]
 fn a_press_whose_preview_ended_is_refused_by_how_it_ended() {
     let cases = [
@@ -312,8 +316,8 @@ fn a_press_whose_preview_ended_is_refused_by_how_it_ended() {
 /// CT-KN5-09 (part: an action that does not move the puzzle, the undo of a protection change or a workspace overlay's
 /// completion, keeps the head, the state revision, the pending preview and the running jobs; the protection revision is
 /// one of the preview's dependencies (KN0.8), so a press from before a protection undo is stale, while a press from
-/// before a workspace completion commits; the commit then ends the query job and keeps the file job; not run: a record
-/// write and its undo, which wait for the workspace store), KN5.18, L4.
+/// before a workspace completion commits; the commit then ends the query job and keeps the file job; a record write
+/// and its undo are in `kn5_stages.rs`), KN5.18, L4.
 #[test]
 fn an_action_that_moves_nothing_keeps_the_preview_and_the_jobs() {
     let mut f = fixture(&[]);
@@ -469,8 +473,8 @@ fn an_unknown_id_is_unknown_and_a_stale_envelope_keeps_its_refusal_for_the_epoch
 }
 
 /// CT-KN5-04 (part: a workspace overlay's completion is durable with its receipt, so its lookup and its retry answer
-/// the same `completed(workspace)` after a restart and after a reopen and write nothing; not run: a record write, which
-/// waits for the workspace store), KN5.23, L8.
+/// the same `completed(workspace)` after a restart and after a reopen and write nothing; a record write is in
+/// `kn5_stages.rs`), KN5.23, L8.
 #[test]
 fn a_workspace_completion_keeps_its_receipt_across_a_restart_and_a_reopen() {
     let mut f = fixture(&[]);
@@ -498,8 +502,9 @@ fn a_workspace_completion_keeps_its_receipt_across_a_restart_and_a_reopen() {
 /// CT-KN5-01 (part: a token minted with the launch's secret and bound to anything but this press is refused, and
 /// nothing changes: another preview ID answers `preview_replaced`; another session, epoch, command, row, argument
 /// digest, literal digest or identity-block field `token_mismatch` (draft ruling 5 for the session and the epoch); a
-/// changed PreviewDeps field `revision_changed`; the unchanged binding commits; not run: the shell's display),
-/// CT-ONE-03 (part: the same matrix; not run: the user stage), KN5.14, KN5.16, L9.
+/// changed PreviewDeps field `revision_changed`; a frame stamp outside the preview's presentation `no_fresh_preview`
+/// (ONE.41); the unchanged binding commits; not run: the shell's display), CT-ONE-03 (part: the same matrix; not run:
+/// a live twist and a crossing commit, whose rows the headless layer does not build), KN5.14, KN5.16, L9.
 #[test]
 fn every_bound_field_of_a_token_is_checked() {
     let mut f = fixture(&[]);
@@ -513,6 +518,7 @@ fn every_bound_field_of_a_token_is_checked() {
         ("arguments".into(), code::TOKEN_MISMATCH, edit(move |b| b.args = args_digest(&preview_args(p + 1)))),
         ("preview ID".into(), code::PREVIEW_REPLACED, edit(|b| b.preview.as_mut().unwrap().id += 1)),
         ("literal".into(), code::TOKEN_MISMATCH, edit(|b| b.preview.as_mut().unwrap().literal = "0".repeat(64))),
+        ("frame".into(), code::NO_FRESH_PREVIEW, edit(|b| b.preview.as_mut().unwrap().frame.sequence += 1)),
         ("deps.epoch".into(), code::REVISION_CHANGED, deps(|d| d.epoch += 1)),
         ("deps.identity".into(), code::REVISION_CHANGED, deps(|d| d.identity.push('x'))),
         ("deps.mode".into(), code::REVISION_CHANGED, deps(|d| d.mode = "jumble_on")),
@@ -531,7 +537,7 @@ fn every_bound_field_of_a_token_is_checked() {
         let identity = digest(&Value::Object(changed));
         cases.push((format!("identity.{field}"), code::TOKEN_MISMATCH, edit(move |b| b.identity = identity.clone())));
     }
-    assert_eq!(cases.len(), 18);
+    assert_eq!(cases.len(), 19);
     for (nonce, (field, expected, change)) in (100..).zip(&cases) {
         let press = f.forge(nonce, |b| change(b));
         f.refused(press, expected, field);
@@ -673,6 +679,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("store_mut", true),
         ("set_program_capacity", false),
         ("present", false),
+        ("set_provenance", false),
         ("hold_commit_lane", true),
         ("fault_replace_head", true),
         ("restart", false),
@@ -695,13 +702,13 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         .collect();
     calls.sort_unstable();
     calls.dedup();
-    assert_eq!(calls, ["identity_binding", "invoke", "present", "revision", "table", "undo_hint"]);
+    assert_eq!(calls, ["frame", "identity_binding", "invoke", "present", "revision", "table", "undo_hint"]);
 }
 
 /// CT-ONE-11 (part: when two commit steps fail together the earlier step's code answers and nothing changes, for each
 /// pair of adjacent steps from 3 to 8 and for steps 3 and 8; not run: the other pairs), CT-KN5-06 (part: a protection
-/// release and its undo restore the set, and a press from before them is still stale; not run: a record edit and its
-/// undo), L18 (a), L18 (d), L18 (e).
+/// release and its undo restore the set, and a press from before them is still stale; a record edit and its undo are
+/// in `kn5_stages.rs`), L18 (a), L18 (d), L18 (e).
 #[test]
 fn the_earliest_failing_step_answers() {
     let (clear, moves) = o06();

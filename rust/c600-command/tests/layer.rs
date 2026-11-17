@@ -8,8 +8,8 @@ use std::sync::{Arc, OnceLock};
 use c600_command::token::args_digest;
 use c600_command::{
     code, draft_args, word_draft, ActionHint, Caller, CancelReason, CommandLayer, Completion, CompletionKind,
-    Direction, Error, Fate, Invocation, Kind, Lane, MemoryStore, Overlay, PreviewRule, PreviewState, Receipt, Secret,
-    Shell, Status, Table, Token, TokenBinding,
+    Direction, Error, Fate, HeadlessFrames, Invocation, Kind, Lane, MemoryStore, Overlay, PreviewRule, PreviewState,
+    Receipt, Secret, Shell, Status, Table, Token, TokenBinding,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{archive, Derivation, Kernel, ProtectedSet, Snapshot, Verdict};
@@ -80,6 +80,7 @@ fn preview_args(id: u64) -> Value {
 struct Fixture {
     layer: CommandLayer,
     shell: Shell,
+    frames: HeadlessFrames,
 }
 
 fn fixture(protected: &[i64]) -> Fixture {
@@ -88,7 +89,7 @@ fn fixture(protected: &[i64]) -> Fixture {
     let start = k.solved();
     let layer =
         CommandLayer::new(k, Table::h08(), Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
-    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell") }
+    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
 impl Fixture {
@@ -106,8 +107,9 @@ impl Fixture {
         job
     }
 
+    /// The display's next frame shows the pending preview through the built-in chain, and the shell reports it.
     fn present(&mut self, id: u64) {
-        self.shell.present(&mut self.layer, id).unwrap();
+        self.frames.present(&mut self.shell, &mut self.layer, id).unwrap();
     }
 
     /// The commit chord through the command route, bound to the presented preview.
@@ -220,7 +222,12 @@ fn a_commit_needs_its_token_and_a_presented_preview() {
         row: "operation.execute".into(),
         args: args_digest(&preview_args(id)),
         identity: f.layer.identity_binding(),
-        preview: Some(c600_command::PreviewBinding { id, literal: p.literal.clone(), deps: p.deps.clone() }),
+        preview: Some(c600_command::PreviewBinding {
+            id,
+            literal: p.literal.clone(),
+            deps: p.deps.clone(),
+            frame: f.frames.next(),
+        }),
         revision: None,
         hint: None,
     };
@@ -286,8 +293,14 @@ fn a_token_from_before_a_commit_and_its_undo_is_refused() {
     binding.nonce = 901;
     binding.command = "t/revisited".into();
     binding.args = args_digest(&preview_args(q));
-    binding.preview =
-        Some(c600_command::PreviewBinding { id: q, literal: fresh.literal.clone(), deps: old.preview.unwrap().deps });
+    // The frame that presented the new preview, so only the dependencies are stale.
+    let frame = f.shell.presented().unwrap().frame.clone();
+    binding.preview = Some(c600_command::PreviewBinding {
+        id: q,
+        literal: fresh.literal.clone(),
+        deps: old.preview.unwrap().deps,
+        frame,
+    });
     let revisited = Invocation {
         command: "t/revisited".into(),
         row: "operation.execute".into(),

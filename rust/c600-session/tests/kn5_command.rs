@@ -5,8 +5,8 @@
 mod common;
 
 use c600_command::{
-    code, draft_args, Caller, CommandLayer, Completion, CompletionKind, Direction, Invocation, Kind, Overlay, Receipt,
-    Reopen, Secret, Shell, Status, Table,
+    code, draft_args, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames, Invocation,
+    Kind, Overlay, Provenance, Receipt, Reopen, Revision, Secret, Shell, Status, Table, RECORD_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::ProtectedSet;
@@ -30,6 +30,7 @@ fn code_of(receipt: &Receipt) -> &'static str {
 struct Fixture {
     layer: CommandLayer<JournalStore>,
     shell: Shell,
+    frames: HeadlessFrames,
 }
 
 /// A new session at the solved state on an empty memory disk.
@@ -38,7 +39,7 @@ fn create(disk: &MemDisk) -> Fixture {
     let store = JournalStore::create(Box::new(disk.clone())).expect("an empty disk takes a session");
     let layer = CommandLayer::new(k.clone(), Table::h08(), Secret::fixed(SECRET), store, "s1", k.solved(), none());
     assert!(layer.recovery().is_none(), "{:?}", layer.recovery());
-    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell") }
+    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
 /// The session the disk holds, reopened under a new layer and shell with `secret`.
@@ -48,7 +49,7 @@ fn reopen(disk: &MemDisk, secret: [u8; 32]) -> Fixture {
         Ok(layer) => layer,
         Err(error) => panic!("the session does not reopen: {error:?}"),
     };
-    Fixture { layer, shell: Shell::new(Secret::fixed(secret), "shell") }
+    Fixture { layer, shell: Shell::new(Secret::fixed(secret), "shell"), frames: HeadlessFrames::new() }
 }
 
 fn none() -> ProtectedSet {
@@ -63,7 +64,7 @@ impl Fixture {
         assert_eq!(self.layer.run_jobs(), 1);
         let done = self.layer.outcome(&receipt.command, &receipt.request).unwrap();
         assert!(matches!(done.status, Status::Completed(Completion { kind: CompletionKind::PreviewReady, .. })));
-        self.shell.present(&mut self.layer, id).unwrap();
+        self.frames.present(&mut self.shell, &mut self.layer, id).unwrap();
         (done, id)
     }
 
@@ -362,8 +363,8 @@ fn a_store_refuses_a_second_session_and_opens_no_empty_one() {
 }
 
 /// CT-KN5-04 (part: a workspace overlay's completion is written with its receipt in one journal frame, so after a reopen
-/// its lookup and its identical retry answer the same `completed(workspace)` and the retry writes nothing; not run: a
-/// record write, which waits for the workspace store), KN5.23, L8.
+/// its lookup and its identical retry answer the same `completed(workspace)` and the retry writes nothing; a record
+/// write is the next test), KN5.23, L8.
 #[test]
 fn a_workspace_completion_and_its_receipt_are_one_durable_frame() {
     let disk = MemDisk::new();
@@ -388,6 +389,57 @@ fn a_workspace_completion_and_its_receipt_are_one_durable_frame() {
     let writes = disk.writes();
     assert_eq!(g.layer.invoke(&Caller::Shell, asked), done);
     assert_eq!(disk.writes(), writes);
+}
+
+/// CT-KN5-04 (part: a record write and its undo are written to the journal with their receipts, so a reopen replays them
+/// without a provenance reader to the same record, version and revision, and the write's lookup and its identical retry
+/// answer the same `completed(workspace)` and write nothing; not run: the shell's transport), KN5.20, KN5.23, PS1.16.
+#[test]
+fn a_record_write_and_its_undo_are_durable_in_the_journal() {
+    struct Reader;
+    impl Provenance for Reader {
+        fn check(&self, _: &[u8]) -> Result<(), Error> {
+            Ok(())
+        }
+        fn admit(&self, _: &[u8]) -> Result<(), Error> {
+            Ok(())
+        }
+    }
+    let disk = MemDisk::new();
+    let k = common::kernel();
+    let store = JournalStore::create(Box::new(disk.clone())).expect("an empty disk takes a session");
+    let table = Table::h08().with_drafts();
+    let mut layer = CommandLayer::new(k.clone(), table.clone(), Secret::fixed(SECRET), store, "s1", k.solved(), none());
+    layer.set_provenance(Box::new(Reader));
+    let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
+    let args = json::object([
+        ("payload", Value::Array(vec![Value::Int(1), Value::Int(2)])),
+        ("provenance", Value::String("block".into())),
+        ("record", Value::String("w".into())),
+    ]);
+    let write = shell.prepare(&layer, RECORD_ROW, args).unwrap();
+    let written = shell.send(&mut layer, write.clone());
+    assert!(matches!(written.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })));
+    let hint = layer.undo_hint(Direction::Undo).expect("the write is undoable");
+    let undone = shell.invoke(&mut layer, "session.undo", json::object([("hint", hint.to_json())])).unwrap();
+    assert!(matches!(undone.status, Status::Committed(_)), "{:?}", undone.status);
+    let records = layer.records().clone();
+    assert_eq!((records["w"].value.as_ref(), records["w"].version), (None, 2));
+    let revision = Revision { epoch: 0, ..layer.revision().clone() };
+    drop((layer, shell));
+
+    let store = JournalStore::open(Box::new(disk.clone())).expect("the journal opens");
+    let mut reopened = match CommandLayer::open(common::kernel(), table, Secret::fixed([9; 32]), store) {
+        Ok(layer) => layer,
+        Err(error) => panic!("the session does not reopen: {error:?}"),
+    };
+    assert!(reopened.recovery().is_none(), "{:?}", reopened.recovery());
+    assert_eq!(reopened.records(), &records);
+    assert_eq!(Revision { epoch: 0, ..reopened.revision().clone() }, revision);
+    assert_eq!(reopened.outcome(&write.command, &written.request), Some(written.clone()));
+    let writes = disk.writes();
+    assert_eq!(reopened.invoke(&Caller::Shell, write), written);
+    assert_eq!((disk.writes(), reopened.records()), (writes, &records));
 }
 
 /// CT-KN5-04 (part: M6's own `Session::invoke` keeps the command layer's rule: an envelope with a forged authenticator,

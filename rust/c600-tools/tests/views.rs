@@ -7,7 +7,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use c600_command::{code as layer_code, CommandLayer, PreviewState, Secret, Shell, Status as LayerStatus, Table};
+use c600_command::{
+    code as layer_code, CommandLayer, Error as CommandError, FrameChain, HeadlessFrames, PreviewState, Secret, Shell,
+    Status as LayerStatus, Table,
+};
 use c600_digest::sha256_hex;
 use c600_display::codes;
 use c600_display::host::{Host, MockBackend};
@@ -28,9 +31,9 @@ use c600_tools::bridge::{base as read_base, Bridge};
 use c600_tools::expand::literal_digest;
 use c600_tools::tool::{manifest, BoundaryClass, Manifest, Ran, Tool, ENTRY, MODULE, ROW, SOURCE};
 use c600_tools::views::{
-    self, content, declared, derivation, engine_bundle, imported_view, model_revision, preview_display, preview_shown,
-    proposal_view, report_presented, revision_ref, word_text, Links, DERIVED_PLAN, ENTRY_NODE, PROPOSAL_NODE,
-    SUPPORT_PLAN,
+    self, content, declared, derivation, engine_bundle, frame_stamp, imported_view, model_revision, presented_frame,
+    preview_display, preview_shown, proposal_view, report_presented, revision_ref, word_text, Links, DERIVED_PLAN,
+    ENTRY_NODE, PROPOSAL_NODE, SUPPORT_PLAN,
 };
 use c600_view as view;
 
@@ -351,9 +354,10 @@ fn ct_ev3_02_a_burst_adopts_the_newest_bundle_and_skips_obsolete_evaluations() {
     let mut pending = Vec::new();
     let mut revisions = Vec::new();
     let mut newest = first.clone();
+    let mut frames = HeadlessFrames::new();
     for (round, word) in [[3, -4], [5, 6], [-7, 8], [9, -10]].iter().enumerate() {
         let preview = layer.preview().expect("the pending preview").id;
-        shell.present(&mut layer, preview).expect("presented by the built-in chain");
+        frames.present(&mut shell, &mut layer, preview).expect("presented by the built-in chain");
         let receipt = shell.press(&mut layer, COMMIT, false).expect("the commit chord").expect("not a repeat");
         assert!(matches!(receipt.status, LayerStatus::Committed(_)), "{receipt:?}");
         let ran = name_word(&mut layer, word, &format!("burst-{}", round + 1));
@@ -667,15 +671,18 @@ fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
 // ----- CT-ONE-29
 
 /// CT-ONE-29 (ONE.41, RPI.76), its user-stage part, synthetic, at the adapter: a frame that draws the tool's preview
-/// through a user stage composes it as an extra display, its presented report names no preview, and the adapter's
-/// report tells the shell nothing, so the shell holds no presented preview, mints no commit token and the commit chord
-/// stops at its gate; nothing changes. A frame in which the built-in chain draws the preview, here over a view drawn by
-/// a user stage, names it; the adapter reports it, the shell's token binds to exactly that preview, and the chord
-/// commits it. The command layer's `present` takes a preview ID only, so the layer itself cannot refuse a caller that
-/// reports a user-stage frame: that check is not built (see the crate's drafts).
+/// through a user stage composes it as an extra display, and its presented report names no preview. The adapter
+/// reports each frame with its stamp; the layer refuses a frame that draws the preview through a user stage, one that
+/// shows no preview and one that shows a preview the layer does not hold, so the shell holds no presented preview,
+/// mints no commit token and the commit chord stops at its gate; nothing changes. A frame in which the built-in chain
+/// draws the preview, here over a view drawn by a user stage, presents it, and the shell's token binds exactly that
+/// preview and that frame's stamp. A later user-stage frame ends the presentation, a delayed report older than it
+/// changes nothing, and the next built-in frame presents the preview again; the chord commits it.
 #[test]
 fn ct_one_29_a_preview_drawn_through_a_user_stage_binds_no_commit_token() {
     let (mut layer, mut shell, _) = proposed(&[1, -2], "one-29");
+    let mut frames = HeadlessFrames::new();
+    let refused = |report: Result<Option<u64>, CommandError>| report.err().map(|error| error.code);
     let preview = layer.preview().expect("the pending preview").clone();
     let shown = preview_shown(&preview);
     assert_eq!(
@@ -693,7 +700,10 @@ fn ct_one_29_a_preview_drawn_through_a_user_stage_binds_no_commit_token() {
     let extra = compose(&Chain::BuiltIn, Some((&shown, &user)), &[HostStatus::Preview]);
     assert!(extra.layers.contains(&Layer::ExtraPreview) && !extra.layers.contains(&Layer::Preview(shown.clone())));
     assert_eq!((&extra.presented, extra.commit_binding()), (&Presented::NoPreview, None));
-    assert_eq!(report_presented(&extra, &mut shell, &mut layer), Ok(None));
+    let presented = presented_frame(&extra, frames.next());
+    assert_eq!((&presented.preview, presented.chain), (&None, FrameChain::UserStage));
+    let report = report_presented(&extra, frames.next(), &mut shell, &mut layer);
+    assert_eq!(refused(report), Some(layer_code::NO_FRESH_PREVIEW));
     assert_eq!((shell.presented(), layer.preview_state(preview.id)), (None, Some(PreviewState::Ready)));
     let gate = shell.prepare(&layer, "operation.execute", args.clone()).err().map(|error| error.code);
     assert_eq!(gate, Some(layer_code::NO_FRESH_PREVIEW), "no token is minted");
@@ -701,31 +711,64 @@ fn ct_one_29_a_preview_drawn_through_a_user_stage_binds_no_commit_token() {
     assert_eq!(chord, Some(layer_code::NO_FRESH_PREVIEW));
     assert_eq!(fingerprint(&layer), before);
 
-    // A frame with no preview, and one naming a preview the layer does not hold, report nothing either.
+    // A frame with no preview, and one naming a preview the layer does not hold, are refused as well.
     let none = compose(&user, None, &[]);
-    assert_eq!(report_presented(&none, &mut shell, &mut layer), Ok(None));
+    assert_eq!(presented_frame(&none, frames.next()).chain, FrameChain::BuiltIn);
+    assert_eq!(
+        refused(report_presented(&none, frames.next(), &mut shell, &mut layer)),
+        Some(layer_code::NO_FRESH_PREVIEW)
+    );
     let mut another = shown.clone();
     another.literal = literal_digest(&[7, 8]);
     let foreign = compose(&Chain::BuiltIn, Some((&another, &Chain::BuiltIn)), &[]);
-    assert_eq!(report_presented(&foreign, &mut shell, &mut layer), Ok(None));
-    assert_eq!((shell.presented(), fingerprint(&layer)), (None, before.clone()));
+    let report = report_presented(&foreign, frames.next(), &mut shell, &mut layer);
+    assert_eq!(refused(report), Some(layer_code::NO_FRESH_PREVIEW));
+    assert_eq!((shell.presented(), layer.preview_state(preview.id)), (None, Some(PreviewState::Ready)));
+    assert_eq!(fingerprint(&layer), before);
 
     // The display host's own frame report of the preview, drawn by the built-in chain.
     let base = base_of(&layer);
     let mut host = host_at(&base);
     host.show_preview(V1, Some(preview_display(&preview, &base))).expect("the engine's preview");
     host.frame(V1).expect("a frame");
-    let frames = host.read_presented();
-    assert_eq!(frames.last().map(|frame| &frame.presented), Some(&Presented::Previews(vec![shown.clone()])));
+    let reported = host.read_presented();
+    assert_eq!(reported.last().map(|frame| &frame.presented), Some(&Presented::Previews(vec![shown.clone()])));
     assert_eq!(host.presented_preview(), Some(shown.clone()));
+    let display = &reported.last().expect("the host's report").stamp;
+    let stamp = frame_stamp(display);
+    let fields = (stamp.device_epoch, stamp.surface, stamp.surface_generation, stamp.sequence);
+    assert_eq!(fields, (display.device_epoch, display.surface, display.surface_generation, display.sequence));
 
-    // The built-in chain draws the preview over a view drawn by the user stage: the token binds to that preview.
+    // The built-in chain draws the preview over a view drawn by the user stage: the token binds to that preview and to
+    // the frame that presented it.
     let built_in = compose(&user, Some((&shown, &Chain::BuiltIn)), &[HostStatus::Preview]);
     assert_eq!(built_in.commit_binding(), Some(&shown));
-    assert_eq!(report_presented(&built_in, &mut shell, &mut layer), Ok(Some(preview.id)));
+    let first = frames.next();
+    assert_eq!(report_presented(&built_in, first.clone(), &mut shell, &mut layer), Ok(Some(preview.id)));
     assert_eq!(layer.preview_state(preview.id), Some(PreviewState::Presented));
     let bound = shell.presented().cloned().expect("a presented preview");
-    assert_eq!((bound.id, bound.literal.as_str(), &bound.deps), (preview.id, preview.literal.as_str(), &preview.deps));
+    let binding = (bound.id, bound.literal.as_str(), &bound.deps, &bound.frame);
+    assert_eq!(binding, (preview.id, preview.literal.as_str(), &preview.deps, &first));
+
+    // A later user-stage frame ends the presentation; a delayed built-in frame from before it changes nothing.
+    let delayed = frames.next();
+    assert_eq!(
+        refused(report_presented(&extra, frames.next(), &mut shell, &mut layer)),
+        Some(layer_code::NO_FRESH_PREVIEW)
+    );
+    assert_eq!((shell.presented(), layer.preview_state(preview.id)), (None, Some(PreviewState::Ready)));
+    let report = report_presented(&built_in, delayed, &mut shell, &mut layer);
+    assert_eq!(refused(report), Some(layer_code::NO_FRESH_PREVIEW));
+    assert_eq!((shell.presented(), layer.preview_state(preview.id)), (None, Some(PreviewState::Ready)));
+    let chord = shell.press(&mut layer, COMMIT, false).err().map(|error| error.code);
+    assert_eq!(chord, Some(layer_code::NO_FRESH_PREVIEW));
+    assert_eq!(fingerprint(&layer), before);
+
+    // The next built-in frame presents it again, and the token binds that frame.
+    let again = frames.next();
+    assert_eq!(report_presented(&built_in, again.clone(), &mut shell, &mut layer), Ok(Some(preview.id)));
+    let bound = shell.presented().cloned().expect("a presented preview");
+    assert_eq!((bound.id, &bound.frame), (preview.id, &again));
     let prepared = shell.prepare(&layer, "operation.execute", args).expect("a token is minted");
     assert_eq!(prepared.token.as_ref().and_then(|token| token.binding.preview.clone()), Some(bound));
     let receipt = shell.send(&mut layer, prepared);

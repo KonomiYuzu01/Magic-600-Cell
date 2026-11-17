@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, draft_args, Caller, CommandLayer, Invocation, Kind, PreviewState, Secret, Shell, Status, Table, Token,
+    code, draft_args, Caller, CommandLayer, HeadlessFrames, Invocation, Kind, PreviewState, Secret, Shell, Status,
+    Table, Token,
 };
 use c600_digest::sha256_hex;
 use c600_ir::{ExactRole, QTy, Ty};
@@ -198,7 +199,7 @@ fn a_runtime_invocation_carrying_a_token_is_refused() {
     let admitted = shell.invoke(&mut layer, "operation.preview", draft_args(&recipe)).unwrap();
     let Status::Running(id) = admitted.status else { panic!("{admitted:?}") };
     assert_eq!(layer.run_jobs(), 1);
-    shell.present(&mut layer, id).unwrap();
+    HeadlessFrames::after(&layer).present(&mut shell, &mut layer, id).unwrap();
     let before = fingerprint(&layer);
     let prepared =
         shell.prepare(&layer, "operation.execute", json::object([("preview", Json::Int(id as i64))])).unwrap();
@@ -236,7 +237,7 @@ fn only_a_token_the_shell_mints_commits_the_pending_preview() {
 
     let unpresented = shell.press(&mut layer, "Ctrl+Shift+Enter", false);
     assert_eq!(unpresented.err().map(|error| error.code), Some(code::NO_FRESH_PREVIEW));
-    shell.present(&mut layer, id).unwrap();
+    HeadlessFrames::after(&layer).present(&mut shell, &mut layer, id).unwrap();
     let preview = layer.preview().cloned().expect("the pending preview");
     assert_eq!((preview.id, &preview.caller), (id, &Caller::Runtime { run: "proposer".into() }));
 

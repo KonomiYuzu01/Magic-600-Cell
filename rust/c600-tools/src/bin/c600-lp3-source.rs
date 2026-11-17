@@ -37,8 +37,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use c600_command::{
-    code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, Receipt, Secret, Shell,
-    Status, Table,
+    code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Receipt,
+    Secret, Shell, Status, Table,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refusal, Snapshot, SupportRow};
@@ -318,8 +318,8 @@ fn refusal(refusal: &Refusal) -> Value {
     json::object([("code", Value::String(refusal.code.into())), ("detail", Value::String(refusal.message.clone()))])
 }
 
-/// One session of the source route: the layer, its shell, the tool, its host, and every receipt in order with its
-/// caller.
+/// One session of the source route: the layer, its shell, the headless display's frames, the tool, its host, and
+/// every receipt in order with its caller.
 struct Session<'k> {
     kernel: &'k Kernel,
     tool: &'k Tool,
@@ -328,6 +328,7 @@ struct Session<'k> {
     case_id: String,
     layer: CommandLayer,
     shell: Shell,
+    frames: HeadlessFrames,
     tamper: Option<i64>,
     runs: usize,
     start_refused: usize,
@@ -466,7 +467,8 @@ impl Session<'_> {
         if !matches!(built.status, Status::Completed(Completion { kind: CompletionKind::PreviewReady, .. })) {
             return Err(unexpected("operation.preview", &built.status));
         }
-        self.shell.present(&mut self.layer, id).map_err(|error| disagree(format!("present: {}", error.code)))?;
+        let presented = self.frames.present(&mut self.shell, &mut self.layer, id);
+        presented.map_err(|error| disagree(format!("present: {}", error.code)))?;
         let preview = self.layer.preview().filter(|p| p.id == id).ok_or_else(|| disagree("the preview is gone"))?;
         // The result digest covers the draft's digest. The command route drafts the case's recipe; the source route
         // drafts the literal word. The rebased digest is the preview's result over the case recipe's draft.
@@ -604,6 +606,7 @@ fn replay(
         case_id: case_id.clone(),
         layer,
         shell,
+        frames: HeadlessFrames::new(),
         tamper,
         runs: 0,
         start_refused: 0,

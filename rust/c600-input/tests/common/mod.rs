@@ -6,7 +6,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use c600_command::{CommandLayer, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table};
+use c600_command::{CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table};
 use c600_input::{
     default_specs, BindingSpec, Context, Entry, KeyEvent, KeyMap, Layout, ListFocus, Routed, Router, RoutingClass, Slot,
 };
@@ -72,6 +72,8 @@ pub struct Fixture {
     pub layer: CommandLayer,
     pub shell: Shell,
     pub router: Router,
+    /// The headless display's frames, which present the pending preview through the built-in chain.
+    pub frames: HeadlessFrames,
     prefix: String,
 }
 
@@ -87,7 +89,8 @@ pub fn fixture(prefix: &str, layout: &str) -> Fixture {
     layer.register_overlay(TOOL, Kind::Query, &[], overlay).unwrap();
     let keymap = KeyMap::apply(&specs_with_tool(), &[Layout::US, Layout::FRENCH], layout).unwrap();
     let router = Router::new(keymap, Context::new(slots("")));
-    Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), prefix), router, prefix: prefix.to_owned() }
+    let shell = Shell::new(Secret::fixed(SECRET), prefix);
+    Fixture { layer, shell, router, frames: HeadlessFrames::new(), prefix: prefix.to_owned() }
 }
 
 impl Fixture {
@@ -125,7 +128,7 @@ impl Fixture {
     pub fn build_and_present(&mut self, receipt: &Receipt) -> u64 {
         let Status::Running(job) = receipt.status else { panic!("not running: {:?}", receipt.status) };
         assert_eq!(self.layer.run_jobs(), 1);
-        self.shell.present(&mut self.layer, job).unwrap();
+        self.frames.present(&mut self.shell, &mut self.layer, job).unwrap();
         job
     }
 
