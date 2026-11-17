@@ -9,12 +9,15 @@
 //! ones, for the rollback and unknown-outcome rehearsals.
 //!
 //! A record write and the undo or redo of one carry the record's value after the action ([`Transaction::record`]). The
-//! journal form names `record` only for them, so a journal written before KN5's stage 3 reads unchanged.
+//! journal form names `record` only for them, so a journal written before KN5's stage 3 reads unchanged. In the same
+//! way a protection-policy change and the undo or redo of one carry the policy after the action
+//! ([`Transaction::policy`]), and only they name `policy` (draft), so a journal written before the Strict mode reads
+//! unchanged.
 
 use std::collections::VecDeque;
 
 use c600_kernel::json::{self, Value};
-use c600_kernel::{IdentityBlock, Puzzle};
+use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
 use crate::layer::Caller;
 use crate::receipt::{CommitRecord, Completion, CompletionKind, Error, Receipt, ResultRef, Revision, Status};
@@ -31,6 +34,8 @@ pub enum TransactionKind {
     Workspace,
     /// A workspace record's write through `workspace.set` (KN5's stage 3).
     Record,
+    /// A change of the protection policy, Net or Strict, through `protection.policy.set` (KN2.4, LB2.3; draft).
+    Policy,
 }
 
 impl TransactionKind {
@@ -42,6 +47,7 @@ impl TransactionKind {
             TransactionKind::Protection => "protection",
             TransactionKind::Workspace => "workspace",
             TransactionKind::Record => "record",
+            TransactionKind::Policy => "policy",
         }
     }
 
@@ -53,9 +59,27 @@ impl TransactionKind {
             TransactionKind::Protection,
             TransactionKind::Workspace,
             TransactionKind::Record,
+            TransactionKind::Policy,
         ]
         .into_iter()
         .find(|kind| kind.name() == name)
+    }
+}
+
+/// A protection policy's name in H-08's `protection.policy.set` arguments and in the journal: `net` or `strict`.
+pub fn policy_name(policy: ProtectionMode) -> &'static str {
+    match policy {
+        ProtectionMode::Net => "net",
+        ProtectionMode::Strict => "strict",
+    }
+}
+
+/// Reads [`policy_name`]'s form.
+pub fn policy_from_name(name: &str) -> Option<ProtectionMode> {
+    match name {
+        "net" => Some(ProtectionMode::Net),
+        "strict" => Some(ProtectionMode::Strict),
+        _ => None,
     }
 }
 
@@ -93,12 +117,16 @@ pub struct Transaction {
     /// A record write's record and value, or for the undo or redo of one the record's value after the inverse or the
     /// repeat. `None` for every other action.
     pub record: Option<RecordWrite>,
+    /// A policy change's protection policy after it, or for the undo or redo of one the policy after the inverse or the
+    /// repeat. `None` for every other action: the policy in force is the one the last such action left, Net from a
+    /// session's start.
+    pub policy: Option<ProtectionMode>,
 }
 
 impl Transaction {
     /// The terminal receipt the action answers: `committed` for a commit, undo or redo, `completed(workspace)` for a
-    /// protection change, a record write or a workspace row. It is a function of the transaction, so it is durable with
-    /// the effect (KN5.23).
+    /// protection or policy change, a record write or a workspace row. It is a function of the transaction, so it is
+    /// durable with the effect (KN5.23).
     pub fn receipt(&self) -> Receipt {
         let status = match self.kind {
             TransactionKind::Commit | TransactionKind::Undo | TransactionKind::Redo => {
@@ -109,18 +137,20 @@ impl Transaction {
                     revision: self.revision.clone(),
                 })
             }
-            TransactionKind::Protection | TransactionKind::Workspace | TransactionKind::Record => {
-                Status::Completed(Completion {
-                    kind: CompletionKind::Workspace,
-                    revision: self.revision.clone(),
-                    result: self.result.clone().map(|digest| ResultRef { job: self.job, digest }),
-                })
-            }
+            TransactionKind::Protection
+            | TransactionKind::Workspace
+            | TransactionKind::Record
+            | TransactionKind::Policy => Status::Completed(Completion {
+                kind: CompletionKind::Workspace,
+                revision: self.revision.clone(),
+                result: self.result.clone().map(|digest| ResultRef { job: self.job, digest }),
+            }),
         };
         Receipt { command: self.command.clone(), request: self.request.clone(), job: self.job, status }
     }
 
-    /// The journal form (draft). `record` appears only when the action carries a record write.
+    /// The journal form (draft). `record` appears only when the action carries a record write, and `policy` only when
+    /// it carries a policy.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
@@ -146,12 +176,16 @@ impl Transaction {
         if let (Value::Object(fields), Some(record)) = (&mut value, &self.record) {
             fields.insert("record".to_owned(), record.to_json());
         }
+        if let (Value::Object(fields), Some(policy)) = (&mut value, self.policy) {
+            fields.insert("policy".to_owned(), Value::String(policy_name(policy).to_owned()));
+        }
         value
     }
 
     /// Reads the journal form strictly: every field and no other. `record` belongs to a record write, which carries one
-    /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty; a
-    /// transaction of another kind that carries one does not read, so the history stops there (KN5.23).
+    /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty.
+    /// `policy` belongs to a policy change and to the undo or redo of one. A transaction that carries either where it
+    /// does not belong, or both, does not read, so the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
         let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
@@ -159,12 +193,18 @@ impl Transaction {
             None => None,
             Some(record) => Some(RecordWrite::from_json(record)?),
         };
-        let carries = match kind {
-            TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()),
-            TransactionKind::Undo | TransactionKind::Redo => true,
-            _ => record.is_none(),
+        let policy = match value.get("policy") {
+            None => None,
+            Some(policy) => Some(policy_from_name(policy.as_str()?)?),
         };
-        (carries && object.len() == 17 + usize::from(record.is_some())).then_some(())?;
+        let carries = match kind {
+            TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()) && policy.is_none(),
+            TransactionKind::Policy => policy.is_some() && record.is_none(),
+            TransactionKind::Undo | TransactionKind::Redo => record.is_none() || policy.is_none(),
+            _ => record.is_none() && policy.is_none(),
+        };
+        let keys = 17 + usize::from(record.is_some()) + usize::from(policy.is_some());
+        (carries && object.len() == keys).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
         let optional = |key: &str| match value.get(key)? {
@@ -199,6 +239,7 @@ impl Transaction {
             job: optional("job")?,
             result,
             record,
+            policy,
         })
     }
 }
