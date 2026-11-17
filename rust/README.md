@@ -682,9 +682,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model found no blocker or
     major finding. Its minor points are the drafts above, which it found defensible, and engine faults that return a
     plain error without a code, as the crate's other engine faults do; no change.
-  - Not built with them: `nu` and `correction_set_check` (JI.13). `nu` needed the label level of A5's crossings and
-    came after it (the ν bullet below); the check needs `nu` and the 36-row correction catalogue, which only research
-    data holds, and shipping that catalogue as model data is a model-boundary decision.
+  - Not built with them: `nu` and `correction_set_check` (JI.13). `nu` needed the label level of A5's crossings, and
+    the check needed `nu` and the 36-row correction catalogue; both came later (the ν and correction catalogue bullets
+    below).
   - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
     source and fixture; the comparison ran on Windows only, and its timings are informational.
 - M8 levels (LP2 plan, section 11; chapter 01, KN1.7 to KN1.11, KN1.14, KN1.17 and KN2.11 to KN2.14; chapter 08,
@@ -727,9 +727,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     compares).
   - Contract tests: CT-KN1-03, CT-KN2-06 and CT-ONE-10 whole; CT-KN1-04 whole by the union of M4's 600-cell-Full half
     and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
-    marker naming what it leaves out. Not built with them: `nu` (the ν bullet below), `correction_set_check`, and the
-    session store's checkpoint and import records (M6). No J1 fault was found. Evidence kind: source and fixture; the
-    comparison ran on Windows only.
+    marker naming what it leaves out. Not built with them: `nu` and `correction_set_check` (the ν and correction
+    catalogue bullets below), and the session store's checkpoint and import records (M6). No J1 fault was found.
+    Evidence kind: source and fixture; the comparison ran on Windows only.
 - The kernel pieces for LP3's C8 (LP2):
   - The slot action of K⁺: `levels::Tables::slot_image` is A3's k·s in one call with its frame check (M8's `image` and
     `slot_of` give its parts without the check), and `piece_slots` gives a piece's slots at a lattice pose in the order
@@ -789,7 +789,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Not run: the refusal on a witnessed I_a state. Stage 04's theorems leave no such state to build, so unit tests
     cover it with a planted value: the consistency check, and the row's decision on the menu identity, the claim's
     kind and the state the claim was made at. The language rows that use ν (CT-LB1-01, CT-LB3-01's ν case, CT-LB3-04
-    and render row J12) are LP3's. `correction_set_check` and its catalogue (EH-11) come next.
+    and render row J12) are LP3's. `correction_set_check` and its catalogue (EH-11) are the next bullet.
   - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model compared the port
     with `nucoords.py` and found no blocker or major finding. Three minor points were fixed before the pull request:
     - the row's decision is now unit-tested;
@@ -797,6 +797,58 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     - the retained words now run in free mode too.
     No action on its two nits: the group test is not tautological, since `order` counts the group's elements as read
     from the trees, and a label check that is redundant but harmless stays.
+  - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
+- The correction catalogue and the drafted correction-set check (LP2, for LP3's C8; chapter 01, KN2.4's
+  `correction_set_check` row; JI.13; DT-J1 O6 (b) and O7 (a), owner, 22 October 2026):
+  - `c600-jumble/data/corrections-I_a.json` holds the 36 corrections of the pinned research library
+    (`research/jumbling/restoration/09-general-method/data/library-merged.json.gz`, decompressed SHA-256 8a13eb6c…),
+    each with its id, its family, its literal word as (grip, item) letters of the pinned I_a menu (23,932 letters in
+    all, 5 to 5,629 a word) and its 45-value ν row. `research/jumbling/differential/references/catalogue.py` writes
+    the file from the library. The file is bound to the model ID, the I_a menu identity and order digest, and the
+    contract revision. It is data of the jumbling engine outside `assets/`, so the model identity does not change.
+  - `c600_jumble::corrections` reads the file once from the crate and checks the format, the binding, the library's
+    path and SHA-256, the coordinate names, the 36 ids in order, each row in its fields with the fixed coordinates 0,
+    and each letter's grip and item; a defect is an engine error.
+    - `Catalogue::lookup` gives a correction by id; an unknown id is refused with `KN2:input.named_object_invalid`.
+    - `Catalogue::twists` gives a correction's literal word as twists of a menu that is I_a by identity and order
+      digest, since the letters number I_a's items in their recorded order (`KN2:input.menu_binding_mismatch`), on
+      the catalogue's model (`KN1:input.identity_mismatch`).
+    - `Catalogue::predict` adds the rows of a drafted set of (id, m) pairs, m any integer, in F2 and F5.
+    - `correction_set_check` is KN2.4's row: ν of the base (`nu::nu`), then the prediction. The base must be under
+      I_a by the menu's order-free identity, as ν's gate is, since the check uses rows and not letters. Free mode and
+      other menus are refused with `KN2:input.menu_binding_mismatch`. Off the lattice the result is undefined, and
+      ν's own refusal passes through.
+    - Nothing chooses, ranks or combines corrections: every id is the caller's (DT-J1 O5 and O6 (b)).
+  - The adapter serves `corrections`, `correction_lookup` (with `twists`, the word as twists of the started state's
+    menu) and `correction_set_check`, and `rust_jumble.py` calls them.
+  - `c600-jumble/tests/corrections.rs` and the module's unit tests test:
+    - 24 planted defects of the file, each an engine error, and three in-field plantings that still read;
+    - another model's catalogue and other menus refused;
+    - EH-11 from solved for the corrections of at most 37 letters (ids 0 to 16), with the check predicting each row
+      and, from the played state with the id taken back, 0;
+    - the check on a derived value;
+    - signed multiples in F2 and F5 (m = 10 and five plays of a C5 row give 0; i64::MIN acts as two plays and
+      i64::MAX as seven);
+    - the check undefined off the lattice.
+  - `tests/test_jumbling_rust_corrections.py` tests against the research library:
+    - the shipped bytes against `catalogue.py`, and the adapter's catalogue against the library;
+    - each word under I_a against the library's records, grip and exact matrix;
+    - EH-11: all 36 from solved and, from the lattice research input E3, the corrections of ids 0 to 20 and 27 (b
+      bits, the frame bit f8 and C5_17); with `JUMBLING_FULL_REPLAY=1` all 36 from E3;
+    - the check against `corrections.drafted_nu` on solved, witnessed, stored and derived bases and on E3 as an
+      import with an open claim;
+    - the refusals, off the lattice, and malformed requests as input errors.
+  - Not run: I1 and I2 as starts (the references ran all three in J1), and a witnessed I_a state with a nonzero fixed
+    coordinate, which stage 04's theorems exclude. The language rows that use the catalogue (CT-LB1-01, CT-LB3-04,
+    CT-LB3-01's ν case and render row J12) are LP3's.
+  - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with
+    JI.13, KN2.4's row and EH-11 and found no blocker or major finding. One minor point was fixed before the pull
+    request: the i64::MIN case compared `predict` with the `add_times` it calls, and now i64::MIN and i64::MAX are
+    checked as two and seven plays. No action on the other three:
+    - the check refuses a free-mode or other-menu base before it reads ν, as its doc comment says, where `nu` alone
+      answers undefined off the lattice; KN2.4's row sets no order, and the rows are I_a's;
+    - the off-lattice tests use eight journal records, which reach the off-lattice states they assert;
+    - `twists: true` before `start` is an input error, as for the other ops that need a started state.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
 
 ## Status of M6: the session store
@@ -997,7 +1049,8 @@ run or not applicable is no pass (PHS.63).
     section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads; `kn3.rs` runs
     KN3's exact rotation requests under A6 (CT-KN3-05 whole; CT-KN3-04, CT-KN3-06, CT-DET-16 and CT-LG2-16's kernel
     half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part; `observations.rs` and `levels.rs`
-    run M8's observations and its levels, end tests and derived values, and `nu.rs` runs ν (M5's section).
+    run M8's observations and its levels, end tests and derived values, `nu.rs` runs ν and `corrections.rs` the
+    correction catalogue (M5's section).
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-module/tests/conformance_lg5.rs` runs CT-LG5-01 whole and CT-LG5-02 to CT-LG5-07 in part against LP3 C4's
     loader and lockfiles. The parts leave out the boundary class against chapter 07's reviewed classes, the run
@@ -1018,8 +1071,9 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section); `tests/test_jumbling_rust_m8_observations.py` and
-    `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1, and
-    `tests/test_jumbling_rust_nu.py` compares ν with the ν reference (M5's section).
+    `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1,
+    `tests/test_jumbling_rust_nu.py` compares ν with the ν reference, and `tests/test_jumbling_rust_corrections.py`
+    the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 67 whole, nine of them by the union of their parts (CT-KN1-04,
@@ -1462,7 +1516,10 @@ run or not applicable is no pass (PHS.63).
 - The host bridge, `c600_tools::bridge::Bridge`, is the runtime's host on `c600-command`. Each proposal the boundary
   admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
   `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
-  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program still receives only the fixed
+  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. For one run the host may give the bridge
+  the solver's word steps of a recipe of plain word steps only: a proposal of exactly that recipe's literal word longer
+  than 100,000 letters then goes in those word steps, in order, in the one invocation, and every other proposal in one
+  word step; the bridge never chooses where to cut (LB2.3, LB2.4). The program still receives only the fixed
   acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
   workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
   app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
@@ -1621,8 +1678,11 @@ run or not applicable is no pass (PHS.63).
     CT-BND-07, parts).
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
     previews clear in Net mode and commits as one transaction, and the prefix alone is refused); CT-LB2-03's oversize
-    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part on
-    the command route.
+    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part:
+    on the command route, and on the source route a recipe of two full chunks previews in the solver's two word steps
+    with the command route's digests and end state and commits as one transaction, while a word of 200,000 letters that
+    is not the input recipe's literal word, or comes without the solver's word steps, is refused whole with the
+    recipe-shape code.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
   - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (ruling 4, owner decision of
@@ -1634,8 +1694,8 @@ run or not applicable is no pass (PHS.63).
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
   `Declared` holds one class); CT-LB2-02's Strict half
   through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named
-  work-sheet reuse; chunked recipes over 100,000 letters on the source route (the tool's entry takes one flat word,
-  though the IR draft now has lists and the kernel chunks words);
+  work-sheet reuse; chunked transport on the source route for a recipe with a star step or a word step with another
+  field (its literal word over 100,000 letters goes in one word step and is refused whole);
   CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in
   admission.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".

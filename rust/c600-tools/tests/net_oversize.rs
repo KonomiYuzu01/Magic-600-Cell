@@ -6,14 +6,14 @@ mod process_support;
 
 use c600_command::{code, draft_args, CommandLayer, Error, HeadlessFrames, Preview, Receipt, Shell, Status};
 use c600_kernel::codes::{PRIMITIVE_CEILING, RECIPE_SHAPE};
-use c600_kernel::json::Value as Json;
+use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Level, ProtectedSet, ProtectionMode, Verdict};
 use c600_run::meter::Outcome;
-use c600_tools::bridge::word_args;
-use c600_tools::expand::{expand, literal_digest, Expansion};
+use c600_tools::bridge::{proposal_args, word_args, Steps};
+use c600_tools::expand::{expand, literal_digest, word_steps, Expansion};
 use c600_tools::process::ProcessHost;
 use c600_tools::tool::{Tool, ROW};
-use process_support::{chunked, fingerprint, kernel, on, process_host, run_on, session, session_with, HOSTS};
+use process_support::{chunked, fingerprint, kernel, on, process_host, run_on, run_with, session, session_with, HOSTS};
 
 /// 0.4's limits, which LB2.4 keeps: the letters of one word step and the primitives of one recipe.
 const WORD_LIMIT: usize = 100_000;
@@ -180,12 +180,16 @@ fn ct_lb2_03_an_oversized_word_is_refused_whole_on_the_command_and_source_routes
 /// same literal, expansion and net digests and the same end state, and commits as one transaction. With the orbits
 /// of the first chunk protected, the two chunks `g` and `-g` preview clear: a chunk boundary is no protection
 /// boundary. On the source route, on either host, the chunked recipe expands to the same literal word, and the
-/// tool's proposal of it previews with the same literal, effect and end state.
+/// tool's proposal of it previews with the same literal, effect and end state. A literal word of at most one chunk
+/// goes in one word step, whatever word steps the solver wrote, as before chunked transport.
 ///
-/// Not built: chunked transport on the source route. The tool's entry takes one flat word and the bridge sends one
-/// word step, so a valid recipe of two full chunks (200,000 letters), which the command route admits, is refused
-/// whole on the source route with the recipe-shape code; it is never split. The last assertion pins that gap.
-/// "Named work-sheet reuse invalidates the old preview" is not built either: this route has no named work sheet.
+/// Chunked transport on the source route: a recipe of two full chunks (200,000 letters) previews on the command route
+/// and commits as one transaction. On either host the tool runs on the recipe's literal word through a bridge given
+/// the recipe's word steps, as the runner gives them; the one invocation carries the solver's two word steps
+/// unchanged, the preview has the command route's literal, expansion and net digests, count and end state, and the
+/// shell's chord commits it as one transaction.
+///
+/// Not built: "Named work-sheet reuse invalidates the old preview": this route has no named work sheet.
 #[test]
 fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() {
     let kernel = kernel();
@@ -231,6 +235,11 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
     }
     assert!(seen.iter().all(|operation| operation == &seen[0]), "the chunking changes the operation: {seen:?}");
     assert_eq!(seen[0].0, literal_digest(&narrow(&word)));
+    let flat = narrow(&word);
+    let solver = Steps::new(&flat, vec![4; 3]);
+    let cut = solver.as_ref().and_then(|steps| steps.cut(&flat)).map(|cut| cut.len());
+    assert_eq!(cut, Some(3), "the solver's three steps fit the literal word");
+    assert_eq!(proposal_args(&flat, solver.as_ref()), word_args(&flat), "one chunk: one word step");
     for host in HOSTS {
         let (mut layer, mut shell) = session("chunks");
         let on = on(host, &mut process);
@@ -250,15 +259,83 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
 
     let two = chunked(&[&chunk, &chunk]);
     let (mut layer, mut shell) = session("chunks");
-    assert!(matches!(command_preview(&mut layer, &mut shell, &two).status, Status::Running(_)));
+    let admitted = command_preview(&mut layer, &mut shell, &two);
+    let preview = present(&mut layer, &mut shell, &admitted);
+    assert_eq!(preview.recipe.steps().len(), 2);
+    let operation = whole(&preview);
+    let committed = commit(&mut layer, &mut shell);
+    assert!(matches!(committed.status, Status::Committed(_)), "{committed:?}");
+    assert_eq!(layer.store().log.len(), before.3 + 1, "two full chunks commit as one transaction");
     let Expansion::Literal(literal) = expand(&kernel, &two) else { panic!("two full chunks expand") };
     assert_eq!(literal.len(), 2 * WORD_LIMIT);
+    assert_eq!(operation.0, literal_digest(&literal));
+    let steps = word_steps(&two).and_then(|lengths| Steps::new(&literal, lengths)).expect("the solver's word steps");
+    assert!(proposal_args(&literal, Some(&steps)) == draft_args(&two), "the solver's two word steps, unchanged");
     for host in HOSTS {
-        let (mut layer, _) = session("chunks");
-        let on = on(host, &mut process);
-        let whole = tool_preview(on, &tool, &mut layer, &literal);
-        assert_eq!(whole.status.code(), Some(RECIPE_SHAPE), "{host}: refused whole, not split: {:?}", whole.status);
-        assert!(layer.preview().is_none() && layer.run_jobs() == 0, "{host}");
+        let (mut layer, mut shell) = session("chunks");
+        let (ran, sent) = run_with(on(host, &mut process), &tool, &mut layer, &literal, "tool", Some(steps.clone()));
+        assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
+        let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
+        assert!(one.invocation.args == draft_args(&two), "{host}: the solver's word steps");
+        let preview = present(&mut layer, &mut shell, &one.receipt);
+        assert_eq!(preview.recipe.steps().len(), 2, "{host}");
+        assert_eq!(whole(&preview), operation, "{host}: the command route's operation");
+        let committed = commit(&mut layer, &mut shell);
+        let Status::Committed(record) = &committed.status else { panic!("{host}: {committed:?}") };
+        assert_eq!(Some(&record.post), operation.4.as_ref(), "{host}");
+        assert_eq!(layer.store().log.len(), before.3 + 1, "{host}: one transaction");
+    }
+}
+
+/// CT-LB2-03, no silent split on the source route (LB2.3: a program is never split silently; LB2.4: `core.py`'s
+/// historical suggestion to split a batch is no automatic split; LB1.11: chunking transports one operation). The
+/// bridge sends the solver's word steps only for a proposal of exactly the literal word of the input recipe the host
+/// gave it, letter for letter. A built-in tool proposes only the word the solver named (`tool.rs`,
+/// `a_built_in_previews_only_the_word_the_solver_named`), so on this route a word of the program's own is a run word
+/// that is not the input recipe's literal, as `--tamper` makes one.
+///
+/// The bridge is given the word steps of a recipe of two full chunks, and the tool runs on its literal word with the
+/// first letter negated: the same length, so the solver's step lengths would fit it. On either host the one
+/// invocation carries one unsplit word step of 200,000 letters and is refused whole with the kernel's recipe-shape
+/// code and detail, the command route's answer to the same draft: no job, no preview, no change. Without the
+/// solver's word steps, as for a recipe with a star step or a word step with another field (`word_steps` gives none
+/// for either), the bridge does not cut even the literal word itself, which two full chunks would carry: it is
+/// refused whole the same way.
+#[test]
+fn ct_lb2_03_a_programs_own_word_over_one_chunk_is_refused_whole_on_the_source_route() {
+    let tool = Tool::full_600_cell().unwrap();
+    let mut process = process_host();
+    let chunk = narrow(&letters(WORD_LIMIT));
+    let literal = [&chunk[..], &chunk[..]].concat();
+    let steps = Steps::new(&literal, vec![WORD_LIMIT; 2]).expect("two full chunks");
+    let mut own = literal.clone();
+    own[0] = -own[0];
+    assert!(steps.cut(&own).is_none(), "a word of the same length that is not the literal is not cut");
+    // The host gives word steps only for a recipe of plain word steps: a star step or a word step with another field
+    // leaves the bridge none.
+    assert_eq!(word_steps(&chunked(&[&[1], &[2, 3]])), Some(vec![1, 2]));
+    let star = json::parse(br#"[{"kind": "word", "moves": [1]}, {"kind": "star", "orbit": 0, "node": 0}]"#);
+    assert_eq!(word_steps(&star.expect("a recipe")), None, "a recipe with a star step");
+    let noted = json::parse(br#"[{"kind": "word", "moves": [1], "note": "n"}]"#);
+    assert_eq!(word_steps(&noted.expect("a recipe")), None, "a word step with another field");
+    for (word, given) in [(&own, Some(steps)), (&literal, None)] {
+        let single = chunked(&[&word.iter().map(|&letter| i64::from(letter)).collect::<Vec<_>>()]);
+        assert!(proposal_args(word, given.as_ref()) == draft_args(&single), "one word step");
+        let (mut layer, mut shell) = session("own");
+        let before = fingerprint(&layer);
+        let command = command_preview(&mut layer, &mut shell, &single);
+        assert_eq!(command.status.code(), Some(RECIPE_SHAPE), "{command:?}");
+        for host in HOSTS {
+            let (mut layer, _) = session("own");
+            let (ran, sent) = run_with(on(host, &mut process), &tool, &mut layer, word, "tool", given.clone());
+            assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
+            let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
+            assert!(one.invocation.args == draft_args(&single), "{host}: one word step");
+            assert_eq!(one.receipt.status, command.status, "{host}: refused whole, as on the command route");
+            assert_eq!(one.receipt.job, None, "{host}");
+            assert!(layer.preview().is_none() && layer.run_jobs() == 0, "{host}");
+            assert_eq!(fingerprint(&layer), before, "{host}");
+        }
     }
 }
 
