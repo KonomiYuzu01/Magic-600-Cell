@@ -197,6 +197,30 @@ impl Table {
         &self.services
     }
 
+    /// The table with the command layer's draft rows that H-08 does not hold yet: `workspace.set`
+    /// ([`crate::workspace::RECORD_ROW`]), M6's record write, a workspace row whose undo is a workspace inverse. A row
+    /// the table already holds is kept as it is.
+    pub fn with_drafts(mut self) -> Table {
+        let id = crate::workspace::RECORD_ROW;
+        let arguments = [("payload", "Json"), ("provenance", "ProvenanceBlock"), ("record", "Text")];
+        self.rows.entry(id.to_owned()).or_insert(Row {
+            id: id.to_owned(),
+            kind: Kind::Workspace,
+            lane: Lane::None,
+            undo: UndoClass::Workspace,
+            preview: PreviewRule::None,
+            gates: Vec::new(),
+            contexts: vec!["any".to_owned()],
+            repeat: false,
+            job: false,
+            key_0_4: None,
+            arguments: arguments.iter().map(|(n, t)| ((*n).to_owned(), (*t).to_owned())).collect(),
+            action_guard: None,
+            overlay: None,
+        });
+        self
+    }
+
     /// Registers a language-defined row. Its lane follows its kind, it takes no token, it has no gates and it is
     /// available in every context. A commit or app row is refused with `KN5:input.overlay_row_kind`; an ID that a
     /// row or service already holds is refused with the draft code `KN5:input.overlay_row_conflict`.

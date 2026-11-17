@@ -4,13 +4,15 @@
 //! absolute arguments before the envelope (EV4.3, EV4.4), so a key bound to a kernel row reaches the engine without
 //! any interpreter step (ONE.48): this crate has no interpreter. A held key's auto-repeat reaches only rows whose
 //! `repeat` flag is set, so a held commit chord commits once (R-18, KN5.17). A word commit's token binds the preview
-//! the shell last presented (ONE.41), which may differ from the engine's pending one (CT-ONE-04).
+//! of the newest frame that presented one, with that frame's stamp (ONE.41), which may differ from the engine's pending
+//! preview (CT-ONE-04).
 //!
 //! The keymap is a draft: G6 has no keymap table yet. It follows 0.4 where 0.4 has a key (`Ctrl+Enter`,
 //! `Ctrl+Shift+Enter`) and uses `Ctrl+Z`, `Ctrl+Y` and `Escape` for undo, redo and cancel.
 
 use c600_kernel::json::{self, Value};
 
+use crate::frame::{PresentedFrame, ShownPreview};
 use crate::layer::{Caller, CommandLayer, Invocation};
 use crate::receipt::{code, ActionHint, Direction, Error, Receipt, Status};
 use crate::store::Store;
@@ -126,11 +128,38 @@ impl Shell {
         }
     }
 
-    /// Presents the engine's pending preview, as the built-in chain's frame report does (RM.26).
-    pub fn present<S: Store>(&mut self, layer: &mut CommandLayer<S>, id: u64) -> Result<(), Error> {
-        let p = layer.present(id)?;
-        self.presented = Some(PreviewBinding { id: p.id, literal: p.literal.clone(), deps: p.deps.clone() });
-        Ok(())
+    /// Reports a presented frame to the layer ([`CommandLayer::present`], RM.26) and binds the preview it presents,
+    /// with the frame's stamp (ONE.41). When the layer refuses the report, the shell keeps its binding only while the
+    /// newest frame still presents that preview through the built-in chain, now with that frame's stamp, so a token may
+    /// still name a preview the engine has replaced since (CT-ONE-04); otherwise the binding ends.
+    pub fn present<S: Store>(
+        &mut self,
+        layer: &mut CommandLayer<S>,
+        id: u64,
+        frame: &PresentedFrame,
+    ) -> Result<(), Error> {
+        let answer = layer.present(id, frame).map(|p| PreviewBinding {
+            id: p.id,
+            literal: p.literal.clone(),
+            deps: p.deps.clone(),
+            frame: frame.stamp.clone(),
+        });
+        match answer {
+            Ok(binding) => {
+                self.presented = Some(binding);
+                Ok(())
+            }
+            Err(error) => {
+                let newest = layer.frame();
+                match (self.presented.as_mut(), newest) {
+                    (Some(bound), Some(newest)) if newest.presents(&ShownPreview::of_binding(bound)) => {
+                        bound.frame = newest.stamp.clone();
+                    }
+                    _ => self.presented = None,
+                }
+                Err(error)
+            }
+        }
     }
 
     /// Step 2: mints the token of one press, or none for a row that takes none.

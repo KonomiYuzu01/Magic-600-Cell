@@ -4,7 +4,7 @@
 
 mod process_support;
 
-use c600_command::{code, draft_args, CommandLayer, Error, Preview, Receipt, Shell, Status};
+use c600_command::{code, draft_args, CommandLayer, Error, HeadlessFrames, Preview, Receipt, Shell, Status};
 use c600_kernel::codes::{PRIMITIVE_CEILING, RECIPE_SHAPE};
 use c600_kernel::json::Value as Json;
 use c600_kernel::{Level, ProtectedSet, ProtectionMode, Verdict};
@@ -43,11 +43,11 @@ fn tool_preview(host: Option<&mut ProcessHost>, tool: &Tool, layer: &mut Command
     one.receipt.clone()
 }
 
-/// Runs the admitted preview job and presents it.
+/// Runs the admitted preview job and presents it in the next headless frame.
 fn present(layer: &mut CommandLayer, shell: &mut Shell, admitted: &Receipt) -> Preview {
     let Status::Running(id) = admitted.status else { panic!("not admitted: {admitted:?}") };
     assert_eq!(layer.run_jobs(), 1);
-    shell.present(layer, id).expect("the built preview is presented");
+    HeadlessFrames::after(layer).present(shell, layer, id).expect("the built preview is presented");
     layer.preview().filter(|preview| preview.id == id).cloned().expect("the presented preview")
 }
 

@@ -29,6 +29,10 @@ pub mod code {
     pub const NOT_GRANTED: &str = "LG3:capability.not_granted";
     pub const UNKNOWN_SESSION: &str = "KN4:input.unknown_session";
     pub const PERSISTENCE_FORMAT: &str = "PS1:input.persistence_format";
+    /// A provenance block the host's reader refuses (PS1.16); the layer passes it on from [`crate::Provenance`].
+    pub const PROVENANCE_INCOMPATIBLE: &str = "PS1:capability.provenance_incompatible";
+    /// A draft that names a record that does not exist or does not hold a list of letters (M6's code).
+    pub const NAMED_OBJECT_INVALID: &str = c600_kernel::codes::NAMED_OBJECT_INVALID;
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";

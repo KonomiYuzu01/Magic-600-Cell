@@ -909,7 +909,7 @@ run or not applicable is no pass (PHS.63).
     faults as expected failures (M5's section); `tests/test_jumbling_rust_m8_observations.py` and
     `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1 (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
-  KN5's stages 1 and 2, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
+  KN5's stages 1 to 5, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 67 whole, nine of them by the union of their parts (CT-KN1-04,
   CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 132 part; 4 named only
   by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing
@@ -1067,10 +1067,43 @@ run or not applicable is no pass (PHS.63).
   when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview. LI is frozen with the
   architecture, so LI changes follow PHS.52: the amendment adds the caller to LI.5's digest list and changes LI.33's
   sentence to ruling 1.
-- KN5 not built yet: KN5.26's admission matrix (L1, L2), ruling 6 (the host stamps a runtime proposal's block; a
-  `file` overlay without a granted file capability), L12 to L14, L16, L17, and CT-ONE-29's `FrameChain` and
-  `PresentedFrame`. No host caller is built: callers are stamped on two channels, the shell's and LP3's runtime bridge
-  (`c600-tools`). No session lock exists (LP3's L9), so two opens of one journal can interleave.
+- KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
+  - The workspace store. `workspace.set` (`RECORD_ROW`, M6's draft name; H-08 has no such row, so a host adds it with
+    `Table::with_drafts` until the typed workspace rows freeze at LP3) writes a named record, its payload and its
+    provenance block as one durable action whose receipt is `completed(workspace)`. The workspace revision and the
+    record's version advance; the state, the preview slot and the jobs stay (KN5.18, KN5.23). The row takes no token,
+    and the runtime may not invoke it. The layer cannot read a provenance block, so the host gives it a `Provenance`
+    reader (`CommandLayer::set_provenance`): a block the reader refuses is refused with its error (PS1.16). With no
+    reader the row is `KN5:input.row_not_built` and a record draft `LG3:capability.not_granted`; a reopen replays
+    record writes without one.
+  - `ResolvedDraftRef`: a draft `{"record": name}` previews the letters the record holds once the reader admits the
+    record's block in the session (KN5.26). The preview's draft digest covers the record's content digest and version
+    (KN0.8), and a record's version advances on every write, undo and redo, so any later write of that record makes the
+    preview stale (`KN5:stale.revision_changed`), the same value written again and an undo included; a write of another
+    record does not.
+  - Workspace undo (`UndoClass::Workspace`): `session.undo` and `session.redo` reverse a record write as a workspace
+    inverse, which answers `committed` with the state and the head unchanged and the workspace revision advanced
+    (KN5.20, LI.26). The journal keeps the record's value after each write, undo and redo (`Transaction::record`, an
+    18th key that only these transactions carry, so a journal without it reads unchanged).
+  - Stage 5: `CommandLayer::present(id, &PresentedFrame)` replaces `present(id)`, and `Shell::present` takes the frame
+    too. A frame report carries its stamp (device epoch, surface, surface generation, sequence), the preview it shows
+    and the chain that drew it (`FrameChain::BuiltIn` or `UserStage`). Reports are read in stamp order, and one that is
+    not newer than the newest is refused and changes nothing. A frame that shows the pending preview through the
+    built-in chain presents it; a frame that shows no preview, another preview or a user stage's drawing is refused
+    with `KN5:stale.no_fresh_preview` and makes a presented preview ready again (ONE.41, RM.26, RPI.76). A word
+    commit's token binds the stamp of the frame that presented its preview, and execute refuses with
+    `KN5:stale.no_fresh_preview` a token whose frame lies outside the preview's current presentation: one device
+    epoch, surface and surface generation, from the first frame that showed it to the newest. `HeadlessFrames` stamps a
+    headless adapter's frames for the tests and the LP3 runners.
+  - Tests: `c600-command/tests/kn5_stages.rs` (parts of CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-13, CT-ONE-04 and
+    CT-ONE-29), a record write and its undo over the journal in `c600-session/tests/kn5_command.rs` (CT-KN5-04, part),
+    and a frame outside the presentation in `kn5.rs`'s token matrix (CT-ONE-03, part).
+- KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
+  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
+  and L17; the provenance reader over `c600-run` (LP3's host), the typed workspace rows and limits on a record's
+  payload; a display adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built:
+  callers are stamped on two channels, the shell's and LP3's runtime bridge (`c600-tools`). No session lock exists
+  (LP3's L9), so two opens of one journal can interleave.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
@@ -1351,11 +1384,12 @@ run or not applicable is no pass (PHS.63).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (C5's host
   bridge decides the real path); reading a record back through `c600_session::journal::scan`, since M6 has no record
   reader; M6's stand-ins for views; and `c600_run::boundary::admit_preview` standing in for KN5.26.
-- Built by KN5's stages 1 and 2 (LP2): durable receipts and undo through the command layer over `JournalStore`. The
-  tests above still drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once
-  their tests run against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting
-  for KN5's later stages (LP2): KN5.26's admission of record words, EV3.2's view rows, LB7.2's work-sheet structure
-  and a session lock.
+- Built by KN5's stages 1 to 5 (LP2): durable receipts and undo through the command layer over `JournalStore`, and
+  since stages 3 to 5 the layer's own `workspace.set` with its undo, record drafts that the host's provenance reader
+  admits (KN5.26's answer for a record's word) and presented frames (C1's section above). The tests above still
+  drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once their tests run
+  against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting for LP2:
+  KN5.26's full admission matrix, EV3.2's view rows, LB7.2's work-sheet structure and a session lock.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -1376,13 +1410,16 @@ run or not applicable is no pass (PHS.63).
   receipt's error.
 - The tool's views: `c600_tools::views` is host code, since the tool publishes no view (LQ21, LG3.13, charter E6). It
   builds the display contract's publication of a proposal and its preview on `c600-display`, the content the headless
-  view model installs on `c600-view`, and the presentation report to the shell, which calls `present` only for a frame
-  the built-in chain drew.
+  view model installs on `c600-view`, and the presentation report: each composed frame goes to the command layer
+  through the shell as a `PresentedFrame` with the display's stamp and the chain that drew the preview, and the
+  layer presents the pending preview only for a frame the built-in chain drew (KN5's stage 5).
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
     fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
-    installed bytes hold only the word the solver named); CT-ONE-29's user-stage part at the adapter (a user-stage frame
-    mints no token and the commit chord finds no fresh preview; a built-in-chain frame's token commits).
+    installed bytes hold only the word the solver named); CT-ONE-29's user-stage part at the adapter (the layer refuses
+    a user-stage frame, a frame with no preview and a frame with another preview, so no token is minted and the
+    commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and commits; a later
+    user-stage frame ends the presentation and a delayed older report changes nothing).
   - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts; the job
     carries only the admitted source; both hosts refuse a word with no transfer encoding at the start stage; a runtime
     that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
@@ -1398,8 +1435,7 @@ run or not applicable is no pass (PHS.63).
     and binding (a token minted with another secret, or the same envelope on a runtime's channel) no longer becomes
     that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
     and neither retry commits anything more.
-- Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
-  `present`); CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece objects for a
+- Not built: CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
   `Declared` holds one class); CT-LB2-02's Strict half
   through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named

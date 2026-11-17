@@ -30,8 +30,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use c600_command::{
-    code, draft_args, word_draft, CommandLayer, Completion, CompletionKind, Direction, Receipt, Secret, Shell, Status,
-    Table,
+    code, draft_args, word_draft, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Receipt, Secret,
+    Shell, Status, Table,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{archive, Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Snapshot, SupportRow};
@@ -277,10 +277,11 @@ enum Outcome {
     Committed(Seen),
 }
 
-/// One session of the loop: the layer, its shell and every receipt in order.
+/// One session of the loop: the layer, its shell, the headless display's frames and every receipt in order.
 struct Session {
     layer: CommandLayer,
     shell: Shell,
+    frames: HeadlessFrames,
     route: Route,
     receipts: Vec<Value>,
 }
@@ -321,7 +322,8 @@ impl Session {
         if !matches!(built.status, Status::Completed(Completion { kind: CompletionKind::PreviewReady, .. })) {
             return Err(unexpected("operation.preview", &built.status));
         }
-        self.shell.present(&mut self.layer, id).map_err(|error| disagree(format!("present: {}", error.code)))?;
+        let presented = self.frames.present(&mut self.shell, &mut self.layer, id);
+        presented.map_err(|error| disagree(format!("present: {}", error.code)))?;
         let preview = self.layer.preview().filter(|p| p.id == id).ok_or_else(|| disagree("the preview is gone"))?;
         let seen = Seen { effect: preview.effect.clone(), conflicts: preview.protection.conflicts.clone() };
         let (base, end) = (preview.base.digest().to_owned(), preview.end.as_ref().map(|s| s.digest().to_owned()));
@@ -434,7 +436,7 @@ fn replay(kernel: &Arc<Kernel>, case: &Value, route: Route, build: &str) -> Resu
         protected,
     );
     let shell = Shell::new(secret, &case_id);
-    let mut session = Session { layer, shell, route, receipts: Vec::new() };
+    let mut session = Session { layer, shell, frames: HeadlessFrames::new(), route, receipts: Vec::new() };
     let mut memo = HashMap::new();
     // The state before the first step and after every committed step of a chain.
     let mut states = vec![initial.clone()];

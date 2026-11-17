@@ -5,7 +5,7 @@
 
 mod process_support;
 
-use c600_command::{code, draft_args, Caller, Invocation, Secret, Status, Token};
+use c600_command::{code, draft_args, Caller, HeadlessFrames, Invocation, Secret, Status, Token};
 use c600_kernel::json::{self, Value as Json};
 use c600_tools::tool::ROW;
 use process_support::{chunked, fingerprint, secret, session};
@@ -37,7 +37,7 @@ fn kn5_21_lead_closed_a_refused_forgery_leaves_the_command_id_to_the_genuine_env
         let admitted = shell.invoke(&mut layer, ROW, draft_args(&recipe)).unwrap();
         let Status::Running(id) = admitted.status else { panic!("{case}: {admitted:?}") };
         assert_eq!(layer.run_jobs(), 1);
-        shell.present(&mut layer, id).unwrap();
+        HeadlessFrames::after(&layer).present(&mut shell, &mut layer, id).unwrap();
         let before = fingerprint(&layer);
         let args = json::object([("preview", Json::Int(id as i64))]);
         let genuine = shell.prepare(&layer, "operation.execute", args).unwrap();

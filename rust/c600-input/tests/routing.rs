@@ -277,7 +277,7 @@ fn the_key_route_and_the_command_route_give_the_same_receipts() {
             let (key, cmd) = pairs[0].clone();
             let id = keys.build_and_present(&key);
             assert_eq!(cmds.layer.run_jobs(), 1);
-            cmds.shell.present(&mut cmds.layer, id).unwrap();
+            cmds.frames.present(&mut cmds.shell, &mut cmds.layer, id).unwrap();
             let key = keys.layer.outcome(&key.command, &key.request).unwrap();
             let cmd = cmds.layer.outcome(&cmd.command, &cmd.request).unwrap();
             assert!(matches!(key.status, Status::Completed(_)));
