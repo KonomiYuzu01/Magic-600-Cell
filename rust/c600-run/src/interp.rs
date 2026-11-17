@@ -1481,7 +1481,9 @@ impl<'a> Machine<'a> {
             self.release(index);
             return self.take_part(n, name, 0, list, element);
         }
-        if op != Prim::Length && args.iter().any(|h| matches!(h.value, Value::MenuWord(_))) {
+        // Only the word operations take menu words as words; `push` appends one to a list as it would any value.
+        let builds = matches!(op, Prim::Concat | Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose);
+        if builds && args.iter().any(|h| matches!(h.value, Value::MenuWord(_))) {
             return self.menu_sequence(n, op, name, args);
         }
         let letters = |h: &Held| match &h.value {

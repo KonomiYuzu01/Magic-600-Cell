@@ -126,6 +126,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_lp3_source_route.py"],
     # The Rust jumbling candidate (LP2, M5) against J1 through the differential harness (CT-KN2-01 and others).
     ["tests/test_jumbling_rust_candidate.py"],
+    # The jumbling oracle route (KN5): J1 against the command layer with Jumble on through the differential harness.
+    ["tests/test_jumbling_command_route.py"],
     # Fable's M5 attack leads as tests (LP2): the candidate's refusals, and J1's faults as expected failures.
     ["tests/test_jumbling_rust_attacks.py"],
     # M8's jumbling observations (LP2) against J1: rim_summary, release_check, covers and repair_list.
@@ -134,6 +136,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_jumbling_rust_m8_levels.py"],
     # The label invariant nu (LP2, A5) over F2 and F5 against the nu reference: EH-10 and the frame groups.
     ["tests/test_jumbling_rust_nu.py"],
+    # The shipped correction catalogue and correction_set_check (LP2, DT-J1 O7 (a)) against the research library: EH-11.
+    ["tests/test_jumbling_rust_corrections.py"],
     # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
     ["tests/test_ct_index.py"],
 ]
@@ -236,10 +240,12 @@ SECONDS = {
     "tests/test_lp3_loop.py": 120,  # an estimate until a CI run measures it
     "tests/test_lp3_source_route.py": 120,  # an estimate until a CI run measures it
     "tests/test_jumbling_rust_candidate.py": 420,  # an estimate until a CI run measures it
+    "tests/test_jumbling_command_route.py": 240,  # an estimate: about 70 s locally with a warm release build
     "tests/test_jumbling_rust_attacks.py": 150,  # an estimate: 18 s locally with a warm release build
     "tests/test_jumbling_rust_m8_observations.py": 400,  # an estimate: about 280 s locally with a warm release build
     "tests/test_jumbling_rust_m8_levels.py": 250,  # an estimate: about 170 s locally with a warm release build
     "tests/test_jumbling_rust_nu.py": 80,  # an estimate: about 40 s locally with a warm release build
+    "tests/test_jumbling_rust_corrections.py": 300,  # an estimate: about 165 s locally with a warm release build
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

@@ -6,13 +6,13 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, draft_args, Caller, CommandLayer, HeadlessFrames, Invocation, Kind, PreviewState, Secret, Shell, Status,
-    Table, Token,
+    code, draft_args, Caller, CommandLayer, Completion, CompletionKind, HeadlessFrames, Invocation, Kind, PreviewState,
+    Secret, Shell, Status, Table, Token, POLICY_ROW,
 };
 use c600_digest::sha256_hex;
 use c600_ir::{ExactRole, QTy, Ty};
 use c600_kernel::json::{self, Value as Json};
-use c600_kernel::{Kernel, ProtectedSet};
+use c600_kernel::{Kernel, ProtectedSet, ProtectionMode};
 use c600_run::boundary::{Answer, Pins, Store};
 use c600_run::interp::{Host, Request, Sink};
 use c600_run::meter::code::NOT_GRANTED;
@@ -60,6 +60,7 @@ fn fingerprint(layer: &CommandLayer) -> (String, String, u64, usize) {
 
 const TO_EXECUTE: &[&str] = &["operation.execute"];
 const TO_EXIT: &[&str] = &["app.exit"];
+const TO_POLICY: &[&str] = &[POLICY_ROW];
 
 /// The tool with `rows[0]` as its proposal's target, loaded with a manifest that names that row.
 fn targeting(rows: &'static [&'static str]) -> Tool {
@@ -186,6 +187,48 @@ fn the_runtime_reaches_no_commit_or_app_row() {
         assert!(matches!(&shown.answer, Answer::Refused(r) if r.code == code::COMMIT_ROW_REFUSED), "{row}");
         assert_eq!(fingerprint(&layer), before, "{row}");
     }
+}
+
+/// The runtime cannot set the protection policy (LP2's draft ruling in `c600-command`: the protection a commit is
+/// judged under is the solver's; KN5.15, LB2.3). An invocation of `protection.policy.set` that the bridge sends on a
+/// run's channel, stamped `Caller::Runtime`, is refused with `LG3:capability.not_granted` before its arguments are
+/// read, whether it asks for Strict under Net or for Net under Strict: the policy, the state, the revision and the
+/// journal stay as they were. Only the shell's own invocation of the row switches the policy. A variant of the tool
+/// whose proposal targets the row loads, and the layer refuses its proposal the same way: the program still gets the
+/// fixed acknowledgement, the shell sees the refusal, and nothing changes.
+#[test]
+fn the_runtime_cannot_set_the_protection_policy() {
+    let (mut layer, mut shell) = session();
+    assert_eq!(layer.policy(), ProtectionMode::Net, "a session starts under Net");
+    let policy = |name: &str| json::object([("policy", Json::String(name.into()))]);
+    for (asked, run) in [("strict", "to-strict"), ("net", "to-net")] {
+        let (kept, before, revision) = (layer.policy(), fingerprint(&layer), layer.revision().clone());
+        let mut bridge = Bridge::new(&mut layer, run);
+        let receipt = bridge.invoke(POLICY_ROW, policy(asked), None);
+        assert_eq!((receipt.status.code(), receipt.job), (Some(code::NOT_GRANTED), None), "{asked}: {receipt:?}");
+        let [one] = &bridge.sent[..] else { panic!("{asked}: one invocation") };
+        assert_eq!(one.caller, Caller::Runtime { run: run.into() }, "{asked}");
+        assert_eq!((one.invocation.row.as_str(), one.invocation.token.is_none()), (POLICY_ROW, true), "{asked}");
+        assert_eq!((layer.policy(), fingerprint(&layer)), (kept, before), "{asked}: the policy stays");
+        assert_eq!(layer.revision(), &revision, "{asked}: no revision advances");
+
+        let switched = shell.invoke(&mut layer, POLICY_ROW, policy(asked)).expect("the shell sends it without a token");
+        let workspace =
+            matches!(switched.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. }));
+        assert!(workspace, "{asked}: {switched:?}");
+        assert_ne!(layer.policy(), kept, "{asked}: the shell's invocation switches the policy");
+    }
+
+    let (tool, run) = (targeting(TO_POLICY), "to-policy");
+    assert_eq!(tool.manifest.rows, TO_POLICY);
+    let (kept, before, read) = (layer.policy(), fingerprint(&layer), base(layer.revision()));
+    let (ran, sent) = run_on(&tool, &mut layer, &[1, -2], run, None);
+    assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, run)[..]));
+    let [one] = &sent[..] else { panic!("one invocation") };
+    assert_eq!((one.invocation.row.as_str(), one.receipt.status.code()), (POLICY_ROW, Some(code::NOT_GRANTED)));
+    let [shown] = &ran.shell[..] else { panic!("one proposal") };
+    assert!(matches!(&shown.answer, Answer::Refused(r) if r.code == code::NOT_GRANTED), "{:?}", shown.answer);
+    assert_eq!((layer.policy(), fingerprint(&layer)), (kept, before), "the policy stays");
 }
 
 /// KN5.15: the runtime never holds a token. A runtime invocation carrying a genuine token the shell minted for the
