@@ -25,7 +25,7 @@
 //! product unit is shorter than three. Its kernel-cost headroom gets the two bytes of difference, so its stop stays on
 //! output with the frozen denied row.
 //!
-//! # Realised: 17 of 40
+//! # Realised: 20 of 40
 //!
 //! | Trace | Clause | Program |
 //! | --- | --- | --- |
@@ -35,6 +35,9 @@
 //! | `simultaneous-memory-output` | DET.56 | the same unit, refused on memory while output is short too |
 //! | `step-precedence` | DET.56 | the same unit, refused on steps |
 //! | `generator` | DET.61 | `three()` from the trace's seed and path: two draws, then one refused on kernel cost |
+//! | `generator-alias-cursor` | DET.61 | `twins()`: `g` started at `root`, aliased as `h`; both draw block 0 |
+//! | `generator-returned-owner` | DET.61 | `owner()`: `make()` starts a generator at `root` and returns it |
+//! | `generator-child-paths` | DET.61 | `children()`: streams at `root/0` and `root/1`, one draw from each |
 //! | `approx-branch-true` | DET.64 | `pick(1, 2, r)`: `display_if` takes `r.v` (two visits) |
 //! | `approx-branch-false` | DET.64 | `pick(5, 2, r)`: `display_if` takes `x` (one visit) |
 //! | `display-stop-source-range` | DET.56 | `pick(1, 2, r)` stopped on steps at `r.v`, after a non-BMP character |
@@ -66,7 +69,15 @@
 //! assertion visits a borrowed predicate and releases nothing, as the trace's does; the comparison's byte goes at the
 //! scope's exit, or with the cleanup after the failure.
 //!
-//! # Not realised: 23 of 40
+//! The generator traces seed in two ways. `generator` draws with `random_draw` from the run's own generator, which the
+//! run starts at the trace's seed and path. The other three start generators of their own with `rng_init` (LP2
+//! draft), whose stream path is the run's path followed by its segments: they run at the trace's seed and the empty
+//! path, so that each `rng_init` names the trace's path in full, and the run's own start, `entry#rng_init` on the
+//! empty path (49 bytes of key input), is overhead. `make`'s frame has no slot, as the trace's call has none, and its
+//! return moves the generator to its caller. The child paths are named streams: child jobs, which assign a child
+//! invocation's index (DET.61), wait for M6.
+//!
+//! # Not realised: 20 of 40
 //!
 //! [`NOT_EXPRESSIBLE`] lists each with its reason, and `every_frozen_trace_is_realised_or_listed_once` holds the two
 //! lists to the 40 frozen vectors.
@@ -89,17 +100,18 @@ const VECTORS: &str =
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
 /// The frozen traces no program of the IR draft can express, and why.
-const NOT_EXPRESSIBLE: [(&str, &str); 23] = [
+const NOT_EXPRESSIBLE: [(&str, &str); 20] = [
     ("child-allowances", "the IR has no child scope (child jobs, M6)"),
     ("child-return-owner", "the IR has no child scope"),
     ("root-before-child", "the IR has no child scope"),
     ("dimension-before-scope", "the IR has no child scope"),
     ("nested-child-ledger", "the IR has no child scope"),
     ("child-decode-error-releases-reservation", "the IR has no child scope and no byte decoding"),
-    ("generator-child-paths", "a run has one generator, seeded at the entry; the IR cannot start one on a child path"),
-    ("generator-alias-cursor", "the generator is not a value: the IR cannot alias it"),
-    ("generator-returned-owner", "the generator is seeded before the entry call, so no call returns it"),
-    ("generator-nested-same-name", "a run has one generator; the IR cannot start a second in a call"),
+    (
+        "generator-nested-same-name",
+        "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
+         a name with `let`, which takes a frame slot and releases at its scope's exit (DET.57)",
+    ),
     ("text-comparison", "the IR has no text order"),
     ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
     ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
@@ -217,25 +229,29 @@ impl<'a> Trace<'a> {
         }
     }
 
-    /// The trace's kernel operation, at any depth.
-    fn kernel(&self) -> Option<&'a Json> {
-        fn find(ops: &[Json]) -> Option<&Json> {
+    /// The trace's first operation `name`, at any depth.
+    fn first(&self, name: &str) -> Option<&'a Json> {
+        fn find<'j>(ops: &'j [Json], name: &str) -> Option<&'j Json> {
             ops.iter().find_map(|op| {
-                if op.get("op").and_then(Json::str) == Some("kernel") {
+                if op.get("op").and_then(Json::str) == Some(name) {
                     return Some(op);
                 }
-                ["body", "then", "else"].iter().find_map(|k| op.get(k).and_then(Json::arr).and_then(|b| find(b)))
+                ["body", "then", "else"].iter().find_map(|k| op.get(k).and_then(Json::arr).and_then(|b| find(b, name)))
             })
         }
-        find(self.given.get("trace").and_then(Json::arr).expect("a trace"))
+        find(self.given.get("trace").and_then(Json::arr).expect("a trace"), name)
     }
 
-    /// The seed and stream path of the trace's `rng_init`, if it has one.
+    /// The trace's kernel operation, at any depth.
+    fn kernel(&self) -> Option<&'a Json> {
+        self.first("kernel")
+    }
+
+    /// The seed and stream path of the trace's first `rng_init`, at any depth, if it has one.
     fn seed(&self) -> Option<(Vec<u8>, Vec<&'a str>)> {
-        let first = self.given.get("trace").and_then(Json::arr).and_then(|t| t.first())?;
-        (text(first, "op") == "rng_init").then(|| {
-            let path = first.get("path").and_then(Json::arr).expect("a path");
-            (hex(text(first, "seed")), path.iter().map(|p| p.str().expect("a path segment")).collect())
+        self.first("rng_init").map(|init| {
+            let path = init.get("path").and_then(Json::arr).expect("a path");
+            (hex(text(init, "seed")), path.iter().map(|p| p.str().expect("a path segment")).collect())
         })
     }
 
@@ -433,7 +449,10 @@ fn run_with(
     limits: Amounts,
     host: &mut TraceHost,
 ) -> Run {
-    let seed = trace.seed();
+    // A program that starts its own generators names the trace's stream paths in full, below the run's empty path;
+    // one that draws with `random_draw` draws from the run's own generator, at the trace's path (module docs).
+    let streams = r.declarations.contains("rng_init(");
+    let seed = trace.seed().map(|(seed, path)| (seed, if streams { Vec::new() } else { path }));
     let ranges = Ranges(&p.lowered);
     let mut options = Options::new(limits);
     if let Some((seed, path)) = &seed {
@@ -696,6 +715,115 @@ fn ct_det_29_generator_runs_as_a_program() {
     for (field, at) in [("a", "draw-0"), ("b", "draw-1")] {
         let block = BigUint::from_bytes_be(&trace.value(at));
         assert!(output.contains(&format!("\"{field}\":{{\"int\":\"{block}\"}}")), "{at}: {output}");
+    }
+}
+
+const TWINS: Realisation = Realisation {
+    trace: "generator-alias-cursor",
+    requires: "random",
+    declarations:
+        "export fn twins() -> record { a: Nat, b: Nat } effects [random] {\n    let g = rng_init(\"root\");\n    \
+                   let h = g;\n    return record { a = rng_draw(g), b = rng_draw(h) };\n}\n",
+    entry: "twins",
+    args: NO_ARGS,
+    probe_args: None,
+    rows: &[
+        ("entry#rng_init", None),
+        ("entry#call", None),
+        ("m.twins:0#rng_init", Some("init")),
+        ("m.twins:root#visit", None),
+        ("m.twins:1.0#visit", None),
+        ("m.twins:1#alias", Some("alias")),
+        ("m.twins:1.1.0.0#visit", None),
+        ("m.twins:1.1.0#rng_draw", Some("draw-g")),
+        ("m.twins:1.1.1.0#visit", None),
+        ("m.twins:1.1.1#rng_draw", Some("draw-h")),
+        ("m.twins:1.1#value", None),
+        ("m.twins:1.1#visit", None),
+        ("m.twins:1.1#visit", None),
+        ("m.twins:1#scope_exit", None),
+        ("m.twins:root#scope_exit", None),
+        ("m.twins:root#return", None),
+        ("entry#emit", None),
+    ],
+    stop_would: None,
+    kernel_extra: 0,
+    source_node: None,
+};
+
+const OWNER: Realisation = Realisation {
+    trace: "generator-returned-owner",
+    declarations: "fn make() -> Generator effects [random] {\n    return rng_init(\"root\");\n}\n\n\
+                   export fn owner() -> Nat effects [random] {\n    let h = make();\n    return rng_draw(h);\n}\n",
+    entry: "owner",
+    rows: &[
+        ("entry#rng_init", None),
+        ("entry#call", None),
+        ("m.owner:0#call", Some("make/call")),
+        ("m.owner:0 > m.make:root#rng_init", Some("make/init")),
+        ("m.owner:0 > m.make:root#return", Some("make/return")),
+        ("m.owner:root#visit", None),
+        ("m.owner:1.0#visit", None),
+        ("m.owner:1#rng_draw", Some("draw-h")),
+        ("m.owner:root#scope_exit", None),
+        ("m.owner:root#return", None),
+        ("entry#emit", None),
+    ],
+    ..TWINS
+};
+
+const CHILDREN: Realisation = Realisation {
+    trace: "generator-child-paths",
+    declarations: "export fn children() -> record { a: Nat, b: Nat } effects [random] {\n    \
+                   let g0 = rng_init(\"root\", \"0\");\n    let a = rng_draw(g0);\n    \
+                   let g1 = rng_init(\"root\", \"1\");\n    return record { a = a, b = rng_draw(g1) };\n}\n",
+    entry: "children",
+    rows: &[
+        ("entry#rng_init", None),
+        ("entry#call", None),
+        ("m.children:0#rng_init", Some("init-0")),
+        ("m.children:root#visit", None),
+        ("m.children:1.0.0#visit", None),
+        ("m.children:1.0#rng_draw", Some("draw-0")),
+        ("m.children:1#visit", None),
+        ("m.children:1.1.0#rng_init", Some("init-1")),
+        ("m.children:1.1#visit", None),
+        ("m.children:1.1.1.0#visit", None),
+        ("m.children:1.1.1.1.0#visit", None),
+        ("m.children:1.1.1.1#rng_draw", Some("draw-1")),
+        ("m.children:1.1.1#value", None),
+        ("m.children:1.1.1#alias", None),
+        ("m.children:1.1.1#visit", None),
+        ("m.children:1.1#scope_exit", None),
+        ("m.children:1#scope_exit", None),
+        ("m.children:root#scope_exit", None),
+        ("m.children:root#return", None),
+        ("entry#emit", None),
+    ],
+    ..TWINS
+};
+
+/// CT-DET-29 (part: named streams, aliases and a returned owner on RT1; not run: RT2 and RT3 (no owner yet), and child
+/// indices assigned by child jobs (M6)): the frozen traces `generator-alias-cursor`, `generator-returned-owner` and
+/// `generator-child-paths` run as programs that start their own generators (LP2 draft; module docs). An alias copies
+/// the cursor at the full 41 units, so both names draw the same block; a generator started in a call leaves with its
+/// owner when the call's frame is released; the child paths are named streams. Each drawn value is the trace's.
+#[test]
+fn ct_det_29_generator_values_run_as_programs() {
+    let root = fixtures();
+    let cases: [(&Realisation, &[(&str, &str)]); 3] = [
+        (&TWINS, &[("\"a\":", "draw-g"), ("\"b\":", "draw-h")]),
+        (&OWNER, &[("", "draw-h")]),
+        (&CHILDREN, &[("\"a\":", "draw-0"), ("\"b\":", "draw-1")]),
+    ];
+    for (r, drawn) in cases {
+        let done = realise(&root, r);
+        let trace = Trace::read(vector(&root, r.trace));
+        let output = std::str::from_utf8(done.run.output.as_deref().expect("a completed run")).expect("UTF-8");
+        for (field, at) in drawn {
+            let block = BigUint::from_bytes_be(&trace.value(at));
+            assert!(output.contains(&format!("{field}{{\"int\":\"{block}\"}}")), "{}: {at}: {output}", r.trace);
+        }
     }
 }
 
@@ -1097,6 +1225,9 @@ fn every_frozen_trace_is_realised_or_listed_once() {
         "simultaneous-exhaustion",
         "simultaneous-memory-output",
         "generator",
+        "generator-alias-cursor",
+        "generator-returned-owner",
+        "generator-child-paths",
         "approx-branch-true",
         "approx-branch-false",
         "display-stop-source-range",

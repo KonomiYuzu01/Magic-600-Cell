@@ -91,8 +91,8 @@ use crate::meter::{
 use crate::rng::{self, Cursor};
 use crate::trace::{self, Relation};
 use crate::value::{
-    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed, List,
-    MenuWord, Record, Text, Value,
+    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed,
+    Generator, List, MenuWord, Record, Text, Value,
 };
 
 /// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
@@ -321,26 +321,48 @@ enum Kind {
     Match(Vec<Value>),
     Call(usize),
     CallValue,
-    Closure { code: usize, captures: Vec<SlotRef> },
+    Closure {
+        code: usize,
+        captures: Vec<SlotRef>,
+    },
     Prim(Prim),
     Record(Vec<Arc<Text>>),
     Field(Box<str>),
     List,
     Set,
     Map,
-    ReadSnapshot { query: String, ty: QTy },
-    ReadSnapshotWith { query: String, ty: QTy },
+    ReadSnapshot {
+        query: String,
+        ty: QTy,
+    },
+    ReadSnapshotWith {
+        query: String,
+        ty: QTy,
+    },
     PublishView,
-    WriteWorkspace { record: String, ty: QTy },
+    WriteWorkspace {
+        record: String,
+        ty: QTy,
+    },
     Propose,
     ReadReceipt(ReceiptField),
     UseExact(ExactRole),
     Accounting(Accounting),
-    Declassified { id: String, ty: Ty },
-    FileRead { path: String, ty: Ty },
-    FileWrite { path: String },
+    Declassified {
+        id: String,
+        ty: Ty,
+    },
+    FileRead {
+        path: String,
+        ty: Ty,
+    },
+    FileWrite {
+        path: String,
+    },
     RandomDraw,
     ReadClock,
+    /// `rng_init`'s path segments after the run's stream path (DET.61; LP2 draft).
+    RngInit(Vec<String>),
 }
 
 #[derive(Debug)]
@@ -534,7 +556,7 @@ fn arity(op: Prim) -> Option<usize> {
         | Prim::ApproxAdd
         | Prim::ApproxLess
         | Prim::ApproxAnd => Some(2),
-        Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) | Prim::Assert => Some(1),
+        Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) | Prim::Assert | Prim::RngDraw => Some(1),
         Prim::ToExact => None,
         Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => Some(1),
         Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
@@ -797,6 +819,7 @@ impl Compiler {
             }
             Expr::RandomDraw => Kind::RandomDraw,
             Expr::ReadClock => Kind::ReadClock,
+            Expr::RngInit { path } => Kind::RngInit(path.clone()),
         };
         self.loaded.nodes[id].kind = kind;
         Ok(())
@@ -920,6 +943,8 @@ struct Machine<'a> {
     values: Vec<Held>,
     tasks: Vec<Task>,
     generator: Option<Cursor>,
+    /// The run's seed and stream path, for `rng_init` (DET.61; LP2 draft).
+    seed: Option<(&'a [u8], &'a [&'a str])>,
 }
 
 /// The stop locator of an operation: the call path from the entry (each caller's call site), then the operation's
@@ -1093,6 +1118,7 @@ impl<'a> Machine<'a> {
             Kind::ReadClock => self.host_read(n, "read", Request::Clock, 0)?,
             Kind::Accounting(a) => self.accounting(n, *a)?,
             Kind::RandomDraw => self.draw(n)?,
+            Kind::RngInit(segments) => self.rng_init(n, segments)?,
             _ => {
                 self.tasks.push(Task::Apply(n));
                 self.tasks.extend(node.kids.iter().rev().map(|&k| Task::Eval(k)));
@@ -1104,15 +1130,16 @@ impl<'a> Machine<'a> {
     fn bind(&mut self, n: NodeId) -> Result<(), Stop> {
         let Kind::Let(slot) = self.loaded.nodes[n].kind else { unreachable!("a let") };
         let held = self.values.pop().expect("the let value");
-        let owners = if held.origin == Origin::Owned {
+        let (value, owners) = if held.origin == Origin::Owned {
             self.charge(Some(n), "visit", 0, 0, 0)?;
-            held.owners
+            (held.value, held.owners)
         } else {
             let size = held.value.size();
             self.charge(Some(n), "alias", 0, size, 0)?;
-            self.own(size)
+            // An aliased generator draws from a cursor of its own (DET.61).
+            (held.value.alias(), self.own(size))
         };
-        self.frames.last_mut().expect("a frame").lets[slot] = Some((held.value, owners));
+        self.frames.last_mut().expect("a frame").lets[slot] = Some((value, owners));
         self.tasks.push(Task::ScopeExit(n));
         self.tasks.push(Task::Eval(self.loaded.nodes[n].kids[1]));
         Ok(())
@@ -1132,6 +1159,7 @@ impl<'a> Machine<'a> {
                 if origin == (Origin::Let { slot, whole: false }) {
                     let size = result.value.size();
                     self.charge(Some(n), "alias", 0, size, 0)?;
+                    result.value = result.value.alias();
                     result.owners = self.own(size);
                     result.origin = Origin::Owned;
                 }
@@ -1282,6 +1310,7 @@ impl<'a> Machine<'a> {
         if result.origin != Origin::Owned {
             let size = result.value.size();
             self.charge(Some(body), "alias", 0, size, 0)?;
+            result.value = result.value.alias();
             result.owners = self.own(size);
             result.origin = Origin::Owned;
         }
@@ -1307,6 +1336,7 @@ impl<'a> Machine<'a> {
             Prim::ExactAdd => "exact_add",
             Prim::ExactMul => "exact_mul",
             Prim::Assert => "assert",
+            Prim::RngDraw => "rng_draw",
             Prim::ExactLess => "exact_less",
             Prim::ExactEq => "exact_eq",
             Prim::Not => "not",
@@ -1348,6 +1378,8 @@ impl<'a> Machine<'a> {
             (Prim::ExactMul, a, Some(b)) => value::mul_price(a, b, &t, &d),
             // One step and no memory: the predicate was evaluated before, with ordinary operations (DET.55).
             (Prim::Assert, Value::Bool(_), None) => Some((0, 0)),
+            // One block of the generator's stream and its 256-bit integer, as the run's own draw (DET.61).
+            (Prim::RngDraw, Value::Generator(_), None) => Some((t.rng_block, integer_size(256))),
             (Prim::ExactLess, a, Some(b)) => value::compare_price(a, b, &d).map(|k| (k, 1)),
             // A compressed word has no exact equality, and an end test's verdict is matched on its outcomes only, so
             // an equality of verdicts behind a type variable stops here (LP2 drafts; LG2.9).
@@ -1384,6 +1416,11 @@ impl<'a> Machine<'a> {
                 return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
             }
             (Prim::Assert, Value::Bool(true), None) => Value::Unit,
+            // The draw advances the cursor the operand shares with its owner; only a successful draw does.
+            (Prim::RngDraw, Value::Generator(g), None) => match g.draw() {
+                Some(block) => Value::int(BigInt::from_bytes_be(Sign::Plus, &block)),
+                None => return Err(self.fail(Some(n), name, meter::code::GENERATOR_EXHAUSTED)),
+            },
             (Prim::ExactLess, a, Some(b)) => Value::Bool(value::compare(a, b) == Some(std::cmp::Ordering::Less)),
             (Prim::ExactEq, a, Some(b)) => Value::Bool(value::equal(a, b)),
             (Prim::Not, Value::Bool(x), None) => Value::Bool(!x),
@@ -2037,6 +2074,24 @@ impl<'a> Machine<'a> {
         Ok(())
     }
 
+    /// `rng_init` (DET.61; LP2 draft): a generator on the run's seed, its stream path being the run's path followed by
+    /// the node's segments. It is priced as the run's own generator is; without a seed it is not granted, and a seed
+    /// or path the stream key refuses stops the run after the charge.
+    fn rng_init(&mut self, n: NodeId, segments: &[String]) -> Result<(), Stop> {
+        let Some((seed, base)) = self.seed else {
+            self.charge(Some(n), "rng_init", 0, 0, 0)?;
+            return Err(self.fail(Some(n), "rng_init", meter::code::NOT_GRANTED));
+        };
+        let path: Vec<&str> = base.iter().copied().chain(segments.iter().map(String::as_str)).collect();
+        let len = rng::key_input_len(seed.len(), &path);
+        self.charge(Some(n), "rng_init", self.tariffs.rng_init_per_byte.saturating_mul(len), GENERATOR_SIZE, 0)?;
+        let Some((key, _)) = rng::stream_key(seed, &path) else {
+            return Err(self.fail(Some(n), "rng_init", meter::code::GENERATOR_INPUT));
+        };
+        self.settle(GENERATOR_SIZE, Value::Generator(Arc::new(Generator::new(Cursor::new(key)))));
+        Ok(())
+    }
+
     /// Enters the run, runs the entry function and emits its result as the top-level output unit.
     fn start(
         &mut self,
@@ -2125,6 +2180,7 @@ impl Loaded {
             values: Vec::new(),
             tasks: Vec::new(),
             generator: None,
+            seed: options.seed,
         };
         let outcome = machine.start(f, input, options.seed);
         let Machine { meter, frames, values, .. } = machine;

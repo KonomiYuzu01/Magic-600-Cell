@@ -3,9 +3,9 @@
 //! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
 //! refuses the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is
 //! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; an end
-//! test's verdict (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; the
-//! built-in column, the pinned menu and the pinned trace relation are strict trailing fields of the run, in that
-//! order.
+//! test's verdict (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; a
+//! generator (DET.61) has no value tag and is type tag 27; the built-in column, the pinned menu and the pinned trace
+//! relation are strict trailing fields of the run, in that order.
 
 mod support;
 
@@ -19,8 +19,9 @@ use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
 use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
 use c600_run::meter::code::STEPS;
 use c600_run::meter::{Amounts, ChildRecord, Interruption, Outcome, Position, SourceRange};
+use c600_run::rng::Cursor;
 use c600_run::trace::{Relation, RelationError, TraceKey, FULL_DISJOINT_SUPPORT};
-use c600_run::value::{Closure, Quad, Ratio, Value};
+use c600_run::value::{Closure, Generator, Quad, Ratio, Value};
 use c600_runtime::codec::{self, Codes};
 use c600_runtime::message::{self, Answer, Call, ToChild, SCHEMA};
 use c600_runtime::wire::{self, Dec, Enc, FrameError, MAX_FRAME, PROTOCOL};
@@ -742,6 +743,24 @@ fn a_menu_word_crosses_with_its_alphabet() {
     assert_eq!(e.bytes, [23]);
     let mut d = Dec::new(&e.bytes);
     assert_eq!(codec::decode_ty(&mut d).unwrap(), Ty::MenuWord);
+    d.end().unwrap();
+}
+
+/// A generator (DET.61; LP2 draft) stays in its run: a copy in another process would be a second cursor on its stream,
+/// which only DET.61's alias makes, so it has no value tag and a value that holds one is refused whole. The type
+/// `Generator` is type tag 27; tag 26 stays free for KN3.2's draft type.
+#[test]
+fn a_generator_has_no_transfer_form_and_its_type_is_tag_27() {
+    let g = Value::Generator(Arc::new(Generator::new(Cursor::new([1; 32]))));
+    for v in [g.clone(), Value::list(vec![g.clone()]), Value::record(vec![("g", g)])] {
+        let refused = codec::value_bytes(&v).expect_err("no transfer form");
+        assert_eq!(refused.0, "a generator, which stays in its run", "{v:?}");
+    }
+    let mut e = Enc::new();
+    codec::encode_ty(&Ty::Generator, &mut e).unwrap();
+    assert_eq!(e.bytes, [27]);
+    let mut d = Dec::new(&e.bytes);
+    assert_eq!(codec::decode_ty(&mut d).unwrap(), Ty::Generator);
     d.end().unwrap();
 }
 

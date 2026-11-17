@@ -39,7 +39,8 @@ const ACK: &[u8] = b"{\"base\":\"rev-7\",\"id\":\"run/1\"}\n";
 enum Kind {
     /// Evaluated inside the interpreter; the host is not asked.
     Pure,
-    /// Display accounting, a draw from the seeded generator and a receipt field: interpreter rows without a host call.
+    /// Display accounting, a draw from the seeded generator or a generator's start (DET.61; LP2 draft) and a receipt
+    /// field: interpreter rows without a host call.
     Accounting,
     Draw,
     ReceiptRead,
@@ -89,6 +90,7 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::FileRead { path: _, ty: _ } => ("file_read", Kind::FileRead, &[]),
         Expr::FileWrite { path: _, value: _ } => ("file_write", Kind::FileWrite, &["value"]),
         Expr::RandomDraw => ("random_draw", Kind::Draw, &[]),
+        Expr::RngInit { path: _ } => ("rng_init", Kind::Draw, &[]),
         Expr::ReadClock => ("read_clock", Kind::ClockRead, &[]),
     }
 }
@@ -176,6 +178,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::MenuWord => "letters of a pinned menu, with the name of their alphabet",
         Ty::EndTest(_) => "the outcome of the end test it names",
         Ty::TraceEqualityKey => "a trace equality key under the run's relation, which is never letters",
+        Ty::Generator => "a cursor on a stream of the run's seed, kept only inside the interpreter",
     }
 }
 
@@ -196,6 +199,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::MenuWord(_) => "letters of a pinned menu, with the name of their alphabet",
         Value::EndTest(..) => "the outcome of the end test it names",
         Value::TraceEqualityKey(_) => "a trace equality key under the run's relation, which is never letters",
+        Value::Generator(_) => "a cursor on a stream of the run's seed, kept only inside the interpreter",
     }
 }
 
@@ -652,8 +656,10 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
         requests.iter().flat_map(|r| request(r).1).chain(sinks.iter().flat_map(|s| sink(s).1)).collect();
     let kinds = ["a name", "a type", "letters", "canonical bytes", "an exact role"];
     assert!(carried.iter().all(|c| kinds.iter().any(|k| c.starts_with(k))), "{carried:?}");
-    let types =
-        [Ty::Fn(Box::new(c600_ir::FnTy { params: vec![], result: exact(Ty::Unit), effects: Default::default() }))];
+    let types = [
+        Ty::Fn(Box::new(c600_ir::FnTy { params: vec![], result: exact(Ty::Unit), effects: Default::default() })),
+        Ty::Generator,
+    ];
     assert!(types.iter().all(|t| holds(t).contains("only inside the interpreter")));
 
     let closure = c600_ir::build::closure(vec![], exact(Ty::Unit), unit());
