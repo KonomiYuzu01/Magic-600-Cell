@@ -27,7 +27,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-LG4-03 | waiting | compressed words, KN2.10, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-21 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-22 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
-| CT-LG4-05 | waiting | a pointwise or whole-state contract form in the IR, no milestone named; named only as not built (`rust/README.md`, missing list) |
 | CT-ONE-13 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-14 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-15 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |

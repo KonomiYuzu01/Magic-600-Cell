@@ -90,6 +90,8 @@ pub enum DeclKind {
     Fn,
     View,
     Command,
+    /// A whole-state contract (LG4.10; LP2 draft).
+    Contract,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

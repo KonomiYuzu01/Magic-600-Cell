@@ -469,6 +469,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
   phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
   `det65_programs.rs`).
+- Whole-state contracts (LP2 draft until the IR freeze; LG4.10, LB1.7). A function of kind `FnKind::Contract`, in
+  source `contract settled() -> Bool effects [snapshot] { ... }`, takes no parameter, returns an exact `Bool` and
+  needs nothing beyond reading the snapshot and child budgets, so its result is a function of its revision; the checker
+  refuses another shape (`LG2:type.mismatch`, `LG3:effect.undeclared`) and any call or reference to a contract, also
+  from a loop's closure or another contract (`LG3:effect.undeclared`), so no call or loop runs one per call.
+  `contract::Revisions` runs a contract once per revision: asked again at its revision it gives the kept run and asks
+  the host nothing; a changed revision or program digest runs it again and replaces the kept run. A kept run is a
+  value, never evidence. The agreement-test form is any test that runs a contract (`c600-run/tests/contracts.rs`:
+  CT-LG4-05 whole).
 - Generators (LP2 drafts; DET.61). `rng_init` is one step priced at the input-byte tariff per byte of the hashed key
   input (13 bytes of domain, the seed's 32, 4 for the segment count and per segment 4 and its bytes), and it holds a
   generator's 41 units. Its stream path is the run's assigned path followed by its segments, on the run's seed, so
@@ -1393,11 +1402,11 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, and the stage checker, as
-  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 86 whole, eleven of
+  M6's record layer with its run record and jumbling records, the stage checker and whole-state contracts, as
+  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 87 whole, eleven of
   them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
   CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as parts
-  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 22 waiting, each with what it waits
+  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 21 waiting, each with what it waits
   for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1479,7 +1488,6 @@ run or not applicable is no pass (PHS.63).
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
     part (M4's section).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
-  - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
 - Evidence kind: source and fixture. The checks ran on Windows only.
 
 ## Status of LP3, C1: the command layer

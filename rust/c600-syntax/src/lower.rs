@@ -498,6 +498,7 @@ impl Body<'_> {
             DeclKind::Fn => FnKind::Helper,
             DeclKind::View => FnKind::View,
             DeclKind::Command => FnKind::Command,
+            DeclKind::Contract => FnKind::Contract,
         };
         Ok(Function {
             name: d.name.text.clone(),
