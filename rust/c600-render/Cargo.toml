@@ -1,6 +1,6 @@
 [package]
 name = "c600-render"
-description = "The display host's bridge to the S-A2 renderer core: c600-display's Backend over ABI 4 of renderer/core/include/sa2_interop.h, through a table of the core's C functions, with a fake core for headless tests (C9)"
+description = "The display host's bridge to the S-A2 renderer core: c600-display's Backend over ABI 4 of renderer/core/include/sa2_interop.h through a safe call interface, with a fake core for headless tests; the C function table is in renderer/bridge (C9)"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true

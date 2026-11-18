@@ -4,7 +4,8 @@
 mod common;
 
 use c600_render::abi::{Sa2FrameInput, Status, PIECES, SLOTS};
-use c600_render::{CoreAbi, CoreFunctions, DllCore, EngineImage, FakeCore, PoseArrays, PreparationInput};
+use c600_render::{CoreAbi, EngineImage, FakeCore, PoseArrays, PreparationInput};
+use c600_render_ffi::{CoreFunctions, DllCore};
 
 use common::{Driver, Shimmed};
 
@@ -30,7 +31,7 @@ fn a_report_longer_than_the_first_buffer_is_read_again() {
     let (status, recovered) = Shimmed::new(FakeCore::new((8, 8)), 0).recover();
     assert_eq!(status, Status::UNAVAILABLE);
     assert!(recovered.contains("RPI.46"), "the JSON comes with the status");
-    let oversized = Shimmed::new(FakeCore::new((8, 8)), c600_render::ffi::JSON_LIMIT);
+    let oversized = Shimmed::new(FakeCore::new((8, 8)), c600_render_ffi::JSON_LIMIT);
     assert_eq!(oversized.describe(), Err(Status::INVALID_ARGUMENT), "a report over the limit is not read again");
 }
 

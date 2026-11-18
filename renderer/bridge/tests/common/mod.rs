@@ -9,7 +9,15 @@ use std::mem::size_of;
 use std::slice;
 
 use c600_render::abi::*;
-use c600_render::{CoreAbi, CoreFunctions, DllCore, EngineImage, FakeCore, PoseArrays, PreparationInput};
+use c600_render::{CoreAbi, EngineImage, FakeCore, PoseArrays, PreparationInput};
+use c600_render_ffi::{CoreFunctions, DllCore};
+
+/// c600-render's host scenarios and their [`Driver`] trait, from that crate's tests, so that the same scenarios run
+/// here through the C function table.
+#[path = "../../../../rust/c600-render/tests/support/mod.rs"]
+pub mod support;
+
+pub use support::Driver;
 
 /// What a context points to.
 pub struct Shim {
@@ -288,17 +296,6 @@ impl CoreAbi for Shimmed {
     }
     fn last_error(&self) -> String {
         self.dll.last_error()
-    }
-}
-
-/// A core whose fake a test can drive (complete work, place picks, remove the device).
-pub trait Driver: CoreAbi {
-    fn fake(&mut self) -> &mut FakeCore;
-}
-
-impl Driver for FakeCore {
-    fn fake(&mut self) -> &mut FakeCore {
-        self
     }
 }
 

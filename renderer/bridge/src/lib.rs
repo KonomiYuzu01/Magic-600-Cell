@@ -1,14 +1,17 @@
-//! The core's C functions behind [`CoreAbi`]. The crate never loads a library: whoever loads `sa2_interop.dll` and
-//! attaches a context (the product shell, or the platform layer of RPI.52) hands over [`CoreFunctions`], filled with
-//! the exports named in [`SYMBOLS`], and the context. This is the crate's only unsafe code. Every slice length is
-//! checked before a call, because the core reads `SA2_SLOTS`, `SA2_PIECES` and `pose_count` entries through the
-//! pointers it receives.
+//! The foreign half of C9's renderer bridge (`c600-render-ffi`): the S-A2 core's C functions behind c600-render's
+//! [`CoreAbi`]. It lives outside the language workspace (`rust/`), because CT-RPI-01 keeps every member of that
+//! workspace free of unsafe code and foreign declarations; c600-render itself forbids unsafe code.
+//!
+//! The crate never loads a library: whoever loads `sa2_interop.dll` and attaches a context (the product shell, or the
+//! platform layer of RPI.52) hands over [`CoreFunctions`], filled with the exports named in [`SYMBOLS`], and the
+//! context. Every slice length is checked before a call, because the core reads `SA2_SLOTS`, `SA2_PIECES` and
+//! `pose_count` entries through the pointers it receives.
 
 use std::ffi::{c_char, c_void};
 use std::mem::size_of;
 
-use crate::abi::*;
-use crate::api::{CoreAbi, EngineImage, PreparationInput};
+use c600_render::abi::*;
+use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
 pub const SYMBOLS: [&str; 17] = [
