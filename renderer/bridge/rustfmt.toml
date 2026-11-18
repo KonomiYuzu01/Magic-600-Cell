@@ -1,0 +1,3 @@
+# As rust/rustfmt.toml: this crate is formatted like the workspace whose crates it links.
+max_width = 120
+use_small_heuristics = "Max"
