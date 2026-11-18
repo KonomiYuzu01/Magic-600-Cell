@@ -1890,6 +1890,18 @@ run or not applicable is no pass (PHS.63).
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
   budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
+- EV3.2's view rows `view.open` and `view.close` (RPI.81 to RPI.83; the drafts are in `c600-command/src/view.rs`). The
+  layer admits them, and the host's view model holds the views, Global and Local and RPI.82's budget: the `Views`
+  trait, given with `CommandLayer::set_views`, which LP3's host implements with `c600-view`'s `ViewModel`. Without one
+  both rows are `KN5:input.row_not_built`, as before. Before the host is called: the argument forms (a `ViewId` is a
+  nonempty text; a `ViewSourceRef` is `{"built_in": Text}` or `{"overlay": {"row", "module", "arguments"}}`, the module
+  a SHA-256 in lowercase hex), an overlay source's row, which must be an overlay row of kind `view` with arguments that
+  fit it (`KN5:input.argument_form`), and the caller: a run not inside a command the solver invoked, as a
+  recomputation started by a revision change is not, is `LG3:capability.not_granted`, so a view cannot open views. The
+  host's refusals (`EV3:input.view_id_in_use`, `EV3:input.view_not_closable`, `EV3:resource_limit.display_plan_ceiling`)
+  reach the receipt. An admitted open or close is `accepted` with no job, since KN5.21 has no completion kind for either
+  row; a retry gets the stored receipt and the host sees one call. Tests: `c600-command/tests/view_rows.rs` (CT-RPI-36's
+  layer half and CT-EV3-07's view half on the layer).
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
   and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for

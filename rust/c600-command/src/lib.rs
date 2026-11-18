@@ -103,6 +103,11 @@
 //!     runtime may invoke neither (`LG3:capability.not_granted`). No entry can serve them.
 //!   - Not built: `worksheet.compare` (LB2's analysis, a program job), gains and losses, macro versions, and reading a
 //!     position role's occupant again.
+//! - `view.open` and `view.close` ([`view`]; EV3.2, RPI.81 to RPI.83; draft). The layer admits them and the host's
+//!   view model ([`Views`], given with [`CommandLayer::set_views`]) holds the views and RPI.82's budget. The argument
+//!   forms, an overlay source's row and the caller come first (`KN5:input.argument_form`,
+//!   `LG3:capability.not_granted` for a run not inside a command the solver invoked); an admitted open or close is
+//!   `accepted` with no job. Without a view model both rows are `KN5:input.row_not_built`.
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
 //! - `twist.apply` ([`TWIST_ROW`]; A6, ONE.46, ONE.78), a live twist with no preview.
@@ -483,6 +488,7 @@ pub mod store;
 pub mod table;
 pub mod token;
 pub mod twist;
+pub mod view;
 pub mod worksheet;
 pub mod workspace;
 
@@ -505,13 +511,16 @@ pub use store::{
 pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
+pub use view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 pub use worksheet::{Placement, Resolution, Role, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 16] = [
+pub const SOURCES: [(&str, &[u8]); 19] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
+    ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
+    ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
     ("c600-command/src/jumble.rs", include_bytes!("jumble.rs")),
@@ -523,6 +532,7 @@ pub const SOURCES: [(&str, &[u8]); 16] = [
     ("c600-command/src/table.rs", include_bytes!("table.rs")),
     ("c600-command/src/token.rs", include_bytes!("token.rs")),
     ("c600-command/src/twist.rs", include_bytes!("twist.rs")),
+    ("c600-command/src/view.rs", include_bytes!("view.rs")),
     ("c600-command/src/worksheet.rs", include_bytes!("worksheet.rs")),
     ("c600-command/src/workspace.rs", include_bytes!("workspace.rs")),
     ("docs/progress/1.0/command-table.json", table::H08.as_bytes()),

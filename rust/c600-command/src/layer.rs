@@ -117,6 +117,7 @@ use crate::store::{
 use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
+use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 use crate::worksheet::{Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
@@ -677,6 +678,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     filters: BTreeMap<u64, FilterPreview>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
     provenance: Option<Box<dyn Provenance>>,
+    /// The host's view model (EV3.2, RPI.83). Without one, `view.open` and `view.close` are refused.
+    views: Option<Box<dyn Views>>,
     /// The twist menu the host pinned (KN3.8). Without one, `twist.apply` and `jumble.on` are refused.
     twists: Option<Twists>,
     /// The jumbling engine's value at the head while Jumble is on (draft; [`crate::jumble`]). `None` with Jumble off.
@@ -735,6 +738,7 @@ impl<S: Store> CommandLayer<S> {
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             provenance: None,
+            views: None,
             twists: None,
             jumbled: None,
             history: BTreeMap::new(),
@@ -1458,6 +1462,13 @@ impl<S: Store> CommandLayer<S> {
         self.generation += 1;
     }
 
+    /// Gives the layer the host's view model (EV3.2, RPI.83; [`crate::view`]). Without one, `view.open` and
+    /// `view.close` are refused with `KN5:input.row_not_built`.
+    pub fn set_views(&mut self, views: Box<dyn Views>) {
+        self.views = Some(views);
+        self.generation += 1;
+    }
+
     /// Pins the twist menu that `twist.apply` resolves its exact requests against and that `jumble.on` enters under
     /// (KN3.8; draft), with the exact model `context` it is read in, which must be the session's model
     /// (`KN1:input.identity_mismatch`). A pin replaces the one before; with Jumble on, only by a menu with the
@@ -1728,6 +1739,10 @@ impl<S: Store> CommandLayer<S> {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's provenance reader", row.id)))
                 }
             },
+            VIEW_OPEN_ROW | VIEW_CLOSE_ROW => match self.views {
+                Some(_) => Ok(()),
+                None => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id))),
+            },
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
     }
@@ -1920,6 +1935,7 @@ impl<S: Store> CommandLayer<S> {
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
+            VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
                 self.check_filter_refs(&row, args)?;
@@ -1934,6 +1950,55 @@ impl<S: Store> CommandLayer<S> {
     fn next_job(&mut self) -> u64 {
         self.jobs_issued += 1;
         self.jobs_issued
+    }
+
+    // ----- view.open, view.close -----
+
+    /// `view.open {view, source}` and `view.close {view}` (EV3.2, RPI.83; [`crate::view`]). Refused, calling no host,
+    /// in this order: no view model (`KN5:input.row_not_built`); the argument forms, and an overlay source that does
+    /// not name an overlay row of kind `view` or whose arguments do not fit it (`KN5:input.argument_form`), name a
+    /// revision that is not current or a `FilterRef` that does not resolve (that row's own refusals); a run not inside
+    /// a command the solver invoked (`LG3:capability.not_granted`). Then the host's view model answers; an admitted
+    /// open or close is `accepted` with no job, the layer's final answer for either row.
+    fn view_row(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        row: &Row,
+        args: &BTreeMap<String, Value>,
+    ) -> Result<(Option<u64>, Status), Error> {
+        if self.views.is_none() {
+            return refused(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id));
+        }
+        forms::check_forms(row, args)?;
+        let view = args.get("view").and_then(Value::as_str).unwrap_or_default();
+        let source = match args.get("source").and_then(ViewSourceRef::from_json) {
+            Some(source) if row.id == VIEW_OPEN_ROW => Some(source),
+            _ => None,
+        };
+        if let Some(ViewSourceRef::Overlay { row: name, arguments, .. }) = &source {
+            let Some(overlay) = self.table.row(name).filter(|r| r.overlay.is_some() && r.kind == Kind::View) else {
+                return refused(code::ARGUMENT_FORM, format!("`{name}` is not an overlay row of kind `view`"));
+            };
+            if !forms::names_fit(overlay, arguments.keys().map(String::as_str)) {
+                return refused(code::ARGUMENT_FORM, format!("`{name}` takes {:?}", overlay.arguments));
+            }
+            forms::check(overlay, arguments, &self.revision)?;
+            self.check_filter_refs(overlay, arguments)?;
+        }
+        if let Caller::Runtime { run } = caller {
+            if !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (RPI.83)");
+                return refused(code::NOT_GRANTED, detail);
+            }
+        }
+        let views = self.views.as_mut().expect("checked above");
+        let command = invocation.command.as_str();
+        match &source {
+            Some(source) => views.open(command, view, source)?,
+            None => views.close(command, view)?,
+        }
+        Ok((None, Status::Accepted))
     }
 
     // ----- operation.preview -----
