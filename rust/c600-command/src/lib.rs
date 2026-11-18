@@ -422,6 +422,22 @@
 //!     their place.
 //!   - Drafts for LP3's amendment list (PHS.52): the digest's form, the code for a record from another row, the
 //!     history cut and the journal key `records`.
+//! - Argument blocks (BND.22; LP3's C6, step 1 item 4). The host fills every provenance block, and a program sets no
+//!   field of one. [`CommandLayer::invoke_with_inputs`] takes the blocks of an invocation's arguments beside the
+//!   envelope; for a running program's invocation the host builds them from the run's context. Draft choices:
+//!   - Blocks change none of the checks before a row is dispatched (epoch, row, caller, token, recovery, argument
+//!     names); their refusals come first. Only a row an entry serves takes blocks. Any other row that passed those
+//!     checks refuses them with `KN5:input.argument_form`.
+//!   - For a served row, the host's reader checks each block's form after the arguments' forms, the `FilterRef`s and
+//!     the gate, as for a record's block (PS1.16). A block it refuses refuses the invocation with the reader's error.
+//!     Without a reader, an invocation with blocks is refused with `KN5:input.row_not_built`. The layer reads nothing
+//!     else in a block and sets no limit of its own on their number or size.
+//!   - The job holds the blocks as given, in their order ([`ProgramJob::inputs`]). The host runs the entry with them
+//!     as its run's inputs. [`CommandLayer::invoke`] passes none.
+//!   - The request digest covers each block's SHA-256 under the key `inputs`, only when there are blocks. An
+//!     invocation without blocks keeps its digest, and a retry with other blocks is other content
+//!     (`KN5:input.command_id_reused`).
+//!   - A run still reaches no workspace or file row (ruling of 18 November 2026). Blocks change no admission.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
 //!   - A `FilterRef` names a completed job of a row that prepares a predicate (`structure.layer`) by its result
 //!     reference. It resolves while every record that job wrote still holds the job's write, to those records, each
