@@ -1912,6 +1912,17 @@ run or not applicable is no pass (PHS.63).
   reach the receipt. An admitted open or close is `accepted` with no job, since KN5.21 has no completion kind for either
   row; a retry gets the stored receipt and the host sees one call. Tests: `c600-command/tests/view_rows.rs` (CT-RPI-36's
   layer half and CT-EV3-07's view half on the layer).
+- The session's durable home for a word's part blocks (BND.24, BND.85, CT-BND-27; draft). The host's reader has two
+  more methods, with defaults that keep a reader without them working as before: `Provenance::parts(block)`, the
+  blocks of the block's recursive parts that the host holds, and `Provenance::admit_kept(block, kept)`, admission with
+  the part blocks the session keeps. A record write (`workspace.set` and the work-sheet rows) and a workspace row's
+  completion keep the part blocks the reader holds for the blocks they write, each by the SHA-256 of its bytes. The
+  action journals those the session did not keep yet as `blocks`, a draft field of the journal form that only a record
+  write or a workspace completion carries. A replay keeps them again, and nothing removes them, an undo included;
+  `CommandLayer::blocks` lists them. At `operation.preview` of a record draft the layer gives them back to the reader,
+  so a restored word's recursive parts are read after a restart with a reader that holds nothing. Tests:
+  `c600-command/tests/part_blocks.rs` and `c600-session/tests/part_blocks.rs` (CT-BND-27 on the journal after a power
+  loss, with `c600-run`'s FP.17 blocks and the boundary's preview admission as the reader).
 - KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
   (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
   and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for

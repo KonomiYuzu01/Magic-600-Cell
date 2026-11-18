@@ -19,6 +19,7 @@
 
 use std::collections::VecDeque;
 
+use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
@@ -151,6 +152,11 @@ pub struct Transaction {
     /// `Digest<literal word>`; for an exit, the episode it ends, the identity block, the jumbling journal, the pose
     /// and label digests and A5's certificate ([`crate::jumble`]; draft). `None` for every other action.
     pub crossing: Option<Value>,
+    /// The part blocks a record write or a workspace row's completion keeps for the session, as the host's reader gave
+    /// them for the blocks it writes ([`crate::Provenance::parts`]): each block's text, those the session did not keep
+    /// yet, in the order of the SHA-256 of their bytes (BND.24, BND.85, CT-BND-27; draft). Empty for every other
+    /// action.
+    pub blocks: Vec<String>,
 }
 
 impl Transaction {
@@ -184,8 +190,8 @@ impl Transaction {
 
     /// The journal form (draft). `record` appears only when the action carries a record write, `policy` only when it
     /// carries a policy, `records` only when a workspace row's job wrote records or an undo or redo inverts or repeats
-    /// such a completion, `rotation` only on a twist and
-    /// `crossing` only on a crossing or an exit.
+    /// such a completion, `rotation` only on a twist, `crossing` only on a crossing or an exit, and `blocks` only when
+    /// the action keeps part blocks.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
@@ -224,6 +230,10 @@ impl Transaction {
         if let (Value::Object(fields), Some(crossing)) = (&mut value, &self.crossing) {
             fields.insert("crossing".to_owned(), crossing.clone());
         }
+        if let (Value::Object(fields), false) = (&mut value, self.blocks.is_empty()) {
+            let blocks = self.blocks.iter().map(|block| Value::String(block.clone())).collect();
+            fields.insert("blocks".to_owned(), Value::Array(blocks));
+        }
         value
     }
 
@@ -232,10 +242,11 @@ impl Transaction {
     /// `policy` belongs to a policy change and to the undo or redo of one. `records` belongs to a workspace row's
     /// completion, a non-empty list of writes with values, their names strictly increasing, and to the undo or redo of
     /// an undoable one, where a write's value is `null` when the inverse leaves the record empty; an undo or redo carries
-    /// at most one of `record`, `policy` and `records`. `rotation` belongs to a
-    /// commit of `twist.apply` or `jumble.twist.menu` and to a jumble move, which always carry one in the form
-    /// [`crate::twist`] reads. `crossing` belongs to a crossing and to an exit, which always carry one in the form
-    /// [`crate::jumble`] reads for their kind. A crossing, a jumble move and an exit derive no retained recipe and
+    /// at most one of `record`, `policy` and `records`. `rotation` belongs to a commit of `twist.apply` or
+    /// `jumble.twist.menu` and to a jumble move, which always carry one in the form [`crate::twist`] reads. `crossing`
+    /// belongs to a crossing and to an exit, which always carry one in the form [`crate::jumble`] reads for their kind.
+    /// `blocks` belongs to a record write and to a workspace row's completion that writes records, a non-empty list of
+    /// texts whose SHA-256 strictly increases. A crossing, a jumble move and an exit derive no retained recipe and
     /// confirm nothing, so their `recipe` is `null` and their `confirm` false. A transaction that carries one where it
     /// does not belong, or both `record` and `policy`, or a twist without its rotation, or a crossing or an exit
     /// without its record, or a crossing, a jumble move or an exit with a recipe or a confirmation, does not read, so
@@ -271,6 +282,21 @@ impl Transaction {
             Some(crossing) if kind == TransactionKind::Exit => Some(exit_reads(crossing).then(|| crossing.clone())?),
             Some(crossing) => Some(crossing_reads(crossing).then(|| crossing.clone())?),
         };
+        let blocks = match value.get("blocks") {
+            None => Vec::new(),
+            Some(blocks) => {
+                let blocks: Vec<String> =
+                    blocks.as_array()?.iter().map(|block| block.as_str().map(str::to_owned)).collect::<Option<_>>()?;
+                let digests: Vec<String> = blocks.iter().map(|block| sha256_hex(block.as_bytes())).collect();
+                let ordered = digests.windows(2).all(|pair| pair[0] < pair[1]);
+                let writes = match kind {
+                    TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()),
+                    TransactionKind::Workspace => !records.is_empty(),
+                    _ => false,
+                };
+                (!blocks.is_empty() && ordered && writes).then_some(blocks)?
+            }
+        };
         let row = value.get("row")?.as_str()?;
         let twist = match kind {
             TransactionKind::Commit => row == TWIST_ROW || row == JUMBLE_TWIST_ROW,
@@ -296,7 +322,8 @@ impl Transaction {
             + usize::from(policy.is_some())
             + usize::from(!records.is_empty())
             + usize::from(rotation.is_some())
-            + usize::from(crossing.is_some());
+            + usize::from(crossing.is_some())
+            + usize::from(!blocks.is_empty());
         (carries && object.len() == keys).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
@@ -336,6 +363,7 @@ impl Transaction {
             records,
             rotation,
             crossing,
+            blocks,
         })
     }
 }

@@ -85,7 +85,10 @@
 //!   and `provenance`, the provenance block's canonical JSON as text. H-08 has no such row yet, so [`Table::with_drafts`]
 //!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
 //!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and admits a record's
-//!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused.
+//!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused. A record write and a
+//!   workspace row's completion keep the part blocks the reader holds for the blocks they write
+//!   ([`Provenance::parts`]) with the action, and admission gives them back ([`Provenance::admit_kept`]), so a restored
+//!   workspace keeps a word's recursive parts (BND.24, BND.85, CT-BND-27; draft).
 //! - LB7.2's work sheets ([`worksheet`]; CT-LB2-03's work-sheet part), two rows of H-08:
 //!   - A work sheet is a workspace record whose payload is `{"worksheet": {...}}` ([`Worksheet::to_payload`]): the
 //!     phases Prepare, Macro and Cleanup, the named roles (a piece, named by its home position, or a position), the

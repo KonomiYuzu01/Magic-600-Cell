@@ -32,7 +32,8 @@
 //!
 //! KN5's stage 3, the workspace store ([`crate::workspace`]): `workspace.set` ([`RECORD_ROW`]) writes one record, and
 //! a draft `{"record": name}` previews the letters the record holds, with the record's content digest and version in
-//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26). LB7.2's work
+//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26) with the part
+//! blocks the session keeps (CT-BND-27; [`crate::workspace`]). LB7.2's work
 //! sheets ([`crate::worksheet`]) are records too: `worksheet.save` writes one from a draft record, and `worksheet.load`
 //! places its piece roles again and writes it again, so a preview of the sheet goes stale (CT-LB2-03). KN5's stage 5
 //! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
@@ -90,6 +91,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+use c600_digest::sha256_hex;
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
 use c600_jumble::levels::{self, Base, Derived};
 use c600_jumble::q5::{identity4, transpose};
@@ -670,6 +672,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     run: Option<(u64, FrameStamp)>,
     /// The workspace records by name (KN5's stage 3).
     records: BTreeMap<String, WorkspaceRecord>,
+    /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
+    /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
+    blocks: BTreeMap<String, String>,
     /// The completed jobs of the rows that prepare a predicate, by job, while their writes stand: what a `FilterRef`
     /// names ([`crate::filter`]; draft). A replay rebuilds them.
     predicates: BTreeMap<u64, Predicate>,
@@ -737,6 +742,7 @@ impl<S: Store> CommandLayer<S> {
             records: BTreeMap::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
+            blocks: BTreeMap::new(),
             provenance: None,
             views: None,
             twists: None,
@@ -990,6 +996,10 @@ impl<S: Store> CommandLayer<S> {
         };
         if !agrees(&planned.transaction, stored) {
             return Err(broken("the replay does not reach the recorded action"));
+        }
+        // An action journals only the part blocks the session did not keep yet ([`Self::parts_to_keep`]).
+        if stored.blocks.iter().any(|block| self.blocks.contains_key(&sha256_hex(block.as_bytes()))) {
+            return Err(broken("the action keeps a part block the session keeps already"));
         }
         self.adopt(Adoption { transaction: stored.clone(), ..planned });
         Ok(())
@@ -1518,6 +1528,12 @@ impl<S: Store> CommandLayer<S> {
     /// The workspace records by name, each with its version and value (KN5's stage 3).
     pub fn records(&self) -> &BTreeMap<String, WorkspaceRecord> {
         &self.records
+    }
+
+    /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
+    /// CT-BND-27; draft): what the host's reader held for the blocks of the records written, kept with those writes.
+    pub fn blocks(&self) -> &BTreeMap<String, String> {
+        &self.blocks
     }
 
     /// The value record `name` holds, if any.
@@ -2072,7 +2088,7 @@ impl<S: Store> CommandLayer<S> {
         let Some(reader) = &self.provenance else {
             return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
         };
-        reader.admit(value.provenance.as_bytes())?;
+        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
         Ok(ResolvedDraft { source: draft.clone(), letters, reads: vec![RecordRead::of(name, record)] })
     }
 
@@ -2353,6 +2369,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -2367,7 +2384,8 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// Steps 9 and 10: writes the action and adopts it only when the store answers that it is durable.
-    fn transact(&mut self, adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
+    fn transact(&mut self, mut adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
+        adoption.transaction.blocks = self.parts_to_keep(&adoption.transaction);
         match self.store.transact(&adoption.transaction) {
             Fate::Durable => {
                 let receipt = self.adopt(adoption);
@@ -2381,6 +2399,26 @@ impl<S: Store> CommandLayer<S> {
                 Ok((None, Status::UnknownOutcome))
             }
         }
+    }
+
+    /// The part blocks a record write or a workspace row's completion keeps (CT-BND-27; draft): those the host's reader
+    /// holds for the blocks the action writes ([`Provenance::parts`]) that the session does not keep yet, in the order
+    /// of their digests. An undo or redo writes values whose parts were kept when they were first written.
+    fn parts_to_keep(&self, transaction: &Transaction) -> Vec<String> {
+        let (Some(reader), TransactionKind::Record | TransactionKind::Workspace) = (&self.provenance, transaction.kind)
+        else {
+            return Vec::new();
+        };
+        let mut new = BTreeMap::new();
+        for value in transaction.record.iter().chain(&transaction.records).filter_map(|write| write.value.as_ref()) {
+            for part in reader.parts(value.provenance.as_bytes()) {
+                let digest = sha256_hex(part.as_bytes());
+                if !self.blocks.contains_key(&digest) {
+                    new.insert(digest, part);
+                }
+            }
+        }
+        new.into_values().collect()
     }
 
     /// Step 10: applies a durable action, stores its durable receipt and returns it. Only an action that moves the
@@ -2409,6 +2447,10 @@ impl<S: Store> CommandLayer<S> {
             let record = self.records.entry(name.clone()).or_default();
             record.version += 1;
             record.value = value.clone();
+        }
+        // The part blocks it keeps stay for the session, an undo's included (CT-BND-27).
+        for block in &transaction.blocks {
+            self.blocks.entry(sha256_hex(block.as_bytes())).or_insert_with(|| block.clone());
         }
         // No undo reaches a workspace completion of a row whose undo class is not `workspace`, so an undo or redo of an
         // earlier write of one of its records would write over it. The actions that wrote one leave both stacks
@@ -2657,6 +2699,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let side = Side::Stay;
         match change {
@@ -2895,6 +2938,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -2955,6 +2999,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3023,6 +3068,7 @@ impl<S: Store> CommandLayer<S> {
             records,
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
@@ -3092,6 +3138,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3289,6 +3336,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: Some(entry.record.clone()),
+            blocks: Vec::new(),
         };
         let (identity, record) = (entry.identity, entry.record);
         let change = Change::Crossing { before: self.head, after: order, identity, record };
@@ -3455,6 +3503,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: Some(exit.record.clone()),
+            blocks: Vec::new(),
         };
         let point = ExitPoint { poses: head.clone(), retained: self.current.clone(), record: exit.record };
         let change = Change::Exit { before: self.head, after: order, point: Box::new(point) };
@@ -3599,6 +3648,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: Some(rotation),
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Pose { before: self.head, after: order };
         let tree = Tree::Push { node: Some((order, node)), change };

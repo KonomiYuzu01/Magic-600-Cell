@@ -12,6 +12,16 @@
 //! adapter ([`crate::CommandLayer::set_provenance`]), which reads a block when a record is written (PS1.16) and decides
 //! whether a record's word may be previewed in the session (KN5.26; BND.84, BND.85). Without an adapter the layer
 //! refuses both.
+//!
+//! A word built from parts cites its parts' blocks by content digest (BND.24), and admission reads every part,
+//! recursively; a part whose block nobody holds reads unknown and is refused (BND.21, BND.85). So that a restored
+//! workspace keeps a word's recursive parts (CT-BND-27; draft), the layer keeps the part blocks the reader holds for a
+//! block it writes ([`Provenance::parts`]) in the session, by the SHA-256 of their bytes: the action that writes the
+//! record journals those the session did not keep yet, a replay keeps them again, and nothing removes them, an undo
+//! included, since a kept block is only content and grants nothing. At admission the layer gives them back to the
+//! reader ([`Provenance::admit_kept`]).
+
+use std::collections::BTreeMap;
 
 use c600_kernel::json::{self, Value};
 
@@ -158,4 +168,22 @@ pub trait Provenance: Send + Sync {
     /// refused at admission with its error, `LG3:capability.not_granted` or
     /// `PS1:capability.provenance_incompatible`.
     fn admit(&self, block: &[u8]) -> Result<(), Error>;
+
+    /// The blocks of `block`'s parts, recursively, that the host holds, each as its text (BND.24, BND.85). The layer
+    /// keeps those it does not keep yet with the action that writes a record with `block`, durably, and gives them back
+    /// at admission ([`Provenance::admit_kept`]), so a restored workspace keeps a word's recursive parts (CT-BND-27;
+    /// draft). Only text is kept, so a part block that is not UTF-8 stays with the host; the order does not matter, and
+    /// the walk must end on a cycle. The kept blocks count toward the size of the action's journal record, so a journal
+    /// that bounds its records refuses an action whose parts exceed the bound (`c600-session`'s journal, with
+    /// `PS1:resource_limit.record_too_large`). The default holds none.
+    fn parts(&self, _block: &[u8]) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// [`Provenance::admit`] with the part blocks the session keeps, by the SHA-256 hex of their bytes: a part that the
+    /// host does not hold itself is read from `kept`, and one that neither holds reads unknown (BND.21, BND.85). The
+    /// layer calls this one at admission; the default ignores `kept`.
+    fn admit_kept(&self, block: &[u8], _kept: &BTreeMap<String, String>) -> Result<(), Error> {
+        self.admit(block)
+    }
 }
