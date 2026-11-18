@@ -164,7 +164,8 @@ def build(godot: str | None) -> Path:
     print(f"core: {native}", flush=True)
     prepare_host.run_logged(core_command(native), ROOT, env, 1200, logs / "core")
     print("host: cargo build --release -p c600-shell-host", flush=True)
-    prepare_host.run_logged(host_command(), ROOT, env, 1800, logs / "host")
+    # From renderer/bridge, so that cargo reads its .cargo/config.toml: the vendored crates, with no network.
+    prepare_host.run_logged(host_command(), BRIDGE, env, 1800, logs / "host")
     shutil.copy2(BRIDGE / "target" / "release" / "c600_shell_host.dll", host / "c600_shell_host.dll")
     build_shell.build(str(executable), out / "shell")
     print(f"assets: {copy_assets(out / ASSETS)} files", flush=True)
