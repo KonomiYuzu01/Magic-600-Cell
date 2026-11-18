@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-18] decision | Route B for the confirmed present, accepted for now
+The owner accepted route B for now: the renderer core presents the gated workload in its own composition swap chain and DirectComposition layer beneath Godot's per-pixel transparent window, so it can confirm presented frames (RM.26, ONE.41). C9 may build on it now. It becomes final, with ADR-R01.2's revision under PHS.52, when three owner-machine checks pass (input through the transparent window, the UI-to-3D skew, three cold probe runs), and a failing check returns it to the owner ([record](decisions/owner-decisions-2026-11-18-route-b.md)).
+
 ## [2026-11-18] decision | Word keys use trace-key/1; a receipt is not evidence
 Recorded the owner's two card answers of 17 November 2026 in [owner-decisions-2026-11-17-c5-evidence](decisions/owner-decisions-2026-11-17-c5-evidence.md): C5's word keys use LB1.10's draft `trace-key/1` for 600-cell-Full words, so CT-LB1-06 proceeds on its Full half; and a receipt does not count as evidence, so nothing changes in code or frozen text.
 
