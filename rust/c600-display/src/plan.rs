@@ -314,7 +314,8 @@ pub enum StageKind {
     Fragment,
 }
 
-/// The user-stage row (RPI.68 to RPI.80). The stage checker is not built here, so it is always unsupported.
+/// The user-stage row (RPI.68 to RPI.80). It is always unsupported here: LP2's checker admits a stage
+/// ([`crate::stage::take_up`]), but compiling, bounding and drawing it need a backend (C9).
 #[derive(Clone, Debug, PartialEq)]
 pub struct UserStageInput {
     pub kind: StageKind,

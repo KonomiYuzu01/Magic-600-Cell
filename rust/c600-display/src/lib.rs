@@ -8,10 +8,12 @@
 //!   KN5.21 locally; nothing depends on `c600-command`.
 //! - **Picks and stamps** ([`pick`], [`host`]): RM.10, RM.24, RPI.24 and RPI.25. A pick resolves by instance ID through
 //!   the installed source map, never through a chart inverse.
-//! - **Charts and stages** ([`exact`], [`chart`], [`reference`], [`stage`]): exact chart-property checks at exact poses
-//!   and `admit_chart` (RPI.28 to RPI.30, RPI.34, RPI.48, LB4.2), the binary32 CPU reference evaluation with its
-//!   coverage and reproducibility key (RPI.37, RPI.56), and the headless part of the user-stage contract: declared
-//!   outputs, composition order and presented-preview identity (RPI.68, RPI.69, RPI.75, RPI.76).
+//! - **Charts and stages** ([`exact`], [`chart`], [`reference`], [`stage`], [`raster`]): exact chart-property checks at
+//!   exact poses and `admit_chart` (RPI.28 to RPI.30, RPI.34, RPI.48, LB4.2), the binary32 CPU reference evaluation
+//!   with its coverage and reproducibility key (RPI.37, RPI.56), and the headless part of the user-stage contract: the
+//!   take-up of stages that LP2's stage checker admits, declared outputs, composition order and presented-preview
+//!   identity, and RPI.72's raster bound with the frame stop, the quarantine and the frame reports (RPI.68, RPI.69,
+//!   RPI.72, RPI.75 to RPI.77, RM.41).
 //!
 //! [`produce`] builds the 600-cell-Full producers and fixture contexts; [`jumble`] builds the jumbling producers
 //! (posed stickers, certified transforms, certified overlays, the seam table and the slot projection) from M5's kernel,
@@ -41,8 +43,8 @@
 //! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full. On the jumbling puzzle
 //!   the posed row, the certified transform, the certified overlay and the projection chain are produced from M5's
 //!   states ([`jumble`]); of the J07 to J12 payloads only J08's seam table is read from the engine, and the rest
-//!   are still checked only as fixtures. User stages (F05, F26) stay
-//!   unsupported: no stage module reaches the host, and [`stage`] checks fixture descriptions only.
+//!   are still checked only as fixtures. User stages (F05, F26) stay unsupported: no user stage reaches the host's
+//!   publications or frames, and [`stage`] takes up the stages that LP2's checker admits beside the host.
 //! - RPI.15, J02 (render/1 section 3): a posed row is validated only for a jumbling identity and a pose-level subject
 //!   (a Jumble-on revision or a derived state at level poses): 177120 pose indices inside the table, finite row-major
 //!   d x d matrices with the identity at pose 0, and one lattice entry per pose, -1 or a K+ index below 7200
@@ -94,8 +96,9 @@
 //!   [`validate::Context::checks`] at every surveyed exact pose and region; otherwise it is `not_established`. RPI.36:
 //!   a plan's precision is an opaque name.
 //! - RM.11: the counted fields are [`validate::COUNTED`]; the stage, fragment, frame, view-vertex and adapter fields
-//!   need the stage module checker (RPI.71), the weight table or a backend. `overlay_items` counts overlay objects,
-//!   certificate pieces and two points per certificate pair. RPI.50: every ceiling here is a declared fixture value.
+//!   need user stages in publications (F05, F26), RM.38's weight table or a backend. `overlay_items` counts overlay
+//!   objects, certificate pieces and two points per certificate pair. RPI.50: every ceiling here is a declared fixture
+//!   value.
 //! - RM.13, LI.16: the canonical output bytes are the canonical JSON text of the publication plus its array and source
 //!   bytes; only a scheduled publication is charged against an output allowance.
 //! - KN5.21: a request digest is the SHA-256 of the canonical publication; a scheduled request's digest names its view
@@ -160,6 +163,16 @@
 //!   declaration, pose (an exact pose's identity, or an approximate pose's declared label, never its float bits), the
 //!   vertices' digest, the rule's bits and the exactly decided missing vertices. Approximate values are compared with
 //!   the exact image under the declared rule, never bitwise.
+//! - RPI.68, RPI.69: the display takes a stage up through LP2's stage checker. [`stage::take_up`] turns a stage that
+//!   `c600_check::admit_stage` admitted with no finding into a [`stage::CheckedStage`]; otherwise it returns every
+//!   finding in the checker's order with the checker's code, in that code's registered form (`refusal` for
+//!   `LG4:input.ir_version_unsupported` and the checker's two LG3 capability codes, which `admit_stage` does not give
+//!   today, `diagnostic` for the others), naming its module, function, path and types. [`stage::check_outputs`] stays
+//!   public: `c600-repr`'s chart path still makes a checked stage from a description of its own, until it reads
+//!   admitted stages.
+//! - RPI.78: a stage's digest is the SHA-256 of its module name, its entry name and the checked definition's Rust
+//!   debug text ([`stage::describe`]). It stands in for a digest of the IR's canonical encoding, which waits for the IR
+//!   freeze, and it never depends on the host's limits.
 //! - RPI.68, RPI.69, RPI.75: a stage description ([`stage::StageDescription`]) declares its kind, digest and outputs.
 //!   A vertex stage declares exactly a position and a coverage code, a fragment stage exactly opaque RGB. An alpha,
 //!   discard, depth, stencil or coverage output, a repeated or missing output and a digest that is not 64 lowercase
@@ -167,18 +180,35 @@
 //! - RPI.76, RM.26, ONE.41: a frame draws the view's chain, then a preview by the chain that draws it, then each host
 //!   status once, in the order preview, stale, protection breakthrough, selection. Only a preview drawn by the built-in
 //!   chain is in the presented report and can bind a commit token; drawn through a user stage it is an extra display.
+//! - RPI.72: [`raster`] is step 3's formula on the CPU, over triangles already placed on the surface in pixels and
+//!   classified against the clip volume. A rectangle is rounded outward, clipped and then widened to whole quads, which
+//!   are not clipped again; a rectangle with no width or height counts zero, since it bounds a triangle of no area,
+//!   which covers no pixel; a non-finite coordinate is an undefined vertex; a line's quad has no caps, and a point or a
+//!   line of zero length has no expansion here.
+//! - RPI.72, RPI.77, RM.41: [`stage::Quarantine`] keeps one session's quarantined digests and frame reports, and the
+//!   host does not call it yet. RM.41 reports "each frame that stopped a user stage". A frame over its allowance stops,
+//!   quarantines its chain's digests and gives one report, whose `EV3:resource_limit.stage_work_exceeded` names the
+//!   digests in one entry, comma-separated in chain order. A later frame of a quarantined chain runs the fallback, so
+//!   it runs no user stage and stops none, and gets no report. A device fault quarantines with no report, because
+//!   RM.41's report needs an error and the registry names no code for a device fault. A publication naming a
+//!   quarantined digest ends with `EV3:input.stage_quarantined` in the form its caller names: a refusal before
+//!   acceptance, a stop after it.
 //!
 //! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change) and the
 //! ceilings named above that need a weight table or a backend. For the jumbling puzzle: J01's shrink anchors, J06's
 //! backend readback, plans for the J07 to J12 rows and producers for their payloads other than the seam table (domain
 //! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, and a comparison
 //! of the posed arrays with a J1 stage after the start.
-//! For user stages: the stage module's parser and checker (RPI.69's body rules, RPI.70's operation tiers and RPI.71's
-//! costs need the stage language and RM.38's weight table), and HLSL compilation (RPI.78), the raster bound (RPI.72),
-//! quarantine (RPI.77), frame reports (RM.41) and composition on a device, which need a backend; no user stage reaches
-//! the host, so F05 and F26 stay unsupported and CT-RPI-32 runs only its headless part. For charts: any chart or
-//! property outside the drafted repertoire (RPI.34 stays open), the GPU agreement check (RPI.35) and a production
-//! precision rule (RPI.36 stays open). CT-RPI-19's headless Linux leg is not run here.
+//! For user stages, waiting for C9's backend: HLSL compilation and its compile record (RPI.78); the vertex evaluation
+//! into a charged buffer, the projection and clip classification that place [`raster`]'s triangles, the expansion of
+//! points and of lines of zero length, U on a device and the skipping of a stopped frame's work (RPI.72; CT-RM-10,
+//! CT-RPI-31); injecting and detecting a device fault and, with CT-RPI-34, whether a frame with a device fault is
+//! reported (RPI.77, RM.41); composition on a device; and the host's support for F05 and F26, with
+//! [`stage::Quarantine`] wired into its publications and frames and RM.14's `read_frame_reports` on the backend. Until
+//! then CT-RPI-32 and CT-RM-09's rows 3 to 6, 8 and 10 run only their headless parts, under declared fixture weights in
+//! place of RM.38's measured table (RPI.79). For charts: any chart or property outside the drafted repertoire (RPI.34
+//! stays open), the GPU agreement check (RPI.35) and a production precision rule (RPI.36 stays open). CT-RPI-19's
+//! headless Linux leg is not run here.
 
 #![forbid(unsafe_code)]
 
@@ -193,6 +223,7 @@ pub mod jumble;
 pub mod pick;
 pub mod plan;
 pub mod produce;
+pub mod raster;
 pub mod receipt;
 pub mod reference;
 pub mod source;

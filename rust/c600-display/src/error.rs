@@ -28,6 +28,12 @@ pub mod codes {
     pub const APPROXIMATE_PROPERTY_INPUT: &str = "LB4:type.approximate_property_input";
     /// LG2.24, RPI.69: a stage outside the stage rules; its registered form is `diagnostic`.
     pub const STAGE_RULE_VIOLATION: &str = "LG2:type.stage_rule_violation";
+    /// RPI.77, RM.20: a publication names a stage digest quarantined in this session; a refusal before acceptance and
+    /// a stop after it.
+    pub const STAGE_QUARANTINED: &str = "EV3:input.stage_quarantined";
+    /// RPI.72, RPI.77, RM.41: a frame with a user stage had a raster bound over its allowance; its registered form is
+    /// `status`, in the frame report.
+    pub const STAGE_WORK_EXCEEDED: &str = "EV3:resource_limit.stage_work_exceeded";
     /// KN1.8, KN1.10, RPI.23: a slot projection asked for a subject at a level it does not hold. A digest of one level
     /// never compares with a digest of another and nothing lifts labels into poses, so the slot is missing with this
     /// reason, distinct from `off_lattice` (chapter 13: "distinct from partial off-lattice data").

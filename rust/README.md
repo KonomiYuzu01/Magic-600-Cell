@@ -1912,7 +1912,10 @@ run or not applicable is no pass (PHS.63).
   isometry and homomorphism each decided by its own check on `c600_jumble::polytope` (C6), and `admit_chart`, which
   admits a chart only on established check results and refuses it on a refutation with `EV3:evidence.chart_check_failed`
   (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact fields (`reference.rs`); and the
-  stage output rules and their composition order (`stage.rs`).
+  stage output rules and their composition order (`stage.rs`). C2's stage take-up reads a stage's description from a
+  stage that LP2's checker admits (`c600_check::admit_stage`, pull request 241) and returns each refusal with the
+  checker's code (`stage::take_up`); it adds RPI.72's raster bound on the CPU over placed triangles (`raster.rs`) and
+  the frame stop, the session's quarantine and RM.41's frame reports beside the host (`stage::Quarantine`).
 - Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
   CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
   Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
@@ -1920,7 +1923,11 @@ run or not applicable is no pass (PHS.63).
   the CPU reference (its device version, CT-RPI-33, waits for the renderer), CT-RPI-19's Windows leg, CT-RPI-22's
   chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32. C6 adds CT-LB4-01,
   whole over the drafted repertoire (`ct_lb4_01.rs`): the domain with its boundary cases, and injectivity, embedding,
-  isometry and homomorphism each decided by its own check, for stereographic and projective charts.
+  isometry and homomorphism each decided by its own check, for stereographic and projective charts. C2's stage take-up
+  runs CT-RPI-32's headless part on stages that LP2's checker admits, each refusal with the checker's code, and the
+  headless parts of CT-RM-09's rows 3 to 6, 8 and 10 (`ct_rm_09.rs`): spread and overlapping plans, samples and the
+  ID pass, a near-plane crossing, a line-only layout, a later-frame stop that keeps its receipt, and a chain's stages
+  quarantined together.
 - Display drafts: the list in the crate documentation, among them the validation order, string dependency keys, set
   digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error after
   acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the drafted chart
@@ -1930,16 +1937,20 @@ run or not applicable is no pass (PHS.63).
   refused, never rounded; RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own
   precision rule (1e-4 absolute, with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only,
   and the stage output rules as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is
-  `not_established` now holds only when the validator's context carries no check result for it (RPI.48).
-- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the stage
-  module's parser and checker (RPI.69 to RPI.71, RPI.77, RM.38's weight table) and a backend for HLSL compilation, the
-  raster bound and frame reports (RPI.72, RPI.78, RM.41); an exact checker of isometry and homomorphism for the
+  `not_established` now holds only when the validator's context carries no check result for it (RPI.48). C2's stage
+  take-up adds a stage digest over the checked definition's debug text in place of the IR's canonical encoding
+  (RPI.78), the checker's codes in their registered forms, the raster bound's pixel conventions (rounded outward,
+  clipped, then widened to quads; a line's quad has no caps), one comma-separated `digests` entry in
+  `stage_work_exceeded`'s context, and no frame report for a device fault or a later frame of a quarantined chain.
+- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs a backend for
+  HLSL compilation and composition on a device (RPI.78; C9); an exact checker of isometry and homomorphism for the
   stereographic chart, which is not a projective map (both stay `not_established`); charts and properties outside the
   drafted repertoire, the GPU agreement check (RPI.35) and a production precision rule (RPI.36). CT-RPI-08's jumbling
   rows and the posed producer wait for M5; a decoder from the interpreter's values (the IR draft has list types since
-  pull request 176); F05 and F26 stay unsupported until the stage checker exists; CT-RM-09's rows 3 to 6, 8 and 10
-  (the raster bound, frame-report stops and device-fault quarantine) need a stage checker or a device; RM.38's weight
-  table, device loss and `display_unsupported` belong to the renderer and its backend.
+  pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired into the host, until a backend
+  compiles and bounds user stages; CT-RM-09's rows 3 to 6, 8 and 10 wait for C9 for their device parts: the vertex
+  evaluation and projection, U on a device and the skipped work (CT-RM-10, CT-RPI-31), and fault injection
+  (CT-RPI-34); RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 

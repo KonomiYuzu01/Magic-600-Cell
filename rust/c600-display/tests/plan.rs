@@ -251,7 +251,7 @@ fn ct_rpi_08_f05_f26_user_stages_are_unsupported() {
             digest: sha256_hex(b"stage"),
             compile_record: sha256_hex(b"record"),
         }));
-        let error = validate(&publication, &context()).expect_err("no stage checker");
+        let error = validate(&publication, &context()).expect_err("user stages are unsupported");
         assert_eq!(error.code, codes::UNSUPPORTED);
         assert_eq!(error.context["feature"], row);
     }
