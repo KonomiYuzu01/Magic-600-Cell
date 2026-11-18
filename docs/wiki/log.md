@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-18] decision | Word keys use trace-key/1; a receipt is not evidence
+Recorded the owner's two card answers of 17 November 2026 in [owner-decisions-2026-11-17-c5-evidence](decisions/owner-decisions-2026-11-17-c5-evidence.md): C5's word keys use LB1.10's draft `trace-key/1` for 600-cell-Full words, so CT-LB1-06 proceeds on its Full half; and a receipt does not count as evidence, so nothing changes in code or frozen text.
+
 ## [2026-11-18] update | Toolchain: the archive-zip-hashed method and the DXC pin
 `tools/toolchain/bootstrap.py` gains the Windows-only method `archive-zip-hashed`, which downloads one https zip under `download-hashed`'s host and redirect rules, checks its pinned size and SHA-256 before opening it, refuses unsafe members (absolute or parent paths, drive letters, links, non-regular or encrypted members, case-insensitive duplicates) and moves only a checked staging tree into its own directory below `tools/`. The allowlist pins DirectX Shader Compiler v1.9.2609 (`dxc_2026_09_29.zip`, profile `renderer-spike`, hosts `github.com` and `release-assets.githubusercontent.com`) for LP3's C9 user stages; it installs only after the owner approves this installer and lockfile revision.
 
