@@ -75,6 +75,8 @@ fn form(ty: &str, value: &Value) -> Option<bool> {
         "RevisionRef" => revision(value),
         "FilterRef" => crate::filter::filter_ref(value).is_some(),
         "FilterPreviewRef" => crate::filter::filter_preview_ref(value).is_some(),
+        "ViewId" => crate::view::view_id(value),
+        "ViewSourceRef" => crate::view::ViewSourceRef::from_json(value).is_some(),
         "CanonicalObjectRefs" => value.as_array().is_some_and(|members| members.iter().all(piece)),
         _ => {
             let words = choice(ty)?;
@@ -100,6 +102,9 @@ pub(crate) fn check(row: &Row, args: &BTreeMap<String, Value>, current: &Revisio
 /// - `Nat` is an integer of at least 0, `Text` a string, a choice of words one of its words, `CellId` an integer from
 ///   0 to 599, `CellIdPair` a list of two `CellId`s, and `RevisionRef` KN0.2's nine-key object, its text fields text
 ///   and its counters naturals. An optional type `T?` has `T`'s form when it is given.
+/// - `ViewId` is a nonempty text and `ViewSourceRef` `{"built_in": Text}` or `{"overlay": {"row": Text, "module":
+///   Text, "arguments": {..}}}` ([`crate::view::ViewSourceRef`]; draft). What an overlay source names is checked after
+///   the forms.
 /// - `FilterRef` is a result reference `{"job": Nat, "digest": Text}` and `FilterPreviewRef` `{"epoch": Nat, "job":
 ///   Nat}`, a job and the epoch it ran in ([`crate::filter`]; draft). What they name is checked after the forms.
 /// - `CanonicalObjectRefs` is a list of pieces or positions, as `set.save`'s `kind` names them, each an integer from 0

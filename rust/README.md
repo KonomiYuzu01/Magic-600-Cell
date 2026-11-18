@@ -1913,9 +1913,31 @@ run or not applicable is no pass (PHS.63).
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
   budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
-- KN5 not built yet: a durable home for a word's part blocks (a reopen restores each record's own block, and a host
-  that lost the parts' blocks refuses the word, CT-BND-27), a session profile (every session the layer serves is a
-  solving session, BND.14 and BND.15), ruling 6's `file` overlay without a granted file capability, L12 to L14, L16
+- EV3.2's view rows `view.open` and `view.close` (RPI.81 to RPI.83; the drafts are in `c600-command/src/view.rs`). The
+  layer admits them, and the host's view model holds the views, Global and Local and RPI.82's budget: the `Views`
+  trait, given with `CommandLayer::set_views`, which LP3's host implements with `c600-view`'s `ViewModel`. Without one
+  both rows are `KN5:input.row_not_built`, as before. Before the host is called: the argument forms (a `ViewId` is a
+  nonempty text; a `ViewSourceRef` is `{"built_in": Text}` or `{"overlay": {"row", "module", "arguments"}}`, the module
+  a SHA-256 in lowercase hex), an overlay source's row, which must be an overlay row of kind `view` with arguments that
+  fit it (`KN5:input.argument_form`), and the caller: a run not inside a command the solver invoked, as a
+  recomputation started by a revision change is not, is `LG3:capability.not_granted`, so a view cannot open views. The
+  host's refusals (`EV3:input.view_id_in_use`, `EV3:input.view_not_closable`, `EV3:resource_limit.display_plan_ceiling`)
+  reach the receipt. An admitted open or close is `accepted` with no job, since KN5.21 has no completion kind for either
+  row; a retry gets the stored receipt and the host sees one call. Tests: `c600-command/tests/view_rows.rs` (CT-RPI-36's
+  layer half and CT-EV3-07's view half on the layer).
+- The session's durable home for a word's part blocks (BND.24, BND.85, CT-BND-27; draft). The host's reader has two
+  more methods, with defaults that keep a reader without them working as before: `Provenance::parts(block)`, the
+  blocks of the block's recursive parts that the host holds, and `Provenance::admit_kept(block, kept)`, admission with
+  the part blocks the session keeps. A record write (`workspace.set` and the work-sheet rows) and a workspace row's
+  completion keep the part blocks the reader holds for the blocks they write, each by the SHA-256 of its bytes. The
+  action journals those the session did not keep yet as `blocks`, a draft field of the journal form that only a record
+  write or a workspace completion carries. A replay keeps them again, and nothing removes them, an undo included;
+  `CommandLayer::blocks` lists them. At `operation.preview` of a record draft the layer gives them back to the reader,
+  so a restored word's recursive parts are read after a restart with a reader that holds nothing. Tests:
+  `c600-command/tests/part_blocks.rs` and `c600-session/tests/part_blocks.rs` (CT-BND-27 on the journal after a power
+  loss, with `c600-run`'s FP.17 blocks and the boundary's preview admission as the reader).
+- KN5 not built yet: a session profile (every session the layer serves is a solving session, BND.14 and BND.15),
+  ruling 6's `file` overlay without a granted file capability, L12 to L14, L16
   and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for
   which `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the shell's and
   LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session

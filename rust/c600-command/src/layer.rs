@@ -32,7 +32,8 @@
 //!
 //! KN5's stage 3, the workspace store ([`crate::workspace`]): `workspace.set` ([`RECORD_ROW`]) writes one record, and
 //! a draft `{"record": name}` previews the letters the record holds, with the record's content digest and version in
-//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26). LB7.2's work
+//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26) with the part
+//! blocks the session keeps (CT-BND-27; [`crate::workspace`]). LB7.2's work
 //! sheets ([`crate::worksheet`]) are records too: `worksheet.save` writes one from a draft record, and `worksheet.load`
 //! places its piece roles again and writes it again, so a preview of the sheet goes stale (CT-LB2-03). KN5's stage 5
 //! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
@@ -90,6 +91,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+use c600_digest::sha256_hex;
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
 use c600_jumble::levels::{self, Base, Derived};
 use c600_jumble::q5::{identity4, transpose};
@@ -117,6 +119,7 @@ use crate::store::{
 use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
+use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 use crate::worksheet::{Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
@@ -669,6 +672,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     run: Option<(u64, FrameStamp)>,
     /// The workspace records by name (KN5's stage 3).
     records: BTreeMap<String, WorkspaceRecord>,
+    /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
+    /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
+    blocks: BTreeMap<String, String>,
     /// The completed jobs of the rows that prepare a predicate, by job, while their writes stand: what a `FilterRef`
     /// names ([`crate::filter`]; draft). A replay rebuilds them.
     predicates: BTreeMap<u64, Predicate>,
@@ -677,6 +683,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     filters: BTreeMap<u64, FilterPreview>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
     provenance: Option<Box<dyn Provenance>>,
+    /// The host's view model (EV3.2, RPI.83). Without one, `view.open` and `view.close` are refused.
+    views: Option<Box<dyn Views>>,
     /// The twist menu the host pinned (KN3.8). Without one, `twist.apply` and `jumble.on` are refused.
     twists: Option<Twists>,
     /// The jumbling engine's value at the head while Jumble is on (draft; [`crate::jumble`]). `None` with Jumble off.
@@ -734,7 +742,9 @@ impl<S: Store> CommandLayer<S> {
             records: BTreeMap::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
+            blocks: BTreeMap::new(),
             provenance: None,
+            views: None,
             twists: None,
             jumbled: None,
             history: BTreeMap::new(),
@@ -986,6 +996,10 @@ impl<S: Store> CommandLayer<S> {
         };
         if !agrees(&planned.transaction, stored) {
             return Err(broken("the replay does not reach the recorded action"));
+        }
+        // An action journals only the part blocks the session did not keep yet ([`Self::parts_to_keep`]).
+        if stored.blocks.iter().any(|block| self.blocks.contains_key(&sha256_hex(block.as_bytes()))) {
+            return Err(broken("the action keeps a part block the session keeps already"));
         }
         self.adopt(Adoption { transaction: stored.clone(), ..planned });
         Ok(())
@@ -1482,6 +1496,13 @@ impl<S: Store> CommandLayer<S> {
         self.generation += 1;
     }
 
+    /// Gives the layer the host's view model (EV3.2, RPI.83; [`crate::view`]). Without one, `view.open` and
+    /// `view.close` are refused with `KN5:input.row_not_built`.
+    pub fn set_views(&mut self, views: Box<dyn Views>) {
+        self.views = Some(views);
+        self.generation += 1;
+    }
+
     /// Pins the twist menu that `twist.apply` resolves its exact requests against and that `jumble.on` enters under
     /// (KN3.8; draft), with the exact model `context` it is read in, which must be the session's model
     /// (`KN1:input.identity_mismatch`). A pin replaces the one before; with Jumble on, only by a menu with the
@@ -1507,6 +1528,12 @@ impl<S: Store> CommandLayer<S> {
     /// The workspace records by name, each with its version and value (KN5's stage 3).
     pub fn records(&self) -> &BTreeMap<String, WorkspaceRecord> {
         &self.records
+    }
+
+    /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
+    /// CT-BND-27; draft): what the host's reader held for the blocks of the records written, kept with those writes.
+    pub fn blocks(&self) -> &BTreeMap<String, String> {
+        &self.blocks
     }
 
     /// The value record `name` holds, if any.
@@ -1752,6 +1779,10 @@ impl<S: Store> CommandLayer<S> {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's provenance reader", row.id)))
                 }
             },
+            VIEW_OPEN_ROW | VIEW_CLOSE_ROW => match self.views {
+                Some(_) => Ok(()),
+                None => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id))),
+            },
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
     }
@@ -1944,6 +1975,7 @@ impl<S: Store> CommandLayer<S> {
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
+            VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
                 self.check_filter_refs(&row, args)?;
@@ -1958,6 +1990,55 @@ impl<S: Store> CommandLayer<S> {
     fn next_job(&mut self) -> u64 {
         self.jobs_issued += 1;
         self.jobs_issued
+    }
+
+    // ----- view.open, view.close -----
+
+    /// `view.open {view, source}` and `view.close {view}` (EV3.2, RPI.83; [`crate::view`]). Refused, calling no host,
+    /// in this order: no view model (`KN5:input.row_not_built`); the argument forms, and an overlay source that does
+    /// not name an overlay row of kind `view` or whose arguments do not fit it (`KN5:input.argument_form`), name a
+    /// revision that is not current or a `FilterRef` that does not resolve (that row's own refusals); a run not inside
+    /// a command the solver invoked (`LG3:capability.not_granted`). Then the host's view model answers; an admitted
+    /// open or close is `accepted` with no job, the layer's final answer for either row.
+    fn view_row(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        row: &Row,
+        args: &BTreeMap<String, Value>,
+    ) -> Result<(Option<u64>, Status), Error> {
+        if self.views.is_none() {
+            return refused(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id));
+        }
+        forms::check_forms(row, args)?;
+        let view = args.get("view").and_then(Value::as_str).unwrap_or_default();
+        let source = match args.get("source").and_then(ViewSourceRef::from_json) {
+            Some(source) if row.id == VIEW_OPEN_ROW => Some(source),
+            _ => None,
+        };
+        if let Some(ViewSourceRef::Overlay { row: name, arguments, .. }) = &source {
+            let Some(overlay) = self.table.row(name).filter(|r| r.overlay.is_some() && r.kind == Kind::View) else {
+                return refused(code::ARGUMENT_FORM, format!("`{name}` is not an overlay row of kind `view`"));
+            };
+            if !forms::names_fit(overlay, arguments.keys().map(String::as_str)) {
+                return refused(code::ARGUMENT_FORM, format!("`{name}` takes {:?}", overlay.arguments));
+            }
+            forms::check(overlay, arguments, &self.revision)?;
+            self.check_filter_refs(overlay, arguments)?;
+        }
+        if let Caller::Runtime { run } = caller {
+            if !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (RPI.83)");
+                return refused(code::NOT_GRANTED, detail);
+            }
+        }
+        let views = self.views.as_mut().expect("checked above");
+        let command = invocation.command.as_str();
+        match &source {
+            Some(source) => views.open(command, view, source)?,
+            None => views.close(command, view)?,
+        }
+        Ok((None, Status::Accepted))
     }
 
     // ----- operation.preview -----
@@ -2007,7 +2088,7 @@ impl<S: Store> CommandLayer<S> {
         let Some(reader) = &self.provenance else {
             return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
         };
-        reader.admit(value.provenance.as_bytes())?;
+        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
         Ok(ResolvedDraft { source: draft.clone(), letters, reads: vec![RecordRead::of(name, record)] })
     }
 
@@ -2288,6 +2369,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -2302,7 +2384,8 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// Steps 9 and 10: writes the action and adopts it only when the store answers that it is durable.
-    fn transact(&mut self, adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
+    fn transact(&mut self, mut adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
+        adoption.transaction.blocks = self.parts_to_keep(&adoption.transaction);
         match self.store.transact(&adoption.transaction) {
             Fate::Durable => {
                 let receipt = self.adopt(adoption);
@@ -2316,6 +2399,26 @@ impl<S: Store> CommandLayer<S> {
                 Ok((None, Status::UnknownOutcome))
             }
         }
+    }
+
+    /// The part blocks a record write or a workspace row's completion keeps (CT-BND-27; draft): those the host's reader
+    /// holds for the blocks the action writes ([`Provenance::parts`]) that the session does not keep yet, in the order
+    /// of their digests. An undo or redo writes values whose parts were kept when they were first written.
+    fn parts_to_keep(&self, transaction: &Transaction) -> Vec<String> {
+        let (Some(reader), TransactionKind::Record | TransactionKind::Workspace) = (&self.provenance, transaction.kind)
+        else {
+            return Vec::new();
+        };
+        let mut new = BTreeMap::new();
+        for value in transaction.record.iter().chain(&transaction.records).filter_map(|write| write.value.as_ref()) {
+            for part in reader.parts(value.provenance.as_bytes()) {
+                let digest = sha256_hex(part.as_bytes());
+                if !self.blocks.contains_key(&digest) {
+                    new.insert(digest, part);
+                }
+            }
+        }
+        new.into_values().collect()
     }
 
     /// Step 10: applies a durable action, stores its durable receipt and returns it. Only an action that moves the
@@ -2344,6 +2447,10 @@ impl<S: Store> CommandLayer<S> {
             let record = self.records.entry(name.clone()).or_default();
             record.version += 1;
             record.value = value.clone();
+        }
+        // The part blocks it keeps stay for the session, an undo's included (CT-BND-27).
+        for block in &transaction.blocks {
+            self.blocks.entry(sha256_hex(block.as_bytes())).or_insert_with(|| block.clone());
         }
         // No undo reaches a workspace completion of a row whose undo class is not `workspace`, so an undo or redo of an
         // earlier write of one of its records would write over it. The actions that wrote one leave both stacks
@@ -2592,6 +2699,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let side = Side::Stay;
         match change {
@@ -2830,6 +2938,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -2890,6 +2999,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -2958,6 +3068,7 @@ impl<S: Store> CommandLayer<S> {
             records,
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
@@ -3027,6 +3138,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3224,6 +3336,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: Some(entry.record.clone()),
+            blocks: Vec::new(),
         };
         let (identity, record) = (entry.identity, entry.record);
         let change = Change::Crossing { before: self.head, after: order, identity, record };
@@ -3390,6 +3503,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: Some(exit.record.clone()),
+            blocks: Vec::new(),
         };
         let point = ExitPoint { poses: head.clone(), retained: self.current.clone(), record: exit.record };
         let change = Change::Exit { before: self.head, after: order, point: Box::new(point) };
@@ -3534,6 +3648,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: Some(rotation),
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Pose { before: self.head, after: order };
         let tree = Tree::Push { node: Some((order, node)), change };
