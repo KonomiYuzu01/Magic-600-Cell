@@ -12,6 +12,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
+use c600_command::filter::preview_ref;
 use c600_command::{
     code, draft_args, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames, JobOutput,
     MemoryStore, Overlay, Provenance, Receipt, RecordValue, ResultRef, Secret, Shell, Status, Table, Transaction,
@@ -79,6 +80,14 @@ fn preview_args(id: u64) -> Value {
 /// A `FilterRef`: the result reference of the job that prepared the predicate.
 fn filter_ref(job: u64, digest: &str) -> Value {
     json::object([("digest", text(digest)), ("job", Value::Int(job as i64))])
+}
+
+/// The job a `FilterPreviewRef` names.
+fn job_of(reference: &Value) -> u64 {
+    match reference.get("job") {
+        Some(Value::Int(job)) => *job as u64,
+        other => panic!("{other:?}"),
+    }
 }
 
 /// An output whose records each have the provenance block `block`.
@@ -174,8 +183,9 @@ impl Fixture {
         self.shell.invoke(&mut self.layer, PREVIEW, args).unwrap()
     }
 
-    /// A filter preview of `predicate`: its job completes with counts, and the layer keeps it under the job's ID.
-    fn preview(&mut self, predicate: Value) -> u64 {
+    /// A filter preview of `predicate`: its job completes with counts, and the layer keeps it under the job's ID. Its
+    /// `FilterPreviewRef` names the job and the current epoch.
+    fn preview(&mut self, predicate: Value) -> Value {
         let receipt = self.ask_preview(predicate);
         let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
         assert_eq!(self.layer.take_program_job().map(|taken| taken.job), Some(job));
@@ -187,13 +197,14 @@ impl Fixture {
             done.status,
             Status::Completed(Completion { kind: CompletionKind::Query, revision: before, result: Some(reference) })
         );
-        assert!(self.layer.filter_preview(job).is_some());
-        job
+        let reference = self.layer.filter_preview(job).expect("kept").reference();
+        assert_eq!(reference, preview_ref(job, self.layer.revision().epoch));
+        reference
     }
 
     /// `filter.apply` of filter preview `preview`, its job writing `payload` to the filtered record.
-    fn apply(&mut self, preview: u64, payload: Value) -> Receipt {
-        let receipt = self.shell.invoke(&mut self.layer, APPLY, apply_args(Value::Int(preview as i64))).unwrap();
+    fn apply(&mut self, preview: &Value, payload: Value) -> Receipt {
+        let receipt = self.shell.invoke(&mut self.layer, APPLY, apply_args(preview.clone())).unwrap();
         let Status::Running(job) = receipt.status else { return receipt };
         assert_eq!(self.layer.take_program_job().map(|taken| taken.job), Some(job));
         self.finish(job, output(Value::Null, &[(FILTERED, payload)]))
@@ -258,7 +269,7 @@ fn a_fresh_filter_preview_applies_without_a_word_preview_or_a_presentation() {
     let before = f.layer.revision().clone();
     let log = f.layer.store().log.len();
 
-    let done = f.apply(preview, letters(&[4, 5]));
+    let done = f.apply(&preview, letters(&[4, 5]));
     let Status::Completed(Completion { kind, revision, result }) = &done.status else { panic!("{:?}", done.status) };
     assert_eq!(*kind, CompletionKind::Workspace);
     let mut moved = before.clone();
@@ -271,7 +282,7 @@ fn a_fresh_filter_preview_applies_without_a_word_preview_or_a_presentation() {
     assert_eq!(f.layer.preview_state(waiting), shown);
 
     // The applied preview stays fresh: its filter did not read the record the apply wrote.
-    assert!(completed(&f.apply(preview, letters(&[6]))));
+    assert!(completed(&f.apply(&preview, letters(&[6]))));
 }
 
 /// The filter preview binds what KN0.9 names: the epoch, the model identity, the mode, the state revision and the
@@ -281,8 +292,9 @@ fn a_fresh_filter_preview_applies_without_a_word_preview_or_a_presentation() {
 fn a_filter_preview_binds_the_state_and_the_records_its_filter_read() {
     let mut f = fixture();
     let predicate = f.predicate(letters(&[1]));
-    let job = f.preview(predicate.clone());
-    let kept = f.layer.filter_preview(job).unwrap().clone();
+    let preview = f.preview(predicate.clone());
+    let kept = f.layer.filter_preview(job_of(&preview)).unwrap().clone();
+    assert_eq!(kept.reference(), preview);
     assert!(f.layer.filter_fresh(&kept));
     assert_eq!(kept.deps, f.layer.filter_deps(&kept.resolved.digest()));
     assert_eq!(kept.resolved.source, predicate);
@@ -303,7 +315,7 @@ fn an_unread_edit_leaves_the_filter_preview_fresh() {
     let predicate = f.predicate(letters(&[1]));
     let preview = f.preview(predicate);
     assert!(completed(&f.write("notes", letters(&[9]))));
-    assert!(completed(&f.apply(preview, letters(&[2]))));
+    assert!(completed(&f.apply(&preview, letters(&[2]))));
 }
 
 /// CT-LI-11, a state change: a commit makes the filter preview stale, and `filter.apply` is refused with
@@ -315,7 +327,7 @@ fn a_state_change_makes_the_filter_preview_stale() {
     let preview = f.preview(predicate);
     assert!(committed(&f.commit(&word(&[1]))));
     let before = f.fixed();
-    assert_eq!(f.refused(APPLY, apply_args(Value::Int(preview as i64))), code::STALE_FILTER_PREVIEW);
+    assert_eq!(f.refused(APPLY, apply_args(preview.clone())), code::STALE_FILTER_PREVIEW);
     assert_eq!(f.fixed(), before);
 }
 
@@ -334,15 +346,16 @@ fn a_change_to_a_record_the_filter_read_makes_it_stale() {
             assert!(completed(&f.write(PREDICATE, letters(&[1]))));
         }
         let before = f.fixed();
-        assert_eq!(f.refused(APPLY, apply_args(Value::Int(preview as i64))), code::STALE_FILTER_PREVIEW, "{rerun}");
+        assert_eq!(f.refused(APPLY, apply_args(preview.clone())), code::STALE_FILTER_PREVIEW, "{rerun}");
         assert_eq!(f.fixed(), before, "{rerun}");
         assert_eq!(f.ask_preview(predicate).status.code(), Some(code::NAMED_OBJECT_INVALID), "{rerun}");
     }
 }
 
 /// A `FilterPreviewRef` that names no filter preview the layer keeps is stale: an unknown job, the job of the
-/// predicate row and the job of `filter.apply` itself. One that is not a natural is refused with
-/// `KN5:input.argument_form` before the gate.
+/// predicate row, the job of `filter.apply` itself, and the filter preview's job with another epoch. One that is not
+/// `{"epoch": Nat, "job": Nat}`, the bare job ID among them, is refused with `KN5:input.argument_form` before the
+/// gate.
 #[test]
 fn a_missing_or_malformed_filter_preview_is_refused() {
     let mut f = fixture();
@@ -352,13 +365,28 @@ fn a_missing_or_malformed_filter_preview_is_refused() {
         other => panic!("{other:?}"),
     };
     let preview = f.preview(predicate);
-    let Status::Completed(_) = f.apply(preview, letters(&[2])).status else { panic!("not applied") };
+    let Status::Completed(_) = f.apply(&preview, letters(&[2])).status else { panic!("not applied") };
     let apply_job = f.layer.store().log.last().and_then(|t| t.job).unwrap();
     let before = f.fixed();
-    for named in [999, layer_job, apply_job as i64] {
-        assert_eq!(f.refused(APPLY, apply_args(Value::Int(named))), code::STALE_FILTER_PREVIEW, "{named}");
+    let (job, epoch) = (job_of(&preview), f.layer.revision().epoch);
+    for named in [preview_ref(999, epoch), preview_ref(layer_job as u64, epoch), preview_ref(apply_job, epoch)] {
+        let what = format!("{named:?}");
+        assert_eq!(f.refused(APPLY, apply_args(named)), code::STALE_FILTER_PREVIEW, "{what}");
     }
-    for malformed in [Value::Int(-1), text("1"), Value::Null, letters(&[1])] {
+    assert_eq!(f.refused(APPLY, apply_args(preview_ref(job, epoch ^ 1))), code::STALE_FILTER_PREVIEW);
+    let n = |value: u64| Value::Int(value as i64);
+    let malformed = [
+        n(job),
+        json::object([("epoch", n(epoch)), ("job", Value::Int(-1))]),
+        json::object([("epoch", Value::Int(-1)), ("job", n(job))]),
+        json::object([("job", n(job))]),
+        json::object([("epoch", n(epoch)), ("extra", Value::Null), ("job", n(job))]),
+        json::object([("epoch", text("1")), ("job", n(job))]),
+        text("1"),
+        Value::Null,
+        letters(&[1]),
+    ];
+    for malformed in malformed {
         let what = format!("{malformed:?}");
         assert_eq!(f.refused(APPLY, apply_args(malformed)), code::ARGUMENT_FORM, "{what}");
     }
@@ -372,7 +400,7 @@ fn a_filter_preview_that_goes_stale_while_the_apply_runs_fails_it() {
     let mut f = fixture();
     let predicate = f.predicate(letters(&[1]));
     let preview = f.preview(predicate);
-    let job = f.start(APPLY, apply_args(Value::Int(preview as i64)));
+    let job = f.start(APPLY, apply_args(preview.clone()));
     assert!(completed(&f.write(PREDICATE, letters(&[2]))));
     let before = f.fixed();
     let done = f.finish(job, output(Value::Null, &[(FILTERED, letters(&[3]))]));
@@ -394,7 +422,7 @@ fn a_filter_ref_names_a_predicate_whose_writes_stand() {
         other => panic!("{other:?}"),
     };
     let preview = f.preview(predicate.clone());
-    for named in [filter_ref(999, &digest), filter_ref(job, "00"), filter_ref(preview, &digest)] {
+    for named in [filter_ref(999, &digest), filter_ref(job, "00"), filter_ref(job_of(&preview), &digest)] {
         let what = format!("{named:?}");
         assert_eq!(f.ask_preview(named).status.code(), Some(code::NAMED_OBJECT_INVALID), "{what}");
     }
@@ -428,12 +456,15 @@ fn a_predicate_written_over_while_its_preview_runs_keeps_no_filter_preview() {
     assert!(matches!(done.status, Status::Completed(Completion { kind: CompletionKind::Query, .. })), "{done:?}");
     assert!(f.layer.filter_preview(job).is_none());
     let before = f.fixed();
-    assert_eq!(f.refused(APPLY, apply_args(Value::Int(job as i64))), code::STALE_FILTER_PREVIEW);
+    let named = preview_ref(job, f.layer.revision().epoch);
+    assert_eq!(f.refused(APPLY, apply_args(named)), code::STALE_FILTER_PREVIEW);
     assert_eq!(f.fixed(), before);
 }
 
 /// A reopen keeps no filter preview (they are transient), but it rebuilds the predicates from the journal, so a
-/// predicate prepared before the reopen previews and applies after it.
+/// predicate prepared before the reopen previews and applies after it. Job IDs start again after a reopen, so the new
+/// filter preview takes the job ID of the one before it; the reference from before the reopen names the earlier epoch
+/// and stays stale for the hint and the shell, and only the new reference applies.
 #[test]
 fn a_reopen_keeps_no_filter_preview_but_its_predicates() {
     let mut f = fixture();
@@ -444,10 +475,17 @@ fn a_reopen_keeps_no_filter_preview_but_its_predicates() {
         shell: Shell::new(Secret::fixed(SECRET), "shell"),
         frames: HeadlessFrames::new(),
     };
-    assert!(g.layer.filter_preview(preview).is_none());
-    assert_eq!(g.refused(APPLY, apply_args(Value::Int(preview as i64))), code::STALE_FILTER_PREVIEW);
+    assert!(g.layer.filter_preview(job_of(&preview)).is_none());
+    assert_eq!(g.refused(APPLY, apply_args(preview.clone())), code::STALE_FILTER_PREVIEW);
     let again = g.preview(predicate);
-    assert!(completed(&g.apply(again, letters(&[2]))));
+    assert_eq!(job_of(&again), job_of(&preview), "job IDs start again after a reopen");
+    assert_ne!(again, preview);
+    let before = g.fixed();
+    let hint = g.layer.availability_for(APPLY, &apply_args(preview.clone())).map_err(|error| error.code);
+    assert_eq!(hint, Err(code::STALE_FILTER_PREVIEW));
+    assert_eq!(g.refused(APPLY, apply_args(preview)), code::STALE_FILTER_PREVIEW);
+    assert_eq!(g.fixed(), before);
+    assert!(completed(&g.apply(&again, letters(&[2]))));
     assert_eq!(g.record(FILTERED), (1, Some(letters(&[2]))));
 }
 
@@ -460,7 +498,7 @@ fn an_apply_that_writes_no_record_takes_no_undo_entry() {
     let top = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
     let predicate = f.predicate(letters(&[1]));
     let preview = f.preview(predicate);
-    let job = f.start(APPLY, apply_args(Value::Int(preview as i64)));
+    let job = f.start(APPLY, apply_args(preview.clone()));
     assert!(completed(&f.finish(job, JobOutput::of(Value::Null))));
     assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), top);
     let g = reopen(&f.layer);
@@ -478,7 +516,7 @@ fn a_predicate_that_writes_over_an_applied_filter_drops_it_from_both_stacks() {
         let below = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
         let predicate = f.predicate(letters(&[1]));
         let preview = f.preview(predicate);
-        assert!(completed(&f.apply(preview, letters(&[7]))));
+        assert!(completed(&f.apply(&preview, letters(&[7]))));
         if undone {
             assert!(committed(&f.step(Direction::Undo)));
             assert!(f.layer.undo_hint(Direction::Redo).is_some());
@@ -497,6 +535,99 @@ fn a_predicate_that_writes_over_an_applied_filter_drops_it_from_both_stacks() {
     }
 }
 
+/// The cut runs on through the other records of an apply it drops. The apply writes `filtered` and `b`, after
+/// earlier writes of `w` and `b`, and a predicate job then writes `filtered`:
+/// - The apply leaves the undo stack, and so does the earlier write of `b`: its undo would write over the apply's `b`,
+///   which no step reaches now. The write of `w` keeps its place.
+/// - A write of `b` after the apply keeps its place: its undo gives back the apply's `b`.
+/// - With the apply undone first, its writes are gone: only the apply leaves the redo stack, and the earlier write of
+///   `b` keeps its place on the undo stack.
+///
+/// A reopen offers the same undo and redo, and the undo steps that remain write no step over another.
+#[test]
+fn a_cut_runs_on_through_the_other_records_of_an_applied_filter() {
+    for case in ["plain", "written after", "undone"] {
+        let mut f = fixture();
+        let top = |f: &Fixture| f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
+        assert!(completed(&f.write("w", letters(&[1]))));
+        let below = top(&f);
+        assert!(completed(&f.write("b", letters(&[2]))));
+        let earlier = top(&f);
+        let predicate = f.predicate(letters(&[1]));
+        let preview = f.preview(predicate);
+        let job = f.start(APPLY, apply_args(preview));
+        let out = output(Value::Null, &[(FILTERED, letters(&[7])), ("b", letters(&[8]))]);
+        assert!(completed(&f.finish(job, out)));
+        let mut after = None;
+        match case {
+            "written after" => {
+                assert!(completed(&f.write("b", letters(&[3]))));
+                after = top(&f);
+            }
+            "undone" => {
+                assert!(committed(&f.step(Direction::Undo)));
+                assert_eq!((f.record("b").1, f.record(FILTERED).1), (Some(letters(&[2])), None));
+            }
+            _ => {}
+        }
+        let job = f.start(LAYER, layer_args(1, 2));
+        assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[9]))]))));
+        assert!(f.layer.undo_hint(Direction::Redo).is_none(), "{case}");
+        let g = reopen(&f.layer);
+        for direction in [Direction::Undo, Direction::Redo] {
+            assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{case} {direction:?}");
+        }
+        match case {
+            "plain" => assert_eq!(top(&f), below),
+            "written after" => {
+                assert_eq!(top(&f), after);
+                assert!(committed(&f.step(Direction::Undo)));
+                assert_eq!(f.record("b").1, Some(letters(&[8])), "the apply's `b` is given back");
+                assert_eq!(top(&f), below);
+            }
+            _ => {
+                assert_eq!(top(&f), earlier);
+                assert!(committed(&f.step(Direction::Undo)));
+                assert_eq!(f.record("b").1, None);
+                assert_eq!(top(&f), below);
+            }
+        }
+        assert!(committed(&f.step(Direction::Undo)));
+        assert!(f.layer.undo_hint(Direction::Undo).is_none(), "{case}");
+        let b = if case == "undone" { None } else { Some(letters(&[8])) };
+        assert_eq!((f.record("w").1, f.record("b").1, f.record(FILTERED).1), (None, b, Some(letters(&[9]))), "{case}");
+    }
+}
+
+/// The cut runs on through the redo stack too. An apply that wrote `filtered` and `z` and a later write of `z` are
+/// both undone. A predicate job's write of `filtered` then drops the apply from the redo stack, and with it the later
+/// write of `z` beneath it: that write's redo would start from the apply's `z`, which no redo brings back now. The undo
+/// stack keeps its place, and a reopen offers the same undo and redo.
+#[test]
+fn the_cut_runs_on_through_the_redo_stack() {
+    let mut f = fixture();
+    let top = |f: &Fixture| f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
+    let predicate = f.predicate(letters(&[1]));
+    let preview = f.preview(predicate);
+    assert!(completed(&f.write("w", letters(&[1]))));
+    let below = top(&f);
+    let job = f.start(APPLY, apply_args(preview));
+    assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[7])), ("z", letters(&[8]))]))));
+    assert!(completed(&f.write("z", letters(&[3]))));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert_eq!((f.record("z").1, f.record(FILTERED).1), (None, None));
+    assert!(f.layer.undo_hint(Direction::Redo).is_some());
+    let job = f.start(LAYER, layer_args(1, 2));
+    assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[9]))]))));
+    assert!(f.layer.undo_hint(Direction::Redo).is_none(), "both undone actions leave the redo stack");
+    assert_eq!(top(&f), below);
+    let g = reopen(&f.layer);
+    for direction in [Direction::Undo, Direction::Redo] {
+        assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{direction:?}");
+    }
+}
+
 /// The workspace inverse (H-08: `filter.apply` undoes in the workspace): an undo writes back what each record held
 /// before the apply, absent ones included, and a redo writes the apply's records again; each moves every written
 /// record's version and the workspace revision once. An earlier record write keeps its place on the stack beneath
@@ -507,7 +638,7 @@ fn an_applied_filter_undoes_and_redoes_in_the_workspace() {
     assert!(completed(&f.write(FILTERED, letters(&[1]))));
     let predicate = f.predicate(letters(&[1]));
     let preview = f.preview(predicate);
-    let receipt = f.shell.invoke(&mut f.layer, APPLY, apply_args(Value::Int(preview as i64))).unwrap();
+    let receipt = f.shell.invoke(&mut f.layer, APPLY, apply_args(preview.clone())).unwrap();
     let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
     f.layer.take_program_job().unwrap();
     let out = output(Value::Null, &[(FILTERED, letters(&[7])), ("count", letters(&[5]))]);
@@ -547,7 +678,7 @@ fn an_applied_filter_and_its_undo_journal_their_records() {
     let mut f = fixture();
     let predicate = f.predicate(letters(&[1]));
     let preview = f.preview(predicate);
-    assert!(completed(&f.apply(preview, letters(&[7]))));
+    assert!(completed(&f.apply(&preview, letters(&[7]))));
     assert!(completed(&f.write("w", letters(&[3]))));
     assert!(committed(&f.step(Direction::Undo)));
     assert!(committed(&f.step(Direction::Undo)));

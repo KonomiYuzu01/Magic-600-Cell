@@ -602,6 +602,34 @@ fn nat(value: Option<&Value>) -> Option<u64> {
     value.and_then(Value::as_i64).and_then(|n| u64::try_from(n).ok())
 }
 
+/// The names of the records an action wrote: one for a record write, each of a workspace completion's, none otherwise.
+fn written(change: &Change) -> Box<dyn Iterator<Item = &str> + '_> {
+    match change {
+        Change::Record { name, .. } => Box::new(std::iter::once(name.as_str())),
+        Change::Records { after, .. } => Box::new(after.iter().map(|write| write.name.as_str())),
+        _ => Box::new(std::iter::empty()),
+    }
+}
+
+/// The actions of an undo or redo `stack` that a write no step reaches cuts off (draft): walked from the top, in the
+/// order the steps would take them, an action that wrote a record of `cut` leaves the stack, since its step would write
+/// over that write. The records it wrote then join the cut for the actions beneath it. On the undo stack its writes
+/// stand beyond every step, so an undo beneath it would write over them; on the redo stack its writes are undone and
+/// stay so, so a redo beneath it would start from values its own undo does not expect. An action above one that leaves
+/// keeps its place: its step finds what it wrote.
+fn cut_stack(changes: &BTreeMap<u64, Change>, stack: &[u64], cut: &BTreeSet<String>) -> BTreeSet<u64> {
+    let mut cut = cut.clone();
+    let mut dropped = BTreeSet::new();
+    for &order in stack.iter().rev() {
+        let Some(change) = changes.get(&order) else { continue };
+        if written(change).any(|name| cut.contains(name)) {
+            cut.extend(written(change).map(str::to_owned));
+            dropped.insert(order);
+        }
+    }
+    dropped
+}
+
 /// The command layer for one session.
 pub struct CommandLayer<S: Store = MemoryStore> {
     kernel: Arc<Kernel>,
@@ -1189,8 +1217,9 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// The filter preview that completed `filter.preview` job `job` made, while the layer keeps it (KN0.9; draft): a
-    /// `FilterPreviewRef` names it by `job`. The layer keeps a filter preview while it is fresh and drops stale ones
-    /// as it keeps a new one, so a missing preview and a stale one are refused alike.
+    /// `FilterPreviewRef` names it by `job` and the epoch it was made in ([`FilterPreview::reference`]). The layer
+    /// keeps a filter preview while it is fresh and drops stale ones as it keeps a new one, so a missing preview and a
+    /// stale one are refused alike.
     pub fn filter_preview(&self, job: u64) -> Option<&FilterPreview> {
         self.filters.get(&job)
     }
@@ -1243,16 +1272,19 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// The gate `fresh_filter_preview` (LI.41), for a row that takes it: the filter preview its `FilterPreviewRef`
-    /// argument names must be one the layer keeps and fresh ([`CommandLayer::filter_fresh`]), or the row is refused with
-    /// `KN5:stale.filter_preview`. It reads neither the word-preview slot nor a presentation. The layer checks it when it
-    /// admits the job and again when the job's output is published (KN0.9).
+    /// argument names must be one the layer keeps, made in the reference's epoch, and fresh
+    /// ([`CommandLayer::filter_fresh`]), or the row is refused with `KN5:stale.filter_preview`. Job IDs start again
+    /// after a reopen, so the epoch keeps a reference from before it off a later preview with the same job ID. The gate
+    /// reads neither the word-preview slot nor a presentation. The layer checks it when it admits the job and again
+    /// when the job's output is published (KN0.9).
     fn fresh_filter_gate(&self, row: &Row, args: &Value) -> Result<(), Error> {
         if !row.has_gate(FRESH_FILTER_PREVIEW) {
             return Ok(());
         }
         let named = row.arguments.iter().find(|(_, ty)| ty.as_str() == "FilterPreviewRef").map(|(name, _)| name);
-        let job = named.and_then(|name| nat(args.get(name)));
-        let Some(f) = job.and_then(|job| self.filters.get(&job)) else {
+        let reference = named.and_then(|name| filter::filter_preview_ref(args.get(name)?));
+        let kept = reference.and_then(|(job, epoch)| self.filters.get(&job).filter(|f| f.deps.epoch == epoch));
+        let Some(f) = kept else {
             let detail = "the filter preview the row names is not one the layer keeps";
             return Err(Error::new(code::STALE_FILTER_PREVIEW, detail));
         };
@@ -1282,7 +1314,7 @@ impl<S: Store> CommandLayer<S> {
         for job in stale {
             self.filters.remove(&job);
         }
-        self.filters.insert(program.job, FilterPreview { result, deps, resolved });
+        self.filters.insert(program.job, FilterPreview { job: program.job, result, deps, resolved });
     }
 
     /// `kernel.undo_hint`: the current order and the eligible target for `direction`, read together (LI.9).
@@ -2259,16 +2291,12 @@ impl<S: Store> CommandLayer<S> {
         }
         // No undo reaches a workspace completion of a row whose undo class is not `workspace`, so an undo or redo of an
         // earlier write of one of its records would write over it. The actions that wrote one leave both stacks
-        // (draft). An undoable completion, and an undo or redo of one, keep them: the stack inverts them in order.
+        // (draft), and the cut runs on beneath them ([`cut_stack`]). An undoable completion, and an undo or redo of
+        // one, keep them: the stack inverts them in order.
         if matches!(tree, Tree::None) && !transaction.records.is_empty() {
-            let written: BTreeSet<&str> = transaction.records.iter().map(|write| write.name.as_str()).collect();
-            let rewrites = |order: &u64| match self.changes.get(order) {
-                Some(Change::Record { name, .. }) => written.contains(name.as_str()),
-                Some(Change::Records { after, .. }) => after.iter().any(|write| written.contains(write.name.as_str())),
-                _ => false,
-            };
-            let dropped: Vec<u64> =
-                self.undo.iter().chain(&self.redo).filter(|order| rewrites(order)).copied().collect();
+            let cut: BTreeSet<String> = transaction.records.iter().map(|write| write.name.clone()).collect();
+            let mut dropped = cut_stack(&self.changes, &self.undo, &cut);
+            dropped.extend(cut_stack(&self.changes, &self.redo, &cut));
             self.undo.retain(|order| !dropped.contains(order));
             self.redo.retain(|order| !dropped.contains(order));
             for order in dropped {

@@ -346,8 +346,9 @@
 //!     `RevisionRef` that is not the layer's current revision in every field is refused with
 //!     `KN5:stale.revision_changed` (EV4.14), so a malformed request is never answered as stale. Both refusals come
 //!     before the lane's capacity is checked and take no job.
-//!   - `FilterRef` is a result reference `{"job": Nat, "digest": Text}` and `FilterPreviewRef` a `Nat`, a job ID
-//!     (draft). After the forms and the revisions, a `FilterRef` must resolve (filter previews, below).
+//!   - `FilterRef` is a result reference `{"job": Nat, "digest": Text}` and `FilterPreviewRef` `{"epoch": Nat, "job":
+//!     Nat}`, a job and the epoch it ran in (draft). After the forms and the revisions, a `FilterRef` must resolve
+//!     (filter previews, below).
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them
 //!     `CanonicalObjectRefs`, which `set.save` takes, and a union of types such as `ResolvedDraftRef|WordRef`. The
 //!     layer's own rows check their arguments where they are built.
@@ -401,7 +402,9 @@
 //!     (`Transaction::records`), so a reopen writes them again.
 //!   - No undo reaches the writes of a job of a language-defined row or of a stored row whose undo class is `none`.
 //!     So that an undo or redo of an earlier write of the same record cannot write over them, the earlier actions that
-//!     wrote one leave the undo and redo stacks.
+//!     wrote one leave the undo and redo stacks. The cut runs on: walked from each stack's top, an action that leaves
+//!     adds the records it wrote, so the actions beneath it that wrote one of them leave too, while those above it keep
+//!     their place.
 //!   - Drafts for LP3's amendment list (PHS.52): the digest's form, the code for a record from another row, the
 //!     history cut and the journal key `records`.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
@@ -414,12 +417,15 @@
 //!     ([`CommandLayer::filter_preview`]) with KN0.9's dependencies ([`FilterPreviewDeps`]): the epoch, identity, mode
 //!     and state of the revision the job read, and the resolved filter's digest. The protection and workspace
 //!     revisions are not dependencies. The layer keeps fresh filter previews only, and none across a reopen.
-//!   - `filter.apply`'s gate `fresh_filter_preview` holds while the filter preview its `FilterPreviewRef` names is kept
-//!     and fresh ([`CommandLayer::filter_fresh`]): its records are read again, so a write of one, its undo included,
-//!     makes it stale, and an edit of another record does not. It reads neither the word-preview slot nor a
-//!     presentation. Missing or stale, the row is refused with `KN5:stale.filter_preview` when the job is admitted; a
-//!     preview that goes stale while the job runs fails the job with that code when its output is published, and
-//!     nothing is written.
+//!   - A `FilterPreviewRef` names a filter preview by its job and the epoch it was made in ([`filter::preview_ref`],
+//!     [`FilterPreview::reference`]). Job IDs start again after a reopen and no epoch comes back, so a reference from
+//!     before a reopen never names a later filter preview with the same job ID.
+//!   - `filter.apply`'s gate `fresh_filter_preview` holds while the filter preview its `FilterPreviewRef` names is
+//!     kept, made in the reference's epoch, and fresh ([`CommandLayer::filter_fresh`]): its records are read again, so
+//!     a write of one, its undo included, makes it stale, and an edit of another record does not. It reads neither the
+//!     word-preview slot nor a presentation. Missing or stale, the row is refused with `KN5:stale.filter_preview` when
+//!     the job is admitted; a preview that goes stale while the job runs fails the job with that code when its output
+//!     is published, and nothing is written.
 //!   - A workspace completion of a stored row whose undo class is `workspace`, `filter.apply`'s among them, is one
 //!     undoable action. `session.undo` and `session.redo` write each of its records' values before or after it again
 //!     as one action, answering `committed` with equal puzzle hashes and advancing the workspace revision and the

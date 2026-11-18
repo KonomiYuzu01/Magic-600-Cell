@@ -449,7 +449,7 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
 /// `filter.apply` is served with the other five rows, and its gate `fresh_filter_preview` refuses a stale filter
 /// preview. The layer keeps a filter preview for a completed `filter.preview` job, and the availability hint for its
 /// `FilterPreviewRef` is clear while it is fresh. After a commit moves the state, the hint and the shell's invocation
-/// refuse it with `KN5:stale.filter_preview`, as they refuse a job ID that names no filter preview; a running program
+/// refuse it with `KN5:stale.filter_preview`, as they refuse a reference to a job that made none; a running program
 /// may not invoke the workspace row (`LG3:capability.not_granted`). No refusal takes a job or moves anything. Covers no
 /// conformance ID: `c600-command`'s `tests/filter_apply.rs` runs the row's gate and completion.
 #[test]
@@ -473,18 +473,21 @@ fn filter_apply_is_served_and_refuses_a_stale_filter_preview() {
     session.shell.invoke(&mut session.layer, "filter.preview", preview_args).expect("prepared");
     let (counted, output, _) = host.serve_next(&mut session.layer).expect("the filter preview's job");
     output.expect("the counts");
-    assert!(session.layer.filter_preview(counted.job).is_some(), "the layer keeps the filter preview");
-    let fresh = json::object([("preview", Json::Int(counted.job as i64))]);
+    let kept = session.layer.filter_preview(counted.job).expect("the layer keeps the filter preview");
+    let reference = kept.reference();
+    let fresh = json::object([("preview", reference.clone())]);
     assert_eq!(session.layer.availability_for(need.row, &fresh), Ok(()), "a fresh filter preview");
 
     session.commit(&[2]);
     let before = session.fixed();
-    for preview in [counted.job as i64, 999] {
-        let args = json::object([("preview", Json::Int(preview))]);
+    let unknown = c600_command::filter::preview_ref(999, session.layer.revision().epoch);
+    for preview in [reference, unknown] {
+        let what = format!("{preview:?}");
+        let args = json::object([("preview", preview)]);
         let hint = session.layer.availability_for(need.row, &args).map_err(|error| error.code);
-        assert_eq!(hint, Err(code::STALE_FILTER_PREVIEW), "{preview}");
+        assert_eq!(hint, Err(code::STALE_FILTER_PREVIEW), "{what}");
         let receipt = session.shell.invoke(&mut session.layer, need.row, args).expect("prepared");
-        assert_eq!(receipt.status.code(), Some(code::STALE_FILTER_PREVIEW), "{preview} from the shell");
+        assert_eq!(receipt.status.code(), Some(code::STALE_FILTER_PREVIEW), "{what} from the shell");
     }
     let receipt = session.layer.invoke(&program_channel(), session.runtime_call("rt/apply", need.row));
     assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "from a program");

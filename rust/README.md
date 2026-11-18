@@ -1695,7 +1695,8 @@ run or not applicable is no pass (PHS.63).
   written in its completion's one durable action and kept in the journal (`Transaction::records`). For a stored row
   whose undo class is `workspace` (`filter.apply`, `operation.phase.edit`) the completion is a workspace inverse: its
   undo writes back what each record held before, absent ones included, and its redo writes the records again. No undo
-  reaches any other row's records, so earlier writes of the same records leave the undo and redo stacks. A replay
+  reaches any other row's records, so earlier writes of the same records leave the undo and redo stacks, and so,
+  beneath an action that leaves, do the actions that wrote one of its other records. A replay
   decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
   `c600-command/tests/filter_apply.rs`.
 - Filter previews and `filter.apply` (KN0.9, H15.4, LI.41, CT-LI-11; LP3's C6; the drafts are in the crate
@@ -1705,7 +1706,9 @@ run or not applicable is no pass (PHS.63).
   (`CommandLayer::filter_preview(job)`), bound to `FilterPreviewDeps`: the epoch, the model identity, the mode, the
   state revision and the digest of the resolved filter, which holds each record it read with its content digest and
   version. The protection and workspace revisions are not dependencies, so an unread edit leaves it fresh. A
-  `FilterPreviewRef` is the job's ID. The gate `fresh_filter_preview` reads neither the word-preview slot nor a
+  `FilterPreviewRef` is `{"epoch", "job"}` (`FilterPreview::reference`): job IDs start again after a reopen, and the
+  epoch keeps a reference from before it off a later preview. The gate `fresh_filter_preview` reads neither the
+  word-preview slot nor a
   presentation: a missing or stale filter preview refuses `filter.apply` with `KN5:stale.filter_preview` before any
   job, and the gate is checked again when the job's output is published, where a stale one fails the job and writes
   nothing. Filter previews are transient, so a reopen keeps none. Tests: `c600-command/tests/filter_apply.rs`.

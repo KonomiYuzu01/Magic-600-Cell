@@ -126,9 +126,10 @@ pub const NEEDS: [RowNeed; 6] = [
                      the slot map as they were.",
         served: true,
         met: "The layer serves the row (LP2's filter previews, `c600-command`'s `filter` module). It checks the \
-              `FilterPreviewRef` form, a job ID, and keeps a filter preview for each completed `filter.preview` job \
-              with KN0.9's dependencies: the epoch, identity, mode and state, and the digest of the resolved filter, \
-              which holds each record the predicate's job wrote with its content digest and version. The gate \
+              `FilterPreviewRef` form, a job and the epoch it ran in, and keeps a filter preview for each completed \
+              `filter.preview` job with KN0.9's dependencies: the epoch, identity, mode and state, and the digest of \
+              the resolved filter, which holds each record the predicate's job wrote with its content digest and \
+              version. The gate \
               `fresh_filter_preview` refuses a missing or stale filter preview with `KN5:stale.filter_preview` before \
               any job, reading neither the word-preview slot nor a presentation, and fails the job with that code, \
               writing nothing, when the filter preview went stale while the job ran. The completion is one workspace \
