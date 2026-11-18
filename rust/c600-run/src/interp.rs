@@ -115,7 +115,7 @@ use crate::rng::{self, Cursor};
 use crate::trace::{self, Relation};
 use crate::value::{
     self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed,
-    Generator, List, MenuWord, Record, Text, Value,
+    Generator, List, MenuWord, Record, Text, Value, WordStream,
 };
 
 /// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
@@ -620,6 +620,8 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::Contains | Prim::Insert | Prim::Lookup => Some(2),
         Prim::InsertEntry | Prim::Expand => Some(3),
         Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => Some(1),
+        Prim::TextDecode | Prim::StreamDigest => Some(1),
+        Prim::WordStream => Some(2),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
         Prim::Stage(s) => Some(s.arity()),
     }
@@ -1712,6 +1714,9 @@ impl<'a> Machine<'a> {
             | Prim::FieldNeg
             | Prim::FieldMul
             | Prim::FieldInverse => return self.finite_field(n, op, args),
+            Prim::TextDecode => return self.text_decode(n, args),
+            Prim::WordStream => return self.word_stream(n, args),
+            Prim::StreamDigest => return self.stream_digest(n, args),
             Prim::Stage(_) => unreachable!("refused when loaded"),
         };
         let display = |v: &Value| match v {
@@ -1854,6 +1859,30 @@ impl<'a> Machine<'a> {
             _ => unreachable!("a priced operation"),
         };
         self.settle(memory, result);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `text_decode(b)` (DET.62; LP2 draft): one step with the input-byte tariff on every byte and a reservation of
+    /// 4 bytes per input byte, the bound of a text of that many scalars, admitted before any byte is read. Invalid
+    /// UTF-8 or a surrogate stops the run with `LG4:input.text_scalar_invalid`, binding no value and keeping the
+    /// reservation until cleanup; a decoded text settles to its 4 bytes per scalar (DET.57).
+    fn text_decode(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let Some(Value::Bytes(data)) = args.first().map(|h| &h.value) else {
+            return Err(self.fail(Some(n), "text_decode", code::IR_REJECTED));
+        };
+        let data = Arc::clone(data);
+        let reserved = (data.len() as u128).saturating_mul(4);
+        let kernel = self.tariffs.decode_per_byte.saturating_mul(data.len() as u128);
+        self.charge(Some(n), "text_decode", kernel, reserved, 0)?;
+        let Ok(text) = std::str::from_utf8(&data) else {
+            return Err(self.fail(Some(n), "text_decode", meter::code::TEXT_SCALAR_INVALID));
+        };
+        self.settle(reserved, Value::text(text));
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);
@@ -2134,6 +2163,77 @@ impl<'a> Machine<'a> {
         };
         let word = c.expand(&start, count).expect("a range within the word");
         self.settle(memory, Value::Word(word.into()));
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `word_stream(c, chunk)` (DET.63, KN2.10, LG4.6; LP2 draft). The schedule comes from the sealed inputs alone:
+    /// chunks of `chunk` letters from position 0, the last one short. `word_open` is one step at the `stream_setup`
+    /// tariff and reserves the cursor, the length as an exact integer, without debiting any chunk. Each chunk,
+    /// located `chunk:<position>`, is one step that preflights its share before it expands a letter: `expand_per_letter`
+    /// and `replay_per_letter` per letter, the vectors' partition of the full tariff (FR-B02), which includes the
+    /// cursor's reads of the parts, and 2 bytes of scratch per letter. It then expands only its letters, hashes them
+    /// into the literal digest and releases the scratch, so coverage advances only on completion and a denied chunk
+    /// expands nothing. An interruption is observed before each step, so a cancelled stream stops at a chunk boundary
+    /// whose locator names its coverage. A zero-length stream has its open row alone. The completed stream keeps the
+    /// cursor's reservation as its owner. A chunk size of 0 is a pointwise failure before any step.
+    fn word_stream(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let name = "word_stream";
+        let (Value::Compressed(c), Value::Int(size)) = (&args[0].value, &args[1].value) else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        if size.sign() != Sign::Plus {
+            return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
+        }
+        let (c, size) = (Arc::clone(c), (**size).clone());
+        let length = c.length().clone();
+        let cursor = WordStream::cursor_size(&length);
+        let setup = self.tariffs.stream_setup;
+        self.charge(Some(n), "word_open", setup, cursor, 0)?;
+        let per_letter = self.tariffs.expand_per_letter.saturating_add(self.tariffs.replay_per_letter);
+        let mut letters = c.letters();
+        let mut digest = c600_digest::Sha256::new();
+        let mut scratch = Vec::new();
+        let mut at = BigInt::from(0);
+        while at < length {
+            let share = (&length - &at).min(size.clone());
+            let count = u128::try_from(&share).unwrap_or(u128::MAX);
+            let memory = count.saturating_mul(2);
+            self.charge(Some(n), &format!("chunk:{at}"), per_letter.saturating_mul(count), memory, 0)?;
+            let Ok(count) = usize::try_from(count) else {
+                return Err(self.fail(Some(n), name, code::HOST_EXHAUSTED));
+            };
+            scratch.clear();
+            letters.next_chunk(count, &mut scratch);
+            for letter in &scratch {
+                digest.update(&letter.to_le_bytes());
+            }
+            self.meter.release(memory);
+            at += share;
+        }
+        self.settle(cursor, Value::WordStream(Arc::new(WordStream::new(length, digest.finish()))));
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `stream_digest(s)` (DET.63, KI.13; LP2 draft): one step that reserves the digest's text of 64 hex digits and
+    /// costs no kernel units, a fixed-width reading of the stream's summary.
+    fn stream_digest(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let Some(Value::WordStream(s)) = args.first().map(|h| &h.value) else {
+            return Err(self.fail(Some(n), "stream_digest", code::IR_REJECTED));
+        };
+        let text = Value::text(&c600_digest::hex(s.digest()));
+        let size = text.size();
+        self.charge(Some(n), "stream_digest", 0, size, 0)?;
+        self.settle(size, text);
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);

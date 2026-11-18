@@ -1210,7 +1210,7 @@ impl Kernel {
             ceiling,
             length: 0,
             first: None,
-            bytes: Vec::new(),
+            digest: c600_digest::Sha256::new(),
         })
     }
 
@@ -1281,8 +1281,9 @@ pub struct Replay<'k> {
     length: u64,
     /// The first refused prefix and its last letter.
     first: Option<(u64, i32)>,
-    /// The letters as little-endian 32-bit integers, for `Digest<literal word>`.
-    bytes: Vec<u8>,
+    /// `Digest<literal word>` so far: the letters as little-endian 32-bit integers, hashed as they are pushed, so a
+    /// streamed word keeps no copy of its letters (KN2.10, LG4.6).
+    digest: c600_digest::Sha256,
 }
 
 impl Replay<'_> {
@@ -1296,7 +1297,6 @@ impl Replay<'_> {
             return Err(Refusal::new(codes::PRIMITIVE_CEILING, engine::CEILING));
         }
         let model = &self.kernel.model;
-        self.bytes.reserve(4 * letters.len());
         for (at, &m) in (self.length + 1..).zip(letters) {
             let m = m as i32;
             if self.first.is_none() && model.letter_orbits(m) & self.mask != 0 {
@@ -1304,7 +1304,7 @@ impl Replay<'_> {
             }
             let (source, destination) = model.pairs(m);
             engine::apply(&mut self.map, source, destination, &mut self.scratch);
-            self.bytes.extend_from_slice(&m.to_le_bytes());
+            self.digest.update(&m.to_le_bytes());
         }
         self.length += letters.len() as u64;
         Ok(())
@@ -1325,7 +1325,7 @@ impl Replay<'_> {
     pub fn finish(self) -> Derivation {
         let kernel = self.kernel;
         let (source, destination) = engine::net_from_map(&self.map);
-        let word = c600_digest::sha256_hex(&self.bytes);
+        let word = c600_digest::hex(&self.digest.finish());
         let effect = kernel.effect_of(source, destination, word, self.length as usize);
         let (protection, certificates) = kernel.strict_verdict(&self.protected, self.first);
         kernel.conclude(&self.base, &self.labels, effect, protection, certificates)

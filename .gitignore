@@ -38,5 +38,6 @@ team-project.json
 tools/.venv/
 tools/.models/
 tools/qt/
+tools/.dxc/
 tools/node/*/node_modules/
 .obsidian/

@@ -69,6 +69,45 @@ pub enum Value {
     /// An element of F2 or F5 (KN3.2; LP2 draft): the field and its residue, which is below the field's prime. Build
     /// one with [`Value::field`].
     Field(Field, u8),
+    /// Captured bytes (DET.62; LP2 draft): an octet sequence that only `text_decode` turns into text.
+    Bytes(Arc<[u8]>),
+    /// A compressed word streamed through its semantic chunks (DET.63; LP2 draft): the stream's owner, with the
+    /// length it covered and its literal digest.
+    WordStream(Arc<WordStream>),
+}
+
+/// A completed word stream (DET.63, KN2.10, LG4.6; LP2 draft): the exact length its chunks covered and the literal
+/// digest of its letters (KI.13), the SHA-256 of the letters as little-endian 32-bit integers. Its logical size is its
+/// cursor's, the bound of a position in the word: the length as an exact integer (DET.57). The digest is a fixed-width
+/// summary that the cursor derived from the letters it streamed, host metadata as a compressed word's heights are, not
+/// payload; `stream_digest` charges the text it gives.
+#[derive(Debug, PartialEq, Eq)]
+pub struct WordStream {
+    length: BigInt,
+    digest: [u8; 32],
+}
+
+impl WordStream {
+    /// A stream that covered `length` letters with the literal digest `digest`.
+    pub fn new(length: BigInt, digest: [u8; 32]) -> WordStream {
+        WordStream { length, digest }
+    }
+
+    /// The exact number of letters the stream covered, the word's length.
+    pub fn length(&self) -> &BigInt {
+        &self.length
+    }
+
+    /// The literal digest's 32 bytes.
+    pub fn digest(&self) -> &[u8; 32] {
+        &self.digest
+    }
+
+    /// The logical size of a stream's cursor over a word of `length` letters: the length as an exact integer (DET.57),
+    /// which `word_open` reserves before the first chunk.
+    pub fn cursor_size(length: &BigInt) -> u128 {
+        int_size(length)
+    }
 }
 
 /// A generator's cursor (DET.61; LP2 draft). The checker keeps a generator a bare value, so no record, collection or
@@ -397,6 +436,45 @@ impl Compressed {
         }
         Some(out)
     }
+
+    /// A chronological reading of the word in chunks (DET.63, LG4.6; LP2 draft), from its first letter.
+    pub fn letters(&self) -> Letters<'_> {
+        let pending = if self.length().is_zero() { Vec::new() } else { vec![self.parts.len() - 1] };
+        Letters { word: self, pending, leaf: None }
+    }
+}
+
+/// A chronological reading of a compressed word in chunks (DET.63, LG4.6; LP2 draft). It keeps a stack of the parts
+/// still to read, at most the word's height plus one, and the rest of the current leaf, and expands each chunk's
+/// letters and nothing else, so a stream of any length holds one chunk's letters at a time. Each part it reads holds
+/// letters, so over the whole word it reads at most two parts per letter.
+pub struct Letters<'c> {
+    word: &'c Compressed,
+    pending: Vec<usize>,
+    /// The current leaf's part and the offset of its next letter.
+    leaf: Option<(usize, usize)>,
+}
+
+impl Letters<'_> {
+    /// Appends the next `count` letters to `out`, or fewer at the word's end.
+    pub fn next_chunk(&mut self, count: usize, out: &mut Vec<i32>) {
+        let mut want = count;
+        while want > 0 {
+            if let Some((part, from)) = self.leaf {
+                let Part::Leaf(l) = &self.word.parts[part] else { unreachable!("a leaf") };
+                let take = (l.len() - from).min(want);
+                out.extend_from_slice(&l[from..from + take]);
+                want -= take;
+                self.leaf = (from + take < l.len()).then_some((part, from + take));
+                continue;
+            }
+            let Some(at) = self.pending.pop() else { break };
+            match &self.word.parts[at] {
+                Part::Concat(i, j) => self.pending.extend([*j, *i]),
+                Part::Leaf(_) => self.leaf = Some((at, 0)),
+            }
+        }
+    }
 }
 
 /// LG2.18's key of a Full word: a stack scan in chronological order that cancels only adjacent inverse pairs.
@@ -467,6 +545,8 @@ fn kind(v: &Value) -> u8 {
         Value::TraceEqualityKey(_) => 21,
         Value::Generator(_) => 22,
         Value::Field(..) => 23,
+        Value::Bytes(_) => 24,
+        Value::WordStream(_) => 25,
     }
 }
 
@@ -520,6 +600,9 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                     (x.key, x.counter).cmp(&(y.key, y.counter))
                 }
                 (Value::Field(f, x), Value::Field(g, y)) => (f, x).cmp(&(g, y)),
+                (Value::Bytes(x), Value::Bytes(y)) => x.cmp(y),
+                // By their lengths and digests: no key or equality of a checked program holds a word stream.
+                (Value::WordStream(x), Value::WordStream(y)) => (&x.length, x.digest).cmp(&(&y.length, y.digest)),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -872,6 +955,9 @@ impl Value {
             // The 32-byte key, the 8-byte counter and the exhausted flag (DET.61).
             Value::Generator(_) => GENERATOR_SIZE,
             Value::Field(..) => 1,
+            // One byte per octet.
+            Value::Bytes(b) => b.len() as u128,
+            Value::WordStream(s) => WordStream::cursor_size(&s.length),
         }
     }
 
@@ -941,7 +1027,9 @@ impl Value {
             | Value::TraceEqualityKey(_)
             | Value::Compressed(_)
             | Value::Generator(_)
-            | Value::Field(..) => 0,
+            | Value::Field(..)
+            | Value::Bytes(_)
+            | Value::WordStream(_) => 0,
         }
     }
 }
@@ -1145,6 +1233,8 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             // Each cursor read on its own; the checker gives a generator no equality (LP2 draft).
             (Value::Generator(x), Value::Generator(y)) => x.state() == y.state(),
             (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
+            (Value::Bytes(x), Value::Bytes(y)) => x == y,
+            (Value::WordStream(x), Value::WordStream(y)) => x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
         };
         if !same {
@@ -1252,6 +1342,7 @@ pub fn literal(lit: &c600_ir::Lit) -> Option<Value> {
         Lit::Colour(s) => Value::colour(s),
         // A menu-word literal names no alphabet until a run reads it with its pinned one (LP2 draft).
         Lit::MenuWord(letters) => Value::menu_word(&Arc::default(), letters)?,
+        Lit::Bytes(data) => Value::Bytes(data.as_slice().into()),
     })
 }
 

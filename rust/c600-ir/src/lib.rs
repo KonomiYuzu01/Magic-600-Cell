@@ -281,6 +281,16 @@ pub enum Ty {
     /// to or from another number kind, and it has no canonical stored form (FP.6 wraps only int, rat and q5), so a
     /// program stores its `residue`.
     Field(Field),
+    /// Captured bytes (DET.62; LP2 draft until the IR freeze, PHS.49): an octet sequence, such as a captured input
+    /// read whole, that a program turns into `Text` only by `text_decode`, which prices every byte and refuses
+    /// invalid UTF-8 or a surrogate. A literal is `bytes("<hex>")`. Bytes have an exact equality but no canonical
+    /// stored form and no key order, so they never enter a goal, evidence, a set or a map's keys.
+    Bytes,
+    /// A compressed word streamed through its declared semantic chunks (DET.63, KN2.10, LG4.6; LP2 draft until the
+    /// IR freeze, PHS.49): the stream's owner after `word_stream`, holding the exact length it covered and the
+    /// literal digest, which `stream_digest` reads. It holds no letter, so it carries no word, and like a generator
+    /// it stays in its run: no canonical form, no equality and no key order.
+    WordStream,
 }
 
 /// LB3.2's end tests (LP2 draft): three independently named tests with different premises and conclusions (state
@@ -494,6 +504,8 @@ pub enum Lit {
     /// [`MENU_INDEX_LIMIT`]. The run's pinned menu gives them their meaning (LB1.8); a letter outside it stops the
     /// run.
     MenuWord(Vec<[u32; 2]>),
+    /// A literal of captured bytes (LP2 draft; DET.62), written `bytes("<hex>")` with two hex digits per byte.
+    Bytes(Vec<u8>),
 }
 
 /// The bound of a menu letter's indices (LB1.8; LP2 draft): a cap is a pole index of the jumbling model, which has 600
@@ -592,6 +604,20 @@ pub enum Prim {
     FieldInverse,
     /// A stage operation (RPI.70; LP2 draft). Only a stage module uses one; the checker refuses it elsewhere.
     Stage(StageOp),
+    /// `text_decode(b)`: the bytes `b` decoded as UTF-8 into `Text` (LP2 draft; DET.62). The row prices every input
+    /// byte and reserves the bound of the longest text they could hold, 4 bytes per input byte (DET.57), settled
+    /// to the result's 4 bytes per scalar. Invalid UTF-8 or a surrogate stops the run with
+    /// `LG4:input.text_scalar_invalid` before any value is bound.
+    TextDecode,
+    /// `word_stream(c, chunk)`: the compressed word `c` streamed chronologically in semantic chunks of `chunk`
+    /// letters (DET.63, KN2.10, LG4.6; LP2 draft) without first expanding the whole word. One `word_open` row
+    /// declares the schedule and reserves the cursor; then one `chunk:<position>` row per chunk preflights its share,
+    /// expands only its letters into scratch, hashes them into the literal digest and releases the scratch, so
+    /// coverage advances only on completion. A chunk size of 0 is a pointwise failure before any step.
+    WordStream,
+    /// `stream_digest(s)`: the literal digest of a streamed word as 64 lowercase hex digits, the SHA-256 of its
+    /// letters as little-endian 32-bit integers, which is the kernel's literal digest of the same letters (KI.13).
+    StreamDigest,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -908,6 +934,22 @@ pub mod build {
     }
     pub fn rng_draw(g: Expr) -> Expr {
         prim(Prim::RngDraw, vec![g])
+    }
+    /// A literal of captured bytes (LP2 draft; DET.62).
+    pub fn bytes(data: &[u8]) -> Expr {
+        Expr::Lit(Lit::Bytes(data.to_vec()))
+    }
+    /// `text_decode(b)` (LP2 draft; DET.62).
+    pub fn text_decode(b: Expr) -> Expr {
+        prim(Prim::TextDecode, vec![b])
+    }
+    /// `word_stream(c, chunk)` (LP2 draft; DET.63).
+    pub fn word_stream(c: Expr, chunk: Expr) -> Expr {
+        prim(Prim::WordStream, vec![c, chunk])
+    }
+    /// `stream_digest(s)` (LP2 draft; DET.63, KI.13).
+    pub fn stream_digest(s: Expr) -> Expr {
+        prim(Prim::StreamDigest, vec![s])
     }
     /// A child scope (LP2 draft; DET.60): `body` under `caps`, and `otherwise` after its stop, with `status` bound
     /// when it is named.

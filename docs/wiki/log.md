@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-18] update | Toolchain: the archive-zip-hashed method and the DXC pin
+`tools/toolchain/bootstrap.py` gains the Windows-only method `archive-zip-hashed`, which downloads one https zip under `download-hashed`'s host and redirect rules, checks its pinned size and SHA-256 before opening it, refuses unsafe members (absolute or parent paths, drive letters, links, non-regular or encrypted members, case-insensitive duplicates) and moves only a checked staging tree into its own directory below `tools/`. The allowlist pins DirectX Shader Compiler v1.9.2609 (`dxc_2026_09_29.zip`, profile `renderer-spike`, hosts `github.com` and `release-assets.githubusercontent.com`) for LP3's C9 user stages; it installs only after the owner approves this installer and lockfile revision.
+
 ## [2026-11-18] update | The renderer core in the product tree, with the pose path
 `renderer/core/` is the product copy of the selected S-A2 core with W-J's per-piece pose path as ABI 3 (`sa2_scene_load_wj`, `sa2_scene_lattice_check`; every ABI 2 call and layout kept), copied from the selection evidence at 0f067202 with a digest per source in its `PROVENANCE.md`, which `tests/test_renderer_core.py` checks. W1 to W4 now draw through W-J's shaders with identity poses, as W-J's W3 run did, so the core has a new build identity: the W-J runs and the three cold W3 runs on it (freeze condition 1) are still unrun, and nothing about it is Windows/DirectX or performance evidence yet.
 

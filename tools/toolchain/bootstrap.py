@@ -12,6 +12,7 @@ Only entries in tools/toolchain.lock.json with status "verified" and installable
 are installed. Unknown arguments are rejected before any download or write.
 7z archive installs verify pinned bytes and hashes before listing or extraction, and
 run installed binaries only after the checked staging tree reaches its destination.
+Zip archive installs do the same with the standard library's zipfile.
 """
 from __future__ import annotations
 
@@ -19,6 +20,7 @@ import argparse
 import hashlib
 import http.client
 import importlib.util
+import io
 import ipaddress
 import json
 import os
@@ -35,6 +37,7 @@ import types
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from http.client import HTTPException
@@ -73,9 +76,15 @@ SOCKET_TIMEOUT = 60
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 PLATFORM = {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
 REQUIRED_KEYS = {"id", "purpose", "profiles", "method", "status", "installable", "platforms"}
-METHODS = {"external", "pip-hashed", "uv-venv-hashed", "npm-ci", "winget", "archive-7z-hashed", "download-hashed"}
+METHODS = {"external", "pip-hashed", "uv-venv-hashed", "npm-ci", "winget", "archive-7z-hashed", "download-hashed",
+           "archive-zip-hashed"}
 DOWNLOAD_ROOT = "tools/.models/"
+ZIP_RESERVED_ROOTS = {".venv", ".models", ".git"}
 DOWNLOAD_TIMEOUT = 60
+# An archive-zip-hashed entry has exactly these keys; any other key is refused.
+ZIP_KEYS = REQUIRED_KEYS | {"version", "url", "size", "sha256", "dest", "probe", "expect", "network_hosts",
+                            "max_unpacked_bytes", "required_files"}
+ZIP_OPTIONAL_KEYS = {"license", "note", "uninstall"}
 
 
 class Refused(Exception):
@@ -142,6 +151,8 @@ def load_lock() -> dict:
             raise SystemExit(f"lockfile: {entry['id']} has an invalid python request")
         if entry["method"] == "download-hashed" and not valid_download(entry):
             raise SystemExit(f"lockfile: {entry['id']} has an invalid download pin")
+        if entry["method"] == "archive-zip-hashed":
+            validate_zip_entry(entry)
         ids.add(entry["id"])
     for entry in lock["tools"]:
         if entry["method"] == "archive-7z-hashed":
@@ -200,6 +211,52 @@ def validate_archive_entry(entry: dict, lock: dict) -> None:
     requires = entry.get("requires")
     require(extractor is not None and extractor["method"] == "uv-venv-hashed"
             and isinstance(requires, list) and extractor["id"] in requires, "extractor/requires")
+
+
+def _valid_host(host) -> bool:
+    """A plain lower-case DNS name with a dot: never an address, a port, credentials or localhost."""
+    return (isinstance(host, str) and host == host.lower() and _mirror_url(f"https://{host}/a", "a")
+            and urllib.parse.urlsplit(f"https://{host}/a").hostname == host)
+
+
+def validate_zip_entry(entry: dict) -> None:
+    """An archive-zip-hashed entry pins one https zip by size and sha256 and unpacks it into its own directory below tools/."""
+    def require(ok, field):
+        if not ok:
+            raise SystemExit(f"lockfile: {entry['id']} has invalid {field}")
+
+    missing, unknown = ZIP_KEYS - set(entry), set(entry) - ZIP_KEYS - ZIP_OPTIONAL_KEYS
+    require(not missing and not unknown, "keys " + ", ".join(sorted(missing | unknown)))
+    require(entry["platforms"] == ["windows"], "platforms")
+    require(isinstance(entry["version"], str) and bool(entry["version"]), "version")
+    hosts = entry["network_hosts"]
+    require(isinstance(hosts, list) and bool(hosts) and all(_valid_host(h) for h in hosts), "network_hosts")
+    url = entry["url"]
+    try:
+        check_url(url, hosts)
+        parts = urllib.parse.urlsplit(url)
+    except (Refused, TypeError, ValueError, AttributeError):
+        parts = None
+    require(parts is not None and "?" not in url and "#" not in url and parts.path.endswith(".zip"), "url/network_hosts")
+    require(isinstance(entry["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is not None, "sha256")
+    require(type(entry["size"]) is int and entry["size"] > 0, "size")
+    dest = entry["dest"]
+    # Its own dot folder below tools/ (tools/.dxc/<version>), never an environment, the model store or a tool tree.
+    require(_archive_rel(dest) and dest.startswith("tools/") and len(dest.split("/")) >= 3
+            and dest.split("/")[1].startswith(".") and dest.split("/")[1] not in ZIP_RESERVED_ROOTS
+            and not dest.split("/")[-1].startswith(".") and not dest.startswith(DOWNLOAD_ROOT), "dest")
+    require(type(entry["max_unpacked_bytes"]) is int and entry["max_unpacked_bytes"] > 0, "max_unpacked_bytes")
+    files = entry["required_files"]
+    require(isinstance(files, list) and bool(files) and all(_archive_rel(p) for p in files), "required_files")
+    probe = entry["probe"]
+    require(isinstance(probe, list) and bool(probe) and all(isinstance(arg, str) for arg in probe)
+            and probe[0].startswith("{dest}/") and _archive_rel(probe[0][len("{dest}/"):]), "probe")
+    try:
+        re.compile(entry["expect"])
+        expect = isinstance(entry["expect"], str) and bool(entry["expect"])
+    except (re.error, TypeError):
+        expect = False
+    require(expect, "expect")
 
 
 def valid_download(entry: dict) -> bool:
@@ -266,11 +323,15 @@ def resolve_executable(entry: dict, name: str) -> str | None:
     if name == "{python}":
         return sys.executable
     # An archive tool runs only from its final version tree, reached without any link (so never from staging).
-    archive = name.startswith("{prefix}/") and entry["method"] == "archive-7z-hashed"
+    zip_tool = name.startswith("{dest}/") and entry["method"] == "archive-zip-hashed"
+    archive = zip_tool or (name.startswith("{prefix}/") and entry["method"] == "archive-7z-hashed")
     if name.startswith("{venv}/"):
         root = safe_dest(entry["venv"])
         venv_contained(entry)  # the interpreter and scripts it runs must stay inside the environment
         base = _bin_dir(root) / name[len("{venv}/"):]
+    elif zip_tool:
+        root = safe_dest(entry["dest"])
+        base = root / name[len("{dest}/"):]
     elif name.startswith("{prefix}/"):
         prefix = safe_dest(entry["prefix"])
         root = safe_dest(entry["prefix"] + "/" + entry["root"]) if archive else prefix
@@ -922,14 +983,8 @@ def _remove_tree(top: Path) -> None:
     shutil.rmtree(top, onexc=writable_retry)
 
 
-def install_archives(entry: dict) -> None:
-    if PLATFORM != "windows":
-        raise Refused(f"{entry['id']}: archive-7z-hashed installs on Windows only")
-    prefix = safe_dest(entry["prefix"])
-    final = safe_dest(entry["prefix"] + "/" + entry["root"])
-    if os.path.lexists(final):
-        raise Refused(f"{entry['id']}: destination already exists")
-    prefix.mkdir(parents=True, exist_ok=True)
+def _remove_leftover_staging(prefix: Path) -> None:
+    """Remove an earlier attempt's staging tree; anything unmarked or holding a link is kept and refused."""
     for leftover in prefix.glob(".st-*"):
         try:
             if _is_link(leftover) or not leftover.is_dir() or not (leftover / ".magic600-staging").is_file():
@@ -938,6 +993,17 @@ def install_archives(entry: dict) -> None:
         except Refused:
             raise Refused(f"unexpected leftover {leftover.name}; remove it or ask the owner") from None
         _remove_tree(leftover)
+
+
+def install_archives(entry: dict) -> None:
+    if PLATFORM != "windows":
+        raise Refused(f"{entry['id']}: archive-7z-hashed installs on Windows only")
+    prefix = safe_dest(entry["prefix"])
+    final = safe_dest(entry["prefix"] + "/" + entry["root"])
+    if os.path.lexists(final):
+        raise Refused(f"{entry['id']}: destination already exists")
+    prefix.mkdir(parents=True, exist_ok=True)
+    _remove_leftover_staging(prefix)
     archives = entry["archives"]
     if shutil.disk_usage(prefix).free < sum(a["bytes"] for a in archives) + entry["max_unpacked_bytes"]:
         raise Refused(f"{entry['id']}: too little free space")
@@ -1022,6 +1088,134 @@ def install_archives(entry: dict) -> None:
         raise
 
 
+_ZIP_ENCRYPTED = 0x1  # general purpose flag bit 0
+_DOS_REPARSE_POINT = 0x400  # FILE_ATTRIBUTE_REPARSE_POINT among a member's MS-DOS attributes
+
+
+def zip_listing(infos: list) -> tuple[list[dict], list[str]]:
+    """A zip archive's members in member_problems' form, and the problems only a zip member can have.
+
+    The raw name from the central directory is checked, never zipfile's cleaned one. A Unix mode or an
+    MS-DOS attribute that marks a link, any other non-regular type, a type that disagrees with the
+    member's name, a directory with content and an encrypted member never pass."""
+    listing, problems = [], []
+    for info in infos:
+        raw = info.orig_filename
+        directory = raw.endswith(("/", "\\"))
+        name = raw[:-1] if directory else raw
+        kind = stat.S_IFMT(info.external_attr >> 16)
+        listing.append({"name": name, "dir": directory, "file": not directory,
+                        "symlink": kind == stat.S_IFLNK or bool(info.external_attr & _DOS_REPARSE_POINT),
+                        "junction": False, "socket": kind not in (0, stat.S_IFREG, stat.S_IFDIR, stat.S_IFLNK),
+                        "size": info.file_size})
+        if kind in (stat.S_IFREG, stat.S_IFDIR) and (kind == stat.S_IFDIR) != directory:
+            problems.append(f"{name[:80]!r}: member type disagrees with its name")
+        if directory and info.file_size:
+            problems.append(f"{name[:80]!r}: directory member with content")
+        if info.flag_bits & _ZIP_ENCRYPTED:
+            problems.append(f"{name[:80]!r}: encrypted member")
+    return listing, problems
+
+
+def _extract_zip(entry: dict, path: Path, target: Path, free_at: Path) -> dict:
+    """List and check a verified zip, then extract it into the new directory target.
+
+    Returns the expected files as {case-folded path below target: size}. Nothing is extracted when
+    any member is unsafe, and every write is an exclusive create inside target."""
+    # Open the bytes that were verified, not the path again: re-check them in memory and unpack from there.
+    data = path.read_bytes()
+    if len(data) != entry["size"] or hashlib.sha256(data).hexdigest() != entry["sha256"]:
+        raise Refused(f"{entry['id']}: archive changed after verification; installation blocked until verified again")
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            infos = archive.infolist()
+            listing, zip_only = zip_listing(infos)
+            problems = (member_problems(listing, "") + zip_only)[:20]
+            if problems:
+                raise Refused(f"{entry['id']}: {'; '.join(problems)}; installation blocked until verified again")
+            expected = {m["name"].replace("\\", "/").casefold(): m["size"] for m in listing if m["file"]}
+            unpacked = sum(expected.values())
+            if unpacked > entry["max_unpacked_bytes"] or shutil.disk_usage(free_at).free < unpacked:
+                raise Refused(f"{entry['id']}: unpacked size exceeds the limit or available free space")
+            target.mkdir()
+            for info, member in zip(infos, listing):
+                out = target.joinpath(*member["name"].replace("\\", "/").split("/"))
+                if not _within(out, target):
+                    raise Refused(f"{entry['id']}: member {member['name'][:80]!r} leaves the destination")
+                if member["dir"]:
+                    out.mkdir(parents=True, exist_ok=True)
+                    continue
+                out.parent.mkdir(parents=True, exist_ok=True)
+                written = 0
+                with archive.open(info) as source, out.open("xb") as sink:
+                    while chunk := source.read(1 << 20):
+                        written += len(chunk)
+                        if written > member["size"]:
+                            break
+                        sink.write(chunk)
+                if written != member["size"]:
+                    raise Refused(f"{entry['id']}: member {member['name'][:80]!r} differs from its listed size")
+    except Refused:
+        raise
+    except Exception as exc:  # a damaged archive, an unsupported method, a CRC mismatch or a failed write
+        raise Refused(f"{entry['id']}: archive could not be extracted ({type(exc).__name__}); "
+                      "installation blocked until verified again") from None
+    return expected
+
+
+def install_zip(entry: dict) -> None:
+    """Install one pinned zip into its own directory below tools/ (Windows only).
+
+    The bytes are checked against the pinned size and sha256 before the archive is opened. Every
+    member is checked before anything is extracted, extraction happens in a marked staging tree beside
+    the destination, and only the checked tree is moved into place, so a failed install leaves no
+    destination behind."""
+    if PLATFORM != "windows":
+        raise Refused(f"{entry['id']}: archive-zip-hashed installs on Windows only")
+    final = safe_dest(entry["dest"])
+    if os.path.lexists(final):
+        raise Refused(f"{entry['id']}: destination already exists")
+    prefix = final.parent
+    prefix.mkdir(parents=True, exist_ok=True)
+    safe_dest(entry["dest"])  # the directories just created are not links either
+    _remove_leftover_staging(prefix)
+    if shutil.disk_usage(prefix).free < entry["size"] + entry["max_unpacked_bytes"]:
+        raise Refused(f"{entry['id']}: too little free space")
+    started = time.monotonic()
+    staging = prefix / f".st-{os.getpid()}"
+    staging.mkdir()
+    moved = False
+    try:
+        try:
+            (staging / ".magic600-staging").write_bytes(b"magic600\n")
+            dl, tree = staging / "dl", staging / "x"
+            dl.mkdir()
+            tree.mkdir()
+            host = _fetch_pinned(entry, dl / "archive.zip")  # size and sha256 hold before the archive is opened
+            expected = _extract_zip(entry, dl / "archive.zip", tree / final.name, prefix)
+            actual, longest = _archive_tree(tree, final.name)
+            expected = {f"{final.name.casefold()}/{rel}": size for rel, size in expected.items()}
+            if actual.keys() != expected.keys():
+                raise Refused(f"{entry['id']}: extracted file set differs from the listing")
+            if actual != expected:
+                raise Refused(f"{entry['id']}: extracted file size differs from the listing")
+            for rel in entry["required_files"]:
+                path = tree / final.name / rel
+                if _is_link(path) or not path.is_file():
+                    raise Refused(f"{entry['id']}: missing required file {rel}")
+            os.rename(tree / final.name, final)
+            moved = True
+        finally:
+            _remove_tree(staging)
+        ledger({"tool": entry["id"], "phase": "zip", "bytes": entry["size"], "host": host, "files": len(expected),
+                "unpacked": sum(expected.values()), "longest_path": len(str(prefix)) + 1 + longest,
+                "seconds": round(time.monotonic() - started, 1)})
+    except BaseException:
+        if moved:
+            _remove_tree(final)  # a failure after the move leaves the absent destination absent
+        raise
+
+
 def install_entry(entry: dict) -> None:
     method = entry["method"]
     source = APPROVED_SOURCES.get(method)
@@ -1072,6 +1266,8 @@ def install_entry(entry: dict) -> None:
               f"--registry={NPM_REGISTRY}"], cwd=prefix)
     elif method == "archive-7z-hashed":
         install_archives(entry)
+    elif method == "archive-zip-hashed":
+        install_zip(entry)
     elif method == "winget":
         if PLATFORM != "windows":
             raise Refused(f"{entry['id']}: winget entries install on Windows only")
@@ -1102,26 +1298,21 @@ def _download_opener(hosts: list[str]):
     return urllib.request.build_opener(urllib.request.ProxyHandler({}), _ApprovedRedirects(hosts))
 
 
-def download_hashed(entry: dict) -> None:
-    """Download one pinned file (model weights) into tools/.models/; keep it only when size and sha256 match.
+def _fetch_pinned(entry: dict, part: Path) -> str:
+    """Download entry["url"] into the new file part and keep it only when size and sha256 match the pin.
 
-    No credentials or cookies are sent. The file is written to a staging file that this call creates
-    and owns, and renamed only after the check, so a failed or tampered download never leaves a file
-    that looks installed."""
+    No credentials or cookies are sent, and every redirect stays on plain https to the entry's approved
+    hosts. part is created exclusively: a file or hard link planted there is refused, never written
+    through. On any failure the file is removed only if this call created it. Returns the final host."""
     hosts = entry["network_hosts"]
     check_url(entry["url"], hosts)
-    dest = safe_dest(entry["dest"])
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    safe_dest(entry["dest"])  # the directories just created are not links either
-    # A fresh name, created exclusively: a file or hard link planted at a staging path, or another
-    # download of the same entry, can neither receive these bytes nor replace them before the rename.
-    part = safe_dest(f"{entry['dest']}.{os.urandom(8).hex()}.part")
     request = urllib.request.Request(entry["url"], headers={"User-Agent": "magic600-bootstrap"})
-    digest, size, created = hashlib.sha256(), 0, False
+    digest, size, created, kept = hashlib.sha256(), 0, False, False
     print(f"+ download {entry['url']} ({entry['size']} bytes)", flush=True)
     try:
         with _download_opener(hosts).open(request, timeout=DOWNLOAD_TIMEOUT) as response:
-            check_url(response.geturl(), hosts)
+            final_url = response.geturl()
+            check_url(final_url, hosts)
             with part.open("xb") as out:
                 created = True
                 for chunk in iter(lambda: response.read(1 << 20), b""):
@@ -1132,13 +1323,33 @@ def download_hashed(entry: dict) -> None:
                     out.write(chunk)
         if size != entry["size"] or digest.hexdigest() != entry["sha256"]:
             raise Refused(f"{entry['id']}: size or sha256 differs from the lockfile; installation blocked until verified again")
-        os.replace(part, dest)
-        created = False
+        kept = True
+        return urllib.parse.urlsplit(final_url).hostname
     except (OSError, http.client.HTTPException) as exc:  # urllib.error.URLError is an OSError
         raise Refused(f"{entry['id']}: download failed ({type(exc).__name__})") from None
     finally:
-        if created:  # only this call's own staging file, never a file it did not create
+        if created and not kept:  # only this call's own staging file, never a file it did not create
             part.unlink(missing_ok=True)
+
+
+def download_hashed(entry: dict) -> None:
+    """Download one pinned file (model weights) into tools/.models/; keep it only when size and sha256 match.
+
+    The file is written to a staging file that this call creates and owns, and renamed only after the
+    check, so a failed or tampered download never leaves a file that looks installed."""
+    check_url(entry["url"], entry["network_hosts"])
+    dest = safe_dest(entry["dest"])
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    safe_dest(entry["dest"])  # the directories just created are not links either
+    # A fresh name, created exclusively: a file or hard link planted at a staging path, or another
+    # download of the same entry, can neither receive these bytes nor replace them before the rename.
+    part = safe_dest(f"{entry['dest']}.{os.urandom(8).hex()}.part")
+    _fetch_pinned(entry, part)
+    try:
+        os.replace(part, dest)
+    except OSError as exc:
+        part.unlink(missing_ok=True)
+        raise Refused(f"{entry['id']}: download failed ({type(exc).__name__})") from None
 
 
 PYTHON_FACTS = "import platform,struct;print(platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
@@ -1259,9 +1470,11 @@ def install(lock: dict, tool_id: str, done: set) -> str:
         if not ok:
             raise Refused(f"{tool_id}: installed but the probe failed ({detail})")
     except BaseException:
+        # install_archives and install_zip refuse an existing destination, so this attempt created the tree: remove it.
         if entry["method"] == "archive-7z-hashed":
-            # install_archives refuses an existing destination, so this attempt created the tree: remove it.
             _remove_tree(safe_dest(entry["prefix"] + "/" + entry["root"]))
+        elif entry["method"] == "archive-zip-hashed":
+            _remove_tree(safe_dest(entry["dest"]))
         raise
     done.add(tool_id)
     print(f"{tool_id}: installed ({detail})")

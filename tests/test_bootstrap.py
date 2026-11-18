@@ -13,12 +13,15 @@ import shutil
 import socket
 import ssl
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
 import uuid
+import warnings
+import zipfile
 from types import SimpleNamespace
 from pathlib import Path
 from unittest import mock
@@ -1867,6 +1870,461 @@ class AqtAndRealExtractorTests(unittest.TestCase):
                 r = subprocess.run([*command, "extract", str(archive), str(target)], **kwargs)
                 self.assertEqual(r.returncode, 0, r.stderr)
                 self.assertEqual((target / "nested/file").read_bytes(), source.read_bytes())
+
+
+DXC_URL = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/dxc_2026_09_29.zip"
+DXC_ASSET = ("https://release-assets.githubusercontent.com/github-production-release-asset/1/abc?sp=r&sv=2018-11-09"
+             "&se=2026-11-18T10%3A00%3A00Z&rscd=attachment%3B+filename%3Ddxc_2026_09_29.zip&sig=x")
+DXC_MEMBERS = [("bin/", b""), ("bin/x64/dxc.exe", b"dxc x64"), ("bin/x64/dxcompiler.dll", b"compiler x64"),
+               ("bin/x64/dxil.dll", b"dxil x64"), ("bin/x86/dxc.exe", b"dxc x86"), ("inc/dxcapi.h", b"// header"),
+               ("lib/x64/dxcompiler.lib", b"lib"), ("LICENSE-LLVM.txt", b"NCSA licence text")]
+DXC_VERSION = "dxcompiler.dll: 1.9 - 1.9.2609.7 (6a1b2c3d4); dxil.dll: 1.9(101.9.2609.7)"
+REAL_DOWNLOAD_OPENER = bootstrap._download_opener  # read before any test replaces it
+
+
+def zip_of(members, method=zipfile.ZIP_DEFLATED) -> bytes:
+    """A zip whose raw member names and attributes are exactly as given; zipfile never cleans them here.
+
+    A member is (name, data) or (name, data, external_attr); without one, a Unix file or directory mode is written."""
+    buffer = io.BytesIO()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # some fixtures repeat a name on purpose
+        with zipfile.ZipFile(buffer, "w", method) as archive:
+            for name, data, *attr in members:
+                info = zipfile.ZipInfo("member")
+                info.filename = name
+                info.compress_type = method
+                info.external_attr = attr[0] if attr else (
+                    (stat.S_IFDIR | 0o755) << 16 | 0x10 if name.endswith("/") else (stat.S_IFREG | 0o644) << 16)
+                archive.writestr(info, data)
+    return buffer.getvalue()
+
+
+def with_flag_bits(data: bytes, bits: int) -> bytes:
+    """Set general purpose flag bits in every local and central header of a zip."""
+    out = bytearray(data)
+    for signature, offset in ((b"PK\x03\x04", 6), (b"PK\x01\x02", 8)):
+        at = out.find(signature)
+        while at >= 0:
+            flags = struct.unpack_from("<H", out, at + offset)[0]
+            struct.pack_into("<H", out, at + offset, flags | bits)
+            at = out.find(signature, at + 4)
+    return bytes(out)
+
+
+class ZipLockTests(unittest.TestCase):
+    def test_dxc_entry_pins_the_release_asset(self):
+        lock = bootstrap.load_lock()
+        dxc = bootstrap.entry_for(lock, "dxc")
+        self.assertEqual(dxc["method"], "archive-zip-hashed")
+        self.assertEqual((dxc["status"], dxc["installable"], dxc["platforms"], dxc["profiles"]),
+                         ("verified", True, ["windows"], ["renderer-spike"]))
+        self.assertEqual((dxc["version"], dxc["url"], dxc["size"], dxc["sha256"]),
+                         ("1.9.2609", DXC_URL, 32287592, "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1"))
+        self.assertEqual(dxc["network_hosts"], ["github.com", "release-assets.githubusercontent.com"])
+        self.assertEqual(dxc["dest"], "tools/.dxc/v1.9.2609")
+        self.assertEqual(dxc["probe"], ["{dest}/bin/x64/dxc", "--version"])
+        self.assertRegex(DXC_VERSION, dxc["expect"])
+        self.assertNotRegex("dxcompiler.dll: 1.8 - 1.8.2505.1 (abc); dxil.dll: 1.8(101.8.2505.1)", dxc["expect"])
+        self.assertIn("tools/.dxc/", (ROOT / ".gitignore").read_text().splitlines())
+        self.assertIn("archive-zip-hashed", bootstrap.METHODS)
+        self.assertNotIn("archive-zip-hashed", bootstrap.EXACT_VERSION_METHODS)  # dxc reports 1.9, not 1.9.2609
+
+    def test_malformed_zip_fields_are_rejected(self):
+        lock = bootstrap.load_lock()
+        good = bootstrap.entry_for(lock, "dxc")
+        cases = []
+
+        def changed(field, value):
+            entry = copy.deepcopy(good)
+            entry[field] = value
+            cases.append((field + "=" + repr(value), entry))
+
+        for field in sorted(bootstrap.ZIP_KEYS - {"id"}):
+            entry = copy.deepcopy(good)
+            del entry[field]
+            cases.append(("missing " + field, entry))
+        for field, value in (("requires", ["uv"]), ("prefix", "tools/.dxc"), ("archives", []), ("extra", 1)):
+            changed(field, value)
+        for value in ([], ["linux"], ["windows", "linux"], "windows"):
+            changed("platforms", value)
+        for value in (None, "", 1.9):
+            changed("version", value)
+        for value in (None, 1, DXC_URL.replace("https:", "http:"), DXC_URL.replace("github.com", "github.com:8443"),
+                      DXC_URL.replace("github.com", "user@github.com"), DXC_URL + "?x=1", DXC_URL + "#f",
+                      DXC_URL[:-4] + ".7z", "https://objects.githubusercontent.com/dxc.zip", "https://github.com/"):
+            changed("url", value)
+        for value in (None, [], "github.com", ["github.com", 1], ["github.com", "127.0.0.1"], ["github.com", "localhost"],
+                      ["github.com", "github.com:443"], ["github.com", "user@github.com"], ["github.com", "internal"],
+                      ["github.com", "release-assets.githubusercontent.com/x"], ["GitHub.com"]):
+            changed("network_hosts", value)
+        for value in (None, "a" * 63, "A" * 64, "g" * 64, good["sha256"] + "\n"):
+            changed("sha256", value)
+        for value in (None, 0, -1, True, 1.0, "1"):
+            changed("size", value)
+        for value in (None, "", "tools", "tools/.dxc", "/tools/.dxc/v", "C:/tools/.dxc/v", "tools\\.dxc\\v",
+                      "tools/.dxc/../v", "tools//.dxc/v", "tools/.dxc/v/", "work/.dxc/v", "tools/.dxc/.st-1",
+                      "tools/.models/dxc/v", "tools/toolchain/dxc", "tools/skills/dxc", "tools/node/dxc",
+                      "tools/.venv/dxc", "tools/.git/dxc"):
+            changed("dest", value)
+        for value in (None, 0, -1, True, 4.0, "4"):
+            changed("max_unpacked_bytes", value)
+        for value in (None, [], "bin/x64/dxc.exe", [None], ["../dxc.exe"], ["bin//dxc.exe"], ["/bin/dxc.exe"], ["bin\\dxc.exe"]):
+            changed("required_files", value)
+        for value in (None, [], "{dest}/bin/x64/dxc", ["dxc", "--version"], ["{prefix}/bin/x64/dxc"], ["{dest}/../dxc"],
+                      ["{dest}/bin/x64/dxc", 1], ["{dest}/"]):
+            changed("probe", value)
+        for value in (None, "", "(", 1):
+            changed("expect", value)
+        saved = bootstrap.LOCK_PATH
+        with tempfile.TemporaryDirectory() as td:
+            bootstrap.LOCK_PATH = Path(td) / "lock.json"
+            try:
+                for name, candidate in cases:
+                    trial = copy.deepcopy(lock)
+                    trial["tools"][trial["tools"].index(bootstrap.entry_for(trial, "dxc"))] = candidate
+                    bootstrap.LOCK_PATH.write_text(json.dumps(trial), encoding="utf-8")
+                    with self.subTest(case=name), self.assertRaisesRegex(SystemExit, r"lockfile: dxc "):
+                        bootstrap.load_lock()
+            finally:
+                bootstrap.LOCK_PATH = saved
+
+
+class ZipInstallTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="zips-")
+        self.base = Path(self.tmp.name).resolve()  # long form: TEMP may be an 8.3 short path
+        self.lock = bootstrap.load_lock()
+        self.entry = copy.deepcopy(bootstrap.entry_for(self.lock, "dxc"))
+        state = bootstrap.approval_state()  # the real installer revision, read before the root moves
+        self.records, self.opened, self.body, self.final_url = [], [], b"", None
+        test = self
+
+        class Response(io.BytesIO):
+            def geturl(self):
+                return test.final_url or test.opened[-1]
+
+        class Opener:
+            def open(self, request, timeout=None):
+                test.opened.append(request.full_url)
+                return Response(test.body)
+
+        self.enterContext(mock.patch.object(bootstrap, "approval_state", lambda: state))
+        self.enterContext(mock.patch.object(bootstrap, "ROOT", self.base))  # fixtures stay outside the repository
+        self.enterContext(mock.patch.object(bootstrap, "PLATFORM", "windows"))
+        self.enterContext(mock.patch.object(bootstrap, "ledger", self.records.append))
+        self.enterContext(mock.patch.object(bootstrap, "_download_opener", lambda hosts: Opener()))
+        self.enterContext(mock.patch.object(bootstrap.shutil, "disk_usage", lambda p: SimpleNamespace(free=1 << 40)))
+        self.enterContext(contextlib.redirect_stdout(io.StringIO()))
+        self.use(zip_of(DXC_MEMBERS))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def use(self, data: bytes, served: bytes | None = None):
+        """Pin data and serve served (by default the same bytes)."""
+        self.entry["size"], self.entry["sha256"] = len(data), hashlib.sha256(data).hexdigest()
+        self.body = data if served is None else served
+
+    @property
+    def final(self):
+        return self.base / self.entry["dest"]
+
+    @property
+    def prefix(self):
+        return self.final.parent
+
+    def assert_clean_refusal(self, text):
+        with self.assertRaisesRegex(bootstrap.Refused, text):
+            bootstrap.install_zip(self.entry)
+        self.assertFalse(os.path.lexists(self.final))
+        self.assertEqual(list(self.prefix.glob(".st-*")) if self.prefix.exists() else [], [])
+        self.assertEqual(self.records, [])
+
+    def test_good_archive_installs_and_logs(self):
+        bootstrap.install_zip(self.entry)
+        self.assertEqual(self.opened, [DXC_URL])
+        files = {p.relative_to(self.final).as_posix(): p.read_bytes() for p in self.final.rglob("*") if p.is_file()}
+        self.assertEqual(files, {name: data for name, data in DXC_MEMBERS if not name.endswith("/")})
+        self.assertEqual([p.name for p in self.prefix.iterdir()], [self.final.name])
+        self.assertTrue(bootstrap.present(self.entry))
+        self.assertEqual(len(self.records), 1)
+        record = self.records[0]
+        self.assertEqual((record["tool"], record["phase"], record["bytes"], record["host"], record["files"]),
+                         ("dxc", "zip", self.entry["size"], "github.com", 7))
+        self.assertEqual(record["unpacked"], sum(len(data) for _, data in DXC_MEMBERS))
+        self.assertEqual(record["longest_path"], max(len(str(p)) for p in self.final.rglob("*")))
+
+    def test_windows_made_archive_with_ms_dos_attributes_installs(self):
+        self.use(zip_of([(name, data, 0x10 if name.endswith("/") else 0x20) for name, data in DXC_MEMBERS],
+                        method=zipfile.ZIP_STORED))
+        bootstrap.install_zip(self.entry)
+        self.assertEqual((self.final / "bin/x64/dxil.dll").read_bytes(), b"dxil x64")
+
+    def test_pinned_byte_mismatch_is_refused_before_the_archive_is_opened(self):
+        data = zip_of(DXC_MEMBERS)
+        mid = len(data) // 2
+        other = data[:mid] + bytes([data[mid] ^ 1]) + data[mid + 1:]  # same size, one bit changed
+        cases = {"other content": (other, None), "truncated": (data[:-1], None), "longer": (data + b"x", None),
+                 "unapproved final host": (data, "https://objects.githubusercontent.com/dxc.zip")}
+        for name, (served, final_url) in cases.items():
+            self.use(data, served)
+            self.final_url = final_url
+            with self.subTest(case=name), \
+                    mock.patch.object(bootstrap.zipfile, "ZipFile", side_effect=AssertionError("archive opened")) as opened:
+                self.assert_clean_refusal("installation blocked|not among the entry's approved network hosts")
+                opened.assert_not_called()
+
+    def test_unsafe_members_are_refused_before_extraction(self):
+        link = (stat.S_IFLNK | 0o777) << 16
+        cases = {
+            "absolute": ([("/bin/x64/dxc.exe", b"x")], "absolute member path"),
+            "absolute backslash": ([("\\bin\\dxc.exe", b"x")], "absolute member path"),
+            "drive letter": ([("C:/bin/dxc.exe", b"x")], "absolute member path"),
+            "drive-relative": ([("C:dxc.exe", b"x")], "absolute member path"),
+            "UNC": ([("\\\\server\\share\\dxc.exe", b"x")], "absolute member path"),
+            "parent": ([("../dxc.exe", b"x")], "unsafe path segment"),
+            "nested parent": ([("bin/../../dxc.exe", b"x")], "unsafe path segment"),
+            "backslash parent": ([("bin\\..\\..\\dxc.exe", b"x")], "unsafe path segment"),
+            "trailing dot": ([("bin./dxc.exe", b"x")], "unsafe path segment"),
+            "NUL": ([("dxc.exe\x00.txt", b"x")], "forbidden character"),
+            "stream": ([("dxc.exe:stream", b"x")], "forbidden character"),
+            "device": ([("bin/CON.txt", b"x")], "Windows device name"),
+            "unix symlink": ([("bin/x64/dxc.exe", b"C:/Windows/System32/cmd.exe", link)], "regular file or directory"),
+            "directory symlink": ([("bin/", b"", link)], "regular file or directory"),
+            "reparse point": ([("bin/x64/dxc.exe", b"x", 0x400 | 0x20)], "regular file or directory"),
+            "fifo": ([("bin/fifo", b"", (stat.S_IFIFO | 0o644) << 16)], "regular file or directory"),
+            "device node": ([("bin/dev", b"", (stat.S_IFCHR | 0o644) << 16)], "regular file or directory"),
+            "type disagrees": ([("bin/x64/dxc.exe", b"", (stat.S_IFDIR | 0o755) << 16)], "disagrees with its name"),
+            "directory with content": ([("bin/", b"hidden")], "directory member with content"),
+            "duplicate": ([("dxc.exe", b"a"), ("dxc.exe", b"b")], "duplicate member"),
+            "case duplicate": ([("Bin/DXC.exe", b"a"), ("bin/dxc.exe", b"b")], "duplicate member"),
+            "separator duplicate": ([("bin\\dxc.exe", b"a"), ("bin/dxc.exe", b"b")], "duplicate member"),
+            "file and directory": ([("bin", b"a"), ("bin/", b"")], "duplicate member"),
+        }
+        for name, (members, text) in cases.items():
+            self.use(zip_of(members))
+            with self.subTest(case=name), \
+                    mock.patch.object(zipfile.ZipFile, "open", side_effect=AssertionError("member extracted")) as extracted:
+                self.assert_clean_refusal(text)
+                extracted.assert_not_called()
+        self.use(with_flag_bits(zip_of([("bin/x64/dxc.exe", b"x")]), 0x1))
+        with mock.patch.object(zipfile.ZipFile, "open", side_effect=AssertionError("member extracted")) as extracted:
+            self.assert_clean_refusal("encrypted member")
+            extracted.assert_not_called()
+
+    def test_a_member_leaving_the_destination_is_refused_past_the_name_checks(self):
+        self.use(zip_of([("bin/x64/dxc.exe", b"x"), ("../escape", b"outside")]))
+        with mock.patch.object(bootstrap, "member_problems", return_value=[]):
+            self.assert_clean_refusal("leaves the destination")
+        self.assertEqual([p for p in self.base.rglob("escape")], [])
+
+    def test_archive_swapped_after_verification_is_refused(self):
+        good = zip_of(DXC_MEMBERS)
+        self.use(good)
+
+        def swapped(entry, path):
+            path.write_bytes(zip_of([("bin/x64/dxc.exe", b"other")]))  # replaced after the pinned bytes were checked
+            return "release-assets.githubusercontent.com"
+
+        with mock.patch.object(bootstrap, "_fetch_pinned", side_effect=swapped):
+            self.assert_clean_refusal("changed after verification")
+
+    def test_failed_extraction_leaves_no_destination(self):
+        stored = zip_of(DXC_MEMBERS, method=zipfile.ZIP_STORED)
+        self.assertEqual(stored.count(b"dxil x64"), 1)
+        cases = {"CRC mismatch": (stored.replace(b"dxil x64", b"dxil X64"), "could not be extracted \\(BadZipFile\\)"),
+                 "not a zip": (b"not a zip archive", "could not be extracted \\(BadZipFile\\)")}
+        for name, (data, text) in cases.items():
+            self.use(data)
+            with self.subTest(case=name):
+                self.assert_clean_refusal(text)
+        self.use(zip_of(DXC_MEMBERS))
+        real_open = Path.open
+
+        def failing_open(path, mode="r", *args, **kwargs):
+            if mode == "xb" and path.name == "dxil.dll":
+                raise PermissionError("disk refused the write")
+            return real_open(path, mode, *args, **kwargs)
+
+        with mock.patch.object(Path, "open", failing_open):
+            self.assert_clean_refusal("could not be extracted \\(PermissionError\\)")
+
+    def test_unpacked_limit_and_free_space_are_checked_before_extraction(self):
+        self.entry["max_unpacked_bytes"] = 10
+        with mock.patch.object(zipfile.ZipFile, "open", side_effect=AssertionError("member extracted")) as extracted:
+            self.assert_clean_refusal("unpacked size exceeds")
+            extracted.assert_not_called()
+        self.entry["max_unpacked_bytes"] = 4096
+        bootstrap.shutil.disk_usage = lambda p: SimpleNamespace(free=1)
+        self.assert_clean_refusal("too little free space")
+        self.assertEqual(self.opened, [DXC_URL])  # only the first case reached the network
+
+    def damaged(self, damage):
+        """Run the real extraction, then change the extracted tree before the installer checks it."""
+        real = bootstrap._extract_zip
+
+        def extract(entry, path, target, free_at):
+            expected = real(entry, path, target, free_at)
+            damage(target)
+            return expected
+
+        return mock.patch.object(bootstrap, "_extract_zip", extract)
+
+    def test_extracted_tree_is_checked_before_the_move(self):
+        sentinel = self.base / "sentinel"
+        sentinel.write_bytes(b"x" * len(b"NCSA licence text"))
+
+        def hard_link(target):
+            (target / "LICENSE-LLVM.txt").unlink()
+            os.link(sentinel, target / "LICENSE-LLVM.txt")
+
+        cases = {"outside root": lambda target: (target.parent / "outside").write_bytes(b"x"),
+                 "file set differs": lambda target: (target / "unlisted").write_bytes(b"x"),
+                 "file size differs": lambda target: (target / "bin/x64/dxc.exe").write_bytes(b"another size"),
+                 "hard-linked file": hard_link}
+        for text, damage in cases.items():
+            with self.subTest(case=text), self.damaged(damage):
+                try:
+                    self.assert_clean_refusal(text)
+                except OSError as exc:  # os.link without hard-link support
+                    self.skipTest(f"hard links not available ({exc})")
+        self.assertEqual(sentinel.read_bytes(), b"x" * len(b"NCSA licence text"))
+        linked = self.prefix / f".st-{os.getpid()}/x/{self.final.name}/bin"
+        real_is_link = bootstrap._is_link
+        with mock.patch.object(bootstrap, "_is_link", lambda p: Path(p) == linked or real_is_link(p)):
+            self.assert_clean_refusal("contains a link")
+        self.entry["required_files"].append("bin/x64/missing.dll")
+        self.assert_clean_refusal("missing required file bin/x64/missing.dll")
+
+    def test_existing_destination_and_leftovers(self):
+        self.final.mkdir(parents=True)
+        (self.final / "owner.txt").write_bytes(b"owner")
+        with self.assertRaisesRegex(bootstrap.Refused, "destination already exists"):
+            bootstrap.install_zip(self.entry)
+        self.assertEqual((self.final / "owner.txt").read_bytes(), b"owner")
+        shutil.rmtree(self.final)
+        leftover = self.prefix / ".st-old"
+        leftover.mkdir()
+        (leftover / "owner.txt").write_bytes(b"owner")
+        with self.assertRaisesRegex(bootstrap.Refused, "unexpected leftover .st-old"):
+            bootstrap.install_zip(self.entry)
+        self.assertEqual((leftover / "owner.txt").read_bytes(), b"owner")
+        self.assertEqual(self.opened, [])
+        (leftover / ".magic600-staging").write_bytes(b"marker")
+        bootstrap.install_zip(self.entry)
+        self.assertFalse(leftover.exists())
+        self.assertTrue((self.final / "bin/x64/dxc.exe").is_file())
+
+    def test_zip_method_is_windows_only(self):
+        bootstrap.PLATFORM = "linux"
+        self.assert_clean_refusal("Windows only")
+        self.assertEqual(self.opened, [])
+
+    def test_probe_runs_dxc_from_the_final_tree(self):
+        bootstrap.install_zip(self.entry)
+        dxc = self.final / "bin/x64/dxc.exe"
+        for output, code, ok in ((DXC_VERSION, 0, True), ("dxcompiler.dll: 1.8 - 1.8.2505.1 (abc)", 0, False),
+                                 ("error", 1, False)):
+            calls = []
+
+            def probe(cmd, **kwargs):
+                calls.append(cmd)
+                self.assertEqual((Path(cmd[0]), cmd[1:]), (dxc, ["--version"]))
+                self.assertEqual((kwargs["timeout"], kwargs["env"]), (bootstrap.PROBE_TIMEOUT, bootstrap.probe_env()))
+                return subprocess.CompletedProcess(cmd, code, output + "\n", "")
+
+            with self.subTest(output=output), mock.patch.object(bootstrap.subprocess, "run", probe):
+                self.assertEqual(bootstrap.run_probe(self.entry)[0], ok)
+                self.assertEqual(len(calls), 1)
+
+    def test_probe_refuses_a_linked_dxc_without_running_it(self):
+        bootstrap.install_zip(self.entry)
+        dxc = self.final / "bin/x64/dxc.exe"
+        elsewhere = self.base / "elsewhere.exe"
+        elsewhere.write_bytes(b"other")
+        dxc.unlink()
+        try:
+            os.symlink(elsewhere, dxc)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks not available")
+        with mock.patch.object(bootstrap.subprocess, "run", side_effect=AssertionError("probe ran")):
+            ok, detail = bootstrap.run_probe(self.entry)
+        self.assertFalse(ok)
+        self.assertIn("refused", detail)
+        self.assertFalse(bootstrap.present(self.entry))
+
+    def install(self, output=DXC_VERSION):
+        lock = dict(self.lock, tools=[self.entry if e["id"] == "dxc" else e for e in self.lock["tools"]])
+        probe = lambda cmd, **kwargs: subprocess.CompletedProcess(cmd, 0, output, "")
+        with mock.patch.object(bootstrap.subprocess, "run", probe):
+            return bootstrap.install(lock, "dxc", set())
+
+    def test_install_probes_after_the_move_and_removes_the_tree_on_failure(self):
+        with self.assertRaisesRegex(bootstrap.Refused, "installed but the probe failed"):
+            self.install(output="dxcompiler.dll: 1.8 - 1.8.2505.1")
+        self.assertFalse(os.path.lexists(self.final))
+        self.assertEqual([r.get("result") for r in self.records], [None, "probe-failed"])
+        self.records.clear()
+
+        def read_only_ledger(record):
+            if record.get("phase") == "zip":
+                raise PermissionError("ledger is read-only")
+            self.records.append(record)
+
+        with mock.patch.object(bootstrap, "ledger", read_only_ledger), self.assertRaises(PermissionError):
+            self.install()
+        self.assertFalse(os.path.lexists(self.final))
+        self.assertEqual(list(self.prefix.glob(".st-*")), [])
+        self.assertEqual(self.install(), "installed")
+        self.assertEqual([r.get("phase") or r.get("result") for r in self.records], ["zip", "ok"])
+        self.assertEqual(self.install(), "present")
+
+    def test_github_redirect_reaches_only_the_release_asset_host(self):
+        from email.message import Message
+
+        def connection(*responses):
+            class Response(io.BytesIO):
+                def __init__(self, status, body=b"", location=None):
+                    super().__init__(body)
+                    self.code = self.status = status
+                    self.reason = "Found" if location else "OK"
+                    self.headers = Message()
+                    if location:
+                        self.headers["Location"] = location
+
+                def info(self):
+                    return self.headers
+
+                def geturl(self):
+                    return self.url  # set by urllib when it returns the response
+
+            conn = mock.Mock()
+            conn.sock = None
+            conn.getresponse.side_effect = [Response(*r) for r in responses]
+            return conn
+
+        data = zip_of(DXC_MEMBERS)
+        self.use(data)
+        part = self.base / "download.part"
+        conn = connection((302, b"", DXC_ASSET), (200, data))
+        with mock.patch.object(bootstrap, "_download_opener", REAL_DOWNLOAD_OPENER), \
+                mock.patch.object(bootstrap.http.client, "HTTPSConnection", return_value=conn) as connect:
+            self.assertEqual(bootstrap._fetch_pinned(self.entry, part), "release-assets.githubusercontent.com")
+        self.assertEqual([call.args[0] for call in connect.call_args_list], ["github.com", "release-assets.githubusercontent.com"])
+        self.assertEqual(part.read_bytes(), data)
+        part.unlink()
+        for target in ("https://objects.githubusercontent.com/github-production-release-asset/1/abc",
+                       "https://release-assets.githubusercontent.com.example.net/abc",
+                       "http://release-assets.githubusercontent.com/abc", "https://release-assets.githubusercontent.com:8443/abc"):
+            conn = connection((302, b"", target), (200, data))
+            with self.subTest(target=target), \
+                    mock.patch.object(bootstrap, "_download_opener", REAL_DOWNLOAD_OPENER), \
+                    mock.patch.object(bootstrap.http.client, "HTTPSConnection", return_value=conn) as connect, \
+                    self.assertRaisesRegex(bootstrap.Refused, "only plain https|not among the entry's approved network hosts"):
+                bootstrap._fetch_pinned(self.entry, part)
+            self.assertEqual([call.args[0] for call in connect.call_args_list], ["github.com"])
+            self.assertFalse(part.exists())
 
 
 H = "--hash=sha256:" + "a" * 64

@@ -11,10 +11,10 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, Caller, CommandLayer, Invocation, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table,
+    code, Caller, CommandLayer, Invocation, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table, POLICY_ROW,
 };
 use c600_kernel::json::{self, Value};
-use c600_kernel::Kernel;
+use c600_kernel::{Kernel, ProtectionMode};
 
 const SECRET: [u8; 32] = [7; 32];
 const ROWS: [&str; 4] = ["recording.start", "recording.stop", "recording.play", "recording.convert"];
@@ -104,6 +104,41 @@ fn a_run_cannot_start_a_served_playback() {
         "the run's `recording.play` was answered {}, and the waiting program job is {job:?}",
         answer(&receipt)
     );
+}
+
+/// Finding LD1 (class B and D, a lead: playback is not built). Rule: EV4.22 [D] lets a recording play view and
+/// workspace steps unattended, never a commit. H-08 gives `protection.policy.set`, a workspace row, no `confirm` gate,
+/// so a recorded switch from Strict to Net would be an unattended step, and the solver's next commit would be judged
+/// under a policy they did not set in this sitting.
+///
+/// Fixed (the owner's reading of 18 November 2026, `docs/wiki/decisions/owner-decisions-2026-11-18.md`): a change of
+/// the policy needs the solver's own confirmed press, as a release of protection does, so no playback or run changes
+/// it. A step with no confirmation, or with a confirmation of false, is refused with `KN5:input.confirmation_required`;
+/// a run's step is refused with or without one; the policy, the revision and the journal stay as they were. The
+/// solver's confirmed press changes the policy.
+#[test]
+fn ld1_a_policy_change_needs_the_solvers_confirmed_press() {
+    let mut f = fixture();
+    let before = (f.layer.policy(), f.layer.revision().clone(), f.transactions());
+    let strict = |confirm: Option<bool>| match confirm {
+        None => json::object([("policy", text("strict"))]),
+        Some(confirm) => json::object([("confirm", Value::Bool(confirm)), ("policy", text("strict"))]),
+    };
+    for (what, confirm) in [("no confirmation", None), ("a confirmation of false", Some(false))] {
+        let receipt = f.shell.invoke(&mut f.layer, POLICY_ROW, strict(confirm)).unwrap();
+        assert_eq!(receipt.status.code(), Some(code::CONFIRMATION_REQUIRED), "{what}: {:?}", receipt.status);
+        assert_eq!((f.layer.policy(), f.layer.revision().clone(), f.transactions()), before, "{what}");
+    }
+    for confirm in [None, Some(true)] {
+        let receipt = f.runtime("stray-run", POLICY_ROW, strict(confirm));
+        assert!(matches!(receipt.status, Status::Refused(_)), "a run's step ({confirm:?}): {:?}", receipt.status);
+        println!("a run's policy step with confirmation {confirm:?} is answered {}", answer(&receipt));
+        assert_eq!((f.layer.policy(), f.layer.revision().clone(), f.transactions()), before, "{confirm:?}");
+    }
+    assert_eq!(before.0, ProtectionMode::Net);
+    let pressed = f.shell.invoke(&mut f.layer, POLICY_ROW, strict(Some(true))).unwrap();
+    assert!(matches!(pressed.status, Status::Completed(_)), "the solver's press: {:?}", pressed.status);
+    assert_eq!((f.layer.policy(), f.transactions()), (ProtectionMode::Strict, before.2 + 1));
 }
 
 /// Guard (class B, refuted): playback is not built, and the layer does nothing for a recording row that no entry

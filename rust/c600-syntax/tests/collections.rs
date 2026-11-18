@@ -342,8 +342,8 @@ fn ct_lg2_05_set_elements_and_map_keys_are_exact() {
 
 /// CT-LG2-14 (part, the language half's static rules: `CompressedWord` is a type of its own, `compress` and `expand`
 /// lower to their primitives, and the checker gives a compressed word an exact `Nat` length and joins two without
-/// expansion; not run: the run-time half, `c600-run`'s `collections.rs`, and the kernel's streaming, CT-LG4-03 and
-/// M4): a compressed word is never a `Word`, has no exact equality and is no key (LP2 draft), and an expansion takes
+/// expansion; not run: the run-time half, `c600-run`'s `collections.rs`, and the streaming, CT-LG4-03's
+/// `streams.rs`): a compressed word is never a `Word`, has no exact equality and is no key (LP2 draft), and an expansion takes
 /// exact natural positions.
 #[test]
 fn ct_lg2_14_a_compressed_word_is_a_type_of_its_own() {

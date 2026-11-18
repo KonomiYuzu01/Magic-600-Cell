@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 87] = [
+const BUILTINS: [&str; 91] = [
     "if",
     "display_if",
     "exact_add",
@@ -41,6 +41,12 @@ const BUILTINS: [&str; 87] = [
     "tag",
     "colour",
     "target",
+    // Captured bytes and their decoding (LP2 drafts; DET.62).
+    "bytes",
+    "text_decode",
+    // A compressed word streamed in semantic chunks, and its literal digest (LP2 drafts; DET.63).
+    "word_stream",
+    "stream_digest",
     "read_snapshot",
     "publish_view",
     "write_workspace",
@@ -127,7 +133,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 24] = [
+const BASE_TYPES: [&str; 26] = [
     "Unit",
     "Bool",
     "Nat",
@@ -154,6 +160,10 @@ const BASE_TYPES: [&str; 24] = [
     "Generator",
     "F2",
     "F5",
+    // DET.62's captured bytes (LP2 draft).
+    "Bytes",
+    // DET.63's word stream (LP2 draft).
+    "WordStream",
 ];
 
 fn reserved(name: &str) -> bool {
@@ -720,6 +730,16 @@ impl Body<'_> {
         }
     }
 
+    /// The bytes of a `bytes("<hex>")` literal: two hex digits per byte (LP2 draft; DET.62).
+    fn hex(&self, op: &str, arg: &Expr) -> R<Vec<u8>> {
+        let text = self.text(op, arg)?;
+        let digits: Option<Vec<u8>> = text.chars().map(|c| c.to_digit(16).map(|d| d as u8)).collect();
+        match digits {
+            Some(d) if d.len() % 2 == 0 => Ok(d.chunks(2).map(|p| (p[0] << 4) | p[1]).collect()),
+            _ => Err(self.err(arg.loc.0, format!("`{op}` takes a string of hex digit pairs"))),
+        }
+    }
+
     fn unqualified(&self, op: &str, t: &TypeExpr, span: Span) -> R<Ty> {
         let q = self.ty(t)?;
         if q.display {
@@ -746,6 +766,8 @@ impl Body<'_> {
             "approx_sub" | "approx_mul" | "approx_div" | "exclude" => 2,
             "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
             "field_add" | "field_sub" | "field_mul" => 2,
+            // `word_stream(c, chunk)` (LP2 draft; DET.63).
+            "word_stream" => 2,
             // An ordered result names its order (LG4.3).
             "contains" | "lookup" | "elements" | "keys" | "entries" => 2,
             // `read_snapshot<T>("q", x)` reads the engine's row `q` for `x` (LP2 draft).
@@ -844,6 +866,9 @@ impl Body<'_> {
             "to_f2" => Some(Prim::ToField(Field::F2)),
             "to_f5" => Some(Prim::ToField(Field::F5)),
             "residue" => Some(Prim::Residue),
+            "text_decode" => Some(Prim::TextDecode),
+            "word_stream" => Some(Prim::WordStream),
+            "stream_digest" => Some(Prim::StreamDigest),
             "field_add" => Some(Prim::FieldAdd),
             "field_sub" => Some(Prim::FieldSub),
             "field_neg" => Some(Prim::FieldNeg),
@@ -891,6 +916,7 @@ impl Body<'_> {
             "tag" => Ir::Lit(Lit::Tag(self.text(op, &args[0])?)),
             "colour" => Ir::Lit(Lit::Colour(self.text(op, &args[0])?)),
             "target" => Ir::Lit(Lit::Target(self.text(op, &args[0])?)),
+            "bytes" => Ir::Lit(Lit::Bytes(self.hex(op, &args[0])?)),
             "read_snapshot" if args.len() == 2 => {
                 let (query, ty) = (self.text(op, &args[0])?, self.ty(&type_args[0])?);
                 let arg = self.at(path, 0, |b, p| b.expr(&args[1], p))?;
@@ -1158,6 +1184,8 @@ impl Body<'_> {
                             "CompressedWord" => Ty::CompressedWord,
                             "MenuWord" => Ty::MenuWord,
                             "Generator" => Ty::Generator,
+                            "Bytes" => Ty::Bytes,
+                            "WordStream" => Ty::WordStream,
                             "F2" => Ty::Field(Field::F2),
                             "F5" => Ty::Field(Field::F5),
                             _ => match EndTest::of_type_name(n) {
@@ -1241,13 +1269,14 @@ mod tests {
                 "write_workspace" => format!("{op}<Nat>(\"r\", 1)"),
                 "file_write" => format!("{op}(\"p\", 1)"),
                 "tag" | "colour" | "target" => format!("{op}(\"x\")"),
+                "bytes" => format!("{op}(\"00\")"),
                 "rng_init" => format!("{op}(\"root\", \"0\")"),
                 "if" | "display_if" => format!("{op}(true, 1, 2)"),
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"
                 | "approx_and" | "propose" | "index" | "push" | "concat" | "conjugate" | "commutator" | "compose"
                 | "contains" | "insert" | "lookup" | "exact_mul" | "field_add" | "field_sub" | "field_mul"
-                | "approx_sub" | "approx_mul" | "approx_div" | "exclude" => format!("{op}(1, 2)"),
+                | "approx_sub" | "approx_mul" | "approx_div" | "exclude" | "word_stream" => format!("{op}(1, 2)"),
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
