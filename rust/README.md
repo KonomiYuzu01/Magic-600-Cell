@@ -2010,8 +2010,8 @@ run or not applicable is no pass (PHS.63).
   pointwise-failure traces since LP2's `exact_mul` and `assert`, three generator traces since LP2's `rng_init` and
   `rng_draw`, the five child traces, child records included, since LP2's child scopes, `final-loop-test` since LP2's
   loops, the two decoding traces since LP2's byte decoding, on bytes the host delivers as a snapshot, and the three
-  streaming traces since LP2's streamed words, the split and the coalesced trace as one job, since no frame between the
-  host and the child falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's
+  streaming traces since LP2's streamed words, the split and the coalesced trace as one job, since no host call or
+  answer falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's
   field list, each host request's round trip and its refusal when cut or unknown, the class rows, the pinned menu and
   the pinned trace relation as strict trailing fields, and a menu word's, a menu-word preview's and a trace key's
   encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in entry admitted,

@@ -131,12 +131,14 @@
 //! LP2 runs the split and the coalesced trace as one program and one run, since a run has no transport between the
 //! interpreter and a kernel. That holds on the child path too. A word stream stays in its run (the wire codec refuses
 //! `Value::WordStream`; only its type crosses, as tag 29), so `go` takes no stream and returns none. `word_stream` is
-//! one operation of the interpreter, which calls no host between its open and its last chunk, so no frame between the
-//! host and the child falls among a stream's rows; a `cancel` only interrupts a run before a step (DET.56). These
-//! programs call no host at all (`streamed` holds their host calls to none), so each run crosses as its job's frame
-//! and its end's frame, and the end carries every row and charge whole. The test holds the two partitions' ends to
-//! each other, and the cut-off run's live memory at the stop, beyond the program's own before the open, to the
-//! trace's live cursor. The child path gives the coalesced trace nothing more to check.
+//! one operation of the interpreter, which calls no host between its open and its last chunk, so no host call or answer
+//! falls among a stream's rows. A `cancel` may arrive while a stream runs: an interruption is observed before each step
+//! (DET.56), and each chunk is a step, so a cancelled stream stops at a chunk boundary (LP2's `word_stream`). Neither
+//! these traces nor this test sends one. These programs call no host at all (`streamed` holds their host calls to
+//! none), so each run crosses as its job's frame and its end's frame, and the end carries every row and charge whole.
+//! The test holds the two partitions' ends to each other; both run the same job under the same limits, so this checks
+//! only that the run repeats. It holds the cut-off run's live memory at the stop, beyond the program's own before the
+//! open, to the trace's live cursor. The child path gives the coalesced trace nothing more to check.
 //!
 //! # Not realised: 9 of 40
 //!
@@ -422,7 +424,7 @@ fn decoded_text(values: &[(String, Json)], run: &Run, _: &Session) {
 }
 
 /// The streaming traces have no values. `go` calls no host, so its run crosses between the host and the child as its
-/// job and its end alone, and no frame falls among the stream's rows (module docs).
+/// job and its end alone, and no host call or answer falls among the stream's rows (module docs).
 fn streamed(values: &[(String, Json)], run: &Run, session: &Session) {
     no_values(values, run, session);
     assert!(session.log.is_empty(), "no host call: {:?}", session.log);

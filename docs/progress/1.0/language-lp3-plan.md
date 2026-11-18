@@ -218,8 +218,8 @@ acceptance check and stop condition.
   (pull request 225) the five child traces, child records included: 25 of 40. With its loops (pull request 234)
   `final-loop-test` runs: 26 of 40. With its byte decoding (pull request 249) `decode-scalar` and `decode-surrogate` run
   too, on bytes the host delivers as a snapshot: 28 of 40. With its streamed words (pull request 250) the three
-  streaming traces run, the split and the coalesced trace as one job, since no frame between the host and the child
-  falls among a stream's rows: 31 of 40. Of the other 9, one waits for the IR draft (LP2: a child's bytes without a row
+  streaming traces run, the split and the coalesced trace as one job, since no host call or answer falls among a
+  stream's rows: 31 of 40. Of the other 9, one waits for the IR draft (LP2: a child's bytes without a row
   of their own, for `child-decode-error-releases-reservation`), three are amendment candidates for C10, and form 2's
   five are not applicable, which is no pass, since LP2 builds only form 1 of LG2.5 (section 9). A compressed word
   crosses as its parts, within one frame's bound on the lengths they derive (crate draft 15, on LP2's pull request 185).
