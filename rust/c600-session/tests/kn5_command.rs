@@ -206,7 +206,7 @@ fn a_policy_change_and_its_undo_are_durable_in_the_journal() {
     let mut f = create(&disk);
     f.commit(&word(&[1]));
     assert_eq!(f.layer.policy(), ProtectionMode::Net);
-    let args = json::object([("policy", Value::String("strict".into()))]);
+    let args = json::object([("confirm", Value::Bool(true)), ("policy", Value::String("strict".into()))]);
     let set = f.shell.invoke(&mut f.layer, POLICY_ROW, args).unwrap();
     assert!(matches!(set.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })));
     let kept = (f.kept(), f.layer.policy());

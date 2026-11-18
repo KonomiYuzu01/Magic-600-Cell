@@ -244,7 +244,7 @@ fn a_revision_ref_names_the_current_revision() {
     let later = set("workspace", Value::Int(1));
     assert_eq!(refusal(&f.invoke(FILTER, filter(later))), code::REVISION_CHANGED);
 
-    let policy = f.invoke(POLICY_ROW, json::object([("policy", text("strict"))]));
+    let policy = f.invoke(POLICY_ROW, json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))]));
     assert!(matches!(policy.status, Status::Completed(_)), "{:?}", policy.status);
     let second = f.layer.revision().to_json();
     assert_ne!(second, first);

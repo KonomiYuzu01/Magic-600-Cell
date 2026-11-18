@@ -201,7 +201,7 @@ fn the_runtime_reaches_no_commit_or_app_row() {
 fn the_runtime_cannot_set_the_protection_policy() {
     let (mut layer, mut shell) = session();
     assert_eq!(layer.policy(), ProtectionMode::Net, "a session starts under Net");
-    let policy = |name: &str| json::object([("policy", Json::String(name.into()))]);
+    let policy = |name: &str| json::object([("confirm", Json::Bool(true)), ("policy", Json::String(name.into()))]);
     for (asked, run) in [("strict", "to-strict"), ("net", "to-net")] {
         let (kept, before, revision) = (layer.policy(), fingerprint(&layer), layer.revision().clone());
         let mut bridge = Bridge::new(&mut layer, run);

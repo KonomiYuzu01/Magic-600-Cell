@@ -28,7 +28,8 @@
 //! - Ruling 4 (KN5.21, KN5.23): the retry lookup keeps its frozen place before authentication (chapter 08 section 7),
 //!   and the host stamps the caller from the channel the envelope came on. The envelope ([`Invocation`]) names no
 //!   caller; [`CommandLayer::invoke`] takes the channel's caller beside it. Command IDs are scoped per caller (the
-//!   shell, the runtime; no host caller is built). A record is keyed by the scope and the ID, and the request digest
+//!   shell, and each run on its own since finding G1's reading below; no host caller is built). A record is keyed by
+//!   the scope and the ID, and the request digest
 //!   covers the stamped caller (LI.5's amendment says so). A refusal of an envelope that does not authenticate (a bad
 //!   authenticator, a missing token, or a caller that may not use the row or hold a token) is retained for the epoch
 //!   under the envelope's full digest, authenticator included, which is its receipt's `request`; it never attaches to
@@ -47,6 +48,23 @@
 //!   before it with `KN5:consistency.unadmitted_journal_action` (a draft code), so the session does not open as an
 //!   intact writable one. The journal carries no authentication: an edit that rewrites a program-made action as the
 //!   solver's own is not detected.
+//! - Findings B1 and L17 (KN5.12, ONE.42 option (a)): a run cannot replace or cancel a preview the solver is shown;
+//!   only the solver's action ends it. While a frame presents the pending preview, a run's preview and a run's cancel
+//!   of it are refused with `KN5:capability.preview_shown` (a draft code), also for the run of a command the solver
+//!   invoked.
+//! - Finding B2 (ONE.34): a run prepares a preview only inside a command the solver invoked, and the one check is in
+//!   the layer, not in each host. The run must be the run of a program job ([`ProgramJob::run`], `job-<id>`) that the
+//!   host has taken and not yet reported, invoked by the shell or by a run that is itself inside such a command.
+//!   Otherwise its preview is refused with `KN5:capability.outside_solver_command` (a draft code). The check is built
+//!   and off: LP3's host still starts its runs with no solver command behind them, and nothing outside the tests
+//!   serves program jobs yet. It is switched on once LP3 starts its runs through a tool row the shell invokes.
+//! - Finding G1: a command ID lives in its caller's namespace. Each run has its own scope (`runtime/<run>`), so one run
+//!   cannot use up another run's IDs. The scope is derived from the stored caller, so the journal format is unchanged.
+//! - Finding LD1 (EV4.22): a change of the protection policy needs the solver's own confirmed press, as a release of
+//!   protection does, so no playback or run changes it (below).
+//! - ONE.52: a run invokes no row that writes a workspace record, even a run that a solver command started (below).
+//!   The records a workspace row's own job returns are written in that row's completion, and only the solver invokes
+//!   that row.
 //!
 //! # Drafts
 //!
@@ -268,8 +286,10 @@
 //!   preview is built with the kernel's `derive_strict`, step 8 judges the preview's recipe again with
 //!   `strict_protection`, and an undo or redo derives its path with `derive_strict`, so every executed literal prefix
 //!   is judged; a Strict preview's summary adds `mode` and `first_refused_prefix`, and a Net preview's summary is
-//!   unchanged. The row is a workspace row with no token and, as H-08 gives it no gate, no confirmation in either
-//!   direction; the runtime may not invoke it. A policy change advances the workspace and protection revisions, so a
+//!   unchanged. The row is a workspace row with no token. A change in either direction needs `confirm: true`
+//!   (`KN5:input.confirmation_required` otherwise; finding LD1's reading). H-08 gives the row no gate, so the layer asks
+//!   for the confirmation itself; an undo or redo of a policy change needs none. The runtime may not invoke it. A policy
+//!   change advances the workspace and protection revisions, so a
 //!   pending preview built under the old policy is stale (H-08's note), and it is undoable as a workspace inverse. The
 //!   journal names it `policy`, and it and its undo or redo carry the policy after the action
 //!   (`Transaction::policy`).
@@ -280,13 +300,14 @@
 //!   record with no value. The journal keeps the record's value after each of these actions (`Transaction::record`).
 //! - A workspace overlay's completion is one durable action with its receipt (KN5.23) but is not undoable: the layer
 //!   holds no inverse of a program's write. A rolled-back transaction's `failed` receipt is transient.
-//! - A run reaches no workspace-kind row (draft; findings B3 and B4 of the KN5 boundary attack). Of the rows an entry
+//! - A run reaches no workspace-kind row (findings B3 and B4 of the KN5 boundary attack). Of the rows an entry
 //!   runs, an overlay row or a served row, the runtime may invoke a query or view row only. A workspace or file row is
 //!   refused with `LG3:capability.not_granted`, as `workspace.set` is, before read-only recovery, the arguments and
 //!   the row's own gates are checked: no job is admitted, nothing is journaled and no history is cut. So a run alone
-//!   causes no durable action, and a run's write never takes the solver's record writes out of the undo order. Whether
-//!   a run that a solver command started may invoke a workspace row, as a change inside a command the solver invokes
-//!   (ONE.52), is open and is the owner's.
+//!   causes no durable action, and a run's write never takes the solver's record writes out of the undo order. A run
+//!   that a solver command started reaches no workspace row either: a program prepares previews and views, and the
+//!   solver saves (ONE.52; the owner's reading of 18 November 2026). The records a workspace row's job returns are
+//!   written in that row's completion, the solver's own action (job output, below), not on the run's channel.
 //! - A built-in tool's entry may serve a stored row ([`CommandLayer::serve_row`]; LP3's C6, its first common need).
 //!   - An invocation of a served row admits a program job for the entry, as for an overlay row.
 //!   - The row keeps H-08's kind, lane, undo class, gates and argument types. The runtime may invoke it only when it

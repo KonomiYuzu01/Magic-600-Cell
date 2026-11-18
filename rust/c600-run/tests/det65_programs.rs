@@ -25,7 +25,7 @@
 //! product unit is shorter than three. Its kernel-cost headroom gets the two bytes of difference, so its stop stays on
 //! output with the frozen denied row.
 //!
-//! # Realised: 28 of 40
+//! # Realised: 31 of 40
 //!
 //! | Trace | Clause | Program |
 //! | --- | --- | --- |
@@ -57,6 +57,9 @@
 //! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
 //! | `decode-scalar` | DET.62 | `d()`: the snapshot `b`'s four bytes decode into one scalar; 16 reserved, 12 released |
 //! | `decode-surrogate` | DET.62 | `d()`: an encoded surrogate stops the run at its decoding, in the effect phase |
+//! | `streaming` | DET.63 | `go()`: `s` streams five letters in chunks of two; the last chunk is refused on kernel cost |
+//! | `streaming-complete-split` | DET.63 | `go()`: the same stream completes; `s`'s scope exit drops the cursor |
+//! | `streaming-complete-coalesced` | DET.63 | the same program and run: a transport partition is not accounted |
 //!
 //! The snapshot `k` is priced as the trace's kernel row (CV.4): the batch's kernel cost, a reservation of the result
 //! and the scratch, and a result of exactly the trace's result size, so the scratch is released after the row as the
@@ -107,7 +110,13 @@
 //! result, so the decoding borrows the bytes and its row releases only the reservation's excess, as the trace's does.
 //! `decode-surrogate` stops on its value: its probe's host delivers three ASCII bytes, which read alike.
 //!
-//! # Not realised: 12 of 40
+//! The streaming traces stream a compressed word with `word_stream` (DET.63; LP2 draft), whose rows are the frozen
+//! `open` and `chunk:<position>` rows. The literal word and its compression are the program's own, and `go` passes the
+//! word and the chunk size to `s`: parameters are borrowed, so the stream releases no operand, and `s`'s scope exit,
+//! which releases the cursor alone, is the frozen `close`. The run has no transport between the interpreter and a
+//! kernel, so the split and the coalesced trace are one program and one run.
+//!
+//! # Not realised: 9 of 40
 //!
 //! [`NOT_EXPRESSIBLE`] lists each with its reason, and `every_frozen_trace_is_realised_or_listed_once` holds the two
 //! lists to the 40 frozen vectors.
@@ -130,7 +139,7 @@ const VECTORS: &str =
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
 /// The frozen traces no program of the IR draft can express, and why.
-const NOT_EXPRESSIBLE: [(&str, &str); 12] = [
+const NOT_EXPRESSIBLE: [(&str, &str); 9] = [
     (
         "child-decode-error-releases-reservation",
         "its child decodes given bytes in two steps, its call and its decoding; a child body takes no argument, so \
@@ -148,9 +157,6 @@ const NOT_EXPRESSIBLE: [(&str, &str); 12] = [
         "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR \
          has no flow check",
     ),
-    ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
-    ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
-    ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
     ("form2-equal-limit", "display form 2 needs execution contract `lp1-exec-region-draft-1`, which has no executor"),
     ("form2-one-short", "display form 2 needs execution contract `lp1-exec-region-draft-1`, which has no executor"),
     (
@@ -1599,6 +1605,103 @@ fn ct_det_28_byte_decoding_runs_as_programs() {
     assert!(done.run.value.is_none(), "no value is bound");
 }
 
+/// The streaming traces' program (DET.63; LP2 draft). `go` compresses the trace's five letters and passes the word
+/// and the chunk size to `s`, which streams the word into `cursor` and returns: parameters are borrowed, so the
+/// stream releases no operand, and `s`'s scope exit releases the cursor alone, the frozen `close`.
+const STREAM: &str = "fn s(c: CompressedWord, k: Nat) -> Unit effects [] {\n    let cursor = word_stream(c, k);\n    \
+                      return ();\n}\n\n\
+                      export fn go() -> Unit effects [] {\n    let c = compress(word[+1, -2, +3, -4, +5]);\n    \
+                      return s(c, 2);\n}\n";
+
+const STREAM_SPLIT: Realisation = Realisation {
+    trace: "streaming-complete-split",
+    requires: "",
+    declarations: STREAM,
+    entry: "go",
+    args: NO_ARGS,
+    probe_args: None,
+    rows: &[
+        ("entry#call", None),
+        ("m.go:0.0#value", None),
+        ("m.go:0#compress", None),
+        ("m.go:root#visit", None),
+        ("m.go:1.0#visit", None),
+        ("m.go:1.1#value", None),
+        ("m.go:1#call", None),
+        ("m.go:1 > m.s:0.0#visit", None),
+        ("m.go:1 > m.s:0.1#visit", None),
+        ("m.go:1 > m.s:0#word_open", Some("word/open")),
+        ("m.go:1 > m.s:0#chunk:0", Some("word/chunk:0")),
+        ("m.go:1 > m.s:0#chunk:2", Some("word/chunk:2")),
+        ("m.go:1 > m.s:0#chunk:4", Some("word/chunk:4")),
+        ("m.go:1 > m.s:root#visit", None),
+        ("m.go:1 > m.s:1#value", None),
+        ("m.go:1 > m.s:root#scope_exit", Some("close")),
+        ("m.go:1 > m.s:root#return", None),
+        ("m.go:root#scope_exit", None),
+        ("m.go:root#return", None),
+        ("entry#emit", None),
+    ],
+    stop_would: None,
+    kernel_extra: 0,
+    source_node: None,
+};
+
+/// The same program: a transport partition has no place in a run's accounting (DET.63).
+const STREAM_COALESCED: Realisation = Realisation { trace: "streaming-complete-coalesced", ..STREAM_SPLIT };
+
+/// The same program, cut off on kernel cost before its last chunk expands a letter: the trace ends there, so its
+/// probe's scope exit is overhead.
+const STREAM_CUT: Realisation = Realisation {
+    trace: "streaming",
+    rows: &[
+        ("entry#call", None),
+        ("m.go:0.0#value", None),
+        ("m.go:0#compress", None),
+        ("m.go:root#visit", None),
+        ("m.go:1.0#visit", None),
+        ("m.go:1.1#value", None),
+        ("m.go:1#call", None),
+        ("m.go:1 > m.s:0.0#visit", None),
+        ("m.go:1 > m.s:0.1#visit", None),
+        ("m.go:1 > m.s:0#word_open", Some("word/open")),
+        ("m.go:1 > m.s:0#chunk:0", Some("word/chunk:0")),
+        ("m.go:1 > m.s:0#chunk:2", Some("word/chunk:2")),
+        ("m.go:1 > m.s:0#chunk:4", Some("word/chunk:4")),
+        ("m.go:1 > m.s:root#visit", None),
+        ("m.go:1 > m.s:1#value", None),
+        ("m.go:1 > m.s:root#scope_exit", None),
+        ("m.go:1 > m.s:root#return", None),
+        ("m.go:root#scope_exit", None),
+        ("m.go:root#return", None),
+        ("entry#emit", None),
+    ],
+    stop_would: Some([1, 3, 2, 0]),
+    ..STREAM_SPLIT
+};
+
+/// CT-DET-30 (part: RT1's runs of the frozen streaming traces; not run: transport splits and cold caches, which RT1's
+/// in-process stream does not have (no owner yet)): the frozen traces `streaming`, `streaming-complete-split` and
+/// `streaming-complete-coalesced` run as programs (DET.63; LP2 draft). The two partitions are one program and one run:
+/// the chunk schedule comes from the word's length and the declared chunk size alone. The cut-off run stops at the
+/// chunk at position 4 with the cursor live and four letters covered, and its cleanup releases the cursor.
+#[test]
+fn ct_det_30_streaming_runs_as_programs() {
+    let root = fixtures();
+    let split = realise(&root, &STREAM_SPLIT);
+    let coalesced = realise(&root, &STREAM_COALESCED);
+    assert_eq!(split.run.summary.rows, coalesced.run.summary.rows, "a transport partition changes no row");
+    let cut = realise(&root, &STREAM_CUT);
+    let trace = vector(&root, STREAM_CUT.trace).get("expected").expect("expected");
+    let s = &cut.run.summary;
+    // The live charge at the stop beyond the program's own before the open is the trace's: the cursor alone.
+    let open = s.rows.iter().position(|r| r.at.ends_with("#word_open")).expect("the open row");
+    let overhead = Before::of(s.rows[..open].iter().map(charges)).live;
+    assert_eq!(s.live_before_cleanup - overhead, uint(trace, "live_before_cleanup"), "the cursor is live at the stop");
+    let covered: Vec<&str> = s.rows.iter().filter_map(|r| r.at.strip_prefix("m.go:1 > m.s:0#chunk:")).collect();
+    assert_eq!(covered, ["0", "2", "4"], "chunks before the stop and the stopped one");
+}
+
 /// Every frozen trace is realised in this file or listed in [`NOT_EXPRESSIBLE`] with its reason, exactly once.
 #[test]
 fn every_frozen_trace_is_realised_or_listed_once() {
@@ -1632,6 +1735,9 @@ fn every_frozen_trace_is_realised_or_listed_once() {
         "nested-child-ledger",
         "decode-scalar",
         "decode-surrogate",
+        "streaming",
+        "streaming-complete-split",
+        "streaming-complete-coalesced",
     ];
     let mut ids: Vec<&str> = all(&root).iter().map(|v| text(v, "id")).collect();
     let mut accounted: Vec<&str> = realised.iter().copied().chain(NOT_EXPRESSIBLE.iter().map(|n| n.0)).collect();

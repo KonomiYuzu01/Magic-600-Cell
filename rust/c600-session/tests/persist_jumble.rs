@@ -276,7 +276,13 @@ impl Fixture {
     }
 
     fn set_policy(&mut self, policy: &str) -> Receipt {
-        self.shell.invoke(&mut self.layer, POLICY_ROW, json::object([("policy", text(policy))])).unwrap()
+        self.shell
+            .invoke(
+                &mut self.layer,
+                POLICY_ROW,
+                json::object([("confirm", Value::Bool(true)), ("policy", text(policy))]),
+            )
+            .unwrap()
     }
 }
 

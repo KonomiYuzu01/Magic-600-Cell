@@ -81,7 +81,13 @@ fn restored(layer: &CommandLayer) -> (ProtectionMode, String, u64, String, u64, 
 impl Fixture {
     /// `protection.policy.set` with `policy` through the command route.
     fn set_policy(&mut self, policy: &str) -> Receipt {
-        self.shell.invoke(&mut self.layer, POLICY_ROW, json::object([("policy", text(policy))])).unwrap()
+        self.shell
+            .invoke(
+                &mut self.layer,
+                POLICY_ROW,
+                json::object([("confirm", Value::Bool(true)), ("policy", text(policy))]),
+            )
+            .unwrap()
     }
 
     /// Previews `recipe` and runs the job; returns the preview's ID.
@@ -176,7 +182,7 @@ fn ct_lb2_02_strict_refuses_in_the_route_a_word_that_net_commits() {
     assert_eq!((after.workspace, after.protection), (before.workspace + 1, before.protection + 1));
     assert_eq!(f.layer.policy(), ProtectionMode::Strict);
     let last = f.layer.store().log.last().unwrap().clone();
-    assert_eq!((last.kind, last.policy, last.confirm), (TransactionKind::Policy, Some(ProtectionMode::Strict), false));
+    assert_eq!((last.kind, last.policy, last.confirm), (TransactionKind::Policy, Some(ProtectionMode::Strict), true));
     assert_eq!((&last.pre, &last.post, last.receipt()), (&before.digest, &before.digest, switched));
 
     // Under Strict the same word builds a preview (KN5.9): its first prefix, word([1]), moves the protected orbit.
@@ -240,7 +246,8 @@ fn a_policy_change_makes_an_open_preview_stale() {
 
 /// CT-KN5-09 (part: the undo and redo of a policy change are workspace inverses that answer `committed` with equal
 /// puzzle hashes, put the policy before or after the change in force again and advance the workspace and protection
-/// revisions; no direction confirms, since H-08 gives the row no gate (draft)), KN5.18, LI.26. The stacks are last in,
+/// revisions; no direction confirms: the owner's reading of finding LD1 gates the row, and an undo or redo is the
+/// solver's own press (draft)), KN5.18, LI.26. The stacks are last in,
 /// first out, so an undo runs under the policy of its original action: a commit made under Net with an orbit protected
 /// is undone and redone under Net once the policy change above it is undone.
 #[test]
@@ -279,13 +286,15 @@ fn a_policy_change_undoes_and_redoes_as_a_workspace_inverse() {
 #[test]
 fn a_policy_change_keeps_its_receipt_across_a_restart_and_a_reopen() {
     let mut f = fixture(&[]);
-    let asked = f.shell.prepare(&f.layer, POLICY_ROW, json::object([("policy", text("strict"))])).unwrap();
+    let args = json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))]);
+    let asked = f.shell.prepare(&f.layer, POLICY_ROW, args).unwrap();
     assert!(asked.token.is_none(), "a policy change takes no token");
     let done = f.shell.send(&mut f.layer, asked.clone());
     assert!(completed(&done), "{:?}", done.status);
     let kept = f.fixed();
     assert_eq!(f.layer.invoke(&Caller::Shell, asked.clone()), done);
-    let other = Invocation { args: json::object([("policy", text("net"))]), ..asked.clone() };
+    let other =
+        Invocation { args: json::object([("confirm", Value::Bool(true)), ("policy", text("net"))]), ..asked.clone() };
     f.refused(other, code::COMMAND_ID_REUSED, "other content under the command ID");
     assert_eq!(f.fixed(), kept);
 
@@ -426,27 +435,38 @@ fn a_reopened_layer_keeps_the_policy() {
     assert_eq!((restored(&h.layer), h.layer.policy()), (restored(&f.layer), ProtectionMode::Strict));
 }
 
-/// KN5.15 and H-08's argument form (draft: the runtime may not set the policy, since the protection a commit is judged
-/// under is the solver's; `policy` is `net` or `strict`, and the row takes no `confirm`). Each refusal changes nothing.
+/// KN5.15, H-08's argument form and finding LD1 of the KN5 boundary attack (EV4.22; the owner's reading of 18 November
+/// 2026): the runtime may not set the policy, since the protection a commit is judged under is the solver's, even with a
+/// confirmation; `policy` is `net` or `strict`; and the change needs the solver's confirmation, `confirm: true`, as a
+/// release of a protected orbit does, so a playback that sends the row without it changes nothing. Each refusal
+/// changes nothing.
 #[test]
 fn only_the_solver_sets_the_policy_and_only_by_name() {
     let mut f = fixture(&[]);
     assert_eq!(f.layer.availability(POLICY_ROW), Ok(()));
     let runtime = Caller::Runtime { run: "run-1".into() };
     let epoch = f.layer.revision().epoch;
-    let args = json::object([("policy", text("strict"))]);
+    let args = json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))]);
     let theirs = Invocation { command: "run-1/1".into(), row: POLICY_ROW.into(), args, token: None, epoch };
     f.refused_on(&runtime, theirs, code::NOT_GRANTED, "the runtime");
     let bad = [
         ("an unknown policy", json::object([("policy", text("loose"))])),
         ("a capitalised name", json::object([("policy", text("Strict"))])),
         ("a policy that is not text", json::object([("policy", Value::Bool(true))])),
-        ("a confirmation", json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))])),
+        ("a confirmation that is not a boolean", json::object([("confirm", text("yes")), ("policy", text("strict"))])),
         ("no policy", json::object([])),
     ];
     for (what, args) in bad {
         let asked = f.shell.prepare(&f.layer, POLICY_ROW, args).unwrap();
         f.refused(asked, code::ARGUMENT_FORM, what);
+    }
+    let unconfirmed = [
+        ("no confirmation", json::object([("policy", text("strict"))])),
+        ("a confirmation of false", json::object([("confirm", Value::Bool(false)), ("policy", text("strict"))])),
+    ];
+    for (what, args) in unconfirmed {
+        let asked = f.shell.prepare(&f.layer, POLICY_ROW, args).unwrap();
+        f.refused(asked, code::CONFIRMATION_REQUIRED, what);
     }
     assert_eq!(f.layer.policy(), ProtectionMode::Net);
 }

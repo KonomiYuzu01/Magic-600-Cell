@@ -160,7 +160,7 @@ fn b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit() {
     for policy in ["net", "strict"] {
         let mut f = fixture(&[0]);
         if policy == "strict" {
-            let args = json::object([("policy", Value::String(policy.into()))]);
+            let args = json::object([("confirm", Value::Bool(true)), ("policy", Value::String(policy.into()))]);
             assert!(completed(&f.shell.invoke(&mut f.layer, POLICY_ROW, args).unwrap()));
         }
         let solved = f.layer.revision().digest.clone();

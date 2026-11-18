@@ -648,6 +648,38 @@ fn ct_kn2_07_and_ct_lb2_03_a_word_replays_in_chunks() {
     assert_eq!(empty.word, c600_digest::sha256_hex(b""));
 }
 
+/// CT-LG4-03 (part: the kernel half; LP2 draft; the interpreter's half is `c600-run`'s `streams.rs`; not run: a
+/// stream fed chunk by chunk into the kernel's replay, since a run proposes no stream (no owner yet)): chunking changes neither the literal digest nor the verdict. The replay hashes the letters as they are
+/// pushed and keeps no copy of them, so any split of one word, empty chunks included, gives the digest of the whole
+/// word's little-endian letters, its effect and its first refused prefix.
+#[test]
+fn ct_lg4_03_chunking_keeps_the_literal_digest_and_the_prefix() {
+    let kernel = kernel();
+    let base = derived(&kernel.solved(), &[17, -400, 1013]);
+    let word = seeded_word(4_099);
+    let literal: Vec<u8> = word.iter().flat_map(|&m| (m as i32).to_le_bytes()).collect();
+    let protected = kernel.protected_set(&[7]).unwrap();
+    for (set, refuses) in [(ProtectedSet::none(), false), (protected, true)] {
+        let mut verdicts = Vec::new();
+        for size in [1, 2, 7, 64, 1_000, 4_099] {
+            let mut replay = kernel.replay(&base, &set).unwrap();
+            for chunk in word.chunks(size) {
+                replay.push(chunk).unwrap();
+                replay.push(&[]).unwrap();
+            }
+            let prefix = replay.first_refused_prefix();
+            let (digest, effect, refused) = match replay.finish() {
+                Derivation::Derived(d) => (d.word, d.effect, None),
+                Derivation::Refused(r) => (r.word, r.effect, r.first_refused_prefix),
+            };
+            assert_eq!(digest, c600_digest::sha256_hex(&literal), "chunks of {size}");
+            assert_eq!((refused, prefix.is_some()), (prefix, refuses), "chunks of {size}");
+            verdicts.push((digest, effect, prefix));
+        }
+        assert!(verdicts.windows(2).all(|w| w[0] == w[1]), "every chunking agrees");
+    }
+}
+
 #[test]
 fn protected_sets_name_moving_orbits() {
     let kernel = kernel();
