@@ -14,8 +14,10 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
 - `project/`: the Godot project.
   - `Shell.cs` is the root node.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function
-    table names, in its order, and refuses another ABI version. The bridge crates load no library (CT-RPI-20), so
-    the shell is the only place that loads the core.
+    table names, in its order, and refuses another ABI version than 5. It also resolves `ShellCalls`, the route-B
+    calls the shell makes itself and the table does not hold: `sa2_create`, `sa2_scene_load`, the three surface
+    calls, `sa2_resize`, `sa2_drain`, `sa2_scene_unload` and `sa2_detach`. The bridge crates load no library
+    (CT-RPI-20), so the shell is the only place that loads the core.
 - `build_shell.py`: an offline build into `work/build/c9-shell/<stamp>/`. It uses the harness's offline restore
   (`renderer/acceptance/prepare_host.py`), which takes the packages only from the pinned Godot install, and writes
   `build.json`. It never launches Godot and builds no core and no bridge.
@@ -23,14 +25,15 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - Godot.NET.Sdk 4.7.2 on net10.0;
   - the offline package source;
   - the route-B window settings;
-  - the export list and ABI version equal to the bridge's and the header's.
+  - the export list and ABI version equal to the bridge's and the header's;
+  - every shell call declared by the header and absent from the bridge's table.
 
 ## Status
 
-Step S1 of the shell:
+Step S1 of the shell, moved to the core's ABI 5:
 
 - The project skeleton builds offline on net10.0. On 18 November 2026 it built with .NET SDK 10.0.401 and Godot.NET.Sdk
-  4.7.2, with no warning.
+  4.7.2, with no warning, before and after the move to ABI 5.
 - It was never launched. Nothing here is Windows/DirectX, input or performance evidence.
 - Evidence kind: source build.
 
@@ -45,5 +48,5 @@ Next steps:
 
 - the native host library and its C interface;
 - the C# calls into it;
-- the window and layout with the core's surface attached, which needs the core's ABI 5;
+- the window and layout with the core's surface attached, through the shell calls;
 - the frame loop and the E2 and E3 log rows.

@@ -46,11 +46,20 @@ def rust_symbols() -> list[str]:
     return names
 
 
-def csharp_symbols() -> list[str]:
+def csharp_list(name: str) -> list[str]:
     source = text(PROJECT / "CoreLibrary.cs")
-    block = re.search(r"Symbols = new\[\]\s*\{(.*?)\};", source, re.S)
-    assert block, "Symbols in CoreLibrary.cs"
+    block = re.search(rf"\b{name} = new\[\]\s*\{{(.*?)\}};", source, re.S)
+    assert block, f"{name} in CoreLibrary.cs"
     return re.findall(r'"(sa2_[a-z_]+)"', block.group(1))
+
+
+def csharp_symbols() -> list[str]:
+    return csharp_list("Symbols")
+
+
+def header_exports() -> set[str]:
+    header = text(ROOT / "renderer" / "core" / "include" / "sa2_interop.h")
+    return set(re.findall(r"^SA2_API [^(]*?\b(sa2_[a-z0-9_]+)\(", header, re.M))
 
 
 class ShellProject(unittest.TestCase):
@@ -91,6 +100,17 @@ class ShellProject(unittest.TestCase):
         header = re.search(r"#define SA2_ABI_VERSION (\d+)u", text(ROOT / "renderer/core/include/sa2_interop.h"))
         self.assertTrue(shell_abi and rust_abi and header)
         self.assertEqual({shell_abi.group(1), rust_abi.group(1), header.group(1)}, {header.group(1)})
+
+    def test_the_shell_calls_are_route_b_exports_outside_the_table(self):
+        calls = csharp_list("ShellCalls")
+        exports = header_exports()
+        self.assertIn("sa2_frame_submit", exports, "the header's exports are read")
+        self.assertEqual(len(calls), len(set(calls)))
+        for name in ["sa2_create", "sa2_surface_attach", "sa2_surface_move", "sa2_surface_detach"]:
+            self.assertIn(name, calls)
+        for name in calls:
+            self.assertIn(name, exports, name)
+            self.assertNotIn(name, rust_symbols(), name)
 
     def test_the_build_never_launches(self):
         sys.path.insert(0, str(SHELL))

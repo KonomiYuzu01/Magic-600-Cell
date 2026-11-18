@@ -12,7 +12,7 @@ namespace Magic600.Shell;
 public sealed class CoreLibrary : IDisposable
 {
     /// <summary>The ABI this shell speaks; the core's sa2_abi_version must answer it.</summary>
-    public const uint AbiVersion = 4;
+    public const uint AbiVersion = 5;
 
     /// <summary>
     /// The exports of c600-render-ffi's SYMBOLS, in its order. tests/test_renderer_shell.py checks the two lists
@@ -39,16 +39,39 @@ public sealed class CoreLibrary : IDisposable
         "sa2_device_status",
     };
 
+    /// <summary>
+    /// The calls the shell makes itself on route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks: it creates the context on the
+    /// core's own device, loads the scene, attaches, moves and resizes the surface beneath its window, drains, and
+    /// takes everything down again. They are not in the bridge's table. tests/test_renderer_shell.py checks that the
+    /// header declares each one.
+    /// </summary>
+    public static readonly IReadOnlyList<string> ShellCalls = new[]
+    {
+        "sa2_create",
+        "sa2_scene_load",
+        "sa2_surface_attach",
+        "sa2_surface_move",
+        "sa2_resize",
+        "sa2_drain",
+        "sa2_surface_detach",
+        "sa2_scene_unload",
+        "sa2_detach",
+    };
+
     private IntPtr _handle;
 
-    private CoreLibrary(IntPtr handle, IntPtr[] functions)
+    private CoreLibrary(IntPtr handle, IntPtr[] functions, IntPtr[] shellFunctions)
     {
         _handle = handle;
         Functions = functions;
+        ShellFunctions = shellFunctions;
     }
 
     /// <summary>The export addresses in <see cref="Symbols"/> order.</summary>
     public IReadOnlyList<IntPtr> Functions { get; }
+
+    /// <summary>The export addresses in <see cref="ShellCalls"/> order.</summary>
+    public IReadOnlyList<IntPtr> ShellFunctions { get; }
 
     /// <summary>
     /// Loads the core from an absolute path, resolves every export and checks the ABI version. A missing export or
@@ -63,26 +86,32 @@ public sealed class CoreLibrary : IDisposable
         var handle = NativeLibrary.Load(path);
         try
         {
-            var functions = new IntPtr[Symbols.Count];
-            for (var i = 0; i < Symbols.Count; i++)
-            {
-                if (!NativeLibrary.TryGetExport(handle, Symbols[i], out functions[i]))
-                {
-                    throw new EntryPointNotFoundException($"the core does not export {Symbols[i]}");
-                }
-            }
+            var functions = Resolve(handle, Symbols);
             var version = ((delegate* unmanaged[Cdecl]<uint>)functions[0])();
             if (version != AbiVersion)
             {
                 throw new NotSupportedException($"the core speaks ABI {version}, the shell ABI {AbiVersion}");
             }
-            return new CoreLibrary(handle, functions);
+            return new CoreLibrary(handle, functions, Resolve(handle, ShellCalls));
         }
         catch
         {
             NativeLibrary.Free(handle);
             throw;
         }
+    }
+
+    private static IntPtr[] Resolve(IntPtr handle, IReadOnlyList<string> names)
+    {
+        var functions = new IntPtr[names.Count];
+        for (var i = 0; i < names.Count; i++)
+        {
+            if (!NativeLibrary.TryGetExport(handle, names[i], out functions[i]))
+            {
+                throw new EntryPointNotFoundException($"the core does not export {names[i]}");
+            }
+        }
+        return functions;
     }
 
     public void Dispose()
