@@ -27,7 +27,36 @@
 //!   power loss. A program's `workspace.set` and `session.undo` are refused, and a view, a language overlay row of kind
 //!   `view`, publishes from a program and from the shell without writing the journal or making the undo hint stale.
 //! - `tests/kn5_on_session.rs`: the same CT-EV3-07 parts on M6's own `Session` API, and CT-LB2-03's work-sheet part
-//!   (LB7.2: reusing a named work sheet invalidates the old preview), which runs on M6 only.
+//!   (LB7.2: reusing a named work sheet invalidates the old preview) with the sheet as a record that M6 sets again,
+//!   since M6 has no work-sheet rows.
+//! - `tests/ct_lb2_03_work_sheet_reuse.rs`: CT-LB2-03's work-sheet sentence through the layer's `worksheet.save` and
+//!   `worksheet.load` rows on the journal, with C5's reader installed (LB7.2, LB7.3, KN0.8, KN5.23). A sheet saved from
+//!   a draft record comes back equal at a reuse in the same session, after a power loss on a memory disk and in a new
+//!   session on a file-system disk. Each reuse makes a presented preview of the sheet stale
+//!   (`KN5:stale.revision_changed`), so the press prepared before it commits nothing, and a fresh engine preview of the
+//!   reused sheet commits its complete operation. A reuse after that commit places the piece roles again and shows the
+//!   moved piece without retargeting the sheet, and its undo restores the sheet as saved. Each refusal of the two rows
+//!   that LP2's draft names comes back with the layer's code and changes neither the revision, the records, the pending
+//!   preview nor the journal's bytes: no reader, in a session reopened without one, where neither row is available
+//!   either (`KN5:input.row_not_built`), the runtime (`LG3:capability.not_granted`), a malformed argument
+//!   (`KN5:input.argument_form`), an unknown or removed record and a record that holds no operation to save or no saved
+//!   sheet to reuse, a malformed sheet among them (`KN2:input.named_object_invalid`), a sheet named at another version
+//!   (`KN5:stale.revision_changed`) and a block that C5's reader refuses (`PS1:capability.provenance_incompatible`).
+//!   Not run here: the refusal of both rows with Jumble on (`KN5:input.retained_tool_needs_jumble_off`, LG2.8), which
+//!   `c600-command`'s `tests/jumble_on.rs` runs; entering Jumble on needs a twist menu pinned from `c600-jumble`, which
+//!   is no dependency of this crate.
+//!
+//! # Whether CT-LB2-03 runs whole
+//!
+//! It does not. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in `c600-kernel`'s
+//! `tests/kernel.rs` (the kernel half) and in `c600-tools`' `tests/net_oversize.rs` and `tests/process.rs` (the command
+//! and source routes), and C5 records chunked transport on the source route for a recipe with a star step, or a word
+//! step with another field, as not built. Its second sentence, named work-sheet reuse invalidates the old preview, runs
+//! through the layer's rows on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's journal
+//! (`tests/ct_lb2_03_work_sheet_reuse.rs`). Still missing, as LP2's own marker for that sentence lists: LB7.2's fresh
+//! exact analysis of a reused sheet, H-08's `worksheet.compare` (a query row with a job), with LB2's gains and losses,
+//! and macro versions. LP2's layer does not build them and refuses `worksheet.compare` with `KN5:input.row_not_built`;
+//! this crate builds no KN5 logic, so they wait for LP2.
 //!
 //! # Drafts
 //!
@@ -48,6 +77,11 @@
 //! - **Views on M6** (EV3.2). M6 has no view rows. `tests/kn5_on_session.rs` uses what a view stands on in M6 instead:
 //!   a query job, an opened snapshot and a preview, and a program's attempts to write the workspace, on the program's
 //!   channel and from a job.
+//! - **A block that C5's reader refuses, on the journal** (PS1.16, LB7.3). C5's reader reads only canonical FP.17
+//!   blocks, so no record written through it holds another block. `tests/ct_lb2_03_work_sheet_reuse.rs` writes such a
+//!   record, and a sheet saved from it, under a test reader that reads every block, standing in for a host's reader
+//!   that accepted the block. After a power loss the journal replays both without a reader check, the sheet keeps the
+//!   block, and C5's reader refuses the save and the reuse with its error.
 //!
 //! # Waiting for LP2's KN5 implementation
 //!
@@ -59,6 +93,9 @@
 //!   again, and CT-BND-27's recursive parts are not run.
 //! - EV3.2's view rows. The layer refuses H-08's `view` rows, `view.open` and `view.close` among them, with
 //!   `KN5:input.row_not_built`, so CT-EV3-07's view part runs on a language overlay row of kind `view`.
-//! - LB7.2's work-sheet structure (named roles, re-resolution and a fresh exact analysis).
+//! - LB7.2's fresh exact analysis of a reused work sheet: H-08's `worksheet.compare`, which the layer refuses with
+//!   `KN5:input.row_not_built`, with LB2's gains and losses, and macro versions (CT-LB2-03's missing piece, above).
+//!   The layer builds the rest of the work-sheet structure, the named roles and their placement again at a reuse,
+//!   through `worksheet.save` and `worksheet.load`, which `tests/ct_lb2_03_work_sheet_reuse.rs` runs.
 
 #![forbid(unsafe_code)]

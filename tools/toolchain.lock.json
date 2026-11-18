@@ -621,6 +621,42 @@
       "note": "Archive requests to download.qt.io are redirected to the Qt mirror network; any HTTPS mirror serving the same repository path is accepted (redirects policy), and integrity rests on the pinned bytes and sha256 checked before extraction. Download 203,969,690 bytes. tools/qt is never committed or redistributed; a redistributed build must carry Qt's licence texts."
     },
     {
+      "id": "dxc",
+      "purpose": "DirectX Shader Compiler: the run-time compiler for user shader stages (LP3 C9) and a candidate offline HLSL compiler for the renderer",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "archive-zip-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "1.9.2609",
+      "url": "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/dxc_2026_09_29.zip",
+      "size": 32287592,
+      "sha256": "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1",
+      "dest": "tools/.dxc/v1.9.2609",
+      "max_unpacked_bytes": 536870912,
+      "required_files": [
+        "bin/x64/dxc.exe",
+        "bin/x64/dxcompiler.dll",
+        "bin/x64/dxil.dll"
+      ],
+      "probe": [
+        "{dest}/bin/x64/dxc",
+        "--version"
+      ],
+      "expect": "\\b1\\.9\\b",
+      "license": "NCSA (University of Illinois/NCSA Open Source License, LLVM-derived); dxil.dll's licence is in the release archive; check before packaging",
+      "network_hosts": [
+        "github.com",
+        "release-assets.githubusercontent.com"
+      ],
+      "note": "Release v1.9.2609 of microsoft/DirectXShaderCompiler (published 2026-09-29), asset dxc_2026_09_29.zip. Size and sha256 are the values the GitHub releases API reported on 2026-11-18; the archive was not downloaded when the entry was written, and the installer checks both before it opens the archive. github.com redirects release assets to release-assets.githubusercontent.com; a redirect to any other host is refused. The zip also holds the x86 and arm64 builds, inc/ and lib/. The owner approved shipping DXC for user stages; the redistributable files and their licences are settled at packaging.",
+      "uninstall": "delete tools/.dxc/v1.9.2609"
+    },
+    {
       "id": "cmake",
       "purpose": "Build system for native spikes",
       "profiles": [
