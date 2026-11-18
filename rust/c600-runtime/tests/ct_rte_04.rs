@@ -24,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 28 of 40
+//! # Realised: 31 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -56,6 +56,9 @@
 //! | `final-loop-test` | DET.55 | `spin()`: `repeat(1, 0, …)` visits `acc` once; the final test is refused on steps |
 //! | `decode-scalar` | DET.62 | `decode()`: the snapshot `b` holds four bytes of one scalar; 16 reserved, 12 released |
 //! | `decode-surrogate` | DET.62 | `decode()`: an encoded surrogate stops the run at its decoding (effect phase) |
+//! | `streaming` | DET.63 | `go()`: `s` streams five letters in chunks of two; the last is refused on kernel cost |
+//! | `streaming-complete-split` | DET.63 | `go()`: the same stream completes; `s`'s scope exit drops the cursor |
+//! | `streaming-complete-coalesced` | DET.63 | the split trace's job: a transport partition is not accounted |
 //!
 //! The trace's `display_if` condition is a given value that holds no memory. `pick` binds its comparison with `let`,
 //! so the `display_if` row visits a borrowed condition and releases nothing; the comparison's byte is released at the
@@ -118,13 +121,30 @@
 //! trace's does. The decoded text, the trace's `t`, is the entry's value. `decode-surrogate` stops on its value, so
 //! its probe's host delivers as many ASCII bytes instead (`probe_setup`), which read alike and decode.
 //!
-//! # Not realised: 12 of 40
+//! The streaming traces stream a compressed word with `word_stream` (DET.63; LP2 draft), as LP2's
+//! `det65_programs.rs` does; its rows are the frozen `open` and `chunk:<position>` rows. The literal word and its
+//! compression are the program's own, and `go` passes the word and the chunk size to `s`: parameters are borrowed, so
+//! the stream releases no operand, and `s`'s scope exit, which releases the cursor alone, is the frozen `close`.
+//! `streaming` is cut off on kernel cost at the chunk at position 4, whose step is admitted, before it expands a
+//! letter; its probe's scope exit is overhead.
+//!
+//! LP2 runs the split and the coalesced trace as one program and one run, since a run has no transport between the
+//! interpreter and a kernel. That holds on the child path too. A word stream stays in its run (the wire codec refuses
+//! `Value::WordStream`; only its type crosses, as tag 29), so `go` takes no stream and returns none. `word_stream` is
+//! one operation of the interpreter, which calls no host between its open and its last chunk, so no frame between the
+//! host and the child falls among a stream's rows; a `cancel` only interrupts a run before a step (DET.56). These
+//! programs call no host at all (`streamed` holds their host calls to none), so each run crosses as its job's frame
+//! and its end's frame, and the end carries every row and charge whole. The test holds the two partitions' ends to
+//! each other, and the cut-off run's live memory at the stop, beyond the program's own before the open, to the
+//! trace's live cursor. The child path gives the coalesced trace nothing more to check.
+//!
+//! # Not realised: 9 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no flow check, text order or streaming cursor; no call frame without a slot holds a binding
-//! (`generator-nested-same-name`); a child body takes no argument, so a child's bytes cannot arrive without a row of
-//! their own (`child-decode-error-releases-reservation`); and the region contract `lp1-exec-region-draft-1` has no
-//! executor yet.
+//! has no flow check or text order; no call frame without a slot holds a binding (`generator-nested-same-name`); a
+//! child body takes no argument, so a child's bytes cannot arrive without a row of their own
+//! (`child-decode-error-releases-reservation`); and the region contract `lp1-exec-region-draft-1` has no executor
+//! yet.
 
 mod support;
 
@@ -140,7 +160,7 @@ use c600_run::value::{equal, Value};
 use c600_runtime::{run_in_process, Ended, JobOptions, Runtime};
 use json::Json;
 use num_bigint::BigInt;
-use support::{compare, header, job, ran, runtime, Session, WIDE};
+use support::{assert_same_end, compare, header, job, ran, runtime, Session, WIDE};
 
 const VECTORS: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/architecture/1.0/language/contract-vectors/vectors.json");
@@ -196,10 +216,12 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     }, fn() -> Unit { return (); });\n    return ();\n}\n\n\
     export fn spin() -> Nat effects [] {\n    return repeat(1, 0, fn(acc: Nat) -> Nat { return acc; });\n}\n\n\
     export fn decode() -> Text effects [snapshot] {\n    let b = read_snapshot<Bytes>(\"b\");\n    \
-    return text_decode(b);\n}\n";
+    return text_decode(b);\n}\n\n\
+    fn s(c: CompressedWord, k: Nat) -> Unit effects [] {\n    let cursor = word_stream(c, k);\n    return ();\n}\n\n\
+    export fn go() -> Unit effects [] {\n    let c = compress(word[+1, -2, +3, -4, +5]);\n    return s(c, 2);\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 12] = [
+const UNREALISED: [(&str, &str); 9] = [
     (
         "child-decode-error-releases-reservation",
         "its child decodes given bytes in two steps, its call and its decoding; a child body takes no argument, so \
@@ -217,9 +239,6 @@ const UNREALISED: [(&str, &str); 12] = [
         "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR has \
          no flow check",
     ),
-    ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
-    ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
-    ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
     ("form2-equal-limit", "execution contract `lp1-exec-region-draft-1` has no executor yet"),
     ("form2-one-short", "execution contract `lp1-exec-region-draft-1` has no executor yet"),
     ("form2-untaken-branch", "execution contract `lp1-exec-region-draft-1` has no executor yet"),
@@ -402,6 +421,13 @@ fn decoded_text(values: &[(String, Json)], run: &Run, _: &Session) {
     }
 }
 
+/// The streaming traces have no values. `go` calls no host, so its run crosses between the host and the child as its
+/// job and its end alone, and no frame falls among the stream's rows (module docs).
+fn streamed(values: &[(String, Json)], run: &Run, session: &Session) {
+    no_values(values, run, session);
+    assert!(session.log.is_empty(), "no host call: {:?}", session.log);
+}
+
 const PICK_TRUE: &[(&str, &str)] = &[
     ("display", "m.pick:1#display_if"),
     ("display/then/a", "m.pick:1.1.0#visit"),
@@ -466,6 +492,13 @@ const SPIN: &[(&str, &str)] = &[
     ("loop/test:1", "m.spin:root#loop_test:1"),
 ];
 const DECODE: &[(&str, &str)] = &[("decode", "m.decode:1#text_decode")];
+const STREAM: &[(&str, &str)] = &[
+    ("word/open", "m.go:1 > m.s:0#word_open"),
+    ("word/chunk:0", "m.go:1 > m.s:0#chunk:0"),
+    ("word/chunk:2", "m.go:1 > m.s:0#chunk:2"),
+    ("word/chunk:4", "m.go:1 > m.s:0#chunk:4"),
+    ("close", "m.go:1 > m.s:root#scope_exit"),
+];
 
 fn realisations() -> Vec<Realisation> {
     let base = Realisation {
@@ -484,6 +517,7 @@ fn realisations() -> Vec<Realisation> {
     };
     let show =
         |trace| Realisation { trace, entry: "show", args: Vec::new, map: SHOW, stop_would: Some([1, 3, 3, 3]), ..base };
+    let stream = |trace| Realisation { trace, entry: "go", args: Vec::new, map: STREAM, values: streamed, ..base };
     vec![
         Realisation { trace: "approx-branch-true", ..base },
         Realisation { trace: "approx-branch-false", args: || pick_args(5, 2), map: PICK_FALSE, ..base },
@@ -689,6 +723,10 @@ fn realisations() -> Vec<Realisation> {
             values: decoded_text,
             ..base
         },
+        // Cut off before the last chunk expands a letter: the trace ends there, so the probe's `close` is overhead.
+        Realisation { map: &STREAM[..4], stop_would: Some([1, 3, 2, 0]), ..stream("streaming") },
+        stream("streaming-complete-split"),
+        stream("streaming-complete-coalesced"),
     ]
 }
 
@@ -892,7 +930,8 @@ fn limits(id: &str, trace: &Trace, probe: &Summary, mapped: &[usize], kernel_ext
     }
 }
 
-fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
+/// Realises one trace on both executors and returns the child's end.
+fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) -> Ended {
     let id = r.trace;
     let given = vector.get("given").expect("given");
     let trace = Trace::read(vector);
@@ -1005,10 +1044,11 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
         (want, got) => panic!("{id}: the trace stops at {:?}, the run at {got:?}", want.as_ref().map(|s| &s.at)),
     }
     (r.values)(&trace.values, ran(&end), &session);
+    end
 }
 
-/// CT-RTE-04 in part: 28 DET.65 traces realised as programs keep their exact results, charges, stopping points,
-/// child records and source associations on both executors; the other 12 are listed with the reason they are not
+/// CT-RTE-04 in part: 31 DET.65 traces realised as programs keep their exact results, charges, stopping points,
+/// child records and source associations on both executors; the other 9 are listed with the reason they are not
 /// realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
@@ -1026,9 +1066,20 @@ fn ct_rte_04_partial_det65_traces_on_both_executors() {
 
     let source = format!("{}{PROGRAM}", header("random"));
     let mut rt = runtime();
+    let vector = |id: &str| all.iter().find(|v| text(v, "id") == id).expect("a frozen trace");
+    let mut ends = Vec::new();
     for r in &realised {
-        let vector = all.iter().find(|v| text(v, "id") == r.trace).expect("a frozen trace");
-        realise(&mut rt, &source, r, vector);
+        ends.push((r.trace, realise(&mut rt, &source, r, vector(r.trace))));
     }
     assert_eq!(rt.spawns(), 1, "one child ran every realisation");
+
+    // The streaming traces (module docs): the two transport partitions are one job and end alike; at the cut-off
+    // stream's stop, the run's live memory beyond the program's own before the open is the trace's: the cursor.
+    let end = |id: &str| &ends.iter().find(|(trace, _)| *trace == id).expect("a realised trace").1;
+    assert_same_end(end("streaming-complete-split"), end("streaming-complete-coalesced"));
+    let cut = &ran(end("streaming")).summary;
+    let open = cut.rows.iter().position(|row| row.at.ends_with("#word_open")).expect("the open row");
+    let own = Before::of(cut.rows[..open].iter().map(charges)).live;
+    let frozen = uint(vector("streaming").get("expected").expect("expected"), "live_before_cleanup");
+    assert_eq!(cut.live_before_cleanup - own, frozen, "the cursor alone is live at the stop beyond the program's own");
 }
