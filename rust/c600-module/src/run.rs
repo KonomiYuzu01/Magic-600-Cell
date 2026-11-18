@@ -5,14 +5,16 @@
 //! around `c600-run`'s [`Boundary`]: the outer one notes, at each proposal, whether the block the boundary will record
 //! may read state; the inner one, between the boundary and the engine, refuses that proposal with
 //! `LG3:capability.not_granted`. The boundary's preview admission runs first and keeps its own codes (BND.84, BND.85),
-//! and the program gets the boundary's fixed acknowledgement `{base, id}` either way (BND.42, BND.43).
+//! and the program gets the boundary's fixed acknowledgement `{base, id}` either way (BND.42, BND.43). A proposal is a
+//! literal word's or a menu word's ([`Request::is_proposal`]; LB1.8, LP2 draft): both pass the same gate.
 
 use std::cell::{Cell, RefCell};
+use std::sync::Arc;
 
 use c600_run::boundary::{Answer, Boundary, Capture, Context, Pins, Shown, Store};
 use c600_run::interp::{self, Host, Loaded, Options, Request, RowTariff, Run, Sink};
 use c600_run::provenance::{self, field, hex, Json, Producer};
-use c600_run::value::Value;
+use c600_run::value::{MenuWord, Value};
 
 use crate::code::{DIGEST_MISMATCH, MODEL_NOT_SUPPORTED, NOT_GRANTED};
 use crate::{refuse, Approval, Closure, Refusal};
@@ -119,7 +121,7 @@ impl Host for Outer<'_> {
     }
 
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
-        if !matches!(request, Request::Propose { .. }) {
+        if !request.is_proposal() {
             return self.boundary.perform(request);
         }
         let block = self.boundary.block();
@@ -152,7 +154,7 @@ impl Host for Split<'_> {
     }
 
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
-        if matches!(request, Request::Propose { .. }) && self.gate.reads_state.get() {
+        if request.is_proposal() && self.gate.reads_state.get() {
             self.gate.refused.set(true);
             return Err(NOT_GRANTED);
         }
@@ -166,10 +168,32 @@ impl Host for Split<'_> {
 
 impl Outcome {
     /// The canonical result bytes CT-RTE-07 hashes (RTE.46; draft): the outcome, code, stop position, used amounts,
-    /// output bytes, shell answers and captures, in FP.5's canonical JSON.
+    /// output bytes, shell answers and captures, in FP.5's canonical JSON. A menu-word proposal's word is the value's
+    /// canonical encoding under `menu`, letters and identity block, and `null` for a literal word.
     pub fn canonical(&self) -> Vec<u8> {
         let s = &self.run.summary;
         let word = |w: &[i32]| Json::List(w.iter().map(|l| Json::Int(i64::from(*l))).collect());
+        let menu = |m: &Option<MenuWord>| {
+            m.as_ref().map_or(Json::Null, |w| {
+                let mut bytes = Vec::new();
+                let encoded = c600_run::encode::encode(&Value::MenuWord(Arc::new(w.clone())), &mut bytes);
+                match encoded.ok().and_then(|()| String::from_utf8(bytes).ok()) {
+                    Some(text) => Json::Text(text),
+                    // The encoder refuses a word whose identity block names no alphabet. Its fields and letters stay,
+                    // so two such words never share canonical bytes.
+                    None => {
+                        let letter = |&[cap, item]: &[u32; 2]| {
+                            Json::List(vec![Json::Int(i64::from(cap)), Json::Int(i64::from(item))])
+                        };
+                        Json::object([
+                            ("identity", Json::object(w.identity().fields().map(|(k, v)| (k, Json::text(v))))),
+                            ("letters", Json::List(w.letters().iter().map(letter).collect())),
+                            ("noncanonical", Json::Bool(true)),
+                        ])
+                    }
+                }
+            })
+        };
         let nat = |n: u128| Json::Text(n.to_string());
         let shell = self.shell.iter().map(|row| {
             let answer = match &row.answer {
@@ -192,6 +216,7 @@ impl Outcome {
                 ("answer", answer),
                 ("block", Json::Text(hex(&row.block))),
                 ("id", Json::text(&row.id)),
+                ("menu", menu(&row.menu)),
                 ("separated", Json::Bool(self.separated.contains(&row.id))),
                 ("target", Json::text(&row.target)),
                 ("word", word(&row.word)),
@@ -201,6 +226,7 @@ impl Outcome {
             Json::object([
                 ("block", Json::Text(hex(&c.block))),
                 ("id", Json::text(&c.id)),
+                ("menu", menu(&c.menu)),
                 ("target", Json::text(&c.target)),
                 ("word", word(&c.word)),
             ])
