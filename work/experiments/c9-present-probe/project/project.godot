@@ -1,0 +1,32 @@
+config_version=5
+
+[application]
+config/name="C9 Present Probe"
+run/main_scene="res://Main.tscn"
+run/low_processor_mode=false
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/resizable=true
+window/size/transparent=true
+window/per_pixel_transparency/allowed=true
+window/vsync/vsync_mode=1
+window/stretch/mode="disabled"
+window/energy_saving/keep_screen_on=true
+
+[dotnet]
+project/assembly_name="C9Probe"
+
+[rendering]
+rendering_device/driver.windows="d3d12"
+rendering_device/fallback_to_vulkan=false
+rendering_device/fallback_to_opengl3=false
+renderer/rendering_method="forward_plus"
+viewport/transparent_background=true
+environment/defaults/default_clear_color=Color(0, 0, 0, 0)
+shader_compiler/shader_cache/enabled=false
+rendering_device/pipeline_cache/enable=false
+
+[debug]
+file_logging/enable_file_logging.pc=false

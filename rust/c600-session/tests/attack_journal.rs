@@ -13,7 +13,7 @@
 
 mod common;
 
-use c600_command::{draft_args, CommandLayer, HeadlessFrames, Receipt, Secret, Shell, Status, Table};
+use c600_command::{draft_args, CommandLayer, Direction, HeadlessFrames, Receipt, Secret, Shell, Status, Table};
 use c600_kernel::json::{self, Value};
 use c600_kernel::ProtectedSet;
 use c600_session::disk::MemDisk;
@@ -47,8 +47,9 @@ fn create(disk: &MemDisk) -> Opener {
     Opener { layer, shell: Shell::new(Secret::fixed([7; 32]), "shell"), frames: HeadlessFrames::new() }
 }
 
-/// Opens the session the disk holds, or gives the code the open is refused with.
+/// Opens the session the disk holds, as a restart (`MemDisk::end_holder`), or gives the code the open is refused with.
 fn open(disk: &MemDisk) -> Result<Opener, &'static str> {
+    disk.end_holder();
     let store = JournalStore::open(Box::new(disk.clone())).map_err(|e| e.code)?;
     let secret = Secret::fixed([9; 32]);
     let layer = CommandLayer::open(common::kernel(), Table::h08(), secret, store).map_err(|e| e.code)?;
@@ -76,6 +77,16 @@ impl Opener {
             false => json::object([("orbits", parse(orbits))]),
         };
         self.shell.invoke(&mut self.layer, "protection.orbit.set", args).unwrap()
+    }
+
+    /// The solver undoes the action on top of the undo stack, confirming a release when `confirm` is set.
+    fn undo(&mut self, confirm: bool) -> Receipt {
+        let hint = self.layer.undo_hint(Direction::Undo).expect("an eligible target");
+        let mut args = json::object([("hint", hint.to_json())]);
+        if confirm {
+            args = json::object([("hint", hint.to_json()), ("confirm", Value::Bool(true))]);
+        }
+        self.shell.invoke(&mut self.layer, "session.undo", args).unwrap()
     }
 
     fn head(&self) -> String {
@@ -122,6 +133,14 @@ fn reopened(disk: &MemDisk) -> Option<String> {
     Some(format!("head {}, protected {:?}", &opener.head()[..8], opener.layer.protected().orbits()))
 }
 
+/// The code of the read-only recovery a reopen of the disk's journal is in, if it opens.
+fn recovery(disk: &MemDisk) -> Option<&'static str> {
+    open(disk).ok()?.layer.recovery().map(|error| error.code)
+}
+
+/// The draft code of a journal action that no solver action could have made (B7).
+const UNADMITTED: &str = "KN5:consistency.unadmitted_journal_action";
+
 fn committed(receipt: &Receipt) -> bool {
     matches!(receipt.status, Status::Committed(_))
 }
@@ -142,8 +161,13 @@ fn committed(receipt: &Receipt) -> bool {
 ///
 /// Observed on 4c20ce30: all three reopen as an intact, writable session; (b) reopens with orbit 0 protected and its
 /// pieces moved. The exact answers are in the assertion's message.
+///
+/// Fixed under the owner's reading of 18 November 2026: the replay refuses a commit whose caller is not the shell,
+/// derives a commit under the protection and policy then in force, and counts only a release's stored confirmation;
+/// each edit reopens in read-only recovery with `KN5:consistency.unadmitted_journal_action` (draft). Not detected, as
+/// the reading records: an edit that rewrites a program-made action as the solver's own, since the journal carries
+/// no authentication.
 #[test]
-#[ignore = "finding B7: fails while an edited journal that no solver action could have written reopens intact"]
 fn b7_a_journal_that_records_what_no_solver_action_could_do_does_not_reopen_intact() {
     let mut accepted = Vec::new();
 
@@ -163,6 +187,7 @@ fn b7_a_journal_that_records_what_no_solver_action_could_do_does_not_reopen_inta
     if let Some(session) = reopened(&disk) {
         accepted.push(format!("(a) a commit the journal gives to a run reopens intact: {session}"));
     }
+    assert_eq!(recovery(&disk), Some(UNADMITTED), "(a)");
 
     // (b) A commit that moves a protected orbit. The live layer refuses it.
     let disk = MemDisk::new();
@@ -186,6 +211,7 @@ fn b7_a_journal_that_records_what_no_solver_action_could_do_does_not_reopen_inta
     if let Some(session) = reopened(&disk) {
         accepted.push(format!("(b) a commit that moves protected orbit 0 reopens intact: {session}"));
     }
+    assert_eq!(recovery(&disk), Some(UNADMITTED), "(b)");
 
     // (c) A release without the solver's confirmation. The live layer refuses it.
     let disk = MemDisk::new();
@@ -202,8 +228,32 @@ fn b7_a_journal_that_records_what_no_solver_action_could_do_does_not_reopen_inta
     if let Some(session) = reopened(&disk) {
         accepted.push(format!("(c) a release with no confirmation reopens intact: {session}"));
     }
+    assert_eq!(recovery(&disk), Some(UNADMITTED), "(c)");
 
     assert!(accepted.is_empty(), "{accepted:#?}");
+}
+
+/// B7, the undo half of the release check (the owner's reading of 18 November 2026): an undo that releases a protected
+/// orbit needs the solver's confirmation (LI.26) as a release does, and a reopen counts only the confirmation stored
+/// with it. The honest journal reopens intact; with the stored confirmation set to false it reopens in read-only
+/// recovery with `KN5:consistency.unadmitted_journal_action`.
+#[test]
+fn an_undo_that_releases_without_its_confirmation_does_not_reopen_intact() {
+    let disk = MemDisk::new();
+    let mut live = create(&disk);
+    assert!(matches!(live.protect("[0]", false).status, Status::Completed(_)));
+    assert_eq!(live.undo(false).status.code(), Some("KN5:input.confirmation_required"));
+    let undone = live.undo(true);
+    assert!(!matches!(undone.status, Status::Refused(_)), "{:?}", undone.status);
+    drop(live);
+    // Read before the honest reopen, which appends its epoch record.
+    let mut edited = records(&disk);
+    assert_eq!(edited.len(), 3);
+    assert!(reopened(&disk).is_some(), "the honest journal does not reopen intact");
+    assert_eq!(*field(transaction(&mut edited[2]), "confirm"), Value::Bool(true));
+    *field(transaction(&mut edited[2]), "confirm") = Value::Bool(false);
+    write(&disk, &edited);
+    assert_eq!(recovery(&disk), Some(UNADMITTED));
 }
 
 /// Guard (class B, refuted): the replay catches an edit that changes what an action does. Another word under the

@@ -556,7 +556,10 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
     }
     let mut functions = Vec::new();
     let mut names = HashMap::new();
-    for (mi, m) in program.modules.iter().enumerate() {
+    // A stage module runs only in the stage evaluator, never in a program (RPI.68, RPI.73): its functions are not
+    // loaded, and the checker refuses every call of one.
+    let runnable = || program.modules.iter().enumerate().filter(|(_, m)| m.stage().is_none());
+    for (mi, m) in runnable() {
         for f in &m.functions {
             if names.insert((mi, f.name.clone()), functions.len()).is_some() {
                 return Err(rejected(format!("function {}.{} is declared twice", m.name, f.name)));
@@ -571,7 +574,7 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
             });
         }
     }
-    let exported: Vec<bool> = program.modules.iter().flat_map(|m| m.functions.iter().map(|f| f.exported)).collect();
+    let exported: Vec<bool> = runnable().flat_map(|(_, m)| m.functions.iter().map(|f| f.exported)).collect();
     let mut compiler = Compiler {
         loaded: Loaded { modules, functions, codes: Vec::new(), nodes: Vec::new() },
         names,
@@ -579,7 +582,7 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
         next_id: 0,
     };
     let mut fi = 0;
-    for (mi, m) in program.modules.iter().enumerate() {
+    for (mi, m) in runnable() {
         for f in &m.functions {
             compiler.function(fi, mi, f, &exported)?;
             fi += 1;
@@ -618,6 +621,7 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::InsertEntry | Prim::Expand => Some(3),
         Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => Some(1),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
+        Prim::Stage(s) => Some(s.arity()),
     }
 }
 
@@ -849,6 +853,11 @@ impl Compiler {
             Expr::Prim { op, args } => {
                 match (arity(*op), op) {
                     (None, _) => return Err(rejected("a conversion to exact is never run (LG2.19)")),
+                    (_, Prim::Stage(s)) => {
+                        let note =
+                            format!("the stage operation `{}` runs only in a stage's evaluator (RPI.68)", s.name());
+                        return Err(rejected(note));
+                    }
                     (Some(n), _) if n != args.len() => return Err(rejected(format!("{op:?} takes {n} operands"))),
                     (_, Prim::ToApprox(p)) if !approx::PRECISIONS.contains(p) => {
                         return Err(rejected(format!("unsupported precision {p}")))
@@ -1703,6 +1712,7 @@ impl<'a> Machine<'a> {
             | Prim::FieldNeg
             | Prim::FieldMul
             | Prim::FieldInverse => return self.finite_field(n, op, args),
+            Prim::Stage(_) => unreachable!("refused when loaded"),
         };
         let display = |v: &Value| match v {
             Value::Bool(x) | Value::ApproxBool(x) => Some(*x),

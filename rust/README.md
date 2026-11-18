@@ -30,6 +30,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) with their catalogue row, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
+| `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -311,6 +312,28 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   word (LB3.5) (`c600-syntax/tests/loops.rs`, `c600-check/tests/built_in.rs`).
 - A chain of `let`s is checked in a loop, so a long straight-line body does not deepen the checker's recursion, and a
   finding inside the chain keeps its nested path (`c600-check/tests/let_chains.rs`).
+- Stage modules (LP2 draft until the IR freeze; RPI.68 to RPI.71, RPI.75, LG2.24, LG3.17, LG5.12). A module has a
+  kind (`Module::kind`): a program module, or a stage (`ModuleKind::Stage`) with its kind, `vertex` or `fragment`,
+  its declared `ops` and `overdraw` and its array inputs with their lengths. In source a stage's header is
+  `stage vertex lens ops 16 overdraw 1 inputs [knots: 4];` in place of `module ... requires [...];`, and the eleven
+  stage operations (`Prim::Stage`: `approx_sub`, `approx_mul`, `approx_div`, `approx_neg`, `approx_abs`,
+  `approx_sqrt`, `approx_sin`, `approx_cos`, `approx_exp2`, `approx_log2` and `exclude`) lower only there. `check`
+  applies the stage checker's structural rules to every stage module, alike under every profile, and the ordinary
+  checker walks no stage body: binary32 only, with literals that are exact binary32 values; no capability; a plain
+  `fn` with no effect; `index` of a declared array at a literal position below its length; `repeat` with a literal
+  count; calls of stage functions of the same kind only, and no recursion; `exclude` only in a vertex stage, with a
+  positive literal radius; and no `if`, `match`, closure, collection, clock, file, randomness, budget, snapshot,
+  workspace, preview or view. Each refusal is `LG2:type.stage_rule_violation`, apart from a base-type mismatch
+  (`LG2:type.mismatch`). A program that calls a stage function or holds one as a value is refused there, `admit` and
+  `admit_built_in` refuse a stage function as a run's entry, and the interpreter loads no stage module.
+  `admit_stage(program, module, entry, limits)` alone makes a `CheckedStage`: it adds the entry's rules (exported,
+  takes every declared array, returns `record { x, y, z }` in a vertex stage and `record { r, g, b }` in a fragment
+  stage) and the host's `StageLimits` (enabled tiers, RM.38's weights, the loop count and nesting bounds, and the
+  `ops` and `overdraw` bounds, with the declared `ops` at least the weighted count of the expanded chain). The weights
+  and bounds are test values until RM.38 is measured (RPI.79). Not built here: the raster bound, the ID pass, the host
+  statuses, quarantine and compilation (RPI.72, RPI.75 to RPI.78), which are the adapter's and the host's
+  (`c600-check/tests/stages.rs`: CT-LG3-10 whole and parts of CT-LG2-15; `c600-syntax/tests/stages.rs`: parts of
+  CT-LG5-08).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -447,6 +470,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
   phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
   `det65_programs.rs`).
+- Whole-state contracts (LP2 draft until the IR freeze; LG4.10, LB1.7). A function of kind `FnKind::Contract`, in
+  source `contract settled() -> Bool effects [snapshot] { ... }`, takes no parameter, returns an exact `Bool` and
+  needs nothing beyond reading the snapshot and child budgets, so its result is a function of its revision; the checker
+  refuses another shape (`LG2:type.mismatch`, `LG3:effect.undeclared`) and any call or reference to a contract, also
+  from a loop's closure or another contract (`LG3:effect.undeclared`), so no call or loop runs one per call.
+  `contract::Revisions` runs a contract once per revision: asked again at its revision it gives the kept run and asks
+  the host nothing; a changed revision or program digest runs it again and replaces the kept run. A kept run is a
+  value, never evidence. The agreement-test form is any test that runs a contract (`c600-run/tests/contracts.rs`:
+  CT-LG4-05 whole).
 - Generators (LP2 drafts; DET.61). `rng_init` is one step priced at the input-byte tariff per byte of the hashed key
   input (13 bytes of domain, the seed's 32, 4 for the segment count and per segment 4 and its bytes), and it holds a
   generator's 41 units. Its stream path is the run's assigned path followed by its segments, on the run's seed, so
@@ -1100,17 +1132,27 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 ## Status of M6: the session store
 
 - `c600-session` keeps one session in one journal on a `Disk`: `FsDisk` over a directory, or `MemDisk` in memory for
-  the tests. `MemDisk` fails a chosen write (an error, a partial write, or a write that persisted but reported
-  failure), holds a write so a test can act while it is in flight, tears unsynced appends and loses unsynced data in
-  a crash, and counts reads and writes.
+  the tests only, behind the crate feature `mem-disk`. `MemDisk` fails a chosen write (an error, a partial write, or
+  a write that persisted but reported failure), holds a write so a test can act while it is in flight, tears unsynced
+  appends and loses unsynced data in a crash, and counts reads and writes.
 - The session lock (KN4.1: only the engine opens the session files; Fable lead L9). A store takes it before it
   reads the journal, so one process opens a session at a time. `FsDisk` holds an exclusive lock on the empty file
   `lock` in its directory (std's `File::try_lock`: `LockFileEx` on Windows, `flock` on Unix) until the disk is
   dropped. The operating system releases it when the process ends, a hard exit included, as it did for 0.4's
   `engine.lock` (1.0-A3's V03.4: a lock conflict is a typed error, not a crash). A second opener of a held session,
   in this process or another, is refused with `KN4:busy.session_locked` before it reads or writes the journal or a
-  state object. That covers `Session::open` and `create` and `JournalStore::open` and `create`. `MemDisk` takes no
-  lock: it lives in one process, and its clones stand for a restart in the crash tests. This is not the lock of
+  state object. That covers `Session::open` and `create` and `JournalStore::open` and `create`. Every disk takes
+  the lock (finding E2 of the KN5 boundary attack, the owner's reading of 18 November 2026,
+  `docs/wiki/decisions/owner-decisions-2026-11-18.md`): one clone of a `MemDisk` holds it until that clone is dropped
+  or the disk crashes, so a second store on a held memory disk is refused the same way, and a clone opened after the
+  holder is gone stands for a restart in the crash tests. A lock on a file holds only while the file keeps its name
+  (E1). A journal without a `lock` file refuses the opener, and a holder puts back a removed `lock` when it is
+  dropped. On Windows `FsDisk` opens `lock` through the platform layer `c600-platform` with a handle that denies
+  delete sharing, so nothing deletes or renames it, or removes the session directory, while it is held; outside
+  Windows a `lock` removed and created again while the session is held lets a second opener in. A hard exit leaves
+  `lock` in place. When something outside the store removed it, `FsDisk::open_anyway`, the engine's explicit "open
+  anyway" (no UI), puts it back and opens; it refuses while this machine's lock is held, and it does not see a lock
+  that another machine or a sync service holds on a shared folder. This is not the lock of
   KN4.2's R-15, which is the in-process lock that 0.4 held while it wrote a response (B-005); M6 calls that one the
   core lock. Drafts: the file's name and the code, which chapter 13 does not register (a row for LP3's amendment
   list, PHS.52).
@@ -1371,11 +1413,12 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, as `tools/language/ct_index.py --summary` prints it
-  (`tests/test_ct_index.py` checks the tool): 85 whole, eleven of them by the union of their parts (CT-KN1-04,
-  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22);
-  134 part; 4 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and
-  CT-LI-10); none missing; 25 waiting, each with what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  M6's record layer with its run record and jumbling records, the stage checker and whole-state contracts, as
+  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 87 whole, eleven of
+  them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
+  CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as parts
+  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 21 waiting, each with what it waits
+  for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1453,11 +1496,9 @@ run or not applicable is no pass (PHS.63).
   - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
     (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
-  - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
     part (M4's section).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
-  - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
 - Evidence kind: source and fixture. The checks ran on Windows only.
 
 ## Status of LP3, C1: the command layer

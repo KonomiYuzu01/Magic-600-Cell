@@ -29,8 +29,10 @@ ROOT = Path(__file__).resolve().parents[1]
 RUST = ROOT / "rust"
 TOOLS = ROOT / "tools"
 
-# The members allowed to call Windows APIs: the platform layer of RPI.52. LP2 has none.
-PLATFORM_LAYER: frozenset[str] = frozenset()
+# The members allowed to call Windows APIs: the platform layer of RPI.52. Its first member holds the session lock
+# file's open (the owner's reading of finding E1 of the KN5 boundary attack, 18 November 2026,
+# docs/wiki/decisions/owner-decisions-2026-11-18.md; the layer-boundary change approved under PHS.52).
+PLATFORM_LAYER: frozenset[str] = frozenset({"c600-platform"})
 # KN6 checkers, by source path, with the producer modules they must not import (KN6.2). LP2 has none: KN6.1's checker
 # kinds arrive with LP5 (CT-KN6-01, CT-KN6-03).
 KN6_CHECKERS: dict[str, tuple[str, ...]] = {}
@@ -72,6 +74,7 @@ UNREGISTERED_DRAFTS = frozenset({
     ("rust/c600-command/src/receipt.rs", "KN5:input.row_not_built"),
     ("rust/c600-command/src/receipt.rs", "KN5:input.overlay_row_conflict"),
     ("rust/c600-command/src/receipt.rs", "KN4:input.session_exists"),
+    ("rust/c600-command/src/receipt.rs", "KN5:consistency.unadmitted_journal_action"),
     ("rust/c600-session/src/types.rs", "KN4:busy.session_locked"),
 })
 
@@ -709,11 +712,16 @@ class ScanTests(unittest.TestCase):
         product shader stage exists before LP3's display and renderer, whose sources this test refuses until that
         half is written): Cargo.lock has no Windows package, no member or vendored crate depends on one or has a
         Windows target table, and no member or vendored source uses std::os::windows, a Windows API crate, a Windows
-        ABI, a #[link] attribute, a Windows cfg, windows_subsystem or a native link instruction; LP2 has no platform
-        layer, so every finding fails (RPI.51 to RPI.53). Controls: a planted workspace with each kind of finding
-        fails once per kind, and a slice's `.windows(2)` is no finding."""
+        ABI, a #[link] attribute, a Windows cfg, windows_subsystem or a native link instruction outside the platform
+        layer (PLATFORM_LAYER, a workspace member), so every such finding fails (RPI.51 to RPI.53). Controls: the
+        same scan without the platform layer finds the layer's own Windows code and nothing else; a planted
+        workspace with each kind of finding fails once per kind, and a slice's `.windows(2)` is no finding."""
         self.assertEqual(windows_problems(), [])
         members = workspace_members()
+        self.assertLessEqual(PLATFORM_LAYER, set(members), members)
+        unguarded = windows_problems(RUST, frozenset())
+        self.assertTrue(unguarded, "the platform layer holds no Windows code the scan sees")
+        self.assertEqual([p for p in unguarded if p.split("/", 1)[0] not in PLATFORM_LAYER], [], unguarded)
         core = {"c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel"}
         self.assertLessEqual(core, set(members), members)
         self.assertTrue(all((RUST / member / "Cargo.toml").is_file() for member in members), members)

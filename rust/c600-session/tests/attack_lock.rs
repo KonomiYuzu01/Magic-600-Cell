@@ -175,8 +175,11 @@ fn e1_a_second_opener_is_refused_after_the_held_lock_file_is_deleted_or_renamed(
 /// that hands the store any disk without its own `lock` has no session lock, and nothing says so.
 ///
 /// Observed on 4c20ce30: the second `JournalStore::open` on a memory disk that a first store still holds opens.
+///
+/// Fixed under the owner's reading of 18 November 2026 (every product store takes the session lock; the memory disk
+/// is for tests only): `Disk::lock` has no default body, and the memory disk, behind the `mem-disk` feature, holds a
+/// lock among its clones.
 #[test]
-#[ignore = "finding E2: fails while a disk without its own lock opens twice"]
 fn e2_a_disk_that_takes_no_lock_does_not_open_twice() {
     let disk = MemDisk::new();
     let k = common::kernel();
