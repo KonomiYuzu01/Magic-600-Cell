@@ -11,9 +11,11 @@
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
  *
- * Threading: every function except sa2_abi_version is called from one thread,
- * Godot's render thread (inside RenderingServer.call_on_render_thread). The
- * info-queue callback the DLL registers may run on any thread.
+ * Threading: on a sa2_attach context every function except sa2_abi_version is
+ * called from one thread, Godot's render thread (inside
+ * RenderingServer.call_on_render_thread). A sa2_create context (ABI 5) takes
+ * no lock: its calls may come from any thread, one at a time, serialised by
+ * the caller. The info-queue callback the DLL registers may run on any thread.
  *
  * Handles: device, queue, adapter and resource arguments are the uint64 values
  * returned by RenderingDevice.get_driver_resource() on Godot's D3D12 driver:
@@ -886,6 +888,9 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
  * confirmed sa2_drain; width and height are at most SA2_SURFACE_MAX_PX. It
  * resizes the swap chain's buffers and, with a loaded scene, the size-bound
  * resources with a new target generation, as in ABI 4. A scene is not required.
+ * A sa2_resize that fails after ResizeBuffers succeeded leaves surface frames
+ * answering SA2_E_WRONG_STATE until a sa2_resize to the same size succeeds;
+ * the failed call queues no GPU work, so the drain still counts as confirmed.
  *
  * sa2_recover on a sa2_create context whose device is removed builds a new
  * device and queue on the same adapter with what sa2_create made, a new swap

@@ -1,5 +1,5 @@
-//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`], and the ABI 4 calls the trait has no method for
-//! (engine adoption, frame reports, picks, counters) as methods of their own.
+//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`], and the ABI 5 product calls the trait has no
+//! method for (engine adoption, frame reports, picks, counters) as methods of their own.
 //!
 //! What the bridge decides, because the core's interface and the host's types differ:
 //! - A publication becomes per-slot rows: the one retained primitive's visibility and interaction sets, and each
@@ -17,10 +17,14 @@
 //!   camera matrix is the one set for its view and camera version ([`RenderBackend::set_camera_matrix`]); its target
 //!   is the one set by [`RenderBackend::set_frame_target`].
 //! - `cancel` and `retire` cannot return an error through the trait; a failure is kept in [`RenderBackend::fault`].
+//! - Recovery (ABI 5, route B; accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks)
+//!   forgets every resource set of the old device epoch: the core released them, and RM.23 lets no old resource token
+//!   draw on the new device. A frame naming such a set fails until its publication is prepared and activated again;
+//!   retiring one is a no-op.
 //! - Every core failure is `EV3:busy.renderer_unavailable` except `SA2_E_UNSUPPORTED`, which is
 //!   `EV3:input.display_unsupported`; the context names the status and the core's last error.
 
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use c600_digest::sha256;
 use c600_display::error::Error;
@@ -91,6 +95,8 @@ pub struct RenderBackend<C: CoreAbi> {
     target: u32,
     cameras: BTreeMap<ViewId, VecDeque<(u64, [f32; 16])>>,
     sets: BTreeMap<u64, SetRecord>,
+    /// Sets of an earlier device epoch, which the core released at recovery.
+    lost_sets: BTreeSet<u64>,
     frames: VecDeque<FrameRecord>,
     /// The newest failure of `cancel` or `retire`, which the trait cannot return.
     pub fault: Option<Error>,
@@ -105,12 +111,15 @@ impl<C: CoreAbi> RenderBackend<C> {
             target: 0,
             cameras: BTreeMap::new(),
             sets: BTreeMap::new(),
+            lost_sets: BTreeSet::new(),
             frames: VecDeque::new(),
             fault: None,
         }
     }
 
-    /// The frame target of the next frames: on the Godot-texture route, the registered ring slot.
+    /// The frame target of the next frames: on the Godot-texture route, the registered ring slot; on route B (a
+    /// `sa2_create` context; accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks),
+    /// [`TARGET_SURFACE`].
     pub fn set_frame_target(&mut self, target: u32) {
         self.target = target;
     }
@@ -321,6 +330,9 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     }
 
     fn retire(&mut self, resources: ResourceSet) {
+        if self.lost_sets.remove(&resources.0) {
+            return;
+        }
         self.sets.remove(&resources.0);
         if let Err(status) = self.core.retire(resources.0) {
             self.fault = Some(self.error(status));
@@ -412,6 +424,8 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 .unwrap_or_default();
             return Err(self.error(status).with("reason", reason));
         }
+        let lost = std::mem::take(&mut self.sets);
+        self.lost_sets.extend(lost.into_keys());
         self.describe_backend()
     }
 }
@@ -500,7 +514,7 @@ fn support_report(text: &str, limits: &LimitProfile) -> Result<SupportReport, Er
     let value = json::parse(text.as_bytes()).map_err(|_| malformed())?;
     let version = value.get("interface_version").and_then(Value::as_i64).ok_or_else(malformed)?;
     if version != i64::from(ABI_VERSION) {
-        return Err(Error::unavailable(format!("the core speaks interface version {version}, not 4")));
+        return Err(Error::unavailable(format!("the core speaks interface version {version}, not {ABI_VERSION}")));
     }
     if let Some(removed) = value.get("device_removed").and_then(Value::as_str) {
         return Err(Error::unavailable("the renderer core's device is removed").with("removed", removed));
