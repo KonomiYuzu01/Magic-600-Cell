@@ -687,6 +687,8 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("fault_replace_head", true),
         ("restart", false),
         ("invoke", false),
+        // KN5.1's `invoke` with the host's blocks for the arguments (BND.22), beside the envelope.
+        ("invoke_with_inputs", false),
         ("run_jobs", false),
         ("take_program_job", false),
         ("finish_program_job", false),
