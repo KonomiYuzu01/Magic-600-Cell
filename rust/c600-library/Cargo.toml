@@ -1,6 +1,6 @@
 [package]
 name = "c600-library"
-description = "The base library's first entries as 600 Cell Script: LB1's literal words, their source and their catalogue row (LP3, C5)"
+description = "The base library's first entries as 600 Cell Script: LB1's literal words and LB2's exact completion, their sources and their catalogue rows (LP3, C5)"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true

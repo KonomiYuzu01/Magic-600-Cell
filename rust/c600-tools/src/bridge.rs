@@ -8,9 +8,10 @@
 //! layer refuses a runtime invocation of a commit or app row, and any runtime invocation that carries a token
 //! (ADR-L02, KN5.15). The bridge answers the boundary with a short form of the layer's receipt, which only the shell
 //! sees; the program gets the boundary's fixed acknowledgement (BND.42, BND.43). Besides proposals, the bridge serves
-//! one state read: KN2.4's `positions` row to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2
-//! draft, CT-LB2-04). Capability separation keeps an entry that reads it from also proposing: admission refuses an
-//! entry that does both (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no workspace
+//! two state reads, each to a snapshot read with an argument at the layer's head: KN2.4's `positions` and `labels`
+//! rows ([`crate::kernel_rows`]; KN5, LP2 draft), which LB2's exact completion reads (CT-LB2-04). Capability
+//! separation keeps an entry that reads them from also proposing: admission refuses an entry that does both (LQ21,
+//! LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no workspace
 //! or file write and no clock.
 //!
 //! The draft carries the word in one word step, with one exception (LB2.3, LB2.4, LB1.11). For one run a host may give
@@ -176,7 +177,10 @@ impl<S: Store> Host for Bridge<'_, S> {
                 Ok(RowTariff { kernel_cost: word.len() as u128, result_bound: RESULT_BOUND })
             }
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::POSITIONS => {
-                kernel_rows::tariff(arg, ty)
+                kernel_rows::positions_read_tariff(arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::LABELS => {
+                kernel_rows::labels_read_tariff(arg, ty)
             }
             _ => Err(NOT_GRANTED),
         }
@@ -186,6 +190,9 @@ impl<S: Store> Host for Bridge<'_, S> {
         if let Request::SnapshotWith { query, arg, ty } = request {
             if *query == kernel_rows::POSITIONS {
                 return kernel_rows::positions(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::LABELS {
+                return kernel_rows::labels(self.layer, arg, ty);
             }
         }
         let Request::Propose { word, target, .. } = request else {

@@ -160,13 +160,13 @@ fn refused(layer: &mut CommandLayer, entry: &str, arg: &Value, expected: &str) -
     summary.used.kernel_cost
 }
 
-/// CT-LB2-04 (part: a host row serves KN2.4's `positions` to a library entry; not run: LB2's exact-completion entry,
-/// LP3's library). In a scrambled session an entry reads, for the pieces it names, each piece's identity, orbit, home
-/// slots and the slots that hold its stickers, so their orientation, as the kernel reads them at the head. A piece in
-/// its home position but turned answers slots other than its home slots, and a piece moved away answers the position
-/// that holds it. The answer follows the asked order, repeats and a fixed cell centre (orbit -1) included, and the
-/// declared field order; whole numbers may be declared `Int`, and a set names its pieces in increasing order. No piece
-/// answers no row. A read changes nothing.
+/// CT-LB2-04 (part: a host row serves KN2.4's `positions` to a library entry; LB2's exact-completion entry runs whole
+/// in `tests/exact_completion.rs`). In a scrambled session an entry reads, for the pieces it names, each piece's
+/// identity, orbit, home slots and the slots that hold its stickers, so their orientation, as the kernel reads them at
+/// the head. A piece in its home position but turned answers slots other than its home slots, and a piece moved away
+/// answers the position that holds it. The answer follows the asked order, repeats and a fixed cell centre (orbit -1)
+/// included, and the declared field order; whole numbers may be declared `Int`, and a set names its pieces in
+/// increasing order. No piece answers no row. A read changes nothing.
 #[test]
 fn a_library_entry_reads_identities_slots_and_orientations() {
     let start = scrambled();
