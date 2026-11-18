@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-18] update | The renderer core in the product tree, with the pose path
+`renderer/core/` is the product copy of the selected S-A2 core with W-J's per-piece pose path as ABI 3 (`sa2_scene_load_wj`, `sa2_scene_lattice_check`; every ABI 2 call and layout kept), copied from the selection evidence at 0f067202 with a digest per source in its `PROVENANCE.md`, which `tests/test_renderer_core.py` checks. W1 to W4 now draw through W-J's shaders with identity poses, as W-J's W3 run did, so the core has a new build identity: the W-J runs and the three cold W3 runs on it (freeze condition 1) are still unrun, and nothing about it is Windows/DirectX or performance evidence yet.
+
 ## [2026-11-18] decision | Commit-boundary readings, the session lock, DXC, C9, E3 and LX-4
 The owner took every recommended option on one page of five decisions: five readings of the frozen text at the commit boundary that the 17 November attack left open, a Windows platform lock with an "open anyway" entry, DXC shipped for user stages, C9 as its own line without a Godot source build, charter E3 at 3 s and LX-4's time box at 4 hours ([record](decisions/owner-decisions-2026-11-18.md)).
 
