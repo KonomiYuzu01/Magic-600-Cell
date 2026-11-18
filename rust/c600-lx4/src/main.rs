@@ -8,6 +8,8 @@
 //! writes nothing unless both agree: S.6cs, M.6cs, L.6cs, W/W00.6cs to W/W49.6cs, MANIFEST.json and EDITS.json. It
 //! prints one summary line. Exit 0 when written, 1 when the front end disagrees, 2 for a usage or file error.
 
+#![forbid(unsafe_code)]
+
 use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;

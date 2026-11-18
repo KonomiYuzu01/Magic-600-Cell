@@ -17,6 +17,8 @@
 //! its exact length. The manifest lists the tools' sources by digest: when a tool changes, the module set changes, and
 //! RTE.51 step 1 freezes it again with the candidate. Until then the set is a DRAFT.
 
+#![forbid(unsafe_code)]
+
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
