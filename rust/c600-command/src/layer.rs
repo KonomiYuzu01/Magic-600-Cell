@@ -98,8 +98,8 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    Derivation, Effect, IdentityBlock, Kernel, PiecePosition, ProtectedSet, Protection, ProtectionMode, Recipe,
-    Snapshot, Step, SupportRow, Verdict,
+    CellComparison, Derivation, Effect, IdentityBlock, Kernel, LayerCounts, PiecePosition, ProtectedSet, Protection,
+    ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
@@ -1095,6 +1095,30 @@ impl<S: Store> CommandLayer<S> {
     pub fn positions(&self, pieces: &[i64]) -> Result<Vec<PiecePosition>, Error> {
         self.retained_mode()?;
         Ok(self.kernel.positions(&self.current, pieces)?)
+    }
+
+    /// The structure row that `structure.compare` reads (draft; LP3's C6, step 1 item 3): two cells compared, as
+    /// [`Kernel::compare_cells`] counts their face steps, with its refusal of a cell outside 0 to 599. Jumble on
+    /// refuses it, as it refuses [`CommandLayer::positions`] (LG2.8). A read changes nothing.
+    pub fn compare_cells(&self, first: i64, second: i64) -> Result<CellComparison, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.compare_cells(first, second)?)
+    }
+
+    /// The counts that `filter.preview` reads for a layer predicate (draft; LP3's C6, step 1 item 3): the positions
+    /// and slots of each layer around `cell`, as [`Kernel::cell_layers`] counts them. Jumble on refuses it, as it
+    /// refuses [`CommandLayer::positions`] (LG2.8), since the positions are the retained model's. A read changes
+    /// nothing.
+    pub fn cell_layers(&self, cell: i64) -> Result<Vec<LayerCounts>, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.cell_layers(cell)?)
+    }
+
+    /// One layer of [`CommandLayer::cell_layers`], as [`Kernel::layer_counts`] counts it, with its refusal of a layer
+    /// past the cell's last.
+    pub fn layer_counts(&self, cell: i64, layer: i64) -> Result<LayerCounts, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.layer_counts(cell, layer)?)
     }
 
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The

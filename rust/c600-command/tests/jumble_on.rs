@@ -482,9 +482,10 @@ fn a_retried_entry_answers_its_receipt_and_enters_once() {
 /// `twist.apply` are `KN5:input.retained_tool_needs_jumble_off` and change nothing: a preview before its draft is read,
 /// a commit after its token's binding, a twist after its token, so a jumble item answers the mode too. So are LB7.2's
 /// `worksheet.save` and `worksheet.load`, before their arguments are read. Availability says the same, and so does
-/// KN2.4's `positions` read at the head (draft; CT-LB2-04), whose retained state is the one the crossing entered from.
-/// The protection, policy and record rows and a program row stay, their actions' `pre` and `post` are the pose digest,
-/// and a program job reads the revision with its mode.
+/// KN2.4's `positions` read at the head (draft; CT-LB2-04), whose retained state is the one the crossing entered from,
+/// and the structure reads of `structure.compare` and `filter.preview` (draft), which name the retained model's cells
+/// and positions. The protection, policy and record rows and a program row stay, their actions' `pre` and `post` are
+/// the pose digest, and a program job reads the revision with its mode.
 #[test]
 fn the_retained_workflow_needs_jumble_off() {
     let mut f = fixture(&[]);
@@ -508,6 +509,9 @@ fn the_retained_workflow_needs_jumble_off() {
     }
     let kept = f.fixed();
     assert_eq!(f.layer.positions(&[0, 177_119]).unwrap_err().code, needs_off);
+    assert_eq!(f.layer.compare_cells(0, 1).unwrap_err().code, needs_off);
+    assert_eq!(f.layer.cell_layers(0).unwrap_err().code, needs_off);
+    assert_eq!(f.layer.layer_counts(0, 0).unwrap_err().code, needs_off);
     assert_eq!(f.fixed(), kept);
     let asked = f.shell.prepare(&f.layer, "operation.preview", draft_args(&word(&[2]))).unwrap();
     f.refused(asked, needs_off, "a preview");
@@ -584,6 +588,8 @@ fn undo_and_redo_restore_the_entry_s_own_sides() {
     assert_eq!(f.layer.availability(TWIST_ROW), Ok(()));
     let pieces = [0, 177_119];
     assert_eq!(f.layer.positions(&pieces), Ok(kernel().positions(f.layer.snapshot(), &pieces).unwrap()));
+    assert_eq!(f.layer.compare_cells(0, 1), Ok(kernel().compare_cells(0, 1).unwrap()));
+    assert_eq!(f.layer.layer_counts(0, 0), Ok(kernel().layer_counts(0, 0).unwrap()));
 
     let redone = f.step(Direction::Redo);
     let Status::Committed(record) = &redone.status else { panic!("{:?}", redone.status) };
