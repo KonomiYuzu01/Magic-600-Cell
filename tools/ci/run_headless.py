@@ -86,6 +86,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_renderer_core.py"],
     # The C9 acceptance harness: its provenance, its interop layout against the core header and its finalizer.
     ["tests/test_renderer_acceptance.py"],
+    # The C9 measurement tools (charter E2 and E3 timers, PresentMon wrapper, runbook) on synthetic inputs.
+    ["tests/test_c9_measure.py"],
     ["tests/test_feature_costs.py"],
     ["tests/test_migration_probes.py"],
     ["tests/test_migration_p2.py"],
