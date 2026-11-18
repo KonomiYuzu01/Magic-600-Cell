@@ -1,0 +1,13 @@
+{"t": "run", "format": "magic600-c9-shell-events-v1", "run_id": "fixture-e2", "build_identity": "synthetic-build-0001", "qpc_frequency": 10000000, "synthetic": true, "foreground_throughout": true, "correctness": "pass", "process_id": 4242, "swap_chain": "0x00000200AB12CD00"}
+{"t": "key", "seq": 0, "qpc": 1000000, "frame_id": 1}
+{"t": "frame", "frame_id": 1, "qpc": 1100000, "device_epoch": 1, "surface": 1}
+{"t": "frame", "frame_id": 2, "qpc": 1300000, "device_epoch": 1, "surface": 1}
+{"t": "presented", "frame_id": 1, "device_epoch": 1, "surface": 1, "sequence": 1, "display_qpc": 1450000}
+{"t": "presented", "frame_id": 2, "device_epoch": 1, "surface": 1, "sequence": 2, "display_qpc": 1620000}
+{"t": "key", "seq": 1, "qpc": 2000000, "frame_id": 3}
+{"t": "frame", "frame_id": 3, "qpc": 2100000, "device_epoch": 1, "surface": 1}
+{"t": "frame", "frame_id": 4, "qpc": 2300000, "device_epoch": 1, "surface": 1}
+{"t": "presented", "frame_id": 3, "device_epoch": 1, "surface": 1, "sequence": 3, "display_qpc": 2520000}
+{"t": "key", "seq": 2, "qpc": 3000000, "frame_id": 5}
+{"t": "frame", "frame_id": 5, "qpc": 3200000, "device_epoch": 1, "surface": 1}
+{"t": "presented", "frame_id": 5, "device_epoch": 1, "surface": 1, "sequence": 4, "display_qpc": 3600000}
