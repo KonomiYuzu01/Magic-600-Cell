@@ -116,5 +116,5 @@ fn the_layer_refuses_all_six_rows_and_an_overlay_cannot_replace_one() {
             Err(error) => assert_eq!((need.served, error.code), (false, code::OVERLAY_ROW_KIND), "{}", need.row),
         }
     }
-    assert_eq!(NEEDS.iter().filter(|need| need.served).count(), 5);
+    assert_eq!(NEEDS.iter().filter(|need| need.served).count(), 6);
 }

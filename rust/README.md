@@ -1471,11 +1471,12 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder
-  and streamed words, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool):
-  89 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
+  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder,
+  streamed words and `filter.apply`, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py`
+  checks the tool):
+  90 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
   CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 137 part; 4 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 18 waiting, each with
+  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 17 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1710,11 +1711,12 @@ run or not applicable is no pass (PHS.63).
   row transiently, a workspace row as one durable workspace action with its result reference. The row keeps H-08's
   kind, lane, undo class, gates and argument types, so a `none`-lane row has no occupancy limit (KN7.2) and a
   `view`-lane row supersedes its own waiting invocation. Only a view, workspace, query or file row on the `none`,
-  `view` or `program` lane, with no gate, preview rule, action guard, token or undo entry, is served; any other is
-  refused with `KN5:input.overlay_row_kind`, and a row the layer builds itself or one already served with
-  `KN5:input.overlay_row_conflict`. Serving is not journaled, so after a reopen the host serves its rows again. Five of
-  the representations tool's six rows can be served now; `filter.apply` waits for its gate, its filter preview rule
-  and its workspace inverse. Tests: `c600-command/tests/served_rows.rs`.
+  `view` or `program` lane, with no action guard or token, is served, and only with no gate, preview rule or undo
+  entry, except a workspace row whose undo class is `workspace`, and one that takes exactly the gate
+  `fresh_filter_preview` with the `filter` preview rule; any other is refused with `KN5:input.overlay_row_kind`, and a
+  row the layer builds itself or one already served with `KN5:input.overlay_row_conflict`. Serving is not journaled,
+  so after a reopen the host serves its rows again. All six of the representations tool's rows and
+  `operation.phase.edit` can be served now. Tests: `c600-command/tests/served_rows.rs`.
 - Job output (LP3's C6, its second common need; the drafts are in the crate documentation).
   `CommandLayer::finish_program_job_with(job, Result<JobOutput, Error>)` takes a job's output as the runtime's sinks
   gave it: the entry's value, the views it published and the workspace records it wrote, each with its provenance
@@ -1722,8 +1724,26 @@ run or not applicable is no pass (PHS.63).
   is the value's own digest when there are no views and no records. Only a workspace row's job writes records; a record
   from any other row fails the job with `LG3:capability.not_granted`. The host's provenance reader checks every
   record's block, as for `workspace.set`. A job whose output fails a check writes nothing. A workspace row's records are
-  written in its completion's one durable action and kept in the journal (`Transaction::records`). No undo reaches
-  them, so earlier writes of the same records leave the undo and redo stacks. Tests: `c600-command/tests/job_output.rs`.
+  written in its completion's one durable action and kept in the journal (`Transaction::records`). For a stored row
+  whose undo class is `workspace` (`filter.apply`, `operation.phase.edit`) the completion is a workspace inverse: its
+  undo writes back what each record held before, absent ones included, and its redo writes the records again. No undo
+  reaches any other row's records, so earlier writes of the same records leave the undo and redo stacks, and so,
+  beneath an action that leaves, do the actions that wrote one of its other records. A replay
+  decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
+  `c600-command/tests/filter_apply.rs`.
+- Filter previews and `filter.apply` (KN0.9, H15.4, LI.41, CT-LI-11; LP3's C6; the drafts are in the crate
+  documentation and `c600-command/src/filter.rs`). A `FilterRef` is the result reference `{"job", "digest"}` of a
+  completed `structure.layer` job, and it resolves while every record that job wrote keeps the version the write left
+  (`KN2:input.named_object_invalid` otherwise). A completed `filter.preview` job is kept as a filter preview
+  (`CommandLayer::filter_preview(job)`), bound to `FilterPreviewDeps`: the epoch, the model identity, the mode, the
+  state revision and the digest of the resolved filter, which holds each record it read with its content digest and
+  version. The protection and workspace revisions are not dependencies, so an unread edit leaves it fresh. A
+  `FilterPreviewRef` is `{"epoch", "job"}` (`FilterPreview::reference`): job IDs start again after a reopen, and the
+  epoch keeps a reference from before it off a later preview. The gate `fresh_filter_preview` reads neither the
+  word-preview slot nor a
+  presentation: a missing or stale filter preview refuses `filter.apply` with `KN5:stale.filter_preview` before any
+  job, and the gate is checked again when the job's output is published, where a stale one fails the job and writes
+  nothing. Filter previews are transient, so a reopen keeps none. Tests: `c600-command/tests/filter_apply.rs`.
 - Argument forms (LP3's C6, its third common need; the drafts are in the crate documentation). An argument of an
   optional type (`T?`) may be left out of any row; every other argument must be given. A row the layer does not build
   is refused as not built once its names fit, with an optional argument left out or given. For a row the layer admits
@@ -1731,8 +1751,9 @@ run or not applicable is no pass (PHS.63).
   (0 to 599), `CellIdPair` and `RevisionRef` (KN0.2's nine keys) before it admits the job. A malformed argument is
   refused with `KN5:input.argument_form`, and after every form check a `RevisionRef` that is not the current revision
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
-  and take no job. Other types, among them `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs`, pass unchecked
-  until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
+  is checked after every form. Other types, among them `CanonicalObjectRefs`, pass unchecked until their forms are
+  written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
