@@ -143,7 +143,7 @@ std::pair<uint64_t, uint64_t> ready_set(sa2::Product& product, const sa2::Prepar
     return {ticket, row.resource_set};
 }
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 4, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 5, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
@@ -155,7 +155,8 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_scene_geometry_check", "sa2_identity", "sa2_scene_unload", "sa2_scene_load_wj", "sa2_scene_lattice_check",
             "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
-            "sa2_resize", "sa2_counters", "sa2_device_status"};
+            "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
+            "sa2_surface_detach"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1017,7 +1018,7 @@ void run_cpu(Suite& suite, const Options& options) {
     });
     suite.check("product describe", [] {
         const auto json = Json::parse(sa2::describe("abc", 0).dump());
-        expect(json.at("interface_version").integer() == 4 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
+        expect(json.at("interface_version").integer() == 5 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
             && json.at("device_removed").null() && json.at("evidence").array().empty(), "the SupportReport header is wrong");
         const auto& features = json.at("features");
         expect(features.object().size() == 8, "the SupportReport does not list eight rows");
@@ -1029,6 +1030,162 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(recover.at("status").string() == "unavailable" && !recover.at("reason").string().empty() && recover.at("device_removed").null()
             && recover.at("device_epoch").integer() == 1, "the recover report is wrong");
         expect(sa2::removed_text(int32_t(0x887A0005)) == "0x887a0005", "the removal text is not 0x%08x");
+        // ABI 5, route B: F22 and F23 on a sa2_create context with a surface.
+        const auto route_b = Json::parse(sa2::describe("abc", 0, 3, true).dump());
+        expect(route_b.at("interface_version").integer() == 5 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
+        for (const char* row : {"F22", "F23"})
+            expect(route_b.at("features").at(row).at("status").string() == "supported"
+                && route_b.at("features").at(row).at("layout_version").integer() == 1, "route B does not support F22 and F23");
+        expect(route_b.at("features").at("J13").at("status").string() == "unsupported", "route B changed J13");
+    });
+    // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
+    // three owner-machine checks): the argument checks, the present ledger's
+    // exact rule and the recovery bookkeeping, without a device or a window.
+    suite.check("route b arguments", [] {
+        static_assert(SA2_TARGET_SURFACE == 0xFFFFFFFFu && SA2_SURFACE_SYNC_INTERVAL == 1u && SA2_SURFACE_BUFFERS == SA2_RING_SLOTS
+            && SA2_SURFACE_MAX_PX == 16384u, "the ABI 5 defines changed");
+        sa2_config config{};
+        auto* ctx = reinterpret_cast<sa2_context*>(uintptr_t(1));
+        invalid(sa2_create(0, nullptr, &ctx), "sa2_create");
+        expect(ctx == nullptr, "a refused sa2_create left its output set");
+        invalid(sa2_create(0, &config, &ctx), "sa2_create");
+        config.struct_size = sizeof(config);
+        config.queue_mode = 7;
+        invalid(sa2_create(0, &config, &ctx), "sa2_create");
+        config.queue_mode = SA2_QUEUE_SAME;
+        config.debug_callback = 2;
+        invalid(sa2_create(0, &config, &ctx), "sa2_create");
+        config.debug_callback = 0;
+        invalid(sa2_create(0, &config, nullptr), "sa2_create");
+        invalid(sa2_surface_attach(nullptr, 1, 0, 0, 256, 256), "sa2_surface_attach");
+        invalid(sa2_surface_move(nullptr, 0, 0), "sa2_surface_move");
+        invalid(sa2_surface_detach(nullptr), "sa2_surface_detach");
+        auto frame = frame_input(1, 1);
+        frame.target = SA2_TARGET_SURFACE;
+        sa2::validate_frame_input(&frame);
+        expect(rejects([&] { auto bad = frame; bad.target = SA2_TARGET_SURFACE - 1; sa2::validate_frame_input(&bad); }), "a target between the ring and the surface was accepted");
+    });
+    suite.check("present matching", [] {
+        using sa2::PresentMatch;
+        constexpr int32_t disjoint = int32_t(0x887A000B); // DXGI_ERROR_FRAME_STATISTICS_DISJOINT
+        const auto match = [](uint64_t generation, uint32_t count, sa2::PresentSample sample) { return sa2::present_match(generation, count, sample); };
+        expect(match(1, 5, {0, 1, 5, 5}) == PresentMatch::Exact && match(1, 5, {0, 1, 5, 9}) == PresentMatch::Exact, "an equal count was not exact");
+        expect(match(1, 5, {0, 1, 6, 9}) == PresentMatch::Superseded, "a row past the frame's count did not drop it");
+        expect(match(1, 5, {0, 1, 4, 9}) == PresentMatch::Wait, "a row before the frame's count did not wait");
+        expect(match(1, 5, {0, 2, 1, 1}) == PresentMatch::Superseded, "a newer swap-chain generation did not drop the frame");
+        expect(match(2, 5, {0, 1, 5, 5}) == PresentMatch::Ignore, "an older generation's row was used");
+        expect(match(1, 5, {disjoint, 1, 5, 5}) == PresentMatch::Ignore, "a disjoint row was used");
+        expect(match(1, 5, {0, 1, 5, 4}) == PresentMatch::Ignore && match(1, 5, {0, 1, 6, 5}) == PresentMatch::Ignore,
+            "a row above GetLastPresentCount was used");
+        sa2::PresentLedger ledger;
+        auto input = frame_input(1, 1);
+        ledger.presented(input, 1, 1, 10);
+        input.sequence = 2;
+        input.flags = SA2_FRAME_PREVIEW;
+        input.preview = 4;
+        ledger.presented(input, 2, 1, 11);
+        input.sequence = 3;
+        input.flags = 0;
+        input.preview = 0;
+        ledger.presented(input, 3, 1, 12);
+        sa2_presented_row rows[4]{};
+        ledger.sample({0, 1, 9, 12});
+        ledger.sample({disjoint, 1, 11, 12});
+        expect(ledger.awaiting() == 3 && ledger.rows(rows, 4) == 0, "an earlier or disjoint row changed the ledger");
+        ledger.sample({0, 1, 11, 12, 7000});
+        ledger.sample({0, 1, 11, 12, 7100});
+        expect(ledger.awaiting() == 1 && ledger.confirmed() == 1, "a row did not confirm its frame once and drop the passed one");
+        expect(ledger.rows(rows, 4) == 1 && rows[0].struct_size == sizeof(rows[0]) && rows[0].frame_id == 2 && rows[0].previews == 1
+            && rows[0].preview == 4 && rows[0].sequence == 2 && rows[0].surface == 1 && rows[0].device_epoch == sa2::DeviceEpoch,
+            "the confirmed row does not carry its frame's input");
+        expect(rows[0].display_qpc == 7000, "the confirmed row does not carry the confirming row's SyncQPCTime");
+        expect(ledger.rows(rows, 4) == 0, "a confirmed frame was reported twice");
+        ledger.sample({0, 1, 12, 12, 7200});
+        expect(ledger.rows(rows, 4) == 1 && rows[0].frame_id == 3 && rows[0].previews == 0 && rows[0].preview == 0
+            && rows[0].display_qpc == 7200, "frame 3 was not confirmed");
+        // A resize or recovery ends the generation: its waiting frames are never reported.
+        ledger.presented(input, 4, 1, 13);
+        ledger.sample({0, 2, 1, 1});
+        expect(ledger.awaiting() == 0 && ledger.confirmed() == 0, "an ended generation's frame was kept");
+        // A present count that does not increase makes both frames ambiguous.
+        ledger.presented(input, 5, 2, 3);
+        ledger.presented(input, 6, 2, 3);
+        ledger.sample({0, 2, 3, 3});
+        expect(ledger.awaiting() == 0 && ledger.confirmed() == 0, "frames with one present count were confirmed");
+        // Frame order, capacity 1.
+        ledger.presented(input, 7, 3, 1);
+        ledger.sample({0, 3, 1, 1});
+        ledger.presented(input, 8, 3, 2);
+        ledger.sample({0, 3, 2, 2});
+        expect(ledger.rows(rows, 1) == 1 && rows[0].frame_id == 7 && ledger.rows(rows, 1) == 1 && rows[0].frame_id == 8, "confirmed frames left frame order");
+        // Both lists are bounded; the oldest entries go first and are never reported.
+        for (uint32_t i = 0; i < sa2::MaxPresents + 5; ++i) ledger.presented(input, 100 + i, 4, 1 + i);
+        expect(ledger.awaiting() == sa2::MaxPresents, "the awaiting frames are unbounded");
+        for (uint32_t i = 0; i < sa2::MaxPresents + 5; ++i) {
+            ledger.presented(input, 5000 + i, 5, 1 + i);
+            ledger.sample({0, 5, 1 + i, 1 + i});
+        }
+        expect(ledger.confirmed() == sa2::MaxPresents && ledger.awaiting() == 0, "the confirmed frames are unbounded");
+        expect(ledger.rows(rows, 1) == 1 && rows[0].frame_id == 5005, "the oldest confirmed frame was not dropped first");
+        ledger.clear();
+        expect(ledger.awaiting() == 0 && ledger.confirmed() == 0 && ledger.rows(rows, 4) == 0, "clear left an entry");
+    });
+    suite.check("recovery bookkeeping", [] {
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        expect(wrong_state([&] { product.recovered(sa2::DeviceEpoch + 1); }), "a live device was recovered");
+        PreparationArrays arrays(1, 1, 1);
+        const auto data = sa2::preparation(&arrays.value);
+        const auto ready = ready_set(product, data, 0);
+        const uint8_t stamp[32]{};
+        product.activate(ready.second, stamp);
+        auto input = frame_input(1, 1);
+        input.resource_set = ready.second;
+        product.commit(input, product.plan(input, 256, 256), 1, 0);
+        product.produced(1, 100, 3);
+        input.sequence = 2;
+        product.commit(input, product.plan(input, 256, 256), 2, 1);
+        const auto plan = product.pick_plan(1, 0, 0);
+        const auto pick = product.reserve_pick();
+        product.pick_commit(pick, plan, plan.pass ? 5 : 0);
+        product.presents().presented(input, 2, 1, 7);
+        const auto generation = product.target_generation();
+        product.observe_removal(int32_t(0x887A0005));
+        expect(wrong_state([&] { product.recovered(sa2::DeviceEpoch); }), "a recovery kept the device epoch");
+        product.recovered(sa2::DeviceEpoch + 1);
+        expect(!product.removed() && product.removed_reason() == 0 && product.device_epoch() == sa2::DeviceEpoch + 1, "the recovery did not clear the removal");
+        expect(product.image() != nullptr && product.image()->revision == 1, "the adopted CPU image was not kept (RM.16)");
+        expect(product.live_tickets() == 0 && product.retained_frames() == 0 && product.live_picks() == 0 && product.presents().awaiting() == 0,
+            "the old epoch's tickets, frames, picks or presents were kept");
+        expect(product.target_generation() == generation + 1, "the recovery did not start a target generation");
+        sa2_frame_report reports[2]{};
+        expect(product.counter_values().reports_dropped == 2 && product.reports(reports, 2) == 0, "the old epoch's unread reports were not dropped");
+        // The old epoch's tickets, sets, frames and picks answer SA2_E_WRONG_STATE.
+        bool release = true;
+        expect(wrong_state([&] { product.poll(ready.first, 0); }), "an old ticket was polled");
+        expect(wrong_state([&] { product.cancel(ready.first, SA2_CANCEL_BY_USER, 0); }), "an old ticket was cancelled");
+        expect(wrong_state([&] { product.activate(ready.second, stamp); }), "an old set was activated");
+        expect(wrong_state([&] { product.retire(ready.second); }), "an old set was retired");
+        expect(wrong_state([&] { product.pick_plan(1, 0, 0); }), "an old frame was picked");
+        expect(wrong_state([&] { product.pick_poll(pick, 5, [] { return 1u; }, release); }), "an old pick was polled");
+        // Work naming the old epoch is refused; the new epoch's work runs and its numbers keep counting.
+        input.sequence = 3;
+        input.resource_set = 0;
+        expect(wrong_state([&] { product.plan(input, 256, 256); }), "a frame of the old epoch was planned");
+        expect(wrong_state([&] { product.check_prepare(data); }), "a preparation of the old epoch was accepted");
+        input.device_epoch = sa2::DeviceEpoch + 1;
+        expect(product.plan(input, 256, 256).upload, "the kept image was not uploaded to the new device");
+        arrays.value.device_epoch = sa2::DeviceEpoch + 1;
+        const auto again = ready_set(product, sa2::preparation(&arrays.value), 0);
+        expect(again.first > ready.first && again.second > ready.second && product.reserve_pick() > pick, "a ticket, set or pick number was reused");
+        // The answers.
+        const auto recovered = Json::parse(sa2::recover_result("recovered", "r", 2, int32_t(0x887A0005)).dump());
+        expect(recovered.at("status").string() == "recovered" && recovered.at("reason").string() == "r" && recovered.at("device_epoch").integer() == 2
+            && recovered.at("device_removed").string() == "0x887a0005", "the recovered answer is wrong");
+        const auto live = Json::parse(sa2::recover_result("not_removed", "n", 1, 0).dump());
+        expect(live.at("status").string() == "not_removed" && live.at("device_removed").null() && live.at("device_epoch").integer() == 1,
+            "the not_removed answer is wrong");
     });
 }
 Options parse(int argc, char** argv) {

@@ -6,7 +6,7 @@ mod common;
 
 use c600_render::FakeCore;
 
-use common::support::{frames_and_batches, scenario, SIZE};
+use common::support::{frames_and_batches, route_b, scenario, SIZE};
 use common::Shimmed;
 
 #[test]
@@ -18,4 +18,11 @@ fn the_host_runs_through_the_c_function_table() {
 #[test]
 fn frames_and_report_batches_cross_the_c_function_table() {
     frames_and_batches(Shimmed::new(FakeCore::new(SIZE), 0));
+}
+
+/// Route B (accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) through the C function table; the recovery JSON is read
+/// twice.
+#[test]
+fn route_b_crosses_the_c_function_table() {
+    route_b(Shimmed::new(FakeCore::on_surface(SIZE), 5000));
 }

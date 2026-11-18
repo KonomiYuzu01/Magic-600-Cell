@@ -83,7 +83,7 @@ void validate_frame_input(const sa2_frame_input* input) {
     argument(input && input->struct_size == sizeof(*input), "invalid frame_input struct_size");
     argument(input->reserved == 0, "frame_input reserved must be 0");
     argument(!(input->flags & ~SA2_FRAME_PREVIEW), "unknown frame_input flags");
-    argument(input->target < SA2_RING_SLOTS, "target must be a ring slot 0..2");
+    argument(input->target < SA2_RING_SLOTS || input->target == SA2_TARGET_SURFACE, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
     argument(input->viewport_width >= SA2_MIN_TEXTURE_PX && input->viewport_height >= SA2_MIN_TEXTURE_PX,
         "viewport is below SA2_MIN_TEXTURE_PX");
     if (!(input->flags & SA2_FRAME_PREVIEW))
@@ -119,7 +119,7 @@ uint64_t Product::adopt(EngineImage image) {
 
 void Product::check_prepare(const PreparedData& data) const {
     require_live();
-    state(data.stamp.device_epoch == DeviceEpoch, "device_epoch is not the backend's");
+    state(data.stamp.device_epoch == device_epoch_, "device_epoch is not the backend's");
     state(held_tickets() < MaxTickets, "256 tickets hold GPU memory");
 }
 size_t Product::held_tickets() const {
@@ -242,7 +242,7 @@ std::vector<uint64_t> Product::releasable(uint64_t frames_completed, uint64_t pr
 
 FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t height) const {
     require_live();
-    state(input.device_epoch == DeviceEpoch, "device_epoch is not the backend's");
+    state(input.device_epoch == device_epoch_, "device_epoch is not the backend's");
     state(image_.has_value(), "no engine image adopted");
     state(input.engine_revision == image_->revision, "engine_revision is not the adopted revision");
     state(input.viewport_width == width && input.viewport_height == height, "viewport is not the target's size");
@@ -503,11 +503,94 @@ sa2_counter_values Product::counter_values() const {
     return out;
 }
 
+// ABI 5 (route B; accepted for now by the owner on 18 Nov 2026, pending three
+// owner-machine checks): recovery on a new device of the same adapter.
+void Product::recovered(uint64_t epoch) {
+    state(removed_, "the device is not removed");
+    state(epoch > device_epoch_, "the device epoch must increase");
+    for (const auto& record : frames_)
+        if (!record.reported) ++counters_.reports_dropped;
+    entries_.clear();
+    sets_.clear();
+    picks_.clear();
+    frames_.clear();
+    copies_ = {}; // the ring copies were on the old device: the next frame uploads the kept image
+    unharvested_ = {};
+    presents_.clear();
+    ++target_generation_;
+    removed_ = false;
+    reason_ = 0;
+    device_epoch_ = epoch;
+}
+
+// ABI 5 (route B; accepted for now by the owner on 18 Nov 2026, pending three
+// owner-machine checks): the C9 present probe's exact rule (analyze.py, pass
+// 2), for one frame and one statistics sample.
+PresentMatch present_match(uint64_t generation, uint32_t present_count, const PresentSample& sample) {
+    if (sample.generation > generation) return PresentMatch::Superseded; // the frame's swap chain ended: its row never comes
+    if (sample.generation < generation) return PresentMatch::Ignore;
+    // A failed or disjoint call, or a count ahead of the swap chain's own last
+    // present count, is no row (the probe's "usable" rows only).
+    if (sample.hr != 0 || sample.present_count > sample.last_present_count) return PresentMatch::Ignore;
+    if (sample.present_count == present_count) return PresentMatch::Exact;
+    return sample.present_count > present_count ? PresentMatch::Superseded : PresentMatch::Wait;
+}
+
+void PresentLedger::presented(const sa2_frame_input& input, uint64_t frame, uint64_t generation, uint32_t present_count) {
+    bool ambiguous = false;
+    for (auto it = awaiting_.begin(); it != awaiting_.end();) {
+        if (it->generation == generation && it->count >= present_count) {
+            it = awaiting_.erase(it);
+            ambiguous = true;
+        } else ++it;
+    }
+    if (ambiguous) return;
+    Entry entry;
+    entry.input = input;
+    entry.frame = frame;
+    entry.generation = generation;
+    entry.count = present_count;
+    awaiting_.push_back(entry);
+    while (awaiting_.size() > MaxPresents) awaiting_.pop_front();
+}
+
+void PresentLedger::sample(const PresentSample& sample) {
+    for (auto it = awaiting_.begin(); it != awaiting_.end();) {
+        const auto match = present_match(it->generation, it->count, sample);
+        if (match == PresentMatch::Exact) {
+            confirmed_.push_back(*it);
+            confirmed_.back().display_qpc = static_cast<uint64_t>(sample.sync_qpc);
+            it = awaiting_.erase(it);
+        } else if (match == PresentMatch::Superseded) it = awaiting_.erase(it);
+        else ++it;
+    }
+    while (confirmed_.size() > MaxPresents) confirmed_.pop_front();
+}
+
+uint32_t PresentLedger::rows(sa2_presented_row* rows, uint32_t capacity) {
+    uint32_t count = 0;
+    while (count < capacity && !confirmed_.empty()) {
+        const Entry& entry = confirmed_.front();
+        sa2_presented_row& row = rows[count++];
+        row = {};
+        row.struct_size = sizeof(row);
+        row.previews = (entry.input.flags & SA2_FRAME_PREVIEW) ? 1u : 0u;
+        row.frame_id = entry.frame;
+        row.device_epoch = entry.input.device_epoch;
+        row.surface = entry.input.surface;
+        row.sequence = entry.input.sequence;
+        row.preview = entry.input.preview;
+        row.display_qpc = entry.display_qpc;
+        confirmed_.pop_front();
+    }
+    return count;
+}
+
 namespace {
 Json removal(int32_t removed_reason) { return removed_reason < 0 ? Json(removed_text(removed_reason)) : Json(); }
 }
 
-Json describe(const std::string& backend_build, int32_t removed_reason) {
+Json describe(const std::string& backend_build, int32_t removed_reason, uint64_t device_epoch, bool route_b) {
     const auto supported = [] { return Json(Json::Object{{"status", "supported"}, {"layout_version", 1}}); };
     const auto unsupported = [](const char* reason) { return Json(Json::Object{{"status", "unsupported"}, {"reason", reason}}); };
     Json::Object features{
@@ -516,17 +599,28 @@ Json describe(const std::string& backend_build, int32_t removed_reason) {
         {"F18", supported()},
         {"J01", supported()},
         {"J02", supported()},
-        {"F22", unsupported("recover: ABI 4 cannot recover a removed device (RPI.46)")},
-        {"F23", unsupported("read_presented: the core owns no swap chain and cannot confirm a presentation (RM.26)")},
+        // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
+        // three owner-machine checks): supported only with the core's own device and surface.
+        {"F22", route_b ? supported() : unsupported("recover: ABI 4 cannot recover a removed device (RPI.46)")},
+        {"F23", route_b ? supported() : unsupported("read_presented: the core owns no swap chain and cannot confirm a presentation (RM.26)")},
         {"J13", unsupported("grip, piece and certificate-point IDs: the ID pass writes per-slot instance IDs only")},
     };
     return Json::Object{
         {"interface_version", SA2_ABI_VERSION},
         {"backend_build", backend_build},
-        {"device_epoch", DeviceEpoch},
+        {"device_epoch", device_epoch},
         {"device_removed", removal(removed_reason)},
         {"features", features},
         {"evidence", Json::Array{}},
+    };
+}
+
+Json recover_result(const char* status, const std::string& reason, uint64_t device_epoch, int32_t removed_reason) {
+    return Json::Object{
+        {"status", status},
+        {"reason", reason},
+        {"device_epoch", device_epoch},
+        {"device_removed", removal(removed_reason)},
     };
 }
 

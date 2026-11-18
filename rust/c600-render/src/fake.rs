@@ -1,8 +1,13 @@
-//! A fake core for headless tests: ABI 4's product calls in Rust, following the header's rules for tickets, frames,
+//! A fake core for headless tests: ABI 5's product calls in Rust, following the header's rules for tickets, frames,
 //! reports, picks and device loss. Nothing runs on a GPU: uploads, frames and ID passes stay pending until
 //! [`FakeCore::complete`], and the ID pass reads the instance of the slot a test placed at a pixel
 //! ([`FakeCore::place`]). It does not model resize, trace windows, the 256-ticket and 1024-pick bounds or engine
 //! ring staleness.
+//!
+//! [`FakeCore::new`] is a `sa2_attach` context (the Godot-texture route): it cannot confirm a presentation or recover.
+//! [`FakeCore::on_surface`] is a `sa2_create` context with an attached surface (route B, accepted for now by the owner
+//! on 18 Nov 2026, pending three owner-machine checks): its frames name [`TARGET_SURFACE`], [`FakeCore::show`]
+//! confirms a frame's presentation under the exact rule, and `recover` rebuilds a removed device.
 
 use std::collections::{BTreeMap, VecDeque};
 
@@ -11,6 +16,8 @@ use crate::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// `DXGI_ERROR_DEVICE_REMOVED`, the reason a removed fake device reports.
 pub const DEVICE_REMOVED_REASON: i32 = 0x887A_0005_u32 as i32;
+/// The fake display clock's step per confirmed frame, in QPC ticks: one 60 Hz refresh at a 10 MHz counter.
+pub const DISPLAY_TICKS: u64 = 166_667;
 
 #[derive(Clone, Debug)]
 struct Ticket {
@@ -53,6 +60,14 @@ pub struct FakeCore {
     pub device_epoch: u64,
     /// The frame target size every frame's viewport must equal.
     pub target_size: (u32, u32),
+    /// A `sa2_create` context with an attached surface (route B).
+    surface: bool,
+    /// Confirmed presentations not yet read, in frame order.
+    confirmed: VecDeque<Sa2PresentedRow>,
+    /// The newest frame a presentation confirmation passed: no frame up to it is confirmed later.
+    shown_up_to: u64,
+    /// The fake display clock: the `display_qpc` of the last confirmed frame.
+    pub display_qpc: u64,
     removed: bool,
     adopted: Option<u64>,
     next_ticket: u64,
@@ -80,6 +95,10 @@ impl FakeCore {
         FakeCore {
             device_epoch: 1,
             target_size,
+            surface: false,
+            confirmed: VecDeque::new(),
+            shown_up_to: 0,
+            display_qpc: 0,
             removed: false,
             adopted: None,
             next_ticket: 1,
@@ -98,6 +117,44 @@ impl FakeCore {
             submitted: Vec::new(),
             adoptions: Vec::new(),
         }
+    }
+
+    /// A `sa2_create` context with a surface of `target_size` attached (route B).
+    pub fn on_surface(target_size: (u32, u32)) -> FakeCore {
+        FakeCore { surface: true, ..FakeCore::new(target_size) }
+    }
+
+    /// The display shows a completed, drawn frame and a statistics row names its own present count: the frame is
+    /// confirmed at the fake display clock advanced by [`DISPLAY_TICKS`], and every older frame not yet confirmed
+    /// never will be (the exact rule). False, and nothing changes, without a surface or for a frame that is not
+    /// retained, did not draw or is not newer than the last shown.
+    pub fn show(&mut self, frame_id: u64) -> bool {
+        if !self.surface || self.removed || frame_id <= self.shown_up_to {
+            return false;
+        }
+        let Some(frame) = self.frames.iter().find(|f| f.id == frame_id && f.completed && f.error == Status::OK) else {
+            return false;
+        };
+        let i = frame.input;
+        let preview = i.flags & FRAME_PREVIEW != 0;
+        self.display_qpc += DISPLAY_TICKS;
+        self.confirmed.push_back(Sa2PresentedRow {
+            previews: u32::from(preview),
+            frame_id,
+            device_epoch: i.device_epoch,
+            surface: i.surface,
+            sequence: i.sequence,
+            preview: if preview { i.preview } else { 0 },
+            display_qpc: self.display_qpc,
+            ..Sa2PresentedRow::new()
+        });
+        self.shown_up_to = frame_id;
+        true
+    }
+
+    /// A faulty core, for tests: every confirmed presentation not yet read names `sequence` in place of its frame's.
+    pub fn misbind_presented(&mut self, sequence: u64) {
+        self.confirmed.iter_mut().for_each(|row| row.sequence = sequence);
     }
 
     /// The ID pass finds `slot` at pixel `(x, y)` of every frame.
@@ -203,19 +260,31 @@ impl CoreAbi for FakeCore {
         let supported = |row: &str| format!("\"{row}\":{{\"status\":\"supported\",\"layout_version\":1}}");
         let unsupported =
             |row: &str, why: &str| format!("\"{row}\":{{\"status\":\"unsupported\",\"reason\":\"{why}\"}}");
+        let (f22, f23) = if self.surface {
+            (supported("F22"), supported("F23"))
+        } else {
+            (
+                unsupported("F22", "recover: ABI 4 cannot recover a removed device (RPI.46)"),
+                unsupported(
+                    "F23",
+                    "read_presented: the core owns no swap chain and cannot confirm a presentation (RM.26)",
+                ),
+            )
+        };
         let rows = [
             supported("F01"),
             supported("F02"),
             supported("F18"),
-            unsupported("F22", "ABI 4 cannot recover a device"),
-            unsupported("F23", "the core cannot confirm a presentation"),
+            f22,
+            f23,
             supported("J01"),
             supported("J02"),
             unsupported("J13", "no grip, piece or certificate-point IDs"),
         ];
         Ok(format!(
-            "{{\"interface_version\":4,\"backend_build\":\"{}\",\"device_epoch\":{},\"device_removed\":{},\
+            "{{\"interface_version\":{},\"backend_build\":\"{}\",\"device_epoch\":{},\"device_removed\":{},\
              \"features\":{{{}}},\"evidence\":[]}}",
+            ABI_VERSION,
             "0".repeat(64),
             self.device_epoch,
             self.removed_json(),
@@ -324,6 +393,12 @@ impl CoreAbi for FakeCore {
         if input.flags & !FRAME_PREVIEW != 0 || input.camera_matrix.iter().any(|v| !v.is_finite()) {
             return self.fail(Status::INVALID_ARGUMENT, "unknown flags or a non-finite camera");
         }
+        if input.target >= RING_SLOTS && input.target != TARGET_SURFACE {
+            return self.fail(Status::INVALID_ARGUMENT, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
+        }
+        if self.surface != (input.target == TARGET_SURFACE) {
+            return self.fail(Status::WRONG_STATE, "the target is not this context's route");
+        }
         self.alive()?;
         if input.device_epoch != self.device_epoch || Some(input.engine_revision) != self.adopted {
             return self.fail(Status::WRONG_STATE, "the frame names another epoch or engine revision");
@@ -393,8 +468,16 @@ impl CoreAbi for FakeCore {
         Ok(n)
     }
 
-    fn presented(&mut self, _rows: &mut [Sa2PresentedRow]) -> Result<usize, Status> {
-        self.fail(Status::UNAVAILABLE, "the core owns no swap chain and cannot confirm a presentation")
+    fn presented(&mut self, rows: &mut [Sa2PresentedRow]) -> Result<usize, Status> {
+        if !self.surface {
+            return self.fail(Status::UNAVAILABLE, "the core owns no swap chain and cannot confirm a presentation");
+        }
+        self.alive()?;
+        let n = rows.len().min(self.confirmed.len());
+        for (row, confirmed) in rows.iter_mut().zip(self.confirmed.drain(..n)) {
+            *row = confirmed;
+        }
+        Ok(n)
     }
 
     fn pick_request(&mut self, frame_id: u64, x: u32, y: u32) -> Result<u64, Status> {
@@ -448,14 +531,38 @@ impl CoreAbi for FakeCore {
     }
 
     fn recover(&mut self) -> (Status, String) {
-        self.error = "fake core: ABI 4 cannot recover a device".to_owned();
-        let json = format!(
-            "{{\"status\":\"unavailable\",\"reason\":\"ABI 4 cannot recover a device (RPI.46)\",\
-             \"device_epoch\":{},\"device_removed\":{}}}",
-            self.device_epoch,
-            self.removed_json()
-        );
-        (Status::UNAVAILABLE, json)
+        let result = |status: &str, reason: &str, epoch: u64, removed: &str| {
+            format!(
+                "{{\"status\":\"{status}\",\"reason\":\"{reason}\",\"device_epoch\":{epoch},\"device_removed\":{removed}}}"
+            )
+        };
+        if !self.surface {
+            self.error = "fake core: ABI 4 cannot recover a device".to_owned();
+            let removed = self.removed_json();
+            return (
+                Status::UNAVAILABLE,
+                result("unavailable", "ABI 4 cannot recover a device (RPI.46)", self.device_epoch, &removed),
+            );
+        }
+        if !self.removed {
+            self.error = "fake core: the device is not removed; nothing to recover".to_owned();
+            let reason = "the device is not removed; nothing to recover";
+            return (Status::WRONG_STATE, result("not_removed", reason, self.device_epoch, "null"));
+        }
+        // The old epoch's tickets, sets, picks and frames are gone: unread reports are dropped and old frames are
+        // never confirmed. The adopted engine image is kept (RM.16), and numbers keep counting.
+        let removed = self.removed_json();
+        self.counters.reports_dropped += self.frames.iter().filter(|f| !f.reported).count() as u64;
+        self.frames.clear();
+        self.tickets.clear();
+        self.sets.clear();
+        self.picks.clear();
+        self.confirmed.clear();
+        self.shown_up_to = self.next_frame - 1;
+        self.removed = false;
+        self.device_epoch += 1;
+        let reason = "recovered on a new device of the same adapter (RPI.46)";
+        (Status::OK, result("recovered", reason, self.device_epoch, &removed))
     }
 
     fn counters(&self) -> Result<Sa2CounterValues, Status> {
