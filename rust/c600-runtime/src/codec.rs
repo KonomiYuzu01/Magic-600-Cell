@@ -85,6 +85,8 @@ mod tag {
     /// LP2's draft F2 or F5 element (KN3.2): its field's byte (`field_byte`), then its residue's byte, below the field's
     /// prime.
     pub const FIELD: u8 = 24;
+    /// LP2's draft captured bytes (DET.62): the octets, length-prefixed.
+    pub const BYTES: u8 = 25;
 }
 
 /// A finite field's byte in a value or a type (LP2 draft): 0 for F2, 1 for F5.
@@ -486,6 +488,10 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(field_byte(*field));
                 e.u8(*residue);
             }
+            Value::Bytes(b) => {
+                e.u8(tag::BYTES);
+                e.bytes(b);
+            }
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -681,6 +687,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 }
                 Value::Field(field, residue)
             }
+            tag::BYTES => Value::Bytes(d.bytes()?.into()),
             tag::WORD_KEY => {
                 let letters = decode_letters(d)?;
                 if !freely_reduced(&letters) {
@@ -1040,6 +1047,8 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         }
         // LP2's draft generator (DET.61).
         Ty::Generator => e.u8(27),
+        // LP2's draft captured bytes (DET.62).
+        Ty::Bytes => e.u8(28),
     }
     Ok(())
 }
@@ -1125,6 +1134,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         25 => Ty::TraceEqualityKey,
         26 => Ty::Field(field_from(d.u8()?)?),
         27 => Ty::Generator,
+        28 => Ty::Bytes,
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }

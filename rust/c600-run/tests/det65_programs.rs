@@ -25,7 +25,7 @@
 //! product unit is shorter than three. Its kernel-cost headroom gets the two bytes of difference, so its stop stays on
 //! output with the frozen denied row.
 //!
-//! # Realised: 26 of 40
+//! # Realised: 28 of 40
 //!
 //! | Trace | Clause | Program |
 //! | --- | --- | --- |
@@ -55,6 +55,8 @@
 //! | `root-before-child` | DET.60 | `early()`: the root and the child run out of steps at the body's `return` |
 //! | `dimension-before-scope` | DET.60 | `dim()`: a child's `k`, over its kernel cap while the root lacks memory |
 //! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
+//! | `decode-scalar` | DET.62 | `d()`: the snapshot `b`'s four bytes decode into one scalar; 16 reserved, 12 released |
+//! | `decode-surrogate` | DET.62 | `d()`: an encoded surrogate stops the run at its decoding, in the effect phase |
 //!
 //! The snapshot `k` is priced as the trace's kernel row (CV.4): the batch's kernel cost, a reservation of the result
 //! and the scratch, and a result of exactly the trace's result size, so the scratch is released after the row as the
@@ -100,7 +102,12 @@
 //! fit in the root either, as in the trace, so the child's kernel-cost stop shows DET.56's dimension order before
 //! the scope order.
 //!
-//! # Not realised: 14 of 40
+//! The decoding traces decode bytes the host delivers as the snapshot `b` (DET.62; LP2 draft): bytes have no
+//! canonical form, so they cannot cross as an argument. The read is a row of the program's own, and `let` binds its
+//! result, so the decoding borrows the bytes and its row releases only the reservation's excess, as the trace's does.
+//! `decode-surrogate` stops on its value: its probe's host delivers three ASCII bytes, which read alike.
+//!
+//! # Not realised: 12 of 40
 //!
 //! [`NOT_EXPRESSIBLE`] lists each with its reason, and `every_frozen_trace_is_realised_or_listed_once` holds the two
 //! lists to the 40 frozen vectors.
@@ -112,7 +119,7 @@ mod json;
 use c600_check::check;
 use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Run, Sink, SourceRanges};
 use c600_run::meter::{code, frame_size, Amounts, Outcome, Row, SourceRange, Summary, Tariffs};
-use c600_run::value::Value;
+use c600_run::value::{equal, Value};
 use c600_syntax::{lower, parse, sha256_hex, Lowered};
 use json::Json;
 use num_bigint::{BigInt, BigUint};
@@ -123,10 +130,12 @@ const VECTORS: &str =
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
 /// The frozen traces no program of the IR draft can express, and why.
-const NOT_EXPRESSIBLE: [(&str, &str); 14] = [
+const NOT_EXPRESSIBLE: [(&str, &str); 12] = [
     (
         "child-decode-error-releases-reservation",
-        "the IR has no byte decoding: arguments and host results cross as values",
+        "its child decodes given bytes in two steps, its call and its decoding; a child body takes no argument, so \
+         its bytes come from a literal, a capture or a host read, each a row of its own inside the child, whose \
+         caps and use the trace fixes",
     ),
     (
         "generator-nested-same-name",
@@ -134,8 +143,6 @@ const NOT_EXPRESSIBLE: [(&str, &str); 14] = [
          a name with `let`, which takes a frame slot and releases at its scope's exit (DET.57)",
     ),
     ("text-comparison", "the IR has no text order"),
-    ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
-    ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
     (
         "abstract-trace-charges",
         "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR \
@@ -361,6 +368,8 @@ struct TraceHost {
     /// The tariff and the result, if the trace delivers one.
     k: Option<(RowTariff, Option<Value>)>,
     views: Vec<Vec<u8>>,
+    /// The bytes of the snapshot `b`, if the trace decodes given bytes (DET.62).
+    bytes: Option<Vec<u8>>,
 }
 
 impl TraceHost {
@@ -382,22 +391,36 @@ impl TraceHost {
             };
             (tariff, value)
         });
-        TraceHost { k, views: Vec::new() }
+        let bytes = trace.first("text_decode").map(|d| hex(text(d, "hex")));
+        TraceHost { k, views: Vec::new(), bytes }
+    }
+
+    /// The probe's host: a trace that stops on its decoded bytes probes with as many ASCII bytes, which read alike
+    /// and decode (module docs).
+    fn probing(mut self, trace: &Trace) -> TraceHost {
+        if let (Some(bytes), Some(_)) = (&mut self.bytes, &trace.stop) {
+            bytes.fill(b'a');
+        }
+        self
     }
 }
 
 impl Host for TraceHost {
     fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
-        match (request, &self.k) {
-            (Request::Snapshot { query: "k", .. }, Some((tariff, _))) => Ok(*tariff),
+        match (request, &self.k, &self.bytes) {
+            (Request::Snapshot { query: "k", .. }, Some((tariff, _)), _) => Ok(*tariff),
+            (Request::Snapshot { query: "b", .. }, _, Some(bytes)) => {
+                Ok(RowTariff { kernel_cost: 0, result_bound: bytes.len() as u128 })
+            }
             _ => Err(code::NOT_GRANTED),
         }
     }
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
-        match (request, &self.k) {
-            (Request::Snapshot { query: "k", .. }, Some((_, value))) => {
+        match (request, &self.k, &self.bytes) {
+            (Request::Snapshot { query: "k", .. }, Some((_, value)), _) => {
                 Ok(value.clone().expect("a result the trace delivers"))
             }
+            (Request::Snapshot { query: "b", .. }, _, Some(bytes)) => Ok(Value::Bytes(bytes.as_slice().into())),
             _ => Err(code::NOT_GRANTED),
         }
     }
@@ -555,7 +578,14 @@ fn realise(root: &Json, r: &Realisation) -> Realised {
     let trace = Trace::read(vector(root, id));
     let p = program(r.requires, r.declarations);
 
-    let probe = run_with(&p, r, r.probe_args.unwrap_or(r.args), &trace, WIDE, &mut TraceHost::for_trace(&trace));
+    let probe = run_with(
+        &p,
+        r,
+        r.probe_args.unwrap_or(r.args),
+        &trace,
+        WIDE,
+        &mut TraceHost::for_trace(&trace).probing(&trace),
+    );
     let list = listing(&probe.summary);
     assert_eq!(probe.summary.outcome, Outcome::Completed, "{id}: the probe completes:{list}");
     let paths: Vec<&str> = probe.summary.rows.iter().map(|row| row.at.as_str()).collect();
@@ -1523,6 +1553,52 @@ fn ct_det_27_child_scopes_run_as_programs() {
     assert!(left < uint(trace.kernel().expect("the row k"), "result_bytes"), "the root lacks memory at k");
 }
 
+/// The decoding traces' program (DET.62; LP2 draft). Bytes have no canonical form, so they cannot cross as an
+/// argument: the host delivers the trace's bytes as the snapshot `b`, a row of the program's own, and `let` binds
+/// them, so the decoding borrows them and its row releases the reservation's excess alone.
+const DECODE: &str = "export fn d() -> Text effects [snapshot] {\n    let b = read_snapshot<Bytes>(\"b\");\n    \
+                      return text_decode(b);\n}\n";
+
+const SCALAR: Realisation = Realisation {
+    trace: "decode-scalar",
+    requires: "",
+    declarations: DECODE,
+    entry: "d",
+    args: NO_ARGS,
+    probe_args: None,
+    rows: &[
+        ("entry#call", None),
+        ("m.d:0#kernel", None),
+        ("m.d:root#visit", None),
+        ("m.d:1.0#visit", None),
+        ("m.d:1#text_decode", Some("decode")),
+        ("m.d:root#scope_exit", None),
+        ("m.d:root#return", None),
+        ("entry#emit", None),
+    ],
+    stop_would: None,
+    kernel_extra: 0,
+    source_node: None,
+};
+
+/// The surrogate stops on its value: the probe decodes three ASCII bytes, which read alike (module docs).
+const SURROGATE: Realisation = Realisation { trace: "decode-surrogate", stop_would: Some([1, 3, 12, 0]), ..SCALAR };
+
+/// CT-DET-28 (part: captured bytes decode in one row on RT1; not run: RT2 and RT3 (no owner yet)): the frozen traces
+/// `decode-scalar` and `decode-surrogate` run as programs (DET.62; LP2 draft). The row is one step with the input-byte
+/// tariff on each byte and a reservation of 4 bytes per byte, settled to the text's 4 bytes per scalar; an encoded
+/// surrogate stops the run in the effect phase at that row, with the reservation admitted and nothing bound.
+#[test]
+fn ct_det_28_byte_decoding_runs_as_programs() {
+    let root = fixtures();
+    let done = realise(&root, &SCALAR);
+    let trace = Trace::read(vector(&root, SCALAR.trace));
+    let want = trace.values.iter().find(|(k, _)| k == "decode").and_then(|(_, v)| v.str()).expect("the text");
+    assert!(equal(done.run.value.as_ref().expect("the decoded text"), &Value::text(want)));
+    let done = realise(&root, &SURROGATE);
+    assert!(done.run.value.is_none(), "no value is bound");
+}
+
 /// Every frozen trace is realised in this file or listed in [`NOT_EXPRESSIBLE`] with its reason, exactly once.
 #[test]
 fn every_frozen_trace_is_realised_or_listed_once() {
@@ -1554,6 +1630,8 @@ fn every_frozen_trace_is_realised_or_listed_once() {
         "root-before-child",
         "dimension-before-scope",
         "nested-child-ledger",
+        "decode-scalar",
+        "decode-surrogate",
     ];
     let mut ids: Vec<&str> = all(&root).iter().map(|v| text(v, "id")).collect();
     let mut accounted: Vec<&str> = realised.iter().copied().chain(NOT_EXPRESSIBLE.iter().map(|n| n.0)).collect();

@@ -195,7 +195,8 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
             | Value::TraceEqualityKey(_)
             | Value::Compressed(_)
             | Value::Generator(_)
-            | Value::Field(..) => return Err(Noncanonical),
+            | Value::Field(..)
+            | Value::Bytes(_) => return Err(Noncanonical),
         }
     }
     out.push(b'\n');
