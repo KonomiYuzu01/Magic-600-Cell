@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-18] decision | Commit-boundary readings, the session lock, DXC, C9, E3 and LX-4
+The owner took every recommended option on one page of five decisions: five readings of the frozen text at the commit boundary that the 17 November attack left open, a Windows platform lock with an "open anyway" entry, DXC shipped for user stages, C9 as its own line without a Godot source build, charter E3 at 3 s and LX-4's time box at 4 hours ([record](decisions/owner-decisions-2026-11-18.md)).
+
 ## [2026-11-17] update | The language: jumble.on from an exit root
 The command layer (`rust/c600-command`) builds the second entrance of H-08's `jumble.on` (JI.25 to JI.27, JI.29; FP.31, FP.32): while an exit is active, that is while only retained commits follow it on the path to the head, the entry starts from the exit's own poses and replays that retained suffix in the jumbling engine under the pinned menu, an empty suffix keeping the exit's pose digest, and enters only when the replay reaches the current labels; the solved witness applies only when no exit is active. The crossing's record names the entrance `exit_root`, the exit's event, the SHA-256 of the exit's record and the suffix's letter count and word digest, and a redo and a reopen must reach the same poses and record; the record form, the identity refusal of an exit made under another menu and the absence of a fall-back to the solved witness are drafts for LP3's amendment list under PHS.52.
 
