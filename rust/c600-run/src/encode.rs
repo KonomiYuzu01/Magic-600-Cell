@@ -196,7 +196,8 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
             | Value::Compressed(_)
             | Value::Generator(_)
             | Value::Field(..)
-            | Value::Bytes(_) => return Err(Noncanonical),
+            | Value::Bytes(_)
+            | Value::WordStream(_) => return Err(Noncanonical),
         }
     }
     out.push(b'\n');

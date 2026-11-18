@@ -1303,7 +1303,8 @@ fn carries_word(ty: &Ty) -> bool {
         | Ty::Generator
         | Ty::EndTest(_)
         | Ty::Field(_)
-        | Ty::Bytes => false,
+        | Ty::Bytes
+        | Ty::WordStream => false,
     }
 }
 
@@ -1339,6 +1340,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::EndTest(test) => test.type_name().into(),
         Ty::Field(f) => f.name().into(),
         Ty::Bytes => "Bytes".into(),
+        Ty::WordStream => "WordStream".into(),
     }
 }
 
@@ -1521,6 +1523,7 @@ fn key_type(q: &QTy) -> bool {
             | Ty::CompressedWord
             | Ty::Generator
             | Ty::Bytes
+            | Ty::WordStream
             | Ty::EndTest(_) => false,
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
@@ -1567,6 +1570,8 @@ fn portable(ty: &Ty) -> bool {
         Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::CompressedWord => false,
         // Captured bytes have no canonical form either (DET.62; LP2 draft): a program passes the decoded text.
         Ty::Generator | Ty::Field(_) | Ty::Bytes => false,
+        // A word stream stays in its run, as a generator does (DET.63; LP2 draft): a program passes its digest.
+        Ty::WordStream => false,
         Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
         other => other.elements().into_iter().all(|e| portable(&e.ty)),
     }
@@ -1601,6 +1606,15 @@ fn holds_compressed(ty: &Ty) -> bool {
         Ty::CompressedWord => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_compressed(&f.ty)),
         other => other.elements().into_iter().any(|e| holds_compressed(&e.ty)),
+    }
+}
+
+/// Whether a type is or holds a word stream in a record or a collection (LP2 draft; DET.63).
+fn holds_stream(ty: &Ty) -> bool {
+    match ty {
+        Ty::WordStream => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_stream(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_stream(&e.ty)),
     }
 }
 
@@ -3658,6 +3672,7 @@ impl<'p> Checker<'p> {
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
             Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse | Prim::TextDecode => 1,
+            Prim::StreamDigest => 1,
             Prim::InsertEntry | Prim::Expand => 3,
             _ => 2,
         };
@@ -3733,6 +3748,13 @@ impl<'p> Checker<'p> {
                 if let Some(i) = vals.iter().position(|v| holds_generator(&v.ty)) {
                     let note = "an operand of an exact equality, which a generator does not have";
                     self.at(i, |c| c.misfit("a type without Generator", &vals[i], note));
+                    return Ok(Val::exact(Ty::Bool));
+                }
+                // A word stream has no equality either: two streams of one word are its digests' business (LP2
+                // draft; DET.63).
+                if let Some(i) = vals.iter().position(|v| holds_stream(&v.ty)) {
+                    let note = "an operand of an exact equality, which a word stream does not have (compare digests)";
+                    self.at(i, |c| c.misfit("a type without WordStream", &vals[i], note));
                     return Ok(Val::exact(Ty::Bool));
                 }
                 if self.verdict_equality(vals) {
@@ -4073,6 +4095,32 @@ impl<'p> Checker<'p> {
                 let v = &vals[0];
                 if v.ty != Ty::Bytes && !is_unknown(&v.ty) {
                     self.at(0, |c| c.misfit("Bytes", v, "the bytes of text_decode"));
+                    return Ok(Val::unknown());
+                }
+                Ok(Val::new(Ty::Text, v.qual))
+            }
+            Prim::WordStream => {
+                // The chunk size fixes the schedule, so it is exact control, like an expansion's range (LG2.20).
+                let size = &vals[1];
+                if fits(&Ty::Nat, &size.ty) {
+                    self.at(1, |s| s.exact_use(Site::Control, size, "an exact chunk size"));
+                } else {
+                    self.at(1, |s| s.misfit("Nat", size, "an exact chunk size"));
+                }
+                let c = &vals[0];
+                if c.ty != Ty::CompressedWord && !is_unknown(&c.ty) {
+                    self.at(0, |s| s.misfit("CompressedWord", c, "a streamed word"));
+                    return Ok(Val::unknown());
+                }
+                // The stream reads exact letters, so a display-qualified word gives none, as an expansion does
+                // (LG2.19).
+                Ok(Val::new(Ty::WordStream, project(c.qual, Qual::Exact)))
+            }
+            Prim::StreamDigest => {
+                // The digest keeps the stream's qualifier (LP2 draft; DET.63).
+                let v = &vals[0];
+                if v.ty != Ty::WordStream && !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("WordStream", v, "the stream of stream_digest"));
                     return Ok(Val::unknown());
                 }
                 Ok(Val::new(Ty::Text, v.qual))
