@@ -88,8 +88,8 @@
 //!
 //! # Not built
 //!
-//! - Jumbling words in the library: the IR draft has menu words since LP2's pull request 210, and no library entry
-//!   builds or takes one yet. C8's `c600_jumble_tool::word` builds literal jumbling words of one pinned menu in Rust.
+//! - Jumbling words in this crate: the jumbling library entries, on the IR draft's menu words (LP2's pull request
+//!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
 //! - Library entries over kernel rows other than exact completion, such as LB2's "Star and recipe construction" and
 //!   "Net and Strict protection": the tool's host bridge serves the `positions` and `labels` rows only
 //!   (`c600_tools::kernel_rows`), so CT-LB2-02's tests apply a library-built word through the kernel from Rust.
@@ -155,7 +155,7 @@ pub struct CatalogueRow {
 pub fn literal_words() -> CatalogueRow {
     CatalogueRow {
         entry: "Literal words",
-        level: "600-cell-Full signed generators. No library entry takes the IR draft's menu words yet.",
+        level: "600-cell-Full signed generators. C8's `c600_jumble_tool::library` has the jumbling entries.",
         effects: &[],
         backing: "Library code: `words.power` over the IR draft's `concat` and `inverse`. The IR draft's own \
                   operations give concatenation, inverse, conjugate and commutator (LG2.15).",

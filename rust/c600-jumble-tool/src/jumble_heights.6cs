@@ -1,0 +1,37 @@
+edition "6cs-draft-1";
+module jumble_heights requires [];
+
+export fn height_facts() -> record { at_zero: Nat, counts: record { max_above_6: List<Nat>, n_0: Nat, n_2: Nat, n_4: Nat, n_6: Nat, n_above_6: Nat }, lattice_key: Text, max_left_height: Nat, on_lattice: Nat, phi: Int, poses: Map<Text,record { branches: List<Int>, count: Nat, domain: Text, heights: List<Nat> }> } effects [snapshot] {
+    let table = read_snapshot<record { lattice_key: Text, poses: Map<Text,record { branches: List<Int>, count: Nat, domain: Text, heights: List<Nat> }> }>("heights");
+    let counts = read_snapshot<record { max_above_6: List<Nat>, n_0: Nat, n_2: Nat, n_4: Nat, n_6: Nat, n_above_6: Nat }>("height_counts");
+    let poses = entries(table.poses, ascending);
+    let sums = repeat(length(poses), record { at_zero = 0, max_left_height = 0, next = 0, on_lattice = 0, phi = exact_mul(0, -1) }, fn(s: record { at_zero: Nat, max_left_height: Nat, next: Nat, on_lattice: Nat, phi: Int }) -> record { at_zero: Nat, max_left_height: Nat, next: Nat, on_lattice: Nat, phi: Int } {
+        let pose = index(poses, s.next).value;
+        let left = index(pose.heights, 0);
+        let zero = and(exact_eq(left, 0), exact_eq(index(pose.heights, 1), 0));
+        let lattice = exact_eq(pose.domain, table.lattice_key);
+        return record { at_zero = exact_add(s.at_zero, counted(zero, pose.count)), max_left_height = larger(s.max_left_height, left), next = exact_add(s.next, 1), on_lattice = exact_add(s.on_lattice, counted(lattice, pose.count)), phi = exact_add(s.phi, exact_mul(pose.count, above_two(left))) };
+    });
+    return record { at_zero = sums.at_zero, counts = counts, lattice_key = table.lattice_key, max_left_height = sums.max_left_height, on_lattice = sums.on_lattice, phi = sums.phi, poses = table.poses };
+}
+
+fn counted(holds: Bool, count: Nat) -> Nat effects [] {
+    return match holds {
+        true => count;
+        _ => 0;
+    };
+}
+
+fn larger(a: Nat, b: Nat) -> Nat effects [] {
+    return match exact_less(a, b) {
+        true => b;
+        _ => a;
+    };
+}
+
+fn above_two(height: Nat) -> Int effects [] {
+    return match exact_less(height, 3) {
+        true => exact_mul(0, -1);
+        _ => exact_add(height, -2);
+    };
+}

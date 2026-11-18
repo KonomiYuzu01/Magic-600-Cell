@@ -60,12 +60,12 @@ November 2026 as a line of its own.
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves are C8's (section 8) |
 | Representations tool, headless half | Built in part (C6, section 7): five of its six rows served through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number | `filter.apply` and the rest of the rows' needs: the command layer's gate, filter preview rule, workspace inverse and reference forms (KN5, LP2), and kernel rows for the two snapshot reads (section 7) |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8) | The rest of KN5.26's admission matrix, a session profile, a durable home for part blocks and EV3.2's view rows: KN5's later stages (LP2). LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's gains and losses) and macro versions, which the command layer does not build (LP2). M6's session lock covers `JournalStore` (pull request 195) |
-| The jumbling tool and every jumbling half | Built in part (C8, section 8) | LP2's exposed-face geometry for J10, a jumbling word key, and a job that names its cap through the command layer (section 8). Built and not used by C8 yet: `jumble-locality/1` with `trace_key` on menu words (pull request 251), for CT-LB1-06's jumbling half; the F2 and F5 number kinds in the IR draft (pull request 222), for LB3's ν and correction-set entry as language code; Jumble in the command layer (pull requests 212, 217, 218 and 220); and menu words in the IR draft (pull request 210), for the jumbling library entries. M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
+| The jumbling tool and every jumbling half | Built in part (C8, section 8) | LP2's exposed-face geometry for J10, a jumbling word key, and a job that names its cap through the command layer (section 8). Built and not used by C8 yet: `jumble-locality/1` with `trace_key` on menu words (pull request 251), for CT-LB1-06's jumbling half; the F2 and F5 number kinds in the IR draft (pull request 222), for LB3's ν and correction-set entry as language code; and Jumble in the command layer (pull requests 212, 217, 218 and 220). M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel, and CT-LB2-04 whole over `positions` and a `labels` host row; C5: its Strict half through the tool's route, on the command layer's Strict mode of LP2's pull request 198, and the twist keys' exact requests through `twist.apply`; C6: CT-LB4-01's checks on the polytope operations); the others can start | What the kernel alone does not give: host rows beyond `positions` and `labels` in the tool's bridge, LP3's to add (the table below); LB7.2's work sheets are in the command layer (pull request 232) |
 | The on-screen half | Started as a line of its own (owner, 18 November 2026; C9, section 8) | Its components, which that line builds; the owner's runs |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, RPI.79's gate run and the W-J runs on the selected renderer | Waits | The owner's machine, all run together (owner, 16 November 2026; ADR-R01.3); LX-4's time box is 4 hours (owner, 18 November 2026) |
 | CT-LB1-06's word keys | Answered: `trace-key/1` (owner, 17 November 2026, [decision](../../wiki/decisions/owner-decisions-2026-11-17-c5-evidence.md)); the 600-cell-Full half is built (LP2's pull request 214), and so is the jumbling half's relation, `jumble-locality/1`, with `trace_key` on menu words (LP2's pull request 251) | None from LP2: C8 pins the relation in `c600-jumble-tool`, and the jumbling half's library entries then run |
-| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Built in part (C5 library, section 7): LB1's literal words and LB2's exact completion on 600-cell-Full | Nothing from LP2 for the next entries: menu words (pull request 210), `trace-key/1` (pull request 214), F2 and F5 (pull request 222) and loops (pull request 234) are in the IR draft. Entries over kernel rows, such as LB2's star and recipe construction and its Net and Strict protection, need a host row for each kernel row they read; the tool's bridge answers the IR draft's snapshot read with an argument for `positions` (LP2's pull requests 199 and 226; the IR freezes at PHS.49) and `labels` (C5 library) only, and LP3 adds the others. The other entries are not written yet |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Built in part (C5 library, section 7): LB1's literal words and LB2's exact completion on 600-cell-Full; the jumbling entries on menu words (C8, section 8), whose rows a test host serves | Nothing from LP2 for the next entries: menu words (pull request 210), `trace-key/1` (pull request 214), F2 and F5 (pull request 222) and loops (pull request 234) are in the IR draft. Entries over kernel rows, such as LB2's star and recipe construction and its Net and Strict protection, need a host row for each kernel row they read; the tool's bridge answers the IR draft's snapshot read with an argument for `positions` (LP2's pull requests 199 and 226; the IR freezes at PHS.49) and `labels` (C5 library) only, and LP3 adds the others. The other entries are not written yet |
 
 LP2 deliverables that LP3's tests wait for. The LP2 line confirmed on 16 November 2026 that each is LP2 work: section
 15.3 lists its tests, and PHS.18's product row "Kernel API over both puzzles" and the LP2 plan's M8 row ("section 15.3
@@ -429,34 +429,40 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   CT-LB3-06 and CT-LB3-07 on M5's public API; the producers of the jumbling rows J02 to J05 with CT-RPI-08's jumbling
   rows; CT-RPI-12's off-lattice part, so CT-RPI-12 runs whole with C2's stale half; and CT-RM-07's jumbling half on M5's
   model, rows 1 to 8 and 15. Not taken up yet from LP2: Jumble on in the command layer, with oracle equality against
-  M5's fixtures through it (pull requests 212, 217, 218 and 220); menu words in the IR draft (pull request 210), for the
-  jumbling library entries; F2 and F5 in the IR draft (pull request 222), for LB3's ν and correction-set entry; and
-  `jumble-locality/1` with `trace_key` on menu words (pull request 251), which `c600-jumble-tool` pins for CT-LB1-06's
-  jumbling half. Waits: the rows J01 and J06 to J12 (their producers in `c600-display`; J10 also needs exposed-face
-  geometry, LP2); CT-LB1-02's key half (LG2.18's jumbling word key, LP2); BM5's review records. Built next, as one
-  piece: CT-LB1-03's jumbling kernel half (LB1.8's literal words of one pinned menu and their constructors, with no
-  state access); CT-LB3-02's LP3 side (protection verdicts that carry their level and are refused at the other, beside
-  the kernel facts M5's `crossing.rs` runs as CT-KN2-03); CT-EV3-06's off-lattice half (a slot's current occupant, with
-  "none: off the lattice" and `unknown` as two values, over all 259,800 slots); and CT-LB4-03's jumbling half (J02's
-  posed row through C6's layouts, at pose level). M8 has since built what that piece lacked (pull requests 176 and 182):
-  the slot action of K⁺ (`levels::labels`, `Tables::slot_of`); LB3.4's projection from poses to labels with its
-  checkpoints (`levels::project`, `retained_checkpoint`, `label_checkpoint`); the sticker test; a whole word's Net and
-  Strict protection at pose level (`levels::derive`); and the repair list, covers and release check (`observe::cuts`).
-  C8 now uses the slot action, the end tests and the repair list: a slot's current occupant at every lattice pose
-  (CT-EV3-06); and the kernel halves of CT-LB3-01, of CT-LB3-03's sticker test, and of CT-LB3-05 with CT-BND-17. With
-  LP2's kernel pieces for C8 (pull request 190), `c600-display`'s pose projection places a sticker at any lattice pose
-  by the slot action with its frame check (`Tables::piece_slots`; J13), so CT-LB4-03 checks the display's own projection
-  against the current-occupant relation; a jumbling transform carries the plane the engine names (`Twist::plane`), so it
-  has a swept preview, a half-turn at θ = π in the engine's direction (J03); and CT-LB3-02 runs whole on engine
-  verdicts: M8's protection of a whole word at pose level, the kernel's protection of named pieces at label level,
-  centres included (`Kernel::piece_protection`, `strict_piece_protection`), and M8's projection from poses to labels at
-  the crossing. With LP2's ν and correction catalogue (pull requests 201 and 206), CT-LB3-04 runs whole at C8's level:
-  off-lattice ν is undefined, the pinned C5 convention round-trips, a planted nonzero fixed I_a coordinate is refused as
-  a consistency error, and a drafted correction set is checked as drafted, the tool choosing none. CT-LB3-01's kernel
-  half takes its ν case (a reachable nonzero-ν lattice state fails the label checkpoint, a ν-zero one passes), and
-  CT-LB3-07's correction part runs on the kernel. No `.6cs` program reads ν yet, though the IR draft has F2 and F5 since
-  LP2's pull request 222. Not taken up yet: a whole word's protection for CT-LB3-06, and the rim and survey rows of
-  CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its twists, and which
+  M5's fixtures through it (pull requests 212, 217, 218 and 220); F2 and F5 in the IR draft (pull request 222), for
+  LB3's ν and correction-set entry; and `jumble-locality/1` with `trace_key` on menu words (pull request 251), which
+  `c600-jumble-tool` pins for CT-LB1-06's jumbling half. Waits: the rows J01 and J06 to J12 (their producers in
+  `c600-display`; J10 also needs exposed-face geometry, LP2); CT-LB1-02's key half (LG2.18's jumbling word key, LP2);
+  BM5's review records. Built next, as one piece: CT-LB1-03's jumbling kernel half (LB1.8's literal words of one pinned
+  menu and their constructors, with no state access); CT-LB3-02's LP3 side (protection verdicts that carry their level
+  and are refused at the other, beside the kernel facts M5's `crossing.rs` runs as CT-KN2-03); CT-EV3-06's off-lattice
+  half (a slot's current occupant, with "none: off the lattice" and `unknown` as two values, over all 259,800 slots);
+  and CT-LB4-03's jumbling half (J02's posed row through C6's layouts, at pose level). M8 has since built what that
+  piece lacked (pull requests 176 and 182): the slot action of K⁺ (`levels::labels`, `Tables::slot_of`); LB3.4's
+  projection from poses to labels with its checkpoints (`levels::project`, `retained_checkpoint`, `label_checkpoint`);
+  the sticker test; a whole word's Net and Strict protection at pose level (`levels::derive`); and the repair list,
+  covers and release check (`observe::cuts`). C8 now uses the slot action, the end tests and the repair list: a slot's
+  current occupant at every lattice pose (CT-EV3-06); and the kernel halves of CT-LB3-01, of CT-LB3-03's sticker test,
+  and of CT-LB3-05 with CT-BND-17. With LP2's kernel pieces for C8 (pull request 190), `c600-display`'s pose projection
+  places a sticker at any lattice pose by the slot action with its frame check (`Tables::piece_slots`; J13), so
+  CT-LB4-03 checks the display's own projection against the current-occupant relation; a jumbling transform carries the
+  plane the engine names (`Twist::plane`), so it has a swept preview, a half-turn at θ = π in the engine's direction
+  (J03); and CT-LB3-02 runs whole on engine verdicts: M8's protection of a whole word at pose level, the kernel's
+  protection of named pieces at label level, centres included (`Kernel::piece_protection`, `strict_piece_protection`),
+  and M8's projection from poses to labels at the crossing. With LP2's ν and correction catalogue (pull requests 201 and
+  206), CT-LB3-04 runs whole at C8's level: off-lattice ν is undefined, the pinned C5 convention round-trips, a planted
+  nonzero fixed I_a coordinate is refused as a consistency error, and a drafted correction set is checked as drafted,
+  the tool choosing none. CT-LB3-01's kernel half takes its ν case (a reachable nonzero-ν lattice state fails the label
+  checkpoint, a ν-zero one passes), and CT-LB3-07's correction part runs on the kernel. The jumbling library entries are
+  built as 600 Cell Script on the IR draft's menu words (LP2's pull request 210), in `c600_jumble_tool::library`:
+  LB1.8's literal words of one pinned menu (`power`, pure), and LB3.1's rows "Heights, branches, domains and Φ",
+  "Release and whole-word checks" (the chronological observations and the step flag) and "Protection" at pose level (a
+  whole word's Net and Strict verdicts, as M8's `levels::derive` gives them). Each entry that reads state reads only its
+  KN2.4 rows. No host bridge or command-layer route serves those rows to a program yet, so the tests serve them from
+  `c600_jumble` through a test host, and the rows' answer types are drafts; that route is next. The jumbling halves of
+  CT-LB1-03, CT-LB3-03 and CT-LB3-06 now also run in the language, and all three still run in part. No `.6cs` program
+  reads ν yet, though the IR draft has F2 and F5 since LP2's pull request 222. Not taken up yet: the rim and survey rows
+  of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its twists, and which
   engine names one is not settled.
 - **C9, the on-screen half, on the selected renderer.** The owner signed the renderer freeze on 16 November 2026
   ([freeze record](../../wiki/decisions/renderer-freeze.md), ADR-R01): S-A2, the S-B Direct3D 12 drawing core as a
@@ -491,7 +497,7 @@ is not built yet.
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
 | CT-LB1-01 | source | Its library entries, not written yet: F2 and F5 equation ranks and solutions (on the IR draft's F2 and F5, LP2's pull request 222), exact Q(√5) signs, quaternion factor reconstruction and tree outputs, against the pinned research references (C5 library) | - |
 | CT-LB1-02 | source | LG2.18's domain-preserving jumbling word key and "keys preserve the end digest", not built (LP2; the owner's answer of 17 November 2026 gave 600-cell-Full words `trace-key/1`); the library entry, not written yet (collection types are in the IR draft, pull request 176) | The kernel half at a blocked cap, with prefix protection reading literal letters (C8) |
-| CT-LB1-03 | source | Next: the jumbling half as language code, on menu words in the IR draft (LP2's pull request 210) (C8) | The jumbling kernel half: literal words of one pinned menu and their constructors (C8); the 600-cell-Full half as language code: powers in the library, the IR draft's word operations, application prefix by prefix and the inverse's path (C5 library) |
+| CT-LB1-03 | source | Next: the jumbling half's rows for application through a host bridge or a command-layer route, in place of the test host that serves them from `c600_jumble` (C8) | The jumbling kernel half: literal words of one pinned menu and their constructors (C8); the jumbling half as language code: `power` and the IR draft's constructors on menu words, with no host, and application prefix by prefix and the inverse's path on the test host's rows (C8); the 600-cell-Full half as language code: powers in the library, the IR draft's word operations, application prefix by prefix and the inverse's path (C5 library) |
 | CT-LB1-06 | source | The jumbling half's library entries: next, on `jumble-locality/1` (LP2's pull request 251), which `c600-jumble-tool` pins (C8) | The 600-cell-Full half on `trace-key/1` (owner, 17 November 2026): in source, at run time and on the pinned model's relation (LP2's pull request 214: `c600-syntax/tests/conformance_lg2.rs`, `c600-run/tests/trace_keys.rs`, `c600-tools/tests/supports.rs`); the jumbling relation on the pinned model (LP2's pull request 251: `c600-jumble/tests/locality.rs`) |
 | CT-LB2-01 | source | The library's recipes and reports, entries over kernel rows: a host row in the tool's bridge for each kernel row they read (LP3; the bridge answers `positions` since LP2's pull request 226 and `labels` since C5's exact completion) | - |
 | CT-LB2-02 | source | The captured lock of LB2's "Net and Strict protection" and LB2.3's coverage report, library entries over kernel rows (section 7) | The Net half (C5); the Strict half through the tool's route (C5); the Strict half at the kernel, on library-built words (C5 library) |
@@ -499,10 +505,10 @@ is not built yet.
 | CT-LB2-04 | source | Now (C5 library: LB2's exact-completion entry, LP3's library code over KN2.4's `positions` and `labels`, run through the tool's bridge, which serves `positions` since LP2's pull request 226 and `labels` since this entry; `c600-tools/tests/exact_completion.rs`) | - |
 | CT-LB3-01 | source | Now (C8's kernel half on M8's levels, the ν case included, with ν from LP2's `nu` row; the checker half, the end tests' typed verdicts, is LP2's, pull request 213) | - |
 | CT-LB3-02 | source | Now (C8; M5's `rust/c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03) | - |
-| CT-LB3-03 | source | Next: the library entry, on menu words in the IR draft (LP2's pull request 210) (C8) | The kernel half: heights (0,0) off the lattice in free mode, domain IDs by exact coset tests, and the sticker-test sentence on M8's `sticker_test` (C8); the agreement with `trees.py` runs in M5's `tests/test_jumbling_rust_candidate.py` |
+| CT-LB3-03 | source | Next: the library entry's rows through a host bridge or a command-layer route, in place of the test host that serves them from `c600_jumble` (C8) | The kernel half: heights (0,0) off the lattice in free mode, domain IDs by exact coset tests, and the sticker-test sentence on M8's `sticker_test` (C8); the library entry, equal to the kernel half on six menu-reached states (C8); the agreement with `trees.py` runs in M5's `tests/test_jumbling_rust_candidate.py` |
 | CT-LB3-04 | source | Now (C8, on LP2's `nu` and `correction_set_check`, pull requests 201 and 206) | - |
 | CT-LB3-05 | source | A job that names its cap through the command layer (KN5, LP2); the repair-list inspector library entry, not written yet. Built: the named-cap repair list (pull request 176) and the built-in column's repair-list exception (pull request 229) | The kernel half on `observe::cuts::repair_list` (C8) |
-| CT-LB3-06 | source | Next: the library entry, on menu words in the IR draft (LP2's pull request 210), with a whole word's Net and Strict protection, built in pull request 182 and not used by C8 yet (C8) | The kernel half on exact word fixtures (C8) |
+| CT-LB3-06 | source | Next: the library entries' rows through a host bridge or a command-layer route, in place of the test host that serves them from `c600_jumble` (C8) | The kernel half on exact word fixtures (C8); the library entries: peak, excursion, tameness and the step flag recomputed from the rows, and a whole word's Net and Strict protection at pose level, equal to the kernel's and to `levels::derive`'s (C8) |
 | CT-LB3-07 | source | The inspector library entries, not written yet. Built: LB3.5's recommendation rule in `c600-check` (pull request 213), the rim summary, covers and release check (pull request 176) and the correction catalogue (pull request 206) | The checker half for outcome tables and named-word checks (C5) and for recommendations and reads (LP2, pull request 213); the jumbling half on the kernel, its correction part on LP2's `nu` and `correction_set_check` (C8) |
 | CT-LB4-01 | source | Now (C6) | - |
 | CT-LB4-02 | synthetic | Now (C6) | - |
