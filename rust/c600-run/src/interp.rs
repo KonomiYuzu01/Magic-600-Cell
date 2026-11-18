@@ -620,6 +620,7 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::Contains | Prim::Insert | Prim::Lookup => Some(2),
         Prim::InsertEntry | Prim::Expand => Some(3),
         Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => Some(1),
+        Prim::TextDecode => Some(1),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
         Prim::Stage(s) => Some(s.arity()),
     }
@@ -1712,6 +1713,7 @@ impl<'a> Machine<'a> {
             | Prim::FieldNeg
             | Prim::FieldMul
             | Prim::FieldInverse => return self.finite_field(n, op, args),
+            Prim::TextDecode => return self.text_decode(n, args),
             Prim::Stage(_) => unreachable!("refused when loaded"),
         };
         let display = |v: &Value| match v {
@@ -1854,6 +1856,30 @@ impl<'a> Machine<'a> {
             _ => unreachable!("a priced operation"),
         };
         self.settle(memory, result);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `text_decode(b)` (DET.62; LP2 draft): one step with the input-byte tariff on every byte and a reservation of
+    /// 4 bytes per input byte, the bound of a text of that many scalars, admitted before any byte is read. Invalid
+    /// UTF-8 or a surrogate stops the run with `LG4:input.text_scalar_invalid`, binding no value and keeping the
+    /// reservation until cleanup; a decoded text settles to its 4 bytes per scalar (DET.57).
+    fn text_decode(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let Some(Value::Bytes(data)) = args.first().map(|h| &h.value) else {
+            return Err(self.fail(Some(n), "text_decode", code::IR_REJECTED));
+        };
+        let data = Arc::clone(data);
+        let reserved = (data.len() as u128).saturating_mul(4);
+        let kernel = self.tariffs.decode_per_byte.saturating_mul(data.len() as u128);
+        self.charge(Some(n), "text_decode", kernel, reserved, 0)?;
+        let Ok(text) = std::str::from_utf8(&data) else {
+            return Err(self.fail(Some(n), "text_decode", meter::code::TEXT_SCALAR_INVALID));
+        };
+        self.settle(reserved, Value::text(text));
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);

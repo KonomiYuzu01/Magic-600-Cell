@@ -69,6 +69,8 @@ pub enum Value {
     /// An element of F2 or F5 (KN3.2; LP2 draft): the field and its residue, which is below the field's prime. Build
     /// one with [`Value::field`].
     Field(Field, u8),
+    /// Captured bytes (DET.62; LP2 draft): an octet sequence that only `text_decode` turns into text.
+    Bytes(Arc<[u8]>),
 }
 
 /// A generator's cursor (DET.61; LP2 draft). The checker keeps a generator a bare value, so no record, collection or
@@ -467,6 +469,7 @@ fn kind(v: &Value) -> u8 {
         Value::TraceEqualityKey(_) => 21,
         Value::Generator(_) => 22,
         Value::Field(..) => 23,
+        Value::Bytes(_) => 24,
     }
 }
 
@@ -520,6 +523,7 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                     (x.key, x.counter).cmp(&(y.key, y.counter))
                 }
                 (Value::Field(f, x), Value::Field(g, y)) => (f, x).cmp(&(g, y)),
+                (Value::Bytes(x), Value::Bytes(y)) => x.cmp(y),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -872,6 +876,8 @@ impl Value {
             // The 32-byte key, the 8-byte counter and the exhausted flag (DET.61).
             Value::Generator(_) => GENERATOR_SIZE,
             Value::Field(..) => 1,
+            // One byte per octet.
+            Value::Bytes(b) => b.len() as u128,
         }
     }
 
@@ -941,7 +947,8 @@ impl Value {
             | Value::TraceEqualityKey(_)
             | Value::Compressed(_)
             | Value::Generator(_)
-            | Value::Field(..) => 0,
+            | Value::Field(..)
+            | Value::Bytes(_) => 0,
         }
     }
 }
@@ -1145,6 +1152,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             // Each cursor read on its own; the checker gives a generator no equality (LP2 draft).
             (Value::Generator(x), Value::Generator(y)) => x.state() == y.state(),
             (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
+            (Value::Bytes(x), Value::Bytes(y)) => x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
         };
         if !same {
@@ -1252,6 +1260,7 @@ pub fn literal(lit: &c600_ir::Lit) -> Option<Value> {
         Lit::Colour(s) => Value::colour(s),
         // A menu-word literal names no alphabet until a run reads it with its pinned one (LP2 draft).
         Lit::MenuWord(letters) => Value::menu_word(&Arc::default(), letters)?,
+        Lit::Bytes(data) => Value::Bytes(data.as_slice().into()),
     })
 }
 
