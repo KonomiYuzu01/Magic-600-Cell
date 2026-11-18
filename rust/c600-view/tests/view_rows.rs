@@ -436,8 +436,9 @@ fn built_in(name: &str) -> ViewSource {
 }
 
 /// RPI.28's two chart evaluators as a view's declared chain, with the stage a frame reports for each: the built-in
-/// stage, and a checked vertex stage (RPI.68). No stage checker is built, so the vertex stage is a declared fixture
-/// chain; its `frame_work` is 10 * 3 + 10 * 1 * 1 = 40 at `overdraw` 1.
+/// stage, and a checked vertex stage (RPI.68). The view model takes a declared chain, so the vertex stage is a declared
+/// fixture chain, not one taken up from LP2's stage checker; its `frame_work` is 10 * 3 + 10 * 1 * 1 = 40 at
+/// `overdraw` 1.
 fn evaluators() -> [(Workload, StageUse); 2] {
     let built_in = Workload { vertex_evals: 10, cpu_bytes: 1, gpu_bytes: 1, pixels: 10, ..Workload::default() };
     [(built_in, StageUse::BuiltIn), (Workload { stage_ops: 3, fragment_ops: 1, ..built_in }, StageUse::User)]

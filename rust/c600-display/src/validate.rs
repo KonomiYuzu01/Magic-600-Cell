@@ -79,7 +79,8 @@ limits!(
 );
 
 /// The RM.11 fields a publication is counted against here, in the table's order. The stage, fragment, frame, view
-/// and adapter fields need the stage checker, the weight table or a backend, which this crate does not have.
+/// and adapter fields need user stages in publications, RM.38's weight table or a backend, which this crate does
+/// not have.
 pub const COUNTED: [&str; 13] = [
     "nodes",
     "plans",
@@ -651,7 +652,7 @@ impl Check<'_> {
             Primitive::UserStage(_) => {
                 return Err(Error::unsupported(
                     feature,
-                    "user stages need the stage checker of RPI.68 to RPI.80, not built",
+                    "user stages need a backend that compiles and bounds them (RPI.72, RPI.78), not built",
                 ))
             }
             Primitive::Layout(layout) => self.layout(layout, plan)?,

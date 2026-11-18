@@ -1,8 +1,8 @@
 //! The kernel halves of the LB1 and LB3 jumbling tests that `c600_jumble`'s public API reaches (LP3, C8, item 2;
-//! definitions in chapter 03's test table), with CT-BND-17 beside CT-LB3-05. The LB3 library entries are language
-//! code the IR draft cannot express yet (it has no list types and no word operations), so each test checks, on the
-//! kernel API, the facts the library entry would return: the kernel half; the library entry waits for the IR draft's
-//! collections. None of these IDs runs whole here; each test's comment names the part that runs. Milestone M8's
+//! definitions in chapter 03's test table), with CT-BND-17 beside CT-LB3-05. Each test checks, on the kernel API, the
+//! facts the library entry would return: the kernel half. The library entries of CT-LB3-03 and CT-LB3-06 run as
+//! language code in `tests/library.rs`, against the same API; the other LB3 entries are not written as language code
+//! yet. None of these IDs runs whole here; each test's comment names the part that runs. Milestone M8's
 //! `levels` end tests and `observe::cuts::repair_list` carry CT-LB3-01, the sticker-test sentence of CT-LB3-03, and
 //! CT-LB3-05 with CT-BND-17. LP2's ν row and correction catalogue (`c600_jumble::nu`, `c600_jumble::corrections`)
 //! carry CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07; `tests/ct_lb3_04.rs` runs
@@ -154,7 +154,7 @@ fn play(state: &mut State, letter: &Letter) -> Status {
 }
 
 /// CT-LB1-02 (part: the kernel half of "at a blocked cap, literal a,a⁻¹ is refused; empty is admitted" and of "prefix
-/// protection still reads literal letters"; the library entry waits for the IR draft's collections. Not run: the
+/// protection still reads literal letters"; the library entry is not written as language code yet. Not run: the
 /// domain-preserving key and "keys preserve the end digest", which wait for an owner answer on LG2.18's word keys).
 ///
 /// At the state after 12 records of the I_a journal, cap `blocked` is blocked. The literal word a,a⁻¹ at that cap
@@ -255,7 +255,7 @@ fn evidence<'a>(verdict: &'a Verdict, key: &str) -> Option<&'a str> {
 
 /// CT-LB3-01 (part: the kernel half of "separate fixtures distinguish retained checkpoint, label checkpoint and sticker
 /// test" and of "an imported table without reachability stays unestablished", on M8's `levels` end tests; the library
-/// entry waits for the IR draft's collections. The next test runs the kernel half of "a reachable nonzero-ν lattice
+/// entry is not written as language code yet. The next test runs the kernel half of "a reachable nonzero-ν lattice
 /// state fails the label checkpoint". The checker half, the end tests' typed verdicts, is LP2's (`c600-check`, pull
 /// request 213)).
 ///
@@ -426,7 +426,7 @@ fn nu_of(snapshot: &Snapshot) -> NuVector {
 }
 
 /// CT-LB3-01 (part: the kernel half of "a reachable nonzero-ν lattice state fails the label checkpoint", on M8's
-/// `levels` end tests with ν from LP2's `nu` row; the library entry waits for the IR draft's collections. The checker
+/// `levels` end tests with ν from LP2's `nu` row; the library entry is not written as language code yet. The checker
 /// half, the end tests' typed verdicts, is LP2's (`c600-check`, pull request 213)).
 ///
 /// The retained word [1, 3, −5] followed by correction 2 of LP2's catalogue, played from solved under I_a, is a
@@ -482,7 +482,7 @@ fn cayley(omega: [Q5; 3]) -> Twist {
 
 /// CT-LB3-03 (part: the kernel half of "in free mode, heights (0,0) do not imply the lattice, and domain IDs come from
 /// exact coset tests", with LB3.1's "a lattice test by heights holds only on Γ(Λ)" on two menu-reached states; the
-/// library entry waits for the IR draft's collections. Not run here: the agreement of heights and domain IDs with
+/// library entry runs in `tests/library.rs`. Not run here: the agreement of heights and domain IDs with
 /// `trees.py` on ENG-0J item 8's states and H6030, which M5's `tests/test_jumbling_rust_candidate.py` runs on the same
 /// kernel API (CT-KN2-02: `assert_heights`, called by `FixtureComparisonTests` and `H6030Tests`) and this test does not
 /// repeat. The sticker-test sentence runs in the next test).
@@ -568,7 +568,7 @@ fn at_left_height(state: &State, left: i64) -> i64 {
 }
 
 /// CT-LB3-03 (part: "Φ = 0 with height-2 pieces does not pass the sticker test", on M8's `levels::sticker_test`; the
-/// library entry waits for the IR draft's collections).
+/// library entry runs in `tests/library.rs`).
 ///
 /// After the first record of the I_a journal, and after 12 records of the I_a and S4 journals, Φ is 0 while pieces sit
 /// at left height 2, the largest left height there, so no piece adds to Φ. The sticker test answers no on each, with
@@ -668,8 +668,8 @@ fn lowest(values: &[i64]) -> (i64, usize) {
     (first as i64, values.iter().filter(|&&value| value == low).count())
 }
 
-/// CT-LB3-05 and CT-BND-17 (part: the kernel half, on M8's `observe::cuts::repair_list`, JI.12; the library entry waits
-/// for the IR draft's collections. Not run: a job that names its cap through the command layer (KN5), the built-in
+/// CT-LB3-05 and CT-BND-17 (part: the kernel half, on M8's `observe::cuts::repair_list`, JI.12; the library entry is
+/// not written as language code yet. Not run: a job that names its cap through the command layer (KN5), the built-in
 /// column's repair-list exception in `c600-check`, an empty list worded as BND.2 states, and "no key skips caps with an
 /// empty list", which need LP2's command layer and checker).
 ///
@@ -871,9 +871,9 @@ fn ct_lb3_05_the_repair_list_runs_at_a_named_cap_in_neutral_order() {
     }
 }
 
-/// CT-LB3-06 (part: the kernel half, on exact word fixtures in the pinned I_a menu; the library entry waits for the IR
-/// draft's collections. Not run: Net and Strict protection of a whole word, which M8's `levels::derive` has and this
-/// test does not take up yet, so "no protection conflict" is a run with no protected piece).
+/// CT-LB3-06 (part: the kernel half, on exact word fixtures in the pinned I_a menu; the library entry, with Net and
+/// Strict protection of a whole word from M8's `levels::derive`, runs in `tests/library.rs`. Here "no protection
+/// conflict" is a run with no protected piece).
 ///
 /// Prefix peak, excursion and tameness of three literal words are recomputed apart from the kernel's batch and equal
 /// both the prefix observations' final claims and the whole-word check's: the first 35 letters of H6030 from solved
@@ -1051,8 +1051,8 @@ const LEAKS: [&str; 9] = ["recommend", "suggest", "next", "skip", "best", "rank"
 
 /// CT-LB3-07 (part: the jumbling half, on the kernel: "named-word checks answer only their named word; no
 /// recommendation, next-cap skip or correction combination leaks", checked on the whole-word check the tool's entries
-/// reach and on the per-revision height and unit facts; the inspector library entries wait for the IR draft's
-/// collections. The correction part runs in the last test of this file. Not run: the per-revision rim and survey rows'
+/// reach and on the per-revision height and unit facts; the inspector library entries are not written as language
+/// code yet. The correction part runs in the last test of this file. Not run: the per-revision rim and survey rows'
 /// "no all-items outcome table", not taken up yet).
 ///
 /// A run of each entry proposes the word the solver named once, as given; read as literal letters, the kernel's check
@@ -1145,7 +1145,7 @@ fn ct_lb3_07_a_named_word_check_answers_only_its_named_word() {
 
 /// CT-LB3-07 (part: the correction part, on the kernel: "no correction combination leaks through the inspector
 /// entries", checked on LP2's `nu` and `correction_set_check` rows, the label checkpoint and the whole-word check the
-/// tool's entries reach; the inspector library entries wait for the IR draft's collections).
+/// tool's entries reach; the inspector library entries are not written as language code yet).
 ///
 /// The base is the retained word [1, 3, −5] followed by correction 2 under I_a, a witnessed lattice configuration whose
 /// ν is correction 2's row. The solver selects correction 2 by its id, and a run of the word entry proposes its

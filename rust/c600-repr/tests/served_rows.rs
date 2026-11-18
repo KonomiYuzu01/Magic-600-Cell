@@ -15,8 +15,8 @@
 //!   number of the revision the run reads, and grants nothing else. No kernel row counts the objects a predicate
 //!   selects or compares two cells yet, and both entries read a literal query that takes no argument.
 //! - A job's arguments map to the entry's parameters by name: a cell, a layer and each member to a natural, the
-//!   choice words and the name to text. `filter_counts` takes neither of `filter.preview`'s arguments. A member that
-//!   is no natural fails the job with the layer's argument-form code, since the layer has no form for the members yet.
+//!   choice words and the name to text. `filter_counts` takes neither of `filter.preview`'s arguments. A member
+//!   outside 0 to 177,119 never reaches the host: the layer refuses it at admission with its argument-form code.
 //! - What a run published and wrote is read back from its canonical bytes as the layer's JSON, where an integer is
 //!   `{"int": "n"}`, and a record's provenance is the text of its block.
 //! - A shell job's arguments are what the solver entered, so their block is a manual record under C5's draft contract
@@ -399,13 +399,11 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
 
 /// The layer checks the forms of the rows' arguments before it admits a job, so no malformed or stale argument reaches
 /// an entry: a scope other than `body` or `complete`, a pair of one cell, a cell outside 0 to 599, a negative layer, a
-/// kind other than `identity` or `position` and a name that is no text are refused with `KN5:input.argument_form`, and
-/// a `revision` that is not the current one with `KN5:stale.revision_changed`; none takes a job or moves anything.
-/// The members (`CanonicalObjectRefs`) have no form in the layer yet, so a member that is no natural passes the layer
-/// and the host fails the job, which writes nothing. Covers no conformance ID.
+/// kind other than `identity` or `position`, a member outside 0 to 177,119 (`CanonicalObjectRefs`, the kernel's
+/// `PIECES`) and a name that is no text are refused with `KN5:input.argument_form`, and a `revision` that is not the
+/// current one with `KN5:stale.revision_changed`; none takes a job or moves anything. Covers no conformance ID.
 #[test]
 fn the_layer_checks_the_rows_argument_forms_before_any_job() {
-    let host = ToolHost::new();
     let mut session = session();
     serve(&mut session.layer);
     let mut stale = session.layer.revision().clone();
@@ -422,6 +420,7 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
         ("structure.layer", json::object([("cell", Json::Int(7)), ("layer", Json::Int(-1))]), code::ARGUMENT_FORM),
         ("set.save", save("other", &[3], text("pair")), code::ARGUMENT_FORM),
         ("set.save", save("identity", &[3], Json::Int(5)), code::ARGUMENT_FORM),
+        ("set.save", save("identity", &[3, -5], text("pair")), code::ARGUMENT_FORM),
         (
             "filter.preview",
             json::object([("predicate", unresolved), ("revision", stale.to_json())]),
@@ -435,14 +434,6 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
         assert!(session.layer.take_program_job().is_none(), "{row}");
         assert_eq!(session.fixed(), before, "{row}");
     }
-
-    let before = session.fixed();
-    let receipt = session.shell.invoke(&mut session.layer, "set.save", save("identity", &[3, -5], text("pair")));
-    assert!(matches!(receipt.expect("prepared").status, Status::Running(_)));
-    let (_, output, done) = host.serve_next(&mut session.layer).expect("the row's job");
-    assert_eq!(output.map_err(|error| error.code), Err(code::ARGUMENT_FORM));
-    assert_eq!(done.status.code(), Some(code::ARGUMENT_FORM));
-    assert_eq!(session.fixed(), before);
     assert!(session.layer.records().is_empty());
 }
 

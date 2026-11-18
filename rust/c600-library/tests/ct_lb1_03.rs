@@ -9,14 +9,13 @@
 //! and names no proposal target; `power` and a client that imports the library by digest build the expected letters,
 //! literally, with no cancellation and no host); the application part (`Kernel::replay`, fed a library-built word in
 //! chunks, finds the first prefix that moves a protected orbit as soon as that prefix is pushed, clears every prefix
-//! when no orbit is protected, and ends where `Kernel::derive` ends); and the inverse part (a library-built word and its
-//! inverse retrace one path, prefix by prefix, from solved and from a scrambled state).
+//! when no orbit is protected, and ends where `Kernel::derive` ends); and the inverse part (a library-built word and
+//! its inverse retrace one path, prefix by prefix, from solved and from a scrambled state).
 //!
 //! Not run here: the jumbling half, which C8 runs on Rust constructors over one pinned menu
-//! (`c600-jumble-tool/tests/ct_lb1_03.rs`); jumbling words in the language, which no library entry builds yet
-//! although the IR draft has menu words since LP2's pull request 210; and the refusal
-//! `LB1:input.incompatible_alphabet`, which the checker gives, not the library, for a menu word where a `Word` is
-//! expected. A pass is source and fixture evidence.
+//! (`c600-jumble-tool/tests/ct_lb1_03.rs`) and in the language on its library's menu words
+//! (`c600-jumble-tool/tests/library.rs`); and the refusal `LB1:input.incompatible_alphabet`, which the checker gives,
+//! not the library, for a menu word where a `Word` is expected. A pass is source and fixture evidence.
 
 mod common;
 

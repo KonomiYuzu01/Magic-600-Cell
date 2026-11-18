@@ -36,7 +36,8 @@
 //! counter half), CT-RPI-36, CT-RPI-37, CT-RM-02, the accounting rows 1, 2, 7 and 9 of CT-RM-09, CT-ONE-30 and
 //! CT-EV3-08 (its admission semantics), each test named after its ID. An ID with a named part runs only that part.
 //! It also holds L11's three leads, `l11_a` to `l11_c`: a burst while the view is blocked, output of an older engine
-//! epoch, and a recomputation naming `view.open` or `view.close`.
+//! epoch, and a recomputation naming `view.open` or `view.close`. CT-RM-09's rows 3 to 6, 8 and 10 run their headless
+//! parts in `c600-display` (`tests/ct_rm_09.rs`), on stages that LP2's stage checker admits.
 //!
 //! # Drafts
 //!
@@ -110,13 +111,15 @@
 //! # Not built
 //!
 //! - CT-RM-09 rows 3 to 6, 8 and 10 (the raster bound `U`, `stage_work_exceeded` frame reports, device faults and
-//!   quarantine) need a user-stage checker or a device.
+//!   quarantine): this model has no stage digests, so their headless parts run in `c600-display`. Their device parts,
+//!   the vertex evaluation, `U` on a device with the skipped work and fault injection, wait for C9.
 //! - CT-RPI-22's chart half (chart admission) needs the display-plan validator.
 //! - CT-RPI-26's gate half, charter E2 with program views active and the R-19 gate captures, is an owner-machine run
 //!   (C9). The counters here are not frame timings, and nothing is timed.
 //! - CT-EV3-08's measured half, RM.39's ceilings from a passing run of the unrelaxed gate, waits for the renderer
 //!   freeze (C9). Every ceiling in the tests is a declared fixture value.
-//! - A user-stage checker: a checked vertex stage is a declared fixture chain here (RPI.68 to RPI.80).
+//! - A take-up of the user-stage checker: a view's chain is declared, so a checked vertex stage is a declared fixture
+//!   chain here; `c600-display` takes up the stages that LP2's checker admits (RPI.68 to RPI.80).
 //! - The policy table and display refusal (BND.28, LQ2's option set): the view model stores the block and decides
 //!   nothing on it.
 //! - RM.38's weight table, device loss (`busy.renderer_unavailable`), `display_unsupported` and command-ID reuse
