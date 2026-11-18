@@ -120,6 +120,8 @@ fn prim_family(op: Prim) -> &'static str {
             "arithmetic"
         }
         Prim::FieldInverse => "arithmetic",
+        // A stage module's binary32 operations and `exclude`'s coverage (RPI.70; LP2 draft; tests in c600-check).
+        Prim::Stage(_) => "stage arithmetic",
         Prim::Length | Prim::Index | Prim::Push | Prim::Concat => "collection",
         Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => "collection",
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",

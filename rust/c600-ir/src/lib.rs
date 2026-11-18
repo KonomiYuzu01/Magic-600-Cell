@@ -33,6 +33,8 @@ impl Program {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Module {
     pub name: String,
+    /// The module kind (LG5.12): an ordinary module or a stage module.
+    pub kind: ModuleKind,
     /// The capabilities the module declares (LG3.9). A declaration requests authority and never supplies it.
     pub capabilities: BTreeSet<Capability>,
     pub functions: Vec<Function>,
@@ -42,6 +44,130 @@ impl Module {
     pub fn declaring(mut self, capabilities: &[Capability]) -> Self {
         self.capabilities.extend(capabilities.iter().copied());
         self
+    }
+
+    /// The stage declaration of a stage module.
+    pub fn stage(&self) -> Option<&StageDecl> {
+        match &self.kind {
+            ModuleKind::Stage(decl) => Some(decl),
+            ModuleKind::Program => None,
+        }
+    }
+}
+
+/// A module's kind (LG5.12). There is no fourth profile: a stage module is a kind of module, which any profile may use
+/// (LG2.24, RPI.68).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum ModuleKind {
+    /// An ordinary module of 600 Cell Script.
+    #[default]
+    Program,
+    /// A user shader stage (RPI.68 to RPI.76), checked by the stage checker alone and never called by a program.
+    Stage(StageDecl),
+}
+
+/// What a stage module declares (LP2 draft until the IR freeze, PHS.49). Its entry is its one exported function, whose
+/// parameters are the stage's inputs; frame time is one of them, never an ambient read (RPI.69).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StageDecl {
+    pub kind: StageKind,
+    /// The declared static costs (RPI.71): weighted scalar operations for one vertex evaluation (`stage_ops`) or one
+    /// fragment invocation (`fragment_ops`), and the allowed fragment invocations per surface pixel (`overdraw`).
+    pub ops: u64,
+    pub overdraw: u64,
+    /// The entry's immutable array inputs, by parameter name, with their declared lengths. An index into one is checked
+    /// statically (RPI.69).
+    pub arrays: Vec<(String, u64)>,
+}
+
+/// The two stage kinds (RPI.68). There is no compute stage.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StageKind {
+    /// A chart evaluator: it returns a position, or a typed coverage code where the map is undefined.
+    Vertex,
+    /// It returns an opaque RGB value, with no discard, depth, stencil or coverage change (RPI.75).
+    Fragment,
+}
+
+impl StageKind {
+    pub fn name(self) -> &'static str {
+        match self {
+            StageKind::Vertex => "vertex",
+            StageKind::Fragment => "fragment",
+        }
+    }
+}
+
+/// The binary32 operations that only a stage module uses (RPI.70; LP2 draft): with `approx_add`, `approx_less`,
+/// `approx_and` and `approx_not` they make the stage's operation table. A program never runs one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StageOp {
+    Sub,
+    Mul,
+    Div,
+    Neg,
+    Abs,
+    Sqrt,
+    Sin,
+    Cos,
+    Exp2,
+    Log2,
+    /// `exclude(v, radius)`: in a vertex stage, the point is undefined (coverage `singular_neighbourhood`) where
+    /// `abs(v) <= radius`, as in LX-7's subset; `radius` is a positive binary32 literal.
+    Exclude,
+}
+
+impl StageOp {
+    pub const ALL: [StageOp; 11] = [
+        StageOp::Sub,
+        StageOp::Mul,
+        StageOp::Div,
+        StageOp::Neg,
+        StageOp::Abs,
+        StageOp::Sqrt,
+        StageOp::Sin,
+        StageOp::Cos,
+        StageOp::Exp2,
+        StageOp::Log2,
+        StageOp::Exclude,
+    ];
+
+    /// The operation's reserved name in source.
+    pub fn name(self) -> &'static str {
+        match self {
+            StageOp::Sub => "approx_sub",
+            StageOp::Mul => "approx_mul",
+            StageOp::Div => "approx_div",
+            StageOp::Neg => "approx_neg",
+            StageOp::Abs => "approx_abs",
+            StageOp::Sqrt => "approx_sqrt",
+            StageOp::Sin => "approx_sin",
+            StageOp::Cos => "approx_cos",
+            StageOp::Exp2 => "approx_exp2",
+            StageOp::Log2 => "approx_log2",
+            StageOp::Exclude => "exclude",
+        }
+    }
+
+    pub fn of_name(name: &str) -> Option<StageOp> {
+        StageOp::ALL.into_iter().find(|op| op.name() == name)
+    }
+
+    pub fn arity(self) -> usize {
+        match self {
+            StageOp::Sub | StageOp::Mul | StageOp::Div | StageOp::Exclude => 2,
+            _ => 1,
+        }
+    }
+
+    /// RPI.70's tier: 1 for `+ - * /`, unary minus and `abs`, 2 for `sqrt`, 3 for `sin`, `cos`, `exp2` and `log2`.
+    /// The draft puts `exclude` in tier 1, as a comparison.
+    pub fn tier(self) -> u8 {
+        match self {
+            StageOp::Sqrt => 2,
+            StageOp::Sin | StageOp::Cos | StageOp::Exp2 | StageOp::Log2 => 3,
+            _ => 1,
+        }
     }
 }
 
@@ -460,6 +586,8 @@ pub enum Prim {
     /// `field_inverse(x)`: the multiplicative inverse in the field. Zero has none: the operation is guarded by a
     /// pointwise assertion that `x` is not zero (DET.55), and its failure is `LG4:input.pointwise_failed`.
     FieldInverse,
+    /// A stage operation (RPI.70; LP2 draft). Only a stage module uses one; the checker refuses it elsewhere.
+    Stage(StageOp),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -871,7 +999,23 @@ pub mod build {
         function(FnKind::Command, name, params, result, body)
     }
     pub fn module(name: &str, functions: Vec<Function>) -> Module {
-        Module { name: name.into(), capabilities: BTreeSet::new(), functions }
+        Module { name: name.into(), kind: ModuleKind::Program, capabilities: BTreeSet::new(), functions }
+    }
+    /// A stage module with no array inputs.
+    pub fn stage(name: &str, kind: StageKind, ops: u64, overdraw: u64, functions: Vec<Function>) -> Module {
+        let decl = StageDecl { kind, ops, overdraw, arrays: Vec::new() };
+        Module { name: name.into(), kind: ModuleKind::Stage(decl), capabilities: BTreeSet::new(), functions }
+    }
+    /// A binary32 scalar, `Approx<24>` (RPI.69).
+    pub fn f32() -> QTy {
+        display(Ty::Approx(24))
+    }
+    /// A binary32 literal.
+    pub fn f32_lit(decimal: &str) -> Expr {
+        Expr::Lit(Lit::Approx { decimal: decimal.into(), precision: 24 })
+    }
+    pub fn stage_op(op: StageOp, args: Vec<Expr>) -> Expr {
+        Expr::Prim { op: Prim::Stage(op), args }
     }
     pub fn program(modules: Vec<Module>) -> Program {
         Program::new(modules)
