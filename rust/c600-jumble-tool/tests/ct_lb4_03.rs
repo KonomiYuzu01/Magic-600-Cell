@@ -19,12 +19,14 @@
 //! `c600-display`'s pose projection and checked against CT-EV3-06's current-occupant relation, which places pieces by
 //! chamber; six instances on a third plan, with stickers of two such pieces that share one pose index, resolved at the
 //! occurrence, piece and slot levels and checked against that relation; and a layout filter that keeps those pieces.
-//! Not run: a layout evaluated again at a later revision of a jumbled session, since no command-layer row commits a
-//! jumbling state yet (LP2's KN5); derived pose-level subjects; chart properties at exact poses (LB4.2); and any
-//! backend, readback or drawing (J06). A pass is source and fixture evidence over the mock backend, not a backend run.
+//! At a later revision of a jumbled session, with Jumble on in the command layer (LP2's pull requests 212, 217, 218 and
+//! 220): a layout evaluated at a head the layer reaches by presses of the journal's records, then evaluated again at the
+//! revision the next press makes and at the one its undo makes, each with that revision's posed row, analysed set and
+//! pose-level subject, while the installed earlier evaluation goes stale. Not run: derived pose-level subjects; chart properties
+//! at exact poses (LB4.2); and any backend, readback or drawing (J06). A pass is source and fixture evidence over the
+//! mock backend, not a backend run.
 
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_digest::sha256_hex;
@@ -36,34 +38,24 @@ use c600_display::plan::*;
 use c600_display::produce::GeometryInput;
 use c600_display::receipt::Status;
 use c600_display::validate::{validate, Context, LimitProfile};
+use c600_jumble::levels;
 use c600_jumble::model::NP;
 use c600_jumble::state::{Outcome, State};
 use c600_jumble::twist::{Menu, Twist};
-use c600_jumble::Context as Engine;
 use c600_jumble_tool::relation::current_occupants;
 use c600_kernel::json::{self, Value};
-use c600_kernel::{Kernel, Puzzle};
+use c600_kernel::Puzzle;
 use c600_repr::layout::{Header, Occurrence, Representation};
+
+mod common;
+
+use common::{committed, engine, kernel, moved, repository, Fixture as Journal, Session};
 
 /// The one producing source of the fixture maps.
 const SOURCE: &str = "jumbling representations fixture source";
 
 /// The slot reason of a projection bound to another subject.
 const ANOTHER_SUBJECT: &str = "slot: the projection is for another subject";
-
-fn repository() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
-}
-
-fn engine() -> &'static Engine {
-    static ENGINE: OnceLock<Engine> = OnceLock::new();
-    ENGINE.get_or_init(|| Engine::load(&repository().join("assets")).expect("the jumbling model loads"))
-}
-
-fn kernel() -> &'static Kernel {
-    static KERNEL: OnceLock<Kernel> = OnceLock::new();
-    KERNEL.get_or_init(|| Kernel::load(&repository().join("assets")).expect("the 600-cell-Full model loads"))
-}
 
 fn geometry() -> &'static GeometryInput {
     static GEOMETRY: OnceLock<GeometryInput> = OnceLock::new();
@@ -530,6 +522,17 @@ fn ct_lb4_03_jumbling_half_a_layout_filter_preserves_the_analysed_set() {
     assert_eq!(error.code, codes::PLAN_INVALID);
 }
 
+/// The slot where M8's slot action of K⁺ places `piece`'s first home sticker at `state`; none off the lattice.
+fn sticker_slot(state: &State, piece: u32) -> Option<u32> {
+    let k = state.pose_of(piece as usize).kidx()?;
+    if k == 0 {
+        return Some(home_of(piece));
+    }
+    let tables = levels::tables(engine()).expect("the level tables");
+    let at = tables.slots(piece as usize).iter().position(|&slot| slot == home_of(piece)).expect("a home slot");
+    Some(tables.piece_slots(engine(), piece as usize, k).expect("the slot action")[at])
+}
+
 /// The slot an instance resolves to through `projection`.
 fn slot_of(host: &Host<MockBackend>, id: u64, projection: &dyn Projection) -> ObjectId {
     total(host, &reply(host, id), Requested::Slot, projection).target
@@ -638,4 +641,133 @@ fn ct_lb4_03_jumbling_half_stickers_at_other_lattice_poses_map_to_their_slots() 
         assert_eq!(&r.target, object, "instance {id}");
     }
     assert_eq!((slot_of(&host, 9, &projection), slot_of(&host, 11, &projection)), (at_a, at_b), "the same slots");
+}
+
+/// CT-LB4-03 (part, the jumbling half at a later revision of a jumbled session: LB4.4's layouts evaluate per revision,
+/// with Jumble on in the command layer, LP2's pull requests 212, 217, 218 and 220). A session enters Jumble on under the
+/// pinned I_a menu and presses the journal's records through `jumble.twist.menu`, each press moving M5's inside set of
+/// that record, up to the first record (the next one) that turns a piece m from off the lattice onto a lattice pose
+/// while it leaves a piece u whose sticker is out of its home slot. (No record of the three W-J journals turns a piece
+/// from one lattice pose to another: a piece the menu's twists take off the lattice comes back to it only so.) Plan 4,
+/// a sheet of m's sticker, u's sticker and piece m itself, is evaluated at the head beside the pieces the last press
+/// moved, and installed; m's sticker has no slot there (`off_lattice`). The next record is pressed through the layer.
+/// The host adopts the later revision's posed row; the installed sheet goes stale and a pick under its binding is
+/// refused with `EV3:stale.display_pick`. Evaluated again at the later revision, beside the pieces that press moved
+/// (M5's inside set), the same layout installs: each instance resolves to the same canonical object under the later
+/// pose-level subject, m's sticker to the slot where M8's slot action now places it, whose current occupant is m, and
+/// u's sticker to the slot it had; the earlier revision's projection answers no slot for the later subject.
+/// `session.undo` returns the poses to the earlier digest at a new state revision, and the layout evaluated there
+/// answers as at the earlier revision: m's sticker off the lattice, u's in its slot.
+#[test]
+fn ct_lb4_03_jumbling_half_a_layout_is_evaluated_again_at_a_later_revision() {
+    let engine = engine();
+    let journal = Journal::load("I_a");
+    let mut session = Session::entered(&journal);
+    // M5's engine walks the journal beside the layer, one record ahead of it, until a record turns a piece from off the
+    // lattice onto it while it leaves a piece whose sticker is out of its home slot.
+    let mut oracle = State::new(Some(Arc::new(journal.menu())));
+    let mut pressed = Vec::new();
+    let mut found = None;
+    for (index, twist) in journal.twists.iter().enumerate() {
+        let mut later = oracle.clone();
+        let outcome = later.apply(engine, twist, None, &[]).expect("no engine error");
+        let m = outcome
+            .inside
+            .iter()
+            .copied()
+            .find(|&p| oracle.pose_of(p as usize).kidx().is_none() && later.pose_of(p as usize).kidx().is_some());
+        let u = m.and_then(|_| {
+            (0..NP as u32).find(|&p| {
+                outcome.inside.binary_search(&p).is_err() && sticker_slot(&oracle, p).is_some_and(|s| s != home_of(p))
+            })
+        });
+        if let (Some(m), Some(u)) = (m, u) {
+            found = Some((index, later, outcome, m, u));
+            break;
+        }
+        let before = session.state().clone();
+        assert!(committed(&session.press(twist)), "record {index}");
+        pressed = moved(&before, session.state());
+        assert_eq!(pressed, outcome.inside, "record {index}: the press moved M5's inside set");
+        oracle = later;
+    }
+    let (index, later, outcome, m, u) = found.expect("a record that turns a piece onto the lattice");
+    let (first, earlier) = (session.base(), session.state().clone());
+    assert_eq!(first.digest, oracle.digest(engine), "the layer's head is M5's state before record {index}");
+    assert_eq!(first.digest, earlier.digest(engine));
+    assert!(!pressed.is_empty(), "the last press moved pieces");
+    let layout = |base: &RevisionRef, state: &State, analysed: &[u32]| -> (Representation, PosedInput) {
+        let posed = jumble::posed(engine, state).expect("finite poses");
+        let analysed: Vec<ObjectId> = analysed.iter().map(|&p| ObjectId::Piece(p)).collect();
+        let occurrences = [
+            occurrence(21, ObjectId::Sticker(home_of(m)), None, None, range(0, 1)),
+            occurrence(22, ObjectId::Sticker(home_of(u)), None, None, range(1, 2)),
+            occurrence(23, ObjectId::Piece(m), None, None, range(2, 3)),
+        ];
+        (representation(4, base, &posed, &analysed, Vec::new(), &occurrences), posed)
+    };
+    let objects = [(21, ObjectId::Sticker(home_of(m))), (22, ObjectId::Sticker(home_of(u))), (23, ObjectId::Piece(m))];
+    let resolves_at = |host: &Host<MockBackend>, base: &RevisionRef| {
+        for (id, object) in &objects {
+            let r = total(host, &reply(host, *id), Requested::Occurrence, &PlantedInverse);
+            assert_eq!((r.instance, r.plan, &r.target), (InstanceId(*id), PlanId(4), object));
+            assert_eq!(r.subject, StateRef::Snapshot(base.clone()), "instance {id}: the subject of its revision");
+        }
+    };
+
+    let (sheet, _) = layout(&first, &earlier, &pressed);
+    assert_eq!(sheet.analysed().expect("an analysed set").objects.len(), pressed.len());
+    let mut host = host(&first);
+    install(&mut host, 1, publication(&first, vec![sheet]));
+    resolves_at(&host, &first);
+    let at_first = pose_projection(&earlier);
+    let off_lattice = (ObjectId::Sticker(home_of(m)), vec![format!("slot: {OFF_LATTICE}")]);
+    let (covered, missing) = partial_slot(&host, 21, &at_first);
+    assert_eq!((covered.target, missing), off_lattice.clone(), "m's sticker has no slot off the lattice");
+    let u_first = slot_of(&host, 22, &at_first);
+    assert_ne!(u_first, ObjectId::Slot(home_of(u)), "u's sticker is not in its home slot");
+    let earlier_reply = reply(&host, 21);
+
+    // The later revision, through the layer.
+    assert!(committed(&session.press(&journal.twists[index])));
+    let second = session.base();
+    let current = session.state().clone();
+    assert_eq!(moved(&earlier, &current), outcome.inside, "the press moved M5's inside set");
+    assert_eq!((second.digest.as_str(), second.state), (later.digest(engine).as_str(), first.state + 1));
+    let (sheet, posed) = layout(&second, &current, &outcome.inside);
+    assert_eq!(host.adopt(&jumble::bundle(&second, &posed)).expect("the later bundle"), second);
+    assert!(host.stale(ViewId(1)), "the sheet evaluated at the earlier revision is stale");
+    let error = host
+        .resolve_pick(&earlier_reply, PickMode::Explicit, Requested::Occurrence, &PlantedInverse)
+        .expect_err("a pick under the earlier binding");
+    assert_eq!(error.code, codes::STALE_PICK);
+
+    install(&mut host, 2, publication(&second, vec![sheet]));
+    assert!(!host.stale(ViewId(1)));
+    resolves_at(&host, &second);
+    let at_second = pose_projection(&current);
+    let m_second = slot_of(&host, 21, &at_second);
+    let ObjectId::Slot(slot) = m_second else { panic!("a slot: {m_second:?}") };
+    assert_eq!(Some(slot), sticker_slot(&current, m), "the slot of M8's slot action at m's later pose");
+    let occupants =
+        current_occupants(engine, &current, &[slot]).expect("no engine error").expect("a slot of the model");
+    assert_eq!(occupants.get(slot), Some(Ok(m)), "the slot holds m at the later revision");
+    assert_eq!(slot_of(&host, 22, &at_second), u_first, "u's sticker stays in its slot");
+    let (covered, missing) = partial_slot(&host, 21, &at_first);
+    assert_eq!((covered.target, missing), (ObjectId::Sticker(home_of(m)), vec![ANOTHER_SUBJECT.to_owned()]));
+
+    // The undo, through the layer: the earlier poses at a new state revision.
+    assert!(committed(&session.undo()));
+    let third = session.base();
+    assert_eq!((third.digest.as_str(), third.state), (first.digest.as_str(), second.state + 1));
+    assert_eq!(moved(&current, session.state()), outcome.inside, "the undo moves the same pieces back");
+    let (sheet, posed) = layout(&third, session.state(), &outcome.inside);
+    host.adopt(&jumble::bundle(&third, &posed)).expect("the undo's bundle");
+    assert!(host.stale(ViewId(1)), "the sheet evaluated at the later revision is stale");
+    install(&mut host, 3, publication(&third, vec![sheet]));
+    resolves_at(&host, &third);
+    let at_third = pose_projection(session.state());
+    let (covered, missing) = partial_slot(&host, 21, &at_third);
+    assert_eq!((covered.target, missing), off_lattice, "m's sticker is off the lattice again");
+    assert_eq!(slot_of(&host, 22, &at_third), u_first, "u's sticker is in its earlier slot");
 }
