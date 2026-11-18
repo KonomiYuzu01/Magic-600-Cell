@@ -28,7 +28,7 @@
 //! | list (LP2 draft) | `value` (the header), then per element `visit` (a move) or `alias` (a borrow), as a record is built |
 //! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
-//! | `trace_key` (LB1.10; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per read of the least topological scan ([`crate::trace::Relation::reads`]) and 2 bytes reserved per letter; a run that pins no trace relation, or a letter outside its alphabet, stops with `LB1:input.key_contract_mismatch` before its step |
+//! | `trace_key` (LB1.10; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per read of the least topological scan ([`crate::trace::Relation::reads`], [`crate::trace::Relation::menu_reads`] for a menu word) and 2 bytes reserved per letter, 4 per menu letter; a run that pins no trace relation of the word's alphabet (`full-disjoint-support/1` for a Full word, a `jumble-locality/1` relation that keys the pinned menu alphabet for a menu word) stops with `LB1:input.key_contract_mismatch`, and a letter outside the relation's alphabet with `LB1:input.incompatible_alphabet`, before its step |
 //! | `length`, `concat`, `inverse`, `conjugate`, `commutator`, `compose` of menu words (LB1.8; LP2 drafts) | as on words: `expand_per_letter` per letter built and 4 bytes reserved per letter; an inverse reads the pinned menu's inverse items, and a word of another alphabet stops with `LB1:input.incompatible_alphabet` before its step |
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
@@ -58,10 +58,10 @@
 //! its own ([`crate::menu`]).
 //!
 //! A run pins at most one trace relation ([`Options::relation`]; LB1.10, LP2 draft), and every trace key in it is a
-//! key under that relation: `trace_key` stops the run before its step when it pins none, and a host's answer that
-//! holds a key under another header, or letters that are not the key of their trace, stops the run after its row.
-//! Each has the code `LB1:input.key_contract_mismatch`. A trace key has no canonical form, so no argument or result
-//! holds one ([`crate::trace`]).
+//! key under that relation: `trace_key` stops the run before its step when it pins none of the word's alphabet, and a
+//! host's answer that holds a key under another header, or letters that are not the key of their trace, stops the run
+//! after its row. Each has the code `LB1:input.key_contract_mismatch`. A trace key has no canonical form, so no
+//! argument or result holds one ([`crate::trace`]).
 //!
 //! # Drafts (M2)
 //!
@@ -2005,12 +2005,12 @@ impl<'a> Machine<'a> {
                     Box::new(move || Value::WordEqualityKey(free_reduction(&w).into())),
                 )
             }
-            // LB1.10's trace key under the run's pinned relation, priced by what its scan reads. Without a relation no
-            // key is built (LG2.23), and a letter outside the relation's alphabet, such as a letter 0, is not of a Full
-            // word (LB1.3).
+            // LB1.10's trace key under the run's pinned relation, priced by what its scan reads. Without a relation, or
+            // under a jumbling one, no key of a Full word is built (LG2.23), and a letter outside the relation's
+            // alphabet, such as a letter 0, is not of a Full word (LB1.3).
             (Prim::TraceKey, Some(ws), _) => {
                 let w = ws[0].clone();
-                let Some(relation) = self.relation.cloned() else {
+                let Some(relation) = self.relation.filter(|r| !r.is_menu()).cloned() else {
                     return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
                 };
                 if !w.iter().all(|&l| relation.holds(l)) {
@@ -2019,6 +2019,26 @@ impl<'a> Machine<'a> {
                 let (reads, size) = (relation.reads(&w), 2 * w.len() as u128);
                 let build = move || {
                     let key = relation.key(&w).expect("letters of the relation's alphabet");
+                    Value::TraceEqualityKey(Arc::new(key))
+                };
+                (per_letter.saturating_mul(reads), size, Box::new(build))
+            }
+            // A menu word's trace key needs a pinned `jumble-locality/1` relation that keys the run's menu alphabet
+            // (LG2.23: one identity block, grip count and item count); a word of another alphabet is refused.
+            (Prim::TraceKey, None, [h]) if matches!(h.value, Value::MenuWord(_)) => {
+                let Value::MenuWord(w) = &h.value else { unreachable!("a menu word") };
+                let menu = self.menu;
+                let Some(relation) = self.relation.filter(|r| menu.is_some_and(|m| r.keys_menu(m))).cloned() else {
+                    return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
+                };
+                let of_menu = menu.is_some_and(|m| w.identity() == m.identity());
+                if !of_menu || !w.letters().iter().all(|&l| relation.holds_menu(l)) {
+                    return Err(self.fail(Some(n), name, code::INCOMPATIBLE_ALPHABET));
+                }
+                let w = w.clone();
+                let (reads, size) = (relation.menu_reads(w.letters()), 4 * w.letters().len() as u128);
+                let build = move || {
+                    let key = relation.menu_key(w.letters()).expect("letters of the relation's alphabet");
                     Value::TraceEqualityKey(Arc::new(key))
                 };
                 (per_letter.saturating_mul(reads), size, Box::new(build))
