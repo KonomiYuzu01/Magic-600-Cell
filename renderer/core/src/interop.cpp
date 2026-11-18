@@ -1660,7 +1660,8 @@ int32_t sa2_presented(sa2_context* ctx, sa2_presented_row* rows, uint32_t capaci
             if (scene.product.removed()) throw Failure(SA2_E_DEVICE_REMOVED, "device removed (" + sa2::removed_text(scene.product.removed_reason()) + ")");
             return SA2_OK; // no row, such as DXGI_ERROR_FRAME_STATISTICS_DISJOINT: *out_count stays 0
         }
-        scene.product.presents().sample({static_cast<int32_t>(hr), surface.generation, statistics.PresentCount, last});
+        scene.product.presents().sample(
+            {static_cast<int32_t>(hr), surface.generation, statistics.PresentCount, last, statistics.SyncQPCTime.QuadPart});
         *out_count = scene.product.presents().rows(rows, capacity);
         return SA2_OK;
     });

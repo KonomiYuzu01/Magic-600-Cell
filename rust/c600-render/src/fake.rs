@@ -16,6 +16,8 @@ use crate::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// `DXGI_ERROR_DEVICE_REMOVED`, the reason a removed fake device reports.
 pub const DEVICE_REMOVED_REASON: i32 = 0x887A_0005_u32 as i32;
+/// The fake display clock's step per confirmed frame, in QPC ticks: one 60 Hz refresh at a 10 MHz counter.
+pub const DISPLAY_TICKS: u64 = 166_667;
 
 #[derive(Clone, Debug)]
 struct Ticket {
@@ -64,6 +66,8 @@ pub struct FakeCore {
     confirmed: VecDeque<Sa2PresentedRow>,
     /// The newest frame a presentation confirmation passed: no frame up to it is confirmed later.
     shown_up_to: u64,
+    /// The fake display clock: the `display_qpc` of the last confirmed frame.
+    pub display_qpc: u64,
     removed: bool,
     adopted: Option<u64>,
     next_ticket: u64,
@@ -94,6 +98,7 @@ impl FakeCore {
             surface: false,
             confirmed: VecDeque::new(),
             shown_up_to: 0,
+            display_qpc: 0,
             removed: false,
             adopted: None,
             next_ticket: 1,
@@ -120,8 +125,9 @@ impl FakeCore {
     }
 
     /// The display shows a completed, drawn frame and a statistics row names its own present count: the frame is
-    /// confirmed, and every older frame not yet confirmed never will be (the exact rule). False, and nothing changes,
-    /// without a surface or for a frame that is not retained, did not draw or is not newer than the last shown.
+    /// confirmed at the fake display clock advanced by [`DISPLAY_TICKS`], and every older frame not yet confirmed
+    /// never will be (the exact rule). False, and nothing changes, without a surface or for a frame that is not
+    /// retained, did not draw or is not newer than the last shown.
     pub fn show(&mut self, frame_id: u64) -> bool {
         if !self.surface || self.removed || frame_id <= self.shown_up_to {
             return false;
@@ -131,6 +137,7 @@ impl FakeCore {
         };
         let i = frame.input;
         let preview = i.flags & FRAME_PREVIEW != 0;
+        self.display_qpc += DISPLAY_TICKS;
         self.confirmed.push_back(Sa2PresentedRow {
             previews: u32::from(preview),
             frame_id,
@@ -138,6 +145,7 @@ impl FakeCore {
             surface: i.surface,
             sequence: i.sequence,
             preview: if preview { i.preview } else { 0 },
+            display_qpc: self.display_qpc,
             ..Sa2PresentedRow::new()
         });
         self.shown_up_to = frame_id;

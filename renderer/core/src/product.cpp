@@ -559,6 +559,7 @@ void PresentLedger::sample(const PresentSample& sample) {
         const auto match = present_match(it->generation, it->count, sample);
         if (match == PresentMatch::Exact) {
             confirmed_.push_back(*it);
+            confirmed_.back().display_qpc = static_cast<uint64_t>(sample.sync_qpc);
             it = awaiting_.erase(it);
         } else if (match == PresentMatch::Superseded) it = awaiting_.erase(it);
         else ++it;
@@ -579,6 +580,7 @@ uint32_t PresentLedger::rows(sa2_presented_row* rows, uint32_t capacity) {
         row.surface = entry.input.surface;
         row.sequence = entry.input.sequence;
         row.preview = entry.input.preview;
+        row.display_qpc = entry.display_qpc;
         confirmed_.pop_front();
     }
     return count;

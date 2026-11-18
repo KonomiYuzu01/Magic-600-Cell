@@ -21,5 +21,5 @@ pub mod backend;
 pub mod fake;
 
 pub use api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
-pub use backend::{FrameReport, PickPoll, PickTicket, RenderBackend};
+pub use backend::{DisplayTime, FrameReport, PickPoll, PickTicket, RenderBackend};
 pub use fake::FakeCore;

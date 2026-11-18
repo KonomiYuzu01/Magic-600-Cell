@@ -210,6 +210,7 @@ rows! {
         surface: u64,
         sequence: u64,
         preview: u64,
+        display_qpc: u64,
     }
 
     /// `sa2_pick_row`.

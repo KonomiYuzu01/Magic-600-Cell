@@ -163,7 +163,16 @@ fn every_row_has_the_header_layout() {
         ),
         (
             "sa2_presented_row",
-            rust_struct!(Sa2PresentedRow { struct_size, previews, frame_id, device_epoch, surface, sequence, preview }),
+            rust_struct!(Sa2PresentedRow {
+                struct_size,
+                previews,
+                frame_id,
+                device_epoch,
+                surface,
+                sequence,
+                preview,
+                display_qpc
+            }),
         ),
         (
             "sa2_pick_row",
@@ -214,7 +223,7 @@ fn every_row_has_the_header_layout() {
         Sa2PickRow::new().struct_size,
         Sa2CounterValues::new().struct_size,
     ];
-    assert_eq!(sizes, [32, 264, 104, 48, 112, 64], "new() sets struct_size");
+    assert_eq!(sizes, [32, 264, 104, 56, 112, 64], "new() sets struct_size");
 }
 
 #[test]
