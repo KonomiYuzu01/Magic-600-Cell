@@ -12,7 +12,13 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
 ## What is here
 
 - `project/`: the Godot project.
-  - `Shell.cs` is the root node.
+  - `Shell.cs` is the root node. When the environment names the core library (`M600_CORE_DLL`), the host library
+    (`M600_HOST_DLL`) and the assets folder (`M600_ASSETS`), it opens the core's surface under the whole window,
+    creates the host over it, follows window resizes, and submits one frame per process step (step S4, a draft).
+  - `CoreSurface.cs` drives the core context's life through the shell calls: `sa2_create`, `sa2_surface_attach` and
+    `sa2_scene_load` on open, `sa2_surface_move` and a drained `sa2_resize` while it lives, and `sa2_scene_unload`,
+    `sa2_drain`, `sa2_surface_detach` and `sa2_detach` on close. Draft choices: the first hardware adapter, the
+    acceptance harness's default config, and scene 1.
   - `HostLibrary.cs` loads the native host library (`c600_shell_host.dll`, step S3), resolves its `m6h_*` exports,
     refuses another version than 1, and wraps each call. `Create` hands the library the core's table and a context.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function
@@ -29,7 +35,8 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - the route-B window settings;
   - the export list and ABI version equal to the bridge's and the header's;
   - every shell call declared by the header and absent from the bridge's table;
-  - the host library's exports, version, status codes and presented row equal to its Rust source.
+  - the host library's exports, version, status codes and presented row equal to its Rust source;
+  - `CoreSurface.cs` using every shell call and no other.
 
 ## Status
 
@@ -61,7 +68,9 @@ These parts are drafts of C9 that the sources leave open:
 - That library lives outside the language workspace, beside `renderer/bridge`, for CT-RPI-01.
 - The shell hands the core's export addresses to the bridge's table.
 
+Steps S3 and S4 built offline on 18 November 2026 with no warning. They were never launched.
+
 Next steps:
 
-- the window and layout with the core's surface attached, through the shell calls;
-- the frame loop and the E2 and E3 log rows.
+- the E2 and E3 log rows from the frame loop (S5);
+- the owner-machine run of S4 (route B check B1 first), when the owner is not using the machine.

@@ -138,6 +138,10 @@ class ShellProject(unittest.TestCase):
         self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)),
                          ["Sequence", "DeviceEpoch", "EngineRevision", "Camera"])
 
+    def test_the_surface_uses_every_shell_call_and_no_other(self):
+        used = set(re.findall(r'Call\("(sa2_[a-z_]+)"\)', text(PROJECT / "CoreSurface.cs")))
+        self.assertEqual(used, set(csharp_list("ShellCalls")))
+
     def test_the_build_never_launches(self):
         sys.path.insert(0, str(SHELL))
         try:
