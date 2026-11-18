@@ -115,6 +115,9 @@ STEPS = (
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240,
          'the LX-4 edit-script harness on the product build',
+         commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <new folder>'
+                   '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',),
+         prerequisites=(('file', 'rust/c600-lx4/src/main.rs'),),
          run_time=('foreground',), sources=('RTE.52', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
     Step('b3-probe', 'Route B check B3: three cold runs of the present probe', False, 10, None,
          commands=(f'python -B {PROBE} --topmost --wait-quiet 1800   # three times',),
