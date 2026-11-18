@@ -18,9 +18,9 @@ fn a_null_context_or_another_abi_is_refused() {
         unsafe { DllCore::new(common::functions(), std::ptr::null_mut()) }.err(),
         Some(Status::INVALID_ARGUMENT)
     );
-    let abi3 = CoreFunctions { abi_version: common::abi_version_3, ..common::functions() };
+    let previous = CoreFunctions { abi_version: common::abi_version_previous, ..common::functions() };
     // SAFETY: the shim's table and a live shim; only the ABI version is read.
-    assert_eq!(unsafe { DllCore::new(abi3, context.cast()) }.err(), Some(Status::UNSUPPORTED));
+    assert_eq!(unsafe { DllCore::new(previous, context.cast()) }.err(), Some(Status::UNSUPPORTED));
 }
 
 #[test]

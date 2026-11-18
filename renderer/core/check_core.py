@@ -27,6 +27,10 @@ CPU_CHECKS = {
     # ABI 4: the product API's device-free logic.
     "product arguments", "product adopt", "product tickets", "product frames", "product reports", "product picks",
     "product device lost", "product describe",
+    # ABI 5: route B's argument checks, present matching and recovery bookkeeping
+    # (route B is accepted for now by the owner on 18 Nov 2026, pending three
+    # owner-machine checks).
+    "route b arguments", "present matching", "recovery bookkeeping",
 }
 BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
 

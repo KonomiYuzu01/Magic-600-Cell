@@ -34,7 +34,7 @@ pub const SYMBOLS: [&str; 17] = [
     "sa2_device_status",
 ];
 
-/// The ABI 4 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
+/// The ABI 5 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
 /// language can fill it.
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -72,7 +72,7 @@ pub const JSON_LIMIT: usize = 16 << 20;
 
 impl DllCore {
     /// Binds an attached context. Fails with `SA2_E_INVALID_ARGUMENT` for a null context and `SA2_E_UNSUPPORTED`
-    /// when the library is not ABI 4.
+    /// when the library is not ABI 5.
     ///
     /// # Safety
     ///

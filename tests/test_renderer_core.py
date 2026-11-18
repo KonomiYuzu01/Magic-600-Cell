@@ -1,4 +1,4 @@
-"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 4).
+"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 5).
 
 The core builds only on Windows with MSVC (renderer/core/check_core.py). These checks need only the
 Python standard library and run anywhere. They check that:
@@ -6,8 +6,10 @@ Python standard library and run anywhere. They check that:
   work/experiments/, and every "verbatim" product file equals its source;
 - the provenance table lists exactly the files under renderer/core/;
 - the CMake build names no source outside renderer/core/;
-- the ABI header pins version 4, keeps every ABI 2 declaration, layout and constant and the ABI 3
-  additions, and pins the ABI 4 product declarations, struct sizes and constants.
+- the ABI header pins version 5, keeps every ABI 2 declaration, layout and constant and the ABI 3
+  additions, pins the ABI 4 product declarations, struct sizes and constants, and pins ABI 5's
+  route B declarations and constants (route B is accepted for now by the owner on 18 Nov 2026,
+  pending three owner-machine checks).
 """
 from __future__ import annotations
 
@@ -152,11 +154,12 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 30)
+        self.assertEqual(len(values["CPU_CHECKS"]), 33)
         self.assertTrue({"wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls",
                          "wj native writer"} <= values["CPU_CHECKS"])
         self.assertTrue({"product arguments", "product adopt", "product tickets", "product frames", "product reports",
                          "product picks", "product device lost", "product describe"} <= values["CPU_CHECKS"])
+        self.assertTrue({"route b arguments", "present matching", "recovery bookkeeping"} <= values["CPU_CHECKS"])
 
     def test_default_build_directory_is_ignored_work(self):
         batch = (CORE / "build.cmd").read_bytes().decode("ascii")
@@ -197,6 +200,17 @@ ABI4_DEFINES = {
     "SA2_PICK_STALE_SURFACE": "1", "SA2_PICK_STALE_VIEW": "2", "SA2_PICK_STALE_TARGET": "3", "SA2_PICK_STALE_ENGINE": "4",
     "SA2_PICK_STALE_PUBLICATION": "5", "SA2_FRAME_PREVIEW": "1u",
 }
+# ABI 5: route B (accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks).
+ABI5 = {
+    "SA2_API int32_t sa2_create(uint64_t adapter_luid, const sa2_config* config, sa2_context** out);",
+    "SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, int32_t y, uint32_t width, uint32_t height);",
+    "SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);",
+    "SA2_API int32_t sa2_surface_detach(sa2_context* ctx);",
+}
+ABI5_DEFINES = {
+    "SA2_TARGET_SURFACE": "0xFFFFFFFFu", "SA2_SURFACE_SYNC_INTERVAL": "1u", "SA2_SURFACE_BUFFERS": "3u",
+    "SA2_SURFACE_MAX_PX": "16384u",
+}
 
 
 class AbiTests(unittest.TestCase):
@@ -204,8 +218,8 @@ class AbiTests(unittest.TestCase):
         self.header = text(CORE / "include" / "sa2_interop.h")
         self.abi2 = text(SA2_HEADER)
 
-    def test_version_is_4(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["4u"])
+    def test_version_is_5(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["5u"])
         self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.abi2, re.M), ["2u"])
 
     def test_abi2_scene_config_layout_is_pinned(self):
@@ -230,9 +244,9 @@ class AbiTests(unittest.TestCase):
         self.assertIn("sa2_wj_config", structs(self.header))
         self.assertIn('static_assert(sizeof(sa2_wj_config) == 48, "sa2_wj_config requires the x64 ABI");', self.header)
 
-    def test_abi4_additions(self):
+    def test_abi4_and_abi5_additions(self):
         added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, ABI3 | ABI4)
+        self.assertEqual(added, ABI3 | ABI4 | ABI5)
 
     def test_abi4_struct_sizes_are_pinned(self):
         layouts = structs(self.header)
@@ -250,6 +264,13 @@ class AbiTests(unittest.TestCase):
         for name, value in ABI4_DEFINES.items():
             with self.subTest(define=name):
                 self.assertEqual(values.get(name), value)
+
+    def test_abi5_constants_are_pinned(self):
+        values = defines(self.header)
+        for name, value in ABI5_DEFINES.items():
+            with self.subTest(define=name):
+                self.assertEqual(values.get(name), value)
+        self.assertIn("static_assert(SA2_SURFACE_BUFFERS == SA2_RING_SLOTS", text(CORE / "src" / "interop.cpp"))
 
 
 if __name__ == "__main__":

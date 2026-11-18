@@ -1,10 +1,11 @@
 #pragma once
 // ABI 4's one seam between a product frame and where it is drawn and
-// presented. sa2_frame_submit and sa2_resize see only this interface; the
-// Godot-texture route (interop.cpp's SlotTarget, a registered ring slot that
-// Godot composites) is its only implementation in ABI 4. A swap chain or a
-// composition target would be another implementation, not a change to the
-// product calls.
+// presented. sa2_frame_submit and sa2_resize see only this interface. Its
+// implementations: the Godot-texture route (interop.cpp's SlotTarget, a
+// registered ring slot that Godot composites; ABI 4) and route B's surface
+// (interop.cpp's SurfaceTarget, the back buffer of the core's composition swap
+// chain; ABI 5). Route B is accepted for now by the owner on 18 Nov 2026,
+// pending three owner-machine checks.
 #include <d3d12.h>
 #include <cstdint>
 
@@ -14,6 +15,9 @@ public:
     virtual ~FrameTarget() = default;
     virtual uint32_t width() const = 0;
     virtual uint32_t height() const = 0;
+    // The render-target format the frame's pipeline writes: R8G8B8A8_UNORM
+    // for a ring slot, B8G8R8A8_UNORM for a route-B swap chain.
+    virtual DXGI_FORMAT format() const = 0;
     // Selects the per-target constant buffer and query results; a target's
     // next frame is recorded only after its previous one completed (open).
     virtual uint32_t ring() const = 0;

@@ -84,6 +84,10 @@ struct ProductGpu {
     };
     ComPtr<ID3D12RootSignature> root;
     ComPtr<ID3D12PipelineState> draw_pso, id_pso;
+    // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
+    // three owner-machine checks): the product pipeline for a B8G8R8A8
+    // swap-chain buffer, built on the first surface frame.
+    ComPtr<ID3D12PipelineState> surface_pso;
     std::array<EngineCopy, EngineCopies> copies;
     Buffer all_visible, no_instances, statics; // a frame without a resource set: every slot drawn, nothing pickable
     std::array<Buffer, SA2_RING_SLOTS> cb;
@@ -458,6 +462,12 @@ struct Scene::Impl {
         hr(device, queue->GetTimestampFrequency(&p->frequency), "GetTimestampFrequency(product)");
         scene_require(p->frequency > 0, "the producer queue reports no timestamp frequency", SA2_E_D3D12);
         return p;
+    }
+    // ABI 5: the surface pipeline, from the same product blobs.
+    ComPtr<ID3D12PipelineState> product_surface_pipeline(ID3D12RootSignature* signature) {
+        const auto directory = module_path().parent_path();
+        return graphics(scene_bytes(directory / "product_vs.dxil"), scene_bytes(directory / "product_ps.dxil"), signature,
+                        DXGI_FORMAT_B8G8R8A8_UNORM, L"SA2 product surface pipeline");
     }
     ProductGpu& product_gpu() {
         scene_require(product != nullptr, "product resources are not ready", SA2_E_WRONG_STATE);
@@ -936,8 +946,10 @@ Json Scene::lattice_error(const std::string& error) const {
 }
 
 // ABI 4.
-void Scene::product_ready(ID3D12CommandQueue* queue) {
+void Scene::product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format) {
     if (!gpu->product) gpu->product = gpu->product_create(queue);
+    if (format == DXGI_FORMAT_B8G8R8A8_UNORM && !gpu->product->surface_pso)
+        gpu->product->surface_pso = gpu->product_surface_pipeline(gpu->product->root.Get());
 }
 uint64_t Scene::product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting) {
     auto& g = *gpu; auto& p = g.product_gpu();
@@ -967,9 +979,12 @@ uint64_t Scene::product_prepare(uint64_t ticket, const PreparedData& data, ID3D1
     }
 }
 void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
-                          D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring) {
+                          D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format) {
     auto& g = *gpu; auto& p = g.product_gpu();
     scene_require(plan.image != nullptr && plan.copy < EngineCopies && ring < SA2_RING_SLOTS, "product frame without a plan", SA2_E_WRONG_STATE);
+    auto* pso = format == DXGI_FORMAT_B8G8R8A8_UNORM ? p.surface_pso.Get() : p.draw_pso.Get();
+    scene_require(pso != nullptr && (format == DXGI_FORMAT_B8G8R8A8_UNORM || format == DXGI_FORMAT_R8G8B8A8_UNORM),
+        "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
     g.initialize(list); g.product_initialize(list);
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image);
@@ -979,7 +994,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
     list->BeginQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
     const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
-    g.product_draw(list, p.draw_pso.Get(), p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr);
+    g.product_draw(list, pso, p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr);
     list->EndQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
     list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
