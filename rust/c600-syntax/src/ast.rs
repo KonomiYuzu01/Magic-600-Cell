@@ -50,12 +50,25 @@ pub struct Name {
     pub loc: Loc,
 }
 
-/// `module name requires [capabilities];`
+/// `module name requires [capabilities];`, or a stage module's `stage kind name ops n overdraw n inputs [a: n];`
+/// (LG5.12, RPI.68; LP2 draft), which requires no capability.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleHeader {
     pub name: Name,
     pub requires: Vec<Name>,
+    pub stage: Option<StageHeader>,
     pub loc: Loc,
+}
+
+/// A stage module's kind and declared costs (RPI.71) and its array inputs, each a parameter name of the entry with a
+/// length (RPI.69). The `inputs` list is optional; numbers are canonical naturals.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StageHeader {
+    /// `vertex` or `fragment`.
+    pub kind: Name,
+    pub ops: String,
+    pub overdraw: String,
+    pub inputs: Vec<(Name, String)>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -217,12 +217,37 @@ impl Parser {
         }
         self.expect(";")?;
         let start = self.tok().span;
+        if self.accept("stage") {
+            // A stage module (LG5.12, RPI.68; LP2 draft): `stage vertex name ops 12 overdraw 1 inputs [a: 4];`.
+            if !self.at("vertex") && !self.at("fragment") {
+                return Err(self.unexpected("expected the stage's kind, `vertex` or `fragment`"));
+            }
+            let kind = self.name()?;
+            let name = self.name()?;
+            self.expect("ops")?;
+            let ops = self.natural()?;
+            self.expect("overdraw")?;
+            let overdraw = self.natural()?;
+            let mut inputs = Vec::new();
+            if self.accept("inputs") {
+                self.expect("[")?;
+                inputs = self.separated("]", |p| {
+                    let input = p.name()?;
+                    p.expect(":")?;
+                    Ok((input, p.natural()?))
+                })?;
+            }
+            self.expect(";")?;
+            let stage = Some(StageHeader { kind, ops, overdraw, inputs });
+            file.module = Some(ModuleHeader { name, requires: Vec::new(), stage, loc: Loc(self.since(start)) });
+            return Ok(());
+        }
         self.expect("module")?;
         let name = self.name()?;
         self.expect("requires")?;
         let requires = self.names()?;
         self.expect(";")?;
-        file.module = Some(ModuleHeader { name, requires, loc: Loc(self.since(start)) });
+        file.module = Some(ModuleHeader { name, requires, stage: None, loc: Loc(self.since(start)) });
         Ok(())
     }
 
