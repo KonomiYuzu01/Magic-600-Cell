@@ -124,13 +124,16 @@ pub const NEEDS: [RowNeed; 6] = [
         undo_entry: "one workspace action in the durable action order, holding the filter before and after, which \
                      `session.undo` dispatches as a workspace action and which leaves the journal's state actions and \
                      the slot map as they were.",
-        served: false,
-        met: "Nothing of its own: the layer refuses to serve the row (`KN5:input.overlay_row_kind`), since it cannot \
-              check the gate, the preview rule or the undo class without the entry, and refuses an invocation as not \
-              built.",
-        remains: "The gate's freshness check against a store of filter previews, the `filter` preview rule, the \
-                  `FilterPreviewRef` form, and a workspace action with its inverse, which `session.undo` dispatches: \
-                  the layer holds no inverse of a program's write. Then `serve_row` can accept the row.",
+        served: true,
+        met: "The layer serves the row (LP2's filter previews, `c600-command`'s `filter` module). It checks the \
+              `FilterPreviewRef` form, a job ID, and keeps a filter preview for each completed `filter.preview` job \
+              with KN0.9's dependencies: the epoch, identity, mode and state, and the digest of the resolved filter, \
+              which holds each record the predicate's job wrote with its content digest and version. The gate \
+              `fresh_filter_preview` refuses a missing or stale filter preview with `KN5:stale.filter_preview` before \
+              any job, reading neither the word-preview slot nor a presentation, and fails the job with that code, \
+              writing nothing, when the filter preview went stale while the job ran. The completion is one workspace \
+              action that `session.undo` and `session.redo` invert and repeat as workspace actions.",
+        remains: "Nothing in the command layer for the row's admission, gate, completion or undo.",
     },
     RowNeed {
         row: "view.effect.scope",

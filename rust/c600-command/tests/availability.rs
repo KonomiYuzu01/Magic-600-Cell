@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, draft_args, Binding, Caller, CommandLayer, Dependency, Error, Fate, HeadlessFrames, Invocation, Kind,
+    code, digest, draft_args, Binding, Caller, CommandLayer, Dependency, Error, Fate, HeadlessFrames, Invocation, Kind,
     MemoryStore, Metadata, Overlay, Receipt, Secret, Shell, Status, Table,
 };
 use c600_kernel::json::{self, Value};
@@ -28,6 +28,7 @@ const SECRET: [u8; 32] = [7; 32];
 
 const COMPARE: &str = "structure.compare";
 const FILTER: &str = "filter.preview";
+const LAYER: &str = "structure.layer";
 const PREVIEW: &str = "operation.preview";
 const EXECUTE: &str = "operation.execute";
 const ORBITS: &str = "protection.orbit.set";
@@ -114,6 +115,19 @@ fn fixture() -> Fixture {
 impl Fixture {
     fn declare(&mut self, row: &str, metadata: Metadata) {
         self.layer.declare_overlay(row, metadata).unwrap();
+    }
+
+    /// Serves `structure.layer` and returns the `FilterRef` of a predicate its job prepared, which wrote no record.
+    fn predicate(&mut self) -> Value {
+        let tool = Overlay { module: "tools/full".into(), entry: "layer_predicate".into() };
+        self.layer.serve_row(LAYER, tool).unwrap();
+        let args = json::object([("cell", Value::Int(1)), ("layer", Value::Int(2))]);
+        let receipt = self.shell.invoke(&mut self.layer, LAYER, args).unwrap();
+        let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
+        assert_eq!(self.layer.take_program_job().map(|taken| taken.job), Some(job));
+        let done = self.layer.finish_program_job(job, Ok(Value::Null)).unwrap();
+        assert!(matches!(done.status, Status::Completed(_)), "{:?}", done.status);
+        json::object([("digest", text(&digest(&Value::Null))), ("job", Value::Int(job as i64))])
     }
 
     /// Starts a preview of letter 1 and leaves its job on the exclusive lane; returns the preview's ID.
@@ -248,7 +262,8 @@ fn the_first_failure_is_reported_in_li20_order() {
 /// LI.20's vector: with every other gate passing, `(K, A)` available and `(K, B)` refused give an available overlay
 /// for static A and that refusal for static B; a computed binding of K is available on K's argument-independent gates,
 /// and computing B later still gets the refusal at invocation. A static binding that names a revision is stale once the
-/// revision moves.
+/// revision moves, and one whose `FilterRef` names no prepared predicate answers `KN2:input.named_object_invalid`, as
+/// its invocation would.
 #[test]
 fn a_static_binding_answers_as_its_arguments_do() {
     let mut f = fixture();
@@ -270,7 +285,11 @@ fn a_static_binding_answers_as_its_arguments_do() {
     f.declare(READ, requiring(vec![required(COMPARE, Binding::Static(Value::Int(3)))]));
     assert_eq!(code_of(f.layer.availability(READ)), code::ARGUMENT_FORM);
 
-    let bound = json::object([("predicate", text("orbit 3")), ("revision", f.layer.revision().to_json())]);
+    let predicate = f.predicate();
+    let unknown = json::object([("digest", text("00")), ("job", Value::Int(999))]);
+    let unknown = json::object([("predicate", unknown), ("revision", f.layer.revision().to_json())]);
+    assert_eq!(code_of(f.layer.availability_for(FILTER, &unknown)), code::NAMED_OBJECT_INVALID);
+    let bound = json::object([("predicate", predicate), ("revision", f.layer.revision().to_json())]);
     let both = vec![required(FILTER, Binding::Static(bound.clone())), required(FILTER, Binding::Computed)];
     f.declare(READ, requiring(both));
     assert_eq!(f.layer.availability(READ), Ok(()));
