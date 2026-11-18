@@ -7,7 +7,7 @@ use crate::{sha256_hex, Diagnostic, RawContext, Span, EDITION};
 use c600_ir::MENU_INDEX_LIMIT;
 
 /// Names that begin a declaration in column 1. Recovery resumes at the next one (LG1.5).
-const STARTS: [&str; 5] = ["fn", "view", "command", "import", "export"];
+const STARTS: [&str; 6] = ["fn", "view", "command", "contract", "import", "export"];
 
 struct Problem {
     code: &'static str,
@@ -272,8 +272,10 @@ impl Parser {
             DeclKind::View
         } else if self.accept("command") {
             DeclKind::Command
+        } else if self.accept("contract") {
+            DeclKind::Contract
         } else {
-            return Err(self.unexpected("expected `fn`, `view`, `command` or `import`"));
+            return Err(self.unexpected("expected `fn`, `view`, `command`, `contract` or `import`"));
         };
         let name = self.name()?;
         let mut generics = Vec::new();

@@ -2626,6 +2626,44 @@ impl<'p> Checker<'p> {
         }
     }
 
+    /// A whole-state contract is a function of its revision alone (LG4.10; LP2 draft): no parameter, an exact `Bool`
+    /// result, and no need beyond reading the snapshot and child budgets, so it gives one result at one revision.
+    fn contract(&mut self, f: &Function, s: &Summary) {
+        if !f.params.is_empty() {
+            let note = "a whole-state contract takes no parameter: it checks its revision's whole state (LG4.10)";
+            self.push(TYPE_MISMATCH, None, note.into());
+        }
+        if f.result != (QTy { ty: Ty::Bool, display: false }) {
+            let note =
+                format!("a whole-state contract returns an exact Bool, not {} (LG4.10)", type_text(&f.result.ty));
+            self.push(TYPE_MISMATCH, None, note);
+        }
+        for e in s.effects.iter().filter(|e| !matches!(e, Effect::ReadSnapshot | Effect::Budgets)) {
+            self.effect(format!(
+                "a whole-state contract has no {e:?} effect: it reads its revision and nothing else (LG4.10)"
+            ));
+        }
+        for c in &s.capabilities {
+            self.effect(format!(
+                "a whole-state contract uses no {c:?} capability, so its result is a function of its revision (LG4.10)"
+            ));
+        }
+    }
+
+    /// No function calls or holds a whole-state contract, so no call and no loop runs one per call (LG4.10; LP2
+    /// draft): a contract runs once per revision or as an agreement test.
+    fn contract_target(&mut self, mi: usize, fi: usize) {
+        let program = self.program;
+        let f = &program.modules[mi].functions[fi];
+        if f.kind == FnKind::Contract {
+            self.effect(format!(
+                "`{}` is a whole-state contract, which runs once per revision or as an agreement test, never inside a \
+                 call or a loop (LG4.10)",
+                f.name
+            ));
+        }
+    }
+
     fn resolve(&self, module: Option<&str>, name: &str) -> Result<(usize, usize), IrError> {
         let mi = match module {
             None => self.cur.0,
@@ -2932,6 +2970,9 @@ impl<'p> Checker<'p> {
                 }
             }
         }
+        if f.kind == FnKind::Contract {
+            self.contract(f, &s);
+        }
         if let Some(annotation) = &f.effects {
             if !s.within(annotation) {
                 self.effect(format!(
@@ -2981,6 +3022,7 @@ impl<'p> Checker<'p> {
             Expr::FnRef { module, name } => {
                 let (mi, fi) = self.resolve(module.as_deref(), name)?;
                 self.stage_target(mi, name);
+                self.contract_target(mi, fi);
                 let program = self.program;
                 let f = &program.modules[mi].functions[fi];
                 let mut summary = self.table[mi][fi].clone();
@@ -3099,6 +3141,7 @@ impl<'p> Checker<'p> {
                     Callee::Fn { module, name } => {
                         let (mi, fi) = self.resolve(module.as_deref(), name)?;
                         self.stage_target(mi, name);
+                        self.contract_target(mi, fi);
                         let program = self.program;
                         let f = &program.modules[mi].functions[fi];
                         let params: Vec<QTy> = f.params.iter().map(|p| p.ty.clone()).collect();
