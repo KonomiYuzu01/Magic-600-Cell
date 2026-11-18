@@ -13,11 +13,13 @@
 //!   draft).
 //! - [`trace`] is LB1.10's trace key `trace-key/1` of a Full word under the independence relation a run pins (LP2
 //!   draft).
+//! - [`contract`] runs a whole-state contract once per revision (LG4.10; LP2 draft).
 
 #![forbid(unsafe_code)]
 
 pub mod approx;
 pub mod boundary;
+pub mod contract;
 pub mod encode;
 pub mod interp;
 pub mod menu;

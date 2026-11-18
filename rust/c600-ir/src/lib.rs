@@ -171,12 +171,16 @@ impl StageOp {
     }
 }
 
-/// A view is reactive and has no workspace or preview effect (LG3.5, LG3.6); a command is invoked by the solver.
+/// A view is reactive and has no workspace or preview effect (LG3.5, LG3.6); a command is invoked by the solver. A
+/// whole-state contract (LG4.10; LP2 draft until the IR freeze) takes no parameter, returns an exact `Bool` and reads
+/// its revision's state and nothing else; it runs once per revision or as an agreement test, and no function calls or
+/// holds it, so no call or loop runs it per call.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FnKind {
     Helper,
     View,
     Command,
+    Contract,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -997,6 +1001,10 @@ pub mod build {
     }
     pub fn command(name: &str, params: Vec<Param>, result: QTy, body: Expr) -> Function {
         function(FnKind::Command, name, params, result, body)
+    }
+    /// A whole-state contract with the result `result` (LG4.10; LP2 draft): no parameter.
+    pub fn contract(name: &str, result: QTy, body: Expr) -> Function {
+        function(FnKind::Contract, name, Vec::new(), result, body)
     }
     pub fn module(name: &str, functions: Vec<Function>) -> Module {
         Module { name: name.into(), kind: ModuleKind::Program, capabilities: BTreeSet::new(), functions }

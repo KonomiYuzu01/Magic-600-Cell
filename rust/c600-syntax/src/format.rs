@@ -75,6 +75,7 @@ fn declaration(d: &Decl) -> String {
         DeclKind::Fn => "fn ",
         DeclKind::View => "view ",
         DeclKind::Command => "command ",
+        DeclKind::Contract => "contract ",
     });
     out.push_str(&d.name.text);
     if !d.generics.is_empty() {
