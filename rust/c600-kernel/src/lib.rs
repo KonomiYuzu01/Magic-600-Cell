@@ -62,7 +62,9 @@
 //! ([`Kernel::positions`]), `protection` with Strict ([`Kernel::strict_protection`], [`Kernel::derive_strict`]) and
 //! `replay` for Full ([`Kernel::replay`]); the streaming of KN2.10 ([`Kernel::chunks`], [`Replay`]); KN2.11's refusal
 //! shape ([`Refused`]); `protection` at label level for named pieces, fixed cell centres included, under Net and Strict
-//! ([`Kernel::piece_protection`], [`Kernel::strict_piece_protection`]), which LP3's C8 reads for LB3.4. Draft choices:
+//! ([`Kernel::piece_protection`], [`Kernel::strict_piece_protection`]), which LP3's C8 reads for LB3.4; the structure
+//! rows that `structure.compare` and `filter.preview` read, for LP3's C6 ([`Kernel::compare_cells`],
+//! [`Kernel::cell_layers`], [`Kernel::layer_counts`]). Draft choices:
 //!
 //! - A nonempty [`ProtectedSet`] is bound to the model that built it. The empty set names no orbit, so it belongs to no
 //!   model, and `ProtectedSet::none()` equals `protected_set(&[])`. Every call that takes a set checks it except the
@@ -89,6 +91,12 @@
 //!   (LB3.4: inside Jumble that label-level pass cannot replace the pose-level check). Strict refuses at the first
 //!   letter that moves a slot holding a protected sticker. The piece calls judge only: [`Kernel::derive`] still takes a
 //!   [`ProtectedSet`], and a refusal for pieces stays the caller's, with no new code.
+//! - The structure rows follow 0.4's `cell_distances` and `layer_mask`: face steps between cells, and the layers around
+//!   a cell, in which a position with a home slot in a cell of the layer counts whole, so layers overlap. 0.4 takes a
+//!   cell's neighbours as the four nearest centres; here two cells share a face when they share three of their four
+//!   vertices, read from the 120 vertex pieces, and the load checks the graph. The rows read no state, so they take no
+//!   snapshot. A cell outside 0 to 599 and a layer past the cell's last are `KN2:input.named_object_invalid` with
+//!   the texts of 0.4's `cell_mask` and `layer_mask`.
 
 #![forbid(unsafe_code)]
 
@@ -98,6 +106,7 @@ pub mod exact;
 pub mod json;
 mod model;
 pub mod request;
+mod structure;
 
 use std::fmt;
 use std::num::NonZeroUsize;
@@ -140,7 +149,7 @@ pub const PROTECTED_MESSAGE: &str =
     "Protected orbit would move. Remove that protection explicitly or choose a different macro.";
 
 /// The sources of the kernel and its adapter, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 10] = [
+pub const SOURCES: [(&str, &[u8]); 11] = [
     ("c600-kernel/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-kernel/src/archive.rs", include_bytes!("archive.rs")),
     ("c600-kernel/src/bin/c600-oracle-adapter.rs", include_bytes!("bin/c600-oracle-adapter.rs")),
@@ -150,6 +159,7 @@ pub const SOURCES: [(&str, &[u8]); 10] = [
     ("c600-kernel/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-kernel/src/model.rs", include_bytes!("model.rs")),
     ("c600-kernel/src/request.rs", include_bytes!("request.rs")),
+    ("c600-kernel/src/structure.rs", include_bytes!("structure.rs")),
     ("c600-digest/src/lib.rs", include_bytes!("../../c600-digest/src/lib.rs")),
 ];
 
@@ -350,6 +360,38 @@ impl PiecePosition {
     pub fn solved(&self) -> bool {
         self.slots == self.home
     }
+}
+
+/// Two cells compared, as 0.4's structure explorer compares two colours (LP2 draft): the face steps between them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CellComparison {
+    /// The first cell, 0 to 599.
+    pub first: usize,
+    /// The second cell, 0 to 599.
+    pub second: usize,
+    /// The fewest face steps from `first` to `second`: 0 for the same cell and 1 for two cells that share a face.
+    pub steps: usize,
+}
+
+impl CellComparison {
+    /// The two cells share a triangular face.
+    pub fn shares_face(&self) -> bool {
+        self.steps == 1
+    }
+}
+
+/// One breadth-first layer around a cell (LP2 draft): the positions with a home slot in a cell `layer` face steps from
+/// `cell`, which 0.4's `layer(C, L)` filter selects, and their slots.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LayerCounts {
+    /// The cell the layers are counted from, 0 to 599.
+    pub cell: usize,
+    /// The layer: its cells' face steps from `cell`.
+    pub layer: usize,
+    /// The positions in the layer, each counted whole.
+    pub pieces: usize,
+    /// The home slots of those positions.
+    pub slots: usize,
 }
 
 /// A star step: the orbit's seed relocated and set up by the path to a frame node of the orbit's execution tree.
@@ -636,6 +678,15 @@ pub enum Derivation {
     Refused(Refused),
 }
 
+/// A cell named 0 to 599, with the refusal text of 0.4's `Model.cell_mask` (its `cell_distances` says `Color must be
+/// C1..C600` instead; one text serves every structure row here).
+fn named_cell(cell: i64) -> Result<usize, Refusal> {
+    usize::try_from(cell)
+        .ok()
+        .filter(|&cell| cell < model::CELLS)
+        .ok_or_else(|| Refusal::new(codes::NAMED_OBJECT_INVALID, format!("Cell must be 0..{}", model::CELLS - 1)))
+}
+
 /// The piece protection row from its rows: `Moves` when one of them moves.
 fn piece_verdict(
     mode: ProtectionMode,
@@ -698,6 +749,7 @@ pub struct Progress {
 /// The loaded 600-cell-Full model and its star cache.
 pub struct Kernel {
     model: Model,
+    structure: structure::Structure,
     solved: Snapshot,
     stars: Mutex<engine::Stars>,
 }
@@ -706,8 +758,9 @@ impl Kernel {
     /// Loads and checks the model in the `assets` folder.
     pub fn load(assets: &Path) -> Result<Kernel, LoadError> {
         let model = Model::load(assets)?;
+        let structure = structure::Structure::build(&model)?;
         let solved = Snapshot::new(&model.model_id, (0..SLOTS as i32).collect());
-        Ok(Kernel { model, solved, stars: Mutex::new(engine::Stars::new()) })
+        Ok(Kernel { model, structure, solved, stars: Mutex::new(engine::Stars::new()) })
     }
 
     /// The identity block of the loaded model.
@@ -823,6 +876,36 @@ impl Kernel {
             PiecePosition { piece, orbit, home, slots, position: together.then_some(place) }
         });
         Ok(rows.collect())
+    }
+
+    /// Two cells compared (LP2 draft, the row `structure.compare` reads): the fewest face steps between them, as 0.4's
+    /// structure explorer counts them. A cell is named 0 to 599, refused with 0.4's `cell_mask` text. It reads no
+    /// state.
+    pub fn compare_cells(&self, first: i64, second: i64) -> Result<CellComparison, Refusal> {
+        let (first, second) = (named_cell(first)?, named_cell(second)?);
+        Ok(CellComparison { first, second, steps: self.structure.steps(first, second) })
+    }
+
+    /// The layers around `cell` (LP2 draft, the counts `filter.preview` reads for a layer), from layer 0 to the cell's
+    /// last: in each, the positions with a home slot in a cell that many face steps from `cell`, and their slots. A
+    /// position counts whole and can be in several layers, as in 0.4's `layer_mask`. The counts read no state: a
+    /// position keeps its slots whatever piece it holds, so 0.4's `home_layer(C, L)`, the pieces whose home is in the
+    /// layer, counts the same.
+    pub fn cell_layers(&self, cell: i64) -> Result<Vec<LayerCounts>, Refusal> {
+        let cell = named_cell(cell)?;
+        let counts = self.structure.layers(&self.model, cell).into_iter().enumerate();
+        Ok(counts.map(|(layer, (pieces, slots))| LayerCounts { cell, layer, pieces, slots }).collect())
+    }
+
+    /// One layer around `cell`, as [`Kernel::cell_layers`] counts it, with 0.4's `layer_mask` refusal of a layer past
+    /// the cell's last.
+    pub fn layer_counts(&self, cell: i64, layer: i64) -> Result<LayerCounts, Refusal> {
+        let last = self.structure.last_layer(named_cell(cell)?);
+        let Some(layer) = usize::try_from(layer).ok().filter(|&layer| layer <= last) else {
+            let text = format!("Layer must be L0..L{last} for the chosen color");
+            return Err(Refusal::new(codes::NAMED_OBJECT_INVALID, text));
+        };
+        Ok(self.cell_layers(cell)?[layer])
     }
 
     /// The number of frame nodes in `orbit`'s execution tree.
