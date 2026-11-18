@@ -1,6 +1,6 @@
 [package]
 name = "c600-lx2"
-description = "LX-2's metered and forced-kill trials against a given runtime child binary; measurement tooling, never shipped (C9)"
+description = "LX-2's metered and forced-kill trials, alone and in a session, against a given runtime child binary; measurement tooling, never shipped (C9)"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
@@ -10,9 +10,11 @@ name = "c600-lx2-faults"
 path = "src/main.rs"
 
 [dependencies]
+c600-check = { path = "../c600-check" }
+c600-command = { path = "../c600-command" }
 c600-digest = { path = "../c600-digest" }
+c600-kernel = { path = "../c600-kernel" }
 c600-run = { path = "../c600-run" }
 c600-runtime = { path = "../c600-runtime" }
-
-[dev-dependencies]
-c600-kernel = { path = "../c600-kernel" }
+c600-session = { path = "../c600-session" }
+c600-tools = { path = "../c600-tools" }

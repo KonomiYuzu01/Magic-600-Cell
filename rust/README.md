@@ -34,7 +34,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 4 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
-| `c600-lx2` | LX-2's metered and forced-kill trials against a runtime child binary the caller names (the product build's on the owner's machine); measurement tooling, never shipped (LP3, C9) |
+| `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine); measurement tooling, never shipped (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -2661,7 +2661,8 @@ run or not applicable is no pass (PHS.63).
 
 ## Status of LP3, C9 measurement: LX-2's metered and forced-kill half
 
-- `c600-lx2-faults --runtime <c600-runtime binary> [--out <record.json>]` runs four trials on `c600-runtime`'s parent
+- `c600-lx2-faults --runtime <c600-runtime binary> [--sessions <new folder>] [--assets <folder>] [--out <record.json>]`
+  runs four trials on `c600-runtime`'s parent
   API against the child binary it is given, so the decisive runs use the product build's runtime unchanged. Every job
   first proposes SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
 - `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
@@ -2670,10 +2671,18 @@ run or not applicable is no pass (PHS.63).
   and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is
   still the runtime word and the same runtime completes the control again, in a fresh child only after the kill. The
   metered trials and the control also run in process, and the two executors agree.
+- With `--sessions`, each trial also runs with a session open (RTE.42 conditions 1 and 2; RTE.43): KN5's command
+  layer over M6's journal on a file-system disk in its own fresh subfolder, with the shell and the headless display.
+  The solver commits `[1, -2]`; the trial's job runs in the child through the product's bridge and boundary, so its
+  proposal is the layer's pending preview before the fault; the solver then commits that preview and `[3]`. A trial
+  agrees when it ends with its typed outcome, every solver command after it is accepted, its journal records and state
+  hash equal the control's, and a reopen replays the same state hash. The journal is read before the reopen, which
+  journals a fresh random epoch of its own.
 - The record (`magic600-c9-lx2-faults-v1`) names the child by file name and SHA-256 only, never by path, with
-  `injection_device: null`.
+  `injection_device: null`; each session row names the journal by row count and digest, never the folder.
 - Not here: LX-2's native faults (allocator ceiling, unmetered recursion, native loop) need the injection device of
   option (a) (top integrator, 18 November 2026: a separate fault-injection child built from product source in release
   mode, never shipped, with a check that the product build has it off); any hook inside `c600-runtime` is LP3's to
-  shape. Also not here: the session store's journal rows and replayed state hash against a control, the barrier's
-  release acknowledgement, and E2 commits during fault windows. Evidence kind: source and synthetic; nothing is timing.
+  shape. Also not here: the barrier's release acknowledgement and conditions 3 and 4 (the renderer gate, LX-4's echo
+  bar and E2 commits during fault windows), which need the shell's frame loop on the owner's machine. Evidence kind:
+  source and synthetic; nothing is timing.

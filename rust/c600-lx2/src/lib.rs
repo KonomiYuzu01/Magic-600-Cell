@@ -16,14 +16,19 @@
 //! in the same child otherwise. The pending preview must still be the runtime word. A metered trial and the control
 //! also run in process (`run_in_process`), and the two executors must agree.
 //!
+//! [`session`] runs the same trials with a session open (RTE.42 conditions 1 and 2): the journal's records and the
+//! state hash after the same commands must equal the control's, and the session must stay open.
+//!
 //! Not here: LX-2's native faults (allocator ceiling, unmetered recursion, native loop), which need the injection
 //! device of option (a) (top integrator, 18 November 2026: a separate fault-injection child built from product source,
-//! never shipped); the session store's journal rows and replayed state hash against a control run; the barrier's
-//! release acknowledgement; and E2 commits during fault windows. Evidence kind: source and synthetic until the owner's
-//! machine runs it on the product build; nothing here is timing.
+//! never shipped); the barrier's release acknowledgement; and conditions 3 and 4 (the renderer gate, LX-4's echo bar and
+//! E2 commits during fault windows). Evidence kind: source and synthetic until the owner's machine runs it on the
+//! product build; nothing here is timing.
 
 use std::path::Path;
 use std::time::Duration;
+
+pub mod session;
 
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::meter::{code, Amounts, Outcome};
@@ -81,7 +86,8 @@ impl Trial {
         }
     }
 
-    /// The job's source: module `lx2`, entry `work(w: Word) -> Nat`.
+    /// The job's source: module `lx2`, entry `command work(w: Word) -> Nat`. The entry is a command, as a tool's
+    /// previewing entry must be (LG3.6).
     pub fn source(self) -> String {
         let body = match self {
             Trial::Control | Trial::ForcedKill => "    return 1;\n",
@@ -94,7 +100,7 @@ impl Trial {
             Trial::RecursionMetered => "\nfn down(n: Nat) -> Nat effects [] {\n    return down(exact_add(n, 1));\n}\n",
             _ => "",
         };
-        format!("{HEADER}export fn work(w: Word) -> Nat effects [preview] {{\n{PROPOSE}{body}}}\n{down}")
+        format!("{HEADER}export command work(w: Word) -> Nat effects [preview] {{\n{PROPOSE}{body}}}\n{down}")
     }
 
     pub fn limits(self) -> Amounts {
@@ -234,8 +240,14 @@ pub fn run_trial(runtime: &Path, trial: Trial) -> Record {
     Record { trial, observed, preview_kept, recovered, spawns, in_process }
 }
 
-/// The record of every trial as JSON. The child is named by its file name and SHA-256 only, never by its path.
-pub fn record_json(runtime_name: &str, runtime_sha256: &str, records: &[Record]) -> String {
+/// The record of every trial as JSON, with the session-level records when they ran (an empty array otherwise). The
+/// child is named by its file name and SHA-256 only, never by its path.
+pub fn record_json(
+    runtime_name: &str,
+    runtime_sha256: &str,
+    records: &[Record],
+    sessions: &[session::SessionRecord],
+) -> String {
     let rows: Vec<String> = records
         .iter()
         .map(|r| {
@@ -252,11 +264,12 @@ pub fn record_json(runtime_name: &str, runtime_sha256: &str, records: &[Record])
             )
         })
         .collect();
-    let agrees = records.iter().all(Record::agrees);
+    let agrees = records.iter().all(Record::agrees) && session::all_agree(sessions);
     format!(
-        "{{\n  \"format\": \"{FORMAT}\",\n  \"runtime\": {{\"file\": \"{}\", \"sha256\": \"{runtime_sha256}\", \"injection_device\": null}},\n  \"limits\": {{\"steps\": {STEP_LIMIT}, \"memory_bytes\": {MEMORY_LIMIT}, \"deadline_ms\": {}}},\n  \"evidence\": \"source and synthetic unless run on the owner's machine with the product build's runtime\",\n  \"agrees\": {agrees},\n  \"trials\": [\n{}\n  ]\n}}\n",
+        "{{\n  \"format\": \"{FORMAT}\",\n  \"runtime\": {{\"file\": \"{}\", \"sha256\": \"{runtime_sha256}\", \"injection_device\": null}},\n  \"limits\": {{\"steps\": {STEP_LIMIT}, \"memory_bytes\": {MEMORY_LIMIT}, \"deadline_ms\": {}}},\n  \"evidence\": \"source and synthetic unless run on the owner's machine with the product build's runtime\",\n  \"agrees\": {agrees},\n  \"trials\": [\n{}\n  ],\n  \"sessions\": {}\n}}\n",
         runtime_name.replace(['"', '\\'], "_"),
         DEADLINE.as_millis(),
-        rows.join(",\n")
+        rows.join(",\n"),
+        session::sessions_json(sessions)
     )
 }

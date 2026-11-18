@@ -113,7 +113,8 @@ STEPS = (
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
          'the LX-2 fault harness on the product build',
          commands=('cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
-                   '--runtime <product build c600-runtime> --out <record>.json   # metered and forced-kill half only',),
+                   '--runtime <product build c600-runtime> --sessions <new folder> --out <record>.json'
+                   '   # metered and forced-kill half, alone and in a session (conditions 1 and 2)',),
          prerequisites=(('file', 'rust/c600-lx2/src/main.rs'),),
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240,
