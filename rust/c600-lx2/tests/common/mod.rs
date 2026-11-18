@@ -37,6 +37,12 @@ pub fn runtime() -> PathBuf {
         .clone()
 }
 
+/// The injection child of option (a), `c600-lx2-child`, which cargo builds for this package's tests in the test's
+/// profile.
+pub fn injection() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_c600-lx2-child"))
+}
+
 /// The model in `assets/`, loaded once per test binary.
 pub fn kernel() -> Arc<Kernel> {
     static KERNEL: OnceLock<Arc<Kernel>> = OnceLock::new();

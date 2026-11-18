@@ -1,31 +1,45 @@
-//! Runs LX-2's metered and forced-kill trials against a runtime child binary (see the library):
+//! Runs LX-2's metered and forced-kill trials against a runtime child binary, and its native trials against the
+//! injection child (see the library):
 //!
 //! ```text
-//! c600-lx2-faults --runtime <c600-runtime binary> [--sessions <new folder>] [--assets <folder>] [--out <record.json>]
+//! c600-lx2-faults --runtime <c600-runtime binary> [--injection <c600-lx2-child binary>] [--sessions <new folder>]
+//!                 [--assets <folder>] [--out <record.json>]
 //! ```
 //!
-//! With `--sessions` it also runs each trial with a session open (RTE.42 conditions 1 and 2), each in its own subfolder
-//! of that folder, which must be new or empty; `--assets` names the model's folder (default `assets`, from the
-//! repository root). It prints one line per trial and writes the record to `--out`, which must not exist yet. Exit 0
-//! when every trial agrees with its level, 1 when one does not, 2 for a usage or file error.
+//! `--injection` names the fault-injection child of option (a), built from the same source in the same profile as the
+//! product's runtime; the native trials run only on it. With `--sessions` each trial also runs with a session open
+//! (RTE.42 conditions 1 and 2), each in its own subfolder of that folder, which must be new or empty; `--assets` names
+//! the model's folder (default `assets`, from the repository root). It prints one line per trial and writes the record
+//! to `--out`, which must not exist yet. Exit 0 when every trial agrees with its level, 1 when one does not, 2 for a
+//! usage or file error.
+
+#![forbid(unsafe_code)]
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use c600_digest::sha256_hex;
 use c600_kernel::Kernel;
 use c600_lx2::session::{self, run_session_trial};
-use c600_lx2::{record_json, run_trial, Trial};
+use c600_lx2::{record_json, run_trial, Device, Trial};
 
-const USAGE: &str =
-    "usage: c600-lx2-faults --runtime <c600-runtime binary> [--sessions <new folder>] [--assets <folder>] [--out <record.json>]";
+const USAGE: &str = "usage: c600-lx2-faults --runtime <c600-runtime binary> [--injection <c600-lx2-child binary>] \
+                     [--sessions <new folder>] [--assets <folder>] [--out <record.json>]";
+const FLAGS: [&str; 5] = ["--runtime", "--injection", "--sessions", "--assets", "--out"];
 
 fn usage() -> ExitCode {
     eprintln!("{USAGE}");
     ExitCode::from(2)
+}
+
+/// A child binary's file name and SHA-256, or the error to print.
+fn identify(binary: &Path, what: &str) -> Result<Device, String> {
+    let bytes = fs::read(binary).map_err(|error| format!("the {what} binary cannot be read: {error}"))?;
+    let file = binary.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    Ok(Device { file, sha256: sha256_hex(&bytes) })
 }
 
 fn main() -> ExitCode {
@@ -33,22 +47,28 @@ fn main() -> ExitCode {
     let mut flags = BTreeMap::new();
     for pair in args.chunks(2) {
         let [flag, value] = pair else { return usage() };
-        if !["--runtime", "--sessions", "--assets", "--out"].contains(&flag.as_str())
-            || flags.insert(flag.clone(), PathBuf::from(value)).is_some()
-        {
+        if !FLAGS.contains(&flag.as_str()) || flags.insert(flag.clone(), PathBuf::from(value)).is_some() {
             return usage();
         }
     }
     let Some(runtime) = flags.get("--runtime").cloned() else { return usage() };
+    let injection = flags.get("--injection").cloned();
     let out = flags.get("--out").cloned();
     if out.as_ref().is_some_and(|out| out.exists()) {
         eprintln!("the record exists already; a record is never written over");
         return ExitCode::from(2);
     }
-    let bytes = match fs::read(&runtime) {
-        Ok(bytes) => bytes,
+    let product = match identify(&runtime, "runtime") {
+        Ok(product) => product,
         Err(error) => {
-            eprintln!("the runtime binary cannot be read: {error}");
+            eprintln!("{error}");
+            return ExitCode::from(2);
+        }
+    };
+    let device = match injection.as_deref().map(|binary| identify(binary, "injection child")).transpose() {
+        Ok(device) => device,
+        Err(error) => {
+            eprintln!("{error}");
             return ExitCode::from(2);
         }
     };
@@ -59,7 +79,12 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     }
-    let records: Vec<_> = Trial::ALL.iter().map(|&trial| run_trial(&runtime, trial)).collect();
+    // Every trial with the child it runs on: the product's own, or the injection child for the native trials.
+    let mut plan: Vec<(Trial, &Path)> = Trial::ALL.iter().map(|&trial| (trial, runtime.as_path())).collect();
+    if let Some(binary) = &injection {
+        plan.extend(Trial::NATIVE.iter().map(|&trial| (trial, binary.as_path())));
+    }
+    let records: Vec<_> = plan.iter().map(|&(trial, child)| run_trial(child, trial)).collect();
     for r in &records {
         println!(
             "{}: {} (expected {}), preview kept {}, recovered {}, spawns {}: {}",
@@ -82,13 +107,13 @@ fn main() -> ExitCode {
                 return ExitCode::from(2);
             }
         };
-        for &trial in &Trial::ALL {
+        for &(trial, child) in &plan {
             let place = folder.join(trial.name());
             if let Err(error) = fs::create_dir_all(&place) {
                 eprintln!("the session folder cannot be made: {error}");
                 return ExitCode::from(2);
             }
-            sessions.push(run_session_trial(&runtime, &kernel, &place, trial));
+            sessions.push(run_session_trial(child, &kernel, &place, trial));
         }
         let control = sessions[0].clone();
         for r in &sessions {
@@ -103,8 +128,7 @@ fn main() -> ExitCode {
             );
         }
     }
-    let name = runtime.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    let record = record_json(&name, &sha256_hex(&bytes), &records, &sessions);
+    let record = record_json(&product.file, &product.sha256, device.as_ref(), &records, &sessions);
     if let Some(out) = out {
         if let Err(error) = fs::write(&out, record) {
             eprintln!("the record cannot be written: {error}");

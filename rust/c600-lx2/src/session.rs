@@ -18,8 +18,12 @@
 //! replays the same state hash. RTE.43: "unchanged" concerns the fault's effect, so the control runs the same commands
 //! without the fault.
 //!
+//! A native trial ([`Trial::native`]) runs on the injection device of option (a), `c600-lx2-child`, which the caller
+//! passes as the child binary; every other trial runs on the product's child, and each row names its child.
+//!
 //! Not here: conditions 3 and 4 (the renderer gate, LX-4's echo bar and charter E2 during fault windows), which need
-//! the shell's frame loop on the owner's machine, and the native faults of option (a).
+//! the shell's frame loop on the owner's machine, and the native recursion and native loop faults, which wait on a
+//! hook in c600-runtime.
 
 use std::fs;
 use std::path::Path;
@@ -33,13 +37,13 @@ use c600_kernel::{Kernel, ProtectedSet};
 use c600_run::boundary::{Boundary, Store as Shown};
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::value::Value;
-use c600_runtime::{Config, Job, JobOptions, Killer, Runtime};
+use c600_runtime::{Job, JobOptions, Killer, Runtime};
 use c600_session::disk::FsDisk;
 use c600_session::{journal, JournalStore};
 use c600_tools::bridge::{base, word_args, Bridge};
 use c600_tools::tool::{BoundaryClass, Manifest, Tool};
 
-use crate::{observe, Observed, Trial, DEADLINE};
+use crate::{observe_trial, Observed, Trial, DEADLINE};
 
 /// The word the solver commits before the job.
 pub const BEFORE: [i32; 2] = [1, -2];
@@ -197,7 +201,7 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
     let (secret, none) = (Secret::fixed(SECRET), ProtectedSet::none());
     let mut layer = CommandLayer::new(kernel.clone(), Table::h08(), secret, store, "lx2", kernel.solved(), none);
     let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
-    let mut rt = Runtime::new(Config::new(runtime));
+    let mut rt = Runtime::new(crate::config(runtime, trial));
     if let Err(fault) = rt.start() {
         return failed(Observed::Fault(fault.kind, fault.code()), rt.spawns());
     }
@@ -219,7 +223,7 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
         });
         (result, preview)
     };
-    let observed = observe(result);
+    let observed = observe_trial(trial, result);
     open &= preview.is_some_and(|id| commit_preview(&mut layer, &mut shell, id));
     open &= commit_word(&mut layer, &mut shell, &AFTER);
     let spawns = rt.spawns();
@@ -244,8 +248,9 @@ pub fn sessions_json(records: &[SessionRecord]) -> String {
         .iter()
         .map(|r| {
             format!(
-                "    {{\"trial\": \"{}\", \"observed\": \"{}\", \"open\": {}, \"journal_rows\": {}, \"journal_sha256\": \"{}\", \"state\": \"{}\", \"replayed_equal\": {}, \"agrees_with_control\": {}}}",
+                "    {{\"trial\": \"{}\", \"child\": \"{}\", \"observed\": \"{}\", \"open\": {}, \"journal_rows\": {}, \"journal_sha256\": \"{}\", \"state\": \"{}\", \"replayed_equal\": {}, \"agrees_with_control\": {}}}",
                 r.trial.name(),
+                if r.trial.native() { "injection device" } else { "product" },
                 r.observed.describe().replace(['"', '\\'], "_"),
                 r.open,
                 r.journal.len(),

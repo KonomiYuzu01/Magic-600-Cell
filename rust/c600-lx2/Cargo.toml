@@ -1,6 +1,6 @@
 [package]
 name = "c600-lx2"
-description = "LX-2's metered and forced-kill trials, alone and in a session, against a given runtime child binary; measurement tooling, never shipped (C9)"
+description = "LX-2's metered, forced-kill and allocator-ceiling trials, alone and in a session, against a given runtime child binary and the injection device; measurement tooling, never shipped (C9)"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
@@ -8,6 +8,11 @@ publish.workspace = true
 [[bin]]
 name = "c600-lx2-faults"
 path = "src/main.rs"
+
+# The fault-injection child of option (a): c600-runtime's child under a ceiling allocator. Never shipped.
+[[bin]]
+name = "c600-lx2-child"
+path = "src/bin/c600-lx2-child.rs"
 
 [dependencies]
 c600-check = { path = "../c600-check" }

@@ -3,7 +3,7 @@
 
 mod common;
 
-use c600_lx2::{record_json, run_trial, Observed, Record, Trial, RUNTIME_WORD};
+use c600_lx2::{record_json, run_trial, Device, Observed, Record, Trial, RUNTIME_WORD};
 
 fn trial(t: Trial) -> Record {
     let record = run_trial(&common::runtime(), t);
@@ -38,6 +38,28 @@ fn a_forced_kill_at_the_barrier_is_a_typed_loss_and_a_fresh_child_recovers() {
 }
 
 #[test]
+fn the_injection_childs_ceiling_ends_the_child_with_a_typed_loss_and_a_fresh_child_recovers() {
+    let r = run_trial(&common::injection(), Trial::AllocCeiling);
+    assert!(r.agrees(), "{r:#?}");
+    assert_eq!((r.spawns, r.preview_kept, r.recovered, r.in_process), (2, true, true, None));
+}
+
+#[test]
+fn a_child_lost_without_the_allocation_failure_does_not_pass_for_the_ceiling() {
+    let killed = c600_lx2::observe_trial(
+        Trial::AllocCeiling,
+        Err(c600_runtime::Fault {
+            kind: c600_runtime::FaultKind::Lost,
+            detail: "killed".into(),
+            exit: Some(1),
+            stderr: String::new(),
+        }),
+    );
+    assert!(matches!(killed, Observed::Other(_)), "{killed:?}");
+    assert_ne!(killed, Trial::AllocCeiling.expected());
+}
+
+#[test]
 fn a_record_that_disagrees_says_so_and_the_json_names_no_path() {
     let mut wrong = run_trial(&common::runtime(), Trial::Control);
     wrong.recovered = false;
@@ -46,8 +68,13 @@ fn a_record_that_disagrees_says_so_and_the_json_names_no_path() {
     other.recovered = true;
     other.observed = Observed::CutOff("KN7:budget.steps");
     assert!(!other.agrees(), "an unexpected outcome disagrees");
-    let json = record_json("c600-runtime.exe", "00", &[wrong], &[]);
+    let json = record_json("c600-runtime.exe", "00", None, &[wrong.clone()], &[]);
     assert!(json.contains("\"agrees\": false") && json.contains("\"file\": \"c600-runtime.exe\""));
+    assert!(json.contains("\"injection_device\": null") && json.contains("\"child\": \"product\""));
+    let device = Device { file: "c600-lx2-child.exe".into(), sha256: "11".into() };
+    let json = record_json("c600-runtime.exe", "00", Some(&device), &[wrong], &[]);
+    assert!(json.contains("\"injection_device\": {\"file\": \"c600-lx2-child.exe\", \"sha256\": \"11\""));
+    assert!(json.contains("\"source\": \"product source + injection device\""));
     assert!(!json.contains(":\\\\") && !json.contains("/home/"));
     assert_eq!(Trial::ALL.len(), 5);
     assert!(Trial::RecursionMetered.source().contains("down(exact_add(n, 1))"));

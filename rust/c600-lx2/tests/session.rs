@@ -10,7 +10,8 @@ use c600_lx2::{Observed, Trial};
 /// Runs `trial` with its session in a fresh folder named for the test.
 fn run(test: &str, trial: Trial) -> SessionRecord {
     let folder = common::fresh(&format!("{test}-{}", trial.name()));
-    run_session_trial(&common::runtime(), &common::kernel(), &folder, trial)
+    let child = if trial.native() { common::injection() } else { common::runtime() };
+    run_session_trial(&child, &common::kernel(), &folder, trial)
 }
 
 fn control(test: &str) -> SessionRecord {
@@ -30,7 +31,9 @@ fn the_control_commits_three_words_and_a_reopen_replays_its_state() {
 #[test]
 fn each_fault_leaves_the_journal_and_the_state_of_the_control_and_the_session_open() {
     let c = control("faults");
-    for trial in [Trial::LoopMetered, Trial::RecursionMetered, Trial::AllocMetered, Trial::ForcedKill] {
+    for trial in
+        [Trial::LoopMetered, Trial::RecursionMetered, Trial::AllocMetered, Trial::ForcedKill, Trial::AllocCeiling]
+    {
         let r = run("faults", trial);
         let differs: Vec<_> = r.journal.iter().zip(&c.journal).filter(|(a, b)| a != b).take(2).collect();
         assert!(

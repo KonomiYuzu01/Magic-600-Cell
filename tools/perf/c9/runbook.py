@@ -3,9 +3,11 @@
     python -B tools/perf/c9/runbook.py --list                       the steps with commands and prerequisites
     python -B tools/perf/c9/runbook.py --dry-run [--build DIR] [--check-quiet]
 
-The batch runs on one day on the owner's machine (owner, 16 November 2026), attended steps first: route B's input
-check B1 and charter E2 need the owner and the foreground. The unattended steps follow, each started only when the
-quiet-machine gate passes: W-J item 5 and W3 on the product build (ADR-R01.3, route B), RPI.79's gate run, three
+The batch runs on one day on the owner's machine (owner, 16 November 2026), attended steps first: the shell's first
+launch over a real core (ABI 5's GPU smoke, part 2), route B's input check B1 and charter E2 need the owner and the
+foreground. The unattended steps follow, each started only when the quiet-machine gate passes: the core self-test's
+WARP and hardware modes (`check_core.py --gpu`, ABI 5's GPU smoke, part 1), W-J item 5 and W3 on the product build
+(ADR-R01.3, route B), RPI.79's gate run, three
 cold E3 runs, LX-2, LX-4 (4 h time box, owner 18 November 2026), and route B's three cold probe runs (B3) and its
 UI/3D skew measurement (B2). "Unattended" means the owner need not watch; the W-J, W3 and probe windows still need an
 unlocked desktop and the foreground.
@@ -76,6 +78,21 @@ def wj_w3_commands():
 
 
 STEPS = (
+    Step('shell-launch', 'ABI 5 GPU smoke, part 2: the product shell\'s first launch over a real core', True, 10, None,
+         commands=('python -B renderer/core/check_core.py   # the core into work/build/, CPU self-test only',
+                   'cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml '
+                   '-p c600-shell-host',
+                   'python -B renderer/shell/build_shell.py   # builds only, never launches',
+                   'set M600_CORE_DLL, M600_HOST_DLL, M600_ASSETS, M600_EVENTS_DIR (a new folder) and '
+                   'M600_BUILD_IDENTITY; start the built shell from a desktop PowerShell, resize the window twice, '
+                   'close it   # no launcher script yet'),
+         prerequisites=(('compiles', 'renderer/core/check_core.py'), ('file', 'renderer/bridge/Cargo.toml'),
+                        ('compiles', 'renderer/shell/build_shell.py')),
+         run_time=('foreground', 'the owner at the machine', 'native resolution, no frame generation or upscaling',
+                   'pass: the 3D view under the transparent window; frame and presented rows with display_qpc in '
+                   'events.jsonl; no error on resize or close'),
+         sources=('ABI 5 (route B): sa2_create, surface frames, sa2_presented, sa2_resize',
+                  'owner decision 2026-11-18 route B')),
     Step('b1-input', 'Route B check B1: input through Godot\'s transparent window over the core\'s layer', True, 10,
          'the product shell (Godot transparent window over the core\'s DirectComposition layer) and its input check',
          run_time=('foreground', 'the owner at the machine'),
@@ -87,6 +104,11 @@ STEPS = (
          prerequisites=(('imports', 'key_to_frame'), ('presentmon', None)),
          run_time=('foreground', 'the owner at the machine', 'a fresh copy of the session fixture'),
          sources=('charter E2', 'RTE.43', 'V11.1', 'PHS.64')),
+    Step('core-gpu', 'ABI 5 GPU smoke, part 1: the renderer core self-test\'s WARP and hardware modes', False, 15, None,
+         commands=('python -B renderer/core/check_core.py --gpu   # pass: check_core: ok (CPU, WARP and hardware)',),
+         prerequisites=(('compiles', 'renderer/core/check_core.py'), ('file', 'renderer/core/build.cmd')),
+         run_time=('the D3D12 debug layer present', 'no debug-layer error or corruption'),
+         sources=('renderer/core/README.md, GPU checks (owner runs)', 'owner decision 2026-11-18 route B')),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
          False, 50, 'the route-B product build (the W-J and W3 evidence must come from it, not the texture path)',
          commands=wj_w3_commands(),
@@ -112,10 +134,14 @@ STEPS = (
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
          'the LX-2 fault harness on the product build',
-         commands=('cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
-                   '--runtime <product build c600-runtime> --sessions <new folder> --out <record>.json'
-                   '   # metered and forced-kill half, alone and in a session (conditions 1 and 2)',),
-         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'),),
+         commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
+                   '--bin c600-lx2-child   # the injection device of option (a), never shipped',
+                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
+                   '--runtime <product build c600-runtime> --injection <c600-lx2-child release build> '
+                   '--sessions <new folder> --out <record>.json'
+                   '   # metered, forced-kill and allocator-ceiling trials, alone and in a session (conditions 1 '
+                   'and 2)'),
+         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs')),
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240,
          'the LX-4 edit-script harness on the product build',
