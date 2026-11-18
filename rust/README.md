@@ -30,6 +30,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) with their catalogue row, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
+| `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -37,6 +38,8 @@ checker; its tests run checked source programs, so the checker and the syntax cr
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR, digest and
 evidence crates and on the command layer; its job tests run checked source programs too, and its jumbling tests read
 the twist menu through the jumbling crate, a dev-dependency. The evidence library depends on the digest crate only.
+The builder depends on the interpreter, the IR and digest crates: it is the host envelope that reads captured inputs
+and writes the build cache and the published files, so the interpreter itself keeps no file-system call (CT-KN4-01).
 The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
 view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
@@ -478,6 +481,20 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the host nothing; a changed revision or program digest runs it again and replaces the kept run. A kept run is a
   value, never evidence. The agreement-test form is any test that runs a contract (`c600-run/tests/contracts.rs`:
   CT-LG4-05 whole).
+- A language evidence builder and its build cache (LP2 draft until the IR freeze; DET.44 to DET.46), in the crate
+  `c600-build`, outside the interpreter. `Grant` takes an output and a scratch directory and refuses either with
+  `LG3:capability.grant_mismatch` when it is the source tree, lies inside it or holds it. `build` runs an exported entry
+  of a sealed module closure (the program's modules must be exactly the sealed ones; an import resolves only among the
+  given sources) on the caller's thread, with the spec's seed. Its host grants no clock, snapshot, declassifier,
+  preview, view or workspace (`LG3:capability.not_granted`); it reads only the captured inputs, by logical name and
+  type, and writes only files at plain relative paths under the output grant. The cache lives under the scratch grant,
+  keyed by the SHA-256 of the IR and execution contract, the sealed modules, the entry, the arguments, the seed, the
+  captured inputs, the limits and the tariffs; the locations enter no key. Before reuse the host checks the entry's key,
+  its recorded inputs, its result digest and every stored file; after a construction it captures the inputs again. A
+  failed check gives the host-envelope diagnostic `LG4:input.cache_entry_mismatch`: a rejected entry is a miss rebuilt
+  with the original charges (DET.16), and an input changed during construction leaves nothing stored or published. Only
+  a completed run is stored. The checks catch a changed entry; they authenticate nothing. DET.47's atomic publication is
+  chapter 05's (CT-DET-23 not run). `c600-build/tests/builder.rs`: CT-DET-21 and CT-DET-22 whole.
 - Generators (LP2 drafts; DET.61). `rng_init` is one step priced at the input-byte tariff per byte of the hashed key
   input (13 bytes of domain, the seed's 32, 4 for the segment count and per segment 4 and its bytes), and it holds a
   generator's 41 units. Its stream path is the run's assigned path followed by its segments, on the run's seed, so
@@ -1402,12 +1419,12 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, the stage checker and whole-state contracts, as
-  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 87 whole, eleven of
-  them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
-  CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as parts
-  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 21 waiting, each with what it waits
-  for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts and the
+  builder, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 89 whole,
+  eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04,
+  CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as
+  parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 19 waiting, each with what it
+  waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1487,7 +1504,6 @@ run or not applicable is no pass (PHS.63).
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
     part (M4's section).
-  - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
 - Evidence kind: source and fixture. The checks ran on Windows only.
 
 ## Status of LP3, C1: the command layer
