@@ -30,6 +30,20 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
 
 ## Status
 
+Step S2, the native host library: `c600-shell-host` in `renderer/bridge/host`, a member of the bridge's workspace and
+outside the language workspace (CT-RPI-01). It is a draft:
+
+- `m6h_create` takes the core's function table and a context the shell created with `sa2_create`. It loads the
+  shipped model, adopts its solved state, opens one view and publishes it as one retained primitive of every slot.
+- Then come `m6h_set_camera`, `m6h_set_viewport`, `m6h_pump`, `m6h_frame` (to the surface), `m6h_read_presented`
+  (confirmed presentations), `m6h_recover` (which publishes the view again for the new device), `m6h_last_error` and
+  `m6h_destroy`.
+- Every call checks its pointers, catches a panic and answers a status code.
+- The host context is c600-display's declared fixture context with the core's own support report, and the limit
+  profile is a declared draft value. Picking, previews, the command layer and the session store come later.
+- Its tests drive the C interface over the bridge's C shim and the fake core: frames confirmed, a lost device and
+  recovery, and the refusals. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
+
 Step S1 of the shell, moved to the core's ABI 5:
 
 - The project skeleton builds offline on net10.0. On 18 November 2026 it built with .NET SDK 10.0.401 and Godot.NET.Sdk
@@ -46,7 +60,6 @@ These parts are drafts of C9 that the sources leave open:
 
 Next steps:
 
-- the native host library and its C interface;
-- the C# calls into it;
+- the C# calls into the native host library;
 - the window and layout with the core's surface attached, through the shell calls;
 - the frame loop and the E2 and E3 log rows.

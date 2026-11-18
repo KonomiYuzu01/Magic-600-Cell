@@ -119,7 +119,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     [_LANGUAGE + "kernel-interface/check_annex.py"],
     # The Rust workspace of the language (LP2): cargo test --locked --offline in rust/.
     ["tests/test_language_rust.py"],
-    # C9's foreign bridge half outside that workspace (CT-RPI-01): cargo test --locked --offline in renderer/bridge.
+    # C9's foreign bridge half and the shell's native host library outside that workspace (CT-RPI-01): cargo test
+    # --locked --offline --workspace in renderer/bridge.
     ["tests/test_render_ffi.py"],
     # The Rust kernel (LP2, M4) replays the frozen oracle cases O01 to O07 and runs the KN2.9 agreement test.
     ["tests/test_kernel_oracle.py"],
