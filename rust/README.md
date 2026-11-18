@@ -2661,6 +2661,10 @@ run or not applicable is no pass (PHS.63).
   array length and sets every row's size before it calls one, and refuses a null context or another ABI version. The
   bridge loads no library: the shell links `renderer/bridge`, loads `sa2_interop.dll` and hands over the context and
   the table, because only `c600-platform` calls an operating system's own API (CT-RPI-20) and it has no loader.
+- The shell's native host library, `c600-shell-host` in `renderer/bridge/host`, is the other member of that workspace.
+  It is step S2 of `renderer/shell/README.md`, a draft on route B, accepted for now by the owner on 18 Nov 2026,
+  pending three owner-machine checks. It runs `c600-display`'s host over `RenderBackend<DllCore>` behind a C interface
+  (`m6h_*`) that the shell's C# side calls, and it loads no library either.
 - The mapping: the core's describe report becomes the support report, with the limits the caller declares. J01 and J02
   are reported unsupported, because the bridge maps Full labels only. F20 (atomic publication and latest-wins
   replacement) is not a drawing row and the core does not name it; its backend operations are ABI 4's prepare, poll,

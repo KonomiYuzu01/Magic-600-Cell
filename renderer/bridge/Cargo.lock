@@ -72,6 +72,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-shell-host"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-display",
+ "c600-kernel",
+ "c600-render",
+ "c600-render-ffi",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
