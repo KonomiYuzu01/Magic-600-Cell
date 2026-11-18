@@ -328,8 +328,11 @@ impl Table {
     /// gates and argument types.
     ///
     /// Only a row whose admission and completion the layer can check without the entry is served: a view, workspace,
-    /// query or file row on the `none`, `view` or `program` lane, with no gate, preview rule, action guard, token or
-    /// undo entry. The undo class must be `none` because the layer holds no inverse of a program's write.
+    /// query or file row on the `none`, `view` or `program` lane, with no action guard or token. Its undo class is
+    /// `none`, or `workspace` on a workspace row, whose completion the layer inverts as a workspace inverse. It has no
+    /// gate and no preview rule, except a workspace row with the undo class `workspace`, the gate `fresh_filter_preview`
+    /// and the `filter` preview rule together (LI.41: `filter.apply`'s shape), whose gate the layer checks against the
+    /// filter previews it keeps ([`crate::filter`]).
     ///
     /// Refused:
     /// - an ID that names no row, with `KN5:input.unknown_row`;
@@ -348,11 +351,12 @@ impl Table {
         if row.overlay.is_some() {
             return Err(Error::new(code::OVERLAY_ROW_CONFLICT, format!("an entry already serves `{id}`")));
         }
+        let inverse = row.kind == Kind::Workspace && row.undo == UndoClass::Workspace;
+        let filter = row.gates == [crate::filter::FRESH_FILTER_PREVIEW] && row.preview == PreviewRule::Filter;
         let checkable = !matches!(row.kind, Kind::Commit | Kind::App)
             && matches!(row.lane, Lane::None | Lane::View | Lane::Program)
-            && row.undo == UndoClass::None
-            && row.preview == PreviewRule::None
-            && row.gates.is_empty()
+            && (row.undo == UndoClass::None || inverse)
+            && ((row.preview == PreviewRule::None && row.gates.is_empty()) || (inverse && filter))
             && row.action_guard.is_none()
             && !row.takes_token();
         if !checkable {

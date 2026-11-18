@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, draft_args, CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table,
-    POLICY_ROW, RECORD_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    code, digest, draft_args, CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status,
+    Table, POLICY_ROW, RECORD_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -114,6 +114,16 @@ impl Fixture {
         self.shell.invoke(&mut self.layer, row, args).unwrap()
     }
 
+    /// A predicate a `structure.layer` job prepared that wrote no record, as the `FilterRef` that names it.
+    fn predicate(&mut self) -> Value {
+        let receipt = self.invoke(LAYER, json::object([("cell", Value::Int(1)), ("layer", Value::Int(2))]));
+        let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
+        assert_eq!(self.layer.take_program_job().map(|taken| taken.job), Some(job));
+        let done = self.layer.finish_program_job(job, Ok(Value::Null)).unwrap();
+        assert!(matches!(done.status, Status::Completed(_)), "{:?}", done.status);
+        json::object([("digest", Value::String(digest(&Value::Null))), ("job", Value::Int(job as i64))])
+    }
+
     /// The rows of the program jobs waiting, in order, taken.
     fn take_all(&mut self) -> Vec<(String, Value)> {
         std::iter::from_fn(|| self.layer.take_program_job()).map(|job| (job.row, job.args)).collect()
@@ -206,11 +216,12 @@ fn an_optional_argument_may_be_left_out() {
 /// A `RevisionRef` names a revision: KN0.2's nine-key object, its text fields text and its counters naturals. A
 /// malformed one is refused with `KN5:input.argument_form`; a well-formed one that is not the current revision in every
 /// field, after a commit, after a workspace action or in another mode, is refused with `KN5:stale.revision_changed`
-/// (EV4.14). Neither takes a job. `FilterRef` passes unchecked.
+/// (EV4.14). Neither takes a job. The predicate is one a `structure.layer` job prepared, which stays valid throughout.
 #[test]
 fn a_revision_ref_names_the_current_revision() {
-    let mut f = fixture(&[FILTER]);
-    let filter = |revision: Value| json::object([("predicate", text("any form for now")), ("revision", revision)]);
+    let mut f = fixture(&[FILTER, LAYER]);
+    let predicate = f.predicate();
+    let filter = |revision: Value| json::object([("predicate", predicate.clone()), ("revision", revision)]);
     let first = f.layer.revision().to_json();
     assert!(running(&f.invoke(FILTER, filter(first.clone()))));
 
@@ -241,7 +252,7 @@ fn a_revision_ref_names_the_current_revision() {
     }
     let other_mode = set("mode", text("jumble_on"));
     assert_eq!(refusal(&f.invoke(FILTER, filter(other_mode))), code::REVISION_CHANGED);
-    let later = set("workspace", Value::Int(1));
+    let later = set("workspace", Value::Int(f.layer.revision().workspace as i64 + 1));
     assert_eq!(refusal(&f.invoke(FILTER, filter(later))), code::REVISION_CHANGED);
 
     let policy = f.invoke(POLICY_ROW, json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))]));
