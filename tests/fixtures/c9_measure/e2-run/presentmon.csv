@@ -1,0 +1,8 @@
+Application,ProcessID,SwapChainAddress,Runtime,SyncInterval,PresentFlags,Dropped,TimeInSeconds,msInPresentAPI,msBetweenPresents,AllowsTearing,PresentMode,msUntilRenderComplete,msUntilDisplayed,msBetweenDisplayChange,msFlipDelay,msUntilRenderStart,msGPUActive,msSinceInput,QPCTime
+c9shell.exe,4242,0x00000200AB12CD00,DXGI,1,0,0,0.1150,0.10,16.67,0,Composed: Flip,1.00,30.00,16.67,0.00,0.50,2.00,0.00,1150000
+c9shell.exe,4242,0x00000200AB12CD00,DXGI,1,0,0,0.1320,0.10,16.67,0,Composed: Flip,1.00,30.00,16.67,0.00,0.50,2.00,0.00,1320000
+c9shell.exe,4242,0x00000200AB12CD00,DXGI,1,0,0,0.2220,0.10,16.67,0,Composed: Flip,1.00,30.00,16.67,0.00,0.50,2.00,0.00,2220000
+c9shell.exe,4242,0x00000200AB12CD00,DXGI,1,0,1,0.2300,0.10,16.67,0,Composed: Flip,1.00,NA,16.67,0.00,0.50,2.00,0.00,2300000
+c9shell.exe,4242,0x00000200FFFF0000,DXGI,1,0,0,0.2400,0.10,16.67,0,Composed: Flip,1.00,12.00,16.67,0.00,0.50,2.00,0.00,2400000
+c9shell.exe,999,0x00000200AB12CD00,DXGI,1,0,0,0.3000,0.10,16.67,0,Composed: Flip,1.00,10.00,16.67,0.00,0.50,2.00,0.00,3000000
+c9shell.exe,4242,0x00000200AB12CD00,DXGI,1,0,0,0.3300,0.10,16.67,0,Composed: Flip,1.00,30.00,16.67,0.00,0.50,2.00,0.00,3300000

@@ -183,7 +183,8 @@ impl Transaction {
     }
 
     /// The journal form (draft). `record` appears only when the action carries a record write, `policy` only when it
-    /// carries a policy, `records` only when a workspace row's job wrote records, `rotation` only on a twist and
+    /// carries a policy, `records` only when a workspace row's job wrote records or an undo or redo inverts or repeats
+    /// such a completion, `rotation` only on a twist and
     /// `crossing` only on a crossing or an exit.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
@@ -229,7 +230,9 @@ impl Transaction {
     /// Reads the journal form strictly: every field and no other. `record` belongs to a record write, which carries one
     /// with a value, and to the undo or redo of one, whose value is `null` when the inverse leaves the record empty.
     /// `policy` belongs to a policy change and to the undo or redo of one. `records` belongs to a workspace row's
-    /// completion: a non-empty list of writes with values, their names strictly increasing. `rotation` belongs to a
+    /// completion, a non-empty list of writes with values, their names strictly increasing, and to the undo or redo of
+    /// an undoable one, where a write's value is `null` when the inverse leaves the record empty; an undo or redo carries
+    /// at most one of `record`, `policy` and `records`. `rotation` belongs to a
     /// commit of `twist.apply` or `jumble.twist.menu` and to a jumble move, which always carry one in the form
     /// [`crate::twist`] reads. `crossing` belongs to a crossing and to an exit, which always carry one in the form
     /// [`crate::jumble`] reads for their kind. A crossing, a jumble move and an exit derive no retained recipe and
@@ -254,7 +257,8 @@ impl Transaction {
                 let records: Vec<RecordWrite> =
                     records.as_array()?.iter().map(RecordWrite::from_json).collect::<Option<_>>()?;
                 let ordered = records.windows(2).all(|pair| pair[0].name < pair[1].name);
-                let written = records.iter().all(|write| write.value.is_some());
+                let inverse = matches!(kind, TransactionKind::Undo | TransactionKind::Redo);
+                let written = inverse || records.iter().all(|write| write.value.is_some());
                 (!records.is_empty() && ordered && written).then_some(records)?
             }
         };
@@ -278,9 +282,12 @@ impl Transaction {
         let carries = match kind {
             TransactionKind::Record => record.as_ref().is_some_and(|record| record.value.is_some()) && policy.is_none(),
             TransactionKind::Policy => policy.is_some() && record.is_none(),
-            TransactionKind::Undo | TransactionKind::Redo => record.is_none() || policy.is_none(),
+            TransactionKind::Undo | TransactionKind::Redo => {
+                usize::from(record.is_some()) + usize::from(policy.is_some()) + usize::from(!records.is_empty()) <= 1
+            }
             _ => record.is_none() && policy.is_none(),
-        } && (records.is_empty() || kind == TransactionKind::Workspace)
+        } && (records.is_empty()
+            || matches!(kind, TransactionKind::Workspace | TransactionKind::Undo | TransactionKind::Redo))
             && rotation.is_some() == twist
             && crossing.is_some() == matches!(kind, TransactionKind::Crossing | TransactionKind::Exit)
             && bare;

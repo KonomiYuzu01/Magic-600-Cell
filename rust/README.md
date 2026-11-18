@@ -32,6 +32,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
+| `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 4 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -1480,11 +1481,12 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder
-  and streamed words, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool):
-  89 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
+  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder,
+  streamed words and `filter.apply`, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py`
+  checks the tool):
+  90 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
   CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 137 part; 4 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 18 waiting, each with
+  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 17 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1719,11 +1721,12 @@ run or not applicable is no pass (PHS.63).
   row transiently, a workspace row as one durable workspace action with its result reference. The row keeps H-08's
   kind, lane, undo class, gates and argument types, so a `none`-lane row has no occupancy limit (KN7.2) and a
   `view`-lane row supersedes its own waiting invocation. Only a view, workspace, query or file row on the `none`,
-  `view` or `program` lane, with no gate, preview rule, action guard, token or undo entry, is served; any other is
-  refused with `KN5:input.overlay_row_kind`, and a row the layer builds itself or one already served with
-  `KN5:input.overlay_row_conflict`. Serving is not journaled, so after a reopen the host serves its rows again. Five of
-  the representations tool's six rows can be served now; `filter.apply` waits for its gate, its filter preview rule
-  and its workspace inverse. Tests: `c600-command/tests/served_rows.rs`.
+  `view` or `program` lane, with no action guard or token, is served, and only with no gate, preview rule or undo
+  entry, except a workspace row whose undo class is `workspace`, and one that takes exactly the gate
+  `fresh_filter_preview` with the `filter` preview rule; any other is refused with `KN5:input.overlay_row_kind`, and a
+  row the layer builds itself or one already served with `KN5:input.overlay_row_conflict`. Serving is not journaled,
+  so after a reopen the host serves its rows again. All six of the representations tool's rows and
+  `operation.phase.edit` can be served now. Tests: `c600-command/tests/served_rows.rs`.
 - Job output (LP3's C6, its second common need; the drafts are in the crate documentation).
   `CommandLayer::finish_program_job_with(job, Result<JobOutput, Error>)` takes a job's output as the runtime's sinks
   gave it: the entry's value, the views it published and the workspace records it wrote, each with its provenance
@@ -1731,8 +1734,26 @@ run or not applicable is no pass (PHS.63).
   is the value's own digest when there are no views and no records. Only a workspace row's job writes records; a record
   from any other row fails the job with `LG3:capability.not_granted`. The host's provenance reader checks every
   record's block, as for `workspace.set`. A job whose output fails a check writes nothing. A workspace row's records are
-  written in its completion's one durable action and kept in the journal (`Transaction::records`). No undo reaches
-  them, so earlier writes of the same records leave the undo and redo stacks. Tests: `c600-command/tests/job_output.rs`.
+  written in its completion's one durable action and kept in the journal (`Transaction::records`). For a stored row
+  whose undo class is `workspace` (`filter.apply`, `operation.phase.edit`) the completion is a workspace inverse: its
+  undo writes back what each record held before, absent ones included, and its redo writes the records again. No undo
+  reaches any other row's records, so earlier writes of the same records leave the undo and redo stacks, and so,
+  beneath an action that leaves, do the actions that wrote one of its other records. A replay
+  decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
+  `c600-command/tests/filter_apply.rs`.
+- Filter previews and `filter.apply` (KN0.9, H15.4, LI.41, CT-LI-11; LP3's C6; the drafts are in the crate
+  documentation and `c600-command/src/filter.rs`). A `FilterRef` is the result reference `{"job", "digest"}` of a
+  completed `structure.layer` job, and it resolves while every record that job wrote keeps the version the write left
+  (`KN2:input.named_object_invalid` otherwise). A completed `filter.preview` job is kept as a filter preview
+  (`CommandLayer::filter_preview(job)`), bound to `FilterPreviewDeps`: the epoch, the model identity, the mode, the
+  state revision and the digest of the resolved filter, which holds each record it read with its content digest and
+  version. The protection and workspace revisions are not dependencies, so an unread edit leaves it fresh. A
+  `FilterPreviewRef` is `{"epoch", "job"}` (`FilterPreview::reference`): job IDs start again after a reopen, and the
+  epoch keeps a reference from before it off a later preview. The gate `fresh_filter_preview` reads neither the
+  word-preview slot nor a
+  presentation: a missing or stale filter preview refuses `filter.apply` with `KN5:stale.filter_preview` before any
+  job, and the gate is checked again when the job's output is published, where a stale one fails the job and writes
+  nothing. Filter previews are transient, so a reopen keeps none. Tests: `c600-command/tests/filter_apply.rs`.
 - Argument forms (LP3's C6, its third common need; the drafts are in the crate documentation). An argument of an
   optional type (`T?`) may be left out of any row; every other argument must be given. A row the layer does not build
   is refused as not built once its names fit, with an optional argument left out or given. For a row the layer admits
@@ -1740,8 +1761,9 @@ run or not applicable is no pass (PHS.63).
   (0 to 599), `CellIdPair` and `RevisionRef` (KN0.2's nine keys) before it admits the job. A malformed argument is
   refused with `KN5:input.argument_form`, and after every form check a `RevisionRef` that is not the current revision
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
-  and take no job. Other types, among them `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs`, pass unchecked
-  until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
+  is checked after every form. Other types, among them `CanonicalObjectRefs`, pass unchecked until their forms are
+  written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
@@ -2582,4 +2604,36 @@ run or not applicable is no pass (PHS.63).
   not run, because a jumbled layer needs `c600-jumble`; the other entries of LB1.8's table. The IR draft has
   `word_key`, Full's free reduction (LP2's pull request 176), and LB1.10's `trace_key` (`trace-key/1`, pull request
   214).
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C9 bridge: the display host over the S-A2 core
+
+- `c600-render` implements `c600-display`'s `Backend` over ABI 4 of the S-A2 renderer core
+  (`renderer/core/include/sa2_interop.h`) through `CoreAbi`, a safe call interface, and forbids unsafe code.
+- The foreign half is `c600-render-ffi` in `renderer/bridge`, a crate with a workspace and a lockfile of its own,
+  because CT-RPI-01 keeps every member of this workspace free of unsafe code and foreign declarations. There
+  `CoreFunctions` is a table of the core's 17 C functions, and `DllCore` implements `CoreAbi` over it: it checks every
+  array length and sets every row's size before it calls one, and refuses a null context or another ABI version. The
+  bridge loads no library: the shell links `renderer/bridge`, loads `sa2_interop.dll` and hands over the context and
+  the table, because only `c600-platform` calls an operating system's own API (CT-RPI-20) and it has no loader.
+- The mapping: the core's describe report becomes the support report, with the limits the caller declares. J01 and J02
+  are reported unsupported, because the bridge maps Full labels only. F20 (atomic publication and latest-wins
+  replacement) is not a drawing row and the core does not name it; its backend operations are ABI 4's prepare, poll,
+  activate, cancel and retire, and its replacement rules are the host's (RM.17 to RM.22), so the bridge reports it
+  supported unless the core names it. A preparation carries at most one retained primitive, its labels a permutation
+  and its instances on stickers or slots; anything else is refused by the feature it needs. Activation sends the
+  publication stamp's digest. A frame needs a camera matrix for its view and an active set. `read_presented` and
+  `recover` answer renderer unavailable, as ABI 4 does (F23; F22 and RPI.46), so the host's presented latch stays
+  clear. What the `Backend` trait has no operation for yet is inherent: engine adoption, frame reports in batches of
+  64, pick requests and polls (a pick names the binding field that went stale), and the core's counters.
+- Tests (`c600-render/tests/`): `abi_layout.rs` reads the header and checks every row's offsets and size and every
+  constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
+  install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
+  replacement, and device loss. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
+  run again through the C function table over a C shim; there `abi_functions.rs` checks every function's signature
+  against the header and `ffi.rs` what `DllCore` refuses before a call and what it reads back.
+  `tests/test_render_ffi.py` runs that crate's tests, since `tests/test_language_rust.py` runs this workspace only.
+- Not run: no run against the built core library and no GPU run, so nothing here is Windows/DirectX, input or
+  performance evidence. Not built: posed and jumbling engine images (J01, J02), a check of the preparation's base
+  revision by the core, and the trait operations above, which wait for `c600-display`.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.

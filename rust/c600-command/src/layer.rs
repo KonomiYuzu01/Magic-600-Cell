@@ -102,6 +102,7 @@ use c600_kernel::{
     ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
+use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
 use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
@@ -113,7 +114,7 @@ use crate::store::{
     identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Reopen, Store, Transaction,
     TransactionKind,
 };
-use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table};
+use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
 use crate::worksheet::{Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
@@ -382,6 +383,12 @@ enum Change {
         before: Option<RecordValue>,
         after: Option<RecordValue>,
     },
+    /// A workspace completion of a stored row whose undo class is `workspace` (draft; LP3's C6): its records' values
+    /// before and after it, in the order of their names.
+    Records {
+        before: Vec<RecordWrite>,
+        after: Vec<RecordWrite>,
+    },
     /// A protection-policy change: the policy before and after it.
     Policy {
         before: ProtectionMode,
@@ -420,7 +427,8 @@ enum Tree {
     },
     Undo,
     Redo,
-    /// A workspace completion, which no undo reaches.
+    /// A workspace completion that no undo reaches: a language-defined row's, or a stored row's whose undo class is
+    /// `none`.
     None,
 }
 
@@ -595,6 +603,34 @@ fn nat(value: Option<&Value>) -> Option<u64> {
     value.and_then(Value::as_i64).and_then(|n| u64::try_from(n).ok())
 }
 
+/// The names of the records an action wrote: one for a record write, each of a workspace completion's, none otherwise.
+fn written(change: &Change) -> Box<dyn Iterator<Item = &str> + '_> {
+    match change {
+        Change::Record { name, .. } => Box::new(std::iter::once(name.as_str())),
+        Change::Records { after, .. } => Box::new(after.iter().map(|write| write.name.as_str())),
+        _ => Box::new(std::iter::empty()),
+    }
+}
+
+/// The actions of an undo or redo `stack` that a write no step reaches cuts off (draft): walked from the top, in the
+/// order the steps would take them, an action that wrote a record of `cut` leaves the stack, since its step would write
+/// over that write. The records it wrote then join the cut for the actions beneath it. On the undo stack its writes
+/// stand beyond every step, so an undo beneath it would write over them; on the redo stack its writes are undone and
+/// stay so, so a redo beneath it would start from values its own undo does not expect. An action above one that leaves
+/// keeps its place: its step finds what it wrote.
+fn cut_stack(changes: &BTreeMap<u64, Change>, stack: &[u64], cut: &BTreeSet<String>) -> BTreeSet<u64> {
+    let mut cut = cut.clone();
+    let mut dropped = BTreeSet::new();
+    for &order in stack.iter().rev() {
+        let Some(change) = changes.get(&order) else { continue };
+        if written(change).any(|name| cut.contains(name)) {
+            cut.extend(written(change).map(str::to_owned));
+            dropped.insert(order);
+        }
+    }
+    dropped
+}
+
 /// The command layer for one session.
 pub struct CommandLayer<S: Store = MemoryStore> {
     kernel: Arc<Kernel>,
@@ -629,6 +665,12 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     run: Option<(u64, FrameStamp)>,
     /// The workspace records by name (KN5's stage 3).
     records: BTreeMap<String, WorkspaceRecord>,
+    /// The completed jobs of the rows that prepare a predicate, by job, while their writes stand: what a `FilterRef`
+    /// names ([`crate::filter`]; draft). A replay rebuilds them.
+    predicates: BTreeMap<u64, Predicate>,
+    /// The filter previews of completed `filter.preview` jobs, by job, while they are fresh (KN0.9; draft). They are
+    /// transient: a reopen keeps none.
+    filters: BTreeMap<u64, FilterPreview>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
     provenance: Option<Box<dyn Provenance>>,
     /// The twist menu the host pinned (KN3.8). Without one, `twist.apply` and `jumble.on` are refused.
@@ -686,6 +728,8 @@ impl<S: Store> CommandLayer<S> {
             frame: None,
             run: None,
             records: BTreeMap::new(),
+            predicates: BTreeMap::new(),
+            filters: BTreeMap::new(),
             provenance: None,
             twists: None,
             jumbled: None,
@@ -1197,6 +1241,107 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
+    /// The filter preview that completed `filter.preview` job `job` made, while the layer keeps it (KN0.9; draft): a
+    /// `FilterPreviewRef` names it by `job` and the epoch it was made in ([`FilterPreview::reference`]). The layer
+    /// keeps a filter preview while it is fresh and drops stale ones as it keeps a new one, so a missing preview and a
+    /// stale one are refused alike.
+    pub fn filter_preview(&self, job: u64) -> Option<&FilterPreview> {
+        self.filters.get(&job)
+    }
+
+    /// The current filter-preview dependencies for a resolved filter's digest (KN0.9).
+    pub fn filter_deps(&self, filter: &str) -> FilterPreviewDeps {
+        FilterPreviewDeps {
+            epoch: self.revision.epoch,
+            identity: self.revision.identity.clone(),
+            mode: self.revision.mode,
+            state: self.revision.state,
+            filter: filter.to_owned(),
+        }
+    }
+
+    /// KN0.9's `filter_fresh(f)`: `f`'s dependencies equal the same fields read now, its filter's records read again.
+    pub fn filter_fresh(&self, f: &FilterPreview) -> bool {
+        let reads = f.resolved.reads.iter().map(|read| RecordRead::of(&read.record, self.records.get(&read.record)));
+        let now = ResolvedFilter { source: f.resolved.source.clone(), reads: reads.collect() };
+        self.filter_deps(&now.digest()) == f.deps
+    }
+
+    /// Resolves a `FilterRef` ([`crate::filter`]): it must name a completed job of a predicate row with that result
+    /// digest whose writes still stand, or it is refused with `KN2:input.named_object_invalid`. The read set holds each
+    /// record the job wrote, with its content digest and version.
+    fn resolve_filter(&self, source: &Value) -> Result<ResolvedFilter, Error> {
+        let named = filter::filter_ref(source)
+            .and_then(|(job, digest)| self.predicates.get(&job).filter(|predicate| predicate.digest == digest));
+        let Some(predicate) = named else {
+            let detail = "the predicate names no completed job that prepared one with that result";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        };
+        let reads: Vec<RecordRead> =
+            predicate.writes.iter().map(|(name, _)| RecordRead::of(name, self.records.get(name))).collect();
+        if predicate.writes.iter().zip(&reads).any(|((_, version), read)| read.version != *version) {
+            let detail = "a record the predicate's job wrote has been written again since";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        }
+        Ok(ResolvedFilter { source: source.clone(), reads })
+    }
+
+    /// Every `FilterRef` argument of `args` must resolve ([`CommandLayer::resolve_filter`]) when a job is admitted.
+    fn check_filter_refs(&self, row: &Row, args: &BTreeMap<String, Value>) -> Result<(), Error> {
+        for (name, value) in args {
+            if row.arguments.get(name).is_some_and(|ty| ty.strip_suffix('?').unwrap_or(ty) == "FilterRef") {
+                self.resolve_filter(value)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// The gate `fresh_filter_preview` (LI.41), for a row that takes it: the filter preview its `FilterPreviewRef`
+    /// argument names must be one the layer keeps, made in the reference's epoch, and fresh
+    /// ([`CommandLayer::filter_fresh`]), or the row is refused with `KN5:stale.filter_preview`. Job IDs start again
+    /// after a reopen, so the epoch keeps a reference from before it off a later preview with the same job ID. The gate
+    /// reads neither the word-preview slot nor a presentation. The layer checks it when it admits the job and again
+    /// when the job's output is published (KN0.9).
+    fn fresh_filter_gate(&self, row: &Row, args: &Value) -> Result<(), Error> {
+        if !row.has_gate(FRESH_FILTER_PREVIEW) {
+            return Ok(());
+        }
+        let named = row.arguments.iter().find(|(_, ty)| ty.as_str() == "FilterPreviewRef").map(|(name, _)| name);
+        let reference = named.and_then(|name| filter::filter_preview_ref(args.get(name)?));
+        let kept = reference.and_then(|(job, epoch)| self.filters.get(&job).filter(|f| f.deps.epoch == epoch));
+        let Some(f) = kept else {
+            let detail = "the filter preview the row names is not one the layer keeps";
+            return Err(Error::new(code::STALE_FILTER_PREVIEW, detail));
+        };
+        if !self.filter_fresh(f) {
+            let detail = "the filter preview's dependencies differ from the current ones";
+            return Err(Error::new(code::STALE_FILTER_PREVIEW, detail));
+        }
+        Ok(())
+    }
+
+    /// Keeps the filter preview a completed `filter.preview` job made: bound to the revision the job read and to its
+    /// predicate, resolved now, and dropping the filter previews that are stale. A predicate that no longer resolves
+    /// keeps nothing, so a `FilterPreviewRef` to the job is refused as stale.
+    fn keep_filter_preview(&mut self, program: &ProgramJob, result: ResultRef) {
+        let typed = |ty: &str| ty.strip_suffix('?').unwrap_or(ty) == "FilterRef";
+        let Some(row) = self.table.row(&program.row) else { return };
+        let predicate = row.arguments.iter().find(|(_, ty)| typed(ty)).and_then(|(name, _)| program.args.get(name));
+        let Some(Ok(resolved)) = predicate.map(|source| self.resolve_filter(source)) else { return };
+        let deps = FilterPreviewDeps {
+            epoch: program.revision.epoch,
+            identity: program.revision.identity.clone(),
+            mode: program.revision.mode,
+            state: program.revision.state,
+            filter: resolved.digest(),
+        };
+        let stale: Vec<u64> = self.filters.iter().filter(|(_, f)| !self.filter_fresh(f)).map(|(&job, _)| job).collect();
+        for job in stale {
+            self.filters.remove(&job);
+        }
+        self.filters.insert(program.job, FilterPreview { job: program.job, result, deps, resolved });
+    }
+
     /// `kernel.undo_hint`: the current order and the eligible target for `direction`, read together (LI.9).
     pub fn undo_hint(&self, direction: Direction) -> Option<ActionHint> {
         let stack = match direction {
@@ -1435,8 +1580,9 @@ impl<S: Store> CommandLayer<S> {
     /// binding that LI.19 keys by the arguments' digest): [`CommandLayer::availability`]'s answer, then the argument
     /// checks an invocation makes before admission. The arguments are an object, a confirmable row's `confirm` is a
     /// boolean, the names fit the row's arguments, and each argument of a type whose form the layer knows has that
-    /// form and, for a `RevisionRef`, names the current revision. Like every hint it grants nothing: an invocation
-    /// checks its actual arguments and the current inputs again.
+    /// form and, for a `RevisionRef`, names the current revision; a `FilterRef` resolves, and a row that takes the gate
+    /// `fresh_filter_preview` names a fresh filter preview. Like every hint it grants nothing: an invocation checks its
+    /// actual arguments and the current inputs again.
     pub fn availability_for(&self, row: &str, args: &Value) -> Result<(), Error> {
         self.binding(self.known(row)?, args)
     }
@@ -1447,7 +1593,10 @@ impl<S: Store> CommandLayer<S> {
 
     fn binding(&self, row: &Row, args: &Value) -> Result<(), Error> {
         self.gates(row)?;
-        forms::check(row, argument_names(row, args)?, &self.revision)
+        let named = argument_names(row, args)?;
+        forms::check(row, named, &self.revision)?;
+        self.check_filter_refs(row, named)?;
+        self.fresh_filter_gate(row, args)
     }
 
     /// The availability of a row that an entry runs: a data-only conjunction over its stored metadata (KN5.7, LI.20),
@@ -1767,6 +1916,8 @@ impl<S: Store> CommandLayer<S> {
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
+                self.check_filter_refs(&row, args)?;
+                self.fresh_filter_gate(&row, &invocation.args)?;
                 self.admit_program(caller, invocation, &row)
             }
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
@@ -2163,18 +2314,30 @@ impl<S: Store> CommandLayer<S> {
             record.version += 1;
             record.value = value.clone();
         }
-        // No undo reaches a workspace row's writes, so an undo or redo of an earlier write of one of its records would
-        // write over them. Those earlier writes leave both stacks (draft).
-        if !transaction.records.is_empty() {
-            let written: BTreeSet<&str> = transaction.records.iter().map(|write| write.name.as_str()).collect();
-            let rewrites = |order: &u64| matches!(self.changes.get(order), Some(Change::Record { name, .. }) if written.contains(name.as_str()));
-            let dropped: Vec<u64> =
-                self.undo.iter().chain(&self.redo).filter(|order| rewrites(order)).copied().collect();
+        // No undo reaches a workspace completion of a row whose undo class is not `workspace`, so an undo or redo of an
+        // earlier write of one of its records would write over it. The actions that wrote one leave both stacks
+        // (draft), and the cut runs on beneath them ([`cut_stack`]). An undoable completion, and an undo or redo of
+        // one, keep them: the stack inverts them in order.
+        if matches!(tree, Tree::None) && !transaction.records.is_empty() {
+            let cut: BTreeSet<String> = transaction.records.iter().map(|write| write.name.clone()).collect();
+            let mut dropped = cut_stack(&self.changes, &self.undo, &cut);
+            dropped.extend(cut_stack(&self.changes, &self.redo, &cut));
             self.undo.retain(|order| !dropped.contains(order));
             self.redo.retain(|order| !dropped.contains(order));
             for order in dropped {
                 self.changes.remove(&order);
             }
+        }
+        // A predicate row's completion is what a `FilterRef` names while its writes stand ([`crate::filter`]). Those
+        // whose writes another action wrote over are dropped.
+        let predicate = transaction.kind == TransactionKind::Workspace
+            && filter::PREDICATE_ROWS.contains(&transaction.row.as_str());
+        if let (true, Some(job), Some(result)) = (predicate, transaction.job, &transaction.result) {
+            let records = &self.records;
+            let version = |name: &str| records.get(name).map_or(0, |record| record.version);
+            self.predicates.retain(|_, predicate| predicate.writes.iter().all(|(name, at)| version(name) == *at));
+            let writes = transaction.records.iter().map(|write| (write.name.clone(), version(&write.name))).collect();
+            self.predicates.insert(job, Predicate { digest: result.clone(), writes });
         }
         // A policy change, or its undo or redo.
         if let Some(policy) = transaction.policy {
@@ -2432,6 +2595,13 @@ impl<S: Store> CommandLayer<S> {
             Change::Record { name, before, after } => {
                 let to = if direction == Direction::Undo { before } else { after };
                 transaction.record = Some(RecordWrite { name, value: to });
+                transaction.revision.workspace += 1;
+                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
+            }
+            // A workspace completion's inverse: each of its records takes its value before or after the completion
+            // again, as one action, and their versions and the workspace revision advance (KN5.20, LI.26; draft).
+            Change::Records { before, after } => {
+                transaction.records = if direction == Direction::Undo { before } else { after };
                 transaction.revision.workspace += 1;
                 Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
             }
@@ -2715,9 +2885,21 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// A language-defined workspace row's completion: one durable action that advances the workspace revision, writes
-    /// the job's records and keeps the state, the preview slot and the jobs (KN5.23). No undo reaches it.
+    /// A workspace row's job completion: one durable action that advances the workspace revision, writes the job's
+    /// records and keeps the state, the preview slot and the jobs (KN5.23). A stored row whose undo class is
+    /// `workspace` makes an undoable action, which `session.undo` and `session.redo` invert and repeat as a workspace
+    /// inverse ([`Change::Records`]), when it writes a record: one that writes none changes nothing an undo could
+    /// restore, so it takes no undo entry. No undo reaches any other row's completion (draft).
     fn workspace_adoption(&self, meta: Meta, job: u64, result: String, records: Vec<RecordWrite>) -> Adoption {
+        let tree = match self.workspace_undoable(&meta.row) && !records.is_empty() {
+            true => {
+                let value = |name: &str| self.records.get(name).and_then(|record| record.value.clone());
+                let before =
+                    records.iter().map(|write| RecordWrite { name: write.name.clone(), value: value(&write.name) });
+                Tree::Push { node: None, change: Change::Records { before: before.collect(), after: records.clone() } }
+            }
+            false => Tree::None,
+        };
         let order = self.order + 1;
         let digest = self.state_digest().to_owned();
         let mut revision = self.revision.clone();
@@ -2746,8 +2928,15 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
         };
-        let tree = Tree::None;
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
+    }
+
+    /// Whether a completion of workspace row `row` is undoable: a stored row whose undo class is `workspace`. A replay
+    /// reads the same answer before the host serves its rows again, since H-08's table holds the stored rows; a
+    /// language-defined row's completion is never undoable (draft).
+    fn workspace_undoable(&self, row: &str) -> bool {
+        !self.table.language_defined(row)
+            && self.table.row(row).is_some_and(|row| row.kind == Kind::Workspace && row.undo == UndoClass::Workspace)
     }
 
     // ----- workspace.set -----
@@ -3479,12 +3668,20 @@ impl<S: Store> CommandLayer<S> {
     ///
     /// Before the layer takes the output, it checks it: only a workspace row's job writes records
     /// (`LG3:capability.not_granted` otherwise), and every record's provenance block passes the host's reader, as for
-    /// `workspace.set` (PS1.16). A job whose output fails a check fails with that error and leaves nothing written. A
-    /// workspace row's records are written in its completion's one durable action, and no undo reaches them.
+    /// `workspace.set` (PS1.16), and a row that takes the gate `fresh_filter_preview` must pass it again, or the job
+    /// fails with `KN5:stale.filter_preview` (KN0.9). A job whose output fails a check fails with that error and leaves
+    /// nothing written. A workspace row's records are written in its completion's one durable action, which
+    /// `session.undo` reaches only for a stored row whose undo class is `workspace`. A completed `filter.preview` job's
+    /// result is kept as a filter preview ([`CommandLayer::filter_preview`]).
     pub fn finish_program_job_with(&mut self, job: u64, result: Result<JobOutput, Error>) -> Option<Receipt> {
         let program = self.running.remove(&job)?;
         let key = (program.caller.scope(), program.command.clone());
-        let status = match result.and_then(|output| self.admit_output(&program, output)) {
+        // The gate `fresh_filter_preview` must hold again when the output is published (KN0.9).
+        let gate = |output: JobOutput| match self.table.row(&program.row) {
+            Some(row) => self.fresh_filter_gate(row, &program.args).map(|()| output),
+            None => Ok(output),
+        };
+        let status = match result.and_then(|output| self.admit_output(&program, output)).and_then(gate) {
             Err(error) => Status::Failed(error),
             Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
                 Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
@@ -3518,8 +3715,11 @@ impl<S: Store> CommandLayer<S> {
                         )
                     }
                 };
-                let result = Some(ResultRef { job: Some(job), digest: output.digest() });
-                Status::Completed(Completion { kind, revision: program.revision.clone(), result })
+                let result = ResultRef { job: Some(job), digest: output.digest() };
+                if program.row == filter::FILTER_PREVIEW_ROW && kind == CompletionKind::Query {
+                    self.keep_filter_preview(&program, result.clone());
+                }
+                Status::Completed(Completion { kind, revision: program.revision.clone(), result: Some(result) })
             }
         };
         self.settle(&key, status);
