@@ -113,7 +113,7 @@ use crate::receipt::{
     ResultRef, Revision, Status,
 };
 use crate::store::{
-    identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Reopen, Store, Transaction,
+    identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Profile, Reopen, Store, Transaction,
     TransactionKind,
 };
 use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
@@ -644,6 +644,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     table: Table,
     secret: Secret,
     store: S,
+    /// The session's profile (BND.15, BND.17; draft): the host sets it when it creates the session, the journal keeps
+    /// it, and no program or command changes it.
+    profile: Profile,
     protected: ProtectedSet,
     /// The protection policy in force: Net from a session's start, then what the last policy action left.
     policy: ProtectionMode,
@@ -681,7 +684,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     /// The filter previews of completed `filter.preview` jobs, by job, while they are fresh (KN0.9; draft). They are
     /// transient: a reopen keeps none.
     filters: BTreeMap<u64, FilterPreview>,
-    /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
+    /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes are refused, and so are record
+    /// previews in a solving session.
     provenance: Option<Box<dyn Provenance>>,
     /// The host's view model (EV3.2, RPI.83). Without one, `view.open` and `view.close` are refused.
     views: Option<Box<dyn Views>>,
@@ -720,6 +724,7 @@ impl<S: Store> CommandLayer<S> {
             table: table.with_drafts(),
             secret,
             store,
+            profile: Profile::Solving,
             protected,
             policy: ProtectionMode::Net,
             epochs: BTreeSet::from([revision.epoch]),
@@ -759,8 +764,9 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// A new session `session` at `initial` with the protected set `protected`, in epoch 1. The store records the
-    /// session's start ([`Store::begin`]); a store that does not answer durably leaves the layer in read-only recovery.
+    /// A new session `session` at `initial` with the protected set `protected`, in epoch 1, in the solving profile
+    /// ([`CommandLayer::new_with_profile`]). The store records the session's start ([`Store::begin`]); a store that
+    /// does not answer durably leaves the layer in read-only recovery.
     pub fn new(
         kernel: Arc<Kernel>,
         table: Table,
@@ -769,6 +775,23 @@ impl<S: Store> CommandLayer<S> {
         session: &str,
         initial: Snapshot,
         protected: ProtectedSet,
+    ) -> CommandLayer<S> {
+        Self::new_with_profile(kernel, table, secret, store, session, initial, protected, Profile::Solving)
+    }
+
+    /// [`CommandLayer::new`] in the profile `profile` (BND.17; draft). The host sets it from the place the session
+    /// starts: an ordinary session, the practice copy included until LQ2 answers BND.15, is `solving`. The session's
+    /// start records it ([`Genesis::profile`]), a reopen reads it back ([`CommandLayer::open`]), and no row changes it.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_profile(
+        kernel: Arc<Kernel>,
+        table: Table,
+        secret: Secret,
+        store: S,
+        session: &str,
+        initial: Snapshot,
+        protected: ProtectedSet,
+        profile: Profile,
     ) -> CommandLayer<S> {
         let revision = Revision {
             session: session.to_owned(),
@@ -788,8 +811,10 @@ impl<S: Store> CommandLayer<S> {
             labels: initial.labels().to_vec(),
             digest: initial.digest().to_owned(),
             orbits: protected.orbits().to_vec(),
+            profile,
         };
         let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        layer.profile = profile;
         let fate = layer.store.begin(&genesis);
         layer.settle_fate(fate, "the session's start");
         layer
@@ -870,7 +895,9 @@ impl<S: Store> CommandLayer<S> {
             protection: 0,
             digest: initial.digest().to_owned(),
         };
+        let profile = genesis.profile;
         let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        layer.profile = profile;
         if let Some((context, menu)) = pin {
             layer.pin_menu(context, menu)?;
         }
@@ -1156,6 +1183,12 @@ impl<S: Store> CommandLayer<S> {
     /// `protection.policy.set`, or the undo or redo of one, left.
     pub fn policy(&self) -> ProtectionMode {
         self.policy
+    }
+
+    /// The session's profile (BND.15, BND.17; draft), set when the host created the session and read back by a reopen.
+    /// A host sets a run's profile from it (BND.17).
+    pub fn profile(&self) -> Profile {
+        self.profile
     }
 
     /// Derives `recipe` from `base` under `protected` in the policy in force: Net judges the end of the complete
@@ -1653,7 +1686,7 @@ impl<S: Store> CommandLayer<S> {
         let mut required: Vec<_> = metadata.requires.iter().filter(|dependency| !dependency.optional).collect();
         required.sort_by(|a, b| a.row.cmp(&b.row));
         let kernel_row = |id: &str| self.table.row(id).filter(|_| !self.table.language_defined(id));
-        let ungranted = |row: &Row| !Self::runtime_may(row) || row.takes_token();
+        let ungranted = |row: &Row| !Self::runtime_may(row) || !self.profile_grants(row) || row.takes_token();
         if let Some(denied) =
             required.iter().find_map(|dependency| kernel_row(&dependency.row).filter(|r| ungranted(r)))
         {
@@ -1866,10 +1899,27 @@ impl<S: Store> CommandLayer<S> {
         };
         match (caller, &invocation.token) {
             (Caller::Runtime { .. }, Some(_)) => false,
-            (Caller::Runtime { .. }, None) => Self::runtime_may(row) && !row.takes_token(),
+            (Caller::Runtime { .. }, None) => Self::runtime_may(row) && self.profile_grants(row) && !row.takes_token(),
             (Caller::Shell, None) => !row.takes_token(),
             (Caller::Shell, Some(token)) => row.takes_token() && token.verify(&self.secret),
         }
+    }
+
+    /// Whether this session's profile lets a run invoke `row`, which [`CommandLayer::runtime_may`] allows: BND.16's
+    /// table of rows by profile, from chapter 07 section 8 (draft). The kernel knows no profile, so the table sits here
+    /// (KN2.6, BND.17).
+    /// - `solving`: every row `runtime_may` allows. At `operation.preview` the host's reader admits a record's word
+    ///   (KN5.26), and a run's preview is admitted as the run's command allows.
+    /// - `tool_authoring` and `research`: the same rows except `operation.preview`, refused with
+    ///   `LG3:capability.not_granted`. A run's `propose` there goes to a capture in the runtime, and no engine preview
+    ///   exists, so no token and no commit can follow (BND.60). An entry that requires the row is unavailable.
+    ///
+    /// The cells of section 8 that grant a run more outside a solving session are not built: a run writes no record
+    /// of the authoring workspace or the research records in any profile, since the label such a record carries
+    /// (BND.61) is the host's to set. The shell's rows are the same in every profile: a profile belongs to a run
+    /// (BND.17), and the solver's own commands are no run's.
+    fn profile_grants(&self, row: &Row) -> bool {
+        self.profile == Profile::Solving || row.id != "operation.preview"
     }
 
     /// `invoke(command, row, args) -> Receipt` (KN5.1) for an envelope that came on `caller`'s channel. The host stamps
@@ -1942,6 +1992,10 @@ impl<S: Store> CommandLayer<S> {
             }
             if !Self::runtime_may(&row) {
                 return refused(code::NOT_GRANTED, format!("the runtime may not invoke `{}`", row.id));
+            }
+            if !self.profile_grants(&row) {
+                let detail = format!("a run in a {} session prepares no engine preview (BND.60)", self.profile.name());
+                return refused(code::NOT_GRANTED, detail);
             }
             if invocation.token.is_some() {
                 return refused(code::TOKEN_INVALID, "the runtime never holds a token (KN5.15)");
@@ -2072,10 +2126,12 @@ impl<S: Store> CommandLayer<S> {
 
     /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6, or a work
     /// sheet, whose complete operation it previews ([`RecordValue::operation`]; `KN2:input.named_object_invalid`
-    /// otherwise), and the host's provenance reader must admit the record's block in this session, or the draft is
+    /// otherwise). In a solving session the host's provenance reader must admit the record's block, or the draft is
     /// refused with the reader's error (`LG3:capability.not_granted` without a reader). The record is checked before
-    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. The
-    /// read set holds the record's content digest and version.
+    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. In
+    /// a `tool_authoring` or `research` session KN5.26 does not apply and no reader is asked, so the solver's own
+    /// preview there, and a commit of it, needs no admission; a record previewed later in a solving session meets its
+    /// check there (BND.61; draft). The read set holds the record's content digest and version.
     fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
         let record = self.records.get(name);
         let Some(value) = record.and_then(|record| record.value.as_ref()) else {
@@ -2085,10 +2141,11 @@ impl<S: Store> CommandLayer<S> {
             let detail = "the record holds neither a list of letters nor a work sheet";
             return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
         };
-        let Some(reader) = &self.provenance else {
-            return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
-        };
-        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        if self.profile == Profile::Solving {
+            let unread =
+                || Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)");
+            self.provenance.as_ref().ok_or_else(unread)?.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        }
         Ok(ResolvedDraft { source: draft.clone(), letters, reads: vec![RecordRead::of(name, record)] })
     }
 
