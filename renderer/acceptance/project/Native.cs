@@ -52,7 +52,7 @@ public unsafe struct Sa2WjConfig
 
 public unsafe sealed class Native : IDisposable
 {
-    public const uint SA2_ABI_VERSION = 3;
+    public const uint SA2_ABI_VERSION = 4;
     public const int SA2_OK = 0;
     public const int SA2_E_INVALID_ARGUMENT = 1;
     public const int SA2_E_WRONG_STATE = 2;
@@ -63,6 +63,7 @@ public unsafe sealed class Native : IDisposable
     public const int SA2_E_UNSUPPORTED = 7;
     public const int SA2_E_CHECK_FAILED = 8;
     public const int SA2_E_IO = 9;
+    public const int SA2_E_UNAVAILABLE = 10;
     public const uint SA2_SCENE_NO_VRAM = 1;
     public const int SA2_QUEUE_SAME = 0;
     public const int SA2_QUEUE_OWN = 1;
