@@ -440,19 +440,21 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 26 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 28 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, the four generator traces
   generator, generator-alias-cursor, generator-returned-owner and generator-child-paths, the three display traces,
   output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live,
   pointwise-failure, final-loop-test, and the five child traces child-allowances, child-return-owner,
-  root-before-child, dimension-before-scope and nested-child-ledger. Each frozen row, each cutoff or stop (dimension
+  root-before-child, dimension-before-scope and nested-child-ledger, and the two decoding traces decode-scalar and
+  decode-surrogate, on bytes the host delivers as a snapshot. Each frozen row, each cutoff or stop (dimension
   or phase, scope, denied row, source range) and each child record equals the vector, under LP3's limit mapping
   (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The
   alias traces cross a call, since `let` scopes nest. A child trace that completes takes its limits at its first
   `child` row, so that each requested cap is cut as the trace's is.
-- The other 14 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds
-  two bindings (1, generator-nested-same-name), text order (1), byte decoding (3, one of them in a child), a flow
-  check (1, abstract-trace-charges), streaming cursors (3) and display form 2 (5). They still replay through the
+- The other 12 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds
+  two bindings (1, generator-nested-same-name), text order (1), a child's bytes without a row of their own (1,
+  child-decode-error-releases-reservation), a flow check (1, abstract-trace-charges), streaming cursors (3) and
+  display form 2 (5). They still replay through the
   meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
@@ -503,6 +505,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   invocation index under its parent, counted from 0 per parent (DET.61). A child borrows its parent's generators as
   any parent input, so its draws advance their owners' cursors, and a cut-off rolls none back
   (`c600-run/tests/child_scopes.rs`, `det65_programs.rs`).
+- Byte decoding (LP2 drafts; DET.62). `Bytes` holds captured octets, from a `bytes("…")` literal of hex digit pairs
+  or a host result; it has an exact equality but no canonical form and no key order, so no entry, output, goal,
+  evidence, set element or map key holds it. `text_decode` is one step at the input-byte tariff per byte that
+  reserves 4 bytes per byte before reading one and settles to the text's 4 bytes per scalar; invalid UTF-8 or a
+  surrogate stops the run, or a child alone, with `LG4:input.text_scalar_invalid` in the effect phase, nothing bound.
+  The wire codec carries bytes as value tag 25 and type tag 28 (`c600-run/tests/decode.rs`, `det65_programs.rs`).
 - Loops (LP2 drafts; DET.55, DET.56, DET.58). A loop runs in its function's frame, with its value so far in a slot
   of the frame. The initial value fills the slot as a `let` binds: an owned value with a `visit`, a borrowed one
   with an `alias` of its size. Each loop test is a one-step row `loop_test:k`, the final false one included. A row of
@@ -1377,8 +1385,8 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 26 of DET.65's 40
-    traces as programs and lists why the other 14 do not run; `generators.rs` runs DET.61's generators,
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 28 of DET.65's 40
+    traces as programs and lists why the other 12 do not run; `decode.rs` runs DET.62's byte decoding; `generators.rs` runs DET.61's generators,
     `child_scopes.rs` DET.60's child scopes and `loops.rs` DET.55's loops.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).

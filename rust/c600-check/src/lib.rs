@@ -1302,7 +1302,8 @@ fn carries_word(ty: &Ty) -> bool {
         | Ty::Receipt
         | Ty::Generator
         | Ty::EndTest(_)
-        | Ty::Field(_) => false,
+        | Ty::Field(_)
+        | Ty::Bytes => false,
     }
 }
 
@@ -1337,6 +1338,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Generator => "Generator".into(),
         Ty::EndTest(test) => test.type_name().into(),
         Ty::Field(f) => f.name().into(),
+        Ty::Bytes => "Bytes".into(),
     }
 }
 
@@ -1518,6 +1520,7 @@ fn key_type(q: &QTy) -> bool {
             | Ty::Var(_)
             | Ty::CompressedWord
             | Ty::Generator
+            | Ty::Bytes
             | Ty::EndTest(_) => false,
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
@@ -1562,7 +1565,8 @@ fn portable(ty: &Ty) -> bool {
     match ty {
         _ if is_unknown(ty) => true,
         Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::CompressedWord => false,
-        Ty::Generator | Ty::Field(_) => false,
+        // Captured bytes have no canonical form either (DET.62; LP2 draft): a program passes the decoded text.
+        Ty::Generator | Ty::Field(_) | Ty::Bytes => false,
         Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
         other => other.elements().into_iter().all(|e| portable(&e.ty)),
     }
@@ -1790,6 +1794,7 @@ fn lit_type(lit: &Lit) -> Ty {
         Lit::Tag(_) => Ty::Status,
         Lit::Colour(_) => Ty::Colour,
         Lit::MenuWord(_) => Ty::MenuWord,
+        Lit::Bytes(_) => Ty::Bytes,
     }
 }
 
@@ -3652,7 +3657,7 @@ impl<'p> Checker<'p> {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot | Prim::Assert | Prim::RngDraw => 1,
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
-            Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => 1,
+            Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse | Prim::TextDecode => 1,
             Prim::InsertEntry | Prim::Expand => 3,
             _ => 2,
         };
@@ -4062,6 +4067,15 @@ impl<'p> Checker<'p> {
                     Some(f) if !unknown_operand => Val::exact(Ty::Field(f)),
                     _ => Val::unknown(),
                 })
+            }
+            Prim::TextDecode => {
+                // Captured bytes decode into text (DET.62; LP2 draft); the text keeps the bytes' qualifier.
+                let v = &vals[0];
+                if v.ty != Ty::Bytes && !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("Bytes", v, "the bytes of text_decode"));
+                    return Ok(Val::unknown());
+                }
+                Ok(Val::new(Ty::Text, v.qual))
             }
             Prim::Stage(_) => unreachable!("refused at the top"),
         }
