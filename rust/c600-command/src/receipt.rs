@@ -62,8 +62,8 @@ pub mod code {
     /// of 18 November 2026).
     pub const PREVIEW_SHOWN: &str = "KN5:capability.preview_shown";
     /// A run's `operation.preview` outside a command the solver invoked: a preview is prepared only inside one (finding
-    /// B2 of the KN5 boundary attack, ONE.34; the owner's reading of 18 November 2026). The check is built and off
-    /// until LP3 starts its runs inside a solver command, so the layer does not answer this code yet.
+    /// B2 of the KN5 boundary attack, ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must
+    /// start its runs inside a solver command.
     pub const OUTSIDE_SOLVER_COMMAND: &str = "KN5:capability.outside_solver_command";
 }
 

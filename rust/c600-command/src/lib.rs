@@ -55,9 +55,8 @@
 //! - Finding B2 (ONE.34): a run prepares a preview only inside a command the solver invoked, and the one check is in
 //!   the layer, not in each host. The run must be the run of a program job ([`ProgramJob::run`], `job-<id>`) that the
 //!   host has taken and not yet reported, invoked by the shell or by a run that is itself inside such a command.
-//!   Otherwise its preview is refused with `KN5:capability.outside_solver_command` (a draft code). The check is built
-//!   and off: LP3's host still starts its runs with no solver command behind them, and nothing outside the tests
-//!   serves program jobs yet. It is switched on once LP3 starts its runs through a tool row the shell invokes.
+//!   Otherwise its preview is refused with `KN5:capability.outside_solver_command` (a draft code). The check is on, so
+//!   a host, LP3's included, must start its runs through a tool row the shell invokes.
 //! - Finding G1: a command ID lives in its caller's namespace. Each run has its own scope (`runtime/<run>`), so one run
 //!   cannot use up another run's IDs. The scope is derived from the stored caller, so the journal format is unchanged.
 //! - Finding LD1 (EV4.22): a change of the protection policy needs the solver's own confirmed press, as a release of
