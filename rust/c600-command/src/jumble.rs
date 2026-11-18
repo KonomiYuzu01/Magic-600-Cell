@@ -142,11 +142,35 @@ pub(crate) struct Entry {
     pub(crate) record: Value,
 }
 
-/// Replays `letters`, 600-cell-Full's signed primitive letters, from solved in the jumbling engine under the pinned menu
-/// (`levels::derive` with no protected piece), and checks that the replay's labels have the digest `labels`, the
-/// current labels' (A5, JI.25). A word that does not replay, or whose labels are not total or are not the current
-/// ones, is not a valid witness: `KN5:input.jumble_on_labels_only`. An engine fault is
-/// `KN5:consistency.state_hash_mismatch`.
+/// The jumbling engine's pieces that carry the protected orbits `orbits`, in increasing order (the owner's reading of
+/// 18 November 2026 for finding B5 of the KN5 boundary attack: protection holds inside Jumble, so a round trip through
+/// Jumble cannot move a protected orbit; KN1.11, JI.5). The jumbling model numbers its pieces as 600-cell-Full does:
+/// both read `slot_piece` and `orbit_id` from `assets/model.npz`, so the pieces of orbit o are those whose `orbit_id`
+/// is o, and a centre piece (`orbit_id` -1) is in no orbit. The pinned menu's model is the session's own: `pin_menu`
+/// refuses a menu of another model (`KN1:input.identity_mismatch`). No label verdict crosses into Jumble (chapter 03:
+/// no label-to-pose protection transport; KN1.11: a verdict keeps its level). The engine judges these pieces at pose
+/// level, `m_A(w) = 1` (`KN2:protection.piece_would_move`), which is stricter than the label verdict: a word that keeps
+/// every one of their poses moves no sticker of a protected orbit. From solved, each item at grips 0 and 1 of the
+/// pinned menu moves pieces of all 35 orbits, so while an orbit is protected such a pose move commits only after the
+/// solver releases the orbit, with a confirmation (LI.26).
+pub(crate) fn protected_pieces(twists: &Twists, orbits: &[usize]) -> Vec<u32> {
+    pieces_of(&twists.context.model.orbit_id, orbits)
+}
+
+/// The pieces whose entry in `orbit_id` is one of `orbits`, in increasing order; a negative entry is in no orbit.
+fn pieces_of(orbit_id: &[i16], orbits: &[usize]) -> Vec<u32> {
+    if orbits.is_empty() {
+        return Vec::new();
+    }
+    let protected = |piece: &usize| usize::try_from(orbit_id[*piece]).is_ok_and(|orbit| orbits.contains(&orbit));
+    (0..orbit_id.len()).filter(protected).map(|piece| piece as u32).collect()
+}
+
+/// Replays `letters`, 600-cell-Full's signed primitive letters, from solved in the jumbling engine under the pinned
+/// menu (`levels::derive` with no protected piece: the replay rebuilds poses for labels the session holds already, and
+/// an entry moves no piece), and checks that the replay's labels have the digest `labels`, the current labels' (A5,
+/// JI.25). A word that does not replay, or whose labels are not total or are not the current ones, is not a valid
+/// witness: `KN5:input.jumble_on_labels_only`. An engine fault is `KN5:consistency.state_hash_mismatch`.
 pub(crate) fn replay_from_solved(twists: &Twists, letters: &[i32], labels: &str) -> Result<Entry, Error> {
     let ctx = &*twists.context;
     let engine = |error: EngineError| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
@@ -171,12 +195,12 @@ pub(crate) fn replay_from_solved(twists: &Twists, letters: &[i32], labels: &str)
 }
 
 /// Replays `suffix`, the retained suffix's signed primitive letters, from `root`, the active exit's own poses, in the
-/// jumbling engine under the pinned menu (`levels::derive` with no protected piece), and checks that the replay's
-/// labels have the digest `labels`, the current labels' (JI.25 to JI.27, FP.32). An empty suffix keeps the exit's
-/// poses and their digest. Poses made under another menu are `KN1:input.identity_mismatch`. A suffix that does not
-/// replay, or whose labels are not total or are not the current ones, is not a valid witness, and with an active exit
-/// the solved witness does not apply: `KN5:input.jumble_on_labels_only`. `exit` is the exit's record and `crossing`
-/// its event, which the entry's record names ([`exit_root_record`]). An engine fault is
+/// jumbling engine under the pinned menu (`levels::derive` with no protected piece, as for [`replay_from_solved`]), and
+/// checks that the replay's labels have the digest `labels`, the current labels' (JI.25 to JI.27, FP.32). An empty
+/// suffix keeps the exit's poses and their digest. Poses made under another menu are `KN1:input.identity_mismatch`. A
+/// suffix that does not replay, or whose labels are not total or are not the current ones, is not a valid witness, and
+/// with an active exit the solved witness does not apply: `KN5:input.jumble_on_labels_only`. `exit` is the exit's
+/// record and `crossing` its event, which the entry's record names ([`exit_root_record`]). An engine fault is
 /// `KN5:consistency.state_hash_mismatch`.
 pub(crate) fn replay_from_exit(
     twists: &Twists,
@@ -230,8 +254,8 @@ fn reaches_labels(twists: &Twists, derived: &Derived, labels: &str, what: &str) 
 
 /// Replays `word`, the jumbling engine's journal from solved to a pose move (draft), flat from solved under the pinned
 /// menu with no protected piece, and returns the value at its end with that value's pose digest. The word is the
-/// layer's own journal of moves it admitted already, so a refusal or an engine fault is
-/// `KN5:consistency.state_hash_mismatch`.
+/// layer's own journal of moves it admitted already, each judged under the protection in force when it was made, so a
+/// refusal or an engine fault is `KN5:consistency.state_hash_mismatch`.
 pub(crate) fn replay_poses(twists: &Twists, word: &[Twist]) -> Result<(Derived, String), Error> {
     let ctx = &*twists.context;
     let mismatch = |detail: String| Error::new(code::STATE_HASH_MISMATCH, detail);
@@ -431,6 +455,16 @@ mod tests {
             ([], _) => panic!("a path"),
         }
         Value::Object(fields)
+    }
+
+    /// B5's mapping: the pieces of the protected orbits, ascending, and no centre (a negative `orbit_id`).
+    #[test]
+    fn the_protected_pieces_are_those_of_the_protected_orbits() {
+        let orbit_id = [-1, 0, 2, 0, -1, 1, 2];
+        assert_eq!(pieces_of(&orbit_id, &[]), Vec::<u32>::new());
+        assert_eq!(pieces_of(&orbit_id, &[0]), [1, 3]);
+        assert_eq!(pieces_of(&orbit_id, &[0, 2]), [1, 2, 3, 6]);
+        assert_eq!(pieces_of(&orbit_id, &[3]), Vec::<u32>::new());
     }
 
     #[test]

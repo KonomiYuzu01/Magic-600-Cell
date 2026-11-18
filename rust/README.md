@@ -1618,8 +1618,19 @@ run or not applicable is no pass (PHS.63).
   - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
   - ONE.52: a run invokes no row that writes a workspace record, even a run that a solver command started. The records
     a workspace row's own job returns are written in that row's completion, and only the solver invokes that row.
+  - Finding B5 (KN1.11, JI.5; JI.27's alternative is not taken): protection holds inside Jumble, so a round trip through
+    Jumble cannot move a protected orbit. A pose move is derived with the jumbling engine's pieces that carry the
+    protected orbits as pose-protected pieces (both models read `slot_piece` and `orbit_id` from `assets/model.npz`, so
+    the pieces of orbit o are those whose `orbit_id` is o), under the policy in force; a pose move that would move one
+    is the engine's `KN2:protection.piece_would_move` and changes nothing. The verdict is the engine's own pose verdict
+    (`m_A(w) = 1`), stricter than the label verdict, so no label verdict crosses into Jumble (chapter 03). From solved,
+    each item at grips 0 and 1 of the pinned menu moves pieces of all 35 orbits, so while an orbit is protected such a
+    pose move commits only after the solver releases the orbit, with a confirmation (LI.26). A reopen derives a stored
+    pose move as the live move does, under the protection in force at its place in the journal (finding B7), so one that
+    would move a protected piece leaves the layer in read-only recovery before it with the engine's code.
   - Tests: `c600-command/tests/attack_runtime.rs` (B1, B6/L17, and B2, ignored while the check is off),
-    `attack_callers.rs` (G1), `attack_playback.rs` (LD1) and `strict_policy.rs`.
+    `attack_callers.rs` (G1), `attack_playback.rs` (LD1), `strict_policy.rs`, `attack_protection.rs` (B5) and
+    `jumble_twist_menu.rs` (B5 under Net and Strict, a pose move that moves no protected piece, and the reopen).
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
   - The workspace store. `workspace.set` (`RECORD_ROW`, M6's draft name; H-08 has no such row, so a host adds it with
     `Table::with_drafts` until the typed workspace rows freeze at LP3) writes a named record, its payload and its
@@ -1785,10 +1796,12 @@ run or not applicable is no pass (PHS.63).
   come before the token. The named revision must be current in every field (EV4.14), so unlike a `twist.apply` press a
   press from before a workspace completion is `KN5:stale.revision_changed`. With Jumble off a retained item commits its
   retained word as `twist.apply` does, under the protection policy in force. With Jumble on every item is a pose move:
-  the jumbling engine derives the item's exact twist from the head's poses with no pose-protected piece, since no row
-  sets one, so a twist the poses block is `KN2:input.word_blocked_prefix`; the revision's digest becomes the new pose
-  digest and its state revision advances. Like a commit it ends the pending preview and cancels the jobs that read the
-  replaced revision, except file jobs. An undo replays the twist's exact inverse and a redo the twist, each checked
+  the jumbling engine derives the item's exact twist from the head's poses under the policy in force, with the pieces
+  that carry the protected orbits as pose-protected pieces (finding B5, above), so a twist the poses block is
+  `KN2:input.word_blocked_prefix` and one that would move a protected piece `KN2:protection.piece_would_move`; the
+  revision's digest becomes the new pose digest and its state revision advances. Like a commit it ends the pending
+  preview and cancels the jobs that read the replaced revision, except file jobs. An undo replays the twist's exact
+  inverse and a redo the twist, each checked
   against the recorded poses; after 64 chained moves the layer replays the jumbling journal flat from solved and checks
   it against the chained poses. The journal keeps a pose move as the action kind `jumble_move` (FP.31) with its rotation
   record (`Transaction::rotation`), and a reopen with the menu pinned (`CommandLayer::open_with_menu`) replays it; a
@@ -1803,7 +1816,8 @@ run or not applicable is no pass (PHS.63).
   ν = 0 shows from the identity labels, a retained witness or ν as computed (`nu::nu`). Pieces off the lattice are
   `KN5:input.jumble_off_pieces_off_lattice`, a nonzero ν `KN5:input.jumble_off_nu_nonzero`, and poses not shown
   reachable (no witnessed chain, or a displaced centre) `KN5:input.jumble_off_not_shown_reachable`; each names counts
-  only and changes nothing. An exit commits with no preview and no protection gate: the labels' state of 600-cell-Full
+  only and changes nothing. An exit commits with no preview and no protection gate (no pose move moved a protected
+  orbit's pieces while it was protected, finding B5): the labels' state of 600-cell-Full
   becomes the retained state, the revision's mode becomes `jumble_off`, its state revision advances and its digest is
   the label digest. Like a commit it cancels the jobs that read the replaced revision, except file jobs. While only
   retained commits follow the exit it stays active, and `jumble.on` enters again from its poses (JI.26). An undo

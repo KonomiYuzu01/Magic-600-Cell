@@ -63,8 +63,9 @@
 //! commits its retained word as `twist.apply` does, and a jumble item is refused
 //! (`KN5:input.menu_word_needs_jumble_on`). With Jumble on every item is a pose move, journaled as `jumble_move`
 //! ([`TransactionKind::JumbleMove`]): a node of the move tree that holds the item's exact twist, derived in the
-//! jumbling engine from the head's value. No row sets pose-protected pieces, and a label verdict grants no pose
-//! protection (chapter 03), so a pose move is judged with no protected piece. The engine nests each derivation's
+//! jumbling engine from the head's value under the policy in force, with the engine's pieces that carry the
+//! protected orbits as pose-protected pieces (finding B5, the owner's reading of 18 November 2026): a pose move that
+//! would move one is the engine's `KN2:protection.piece_would_move`. The engine nests each derivation's
 //! evidence in the next, so after 64 chained moves the layer replays the jumbling journal flat from solved instead. An
 //! undo applies the exact inverse twist when the menu holds it and replays the journal otherwise, a redo applies the
 //! twist again, and each must reach the move's recorded poses.
@@ -3297,12 +3298,18 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// The jumbling engine's value after one step from the head's value with Jumble on (draft). `step`, an item of the
-    /// pinned menu, is derived from the head's value with no protected piece under the policy in force: no row sets
-    /// pose-protected pieces, and a label verdict grants no pose protection (chapter 03). A blocked step is refused
-    /// with the engine's code (`KN2:input.word_blocked_prefix`). The engine nests each derivation's evidence in the
-    /// next, so the chain is bounded: after [`POSE_CHAIN`] chained steps, or with no step (an undo whose exact inverse
-    /// the menu does not hold), the value is `journal`, the whole jumbling journal to the step's end, replayed flat
-    /// from solved ([`jumble::replay_poses`]), which must reach the step's poses.
+    /// pinned menu, is derived from the head's value under the policy in force, with the pieces that carry the
+    /// protected orbits as pose-protected pieces ([`jumble::protected_pieces`]; finding B5, the owner's reading of 18
+    /// November 2026). The verdict is the engine's own at the pose level, so no label verdict crosses into Jumble
+    /// (chapter 03, KN1.11). A step that would move such a piece is refused with `KN2:protection.piece_would_move`,
+    /// and a blocked step with the engine's code (`KN2:input.word_blocked_prefix`). The engine nests each derivation's
+    /// evidence in the next, so the chain is bounded: after [`POSE_CHAIN`] chained steps, or with no step (an undo
+    /// whose exact inverse the menu does not hold), the value is `journal`, the whole jumbling journal to the step's
+    /// end, replayed flat from solved ([`jumble::replay_poses`]), which must reach the step's poses. Such an undo has
+    /// no verdict and needs none: every protection change made after the move it takes back is undone before it, so the
+    /// protection in force is the one the move was judged under, and the inverse moves only the pieces the move moved.
+    /// A reopen replays a stored pose move through this step too, so one that would move a protected piece leaves the
+    /// layer in read-only recovery before it with the engine's code.
     fn pose_value(
         &self,
         step: Option<&Twist>,
@@ -3317,7 +3324,9 @@ impl<S: Store> CommandLayer<S> {
             None => None,
             Some(twist) => {
                 let (base, identity) = (Base::Derived(&head.derived), head.derived.identity());
-                let derivation = levels::derive(ctx, base, identity, std::slice::from_ref(twist), self.policy, &[]);
+                let protect = jumble::protected_pieces(twists, self.protected.orbits());
+                let derivation =
+                    levels::derive(ctx, base, identity, std::slice::from_ref(twist), self.policy, &protect);
                 let engine = |error| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
                 match derivation.map_err(engine)? {
                     Err(refusal) => return Err(refusal.into()),
