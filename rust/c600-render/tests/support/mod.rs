@@ -22,8 +22,8 @@ use c600_display::validate::{BoundArray, EngineBundle, LimitProfile, Support};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot, SLOTS};
 use c600_render::abi::TARGET_SURFACE;
 use c600_render::backend::subjects_digest;
-use c600_render::fake::DEVICE_REMOVED_REASON;
-use c600_render::{abi, CoreAbi, FakeCore, PickPoll, RenderBackend};
+use c600_render::fake::{DEVICE_REMOVED_REASON, DISPLAY_TICKS};
+use c600_render::{abi, CoreAbi, DisplayTime, FakeCore, PickPoll, RenderBackend};
 
 /// A core whose fake a test can drive (complete work, place picks, remove the device).
 pub trait Driver: CoreAbi {
@@ -363,6 +363,14 @@ pub fn route_b<C: Driver>(core: C) {
     let read = host.read_presented();
     assert_eq!(read.len(), 1);
     assert_eq!(read[0].stamp, shown);
+    let shown_at = DisplayTime {
+        sequence: shown.sequence,
+        device_epoch: shown.device_epoch,
+        surface: shown.surface,
+        display_qpc: DISPLAY_TICKS,
+    };
+    assert_eq!(host.backend.take_display_times(), [shown_at], "the confirming row's display time reaches the caller");
+    assert!(host.backend.take_display_times().is_empty(), "each display time is taken once");
     let expected = PreviewShown { preview: PreviewId(7), literal: format!("{:064x}", 7), base: 12 };
     assert_eq!(read[0].presented, Presented::Previews(vec![expected.clone()]));
     assert_eq!(host.presented_preview(), Some(expected.clone()), "ONE.41 may name the presented preview");
@@ -373,6 +381,9 @@ pub fn route_b<C: Driver>(core: C) {
     assert!(host.backend.core.fake().show(ids[3]));
     assert_eq!(host.read_presented()[0].presented, Presented::NoPreview);
     assert_eq!(host.presented_preview(), None, "a frame without a preview clears the latch");
+    let times = host.backend.take_display_times();
+    assert_eq!(times.iter().map(|t| t.sequence).collect::<Vec<_>>(), [later.sequence, cleared.sequence]);
+    assert!(times[0].display_qpc < times[1].display_qpc);
 
     // A presented row that names other bindings than its frame is a contradiction, and the latch clears.
     host.show_preview(V1, Some(preview(&base, 8))).expect("a preview");
@@ -381,6 +392,7 @@ pub fn route_b<C: Driver>(core: C) {
     assert!(host.backend.core.fake().show(id));
     host.backend.core.fake().misbind_presented(misbound.sequence + 100);
     let error = host.backend.read_presented().expect_err("a contradicting row");
+    assert!(host.backend.take_display_times().is_empty(), "a contradicting read keeps no display time");
     assert_eq!((error.code, error.context["status"].as_str()), (codes::RENDERER_UNAVAILABLE, "contradiction"));
     let again = host.frame(V1).expect("a frame");
     let id = frame_ids(&mut host, &[&again])[0];
@@ -427,6 +439,11 @@ pub fn route_b<C: Driver>(core: C) {
     let id = frame_ids(&mut host, &[&fresh])[0];
     assert!(host.backend.core.fake().show(id));
     assert_eq!(host.read_presented()[0].stamp, fresh);
+    let times = host.backend.take_display_times();
+    assert_eq!(
+        times.iter().map(|t| (t.sequence, t.device_epoch)).collect::<Vec<_>>(),
+        [(again.sequence, 1), (fresh.sequence, 2)]
+    );
     assert_eq!(host.presented_preview().map(|p| p.preview), Some(PreviewId(8)));
 }
 

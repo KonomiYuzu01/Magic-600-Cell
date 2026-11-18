@@ -2615,14 +2615,15 @@ run or not applicable is no pass (PHS.63).
   publication stamp's digest. A frame needs a camera matrix for its view and an active set. On a `sa2_attach`
   context (the Godot-texture route) `read_presented` and `recover` answer renderer unavailable (F23; F22 and RPI.46),
   so the host's presented latch stays clear. On a `sa2_create` context with a surface (ABI 5, route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) frames
-  name `SA2_TARGET_SURFACE`, `read_presented` returns the frames the core confirmed under the exact rule, and
+  name `SA2_TARGET_SURFACE`, `read_presented` returns the frames the core confirmed under the exact rule (the bridge
+  keeps each one's display time, the SyncQPCTime of the confirming statistics row, for `take_display_times`), and
   `recover` rebuilds a removed device: the bridge then forgets every resource set of the old epoch, so an installed
   publication draws again only after it is prepared and activated on the new device (RM.23). What the `Backend` trait has no operation for yet is inherent: engine adoption, frame reports in batches of
   64, pick requests and polls (a pick names the binding field that went stale), and the core's counters.
 - Tests (`c600-render/tests/`): `abi_layout.rs` reads the header and checks every row's offsets and size and every
   constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
   install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
-  replacement, and device loss; on route B also confirmed presentations, the presented-preview latch, a contradicting
+  replacement, and device loss; on route B also confirmed presentations and their display times, the presented-preview latch, a contradicting
   presented row, recovery and a publication drawn again on the new device. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
   run again through the C function table over a C shim; there `abi_functions.rs` checks every function's signature
   against the header and `ffi.rs` what `DllCore` refuses before a call and what it reads back.

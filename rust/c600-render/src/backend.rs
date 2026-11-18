@@ -44,6 +44,8 @@ use crate::api::{CoreAbi, EngineImage, PreparationInput};
 const FRAME_RECORDS: usize = 2048;
 /// Camera matrices kept per view.
 const CAMERAS: usize = 8;
+/// Display times kept until the caller takes them; the oldest go first.
+const DISPLAY_TIMES: usize = 1024;
 
 /// A frame the bridge submitted.
 #[derive(Clone, Debug)]
@@ -74,6 +76,16 @@ pub struct FrameReport {
     pub view_vertex_evals: u64,
 }
 
+/// When the display showed a confirmed frame (route B, accepted for now by the owner on 18 Nov 2026, pending three
+/// owner-machine checks): `display_qpc` is the SyncQPCTime of the statistics row that confirmed it, in QPC ticks.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DisplayTime {
+    pub sequence: u64,
+    pub device_epoch: u64,
+    pub surface: u64,
+    pub display_qpc: u64,
+}
+
 /// A pick request of [`RenderBackend::request_pick`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PickTicket(pub u64);
@@ -98,6 +110,8 @@ pub struct RenderBackend<C: CoreAbi> {
     /// Sets of an earlier device epoch, which the core released at recovery.
     lost_sets: BTreeSet<u64>,
     frames: VecDeque<FrameRecord>,
+    /// Display times of confirmed frames not yet taken.
+    displays: VecDeque<DisplayTime>,
     /// The newest failure of `cancel` or `retire`, which the trait cannot return.
     pub fault: Option<Error>,
 }
@@ -113,6 +127,7 @@ impl<C: CoreAbi> RenderBackend<C> {
             sets: BTreeMap::new(),
             lost_sets: BTreeSet::new(),
             frames: VecDeque::new(),
+            displays: VecDeque::new(),
             fault: None,
         }
     }
@@ -146,6 +161,12 @@ impl<C: CoreAbi> RenderBackend<C> {
             .ok_or_else(|| Error::invalid("the revision digest is not a SHA-256 in hexadecimal"))?;
         let image = EngineImage { revision: bundle.revision.state, labels: &labels, pose: None, digest };
         self.core.engine_adopt(&image).map_err(|status| self.error(status))
+    }
+
+    /// The display times of the frames [`Backend::read_presented`] confirmed since the last call, in frame order;
+    /// at most the newest 1024 are kept.
+    pub fn take_display_times(&mut self) -> Vec<DisplayTime> {
+        self.displays.drain(..).collect()
     }
 
     /// The core's frame reports, in frame order, each with the stamp of its frame. A row that names other bindings
@@ -411,6 +432,17 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 _ => return Err(contradiction("a presented row names a preview its frame did not show")),
             };
             presented.push(PresentedFrame { stamp: stamp.clone(), presented: shown });
+        }
+        for row in &rows[..n] {
+            self.displays.push_back(DisplayTime {
+                sequence: row.sequence,
+                device_epoch: row.device_epoch,
+                surface: row.surface,
+                display_qpc: row.display_qpc,
+            });
+        }
+        while self.displays.len() > DISPLAY_TIMES {
+            self.displays.pop_front();
         }
         Ok(presented)
     }

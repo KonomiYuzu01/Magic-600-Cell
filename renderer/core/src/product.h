@@ -19,7 +19,7 @@ static_assert(sizeof(sa2_preparation) == 112);
 static_assert(sizeof(sa2_poll_row) == 32);
 static_assert(sizeof(sa2_frame_input) == 264);
 static_assert(sizeof(sa2_frame_report) == 104);
-static_assert(sizeof(sa2_presented_row) == 48);
+static_assert(sizeof(sa2_presented_row) == 56);
 static_assert(sizeof(sa2_pick_row) == 112);
 static_assert(sizeof(sa2_counter_values) == 64);
 
@@ -114,6 +114,7 @@ struct PresentSample {
     uint64_t generation = 0; // the swap-chain generation the sample was read from
     uint32_t present_count = 0; // DXGI_FRAME_STATISTICS.PresentCount
     uint32_t last_present_count = 0; // GetLastPresentCount read with the sample
+    int64_t sync_qpc = 0; // DXGI_FRAME_STATISTICS.SyncQPCTime: the confirmed frame's display_qpc
 };
 // Pure: what one sample says about a frame of the generation with that present count.
 PresentMatch present_match(uint64_t generation, uint32_t present_count, const PresentSample& sample);
@@ -129,7 +130,7 @@ public:
     size_t awaiting() const { return awaiting_.size(); }
     size_t confirmed() const { return confirmed_.size(); }
 private:
-    struct Entry { sa2_frame_input input{}; uint64_t frame = 0, generation = 0; uint32_t count = 0; };
+    struct Entry { sa2_frame_input input{}; uint64_t frame = 0, generation = 0, display_qpc = 0; uint32_t count = 0; };
     std::deque<Entry> awaiting_, confirmed_;
 };
 

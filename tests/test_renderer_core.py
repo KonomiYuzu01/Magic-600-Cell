@@ -190,7 +190,7 @@ ABI4 = {
 }
 ABI4_STRUCTS = {
     "sa2_engine_image": 80, "sa2_preparation": 112, "sa2_poll_row": 32, "sa2_frame_input": 264,
-    "sa2_frame_report": 104, "sa2_presented_row": 48, "sa2_pick_row": 112, "sa2_counter_values": 64,
+    "sa2_frame_report": 104, "sa2_presented_row": 56, "sa2_pick_row": 112, "sa2_counter_values": 64,
 }
 ABI4_DEFINES = {
     "SA2_E_UNAVAILABLE": "10", "SA2_SLOTS": "259800u", "SA2_PIECES": "177120u", "SA2_MAX_POSES": "177120u",

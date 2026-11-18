@@ -601,16 +601,17 @@ static_assert(sizeof(sa2_frame_report) == 104, "sa2_frame_report requires the x6
 
 /* read_presented. Written only on an ABI 5 surface context (see sa2_presented). */
 typedef struct sa2_presented_row {
-    uint32_t struct_size; /* sizeof(sa2_presented_row); 48 on x64 */
+    uint32_t struct_size; /* sizeof(sa2_presented_row); 56 on x64 */
     uint32_t previews; /* 0: no_preview; 1: the frame showed its preview */
     uint64_t frame_id;
     uint64_t device_epoch;
     uint64_t surface;
     uint64_t sequence;
     uint64_t preview;
+    uint64_t display_qpc; /* SyncQPCTime of the statistics row that confirmed the frame (QPC ticks) */
 } sa2_presented_row;
 #ifdef __cplusplus
-static_assert(sizeof(sa2_presented_row) == 48, "sa2_presented_row requires the x64 ABI");
+static_assert(sizeof(sa2_presented_row) == 56, "sa2_presented_row requires the x64 ABI");
 #endif
 
 /* poll_pick. The Rust PickReply: the frame's PickBinding and the instance. */
@@ -879,7 +880,8 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
  * DISJOINT or any other failed call is no row. A frame whose count a row
  * passed, or whose swap-chain generation ended (resize, recovery), is never
  * reported. Each confirmed frame is written once, in frame order, with
- * previews and preview from its input; up to 1024 confirmed and 1024 awaiting
+ * previews and preview from its input and display_qpc, the SyncQPCTime of
+ * the statistics row that confirmed it; up to 1024 confirmed and 1024 awaiting
  * frames are kept, the oldest dropped first and never reported. A failed
  * statistics call writes no row and returns SA2_OK with *out_count 0, unless
  * the device is removed (SA2_E_DEVICE_REMOVED). Needs a loaded scene.

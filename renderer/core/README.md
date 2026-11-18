@@ -38,7 +38,7 @@ ABI 4 adds one C call per RM.14 operation of the Rust display host (`rust/c600-d
 | `retire` | `sa2_retire` | - |
 | `submit_frame` | `sa2_frame_submit` | `sa2_frame_input` (264) |
 | `read_frame_reports` | `sa2_frame_reports` | `sa2_frame_report` (104) |
-| `read_presented` | `sa2_presented` | `sa2_presented_row` (48) |
+| `read_presented` | `sa2_presented` | `sa2_presented_row` (56) |
 | `request_pick` | `sa2_pick_request` | - |
 | `poll_pick` | `sa2_pick_poll` | `sa2_pick_row` (112) |
 | `recover` | `sa2_recover` | JSON refusal |

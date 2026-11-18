@@ -1092,15 +1092,17 @@ void run_cpu(Suite& suite, const Options& options) {
         ledger.sample({0, 1, 9, 12});
         ledger.sample({disjoint, 1, 11, 12});
         expect(ledger.awaiting() == 3 && ledger.rows(rows, 4) == 0, "an earlier or disjoint row changed the ledger");
-        ledger.sample({0, 1, 11, 12});
-        ledger.sample({0, 1, 11, 12});
+        ledger.sample({0, 1, 11, 12, 7000});
+        ledger.sample({0, 1, 11, 12, 7100});
         expect(ledger.awaiting() == 1 && ledger.confirmed() == 1, "a row did not confirm its frame once and drop the passed one");
         expect(ledger.rows(rows, 4) == 1 && rows[0].struct_size == sizeof(rows[0]) && rows[0].frame_id == 2 && rows[0].previews == 1
             && rows[0].preview == 4 && rows[0].sequence == 2 && rows[0].surface == 1 && rows[0].device_epoch == sa2::DeviceEpoch,
             "the confirmed row does not carry its frame's input");
+        expect(rows[0].display_qpc == 7000, "the confirmed row does not carry the confirming row's SyncQPCTime");
         expect(ledger.rows(rows, 4) == 0, "a confirmed frame was reported twice");
-        ledger.sample({0, 1, 12, 12});
-        expect(ledger.rows(rows, 4) == 1 && rows[0].frame_id == 3 && rows[0].previews == 0 && rows[0].preview == 0, "frame 3 was not confirmed");
+        ledger.sample({0, 1, 12, 12, 7200});
+        expect(ledger.rows(rows, 4) == 1 && rows[0].frame_id == 3 && rows[0].previews == 0 && rows[0].preview == 0
+            && rows[0].display_qpc == 7200, "frame 3 was not confirmed");
         // A resize or recovery ends the generation: its waiting frames are never reported.
         ledger.presented(input, 4, 1, 13);
         ledger.sample({0, 2, 1, 1});
