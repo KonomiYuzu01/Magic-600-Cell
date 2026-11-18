@@ -1,0 +1,26 @@
+# The foreign half of C9's renderer bridge: the C function table of the S-A2 core's ABI (renderer/core/include/
+# sa2_interop.h) and its implementation of c600-render's CoreAbi. It stays outside the language workspace
+# (rust/Cargo.toml), because CT-RPI-01 keeps every member of that workspace free of unsafe code and foreign
+# declarations. The product shell links this crate, loads sa2_interop.dll and hands over the table and a context.
+[package]
+name = "c600-render-ffi"
+description = "The C function table of the S-A2 renderer core's ABI behind c600-render's CoreAbi, for the product shell (C9)"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# A workspace of its own, so that it is no member of rust/Cargo.toml's.
+[workspace]
+
+[dependencies]
+c600-render = { path = "../../rust/c600-render" }
+
+[dev-dependencies]
+c600-digest = { path = "../../rust/c600-digest" }
+c600-display = { path = "../../rust/c600-display" }
+c600-kernel = { path = "../../rust/c600-kernel" }
+
+# As in rust/Cargo.toml: the shared host scenario loads the shipped model, which is slow unoptimized. Here every
+# crate but this one is outside the workspace, so "*" covers the kernel and the jumbling crate too.
+[profile.dev.package."*"]
+opt-level = 2
