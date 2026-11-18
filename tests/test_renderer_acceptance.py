@@ -4,10 +4,10 @@ The harness runs only on Windows with Godot, PresentMon and a Direct3D 12 device
 the Python standard library, start no process, and run anywhere. They check that:
 - every source digest in renderer/acceptance/PROVENANCE.md still matches the selection evidence under
   work/experiments/, every "verbatim" file equals its source, and the table lists exactly the harness files;
-- the Godot project's interop layer (project/Native.cs) matches the core's ABI 4 header
+- the Godot project's interop layer (project/Native.cs) matches the core's ABI 5 header
   renderer/core/include/sa2_interop.h: the x64 layout of every struct it declares, its constants, and the
   signature of every entry point it imports; it declares every ABI 1 to 3 struct and imports every ABI 1 to 3
-  call (the harness uses no ABI 4 call);
+  call (the harness uses no ABI 4 or ABI 5 call);
 - the injection, menu and scene lists agree across the header, the project and the run script;
 - the run finalizer accepts small synthetic W-J and W3 runs and checks, refuses or fails broken ones, and
   writes records that the unchanged renderer gate (tools/perf/renderer_gate.py) judges as the evidence was.
@@ -296,9 +296,9 @@ class InteropTests(unittest.TestCase):
                   if re.fullmatch(r"SA2_(ABI_VERSION|OK|E_\w+|QUEUE_\w+|BARRIERS_\w+|STATE_\w+|SCENE_NO_VRAM)", name)}
         self.assertEqual(sorted(wanted - {name for _, name, _ in constants}), [])
 
-    def test_abi_version_4_is_required(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["4u"])
-        self.assertIn("public const uint SA2_ABI_VERSION = 4;", self.native)
+    def test_abi_version_5_is_required(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["5u"])
+        self.assertIn("public const uint SA2_ABI_VERSION = 5;", self.native)
         self.assertIn("if (sa2_abi_version() != SA2_ABI_VERSION)", self.native)
         loads = re.findall(r'Export\("(\w+)"\)', self.native)
         self.assertEqual(loads[0], "sa2_abi_version", "the version is checked before any other export")
