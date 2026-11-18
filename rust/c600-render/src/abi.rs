@@ -1,11 +1,11 @@
-//! ABI 4's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
+//! ABI 5's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
 //! `renderer/core/include/sa2_interop.h`, x64 layout. `tests/abi_layout.rs` checks every name, offset, size and
 //! constant against the header.
 
 use std::mem::size_of;
 
 /// `SA2_ABI_VERSION`.
-pub const ABI_VERSION: u32 = 4;
+pub const ABI_VERSION: u32 = 5;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.
@@ -82,7 +82,19 @@ pub const PICK_STALE_PUBLICATION: u32 = 5;
 /// `SA2_FRAME_PREVIEW`.
 pub const FRAME_PREVIEW: u32 = 1;
 
-/// `sa2_engine_image`. Built only by [`crate::ffi`] from checked slices.
+// ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks).
+/// `SA2_TARGET_SURFACE`: the frame target that names the attached surface of a `sa2_create` context.
+pub const TARGET_SURFACE: u32 = 0xFFFF_FFFF;
+/// `SA2_SURFACE_SYNC_INTERVAL`.
+pub const SURFACE_SYNC_INTERVAL: u32 = 1;
+/// `SA2_SURFACE_BUFFERS`.
+pub const SURFACE_BUFFERS: u32 = 3;
+/// `SA2_SURFACE_MAX_PX`.
+pub const SURFACE_MAX_PX: u32 = 16384;
+/// `SA2_RING_SLOTS`: the ring-slot frame targets of the Godot-texture route are 0 to 2.
+pub const RING_SLOTS: u32 = 3;
+
+/// `sa2_engine_image`. Built only by `c600-render-ffi` (`renderer/bridge`) from checked slices.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Sa2EngineImage {
@@ -96,7 +108,7 @@ pub struct Sa2EngineImage {
     pub digest: [u8; 32],
 }
 
-/// `sa2_preparation`. Built only by [`crate::ffi`] from checked slices.
+/// `sa2_preparation`. Built only by `c600-render-ffi` (`renderer/bridge`) from checked slices.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Sa2Preparation {
@@ -198,6 +210,7 @@ rows! {
         surface: u64,
         sequence: u64,
         preview: u64,
+        display_qpc: u64,
     }
 
     /// `sa2_pick_row`.

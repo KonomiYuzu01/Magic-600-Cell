@@ -86,6 +86,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_renderer_core.py"],
     # The C9 acceptance harness: its provenance, its interop layout against the core header and its finalizer.
     ["tests/test_renderer_acceptance.py"],
+    # C9's product shell project (renderer/shell): static checks, no build and no launch.
+    ["tests/test_renderer_shell.py"],
     # The C9 measurement tools (charter E2 and E3 timers, PresentMon wrapper, runbook) on synthetic inputs.
     ["tests/test_c9_measure.py"],
     ["tests/test_feature_costs.py"],
@@ -119,7 +121,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     [_LANGUAGE + "kernel-interface/check_annex.py"],
     # The Rust workspace of the language (LP2): cargo test --locked --offline in rust/.
     ["tests/test_language_rust.py"],
-    # C9's foreign bridge half outside that workspace (CT-RPI-01): cargo test --locked --offline in renderer/bridge.
+    # C9's foreign bridge half and the shell's native host library outside that workspace (CT-RPI-01): cargo test
+    # --locked --offline --workspace in renderer/bridge.
     ["tests/test_render_ffi.py"],
     # The Rust kernel (LP2, M4) replays the frozen oracle cases O01 to O07 and runs the KN2.9 agreement test.
     ["tests/test_kernel_oracle.py"],

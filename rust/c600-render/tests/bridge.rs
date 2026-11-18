@@ -24,6 +24,12 @@ fn the_host_runs_over_the_fake_core() {
     scenario(FakeCore::new(SIZE));
 }
 
+/// Route B (accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks): presentations and recovery.
+#[test]
+fn route_b_confirms_presentations_and_recovers() {
+    route_b(FakeCore::on_surface(SIZE));
+}
+
 /// A bridge over a fresh fake core, and a stamp for a preparation of `publication`.
 fn prepared(publication: &Publication) -> Result<Ticket, Error> {
     let mut backend = RenderBackend::new(FakeCore::new(SIZE), limits());

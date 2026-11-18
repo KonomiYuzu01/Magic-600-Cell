@@ -1,4 +1,4 @@
-//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 4 row's field names, offsets and
+//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 5 row's field names, offsets and
 //! size under the C rules of x64 (each against the header's static_assert too) and every constant. The header is
 //! read, not copied, so a header change fails here. The function table's signatures are checked in `renderer/bridge`.
 
@@ -163,7 +163,16 @@ fn every_row_has_the_header_layout() {
         ),
         (
             "sa2_presented_row",
-            rust_struct!(Sa2PresentedRow { struct_size, previews, frame_id, device_epoch, surface, sequence, preview }),
+            rust_struct!(Sa2PresentedRow {
+                struct_size,
+                previews,
+                frame_id,
+                device_epoch,
+                surface,
+                sequence,
+                preview,
+                display_qpc
+            }),
         ),
         (
             "sa2_pick_row",
@@ -214,7 +223,7 @@ fn every_row_has_the_header_layout() {
         Sa2PickRow::new().struct_size,
         Sa2CounterValues::new().struct_size,
     ];
-    assert_eq!(sizes, [32, 264, 104, 48, 112, 64], "new() sets struct_size");
+    assert_eq!(sizes, [32, 264, 104, 56, 112, 64], "new() sets struct_size");
 }
 
 #[test]
@@ -225,7 +234,12 @@ fn every_constant_has_the_header_value() {
         .filter_map(|rest| {
             let mut parts = rest.split_whitespace();
             let (name, value) = (parts.next()?, parts.next()?);
-            Some((name.to_owned(), value.trim_end_matches('u').parse().ok()?))
+            let value = value.trim_end_matches('u');
+            let value = match value.strip_prefix("0x").or_else(|| value.strip_prefix("0X")) {
+                Some(hex) => i64::from_str_radix(hex, 16).ok()?,
+                None => value.parse().ok()?,
+            };
+            Some((name.to_owned(), value))
         })
         .collect();
     let mut rust: Vec<(String, i64)> = vec![
@@ -251,6 +265,11 @@ fn every_constant_has_the_header_value() {
         ("PICK_STALE_ENGINE".into(), i64::from(PICK_STALE_ENGINE)),
         ("PICK_STALE_PUBLICATION".into(), i64::from(PICK_STALE_PUBLICATION)),
         ("FRAME_PREVIEW".into(), i64::from(FRAME_PREVIEW)),
+        ("TARGET_SURFACE".into(), i64::from(TARGET_SURFACE)),
+        ("SURFACE_SYNC_INTERVAL".into(), i64::from(SURFACE_SYNC_INTERVAL)),
+        ("SURFACE_BUFFERS".into(), i64::from(SURFACE_BUFFERS)),
+        ("SURFACE_MAX_PX".into(), i64::from(SURFACE_MAX_PX)),
+        ("RING_SLOTS".into(), i64::from(RING_SLOTS)),
     ];
     for code in 0..=10 {
         rust.push((Status(code).name().to_owned(), i64::from(code)));

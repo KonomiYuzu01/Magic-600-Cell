@@ -32,7 +32,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
-| `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 4 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
+| `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling trial on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 
@@ -810,6 +810,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     kernel), all 600 centres under every generator, Strict against a scan that derives every prefix, and the set's
     refusals; `tests/load.rs` checks KN1.4 for both piece calls on a second model. The critical-path read is recorded
     with the slot action (M5's section).
+  - The structure rows (draft, for LP3's C6, step 1 item 3): `compare_cells(first, second)` gives the fewest face steps
+    between two cells (`structure.compare`), and `cell_layers(cell)` and `layer_counts(cell, layer)` the positions and
+    slots of each breadth-first layer around a cell (`filter.preview`'s counts for a layer predicate), as 0.4's
+    `cell_distances` and `layer_mask` give them: a position with a home slot in a cell of the layer counts whole, so
+    layers overlap. Two cells share a face when they share three vertices, read from the 120 vertex pieces; the load
+    checks the graph. The rows read no state. A bad cell or layer is `KN2:input.named_object_invalid` with the text of
+    0.4's `cell_mask` or `layer_mask`.
+    `CommandLayer::compare_cells`, `cell_layers` and `layer_counts` read them at the head and, like
+    `CommandLayer::positions`, refuse with Jumble on (LG2.8). `c600-kernel/tests/structure.rs` checks every step count
+    and every layer's counts against digests taken from 0.4's `core.py` on the same assets.
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
@@ -2608,7 +2618,7 @@ run or not applicable is no pass (PHS.63).
 
 ## Status of LP3, C9 bridge: the display host over the S-A2 core
 
-- `c600-render` implements `c600-display`'s `Backend` over ABI 4 of the S-A2 renderer core
+- `c600-render` implements `c600-display`'s `Backend` over ABI 5 of the S-A2 renderer core
   (`renderer/core/include/sa2_interop.h`) through `CoreAbi`, a safe call interface, and forbids unsafe code.
 - The foreign half is `c600-render-ffi` in `renderer/bridge`, a crate with a workspace and a lockfile of its own,
   because CT-RPI-01 keeps every member of this workspace free of unsafe code and foreign declarations. There
@@ -2616,20 +2626,29 @@ run or not applicable is no pass (PHS.63).
   array length and sets every row's size before it calls one, and refuses a null context or another ABI version. The
   bridge loads no library: the shell links `renderer/bridge`, loads `sa2_interop.dll` and hands over the context and
   the table, because only `c600-platform` calls an operating system's own API (CT-RPI-20) and it has no loader.
+- The shell's native host library, `c600-shell-host` in `renderer/bridge/host`, is the other member of that workspace.
+  It is step S2 of `renderer/shell/README.md`, a draft on route B, accepted for now by the owner on 18 Nov 2026,
+  pending three owner-machine checks. It runs `c600-display`'s host over `RenderBackend<DllCore>` behind a C interface
+  (`m6h_*`) that the shell's C# side calls, and it loads no library either.
 - The mapping: the core's describe report becomes the support report, with the limits the caller declares. J01 and J02
   are reported unsupported, because the bridge maps Full labels only. F20 (atomic publication and latest-wins
   replacement) is not a drawing row and the core does not name it; its backend operations are ABI 4's prepare, poll,
   activate, cancel and retire, and its replacement rules are the host's (RM.17 to RM.22), so the bridge reports it
   supported unless the core names it. A preparation carries at most one retained primitive, its labels a permutation
   and its instances on stickers or slots; anything else is refused by the feature it needs. Activation sends the
-  publication stamp's digest. A frame needs a camera matrix for its view and an active set. `read_presented` and
-  `recover` answer renderer unavailable, as ABI 4 does (F23; F22 and RPI.46), so the host's presented latch stays
-  clear. What the `Backend` trait has no operation for yet is inherent: engine adoption, frame reports in batches of
+  publication stamp's digest. A frame needs a camera matrix for its view and an active set. On a `sa2_attach`
+  context (the Godot-texture route) `read_presented` and `recover` answer renderer unavailable (F23; F22 and RPI.46),
+  so the host's presented latch stays clear. On a `sa2_create` context with a surface (ABI 5, route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) frames
+  name `SA2_TARGET_SURFACE`, `read_presented` returns the frames the core confirmed under the exact rule (the bridge
+  keeps each one's display time, the SyncQPCTime of the confirming statistics row, for `take_display_times`), and
+  `recover` rebuilds a removed device: the bridge then forgets every resource set of the old epoch, so an installed
+  publication draws again only after it is prepared and activated on the new device (RM.23). What the `Backend` trait has no operation for yet is inherent: engine adoption, frame reports in batches of
   64, pick requests and polls (a pick names the binding field that went stale), and the core's counters.
 - Tests (`c600-render/tests/`): `abi_layout.rs` reads the header and checks every row's offsets and size and every
   constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
   install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
-  replacement, and device loss. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
+  replacement, and device loss; on route B also confirmed presentations and their display times, the presented-preview latch, a contradicting
+  presented row, recovery and a publication drawn again on the new device. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
   run again through the C function table over a C shim; there `abi_functions.rs` checks every function's signature
   against the header and `ffi.rs` what `DllCore` refuses before a call and what it reads back.
   `tests/test_render_ffi.py` runs that crate's tests, since `tests/test_language_rust.py` runs this workspace only.
