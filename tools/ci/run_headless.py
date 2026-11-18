@@ -86,6 +86,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_renderer_core.py"],
     # The C9 acceptance harness: its provenance, its interop layout against the core header and its finalizer.
     ["tests/test_renderer_acceptance.py"],
+    # C9's product shell project (renderer/shell): static checks, no build and no launch.
+    ["tests/test_renderer_shell.py"],
     ["tests/test_feature_costs.py"],
     ["tests/test_migration_probes.py"],
     ["tests/test_migration_p2.py"],
