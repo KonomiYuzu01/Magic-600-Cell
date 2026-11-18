@@ -1,5 +1,6 @@
 #include "test.h"
 #include "scene_record.h"
+#include "product.h"
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -58,8 +59,91 @@ void invalid(int32_t status, const char* call) {
     expect(std::string(error).starts_with(std::string(call) + ':'), "DLL-wide last error does not name the failed call");
     expect(std::strchr(error, '\n') == nullptr && std::strchr(error, '\r') == nullptr, "last error is not one line");
 }
+// ABI 4: synthetic product inputs, without a device.
+bool wrong_state(const std::function<void()>& call) {
+    try { call(); } catch (const sa2::Failure& error) { return error.status == SA2_E_WRONG_STATE; }
+    return false;
+}
+int32_t failure(const std::function<void()>& call) {
+    try { call(); } catch (const sa2::Failure& error) { return error.status; }
+    return SA2_OK;
+}
+bool rejects(const std::function<void()>& call) { return failure(call) == SA2_E_INVALID_ARGUMENT; }
+// One engine state: label = slot and, when posed, every piece in pose 0.
+struct EngineArrays {
+    std::vector<uint32_t> labels = std::vector<uint32_t>(SA2_SLOTS);
+    std::vector<int32_t> pose_index, lattice;
+    std::vector<float> poses;
+    sa2_engine_image image{};
+    EngineArrays(uint64_t revision, uint32_t pose_count) {
+        for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+        image.struct_size = sizeof(image);
+        image.revision = revision;
+        image.labels = labels.data();
+        image.digest[0] = uint8_t(revision);
+        if (!pose_count) return;
+        pose_index.assign(SA2_PIECES, 0);
+        poses.assign(size_t(pose_count) * 16, 0.0f);
+        for (size_t pose = 0; pose < pose_count; ++pose)
+            for (size_t i = 0; i < 4; ++i) poses[pose * 16 + i * 5] = 1.0f;
+        lattice.assign(pose_count, -1);
+        lattice[0] = 0;
+        image.pose_count = pose_count;
+        image.pose_index = pose_index.data();
+        image.poses = poses.data();
+        image.pose_lattice = lattice.data();
+    }
+    EngineArrays(const EngineArrays&) = delete;
+    EngineArrays& operator=(const EngineArrays&) = delete;
+};
+// One publication: every slot drawn and interactive, instance = slot + 1.
+struct PreparationArrays {
+    std::vector<uint8_t> visibility = std::vector<uint8_t>(SA2_SLOTS, 1), interaction = std::vector<uint8_t>(SA2_SLOTS, 1);
+    std::vector<uint32_t> instances = std::vector<uint32_t>(SA2_SLOTS);
+    sa2_preparation value{};
+    PreparationArrays(uint64_t view, uint64_t view_generation, uint64_t publication_generation) {
+        for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) instances[slot] = slot + 1;
+        value.struct_size = sizeof(value);
+        value.command = 7;
+        value.view = view;
+        value.view_generation = view_generation;
+        value.publication_generation = publication_generation;
+        value.device_epoch = sa2::DeviceEpoch;
+        value.visibility = visibility.data();
+        value.interaction = interaction.data();
+        value.instances = instances.data();
+    }
+    PreparationArrays(const PreparationArrays&) = delete;
+    PreparationArrays& operator=(const PreparationArrays&) = delete;
+};
+// A frame of surface 1 and view 1 at 256 x 256 with the identity camera.
+sa2_frame_input frame_input(uint64_t revision, uint64_t sequence) {
+    sa2_frame_input input{};
+    input.struct_size = sizeof(input);
+    input.device_epoch = sa2::DeviceEpoch;
+    input.surface = 1;
+    input.surface_generation = 1;
+    input.sequence = sequence;
+    input.engine_revision = revision;
+    input.view = 1;
+    input.view_generation = 1;
+    input.publication_generation = 1;
+    input.viewport_width = 256;
+    input.viewport_height = 256;
+    for (size_t i = 0; i < 4; ++i) input.camera_matrix[i * 5] = 1.0f;
+    return input;
+}
+// Prepares a set whose upload signals fence and polls it ready: (ticket, resource set).
+std::pair<uint64_t, uint64_t> ready_set(sa2::Product& product, const sa2::PreparedData& data, uint64_t fence) {
+    product.check_prepare(data);
+    const auto ticket = product.reserve_ticket();
+    product.prepared(ticket, data, fence);
+    const auto row = product.poll(ticket, fence);
+    expect(row.state == SA2_TICKET_READY && row.resource_set != 0, "a completed upload was not ready");
+    return {ticket, row.resource_set};
+}
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 3, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 4, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
@@ -68,7 +152,10 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_register_slot", "sa2_unregister_slot", "sa2_signal_godot_free", "sa2_produce", "sa2_godot_wait_ready", "sa2_mark_shown",
             "sa2_verify_slot", "sa2_drain", "sa2_debug_counts", "sa2_debug_messages", "sa2_remove_device", "sa2_device_removed_reason", "sa2_detach",
             "sa2_scene_load", "sa2_scene_produce", "sa2_scene_trace_begin", "sa2_scene_trace_end", "sa2_scene_write_run",
-            "sa2_scene_geometry_check", "sa2_identity", "sa2_scene_unload", "sa2_scene_load_wj", "sa2_scene_lattice_check"};
+            "sa2_scene_geometry_check", "sa2_identity", "sa2_scene_unload", "sa2_scene_load_wj", "sa2_scene_lattice_check",
+            "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
+            "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
+            "sa2_resize", "sa2_counters", "sa2_device_status"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -304,7 +391,8 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(sa2_identity(truncated.data(), 1) == SA2_OK && truncated[0] == 0 && truncated[1] == '#', "identity size-1 truncation overrun");
         truncated.fill('#');
         expect(sa2_identity(truncated.data(), 8) == SA2_OK && truncated[7] == 0 && truncated[8] == '#', "identity size-8 truncation overrun");
-        expect(shaders.size() == 5 && shaders[4].at("file").string() == "lattice_cs.dxil", "ABI 3 identity does not list lattice_cs.dxil");
+        expect(shaders.size() == 8 && shaders[5].at("file").string() == "lattice_cs.dxil" && shaders[4].at("file").string() == "id_ps.dxil"
+            && shaders[7].at("file").string() == "product_vs.dxil", "ABI 4 identity does not list lattice_cs.dxil and the product shaders");
     });
     suite.check("wj arguments", [] {
         sa2_wj_config config{sizeof(sa2_wj_config), 0, "S4", "existing", 190, nullptr, 180000, 0};
@@ -473,6 +561,474 @@ void run_cpu(Suite& suite, const Options& options) {
             auto other = config; other.menu = menu;
             expect(sa2::SceneRecord(other, 10000000, 64, 64).native(labels, identity, 0, 1, poses).at("fixture").string() == fixture, "W-J fixture name mismatch");
         }
+    });
+    // ABI 4: the product API's device-free logic (product.cpp) and its argument checks.
+    suite.check("product arguments", [] {
+        char text[64]{};
+        uint32_t size = 0;
+        uint64_t value = 0;
+        int32_t hr = 0;
+        const uint8_t digest[32]{};
+        sa2_engine_image image{sizeof(sa2_engine_image)};
+        sa2_preparation preparation{sizeof(sa2_preparation)};
+        sa2_poll_row poll{sizeof(sa2_poll_row)};
+        sa2_frame_input input{sizeof(sa2_frame_input)};
+        sa2_frame_report report{sizeof(sa2_frame_report)};
+        sa2_presented_row presented{sizeof(sa2_presented_row)};
+        sa2_pick_row pick{sizeof(sa2_pick_row)};
+        sa2_counter_values counters{sizeof(sa2_counter_values)};
+        invalid(sa2_describe(nullptr, text, sizeof(text), &size), "sa2_describe");
+        invalid(sa2_engine_adopt(nullptr, &image, &value), "sa2_engine_adopt");
+        invalid(sa2_prepare(nullptr, &preparation, &value), "sa2_prepare");
+        invalid(sa2_poll(nullptr, 1, &poll), "sa2_poll");
+        invalid(sa2_activate(nullptr, 1, digest), "sa2_activate");
+        invalid(sa2_cancel(nullptr, 1, SA2_CANCEL_BY_USER, 0), "sa2_cancel");
+        invalid(sa2_retire(nullptr, 1), "sa2_retire");
+        invalid(sa2_frame_submit(nullptr, &input, &value), "sa2_frame_submit");
+        invalid(sa2_frame_reports(nullptr, &report, 1, &size), "sa2_frame_reports");
+        invalid(sa2_presented(nullptr, &presented, 1, &size), "sa2_presented");
+        invalid(sa2_pick_request(nullptr, 1, 0, 0, &value), "sa2_pick_request");
+        invalid(sa2_pick_poll(nullptr, 1, &pick), "sa2_pick_poll");
+        invalid(sa2_recover(nullptr, text, sizeof(text), &size), "sa2_recover");
+        invalid(sa2_resize(nullptr, 256, 256), "sa2_resize");
+        invalid(sa2_counters(nullptr, &counters), "sa2_counters");
+        invalid(sa2_device_status(nullptr, &hr), "sa2_device_status");
+        expect(size == 0 && value == 0 && hr == 0, "a refused call left an output set");
+        // The engine image.
+        EngineArrays engine(1, 0);
+        expect(sa2::engine_image(&engine.image).labels.size() == SA2_SLOTS, "a valid engine image was refused");
+        expect(rejects([&] { auto bad = engine.image; bad.struct_size = 0; sa2::engine_image(&bad); }), "engine_image struct_size was accepted");
+        expect(rejects([&] { auto bad = engine.image; bad.labels = nullptr; sa2::engine_image(&bad); }), "NULL labels were accepted");
+        expect(rejects([&] { auto bad = engine.image; bad.pose_count = 1; sa2::engine_image(&bad); }), "pose_count without a pose index was accepted");
+        engine.labels[5] = SA2_SLOTS;
+        expect(rejects([&] { sa2::engine_image(&engine.image); }), "a label at SA2_SLOTS was accepted");
+        engine.labels[5] = 5;
+        EngineArrays posed(2, 3);
+        expect(sa2::engine_image(&posed.image).posed(), "a valid posed image was refused");
+        expect(rejects([&] { auto bad = posed.image; bad.pose_count = SA2_MAX_POSES + 1; sa2::engine_image(&bad); }), "pose_count above SA2_MAX_POSES was accepted");
+        expect(rejects([&] { auto bad = posed.image; bad.poses = nullptr; sa2::engine_image(&bad); }), "a pose index without poses was accepted");
+        posed.pose_index[9] = 3;
+        expect(rejects([&] { sa2::engine_image(&posed.image); }), "a pose index at pose_count was accepted");
+        posed.pose_index[9] = 0;
+        posed.poses[0] = 2.0f;
+        expect(rejects([&] { sa2::engine_image(&posed.image); }), "a pose 0 other than the identity was accepted");
+        posed.poses[0] = 1.0f;
+        posed.poses[20] = std::numeric_limits<float>::quiet_NaN();
+        expect(rejects([&] { sa2::engine_image(&posed.image); }), "a non-finite pose was accepted");
+        posed.poses[20] = 0.0f;
+        posed.lattice[1] = SA2_POSE_GROUP_ORDER;
+        expect(rejects([&] { sa2::engine_image(&posed.image); }), "a pose_lattice entry at SA2_POSE_GROUP_ORDER was accepted");
+        posed.lattice[1] = -1;
+        posed.lattice[0] = 1;
+        expect(rejects([&] { sa2::engine_image(&posed.image); }), "pose_lattice entry 0 other than 0 was accepted");
+        posed.lattice[0] = 0;
+        expect(sa2::engine_image(&posed.image).lattice[1] == -1, "the restored posed image was refused");
+        // The preparation (F02: a slot that is not drawn or not interactive writes no instance).
+        PreparationArrays arrays(1, 1, 1);
+        arrays.interaction[10] = 0;
+        arrays.visibility[11] = 0;
+        const auto data = sa2::preparation(&arrays.value);
+        expect(data.visible.size() == SA2_SLOTS && data.instances.size() == SA2_SLOTS && data.instances[12] == 13 && data.visible[10] == 1
+            && data.instances[10] == 0 && data.visible[11] == 0 && data.instances[11] == 0 && data.stamp.command == 7, "the preparation copy is wrong");
+        arrays.visibility[12] = 2;
+        expect(rejects([&] { sa2::preparation(&arrays.value); }), "a visibility byte of 2 was accepted");
+        arrays.visibility[12] = 1;
+        expect(rejects([&] { auto bad = arrays.value; bad.reserved = 1; sa2::preparation(&bad); }), "a nonzero preparation reserved was accepted");
+        expect(rejects([&] { auto bad = arrays.value; bad.instances = nullptr; sa2::preparation(&bad); }), "NULL instances were accepted");
+        expect(rejects([&] { auto bad = arrays.value; bad.struct_size -= 8; sa2::preparation(&bad); }), "preparation struct_size was accepted");
+        // The frame input.
+        const auto frame = frame_input(1, 1);
+        sa2::validate_frame_input(&frame);
+        expect(rejects([&] { auto bad = frame; bad.flags = 2; sa2::validate_frame_input(&bad); }), "an unknown frame flag was accepted");
+        expect(rejects([&] { auto bad = frame; bad.reserved = 1; sa2::validate_frame_input(&bad); }), "a nonzero frame reserved was accepted");
+        expect(rejects([&] { auto bad = frame; bad.target = SA2_RING_SLOTS; sa2::validate_frame_input(&bad); }), "a target outside the ring was accepted");
+        expect(rejects([&] { auto bad = frame; bad.viewport_height = SA2_MIN_TEXTURE_PX - 1; sa2::validate_frame_input(&bad); }), "a viewport below the minimum was accepted");
+        expect(rejects([&] { auto bad = frame; bad.preview = 3; sa2::validate_frame_input(&bad); }), "a preview without SA2_FRAME_PREVIEW was accepted");
+        expect(rejects([&] { auto bad = frame; bad.camera_matrix[3] = std::numeric_limits<float>::infinity(); sa2::validate_frame_input(&bad); }),
+            "a non-finite camera matrix was accepted");
+        auto preview = frame;
+        preview.flags = SA2_FRAME_PREVIEW;
+        preview.preview = 3;
+        preview.preview_base = 2;
+        preview.preview_literal_digest[0] = 1;
+        sa2::validate_frame_input(&preview);
+        // Cancel reasons and row arrays.
+        sa2::validate_cancel(SA2_CANCEL_SUPERSEDED, 9);
+        sa2::validate_cancel(SA2_CANCEL_BUDGET, 0);
+        expect(rejects([] { sa2::validate_cancel(SA2_CANCEL_BY_USER, 9); }), "superseded_by without SA2_CANCEL_SUPERSEDED was accepted");
+        expect(rejects([] { sa2::validate_cancel(SA2_CANCEL_BUDGET + 1, 0); }) && rejects([] { sa2::validate_cancel(-1, 0); }), "an unknown cancel reason was accepted");
+        sa2::validate_rows<sa2_frame_report>(nullptr, 0);
+        expect(rejects([] { sa2::validate_rows<sa2_frame_report>(nullptr, 1); }), "NULL rows with a capacity were accepted");
+        sa2_frame_report rows[2]{};
+        rows[0].struct_size = sizeof(sa2_frame_report);
+        expect(rejects([&] { sa2::validate_rows(rows, 2); }), "a row without struct_size was accepted");
+        rows[1].struct_size = sizeof(sa2_frame_report);
+        sa2::validate_rows(rows, 2);
+    });
+    suite.check("product adopt", [] {
+        sa2::Product product;
+        expect(product.image() == nullptr, "a fresh product holds an image");
+        EngineArrays first(5, 0);
+        expect(product.adopt(sa2::engine_image(&first.image)) == 5, "adopt did not return the revision");
+        first.labels[0] = 7; // the caller's arrays may change once adopt returned
+        expect(product.image()->labels[0] == 0 && product.image()->digest[0] == 5 && !product.image()->posed(), "adopt did not copy the image");
+        expect(wrong_state([&] { product.adopt(sa2::engine_image(&first.image)); }), "an equal revision was adopted");
+        EngineArrays older(4, 0);
+        expect(wrong_state([&] { product.adopt(sa2::engine_image(&older.image)); }), "an older revision was adopted");
+        EngineArrays posed(6, 2);
+        expect(product.adopt(sa2::engine_image(&posed.image)) == 6 && product.image()->posed() && product.image()->pose_count == 2, "a posed revision was not adopted");
+        expect(product.image()->bytes() == uint64_t(SA2_SLOTS) * 4 + uint64_t(SA2_PIECES) * 4 + 2 * (64 + 4), "the posed upload size is wrong");
+        const auto counters = product.counter_values();
+        expect(counters.bytes_uploaded == 0 && counters.frames_submitted == 0, "adopt counted GPU work (RM.16: CPU copy only)");
+    });
+    suite.check("product tickets", [] {
+        sa2::Product product;
+        PreparationArrays arrays(1, 1, 1);
+        const auto data = sa2::preparation(&arrays.value);
+        const uint8_t stamp[32]{1};
+        // Pending until the upload's fence, then ready with a resource set.
+        product.check_prepare(data);
+        const auto first = product.reserve_ticket();
+        product.prepared(first, data, 10);
+        expect(product.counters().bytes_uploaded == uint64_t(SA2_SLOTS) * 8, "the preparation upload size is wrong");
+        auto row = product.poll(first, 9);
+        expect(row.struct_size == sizeof(row) && row.state == SA2_TICKET_PENDING && row.resource_set == 0 && row.reason == 0, "an incomplete upload was not pending");
+        row = product.poll(first, 10);
+        const auto set = row.resource_set;
+        expect(row.state == SA2_TICKET_READY && set != 0 && product.poll(first, 10).resource_set == set, "a completed upload was not ready with one set");
+        expect(wrong_state([&] { product.activate(set + 100, stamp); }), "an unknown set was activated");
+        product.activate(set, stamp);
+        expect(wrong_state([&] { product.activate(set, stamp); }), "a set was activated twice");
+        expect(wrong_state([&] { product.cancel(first, SA2_CANCEL_BY_USER, 0); }), "the ticket of an active set was cancelled");
+        product.retire(set);
+        expect(wrong_state([&] { product.retire(set); }) && wrong_state([&] { product.activate(set, stamp); }), "a retired set was retired or activated");
+        expect(wrong_state([&] { product.poll(first, 10); }), "the ticket of a retired set is still known");
+        expect(product.releasable(0, 10) == std::vector<uint64_t>{first}, "a retired, unused set was not released");
+        expect(product.releasable(0, 10).empty() && product.live_tickets() == 0, "a released ticket was returned twice or kept");
+        // RM.17: cancelled while pending, the late completion yields nothing.
+        const auto second = product.reserve_ticket();
+        product.prepared(second, data, 20);
+        product.cancel(second, SA2_CANCEL_SUPERSEDED, 44);
+        expect(product.releasable(0, 19).empty(), "a cancelled set was released before its upload completed");
+        expect(product.releasable(0, 20) == std::vector<uint64_t>{second}, "a cancelled, uploaded set was not released");
+        row = product.poll(second, 20);
+        expect(row.state == SA2_TICKET_CANCELLED && row.reason == SA2_CANCEL_SUPERSEDED && row.superseded_by == 44 && row.resource_set == 0,
+            "a late completion after cancel changed the reply (RM.17)");
+        row = product.poll(second, 20);
+        expect(row.state == SA2_TICKET_CANCELLED && row.superseded_by == 44, "polling again did not return the cancellation (RM.17)");
+        product.releasable(0, 20);
+        expect(product.live_tickets() == 1 && product.held_tickets() == 0, "a released cancellation holds GPU memory or was forgotten");
+        // Cancelled when ready but not active: the set is gone; a second cancel does nothing.
+        const auto third = product.reserve_ticket();
+        product.prepared(third, data, 30);
+        const auto third_set = product.poll(third, 30).resource_set;
+        product.cancel(third, SA2_CANCEL_BUDGET, 0);
+        product.cancel(third, SA2_CANCEL_BY_USER, 0);
+        expect(wrong_state([&] { product.activate(third_set, stamp); }) && wrong_state([&] { product.retire(third_set); }), "a cancelled set was activated or retired");
+        row = product.poll(third, 30);
+        expect(row.state == SA2_TICKET_CANCELLED && row.reason == SA2_CANCEL_BUDGET && row.superseded_by == 0, "a second cancel changed the reply");
+        // Another device epoch, unknown tickets and the ticket bound.
+        auto other = data;
+        other.stamp.device_epoch = sa2::DeviceEpoch + 1;
+        expect(wrong_state([&] { product.check_prepare(other); }), "another device epoch was prepared");
+        expect(wrong_state([&] { product.poll(999, 0); }) && wrong_state([&] { product.cancel(999, SA2_CANCEL_BY_USER, 0); }), "an unknown ticket was accepted");
+        std::vector<uint64_t> held;
+        while (product.held_tickets() < sa2::MaxTickets) {
+            held.push_back(product.reserve_ticket());
+            product.prepared(held.back(), data, 40);
+        }
+        expect(wrong_state([&] { product.check_prepare(data); }), "a ticket beyond the GPU bound was accepted");
+        // The host never polls a ticket it cancelled: releasing it frees the bound.
+        product.cancel(held.front(), SA2_CANCEL_BY_USER, 0);
+        expect(product.releasable(0, 40).size() == 2, "the cancelled tickets were not released");
+        product.check_prepare(data);
+        // Ended replies are bounded: three are kept (second, third and the
+        // cancelled held ticket); one more than the bound forgets the oldest.
+        for (size_t i = 0; i + 2 < sa2::MaxEnded; ++i) {
+            const auto ticket = product.reserve_ticket();
+            product.prepared(ticket, data, 50);
+            product.cancel(ticket, SA2_CANCEL_BY_USER, 0);
+            product.releasable(0, 50);
+        }
+        expect(wrong_state([&] { product.poll(second, 50); }), "the oldest ended reply was kept beyond the bound");
+        expect(product.poll(third, 50).state == SA2_TICKET_CANCELLED, "a newer ended reply was forgotten");
+        expect(product.held_tickets() == sa2::MaxTickets - 2, "an ended ticket still holds GPU memory");
+    });
+    suite.check("product frames", [] {
+        sa2::Product product;
+        auto input = frame_input(3, 1);
+        expect(wrong_state([&] { product.plan(input, 256, 256); }), "a frame was planned without an adopted image");
+        EngineArrays engine(3, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        auto plan = product.plan(input, 256, 256);
+        expect(plan.upload && plan.copy == 0 && plan.upload_wait == 0 && plan.pose_count == 0 && plan.set_ticket == 0 && plan.image == product.image(),
+            "the first frame does not upload into ring copy 0");
+        product.commit(input, plan, 1, 0);
+        product.produced(1, 100, 10);
+        expect(product.counters().bytes_uploaded == uint64_t(SA2_SLOTS) * 4 && product.counters().frames_submitted == 1, "the frame upload was not counted");
+        input.sequence = 2;
+        plan = product.plan(input, 256, 256);
+        expect(!plan.upload && plan.copy == 0, "an uploaded revision was uploaded again");
+        product.commit(input, plan, 2, 1);
+        product.produced(2, 100, 10);
+        // Stamp rules.
+        expect(wrong_state([&] { product.plan(input, 256, 256); }), "a repeated sequence was accepted");
+        input.sequence = 3;
+        expect(wrong_state([&] { auto bad = input; bad.surface_generation = 0; product.plan(bad, 256, 256); }), "a decreasing surface_generation was accepted");
+        expect(wrong_state([&] { auto bad = input; bad.view_generation = 0; product.plan(bad, 256, 256); }), "a decreasing view_generation was accepted");
+        expect(wrong_state([&] { auto bad = input; bad.engine_revision = 2; product.plan(bad, 256, 256); }), "an engine revision not adopted was accepted");
+        expect(wrong_state([&] { auto bad = input; bad.device_epoch = sa2::DeviceEpoch + 1; product.plan(bad, 256, 256); }), "another device epoch was accepted");
+        expect(wrong_state([&] { product.plan(input, 512, 256); }), "a viewport other than the target's size was accepted");
+        expect(wrong_state([&] { auto bad = input; bad.resource_set = 77; product.plan(bad, 256, 256); }), "an unknown resource set was accepted");
+        auto other = input;
+        other.surface = 2;
+        other.sequence = 1;
+        product.plan(other, 256, 256); // sequences count per surface
+        // New revisions take the oldest ring copy; reusing one waits for the frame that last uploaded into it.
+        uint64_t frame = 2;
+        const uint32_t copies[] = {1, 2, 0};
+        const uint64_t waits[] = {0, 0, 1};
+        for (uint64_t revision = 4; revision <= 6; ++revision) {
+            EngineArrays next(revision, revision == 5 ? 2 : 0);
+            product.adopt(sa2::engine_image(&next.image));
+            input.engine_revision = revision;
+            input.sequence = ++frame;
+            plan = product.plan(input, 256, 256);
+            const auto i = size_t(revision - 4);
+            expect(plan.upload && plan.copy == copies[i] && plan.upload_wait == waits[i] && plan.pose_count == (revision == 5 ? 2u : 0u),
+                "the engine ring did not take the oldest copy");
+            product.commit(input, plan, frame, uint32_t((frame - 1) % SA2_RING_SLOTS));
+            product.produced(frame, 100, 10);
+        }
+        // A resource set draws only an active set's frames of its view, view generation and publication generation.
+        PreparationArrays arrays(1, 1, 1);
+        const auto readied = ready_set(product, sa2::preparation(&arrays.value), 0);
+        input.sequence = ++frame;
+        input.resource_set = readied.second;
+        expect(wrong_state([&] { product.plan(input, 256, 256); }), "a set that is not active was drawn");
+        const uint8_t stamp[32]{};
+        product.activate(readied.second, stamp);
+        plan = product.plan(input, 256, 256);
+        expect(plan.set_ticket == readied.first && !plan.upload && plan.copy == 0, "the active set was not planned");
+        expect(wrong_state([&] { auto bad = input; bad.view_generation = 2; product.plan(bad, 256, 256); }), "a set was drawn for another view generation");
+        expect(wrong_state([&] { auto bad = input; bad.publication_generation = 2; product.plan(bad, 256, 256); }), "a set was drawn for another publication generation");
+        expect(wrong_state([&] { auto bad = input; bad.view = 2; product.plan(bad, 256, 256); }), "a set was drawn for another view");
+        product.commit(input, plan, frame, uint32_t((frame - 1) % SA2_RING_SLOTS));
+        // A retired set is released once the frames that used it completed.
+        product.retire(readied.second);
+        expect(product.releasable(frame - 1, 0).empty(), "a retired set was released before its last frame completed");
+        expect(product.releasable(frame, 0) == std::vector<uint64_t>{readied.first}, "a retired set was not released after its last frame");
+        expect(product.counters().frames_submitted == frame, "frames_submitted is wrong");
+    });
+    suite.check("product reports", [] {
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        const auto submit = [&](uint64_t frame, uint32_t ring) {
+            const auto input = frame_input(1, frame);
+            product.commit(input, product.plan(input, 256, 256), frame, ring);
+        };
+        for (uint64_t frame = 1; frame <= 3; ++frame) submit(frame, uint32_t(frame - 1));
+        sa2_frame_report rows[4]{};
+        expect(product.reports(rows, 4) == 0, "an incomplete frame was reported");
+        product.produced(2, 500, 7);
+        expect(product.reports(rows, 4) == 0, "a frame was reported before an earlier incomplete one");
+        product.produced(1, 400, 5);
+        expect(product.reports(rows, 1) == 1 && rows[0].struct_size == sizeof(rows[0]) && rows[0].frame_id == 1 && rows[0].error == SA2_OK
+            && rows[0].gpu_time_ns == 400 && rows[0].view_vertex_evals == 5 && rows[0].sequence == 1 && rows[0].engine_revision == 1
+            && rows[0].device_epoch == sa2::DeviceEpoch && rows[0].surface == 1 && rows[0].fallback == 0, "capacity 1 did not report frame 1");
+        expect(product.reports(rows, 4) == 1 && rows[0].frame_id == 2 && rows[0].view_vertex_evals == 7, "frame 2 was not reported once, in order");
+        // A frame whose ring slot was reused before its results were read drew without results.
+        submit(4, 2);
+        product.produced(4, 600, 9);
+        expect(product.reports(rows, 4) == 2 && rows[0].frame_id == 3 && rows[0].error == SA2_E_D3D12 && rows[0].view_vertex_evals == 0
+            && rows[1].frame_id == 4 && rows[1].error == SA2_OK, "an unread frame was not reported with an error");
+        auto counters = product.counter_values();
+        expect(counters.struct_size == sizeof(counters) && counters.frames_submitted == 4 && counters.frames_reported == 4
+            && counters.view_vertex_evals_last == 9 && counters.view_vertex_evals_total == 21 && counters.reports_dropped == 0, "the report counters are wrong");
+        expect(product.reports(nullptr, 0) == 0, "an empty read reported a frame");
+        // Unread reports are bounded: the oldest completed one is dropped and counted.
+        const uint64_t last = 5 + sa2::MaxUnreported;
+        for (uint64_t frame = 5; frame <= last; ++frame) {
+            submit(frame, uint32_t(frame % SA2_RING_SLOTS));
+            product.produced(frame, 1, 1);
+        }
+        counters = product.counter_values();
+        expect(counters.reports_dropped == 1 && counters.frames_submitted == last, "the report beyond the bound did not drop the oldest");
+        expect(product.reports(rows, 4) == 4 && rows[0].frame_id == 6 && rows[3].frame_id == 9, "reading resumed at the wrong frame");
+        expect(product.retained_frames() <= sa2::MaxUnreported + sa2::RetainedFrames, "the frame records are unbounded");
+    });
+    suite.check("product picks", [] {
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        const auto submit = [&](sa2_frame_input input, uint64_t frame) {
+            input.sequence = frame;
+            product.commit(input, product.plan(input, 256, 256), frame, uint32_t((frame - 1) % SA2_RING_SLOTS));
+            product.produced(frame, 100, 1);
+        };
+        const auto request = [&](uint64_t frame, uint64_t fence) {
+            const auto plan = product.pick_plan(frame, 10, 20);
+            const auto ticket = product.reserve_pick();
+            product.pick_commit(ticket, plan, plan.pass ? fence : 0);
+            return std::make_pair(ticket, plan);
+        };
+        const auto poll = [&](uint64_t ticket, uint64_t completed, bool& release) {
+            return product.pick_poll(ticket, completed, [] { return 77u; }, release);
+        };
+        const uint8_t stamp[32]{};
+        PreparationArrays first_arrays(1, 1, 1);
+        const auto first = ready_set(product, sa2::preparation(&first_arrays.value), 0);
+        product.activate(first.second, stamp);
+        auto input = frame_input(1, 1);
+        input.resource_set = first.second;
+        input.camera = 5;
+        input.camera_matrix[12] = 0.5f;
+        submit(input, 1);
+        expect(wrong_state([&] { product.pick_plan(99, 0, 0); }), "a pick on an unknown frame was accepted");
+        expect(failure([&] { product.pick_plan(1, 256, 0); }) == SA2_E_INVALID_ARGUMENT, "a pick outside the viewport was accepted");
+        // Pending until the ID pass completes, then the instance with the frame's binding.
+        const auto ready = request(1, 50);
+        const auto& pass = ready.second.input;
+        expect(ready.second.pass && pass.set_ticket == first.first && pass.copy == 0 && pass.width == 256 && pass.height == 256 && pass.x == 10
+            && pass.y == 20 && pass.camera[12] == 0.5f && pass.pose_count == 0, "the ID pass does not use the frame's binding");
+        bool release = true;
+        auto row = poll(ready.first, 49, release);
+        expect(row.struct_size == sizeof(row) && row.state == SA2_PICK_PENDING && row.instance == 0 && !release, "an incomplete ID pass was not pending");
+        row = poll(ready.first, 50, release);
+        expect(row.state == SA2_PICK_READY && row.instance == 77 && row.stale == 0 && release && row.frame_id == 1 && row.camera == 5 && row.surface == 1
+            && row.view == 1 && row.publication_generation == 1 && row.viewport_width == 256 && row.x == 10 && row.y == 20,
+            "a completed ID pass was not ready with the frame's binding");
+        expect(wrong_state([&] { poll(ready.first, 50, release); }), "a reported pick is still known");
+        // RPI.23: a newer surface generation makes a pending reply stale, and a later request stale at once.
+        const auto surface = request(1, 60);
+        input.surface_generation = 2;
+        submit(input, 2);
+        row = poll(surface.first, 60, release);
+        expect(row.state == SA2_PICK_STALE && row.stale == SA2_PICK_STALE_SURFACE && row.instance == 0 && release, "a newer surface generation did not stale the reply");
+        const auto at_once = request(1, 0);
+        expect(!at_once.second.pass && at_once.second.state == SA2_PICK_STALE && at_once.second.stale == SA2_PICK_STALE_SURFACE, "a stale request ran an ID pass");
+        row = poll(at_once.first, 0, release);
+        expect(row.state == SA2_PICK_STALE && row.stale == SA2_PICK_STALE_SURFACE && release, "a stale request did not answer at once");
+        // RPI.24: a newer view generation.
+        const auto view = request(2, 70);
+        input.view_generation = 2;
+        input.resource_set = 0;
+        submit(input, 3);
+        row = poll(view.first, 70, release);
+        expect(row.state == SA2_PICK_STALE && row.stale == SA2_PICK_STALE_VIEW && row.instance == 0, "a newer view generation did not stale the reply");
+        // A frame without a resource set has nothing pickable: ready, instance 0, no ID pass.
+        const auto nothing = request(3, 0);
+        bool read = false;
+        row = product.pick_poll(nothing.first, 0, [&] { read = true; return 77u; }, release);
+        expect(!nothing.second.pass && row.state == SA2_PICK_READY && row.instance == 0 && !read && release, "a frame without a set ran an ID pass");
+        // A retired set's resources outlive the ID passes that read it.
+        product.retire(first.second);
+        expect(product.releasable(3, 69).empty(), "a set was released before its last ID pass completed");
+        expect(product.releasable(3, 70) == std::vector<uint64_t>{first.first}, "a set was not released after its last ID pass");
+        // RPI.25: the frame's set was retired before the request.
+        PreparationArrays second_arrays(1, 2, 1);
+        const auto second = ready_set(product, sa2::preparation(&second_arrays.value), 0);
+        product.activate(second.second, stamp);
+        input.resource_set = second.second;
+        submit(input, 4);
+        product.retire(second.second);
+        const auto publication = request(4, 0);
+        expect(publication.second.state == SA2_PICK_STALE && publication.second.stale == SA2_PICK_STALE_PUBLICATION, "a retired set did not stale the request");
+        // The frame's engine revision left the GPU ring.
+        PreparationArrays third_arrays(1, 2, 1);
+        const auto third = ready_set(product, sa2::preparation(&third_arrays.value), 0);
+        product.activate(third.second, stamp);
+        input.resource_set = third.second;
+        submit(input, 5);
+        input.resource_set = 0;
+        for (uint64_t revision = 2; revision <= 4; ++revision) {
+            EngineArrays next(revision, 0);
+            product.adopt(sa2::engine_image(&next.image));
+            input.engine_revision = revision;
+            submit(input, 4 + revision);
+        }
+        const auto engine_gone = request(5, 0);
+        expect(engine_gone.second.state == SA2_PICK_STALE && engine_gone.second.stale == SA2_PICK_STALE_ENGINE, "a replaced ring copy did not stale the request");
+        // A frame that drew nothing cannot be picked.
+        input.resource_set = third.second;
+        input.sequence = 9;
+        product.commit(input, product.plan(input, 256, 256), 9, 2);
+        product.produced(9, 0, 0, SA2_E_D3D12);
+        expect(wrong_state([&] { product.pick_plan(9, 0, 0); }), "a frame that drew nothing was picked");
+        // A resize makes a pending reply stale, and a later request stale at once.
+        submit(input, 10);
+        const auto target = request(10, 90);
+        expect(target.second.pass && target.second.input.copy == 0, "the ID pass of the newest frame was not planned");
+        product.resized();
+        row = poll(target.first, 90, release);
+        expect(row.state == SA2_PICK_STALE && row.stale == SA2_PICK_STALE_TARGET && row.instance == 0, "a resize did not stale the reply");
+        expect(request(10, 0).second.stale == SA2_PICK_STALE_TARGET, "a resize did not stale the request");
+        expect(product.counters().id_passes == 4, "the ID passes were not counted");
+        // The live pick bound.
+        while (product.live_picks() < sa2::MaxPicks) request(10, 0);
+        expect(wrong_state([&] { product.pick_plan(10, 0, 0); }), "a pick beyond the bound was accepted");
+    });
+    suite.check("product device lost", [] {
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        PreparationArrays arrays(1, 1, 1);
+        const auto data = sa2::preparation(&arrays.value);
+        const auto ready = ready_set(product, data, 0);
+        const auto pending = product.reserve_ticket();
+        product.prepared(pending, data, 10);
+        auto input = frame_input(1, 1);
+        product.commit(input, product.plan(input, 256, 256), 1, 0);
+        product.produced(1, 100, 3);
+        input.sequence = 2;
+        product.commit(input, product.plan(input, 256, 256), 2, 1);
+        product.observe_removal(0);
+        expect(!product.removed(), "S_OK was taken as a removal");
+        product.observe_removal(int32_t(0x887A0005)); // DXGI_ERROR_DEVICE_REMOVED
+        product.observe_removal(int32_t(0x887A0006)); // the first reason latches
+        expect(product.removed() && product.removed_reason() == int32_t(0x887A0005), "the first removal reason did not latch");
+        const uint8_t stamp[32]{};
+        EngineArrays next(2, 0);
+        expect(product.adopt(sa2::engine_image(&next.image)) == 2, "adopt stopped after removal (RM.16)");
+        expect(failure([&] { product.check_prepare(data); }) == SA2_E_DEVICE_REMOVED, "prepare worked after removal");
+        expect(failure([&] { product.activate(ready.second, stamp); }) == SA2_E_DEVICE_REMOVED, "activate worked after removal");
+        input.sequence = 3;
+        input.engine_revision = 2;
+        expect(failure([&] { product.plan(input, 256, 256); }) == SA2_E_DEVICE_REMOVED, "a frame was planned after removal");
+        expect(failure([&] { product.pick_plan(1, 0, 0); }) == SA2_E_DEVICE_REMOVED, "a pick was planned after removal");
+        bool release = true;
+        expect(failure([&] { product.pick_poll(1, 0, [] { return 0u; }, release); }) == SA2_E_DEVICE_REMOVED && !release, "pick_poll worked after removal");
+        // Pending and ready tickets fail; cancel and retire keep working; every set is released.
+        auto row = product.poll(pending, 0);
+        expect(row.state == SA2_TICKET_FAILED && row.reason == SA2_E_DEVICE_REMOVED && row.resource_set == 0, "a pending ticket did not fail");
+        row = product.poll(ready.first, 0);
+        expect(row.state == SA2_TICKET_FAILED && row.reason == SA2_E_DEVICE_REMOVED && row.resource_set == 0, "a ready ticket did not fail");
+        product.retire(ready.second);
+        expect(product.releasable(0, 0).size() == 2 && product.held_tickets() == 0 && product.live_tickets() == 1, "device loss did not release every set");
+        expect(product.poll(pending, 0).state == SA2_TICKET_FAILED, "a failed ticket stopped answering");
+        // The completed frame reports normally; the unread one reports the removal.
+        sa2_frame_report rows[2]{};
+        expect(product.reports(rows, 2) == 2 && rows[0].frame_id == 1 && rows[0].error == SA2_OK && rows[0].view_vertex_evals == 3
+            && rows[1].frame_id == 2 && rows[1].error == SA2_E_DEVICE_REMOVED && rows[1].view_vertex_evals == 0, "an unread frame did not report the removal");
+        expect(product.counter_values().view_vertex_evals_total == 3, "a lost frame counted vertex evaluations");
+        expect(sa2::describe("build", product.removed_reason()).at("device_removed").string() == "0x887a0005"
+            && sa2::recover_report(product.removed_reason()).at("device_removed").string() == "0x887a0005", "describe or recover does not name the removal");
+    });
+    suite.check("product describe", [] {
+        const auto json = Json::parse(sa2::describe("abc", 0).dump());
+        expect(json.at("interface_version").integer() == 4 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
+            && json.at("device_removed").null() && json.at("evidence").array().empty(), "the SupportReport header is wrong");
+        const auto& features = json.at("features");
+        expect(features.object().size() == 8, "the SupportReport does not list eight rows");
+        for (const char* row : {"F01", "F02", "F18", "J01", "J02"})
+            expect(features.at(row).at("status").string() == "supported" && features.at(row).at("layout_version").integer() == 1, "a supported row is missing");
+        for (const char* row : {"F22", "F23", "J13"})
+            expect(features.at(row).at("status").string() == "unsupported" && !features.at(row).at("reason").string().empty(), "an unsupported row lacks its reason");
+        const auto recover = Json::parse(sa2::recover_report(0).dump());
+        expect(recover.at("status").string() == "unavailable" && !recover.at("reason").string().empty() && recover.at("device_removed").null()
+            && recover.at("device_epoch").integer() == 1, "the recover report is wrong");
+        expect(sa2::removed_text(int32_t(0x887A0005)) == "0x887a0005", "the removal text is not 0x%08x");
     });
 }
 Options parse(int argc, char** argv) {
