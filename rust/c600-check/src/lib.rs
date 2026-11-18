@@ -64,6 +64,10 @@ pub const AMBIENT_READ: &str = "LG3:capability.ambient_read";
 /// `LG4:input.ir_version_unsupported` (LG4.1).
 pub const IR_VERSION_UNSUPPORTED: &str = "LG4:input.ir_version_unsupported";
 
+mod stage;
+
+pub use stage::{admit_stage, CheckedStage, StageAdmission, StageLimits, STAGE_RULE_VIOLATION};
+
 /// Never granted in 1.0, whatever a manifest requests (LG3.8, LG3.9).
 pub const NEVER_GRANTED: [Capability; 3] = [Capability::Network, Capability::Process, Capability::SessionFile];
 
@@ -406,7 +410,31 @@ pub fn check(program: &Program) -> Result<Report, IrError> {
     let mut checker = Checker::new(program)?;
     checker.infer()?;
     checker.emit()?;
+    checker.found.extend(stage::structural(program)?);
+    checker.found.sort_by(|a, b| a.key.cmp(&b.key));
     Ok(checker.report())
+}
+
+/// The refusal of a run's entry in a stage module: a stage is display only, a checked definition the adapter takes,
+/// and never a run's entry (RPI.68, RPI.73).
+fn stage_entry(program: &Program, module: &str, function: &str) -> Option<Diagnostic> {
+    let m = program.modules.iter().find(|m| m.name == module)?;
+    let kind = m.stage()?.kind;
+    Some(Diagnostic {
+        code: STAGE_RULE_VIOLATION,
+        module: module.to_string(),
+        function: function.to_string(),
+        path: "entry".into(),
+        value_type: None,
+        display_control: false,
+        qualifier_erasure: false,
+        mismatch: None,
+        note: format!(
+            "`{module}` is a {} stage: a stage is never a run's entry, and no stage result returns to any program \
+             (RPI.68, RPI.73)",
+            kind.name()
+        ),
+    })
 }
 
 /// Check a program and admit one entry for a run under a profile, a grant and a policy (LG3.9, chapter 07 section 8).
@@ -431,6 +459,7 @@ pub fn admit(
         .cloned()
         .ok_or_else(|| IrError(format!("no function `{module}.{function}`")))?;
     let mut diagnostics = report.diagnostics;
+    diagnostics.extend(stage_entry(program, module, function));
     let refuse = |note: String| Diagnostic {
         code: NOT_GRANTED,
         module: module.to_string(),
@@ -577,6 +606,7 @@ pub fn admit_built_in(
         .cloned()
         .ok_or_else(|| IrError(format!("no function `{module}.{function}`")))?;
     let Report { mut diagnostics, summaries } = report;
+    diagnostics.extend(stage_entry(program, module, function));
     let mut refuse = |code: &'static str, path: &str, note: String| {
         diagnostics.push(Diagnostic {
             code,
@@ -2190,7 +2220,7 @@ impl<'p> Checker<'p> {
         let table = program.modules.iter().map(|m| vec![Summary::default(); m.functions.len()]).collect();
         let controls = program.modules.iter().map(|m| vec![false; m.functions.len()]).collect();
         let mut stored = BTreeMap::new();
-        for f in program.modules.iter().flat_map(|m| &m.functions) {
+        for f in program.modules.iter().filter(|m| m.stage().is_none()).flat_map(|m| &m.functions) {
             writes(&f.body, &mut stored);
         }
         Ok(Checker {
@@ -2236,7 +2266,9 @@ impl<'p> Checker<'p> {
         self.emitting = true;
         let program = self.program;
         for (mi, module) in program.modules.iter().enumerate() {
-            for cap in NEVER_GRANTED {
+            // A stage's manifest is the stage checker's: it refuses every capability there, once.
+            let never = if module.stage().is_some() { [].as_slice() } else { NEVER_GRANTED.as_slice() };
+            for &cap in never {
                 if module.capabilities.contains(&cap) {
                     self.found.push(Found {
                         key: (mi, None, Vec::new()),
@@ -2579,6 +2611,59 @@ impl<'p> Checker<'p> {
         }
     }
 
+    /// A program never calls or holds a stage's function: a stage is a checked definition the adapter takes, and no
+    /// stage result returns to any program (RPI.68, RPI.73).
+    fn stage_target(&mut self, mi: usize, name: &str) {
+        let program = self.program;
+        if let Some(d) = program.modules[mi].stage() {
+            let note = format!(
+                "`{}.{name}` belongs to a {} stage, which no program calls or holds; the adapter takes a stage as a \
+                 checked definition, and no stage result returns to any program (RPI.68, RPI.73)",
+                program.modules[mi].name,
+                d.kind.name()
+            );
+            self.push(STAGE_RULE_VIOLATION, None, note);
+        }
+    }
+
+    /// A whole-state contract is a function of its revision alone (LG4.10; LP2 draft): no parameter, an exact `Bool`
+    /// result, and no need beyond reading the snapshot and child budgets, so it gives one result at one revision.
+    fn contract(&mut self, f: &Function, s: &Summary) {
+        if !f.params.is_empty() {
+            let note = "a whole-state contract takes no parameter: it checks its revision's whole state (LG4.10)";
+            self.push(TYPE_MISMATCH, None, note.into());
+        }
+        if f.result != (QTy { ty: Ty::Bool, display: false }) {
+            let note =
+                format!("a whole-state contract returns an exact Bool, not {} (LG4.10)", type_text(&f.result.ty));
+            self.push(TYPE_MISMATCH, None, note);
+        }
+        for e in s.effects.iter().filter(|e| !matches!(e, Effect::ReadSnapshot | Effect::Budgets)) {
+            self.effect(format!(
+                "a whole-state contract has no {e:?} effect: it reads its revision and nothing else (LG4.10)"
+            ));
+        }
+        for c in &s.capabilities {
+            self.effect(format!(
+                "a whole-state contract uses no {c:?} capability, so its result is a function of its revision (LG4.10)"
+            ));
+        }
+    }
+
+    /// No function calls or holds a whole-state contract, so no call and no loop runs one per call (LG4.10; LP2
+    /// draft): a contract runs once per revision or as an agreement test.
+    fn contract_target(&mut self, mi: usize, fi: usize) {
+        let program = self.program;
+        let f = &program.modules[mi].functions[fi];
+        if f.kind == FnKind::Contract {
+            self.effect(format!(
+                "`{}` is a whole-state contract, which runs once per revision or as an agreement test, never inside a \
+                 call or a loop (LG4.10)",
+                f.name
+            ));
+        }
+    }
+
     fn resolve(&self, module: Option<&str>, name: &str) -> Result<(usize, usize), IrError> {
         let mi = match module {
             None => self.cur.0,
@@ -2852,6 +2937,10 @@ impl<'p> Checker<'p> {
         let f = &module.functions[fi];
         self.cur = (mi, fi);
         self.path.clear();
+        if module.stage().is_some() {
+            // The stage checker alone checks a stage module (`stage.rs`); no program reaches one.
+            return Ok((Summary::default(), false));
+        }
         for p in &f.params {
             self.bare(&p.ty.ty, true, "a parameter")?;
         }
@@ -2880,6 +2969,9 @@ impl<'p> Checker<'p> {
                     self.effect(format!("a view has no {e:?} effect, also through callees (LG3.5, LG3.6)"));
                 }
             }
+        }
+        if f.kind == FnKind::Contract {
+            self.contract(f, &s);
         }
         if let Some(annotation) = &f.effects {
             if !s.within(annotation) {
@@ -2929,6 +3021,8 @@ impl<'p> Checker<'p> {
             },
             Expr::FnRef { module, name } => {
                 let (mi, fi) = self.resolve(module.as_deref(), name)?;
+                self.stage_target(mi, name);
+                self.contract_target(mi, fi);
                 let program = self.program;
                 let f = &program.modules[mi].functions[fi];
                 let mut summary = self.table[mi][fi].clone();
@@ -3046,6 +3140,8 @@ impl<'p> Checker<'p> {
                 match callee {
                     Callee::Fn { module, name } => {
                         let (mi, fi) = self.resolve(module.as_deref(), name)?;
+                        self.stage_target(mi, name);
+                        self.contract_target(mi, fi);
                         let program = self.program;
                         let f = &program.modules[mi].functions[fi];
                         let params: Vec<QTy> = f.params.iter().map(|p| p.ty.clone()).collect();
@@ -3548,6 +3644,10 @@ impl<'p> Checker<'p> {
     }
 
     fn prim(&mut self, op: Prim, vals: &[Val]) -> Result<Val, IrError> {
+        if let Prim::Stage(s) = op {
+            // The ordinary checker walks no stage module, so a stage operation here is outside one.
+            return Err(self.err(format!("the stage operation `{}` exists only in a stage module (RPI.68)", s.name())));
+        }
         let arity = match op {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot | Prim::Assert | Prim::RngDraw => 1,
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
@@ -3963,6 +4063,7 @@ impl<'p> Checker<'p> {
                     _ => Val::unknown(),
                 })
             }
+            Prim::Stage(_) => unreachable!("refused at the top"),
         }
     }
 }

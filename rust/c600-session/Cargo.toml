@@ -16,9 +16,18 @@ c600-digest = { path = "../c600-digest" }
 c600-evidence = { path = "../c600-evidence" }
 c600-ir = { path = "../c600-ir" }
 c600-kernel = { path = "../c600-kernel" }
+# The session lock file's open, the platform layer of RPI.52 (`c600-platform`).
+c600-platform = { path = "../c600-platform" }
 c600-run = { path = "../c600-run" }
 
+[features]
+# `disk::MemDisk`, the memory disk, for tests only: a product store takes the session lock on a file system
+# (KN4.1). A test that needs the memory disk enables this feature in its dev-dependencies.
+mem-disk = []
+
 [dev-dependencies]
+# The crate's own tests use the memory disk.
+c600-session = { path = ".", features = ["mem-disk"] }
 # The job tests run checked surface programs.
 c600-check = { path = "../c600-check" }
 # The jumbling tests (`persist_jumble.rs`) read the I_a menu in the exact model, as c600-command's tests do.

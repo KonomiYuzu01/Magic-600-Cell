@@ -11,7 +11,7 @@ use std::fmt;
 use c600_ir::Expr as Ir;
 use c600_ir::{
     Accounting, Callee, Capability, ChildCaps, Effect, EffectBound, EndTest, ExactRole, Field, FnKind, FnTy, Function,
-    Lit, Module, Order, Param, Prim, Program, QTy, ReceiptField, Ty,
+    Lit, Module, ModuleKind, Order, Param, Prim, Program, QTy, ReceiptField, StageDecl, StageKind, StageOp, Ty,
 };
 
 use crate::ast::*;
@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 76] = [
+const BUILTINS: [&str; 87] = [
     "if",
     "display_if",
     "exact_add",
@@ -107,6 +107,18 @@ const BUILTINS: [&str; 76] = [
     "field_neg",
     "field_mul",
     "field_inverse",
+    // A stage module's operations (RPI.70; LP2 draft): they lower only in a stage module.
+    "approx_sub",
+    "approx_mul",
+    "approx_div",
+    "approx_neg",
+    "approx_abs",
+    "approx_sqrt",
+    "approx_sin",
+    "approx_cos",
+    "approx_exp2",
+    "approx_log2",
+    "exclude",
 ];
 
 /// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
@@ -249,6 +261,8 @@ fn error(module: &str, span: Span, message: impl Into<String>) -> LowerError {
 /// What a module declares: its functions, each with what a call of it needs, and its import aliases.
 struct Scope {
     name: String,
+    /// Whether the module is a stage module, the only place a stage operation lowers (RPI.68).
+    stage: bool,
     functions: BTreeMap<String, Signature>,
     aliases: BTreeMap<String, String>,
 }
@@ -284,13 +298,15 @@ pub fn lower(files: &[ParsedFile]) -> Result<Lowered, LowerError> {
     }
     let mut scopes = Vec::new();
     let mut capabilities = Vec::new();
+    let mut kinds = Vec::new();
     for (file, header, _) in &headers {
         capabilities.push(requires(header)?);
+        kinds.push(module_kind(header)?);
         scopes.push(declare(file, header, &digests)?);
     }
     let mut modules = Vec::new();
     let mut sources = Vec::new();
-    for (((file, _, digest), scope), capabilities) in headers.iter().zip(&scopes).zip(capabilities) {
+    for ((((file, _, digest), scope), capabilities), kind) in headers.iter().zip(&scopes).zip(capabilities).zip(kinds) {
         let mut source = SourceMap { module: scope.name.clone(), digest: (*digest).clone(), ..SourceMap::default() };
         let mut functions = Vec::new();
         for d in file.declarations() {
@@ -301,10 +317,30 @@ pub fn lower(files: &[ParsedFile]) -> Result<Lowered, LowerError> {
             source.paths.insert(function.name.clone(), body.paths);
             functions.push(function);
         }
-        modules.push(Module { name: scope.name.clone(), capabilities, functions });
+        modules.push(Module { name: scope.name.clone(), kind, capabilities, functions });
         sources.push(source);
     }
     Ok(Lowered { program: Program::new(modules), sources })
+}
+
+/// A module header's kind: a stage header gives a stage module with its declared costs and array inputs (LG5.12,
+/// RPI.69, RPI.71; LP2 draft). The stage checker checks the declaration; lowering only reads it.
+fn module_kind(header: &ModuleHeader) -> Result<ModuleKind, LowerError> {
+    let Some(s) = &header.stage else { return Ok(ModuleKind::Program) };
+    let module = header.name.text.as_str();
+    let number = |n: &str| {
+        n.parse::<u64>()
+            .map_err(|_| error(module, header.loc.0, format!("the stage's number {n} does not fit in 64 bits")))
+    };
+    let kind = match s.kind.text.as_str() {
+        "vertex" => StageKind::Vertex,
+        _ => StageKind::Fragment,
+    };
+    let mut arrays = Vec::new();
+    for (name, len) in &s.inputs {
+        arrays.push((name.text.clone(), number(len)?));
+    }
+    Ok(ModuleKind::Stage(StageDecl { kind, ops: number(&s.ops)?, overdraw: number(&s.overdraw)?, arrays }))
 }
 
 /// The capabilities a module header requests (LG3.8, LG3.9).
@@ -334,7 +370,12 @@ fn requires(header: &ModuleHeader) -> Result<BTreeSet<Capability>, LowerError> {
 /// The names a module declares: import aliases, resolved by digest, and function names.
 fn declare(file: &ParsedFile, header: &ModuleHeader, digests: &BTreeMap<&str, &str>) -> Result<Scope, LowerError> {
     let module = header.name.text.as_str();
-    let mut scope = Scope { name: module.into(), functions: BTreeMap::new(), aliases: BTreeMap::new() };
+    let mut scope = Scope {
+        name: module.into(),
+        stage: header.stage.is_some(),
+        functions: BTreeMap::new(),
+        aliases: BTreeMap::new(),
+    };
     for item in &file.items {
         let Item::Import(i) = item else { continue };
         let alias = i.alias.text.as_str();
@@ -457,6 +498,7 @@ impl Body<'_> {
             DeclKind::Fn => FnKind::Helper,
             DeclKind::View => FnKind::View,
             DeclKind::Command => FnKind::Command,
+            DeclKind::Contract => FnKind::Contract,
         };
         Ok(Function {
             name: d.name.text.clone(),
@@ -700,6 +742,8 @@ impl Body<'_> {
             "if" | "display_if" => 3,
             "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less" | "approx_and"
             | "write_workspace" | "propose" | "file_write" | "exact_mul" => 2,
+            // `exclude(value, radius)` (LX-7's subset; LP2 draft).
+            "approx_sub" | "approx_mul" | "approx_div" | "exclude" => 2,
             "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
             "field_add" | "field_sub" | "field_mul" => 2,
             // An ordered result names its order (LG4.3).
@@ -755,6 +799,13 @@ impl Body<'_> {
                 _ => Prim::Entries(order),
             };
             return Ok(Ir::Prim { op: prim, args: self.args(&args[..1], path)? });
+        }
+        if let Some(s) = StageOp::of_name(op) {
+            if !self.scope.stage {
+                let note = format!("`{op}` is a stage operation and lowers only in a stage module (RPI.68, RPI.70)");
+                return Err(self.err(span, note));
+            }
+            return Ok(Ir::Prim { op: Prim::Stage(s), args: self.args(args, path)? });
         }
         let prim = match op {
             "length" => Some(Prim::Length),
@@ -1195,9 +1246,8 @@ mod tests {
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"
                 | "approx_and" | "propose" | "index" | "push" | "concat" | "conjugate" | "commutator" | "compose"
-                | "contains" | "insert" | "lookup" | "exact_mul" | "field_add" | "field_sub" | "field_mul" => {
-                    format!("{op}(1, 2)")
-                }
+                | "contains" | "insert" | "lookup" | "exact_mul" | "field_add" | "field_sub" | "field_mul"
+                | "approx_sub" | "approx_mul" | "approx_div" | "exclude" => format!("{op}(1, 2)"),
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
@@ -1208,8 +1258,11 @@ mod tests {
                 "repeat" => format!("{op}(2, 0, fn(acc: Nat) -> Nat {{ return acc; }})"),
                 _ => format!("{op}(1)"),
             };
+            // A stage operation lowers only in a stage module.
+            let header =
+                if StageOp::of_name(op).is_some() { "stage vertex m ops 1 overdraw 1" } else { "module m requires []" };
             let source =
-                format!("edition \"6cs-draft-1\";\nmodule m requires [];\n\nfn f() -> Nat effects [] {{\n    return {call};\n}}\n");
+                format!("edition \"6cs-draft-1\";\n{header};\n\nfn f() -> Nat effects [] {{\n    return {call};\n}}\n");
             let file = crate::parse(source.as_bytes());
             assert!(file.diagnostics.is_empty(), "{op}: {:#?}", file.diagnostics);
             if let Err(e) = lower(&[file]) {

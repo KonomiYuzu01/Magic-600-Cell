@@ -37,6 +37,17 @@
 //! - EN4's layer interfaces (LI) are frozen with the architecture (owner, 15 November 2026), so a change to LI follows
 //!   PHS.52. Where LI is silent, the layer's choices below are drafts.
 //!
+//! On 18 November 2026 the owner answered the readings that the KN5 boundary attack left open
+//! (`docs/wiki/decisions/owner-decisions-2026-11-18.md`):
+//!
+//! - Finding B7: a reopen checks a stored commit and a stored release again ([`CommandLayer::open`]). A commit replays
+//!   only from the shell's caller and derives under the protected set and the policy in force at its place in the
+//!   journal; a protection change that releases an orbit, or the undo or redo of one, replays only with the
+//!   confirmation stored with it. A journal action that fails either check leaves the layer in read-only recovery
+//!   before it with `KN5:consistency.unadmitted_journal_action` (a draft code), so the session does not open as an
+//!   intact writable one. The journal carries no authentication: an edit that rewrites a program-made action as the
+//!   solver's own is not detected.
+//!
 //! # Drafts
 //!
 //! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.

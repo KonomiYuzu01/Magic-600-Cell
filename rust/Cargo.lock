@@ -140,6 +140,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-platform"
+version = "0.0.0"
+
+[[package]]
 name = "c600-repr"
 version = "0.0.0"
 dependencies = [
@@ -193,7 +197,9 @@ dependencies = [
  "c600-ir",
  "c600-jumble",
  "c600-kernel",
+ "c600-platform",
  "c600-run",
+ "c600-session",
  "c600-syntax",
 ]
 

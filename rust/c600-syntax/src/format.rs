@@ -13,8 +13,27 @@ pub fn format(file: &ParsedFile) -> Option<String> {
         return None;
     }
     let (edition, module) = (file.edition.as_ref()?, file.module.as_ref()?);
-    let mut out =
-        format!("edition {};\nmodule {} requires {};\n", quote(edition), module.name.text, names(&module.requires));
+    let mut out = match &module.stage {
+        None => {
+            format!("edition {};\nmodule {} requires {};\n", quote(edition), module.name.text, names(&module.requires))
+        }
+        Some(s) => {
+            let inputs = if s.inputs.is_empty() {
+                String::new()
+            } else {
+                let inputs = list(s.inputs.iter().map(|(n, len)| format!("{}: {len}", n.text)), ", ");
+                format!(" inputs [{inputs}]")
+            };
+            format!(
+                "edition {};\nstage {} {} ops {} overdraw {}{inputs};\n",
+                quote(edition),
+                s.kind.text,
+                module.name.text,
+                s.ops,
+                s.overdraw
+            )
+        }
+    };
     let mut after_declaration = false;
     for item in &file.items {
         match item {
@@ -56,6 +75,7 @@ fn declaration(d: &Decl) -> String {
         DeclKind::Fn => "fn ",
         DeclKind::View => "view ",
         DeclKind::Command => "command ",
+        DeclKind::Contract => "contract ",
     });
     out.push_str(&d.name.text);
     if !d.generics.is_empty() {
