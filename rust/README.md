@@ -33,6 +33,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 4 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
+| `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -2627,3 +2628,24 @@ run or not applicable is no pass (PHS.63).
   performance evidence. Not built: posed and jumbling engine images (J01, J02), a check of the preparation's base
   revision by the core, and the trait operations above, which wait for `c600-display`.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C9 measurement: LX-4's module set and edit script
+
+- `c600-lx4` generates RTE.48's fixtures from whole declarations of the three LP3 tools (PHS.22), renamed, in an
+  order seeded by 2026111801, with `#` comment padding to the exact length: S, M and L are single modules of 200,
+  1,000 and 5,000 LF-terminated lines; W is 50 modules of 400 lines, an acyclic synthetic import graph by digest
+  (module k imports one to three earlier modules; W01 to W09 import W00), not a real LP3 graph. Every module exports
+  `exported() -> Nat`, and a W module's export calls its imports' exports.
+- The edit script (seed 2026111802) holds RTE.51 step 2's four kinds at S, M, L and W00: inside a body, exported
+  signature (`Nat` to `Text`), completion trigger (an unfinished `exact_` at the end, with its cursor) and syntax
+  break. Each edit starts from the original bytes and refuses a stale baseline, a differing preimage or result.
+- Before writing, the module set and every edit go through `c600_syntax::parse` and `lower` and `c600_check::check`:
+  every module is clean; inside-body edits stay clean; the signature edit is clean at S, M and L and, at W00 with all
+  49 later modules re-pinned, refused only in `exported` of W00's 13 direct dependents; the other two kinds stop at
+  syntax. A disagreement refuses the whole output (LX-4's immediate kill criterion).
+- `c600-lx4-fixtures --out <new folder>` writes `S.6cs`, `M.6cs`, `L.6cs`, `W/W00.6cs` to `W/W49.6cs`,
+  `MANIFEST.json` (`magic600-c9-lx4-fixtures-v1`: the tools and every module by digest) and `EDITS.json`
+  (`magic600-c9-lx4-edits-v1`). It never writes over a folder that holds anything.
+- DRAFT: the set follows the tools as they stand; RTE.51 step 1 freezes it with the candidate and its build identity.
+  The modules hold the tools' declarations, not their run-time views, and the LX-4 harness (Jumble on and off, the
+  owner-machine runs, the frame matching) is not built. Evidence kind: source and fixture; nothing here is timing.
