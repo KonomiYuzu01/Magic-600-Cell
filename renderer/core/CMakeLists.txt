@@ -32,7 +32,10 @@ target_include_directories(sa2_scene_record PUBLIC include src)
 target_link_libraries(sa2_scene_record PUBLIC sa2_sb sa2_wj)
 add_library(sa2_interop SHARED src/interop.cpp src/scene.cpp)
 target_compile_definitions(sa2_interop PRIVATE SA2_INTEROP_EXPORTS)
-target_link_libraries(sa2_interop PRIVATE sa2_pure sa2_scene_record d3d12 dxgi dxguid)
+# ABI 5's route B (accepted for now by the owner on 18 Nov 2026, pending three
+# owner-machine checks) adds the DirectComposition layer: dcomp, and user32 for
+# IsWindow.
+target_link_libraries(sa2_interop PRIVATE sa2_pure sa2_scene_record d3d12 dxgi dxguid dcomp user32)
 add_executable(sa2_selftest src/selftest.cpp src/gpu_test.cpp)
 target_link_libraries(sa2_selftest PRIVATE sa2_pure sa2_scene_record sa2_interop d3d12 dxgi dxguid)
 foreach(target sa2_sb sa2_wj sa2_pure sa2_scene_record sa2_interop sa2_selftest)

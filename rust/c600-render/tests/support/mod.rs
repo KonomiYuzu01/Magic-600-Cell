@@ -1,8 +1,9 @@
 //! The host scenarios that c600-render's bridge tests run over the fake core, and that `renderer/bridge`'s tests
 //! (`c600-render-ffi`) run again through the C function table, by including this file: adoption, the support
 //! report, a retained publication from preparation to installation, frames, reports, picks resolved through the
-//! host, staleness, set retirement, device loss and refused recovery, and frames with report batches. Every result
-//! is a synthetic fixture outcome, not a GPU run.
+//! host, staleness, set retirement, device loss and refused recovery, and frames with report batches; and on route B
+//! (route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) confirmed presentations and recovery. Every result is a synthetic fixture
+//! outcome, not a GPU run.
 
 #![allow(dead_code)]
 
@@ -13,15 +14,16 @@ use std::sync::{Arc, OnceLock};
 use c600_digest::sha256_hex;
 use c600_display::codes;
 use c600_display::host::{Backend, FrameInput, Host};
-use c600_display::pick::{FrameStamp, Partial, PickMode, Projection, Requested};
+use c600_display::pick::{FrameStamp, Partial, PickMode, Presented, PreviewShown, Projection, Requested};
 use c600_display::plan::*;
 use c600_display::produce::{self, full_set, GeometryInput};
 use c600_display::receipt::Status;
 use c600_display::validate::{BoundArray, EngineBundle, LimitProfile, Support};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot, SLOTS};
+use c600_render::abi::TARGET_SURFACE;
 use c600_render::backend::subjects_digest;
-use c600_render::fake::DEVICE_REMOVED_REASON;
-use c600_render::{abi, CoreAbi, FakeCore, PickPoll, RenderBackend};
+use c600_render::fake::{DEVICE_REMOVED_REASON, DISPLAY_TICKS};
+use c600_render::{abi, CoreAbi, DisplayTime, FakeCore, PickPoll, RenderBackend};
 
 /// A core whose fake a test can drive (complete work, place picks, remove the device).
 pub trait Driver: CoreAbi {
@@ -160,7 +162,7 @@ pub fn scenario<C: Driver>(core: C) {
     assert_eq!(backend.adopt_engine(&bundle(state, &base)), Ok(12));
     assert_eq!(backend.core.fake().adoptions, [(12, labels[0] as u32)]);
     let report = backend.describe_backend().expect("a live core describes itself");
-    assert_eq!((report.interface_version, report.device_epoch, report.backend_build.len()), (4, 1, 64));
+    assert_eq!((report.interface_version, report.device_epoch, report.backend_build.len()), (5, 1, 64));
     for row in ["F01", "F02", "F18", "F20"] {
         match &report.features[row] {
             Support::Supported { layout_version, limits: declared, stages } => {
@@ -285,6 +287,164 @@ pub fn scenario<C: Driver>(core: C) {
     assert_eq!(refused.context["status"], "E_UNAVAILABLE");
     assert!(refused.context["reason"].contains("RPI.46"), "{refused:?}");
     assert_eq!(host.backend.core.device_status(), (abi::Status::DEVICE_REMOVED, DEVICE_REMOVED_REASON));
+}
+
+pub fn preview(base: &RevisionRef, id: u64) -> PreviewDisplay {
+    PreviewDisplay {
+        preview: PreviewId(id),
+        base: base.clone(),
+        literal: format!("{id:064x}"),
+        effect: "e".repeat(64),
+        primitives: Vec::new(),
+    }
+}
+
+/// The core frame ID of each stamp, from the frame reports (every frame must have drawn).
+fn frame_ids<C: Driver>(host: &mut Host<RenderBackend<C>>, stamps: &[&FrameStamp]) -> Vec<u64> {
+    host.backend.core.fake().complete();
+    let reports = host.backend.read_frame_reports().expect("reports");
+    stamps
+        .iter()
+        .map(|stamp| {
+            let report = reports.iter().find(|r| &&r.stamp == stamp).expect("a report of the frame");
+            assert_eq!(report.error, None);
+            report.frame
+        })
+        .collect()
+}
+
+/// Route B (route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks): on a `sa2_create` context with a surface the
+/// core confirms presentations under the exact rule and recovers its own device; the old epoch's sets never draw.
+pub fn route_b<C: Driver>(core: C) {
+    let state = twisted();
+    let at = slots(state.labels());
+    let base = produce::revision(&geometry().identity, 12, state);
+    let mut backend = RenderBackend::new(core, limits());
+    assert_eq!(backend.adopt_engine(&bundle(state, &base)), Ok(12));
+    let report = backend.describe_backend().expect("a live core describes itself");
+    assert_eq!((report.interface_version, report.device_epoch), (5, 1));
+    for row in ["F01", "F02", "F18", "F20", "F22", "F23"] {
+        assert!(matches!(report.features[row], Support::Supported { .. }), "{row}");
+    }
+    let mut ctx = produce::fixture_context(geometry(), limits());
+    ctx.support = report;
+    let mut host = Host::new(backend, ctx, base.clone());
+    host.open_view(V1).expect("view 1 opens");
+    host.backend.set_camera_matrix(V1, 0, CAMERA);
+
+    // A ring slot is not this context's target.
+    let wrong = host.frame(V1).expect_err("a ring slot on a surface context");
+    assert_eq!(wrong.context["status"], "E_WRONG_STATE");
+    host.backend.set_frame_target(TARGET_SURFACE);
+
+    // A retained publication, installed.
+    let retained = produce::retained(state, &full_set(), &full_set(), Vec::new());
+    let objects = [(1, ObjectId::Sticker(at.home))];
+    host.publish(CommandId(1), publication(&base, vec![Primitive::Retained(retained.clone())], &objects));
+    host.pump();
+    host.backend.core.fake().complete();
+    host.pump();
+    let first_set = host.installed(V1).expect("installed").resources;
+
+    // Four frames: no preview, then preview 7 twice, then no preview. Only shown frames are confirmed, once each and
+    // in frame order; a frame the display passed is never confirmed (the exact rule).
+    let none = host.frame(V1).expect("a frame");
+    host.show_preview(V1, Some(preview(&base, 7))).expect("a preview");
+    let shown = host.frame(V1).expect("a frame");
+    let later = host.frame(V1).expect("a frame");
+    host.show_preview(V1, None).expect("no preview");
+    let cleared = host.frame(V1).expect("a frame");
+    let submitted = &host.backend.core.fake().submitted;
+    assert!(submitted.iter().all(|row| row.target == TARGET_SURFACE && row.resource_set == first_set.0));
+    let ids = frame_ids(&mut host, &[&none, &shown, &later, &cleared]);
+    assert!(host.read_presented().is_empty(), "nothing is confirmed before the display shows a frame");
+    assert!(host.backend.core.fake().show(ids[1]));
+    assert!(!host.backend.core.fake().show(ids[0]), "a passed frame is never confirmed");
+    let read = host.read_presented();
+    assert_eq!(read.len(), 1);
+    assert_eq!(read[0].stamp, shown);
+    let shown_at = DisplayTime {
+        sequence: shown.sequence,
+        device_epoch: shown.device_epoch,
+        surface: shown.surface,
+        display_qpc: DISPLAY_TICKS,
+    };
+    assert_eq!(host.backend.take_display_times(), [shown_at], "the confirming row's display time reaches the caller");
+    assert!(host.backend.take_display_times().is_empty(), "each display time is taken once");
+    let expected = PreviewShown { preview: PreviewId(7), literal: format!("{:064x}", 7), base: 12 };
+    assert_eq!(read[0].presented, Presented::Previews(vec![expected.clone()]));
+    assert_eq!(host.presented_preview(), Some(expected.clone()), "ONE.41 may name the presented preview");
+    assert!(host.read_presented().is_empty(), "each frame is confirmed once");
+    assert!(host.backend.core.fake().show(ids[2]));
+    assert_eq!(host.read_presented()[0].stamp, later);
+    assert_eq!(host.presented_preview(), Some(expected));
+    assert!(host.backend.core.fake().show(ids[3]));
+    assert_eq!(host.read_presented()[0].presented, Presented::NoPreview);
+    assert_eq!(host.presented_preview(), None, "a frame without a preview clears the latch");
+    let times = host.backend.take_display_times();
+    assert_eq!(times.iter().map(|t| t.sequence).collect::<Vec<_>>(), [later.sequence, cleared.sequence]);
+    assert!(times[0].display_qpc < times[1].display_qpc);
+
+    // A presented row that names other bindings than its frame is a contradiction, and the latch clears.
+    host.show_preview(V1, Some(preview(&base, 8))).expect("a preview");
+    let misbound = host.frame(V1).expect("a frame");
+    let id = frame_ids(&mut host, &[&misbound])[0];
+    assert!(host.backend.core.fake().show(id));
+    host.backend.core.fake().misbind_presented(misbound.sequence + 100);
+    let error = host.backend.read_presented().expect_err("a contradicting row");
+    assert!(host.backend.take_display_times().is_empty(), "a contradicting read keeps no display time");
+    assert_eq!((error.code, error.context["status"].as_str()), (codes::RENDERER_UNAVAILABLE, "contradiction"));
+    let again = host.frame(V1).expect("a frame");
+    let id = frame_ids(&mut host, &[&again])[0];
+    assert!(host.backend.core.fake().show(id));
+    assert_eq!(host.read_presented().len(), 1);
+    assert!(host.presented_preview().is_some());
+
+    // Device loss: one frame's report is unread when the device goes. Recovery succeeds with epoch 2.
+    let pending = host.backend.core.fake().prepared.len();
+    host.frame(V1).expect("a frame before the loss");
+    host.backend.core.fake().remove_device();
+    host.device_lost();
+    assert_eq!(host.presented_preview(), None, "loss clears the latch (RM.23)");
+    assert!(host.frame(V1).is_err());
+    assert!(!host.backend.core.fake().show(id + 2), "a removed device confirms nothing");
+    host.recover().expect("route B recovers its own device");
+    assert_eq!(host.ctx.support.device_epoch, 2);
+    assert_eq!(host.backend.core.device_status(), (abi::Status::OK, 0));
+    assert_eq!(host.backend.counters().expect("counters").reports_dropped, 1, "the unread report is dropped");
+    let old = host.backend.core.poll(1).expect_err("an old epoch's ticket is gone");
+    assert_eq!(old, abi::Status::WRONG_STATE);
+    let not_removed = host.backend.recover().expect_err("a live device has nothing to recover");
+    assert_eq!(not_removed.context["status"], "E_WRONG_STATE");
+
+    // The old epoch's set never draws on the new device (RM.23): the frame fails before it reaches the core.
+    let count = host.backend.core.fake().submitted.len();
+    let refused = host.frame(V1).expect_err("the installed set belongs to the old device");
+    assert_eq!(refused.code, codes::RENDERER_UNAVAILABLE);
+    assert_eq!(host.backend.core.fake().submitted.len(), count);
+
+    // Prepared and activated again on the new device, the publication draws; the old set's retirement is a no-op.
+    host.publish(CommandId(2), publication(&base, vec![Primitive::Retained(retained)], &objects));
+    host.pump();
+    host.backend.core.fake().complete();
+    host.pump();
+    assert_eq!(host.backend.core.fake().prepared.len(), pending + 1);
+    let second_set = host.installed(V1).expect("installed").resources;
+    assert_ne!(second_set, first_set);
+    assert_eq!(host.backend.fault, None, "retiring the old epoch's set does not reach the core");
+    let fresh = host.frame(V1).expect("a frame on the new device");
+    assert_eq!(fresh.device_epoch, 2);
+    let row = *host.backend.core.fake().submitted.last().expect("submitted");
+    assert_eq!((row.device_epoch, row.resource_set, row.target), (2, second_set.0, TARGET_SURFACE));
+    let id = frame_ids(&mut host, &[&fresh])[0];
+    assert!(host.backend.core.fake().show(id));
+    assert_eq!(host.read_presented()[0].stamp, fresh);
+    let times = host.backend.take_display_times();
+    assert_eq!(
+        times.iter().map(|t| (t.sequence, t.device_epoch)).collect::<Vec<_>>(),
+        [(again.sequence, 1), (fresh.sequence, 2)]
+    );
+    assert_eq!(host.presented_preview().map(|p| p.preview), Some(PreviewId(8)));
 }
 
 pub fn frame_input(sequence: u64, camera: u64, publication_generation: u64) -> FrameInput {

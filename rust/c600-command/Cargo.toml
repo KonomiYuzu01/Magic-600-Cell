@@ -11,6 +11,11 @@ c600-digest = { path = "../c600-digest" }
 c600-jumble = { path = "../c600-jumble" }
 c600-kernel = { path = "../c600-kernel" }
 
+[dev-dependencies]
+# KN5.26's admission matrix runs through the layer with the runtime's own adapter (`boundary::admit_preview`), as a host
+# installs it; the layer itself never depends on the runtime.
+c600-run = { path = "../c600-run" }
+
 [features]
 # The layer's test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) in a build without debug assertions.
 test-hooks = []

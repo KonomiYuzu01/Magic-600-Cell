@@ -1,5 +1,5 @@
-//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`], and the ABI 4 calls the trait has no method for
-//! (engine adoption, frame reports, picks, counters) as methods of their own.
+//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`], and the ABI 5 product calls the trait has no
+//! method for (engine adoption, frame reports, picks, counters) as methods of their own.
 //!
 //! What the bridge decides, because the core's interface and the host's types differ:
 //! - A publication becomes per-slot rows: the one retained primitive's visibility and interaction sets, and each
@@ -17,10 +17,14 @@
 //!   camera matrix is the one set for its view and camera version ([`RenderBackend::set_camera_matrix`]); its target
 //!   is the one set by [`RenderBackend::set_frame_target`].
 //! - `cancel` and `retire` cannot return an error through the trait; a failure is kept in [`RenderBackend::fault`].
+//! - Recovery (ABI 5, route B; accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks)
+//!   forgets every resource set of the old device epoch: the core released them, and RM.23 lets no old resource token
+//!   draw on the new device. A frame naming such a set fails until its publication is prepared and activated again;
+//!   retiring one is a no-op.
 //! - Every core failure is `EV3:busy.renderer_unavailable` except `SA2_E_UNSUPPORTED`, which is
 //!   `EV3:input.display_unsupported`; the context names the status and the core's last error.
 
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use c600_digest::sha256;
 use c600_display::error::Error;
@@ -40,6 +44,8 @@ use crate::api::{CoreAbi, EngineImage, PreparationInput};
 const FRAME_RECORDS: usize = 2048;
 /// Camera matrices kept per view.
 const CAMERAS: usize = 8;
+/// Display times kept until the caller takes them; the oldest go first.
+const DISPLAY_TIMES: usize = 1024;
 
 /// A frame the bridge submitted.
 #[derive(Clone, Debug)]
@@ -70,6 +76,16 @@ pub struct FrameReport {
     pub view_vertex_evals: u64,
 }
 
+/// When the display showed a confirmed frame (route B, accepted for now by the owner on 18 Nov 2026, pending three
+/// owner-machine checks): `display_qpc` is the SyncQPCTime of the statistics row that confirmed it, in QPC ticks.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DisplayTime {
+    pub sequence: u64,
+    pub device_epoch: u64,
+    pub surface: u64,
+    pub display_qpc: u64,
+}
+
 /// A pick request of [`RenderBackend::request_pick`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PickTicket(pub u64);
@@ -91,7 +107,11 @@ pub struct RenderBackend<C: CoreAbi> {
     target: u32,
     cameras: BTreeMap<ViewId, VecDeque<(u64, [f32; 16])>>,
     sets: BTreeMap<u64, SetRecord>,
+    /// Sets of an earlier device epoch, which the core released at recovery.
+    lost_sets: BTreeSet<u64>,
     frames: VecDeque<FrameRecord>,
+    /// Display times of confirmed frames not yet taken.
+    displays: VecDeque<DisplayTime>,
     /// The newest failure of `cancel` or `retire`, which the trait cannot return.
     pub fault: Option<Error>,
 }
@@ -105,12 +125,16 @@ impl<C: CoreAbi> RenderBackend<C> {
             target: 0,
             cameras: BTreeMap::new(),
             sets: BTreeMap::new(),
+            lost_sets: BTreeSet::new(),
             frames: VecDeque::new(),
+            displays: VecDeque::new(),
             fault: None,
         }
     }
 
-    /// The frame target of the next frames: on the Godot-texture route, the registered ring slot.
+    /// The frame target of the next frames: on the Godot-texture route, the registered ring slot; on route B (a
+    /// `sa2_create` context; accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks),
+    /// [`TARGET_SURFACE`].
     pub fn set_frame_target(&mut self, target: u32) {
         self.target = target;
     }
@@ -137,6 +161,12 @@ impl<C: CoreAbi> RenderBackend<C> {
             .ok_or_else(|| Error::invalid("the revision digest is not a SHA-256 in hexadecimal"))?;
         let image = EngineImage { revision: bundle.revision.state, labels: &labels, pose: None, digest };
         self.core.engine_adopt(&image).map_err(|status| self.error(status))
+    }
+
+    /// The display times of the frames [`Backend::read_presented`] confirmed since the last call, in frame order;
+    /// at most the newest 1024 are kept.
+    pub fn take_display_times(&mut self) -> Vec<DisplayTime> {
+        self.displays.drain(..).collect()
     }
 
     /// The core's frame reports, in frame order, each with the stamp of its frame. A row that names other bindings
@@ -321,6 +351,9 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     }
 
     fn retire(&mut self, resources: ResourceSet) {
+        if self.lost_sets.remove(&resources.0) {
+            return;
+        }
         self.sets.remove(&resources.0);
         if let Err(status) = self.core.retire(resources.0) {
             self.fault = Some(self.error(status));
@@ -400,6 +433,17 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
             };
             presented.push(PresentedFrame { stamp: stamp.clone(), presented: shown });
         }
+        for row in &rows[..n] {
+            self.displays.push_back(DisplayTime {
+                sequence: row.sequence,
+                device_epoch: row.device_epoch,
+                surface: row.surface,
+                display_qpc: row.display_qpc,
+            });
+        }
+        while self.displays.len() > DISPLAY_TIMES {
+            self.displays.pop_front();
+        }
         Ok(presented)
     }
 
@@ -412,6 +456,8 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 .unwrap_or_default();
             return Err(self.error(status).with("reason", reason));
         }
+        let lost = std::mem::take(&mut self.sets);
+        self.lost_sets.extend(lost.into_keys());
         self.describe_backend()
     }
 }
@@ -500,7 +546,7 @@ fn support_report(text: &str, limits: &LimitProfile) -> Result<SupportReport, Er
     let value = json::parse(text.as_bytes()).map_err(|_| malformed())?;
     let version = value.get("interface_version").and_then(Value::as_i64).ok_or_else(malformed)?;
     if version != i64::from(ABI_VERSION) {
-        return Err(Error::unavailable(format!("the core speaks interface version {version}, not 4")));
+        return Err(Error::unavailable(format!("the core speaks interface version {version}, not {ABI_VERSION}")));
     }
     if let Some(removed) = value.get("device_removed").and_then(Value::as_str) {
         return Err(Error::unavailable("the renderer core's device is removed").with("removed", removed));

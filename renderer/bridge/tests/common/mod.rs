@@ -59,11 +59,12 @@ fn sized<T>(struct_size: u32) -> bool {
 }
 
 unsafe extern "C" fn abi_version() -> u32 {
-    4
+    ABI_VERSION
 }
 
-pub unsafe extern "C" fn abi_version_3() -> u32 {
-    3
+/// The previous ABI's answer, which `DllCore` refuses.
+pub unsafe extern "C" fn abi_version_previous() -> u32 {
+    ABI_VERSION - 1
 }
 
 unsafe extern "C" fn last_error(ctx: *mut c_void, buffer: *mut c_char, size: u32) -> i32 {
@@ -236,7 +237,7 @@ impl Shimmed {
     pub fn new(fake: FakeCore, pad: usize) -> Shimmed {
         let shim = Box::into_raw(Box::new(Shim { fake, pad }));
         // SAFETY: the table is the shim's and the context a live shim, which this value owns and frees last.
-        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 4");
+        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 5");
         Shimmed { dll, shim }
     }
 }

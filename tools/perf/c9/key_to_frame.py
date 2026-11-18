@@ -26,8 +26,9 @@ object per line; every QPC value is an integer tick count of the machine's Query
   the core, logged at submission; frame ids strictly increase.
 - `{"t": "presented", "frame_id": int, "device_epoch": int, "surface": int, "sequence": int, "display_qpc": int}`:
   one `sa2_presented` row as the shell receives it from the core: a frame the core confirmed as presented through its
-  own swap chain's frame statistics, `sequence` the present count and `display_qpc` the SyncQPCTime. A frame without
-  its own row is not confirmed (route B).
+  own swap chain's frame statistics, `sequence` the frame's sequence as the core's row carries it (it rises with every
+  frame) and `display_qpc` the SyncQPCTime of the statistics row that confirmed it (`sa2_presented_row.display_qpc`).
+  A frame without its own row is not confirmed (route B).
 
 Rules. A key is matched to its frame by frame id only. A key whose frame has no presented row, or that names no
 frame, is unconfirmed: it gets no time, is printed on stderr and is never filled in from another frame; any

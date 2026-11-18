@@ -9,8 +9,10 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
-# A workspace of its own, so that it is no member of rust/Cargo.toml's.
+# A workspace of its own, so that it is no member of rust/Cargo.toml's. Its other member is the shell's native host
+# library (host/, c600-shell-host), which shares the lockfile and the vendored crates.
 [workspace]
+members = [".", "host"]
 
 [dependencies]
 c600-render = { path = "../../rust/c600-render" }

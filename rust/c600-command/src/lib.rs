@@ -369,9 +369,10 @@
 //!   - `FilterRef` is a result reference `{"job": Nat, "digest": Text}` and `FilterPreviewRef` `{"epoch": Nat, "job":
 //!     Nat}`, a job and the epoch it ran in (draft). After the forms and the revisions, a `FilterRef` must resolve
 //!     (filter previews, below).
-//!   - The forms of the other types are not written down yet, and they pass unchecked: among them
-//!     `CanonicalObjectRefs`, which `set.save` takes, and a union of types such as `ResolvedDraftRef|WordRef`. The
-//!     layer's own rows check their arguments where they are built.
+//!   - `CanonicalObjectRefs`, which `set.save` takes, is a list of pieces or positions, each 0 to 177,119 (the
+//!     kernel's `PIECES`); an empty list and repeated members pass (draft).
+//!   - The forms of the other types are not written down yet, and they pass unchecked: among them a union of types
+//!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
 //! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
 //!   language-defined row's [`Metadata`]: the static check's first failed diagnostic, and the kernel rows its program
 //!   may invoke, each required or optional and bound [`Binding::Static`] with captured arguments or

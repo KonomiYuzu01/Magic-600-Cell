@@ -1,0 +1,33 @@
+; The product shell of Magic 600 Cell 1.0 (C9). Godot draws the UI only; the S-A2 core draws the puzzle.
+; The window settings are the route-B probe's (work/experiments/c9-present-probe, PR 245). The window allows per-pixel
+; transparency, so that the core's own composition layer shows beneath the UI
+; (route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks).
+config_version=5
+
+[application]
+config/name="Magic 600 Cell"
+run/main_scene="res://Main.tscn"
+run/low_processor_mode=false
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/resizable=true
+window/size/transparent=true
+window/per_pixel_transparency/allowed=true
+window/vsync/vsync_mode=1
+window/stretch/mode="disabled"
+
+[dotnet]
+project/assembly_name="Magic600Shell"
+
+[rendering]
+rendering_device/driver.windows="d3d12"
+rendering_device/fallback_to_vulkan=false
+rendering_device/fallback_to_opengl3=false
+renderer/rendering_method="forward_plus"
+viewport/transparent_background=true
+environment/defaults/default_clear_color=Color(0, 0, 0, 0)
+
+[debug]
+file_logging/enable_file_logging.pc=false

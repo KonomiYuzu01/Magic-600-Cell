@@ -1,7 +1,10 @@
 //! Shared fixtures: the shipped geometry and kernel, a declared host context, the RM.30 sources and builders for
-//! 600-cell-Full publications at fixture revisions. Every value here is a source or synthetic fixture.
+//! 600-cell-Full publications at fixture revisions, and in [`stages`] stage modules that LP2's stage checker admits.
+//! Every value here is a source or synthetic fixture.
 
 #![allow(dead_code)]
+
+pub mod stages;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
