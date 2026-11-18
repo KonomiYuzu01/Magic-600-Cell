@@ -285,6 +285,10 @@ pub struct ProgramJob {
     /// The revision the job reads.
     pub revision: Revision,
     pub overlay: Overlay,
+    /// The provenance blocks of the job's arguments (BND.22; LP2 draft), as the caller's host gave them with
+    /// [`CommandLayer::invoke_with_inputs`], in their order; empty after [`CommandLayer::invoke`]. The layer checked
+    /// each block with the host's reader and holds it as given. The host runs the entry with them as its run's inputs.
+    pub inputs: Vec<Vec<u8>>,
 }
 
 impl ProgramJob {
@@ -1755,8 +1759,8 @@ impl<S: Store> CommandLayer<S> {
 
     /// The request digest: the envelope without the token's authenticator (LI.5) and the caller the host stamped
     /// (ruling 4).
-    fn request(&self, caller: &Caller, invocation: &Invocation) -> String {
-        digest(&json::object([
+    fn request(&self, caller: &Caller, invocation: &Invocation, inputs: &[Vec<u8>]) -> String {
+        let mut request = json::object([
             ("session", Value::String(self.revision.session.clone())),
             ("epoch", Value::Int(invocation.epoch as i64)),
             ("caller", caller.to_json()),
@@ -1764,7 +1768,14 @@ impl<S: Store> CommandLayer<S> {
             ("row", Value::String(invocation.row.clone())),
             ("args", invocation.args.clone()),
             ("token", invocation.token.as_ref().map_or(Value::Null, |t| t.binding.to_json())),
-        ]))
+        ]);
+        // The digest of each argument block, only when there are any: an invocation without blocks keeps the request
+        // digest it had before blocks existed, in stored receipts and journals too.
+        if let (false, Value::Object(fields)) = (inputs.is_empty(), &mut request) {
+            let blocks = inputs.iter().map(|block| Value::String(c600_digest::sha256_hex(block))).collect();
+            fields.insert("inputs".to_owned(), Value::Array(blocks));
+        }
+        digest(&request)
     }
 
     /// The envelope's full digest: the request digest and the token's authenticator (ruling 4).
@@ -1817,8 +1828,23 @@ impl<S: Store> CommandLayer<S> {
     /// the epoch under its full digest and never attaches to the command ID, so a later authentic envelope with the ID
     /// is treated as the first (ruling 4); every other answer attaches to the ID (KN5.21).
     pub fn invoke(&mut self, caller: &Caller, invocation: Invocation) -> Receipt {
+        self.invoke_with_inputs(caller, invocation, Vec::new())
+    }
+
+    /// [`CommandLayer::invoke`] with the provenance blocks of the invocation's arguments (BND.22; LP2 draft). A program
+    /// sets no field of a block: the host builds them, for a running program's invocation from the run's context, and
+    /// passes them here beside the envelope, never inside it. Blocks change none of the checks before the row is
+    /// dispatched (epoch, row, caller, token, recovery, argument names), whose refusals come first. Only a row an entry
+    /// serves takes blocks; another row that passed those checks refuses them with `KN5:input.argument_form`. For a
+    /// served row, the layer checks each block with the host's reader after the arguments' forms, the `FilterRef`s and
+    /// the gate, as for a record's block (PS1.16): a block the reader refuses is refused with its error, and with no
+    /// reader the invocation is refused with `KN5:input.row_not_built`. It holds the blocks as given, on the job
+    /// ([`ProgramJob::inputs`]), with no limit of its own on their number or size: the host's channel carries them. The
+    /// request digest covers each block's SHA-256 when there are any, so a retry with other blocks is other content
+    /// (KN5.21), and an invocation without blocks keeps its digest.
+    pub fn invoke_with_inputs(&mut self, caller: &Caller, invocation: Invocation, inputs: Vec<Vec<u8>>) -> Receipt {
         let scope = caller.scope();
-        let request = self.request(caller, &invocation);
+        let request = self.request(caller, &invocation, &inputs);
         let full = Self::envelope(&invocation, &request);
         let retained = self.retained.get(&(scope.clone(), full.clone())).filter(|r| r.command == invocation.command);
         if let Some(receipt) = retained {
@@ -1828,7 +1854,7 @@ impl<S: Store> CommandLayer<S> {
         if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
             return self.kernel_outcome(caller, &invocation.command, &request);
         }
-        let (job, status) = match self.dispatch(caller, &invocation, &request) {
+        let (job, status) = match self.dispatch(caller, &invocation, &request, &inputs) {
             Ok(answer) => answer,
             Err(error) => (None, Status::Refused(error)),
         };
@@ -1847,6 +1873,7 @@ impl<S: Store> CommandLayer<S> {
         caller: &Caller,
         invocation: &Invocation,
         request: &str,
+        inputs: &[Vec<u8>],
     ) -> Result<(Option<u64>, Status), Error> {
         if invocation.epoch != self.revision.epoch {
             return refused(code::EPOCH_CHANGED, "the envelope belongs to another engine epoch");
@@ -1875,6 +1902,9 @@ impl<S: Store> CommandLayer<S> {
                 Some(_) => refused(code::ARGUMENT_FORM, format!("`{}` takes no token", row.id)),
             };
         }
+        if !inputs.is_empty() && row.overlay.is_none() {
+            return refused(code::ARGUMENT_FORM, format!("`{}` runs no entry, so it takes no argument blocks", row.id));
+        }
         match row.id.as_str() {
             "operation.preview" => self.admit_preview(caller, invocation),
             "operation.execute" => self.execute(caller, invocation, request),
@@ -1894,7 +1924,8 @@ impl<S: Store> CommandLayer<S> {
                 forms::check(&row, args, &self.revision)?;
                 self.check_filter_refs(&row, args)?;
                 self.fresh_filter_gate(&row, &invocation.args)?;
-                self.admit_program(caller, invocation, &row)
+                self.check_inputs(&row, inputs)?;
+                self.admit_program(caller, invocation, &row, inputs)
             }
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
         }
@@ -3574,11 +3605,25 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- language-defined rows -----
 
+    /// The argument blocks of an invocation that an entry serves (BND.22): the host's reader checks each block's form,
+    /// as for a record's block (PS1.16). The layer reads nothing else in them.
+    fn check_inputs(&self, row: &Row, inputs: &[Vec<u8>]) -> Result<(), Error> {
+        if inputs.is_empty() {
+            return Ok(());
+        }
+        let Some(reader) = &self.provenance else {
+            let detail = format!("`{}`'s argument blocks need the host's provenance reader", row.id);
+            return Err(Error::new(code::ROW_NOT_BUILT, detail));
+        };
+        inputs.iter().try_for_each(|block| reader.check(block))
+    }
+
     fn admit_program(
         &mut self,
         caller: &Caller,
         invocation: &Invocation,
         row: &Row,
+        inputs: &[Vec<u8>],
     ) -> Result<(Option<u64>, Status), Error> {
         let overlay = row.overlay.clone().expect("an overlay row");
         if row.lane == Lane::Program {
@@ -3609,6 +3654,7 @@ impl<S: Store> CommandLayer<S> {
             caller: caller.clone(),
             revision: self.revision.clone(),
             overlay,
+            inputs: inputs.to_vec(),
         };
         self.jobs.push_back(Job {
             id,
