@@ -1,0 +1,7 @@
+# The approved crates are vendored in rust/vendor, so `cargo test --locked --offline` needs no network, as in
+# rust/.cargo/config.toml. Cargo reads this file when it runs in renderer/bridge (tests/test_render_ffi.py does).
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "../../rust/vendor"

@@ -32,6 +32,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
+| `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 4 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -2584,4 +2585,36 @@ run or not applicable is no pass (PHS.63).
   not run, because a jumbled layer needs `c600-jumble`; the other entries of LB1.8's table. The IR draft has
   `word_key`, Full's free reduction (LP2's pull request 176), and LB1.10's `trace_key` (`trace-key/1`, pull request
   214).
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C9 bridge: the display host over the S-A2 core
+
+- `c600-render` implements `c600-display`'s `Backend` over ABI 4 of the S-A2 renderer core
+  (`renderer/core/include/sa2_interop.h`) through `CoreAbi`, a safe call interface, and forbids unsafe code.
+- The foreign half is `c600-render-ffi` in `renderer/bridge`, a crate with a workspace and a lockfile of its own,
+  because CT-RPI-01 keeps every member of this workspace free of unsafe code and foreign declarations. There
+  `CoreFunctions` is a table of the core's 17 C functions, and `DllCore` implements `CoreAbi` over it: it checks every
+  array length and sets every row's size before it calls one, and refuses a null context or another ABI version. The
+  bridge loads no library: the shell links `renderer/bridge`, loads `sa2_interop.dll` and hands over the context and
+  the table, because only `c600-platform` calls an operating system's own API (CT-RPI-20) and it has no loader.
+- The mapping: the core's describe report becomes the support report, with the limits the caller declares. J01 and J02
+  are reported unsupported, because the bridge maps Full labels only. F20 (atomic publication and latest-wins
+  replacement) is not a drawing row and the core does not name it; its backend operations are ABI 4's prepare, poll,
+  activate, cancel and retire, and its replacement rules are the host's (RM.17 to RM.22), so the bridge reports it
+  supported unless the core names it. A preparation carries at most one retained primitive, its labels a permutation
+  and its instances on stickers or slots; anything else is refused by the feature it needs. Activation sends the
+  publication stamp's digest. A frame needs a camera matrix for its view and an active set. `read_presented` and
+  `recover` answer renderer unavailable, as ABI 4 does (F23; F22 and RPI.46), so the host's presented latch stays
+  clear. What the `Backend` trait has no operation for yet is inherent: engine adoption, frame reports in batches of
+  64, pick requests and polls (a pick names the binding field that went stale), and the core's counters.
+- Tests (`c600-render/tests/`): `abi_layout.rs` reads the header and checks every row's offsets and size and every
+  constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
+  install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
+  replacement, and device loss. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
+  run again through the C function table over a C shim; there `abi_functions.rs` checks every function's signature
+  against the header and `ffi.rs` what `DllCore` refuses before a call and what it reads back.
+  `tests/test_render_ffi.py` runs that crate's tests, since `tests/test_language_rust.py` runs this workspace only.
+- Not run: no run against the built core library and no GPU run, so nothing here is Windows/DirectX, input or
+  performance evidence. Not built: posed and jumbling engine images (J01, J02), a check of the preparation's base
+  revision by the core, and the trait operations above, which wait for `c600-display`.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
