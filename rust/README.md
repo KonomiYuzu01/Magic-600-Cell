@@ -33,6 +33,8 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
+| `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
+| `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling trial on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -2727,3 +2729,68 @@ run or not applicable is no pass (PHS.63).
   performance evidence. Not built: posed and jumbling engine images (J01, J02), a check of the preparation's base
   revision by the core, and the trait operations above, which wait for `c600-display`.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C9 measurement: LX-4's module set and edit script
+
+- `c600-lx4` generates RTE.48's fixtures from whole declarations of the three LP3 tools (PHS.22), renamed, in an
+  order seeded by 2026111801, with `#` comment padding to the exact length: S, M and L are single modules of 200,
+  1,000 and 5,000 LF-terminated lines; W is 50 modules of 400 lines, an acyclic synthetic import graph by digest
+  (module k imports one to three earlier modules; W01 to W09 import W00), not a real LP3 graph. Every module exports
+  `exported() -> Nat`, and a W module's export calls its imports' exports.
+- The edit script (seed 2026111802) holds RTE.51 step 2's four kinds at S, M, L and W00: inside a body, exported
+  signature (`Nat` to `Text`), completion trigger (an unfinished `exact_` at the end, with its cursor) and syntax
+  break. Each edit starts from the original bytes and refuses a stale baseline, a differing preimage or result.
+- Before writing, the module set and every edit go through `c600_syntax::parse` and `lower` and `c600_check::check`:
+  every module is clean; inside-body edits stay clean; the signature edit is clean at S, M and L and, at W00 with all
+  49 later modules re-pinned, refused only in `exported` of W00's 13 direct dependents; the other two kinds stop at
+  syntax. A disagreement refuses the whole output (LX-4's immediate kill criterion).
+- `c600-lx4-fixtures --out <new folder>` writes `S.6cs`, `M.6cs`, `L.6cs`, `W/W00.6cs` to `W/W49.6cs`,
+  `MANIFEST.json` (`magic600-c9-lx4-fixtures-v1`: the tools and every module by digest) and `EDITS.json`
+  (`magic600-c9-lx4-edits-v1`). It never writes over a folder that holds anything.
+- DRAFT: the set follows the tools as they stand; RTE.51 step 1 freezes it with the candidate and its build identity.
+  The modules hold the tools' declarations, not their run-time views, and the LX-4 harness (Jumble on and off, the
+  owner-machine runs, the frame matching) is not built. Evidence kind: source and fixture; nothing here is timing.
+
+## Status of LP3, C9 measurement: LX-2's metered and forced-kill half
+
+- `c600-lx2-faults --runtime <c600-runtime binary> [--injection <c600-lx2-child binary>] [--sessions <new folder>]
+  [--assets <folder>] [--out <record.json>]` runs five trials on `c600-runtime`'s parent API against the child binary
+  it is given, so the decisive runs use the product build's runtime unchanged, and with `--injection` a sixth, native
+  trial on the injection device. Every job
+  first proposes SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
+- `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
+  `recursion_metered` (endless recursion, 1 MiB) ends `KN7:budget.memory`, since the meter charges a frame as memory
+  and has no recursion dimension; `alloc_metered` (a list grown with `push`, 64 KiB, kept small because each `push`
+  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform (the barrier)
+  and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is
+  still the runtime word and the same runtime completes the control again, in a fresh child only after the kill. The
+  metered trials and the control also run in process, and the two executors agree.
+- With `--sessions`, each trial also runs with a session open (RTE.42 conditions 1 and 2; RTE.43): KN5's command
+  layer over M6's journal on a file-system disk in its own fresh subfolder, with the shell and the headless display.
+  The solver commits `[1, -2]`; the trial's job runs in the child through the product's bridge and boundary, so its
+  proposal is the layer's pending preview before the fault; the solver then commits that preview and `[3]`. A trial
+  agrees when it ends with its typed outcome, every solver command after it is accepted, its journal records and state
+  hash equal the control's, and a reopen replays the same state hash. The journal is read before the reopen, which
+  journals a fresh random epoch of its own.
+- The injection device of option (a) (top integrator, 18 November 2026) is the bin `c600-lx2-child`: product source
+  (`c600_runtime::child::main`, unchanged) under a `#[global_allocator]` that wraps the system allocator and refuses
+  an allocation once the live heap would pass the byte count in `C600_LX2_CEILING`. Its unsafe code is in that bin
+  only; c600-runtime is not edited and keeps no allocator of its own. Build it for the decisive run with the product's
+  profile: `cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 --bin c600-lx2-child`.
+  It is never shipped: `tests/device.rs` checks, through `cargo metadata`, that no package of this workspace or of
+  `renderer/bridge` other than c600-lx2 depends on c600-lx2, and that nothing under `c600-runtime/src` names a
+  global allocator.
+- `alloc_ceiling`, the native trial, runs only on the device, with the ceiling at 32 MiB set in `Config.env` for the
+  trial's child and its recovery child, and the meter at 1 GiB as a safety net: a list doubled with `concat` passes the
+  ceiling, the standard library reports the failed allocation and aborts the child, and the parent must report a typed
+  `Lost` fault (`KN7:resource_limit.runtime_lost`) whose standard error shows "memory allocation of"; a loss without it
+  does not count. Then a fresh child completes the control, as after the forced kill. With `--sessions` it also runs
+  with a session open and must agree with the control.
+- The record (`magic600-c9-lx2-faults-v1`) names each child by file name and SHA-256 only, never by path. Each row
+  names its child (`product` or `injection device`); `injection_device` is null without `--injection`, and otherwise
+  carries the device's file name and SHA-256, "product source + injection device", the variable, the ceiling and the
+  meter limit. Each session row names the journal by row count and digest, never the folder.
+- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need a hook inside
+  `c600-runtime`, which is LP3's to shape. Also not here: the barrier's release acknowledgement and conditions 3 and 4
+  (the renderer gate, LX-4's echo bar and E2 commits during fault windows), which need the shell's frame loop on the
+  owner's machine. Evidence kind: source and synthetic; nothing is timing.

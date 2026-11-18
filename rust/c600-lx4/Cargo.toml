@@ -1,0 +1,14 @@
+[package]
+name = "c600-lx4"
+description = "LX-4's module set and seeded edit script from the three LP3 tools, checked by the product front end (C9)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "c600-lx4-fixtures"
+path = "src/main.rs"
+
+[dependencies]
+c600-check = { path = "../c600-check" }
+c600-syntax = { path = "../c600-syntax" }

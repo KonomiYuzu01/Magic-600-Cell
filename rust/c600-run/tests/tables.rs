@@ -576,12 +576,19 @@ fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// The lines of the product's sources that are not whole-line comments, by file.
+/// LX-2's fault-injection device (option (a), top integrator, 18 November 2026): a measurement binary built from
+/// product source and never shipped, and the one source file allowed to hold unsafe code (its global allocator). No
+/// package depends on `c600-lx2`; `c600-lx2/tests/device.rs` checks that.
+const DEVICE: &str = "c600-lx2/src/bin/c600-lx2-child.rs";
+
+/// The lines of the product's sources that are not whole-line comments, by file. LX-2's device is not product source.
 fn code_lines() -> Vec<(PathBuf, usize, String)> {
     let mut files = Vec::new();
     for member in members() {
         sources(&Path::new(RUST).join(&member).join("src"), &mut files);
     }
+    assert!(Path::new(RUST).join(DEVICE).is_file(), "the device moved; update DEVICE");
+    files.retain(|file| !file.ends_with(DEVICE));
     let mut out = Vec::new();
     for file in files {
         let text = std::fs::read_to_string(&file).unwrap();
@@ -625,7 +632,8 @@ fn handing(output: Expr) -> Program {
 /// sink since the owner decision of 16 November 2026 under PHS.52). Every package in
 /// `Cargo.lock` is a workspace member or one of the four approved numeric crates, so no renderer, graphics or windowing
 /// crate is linked; every member forbids unsafe code and no product source holds an `unsafe` block or an `extern`
-/// declaration, so nothing calls a foreign renderer API.
+/// declaration, so nothing calls a foreign renderer API. LX-2's fault-injection device ([`DEVICE`]) is measurement
+/// tooling, not product source.
 #[test]
 fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
     let approved = [("autocfg", "1.5.1"), ("num-bigint", "0.5.1"), ("num-integer", "0.1.47"), ("num-traits", "0.2.19")];

@@ -402,11 +402,15 @@ class PresentMonTests(NoProcessCase):
 class RunbookTests(NoProcessCase):
     def test_the_attended_steps_come_first_in_the_owner_order(self):
         ids = [step.id for step in runbook.STEPS]
-        self.assertEqual(ids, ['b1-input', 'e2-key-to-frame', 'wj-w3', 'rpi79-gate', 'e3-cold-start', 'lx2', 'lx4',
-                               'b3-probe', 'b2-skew'])
+        self.assertEqual(ids, ['shell-launch', 'b1-input', 'e2-key-to-frame', 'core-gpu', 'wj-w3', 'rpi79-gate',
+                               'e3-cold-start', 'lx2', 'lx4', 'b3-probe', 'b2-skew'])
         attended = [step.attended for step in runbook.STEPS]
         self.assertEqual(attended, sorted(attended, reverse=True))
-        self.assertEqual(attended.count(True), 2)
+        self.assertEqual(attended.count(True), 3)
+        lx2 = next(step for step in runbook.STEPS if step.id == 'lx2')
+        self.assertTrue(any('--injection' in command for command in lx2.commands))
+        gpu = next(step for step in runbook.STEPS if step.id == 'core-gpu')
+        self.assertTrue(gpu.built and gpu.commands[0].startswith('python -B renderer/core/check_core.py --gpu'))
         self.assertEqual(next(step for step in runbook.STEPS if step.id == 'lx4').minutes, 240)
         for step in runbook.STEPS:
             with self.subTest(step=step.id):
