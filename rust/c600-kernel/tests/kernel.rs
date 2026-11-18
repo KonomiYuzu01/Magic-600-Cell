@@ -648,8 +648,8 @@ fn ct_kn2_07_and_ct_lb2_03_a_word_replays_in_chunks() {
     assert_eq!(empty.word, c600_digest::sha256_hex(b""));
 }
 
-/// CT-LG4-03 (part: the kernel half; LP2 draft; not run: the interpreter's streaming rows and cancellation, LG4.6 and
-/// DET.63): chunking changes neither the literal digest nor the verdict. The replay hashes the letters as they are
+/// CT-LG4-03 (part: the kernel half; LP2 draft; the interpreter's half is `c600-run`'s `streams.rs`; not run: a
+/// stream fed chunk by chunk into the kernel's replay, since a run proposes no stream (no owner yet)): chunking changes neither the literal digest nor the verdict. The replay hashes the letters as they are
 /// pushed and keeps no copy of them, so any split of one word, empty chunks included, gives the digest of the whole
 /// word's little-endian letters, its effect and its first refused prefix.
 #[test]

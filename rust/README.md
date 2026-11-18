@@ -440,22 +440,22 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 28 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 31 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, the four generator traces
   generator, generator-alias-cursor, generator-returned-owner and generator-child-paths, the three display traces,
   output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live,
   pointwise-failure, final-loop-test, and the five child traces child-allowances, child-return-owner,
-  root-before-child, dimension-before-scope and nested-child-ledger, and the two decoding traces decode-scalar and
-  decode-surrogate, on bytes the host delivers as a snapshot. Each frozen row, each cutoff or stop (dimension
-  or phase, scope, denied row, source range) and each child record equals the vector, under LP3's limit mapping
-  (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The
-  alias traces cross a call, since `let` scopes nest. A child trace that completes takes its limits at its first
-  `child` row, so that each requested cap is cut as the trace's is.
-- The other 12 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds
-  two bindings (1, generator-nested-same-name), text order (1), a child's bytes without a row of their own (1,
-  child-decode-error-releases-reservation), a flow check (1, abstract-trace-charges), streaming cursors (3) and
-  display form 2 (5). They still replay through the
-  meter.
+  root-before-child, dimension-before-scope and nested-child-ledger, the two decoding traces decode-scalar and
+  decode-surrogate, on bytes the host delivers as a snapshot, and the three streaming traces streaming,
+  streaming-complete-split and streaming-complete-coalesced, one program for both transport partitions. Each frozen
+  row, each cutoff or stop (dimension or phase, scope, denied row, source range) and each child record equals the
+  vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 30, 31 and
+  32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest. A child trace that completes
+  takes its limits at its first `child` row, so that each requested cap is cut as the trace's is.
+- The other 9 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds two
+  bindings (1, generator-nested-same-name), text order (1), a child's bytes without a row of their own (1,
+  child-decode-error-releases-reservation), a flow check (1, abstract-trace-charges) and display form 2 (5). They
+  still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -511,6 +511,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   reserves 4 bytes per byte before reading one and settles to the text's 4 bytes per scalar; invalid UTF-8 or a
   surrogate stops the run, or a child alone, with `LG4:input.text_scalar_invalid` in the effect phase, nothing bound.
   The wire codec carries bytes as value tag 25 and type tag 28 (`c600-run/tests/decode.rs`, `det65_programs.rs`).
+- Streamed words (LP2 drafts; KN2.10, LG4.6, DET.63). `word_stream(c, k)` streams a compressed word in chunks of the
+  exact size `k`: a `word_open` row of one step at `stream_setup` that reserves the cursor (the length's integer
+  size), then one `chunk:<position>` row per chunk at `expand_per_letter` and `replay_per_letter` per letter, which
+  preflights its share and 2 bytes of scratch per letter before it expands one and releases the scratch in the same
+  row. The schedule comes from the length and `k` alone; a final short chunk has its own share; a `k` of 0 stops
+  the run with `LG4:input.pointwise_failed` before any step. Expansion keeps the compressed structure and a stack
+  of parts, never the whole word, and an interruption stops the stream at its open or a chunk boundary. The
+  result, `WordStream`, holds the length and the literal digest, which `stream_digest` reads as 64 hex digits:
+  the kernel's, the same for every chunk size. A stream has no equality, key order or canonical form and stays in
+  its run; the wire codec gives its type tag 29 and refuses its value (`c600-run/tests/streams.rs`,
+  `det65_programs.rs`; CT-LG4-03 and CT-DET-30 in part).
 - Loops (LP2 drafts; DET.55, DET.56, DET.58). A loop runs in its function's frame, with its value so far in a slot
   of the frame. The initial value fills the slot as a `let` binds: an owned value with a `visit`, a borrowed one
   with an `alias` of its size. Each loop test is a one-step row `loop_test:k`, the final false one included. A row of
@@ -579,8 +590,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   decoder of untrusted input bounds the parts.
   Tests: `c600-run/tests/collections.rs` (CT-LG2-14's language half, part).
 - Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
-  and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
-  and admission bounds; CT-LG4-03, M4).
+  and an output form; a stream fed chunk by chunk into the kernel's replay, since a run proposes no stream
+  (CT-LG4-03's remaining part).
 - F2 and F5 (LP2 drafts): `Value::Field` holds the field and a residue below its prime, and `Value::field` reduces an
   integer of any size. Draft prices, one step each and charged before the work, with a mistyped operand rejected as
   malformed IR before any charge: `to_f2` and `to_f5` at the integer row's price for adding the prime, one walk over
@@ -1385,8 +1396,9 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 28 of DET.65's 40
-    traces as programs and lists why the other 12 do not run; `decode.rs` runs DET.62's byte decoding; `generators.rs` runs DET.61's generators,
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 31 of DET.65's 40
+    traces as programs and lists why the other 9 do not run; `decode.rs` runs DET.62's byte decoding; `streams.rs`
+    DET.63's streamed words; `generators.rs` runs DET.61's generators,
     `child_scopes.rs` DET.60's child scopes and `loops.rs` DET.55's loops.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
@@ -1424,8 +1436,8 @@ run or not applicable is no pass (PHS.63).
   M6's record layer with its run record and jumbling records, the stage checker and whole-state contracts, as
   `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 87 whole, eleven of
   them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
-  CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as parts
-  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 21 waiting, each with what it waits
+  CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 137 part; 4 named only by LP3's command-layer tests, as parts
+  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 20 waiting, each with what it waits
   for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1504,8 +1516,6 @@ run or not applicable is no pass (PHS.63).
   - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
     (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
-  - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
-    part (M4's section).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
 - Evidence kind: source and fixture. The checks ran on Windows only.
 

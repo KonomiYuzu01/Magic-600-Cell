@@ -24,7 +24,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-KN1-04 | whole by union | M4's 600-cell-Full half (`c600-kernel/tests/kernel.rs`) and M8's jumbling half (`c600-jumble/tests/levels.rs`) (`rust/README.md`, the count line) |
 | CT-PS1-11 | whole by union | the stored-word half and the journal half in `c600-session/tests/persist_jumble.rs` together run the whole definition (`rust/README.md`, the count line) |
 | CT-PS1-22 | whole by union | the never-on half and the interrupted-crossing half in `c600-session/tests/persist_jumble.rs` together run the whole definition (`rust/README.md`, the count line) |
-| CT-LG4-03 | waiting | compressed words, KN2.10, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-21 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-22 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-ONE-13 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
