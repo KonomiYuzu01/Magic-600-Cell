@@ -2288,10 +2288,10 @@ run or not applicable is no pass (PHS.63).
   and "an incomplete prefix check never returns safe" through the tool's route (the captured lock, LB2.3's coverage
   report and `LB2:protection.incomplete_coverage` are LP3's library rows over kernel rows, which need host rows for the
   kernel rows they read; the tool's bridge answers a snapshot read with an argument for `positions`, LP2's pull request
-  226, and `labels` only); named work-sheet reuse; chunked transport on the source route for a recipe with a star step
-  or a word step with another field (its literal word over 100,000 letters goes in one word step and is refused whole);
-  the child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s
-  (LP2, pull request 213).
+  226, and `labels` only); named work-sheet reuse, which C7 runs on the layer; chunked transport on the source route for
+  a recipe with a star step or a word step with another field (its literal word over 100,000 letters goes in one word
+  step and is refused whole); the child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's
+  recommendation rule are `c600-check`'s (LP2, pull request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
