@@ -1,6 +1,7 @@
 //! The base library's first entries as 600 Cell Script (LP3, C5), written as language code over the IR draft (LB1.1):
-//! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations, and the exact-completion half of
-//! LB2's row "Residuals and exact completion", over KN2.4's `positions` and `labels` rows.
+//! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
+//! "Exact linear algebra"; and the exact-completion half of LB2's row "Residuals and exact completion", over KN2.4's
+//! `positions` and `labels` rows.
 //!
 //! # Literal words
 //!
@@ -36,6 +37,23 @@
 //! capability separation it reads state and prepares no preview. The entry runs on a host that serves both rows:
 //! `c600-tools`' host bridge does (`c600_tools::kernel_rows`), and `c600-tools/tests/exact_completion.rs` runs it there
 //! on the command layer (CT-LB2-04).
+//!
+//! # Exact linear algebra over F2 and F5
+//!
+//! The source [`LINALG_SOURCE`], `src/linalg.6cs`, is the module `linalg` in edition `6cs-draft-1`, in the formatter's
+//! canonical layout. It exports four pure functions over the IR draft's F2 and F5 (LP2's pull request 222):
+//! `rank_f2(rows: List<List<Int>>) -> Nat` and `rank_f5`, the rank of the rows in the field, and
+//! `solve_f2(rows: List<List<Int>>, rhs: List<Int>) -> record { rank: Nat, solution: List<Nat>, solvable: Bool }` and
+//! `solve_f5`, for the equations `rows · x = rhs` in the field. Each entry of `rows` and `rhs` is an integer reduced into
+//! the field with `to_f2` or `to_f5`, so negative entries and entries of any size are allowed. A solve answers the rank
+//! of `rows`, whether the equations are consistent, and when they are, one solution as residues: Gauss-Jordan
+//! elimination with every free unknown 0. Inconsistent equations answer `solvable: false` and an empty solution.
+//!
+//! [`exact_linear_algebra`] is the F2 and F5 part of LB1.8's row "Exact linear algebra". The checker infers no effect,
+//! capability or state read for the four functions, so a rank or a solution says something about the supplied equations
+//! only, never about a puzzle state or its reachability (CT-LB1-01). `tests/ct_lb1_01.rs` checks them against the
+//! pinned research references: the 36-macro correction library's ν rows have rank 34 over F2 and 2 over F5, and the
+//! F5 cycle criterion of the general method's senior review.
 //!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
@@ -85,9 +103,20 @@
 //!   read is one request for all named home slots.
 //! - LB2: the catalogue row is Rust data in [`residuals_and_exact_completion`], as for the literal words. Its Level is
 //!   the chapter's "Full labels and positions", and its Effect field is the checker's `ReadSnapshot`.
+//! - LB1.8, exact linear algebra: the IR draft has no function generic over a number kind, so the F2 and F5
+//!   eliminations are two copies of one algorithm, each with its own field's types. Matrices cross the entry as
+//!   `List<List<Int>>` and solutions as `List<Nat>` residues, because a field element has no canonical stored form
+//!   (FP.6). The number of unknowns is the length of the first row, and an empty list of rows has none; rows of other
+//!   lengths and an `rhs` shorter than `rows` stop the run at an `index` past a list's end. The IR draft has no
+//!   mutable list, so each elimination step rebuilds the rows it changes with `push`; the run's budget bounds the work.
+//! - LB1.5, LB1.6: the entry is generic elimination on supplied equations. Composing it with ν and the correction rows
+//!   to choose a combination is the research tier's correction-combination solve; the entry reads neither, and its
+//!   catalogue row carries the marker.
 //!
 //! # Not built
 //!
+//! - The rest of CT-LB1-01: exact Q(√5) signs, quaternion factor reconstruction and tree outputs; and the rest of
+//!   "Exact linear algebra": kernels (null spaces) and the Z, Q and Q(√5) domains.
 //! - Jumbling words in this crate: the jumbling library entries, on the IR draft's menu words (LP2's pull request
 //!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
 //! - Library entries over kernel rows other than exact completion, such as LB2's "Star and recipe construction" and
@@ -121,6 +150,14 @@ pub const COMPLETION_EXPORTS: [&str; 1] = ["exact_completion"];
 /// The KN2.4 rows the exact-completion entry reads with `read_snapshot`, in name order.
 pub const COMPLETION_ROWS: [&str; 2] = ["labels", "positions"];
 
+/// The exact linear algebra source over F2 and F5: edition `6cs-draft-1`, syntax candidate A, in the formatter's
+/// canonical layout.
+pub const LINALG_SOURCE: &str = include_str!("linalg.6cs");
+/// The exact linear algebra module.
+pub const LINALG_MODULE: &str = "linalg";
+/// The exact linear algebra module's exported functions.
+pub const LINALG_EXPORTS: [&str; 4] = ["rank_f2", "solve_f2", "rank_f5", "solve_f5"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -129,6 +166,11 @@ pub fn source_sha256() -> String {
 /// The SHA-256 of [`COMPLETION_SOURCE`], in hex.
 pub fn completion_sha256() -> String {
     sha256_hex(COMPLETION_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`LINALG_SOURCE`], in hex.
+pub fn linalg_sha256() -> String {
+    sha256_hex(LINALG_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -184,6 +226,24 @@ pub fn residuals_and_exact_completion() -> CatalogueRow {
         module: COMPLETION_MODULE,
         functions: &COMPLETION_EXPORTS,
         source_sha256: completion_sha256(),
+    }
+}
+
+/// The F2 and F5 part of LB1.8's row "Exact linear algebra", as far as this crate builds it.
+pub fn exact_linear_algebra() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Exact linear algebra",
+        level: "F2 or F5 values. Z, Q and Q(√5) are not built.",
+        effects: &[],
+        backing: "Library code over KN3's F2 and F5: `linalg.rank_f2`, `linalg.solve_f2`, `linalg.rank_f5` and \
+                  `linalg.solve_f5`, Gauss-Jordan elimination with the IR draft's field operations and loops.",
+        notes: "Rank and one solution of the supplied equations in the declared field; free unknowns are 0. \
+                `solvable: false` is inconsistency of the supplied equations and nothing else. A solution asserts no \
+                puzzle reachability. Puzzle-word selection through these equations is a research tier candidate, \
+                including correction combination.",
+        module: LINALG_MODULE,
+        functions: &LINALG_EXPORTS,
+        source_sha256: linalg_sha256(),
     }
 }
 
