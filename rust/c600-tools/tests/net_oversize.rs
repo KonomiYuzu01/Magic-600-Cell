@@ -70,7 +70,7 @@ fn strict_session(name: &str, protected: ProtectedSet) -> (CommandLayer, Shell) 
     let (mut layer, mut shell) = session_with(name, protected);
     assert_eq!(layer.policy(), ProtectionMode::Net, "a session starts under Net");
     let before = fingerprint(&layer);
-    let strict = json::object([("policy", text("strict"))]);
+    let strict = json::object([("confirm", Json::Bool(true)), ("policy", text("strict"))]);
     let set = shell.invoke(&mut layer, POLICY_ROW, strict).expect("the shell sends a policy change without a token");
     assert!(matches!(set.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })), "{set:?}");
     assert_eq!(layer.policy(), ProtectionMode::Strict);

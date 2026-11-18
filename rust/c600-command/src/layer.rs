@@ -124,6 +124,11 @@ pub const MODE: &str = "jumble_off";
 pub const JUMBLE_ON_MODE: &str = "jumble_on";
 /// H-08's row that sets the protection policy, Net or Strict.
 pub const POLICY_ROW: &str = "protection.policy.set";
+/// Whether a run's preview is admitted only inside a command the solver invoked (finding B2 of the KN5 boundary attack,
+/// ONE.34; the owner's reading of 18 November 2026). The check is built and off: LP3's host still starts its runs with
+/// no solver command behind them, and the switch waits until LP3 starts them through a tool row the shell invokes.
+/// Nothing outside the tests serves program jobs yet.
+const SOLVER_COMMAND_CHECK: bool = false;
 /// A star certificate failure has no registered code yet (draft).
 pub const CERTIFICATE: &str = "KN2:consistency.star_certificate";
 
@@ -143,11 +148,13 @@ pub enum Caller {
 
 impl Caller {
     /// The caller's command-ID space (ruling 4): a record is keyed by it and the command ID, so the runtime's
-    /// IDs never reach the shell's records.
-    pub fn scope(&self) -> &'static str {
+    /// IDs never reach the shell's records. Each run has a space of its own, `runtime/<run>`, so a command ID one run
+    /// used is not used up for another run (finding G1 of the KN5 boundary attack; the owner's reading of 18 November
+    /// 2026).
+    pub fn scope(&self) -> String {
         match self {
-            Caller::Shell => "shell",
-            Caller::Runtime { .. } => "runtime",
+            Caller::Shell => "shell".to_owned(),
+            Caller::Runtime { run } => format!("runtime/{run}"),
         }
     }
 
@@ -278,6 +285,22 @@ pub struct ProgramJob {
     pub overlay: Overlay,
 }
 
+impl ProgramJob {
+    /// The name of the job's run, `job-<job>`: the host runs the job's entry as this run, on the channel
+    /// [`Caller::Runtime`] with this name. While the host holds the job, between [`CommandLayer::take_program_job`] and
+    /// its report, the run is inside the command that invoked the job, and when the shell invoked it the run may prepare
+    /// a preview (ONE.34; finding B2 of the KN5 boundary attack, the owner's reading of 18 November 2026).
+    pub fn run(&self) -> String {
+        format!("job-{}", self.job)
+    }
+
+    /// The job whose run `run` is, if `run` is a job's run name.
+    fn job_of(run: &str) -> Option<u64> {
+        let job = run.strip_prefix("job-")?.parse().ok()?;
+        (format!("job-{job}") == run).then_some(job)
+    }
+}
+
 /// A program job's output as the runtime's sinks gave it (LP3's C6, its second common need; draft): the value its
 /// entry returned, the views it published, in order, and the workspace records it wrote, by name. The runtime's
 /// boundary keeps a record's last write, so a name appears once.
@@ -323,7 +346,7 @@ struct Job {
     id: u64,
     command: String,
     /// The invoking caller's command-ID space.
-    scope: &'static str,
+    scope: String,
     lane: Lane,
     kind: JobKind,
 }
@@ -490,7 +513,7 @@ struct Record {
 }
 
 /// A caller's command-ID space and a command ID (ruling 4).
-type Key = (&'static str, String);
+type Key = (String, String);
 
 /// A recipe's steps in the kernel's JSON form, or the steps of its inverse.
 fn steps_json(recipe: &Recipe, inverse: bool) -> Vec<Value> {
@@ -549,7 +572,7 @@ fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String,
         return Err(Error::new(code::ARGUMENT_FORM, "the arguments are not an object"));
     };
     // A row that confirms a release takes an optional boolean `confirm` beside its table arguments (draft; LI.26).
-    let confirmable = row.has_gate("confirm") || row.action_guard.is_some();
+    let confirmable = row.has_gate("confirm") || row.action_guard.is_some() || row.id == POLICY_ROW;
     if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
         return Err(Error::new(code::ARGUMENT_FORM, "`confirm` is a boolean"));
     }
@@ -1067,6 +1090,49 @@ impl<S: Store> CommandLayer<S> {
         self.slot.as_ref()
     }
 
+    /// The preview the solver is shown: the pending preview while a frame presents it.
+    fn shown(&self) -> Option<&Preview> {
+        self.slot.as_ref().filter(|p| p.state == PreviewState::Presented)
+    }
+
+    /// Whether run `run` may prepare a preview now (the owner's readings of 18 November 2026,
+    /// `docs/wiki/decisions/owner-decisions-2026-11-18.md`). Only inside a command the solver invoked (finding B2 of the
+    /// KN5 boundary attack, ONE.34): the one check is here, not in each host, and it is built but off
+    /// ([`SOLVER_COMMAND_CHECK`]). And not while the solver is shown a preview, which only the solver's action ends
+    /// (findings B1 and L17, KN5.12, ONE.42 option (a)).
+    fn run_may_preview(&self, run: &str) -> Result<(), Error> {
+        if SOLVER_COMMAND_CHECK && !self.inside_solver_command(run) {
+            let detail = format!("run `{run}` is not inside a command the solver invoked (ONE.34)");
+            return Err(Error::new(code::OUTSIDE_SOLVER_COMMAND, detail));
+        }
+        if let Some(shown) = self.shown() {
+            let detail = format!("preview {} is shown to the solver; only the solver ends it", shown.id);
+            return Err(Error::new(code::PREVIEW_SHOWN, detail));
+        }
+        Ok(())
+    }
+
+    /// Whether run `run` is inside a command the solver invoked: the run is a program job's run
+    /// ([`ProgramJob::run`]), the host has taken that job and not yet reported it, and the job was invoked by the shell,
+    /// or by a run that is itself inside a command the solver invoked. A job is invoked by a run only while that run's
+    /// job runs, so its job is older; a chain that does not get older is not followed.
+    fn inside_solver_command(&self, run: &str) -> bool {
+        let mut run = run.to_owned();
+        let mut below = u64::MAX;
+        loop {
+            let Some(job) = ProgramJob::job_of(&run).filter(|&job| job < below) else {
+                return false;
+            };
+            let Some(program) = self.running.get(&job) else {
+                return false;
+            };
+            match &program.caller {
+                Caller::Shell => return true,
+                Caller::Runtime { run: parent } => (run, below) = (parent.clone(), job),
+            }
+        }
+    }
+
     /// The state of any preview this epoch built.
     pub fn preview_state(&self, id: u64) -> Option<PreviewState> {
         match &self.slot {
@@ -1119,7 +1185,7 @@ impl<S: Store> CommandLayer<S> {
     /// command-ID space never saw the ID in this layer's life.
     pub fn outcome(&self, command: &str, request: &str) -> Option<Receipt> {
         let scope = Caller::Shell.scope();
-        let key = (scope, command.to_owned());
+        let key = (scope.clone(), command.to_owned());
         let seen = self.receipts.contains_key(&key)
             || self.lost.contains_key(&key)
             || self.retained.iter().any(|((s, _), receipt)| *s == scope && receipt.command == command);
@@ -1133,7 +1199,8 @@ impl<S: Store> CommandLayer<S> {
     /// `unknown_outcome` (CT-ONE-21, LI.30).
     pub fn kernel_outcome(&self, caller: &Caller, command: &str, request: &str) -> Receipt {
         let scope = caller.scope();
-        if let Some(receipt) = self.retained.get(&(scope, request.to_owned())).filter(|r| r.command == command) {
+        if let Some(receipt) = self.retained.get(&(scope.clone(), request.to_owned())).filter(|r| r.command == command)
+        {
             return receipt.clone();
         }
         let key = (scope, command.to_owned());
@@ -1561,9 +1628,10 @@ impl<S: Store> CommandLayer<S> {
     /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
     /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2). Of the rows an entry
     /// runs, an overlay row or a served row, only a query or view row: a run alone causes no durable action, so it
-    /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (draft;
-    /// findings B3 and B4 of the KN5 boundary attack). Whether a run that a solver command started may (ONE.52) is the
-    /// owner's.
+    /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (findings
+    /// B3 and B4 of the KN5 boundary attack). A run that a solver command started reaches none either: a program
+    /// prepares previews and views, and the solver saves (ONE.52; the owner's reading of 18 November 2026). The records
+    /// a workspace row's job returns are written in that row's completion, which only the solver invokes.
     fn runtime_may(row: &Row) -> bool {
         !matches!(row.kind, Kind::Commit | Kind::App)
             && row.id != "protection.orbit.set"
@@ -1602,11 +1670,11 @@ impl<S: Store> CommandLayer<S> {
         let scope = caller.scope();
         let request = self.request(caller, &invocation);
         let full = Self::envelope(&invocation, &request);
-        let retained = self.retained.get(&(scope, full.clone())).filter(|r| r.command == invocation.command);
+        let retained = self.retained.get(&(scope.clone(), full.clone())).filter(|r| r.command == invocation.command);
         if let Some(receipt) = retained {
             return receipt.clone();
         }
-        let key = (scope, invocation.command.clone());
+        let key = (scope.clone(), invocation.command.clone());
         if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
             return self.kernel_outcome(caller, &invocation.command, &request);
         }
@@ -1660,7 +1728,7 @@ impl<S: Store> CommandLayer<S> {
         match row.id.as_str() {
             "operation.preview" => self.admit_preview(caller, invocation),
             "operation.execute" => self.execute(caller, invocation, request),
-            "operation.preview.cancel" => self.cancel(invocation),
+            "operation.preview.cancel" => self.cancel(caller, invocation),
             "session.undo" => self.undo(caller, invocation, request, Direction::Undo),
             "session.redo" => self.undo(caller, invocation, request, Direction::Redo),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
@@ -1691,6 +1759,9 @@ impl<S: Store> CommandLayer<S> {
     /// `{"record": name}`, a `ResolvedDraftRef` to a workspace record that holds a word's letters, resolved now
     /// ([`CommandLayer::resolve_record`]). A refused draft takes no job and leaves the slot as it was (KN5.11).
     fn admit_preview(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        if let Caller::Runtime { run } = caller {
+            self.run_may_preview(run)?;
+        }
         self.retained_mode()?;
         let draft = invocation.args.get("draft").expect("the form check saw the draft");
         let only = |key: &str| draft.get(key).filter(|_| draft.as_object().is_some_and(|o| o.len() == 1));
@@ -1773,6 +1844,15 @@ impl<S: Store> CommandLayer<S> {
         caller: Caller,
     ) {
         let key = (caller.scope(), command.to_owned());
+        // A run's preview is checked again when it builds: a frame may have presented the solver's preview since the
+        // run's job was admitted, and only the solver's action ends a shown preview (findings B1 and L17).
+        if let Caller::Runtime { run } = &caller {
+            if let Err(error) = self.run_may_preview(run) {
+                self.settle(&key, Status::Failed(error));
+                self.generation += 1;
+                return;
+            }
+        }
         let base = self.current.clone();
         let status = match self.derive(&base, &recipe, &self.protected) {
             Err(error) => Status::Failed(kernel_error(error)),
@@ -1816,10 +1896,16 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- operation.preview.cancel -----
 
-    fn cancel(&mut self, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+    fn cancel(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
         let Some(id) = nat(invocation.args.get("preview")) else {
             return refused(code::ARGUMENT_FORM, "`preview` is a preview ID");
         };
+        if matches!(caller, Caller::Runtime { .. }) && self.shown().is_some_and(|p| p.id == id) {
+            return refused(
+                code::PREVIEW_SHOWN,
+                format!("preview {id} is shown to the solver; only the solver ends it"),
+            );
+        }
         let done = Completion { kind: CompletionKind::Workspace, revision: self.revision.clone(), result: None };
         if self.slot.as_ref().is_some_and(|p| p.id == id) {
             self.slot.take();
@@ -2325,7 +2411,8 @@ impl<S: Store> CommandLayer<S> {
                 Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
             }
             // A workspace inverse: the policy before or after the change is in force again, and the workspace and
-            // protection revisions advance, as for a protection change. H-08 gives the row no `confirm` gate.
+            // protection revisions advance, as for a protection change. Finding LD1's reading asks the change itself
+            // for a confirmation, not its undo or redo.
             Change::Policy { before, after } => {
                 let to = if direction == Direction::Undo { before } else { after };
                 transaction.policy = Some(to);
@@ -2544,8 +2631,10 @@ impl<S: Store> CommandLayer<S> {
 
     /// A change of the protection policy (draft): as for a protection change, the workspace and protection revisions
     /// advance, so a pending preview built under the old policy is stale (H-08: "invalidates any open preview"), and
-    /// the state and the preview slot stay. It is undoable as a workspace inverse. H-08 gives the row no `confirm`
-    /// gate, so no direction needs a confirmation.
+    /// the state and the preview slot stay. It is undoable as a workspace inverse. A change in either direction needs
+    /// the solver's confirmed press (finding LD1, the owner's reading of 18 November 2026; [`Self::set_policy`] checks
+    /// it, as H-08 gives the row no `confirm` gate), and the transaction stores the confirmation. A reopen replays a
+    /// stored change without checking it: a journal from before the reading stores none.
     fn plan_policy(&self, meta: Meta, policy: ProtectionMode) -> Adoption {
         let order = self.order + 1;
         let digest = self.state_digest().to_owned();
@@ -2567,7 +2656,7 @@ impl<S: Store> CommandLayer<S> {
             revision,
             recipe: Value::Null,
             orbits: self.protected.orbits().to_vec(),
-            confirm: false,
+            confirm: meta.confirm,
             job: None,
             result: None,
             record: None,
@@ -2590,7 +2679,14 @@ impl<S: Store> CommandLayer<S> {
         let Some(policy) = policy else {
             return refused(code::ARGUMENT_FORM, "`policy` is `net` or `strict`");
         };
-        let adoption = self.plan_policy(Meta::of(caller, invocation, request), policy);
+        let meta = Meta::of(caller, invocation, request);
+        if !meta.confirm {
+            return refused(
+                code::CONFIRMATION_REQUIRED,
+                "a change of the protection policy needs the solver's confirmation",
+            );
+        }
+        let adoption = self.plan_policy(meta, policy);
         self.transact(adoption)
     }
 
@@ -3416,5 +3512,85 @@ impl<S: Store> CommandLayer<S> {
             reader.check(value.provenance.as_bytes())?;
         }
         Ok(output)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::*;
+    use crate::{MemoryStore, Shell};
+
+    const SECRET: [u8; 32] = [7; 32];
+    const TOOL: &str = "tool.propose";
+
+    fn layer() -> (CommandLayer, Shell) {
+        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..").join("assets");
+        let k = Arc::new(Kernel::load(&assets).expect("the model in assets/ loads"));
+        let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
+        let table = Table::h08().with_drafts();
+        let mut layer =
+            CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
+        let overlay = Overlay { module: "tools/propose".into(), entry: "run".into() };
+        layer.register_overlay(TOOL, Kind::Query, &[], overlay).unwrap();
+        layer.set_program_capacity(3);
+        (layer, Shell::new(Secret::fixed(SECRET), "shell"))
+    }
+
+    /// The tool's row, invoked on `caller`'s channel; the host takes the job.
+    fn tool(layer: &mut CommandLayer, caller: &Caller, command: &str) -> ProgramJob {
+        let invocation = Invocation {
+            command: command.to_owned(),
+            row: TOOL.to_owned(),
+            args: json::object([]),
+            token: None,
+            epoch: layer.revision().epoch,
+        };
+        let receipt = layer.invoke(caller, invocation);
+        assert!(matches!(receipt.status, Status::Running(_)), "{caller:?}: {:?}", receipt.status);
+        layer.take_program_job().expect("the tool's job")
+    }
+
+    #[test]
+    fn a_run_name_names_a_job_only_in_its_one_form() {
+        assert_eq!(ProgramJob::job_of("job-0"), Some(0));
+        assert_eq!(ProgramJob::job_of("job-17"), Some(17));
+        for name in
+            ["job-", "job-+1", "job-01", "job--1", "job-1 ", " job-1", "Job-1", "job-1x", "job-18446744073709551616"]
+        {
+            assert_eq!(ProgramJob::job_of(name), None, "{name:?}");
+        }
+        for name in ["shell", "runtime/job-1", "tool-run", ""] {
+            assert_eq!(ProgramJob::job_of(name), None, "{name:?}");
+        }
+    }
+
+    #[test]
+    fn a_run_is_inside_a_solver_command_only_while_its_chain_reaches_the_shell() {
+        let (mut layer, mut shell) = layer();
+        let receipt = shell.invoke(&mut layer, TOOL, json::object([])).unwrap();
+        assert!(matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);
+        let outer = layer.take_program_job().expect("the solver's tool job");
+        assert!(layer.inside_solver_command(&outer.run()));
+
+        // A job the solver's run invoked is inside too; a job a stray run invoked is not.
+        let inner = tool(&mut layer, &Caller::Runtime { run: outer.run() }, "inner/1");
+        assert!(layer.inside_solver_command(&inner.run()));
+        let stray = tool(&mut layer, &Caller::Runtime { run: "stray".into() }, "stray/1");
+        assert!(!layer.inside_solver_command(&stray.run()));
+        assert!(!layer.inside_solver_command("stray"));
+        assert!(!layer.inside_solver_command("job-999"), "a job the layer never admitted");
+
+        // A chain that does not get older is not followed.
+        let older = inner.job.min(outer.job);
+        layer.running.get_mut(&older).expect("running").caller = Caller::Runtime { run: inner.run() };
+        assert!(!layer.inside_solver_command(&inner.run()), "a cycle is not inside");
+        layer.running.get_mut(&older).expect("running").caller = Caller::Shell;
+
+        // When the host reports the solver's job, its run and the run it invoked are no longer inside.
+        layer.finish_program_job(outer.job, Ok(Value::Null)).expect("reported");
+        assert!(!layer.inside_solver_command(&outer.run()));
+        assert!(!layer.inside_solver_command(&inner.run()));
     }
 }

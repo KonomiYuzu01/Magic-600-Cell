@@ -1528,7 +1528,8 @@ run or not applicable is no pass (PHS.63).
   (1) Ruling 4 (KN5.21, KN5.23) keeps the frozen order, the retry lookup before the token checks (chapter 01 KN5,
   chapter 08 section 7, LI.6), and the host stamps the caller from the channel the envelope came on and never takes
   it from the envelope: `Invocation` names no caller, and `CommandLayer::invoke(&caller, invocation)` takes the
-  channel's. Command IDs are scoped per caller and the request digest covers the stamped caller; a refusal of an
+  channel's. Command IDs are scoped per caller (the shell, and each run on its own since finding G1's reading) and the
+  request digest covers the stamped caller; a refusal of an
   envelope that does not authenticate (a bad authenticator, a missing token, or a caller that may not use the row or
   hold a token) is kept for its epoch under the envelope's full digest, authenticator included, and never takes the
   command ID, so an envelope sent first on another channel cannot block or answer the solver's press; every other
@@ -1537,6 +1538,24 @@ run or not applicable is no pass (PHS.63).
   when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview. LI is frozen with the
   architecture, so LI changes follow PHS.52: the amendment adds the caller to LI.5's digest list and changes LI.33's
   sentence to ruling 1.
+- The owner's readings of 18 November 2026 for the KN5 boundary attack
+  (`../docs/wiki/decisions/owner-decisions-2026-11-18.md`; the drafts are in the crate documentation), in the command
+  layer:
+  - Findings B1 and L17 (KN5.12, ONE.42 option (a)): only the solver's action ends a preview the solver is shown.
+    While a frame presents the pending preview, a run's preview and a run's cancel of it are refused with
+    `KN5:capability.preview_shown` (a draft code), also for the run of a command the solver invoked.
+  - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
+    program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
+    run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (a draft code). The
+    check is built and off until LP3 starts its runs through a tool row the shell invokes; nothing outside the tests
+    serves program jobs yet.
+  - Finding G1: each run has its own command-ID scope (`runtime/<run>`), so one run cannot use up another run's IDs.
+    The scope is derived from the stored caller; the journal format is unchanged.
+  - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
+  - ONE.52: a run invokes no row that writes a workspace record, even a run that a solver command started. The records
+    a workspace row's own job returns are written in that row's completion, and only the solver invokes that row.
+  - Tests: `c600-command/tests/attack_runtime.rs` (B1, B6/L17, and B2, ignored while the check is off),
+    `attack_callers.rs` (G1), `attack_playback.rs` (LD1) and `strict_policy.rs`.
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
   - The workspace store. `workspace.set` (`RECORD_ROW`, M6's draft name; H-08 has no such row, so a host adds it with
     `Table::with_drafts` until the typed workspace rows freeze at LP3) writes a named record, its payload and its
@@ -1576,8 +1595,10 @@ run or not applicable is no pass (PHS.63).
   protection policy (`CommandLayer::policy`), which is Net from a session's start. The preview, execute's step 8 and the
   undo walk derive under the policy in force: Net judges the complete operation's net map, Strict every executed
   literal prefix (`derive_strict`, `strict_protection`). A preview built under Strict adds `mode: "strict"` and
-  `first_refused_prefix` to its summary; a Net summary is unchanged. The row takes no token and no `confirm` (H-08 gives
-  it no gate), and the runtime may not invoke it. A change is one durable workspace action: the state and the preview
+  `first_refused_prefix` to its summary; a Net summary is unchanged. The row takes no token, and a change in either
+  direction needs `confirm: true`, as a release of protection does (`KN5:input.confirmation_required` otherwise;
+  finding LD1's reading of 18 November 2026; H-08 gives the row no gate, so the layer asks for it). Its undo and redo
+  need none, and the runtime may not invoke it. A change is one durable workspace action: the state and the preview
   slot stay, and the workspace and protection revisions advance, so an open preview goes stale (H-08: "invalidates any
   open preview"). Its undo and redo are workspace inverses. The journal kind is `policy`; the change, its undo and its
   redo carry the policy in force after them as `Transaction::policy`, an 18th key, so a journal without it reads

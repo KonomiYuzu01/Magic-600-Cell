@@ -15,6 +15,8 @@ use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
 
 const SECRET: [u8; 32] = [7; 32];
+/// A tool's query row, which the solver invokes to run the tool.
+const TOOL: &str = "tool.propose";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -63,6 +65,8 @@ fn fixture() -> Fixture {
     let table = Table::h08().with_drafts();
     let mut layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
     layer.set_provenance(Box::new(Reader));
+    let overlay = Overlay { module: "tools/propose".into(), entry: "run".into() };
+    layer.register_overlay(TOOL, Kind::Query, &[], overlay).unwrap();
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new(), sent: 0 }
 }
 
@@ -79,6 +83,16 @@ impl Fixture {
             epoch: self.layer.revision().epoch,
         };
         self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
+    }
+
+    /// A run inside a command the solver invoked: the shell invokes the tool's row, and the host takes the job and runs
+    /// it as the job's run (`ProgramJob::run`). The run lasts until the host reports the job. Returns the job and the run.
+    fn solver_run(&mut self) -> (u64, String) {
+        let receipt = self.shell.invoke(&mut self.layer, TOOL, json::object([])).unwrap();
+        let Status::Running(job) = receipt.status else { panic!("the tool's row: {:?}", receipt.status) };
+        let program = self.layer.take_program_job().expect("the tool's job");
+        assert_eq!((program.job, &program.caller), (job, &Caller::Shell));
+        (job, program.run())
     }
 
     /// The solver previews `recipe` from the editor's draft with the preview key and sees it presented.
@@ -105,14 +119,36 @@ fn refused(receipt: &Receipt) -> bool {
 /// command of the solver the run belongs to.
 ///
 /// Observed on 4c20ce30: the receipt is `running(1)`, the job builds preview 1 and the slot holds it.
+///
+/// The owner's reading of 18 November 2026: one check in the command layer, not in each host. A run prepares a preview
+/// only while the host holds the job of a command the solver invoked, and the run is that job's run. A stray run, a run
+/// that names a job it is not, and the job's run after the host reported the job are refused with
+/// `KN5:capability.outside_solver_command`; the run of the solver's command is admitted. The check is built and off
+/// (`SOLVER_COMMAND_CHECK` in `src/layer.rs`) until LP3 starts its runs through a tool row the shell invokes; the
+/// switch takes this test out of `ignore`.
 #[test]
-#[ignore = "B2: fails on 4c20ce30, the runtime's preview is admitted with no solver command behind it"]
+#[ignore = "B2: the layer's check is built and off until LP3's runs start inside a solver command"]
 fn b2_a_preview_outside_a_command_the_solver_invoked_is_refused() {
     let mut f = fixture();
     let receipt = f.runtime("stray-run", "operation.preview", draft_args(&word(&[1])));
     assert!(refused(&receipt), "the stray run's preview was answered {:?}", receipt.status);
+    assert_eq!(receipt.status.code(), Some(code::OUTSIDE_SOLVER_COMMAND));
     assert_eq!(f.layer.run_jobs(), 0);
     assert!(f.layer.preview().is_none());
+
+    let (job, run) = f.solver_run();
+    for other in ["job-0", "job-99", "job-+1", "job-01"] {
+        let receipt = f.runtime(other, "operation.preview", draft_args(&word(&[1])));
+        assert_eq!(receipt.status.code(), Some(code::OUTSIDE_SOLVER_COMMAND), "{other}");
+    }
+    let inside = f.runtime(&run, "operation.preview", draft_args(&word(&[1])));
+    assert!(matches!(inside.status, Status::Running(_)), "the solver's run: {:?}", inside.status);
+    assert_eq!(f.layer.run_jobs(), 1);
+    assert!(f.layer.preview().is_some());
+
+    f.layer.finish_program_job(job, Ok(Value::Null)).expect("the tool's job is reported");
+    let after = f.runtime(&run, "operation.preview", draft_args(&word(&[2])));
+    assert_eq!(after.status.code(), Some(code::OUTSIDE_SOLVER_COMMAND), "{:?}", after.status);
 }
 
 /// B1 (class C, attacker 1). ONE.41 [D], ONE.42 [O], KN5.12 [O], KN5.14 [B]: the commit takes one action on the preview
@@ -123,12 +159,16 @@ fn b2_a_preview_outside_a_command_the_solver_invoked_is_refused() {
 /// pressed on the first frame.
 ///
 /// Observed on 4c20ce30: the press answers `committed`, and the head is the end state of the run's word `[2]`.
+///
+/// Fixed under option (a), the owner's reading of 18 November 2026: a run cannot replace a preview the solver is shown,
+/// even the run of a command the solver invoked; its preview is refused with `KN5:capability.preview_shown`, and the
+/// chord commits the solver's own word.
 #[test]
-#[ignore = "B1: fails on 4c20ce30, the chord commits the run's word one frame after the swap"]
 fn b1_the_commit_chord_does_not_commit_a_word_a_run_swapped_in_one_frame_before() {
     let mut f = fixture();
     let k = kernel();
     let (solvers, runs) = (word(&[1]), word(&[2]));
+    let (_, run) = f.solver_run();
     let mine = f.solver_preview(&solvers);
     assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
     let end_of = |recipe: &Value| {
@@ -140,11 +180,15 @@ fn b1_the_commit_chord_does_not_commit_a_word_a_run_swapped_in_one_frame_before(
     };
 
     // The run's proposal, on its own channel, while the solver looks at their preview.
-    let swap = f.runtime("tool-run", "operation.preview", draft_args(&runs));
+    let swap = f.runtime(&run, "operation.preview", draft_args(&runs));
     let Status::Running(theirs) = swap.status else {
         // Option (a) of ONE.42: the replacement is refused, and the solver's preview stays.
         assert!(refused(&swap));
+        assert_eq!(swap.status.code(), Some(code::PREVIEW_SHOWN), "{:?}", swap.status);
         assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
+        let press = f.shell.press(&mut f.layer, "Ctrl+Shift+Enter", false);
+        assert!(matches!(&press, Ok(Some(r)) if matches!(r.status, Status::Committed(_))), "{press:?}");
+        assert_eq!(f.layer.revision().digest, end_of(&solvers), "the chord commits the solver's own word");
         return;
     };
     f.layer.run_jobs();
@@ -158,21 +202,64 @@ fn b1_the_commit_chord_does_not_commit_a_word_a_run_swapped_in_one_frame_before(
     assert_ne!(f.layer.revision().digest, end_of(&runs), "the head is the end state of the run's word");
 }
 
+/// B1 when the timing differs: the run's preview is admitted while the solver's preview is ready and not yet shown, and a
+/// frame presents the solver's preview before the run's job builds. The layer checks again when the job builds, so the
+/// run's preview fails with `KN5:capability.preview_shown` and the solver's shown preview stays in the slot.
+#[test]
+fn b1_a_runs_preview_admitted_before_the_frame_does_not_replace_the_shown_preview() {
+    let mut f = fixture();
+    let (_, run) = f.solver_run();
+    f.shell.draft = Some(word_draft(&word(&[1])));
+    let receipt = f.shell.press(&mut f.layer, "Ctrl+Enter", false).unwrap().unwrap();
+    let Status::Running(mine) = receipt.status else { panic!("not admitted: {:?}", receipt.status) };
+    assert_eq!(f.layer.run_jobs(), 1);
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Ready));
+
+    // The run's preview is admitted: the solver's preview is not shown yet.
+    let swap = f.runtime(&run, "operation.preview", draft_args(&word(&[2])));
+    let Status::Running(theirs) = swap.status else { panic!("the run's preview: {:?}", swap.status) };
+    let command = format!("{run}/{}", f.sent);
+    // The display's next frame shows the solver's preview; then the run's job builds.
+    f.frames.present(&mut f.shell, &mut f.layer, mine).unwrap();
+    assert_eq!(f.layer.run_jobs(), 1);
+
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
+    assert_eq!(f.layer.preview().map(|p| p.id), Some(mine), "the slot holds the solver's preview");
+    assert_eq!(f.layer.preview_state(theirs), None, "the run's preview was never built");
+    // The same command ID and request answer the stored receipt.
+    let args = draft_args(&word(&[2]));
+    let again =
+        Invocation { command, row: "operation.preview".into(), args, token: None, epoch: f.layer.revision().epoch };
+    let settled = f.layer.invoke(&Caller::Runtime { run: run.clone() }, again);
+    assert!(matches!(settled.status, Status::Failed(_)), "the run's job: {:?}", settled.status);
+    assert_eq!(settled.status.code(), Some(code::PREVIEW_SHOWN));
+}
+
 /// B6 (class G, attacker 4 or a wire that forwards the row; the bridge's proposals cannot name these arguments).
 /// ONE.38's table: a preview is cancelled when "the solver cancelled it, or the job that built it was cancelled". The
 /// layer lets a run cancel the solver's presented preview: `operation.preview.cancel` is a workspace row with no
 /// token, and `runtime_may` lets it through.
 ///
 /// Observed on 4c20ce30: the receipt is `completed(workspace)` and the solver's preview is `Cancelled`.
+///
+/// Fixed (finding L17's reading of 18 November 2026: only the solver's action ends a shown preview): a run's cancel of
+/// the shown preview is refused with `KN5:capability.preview_shown`, from a stray run and from the run of a command the
+/// solver invoked, and the solver's own cancel still ends it.
 #[test]
-#[ignore = "B6: fails on 4c20ce30, a run cancels the solver's presented preview"]
 fn b6_a_run_cannot_cancel_the_solvers_presented_preview() {
     let mut f = fixture();
+    let (_, run) = f.solver_run();
     let mine = f.solver_preview(&word(&[1]));
-    let receipt =
-        f.runtime("tool-run", "operation.preview.cancel", json::object([("preview", Value::Int(mine as i64))]));
-    assert!(refused(&receipt), "the run's cancel was answered {:?}", receipt.status);
-    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
+    let args = json::object([("preview", Value::Int(mine as i64))]);
+    for caller in ["tool-run", run.as_str()] {
+        let receipt = f.runtime(caller, "operation.preview.cancel", args.clone());
+        assert!(refused(&receipt), "{caller}'s cancel was answered {:?}", receipt.status);
+        assert_eq!(receipt.status.code(), Some(code::PREVIEW_SHOWN), "{caller}");
+        assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
+    }
+    let own = f.shell.invoke(&mut f.layer, "operation.preview.cancel", args).unwrap();
+    assert!(matches!(own.status, Status::Completed(_)), "the solver's cancel: {:?}", own.status);
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Cancelled));
 }
 
 fn output(records: &[(&str, Value)]) -> JobOutput {
