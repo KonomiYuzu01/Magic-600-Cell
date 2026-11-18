@@ -2008,13 +2008,13 @@ run or not applicable is no pass (PHS.63).
   puzzle and model ID, the generator count and the independence bits, from which the decoder recomputes the digest,
   refusing what `Relation::from_parts` refuses. The codec cannot order a key's letters without the relation, so the
   run checks a decoded key against its pinned relation, and `LB1:input.key_contract_mismatch` is one of the
-  interpreter's own stop codes. A menu word's trace key (LP2's draft, LB1.10, `jumble-locality/1`) crosses as value
-  tag 26 with its header (the jumbling identity block, the grip and item counts, the key, the contract and the
-  digest) and its `[grip, item]` letters, and a pinned jumbling relation carries the menu's three identity fields
-  after the model ID and the item count after the grip count. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a value that holds one is
-  refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The lengths that a frame's
-  compressed words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter
-  crosses.
+  interpreter's own stop codes. A menu word's trace key (LP2's draft, LB1.10, `jumble-locality/1`) crosses as value tag
+  26 with its header (the jumbling identity block, the grip and item counts, the key, the contract and the digest) and
+  its `[grip, item]` letters, and a pinned jumbling relation carries the menu's three identity fields after the model ID
+  and the item count after the grip count. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a
+  value that holds one is refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The
+  lengths that a frame's compressed words derive are bounded together by one frame's bits, so one word of up to 16,382
+  doublings of a letter crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - LP2's draft F2 and F5: an element crosses as value tag 24, its field's byte (0 for F2, 1 for F5) and its residue's
