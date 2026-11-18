@@ -50,7 +50,9 @@ version = "0.0.0"
 name = "c600-display"
 version = "0.0.0"
 dependencies = [
+ "c600-check",
  "c600-digest",
+ "c600-ir",
  "c600-jumble",
  "c600-kernel",
 ]
