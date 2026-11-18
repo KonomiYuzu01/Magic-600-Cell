@@ -156,6 +156,15 @@ name = "c600-platform"
 version = "0.0.0"
 
 [[package]]
+name = "c600-render"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-display",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-repr"
 version = "0.0.0"
 dependencies = [
