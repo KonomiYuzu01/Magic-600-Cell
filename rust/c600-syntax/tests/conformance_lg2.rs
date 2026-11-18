@@ -442,9 +442,9 @@ fn ct_lg2_11_a_word_equality_key_is_never_literal_letters() {
 }
 
 /// CT-LB1-06 (part: LB1.10's `TraceEqualityKey` and `trace_key` (LP2 drafts) in source, against the proposal binding,
-/// the word operations, a `Word` parameter and the word key; the run-time half is `c600-run`'s `ct_lb1_06_*`; not run:
-/// the jumbling key, which waits for `jumble-locality/1`'s relation): a trace key is never literal letters and never a
-/// word key, and no source form converts one into the other.
+/// the word operations, a `Word` parameter and the word key; the run-time halves are `c600-run`'s `ct_lb1_06_*`, Full
+/// and jumbling, and the model's jumbling relation is `c600-jumble`'s): a trace key is never literal letters and never
+/// a word key, and no source form converts one into the other.
 #[test]
 fn ct_lb1_06_a_trace_key_is_neither_letters_nor_a_word_key() {
     let key = "trace_key(word[+1, -2])";

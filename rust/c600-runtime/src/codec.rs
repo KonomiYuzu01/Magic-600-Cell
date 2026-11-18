@@ -32,7 +32,7 @@ use c600_run::menu::{MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
-use c600_run::trace::{Relation, TraceHeader, TraceKey};
+use c600_run::trace::{MenuHeader, Relation, TraceHeader, TraceKey, JUMBLE_LOCALITY};
 use c600_run::value::{entry, value_order, Closure, Compressed, List, Part, Quad, Ratio, Record, Text, Value};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
@@ -87,6 +87,10 @@ mod tag {
     pub const FIELD: u8 = 24;
     /// LP2's draft captured bytes (DET.62): the octets, length-prefixed.
     pub const BYTES: u8 = 25;
+    /// LP2's draft trace key of menu letters (LB1.10, `jumble-locality/1`): its header, the identity block's five
+    /// fields in KN1.4's order, the grip count, the item count, the key kind, the independence contract and the 32
+    /// digest bytes, then its letters as a menu word's.
+    pub const MENU_TRACE_KEY: u8 = 26;
 }
 
 /// A finite field's byte in a value or a type (LP2 draft): 0 for F2, 1 for F5.
@@ -173,8 +177,12 @@ fn decode_menu_letters(d: &mut Dec) -> Result<Vec<[u32; 2]>, Malformed> {
 }
 
 /// A trace key's header (LB1.10, LG2.23; LP2 draft): its text fields, refused when one is empty, as a relation's
-/// header never is, and its generator count and digest.
+/// header never is, and its generator count and digest. A menu key's header ([`encode_menu_trace_header`]) has the
+/// whole identity block and the item count as well.
 fn encode_trace_header(h: &TraceHeader, e: &mut Enc) -> Result<(), Unencodable> {
+    if h.menu.is_some() {
+        return Err(Unencodable("a Full trace key under a menu header"));
+    }
     if [&h.puzzle, &h.model_id, &h.key, &h.contract].iter().any(|t| t.is_empty()) {
         return Err(Unencodable("a trace key header with an empty field"));
     }
@@ -193,31 +201,84 @@ fn decode_trace_header(d: &mut Dec) -> Result<TraceHeader, Malformed> {
     let generators = d.u32()?;
     let key = d.text()?.to_string();
     let contract = d.text()?.to_string();
-    let digest: [u8; 32] =
-        d.bytes()?.try_into().map_err(|_| Malformed::new("a relation digest of other than 32 bytes"))?;
+    let digest = decode_digest(d)?;
     if [&puzzle, &model_id, &key, &contract].iter().any(|t| t.is_empty()) {
         return Err(Malformed::new("a trace key header with an empty field"));
     }
-    Ok(TraceHeader { puzzle, model_id, generators, key, contract, digest })
+    Ok(TraceHeader { puzzle, model_id, menu: None, generators, key, contract, digest })
+}
+
+fn decode_digest(d: &mut Dec) -> Result<[u8; 32], Malformed> {
+    d.bytes()?.try_into().map_err(|_| Malformed::new("a relation digest of other than 32 bytes"))
+}
+
+/// A menu trace key's header (LB1.10, LG2.23; LP2 draft): the identity block's five fields in KN1.4's order, the grip
+/// count, the item count, the key kind, the independence contract and the digest, refused when a text field is empty.
+fn encode_menu_trace_header(h: &TraceHeader, e: &mut Enc) -> Result<(), Unencodable> {
+    let (Some(identity), Some(menu)) = (h.menu_identity(), h.menu.as_ref()) else {
+        return Err(Unencodable("a menu trace key under a Full header"));
+    };
+    if h.key.is_empty() || h.contract.is_empty() {
+        return Err(Unencodable("a trace key header with an empty field"));
+    }
+    encode_identity(&identity, e).map_err(|_| Unencodable("a trace key header with an empty field"))?;
+    e.u32(h.generators);
+    e.u32(menu.items);
+    e.text(&h.key);
+    e.text(&h.contract);
+    e.bytes(&h.digest);
+    Ok(())
+}
+
+fn decode_menu_trace_header(d: &mut Dec) -> Result<TraceHeader, Malformed> {
+    let identity = read_identity(d)?;
+    let (generators, items) = (d.u32()?, d.u32()?);
+    let key = d.text()?.to_string();
+    let contract = d.text()?.to_string();
+    let digest = decode_digest(d)?;
+    if !identity.names_alphabet() || key.is_empty() || contract.is_empty() {
+        return Err(Malformed::new("a trace key header with an empty field"));
+    }
+    let MenuIdentity { puzzle, model_id, menu_id, menu_order, contract_rev } = identity;
+    let menu = Some(MenuHeader { menu_id, menu_order, contract_rev, items });
+    Ok(TraceHeader { puzzle, model_id, menu, generators, key, contract, digest })
 }
 
 /// A pinned trace relation (LB1.10; LP2 draft): its independence contract, its identity block's puzzle and model ID,
-/// its generator count, then its independence bits as `Relation::bits` gives them. The digest is not sent.
+/// its generator count, then its independence bits as `Relation::bits` gives them. A jumbling relation
+/// (`jumble-locality/1`) has the identity block's other three fields after the model ID and the item count after the
+/// grip count. The digest is not sent.
 pub fn encode_relation(r: &Relation, e: &mut Enc) {
     let h = r.header();
     e.text(&h.contract);
     e.text(&h.puzzle);
     e.text(&h.model_id);
+    if let Some(menu) = &h.menu {
+        e.text(&menu.menu_id);
+        e.text(&menu.menu_order);
+        e.text(&menu.contract_rev);
+    }
     e.u32(h.generators);
+    if let Some(menu) = &h.menu {
+        e.u32(menu.items);
+    }
     e.bytes(r.bits());
 }
 
-/// Reads a pinned trace relation and refuses one that `Relation::from_parts` refuses, with its reason. The digest is
-/// recomputed from what was read.
+/// Reads a pinned trace relation and refuses one that `Relation::from_parts` or `Relation::jumble_locality` refuses,
+/// with its reason. The digest is recomputed from what was read.
 pub fn decode_relation(d: &mut Dec) -> Result<Relation, Malformed> {
     let contract = d.text()?.to_string();
     let puzzle = d.text()?.to_string();
     let model_id = d.text()?.to_string();
+    if contract == JUMBLE_LOCALITY {
+        let mut field = || Ok::<_, Malformed>(d.text()?.to_string());
+        let (menu_id, menu_order, contract_rev) = (field()?, field()?, field()?);
+        let identity = MenuIdentity { puzzle, model_id, menu_id, menu_order, contract_rev };
+        let (grips, items) = (d.u32()?, d.u32()?);
+        let bits = d.bytes()?.to_vec();
+        return Relation::jumble_locality(&identity, grips, items, bits).map_err(|why| Malformed::new(why.to_string()));
+    }
     let generators = d.u32()?;
     let bits = d.bytes()?.to_vec();
     Relation::from_parts(&contract, &puzzle, &model_id, generators, bits).map_err(|why| Malformed::new(why.to_string()))
@@ -469,6 +530,11 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(end_test_code(*test));
                 e.u8(verdict_code(*outcome));
             }
+            Value::TraceEqualityKey(k) if k.is_menu() => {
+                e.u8(tag::MENU_TRACE_KEY);
+                encode_menu_trace_header(k.header(), e)?;
+                encode_menu_letters(k.menu_letters(), e)?;
+            }
             Value::TraceEqualityKey(k) => {
                 if !canonical_word(k.letters()) {
                     return Err(Unencodable("a letter outside 1 to 1200"));
@@ -680,6 +746,10 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
             tag::TRACE_KEY => {
                 let header = Arc::new(decode_trace_header(d)?);
                 Value::TraceEqualityKey(Arc::new(TraceKey::from_parts(header, &decode_letters(d)?)))
+            }
+            tag::MENU_TRACE_KEY => {
+                let header = Arc::new(decode_menu_trace_header(d)?);
+                Value::TraceEqualityKey(Arc::new(TraceKey::from_menu_parts(header, &decode_menu_letters(d)?)))
             }
             tag::FIELD => {
                 let field = field_from(d.u8()?)?;
@@ -1642,4 +1712,149 @@ pub fn decode_summary(d: &mut Dec, codes: &Codes) -> Result<Summary, Malformed> 
         });
     }
     Ok(Summary { outcome, code, stop, used, live_before_cleanup, live_after_cleanup, rows, children })
+}
+
+/// The transfer forms of LB1.10's jumbling relation and of its trace keys over menu letters (LP2 draft). LP3's protocol
+/// tests cover the Full forms, whose layout these additions keep.
+#[cfg(test)]
+mod menu_trace_tests {
+    use super::*;
+    use c600_run::trace::{FULL_DISJOINT_SUPPORT, FULL_GENERATORS};
+
+    fn identity(menu_id: &str) -> MenuIdentity {
+        MenuIdentity {
+            puzzle: "600-cell-jumbled".into(),
+            model_id: "model-1".into(),
+            menu_id: menu_id.into(),
+            menu_order: "order-1".into(),
+            contract_rev: "rev-1".into(),
+        }
+    }
+
+    /// One bit per pair of `n` symbols, every pair independent but (0, 2).
+    fn bits(n: usize) -> Vec<u8> {
+        let pairs = n * (n - 1) / 2;
+        let mut bits = vec![0u8; pairs.div_ceil(8)];
+        for k in 0..pairs {
+            bits[k / 8] |= 1 << (k % 8);
+        }
+        bits[0] &= !0b10;
+        bits
+    }
+
+    fn relation(menu_id: &str) -> Relation {
+        Relation::jumble_locality(&identity(menu_id), 600, 3, bits(600)).expect("a relation")
+    }
+
+    fn relation_bytes(r: &Relation) -> Vec<u8> {
+        let mut e = Enc::new();
+        encode_relation(r, &mut e);
+        e.bytes
+    }
+
+    fn relation_from(bytes: &[u8]) -> Result<Relation, Malformed> {
+        let mut d = Dec::new(bytes);
+        let r = decode_relation(&mut d)?;
+        d.end()?;
+        Ok(r)
+    }
+
+    /// The wire parts of a jumbling relation, as [`encode_relation`] writes them.
+    fn jumbling_parts(identity: &MenuIdentity, grips: u32, items: u32, bits: &[u8]) -> Vec<u8> {
+        let mut e = Enc::new();
+        e.text(JUMBLE_LOCALITY);
+        for (_, text) in identity.fields() {
+            e.text(text);
+        }
+        e.u32(grips);
+        e.u32(items);
+        e.bytes(bits);
+        e.bytes
+    }
+
+    #[test]
+    fn a_jumbling_relation_crosses_with_its_menu_and_its_digest_is_recomputed() {
+        let r = relation("menu-a");
+        let back = relation_from(&relation_bytes(&r)).expect("a relation");
+        assert_eq!((&back, back.digest(), back.header()), (&r, r.digest(), r.header()));
+        assert!(back.is_menu() && !back.menu_independent([0, 1], [2, 0]) && back.menu_independent([0, 1], [1, 0]));
+        assert_eq!(relation_bytes(&r), jumbling_parts(&identity("menu-a"), 600, 3, &bits(600)));
+
+        // A Full relation crosses as before: contract, puzzle, model ID, generator count and bits.
+        let full = Relation::from_parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "model-1", FULL_GENERATORS, bits(1200));
+        let full = full.expect("a relation");
+        let mut e = Enc::new();
+        for text in [FULL_DISJOINT_SUPPORT, "600-cell-Full", "model-1"] {
+            e.text(text);
+        }
+        e.u32(FULL_GENERATORS);
+        e.bytes(&bits(1200));
+        assert_eq!(relation_bytes(&full), e.bytes);
+        assert_eq!(relation_from(&e.bytes).expect("a relation"), full);
+
+        // The receiver refuses what `Relation::jumble_locality` refuses.
+        let mut unnamed = identity("menu-a");
+        unnamed.menu_order.clear();
+        let mut padded = bits(600);
+        *padded.last_mut().unwrap() |= 0x80;
+        for (bytes, why) in [
+            (jumbling_parts(&identity("menu-a"), 599, 3, &bits(599)), "599 grips"),
+            (jumbling_parts(&identity("menu-a"), 600, 0, &bits(600)), "0 menu items"),
+            (jumbling_parts(&identity("menu-a"), 600, 601, &bits(600)), "601 menu items"),
+            (jumbling_parts(&unnamed, 600, 3, &bits(600)), "menu_order is empty"),
+            (jumbling_parts(&identity("menu-a"), 600, 3, &bits(600)[1..]), "bits"),
+            (jumbling_parts(&identity("menu-a"), 600, 3, &padded), "bits"),
+        ] {
+            let refused = relation_from(&bytes).expect_err(why);
+            assert!(refused.0.contains(why), "{why}: {refused}");
+        }
+    }
+
+    #[test]
+    fn a_menu_trace_key_crosses_with_its_header_and_its_letters() {
+        let r = relation("menu-a");
+        let key = r.menu_key(&[[2, 1], [0, 2], [1, 1]]).expect("letters of the alphabet");
+        assert_eq!(key.menu_letters(), [[1, 1], [2, 1], [0, 2]]);
+        let value = Value::TraceEqualityKey(Arc::new(key.clone()));
+        let bytes = value_bytes(&value).expect("a transfer form");
+        assert_eq!(bytes[0], tag::MENU_TRACE_KEY);
+        let back = value_from_bytes(&bytes).expect("a value");
+        assert!(same_value(&back, &value));
+        let Value::TraceEqualityKey(back) = back else { panic!("a trace key") };
+        assert_eq!((back.header(), back.menu_letters(), back.is_menu()), (key.header(), key.menu_letters(), true));
+        // A key under another menu crosses with that menu's header.
+        let other = Value::TraceEqualityKey(Arc::new(relation("menu-b").menu_key(&[[1, 1]]).expect("a key")));
+        let other = value_from_bytes(&value_bytes(&other).expect("a transfer form")).expect("a value");
+        let Value::TraceEqualityKey(other) = other else { panic!("a trace key") };
+        assert_eq!(other.header().differing(key.header()), Some("menu_id"));
+
+        // Letters of one alphabet under the other's header have no transfer form.
+        let menu_header = Arc::new(r.header().clone());
+        let full = Relation::from_parts(FULL_DISJOINT_SUPPORT, "600-cell-Full", "model-1", FULL_GENERATORS, bits(1200));
+        let full_header = Arc::new(full.expect("a relation").header().clone());
+        let refused = |k: TraceKey| value_bytes(&Value::TraceEqualityKey(Arc::new(k))).err();
+        assert!(refused(TraceKey::from_parts(menu_header.clone(), &[1])).is_some());
+        assert!(refused(TraceKey::from_menu_parts(full_header, &[[0, 1]])).is_some());
+        assert!(refused(TraceKey::from_menu_parts(menu_header, &[[600, 0]])).is_some());
+
+        // The receiver refuses a menu index of 600 and a header field that is empty.
+        let at = bytes.len() - 8;
+        let mut outside = bytes.clone();
+        outside[at..at + 4].copy_from_slice(&600u32.to_le_bytes());
+        assert!(value_from_bytes(&outside).unwrap_err().0.contains("600 or more"));
+        let mut e = Enc::new();
+        e.u8(tag::MENU_TRACE_KEY);
+        let mut unnamed = identity("menu-a");
+        unnamed.contract_rev.clear();
+        for (_, text) in unnamed.fields() {
+            e.text(text);
+        }
+        e.u32(600);
+        e.u32(3);
+        e.text(c600_run::trace::TRACE_KEY);
+        e.text(JUMBLE_LOCALITY);
+        e.bytes(r.digest());
+        e.count(0);
+        assert!(value_from_bytes(&e.bytes).unwrap_err().0.contains("empty field"));
+    }
 }
