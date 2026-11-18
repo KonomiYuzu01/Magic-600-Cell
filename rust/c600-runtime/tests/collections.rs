@@ -560,8 +560,8 @@ fn collection_types_round_trip_under_the_depth_bound() {
     };
     assert_eq!(written(codec::TYPE_DEPTH), Ok(nested(codec::TYPE_DEPTH)));
     assert!(written(codec::TYPE_DEPTH + 1).is_err(), "a set type nested beyond the bound");
-    // The first type tag after captured bytes' (LP2 draft, DET.62), which follows a generator's (DET.61).
-    assert!(codec::decode_ty(&mut Dec::new(&[29])).is_err());
+    // The first type tag after a word stream's (LP2 draft, DET.63), which follows captured bytes' (DET.62).
+    assert!(codec::decode_ty(&mut Dec::new(&[30])).is_err());
 }
 
 const COLLECTIONS: &str = "\

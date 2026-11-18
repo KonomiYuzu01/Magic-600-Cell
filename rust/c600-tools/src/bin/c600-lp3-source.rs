@@ -500,8 +500,24 @@ impl Session<'_> {
                 }
                 Ok(Outcome::Committed(seen))
             }
-            Status::Refused(error) if error.code == code::ORBIT_WOULD_MOVE => Ok(Outcome::Protected(seen)),
+            Status::Refused(error) if error.code == code::ORBIT_WOULD_MOVE => {
+                self.dismiss()?;
+                Ok(Outcome::Protected(seen))
+            }
             other => Err(unexpected("operation.execute", other)),
+        }
+    }
+
+    /// The solver dismisses the preview a refused commit left shown, with the key route's Escape: only the solver's
+    /// action ends a shown preview, so the next run's preview is not admitted while it stays (findings B1 and L17 of the
+    /// KN5 boundary attack, the owner's reading of 18 November 2026). The cancel changes no revision and takes no job,
+    /// so it is not kept with the step's receipts; it shifts only the shell's later command IDs.
+    fn dismiss(&mut self) -> Result<(), Failure> {
+        match self.shell.press(&mut self.layer, "Escape", false) {
+            Ok(Some(receipt)) if matches!(receipt.status, Status::Completed(_)) => Ok(()),
+            Ok(Some(receipt)) => Err(unexpected("operation.preview.cancel", &receipt.status)),
+            Ok(None) => Err(disagree("`Escape` was dropped as a repeat")),
+            Err(error) => Err(disagree(format!("the shell stopped `Escape`: {}", error.code))),
         }
     }
 

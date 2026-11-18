@@ -31,6 +31,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
+| `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -38,6 +39,8 @@ checker; its tests run checked source programs, so the checker and the syntax cr
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR, digest and
 evidence crates and on the command layer; its job tests run checked source programs too, and its jumbling tests read
 the twist menu through the jumbling crate, a dev-dependency. The evidence library depends on the digest crate only.
+The builder depends on the interpreter, the IR and digest crates: it is the host envelope that reads captured inputs
+and writes the build cache and the published files, so the interpreter itself keeps no file-system call (CT-KN4-01).
 The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
 view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
@@ -441,22 +444,22 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 28 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 31 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, the four generator traces
   generator, generator-alias-cursor, generator-returned-owner and generator-child-paths, the three display traces,
   output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live,
   pointwise-failure, final-loop-test, and the five child traces child-allowances, child-return-owner,
-  root-before-child, dimension-before-scope and nested-child-ledger, and the two decoding traces decode-scalar and
-  decode-surrogate, on bytes the host delivers as a snapshot. Each frozen row, each cutoff or stop (dimension
-  or phase, scope, denied row, source range) and each child record equals the vector, under LP3's limit mapping
-  (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 31 and 32, all in part, on RT1 only. The
-  alias traces cross a call, since `let` scopes nest. A child trace that completes takes its limits at its first
-  `child` row, so that each requested cap is cut as the trace's is.
-- The other 12 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds
-  two bindings (1, generator-nested-same-name), text order (1), a child's bytes without a row of their own (1,
-  child-decode-error-releases-reservation), a flow check (1, abstract-trace-charges), streaming cursors (3) and
-  display form 2 (5). They still replay through the
-  meter.
+  root-before-child, dimension-before-scope and nested-child-ledger, the two decoding traces decode-scalar and
+  decode-surrogate, on bytes the host delivers as a snapshot, and the three streaming traces streaming,
+  streaming-complete-split and streaming-complete-coalesced, one program for both transport partitions. Each frozen
+  row, each cutoff or stop (dimension or phase, scope, denied row, source range) and each child record equals the
+  vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 30, 31 and
+  32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest. A child trace that completes
+  takes its limits at its first `child` row, so that each requested cap is cut as the trace's is.
+- The other 9 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds two
+  bindings (1, generator-nested-same-name), text order (1), a child's bytes without a row of their own (1,
+  child-decode-error-releases-reservation), a flow check (1, abstract-trace-charges) and display form 2 (5). They
+  still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -482,6 +485,20 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the host nothing; a changed revision or program digest runs it again and replaces the kept run. A kept run is a
   value, never evidence. The agreement-test form is any test that runs a contract (`c600-run/tests/contracts.rs`:
   CT-LG4-05 whole).
+- A language evidence builder and its build cache (LP2 draft until the IR freeze; DET.44 to DET.46), in the crate
+  `c600-build`, outside the interpreter. `Grant` takes an output and a scratch directory and refuses either with
+  `LG3:capability.grant_mismatch` when it is the source tree, lies inside it or holds it. `build` runs an exported entry
+  of a sealed module closure (the program's modules must be exactly the sealed ones; an import resolves only among the
+  given sources) on the caller's thread, with the spec's seed. Its host grants no clock, snapshot, declassifier,
+  preview, view or workspace (`LG3:capability.not_granted`); it reads only the captured inputs, by logical name and
+  type, and writes only files at plain relative paths under the output grant. The cache lives under the scratch grant,
+  keyed by the SHA-256 of the IR and execution contract, the sealed modules, the entry, the arguments, the seed, the
+  captured inputs, the limits and the tariffs; the locations enter no key. Before reuse the host checks the entry's key,
+  its recorded inputs, its result digest and every stored file; after a construction it captures the inputs again. A
+  failed check gives the host-envelope diagnostic `LG4:input.cache_entry_mismatch`: a rejected entry is a miss rebuilt
+  with the original charges (DET.16), and an input changed during construction leaves nothing stored or published. Only
+  a completed run is stored. The checks catch a changed entry; they authenticate nothing. DET.47's atomic publication is
+  chapter 05's (CT-DET-23 not run). `c600-build/tests/builder.rs`: CT-DET-21 and CT-DET-22 whole.
 - Generators (LP2 drafts; DET.61). `rng_init` is one step priced at the input-byte tariff per byte of the hashed key
   input (13 bytes of domain, the seed's 32, 4 for the segment count and per segment 4 and its bytes), and it holds a
   generator's 41 units. Its stream path is the run's assigned path followed by its segments, on the run's seed, so
@@ -512,6 +529,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   reserves 4 bytes per byte before reading one and settles to the text's 4 bytes per scalar; invalid UTF-8 or a
   surrogate stops the run, or a child alone, with `LG4:input.text_scalar_invalid` in the effect phase, nothing bound.
   The wire codec carries bytes as value tag 25 and type tag 28 (`c600-run/tests/decode.rs`, `det65_programs.rs`).
+- Streamed words (LP2 drafts; KN2.10, LG4.6, DET.63). `word_stream(c, k)` streams a compressed word in chunks of the
+  exact size `k`: a `word_open` row of one step at `stream_setup` that reserves the cursor (the length's integer
+  size), then one `chunk:<position>` row per chunk at `expand_per_letter` and `replay_per_letter` per letter, which
+  preflights its share and 2 bytes of scratch per letter before it expands one and releases the scratch in the same
+  row. The schedule comes from the length and `k` alone; a final short chunk has its own share; a `k` of 0 stops
+  the run with `LG4:input.pointwise_failed` before any step. Expansion keeps the compressed structure and a stack
+  of parts, never the whole word, and an interruption stops the stream at its open or a chunk boundary. The
+  result, `WordStream`, holds the length and the literal digest, which `stream_digest` reads as 64 hex digits:
+  the kernel's, the same for every chunk size. A stream has no equality, key order or canonical form and stays in
+  its run; the wire codec gives its type tag 29 and refuses its value (`c600-run/tests/streams.rs`,
+  `det65_programs.rs`; CT-LG4-03 and CT-DET-30 in part).
 - Loops (LP2 drafts; DET.55, DET.56, DET.58). A loop runs in its function's frame, with its value so far in a slot
   of the frame. The initial value fills the slot as a `let` binds: an owned value with a `visit`, a borrowed one
   with an `alias` of its size. Each loop test is a one-step row `loop_test:k`, the final false one included. A row of
@@ -580,8 +608,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   decoder of untrusted input bounds the parts.
   Tests: `c600-run/tests/collections.rs` (CT-LG2-14's language half, part).
 - Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
-  and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
-  and admission bounds; CT-LG4-03, M4).
+  and an output form; a stream fed chunk by chunk into the kernel's replay, since a run proposes no stream
+  (CT-LG4-03's remaining part).
 - F2 and F5 (LP2 drafts): `Value::Field` holds the field and a residue below its prime, and `Value::field` reduces an
   integer of any size. Draft prices, one step each and charged before the work, with a mistyped operand rejected as
   malformed IR before any charge: `to_f2` and `to_f5` at the integer row's price for adding the prime, one walk over
@@ -1386,8 +1414,9 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 28 of DET.65's 40
-    traces as programs and lists why the other 12 do not run; `decode.rs` runs DET.62's byte decoding; `generators.rs` runs DET.61's generators,
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 31 of DET.65's 40
+    traces as programs and lists why the other 9 do not run; `decode.rs` runs DET.62's byte decoding; `streams.rs`
+    DET.63's streamed words; `generators.rs` runs DET.61's generators,
     `child_scopes.rs` DET.60's child scopes and `loops.rs` DET.55's loops.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
@@ -1422,12 +1451,12 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, the stage checker and whole-state contracts, as
-  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 87 whole, eleven of
-  them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
-  CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as parts
-  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 21 waiting, each with what it waits
-  for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder
+  and streamed words, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool):
+  89 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
+  CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 137 part; 4 named only by LP3's command-layer
+  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 18 waiting, each with
+  what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1505,9 +1534,6 @@ run or not applicable is no pass (PHS.63).
   - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
     (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
-  - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
-    part (M4's section).
-  - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
 - Evidence kind: source and fixture. The checks ran on Windows only.
 
 ## Status of LP3, C1: the command layer
@@ -1567,7 +1593,8 @@ run or not applicable is no pass (PHS.63).
   (1) Ruling 4 (KN5.21, KN5.23) keeps the frozen order, the retry lookup before the token checks (chapter 01 KN5,
   chapter 08 section 7, LI.6), and the host stamps the caller from the channel the envelope came on and never takes
   it from the envelope: `Invocation` names no caller, and `CommandLayer::invoke(&caller, invocation)` takes the
-  channel's. Command IDs are scoped per caller and the request digest covers the stamped caller; a refusal of an
+  channel's. Command IDs are scoped per caller (the shell, and each run on its own since finding G1's reading) and the
+  request digest covers the stamped caller; a refusal of an
   envelope that does not authenticate (a bad authenticator, a missing token, or a caller that may not use the row or
   hold a token) is kept for its epoch under the envelope's full digest, authenticator included, and never takes the
   command ID, so an envelope sent first on another channel cannot block or answer the solver's press; every other
@@ -1576,6 +1603,24 @@ run or not applicable is no pass (PHS.63).
   when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview. LI is frozen with the
   architecture, so LI changes follow PHS.52: the amendment adds the caller to LI.5's digest list and changes LI.33's
   sentence to ruling 1.
+- The owner's readings of 18 November 2026 for the KN5 boundary attack
+  (`../docs/wiki/decisions/owner-decisions-2026-11-18.md`; the drafts are in the crate documentation), in the command
+  layer:
+  - Findings B1 and L17 (KN5.12, ONE.42 option (a)): only the solver's action ends a preview the solver is shown.
+    While a frame presents the pending preview, a run's preview and a run's cancel of it are refused with
+    `KN5:capability.preview_shown` (a draft code), also for the run of a command the solver invoked.
+  - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
+    program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
+    run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (a draft code). The
+    check is built and off until LP3 starts its runs through a tool row the shell invokes; nothing outside the tests
+    serves program jobs yet.
+  - Finding G1: each run has its own command-ID scope (`runtime/<run>`), so one run cannot use up another run's IDs.
+    The scope is derived from the stored caller; the journal format is unchanged.
+  - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
+  - ONE.52: a run invokes no row that writes a workspace record, even a run that a solver command started. The records
+    a workspace row's own job returns are written in that row's completion, and only the solver invokes that row.
+  - Tests: `c600-command/tests/attack_runtime.rs` (B1, B6/L17, and B2, ignored while the check is off),
+    `attack_callers.rs` (G1), `attack_playback.rs` (LD1) and `strict_policy.rs`.
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
   - The workspace store. `workspace.set` (`RECORD_ROW`, M6's draft name; H-08 has no such row, so a host adds it with
     `Table::with_drafts` until the typed workspace rows freeze at LP3) writes a named record, its payload and its
@@ -1615,8 +1660,10 @@ run or not applicable is no pass (PHS.63).
   protection policy (`CommandLayer::policy`), which is Net from a session's start. The preview, execute's step 8 and the
   undo walk derive under the policy in force: Net judges the complete operation's net map, Strict every executed
   literal prefix (`derive_strict`, `strict_protection`). A preview built under Strict adds `mode: "strict"` and
-  `first_refused_prefix` to its summary; a Net summary is unchanged. The row takes no token and no `confirm` (H-08 gives
-  it no gate), and the runtime may not invoke it. A change is one durable workspace action: the state and the preview
+  `first_refused_prefix` to its summary; a Net summary is unchanged. The row takes no token, and a change in either
+  direction needs `confirm: true`, as a release of protection does (`KN5:input.confirmation_required` otherwise;
+  finding LD1's reading of 18 November 2026; H-08 gives the row no gate, so the layer asks for it). Its undo and redo
+  need none, and the runtime may not invoke it. A change is one durable workspace action: the state and the preview
   slot stay, and the workspace and protection revisions advance, so an open preview goes stale (H-08: "invalidates any
   open preview"). Its undo and redo are workspace inverses. The journal kind is `policy`; the change, its undo and its
   redo carry the policy in force after them as `Transaction::policy`, an 18th key, so a journal without it reads
