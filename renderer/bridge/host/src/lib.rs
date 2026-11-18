@@ -38,7 +38,7 @@ use c600_display::validate::{BoundArray, EngineBundle, LimitProfile};
 use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::TARGET_SURFACE;
-use c600_render::RenderBackend;
+use c600_render::{DisplayTime, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
@@ -68,6 +68,16 @@ pub const LIMITS: &str = "shell-draft/1";
 
 const IDENTITY: [f32; 16] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
 
+/// A submitted frame, as [`m6h_frame`] writes it: the fields of charter E2's `frame` row that the host knows.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct M6hFrame {
+    /// The host's frame sequence: the frame's id in the shell's logs.
+    pub sequence: u64,
+    pub device_epoch: u64,
+    pub surface: u64,
+}
+
 /// One confirmed presentation (RM.26), as [`m6h_read_presented`] writes it.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -75,20 +85,29 @@ pub struct M6hPresented {
     /// The host's frame sequence, as [`m6h_frame`] answered it.
     pub sequence: u64,
     pub device_epoch: u64,
+    pub surface: u64,
     pub engine_revision: u64,
     /// The camera version the frame drew, as [`m6h_set_camera`] counts it.
     pub camera: u64,
+    /// The SyncQPCTime of the statistics row that confirmed the frame, in QPC ticks (charter E2's display time).
+    pub display_qpc: u64,
 }
 
-impl From<&PresentedFrame> for M6hPresented {
-    fn from(frame: &PresentedFrame) -> M6hPresented {
+impl M6hPresented {
+    /// The row of `frame`, which the core confirmed at `time`; both come from one read of the core's rows.
+    fn new(frame: &PresentedFrame, time: &DisplayTime) -> Result<M6hPresented, Failure> {
         let s = &frame.stamp;
-        M6hPresented {
+        if (time.sequence, time.device_epoch, time.surface) != (s.sequence, s.device_epoch, s.surface) {
+            return Err((M6H_E_HOST, "a display time names another frame than its presentation".to_owned()));
+        }
+        Ok(M6hPresented {
             sequence: s.sequence,
             device_epoch: s.device_epoch,
+            surface: s.surface,
             engine_revision: s.engine_revision,
             camera: s.camera,
-        }
+            display_qpc: time.display_qpc,
+        })
     }
 }
 
@@ -338,31 +357,35 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
     }
 }
 
-/// Polls the host, then submits a frame of the view to the surface and writes its sequence to `*out_sequence`. A lost
-/// device answers [`M6H_E_UNAVAILABLE`]. The frame reports are read and dropped here; the measurement rows wait for a
-/// later step.
+/// Polls the host, then submits a frame of the view to the surface and writes its sequence, device epoch and surface
+/// to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are read and dropped here.
 ///
 /// # Safety
 ///
-/// `handle` is a live handle that no other thread is using; `out_sequence` is null or writable.
+/// `handle` is a live handle that no other thread is using; `out` is null or writable.
 #[no_mangle]
-pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out_sequence: *mut u64) -> i32 {
+pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
             shell.host.pump();
             let stamp = shell.host.frame(VIEW).map_err(host_error)?;
             let _ = shell.host.backend.read_frame_reports();
-            if !out_sequence.is_null() {
-                *out_sequence = stamp.sequence;
+            if !out.is_null() {
+                out.write(M6hFrame {
+                    sequence: stamp.sequence,
+                    device_epoch: stamp.device_epoch,
+                    surface: stamp.surface,
+                });
             }
             Ok(())
         })
     }
 }
 
-/// Writes up to `capacity` confirmed presentations, oldest first, and their number to `*out_count`. Rows that do not
-/// fit wait for the next call, so a caller reads again while `*out_count` equals `capacity`.
+/// Writes up to `capacity` confirmed presentations, oldest first, each with its display time, and their number to
+/// `*out_count`. Rows that do not fit wait for the next call, so a caller reads again while `*out_count` equals
+/// `capacity`. A display time that names another frame than its presentation answers [`M6H_E_HOST`].
 ///
 /// # Safety
 ///
@@ -382,7 +405,13 @@ pub unsafe extern "C" fn m6h_read_presented(
     unsafe {
         with_host(handle, |shell| {
             let frames = shell.host.read_presented();
-            shell.presented.extend(frames.iter().map(M6hPresented::from));
+            let times = shell.host.backend.take_display_times();
+            if times.len() != frames.len() {
+                return Err((M6H_E_HOST, "the presentations and their display times differ in number".to_owned()));
+            }
+            let rows_read: Result<Vec<_>, Failure> =
+                frames.iter().zip(&times).map(|(frame, time)| M6hPresented::new(frame, time)).collect();
+            shell.presented.extend(rows_read?);
             let n = shell.presented.len().min(capacity as usize);
             for (i, row) in shell.presented.drain(..n).enumerate() {
                 rows.add(i).write(row);

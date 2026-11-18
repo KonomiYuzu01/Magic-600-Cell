@@ -15,6 +15,18 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - `Shell.cs` is the root node. When the environment names the core library (`M600_CORE_DLL`), the host library
     (`M600_HOST_DLL`) and the assets folder (`M600_ASSETS`), it opens the core's surface under the whole window,
     creates the host over it, follows window resizes, and submits one frame per process step (step S4, a draft).
+  - `EventLog.cs` (step S5, a draft) writes charter E2's event log, `tools/perf/c9`'s DRAFT
+    `magic600-c9-shell-events-v1`, when `M600_EVENTS_DIR` names an absolute folder without a log and
+    `M600_BUILD_IDENTITY` names the build (`M600_RUN_ID` is optional). Each submitted frame gets a `frame` row at the
+    QPC read just before the call, and each confirmed presentation a `presented` row with the core's display time.
+    `events.jsonl` is written on close, with the `run` row first. The log cannot yet say three things:
+    - There is no turn without the command layer, so there are no `key` rows.
+    - There is no correctness control, so `correctness` is `fail` with `correctness_control` `none`, and
+      `key_to_frame.py` marks every run invalid.
+    - The core does not report its swap chain's address, so there is no `swap_chain` and no PresentMon cross-check.
+
+    The E3 startup log (`magic600-c9-startup-v1`) needs a launcher, a session and a correctness check, so it is not
+    written yet.
   - `CoreSurface.cs` drives the core context's life through the shell calls: `sa2_create`, `sa2_surface_attach` and
     `sa2_scene_load` on open, `sa2_surface_move` and a drained `sa2_resize` while it lives, and `sa2_scene_unload`,
     `sa2_drain`, `sa2_surface_detach` and `sa2_detach` on close. Draft choices: the first hardware adapter, the
@@ -35,7 +47,9 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - the route-B window settings;
   - the export list and ABI version equal to the bridge's and the header's;
   - every shell call declared by the header and absent from the bridge's table;
-  - the host library's exports, version, status codes and presented row equal to its Rust source;
+  - the host library's exports, version, status codes, and frame and presented rows equal to its Rust source;
+  - the event log's `frame` and `presented` fields equal to `key_to_frame.py`'s, with no `key` row and never a
+    passing correctness;
   - `CoreSurface.cs` using every shell call and no other.
 
 ## Status
@@ -45,8 +59,9 @@ outside the language workspace (CT-RPI-01). It is a draft:
 
 - `m6h_create` takes the core's function table and a context the shell created with `sa2_create`. It loads the
   shipped model, adopts its solved state, opens one view and publishes it as one retained primitive of every slot.
-- Then come `m6h_set_camera`, `m6h_set_viewport`, `m6h_pump`, `m6h_frame` (to the surface), `m6h_read_presented`
-  (confirmed presentations), `m6h_recover` (which publishes the view again for the new device), `m6h_last_error` and
+- Then come `m6h_set_camera`, `m6h_set_viewport`, `m6h_pump`, `m6h_frame` (to the surface; it names the frame's
+  sequence, device epoch and surface), `m6h_read_presented` (confirmed presentations, each with the display time the
+  core read from the confirming statistics row), `m6h_recover` (which publishes the view again for the new device), `m6h_last_error` and
   `m6h_destroy`.
 - Every call checks its pointers, catches a panic and answers a status code.
 - The host context is c600-display's declared fixture context with the core's own support report, and the limit
@@ -68,9 +83,10 @@ These parts are drafts of C9 that the sources leave open:
 - That library lives outside the language workspace, beside `renderer/bridge`, for CT-RPI-01.
 - The shell hands the core's export addresses to the bridge's table.
 
-Steps S3 and S4 built offline on 18 November 2026 with no warning. They were never launched.
+Steps S3, S4 and S5 built offline on 18 November 2026 with no warning. They were never launched.
 
 Next steps:
 
-- the E2 and E3 log rows from the frame loop (S5);
+- a turn through the command layer, so that E2 gets `key` rows, and a correctness control for the `run` row;
+- the E3 startup log, once there is a launcher and a session;
 - the owner-machine run of S4 (route B check B1 first), when the owner is not using the machine.

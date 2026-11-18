@@ -12,7 +12,8 @@ namespace Magic600.Shell;
 /// Step S4, a draft that was never launched: when the environment names the core library (M600_CORE_DLL), the host
 /// library (M600_HOST_DLL) and the assets folder (M600_ASSETS), each an absolute path, the shell opens the core's
 /// surface under the whole window, creates the host over it and submits one frame per process step. Without them it
-/// shows the empty window as before. The E2 and E3 log rows come in the next step.
+/// shows the empty window as before. Step S5: when M600_EVENTS_DIR is set as well, <see cref="EventLog"/> records
+/// every submitted frame and every confirmed presentation with its display time.
 /// </remarks>
 public partial class Shell : Control
 {
@@ -20,6 +21,7 @@ public partial class Shell : Control
     private HostLibrary? _hostLibrary;
     private CoreSurface? _surface;
     private IntPtr _host;
+    private EventLog? _log;
     private Vector2I _size;
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
 
@@ -57,6 +59,7 @@ public partial class Shell : Control
             throw new InvalidOperationException($"m6h_create answered {code}: {hostLibrary.LastError(IntPtr.Zero)}");
         }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
+        _log = EventLog.FromEnvironment();
     }
 
     private void Require(HostLibrary library, string name, int code)
@@ -80,8 +83,17 @@ public partial class Shell : Control
             Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
             _size = size;
         }
-        var code = library.Frame(_host, out _);
-        if (code == HostLibrary.Unavailable)
+        if (_log is { } log && !DisplayServer.WindowIsFocused())
+        {
+            log.LostForeground();
+        }
+        var submitted = EventLog.Now();
+        var code = library.Frame(_host, out var frame);
+        if (code == HostLibrary.Ok)
+        {
+            _log?.Frame(frame, submitted);
+        }
+        else if (code == HostLibrary.Unavailable)
         {
             code = library.Recover(_host);
         }
@@ -89,9 +101,18 @@ public partial class Shell : Control
         {
             GD.PushWarning($"frame: {code}: {library.LastError(_host)}");
         }
-        while (library.ReadPresented(_host, _presented, out var count) == HostLibrary.Ok && count == _presented.Length)
+        int count;
+        do
         {
-        }
+            if (library.ReadPresented(_host, _presented, out count) != HostLibrary.Ok)
+            {
+                break;
+            }
+            for (var i = 0; i < count; i++)
+            {
+                _log?.Presented(_presented[i]);
+            }
+        } while (count == _presented.Length);
     }
 
     public override void _ExitTree()
@@ -101,6 +122,8 @@ public partial class Shell : Control
 
     private void Close()
     {
+        _log?.Dispose();
+        _log = null;
         if (_host != IntPtr.Zero && _hostLibrary is { } library)
         {
             library.Destroy(_host);

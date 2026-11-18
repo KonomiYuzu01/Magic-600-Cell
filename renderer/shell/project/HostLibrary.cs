@@ -10,8 +10,8 @@ namespace Magic600.Shell;
 /// draft on route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. The library
 /// runs the display host over the bridge. The shell hands it the core's function table
 /// (<see cref="CoreLibrary.Functions"/>) and the context it created with sa2_create, then drives frames through it.
-/// tests/test_renderer_shell.py checks <see cref="Exports"/>, the version, the status codes and the presented row
-/// against the Rust source.
+/// tests/test_renderer_shell.py checks <see cref="Exports"/>, the version, the status codes and the frame and presented
+/// rows against the Rust source.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
@@ -43,14 +43,26 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_destroy",
     };
 
+    /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Submitted
+    {
+        public ulong Sequence;
+        public ulong DeviceEpoch;
+        public ulong Surface;
+    }
+
     /// <summary>One confirmed presentation, as m6h_read_presented writes it (the Rust M6hPresented).</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Presented
     {
         public ulong Sequence;
         public ulong DeviceEpoch;
+        public ulong Surface;
         public ulong EngineRevision;
         public ulong Camera;
+        /// <summary>The SyncQPCTime of the statistics row that confirmed the frame, in QPC ticks.</summary>
+        public ulong DisplayQpc;
     }
 
     private IntPtr _library;
@@ -141,11 +153,12 @@ public sealed unsafe class HostLibrary : IDisposable
 
     public int Pump(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_pump"])(host);
 
-    public int Frame(IntPtr host, out ulong sequence)
+    /// <summary>Submits a frame of the view to the surface; <paramref name="frame"/> names it.</summary>
+    public int Frame(IntPtr host, out Submitted frame)
     {
-        ulong s = 0;
-        var code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong*, int>)_exports["m6h_frame"])(host, &s);
-        sequence = s;
+        Submitted f = default;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, Submitted*, int>)_exports["m6h_frame"])(host, &f);
+        frame = f;
         return code;
     }
 

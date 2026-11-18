@@ -1,7 +1,7 @@
 //! The shell's native host library through its C interface, over the bridge's C shim and the fake core on route B
 //! (accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks): creation on the shipped model,
-//! the publication installed, frames confirmed and read in batches, a lost device and recovery to epoch 2, and the
-//! refusals. Every result is a synthetic fixture outcome, not a GPU run.
+//! the publication installed, frames confirmed and read in batches with their display times, a lost device and
+//! recovery to epoch 2, and the refusals. Every result is a synthetic fixture outcome, not a GPU run.
 
 #[path = "../../tests/common/mod.rs"]
 mod common;
@@ -9,6 +9,7 @@ mod common;
 use std::path::Path;
 use std::ptr;
 
+use c600_render::fake::DISPLAY_TICKS;
 use c600_render::FakeCore;
 use c600_shell_host::*;
 use common::support::SIZE;
@@ -41,11 +42,11 @@ fn last_error(handle: *mut ShellHost) -> String {
     String::from_utf8(buffer).expect("UTF-8")
 }
 
-fn frame(handle: *mut ShellHost) -> u64 {
-    let mut sequence = 0;
-    // SAFETY: a live handle and a writable sequence.
-    assert_eq!(unsafe { m6h_frame(handle, &mut sequence) }, M6H_OK, "{}", last_error(handle));
-    sequence
+fn frame(handle: *mut ShellHost) -> M6hFrame {
+    let mut submitted = M6hFrame::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_frame(handle, &mut submitted) }, M6H_OK, "{}", last_error(handle));
+    submitted
 }
 
 fn read(handle: *mut ShellHost, capacity: u32) -> Vec<M6hPresented> {
@@ -77,29 +78,41 @@ fn the_host_shows_frames_and_recovers_through_its_c_interface() {
         assert_eq!(m6h_set_viewport(host, SIZE.0, SIZE.1), M6H_OK);
         assert_eq!(m6h_set_camera(host, CAMERA.as_ptr()), M6H_OK);
     }
-    assert_eq!(frame(host), 1);
+    let first = frame(host);
+    assert_eq!((first.sequence, first.device_epoch), (1, 1));
     let input = *fake().submitted.last().expect("a frame");
+    assert_eq!(input.surface, first.surface);
     assert_eq!(input.target, c600_render::abi::TARGET_SURFACE);
     assert_eq!((input.camera, input.camera_matrix), (1, CAMERA));
     assert_eq!((input.viewport_width, input.viewport_height), SIZE);
     fake().complete();
     assert!(fake().show(1));
     let shown = read(host, 4);
-    assert_eq!(shown, [M6hPresented { sequence: 1, device_epoch: 1, engine_revision: ENGINE_REVISION, camera: 1 }]);
+    let expected = M6hPresented {
+        sequence: 1,
+        device_epoch: 1,
+        surface: first.surface,
+        engine_revision: ENGINE_REVISION,
+        camera: 1,
+        display_qpc: DISPLAY_TICKS,
+    };
+    assert_eq!(shown, [expected], "the row carries the confirming row's display time");
 
-    // Two more frames, both confirmed, read one row at a time.
-    assert_eq!((frame(host), frame(host)), (2, 3));
+    // Two more frames, both confirmed, read one row at a time, each with its own display time.
+    assert_eq!((frame(host).sequence, frame(host).sequence), (2, 3));
     fake().complete();
     assert!(fake().show(2) && fake().show(3));
-    assert_eq!(read(host, 1)[0].sequence, 2);
-    assert_eq!(read(host, 1)[0].sequence, 3);
+    let (second, third) = (read(host, 1)[0], read(host, 1)[0]);
+    assert_eq!((second.sequence, third.sequence), (2, 3));
+    assert_eq!((second.display_qpc, third.display_qpc), (2 * DISPLAY_TICKS, 3 * DISPLAY_TICKS));
     assert!(read(host, 1).is_empty());
 
     // The device is removed: frames are unavailable until a recovery, which publishes the view again.
     fake().remove_device();
-    let mut sequence = 0;
-    // SAFETY: a live handle and a writable sequence.
-    assert_eq!(unsafe { m6h_frame(host, &mut sequence) }, M6H_E_UNAVAILABLE);
+    let mut submitted = M6hFrame::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_frame(host, &mut submitted) }, M6H_E_UNAVAILABLE);
+    assert_eq!(submitted, M6hFrame::default(), "a refused frame writes nothing");
     assert!(last_error(host).contains("renderer"), "{}", last_error(host));
     // SAFETY: a live handle.
     assert_eq!(unsafe { m6h_recover(host) }, M6H_OK, "{}", last_error(host));
@@ -108,12 +121,14 @@ fn the_host_shows_frames_and_recovers_through_its_c_interface() {
     // SAFETY: a live handle.
     assert_eq!(unsafe { m6h_pump(host) }, M6H_OK);
     let after = frame(host);
+    assert_eq!(after.device_epoch, 2);
     let id = fake().submitted.len() as u64;
     fake().complete();
     assert!(fake().show(id));
     let shown = read(host, 4);
     assert_eq!(shown.len(), 1);
-    assert_eq!((shown[0].sequence, shown[0].device_epoch), (after, 2));
+    assert_eq!((shown[0].sequence, shown[0].device_epoch, shown[0].surface), (after.sequence, 2, after.surface));
+    assert_eq!(shown[0].display_qpc, 4 * DISPLAY_TICKS);
 
     // SAFETY: the handle is not used again; the shim outlives it.
     unsafe {

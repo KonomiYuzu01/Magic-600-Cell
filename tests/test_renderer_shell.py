@@ -130,13 +130,41 @@ class ShellProject(unittest.TestCase):
         self.assertEqual(set(rust_codes), set(names))
         for rust, name in names.items():
             self.assertEqual(csharp_codes.get(name), rust_codes[rust], rust)
-        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hPresented \{(.*?)\}", source, re.S)
-        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct Presented\s*\{(.*?)\}", csharp, re.S)
-        self.assertTrue(rust_row and csharp_row)
-        self.assertEqual(re.findall(r"pub (\w+): u64,", rust_row.group(1)),
-                         ["sequence", "device_epoch", "engine_revision", "camera"])
-        self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)),
-                         ["Sequence", "DeviceEpoch", "EngineRevision", "Camera"])
+        rows = {"M6hFrame": ("Submitted", ["sequence", "device_epoch", "surface"]),
+                "M6hPresented": ("Presented", ["sequence", "device_epoch", "surface", "engine_revision", "camera",
+                                               "display_qpc"])}
+        for rust_name, (csharp_name, fields) in rows.items():
+            with self.subTest(row=rust_name):
+                rust_row = re.search(rf"#\[repr\(C\)\][^{{]*?pub struct {rust_name} \{{(.*?)\}}", source, re.S)
+                csharp_row = re.search(rf"LayoutKind\.Sequential\)\]\s*public struct {csharp_name}\s*\{{(.*?)\}}",
+                                       csharp, re.S)
+                self.assertTrue(rust_row and csharp_row)
+                self.assertEqual(re.findall(r"pub (\w+): u64,", rust_row.group(1)), fields)
+                pascal = ["".join(part.title() for part in field.split("_")) for field in fields]
+                self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)), pascal)
+
+    def test_the_event_log_writes_the_rows_the_e2_timer_reads(self):
+        sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
+        try:
+            import key_to_frame
+        finally:
+            sys.path.pop(0)
+        log = text(PROJECT / "EventLog.cs")
+        self.assertIn(f'public const string Format = "{key_to_frame.LOG_FORMAT}";', log)
+        self.assertIn(f'public const string FileName = "{key_to_frame.EVENTS}";', log)
+        written = {}
+        for block in re.findall(r'json\.WriteString\("t", "(\w+)"\);(.*?)\}\)', log, re.S):
+            written[block[0]] = re.findall(r'json\.Write\w+\("(\w+)"', block[1])
+        for kind in ("frame", "presented"):
+            with self.subTest(row=kind):
+                self.assertEqual(written[kind], list(key_to_frame.FIELDS[kind]))
+        self.assertNotIn("key", written, "no key rows until a turn exists")
+        run = written["run"]
+        for field in ("format", "run_id", "build_identity", "qpc_frequency", "synthetic", "foreground_throughout",
+                      "correctness", "process_id"):
+            self.assertIn(field, run)
+        self.assertIn('json.WriteString("correctness", "fail");', log, "no correctness control yet: never pass")
+        self.assertIn('json.WriteBoolean("synthetic", false);', log)
 
     def test_the_surface_uses_every_shell_call_and_no_other(self):
         used = set(re.findall(r'Call\("(sa2_[a-z_]+)"\)', text(PROJECT / "CoreSurface.cs")))
