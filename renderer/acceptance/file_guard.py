@@ -1,7 +1,8 @@
 """Hold level 2 identity files and their ancestors until the runner releases them.
 
-C9 acceptance copy of work/experiments/renderer-l2/file_guard.py (see PROVENANCE.md): the ABI 3 core
-also loads lattice_cs.dxil, and --plan prints the protected set without holding it.
+C9 acceptance copy of work/experiments/renderer-l2/file_guard.py (see PROVENANCE.md): the core also
+loads lattice_cs.dxil (ABI 3) and id_ps.dxil, product_ps.dxil and product_vs.dxil (ABI 4; its build
+identity reads all eight shaders), and --plan prints the protected set without holding it.
 """
 from __future__ import annotations
 
@@ -16,7 +17,8 @@ import json
 import ntpath
 import os
 
-SHADERS = {'count_vs.dxil', 'draw_ps.dxil', 'draw_vs.dxil', 'geometry_cs.dxil', 'lattice_cs.dxil'}
+SHADERS = {'count_vs.dxil', 'draw_ps.dxil', 'draw_vs.dxil', 'geometry_cs.dxil', 'id_ps.dxil', 'lattice_cs.dxil',
+           'product_ps.dxil', 'product_vs.dxil'}
 GENERIC_READ, GENERIC_WRITE = 0x80000000, 0x40000000
 FILE_LIST_DIRECTORY = 1
 FILE_SHARE_READ, FILE_SHARE_WRITE = 1, 2

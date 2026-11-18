@@ -471,7 +471,10 @@ fn an_exit_takes_the_labels_of_its_poses() {
 /// the token's binding; then the mode (with Jumble off, `KN5:input.menu_word_needs_jumble_on`: there is no episode to
 /// exit); then the named revision, which is current only if every field is equal (EV4.14); then A5's checkpoint. No
 /// protection gate applies (H-08 gives the row `model_match` only): with orbit 0 protected under Strict, an exit to
-/// labels that moved it commits, and the protected set and the policy stay.
+/// labels that a pose move made before the protection moved it commits, and the protected set and the policy stay.
+/// A pose move cannot move a protected orbit's pieces (the owner's reading of 18 November 2026 for finding B5; the
+/// round trip is `b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit` in `attack_protection.rs`), so the
+/// exit lands a protected orbit where it was when it was protected.
 #[test]
 fn refusals_follow_the_exit_order_and_change_nothing() {
     let mut f = unpinned(&[]);

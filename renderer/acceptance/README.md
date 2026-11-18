@@ -1,6 +1,6 @@
 # C9 acceptance harness
 
-The run harness for the renderer freeze's acceptance runs on the product core `renderer/core/` (ABI 3 with W-J's pose path): three cold runs each of W-J's S4, I_a and I_b, three cold W3 runs, and W-J's untimed geometry and lattice checks. The bars are unchanged: every run and the pooled frames at least 30 fps on average and a 99th-percentile frame time of at most 33.3 ms over [trace start + 10 s, + 190 s), peak VRAM at most about 7 GB (the gate flags peaks above 7168 MB), and a passing label check (W3) or label and pose check (W-J).
+The run harness for the renderer freeze's acceptance runs on the product core `renderer/core/` (W-J's pose path, ABI 3, kept unchanged in ABI 4): three cold runs each of W-J's S4, I_a and I_b, three cold W3 runs, and W-J's untimed geometry and lattice checks. The bars are unchanged: every run and the pooled frames at least 30 fps on average and a 99th-percentile frame time of at most 33.3 ms over [trace start + 10 s, + 190 s), peak VRAM at most about 7 GB (the gate flags peaks above 7168 MB), and a passing label check (W3) or label and pose check (W-J).
 
 The host is S-A2 as tested: the official Godot 4.7.2 .NET editor binary running `project/` (net8.0) with the core's `sa2_interop.dll`. Where every file comes from: [PROVENANCE.md](PROVENANCE.md). The harness writes nothing under `work/experiments/`.
 

@@ -2,9 +2,10 @@
  * sa2_interop.h: the C ABI between the Godot C# host and the native Direct3D
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
- * ABI version 3; the ABI 1 and ABI 2 declarations, layouts and behaviour are
- * retained. ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
- * sa2_scene_lattice_check, at the end of this file).
+ * ABI version 4; the ABI 1, ABI 2 and ABI 3 declarations, layouts and
+ * behaviour are retained. ABI 3 adds W-J's per-piece pose path
+ * (sa2_scene_load_wj and sa2_scene_lattice_check). ABI 4 adds the product
+ * API, one call per RM.14 operation (at the end of this file).
  *
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
@@ -37,7 +38,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 3u
+#define SA2_ABI_VERSION 4u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -428,6 +429,357 @@ SA2_API int32_t sa2_scene_load_wj(sa2_context* ctx, const sa2_wj_config* config)
  * E_CHECK_FAILED with output written.
  */
 SA2_API int32_t sa2_scene_lattice_check(sa2_context* ctx, const char* directory_utf8);
+
+/* ABI 4 product API: one call per RM.14 operation, for the Rust display host
+ * (rust/c600-display/src/host.rs, the Backend trait). Field names follow the
+ * Rust types: every ID (view, command, surface, preview, ticket, resource set)
+ * is the u64 inside its Rust newtype.
+ *
+ * Scope: the product calls draw the loaded scene's model (sa2_scene_load or
+ * sa2_scene_load_wj), so every stateful call needs a loaded scene
+ * (SA2_E_WRONG_STATE otherwise), and sa2_scene_unload discards the adopted
+ * image, every ticket, resource set, frame record and pick. No product call
+ * is allowed inside a scene trace (between sa2_scene_trace_begin and
+ * sa2_scene_trace_end): SA2_E_WRONG_STATE. Product frames use their own label,
+ * pose, constant and query resources, so W1..W4 and W-J outputs are unchanged.
+ *
+ * Arguments: invalid arguments (NULL pointers, struct_size, reserved fields,
+ * values out of range) return SA2_E_INVALID_ARGUMENT before any state check,
+ * as in ABI 2. Every new struct starts with struct_size, which the caller
+ * sets to sizeof the struct; for an array of rows, in every row it passes.
+ *
+ * Device loss: after the device is removed, sa2_prepare, sa2_activate,
+ * sa2_frame_submit and sa2_pick_request return SA2_E_DEVICE_REMOVED;
+ * sa2_poll reports a pending or ready ticket as SA2_TICKET_FAILED with reason
+ * SA2_E_DEVICE_REMOVED; sa2_frame_reports returns SA2_OK and writes the
+ * frames whose GPU results were not read before the removal with error
+ * SA2_E_DEVICE_REMOVED; sa2_pick_poll returns SA2_E_DEVICE_REMOVED.
+ * sa2_engine_adopt keeps updating the CPU image (RM.16); sa2_cancel,
+ * sa2_retire, sa2_describe, sa2_recover, sa2_counters and sa2_device_status
+ * keep working.
+ */
+#define SA2_E_UNAVAILABLE 10 /* the backend cannot perform the operation; nothing was done */
+
+#define SA2_SLOTS 259800u /* labelled sticker slots of 600-cell-Full */
+#define SA2_PIECES 177120u /* pieces, the length of a pose index */
+#define SA2_MAX_POSES 177120u /* pose table capacity: one pose per piece */
+#define SA2_POSE_GROUP_ORDER 7200 /* |K+|: a pose_lattice entry is -1 or below this */
+
+/* Ticket states (sa2_poll_row.state), the Rust Poll variants. */
+#define SA2_TICKET_PENDING 0
+#define SA2_TICKET_READY 1
+#define SA2_TICKET_CANCELLED 2
+#define SA2_TICKET_FAILED 3
+
+/* Cancel reasons, the Rust CancelReason variants. */
+#define SA2_CANCEL_BY_USER 0
+#define SA2_CANCEL_SUPERSEDED 1 /* with superseded_by, the superseding command */
+#define SA2_CANCEL_REPLACED_REVISION 2
+#define SA2_CANCEL_BUDGET 3
+
+/* Pick states and the binding field that made a reply stale. */
+#define SA2_PICK_PENDING 0
+#define SA2_PICK_READY 1
+#define SA2_PICK_STALE 2
+#define SA2_PICK_STALE_SURFACE 1 /* a newer surface_generation of the frame's surface was submitted */
+#define SA2_PICK_STALE_VIEW 2 /* a newer view_generation of the frame's view was submitted */
+#define SA2_PICK_STALE_TARGET 3 /* sa2_resize ran after the frame */
+#define SA2_PICK_STALE_ENGINE 4 /* the frame's engine revision left the GPU ring before the ID pass */
+#define SA2_PICK_STALE_PUBLICATION 5 /* the frame's resource set was retired before the request */
+
+/* sa2_frame_input.flags */
+#define SA2_FRAME_PREVIEW 1u /* the frame shows the preview named by preview, preview_base and its literal digest */
+
+/* adopt_engine. One engine state, copied on the CPU: the labels in the layout
+ * W1..W4 upload and, for a posed state, W-J's pose path arrays.
+ */
+typedef struct sa2_engine_image {
+    uint32_t struct_size; /* sizeof(sa2_engine_image); 80 on x64 */
+    uint32_t pose_count; /* entries in poses and pose_lattice, 1..SA2_MAX_POSES; 0 without a pose index */
+    uint64_t revision; /* the engine state revision (FrameStamp.engine_revision); increases with every adoption */
+    const uint32_t* labels; /* SA2_SLOTS labels by slot, each below SA2_SLOTS */
+    const int32_t* pose_index; /* NULL, or SA2_PIECES pose indices by piece, each below pose_count */
+    const float* poses; /* pose_count 4x4 matrices, rows contiguous, x' = M x; pose 0 is the identity; finite */
+    const int32_t* pose_lattice; /* pose_count entries, -1 or 0..SA2_POSE_GROUP_ORDER - 1; entry 0 is 0 */
+    uint8_t digest[32]; /* the caller's SHA-256 of the state (RevisionRef); stored, not recomputed */
+} sa2_engine_image;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_engine_image) == 80, "sa2_engine_image requires the x64 ABI");
+#endif
+
+/* prepare. One publication's per-view resources (F02): visibility and
+ * interaction by slot, and the instance IDs the ID pass writes.
+ */
+typedef struct sa2_preparation {
+    uint32_t struct_size; /* sizeof(sa2_preparation); 112 on x64 */
+    uint32_t reserved; /* must be 0 */
+    uint64_t command; /* PublicationStamp.command */
+    uint64_t view; /* PublicationStamp.view */
+    uint64_t view_generation;
+    uint64_t publication_generation;
+    uint64_t device_epoch; /* must equal the backend's (sa2_describe) */
+    uint64_t base_revision; /* PublicationStamp.base.state */
+    const uint8_t* visibility; /* SA2_SLOTS bytes, 0 or 1: the slot is drawn */
+    const uint8_t* interaction; /* SA2_SLOTS bytes, 0 or 1: the slot answers picks (RPI.75) */
+    const uint32_t* instances; /* SA2_SLOTS instance IDs by slot; 0 = none */
+    uint8_t input_digest[32]; /* PublicationStamp.input_digest; stored */
+} sa2_preparation;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_preparation) == 112, "sa2_preparation requires the x64 ABI");
+#endif
+
+/* poll. The Rust Poll: Pending, Ready(ResourceSet), Cancelled(CancelReason), Failed(Error). */
+typedef struct sa2_poll_row {
+    uint32_t struct_size; /* sizeof(sa2_poll_row); 32 on x64 */
+    int32_t state; /* SA2_TICKET_* */
+    int32_t reason; /* CANCELLED: SA2_CANCEL_*; FAILED: the SA2_E_* status; else 0 */
+    uint32_t reserved; /* written as 0 */
+    uint64_t resource_set; /* READY: the resource set; else 0 */
+    uint64_t superseded_by; /* CANCELLED with SA2_CANCEL_SUPERSEDED: the command; else 0 */
+} sa2_poll_row;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_poll_row) == 32, "sa2_poll_row requires the x64 ABI");
+#endif
+
+/* submit_frame. The FrameStamp, the camera matrix and the preview shown. */
+typedef struct sa2_frame_input {
+    uint32_t struct_size; /* sizeof(sa2_frame_input); 264 on x64 */
+    uint32_t target; /* the frame target: on the Godot-texture route, the registered ring slot */
+    uint32_t flags; /* SA2_FRAME_PREVIEW or 0 */
+    uint32_t reserved; /* must be 0 */
+    uint64_t device_epoch; /* must equal the backend's */
+    uint64_t surface;
+    uint64_t surface_generation; /* never decreases for a surface */
+    uint64_t sequence; /* increases within the surface */
+    uint64_t engine_revision; /* the adopted revision */
+    uint64_t view;
+    uint64_t view_generation; /* never decreases for a view */
+    uint64_t publication_generation; /* with a resource set, the set's */
+    uint64_t camera; /* the camera version */
+    uint32_t viewport_width; /* equal to the target's size */
+    uint32_t viewport_height;
+    uint64_t visibility; /* the visibility version */
+    uint64_t interaction; /* the interaction version */
+    uint64_t resource_set; /* an activated set prepared for this view and view generation, or 0: all slots drawn, nothing pickable */
+    uint64_t preview; /* PreviewShown.preview; 0 without SA2_FRAME_PREVIEW */
+    uint64_t preview_base; /* PreviewShown.base; 0 without SA2_FRAME_PREVIEW */
+    uint8_t subjects_digest[32]; /* the caller's digest of FrameStamp.subjects; stored */
+    uint8_t preview_literal_digest[32]; /* SHA-256 of PreviewShown.literal; zero without SA2_FRAME_PREVIEW */
+    float camera_matrix[16]; /* the 4D rotation Q in the layout W1..W4 use (column-major float4x4); finite */
+} sa2_frame_input;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_frame_input) == 264, "sa2_frame_input requires the x64 ABI");
+#endif
+
+/* read_frame_reports. One row per frame the GPU completed (RM.41, RM.39). */
+typedef struct sa2_frame_report {
+    uint32_t struct_size; /* sizeof(sa2_frame_report); 104 on x64 */
+    int32_t error; /* SA2_OK, or the status that stopped the frame; such a frame drew nothing */
+    uint32_t fallback; /* RM.41's fallback; always 0 in ABI 4 */
+    uint32_t reserved; /* written as 0 */
+    uint64_t frame_id; /* the value sa2_frame_submit returned */
+    uint64_t device_epoch;
+    uint64_t surface;
+    uint64_t surface_generation;
+    uint64_t sequence;
+    uint64_t engine_revision;
+    uint64_t view;
+    uint64_t view_generation;
+    uint64_t publication_generation;
+    uint64_t gpu_time_ns; /* GPU timestamps around the frame's draw */
+    uint64_t view_vertex_evals; /* D3D12 pipeline statistics VSInvocations of the frame's draw (RM.39) */
+} sa2_frame_report;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_frame_report) == 104, "sa2_frame_report requires the x64 ABI");
+#endif
+
+/* read_presented. ABI 4 never writes a row (see sa2_presented). */
+typedef struct sa2_presented_row {
+    uint32_t struct_size; /* sizeof(sa2_presented_row); 48 on x64 */
+    uint32_t previews; /* 0: no_preview; 1: the frame showed its preview */
+    uint64_t frame_id;
+    uint64_t device_epoch;
+    uint64_t surface;
+    uint64_t sequence;
+    uint64_t preview;
+} sa2_presented_row;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_presented_row) == 48, "sa2_presented_row requires the x64 ABI");
+#endif
+
+/* poll_pick. The Rust PickReply: the frame's PickBinding and the instance. */
+typedef struct sa2_pick_row {
+    uint32_t struct_size; /* sizeof(sa2_pick_row); 112 on x64 */
+    int32_t state; /* SA2_PICK_PENDING, SA2_PICK_READY or SA2_PICK_STALE */
+    uint32_t stale; /* SA2_PICK_STALE_* when state is SA2_PICK_STALE; else 0 */
+    uint32_t instance; /* the ID-pass value at (x, y); 0 = no instance */
+    uint64_t frame_id;
+    uint64_t device_epoch;
+    uint64_t surface;
+    uint64_t surface_generation;
+    uint64_t view;
+    uint64_t view_generation;
+    uint64_t publication_generation;
+    uint64_t camera;
+    uint64_t visibility;
+    uint64_t interaction;
+    uint32_t viewport_width;
+    uint32_t viewport_height;
+    uint32_t x;
+    uint32_t y;
+} sa2_pick_row;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_pick_row) == 112, "sa2_pick_row requires the x64 ABI");
+#endif
+
+/* Counters since the scene was loaded. */
+typedef struct sa2_counter_values {
+    uint32_t struct_size; /* sizeof(sa2_counter_values); 64 on x64 */
+    uint32_t reserved; /* written as 0 */
+    uint64_t view_vertex_evals_last; /* of the newest reported frame */
+    uint64_t view_vertex_evals_total; /* over every reported frame */
+    uint64_t bytes_uploaded; /* engine images and preparations recorded for upload */
+    uint64_t frames_submitted;
+    uint64_t frames_reported;
+    uint64_t id_passes;
+    uint64_t reports_dropped; /* unread reports dropped past the bound of 1024 */
+} sa2_counter_values;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_counter_values) == 64, "sa2_counter_values requires the x64 ABI");
+#endif
+
+/* describe_backend. Writes the SupportReport as NUL-terminated JSON:
+ * {interface_version: 4, backend_build: SHA-256 of the sa2_identity JSON,
+ * device_epoch, device_removed: null or the removal HRESULT as "0x%08x",
+ * features: {row: {status: "supported", layout_version} or {status:
+ * "unsupported", reason}}, evidence: []}. Supported rows: F01 full-detail
+ * stickers (all SA2_SLOTS), F02 visibility and interaction sets, J01 and J02
+ * the posed sticker path, F18 the stamped ID pass. F22 (recover), F23
+ * (read_presented) and J13 (grip, piece and certificate-point IDs) are listed
+ * as unsupported; an omitted row is unsupported (RM.15). The evidence list is
+ * empty: no measured run backs these rows yet. *out_size receives the JSON
+ * length plus one; a smaller
+ * buffer_size returns SA2_E_INVALID_ARGUMENT and writes an empty string.
+ */
+SA2_API int32_t sa2_describe(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size);
+
+/* adopt_engine. Validates and copies the image on the CPU and returns its
+ * revision; no GPU work and no GPU wait (RM.16). The next sa2_frame_submit
+ * naming this revision uploads it into the next of three GPU ring copies
+ * before it draws. A revision that does not increase: SA2_E_WRONG_STATE.
+ * Adoption works during device loss as well (RM.16).
+ */
+SA2_API int32_t sa2_engine_adopt(sa2_context* ctx, const sa2_engine_image* image, uint64_t* out_revision);
+
+/* prepare. Copies the preparation, records its upload on the producer queue
+ * with a command list of its own, signals the product fence and returns the
+ * ticket. The resource set is ready when that fence is reached (sa2_poll). A
+ * device_epoch other than the backend's, or 256 tickets still holding GPU
+ * memory (2 MiB each, until the set is released after retire or cancel):
+ * SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_prepare(sa2_context* ctx, const sa2_preparation* preparation, uint64_t* out_ticket);
+
+/* poll. Never waits. A ticket is forgotten when its resource set is retired.
+ * A cancelled or failed ticket keeps answering that state (RM.17) until 1024
+ * newer cancelled or failed tickets have released their resources. An
+ * unknown or forgotten ticket: SA2_E_WRONG_STATE. A ticket cancelled while
+ * pending stays SA2_TICKET_CANCELLED after its upload completes (RM.17).
+ */
+SA2_API int32_t sa2_poll(sa2_context* ctx, uint64_t ticket, sa2_poll_row* out);
+
+/* activate. Makes a ready resource set drawable by frames of its view and
+ * view generation and stores the PublicationStamp digest. A set that is not
+ * ready, already active or retired: SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_activate(sa2_context* ctx, uint64_t resource_set, const uint8_t stamp_digest[32]);
+
+/* cancel. reason is SA2_CANCEL_*; superseded_by is the command for
+ * SA2_CANCEL_SUPERSEDED and 0 otherwise. Cancelling a pending or a ready but
+ * unactivated ticket discards its resources once its upload completes;
+ * cancelling a cancelled or failed ticket does nothing; a ticket whose set is
+ * active: SA2_E_WRONG_STATE (retire the set instead).
+ */
+SA2_API int32_t sa2_cancel(sa2_context* ctx, uint64_t ticket, int32_t reason, uint64_t superseded_by);
+
+/* retire. Later frames cannot name the set; picks on earlier frames that
+ * used it answer SA2_PICK_STALE_PUBLICATION. Its GPU resources are released
+ * once every frame and ID pass that used it has completed. An unknown or
+ * retired set: SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_retire(sa2_context* ctx, uint64_t resource_set);
+
+/* submit_frame. Checks the stamp (device epoch, adopted engine revision,
+ * viewport equal to the target's size, increasing sequence and
+ * non-decreasing surface and view generations, the resource set), then draws
+ * the loaded model into the frame target with the frame's camera and the set's
+ * visibility, as sa2_scene_produce draws (bounded wait for the target's
+ * previous frame, fail-closed free check, queue mode and handover states). One
+ * ClearRenderTargetView without rectangles clears the target. *out_frame_id
+ * receives the frame ID: the ready fence value the frame signals, one more
+ * than the last frame any produce call signalled, for sa2_godot_wait_ready
+ * and sa2_mark_shown. Stamp rule failures: SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_t* out_frame_id);
+
+/* read_frame_reports. Never waits. Writes up to capacity rows, in frame
+ * order, for frames whose ready fence the GPU reached, each frame once; it
+ * stops at the first frame not yet completed. *out_count receives the number
+ * written. rows may be NULL when capacity is 0.
+ */
+SA2_API int32_t sa2_frame_reports(sa2_context* ctx, sa2_frame_report* rows, uint32_t capacity, uint32_t* out_count);
+
+/* read_presented. The core owns no swap chain and cannot confirm a
+ * presentation (RM.26): after the argument checks it sets *out_count to 0,
+ * writes no row and returns SA2_E_UNAVAILABLE.
+ */
+SA2_API int32_t sa2_presented(sa2_context* ctx, sa2_presented_row* rows, uint32_t capacity, uint32_t* out_count);
+
+/* request_pick. Records an ID pass with that frame's camera, viewport,
+ * engine ring copy, visibility and instance IDs into an R32_UINT target of
+ * the target's size on the producer queue (same vertex stage, no discard;
+ * RPI.22), copies texel (x, y) to a readback buffer and signals the product
+ * fence. A frame without a resource set answers SA2_PICK_READY with instance
+ * 0 and no GPU work; the stale cases detectable at request time answer at
+ * once with instance 0. The frame must be retained (the last 64 reported
+ * frames and every unreported one) and drawn, and fewer than 1024 picks may be
+ * live (else SA2_E_WRONG_STATE); x and y lie inside its viewport (else
+ * SA2_E_INVALID_ARGUMENT). The x and y check needs the frame record, so a
+ * removed device or a frame that is not retained answers first.
+ */
+SA2_API int32_t sa2_pick_request(sa2_context* ctx, uint64_t frame_id, uint32_t x, uint32_t y, uint64_t* out_ticket);
+
+/* poll_pick. Never waits. Pending until the ID pass completes; then reports
+ * the instance with the frame's binding, SA2_PICK_STALE when a newer surface
+ * or view generation was submitted, the target was resized or the request
+ * found the binding gone (RPI.23 to RPI.25). A reported pick is forgotten: a
+ * second poll returns SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_pick_poll(sa2_context* ctx, uint64_t ticket, sa2_pick_row* out);
+
+/* recover. ABI 4 cannot recover a device (RPI.46): it writes NUL-terminated
+ * JSON {status: "unavailable", reason, device_epoch, device_removed: null or
+ * "0x%08x"}, sets *out_size as sa2_describe and returns SA2_E_UNAVAILABLE.
+ */
+SA2_API int32_t sa2_recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size);
+
+/* The frame target changed size. After a confirmed sa2_drain, with a loaded
+ * scene outside a trace and all three slots registered at width x height
+ * (the host registers the new slots first), recreate the size-bound
+ * resources (depth and ID-pass targets) and start a new target generation:
+ * picks on earlier frames answer SA2_PICK_STALE_TARGET. W1..W4 and W-J draw
+ * at the new size afterwards. Width and height are at least SA2_MIN_TEXTURE_PX.
+ */
+SA2_API int32_t sa2_resize(sa2_context* ctx, uint32_t width, uint32_t height);
+
+/* Copies the counters; all zero without a loaded scene. */
+SA2_API int32_t sa2_counters(sa2_context* ctx, sa2_counter_values* out);
+
+/* *out_removed_reason receives GetDeviceRemovedReason (S_OK while alive).
+ * Returns SA2_OK while the device is alive and SA2_E_DEVICE_REMOVED after
+ * removal, which the product calls then observe.
+ */
+SA2_API int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason);
 
 #ifdef __cplusplus
 }
