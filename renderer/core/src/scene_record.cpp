@@ -125,8 +125,9 @@ std::filesystem::path module_path() {
     scene_require(count && count < path.size(), "cannot locate sa2_interop.dll file", SA2_E_IO);
     return std::filesystem::path(std::wstring(path.data(), count));
 }
-const std::array<const char*, 5>& shader_names() {
-    static constexpr std::array<const char*, 5> names{"count_vs.dxil", "draw_ps.dxil", "draw_vs.dxil", "geometry_cs.dxil", "lattice_cs.dxil"};
+const std::array<const char*, 8>& shader_names() {
+    static constexpr std::array<const char*, 8> names{"count_vs.dxil", "draw_ps.dxil", "draw_vs.dxil", "geometry_cs.dxil", "id_ps.dxil",
+        "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"};
     return names;
 }
 Json scene_identity() {

@@ -99,6 +99,7 @@ version = "0.0.0"
 dependencies = [
  "c600-digest",
  "c600-kernel",
+ "c600-run",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -233,6 +234,7 @@ dependencies = [
  "c600-display",
  "c600-ir",
  "c600-kernel",
+ "c600-library",
  "c600-run",
  "c600-runtime",
  "c600-syntax",

@@ -13,7 +13,10 @@ import subprocess
 import sys
 
 
-SHADERS = ["count_vs.dxil", "draw_ps.dxil", "draw_vs.dxil", "geometry_cs.dxil", "lattice_cs.dxil"]
+SHADERS = [
+    "count_vs.dxil", "draw_ps.dxil", "draw_vs.dxil", "geometry_cs.dxil", "id_ps.dxil", "lattice_cs.dxil",
+    "product_ps.dxil", "product_vs.dxil",
+]
 CPU_CHECKS = {
     # ABI 2 checks, unchanged.
     "abi", "exports", "invalid arguments", "last error truncation", "crc", "vectors", "images", "decode rejection",
@@ -21,6 +24,9 @@ CPU_CHECKS = {
     "scene native writer", "scene output IO", "identity",
     # ABI 3: the W-J scene API without a device.
     "wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls", "wj native writer",
+    # ABI 4: the product API's device-free logic.
+    "product arguments", "product adopt", "product tickets", "product frames", "product reports", "product picks",
+    "product device lost", "product describe",
 }
 BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
 

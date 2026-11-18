@@ -27,7 +27,7 @@ target_compile_definitions(sa2_wj PRIVATE M600_REPO_ROOT="${REPO_ROOT}" main=sa2
 target_link_libraries(sa2_wj PUBLIC bcrypt)
 add_library(sa2_pure STATIC src/pure.cpp)
 target_include_directories(sa2_pure PUBLIC include src)
-add_library(sa2_scene_record STATIC src/scene_record.cpp)
+add_library(sa2_scene_record STATIC src/scene_record.cpp src/product.cpp)
 target_include_directories(sa2_scene_record PUBLIC include src)
 target_link_libraries(sa2_scene_record PUBLIC sa2_sb sa2_wj)
 add_library(sa2_interop SHARED src/interop.cpp src/scene.cpp)
@@ -40,20 +40,26 @@ foreach(target sa2_sb sa2_wj sa2_pure sa2_scene_record sa2_interop sa2_selftest)
     target_compile_definitions(${target} PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_compile_options(${target} PRIVATE /W4 /permissive- /utf-8 /EHsc)
 endforeach()
-# W-J's pose-path shaders; W1..W4 run them with the pose path disabled.
+# W-J's pose-path shaders; W1..W4 run them with the pose path disabled. ABI 4's
+# product passes (product.hlsl) include draw.hlsl and share its vertex stage.
 function(compile_shader output source entry profile)
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${output}"
         COMMAND "${DXC_EXECUTABLE}" -nologo -O3 -Ges -T "${profile}" -E "${entry}"
             ${ARGN} -I "${CORE_SHADERS}" -Fo "${CMAKE_CURRENT_BINARY_DIR}/${output}"
             "${CORE_SHADERS}/${source}"
-        DEPENDS "${CORE_SHADERS}/${source}" "${CORE_SHADERS}/geometry.hlsl" VERBATIM)
+        DEPENDS "${CORE_SHADERS}/${source}" "${CORE_SHADERS}/geometry.hlsl" "${CORE_SHADERS}/draw.hlsl" VERBATIM)
 endfunction()
 compile_shader(draw_vs.dxil draw.hlsl vsMain vs_6_0)
 compile_shader(draw_ps.dxil draw.hlsl psMain ps_6_0)
 compile_shader(count_vs.dxil draw.hlsl vsMain vs_6_0 -DCOUNT_INVOCATIONS=1)
 compile_shader(geometry_cs.dxil check.hlsl csMain cs_6_0)
 compile_shader(lattice_cs.dxil lattice.hlsl latticeMain cs_6_0)
+compile_shader(id_ps.dxil product.hlsl idPs ps_6_0)
+compile_shader(product_ps.dxil product.hlsl productPs ps_6_0)
+compile_shader(product_vs.dxil product.hlsl productVs vs_6_0)
 add_custom_target(sa2_shaders ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/draw_vs.dxil"
     "${CMAKE_CURRENT_BINARY_DIR}/draw_ps.dxil" "${CMAKE_CURRENT_BINARY_DIR}/count_vs.dxil"
-    "${CMAKE_CURRENT_BINARY_DIR}/geometry_cs.dxil" "${CMAKE_CURRENT_BINARY_DIR}/lattice_cs.dxil")
+    "${CMAKE_CURRENT_BINARY_DIR}/geometry_cs.dxil" "${CMAKE_CURRENT_BINARY_DIR}/lattice_cs.dxil"
+    "${CMAKE_CURRENT_BINARY_DIR}/id_ps.dxil" "${CMAKE_CURRENT_BINARY_DIR}/product_ps.dxil"
+    "${CMAKE_CURRENT_BINARY_DIR}/product_vs.dxil")
 add_dependencies(sa2_interop sa2_shaders)

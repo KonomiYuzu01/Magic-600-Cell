@@ -4,7 +4,7 @@
 //! admission refuses it. The module, branch, preview-outcome and persisted-word cases keep BM2.
 //!
 //! The persisted-word cases use the in-memory store of `c600-run`. The durable leg, a word read back from M6's
-//! session store, waits for M6.
+//! session store, runs in `c600-durable`'s tests (C7, `ct_rte_08_persisted_word.rs`).
 
 mod support;
 
@@ -14,8 +14,10 @@ use c600_module::code::{
     CONTRACT_MISMATCH, DEPENDENCY_MISSING, DIGEST_MISMATCH, IR_REJECTED, IR_VERSION_UNSUPPORTED, MODEL_NOT_SUPPORTED,
     NONCANONICAL_VALUE, NOT_GRANTED, PERSISTENCE_FORMAT, PERSISTENCE_VERSION,
 };
-use c600_module::{approve, load, resolve, verify, Closure, Files, Identity, Lock, Manifest};
+use c600_module::{approve, load, resolve, verify, Closure, Files, Identity, Lock, Manifest, RunRequest};
 use c600_run::boundary::{admit_preview, Answer, Place, Store};
+use c600_run::interp::Options;
+use c600_run::menu::{MenuAlphabet, MenuIdentity};
 use c600_run::meter::Outcome as Ended;
 use c600_run::provenance::{self, field, hex, Author, Json, Profile};
 use c600_run::value::Value;
@@ -431,6 +433,63 @@ fn ct_rte_08_a_previewer_gets_only_base_and_id() {
     assert_eq!((out.run.summary.outcome, out.run.summary.code), (Ended::Error, Some(NOT_GRANTED)));
     assert_eq!(out.separated, ["run/1"]);
     assert!(engine.previews.is_empty());
+}
+
+/// LB1.8's menu words (LP2 draft) pass the same gate as literal words (BND.39, BND.42, LG3.13): a built-in previews the
+/// menu word the solver named, the shell and the canonical result keep its letters and alphabet, and reading the
+/// outcome makes the menu-word proposal non-previewing.
+#[test]
+fn ct_rte_08_a_menu_word_proposal_passes_the_same_gate() {
+    let root = module(
+        "m",
+        &[],
+        &[],
+        "export fn go(m: MenuWord, t: Target) -> Text effects [preview] {\n    \
+         return receipt_id(propose(m, t));\n}\n\n\
+         export fn outcome(m: MenuWord, t: Target) -> Text effects [snapshot, preview] {\n    \
+         return receipt_effect(propose(m, t));\n}\n",
+    );
+    let p = package(&root, &[]);
+    let identity = MenuIdentity {
+        puzzle: "600-cell-jumbled".into(),
+        model_id: "model-1".into(),
+        menu_id: "menu-a".into(),
+        menu_order: "order-1".into(),
+        contract_rev: "rev-1".into(),
+    };
+    let alphabet = MenuAlphabet::new(identity, 4, vec![0, 2, 1]).expect("an alphabet");
+    let run_on = |ready: &c600_module::Ready, letters: &[[u32; 2]], engine: &mut Engine| {
+        let word = Value::menu_word(alphabet.shared_identity(), letters).expect("indices below 600");
+        let request = RunRequest {
+            run: "run",
+            base: "rev-7",
+            args: vec![word, Value::target("c0")],
+            inputs: vec![manual(), manual()],
+            pins: pins(),
+            options: Options { menu: Some(&alphabet), ..Options::new(WIDE) },
+        };
+        ready.run(request, engine, &mut Store::default()).expect("a run")
+    };
+
+    let ready = previewer(&p, "go");
+    let mut engine = Engine::fixture();
+    let out = run_on(&ready, &[[0, 1], [3, 2]], &mut engine);
+    assert_eq!(out.run.output.as_deref(), Some(&b"\"run/1\"\n"[..]), "the fixed acknowledgement");
+    assert!(matches!(&out.shell[0].answer, Answer::Previewed(_)) && out.separated.is_empty());
+    assert_eq!(engine.menu_previews, [(vec![[0, 1], [3, 2]], "c0".to_string())]);
+    let shown = out.shell[0].menu.as_ref().map(|w| w.letters().to_vec());
+    assert!(out.shell[0].word.is_empty() && shown == Some(vec![[0, 1], [3, 2]]));
+    let other = run_on(&ready, &[[0, 1], [3, 1]], &mut Engine::fixture());
+    assert_ne!(out.canonical(), other.canonical(), "the canonical result keeps the menu word");
+    assert!(contains(&out.canonical(), b"menu-a"), "and its alphabet");
+
+    let reads = previewer(&p, "outcome");
+    let mut engine = Engine::fixture();
+    let out = run_on(&reads, &[[0, 1]], &mut engine);
+    assert_eq!((out.run.summary.outcome, out.run.summary.code), (Ended::Error, Some(NOT_GRANTED)));
+    assert!(matches!(&out.shell[0].answer, Answer::Refused(r) if r.code == NOT_GRANTED));
+    assert_eq!(out.separated, ["run/1"]);
+    assert!(engine.menu_previews.is_empty() && engine.previews.is_empty() && engine.traps == 0);
 }
 
 /// The branch case of BM2 (BND.39; LX-3 MR09, MR10): a state-conditioned choice between two constant words never

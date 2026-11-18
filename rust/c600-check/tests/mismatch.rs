@@ -185,9 +185,12 @@ fn state_and_preview_operations_take_their_types() {
             assert_eq!((code, function, at, expected, supplied), (WORD_KEY_NOT_EXECUTABLE, "f", *path, "Word", name));
         }
     }
-    // A trace key takes a Full word: LB1.10's menu half waits for its relation, so a menu word is of another alphabet.
-    let menu = Expr::Lit(Lit::MenuWord(vec![[0, 1]]));
-    let d = only(&f(Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![menu])));
+    // A trace key takes a Full word or a menu word (LB1.10: a menu word's key is under the run's `jumble-locality/1`),
+    // and a word key a Full word only, so a menu word is of another alphabet there.
+    let menu = || Expr::Lit(Lit::MenuWord(vec![[0, 1]]));
+    let keyed = report(&f(Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![menu()])));
+    assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
+    let d = only(&f(Ty::WordEqualityKey, prim(Prim::WordKey, vec![menu()])));
     let (code, _, at, expected, supplied) = mismatch(&d);
     assert_eq!((code, at, expected, supplied), (INCOMPATIBLE_ALPHABET, "0", "Word", "MenuWord"));
     assert_only(&cmd(Ty::Receipt, propose(word(&[1]), nat(2))), "f", "1", "Target", "Nat");

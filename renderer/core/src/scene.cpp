@@ -6,6 +6,8 @@
 #include <cstring>
 #include <optional>
 #include <limits>
+#include <map>
+#include <tuple>
 
 namespace sa2 {
 namespace {
@@ -60,6 +62,48 @@ template<class F> void refused(F&& body) {
     catch (const Failure&) { throw; }
     catch (const std::exception& error) { throw Failure(SA2_E_CHECK_FAILED, error.what()); }
 }
+// ABI 4's GPU resources, created by the first product call that needs them.
+// Every product buffer lives in a default heap and decays to COMMON after
+// each ExecuteCommandLists, so a copy into it relies on implicit promotion to
+// COPY_DEST and ends with an explicit barrier to NON_PIXEL_SHADER_RESOURCE;
+// a draw that only reads it promotes it implicitly. All product work runs on
+// the producer queue, so queue order protects a default buffer's reuse.
+struct ProductGpu {
+    // One GPU copy of an adopted engine image: labels (t5), then the pose
+    // index, matrix rows and lattice table (t8..t10), at full capacity.
+    struct EngineCopy { Buffer labels; std::array<Buffer, 3> pose; Buffer staging; uint8_t* data = nullptr; };
+    // One preparation: per-slot visibility (t15) and instance IDs (t16).
+    struct Set {
+        ComPtr<ID3D12CommandAllocator> allocator; ComPtr<ID3D12GraphicsCommandList> list;
+        Buffer visible, instances, staging; uint64_t fence = 0;
+    };
+    // One ID pass: its constants and the one-texel readback.
+    struct Pick {
+        ComPtr<ID3D12CommandAllocator> allocator; ComPtr<ID3D12GraphicsCommandList> list;
+        Buffer constants, read; uint64_t fence = 0;
+    };
+    ComPtr<ID3D12RootSignature> root;
+    ComPtr<ID3D12PipelineState> draw_pso, id_pso;
+    std::array<EngineCopy, EngineCopies> copies;
+    Buffer all_visible, no_instances, statics; // a frame without a resource set: every slot drawn, nothing pickable
+    std::array<Buffer, SA2_RING_SLOTS> cb;
+    std::array<uint8_t*, SA2_RING_SLOTS> cb_data{};
+    // Per ring slot: timestamps 2r and 2r + 1, statistics r; resolved to r * 256 (timestamps) and r * 256 + 16 (statistics).
+    ComPtr<ID3D12QueryHeap> timestamps, statistics;
+    Buffer query_read;
+    ComPtr<ID3D12Fence> fence;
+    uint64_t value = 0, frequency = 0;
+    std::map<uint64_t, Set> sets; // by preparation ticket
+    std::map<uint64_t, Pick> picks; // by pick ticket
+    ComPtr<ID3D12Resource> id_target; // R32_UINT at the scene's size, created on the first pick
+    ComPtr<ID3D12DescriptorHeap> id_heap;
+    bool initialized = false;
+    ~ProductGpu() {
+        for (auto& copy : copies) if (copy.data) copy.staging.resource->Unmap(0, nullptr);
+        for (size_t i = 0; i < cb.size(); ++i) if (cb_data[i]) cb[i].resource->Unmap(0, nullptr);
+    }
+};
+constexpr uint64_t QueryStride = 256, StatisticsOffset = 16;
 }
 
 struct Scene::Impl {
@@ -101,6 +145,7 @@ struct Scene::Impl {
     sb::Matrix q = sb::identity();
     bool initialized = false, healthy = true;
     uint64_t readback_capacity = 0, row_bytes = 64, lattice_bytes = 4, stride = sb::LabelBytes;
+    std::unique_ptr<ProductGpu> product; // ABI 4; null until product_ready
 
     Impl(ID3D12Device* attached, const SceneRecord& record) : device(attached) {
         if (record.jumbling()) {
@@ -200,22 +245,28 @@ struct Scene::Impl {
         name(out.Get(), is_depth ? L"SA2 scene depth" : L"SA2 geometry target");
         return out;
     }
-    void make_root() {
-        // W-J's root signature: S-B's ten parameters, then root SRVs t7..t14 for the pose path.
-        D3D12_ROOT_PARAMETER params[18]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    // W-J's root signature: S-B's ten parameters, then root SRVs t7..t14 for
+    // the pose path. ABI 4's product signature appends root SRVs t15 and t16
+    // (appended = 2); W1..W4 and W-J keep appended = 0.
+    ComPtr<ID3D12RootSignature> signature(UINT appended, const wchar_t* label) {
+        D3D12_ROOT_PARAMETER params[20]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
-        for (UINT i = 10; i < 18; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
-        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 18; d.pParameters = params;
+        for (UINT i = 10; i < 18 + appended; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
+        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 18 + appended; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
         hr(device, D3D12SerializeRootSignature(&d, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), "D3D12SerializeRootSignature(scene)");
-        hr(device, device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&root)), "CreateRootSignature(scene)");
-        name(root.Get(), L"SA2 scene root signature");
+        ComPtr<ID3D12RootSignature> out;
+        hr(device, device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&out)), "CreateRootSignature(scene)");
+        name(out.Get(), label);
+        return out;
     }
-    ComPtr<ID3D12PipelineState> graphics(const std::vector<uint8_t>& vs, const std::vector<uint8_t>& ps) {
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC d{}; d.pRootSignature = root.Get(); d.VS = {vs.data(), vs.size()}; d.PS = {ps.data(), ps.size()};
+    void make_root() { root = signature(0, L"SA2 scene root signature"); }
+    ComPtr<ID3D12PipelineState> graphics(const std::vector<uint8_t>& vs, const std::vector<uint8_t>& ps, ID3D12RootSignature* signature = nullptr,
+                                         DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, const wchar_t* label = L"SA2 scene graphics pipeline") {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC d{}; d.pRootSignature = signature ? signature : root.Get(); d.VS = {vs.data(), vs.size()}; d.PS = {ps.data(), ps.size()};
         auto& blend = d.BlendState.RenderTarget[0]; blend.SrcBlend = blend.SrcBlendAlpha = D3D12_BLEND_ONE;
         blend.DestBlend = blend.DestBlendAlpha = D3D12_BLEND_ZERO; blend.BlendOp = blend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
         blend.LogicOp = D3D12_LOGIC_OP_NOOP; blend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
@@ -227,10 +278,10 @@ struct Scene::Impl {
         D3D12_DEPTH_STENCILOP_DESC stencil{}; stencil.StencilFailOp = stencil.StencilDepthFailOp = stencil.StencilPassOp = D3D12_STENCIL_OP_KEEP;
         stencil.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS; d.DepthStencilState.FrontFace = d.DepthStencilState.BackFace = stencil;
         d.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; d.NumRenderTargets = 1;
-        d.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; d.DSVFormat = DXGI_FORMAT_D32_FLOAT; d.SampleDesc.Count = 1;
+        d.RTVFormats[0] = format; d.DSVFormat = DXGI_FORMAT_D32_FLOAT; d.SampleDesc.Count = 1;
         ComPtr<ID3D12PipelineState> out;
         hr(device, device->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&out)), "CreateGraphicsPipelineState(scene)");
-        name(out.Get(), L"SA2 scene graphics pipeline");
+        name(out.Get(), label);
         return out;
     }
     ComPtr<ID3D12PipelineState> compute(const std::vector<uint8_t>& cs, const wchar_t* label) {
@@ -243,11 +294,13 @@ struct Scene::Impl {
     void create(const SceneRecord& record) {
         const auto directory = module_path().parent_path();
         // W1..W4 load the four draw/count/geometry blobs, as in ABI 2; W-J also loads lattice_cs.dxil.
-        std::array<std::vector<uint8_t>, 5> shaders;
-        for (size_t i = 0; i < (jumble ? shaders.size() : 4); ++i) shaders[i] = scene_bytes(directory / shader_names()[i]);
-        make_root(); draw_pso = graphics(shaders[2], shaders[1]); count_pso = graphics(shaders[0], shaders[1]);
-        compute_pso = compute(shaders[3], L"SA2 geometry compute pipeline");
-        if (jumble) lattice_pso = compute(shaders[4], L"SA2 lattice compute pipeline");
+        // Blobs are loaded by name: ABI 4's product blobs load on the first product call (product_ready).
+        const auto blob = [&](const char* file) { return scene_bytes(directory / file); };
+        const auto count_vs = blob("count_vs.dxil"), draw_ps = blob("draw_ps.dxil"), draw_vs = blob("draw_vs.dxil"), geometry_cs = blob("geometry_cs.dxil");
+        const auto lattice_cs = jumble ? blob("lattice_cs.dxil") : std::vector<uint8_t>{};
+        make_root(); draw_pso = graphics(draw_vs, draw_ps); count_pso = graphics(count_vs, draw_ps);
+        compute_pso = compute(geometry_cs, L"SA2 geometry compute pipeline");
+        if (jumble) lattice_pso = compute(lattice_cs, L"SA2 lattice compute pipeline");
         auto put = [&](const auto& values) { return static_buffer(values.data(), values.size() * sizeof(values[0])); };
         auto model = [&](const auto& a) {
             geometry[0] = put(a.vertices); geometry[1] = put(a.local); geometry[2] = put(a.centers);
@@ -364,6 +417,155 @@ struct Scene::Impl {
         const float colour[4] = {0.13f, 0.145f, 0.16f, 1}; list->ClearRenderTargetView(rtv, colour, 0, nullptr);
         list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
         list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); list->DrawInstanced(sb::Vertices, sb::Cells, 0, 0);
+    }
+    // ABI 4. Builds every product resource into a new object, so a failure leaves the scene as it was.
+    std::unique_ptr<ProductGpu> product_create(ID3D12CommandQueue* queue) {
+        auto p = std::make_unique<ProductGpu>();
+        const auto directory = module_path().parent_path();
+        const auto blob = [&](const char* file) { return scene_bytes(directory / file); };
+        const auto id_ps = blob("id_ps.dxil"), product_ps = blob("product_ps.dxil"), product_vs = blob("product_vs.dxil");
+        p->root = signature(2, L"SA2 product root signature");
+        p->draw_pso = graphics(product_vs, product_ps, p->root.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, L"SA2 product pipeline");
+        p->id_pso = graphics(product_vs, id_ps, p->root.Get(), DXGI_FORMAT_R32_UINT, L"SA2 ID pass pipeline");
+        const uint64_t pose_sizes[] = {uint64_t(SA2_PIECES) * 4, uint64_t(SA2_MAX_POSES) * 64, uint64_t(SA2_MAX_POSES) * 4};
+        for (auto& copy : p->copies) {
+            copy.labels = buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+            uint64_t total = copy.labels.size;
+            for (size_t j = 0; j < 3; ++j) { copy.pose[j] = buffer(pose_sizes[j], D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON); total += pose_sizes[j]; }
+            copy.staging = buffer(total, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ); copy.data = map(copy.staging);
+        }
+        p->all_visible = buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+        p->no_instances = buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+        p->statics = buffer(2 * sb::LabelBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        {
+            const std::vector<uint32_t> ones(SA2_SLOTS, 1u);
+            auto* data = map(p->statics);
+            std::memcpy(data, ones.data(), size_t(sb::LabelBytes)); std::memset(data + sb::LabelBytes, 0, size_t(sb::LabelBytes));
+            p->statics.resource->Unmap(0, nullptr);
+        }
+        for (size_t i = 0; i < p->cb.size(); ++i) {
+            p->cb[i] = buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ); p->cb_data[i] = map(p->cb[i]);
+        }
+        D3D12_QUERY_HEAP_DESC query{}; query.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP; query.Count = 2 * SA2_RING_SLOTS;
+        hr(device, device->CreateQueryHeap(&query, IID_PPV_ARGS(&p->timestamps)), "CreateQueryHeap(product timestamps)");
+        name(p->timestamps.Get(), L"SA2 product timestamps");
+        query.Type = D3D12_QUERY_HEAP_TYPE_PIPELINE_STATISTICS; query.Count = SA2_RING_SLOTS;
+        hr(device, device->CreateQueryHeap(&query, IID_PPV_ARGS(&p->statistics)), "CreateQueryHeap(product statistics)");
+        name(p->statistics.Get(), L"SA2 product pipeline statistics");
+        p->query_read = buffer(QueryStride * SA2_RING_SLOTS, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+        hr(device, device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&p->fence)), "CreateFence(product)");
+        name(p->fence.Get(), L"SA2 product fence");
+        hr(device, queue->GetTimestampFrequency(&p->frequency), "GetTimestampFrequency(product)");
+        scene_require(p->frequency > 0, "the producer queue reports no timestamp frequency", SA2_E_D3D12);
+        return p;
+    }
+    ProductGpu& product_gpu() {
+        scene_require(product != nullptr, "product resources are not ready", SA2_E_WRONG_STATE);
+        return *product;
+    }
+    std::pair<ComPtr<ID3D12CommandAllocator>, ComPtr<ID3D12GraphicsCommandList>> product_list(const wchar_t* label) {
+        std::pair<ComPtr<ID3D12CommandAllocator>, ComPtr<ID3D12GraphicsCommandList>> out;
+        hr(device, device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&out.first)), "CreateCommandAllocator(product)");
+        hr(device, device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, out.first.Get(), nullptr, IID_PPV_ARGS(&out.second)), "CreateCommandList(product)");
+        name(out.second.Get(), label);
+        return out;
+    }
+    // A copy into a product buffer that decayed to COMMON: implicit promotion, then an explicit barrier.
+    void copy_into(ID3D12GraphicsCommandList* list, Buffer& target, Buffer& staging, uint64_t offset, uint64_t size) {
+        scene_require(size <= target.size && offset + size <= staging.size, "product upload exceeds its staging range");
+        target.state = D3D12_RESOURCE_STATE_COPY_DEST;
+        list->CopyBufferRegion(target.resource.Get(), 0, staging.resource.Get(), offset, size);
+        transition(list, target, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    }
+    void product_initialize(ID3D12GraphicsCommandList* list) {
+        auto& p = product_gpu();
+        if (p.initialized) return;
+        copy_into(list, p.all_visible, p.statics, 0, sb::LabelBytes);
+        copy_into(list, p.no_instances, p.statics, sb::LabelBytes, sb::LabelBytes);
+        p.initialized = true;
+    }
+    // Copies only the image's bytes; the shaders read pose rows and lattice entries below pose_count only.
+    void upload_engine(ID3D12GraphicsCommandList* list, ProductGpu::EngineCopy& copy, const EngineImage& image) {
+        uint64_t offset = 0;
+        auto put = [&](Buffer& target, const void* data, uint64_t size) {
+            scene_require(offset + size <= copy.staging.size, "engine upload exceeds its staging range");
+            std::memcpy(copy.data + offset, data, size_t(size));
+            copy_into(list, target, copy.staging, offset, size);
+            offset += target.size;
+        };
+        put(copy.labels, image.labels.data(), uint64_t(image.labels.size()) * 4);
+        if (!image.posed()) return;
+        put(copy.pose[0], image.pose_index.data(), uint64_t(image.pose_index.size()) * 4);
+        put(copy.pose[1], image.poses.data(), uint64_t(image.poses.size()) * 4);
+        put(copy.pose[2], image.lattice.data(), uint64_t(image.lattice.size()) * 4);
+    }
+    // W-J's constants with the frame's camera; the pose path follows the engine image.
+    Constants product_constants(const std::array<float, 16>& matrix, uint32_t width, uint32_t height, uint32_t pose_count) {
+        sb::Matrix rotation; std::copy(matrix.begin(), matrix.end(), rotation.begin());
+        auto c = constants(shape, rotation, float(width) / float(height), 0);
+        c.poseEnabled = pose_count ? 1u : 0u; c.poseCount = std::max(pose_count, 1u);
+        return c;
+    }
+    std::pair<Buffer*, Buffer*> product_set(uint64_t set_ticket) {
+        auto& p = product_gpu();
+        if (!set_ticket) return {&p.all_visible, &p.no_instances};
+        auto set = p.sets.find(set_ticket);
+        scene_require(set != p.sets.end(), "the resource set has no GPU resources", SA2_E_WRONG_STATE);
+        return {&set->second.visible, &set->second.instances};
+    }
+    // The product draw and the ID pass: the W-J bindings with the engine copy's
+    // labels and pose path, the set's t15 and t16, and one clear of the whole
+    // target (no rects). The ID pass rasterizes only its pixel (scissor).
+    void product_draw(ID3D12GraphicsCommandList* list, ID3D12PipelineState* pipeline, Buffer& constants_buffer, ProductGpu::EngineCopy& copy,
+                      uint64_t set_ticket, D3D12_CPU_DESCRIPTOR_HANDLE rtv, UINT width, UINT height, const float* colour, const D3D12_RECT* pixel) {
+        auto& p = product_gpu();
+        const auto [visible, instances] = product_set(set_ticket);
+        list->SetPipelineState(pipeline); list->SetGraphicsRootSignature(p.root.Get());
+        list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress());
+        const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], &geometry[4], &copy.labels, &geometry[5]};
+        for (UINT i = 0; i < 7; ++i) list->SetGraphicsRootShaderResourceView(i + 1, srv[i]->resource->GetGPUVirtualAddress());
+        // t7..t16: slot -> piece, pose index, rows, lattice, destination, overlay points, straddles, offsets, visibility, instance IDs.
+        const Buffer* additional[] = {&extra[0], &copy.pose[0], &copy.pose[1], &copy.pose[2], &extra[1], &extra[2], &extra[3], &extra[4], visible, instances};
+        for (UINT i = 0; i < 10; ++i) list->SetGraphicsRootShaderResourceView(i + 10, additional[i]->resource->GetGPUVirtualAddress());
+        D3D12_VIEWPORT viewport{0, 0, float(width), float(height), 0, 1};
+        const D3D12_RECT rect = pixel ? *pixel : D3D12_RECT{0, 0, LONG(width), LONG(height)};
+        list->RSSetViewports(1, &viewport); list->RSSetScissorRects(1, &rect);
+        const auto dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
+        list->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+        list->ClearRenderTargetView(rtv, colour, 0, nullptr);
+        list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+        list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); list->DrawInstanced(sb::Vertices, sb::Cells, 0, 0);
+    }
+    void make_id_target(uint32_t width, uint32_t height) {
+        auto& p = product_gpu();
+        if (p.id_target) return;
+        D3D12_HEAP_PROPERTIES heap{}; heap.Type = D3D12_HEAP_TYPE_DEFAULT; heap.CreationNodeMask = heap.VisibleNodeMask = 1;
+        D3D12_RESOURCE_DESC d{}; d.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; d.Width = width; d.Height = height;
+        d.DepthOrArraySize = d.MipLevels = 1; d.SampleDesc.Count = 1; d.Format = DXGI_FORMAT_R32_UINT;
+        d.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        D3D12_CLEAR_VALUE clear{}; clear.Format = DXGI_FORMAT_R32_UINT; // 0: no instance
+        ComPtr<ID3D12Resource> target; ComPtr<ID3D12DescriptorHeap> rtv;
+        hr(device, device->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &d, D3D12_RESOURCE_STATE_RENDER_TARGET, &clear, IID_PPV_ARGS(&target)),
+           "CreateCommittedResource(ID target)");
+        name(target.Get(), L"SA2 ID target");
+        D3D12_DESCRIPTOR_HEAP_DESC desc{}; desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; desc.NumDescriptors = 1;
+        hr(device, device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&rtv)), "CreateDescriptorHeap(ID target RTV)");
+        name(rtv.Get(), L"SA2 ID target RTV heap");
+        device->CreateRenderTargetView(target.Get(), nullptr, rtv->GetCPUDescriptorHandleForHeapStart());
+        p.id_target = std::move(target); p.id_heap = std::move(rtv);
+    }
+    void texture_barrier(ID3D12GraphicsCommandList* list, ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
+        D3D12_RESOURCE_BARRIER barrier{}; barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition = {resource, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, before, after};
+        list->ResourceBarrier(1, &barrier);
+    }
+    // Closes a product list, executes it on the producer queue and signals the product fence.
+    uint64_t product_submit(ID3D12GraphicsCommandList* list, ID3D12CommandQueue* queue, const std::function<void()>& submitting, bool& submitted) {
+        auto& p = product_gpu();
+        hr(device, list->Close(), "Close(product list)");
+        ID3D12CommandList* lists[] = {list}; submitting(); queue->ExecuteCommandLists(1, lists); submitted = true;
+        hr(device, queue->Signal(p.fence.Get(), p.value + 1), "Signal(product fence)");
+        return ++p.value;
     }
     void wait(uint32_t timeout) {
         const auto until = Clock::now() + std::chrono::milliseconds(timeout);
@@ -731,5 +933,147 @@ Json Scene::lattice_check(ID3D12CommandQueue* queue, uint32_t timeout, const std
 Json Scene::lattice_error(const std::string& error) const {
     return Json::Object{{"format", "magic600-wj-lattice-check/1"}, {"status", "fail"}, {"build_identity", build_identity()},
         {"adapter", gpu->adapter_name}, {"error", error}, {"states", Json::Array{}}};
+}
+
+// ABI 4.
+void Scene::product_ready(ID3D12CommandQueue* queue) {
+    if (!gpu->product) gpu->product = gpu->product_create(queue);
+}
+uint64_t Scene::product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    scene_require(data.visible.size() == SA2_SLOTS && data.instances.size() == SA2_SLOTS, "a preparation holds one entry per slot", SA2_E_INVALID_ARGUMENT);
+    scene_require(p.sets.find(ticket) == p.sets.end(), "the ticket already has GPU resources", SA2_E_WRONG_STATE);
+    // Resources first: a failure here leaves the scene usable.
+    ProductGpu::Set set;
+    std::tie(set.allocator, set.list) = g.product_list(L"SA2 preparation command list");
+    set.visible = g.buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+    set.instances = g.buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+    set.staging = g.buffer(2 * sb::LabelBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+    auto* bytes = g.map(set.staging);
+    std::memcpy(bytes, data.visible.data(), size_t(sb::LabelBytes)); std::memcpy(bytes + sb::LabelBytes, data.instances.data(), size_t(sb::LabelBytes));
+    set.staging.resource->Unmap(0, nullptr);
+    auto& stored = p.sets[ticket] = std::move(set);
+    bool submitted = false;
+    try {
+        auto* list = stored.list.Get();
+        g.copy_into(list, stored.visible, stored.staging, 0, sb::LabelBytes);
+        g.copy_into(list, stored.instances, stored.staging, sb::LabelBytes, sb::LabelBytes);
+        stored.fence = g.product_submit(list, queue, submitting, submitted);
+        return stored.fence;
+    } catch (...) {
+        if (!submitted) p.sets.erase(ticket);
+        g.healthy = false;
+        throw;
+    }
+}
+void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
+                          D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    scene_require(plan.image != nullptr && plan.copy < EngineCopies && ring < SA2_RING_SLOTS, "product frame without a plan", SA2_E_WRONG_STATE);
+    g.initialize(list); g.product_initialize(list);
+    auto& copy = p.copies[plan.copy];
+    if (plan.upload) g.upload_engine(list, copy, *plan.image);
+    std::array<float, 16> camera; std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), camera.begin());
+    const auto c = g.product_constants(camera, input.viewport_width, input.viewport_height, plan.pose_count);
+    std::memcpy(p.cb_data[ring], &c, sizeof(c));
+    list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
+    list->BeginQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
+    const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
+    g.product_draw(list, p.draw_pso.Get(), p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr);
+    list->EndQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
+    list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
+    list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
+    list->ResolveQueryData(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring, 1, p.query_read.resource.Get(),
+                           ring * QueryStride + StatisticsOffset);
+}
+std::pair<uint64_t, uint64_t> Scene::product_results(uint32_t ring) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    scene_require(ring < SA2_RING_SLOTS, "ring slot out of range", SA2_E_INVALID_ARGUMENT);
+    const SIZE_T begin = SIZE_T(ring * QueryStride);
+    D3D12_RANGE range{begin, begin + SIZE_T(StatisticsOffset + sizeof(D3D12_QUERY_DATA_PIPELINE_STATISTICS))};
+    void* data = nullptr;
+    hr(g.device, p.query_read.resource->Map(0, &range, &data), "Map(product queries)");
+    uint64_t ticks[2]{}; D3D12_QUERY_DATA_PIPELINE_STATISTICS statistics{};
+    std::memcpy(ticks, static_cast<const uint8_t*>(data) + begin, sizeof(ticks));
+    std::memcpy(&statistics, static_cast<const uint8_t*>(data) + begin + StatisticsOffset, sizeof(statistics));
+    D3D12_RANGE none{0, 0}; p.query_read.resource->Unmap(0, &none);
+    const uint64_t elapsed = ticks[1] > ticks[0] ? ticks[1] - ticks[0] : 0;
+    const auto ns = uint64_t(double(elapsed) * 1e9 / double(p.frequency));
+    return {ns, statistics.VSInvocations};
+}
+uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12CommandQueue* queue, const std::function<void()>& submitting) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    scene_require(input.copy < EngineCopies && input.width == record.width && input.height == record.height
+        && input.x < input.width && input.y < input.height, "the ID pass does not match the scene's size", SA2_E_WRONG_STATE);
+    scene_require(p.picks.find(ticket) == p.picks.end(), "the pick already has GPU resources", SA2_E_WRONG_STATE);
+    g.product_set(input.set_ticket);
+    // Resources first: a failure here leaves the scene usable.
+    g.make_id_target(record.width, record.height);
+    ProductGpu::Pick pick;
+    std::tie(pick.allocator, pick.list) = g.product_list(L"SA2 ID pass command list");
+    pick.constants = g.buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+    pick.read = g.buffer(256, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+    const auto c = g.product_constants(input.camera, input.width, input.height, input.pose_count);
+    std::memcpy(g.map(pick.constants), &c, sizeof(c)); pick.constants.resource->Unmap(0, nullptr);
+    auto& stored = p.picks[ticket] = std::move(pick);
+    bool submitted = false;
+    try {
+        auto* list = stored.list.Get();
+        g.initialize(list); g.product_initialize(list);
+        const float zero[4] = {0, 0, 0, 0};
+        const D3D12_RECT pixel{LONG(input.x), LONG(input.y), LONG(input.x + 1), LONG(input.y + 1)};
+        g.product_draw(list, p.id_pso.Get(), stored.constants, p.copies[input.copy], input.set_ticket,
+                       p.id_heap->GetCPUDescriptorHandleForHeapStart(), input.width, input.height, zero, &pixel);
+        g.texture_barrier(list, p.id_target.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        D3D12_TEXTURE_COPY_LOCATION destination{}; destination.pResource = stored.read.resource.Get();
+        destination.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        destination.PlacedFootprint.Footprint = {DXGI_FORMAT_R32_UINT, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT};
+        D3D12_TEXTURE_COPY_LOCATION source{}; source.pResource = p.id_target.Get();
+        source.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX; source.SubresourceIndex = 0;
+        const D3D12_BOX box{input.x, input.y, 0, input.x + 1, input.y + 1, 1};
+        list->CopyTextureRegion(&destination, 0, 0, 0, &source, &box);
+        g.texture_barrier(list, p.id_target.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        stored.fence = g.product_submit(list, queue, submitting, submitted);
+        return stored.fence;
+    } catch (...) {
+        if (!submitted) p.picks.erase(ticket);
+        g.healthy = false;
+        throw;
+    }
+}
+uint32_t Scene::product_pick_value(uint64_t ticket) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    auto pick = p.picks.find(ticket);
+    scene_require(pick != p.picks.end(), "the pick has no GPU resources", SA2_E_WRONG_STATE);
+    void* data = nullptr; D3D12_RANGE range{0, sizeof(uint32_t)};
+    hr(g.device, pick->second.read.resource->Map(0, &range, &data), "Map(ID pass readback)");
+    uint32_t value = 0; std::memcpy(&value, data, sizeof(value));
+    D3D12_RANGE none{0, 0}; pick->second.read.resource->Unmap(0, &none);
+    return value;
+}
+void Scene::product_release_pick(uint64_t ticket) { if (gpu->product) gpu->product->picks.erase(ticket); }
+void Scene::product_release_picks() { if (gpu->product) gpu->product->picks.clear(); }
+void Scene::product_release_set(uint64_t ticket) { if (gpu->product) gpu->product->sets.erase(ticket); }
+void Scene::product_collect() {
+    auto& g = *gpu;
+    if (!g.product) return;
+    const auto completed = product_completed();
+    for (auto& [ticket, set] : g.product->sets)
+        if (set.fence && completed >= set.fence) { set.staging = {}; set.list.Reset(); set.allocator.Reset(); }
+    for (auto& [ticket, pick] : g.product->picks)
+        if (pick.fence && completed >= pick.fence) { pick.constants = {}; pick.list.Reset(); pick.allocator.Reset(); }
+}
+uint64_t Scene::product_completed() const {
+    if (!gpu->product) return 0;
+    const auto value = gpu->product->fence->GetCompletedValue();
+    return value == UINT64_MAX ? 0 : value; // UINT64_MAX reports device removal: nothing counts as completed
+}
+void Scene::resize(uint32_t width, uint32_t height) {
+    auto& g = *gpu;
+    auto depth = g.texture(width, height, true);
+    g.device->CreateDepthStencilView(depth.Get(), nullptr, g.dsv_heap->GetCPUDescriptorHandleForHeapStart());
+    g.depth = std::move(depth);
+    record.width = width; record.height = height;
+    if (g.product) { g.product->id_target.Reset(); g.product->id_heap.Reset(); }
 }
 }

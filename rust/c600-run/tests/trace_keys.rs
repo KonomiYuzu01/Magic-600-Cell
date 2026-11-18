@@ -195,11 +195,11 @@ const KEYS: &str = "export fn traces(x: Word, y: Word) -> Bool effects [] {\n   
     return contains(insert(set<TraceEqualityKey>(), trace_key(x)), trace_key(y));\n}\n\n\
     export fn key(x: Word) -> TraceEqualityKey effects [] {\n    return trace_key(x);\n}\n";
 
-/// CT-LB1-06 (part: LB1.10's Full half, run through the interpreter; not run: the jumbling half, `jumble-locality/1`
-/// over menu letters, which waits for an exact Δ(c,d) entry in `c600-jumble`): with a < b < c, b independent of a and
-/// c, and a dependent on c, bca and cab both key to bca, which keeps c before a, abc keys to itself, and the word keys
-/// of bca and cab stay distinct. Every occurrence survives: no inverse pair cancels and no letters merge. A key has no
-/// canonical form, so a run that would emit one stops with `PS1:input.noncanonical_value`.
+/// CT-LB1-06 (part: LB1.10's Full half, run through the interpreter; the jumbling half is `menu_trace_keys.rs`): with
+/// a < b < c, b independent of a and c, and a dependent on c, bca and cab both key to bca, which keeps c before a, abc
+/// keys to itself, and the word keys of bca and cab stay distinct. Every occurrence survives: no inverse pair cancels
+/// and no letters merge. A key has no canonical form, so a run that would emit one stops with
+/// `PS1:input.noncanonical_value`.
 #[test]
 fn ct_lb1_06_bca_and_cab_have_one_trace_key_and_abc_another() {
     let r = relation();

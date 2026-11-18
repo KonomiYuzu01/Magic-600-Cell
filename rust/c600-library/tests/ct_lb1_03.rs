@@ -13,9 +13,10 @@
 //! inverse retrace one path, prefix by prefix, from solved and from a scrambled state).
 //!
 //! Not run here: the jumbling half, which C8 runs on Rust constructors over one pinned menu
-//! (`c600-jumble-tool/tests/ct_lb1_03.rs`); jumbling menu letters in the language, which wait for menu words in the IR
-//! draft (M5, LP2); and the refusal `LB1:input.incompatible_alphabet`, which cannot arise while the IR draft has one
-//! alphabet. A pass is source and fixture evidence.
+//! (`c600-jumble-tool/tests/ct_lb1_03.rs`); jumbling words in the language, which no library entry builds yet
+//! although the IR draft has menu words since LP2's pull request 210; and the refusal
+//! `LB1:input.incompatible_alphabet`, which the checker gives, not the library, for a menu word where a `Word` is
+//! expected. A pass is source and fixture evidence.
 
 mod common;
 

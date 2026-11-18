@@ -1,5 +1,6 @@
 #include "pure.h"
 #include "scene.h"
+#include "frame_target.h"
 #include <d3d12sdklayers.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
@@ -296,6 +297,91 @@ void CALLBACK debug_callback(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY seve
 }
 void require_drained(sa2_context* ctx) {
     require(removed(ctx) || ctx->drained, "a confirmed drain is required", SA2_E_WRONG_STATE);
+}
+
+// ABI 4's frame target on the Godot-texture route: a registered ring slot
+// that Godot composites. It keeps sa2_scene_produce's protocol: a bounded
+// wait for the slot's previous frame, the fail-closed free check, the own
+// queue's GPU wait and the configured handover states.
+class SlotTarget final : public sa2::FrameTarget {
+public:
+    SlotTarget(sa2_context* ctx, uint32_t index) : ctx_(ctx), index_(index), slot_(slot_at(ctx, index)) {}
+    uint32_t width() const override { return slot_.width; }
+    uint32_t height() const override { return slot_.height; }
+    uint32_t ring() const override { return index_; }
+    void wait(uint64_t frame) override {
+        if (frame) wait_fence(ctx_, ctx_->ready.Get(), frame, deadline(ctx_->config.wait_timeout_ms));
+    }
+    ID3D12GraphicsCommandList* open() override {
+        if (ctx_->own_queue) require(slot_.last_shown <= ctx_->last_free, "slot's shown frame has not been signalled free", SA2_E_WRONG_STATE);
+        reset(ctx_, slot_);
+        if (ctx_->own_queue && slot_.last_shown) queue_wait(ctx_, ctx_->own_queue.Get(), ctx_->free.Get(), slot_.last_shown);
+        transition(ctx_, slot_, ctx_->config.state_before_write, SA2_STATE_RENDER_TARGET, true);
+        return slot_.list.Get();
+    }
+    D3D12_CPU_DESCRIPTOR_HANDLE view() const override { return rtv(ctx_, index_); }
+    void close(uint64_t frame) override {
+        transition(ctx_, slot_, SA2_STATE_RENDER_TARGET, ctx_->config.state_after_write, false);
+        ctx_->last_frame = frame;
+        execute(ctx_, slot_, ctx_->ready.Get(), frame);
+        ctx_->last_ready = frame;
+    }
+private:
+    sa2_context* ctx_;
+    uint32_t index_;
+    Slot& slot_;
+};
+
+// The loaded scene for a stateful product call, outside a trace; latches a device removal.
+sa2::Scene& product_scene(sa2_context* ctx) {
+    context(ctx);
+    require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+    auto& scene = *ctx->scene;
+    require(!scene.record.tracing(), "product calls are not allowed inside a scene trace", SA2_E_WRONG_STATE);
+    scene.product.observe_removal(ctx->device->GetDeviceRemovedReason());
+    return scene;
+}
+int32_t removed_reason(sa2_context* ctx) {
+    const int32_t hr = ctx->device->GetDeviceRemovedReason();
+    if (!ctx->scene) return hr < 0 ? hr : 0;
+    ctx->scene->product.observe_removal(hr);
+    return ctx->scene->product.removed_reason();
+}
+uint64_t completed(ID3D12Fence* target) {
+    const auto value = target->GetCompletedValue();
+    return value == UINT64_MAX ? 0 : value; // UINT64_MAX reports device removal, never a completion
+}
+// Reads the query results of every ring slot whose last frame completed.
+void harvest(sa2_context* ctx, sa2::Scene& scene) {
+    if (scene.product.removed()) return;
+    const auto done = completed(ctx->ready.Get());
+    for (uint32_t ring = 0; ring < SA2_RING_SLOTS; ++ring) {
+        const auto frame = scene.product.unharvested(ring);
+        if (!frame || frame > done) continue;
+        const auto [gpu_ns, evals] = scene.product_results(ring);
+        scene.product.produced(frame, gpu_ns, evals);
+    }
+}
+// Releases the GPU resources of finished tickets and the staging of completed
+// uploads; after device loss, every set's and every pick's (sa2_pick_poll then
+// answers SA2_E_DEVICE_REMOVED and never reads a pick).
+void release(sa2_context* ctx, sa2::Scene& scene) {
+    for (const auto ticket : scene.product.releasable(completed(ctx->ready.Get()), scene.product_completed()))
+        scene.product_release_set(ticket);
+    if (scene.product.removed()) scene.product_release_picks();
+    scene.product_collect();
+}
+void write_json(const std::string& text, char* buffer, uint32_t buffer_size, uint32_t* out_size) {
+    require(text.size() < UINT32_MAX, "JSON exceeds the size output", SA2_E_D3D12);
+    *out_size = static_cast<uint32_t>(text.size() + 1);
+    if (buffer_size < text.size() + 1) {
+        if (buffer && buffer_size) buffer[0] = 0;
+        throw Failure(SA2_E_INVALID_ARGUMENT, "buffer_size is smaller than *out_size");
+    }
+    std::memcpy(buffer, text.c_str(), text.size() + 1);
+}
+void require_text_output(char* buffer, uint32_t buffer_size, uint32_t* out_size) {
+    require(out_size != nullptr && (buffer != nullptr || buffer_size == 0), "null size output, or a NULL buffer with a nonzero buffer_size");
 }
 }
 
@@ -914,6 +1000,240 @@ int32_t sa2_scene_unload(sa2_context* ctx) {
         require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
         require_drained(ctx);
         ctx->scene.reset();
+        return SA2_OK;
+    });
+}
+
+// ABI 4 product API.
+int32_t sa2_describe(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size) {
+    if (out_size) *out_size = 0;
+    return invoke(ctx, "sa2_describe", [&] {
+        context(ctx);
+        require_text_output(buffer, buffer_size, out_size);
+        const auto identity = sa2::scene_identity().dump();
+        const auto build = sb::sha256(std::span(reinterpret_cast<const uint8_t*>(identity.data()), identity.size()));
+        write_json(sa2::describe(build, removed_reason(ctx)).dump(), buffer, buffer_size, out_size);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_engine_adopt(sa2_context* ctx, const sa2_engine_image* image, uint64_t* out_revision) {
+    if (out_revision) *out_revision = 0;
+    return invoke(ctx, "sa2_engine_adopt", [&] {
+        context(ctx);
+        require(out_revision != nullptr, "null revision output");
+        auto copy = sa2::engine_image(image);
+        auto& scene = product_scene(ctx);
+        *out_revision = scene.product.adopt(std::move(copy));
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_prepare(sa2_context* ctx, const sa2_preparation* preparation, uint64_t* out_ticket) {
+    if (out_ticket) *out_ticket = 0;
+    return invoke(ctx, "sa2_prepare", [&] {
+        context(ctx);
+        require(out_ticket != nullptr, "null ticket output");
+        const auto data = sa2::preparation(preparation);
+        auto& scene = product_scene(ctx);
+        scene.product.check_prepare(data);
+        scene.require_healthy();
+        live(ctx);
+        scene.product_ready(ctx->producer());
+        const auto ticket = scene.product.reserve_ticket();
+        const auto fence = scene.product_prepare(ticket, data, ctx->producer(), [&] { ctx->drained = false; });
+        scene.product.prepared(ticket, data, fence);
+        *out_ticket = ticket;
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_poll(sa2_context* ctx, uint64_t ticket, sa2_poll_row* out) {
+    return invoke(ctx, "sa2_poll", [&] {
+        context(ctx);
+        require(out && out->struct_size == sizeof(*out), "invalid poll_row struct_size");
+        auto& scene = product_scene(ctx);
+        *out = scene.product.poll(ticket, scene.product_completed());
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_activate(sa2_context* ctx, uint64_t resource_set, const uint8_t stamp_digest[32]) {
+    return invoke(ctx, "sa2_activate", [&] {
+        context(ctx);
+        require(stamp_digest != nullptr, "stamp_digest is NULL");
+        auto& scene = product_scene(ctx);
+        scene.product.activate(resource_set, stamp_digest);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_cancel(sa2_context* ctx, uint64_t ticket, int32_t reason, uint64_t superseded_by) {
+    return invoke(ctx, "sa2_cancel", [&] {
+        context(ctx);
+        sa2::validate_cancel(reason, superseded_by);
+        auto& scene = product_scene(ctx);
+        scene.product.cancel(ticket, reason, superseded_by);
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_retire(sa2_context* ctx, uint64_t resource_set) {
+    return invoke(ctx, "sa2_retire", [&] {
+        context(ctx);
+        auto& scene = product_scene(ctx);
+        scene.product.retire(resource_set);
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_t* out_frame_id) {
+    if (out_frame_id) *out_frame_id = 0;
+    return invoke(ctx, "sa2_frame_submit", [&] {
+        context(ctx);
+        require(out_frame_id != nullptr, "null frame ID output");
+        sa2::validate_frame_input(input);
+        auto& scene = product_scene(ctx);
+        SlotTarget slot(ctx, input->target);
+        sa2::FrameTarget& target = slot;
+        require(target.width() == scene.record.width && target.height() == scene.record.height,
+            "the frame target is not at the scene's size", SA2_E_WRONG_STATE);
+        require(ctx->last_frame < UINT64_MAX - 1, "frame IDs are exhausted", SA2_E_WRONG_STATE);
+        const uint64_t frame = ctx->last_frame + 1;
+        const auto plan = scene.product.plan(*input, target.width(), target.height());
+        scene.require_healthy();
+        live(ctx);
+        scene.wait_geometry(ctx->config.wait_timeout_ms);
+        scene.product_ready(ctx->producer());
+        if (plan.upload) target.wait(plan.upload_wait); // the copy's staging was last read by that frame
+        auto* list = target.open();
+        try {
+            harvest(ctx, scene); // the target's previous frame completed: read its ring results before this frame reuses them
+            scene.product_frame(list, *input, plan, target.view(), target.ring());
+            target.close(frame);
+        } catch (...) { scene.poison(); throw; }
+        scene.product.commit(*input, plan, frame, target.ring());
+        *out_frame_id = frame;
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_frame_reports(sa2_context* ctx, sa2_frame_report* rows, uint32_t capacity, uint32_t* out_count) {
+    if (out_count) *out_count = 0;
+    return invoke(ctx, "sa2_frame_reports", [&] {
+        context(ctx);
+        require(out_count != nullptr, "null count output");
+        sa2::validate_rows(rows, capacity);
+        auto& scene = product_scene(ctx);
+        harvest(ctx, scene);
+        *out_count = scene.product.reports(rows, capacity);
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_presented(sa2_context* ctx, sa2_presented_row* rows, uint32_t capacity, uint32_t* out_count) {
+    if (out_count) *out_count = 0;
+    return invoke(ctx, "sa2_presented", [&]() -> int32_t {
+        context(ctx);
+        require(out_count != nullptr, "null count output");
+        sa2::validate_rows(rows, capacity);
+        throw Failure(SA2_E_UNAVAILABLE, "the core owns no swap chain and cannot confirm a presentation (RM.26)");
+    });
+}
+
+int32_t sa2_pick_request(sa2_context* ctx, uint64_t frame_id, uint32_t x, uint32_t y, uint64_t* out_ticket) {
+    if (out_ticket) *out_ticket = 0;
+    return invoke(ctx, "sa2_pick_request", [&] {
+        context(ctx);
+        require(out_ticket != nullptr, "null ticket output");
+        auto& scene = product_scene(ctx);
+        const auto plan = scene.product.pick_plan(frame_id, x, y);
+        uint64_t fence = 0;
+        if (plan.pass) {
+            scene.require_healthy();
+            live(ctx);
+            scene.wait_geometry(ctx->config.wait_timeout_ms);
+        }
+        const auto ticket = scene.product.reserve_pick();
+        if (plan.pass) fence = scene.product_pick(ticket, plan.input, ctx->producer(), [&] { ctx->drained = false; });
+        scene.product.pick_commit(ticket, plan, fence);
+        *out_ticket = ticket;
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_pick_poll(sa2_context* ctx, uint64_t ticket, sa2_pick_row* out) {
+    return invoke(ctx, "sa2_pick_poll", [&] {
+        context(ctx);
+        require(out && out->struct_size == sizeof(*out), "invalid pick_row struct_size");
+        auto& scene = product_scene(ctx);
+        bool forget = false;
+        *out = scene.product.pick_poll(ticket, scene.product_completed(), [&] { return scene.product_pick_value(ticket); }, forget);
+        if (forget) scene.product_release_pick(ticket);
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size) {
+    if (out_size) *out_size = 0;
+    return invoke(ctx, "sa2_recover", [&]() -> int32_t {
+        context(ctx);
+        require_text_output(buffer, buffer_size, out_size);
+        write_json(sa2::recover_report(removed_reason(ctx)).dump(), buffer, buffer_size, out_size);
+        throw Failure(SA2_E_UNAVAILABLE, "ABI 4 cannot recover a device: it owns no swap chain and no device (RPI.46)");
+    });
+}
+
+int32_t sa2_resize(sa2_context* ctx, uint32_t width, uint32_t height) {
+    return invoke(ctx, "sa2_resize", [&] {
+        context(ctx);
+        require(width >= SA2_MIN_TEXTURE_PX && height >= SA2_MIN_TEXTURE_PX, "width and height must be at least SA2_MIN_TEXTURE_PX");
+        auto& scene = product_scene(ctx);
+        require_drained(ctx);
+        live(ctx);
+        for (uint32_t index = 0; index < SA2_RING_SLOTS; ++index) {
+            SlotTarget slot(ctx, index);
+            const sa2::FrameTarget& target = slot;
+            require(target.width() == width && target.height() == height,
+                "register all three slots at the new size before sa2_resize", SA2_E_WRONG_STATE);
+        }
+        scene.resize(width, height);
+        scene.product.resized();
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_counters(sa2_context* ctx, sa2_counter_values* out) {
+    return invoke(ctx, "sa2_counters", [&] {
+        context(ctx);
+        require(out && out->struct_size == sizeof(*out), "invalid counter_values struct_size");
+        if (ctx->scene) *out = ctx->scene->product.counter_values();
+        else {
+            sa2_counter_values zero{};
+            zero.struct_size = sizeof(zero);
+            *out = zero;
+        }
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason) {
+    if (out_removed_reason) *out_removed_reason = 0;
+    return invoke(ctx, "sa2_device_status", [&] {
+        context(ctx);
+        require(out_removed_reason != nullptr, "null removed-reason output");
+        const int32_t hr = ctx->device->GetDeviceRemovedReason();
+        *out_removed_reason = hr;
+        if (ctx->scene) ctx->scene->product.observe_removal(hr);
+        if (hr < 0) throw Failure(SA2_E_DEVICE_REMOVED, "device removed (" + sa2::removed_text(hr) + ")");
         return SA2_OK;
     });
 }
