@@ -7,8 +7,12 @@ A pass is source evidence only.
 """
 from __future__ import annotations
 
+import importlib
+import json
 import re
+import shutil
 import sys
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -186,6 +190,173 @@ class ShellProject(unittest.TestCase):
     def test_a_mismatched_export_list_is_seen(self):
         names = csharp_symbols()
         self.assertNotEqual(names[:-1] + ["sa2_device_state"], rust_symbols())
+
+
+def shell_module(name: str):
+    sys.path.insert(0, str(SHELL))
+    try:
+        return importlib.import_module(name)
+    finally:
+        sys.path.remove(str(SHELL))
+
+
+def row_fields(source: str) -> dict[str, list[str]]:
+    """The fields each JSON row kind of a C# log writes, in order."""
+    return {kind: re.findall(r'json\.Write\w+\("(\w+)"', body)
+            for kind, body in re.findall(r'json\.WriteString\("t", "(\w+)"\);(.*?)\}\)', source, re.S)}
+
+
+class InputEcho(unittest.TestCase):
+    """Route B's check B1: the echo's log is a file of its own that the E2 timer never reads."""
+
+    def test_the_input_log_is_a_file_of_its_own(self):
+        sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
+        try:
+            import key_to_frame
+        finally:
+            sys.path.pop(0)
+        log = text(PROJECT / "InputLog.cs")
+        self.assertIn('public const string Format = "magic600-c9-shell-input-v1";', log)
+        self.assertIn('public const string FileName = "input.jsonl";', log)
+        self.assertNotEqual("input.jsonl", key_to_frame.EVENTS)
+        written = row_fields(log)
+        self.assertEqual(written["press"], ["seq", "qpc", "keycode", "label"])
+        self.assertEqual(written["click"], ["seq", "qpc", "button", "x", "y"])
+        self.assertEqual(written["run"], ["format", "run_id", "build_identity", "qpc_frequency", "synthetic",
+                                          "foreground_throughout", "process_id", "presses", "clicks"])
+        self.assertFalse(set(written) & set(key_to_frame.FIELDS), "no row kind of the E2 log")
+
+    def test_the_shell_echoes_only_when_asked(self):
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn('GetEnvironmentVariable("M600_INPUT_ECHO") == "1"', text(PROJECT / "InputLog.cs"))
+        self.assertIn("if (InputLog.Requested())", shell)
+        self.assertIn("public override void _Input(InputEvent @event)", shell)
+        self.assertIn("InputEventKey { Pressed: true, Echo: false }", shell, "a held key's repeats are not presses")
+        self.assertIn("MouseButton.WheelUp", shell, "the wheel is not a click")
+        # A core that does not open closes the core's parts only; the echo stays.
+        ready = shell[shell.index("public override void _Ready()"):shell.index("private void Open(")]
+        self.assertIn("CloseCore();", ready)
+        self.assertNotIn("Close();", ready.replace("CloseCore();", ""))
+
+
+class ProductBuild(unittest.TestCase):
+    """build_product.py's record and verify, and launch.py, over a fake build; nothing is built or started."""
+
+    def setUp(self):
+        self.build_product = shell_module("build_product")
+        self.launch = shell_module("launch")
+        self.temp = Path(tempfile.mkdtemp(prefix="c9-product-"))
+        self.addCleanup(shutil.rmtree, self.temp, True)
+        self.build = self.temp / "20261118T000000Z"
+        files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
+                 "host/c600_shell_host.dll": b"host", f"shell/project/{self.build_product.build_shell.ASSEMBLY}": b"asm",
+                 "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
+                 "assets/manifest.json": b"{}"}
+        for name, data in files.items():
+            (self.build / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.build / name).write_bytes(data)
+        self.godot = self.temp / "godot" / self.build_product.prepare_host.GODOT_EXE
+        self.godot.parent.mkdir()
+        self.godot.write_bytes(b"godot")
+        record = self.build_product.record(self.build, self.godot, "0" * 40, False)
+        (self.build / "product.json").write_text(json.dumps(record), encoding="utf-8")
+
+    def test_a_build_verifies_and_names_every_part_it_loads(self):
+        product = self.build_product.verify(self.build)
+        self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
+                                                 "shell:assembly", "shell:Main.tscn", "assets:manifest.json"})
+        self.assertTrue(product["identity"].startswith("c9-product-"))
+        self.assertTrue(all(not Path(part["path"]).is_absolute() for part in product["parts"].values()))
+
+    def test_a_changed_or_added_part_is_refused(self):
+        host = self.build / "host" / "c600_shell_host.dll"
+        host.write_bytes(b"other host")
+        with self.assertRaises(self.build_product.ProductError):
+            self.build_product.verify(self.build)
+        host.write_bytes(b"host")
+        self.build_product.verify(self.build)
+        (self.build / "shell" / "project" / "Extra.cs").write_bytes(b"extra")
+        with self.assertRaises(self.build_product.ProductError):
+            self.build_product.verify(self.build)
+
+    def test_the_identity_follows_every_digest_and_no_order(self):
+        identity = self.build_product.identity
+        digests = {"a": "1" * 64, "b": "2" * 64}
+        self.assertEqual(identity(digests), identity(dict(reversed(list(digests.items())))))
+        self.assertNotEqual(identity(digests), identity({**digests, "b": "3" * 64}))
+
+    def test_the_build_never_launches(self):
+        self.assertEqual(self.build_product.host_command()[:6],
+                         ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
+        self.assertTrue(str(self.build_product.BUILD_ROOT).replace("\\", "/").endswith("work/build/c9-product"))
+        source = text(SHELL / "build_product.py")
+        self.assertNotIn("--path", source)
+        self.assertNotIn("launch_value", source)
+
+    def test_a_dry_run_creates_and_starts_nothing(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a dry run started a process")
+        for echo in ([], ["--echo"]):
+            lines = []
+            out = self.temp / "run"
+            code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *echo],
+                                    popen=refuse, out_stream=lines.append)
+            self.assertEqual(code, 0, lines)
+            self.assertFalse(out.exists())
+            names = {line.split("=", 1)[0][len("env: "):] for line in lines if line.startswith("env: ")}
+            expected = {"M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
+                        "M600_RUN_ID"} | ({"M600_INPUT_ECHO"} if echo else set())
+            self.assertEqual(names, expected)
+
+    def test_a_used_run_folder_or_a_changed_build_is_refused(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        used = self.temp / "used"
+        used.mkdir()
+        self.assertEqual(self.launch.main(["--out", str(used), "--build", str(self.build)], popen=refuse,
+                                          out_stream=lambda line: None), 2)
+        (self.build / "native" / "draw_vs.dxil").write_bytes(b"other shader")
+        self.assertEqual(self.launch.main(["--out", str(self.temp / "fresh"), "--build", str(self.build)],
+                                          popen=refuse, out_stream=lambda line: None), 2)
+        self.assertFalse((self.temp / "fresh").exists())
+
+    def test_a_launch_starts_godot_on_the_build_and_records_no_private_path(self):
+        started = {}
+
+        class Process:
+            def wait(self):
+                return 0
+
+        def popen(arguments, cwd, env):
+            started.update(arguments=arguments, cwd=cwd, env=env)
+            return Process()
+        out = self.temp / "run"
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r1"], popen=popen,
+                                out_stream=lambda line: None)
+        self.assertEqual(code, 0)
+        product = self.build_product.verify(self.build)
+        arguments, env = started["arguments"], started["env"]
+        self.assertEqual(Path(arguments[0]).name, self.build_product.prepare_host.GODOT_EXE)
+        self.assertEqual(arguments[arguments.index("--path") + 1], str(self.build / "shell" / "project"))
+        self.assertEqual(env["M600_BUILD_IDENTITY"], product["identity"])
+        self.assertEqual(env["M600_ASSETS"], str(self.build / "assets"))
+        self.assertEqual(env["M600_EVENTS_DIR"], str(out.resolve()))
+        self.assertEqual(env["M600_RUN_ID"], "r1")
+        self.assertNotIn("M600_INPUT_ECHO", env)
+        record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
+        self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"]),
+                         ("magic600-c9-launch-v1", product["identity"], 0, False))
+        self.assertNotIn(str(self.temp), json.dumps(record))
+        self.assertNotIn(str(self.temp).replace("\\", "/"), json.dumps(record))
+
+    def test_inherited_shell_variables_are_dropped(self):
+        product = self.build_product.verify(self.build)
+        env = self.launch.environment(product, self.build, self.temp / "run", "r1", False,
+                                      base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p"})
+        self.assertNotIn("M600_INPUT_ECHO", env)
+        self.assertNotIn("m600_core_dll", env)
+        self.assertEqual(env["PATH"], "p")
+        self.assertEqual(env["M600_CORE_DLL"], str(self.build / "native" / "sa2_interop.dll"))
 
 
 if __name__ == "__main__":
