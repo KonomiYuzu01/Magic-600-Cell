@@ -808,6 +808,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     kernel), all 600 centres under every generator, Strict against a scan that derives every prefix, and the set's
     refusals; `tests/load.rs` checks KN1.4 for both piece calls on a second model. The critical-path read is recorded
     with the slot action (M5's section).
+  - The structure rows (draft, for LP3's C6, step 1 item 3): `compare_cells(first, second)` gives the fewest face steps
+    between two cells (`structure.compare`), and `cell_layers(cell)` and `layer_counts(cell, layer)` the positions and
+    slots of each breadth-first layer around a cell (`filter.preview`'s counts for a layer predicate), as 0.4's
+    `cell_distances` and `layer_mask` give them: a position with a home slot in a cell of the layer counts whole, so
+    layers overlap. Two cells share a face when they share three vertices, read from the 120 vertex pieces; the load
+    checks the graph. The rows read no state. A bad cell or layer is `KN2:input.named_object_invalid` with the text of
+    0.4's `cell_mask` or `layer_mask`.
+    `CommandLayer::compare_cells`, `cell_layers` and `layer_counts` read them at the head and, like
+    `CommandLayer::positions`, refuse with Jumble on (LG2.8). `c600-kernel/tests/structure.rs` checks every step count
+    and every layer's counts against digests taken from 0.4's `core.py` on the same assets.
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
