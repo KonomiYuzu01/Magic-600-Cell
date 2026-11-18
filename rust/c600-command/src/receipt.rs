@@ -52,6 +52,11 @@ pub mod code {
     pub const ROW_NOT_BUILT: &str = "KN5:input.row_not_built";
     pub const OVERLAY_ROW_CONFLICT: &str = "KN5:input.overlay_row_conflict";
     pub const SESSION_EXISTS: &str = "KN4:input.session_exists";
+    /// A journal action that no solver action could have made, met at a reopen's replay: a commit whose caller is not
+    /// the shell, a commit that moves a protected orbit under the protection and policy then in force, or a release of
+    /// a protected orbit without its confirmation (finding B7 of the KN5 boundary attack; the owner's reading of
+    /// 18 November 2026). The session opens in read-only recovery before it (KN5.23).
+    pub const UNADMITTED_JOURNAL_ACTION: &str = "KN5:consistency.unadmitted_journal_action";
 }
 
 /// An error with its chapter 13 code.
