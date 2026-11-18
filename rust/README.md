@@ -311,6 +311,28 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   word (LB3.5) (`c600-syntax/tests/loops.rs`, `c600-check/tests/built_in.rs`).
 - A chain of `let`s is checked in a loop, so a long straight-line body does not deepen the checker's recursion, and a
   finding inside the chain keeps its nested path (`c600-check/tests/let_chains.rs`).
+- Stage modules (LP2 draft until the IR freeze; RPI.68 to RPI.71, RPI.75, LG2.24, LG3.17, LG5.12). A module has a
+  kind (`Module::kind`): a program module, or a stage (`ModuleKind::Stage`) with its kind, `vertex` or `fragment`,
+  its declared `ops` and `overdraw` and its array inputs with their lengths. In source a stage's header is
+  `stage vertex lens ops 16 overdraw 1 inputs [knots: 4];` in place of `module ... requires [...];`, and the eleven
+  stage operations (`Prim::Stage`: `approx_sub`, `approx_mul`, `approx_div`, `approx_neg`, `approx_abs`,
+  `approx_sqrt`, `approx_sin`, `approx_cos`, `approx_exp2`, `approx_log2` and `exclude`) lower only there. `check`
+  applies the stage checker's structural rules to every stage module, alike under every profile, and the ordinary
+  checker walks no stage body: binary32 only, with literals that are exact binary32 values; no capability; a plain
+  `fn` with no effect; `index` of a declared array at a literal position below its length; `repeat` with a literal
+  count; calls of stage functions of the same kind only, and no recursion; `exclude` only in a vertex stage, with a
+  positive literal radius; and no `if`, `match`, closure, collection, clock, file, randomness, budget, snapshot,
+  workspace, preview or view. Each refusal is `LG2:type.stage_rule_violation`, apart from a base-type mismatch
+  (`LG2:type.mismatch`). A program that calls a stage function or holds one as a value is refused there, `admit` and
+  `admit_built_in` refuse a stage function as a run's entry, and the interpreter loads no stage module.
+  `admit_stage(program, module, entry, limits)` alone makes a `CheckedStage`: it adds the entry's rules (exported,
+  takes every declared array, returns `record { x, y, z }` in a vertex stage and `record { r, g, b }` in a fragment
+  stage) and the host's `StageLimits` (enabled tiers, RM.38's weights, the loop count and nesting bounds, and the
+  `ops` and `overdraw` bounds, with the declared `ops` at least the weighted count of the expanded chain). The weights
+  and bounds are test values until RM.38 is measured (RPI.79). Not built here: the raster bound, the ID pass, the host
+  statuses, quarantine and compilation (RPI.72, RPI.75 to RPI.78), which are the adapter's and the host's
+  (`c600-check/tests/stages.rs`: CT-LG3-10 whole and parts of CT-LG2-15; `c600-syntax/tests/stages.rs`: parts of
+  CT-LG5-08).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -1371,11 +1393,12 @@ run or not applicable is no pass (PHS.63).
     the correction catalogue with the research library (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, as `tools/language/ct_index.py --summary` prints it
-  (`tests/test_ct_index.py` checks the tool): 85 whole, eleven of them by the union of their parts (CT-KN1-04,
-  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22);
-  134 part; 4 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and
-  CT-LI-10); none missing; 25 waiting, each with what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  M6's record layer with its run record and jumbling records, and the stage checker, as
+  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 86 whole, eleven of
+  them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01,
+  CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 136 part; 4 named only by LP3's command-layer tests, as parts
+  without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 22 waiting, each with what it waits
+  for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1453,7 +1476,6 @@ run or not applicable is no pass (PHS.63).
   - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
     (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
     `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
-  - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
     part (M4's section).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
