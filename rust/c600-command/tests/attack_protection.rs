@@ -10,6 +10,7 @@ use c600_command::{
     code, draft_args, CommandLayer, Direction, HeadlessFrames, MemoryStore, Receipt, Secret, Shell, Status, Table,
     TransactionKind, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW,
 };
+use c600_jumble::codes::PIECE_WOULD_MOVE;
 use c600_jumble::twist::Menu;
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
@@ -141,9 +142,10 @@ impl Fixture {
 ///
 /// Orbit 0 is protected, and with Jumble off the retained item 1 is refused: it would move orbit 0. Three presses
 /// later the same item's labels are the head state, orbit 0 is still in the protected set, no press was refused and
-/// none asked for a release: `jumble.on`, the same item as a pose move, `jumble.off`. The crate documents the cause as
-/// a draft (a pose move is judged with no protected piece, and the exit checks no protected orbit), and two existing
-/// tests pin it (`protection_judges_a_retained_item_and_no_pose`, `refusals_follow_the_exit_order_and_change_nothing`).
+/// none asked for a release: `jumble.on`, the same item as a pose move, `jumble.off`. The crate documented the cause as
+/// a draft (a pose move was judged with no protected piece, and the exit checks no protected orbit), and two tests
+/// pinned it (in `jumble_twist_menu.rs`, now `protection_judges_a_retained_item_and_a_pose_move`, and
+/// `refusals_follow_the_exit_order_and_change_nothing` in `jumble_off.rs`).
 ///
 /// The assertion is the part both readings of the frozen text share. Reading 1 (the gate's): the pose move is refused.
 /// Reading 2 (the draft's, "no label-to-pose transport"): the label-level protection has no force inside Jumble, and
@@ -153,8 +155,13 @@ impl Fixture {
 /// `KN2:protection.orbit_would_move`; then the entry, the pose move and the exit all answer `committed`; the entry's
 /// journal row keeps orbits `[0]` with `confirm: false`; the head digest is no longer the solved digest and the
 /// protected set is still `[0]`.
+///
+/// Fixed under the owner's reading of 18 November 2026 (decision 2: protection holds inside Jumble, KN1.11, JI.5;
+/// JI.27's alternative is not taken): a pose move is derived with the jumbling engine's pieces that carry the protected
+/// orbits as pose-protected pieces, so under Net and under Strict the pose move is refused with the engine's
+/// `KN2:protection.piece_would_move` and the round trip stops there: the entry and the exit commit, no pose move is
+/// journalled and the head ends at the solved digest.
 #[test]
-#[ignore = "B5: fails on 4c20ce30, a round trip through Jumble moves a protected orbit with no refusal or release"]
 fn b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit() {
     let mut bypassed = Vec::new();
     for policy in ["net", "strict"] {
@@ -170,8 +177,13 @@ fn b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit() {
         let entry = f.cross(JUMBLE_ON_ROW);
         let moved = f.menu_twist(&item(1));
         let exit = f.cross(JUMBLE_OFF_ROW);
+        assert_eq!(moved.status.code(), Some(PIECE_WOULD_MOVE), "{policy}: the pose move moves orbit 0's pieces");
+        assert_eq!(f.layer.revision().digest, solved, "{policy}: the round trip moved nothing");
 
+        assert!(committed(&entry) && committed(&exit), "{policy}: the entry and the exit commit");
         let log = &f.layer.store().log;
+        let journalled = log.iter().any(|t| t.kind == TransactionKind::JumbleMove);
+        assert!(!journalled, "{policy}: no pose move is journalled");
         let entered = log.iter().find(|t| t.kind == TransactionKind::Crossing);
         let released = entered.is_some_and(|t| t.confirm || !t.orbits.contains(&0));
         let round_trip = committed(&entry) && committed(&moved) && committed(&exit);
