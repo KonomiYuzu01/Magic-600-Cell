@@ -470,11 +470,11 @@ fn filter_apply_stays_not_built_with_the_other_five_served() {
     }
 }
 
-/// A running program may not invoke a served workspace row: a run reaches no workspace-kind row (draft; finding B3 of
-/// the KN5 boundary attack), so the layer refuses `set.save` on the program's channel with
-/// `LG3:capability.not_granted`, as it refuses `workspace.set`, admits no job, and nothing is written or moved. The
-/// host's own refusal of a running program's job (its arguments carry no blocks, which BND.22 needs) is no longer
-/// reached for this row. Covers no conformance ID: it pins the layer's draft until the owner reads ONE.52.
+/// A running program may not invoke a served workspace row: a run reaches no workspace-kind row (finding B3 of the KN5
+/// boundary attack; ONE.52, the owner's reading of 18 November 2026), so the layer refuses `set.save` on the program's
+/// channel with `LG3:capability.not_granted`, as it refuses `workspace.set`, admits no job, and nothing is written or
+/// moved. The host's own refusal of a running program's job (its arguments carry no blocks, which BND.22 needs) is no
+/// longer reached for this row. Covers no conformance ID.
 #[test]
 fn a_running_program_cannot_invoke_a_served_workspace_row() {
     let mut session = session();

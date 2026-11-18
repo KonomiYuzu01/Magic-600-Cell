@@ -166,7 +166,10 @@ impl Session {
                 answer(self.shell.invoke(&mut self.layer, "protection.orbit.set", args))
             }
             Op::Policy(strict) => {
-                let args = json::object([("policy", text(if *strict { "strict" } else { "net" }))]);
+                let args = json::object([
+                    ("confirm", Value::Bool(true)),
+                    ("policy", text(if *strict { "strict" } else { "net" })),
+                ]);
                 answer(self.shell.invoke(&mut self.layer, POLICY_ROW, args))
             }
             Op::Job(name, letter) => {
