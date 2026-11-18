@@ -2662,12 +2662,13 @@ run or not applicable is no pass (PHS.63).
 ## Status of LP3, C9 measurement: LX-2's metered and forced-kill half
 
 - `c600-lx2-faults --runtime <c600-runtime binary> [--sessions <new folder>] [--assets <folder>] [--out <record.json>]`
-  runs four trials on `c600-runtime`'s parent
+  runs five trials on `c600-runtime`'s parent
   API against the child binary it is given, so the decisive runs use the product build's runtime unchanged. Every job
   first proposes SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
 - `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
   `recursion_metered` (endless recursion, 1 MiB) ends `KN7:budget.memory`, since the meter charges a frame as memory
-  and has no recursion dimension; `forced_kill` kills the child's process inside the proposal's perform (the barrier)
+  and has no recursion dimension; `alloc_metered` (a list grown with `push`, 64 KiB, kept small because each `push`
+  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform (the barrier)
   and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is
   still the runtime word and the same runtime completes the control again, in a fresh child only after the kill. The
   metered trials and the control also run in process, and the two executors agree.

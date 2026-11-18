@@ -30,7 +30,7 @@ fn the_control_commits_three_words_and_a_reopen_replays_its_state() {
 #[test]
 fn each_fault_leaves_the_journal_and_the_state_of_the_control_and_the_session_open() {
     let c = control("faults");
-    for trial in [Trial::LoopMetered, Trial::RecursionMetered, Trial::ForcedKill] {
+    for trial in [Trial::LoopMetered, Trial::RecursionMetered, Trial::AllocMetered, Trial::ForcedKill] {
         let r = run("faults", trial);
         let differs: Vec<_> = r.journal.iter().zip(&c.journal).filter(|(a, b)| a != b).take(2).collect();
         assert!(

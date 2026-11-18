@@ -9,6 +9,8 @@
 //!   with `KN7:budget.steps`;
 //! - `recursion_metered` recurses without end until its live frames reach the memory limit (1 MiB) and the meter cuts
 //!   it off with `KN7:budget.memory` (the meter has no separate recursion dimension: a frame is charged as memory);
+//! - `alloc_metered` grows a list with `push` in a `repeat` loop until the meter's memory limit (64 KiB, kept small
+//!   because each `push` copies the list) cuts it off with `KN7:budget.memory`;
 //! - `forced_kill` has the caller kill the child's actual process (`Killer`, `Child::kill`) inside the proposal's
 //!   perform, the barrier; the parent must report a typed `Lost` fault.
 //!
@@ -40,6 +42,8 @@ pub const FORMAT: &str = "magic600-c9-lx2-faults-v1";
 pub const RUNTIME_WORD: [i32; 3] = [7, -11, 1200];
 pub const STEP_LIMIT: u128 = 100_000;
 pub const MEMORY_LIMIT: u128 = 1 << 20;
+/// The allocation trial's memory limit.
+pub const ALLOC_LIMIT: u128 = 1 << 16;
 /// The wall-clock safety stop of one run; a trial that reaches it has failed.
 pub const DEADLINE: Duration = Duration::from_secs(60);
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
@@ -51,6 +55,7 @@ pub enum Trial {
     Control,
     LoopMetered,
     RecursionMetered,
+    AllocMetered,
     ForcedKill,
 }
 
@@ -75,13 +80,15 @@ impl Observed {
 }
 
 impl Trial {
-    pub const ALL: [Trial; 4] = [Trial::Control, Trial::LoopMetered, Trial::RecursionMetered, Trial::ForcedKill];
+    pub const ALL: [Trial; 5] =
+        [Trial::Control, Trial::LoopMetered, Trial::RecursionMetered, Trial::AllocMetered, Trial::ForcedKill];
 
     pub fn name(self) -> &'static str {
         match self {
             Trial::Control => "control",
             Trial::LoopMetered => "loop_metered",
             Trial::RecursionMetered => "recursion_metered",
+            Trial::AllocMetered => "alloc_metered",
             Trial::ForcedKill => "forced_kill",
         }
     }
@@ -95,6 +102,9 @@ impl Trial {
                 "    return repeat(1000000000000, 0, fn(acc: Nat) -> Nat {\n        return exact_add(acc, 1);\n    });\n"
             }
             Trial::RecursionMetered => "    return down(0);\n",
+            Trial::AllocMetered => {
+                "    let grown = repeat(1000000000000, list<Nat>(), fn(done: List<Nat>) -> List<Nat> {\n        return push(done, length(done));\n    });\n    return length(grown);\n"
+            }
         };
         let down = match self {
             Trial::RecursionMetered => "\nfn down(n: Nat) -> Nat effects [] {\n    return down(exact_add(n, 1));\n}\n",
@@ -107,6 +117,7 @@ impl Trial {
         match self {
             Trial::LoopMetered => Amounts { steps: STEP_LIMIT, ..WIDE },
             Trial::RecursionMetered => Amounts { memory: MEMORY_LIMIT, ..WIDE },
+            Trial::AllocMetered => Amounts { memory: ALLOC_LIMIT, ..WIDE },
             _ => WIDE,
         }
     }
@@ -126,7 +137,7 @@ impl Trial {
         match self {
             Trial::Control => Observed::Completed,
             Trial::LoopMetered => Observed::CutOff(code::STEPS),
-            Trial::RecursionMetered => Observed::CutOff(code::MEMORY),
+            Trial::RecursionMetered | Trial::AllocMetered => Observed::CutOff(code::MEMORY),
             Trial::ForcedKill => Observed::Fault(FaultKind::Lost, c600_runtime::parent::RUNTIME_LOST),
         }
     }
@@ -266,7 +277,7 @@ pub fn record_json(
         .collect();
     let agrees = records.iter().all(Record::agrees) && session::all_agree(sessions);
     format!(
-        "{{\n  \"format\": \"{FORMAT}\",\n  \"runtime\": {{\"file\": \"{}\", \"sha256\": \"{runtime_sha256}\", \"injection_device\": null}},\n  \"limits\": {{\"steps\": {STEP_LIMIT}, \"memory_bytes\": {MEMORY_LIMIT}, \"deadline_ms\": {}}},\n  \"evidence\": \"source and synthetic unless run on the owner's machine with the product build's runtime\",\n  \"agrees\": {agrees},\n  \"trials\": [\n{}\n  ],\n  \"sessions\": {}\n}}\n",
+        "{{\n  \"format\": \"{FORMAT}\",\n  \"runtime\": {{\"file\": \"{}\", \"sha256\": \"{runtime_sha256}\", \"injection_device\": null}},\n  \"limits\": {{\"steps\": {STEP_LIMIT}, \"memory_bytes\": {MEMORY_LIMIT}, \"alloc_memory_bytes\": {ALLOC_LIMIT},\"deadline_ms\": {}}},\n  \"evidence\": \"source and synthetic unless run on the owner's machine with the product build's runtime\",\n  \"agrees\": {agrees},\n  \"trials\": [\n{}\n  ],\n  \"sessions\": {}\n}}\n",
         runtime_name.replace(['"', '\\'], "_"),
         DEADLINE.as_millis(),
         rows.join(",\n"),
