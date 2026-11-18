@@ -14,7 +14,7 @@ use c600_command::{
     Invocation, Kind, MemoryStore, Overlay, PreviewState, Receipt, Secret, Shell, Status, Table, Transaction,
     TransactionKind, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW, TWIST_ROW,
 };
-use c600_jumble::codes::{MENU_WORD_NEEDS_JUMBLE_ON, WORD_BLOCKED_PREFIX};
+use c600_jumble::codes::{MENU_WORD_NEEDS_JUMBLE_ON, PIECE_WOULD_MOVE, WORD_BLOCKED_PREFIX};
 use c600_jumble::levels::{self, Base};
 use c600_jumble::q5::transpose;
 use c600_jumble::rotation;
@@ -460,13 +460,17 @@ fn with_jumble_off_an_item_dispatches_by_its_kind() {
     assert_eq!(kinds, [TransactionKind::Commit, TransactionKind::Crossing, TransactionKind::JumbleMove]);
 }
 
-/// KN2.4, KN2.7 and the draft rulings in `src/lib.rs` on pose protection. With Jumble off a retained item's word is
-/// judged under the protection set and policy in force, so with orbit 0 protected item 1 is
-/// `KN2:protection.orbit_would_move` under Net and under Strict, with nothing changed. No row sets pose-protected
-/// pieces and a label verdict grants no pose protection (chapter 03), so with Jumble on the same item is a pose move
-/// that commits under both policies, and the protected orbits stay.
+/// KN2.4, KN2.7, KN1.11, JI.5 and the owner's reading of 18 November 2026 for finding B5 (protection holds inside
+/// Jumble). With Jumble off a retained item's word is judged under the protection set and policy in force, so with
+/// orbit 0 protected item 1 is `KN2:protection.orbit_would_move` under Net and under Strict, with nothing changed. With
+/// Jumble on the same item is a pose move, judged at the pose level (`m_A(w) = 1`) on the jumbling engine's pieces that
+/// carry orbit 0: the engine's `KN2:protection.piece_would_move` under both policies, naming a piece of orbit 0, with
+/// nothing changed. No label verdict crosses into Jumble (chapter 03, KN1.11); the pose verdict is the engine's own.
+/// From solved, item 1 moves pieces of every orbit, so the protected piece moves only after a release the solver
+/// confirmed (LI.26): unconfirmed, the release is `KN5:input.confirmation_required`; confirmed inside Jumble, the same
+/// pose move commits under both policies.
 #[test]
-fn protection_judges_a_retained_item_and_no_pose() {
+fn protection_judges_a_retained_item_and_a_pose_move() {
     for policy in ["net", "strict"] {
         let mut f = fixture(&[0]);
         if policy == "strict" {
@@ -475,11 +479,52 @@ fn protection_judges_a_retained_item_and_no_pose() {
         let press = f.press(&item(1));
         f.refused(press, code::ORBIT_WOULD_MOVE, policy);
         assert!(committed(&f.enter()), "{policy}");
+        let press = f.press(&item(1));
+        let refused = f.refused(press, PIECE_WOULD_MOVE, &format!("{policy}: a pose move of orbit 0's pieces"));
+        let Status::Refused(error) = &refused.status else { panic!("{policy}: a refusal") };
+        let piece = error.detail.rsplit(' ').next().and_then(|piece| piece.parse::<usize>().ok());
+        let piece = piece.unwrap_or_else(|| panic!("{policy}: the refusal names a piece: {}", error.detail));
+        assert_eq!(ctx().model.orbit_id[piece], 0, "{policy}: the refused piece {piece} carries orbit 0");
+
+        let none = || json::object([("orbits", Value::Array(Vec::new()))]);
+        let unconfirmed = f.shell.prepare(&f.layer, "protection.orbit.set", none()).unwrap();
+        f.refused(unconfirmed, code::CONFIRMATION_REQUIRED, &format!("{policy}: an unconfirmed release"));
+        let Value::Object(mut confirmed) = none() else { panic!("an object") };
+        confirmed.insert("confirm".into(), Value::Bool(true));
+        let released = f.shell.invoke(&mut f.layer, "protection.orbit.set", Value::Object(confirmed)).unwrap();
+        assert!(completed(&released), "{policy}: {:?}", released.status);
         let receipt = f.menu_twist(&item(1));
         assert!(committed(&receipt), "{policy}: {:?}", receipt.status);
         assert_eq!(f.layer.revision().digest, poses(&[resolved(&item(1))]), "{policy}");
-        assert_eq!(f.layer.store().log.last().unwrap().orbits, [0], "{policy}");
+        assert!(f.layer.protected().orbits().is_empty(), "{policy}");
     }
+}
+
+/// Findings B7 and B5 (the owner's readings of 18 November 2026): a reopen judges a stored pose move again under the
+/// protected orbits in force at its place in the journal, since the replay derives it as the live move does. A journal
+/// whose pose move moved orbit 0 while no orbit was protected reopens intact. The same journal edited so that orbit 0
+/// is protected from the session's start, which the live layer would have refused, reopens in read-only recovery
+/// before the pose move with the engine's `KN2:protection.piece_would_move` (a stored commit's refusal is B7's draft
+/// `KN5:consistency.unadmitted_journal_action`; the replay passes a pose move's on as the engine gives it).
+#[test]
+fn a_reopen_judges_a_stored_pose_move_under_the_protection_in_force() {
+    let mut f = entered(&[]);
+    let at_entry = f.layer.revision().clone();
+    assert!(committed(&f.menu_twist(&item(1))));
+    let honest = f.layer.store().clone();
+    let reopened = reopen_store(honest.clone(), Some(pinned()));
+    assert!(reopened.layer.recovery().is_none(), "the honest journal: {:?}", reopened.layer.recovery());
+
+    let mut edited = honest;
+    edited.genesis.as_mut().expect("a genesis").orbits = vec![0];
+    for transaction in &mut edited.log {
+        transaction.orbits = vec![0];
+    }
+    let reopened = reopen_store(edited, Some(pinned()));
+    let recovery = reopened.layer.recovery().expect("the edited journal reopens in read-only recovery");
+    assert_eq!(recovery.code, PIECE_WOULD_MOVE, "{recovery:?}");
+    let r = reopened.layer.revision();
+    assert_eq!((&r.head, &r.digest), (&at_entry.head, &at_entry.digest), "the recovery is before the pose move");
 }
 
 /// The input refusals of `input_refusals_change_nothing` that answer the same in both modes, at the revision `now`.
@@ -580,9 +625,10 @@ fn input_refusals_change_nothing() {
 /// order: the pinned menu (`KN5:input.row_not_built`, also for LP3's placeholder arguments) and the input before the
 /// token; then the token, the commit lane and the token's binding; then the named revision, which is current only if
 /// every field is equal (EV4.14), so a workspace completion makes a press stale, unlike a `twist.apply` press, and the
-/// token's state and protection revisions; then the head hash; then, for a retained item, the protection gate. With
-/// Jumble on a press from before the entry or before a pose move is stale too, and a held lane refuses a pose move. The
-/// head hash is provoked with Jumble off only: no fault hook replaces the poses.
+/// token's state and protection revisions; then the head hash; then protection: a retained item's label gate, or a
+/// pose move's pose verdict in the jumbling engine (finding B5; `protection_judges_a_retained_item_and_a_pose_move`).
+/// With Jumble on a press from before the entry or before a pose move is stale too, and a held lane refuses a pose
+/// move. The head hash is provoked with Jumble off only: no fault hook replaces the poses.
 #[test]
 fn refusals_follow_the_commit_order() {
     let mut f = unpinned(&[]);
@@ -642,6 +688,10 @@ fn refusals_follow_the_commit_order() {
     f.refused(press, code::STATE_HASH_MISMATCH, "a head that differs");
     f.layer.fault_replace_head(head);
 
+    // A pose move cannot move a protected orbit's pieces (finding B5), so the pose moves below come after a release
+    // of orbit 0 that the solver confirmed.
+    let none = json::object([("confirm", Value::Bool(true)), ("orbits", Value::Array(Vec::new()))]);
+    assert!(completed(&f.shell.invoke(&mut f.layer, "protection.orbit.set", none).unwrap()));
     let stale = f.press(&item(12));
     assert!(committed(&f.enter()));
     f.refused(stale, code::REVISION_CHANGED, "a press from before the entry");

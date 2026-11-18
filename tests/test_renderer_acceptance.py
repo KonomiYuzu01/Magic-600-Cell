@@ -4,8 +4,10 @@ The harness runs only on Windows with Godot, PresentMon and a Direct3D 12 device
 the Python standard library, start no process, and run anywhere. They check that:
 - every source digest in renderer/acceptance/PROVENANCE.md still matches the selection evidence under
   work/experiments/, every "verbatim" file equals its source, and the table lists exactly the harness files;
-- the Godot project's interop layer (project/Native.cs) matches the core's ABI 3 header
-  renderer/core/include/sa2_interop.h: struct layouts on x64, constants, and every entry point's signature;
+- the Godot project's interop layer (project/Native.cs) matches the core's ABI 4 header
+  renderer/core/include/sa2_interop.h: the x64 layout of every struct it declares, its constants, and the
+  signature of every entry point it imports; it declares every ABI 1 to 3 struct and imports every ABI 1 to 3
+  call (the harness uses no ABI 4 call);
 - the injection, menu and scene lists agree across the header, the project and the run script;
 - the run finalizer accepts small synthetic W-J and W3 runs and checks, refuses or fails broken ones, and
   writes records that the unchanged renderer gate (tools/perf/renderer_gate.py) judges as the evidence was.
@@ -156,7 +158,15 @@ class DataTests(unittest.TestCase):
 
 C_SCALARS = {"uint32_t": (4, 4), "int32_t": (4, 4), "uint64_t": (8, 8), "double": (8, 8)}
 CS_FIELD_TYPES = {"uint": "uint32_t", "int": "int32_t", "ulong": "uint64_t", "double": "double", "byte*": "pointer"}
-CS_SCALARS = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong", "double": "double"}
+CS_SCALARS = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong", "double": "double", "uint8_t": "byte"}
+ABI4_SECTION = "\n/* ABI 4 product API"
+
+
+def abi1_to_3(header: str) -> str:
+    """The header before its ABI 4 product section: the ABI 1 to 3 declarations and structs."""
+    if header.count(ABI4_SECTION) != 1:
+        raise AssertionError("the header must open its ABI 4 section exactly once")
+    return header[:header.index(ABI4_SECTION)]
 
 
 def camel(name: str) -> str:
@@ -219,10 +229,11 @@ def header_functions(header: str) -> dict[str, list[str]]:
         returns, name, parameters = match.groups()
         types = []
         for parameter in ([] if parameters == "void" else parameters.split(",")):
-            parsed = re.fullmatch(r"(?:const )?(\w+)(\**) \w+", " ".join(parameter.split()))
+            parsed = re.fullmatch(r"(?:const )?(\w+)(\**) \w+(\[\d+\])?", " ".join(parameter.split()))
             if not parsed:
                 raise AssertionError(f"unparsed parameter {parameter!r} of {name}")
-            base, stars = parsed.groups()
+            base, stars, array = parsed.groups()
+            stars += "*" if array else ""  # an array parameter is a pointer
             if base == "sa2_context":
                 types.append("nint" + stars[1:])  # the opaque context handle is a pointer
             elif base == "char":
@@ -246,15 +257,22 @@ class InteropTests(unittest.TestCase):
 
     def test_structs_match_the_header_on_x64(self):
         header, native = header_structs(self.header), cs_structs(self.native)
-        self.assertEqual(len(header), 5)
-        self.assertEqual(sorted(native), sorted(camel(name) for name in header), "struct set")
+        earlier = header_structs(abi1_to_3(self.header))
+        self.assertEqual(len(earlier), 5, "the ABI 1 to 3 structs")
+        self.assertEqual(sorted({camel(name) for name in earlier} - native.keys()), [],
+                         "Native.cs declares every ABI 1 to 3 struct")
+        by_managed = {camel(name): name for name in header}
+        self.assertEqual(len(by_managed), len(header))
+        self.assertEqual(sorted(native.keys() - by_managed.keys()), [], "every struct of Native.cs is in the header")
         self.assertEqual(self.native.count("struct Sa2"), len(native), "every struct is sequential")
-        asserted = dict(re.findall(r"static_assert\(sizeof\((\w+)\) == (\d+),", self.header))
-        self.assertEqual(sorted(asserted), ["sa2_scene_config", "sa2_wj_config"])
+        pattern = r"static_assert\(sizeof\((\w+)\) == (\d+),"
+        asserted = dict(re.findall(pattern, self.header))
+        self.assertEqual(sorted(dict(re.findall(pattern, abi1_to_3(self.header)))), ["sa2_scene_config", "sa2_wj_config"])
         constants = dict(re.findall(r"public const int (\w+Size) = (\d+);", self.native))
-        for name, fields in header.items():
+        for managed_name, managed in sorted(native.items()):  # only the structs Native.cs declares
+            name = by_managed[managed_name]
+            fields = header[name]
             with self.subTest(struct=name):
-                managed = native[camel(name)]
                 self.assertEqual([(n.casefold(), kind, count) for n, kind, count in managed],
                                  [(n.casefold(), kind, count) for n, kind, count in fields])
                 _, size = x64_layout(fields)
@@ -278,25 +296,28 @@ class InteropTests(unittest.TestCase):
                   if re.fullmatch(r"SA2_(ABI_VERSION|OK|E_\w+|QUEUE_\w+|BARRIERS_\w+|STATE_\w+|SCENE_NO_VRAM)", name)}
         self.assertEqual(sorted(wanted - {name for _, name, _ in constants}), [])
 
-    def test_abi_version_3_is_required(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["3u"])
-        self.assertIn("public const uint SA2_ABI_VERSION = 3;", self.native)
+    def test_abi_version_4_is_required(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["4u"])
+        self.assertIn("public const uint SA2_ABI_VERSION = 4;", self.native)
         self.assertIn("if (sa2_abi_version() != SA2_ABI_VERSION)", self.native)
         loads = re.findall(r'Export\("(\w+)"\)', self.native)
         self.assertEqual(loads[0], "sa2_abi_version", "the version is checked before any other export")
 
     def test_entry_points_match_the_header(self):
         functions = header_functions(self.header)
-        self.assertEqual(len(functions), 29)
-        self.assertTrue({"sa2_scene_load_wj", "sa2_scene_lattice_check"} <= functions.keys())
-        fields = {name: split_types(arguments) for arguments, name in
-                  re.findall(r"public readonly delegate\* unmanaged\[Cdecl\]<([^>]*)> (\w+);", self.native)}
-        self.assertEqual(sorted(fields), sorted(functions), "delegate fields")
-        for name, types in functions.items():
+        earlier = header_functions(abi1_to_3(self.header))
+        self.assertEqual(len(earlier), 29, "the ABI 1 to 3 calls")
+        self.assertTrue({"sa2_scene_load_wj", "sa2_scene_lattice_check"} <= earlier.keys())
+        declared = re.findall(r"public readonly delegate\* unmanaged\[Cdecl\]<([^>]*)> (\w+);", self.native)
+        fields = {name: split_types(arguments) for arguments, name in declared}
+        self.assertEqual(len(fields), len(declared), "one delegate field per entry point")
+        self.assertEqual(sorted(earlier.keys() - fields.keys()), [], "Native.cs imports every ABI 1 to 3 call")
+        self.assertEqual(sorted(fields.keys() - functions.keys()), [], "every import is declared in the header")
+        for name, types in fields.items():
             with self.subTest(function=name):
-                self.assertEqual(fields[name], types)
+                self.assertEqual(types, functions[name])
         loads = re.findall(r'(\w+) = \(delegate\* unmanaged\[Cdecl\]<([^>]*)>\)Export\("(\w+)"\);', self.native)
-        self.assertEqual(sorted(name for name, _, _ in loads), sorted(functions), "each export loaded once")
+        self.assertEqual(sorted(name for name, _, _ in loads), sorted(fields), "each export loaded once")
         for name, arguments, export in loads:
             with self.subTest(load=name):
                 self.assertEqual(export, name)

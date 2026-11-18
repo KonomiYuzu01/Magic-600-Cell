@@ -65,6 +65,11 @@
 //! - ONE.52: a run invokes no row that writes a workspace record, even a run that a solver command started (below).
 //!   The records a workspace row's own job returns are written in that row's completion, and only the solver invokes
 //!   that row.
+//! - Finding B5 (KN1.11, JI.5; JI.27's alternative is not taken): protection holds inside Jumble, so a round trip
+//!   through Jumble cannot move a protected orbit. A pose move is derived with the jumbling engine's pieces that carry
+//!   the protected orbits as pose-protected pieces, and one that would move such a piece is refused with the engine's
+//!   `KN2:protection.piece_would_move` (below). The verdict is the engine's own pose verdict, so no label verdict
+//!   crosses into Jumble (chapter 03).
 //!
 //! # Drafts
 //!
@@ -220,9 +225,19 @@
 //!     its kind `jumble_move` (FP.31; [`TransactionKind::JumbleMove`]) and keeps its `rotation`, its literal is the
 //!     engine's `Digest<literal word>` of the twist, and its `pre` and `post` are pose digests. The move is a node of
 //!     the move tree that holds the twist; the state revision advances and the mode stays.
-//!   - Pose protection. No row sets pose-protected pieces, and a label verdict grants no pose protection (chapter 03:
-//!     no label-to-pose transport), so a pose move is judged with no protected piece; the protected orbits stay as
-//!     they are and judge retained moves only.
+//!   - Pose protection (finding B5, the owner's reading of 18 November 2026). A pose move is derived under the policy
+//!     in force with the jumbling engine's pieces that carry the protected orbits as pose-protected pieces
+//!     (`jumble::protected_pieces`: both models read `slot_piece` and `orbit_id` from `assets/model.npz`, so the pieces
+//!     of orbit o are those whose `orbit_id` is o). One that would move such a piece is the engine's
+//!     `KN2:protection.piece_would_move` and changes nothing. The engine judges the pieces at the pose level
+//!     (`m_A(w) = 1`, KN1.11), which is stricter than the label verdict, so no label verdict crosses into Jumble
+//!     (chapter 03: no label-to-pose transport) and a round trip through Jumble moves no protected orbit. From solved,
+//!     each item at grips 0 and 1 of the pinned menu moves pieces of all 35 orbits, so while an orbit is protected such
+//!     a pose move commits only after the solver releases the orbit, with a confirmation (LI.26). A replay of poses the
+//!     session already holds (an entry's witness, an exit's suffix, the flat replay of the journal) judges no piece:
+//!     each move in it was judged when it was made. A reopen derives a stored pose move as the live move does, under
+//!     the protection in force at its place in the journal, so one that would move a protected piece leaves the layer
+//!     in read-only recovery before it with the engine's code.
 //!   - The jumbling engine nests each derivation's reachability evidence in the next, and a chain of some hundreds of
 //!     derivations overflows a thread's stack. After 64 chained moves the layer replays the jumbling journal flat from
 //!     solved instead (the retained letters of the path's commits, then the pose moves' twists), which must reach the
@@ -233,9 +248,9 @@
 //!   - A reopen with [`CommandLayer::open_with_menu`] replays each jumble move's recorded exact twist (KN3.9), which
 //!     must be an item of the pinned menu, and must reach its recorded poses; [`CommandLayer::open`] stops before the
 //!     crossing already.
-//!   - Drafts for LP3's amendment list (PHS.52): the `letter` form, the journal kind `jumble_move`, the empty
-//!     pose-protected set, the chain bound and the flat replay, the undo by the exact inverse, the identity item's
-//!     code in both modes, and the order of the checks.
+//!   - Drafts for LP3's amendment list (PHS.52): the `letter` form, the journal kind `jumble_move`, the chain bound
+//!     and the flat replay, the undo by the exact inverse, the identity item's code in both modes, and the order of
+//!     the checks.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
 //!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
 //!   `KN2:consistency.star_certificate`.

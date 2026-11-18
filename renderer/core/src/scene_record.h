@@ -29,7 +29,7 @@ std::vector<uint32_t> scene_slot_pieces(); // W1..W4's slot -> piece map for the
 wj::Assets wj_assets(const std::string& menu, const std::filesystem::path& data);
 wj::PoseState wj_injected(const wj::Assets& assets, const std::string& injection); // poses[0] as uploaded at turn 20
 std::filesystem::path module_path();
-const std::array<const char*, 5>& shader_names();
+const std::array<const char*, 8>& shader_names(); // sorted; every blob the DLL loads, in the identity
 Json scene_identity();
 int64_t scene_qpc();
 
