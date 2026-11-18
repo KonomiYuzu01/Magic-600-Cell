@@ -1,0 +1,9 @@
+[package]
+name = "c600-platform"
+description = "The platform layer (RPI.52): the one member that calls an operating system's own API"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# std only: the Windows half uses `std::os::windows`, so the layer adds no dependency (RPI.52).
+[dependencies]

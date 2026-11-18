@@ -153,3 +153,46 @@ fn a_session_held_by_another_process_opens_once_that_process_is_killed() {
     fs::remove_file(&marker).expect("the marker is removed");
     fs::remove_dir_all(&root).expect("the directory is removed");
 }
+
+/// The engine's explicit "open anyway" (`FsDisk::open_anyway`; the owner's reading of finding E1, 18 November 2026).
+/// A session whose `lock` file is gone, as after a hard exit with the file removed, refuses every plain opener and
+/// changes no file. The open anyway puts back the lock file and opens it with what was written. While the session is
+/// held, the open anyway is refused as any opener is, and on Windows the held lock file can be neither deleted nor
+/// renamed (the platform layer). Once the holder is dropped, a plain open succeeds again.
+#[test]
+fn the_open_anyway_puts_back_a_lost_lock_file_and_never_opens_a_held_session() {
+    let root = directory("anyway");
+    let session = Session::create(kernel(), disk(&root), "s1", Options::default()).expect("the session is created");
+    committed(&commit(&session, "c1", &[1, 2]));
+    let view = durable(&session);
+    drop(session);
+    fs::remove_file(root.join(LOCK)).expect("the lock file is removed");
+
+    let before = files(&root);
+    for (opener, refused) in openers(&root) {
+        assert_eq!(refused, Some(code::SESSION_LOCKED), "{opener}");
+    }
+    assert_eq!(files(&root), before, "a refused opener changed a file");
+
+    let anyway = || Box::new(FsDisk::open_anyway(&root).expect("a store directory"));
+    let holder = Session::open(kernel(), anyway(), Options::default()).expect("the open anyway opens");
+    assert!(root.join(LOCK).is_file(), "the open anyway did not put back the lock file");
+    assert_eq!(durable(&holder), view);
+    assert_eq!(Session::open(kernel(), anyway(), Options::default()).err().map(|e| e.code), Some(code::SESSION_LOCKED));
+    assert_eq!(JournalStore::open(anyway()).err().map(|e| e.code), Some(code::SESSION_LOCKED));
+    for (opener, refused) in openers(&root) {
+        assert_eq!(refused, Some(code::SESSION_LOCKED), "{opener}");
+    }
+    if cfg!(windows) {
+        assert!(fs::remove_file(root.join(LOCK)).is_err(), "a held lock file was deleted");
+        assert!(fs::rename(root.join(LOCK), root.join("lock.old")).is_err(), "a held lock file was renamed");
+    }
+    committed(&commit(&holder, "c2", &[3]));
+    let view = durable(&holder);
+    drop(holder);
+
+    let reopened = Session::open(kernel(), disk(&root), Options::default()).expect("the session opens");
+    assert_eq!(durable(&reopened), view);
+    drop(reopened);
+    fs::remove_dir_all(&root).expect("the directory is removed");
+}
