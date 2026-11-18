@@ -38,6 +38,7 @@ pub mod dd;
 pub mod eval;
 pub mod kplus;
 pub mod levels;
+pub mod locality;
 pub mod model;
 pub mod nu;
 pub mod observe;
