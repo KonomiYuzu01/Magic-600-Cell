@@ -3928,9 +3928,9 @@ impl<'p> Checker<'p> {
             Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey | Prim::TraceKey => {
                 // One well-formed word domain for every word operation (LG2.15): Full words, or menu words of the
                 // run's pinned alphabet (LB1.8; LP2 draft), never a mix. The first operand of a known type sets the
-                // domain; a word key and a trace key take Full words only (the menu's trace key waits for its
-                // relation, LB1.10).
-                let mut domain = matches!(op, Prim::WordKey | Prim::TraceKey).then_some(Ty::Word);
+                // domain; a word key takes Full words only, and a trace key either (LB1.10: a menu word's key is under
+                // the run's `jumble-locality/1`).
+                let mut domain = matches!(op, Prim::WordKey).then_some(Ty::Word);
                 let mut q = Qual::Exact;
                 let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {

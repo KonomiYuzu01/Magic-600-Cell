@@ -283,13 +283,13 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
   (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves).
 - Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
-  gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word under the independence
-  relation the run pins. A menu word given to it is `LB1:input.incompatible_alphabet`, since the menu's relation,
-  `jumble-locality/1`, is not built. Like a word equality key, a trace key is never literal letters: a proposal, word
-  operation, word slot or result that takes one is `LG2:type.word_key_not_executable`, not a mismatch. It holds its
-  word's letters for the built-in column, and it is no portable data, so a goal, an evidence sink or a snapshot
-  read's argument that holds one is `LG2:type.mismatch` (`c600-check/tests/mismatch.rs`, `exactness.rs` and
-  `built_in.rs`; `c600-syntax/tests/conformance_lg2.rs`: CT-LB1-06's language half, part).
+  gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word or a menu word under the
+  independence relation the run pins (`full-disjoint-support/1` or `jumble-locality/1`). Like a word equality key, a
+  trace key is never literal letters: a proposal, word operation, word slot or result that takes one is
+  `LG2:type.word_key_not_executable`, not a mismatch. It holds its word's letters for the built-in column, and it is
+  no portable data, so a goal, an evidence sink or a snapshot read's argument that holds one is `LG2:type.mismatch`
+  (`c600-check/tests/mismatch.rs`, `exactness.rs` and `built_in.rs`; `c600-syntax/tests/conformance_lg2.rs`:
+  CT-LB1-06's language half, part).
 - Generators (LP2 draft until the IR freeze; DET.61; LP3's plan, section 2). `rng_init` (`Expr::RngInit`) starts a
   `Generator` (`Ty::Generator`) on the run's seed, at the run's stream path followed by its literal segments, none or
   more, and `rng_draw` (`Prim::RngDraw`) draws its next block as a `Nat`. Both have the `random` effect and need the
@@ -668,11 +668,30 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and `full_relation` builds its relation once per model in a process.
   Tests: `c600-run/tests/trace_keys.rs` (CT-LB1-06's run-time half on synthetic supports, part) and
   `c600-tools/tests/supports.rs` (the relation of the model in `assets/`, and CT-LB1-06 on it).
+- The jumbling trace key (LP2 draft; LB1.10, LG2.23). `c600_jumble::locality::Locality` regenerates
+  `jumble-locality/1` from the pinned model and the exact Δ(c,d) = R²(|n|² + n_c·n_d) − 2κ² in Q(√5), with R² the
+  largest squared norm of cap 0's region (96 − 32√5): distinct grips c and d are independent exactly when Δ(c,d) is
+  at most zero. Every grip interacts with 80 others, antipodal grips are independent, and grip 0's pairs match stage
+  14's exact shells (`research/jumbling/restoration/14-blocking-structure/results/locality-summary.json`).
+  `Locality::bits` gives one bit per pair in ascending (c, d), the layout of `trace::Relation::bits`, and
+  `trace::Relation::jumble_locality` builds the relation from them under the jumbling identity block and the menu's
+  item count, so a caller declares no independence of its own. The digest covers the contract, the puzzle, the model
+  ID, the grip count and the bits (the table is the model's); the header adds the menu's three identity fields and its
+  item count. Letters at one grip are dependent, the identity item's too, and menu letters order by grip, then item.
+  `trace_key` on a menu word needs a pinned jumbling relation that keys the run's menu alphabet
+  (`Relation::keys_menu`: one identity block, grip count and item count); without one, and for a Full word under a
+  jumbling relation, the run stops with `LB1:input.key_contract_mismatch` before the step. It is priced as a Full key
+  (`Relation::menu_reads`, the grip in the generator's place), and its size is 4 bytes per letter. A host answer's
+  menu key is checked as a Full key is. `c600-runtime`'s codec carries a menu key as value tag 26, with its header's
+  identity block and item count, and a jumbling relation with the menu's three fields after the model ID and the item
+  count after the grip count; the Full forms are unchanged. A jumbling host pins the relation (LP3: `c600-jumble-tool`).
+  Tests: `c600-jumble/tests/locality.rs` (the table, and CT-LB1-06's jumbling half on the model, part),
+  `c600-run/tests/menu_trace_keys.rs` (on synthetic bits) and `c600-runtime/src/codec.rs`'s tests.
 - Open for menu words: the jumbling library entries that use them (LP3: the jumbling halves of CT-LB1-03 and
-  CT-LB1-06), their trace key (LB1.10), which waits for `jumble-locality/1`'s relation and an exact Δ(c,d) entry in
-  `c600-jumble`, and the alphabet a jumbling host pins, which it builds from `c600_kernel::IdentityBlock` and the
-  inverse items of its menu (`menu::MenuAlphabet::new`). Not built for trace keys: the operations on compressed
-  words, which LP3 does not need, and EV4.9's report of a key's contract.
+  CT-LB1-06), and the alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock` and
+  the inverse items of its menu (`menu::MenuAlphabet::new`), the relation from `c600_jumble::locality::Locality::bits`
+  and `trace::Relation::jumble_locality`. Not built for trace keys: the operations on compressed words, which LP3
+  does not need, and EV4.9's report of a key's contract.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -1988,10 +2007,13 @@ run or not applicable is no pass (PHS.63).
   puzzle and model ID, the generator count and the independence bits, from which the decoder recomputes the digest,
   refusing what `Relation::from_parts` refuses. The codec cannot order a key's letters without the relation, so the
   run checks a decoded key against its pinned relation, and `LB1:input.key_contract_mismatch` is one of the
-  interpreter's own stop codes. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a value that
-  holds one is refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The
-  lengths that a frame's compressed
-  words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
+  interpreter's own stop codes. A menu word's trace key (LP2's draft, LB1.10, `jumble-locality/1`) crosses as value
+  tag 26 with its header (the jumbling identity block, the grip and item counts, the key, the contract and the
+  digest) and its `[grip, item]` letters, and a pinned jumbling relation carries the menu's three identity fields
+  after the model ID and the item count after the grip count. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a value that holds one is
+  refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The lengths that a frame's
+  compressed words derive are bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter
+  crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - LP2's draft F2 and F5: an element crosses as value tag 24, its field's byte (0 for F2, 1 for F5) and its residue's

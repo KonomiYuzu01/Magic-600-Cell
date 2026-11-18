@@ -942,8 +942,8 @@ impl Value {
             Value::Text(t) | Value::Target(t) => t.scalars.saturating_mul(4),
             Value::Tag(_) | Value::Colour(_) => 4,
             Value::Word(w) | Value::WordEqualityKey(w) => 2 * w.len() as u128,
-            // Its letters, as a word's; the header is shared with the run's relation.
-            Value::TraceEqualityKey(k) => 2 * k.letters().len() as u128,
+            // Its letters, as a word's or a menu word's; the header is shared with the run's relation.
+            Value::TraceEqualityKey(k) => k.size(),
             Value::Record(r) | Value::Receipt(r) => r.size,
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,

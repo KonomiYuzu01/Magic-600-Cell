@@ -13,6 +13,9 @@ num-bigint = { version = "=0.5.1", default-features = false, features = ["std"] 
 num-integer = { version = "=0.1.47", default-features = false, features = ["std"] }
 num-traits = { version = "=0.2.19", default-features = false, features = ["std"] }
 
+[dev-dependencies]
+c600-run = { path = "../c600-run" }
+
 [[bin]]
 name = "c600-jumble-adapter"
 path = "src/bin/adapter.rs"
