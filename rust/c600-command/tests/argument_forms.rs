@@ -132,8 +132,8 @@ impl Fixture {
 
 /// A served row's arguments have their types' forms: `CellIdPair` is two cells from 0 to 599, `CellId` one, `Nat` an
 /// integer of at least 0, `Text` a string, and a choice of words one of its words. A malformed argument is refused with
-/// `KN5:input.argument_form` and takes no job. `CanonicalObjectRefs`, whose form is not written down yet, passes
-/// unchecked.
+/// `KN5:input.argument_form` and takes no job. `CanonicalObjectRefs` is a list of pieces or positions, each 0 to
+/// 177,119 (the kernel's `PIECES`), empty and repeated members included (draft).
 #[test]
 fn a_served_rows_arguments_have_their_types_forms() {
     let mut f = fixture(&[COMPARE, LAYER, SAVE, SCOPE]);
@@ -153,8 +153,18 @@ fn a_served_rows_arguments_have_their_types_forms() {
 
     let save =
         |kind: Value, members: Value, name: Value| json::object([("kind", kind), ("members", members), ("name", name)]);
-    for (kind, members) in [("identity", parse("[3, 5]")), ("position", text("not yet checked"))] {
-        assert!(running(&f.invoke(SAVE, save(text(kind), members, text("pair")))), "{kind}");
+    let last = (c600_kernel::PIECES - 1).to_string();
+    let members_ok = ["[3, 5]".to_string(), "[]".to_string(), "[7, 7]".to_string(), format!("[0, {last}]")];
+    for (kind, members) in [("identity", &members_ok[0]), ("position", &members_ok[1])] {
+        assert!(running(&f.invoke(SAVE, save(text(kind), parse(members), text("pair")))), "{kind}");
+    }
+    for members in &members_ok[2..] {
+        assert!(running(&f.invoke(SAVE, save(text("identity"), parse(members), text("pair")))), "{members}");
+    }
+    let past = c600_kernel::PIECES.to_string();
+    for bad in ["[-1]", &format!("[3, {past}]"), "[1.5]", "[\"3\"]", "[[3]]", "[null]", "3", "\"[3]\"", "{}", "null"] {
+        let receipt = f.invoke(SAVE, save(text("position"), parse(bad), text("pair")));
+        assert_eq!(refusal(&receipt), code::ARGUMENT_FORM, "{bad}");
     }
     for (kind, name) in [(text("both"), text("pair")), (Value::Int(1), text("pair")), (text("identity"), Value::Int(7))]
     {
@@ -169,7 +179,7 @@ fn a_served_rows_arguments_have_their_types_forms() {
     assert!(running(&f.invoke(SCOPE, json::object([("scope", text("complete"))]))));
 
     let rows: Vec<String> = f.take_all().into_iter().map(|(row, _)| row).collect();
-    assert_eq!(rows, [COMPARE, COMPARE, LAYER, SAVE, SAVE, SCOPE]);
+    assert_eq!(rows, [COMPARE, COMPARE, LAYER, SAVE, SAVE, SAVE, SAVE, SCOPE]);
 }
 
 /// An argument of an optional type may be left out: `recording.play`'s `from` is `Nat?`. Given, it has `Nat`'s form;
