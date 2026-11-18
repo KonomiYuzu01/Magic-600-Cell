@@ -1697,6 +1697,18 @@ run or not applicable is no pass (PHS.63).
   - Tests: `c600-command/tests/kn5_stages.rs` (parts of CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-13, CT-ONE-04 and
     CT-ONE-29), a record write and its undo over the journal in `c600-session/tests/kn5_command.rs` (CT-KN5-04, part),
     and a frame outside the presentation in `kn5.rs`'s token matrix (CT-ONE-03, part).
+  - KN5.26's admission matrix (leads L1 and L2 of the KN5 boundary attack): `c600-command/tests/kn5_admission.rs` runs
+    it through the layer with `c600-run`'s `boundary::admit_preview` as the host's adapter (a dev-dependency; the layer
+    itself never depends on the runtime). A record's word is refused at admission, with no job and nothing moved, when
+    its block or any part's block, recursively, is a solver-authored tool's output, research output, a part with no
+    stored content or a pick that does not resolve (the last `PS1:capability.provenance_incompatible`, the others
+    `LG3:capability.not_granted`). A hand-entered word, an imported 0.4 macro and built-in output pass, and a permitted
+    word that moves a protected orbit gets its conflict preview (KN5.9). A reopen keeps every refusal, and a host that
+    lost the parts' blocks fails closed. A tool word whose letters the kernel also refuses gets the adapter's refusal,
+    never a failed job. A record written between admission and the build never replaces the admitted letters: the
+    preview is stale at once. A draft carries no block of the caller's: a draft with any key but `recipe` or `record`
+    is `KN5:input.argument_form`, from a run as from the shell (ruling 6's layer half; the runtime's boundary stamps
+    and admits a run's own word, `c600-run/tests/boundary.rs`). Parts of CT-KN5-13 and CT-BND-26 to CT-BND-30.
 - Strict protection in the command route (after KN5's stages; KN2.4, KN2.7, LB2.3; the drafts are in the crate
   documentation). H-08's `protection.policy.set` (`POLICY_ROW`, `{"policy": "net" | "strict"}`) switches the session's
   protection policy (`CommandLayer::policy`), which is Net from a session's start. The preview, execute's step 8 and the
@@ -1901,8 +1913,9 @@ run or not applicable is no pass (PHS.63).
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
   budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
-- KN5 not built yet: KN5.26's admission matrix (L1, L2) beyond the host reader's answer for a record's word, ruling 6
-  (the host stamps a runtime proposal's block; a `file` overlay without a granted file capability), L12 to L14, L16
+- KN5 not built yet: a durable home for a word's part blocks (a reopen restores each record's own block, and a host
+  that lost the parts' blocks refuses the word, CT-BND-27), a session profile (every session the layer serves is a
+  solving session, BND.14 and BND.15), ruling 6's `file` overlay without a granted file capability, L12 to L14, L16
   and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for
   which `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the shell's and
   LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session
