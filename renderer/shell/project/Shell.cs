@@ -15,7 +15,11 @@ namespace Magic600.Shell;
 /// shows the empty window as before. Step S5: when M600_EVENTS_DIR is set as well, <see cref="EventLog"/> records
 /// every submitted frame and every confirmed presentation with its display time. Route B's check B1: when
 /// M600_INPUT_ECHO is 1, a panel over the view echoes every key press and mouse click the window receives, and
-/// <see cref="InputLog"/> records them; the echo works with or without the core.
+/// <see cref="InputLog"/> records them; the echo works with or without the core. Charter E2's turns (a draft): when
+/// M600_SESSION_DIR (a new folder) and M600_TWIST_MENU (the twist menu's record file) are set as well, the host opens
+/// a session there, every key with a W3C code goes through its input router (<see cref="KeyChord"/>), a committed
+/// twist is adopted and shown, <see cref="EventLog"/> writes a key row per measured press, and the close runs the
+/// session's correctness control.
 /// </remarks>
 public partial class Shell : Control
 {
@@ -31,6 +35,10 @@ public partial class Shell : Control
     private string _lastPress = "none";
     private string _lastClick = "none";
     private bool _hadFocus;
+    private bool _focused;
+    private bool _session;
+    /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
+    private ulong _shownRevision;
     private Vector2I _size;
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
 
@@ -81,6 +89,42 @@ public partial class Shell : Control
         }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         _log = EventLog.FromEnvironment();
+        var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
+        var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
+        if (!string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu))
+        {
+            Require(hostLibrary, "m6h_open_session", hostLibrary.OpenSession(_host, session, menu));
+            _session = true;
+        }
+    }
+
+    /// <summary>Routes a key event to the session: a key-down's press goes to the log; a key-up releases it.</summary>
+    private void Turn(InputEventKey key, long qpc)
+    {
+        if (!_session || _hostLibrary is not { } library || KeyChord.Code(key.PhysicalKeycode) is not { } code)
+        {
+            return;
+        }
+        if (!key.Pressed)
+        {
+            library.KeyUp(_host, code);
+            return;
+        }
+        var chord = KeyChord.Chord(key, code);
+        var answer = library.KeyDown(_host, chord, key.Echo, out var result);
+        if (answer != HostLibrary.Ok)
+        {
+            GD.PushWarning($"m6h_key_down {chord}: {answer}: {library.LastError(_host)}");
+            return;
+        }
+        if (result.Press == HostLibrary.PressCommitted)
+        {
+            _log?.Press(qpc, result.EngineRevision);
+        }
+        else if (result.Press == HostLibrary.PressRefused)
+        {
+            _log?.Press(qpc, 0);
+        }
     }
 
     private void CreateEcho()
@@ -100,11 +144,15 @@ public partial class Shell : Control
     /// <summary>Echoes and logs each key press (not a repeat) and mouse click (not the wheel) the window receives.</summary>
     public override void _Input(InputEvent @event)
     {
+        var qpc = EventLog.Now();
+        if (@event is InputEventKey turn)
+        {
+            Turn(turn, qpc);
+        }
         if (_echo is not { } echo)
         {
             return;
         }
-        var qpc = EventLog.Now();
         switch (@event)
         {
             case InputEventKey { Pressed: true, Echo: false } key:
@@ -136,7 +184,8 @@ public partial class Shell : Control
     /// </summary>
     private void FollowFocus()
     {
-        if (DisplayServer.WindowIsFocused())
+        var focused = DisplayServer.WindowIsFocused();
+        if (focused)
         {
             _hadFocus = true;
         }
@@ -145,6 +194,12 @@ public partial class Shell : Control
             _log?.LostForeground();
             _input?.LostForeground();
         }
+        if (_focused && !focused && _session && _hostLibrary is { } library)
+        {
+            // The router releases its held keys; their key-ups never arrive.
+            library.FocusLost(_host);
+        }
+        _focused = focused;
     }
 
     private void Require(HostLibrary library, string name, int code)
@@ -193,6 +248,7 @@ public partial class Shell : Control
             for (var i = 0; i < count; i++)
             {
                 _log?.Presented(_presented[i]);
+                _shownRevision = Math.Max(_shownRevision, _presented[i].EngineRevision);
             }
         } while (count == _presented.Length);
     }
@@ -211,7 +267,25 @@ public partial class Shell : Control
         }
         _input?.Dispose();
         _input = null;
+        CloseSession();
         CloseCore();
+    }
+
+    /// <summary>Closes the session: its correctness control runs once, and the run row carries its outcome.</summary>
+    private void CloseSession()
+    {
+        if (!_session || _hostLibrary is not { } library)
+        {
+            return;
+        }
+        _session = false;
+        var code = library.CloseSession(_host, _shownRevision, out var pass);
+        if (code != HostLibrary.Ok)
+        {
+            GD.PushError($"m6h_close_session: {code}: {library.LastError(_host)}");
+            return;
+        }
+        _log?.Correctness(pass, HostLibrary.CorrectnessControl, library.Check(_host));
     }
 
     /// <summary>Closes the event log, the host, the surface and the libraries; the input echo stays.</summary>

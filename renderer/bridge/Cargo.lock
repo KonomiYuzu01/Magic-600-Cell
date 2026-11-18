@@ -16,6 +16,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-command"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-jumble",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-digest"
 version = "0.0.0"
 
@@ -27,6 +36,21 @@ dependencies = [
  "c600-digest",
  "c600-ir",
  "c600-jumble",
+ "c600-kernel",
+]
+
+[[package]]
+name = "c600-evidence"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+]
+
+[[package]]
+name = "c600-input"
+version = "0.0.0"
+dependencies = [
+ "c600-command",
  "c600-kernel",
 ]
 
@@ -53,6 +77,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-platform"
+version = "0.0.0"
+
+[[package]]
 name = "c600-render"
 version = "0.0.0"
 dependencies = [
@@ -72,14 +100,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "c600-shell-host"
+name = "c600-run"
 version = "0.0.0"
 dependencies = [
  "c600-digest",
+ "c600-ir",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "c600-session"
+version = "0.0.0"
+dependencies = [
+ "c600-command",
+ "c600-digest",
+ "c600-evidence",
+ "c600-ir",
+ "c600-kernel",
+ "c600-platform",
+ "c600-run",
+]
+
+[[package]]
+name = "c600-shell-host"
+version = "0.0.0"
+dependencies = [
+ "c600-command",
+ "c600-digest",
  "c600-display",
+ "c600-input",
+ "c600-jumble",
  "c600-kernel",
  "c600-render",
  "c600-render-ffi",
+ "c600-session",
 ]
 
 [[package]]
