@@ -61,7 +61,7 @@ The ABI 1 `clear_code` path still batches up to 32 rectangles per `ClearRenderTa
 
 ## ABI 5 (route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks)
 
-The record is `docs/wiki/decisions/owner-decisions-2026-11-18-route-b.md`. The route B parts are adapted from the C9 present probe `work/experiments/c9-present-probe/` (PR 245); `PROVENANCE.md` names the files and digests. ABI 5 adds no struct, and the Godot-texture route (`sa2_attach`, the ring slots, W1..W4 and W-J) is unchanged.
+The record is `docs/wiki/decisions/owner-decisions-2026-11-18-route-b.md`. The route B parts are adapted from the C9 present probe `work/experiments/c9-present-probe/` (PR 245); `PROVENANCE.md` names the files and digests. ABI 5 adds no struct. It extends `sa2_presented_row`, which no ABI 4 core wrote, with `display_qpc`, the SyncQPCTime of the statistics row that confirmed the frame. The Godot-texture route (`sa2_attach`, the ring slots, W1..W4 and W-J) is unchanged.
 
 ```c
 #define SA2_TARGET_SURFACE 0xFFFFFFFFu  /* sa2_frame_input.target */

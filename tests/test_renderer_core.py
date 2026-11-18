@@ -188,6 +188,7 @@ ABI4 = {
     "SA2_API int32_t sa2_counters(sa2_context* ctx, sa2_counter_values* out);",
     "SA2_API int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason);",
 }
+# sa2_presented_row was 48 bytes in ABI 4, which never wrote one; ABI 5 extends it with display_qpc.
 ABI4_STRUCTS = {
     "sa2_engine_image": 80, "sa2_preparation": 112, "sa2_poll_row": 32, "sa2_frame_input": 264,
     "sa2_frame_report": 104, "sa2_presented_row": 56, "sa2_pick_row": 112, "sa2_counter_values": 64,

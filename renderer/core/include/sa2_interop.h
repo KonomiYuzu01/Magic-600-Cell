@@ -3,7 +3,9 @@
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
  * ABI version 5; the ABI 1 to ABI 4 declarations, layouts and behaviour are
- * retained. ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
+ * retained, except that ABI 5 extends sa2_presented_row with display_qpc (no
+ * ABI 4 core wrote that row: without a surface sa2_presented answers
+ * SA2_E_UNAVAILABLE). ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
  * sa2_scene_lattice_check). ABI 4 adds the product API, one call per RM.14
  * operation. ABI 5 adds route B: the core's own device, a DirectComposition
  * layer and a composition swap chain (both at the end of this file).
@@ -801,7 +803,8 @@ SA2_API int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason)
  * swap chain, in a DirectComposition layer beneath the host window's content,
  * so it can confirm a presentation per frame (RM.26) and recover from the loss
  * of its own device (RPI.46). The Godot-texture route (sa2_attach, the ring
- * slots, W1..W4 and W-J) is unchanged. ABI 5 adds no struct.
+ * slots, W1..W4 and W-J) is unchanged. ABI 5 adds no struct; it extends
+ * sa2_presented_row, which it is the first to write, with display_qpc.
  *
  * A sa2_create context runs every ABI 4 product call; its frames name
  * SA2_TARGET_SURFACE. The ring-slot calls (sa2_create_texture,
