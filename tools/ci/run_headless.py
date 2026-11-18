@@ -84,6 +84,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_renderer_tools.py"],
     # The product renderer core (C9): provenance digests against the selection evidence and the ABI 3 pin.
     ["tests/test_renderer_core.py"],
+    # The C9 acceptance harness: its provenance, its interop layout against the core header and its finalizer.
+    ["tests/test_renderer_acceptance.py"],
     ["tests/test_feature_costs.py"],
     ["tests/test_migration_probes.py"],
     ["tests/test_migration_p2.py"],
