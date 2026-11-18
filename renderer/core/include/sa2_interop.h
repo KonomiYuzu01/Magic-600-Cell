@@ -2,17 +2,22 @@
  * sa2_interop.h: the C ABI between the Godot C# host and the native Direct3D
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
- * ABI version 4; the ABI 1, ABI 2 and ABI 3 declarations, layouts and
- * behaviour are retained. ABI 3 adds W-J's per-piece pose path
- * (sa2_scene_load_wj and sa2_scene_lattice_check). ABI 4 adds the product
- * API, one call per RM.14 operation (at the end of this file).
+ * ABI version 5; the ABI 1 to ABI 4 declarations, layouts and behaviour are
+ * retained, except that ABI 5 extends sa2_presented_row with display_qpc (no
+ * ABI 4 core wrote that row: without a surface sa2_presented answers
+ * SA2_E_UNAVAILABLE). ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
+ * sa2_scene_lattice_check). ABI 4 adds the product API, one call per RM.14
+ * operation. ABI 5 adds route B: the core's own device, a DirectComposition
+ * layer and a composition swap chain (both at the end of this file).
  *
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
  *
- * Threading: every function except sa2_abi_version is called from one thread,
- * Godot's render thread (inside RenderingServer.call_on_render_thread). The
- * info-queue callback the DLL registers may run on any thread.
+ * Threading: on a sa2_attach context every function except sa2_abi_version is
+ * called from one thread, Godot's render thread (inside
+ * RenderingServer.call_on_render_thread). A sa2_create context (ABI 5) takes
+ * no lock: its calls may come from any thread, one at a time, serialised by
+ * the caller. The info-queue callback the DLL registers may run on any thread.
  *
  * Handles: device, queue, adapter and resource arguments are the uint64 values
  * returned by RenderingDevice.get_driver_resource() on Godot's D3D12 driver:
@@ -38,7 +43,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 4u
+#define SA2_ABI_VERSION 5u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -246,7 +251,8 @@ SA2_API int32_t sa2_debug_counts(sa2_context* ctx, sa2_debug_counts* out);
  */
 SA2_API int32_t sa2_debug_messages(sa2_context* ctx, char* buffer, uint32_t buffer_size);
 
-/* Device-loss probe: calls ID3D12Device5::RemoveDevice on Godot's device. */
+/* Device-loss probe: calls ID3D12Device5::RemoveDevice on Godot's device; on
+ * a sa2_create context (ABI 5), on the core's own device only. */
 SA2_API int32_t sa2_remove_device(sa2_context* ctx);
 
 /* GetDeviceRemovedReason of Godot's device (S_OK while the device is alive). */
@@ -258,6 +264,8 @@ SA2_API int32_t sa2_device_removed_reason(sa2_context* ctx, int32_t* out_hresult
  * SA2_E_WRONG_STATE). ABI 2 also requires any scene to be unloaded first.
  * Then it releases what sa2_attach created, unregisters
  * the callback and releases its references to Godot's device and queue.
+ * ABI 5: on a sa2_create context, detach the surface first (else
+ * SA2_E_WRONG_STATE); the core's own device and queue are released.
  */
 SA2_API int32_t sa2_detach(sa2_context* ctx);
 
@@ -544,7 +552,7 @@ static_assert(sizeof(sa2_poll_row) == 32, "sa2_poll_row requires the x64 ABI");
 /* submit_frame. The FrameStamp, the camera matrix and the preview shown. */
 typedef struct sa2_frame_input {
     uint32_t struct_size; /* sizeof(sa2_frame_input); 264 on x64 */
-    uint32_t target; /* the frame target: on the Godot-texture route, the registered ring slot */
+    uint32_t target; /* the frame target: on the Godot-texture route, the registered ring slot; ABI 5: SA2_TARGET_SURFACE */
     uint32_t flags; /* SA2_FRAME_PREVIEW or 0 */
     uint32_t reserved; /* must be 0 */
     uint64_t device_epoch; /* must equal the backend's */
@@ -593,18 +601,19 @@ typedef struct sa2_frame_report {
 static_assert(sizeof(sa2_frame_report) == 104, "sa2_frame_report requires the x64 ABI");
 #endif
 
-/* read_presented. ABI 4 never writes a row (see sa2_presented). */
+/* read_presented. Written only on an ABI 5 surface context (see sa2_presented). */
 typedef struct sa2_presented_row {
-    uint32_t struct_size; /* sizeof(sa2_presented_row); 48 on x64 */
+    uint32_t struct_size; /* sizeof(sa2_presented_row); 56 on x64 */
     uint32_t previews; /* 0: no_preview; 1: the frame showed its preview */
     uint64_t frame_id;
     uint64_t device_epoch;
     uint64_t surface;
     uint64_t sequence;
     uint64_t preview;
+    uint64_t display_qpc; /* SyncQPCTime of the statistics row that confirmed the frame (QPC ticks) */
 } sa2_presented_row;
 #ifdef __cplusplus
-static_assert(sizeof(sa2_presented_row) == 48, "sa2_presented_row requires the x64 ABI");
+static_assert(sizeof(sa2_presented_row) == 56, "sa2_presented_row requires the x64 ABI");
 #endif
 
 /* poll_pick. The Rust PickReply: the frame's PickBinding and the instance. */
@@ -649,14 +658,17 @@ static_assert(sizeof(sa2_counter_values) == 64, "sa2_counter_values requires the
 #endif
 
 /* describe_backend. Writes the SupportReport as NUL-terminated JSON:
- * {interface_version: 4, backend_build: SHA-256 of the sa2_identity JSON,
+ * {interface_version: 5, backend_build: SHA-256 of the sa2_identity JSON,
  * device_epoch, device_removed: null or the removal HRESULT as "0x%08x",
  * features: {row: {status: "supported", layout_version} or {status:
  * "unsupported", reason}}, evidence: []}. Supported rows: F01 full-detail
  * stickers (all SA2_SLOTS), F02 visibility and interaction sets, J01 and J02
- * the posed sticker path, F18 the stamped ID pass. F22 (recover), F23
- * (read_presented) and J13 (grip, piece and certificate-point IDs) are listed
- * as unsupported; an omitted row is unsupported (RM.15). The evidence list is
+ * the posed sticker path, F18 the stamped ID pass. F22 (recover) and F23
+ * (read_presented) are supported on a sa2_create context with an attached
+ * surface (ABI 5, route B) and listed as unsupported otherwise; J13 (grip,
+ * piece and certificate-point IDs) is listed as unsupported; an omitted row
+ * is unsupported (RM.15). device_epoch is the context's: 1, plus one per
+ * successful sa2_recover. The evidence list is
  * empty: no measured run backs these rows yet. *out_size receives the JSON
  * length plus one; a smaller
  * buffer_size returns SA2_E_INVALID_ARGUMENT and writes an empty string.
@@ -729,9 +741,10 @@ SA2_API int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input,
  */
 SA2_API int32_t sa2_frame_reports(sa2_context* ctx, sa2_frame_report* rows, uint32_t capacity, uint32_t* out_count);
 
-/* read_presented. The core owns no swap chain and cannot confirm a
- * presentation (RM.26): after the argument checks it sets *out_count to 0,
- * writes no row and returns SA2_E_UNAVAILABLE.
+/* read_presented. On a context without a surface the core owns no swap
+ * chain and cannot confirm a presentation (RM.26): after the argument checks
+ * it sets *out_count to 0, writes no row and returns SA2_E_UNAVAILABLE. On an
+ * ABI 5 surface context, see "ABI 5" below.
  */
 SA2_API int32_t sa2_presented(sa2_context* ctx, sa2_presented_row* rows, uint32_t capacity, uint32_t* out_count);
 
@@ -757,9 +770,10 @@ SA2_API int32_t sa2_pick_request(sa2_context* ctx, uint64_t frame_id, uint32_t x
  */
 SA2_API int32_t sa2_pick_poll(sa2_context* ctx, uint64_t ticket, sa2_pick_row* out);
 
-/* recover. ABI 4 cannot recover a device (RPI.46): it writes NUL-terminated
- * JSON {status: "unavailable", reason, device_epoch, device_removed: null or
- * "0x%08x"}, sets *out_size as sa2_describe and returns SA2_E_UNAVAILABLE.
+/* recover. ABI 4 cannot recover a device (RPI.46): on a sa2_attach context it
+ * writes NUL-terminated JSON {status: "unavailable", reason, device_epoch,
+ * device_removed: null or "0x%08x"}, sets *out_size as sa2_describe and
+ * returns SA2_E_UNAVAILABLE. On an ABI 5 sa2_create context, see "ABI 5" below.
  */
 SA2_API int32_t sa2_recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size);
 
@@ -769,6 +783,7 @@ SA2_API int32_t sa2_recover(sa2_context* ctx, char* buffer, uint32_t buffer_size
  * resources (depth and ID-pass targets) and start a new target generation:
  * picks on earlier frames answer SA2_PICK_STALE_TARGET. W1..W4 and W-J draw
  * at the new size afterwards. Width and height are at least SA2_MIN_TEXTURE_PX.
+ * On an ABI 5 sa2_create context the surface is resized instead (see "ABI 5").
  */
 SA2_API int32_t sa2_resize(sa2_context* ctx, uint32_t width, uint32_t height);
 
@@ -780,6 +795,130 @@ SA2_API int32_t sa2_counters(sa2_context* ctx, sa2_counter_values* out);
  * removal, which the product calls then observe.
  */
 SA2_API int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason);
+
+/* ABI 5: route B. Route B is accepted for now by the owner on 18 Nov 2026,
+ * pending three owner-machine checks (docs/wiki/decisions/
+ * owner-decisions-2026-11-18-route-b.md). The core draws the product frames
+ * on a Direct3D 12 device of its own and presents them in its own composition
+ * swap chain, in a DirectComposition layer beneath the host window's content,
+ * so it can confirm a presentation per frame (RM.26) and recover from the loss
+ * of its own device (RPI.46). The Godot-texture route (sa2_attach, the ring
+ * slots, W1..W4 and W-J) is unchanged. ABI 5 adds no struct; it extends
+ * sa2_presented_row, which it is the first to write, with display_qpc.
+ *
+ * A sa2_create context runs every ABI 4 product call; its frames name
+ * SA2_TARGET_SURFACE. The ring-slot calls (sa2_create_texture,
+ * sa2_release_texture, sa2_register_slot, sa2_unregister_slot,
+ * sa2_signal_godot_free, sa2_produce, sa2_godot_wait_ready, sa2_mark_shown,
+ * sa2_verify_slot and sa2_scene_produce) answer SA2_E_WRONG_STATE after their
+ * argument checks. sa2_scene_load and sa2_scene_load_wj need an attached
+ * surface instead of the three slots and use its size; the context keeps a
+ * copy of the scene config for sa2_recover. The surface calls on a sa2_attach
+ * context answer SA2_E_WRONG_STATE. Invalid arguments return
+ * SA2_E_INVALID_ARGUMENT before any state check.
+ *
+ * The surface's back buffers move between COMMON (PRESENT) and RENDER_TARGET
+ * whatever the config's handover states. The swap chain presents on the
+ * producer queue: the core's queue, or its second queue with SA2_QUEUE_OWN.
+ */
+#define SA2_TARGET_SURFACE 0xFFFFFFFFu /* sa2_frame_input.target: the attached surface's current back buffer */
+#define SA2_SURFACE_SYNC_INTERVAL 1u /* the Present sync interval of every surface frame: one vertical blank */
+#define SA2_SURFACE_BUFFERS 3u /* swap-chain buffers; FLIP_DISCARD, frame-latency waitable, maximum frame latency 2 */
+#define SA2_SURFACE_MAX_PX 16384u /* the largest surface width and height */
+
+/* Creates a context on a Direct3D 12 device of the core's own, made by the
+ * D3D12 device factory without storing it as the process's singleton device,
+ * so it is never Godot's device. The adapter is the one whose LUID is
+ * adapter_luid ((HighPart << 32) | LowPart), or for 0 the first hardware
+ * adapter DXGI lists. The context gets its own DIRECT queue and everything
+ * sa2_attach creates; config is validated exactly as sa2_attach validates it.
+ * An adapter_luid no adapter has: SA2_E_INVALID_ARGUMENT; no hardware adapter
+ * or no device factory: SA2_E_UNSUPPORTED. sa2_detach ends the context.
+ */
+SA2_API int32_t sa2_create(uint64_t adapter_luid, const sa2_config* config, sa2_context** out);
+
+/* Attaches the surface. It creates a DirectComposition device, a target for
+ * hwnd with CreateTargetForHwnd(hwnd, FALSE), beneath the host's topmost
+ * target, one visual at (x, y) in the window's client pixels, and a
+ * composition swap chain of width x height on the producer queue
+ * (B8G8R8A8_UNORM, ALPHA_MODE_IGNORE, SA2_SURFACE_BUFFERS buffers,
+ * FLIP_DISCARD, the frame-latency waitable object), then commits. hwnd must be
+ * a window; width and height lie in SA2_MIN_TEXTURE_PX .. SA2_SURFACE_MAX_PX.
+ * Only on a sa2_create context with no surface (else SA2_E_WRONG_STATE) and
+ * a live device (else SA2_E_DEVICE_REMOVED). A failed DirectComposition or
+ * DXGI call: SA2_E_D3D12, and nothing is attached. Each new swap chain, resize and recovery starts a
+ * new swap-chain generation.
+ */
+SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, int32_t y, uint32_t width, uint32_t height);
+
+/* Moves the surface's visual to (x, y) and commits. No GPU work; it works
+ * during device loss. No surface: SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);
+
+/* Detaches the surface: clears the visual's content and the target's root,
+ * commits, and releases the swap chain and the DirectComposition objects.
+ * Needs the scene unloaded and a confirmed sa2_drain (a removed device permits
+ * it without one), else SA2_E_WRONG_STATE. As in the C9 probe, the
+ * DirectComposition results are not checked: releasing the target removes the
+ * layer in any case.
+ */
+SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
+
+/*
+ * sa2_frame_submit with target SA2_TARGET_SURFACE waits up to
+ * config.wait_timeout_ms for the back buffer's previous frame and then for the
+ * frame-latency waitable (SA2_E_TIMEOUT, nothing recorded), draws as on a ring
+ * slot, signals the ready fence and presents with
+ * SA2_SURFACE_SYNC_INTERVAL. The frame's own present count is
+ * GetLastPresentCount right after its Present. A failed Present returns its
+ * status (SA2_E_D3D12 or SA2_E_DEVICE_REMOVED) and poisons the scene, as any
+ * failed submission does.
+ *
+ * sa2_presented on a surface context reads GetFrameStatistics and
+ * GetLastPresentCount once per call. A frame is confirmed only by the C9
+ * present probe's exact rule: a statistics row whose PresentCount equals the
+ * frame's own present count, in the frame's swap-chain generation, with
+ * PresentCount not above GetLastPresentCount. DXGI_ERROR_FRAME_STATISTICS_
+ * DISJOINT or any other failed call is no row. A frame whose count a row
+ * passed, or whose swap-chain generation ended (resize, recovery), is never
+ * reported. Each confirmed frame is written once, in frame order, with
+ * previews and preview from its input and display_qpc, the SyncQPCTime of
+ * the statistics row that confirmed it; up to 1024 confirmed and 1024 awaiting
+ * frames are kept, the oldest dropped first and never reported. A failed
+ * statistics call writes no row and returns SA2_OK with *out_count 0, unless
+ * the device is removed (SA2_E_DEVICE_REMOVED). Needs a loaded scene.
+ *
+ * sa2_resize on a sa2_create context needs an attached surface and a
+ * confirmed sa2_drain; width and height are at most SA2_SURFACE_MAX_PX. It
+ * resizes the swap chain's buffers and, with a loaded scene, the size-bound
+ * resources with a new target generation, as in ABI 4. A scene is not required.
+ * A sa2_resize that fails after ResizeBuffers succeeded leaves surface frames
+ * answering SA2_E_WRONG_STATE until a sa2_resize to the same size succeeds;
+ * the failed call queues no GPU work, so the drain still counts as confirmed.
+ *
+ * sa2_recover on a sa2_create context whose device is removed builds a new
+ * device and queue on the same adapter with what sa2_create made, a new swap
+ * chain at the surface's size set as the same visual's content (or a rebuilt
+ * DirectComposition target and visual on the same hwnd and rectangle), and the
+ * scene loaded again from its retained config. Only then are the old device's
+ * objects released, so a failed recovery leaves the context removed and may be
+ * retried; it returns the failure's status and writes {status: "failed",
+ * reason, device_epoch, device_removed} when the buffer holds it. On success
+ * the adopted CPU engine image is kept (RM.16) and the next frame uploads it,
+ * device_epoch increases by one, and it writes {status: "recovered", reason,
+ * device_epoch: the new epoch, device_removed: the removal reason as
+ * "0x%08x"} and returns SA2_OK. The old epoch's tickets, resource sets,
+ * frames and picks are gone: sa2_poll or sa2_cancel of an old ticket,
+ * sa2_activate or sa2_retire of an old set, sa2_pick_request on an old frame
+ * and sa2_pick_poll of an old pick answer SA2_E_WRONG_STATE, as for an unknown
+ * one. Ticket, set, pick and frame numbers keep counting and are never reused.
+ * Unread reports of old frames are dropped (reports_dropped), and old frames
+ * are never confirmed as presented. On a live device it writes {status:
+ * "not_removed", reason, device_epoch, device_removed: null} and returns
+ * SA2_E_WRONG_STATE. A buffer too small for the success JSON:
+ * SA2_E_INVALID_ARGUMENT before any change.
+ */
 
 #ifdef __cplusplus
 }

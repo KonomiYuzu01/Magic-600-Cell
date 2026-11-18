@@ -1,6 +1,6 @@
-//! The core's product calls as a safe Rust interface: one method per ABI 4 call, with slices where the C structs
-//! carry pointers. [`crate::ffi::DllCore`] implements it over the C functions; [`crate::fake::FakeCore`] implements
-//! it in Rust for headless tests.
+//! The core's product calls as a safe Rust interface: one method per ABI 5 product call, with slices where the C
+//! structs carry pointers. `DllCore` in `renderer/bridge` (`c600-render-ffi`) implements it over the C functions;
+//! [`crate::fake::FakeCore`] implements it in Rust for headless tests.
 
 use crate::abi::{Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Status};
 
@@ -42,7 +42,8 @@ pub struct PreparationInput<'a> {
     pub input_digest: [u8; 32],
 }
 
-/// ABI 4's product calls on one attached context with a loaded scene. Every call comes from the context's thread.
+/// ABI 5's product calls on one context with a loaded scene, one call at a time: on a `sa2_attach` context from
+/// Godot's render thread, on a `sa2_create` context (route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) from any thread.
 pub trait CoreAbi {
     /// `sa2_describe`: the support report's JSON.
     fn describe(&self) -> Result<String, Status>;

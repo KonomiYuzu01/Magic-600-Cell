@@ -1,0 +1,8 @@
+edition "6cs-draft-1";
+module jumble_protection requires [];
+
+export fn word_protection(w: MenuWord, pieces: List<Nat>) -> record { net: record { first_refused_prefix: List<Nat>, level: Text, mode: Text, pieces: List<Nat>, protected: List<Nat>, verdict: Text }, strict: record { first_refused_prefix: List<Nat>, level: Text, mode: Text, pieces: List<Nat>, protected: List<Nat>, verdict: Text } } effects [snapshot] {
+    let net = read_snapshot<record { first_refused_prefix: List<Nat>, level: Text, mode: Text, pieces: List<Nat>, protected: List<Nat>, verdict: Text }>("protection", record { mode = "net", pieces = pieces, word = w });
+    let strict = read_snapshot<record { first_refused_prefix: List<Nat>, level: Text, mode: Text, pieces: List<Nat>, protected: List<Nat>, verdict: Text }>("protection", record { mode = "strict", pieces = pieces, word = w });
+    return record { net = net, strict = strict };
+}

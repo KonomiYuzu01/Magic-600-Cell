@@ -1,0 +1,23 @@
+# The native host library of C9's product shell (renderer/shell, step S2): c600-display's host over the bridge
+# (c600-render and c600-render-ffi), behind a small C interface that the shell's C# side calls. It is a member of
+# renderer/bridge's workspace, outside the language workspace (rust/Cargo.toml), because its C interface needs
+# unsafe code and foreign declarations, which CT-RPI-01 keeps out of that workspace.
+[package]
+name = "c600-shell-host"
+description = "The display host over the S-A2 core's C function table, behind a C interface for the product shell (C9, draft)"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+# cdylib for the shell; rlib so that the tests call the C interface directly.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+c600-display = { path = "../../../rust/c600-display" }
+c600-kernel = { path = "../../../rust/c600-kernel" }
+c600-render = { path = "../../../rust/c600-render" }
+c600-render-ffi = { path = ".." }
+
+[dev-dependencies]
+c600-digest = { path = "../../../rust/c600-digest" }

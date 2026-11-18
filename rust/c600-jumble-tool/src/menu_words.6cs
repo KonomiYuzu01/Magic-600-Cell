@@ -1,0 +1,12 @@
+edition "6cs-draft-1";
+module menu_words requires [];
+
+export fn power(w: MenuWord, n: Int) -> MenuWord effects [] {
+    return match exact_eq(n, 0) {
+        true => menu[];
+        _ => match exact_less(n, 0) {
+            true => concat(inverse(w), power(w, exact_add(n, 1)));
+            _ => concat(w, power(w, exact_add(n, -1)));
+        };
+    };
+}

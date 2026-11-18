@@ -40,6 +40,7 @@ dependencies = [
  "c600-digest",
  "c600-jumble",
  "c600-kernel",
+ "c600-run",
 ]
 
 [[package]]
@@ -50,7 +51,9 @@ version = "0.0.0"
 name = "c600-display"
 version = "0.0.0"
 dependencies = [
+ "c600-check",
  "c600-digest",
+ "c600-ir",
  "c600-jumble",
  "c600-kernel",
 ]
@@ -115,6 +118,7 @@ dependencies = [
  "c600-ir",
  "c600-jumble",
  "c600-kernel",
+ "c600-library",
  "c600-repr",
  "c600-run",
  "c600-syntax",

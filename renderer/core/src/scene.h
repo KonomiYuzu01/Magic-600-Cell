@@ -11,7 +11,7 @@ class Scene {
     std::unique_ptr<Impl> gpu;
 public:
     SceneRecord record;
-    Product product; // ABI 4's device-free state; it lives and dies with the scene
+    Product product; // ABI 4's device-free state; it lives and dies with the scene (an ABI 5 recovery moves it to the new scene)
     Scene(ID3D12Device* device, const sa2_scene_config& config, uint32_t width, uint32_t height);
     Scene(ID3D12Device* device, const sa2_wj_config& config, uint32_t width, uint32_t height);
     ~Scene();
@@ -32,15 +32,17 @@ public:
     // allocate nothing more. Uploads, frames and ID passes run on the
     // producer queue. A failure while creating resources leaves the scene
     // usable; a failure while recording or submitting poisons it.
-    void product_ready(ID3D12CommandQueue* queue);
+    // ABI 5: a B8G8R8A8_UNORM format also builds the route-B surface pipeline.
+    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
     // Records the preparation's upload with its own list and signals the
     // product fence; returns the fence value.
     uint64_t product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
     // Records one frame into the open list: the engine upload the plan asks
     // for, the draw with the frame's camera and the set's visibility, and the
-    // ring's timestamp and pipeline-statistics queries.
+    // ring's timestamp and pipeline-statistics queries. format selects the
+    // pipeline: R8G8B8A8_UNORM (ring slot) or B8G8R8A8_UNORM (ABI 5 surface).
     void product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
-                       D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring);
+                       D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
     // The ring's last frame results, read after that frame completed: GPU nanoseconds and VSInvocations.
     std::pair<uint64_t, uint64_t> product_results(uint32_t ring);
     // Records an ID pass and the texel copy with its own list and signals the product fence.

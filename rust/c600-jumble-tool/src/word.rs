@@ -11,6 +11,10 @@
 //! no state and no model, so construction checks no state, and a constructed word is admitted or refused only when its
 //! letters act, prefix by prefix. A word operation that mixes alphabets, or a word played at a state of another
 //! alphabet, is refused with [`INCOMPATIBLE_ALPHABET`].
+//!
+//! [`Alphabet::pinned`] gives the same alphabet as the interpreter's menu alphabet (`c600_run::menu`, LP2's pull
+//! request 210), which a run pins for the IR draft's menu words, so the library entries written as language code
+//! (`crate::library`) build the words that [`LiteralWord`] builds here.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -20,7 +24,8 @@ use c600_jumble::q5::transpose;
 use c600_jumble::state::State;
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
-use c600_kernel::IdentityBlock;
+use c600_kernel::{IdentityBlock, Puzzle};
+use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
 
 /// The chapter 13 code of a word composition or application that mixes puzzle alphabets or pinned letter meanings
 /// (LB1.3, LB1.9).
@@ -122,6 +127,25 @@ pub fn word_of(pairs: &[[i32; 2]]) -> Vec<i32> {
     pairs.iter().flatten().copied().collect()
 }
 
+/// The identity block as the interpreter's menu alphabet names it (`c600_run::menu`, which does not depend on the
+/// kernel crates): its five fields as text in KN1.4's order, the puzzle written `jumbling` or `full` as the session
+/// store writes it. A field the block does not have, as in free mode or for 600-cell-Full, is empty, and the text then
+/// names no alphabet ([`MenuIdentity::names_alphabet`]).
+pub fn menu_identity(block: &IdentityBlock) -> MenuIdentity {
+    let text = |field: &Option<String>| field.clone().unwrap_or_default();
+    let puzzle = match block.puzzle {
+        Puzzle::Full => "full",
+        Puzzle::Jumbling => "jumbling",
+    };
+    MenuIdentity {
+        puzzle: puzzle.to_owned(),
+        model_id: block.model_id.clone(),
+        menu_id: text(&block.menu_id),
+        menu_order: text(&block.menu_order),
+        contract_rev: text(&block.contract_rev),
+    }
+}
+
 /// The first field in which two identity blocks differ, in KN1.4's order.
 fn differing(a: &IdentityBlock, b: &IdentityBlock) -> Option<&'static str> {
     if a.puzzle != b.puzzle {
@@ -180,6 +204,16 @@ impl Alphabet {
     /// The item of the inverse rotation of `item`, or `None` for an index outside the menu.
     pub fn inverse_item(&self, item: i32) -> Option<i32> {
         usize::try_from(item).ok().and_then(|x| self.0.inverse.get(x)).copied()
+    }
+
+    /// This alphabet as the interpreter's menu alphabet, which a run pins for the IR draft's menu words (LB1.8; LP2
+    /// draft): the identity block as text ([`menu_identity`]), every pole of the model as a cap, and the item of each
+    /// item's inverse rotation. A menu-word literal of the run then takes this alphabet, its `inverse` reads these
+    /// inverse items, and an argument or a host's answer of another alphabet is refused with
+    /// `LB1:input.incompatible_alphabet` (`c600_run::menu`).
+    pub fn pinned(&self) -> Result<MenuAlphabet, MenuError> {
+        let inverse = self.0.inverse.iter().map(|&item| item as u32).collect();
+        MenuAlphabet::new(menu_identity(self.identity()), POLES as u32, inverse)
     }
 
     /// Refuses another alphabet with [`INCOMPATIBLE_ALPHABET`].
