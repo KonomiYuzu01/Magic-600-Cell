@@ -1,0 +1,41 @@
+# Renderer core provenance
+
+`renderer/core/` is the product copy of the selected S-A2 native Direct3D 12 core, with W-J's per-piece pose path added as ABI 3. Every source was copied from the selection evidence under `work/experiments/` at commit `0f067202ae16ee981db7eef2ece05b54fe226b98`. That evidence stays read-only: the build compiles nothing from `work/experiments/`, and `tests/test_renderer_core.py` checks the digests below against it.
+
+Each row pairs one product file with one source. A product file built from two sources has two rows. "verbatim" means that the product file's SHA-256 equals the source digest. A product file with no source is marked `new`.
+
+| Product file | Source | Source SHA-256 | Change |
+| --- | --- | --- | --- |
+| `renderer/core/include/sa2_interop.h` | `work/experiments/renderer-sa2/native/include/sa2_interop.h` | `8f886fd1fe8f827719f0d8b91c1476fc9440bbd6ff61209d550f16ac795ea039` | CRLF to LF; ABI 3: `SA2_ABI_VERSION 3u`, `sa2_wj_config`, `sa2_scene_load_wj`, `sa2_scene_lattice_check` and their documentation; ABI 1 and 2 declarations and layouts unchanged |
+| `renderer/core/src/interop.cpp` | `work/experiments/renderer-sa2/native/src/interop.cpp` | `0c8db39e5151de16eb591c3679531fbd03a71a1df202ee8ed93975816707df78` | adds `sa2_scene_load_wj` and `sa2_scene_lattice_check`; for a W-J scene, write_run also writes `pose_check.json` and the failure texts name W-J |
+| `renderer/core/src/scene.cpp` | `work/experiments/renderer-sa2/native/src/scene.cpp` | `70853bec7f5b2d4bcb0a4c2ee3391c14e4ef6012b8685754a0ff5b74ea127c70` | pose path: W-J's 176-byte constants and 18-parameter root signature; W1..W4 bind identity poses with the pose path off; W-J scene, geometry and lattice paths; build identity factored into a helper |
+| `renderer/core/src/scene.cpp` | `work/experiments/renderer-wj/gpu.cpp` | `1345ae8a2ffa61401622874f250563eceda14aa25f7e5c7bbdf15bcc7471309d` | runGpu's pose, lattice and check resources, bundle upload, bind and copy, geometry and lattice dispatch, ported onto Godot's device and the producer queue (no swap chain) |
+| `renderer/core/src/scene.h` | `work/experiments/renderer-sa2/native/src/scene.h` | `ec2517e9eb346845ea3c8ac1bf9cda268771ce07f220c1d83cb558c8c67cbc2a` | W-J constructor, `labels(Json& poses)`, `lattice_check` and `lattice_error` |
+| `renderer/core/src/scene_record.h` | `work/experiments/renderer-sa2/native/src/scene_record.h` | `454cadd9413103128ccd463eba347846e8485cd9d1d6b40d81862a6a4b53175c` | `SceneWj`, W-J config validation, readback sizing, readers, `WjProtocol`, the W-J record constructor, `require_lattice` and the slot-to-piece map; five shader names |
+| `renderer/core/src/scene_record.cpp` | `work/experiments/renderer-sa2/native/src/scene_record.cpp` | `a0e20c17c85f0dc362ca7550f804876e2218075ea9d4ed5795fc3b04e8f07230` | implements the declarations above; native.json gains W-J's fields for a W-J scene; identity lists `lattice_cs.dxil` |
+| `renderer/core/src/scene_record.cpp` | `work/experiments/renderer-wj/gpu.cpp` | `1345ae8a2ffa61401622874f250563eceda14aa25f7e5c7bbdf15bcc7471309d` | `WjProtocol` is runGpu's revision protocol (initial upload, turn revisions, injection at turn 20, delayed adoption, stale binding) without a device |
+| `renderer/core/src/selftest.cpp` | `work/experiments/renderer-sa2/native/src/selftest.cpp` | `fb77408235c7cb7081a5a152286e36c5bcf91b07e30f982ae6ade32e6599ad12` | ABI 3 version, export and identity checks; adds the CPU checks wj arguments, wj scene state, wj reader refusals, wj protocol controls and wj native writer |
+| `renderer/core/src/pure.cpp` | `work/experiments/renderer-sa2/native/src/pure.cpp` | `cd9ce9c836737f9a51dae58a336b18076933b41f7575649fe9db3e238db7bd94` | verbatim |
+| `renderer/core/src/pure.h` | `work/experiments/renderer-sa2/native/src/pure.h` | `4fddcb46d44049630fdbd59c5c08a77e3795ee1516e6eca0ba23615bf1d5c870` | verbatim |
+| `renderer/core/src/test.h` | `work/experiments/renderer-sa2/native/src/test.h` | `e8b80ebf6b38581ec9b800bf1b2e5a7ee13c084fdb547695faafc9d662a9281a` | verbatim |
+| `renderer/core/src/sb_link.cpp` | `work/experiments/renderer-sa2/native/src/sb_link.cpp` | `6b41b7d0ace26b9ba84be8f6f77557f5e6172af690b323f5e967ec6389085565` | verbatim |
+| `renderer/core/src/gpu_test.cpp` | `work/experiments/renderer-sa2/native/src/gpu_test.cpp` | `8c8ffca528433c5aa4874166c7932041a5725b96c16b27bc96a3ea038ff0e461` | verbatim |
+| `renderer/core/src/wj_link.cpp` | `work/experiments/renderer-sa2/native/src/sb_link.cpp` | `6b41b7d0ace26b9ba84be8f6f77557f5e6172af690b323f5e967ec6389085565` | the same stub for W-J's reader: `wj::runGpu` throws, so the reader links without W-J's standalone device code |
+| `renderer/core/src/sb/probe.cpp` | `work/experiments/renderer-sb/probe/src/probe.cpp` | `ad36aef9c846a8d970f5bf062a12c1eecb1a564946c63b35ecc7ed8c39fad95d` | verbatim |
+| `renderer/core/src/sb/probe.h` | `work/experiments/renderer-sb/probe/src/probe.h` | `158efab7b9101387cfea2e51896488fca898d2744119a307ad5658d5297e9146` | verbatim |
+| `renderer/core/src/sb/edges.cpp` | `work/experiments/renderer-sb/probe/src/edges.cpp` | `836a45bed4c1847e7d642b723f40c2fe77711c4e4d3a106af77423e0f3c609bf` | verbatim |
+| `renderer/core/src/sb/json.h` | `work/experiments/renderer-sb/probe/src/json.h` | `c27b65456dbd85eca7b05e737677da2c910379b94696f890ee33ea9d1632457c` | verbatim |
+| `renderer/core/src/sb/json.h` | `work/experiments/renderer-wj/json.h` | `c27b65456dbd85eca7b05e737677da2c910379b94696f890ee33ea9d1632457c` | verbatim (W-J's copy is byte-identical; both readers use this one) |
+| `renderer/core/src/wj/probe.cpp` | `work/experiments/renderer-wj/probe.cpp` | `e2114ee5dc07a320764b1eea74e42067e1f03275a72caa58c29db6690b04bef7` | CRLF to LF; `namespace sb` renamed `wj`, with the four `sb::` qualifiers in its unused `main` |
+| `renderer/core/src/wj/probe.h` | `work/experiments/renderer-wj/probe.h` | `25a26deb0bcda3ccb6fe97295a59582d09b40e678af993fc392ea6b8f9a1c21c` | `namespace sb` renamed `wj`, so both readers link into one DLL |
+| `renderer/core/shaders/geometry.hlsl` | `work/experiments/renderer-wj/geometry.hlsl` | `6087c279f7b0c67b5541e45bda8363faf73cb952f5a92d47ee49521c825242f1` | verbatim |
+| `renderer/core/shaders/draw.hlsl` | `work/experiments/renderer-wj/draw.hlsl` | `640d55de305bbf66a10f0cad3f2773fbbd9849a265de24ffe24a5e76448c3a13` | verbatim |
+| `renderer/core/shaders/check.hlsl` | `work/experiments/renderer-wj/check.hlsl` | `d9e41fb05066acf170d35102f5ab13cbdf359ac5d294e7892ae3ec08996ae9ab` | verbatim |
+| `renderer/core/shaders/lattice.hlsl` | `work/experiments/renderer-wj/lattice.hlsl` | `aa311a5b773ba8bb7b229c9367f47d8545270a517d13cf26219a0baf32fb8f2c` | verbatim |
+| `renderer/core/code_layout.json` | `work/experiments/renderer-sa2/code_layout.json` | `795a2e57d7a2da116bf2ab0482a7e2128cca9feefb48a4cb5daf370f6e6a097b` | verbatim (CRLF kept) |
+| `renderer/core/CMakeLists.txt` | `work/experiments/renderer-sa2/native/CMakeLists.txt` | `655c7f6cb7cfdb635d8ab499e38fcb3bab0013d48c95a811b4739f2cfc85224d` | product sources only; adds the `sa2_wj` reader library; defines `_SILENCE_CXX20_U8PATH_DEPRECATION_WARNING` for both copied readers (they call `std::filesystem::u8path`), so /W4 stays clean without editing them |
+| `renderer/core/CMakeLists.txt` | `work/experiments/renderer-wj/CMakeLists.txt` | `cf44643f8d4b4817cdca5369838aab0e385881d85d82334d97ec7d0b3f019cd6` | W-J's shader entry points and profiles, including `lattice_cs.dxil` |
+| `renderer/core/build.cmd` | `work/experiments/renderer-sa2/native/build.cmd` | `44ddc7a9092c2b13be66b09708a3a7df67561ad07bfb7139a8d18d78cdab5634` | CRLF kept; venv path from `renderer/core`; optional `M600_RENDERER_SPIKE_SCRIPTS` override; the default build directory is `work/build/renderer-core` |
+| `renderer/core/check_core.py` | `work/experiments/renderer-sa2/native/check_native.py` | `b48355f59a892d488a7d6bf8edf321c8a9432f420553333313bdfb8df774aec4` | builds in `work/build/renderer-core-<pid>`; expects 22 CPU checks and five shaders; refuses generated build files that name `work/experiments` |
+| `renderer/core/README.md` | new | - | what the core is, ABI 3, the build and check commands |
+| `renderer/core/PROVENANCE.md` | new | - | this table |

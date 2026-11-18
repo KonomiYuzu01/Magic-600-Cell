@@ -40,8 +40,10 @@ pub fn session_with(options: Options) -> (Session, MemDisk) {
     (session, disk)
 }
 
-/// Opens the session a memory disk holds under a new engine epoch.
+/// Opens the session a memory disk holds under a new engine epoch, as a restart: the process that held it has ended
+/// (`MemDisk::end_holder`), and a store the test still owns on the disk is not used again.
 pub fn reopen(disk: &MemDisk) -> Session {
+    disk.end_holder();
     Session::open(kernel(), Box::new(disk.clone()), Options::default()).expect("the session reopens")
 }
 

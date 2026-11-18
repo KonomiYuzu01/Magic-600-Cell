@@ -1,0 +1,145 @@
+"""Build the renderer core in a fresh ignored directory and run its CPU self-test; --gpu also runs the owner GPU checks.
+
+Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
+"""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+
+SHADERS = ["count_vs.dxil", "draw_ps.dxil", "draw_vs.dxil", "geometry_cs.dxil", "lattice_cs.dxil"]
+CPU_CHECKS = {
+    # ABI 2 checks, unchanged.
+    "abi", "exports", "invalid arguments", "last error truncation", "crc", "vectors", "images", "decode rejection",
+    "hex masking", "state tables", "json writer", "scene arguments", "scene state", "scene assets",
+    "scene native writer", "scene output IO", "identity",
+    # ABI 3: the W-J scene API without a device.
+    "wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls", "wj native writer",
+}
+BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
+
+
+def run_bounded(arguments, timeout, **kwargs):
+    process = subprocess.Popen(arguments, **kwargs)
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            subprocess.run(
+                ["taskkill.exe", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                timeout=10, check=False,
+            )
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.communicate(timeout=10)
+        raise
+    if process.returncode:
+        raise subprocess.CalledProcessError(process.returncode, arguments, stdout, stderr)
+    return stdout, stderr
+
+
+def check_result(executable, build, mode, vectors):
+    output = build / f"{mode}.json"
+    arguments = [str(executable), f"--{mode}", "--vectors", vectors, "--out", str(output)]
+    if mode != "cpu":
+        arguments.append("--debug")
+    stdout, _ = run_bounded(arguments, 300 if mode == "cpu" else 7200, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print(stdout, end="")
+    if not stdout.splitlines() or stdout.splitlines()[-1] != "selftest: ok":
+        raise RuntimeError(f"{mode}: missing final success marker")
+    report = json.loads(output.read_text(encoding="utf-8"))
+    if report["format"] != "magic600-sa2-native-selftest-v1" or report["mode"] != mode or not report["checks"]:
+        raise RuntimeError(f"{mode}: invalid JSON envelope")
+    for check in report["checks"]:
+        if not check["name"] or not check["reason"] or check["status"] not in ("pass", "unsupported"):
+            raise RuntimeError(f"{mode}: failed or incomplete check: {check}")
+        if mode == "cpu" and check["status"] != "pass":
+            raise RuntimeError("CPU acceptance requires all CPU checks to pass")
+    if mode == "cpu" and {check["name"] for check in report["checks"]} != CPU_CHECKS:
+        raise RuntimeError("CPU check set is incomplete")
+    if mode == "cpu":
+        identity = report["identity"]
+        shaders = identity["shaders"]
+        if identity["dll"]["file"] != "sa2_interop.dll" or [part["file"] for part in shaders] != SHADERS:
+            raise RuntimeError("identity does not cover the DLL and every loaded shader in sorted order")
+        for part in [identity["dll"], *shaders]:
+            digest = hashlib.sha256((build / part["file"]).read_bytes()).hexdigest()
+            if digest != part["sha256"]:
+                raise RuntimeError(f'identity SHA-256 mismatch: {part["file"]}')
+        print(f"identity: DLL and all {len(SHADERS)} shader SHA-256 values recomputed")
+        print(f"cpu checks: {len(report['checks'])} pass")
+
+
+def check_sources(build):
+    """Refuse a build whose generated rules or dependencies name a file under work/experiments."""
+    files = [path for path in build.rglob("*") if path.is_file() and (path.suffix in BUILD_TEXT or path.name == "build.ninja")]
+    if not any(path.name in ("build.make", "build.ninja") for path in files):
+        raise RuntimeError("no generated build rules to inspect")
+    for path in files:
+        text = path.read_text(encoding="utf-8", errors="replace").replace("\\", "/").lower()
+        if "work/experiments" in text:
+            raise RuntimeError(f"build references work/experiments: {path.relative_to(build)}")
+    print(f"sources: {len(files)} generated build files name no work/experiments path")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--gpu", action="store_true", help="also run the WARP and hardware checks (owner only)")
+    options = parser.parse_args()
+    source = Path(__file__).resolve().parent
+    root = source.parent.parent
+    # Application Control can refuse unsigned executables in system temp. Build
+    # inside the repository's ignored work tree.
+    parent = root / "work" / "build"
+    name = f"renderer-core-{os.getpid()}"
+    build = parent / name
+    created = False
+    try:
+        batch = (source / "build.cmd").read_bytes()
+        if not batch.endswith(b"\r\n") or b"\n" in batch.replace(b"\r\n", b"") or b"\r" in batch.replace(b"\r\n", b""):
+            raise RuntimeError("build.cmd must have CRLF-only line endings")
+        layout = json.loads((source / "code_layout.json").read_text(encoding="utf-8"))
+        vectors = ";".join(f'{v["sequence"]},{v["slot"]},{v["generation"]},{v["code"]}' for v in layout["test_vectors"] if "code" in v)
+        if len(vectors.split(";")) != 3:
+            raise RuntimeError("expected three code vectors in code_layout.json")
+        # Plain mkdir: mkdtemp/TemporaryDirectory have unusable ACLs in the sandbox.
+        parent.mkdir(parents=True, exist_ok=True)
+        build.mkdir()
+        created = True
+        environment = os.environ.copy()
+        environment["M600_SA2_CPU_CHECK"] = "1"
+        run_bounded(["cmd.exe", "/d", "/c", "call", str(source / "build.cmd"), str(build)], 1200, env=environment)
+        executable = build / "sa2_selftest.exe"
+        if not (build / "sa2_interop.dll").is_file() or not executable.is_file():
+            raise RuntimeError("build outputs are missing from the build directory root")
+        check_sources(build)
+        check_result(executable, build, "cpu", vectors)
+        if options.gpu:
+            for mode in ("warp", "hardware"):
+                check_result(executable, build, mode, vectors)
+        print("check_core: ok" + (" (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"))
+        return 0
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
+        print(f"check_core: failed: {error}", file=sys.stderr)
+        if isinstance(error, subprocess.CalledProcessError):
+            for text in (error.stdout, error.stderr):
+                if text:
+                    print(text, file=sys.stderr)
+        return 1
+    finally:
+        if created:
+            if build.resolve().parent != parent.resolve() or build.name != name:
+                raise RuntimeError("refusing cleanup outside this check's build directory")
+            shutil.rmtree(build)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

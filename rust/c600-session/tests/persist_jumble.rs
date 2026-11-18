@@ -209,6 +209,7 @@ fn create(disk: &MemDisk, pin: bool) -> Fixture {
 /// The session `disk` holds, reopened: with `pin`'s menu, read in its context, pinned before the replay
 /// (`CommandLayer::open_with_menu`), or with no menu (`CommandLayer::open`).
 fn reopen(disk: &MemDisk, pin: Option<(Arc<Context>, Menu)>) -> Result<Fixture, Error> {
+    disk.end_holder();
     let store = JournalStore::open(Box::new(disk.clone())).expect("the journal opens");
     let (k, table, secret) = (common::kernel(), Table::h08().with_drafts(), Secret::fixed(SECRET));
     let layer = match pin {
