@@ -1,0 +1,24 @@
+edition "6cs-draft-1";
+module completion requires [];
+
+export fn exact_completion(pieces: List<Nat>, home_slots: List<Nat>) -> Bool effects [snapshot] {
+    let rows = read_snapshot<List<record { piece: Nat, orbit: Int, home: List<Nat>, slots: List<Nat>, position: Int }>>("positions", pieces);
+    let labels = read_snapshot<List<Nat>>("labels", home_slots);
+    let homes = repeat(length(rows), list<List<Nat>>(), fn(done: List<List<Nat>>) -> List<List<Nat>> {
+        return push(done, index(rows, length(done)).home);
+    });
+    let slots = repeat(length(rows), list<List<Nat>>(), fn(done: List<List<Nat>>) -> List<List<Nat>> {
+        return push(done, index(rows, length(done)).slots);
+    });
+    let named = exact_eq(flatten(homes, 0), home_slots);
+    let placed = exact_eq(slots, homes);
+    let labelled = exact_eq(labels, home_slots);
+    return and(exact_less(0, length(pieces)), and(named, and(placed, labelled)));
+}
+
+fn flatten(lists: List<List<Nat>>, from: Nat) -> List<Nat> effects [] {
+    return match exact_less(from, length(lists)) {
+        true => concat(index(lists, from), flatten(lists, exact_add(from, 1)));
+        _ => list<Nat>();
+    };
+}
