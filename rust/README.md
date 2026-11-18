@@ -2222,7 +2222,8 @@ run or not applicable is no pass (PHS.63).
     state number. The layer refuses malformed and stale arguments before any job, `filter.apply` stays refused, and a
     running program's query or view job fails at the host, which has no provenance block for its arguments. Since LP2's
     pull request 237 the layer refuses a workspace row such as `set.save` on a running program's channel with
-    `LG3:capability.not_granted` before any job (a draft until the owner reads ONE.52).
+    `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18 November 2026: a run never
+    writes the workspace).
 - Not built: `filter.apply` (its gate, the `filter` preview rule, the `FilterPreviewRef` form and a workspace inverse in
   the command layer); the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's job
   arguments of the query and view rows; kernel rows for the `filter.preview` and `structure.compare` snapshot reads; a

@@ -1,9 +1,10 @@
 # Language LP3 plan: the first closed loop
 
 Status: plan of 16 November 2026, written when LP3's offline work started beside LP2's remaining milestones, and brought
-up to date on 18 November 2026 with LP2's pull requests up to 237 and the renderer freeze (ADR-R01). It records the
-integrator's selections, and the owner may overrule any of them. It is no ADR and freezes nothing: the command table
-stays a draft until it freezes at LP3 (PHS.53), and the IR until its own freeze (PHS.49).
+up to date on 18 November 2026 with LP2's pull requests up to 237, the renderer freeze (ADR-R01) and the owner's
+decisions of that day ([decision](../../wiki/decisions/owner-decisions-2026-11-18.md)). It records the integrator's
+selections, and the owner may overrule any of them. It is no ADR and freezes nothing: the command table stays a draft
+until it freezes at LP3 (PHS.53), and the IR until its own freeze (PHS.49).
 
 Inputs: chapter 12 sections 5 and 15.4 (PHS.22 to PHS.25, PHS.61 to PHS.67); chapter 01 KN5; chapter 08 section 7;
 the [layer interfaces](layer-interfaces.md) (LI.5, LI.6, LI.9, LI.26, LI.30); H-08's stored
@@ -44,7 +45,8 @@ and the renderer freeze for its on-screen half, and headless integration does no
 (PHS.24). The owner signed the renderer freeze on 16 November 2026
 ([ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md); [freeze
 record](../../wiki/decisions/renderer-freeze.md)): the renderer is S-A2, the S-B Direct3D 12 drawing core as a shared
-native library hosted by Godot 4.7.2 .NET, so the on-screen half may start (C9, section 8).
+native library hosted by Godot 4.7.2 .NET, so the on-screen half may start (C9, section 8). The owner started it on 18
+November 2026 as a line of its own.
 
 ## 2. What may start now and what waits
 
@@ -59,8 +61,8 @@ native library hosted by Godot 4.7.2 .NET, so the on-screen half may start (C9, 
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8) | The rest of KN5.26's admission matrix, a session profile, a durable home for part blocks and EV3.2's view rows: KN5's later stages (LP2). LB7.2's work sheets are built in the command layer (`worksheet.save` and `worksheet.load`, pull request 232) and not taken up through it yet. M6's session lock covers `JournalStore` (pull request 195) |
 | The jumbling tool and every jumbling half | Built in part (C8, section 8) | LP2's exposed-face geometry for J10, a jumbling word key and trace key, and a job that names its cap through the command layer (section 8). Built and not used by C8 yet: the F2 and F5 number kinds in the IR draft (pull request 222), for LB3's ν and correction-set entry as language code; Jumble in the command layer (pull requests 212, 217, 218 and 220); and menu words in the IR draft (pull request 210), for the jumbling library entries. M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel; C5: its Strict half through the tool's route, on the command layer's Strict mode of LP2's pull request 198, and the twist keys' exact requests through `twist.apply`; C6: CT-LB4-01's checks on the polytope operations); the others can start | What the kernel alone does not give: host rows beyond `positions` in the tool's bridge, LP3's to add (the table below); LB7.2's work sheets are in the command layer (pull request 232) |
-| The on-screen half | May start (C9, section 8) | Its components, which a line of its own builds; the owner's runs |
-| Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, RPI.79's gate run and the W-J runs on the selected renderer | Waits | The owner's machine, all run together (owner, 16 November 2026; ADR-R01.3) |
+| The on-screen half | Started as a line of its own (owner, 18 November 2026; C9, section 8) | Its components, which that line builds; the owner's runs |
+| Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, RPI.79's gate run and the W-J runs on the selected renderer | Waits | The owner's machine, all run together (owner, 16 November 2026; ADR-R01.3); LX-4's time box is 4 hours (owner, 18 November 2026) |
 | CT-LB1-06's word keys | Answered: `trace-key/1` (owner, 17 November 2026, [decision](../../wiki/decisions/owner-decisions-2026-11-17-c5-evidence.md)); the 600-cell-Full half is built (LP2's pull request 214) | The jumbling half: `jumble-locality/1`, which needs an exact Δ(c,d) entry in `c600-jumble` (LP2) |
 | Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Built in part (C5 library, section 7): LB1's literal words on 600-cell-Full | Nothing from LP2 for the next entries: menu words (pull request 210), `trace-key/1` (pull request 214), F2 and F5 (pull request 222) and loops (pull request 234) are in the IR draft. Entries over kernel rows, such as LB2's star and recipe construction and its Net and Strict protection, need a host row for each kernel row they read; the tool's bridge answers the IR draft's snapshot read with an argument for `positions` only (LP2's pull requests 199 and 226; the IR freezes at PHS.49), and LP3 adds the others. The other entries are not written yet |
 
@@ -79,7 +81,7 @@ runnable") cover the kernel rows. LP3 builds nothing in LP2's crates. Each row s
 | The F2 and F5 number kinds. Built in the kernel (pull request 201: `c600_kernel::exact`), with ν (`c600_jumble::nu`, pull request 201) and the correction catalogue with `correction_set_check` (`c600_jumble::corrections`, pull request 206), and as number kinds of the IR draft (pull request 222: `F2`, `F5`, `to_f2`, `to_f5`, `residue` and the `field_*` operations) | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | None: CT-LB1-01's entries are LP3's library code |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator. Built (pull request 176), with `compose`, `length` and `word_key`, Full's free reduction; menu words (pull request 210) and LB1.10's `trace-key/1` for 600-cell-Full words (pull request 214). Not built: these operations on compressed words, a jumbling word key and a jumbling trace key | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-02's key half and CT-LB1-06's jumbling half; the library entries of CT-LB2-01 and CT-BND-18 are not written yet |
 | Collection types in the IR draft: lists, maps, sets. Built (pull request 176); they cross the runtime's wire (C3, pull request 180) | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | None |
-| The IR features CT-RTE-04's other 14 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216, generator draws with pull request 219, child scopes with pull request 225 and loops with pull request 234). Six wait for byte decoding and streaming cursors, LP2's next IR items; three are amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five need `lp1-exec-region-draft-1`'s executor, which LP2 does not build (LP2 plan, section 3, selection 1): an item for the owner at C10 | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
+| The IR features CT-RTE-04's other 14 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216, generator draws with pull request 219, child scopes with pull request 225 and loops with pull request 234). Six wait for byte decoding and streaming cursors, LP2's next IR items; three are amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five need `lp1-exec-region-draft-1`'s executor, which LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in `c600-command`, takes two LP3
 requirements the LP2 integrator accepted: LP3's KN5.21 lead, closed in its stages 1 and 2 (pull request 174), and the
@@ -168,7 +170,7 @@ One pull request per milestone; each names the checks that ran.
 | C6 | Representations tool, headless half | C2, C5 | Built in part (section 7) |
 | C7 | Durable receipts and undo through the session store | M6 (on main), C1 and LP2's KN5 implementation | Built in part (section 8) |
 | C8 | The jumbling tool | M5 (on main) | Built in part (section 8) |
-| C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze (signed 16 November 2026, ADR-R01); the owner's runs | May start: its components in a line of their own (section 8) |
+| C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze (signed 16 November 2026, ADR-R01); the owner's runs | Started on 18 November 2026 (owner): its components in a line of their own (section 8) |
 | C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
 
 ## 5. C1: the command layer and the oracle loop
@@ -214,9 +216,9 @@ acceptance check and stop condition.
   40. With LP2's `rng_init` and `rng_draw` (pull request 219) three generator traces more run, and with its child scopes
   (pull request 225) the five child traces, child records included: 25 of 40. With its loops (pull request 234)
   `final-loop-test` runs: 26 of 40. Of the other 14, six wait for byte decoding and streaming cursors in the IR draft
-  (LP2), three are amendment candidates for C10, and form 2's five need an executor LP2 does not build (section 9). A
-  compressed word crosses as its parts, within one frame's bound on the lengths they derive (crate draft 15, on LP2's
-  pull request 185).
+  (LP2), three are amendment candidates for C10, and form 2's five are not applicable, which is no pass, since LP2
+  builds only form 1 of LG2.5 (section 9). A compressed word crosses as its parts, within one frame's bound on the
+  lengths they derive (crate draft 15, on LP2's pull request 185).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full;
   three more (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176),
@@ -361,12 +363,12 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   `filter` preview rule, the `FilterPreviewRef` form and a workspace inverse in the command layer (KN5, LP2). Of the
   other rows' needs: the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's job
   arguments of the query and view rows, without which the test host fails such a job (since LP2's pull request 237 the
-  layer refuses a workspace row such as `set.save` from a running program with `LG3:capability.not_granted`); kernel
-  rows for the `filter.preview` and `structure.compare` snapshot reads, for which the test host answers the state
-  number; a record and an exact-set digest for each saved set; and a display that applies the published scope. The crate
-  documentation names the API each needs. Also not built: the stage checker and every device step (C9), the relationship
-  strip (C8 computes one of its typed relations, a slot's current occupant, at pose level), and a BM5 review record,
-  which the tool gets when it ships.
+  layer refuses a workspace row such as `set.save` from a running program with `LG3:capability.not_granted`, the owner's
+  narrow reading of ONE.52 of 18 November 2026); kernel rows for the `filter.preview` and `structure.compare` snapshot
+  reads, for which the test host answers the state number; a record and an exact-set digest for each saved set; and a
+  display that applies the published scope. The crate documentation names the API each needs. Also not built: the stage
+  checker and every device step (C9), the relationship strip (C8 computes one of its typed relations, a slot's current
+  occupant, at pose level), and a BM5 review record, which the tool gets when it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.
@@ -422,14 +424,17 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   names no plane for its twists, and which engine names one is not settled.
 - **C9, the on-screen half, on the selected renderer.** The owner signed the renderer freeze on 16 November 2026
   ([freeze record](../../wiki/decisions/renderer-freeze.md), ADR-R01): S-A2, the S-B Direct3D 12 drawing core as a
-  shared native library hosted by Godot 4.7.2 .NET. A line of its own builds the components: the core with W-J's pose
-  path, a bridge crate that implements `c600_display::Backend` over the core's C interface, the product shell and the
+  shared native library hosted by Godot 4.7.2 .NET. The owner started C9 on 18 November 2026 as a line of its own, with
+  no Godot source build for now: the confirmed present is tried through Godot's public API first. DXC ships as the
+  run-time compiler for user stages (RPI.80, ADR-R01.4). That line builds the components: the core with W-J's pose path,
+  a bridge crate that implements `c600_display::Backend` over the core's C interface, the product shell and the
   measurement tools; LP3 keeps the test mapping and `c600-display`, `c600-input`, `c600-runtime` and `c600-view`. The
   tests: the windows tests CT-ONE-26, CT-RPI-13, CT-RPI-21, CT-RPI-24, CT-RPI-31, CT-RPI-33, CT-RPI-34, CT-RM-05,
   CT-RM-06, CT-RM-10, CT-BND-20 and CT-RTE-10; the performance tests CT-KN7-06, CT-LG4-09, CT-EV1-06, CT-ONE-25,
   CT-RPI-26, CT-RTE-11 and CT-RTE-12; the renderer halves of CT-LB4-04 and CT-EV3-08. The runs follow PHS.64 on one
   frozen candidate, with their bars unchanged, and are done together on the owner's machine (owner, 16 November 2026),
-  with W-J's runs (ADR-R01.3, option A: a failing run reopens the selection) and RPI.79's gate run on the product build.
+  with W-J's runs (ADR-R01.3, option A: a failing run reopens the selection) and RPI.79's gate run on the product build;
+  LX-4's time box is 4 hours, on the same day (owner, 18 November 2026).
 - **C10, the exit.** H-08 freezes (PHS.53), with the draft codes registered under PHS.52; every acceptance item has
   evidence on one frozen candidate; the 82 tests run whole; the owner signs off.
 
@@ -510,7 +515,7 @@ is not built yet.
 | CT-BND-18 | source | The setup-search library entry, not written yet (collection types and word operations are in the IR draft, pull request 176) | The checker half: the built-in column's setup-search exception (LP2's pull request 229, `c600-check/tests/exceptions.rs`) |
 | CT-BND-19 | source | Now (C5: the tool's views, and the live twist through the input router on the tool's view model) | - |
 | CT-BND-20 | windows | The on-screen half (C9) | A held chord commits once; the runtime gets no token (C1) |
-| CT-RTE-04 | source | Byte decoding (three traces) and streaming cursors (three) in the IR draft, LP2's next IR items; `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five traces, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1): an item for the owner at C10 | 26 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, and one after its loops, pull request 234) |
+| CT-RTE-04 | source | Byte decoding (three traces) and streaming cursors (three) in the IR draft, LP2's next IR items; `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five traces, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | 26 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, and one after its loops, pull request 234) |
 | CT-RTE-07 | source | The six jumbling keys, on M5 and menu words (C8); the six store keys, on M6's store and run record (C7, LP2's pull request 235); the keys the IR draft could not express when C4 was built, checked again against LP2's exact multiplication and loops (C4); the budget keys that need a price mapping; host events in a loop or the command layer (C5); and a Linux run | 39 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
