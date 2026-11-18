@@ -75,7 +75,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 /// `menu_words.rs` here and in `c600-run`. So has an end test's verdict (LP2 draft): CT-LG2-09's unknown that never
 /// passes as false, in `end_tests.rs` here and in `c600-check` and `c600-run`. So has the generator (LP2 draft;
 /// DET.61): `generators.rs` here and in `c600-run`. F2 and F5 (LP2 draft) are number kinds of KN3.2, not domain
-/// families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`.
+/// families; their tests are `fields.rs` here, in `c600-check` and in `c600-run`. Captured bytes (LP2 draft; DET.62)
+/// hold octets that a program reads only through `text_decode`; their tests are `decode.rs` in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -100,6 +101,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::EndTest(_)
         | Ty::Generator
         | Ty::Field(_)
+        | Ty::Bytes
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
@@ -129,6 +131,8 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::Compress | Prim::Expand => "word",
         Prim::WordKey | Prim::TraceKey => "word key",
         Prim::RngDraw => "granted input or output",
+        // Captured bytes into text (DET.62; LP2 draft).
+        Prim::TextDecode => "decoding",
     }
 }
 

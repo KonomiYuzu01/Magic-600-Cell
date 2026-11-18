@@ -185,6 +185,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::EndTest(_) => "the outcome of the end test it names",
         Ty::TraceEqualityKey => "a trace equality key under the run's relation, which is never letters",
         Ty::Generator => "a cursor on a stream of the run's seed, kept only inside the interpreter",
+        Ty::Bytes => "captured octets, which a program reads only by decoding them into text",
     }
 }
 
@@ -206,6 +207,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::EndTest(..) => "the outcome of the end test it names",
         Value::TraceEqualityKey(_) => "a trace equality key under the run's relation, which is never letters",
         Value::Generator(_) => "a cursor on a stream of the run's seed, kept only inside the interpreter",
+        Value::Bytes(_) => "captured octets, which a program reads only by decoding them into text",
     }
 }
 
