@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "description": "Code image that carries (sequence, slot, generation) through the SA2 smoke test. The native producer writes it, the harness decodes it from the composited frame, and check_project.py checks the C, C# and Python copies against this file.",
+  "block_px": 8,
+  "grid_cols": 8,
+  "grid_rows": 8,
+  "corners": {
+    "top_left": "blocks start at texel (0, 0)",
+    "bottom_right": "blocks start at texel (width - 64, height - 64)"
+  },
+  "bit_to_block": "bit i is the block at column i % 8 and row i // 8, both counted from the corner's top-left block",
+  "fields": [
+    {"name": "sequence", "first_bit": 0, "bits": 32},
+    {"name": "slot", "first_bit": 32, "bits": 4},
+    {"name": "generation", "first_bit": 36, "bits": 12},
+    {"name": "check", "first_bit": 48, "bits": 16}
+  ],
+  "value": "code = sequence | slot << 32 | generation << 36 | check << 48; sequence, slot and generation are taken modulo 2^32, 2^4 and 2^12",
+  "check": "CRC-16/CCITT-FALSE (polynomial 0x1021, initial 0xFFFF, no reflection, final XOR 0) over the six little-endian bytes of code & 0xFFFFFFFFFFFF",
+  "one_rgba8": [255, 255, 255, 255],
+  "zero_rgba8": [0, 0, 0, 255],
+  "fill_rgba8": "every texel outside both code areas is (32 + 64 * slot, sequence % 251, 16 * (generation % 16), 255)",
+  "decode": "read the red channel at each block centre (x0 + 8 * column + 4, y0 + 8 * row + 4); a value of at least 128 is bit 1. A decode is valid when both corners give the same 64-bit value and its check matches",
+  "min_texture_px": 128,
+  "ring_slots": 3,
+  "test_vectors": [
+    {"input": "123456789", "crc16": "0x29B1"},
+    {"sequence": 1, "slot": 0, "generation": 0, "code": "0x4BB0000000000001"},
+    {"sequence": 3735928559, "slot": 2, "generation": 2748, "code": "0x786FABC2DEADBEEF"},
+    {"sequence": 1000, "slot": 1, "generation": 7, "code": "0x5DD00071000003E8"}
+  ]
+}
