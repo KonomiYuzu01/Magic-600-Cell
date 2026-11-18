@@ -463,14 +463,25 @@ def write_run(directory: Path, scene, menu=None, run_id="c9-test", pose_failure=
     return directory
 
 
-def finalize(directory: Path, mode="run", overlays=OVERLAYS, adapter=None):
+def finalize(directory: Path, mode="run", overlays=OVERLAYS, adapter=None, fault_injection=False, unattended=False):
     """The finalizer with the Windows-only build guard replaced by a fixed identity and binding."""
     output = io.StringIO()
     with mock.patch.object(fr, "build_identity", lambda *arguments: (dict(BUILD), dict(BINDING))), \
             mock.patch.object(fr, "final_guard_check", lambda *arguments: None), \
             contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-        return fr.finalize(directory, "sa2", mode, PID, 0, 2**40, overlays=overlays, fault_injection=False,
-                           adapter=adapter or fr.DEFAULT_ADAPTER)
+        return fr.finalize(directory, "sa2", mode, PID, 0, 2**40, overlays=overlays, fault_injection=fault_injection,
+                           adapter=adapter or fr.DEFAULT_ADAPTER, unattended=unattended)
+
+
+def inject(directory: Path, fault: str) -> Path:
+    """Turn a written run into one that ran an injection which the checks did not catch."""
+    record = read(directory / "harness.json")
+    record["options"]["inject"] = fault
+    write_json(directory / "harness.json", record)
+    native = read(directory / "native.json")
+    native["injection_applied"] = True
+    write_json(directory / "native.json", native)
+    return directory
 
 
 def read(path: Path) -> dict:
@@ -560,6 +571,41 @@ class FinalizerTests(unittest.TestCase):
         self.assertEqual(finalize(run), 2)
         self.assertEqual(read(run / "run.json")["label_check"]["status"], "fail")
         self.assertIn("label-check-failed", gate.summarize_private([run])["invalid_runs"][0]["reasons"])
+
+    def test_fault_injection_run_is_never_gate_evidence(self):
+        run = inject(write_run(self.base / "fault", "w3", run_id="c9-w3-fault"), "swap-same-colour")
+        self.assertIn(finalize(run, overlays=None, fault_injection=True), (0, 2))
+        self.assertFalse((run / "run.json").exists())
+        record = read(run / "fault-run.json")
+        self.assertEqual((record["format"], record["injected_fault"]), ("magic600-l2-fault-run-v1", "swap-same-colour"))
+        self.assertNotIn("watched", record["environment"]["declared"])
+        result = scene_result(gate.summarize_private([run]), "w3")
+        self.assertFalse(result and result["runs"], "the gate must not count a fault-injection run")
+        with self.assertRaises(Exception):
+            gate.validate_run(record)
+
+    def test_operator_declaration_must_match_the_injection(self):
+        cases = {
+            "declared-injected": (inject(write_run(self.base / "a", "w3", run_id="c9-a"), "stale-binding"),
+                                  {"overlays": OVERLAYS}),
+            "unattended-injected": (inject(write_run(self.base / "b", "w3", run_id="c9-b"), "stale-binding"),
+                                    {"overlays": None, "fault_injection": True, "unattended": True}),
+            "fault-flag-clean": (write_run(self.base / "c", "w3", run_id="c9-c"),
+                                 {"overlays": None, "fault_injection": True}),
+        }
+        for name, (run, options) in cases.items():
+            with self.subTest(case=name):
+                self.assertEqual(finalize(run, **options), 5)
+                self.assertEqual(read(run / "refusal.json")["reasons"], ["operator"])
+                self.assertFalse((run / "run.json").exists() or (run / "fault-run.json").exists())
+
+    def test_watched_is_recorded(self):
+        watched = write_run(self.base / "watched", "w3", run_id="c9-watched")
+        unwatched = write_run(self.base / "unwatched", "w3", run_id="c9-unwatched")
+        self.assertEqual(finalize(watched), 0)
+        self.assertEqual(finalize(unwatched, unattended=True), 0)
+        self.assertIs(read(watched / "run.json")["environment"]["declared"]["watched"], True)
+        self.assertIs(read(unwatched / "run.json")["environment"]["declared"]["watched"], False)
 
     def test_refusals(self):
         cases = {"adapter": {"adapter": "Some Other GPU"}, "operator": {"overlays": None}}

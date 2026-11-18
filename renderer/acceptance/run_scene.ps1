@@ -238,7 +238,7 @@ $operatorText = if ($Unattended) {
 } else {
     "$Overlays; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
 }
-$operatorArguments = @(if ($gateRun) { '--overlays', $operatorText } elseif ($Mode -eq 'run') { '--fault-injection' })
+$operatorArguments = @(if ($gateRun) { '--overlays', $operatorText; if ($Unattended) { '--unattended' } } elseif ($Mode -eq 'run') { '--fault-injection' })
 
 if ($DryRun) {
     Write-Host 'file guard plan:'
@@ -323,7 +323,14 @@ try {
         }
         & $python @finalArguments
         $finalExit = $LASTEXITCODE
-        Stop-Guard $guard
+        try { Stop-Guard $guard } catch {
+            # The guard saw a protected file change after the finalizer wrote its record: keep nothing that reads as accepted.
+            foreach ($name in @('run.json','fault-run.json',"$Mode-record.json")) {
+                $written = Join-Path $directory $name
+                if (Test-Path -LiteralPath $written -PathType Leaf) { Move-Item -LiteralPath $written -Destination "$written.rejected" }
+            }
+            throw
+        }
         if ($finalExit -eq 5) {
             $refusalPath = Join-Path $directory 'refusal.json'
             if (Test-Path -LiteralPath $refusalPath -PathType Leaf) {
@@ -361,9 +368,19 @@ if ($Mode -ne 'run') {
     if ($finalExit -eq 2) { exit 2 }
     exit 0
 }
+if (-not $gateRun) {
+    # A fault-injection run: its record is fault-run.json, which the gate never reads; no gate summary is made.
+    $fault = Get-Content -LiteralPath (Join-Path $directory 'fault-run.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $checkText = "label check $($fault.label_check.status)"
+    if ($wj) { $checkText += ", pose check $($fault.pose_check.status)" }
+    Write-Host "$runId`: fault-injection run ($Inject), never gate evidence: $checkText"
+    if ($finalExit -eq 2) { exit 2 }
+    exit 0
+}
 $run = Get-Content -LiteralPath (Join-Path $directory 'run.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $checkText = "label check $($run.label_check.status)"
 if ($wj) { $checkText += ", pose check $($run.pose_check.status)" }
+$checkText += "; watched: $(if ($Unattended) { 'no (unattended)' } else { 'yes (operator-declared)' })"
 Write-Host "$runId`: $checkText"
 # One run's gate summary (verdict insufficient-runs by design); README.md gives the pooled three-run command.
 & $python -B $gateScript $directory --out $summaryPath

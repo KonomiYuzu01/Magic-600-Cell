@@ -31,7 +31,7 @@ sys.path.insert(0, str(REPOSITORY / 'tools' / 'perf'))
 import renderer_gate as gate
 
 DEFAULT_ADAPTER = 'NVIDIA GeForce RTX 4070 Laptop GPU'
-OUTPUTS = ('run.json', 'geometry-record.json', 'lattice-record.json', 'refusal.json')
+OUTPUTS = ('run.json', 'fault-run.json', 'geometry-record.json', 'lattice-record.json', 'refusal.json')
 SCENES = ('w1', 'w2', 'w3', 'w4', 'wj')
 # W-J's menus and the fixture names its native record reports (renderer/core/src/scene_record.cpp).
 MENUS = {'S4': 'wj-s4', 'I_a': 'wj-i-a', 'I_b': 'wj-i-b'}
@@ -713,7 +713,7 @@ def presentmon_summary(rows):
 
 
 def finalize(directory, candidate, mode, pid, app_exit, launched_created, overlays=None, fault_injection=False,
-             adapter=DEFAULT_ADAPTER):
+             adapter=DEFAULT_ADAPTER, unattended=False):
     """Return an exit code; the only output is one exclusively created record."""
     if any(os.path.lexists(directory / name) for name in OUTPUTS):
         print('output-exists: ' + CHECKS['output-exists'], file=sys.stderr)
@@ -760,7 +760,13 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
             check('debug-switch', lambda: require(not any(h['options'][key]
                   for key in ('gpu_validation', 'no_vram', 'debug_half_target'))
                   and integer(h['debug']['debug_layer']) and h['debug']['debug_layer'] == 0))
-            check('operator', lambda: require(fault_injection or isinstance(overlays, str) and bool(overlays.strip())))
+            # A run with an injection is a fault-injection run and nothing else: it never takes an operator
+            # declaration, and a fault-injection finalization of a run without an injection is refused too.
+            injected = h['options']['inject'] is not None
+            check('operator', lambda: require(
+                injected == bool(fault_injection)
+                and (overlays is None and not unattended if fault_injection
+                     else isinstance(overlays, str) and bool(overlays.strip()))))
         if not reasons:
             if mode in ('geometry', 'lattice'):
                 output = {'format': f'magic600-l2-{mode}-record-v1', 'candidate': candidate,
@@ -781,6 +787,9 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                 environment['tearing'] = bool(shown) and all(row['tearing'] == 1 for row in shown)
                 environment['declared']['overlays'] = ('fault-injection run; not gate evidence'
                                                        if fault_injection else overlays)
+                if not fault_injection:
+                    # Machine-readable next to the operator text: an unattended run had no watcher.
+                    environment['declared']['watched'] = not unattended
                 rotating = h['scene'] in ('w2', 'w3', 'wj')
                 output = {'format': 'magic600-renderer-run-v1', 'run_id': run_id,
                           'candidate': candidate, 'scene': h['scene'], 'presentmon': pm,
@@ -801,7 +810,12 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                 if h['options']['inject'] is not None:
                     output['injected_fault'] = h['options']['inject']
                 check('gate-shape', lambda: gate.validate_run(output))
-                name = 'run.json'
+                if h['options']['inject'] is not None:
+                    # Never gate evidence: another name and format, so the gate neither finds nor accepts it.
+                    output['format'] = 'magic600-l2-fault-run-v1'
+                    name = 'fault-run.json'
+                else:
+                    name = 'run.json'
             output['binding'] = binding
     if binding is not None:
         # Last check before the output, so a guard that failed during the later checks
@@ -845,12 +859,14 @@ def main(argv=None):
     operator = parser.add_mutually_exclusive_group()
     operator.add_argument('--overlays')
     operator.add_argument('--fault-injection', action='store_true')
+    parser.add_argument('--unattended', action='store_true', help='with --overlays: nobody watched the run')
     parser.add_argument('--adapter', default=DEFAULT_ADAPTER)
     args = parser.parse_args(argv)
     if not args.directory.is_dir() or args.launched_pid <= 0 or not args.adapter.strip():
         parser.error('An existing run directory, positive PID and nonempty adapter are required.')
     return finalize(args.directory, args.candidate, args.mode, args.launched_pid,
-                    args.app_exit, args.launched_created, args.overlays, args.fault_injection, args.adapter)
+                    args.app_exit, args.launched_created, args.overlays, args.fault_injection, args.adapter,
+                    args.unattended)
 
 
 if __name__ == '__main__':

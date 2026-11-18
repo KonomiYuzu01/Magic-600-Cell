@@ -11,11 +11,11 @@ The host is S-A2 as tested: the official Godot 4.7.2 .NET editor binary running 
 | `prepare_data.py` | runs W-J's `prepare_wj.py` in place with the engine Python (CPU only); `--check` verifies an export against the fixtures |
 | `run_scene.ps1` | one cold run, or one geometry or lattice check, per invocation; `-DryRun` validates and prints the planned commands |
 | `file_guard.py` | holds every loaded build file from before the launch until the finalizer has accepted the run |
-| `finalize_run.py` | checks the app's, the DLL's and PresentMon's outputs and writes `run.json`, a check record or `refusal.json` |
+| `finalize_run.py` | checks the app's, the DLL's and PresentMon's outputs and writes `run.json`, `fault-run.json` for an injected run, a check record or `refusal.json` |
 
 ## What a run needs
 
-- **The owner away, or watching.** A run with `-Unattended` records that nobody watched it; without it, the runner asks after each run whether the whole run was watched with nothing covering the window.
+- **The owner away, or watching.** A run with `-Unattended` records that nobody watched it (`environment.declared.watched` is `false` in `run.json`); without it, the runner asks after each run whether the whole run was watched with nothing covering the window.
 - **A quiet machine**: mains power, no build (`cl`, `link`, `ninja`, `cmake`, `msbuild`, `dotnet`), no Godot, Blender or FFmpeg, no PresentMon overlay or other capture, no other runner, no Codex implement call, and no trace session named `PresentMon` or `magic600-*-capture`. The runner refuses to start otherwise. Close idle heavy applications as well; the runner cannot see them.
 - **The foreground.** Start the runner from an interactive administrator PowerShell on the owner's desktop session, not from a background process: the Godot window must stay visible in the foreground for the whole trace, or the app exits 3 and the run is not evidence.
 - **PresentMon 2.6.0.0** at `%ProgramFiles%\Intel\PresentMon\PresentMonConsoleApplication\PresentMon-2.6.0-x64.exe`.
@@ -71,7 +71,7 @@ The summary has the evidence format `magic600-renderer-gate-v1`; the verdict is 
 
 ## Negative tests (administrator PowerShell)
 
-`-Inject` runs a fault at turn 20 and records the run as fault-injection, never as gate evidence: `corrupt-label`, `swap-same-colour`, `delay-adoption` or `stale-binding` for W3; `corrupt-index`, `swap-same-colour`, `stale-pose`, `delay-adoption` or `stale-binding` for W-J. A caught fault ends with finalizer exit 2 and a failing check.
+`-Inject` runs a fault at turn 20 and records the run as fault-injection, never as gate evidence: `corrupt-label`, `swap-same-colour`, `delay-adoption` or `stale-binding` for W3; `corrupt-index`, `swap-same-colour`, `stale-pose`, `delay-adoption` or `stale-binding` for W-J. A caught fault ends with finalizer exit 2 and a failing check. The record is `fault-run.json` with its own format, which the gate neither reads nor accepts, and no gate summary is made; an injected run never takes an operator declaration. If the file guard reports a changed build file after the finalizer wrote its record, the record is renamed `*.rejected`.
 
 ```powershell
 & $runner -Scene S4 -Build $build -Inject stale-pose
