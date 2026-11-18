@@ -21,8 +21,10 @@ sys.path.insert(0, str(ROOT / 'tools/perf/c9'))
 import cold_start  # noqa: E402
 import evidence  # noqa: E402
 import key_to_frame  # noqa: E402
+import lx4  # noqa: E402
 import presentmon_capture  # noqa: E402
 import runbook  # noqa: E402
+import ui_skew  # noqa: E402
 from b412_summary import nearest_rank  # noqa: E402
 
 FIXTURES = ROOT / 'tests/fixtures/c9_measure'
@@ -402,8 +404,13 @@ class PresentMonTests(NoProcessCase):
 class RunbookTests(NoProcessCase):
     def test_the_attended_steps_come_first_in_the_owner_order(self):
         ids = [step.id for step in runbook.STEPS]
-        self.assertEqual(ids, ['shell-launch', 'b1-input', 'e2-key-to-frame', 'core-gpu', 'wj-w3', 'rpi79-gate',
-                               'e3-cold-start', 'lx2', 'lx4', 'b3-probe', 'b2-skew'])
+        self.assertEqual(ids, ['shell-launch', 'b1-input', 'e2-key-to-frame', 'core-gpu', 'b3-probe', 'b2-skew',
+                               'wj-w3', 'rpi79-gate', 'e3-cold-start', 'lx2', 'lx4'])
+        self.assertEqual([runbook.LABELS[step_id] for step_id in ids],
+                         ['A1', 'A2', 'A3', 'U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8'])
+        for step_id in ('b2-skew', 'lx4'):
+            step = next(step for step in runbook.STEPS if step.id == step_id)
+            self.assertTrue(step.built and any(kind == 'mentions' for kind, _ in step.prerequisites))
         attended = [step.attended for step in runbook.STEPS]
         self.assertEqual(attended, sorted(attended, reverse=True))
         self.assertEqual(attended.count(True), 3)
@@ -454,6 +461,289 @@ class RunbookTests(NoProcessCase):
         with contextlib.redirect_stdout(io.StringIO()) as out:
             self.assertEqual(runbook.main(['--list']), 0)
         self.assertIn('not built yet', out.getvalue())
+        self.assertIn('(U8)', out.getvalue())
+        self.assertTrue(runbook.evaluate('mentions', ('tools/perf/c9', 'OTHER_ROWS'))[0])
+        self.assertFalse(runbook.evaluate('mentions', ('tools/perf/c9', 'no' + ' such token'))[0])
+
+
+def skew_rows(n, skew_ms, *, header=None, unknown=()):
+    """n 3D frames 1/60 s apart, each displayed 20 ms after submission, with a UI frame 1 ms after each."""
+    step = F // 60
+    rows = [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': 'skew', 'build_identity': BUILD,
+             'qpc_frequency': F, 'synthetic': True, 'foreground_throughout': True, 'correctness': 'pass',
+             'process_id': 4242, 'ui_swap_chain': '0xUI', **(header or {})}]
+    for index in range(n):
+        start = F + index * step
+        rows.append({'t': 'frame', 'frame_id': index + 1, 'qpc': start, 'device_epoch': 1, 'surface': 1})
+        rows.append({'t': 'presented', 'frame_id': index + 1, 'device_epoch': 1, 'surface': 1, 'sequence': index + 1,
+                     'display_qpc': start + F // 50})
+        rows.append({'t': 'ui_frame', 'ui_seq': index, 'qpc': start + F // 1000,
+                     'frame_id': 9999 if index in unknown else index + 1})
+    return rows
+
+
+def skew_csv(n, skew_ms, *, missing=()):
+    """The UI chain's presents, each called 2 ms after its 3D frame's submission."""
+    step = F // 60
+    head = ('Application,ProcessID,SwapChainAddress,Runtime,SyncInterval,PresentFlags,Dropped,TimeInSeconds,'
+            'msInPresentAPI,msBetweenPresents,AllowsTearing,PresentMode,msUntilRenderComplete,msUntilDisplayed,'
+            'msBetweenDisplayChange,msFlipDelay,msUntilRenderStart,msGPUActive,msSinceInput,QPCTime')
+    lines = [head]
+    for index in range(n):
+        if index in missing:
+            continue
+        start = F + index * step + 2 * F // 1000
+        until = 20.0 + skew_ms - 2.0
+        lines.append(f'shell.exe,4242,0xUI,DXGI,1,0,0,0,0.1,16.67,0,Composed: Flip,1.0,{until},16.67,0,0.5,2,0,'
+                     f'{start}')
+    lines.append(f'shell.exe,4242,0xOTHER,DXGI,1,0,0,0,0.1,16.67,0,Composed: Flip,1.0,1.0,16.67,0,0.5,2,0,{F + 5}')
+    return '\n'.join(lines) + '\n'
+
+
+class UiSkewTests(NoProcessCase):
+    def run_dir(self, rows, csv_text, name='skew'):
+        directory = self.temp / name
+        write_jsonl(directory / 'events.jsonl', rows)
+        if csv_text is not None:
+            (directory / 'presentmon.csv').write_bytes(csv_text.encode())
+        return directory
+
+    def test_each_ui_frame_pairs_with_its_ui_present_and_its_3d_frame(self):
+        run = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0), skew_csv(120, 5.0)))
+        self.assertEqual(run['status'], 'valid', run['reasons'])
+        self.assertEqual(run['pairs'], 120)
+        self.assertAlmostEqual(run['stats']['signed']['p95'], 5.0, places=3)
+        self.assertAlmostEqual(run['stats']['refresh_ms'], 1000 / 60, places=2)
+        self.assertEqual(run['stats']['within_one_refresh'], 1.0)
+        negative = ui_skew.read_run(self.run_dir(skew_rows(120, -4.0), skew_csv(120, -4.0), 'negative'))
+        self.assertAlmostEqual(negative['stats']['signed']['p50'], -4.0, places=3)
+        self.assertAlmostEqual(negative['stats']['absolute']['max'], 4.0, places=3)
+
+    def test_unmatched_frames_get_no_value_and_too_few_pairs_invalidate(self):
+        run = ui_skew.read_run(self.run_dir(skew_rows(110, 3.0), skew_csv(110, 3.0, missing={4, 5})))
+        self.assertEqual(run['pairs'], 108)
+        self.assertEqual(run['statuses'], {'matched': 108, 'ui-present-unmatched': 2})
+        self.assertEqual(run['status'], 'valid')
+        few = ui_skew.read_run(self.run_dir(skew_rows(50, 3.0), skew_csv(50, 3.0), 'few'))
+        self.assertEqual((few['status'], few['reasons']), ('invalid', ['too-few-pairs']))
+
+    def test_contradictions_conditions_and_a_missing_capture(self):
+        run = ui_skew.read_run(self.run_dir(skew_rows(120, 1.0, unknown={7}), skew_csv(120, 1.0)))
+        self.assertIn('contradiction', run['reasons'])
+        lost = ui_skew.read_run(self.run_dir(skew_rows(120, 1.0, header={'foreground_throughout': False}),
+                                             skew_csv(120, 1.0), 'lost'))
+        self.assertIn('not-foreground', lost['reasons'])
+        bare = ui_skew.read_run(self.run_dir(skew_rows(120, 1.0), None, 'bare'))
+        self.assertEqual((bare['status'], bare['reasons']), ('unreadable', ['no-capture']))
+
+    def test_the_record_has_no_bar_and_a_synthetic_input_never_passes(self):
+        directory = self.run_dir(skew_rows(120, 2.0), skew_csv(120, 2.0))
+        self.assertEqual(ui_skew.judge([ui_skew.read_run(directory)])[0], 'no-bar')
+        record = ui_skew.build([directory], [str(directory)])
+        self.assertEqual((record['verdict'], record['passes_bar'], record['bar']['limit_ms']),
+                         ('synthetic', False, None))
+        self.assertEqual(evidence.exit_code(record), 5)
+
+
+def lx4_fixtures(directory):
+    """A small fixture folder in c600-lx4's format: S, M, L and W00, the four edit kinds at each."""
+    directory.mkdir(parents=True)
+    modules, edits = [], []
+    for name in ('S', 'M', 'L', 'W00'):
+        source = (f'edition "6cs-draft-1";\nmodule lx4_{name.lower()} requires [];\n\n'
+                  f'export fn exported() -> Nat effects [] {{\n    return 1;\n}}\n')
+        path = f'{name}.6cs'
+        (directory / path).write_bytes(source.encode())
+        sha = lx4.sha256_bytes(source.encode())
+        modules.append({'name': name, 'path': path, 'sha256': sha})
+        body, signature = source.index('    return 1;'), source.index('fn exported() -> Nat')
+        for kind, replacements in (
+                ('inside-body', [(body, '    return 1;', '    return exact_add(1, 7);')]),
+                ('exported-signature', [(signature, 'fn exported() -> Nat', 'fn exported() -> Text'),
+                                        (body, '    return 1;', '    return "edited";')]),
+                ('completion-trigger', [(len(source), '', 'fn c() -> Nat effects [] {\n    return exact_')]),
+                ('syntax-break', [(body + 12, ';', '')])):
+            edit = {'target': name, 'path': path, 'kind': kind, 'base_sha256': sha,
+                    'replacements': [{'offset': o, 'delete': d, 'insert': i} for o, d, i in replacements]}
+            edit['result_sha256'] = lx4.sha256_bytes(lx4.apply(source, edit).encode())
+            edits.append(edit)
+    (directory / 'MANIFEST.json').write_bytes(json.dumps({'format': lx4.FIXTURES_FORMAT, 'modules': modules}).encode())
+    (directory / 'EDITS.json').write_bytes(json.dumps({'format': lx4.EDITS_FORMAT, 'edits': edits}).encode())
+    return lx4.load_fixtures(directory)
+
+
+def lx4_logs(edits, digests, puzzle, latency, *, wrong=(), build=BUILD):
+    """A complete run: one timed post per sample, the endpoint's frame confirmed `latency(sample)` ms later."""
+    events = [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': puzzle, 'build_identity': build,
+               'qpc_frequency': F, 'synthetic': True, 'foreground_throughout': True, 'correctness': 'pass',
+               'puzzle': puzzle, 'window': 66}]
+    posts = [{'t': 'run', 'format': lx4.POSTS_FORMAT, 'run_id': puzzle, 'puzzle': puzzle, 'build_identity': build,
+              'qpc_frequency': F, **digests}]
+    frame = 0
+    for sample in lx4.schedule(edits, puzzle):
+        if sample['metric'] == 'turn':
+            continue
+        frame += 1
+        start = F * (sample['id'] + 1)
+        posts.append({'t': 'post', 'sample': sample['id'], 'index': 0, 'message': 1, 'qpc': start, 'ok': True,
+                      'timed': True})
+        posts.append({'t': 'sample', 'sample': sample['id'], 'status': 'done', 'foreground': True})
+        events.append({'t': 'frame', 'frame_id': frame, 'qpc': start + 1, 'device_epoch': 1, 'surface': 1})
+        events.append({'t': 'presented', 'frame_id': frame, 'device_epoch': 1, 'surface': 1, 'sequence': frame,
+                       'display_qpc': start + round(latency(sample) * F / 1000)})
+        result = 'f' * 64 if sample['id'] in wrong else edits[sample['edit']]['result_sha256']
+        events.append({'t': 'lx4', 'sample': sample['id'], 'endpoint': sample['metric'], 'frame_id': frame,
+                       'buffer_sha256': result})
+    return events, posts
+
+
+class Lx4Tests(NoProcessCase):
+    def setUp(self):
+        super().setUp()
+        self.manifest, self.edits, self.digests = lx4_fixtures(self.temp / 'fixtures')
+        self.e2 = {'verdict': 'met', 'build_identity': BUILD, 'inputs': [{'sha256': 'events'}]}
+        self.gate = {'format': 'magic600-renderer-gate-v1',
+                     'scenes': [{'verdict': 'met', 'runs': [{'build_identity': BUILD}]}]}
+
+    def runs(self, latency, **kwargs):
+        return [lx4.analyze_run(*lx4_logs(self.edits, self.digests, puzzle, latency, **kwargs), self.edits,
+                                self.digests) for puzzle in lx4.PUZZLES]
+
+    def test_the_schedule_accounts_for_10800_sml_samples_apart_from_w_turns_and_smoke(self):
+        counts = lx4.accounting([lx4.schedule(self.edits, puzzle) for puzzle in lx4.PUZZLES])
+        self.assertEqual(counts, {'sml_samples': 10_800, 'w_samples': 600, 'turns': 600, 'smoke_samples': 40})
+        samples = lx4.schedule(self.edits, 'jumble-on')
+        self.assertEqual([sample['id'] for sample in samples], list(range(len(samples))))
+        series = [sample for sample in samples if sample['series'] == 2]
+        self.assertTrue(all(sample['metric'] == 'turn' for sample in series[19::20]))
+
+    def test_messages_reset_select_and_type_and_time_the_metric_key(self):
+        samples = {(sample['size'], sample['metric']): sample for sample in lx4.schedule(self.edits, 'jumble-off')}
+        sent, timed = lx4.messages(self.edits, samples[('S', 'echo')])
+        self.assertEqual(sent[0][0], lx4.RESET)
+        self.assertEqual(sent[1][0], lx4.SELECT)
+        self.assertEqual((sent[timed][0], timed), (lx4.WM_CHAR, 2))
+        sent, timed = lx4.messages(self.edits, samples[('S', 'syntax')])
+        self.assertEqual(sent[timed][:2], (lx4.WM_KEYDOWN, lx4.VK_BACK))
+        sent, timed = lx4.messages(self.edits, samples[('M', 'completion')])
+        self.assertIn((lx4.WM_CHAR, 13, 1), sent)
+        self.assertEqual(timed, len(sent) - 1)
+        sent, _ = lx4.messages(self.edits, samples[('L', 'diagnostics')])
+        selects = [wparam for message, wparam, _ in sent if message == lx4.SELECT]
+        self.assertEqual(selects, sorted(selects, reverse=True))
+        turn = next(sample for sample in lx4.schedule(self.edits, 'jumble-off') if sample['metric'] == 'turn')
+        with self.assertRaises(lx4.FixtureError):
+            lx4.messages(self.edits, turn)
+
+    def test_changed_fixtures_are_refused(self):
+        (self.temp / 'fixtures' / 'M.6cs').write_bytes(b'changed\n')
+        with self.assertRaises(lx4.FixtureError):
+            lx4.load_fixtures(self.temp / 'fixtures')
+
+    def test_every_bar_with_e2_and_the_gate_in_the_same_runs_is_an_all_bars_pass(self):
+        verdict, reasons, decision, table = lx4.judge(self.runs(lambda sample: 10.0), self.e2, self.gate, {'events'})
+        self.assertEqual((verdict, reasons, decision), ('met', [], 'all-bars'))
+        self.assertEqual(sum(row['stats']['n'] for row in table if row['series'] and row['size'] != 'W'), 10_800)
+
+    def test_rte53_decides_by_size(self):
+        def late(size, metric, ms):
+            return lambda sample: ms if (sample['size'], sample['metric'], sample['series']) == (size, metric, 2) \
+                else 10.0
+        self.assertEqual(lx4.judge(self.runs(late('L', 'echo', 60.0)), self.e2, self.gate, {'events'})[2],
+                         'owner-l-or-w')
+        self.assertEqual(lx4.judge(self.runs(late('W', 'dependents', 1600.0)), self.e2, self.gate, {'events'})[:3],
+                         ('not-met', ['bar-missed'], 'owner-l-or-w'))
+        self.assertEqual(lx4.judge(self.runs(late('S', 'syntax', 80.0)), self.e2, self.gate, {'events'})[2],
+                         'fail-s-m')
+        smoke = lambda sample: 900.0 if sample['series'] == 0 else 10.0  # noqa: E731
+        self.assertEqual(lx4.judge(self.runs(smoke), self.e2, self.gate, {'events'})[0], 'met')
+
+    def test_e2_and_the_gate_must_hold_in_the_same_runs(self):
+        runs = self.runs(lambda sample: 10.0)
+        self.assertEqual(lx4.judge(runs, None, self.gate, {'events'})[:3],
+                         ('insufficient', ['e2-record-missing'], None))
+        self.assertEqual(lx4.judge(runs, self.e2, self.gate, {'other runs'})[2], 'fail-gate-or-e2')
+        failed = {**self.gate, 'scenes': [{'verdict': 'not-met', 'runs': [{'build_identity': BUILD}]}]}
+        self.assertEqual(lx4.judge(runs, self.e2, failed, {'events'})[2], 'fail-gate-or-e2')
+
+    def test_a_wrong_buffer_or_an_unconfirmed_sample_invalidates_its_run(self):
+        runs = self.runs(lambda sample: 10.0, wrong={5})
+        self.assertEqual(runs[0]['failures'], {'wrong-buffer': 1})
+        self.assertEqual(lx4.judge(runs, self.e2, self.gate, {'events'})[:2],
+                         ('invalid', ['one-valid-run-per-puzzle-needed']))
+        events, posts = lx4_logs(self.edits, self.digests, 'jumble-off', lambda sample: 10.0)
+        events = [row for row in events if not (row['t'] == 'presented' and row['frame_id'] == 3)]
+        run = lx4.analyze_run(events, posts, self.edits, self.digests)
+        self.assertEqual((run['status'], run['failures']), ('invalid', {'unconfirmed': 1}))
+
+    def test_the_record_of_synthetic_runs_never_passes(self):
+        directories = []
+        for puzzle in lx4.PUZZLES:
+            events, posts = lx4_logs(self.edits, self.digests, puzzle, lambda sample: 10.0)
+            write_jsonl(self.temp / puzzle / 'events.jsonl', events)
+            write_jsonl(self.temp / puzzle / lx4.POSTS, posts)
+            directories.append(self.temp / puzzle)
+        record = lx4.build(self.temp / 'fixtures', directories, ['analyze'])
+        self.assertEqual((record['verdict'], record['passes_bar']), ('synthetic', False))
+        self.assertEqual(record['result']['timed_sml_samples'], 10_800)
+
+    def test_a_dry_run_posts_nothing(self):
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = lx4.main(['post', '--fixtures', str(self.temp / 'fixtures'), '--puzzle', 'jumble-on', '--dry-run'],
+                            system_factory=forbidden)
+        self.assertEqual(code, 0)
+        self.assertIn("turn key is not known", out.getvalue())
+        self.assertIn('nothing was posted', out.getvalue())
+
+    def test_the_poster_waits_for_each_endpoint_and_logs_every_post(self):
+        run = self.temp / 'run'
+        write_jsonl(run / 'events.jsonl', [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': 'live',
+                                            'build_identity': BUILD, 'puzzle': 'jumble-off', 'window': 66}])
+        events = run / 'events.jsonl'
+
+        class Fake:
+            def __init__(self, answer=True):
+                self.answer, self.ticks = answer, 0
+
+            def register(self, name):
+                return {lx4.RESET: 0xC001, lx4.SELECT: 0xC002}[name]
+
+            def qpc(self):
+                self.ticks += 1
+                return self.ticks
+
+            def frequency(self):
+                return F
+
+            def post(self, hwnd, message, wparam, lparam):
+                if self.answer and message == 0xC001:
+                    with events.open('a') as stream:
+                        for metric in (*lx4.METRICS, 'dependents'):
+                            stream.write(json.dumps({'t': 'lx4', 'sample': lparam, 'endpoint': metric}) + '\n')
+                if self.answer and message == lx4.WM_KEYDOWN and wparam == 0x54:
+                    with events.open('a') as stream:
+                        stream.write(json.dumps({'t': 'key', 'seq': 0, 'qpc': 1, 'frame_id': None}) + '\n')
+                return hwnd == 66
+
+            def foreground(self, hwnd):
+                return True
+
+            def alive(self, hwnd):
+                return True
+
+        clock = iter(range(10**9))
+        with mock.patch.object(lx4, 'PER_SERIES', 2), mock.patch.object(lx4, 'SERIES', 1):
+            samples = lx4.schedule(self.edits, 'jumble-off')
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 0x54, Fake(),
+                                clock=lambda: next(clock) / 100, sleep=lambda seconds: None, out=lambda line: None)
+            self.assertEqual(code, 0)
+            rows = evidence.read_jsonl(run / lx4.POSTS)
+            self.assertEqual(sum(row['t'] == 'sample' and row['status'] == 'done' for row in rows), len(samples))
+            self.assertEqual(sum(row['t'] == 'post' and row['timed'] for row in rows), len(samples))
+            (run / lx4.POSTS).unlink()
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 0x54, Fake(answer=False),
+                                clock=lambda: next(clock) / 2, sleep=lambda seconds: None, out=lambda line: None)
+            self.assertEqual(code, 3)
 
 
 if __name__ == '__main__':

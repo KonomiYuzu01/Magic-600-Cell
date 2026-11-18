@@ -10,7 +10,9 @@ choice marked DRAFT here is the integrator's draft (PHS.65) until the owner or a
 | `key_to_frame.py` | Charter E2: key press to the core-confirmed present of the first frame carrying it |
 | `cold_start.py` | Charter E3: process creation to the first correct frame, three cold runs |
 | `presentmon_capture.py` | Builds, checks and (administrator only) runs a timed PresentMon 2.6.0.0 capture |
-| `runbook.py` | The owner-machine batch in order; `--dry-run` checks prerequisites without a GPU |
+| `ui_skew.py` | Route B check B2: UI frame to 3D frame skew from `ui_frame` rows and PresentMon; no bar, numbers only |
+| `lx4.py` | LX-4: the schedule (10,800 S/M/L samples), posted window messages (`post`, Windows only; `--dry-run` posts nothing) and the RTE.49/RTE.53 analysis |
+| `runbook.py` | The owner-machine batch in order (labels A1 to A3, U1 to U8); `--dry-run` checks prerequisites without a GPU |
 | `evidence.py` | The shared record format `magic600-c9-measure-record-v1` and log reading |
 
 ## Logs (DRAFT)
@@ -25,6 +27,11 @@ values in integer ticks:
 - `frame`: `frame_id`, `qpc` at submission, `device_epoch`, `surface`;
 - `presented`: one `sa2_presented` row: `frame_id`, `device_epoch`, `surface`, `sequence`, `display_qpc`
   (SyncQPCTime of the core's own frame statistics).
+
+The same log also carries, for B2, a `ui_frame` row per Godot frame (`ui_seq`, `qpc`, `frame_id`) and
+`ui_swap_chain` in the `run` row; for LX-4, an `lx4` row per endpoint (`sample`, `endpoint`, `frame_id`,
+`buffer_sha256`) and `puzzle` and `window` in the `run` row. `key_to_frame.py` skips those rows; `ui_skew.py` and
+`lx4.py` describe them.
 
 **E3, `startup.jsonl`, format `magic600-c9-startup-v1`**: `run` (with `cold`: `new_process`,
 `no_product_process_at_launch`, `fresh_session_copy`, `seconds_since_previous_exit`), `process_start` (the launcher's
