@@ -34,21 +34,33 @@ const LAYER_ROWS: [&str; 10] = [
     WORKSHEET_LOAD_ROW,
 ];
 
-/// One row per shape condition, each alone on a row the layer could otherwise serve; the first four are served.
+/// One row per shape condition, each alone on a row the layer could otherwise serve; the first six are served.
 const SHAPES: &str = r#"{"commands": [
     {"id": "t.query", "kind": "query", "lane": "none", "undo": "none", "preview": "none"},
     {"id": "t.view", "kind": "view", "lane": "view", "undo": "none", "preview": "none"},
     {"id": "t.file", "kind": "file", "lane": "none", "undo": "none", "preview": "none"},
     {"id": "t.program", "kind": "workspace", "lane": "program", "undo": "none", "preview": "none"},
+    {"id": "t.undo.workspace", "kind": "workspace", "lane": "none", "undo": "workspace", "preview": "none"},
+    {"id": "t.filter", "kind": "workspace", "lane": "none", "undo": "workspace", "preview": "filter",
+     "gates": ["fresh_filter_preview"]},
     {"id": "t.commit", "kind": "commit", "lane": "none", "undo": "none", "preview": "none"},
     {"id": "t.app", "kind": "app", "lane": "none", "undo": "none", "preview": "none"},
     {"id": "t.lane.commit", "kind": "query", "lane": "commit", "undo": "none", "preview": "none"},
     {"id": "t.lane.exclusive", "kind": "query", "lane": "exclusive", "undo": "none", "preview": "none"},
     {"id": "t.lane.latest", "kind": "query", "lane": "latest_wins", "undo": "none", "preview": "none"},
     {"id": "t.undo.journal", "kind": "workspace", "lane": "none", "undo": "journal", "preview": "none"},
-    {"id": "t.undo.workspace", "kind": "workspace", "lane": "none", "undo": "workspace", "preview": "none"},
+    {"id": "t.undo.query", "kind": "query", "lane": "none", "undo": "workspace", "preview": "none"},
     {"id": "t.preview.required", "kind": "query", "lane": "none", "undo": "none", "preview": "required"},
     {"id": "t.preview.filter", "kind": "query", "lane": "none", "undo": "none", "preview": "filter"},
+    {"id": "t.filter.query", "kind": "query", "lane": "none", "undo": "none", "preview": "filter",
+     "gates": ["fresh_filter_preview"]},
+    {"id": "t.filter.gate", "kind": "workspace", "lane": "none", "undo": "workspace", "preview": "none",
+     "gates": ["fresh_filter_preview"]},
+    {"id": "t.filter.rule", "kind": "workspace", "lane": "none", "undo": "workspace", "preview": "filter"},
+    {"id": "t.filter.extra", "kind": "workspace", "lane": "none", "undo": "workspace", "preview": "filter",
+     "gates": ["fresh_filter_preview", "confirm"]},
+    {"id": "t.filter.noundo", "kind": "workspace", "lane": "none", "undo": "none", "preview": "filter",
+     "gates": ["fresh_filter_preview"]},
     {"id": "t.gate", "kind": "query", "lane": "none", "undo": "none", "preview": "none", "gates": ["confirm"]},
     {"id": "t.guard", "kind": "query", "lane": "none", "undo": "none", "preview": "none", "action_guard": "action_hint"},
     {"id": "t.token", "kind": "query", "lane": "none", "undo": "none", "preview": "none",
@@ -317,7 +329,7 @@ fn a_served_row_keeps_its_lane() {
 #[test]
 fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
     let mut table = Table::parse(SHAPES.as_bytes()).unwrap();
-    for id in ["t.query", "t.view", "t.file", "t.program"] {
+    for id in ["t.query", "t.view", "t.file", "t.program", "t.undo.workspace", "t.filter"] {
         assert_eq!(table.serve_row(id, overlay(id)).unwrap().overlay, Some(overlay(id)), "{id}");
     }
     let shapes = [
@@ -327,9 +339,14 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
         "t.lane.exclusive",
         "t.lane.latest",
         "t.undo.journal",
-        "t.undo.workspace",
+        "t.undo.query",
         "t.preview.required",
         "t.preview.filter",
+        "t.filter.query",
+        "t.filter.gate",
+        "t.filter.rule",
+        "t.filter.extra",
+        "t.filter.noundo",
         "t.gate",
         "t.guard",
         "t.token",
@@ -340,11 +357,10 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
         "session.checkpoint.save",
         "operation.check",
         "jumble.release.check",
-        "operation.phase.edit",
         "jumble.scramble",
         "macro.save",
         "file.keymap.check",
-        "filter.apply",
+        "file.keymap.apply",
     ];
     let mut h08 = Table::h08().with_drafts();
     let service = h08.services()[0].clone();
@@ -380,15 +396,15 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
     assert_eq!(f.layer.table().row("twist.apply"), Table::h08().row("twist.apply"));
 }
 
-/// Of the representations tool's six rows (`c600_repr::rows::NEEDS`), five can be served now; `filter.apply` waits for
-/// its gate `fresh_filter_preview`, its filter preview rule and its workspace inverse.
+/// The representations tool's six rows (`c600_repr::rows::NEEDS`) can all be served, `filter.apply` with its gate
+/// `fresh_filter_preview`, its filter preview rule and its undo class `workspace`; a stored workspace row whose undo
+/// class is `workspace` and that has no gate is served too.
 #[test]
-fn five_of_the_representations_rows_can_be_served() {
+fn the_representations_rows_can_be_served() {
     let mut table = Table::h08();
-    for id in ["filter.preview", SCOPE, SAVE, COMPARE, "structure.layer"] {
+    for id in ["filter.preview", SCOPE, SAVE, COMPARE, "structure.layer", "filter.apply", "operation.phase.edit"] {
         let kept = table.row(id).unwrap().clone();
         let served = table.serve_row(id, overlay(id)).unwrap();
         assert_eq!(Row { overlay: None, ..served.clone() }, kept, "{id}");
     }
-    assert_eq!(table.serve_row("filter.apply", overlay("apply_filter")).unwrap_err().code, code::OVERLAY_ROW_KIND);
 }
