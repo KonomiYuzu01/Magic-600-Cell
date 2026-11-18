@@ -141,6 +141,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-lx2"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-kernel",
+ "c600-run",
+ "c600-runtime",
+]
+
+[[package]]
 name = "c600-lx4"
 version = "0.0.0"
 dependencies = [

@@ -34,6 +34,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 4 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
+| `c600-lx2` | LX-2's metered and forced-kill trials against a runtime child binary the caller names (the product build's on the owner's machine); measurement tooling, never shipped (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -2649,3 +2650,22 @@ run or not applicable is no pass (PHS.63).
 - DRAFT: the set follows the tools as they stand; RTE.51 step 1 freezes it with the candidate and its build identity.
   The modules hold the tools' declarations, not their run-time views, and the LX-4 harness (Jumble on and off, the
   owner-machine runs, the frame matching) is not built. Evidence kind: source and fixture; nothing here is timing.
+
+## Status of LP3, C9 measurement: LX-2's metered and forced-kill half
+
+- `c600-lx2-faults --runtime <c600-runtime binary> [--out <record.json>]` runs four trials on `c600-runtime`'s parent
+  API against the child binary it is given, so the decisive runs use the product build's runtime unchanged. Every job
+  first proposes SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
+- `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
+  `recursion_metered` (endless recursion, 1 MiB) ends `KN7:budget.memory`, since the meter charges a frame as memory
+  and has no recursion dimension; `forced_kill` kills the child's process inside the proposal's perform (the barrier)
+  and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is
+  still the runtime word and the same runtime completes the control again, in a fresh child only after the kill. The
+  metered trials and the control also run in process, and the two executors agree.
+- The record (`magic600-c9-lx2-faults-v1`) names the child by file name and SHA-256 only, never by path, with
+  `injection_device: null`.
+- Not here: LX-2's native faults (allocator ceiling, unmetered recursion, native loop) need the injection device of
+  option (a) (top integrator, 18 November 2026: a separate fault-injection child built from product source in release
+  mode, never shipped, with a check that the product build has it off); any hook inside `c600-runtime` is LP3's to
+  shape. Also not here: the session store's journal rows and replayed state hash against a control, the barrier's
+  release acknowledgement, and E2 commits during fault windows. Evidence kind: source and synthetic; nothing is timing.
