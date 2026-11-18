@@ -186,6 +186,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::TraceEqualityKey => "a trace equality key under the run's relation, which is never letters",
         Ty::Generator => "a cursor on a stream of the run's seed, kept only inside the interpreter",
         Ty::Bytes => "captured octets, which a program reads only by decoding them into text",
+        Ty::WordStream => "a streamed word's covered length and literal digest, which stays in its run",
     }
 }
 
@@ -208,6 +209,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::TraceEqualityKey(_) => "a trace equality key under the run's relation, which is never letters",
         Value::Generator(_) => "a cursor on a stream of the run's seed, kept only inside the interpreter",
         Value::Bytes(_) => "captured octets, which a program reads only by decoding them into text",
+        Value::WordStream(_) => "a streamed word's covered length and literal digest, which stays in its run",
     }
 }
 

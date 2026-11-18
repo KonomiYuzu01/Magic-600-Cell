@@ -1,7 +1,12 @@
 //! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; LP2 draft until the
-//! command table freezes, PHS.52). One row so far: KN2.4's `positions`, the position of named pieces, which library
-//! entries read (CT-LB2-04: exact completion reads identities, slots and orientations).
-//! [`crate::bridge::Bridge`] serves it from the command layer's head ([`CommandLayer::positions`]).
+//! command table freezes, PHS.52). Two rows so far, both of KN2.4, which LB2's exact completion reads
+//! (`c600_library`'s `completion.exact_completion`; CT-LB2-04: exact completion reads identities, slots and
+//! orientations): `positions`, the position of named pieces, and `labels`, the label of named slots.
+//! [`crate::bridge::Bridge`] serves both from the command layer's head: `positions` through
+//! [`CommandLayer::positions`], and `labels` from the head's snapshot ([`CommandLayer::snapshot`]), because neither the
+//! command layer nor the kernel has a `labels` row function.
+//!
+//! # `positions`
 //!
 //! A program reads the row as `read_snapshot<T>("positions", pieces)`. `pieces` is a list of integers, such as a
 //! `List<Nat>` or a `Set<Nat>` (in increasing order): pieces named by their home positions, 0 to 177,119, with repeats
@@ -23,6 +28,23 @@
 //! charged, the layer refuses it with Jumble on, `KN5:input.retained_tool_needs_jumble_off` (LG2.8), and the kernel
 //! refuses a piece outside 0 to 177,119, `KN2:input.named_object_invalid`; the charge stays, as for a refused
 //! proposal. The tariff is [`positions_tariff`].
+//!
+//! # `labels`
+//!
+//! A program reads the row as `read_snapshot<T>("labels", slots)`. `slots` is a list of integers, such as a
+//! `List<Nat>` or a `Set<Nat>` (in increasing order): slots 0 to 259,799, with repeats allowed. `T` is `List<Nat>` or
+//! `List<Int>`, with no display qualifier. The answer holds one label per named slot, in the argument's order.
+//!
+//! A slot's label is the home slot of the sticker that the slot now holds ([`c600_kernel::Snapshot::labels`]): it
+//! names the sticker by its identity, never by its colour, so two stickers of one colour have two labels. A slot holds
+//! its own sticker exactly when its label is the slot itself, and in the solved state every slot does.
+//!
+//! The bridge refuses as for `positions`. Before the row runs, at the cost of the read's step: a declared type other
+//! than these, `LG2:type.mismatch`; an argument that is not a list of integers, `KN5:input.argument_form`. Once the
+//! read is charged: with Jumble on, `KN5:input.retained_tool_needs_jumble_off` (LG2.8), as
+//! [`CommandLayer::positions`] refuses it, since the head's snapshot is then the retained state the crossing entered
+//! from; and a slot outside 0 to 259,799, `KN2:input.named_object_invalid`, the kernel's code for a named object
+//! outside the model, which it gives a piece outside 0 to 177,119. The tariff is [`labels_tariff`].
 
 use std::sync::OnceLock;
 
@@ -34,8 +56,11 @@ use c600_run::interp::RowTariff;
 use c600_run::provenance::{self, Json};
 use c600_run::value::Value;
 
-/// The row's query: KN2.4's `positions`.
+/// The `positions` row's query: KN2.4's `positions`.
 pub const POSITIONS: &str = "positions";
+
+/// The `labels` row's query: KN2.4's `labels`.
+pub const LABELS: &str = "labels";
 
 /// The most stickers one piece of 600-cell-Full has (the kernel's largest piece; a test checks it). The row's tariff
 /// takes it for every named piece.
@@ -67,16 +92,25 @@ fn list(element: Ty) -> QTy {
     exact(Ty::List(Box::new(exact(element))))
 }
 
+/// `Nat` or `Int` with no display qualifier: a type that holds every whole number 0 to 259,799.
+fn whole(ty: &QTy) -> bool {
+    *ty == exact(Ty::Nat) || *ty == exact(Ty::Int)
+}
+
+/// A list of [`whole`] numbers with no display qualifier.
+fn whole_list(ty: &QTy) -> bool {
+    match &ty.ty {
+        Ty::List(element) => !ty.display && whole(element),
+        _ => false,
+    }
+}
+
 /// Whether `declared` holds every value the row gives `field`: `Nat` or `Int` where no value is negative.
 fn holds(field: Field, declared: &QTy) -> bool {
-    let whole = |ty: &QTy| *ty == exact(Ty::Nat) || *ty == exact(Ty::Int);
     match field {
         Field::Piece => whole(declared),
         Field::Orbit | Field::Position => *declared == exact(Ty::Int),
-        Field::Home | Field::Slots => match &declared.ty {
-            Ty::List(element) => !declared.display && whole(element),
-            _ => false,
-        },
+        Field::Home | Field::Slots => whole_list(declared),
     }
 }
 
@@ -89,6 +123,11 @@ pub fn positions_type() -> QTy {
         Field::Home | Field::Slots => list(Ty::Nat),
     };
     list(Ty::Record(FIELDS.iter().map(|&(name, f)| (name.to_owned(), field(f))).collect()))
+}
+
+/// The type the `labels` row answers: `List<Nat>`.
+pub fn labels_type() -> QTy {
+    list(Ty::Nat)
 }
 
 /// The fields of a declared answer type in its order; None unless it is a list of records with the row's five fields,
@@ -110,7 +149,7 @@ fn declared_fields(ty: &QTy) -> Option<Vec<Field>> {
     Some(order)
 }
 
-/// One canonical integer, `-?(0|[1-9][0-9]*)`, saturated to `i64`: an integer of any size outside 0 to 177,119 stays
+/// One canonical integer, `-?(0|[1-9][0-9]*)`, saturated to `i64`: an integer of any size outside a row's range stays
 /// outside it.
 fn integer(text: &[u8]) -> Option<i64> {
     let (negative, digits) = match text.strip_prefix(b"-") {
@@ -129,17 +168,28 @@ fn integer(text: &[u8]) -> Option<i64> {
     Some(if negative { -magnitude } else { magnitude })
 }
 
-/// The named pieces: the argument's canonical bytes (DET.59), an array of exact integers such as
+/// The integers of an argument's canonical bytes (DET.59): an array of exact integers such as
 /// `[{"int":"3"},{"int":"0"},{"int":"3"}]` and a newline, as a list or a set encodes. Each integer is canonical,
-/// `-?(0|[1-9][0-9]*)`, and is read saturated to `i64`, so one of any size outside 0 to 177,119 stays outside it. None
-/// for any other form.
-pub fn named_pieces(arg: &[u8]) -> Option<Vec<i64>> {
+/// `-?(0|[1-9][0-9]*)`, and is read saturated to `i64`. None for any other form.
+fn integers(arg: &[u8]) -> Option<Vec<i64>> {
     let Json::List(items) = provenance::parse(arg)? else { return None };
-    let piece = |item: &Json| match item {
+    let item = |item: &Json| match item {
         Json::Object(fields) if fields.len() == 1 => integer(fields.get("int")?.as_text()?.as_bytes()),
         _ => None,
     };
-    items.iter().map(piece).collect()
+    items.iter().map(item).collect()
+}
+
+/// The named pieces of a `positions` read: the argument's integers ([`integers`]), so one of any size outside 0 to
+/// 177,119 stays outside it. None for an argument that is not a list of integers.
+pub fn named_pieces(arg: &[u8]) -> Option<Vec<i64>> {
+    integers(arg)
+}
+
+/// The named slots of a `labels` read: the argument's integers ([`integers`]), so one of any size outside 0 to 259,799
+/// stays outside it. None for an argument that is not a list of integers.
+pub fn named_slots(arg: &[u8]) -> Option<Vec<i64>> {
+    integers(arg)
 }
 
 /// The logical size of an empty answer, and what one record adds to an answer at most: a record whose integers all
@@ -160,6 +210,16 @@ fn answer_sizes() -> (u128, u128) {
     })
 }
 
+/// The logical size of an empty `labels` answer, and what one label adds to an answer at most: the largest label,
+/// 259,799.
+fn label_sizes() -> (u128, u128) {
+    static SIZES: OnceLock<(u128, u128)> = OnceLock::new();
+    *SIZES.get_or_init(|| {
+        let empty = Value::list(Vec::new()).size();
+        (empty, Value::list(vec![Value::int((SLOTS - 1) as i64)]).size() - empty)
+    })
+}
+
 /// The row's draft tariff for `pieces` named pieces (DET.55; the command table prices the row when it freezes). The
 /// kernel cost counts the slots the row reads: one pass over the state's 259,800 labels, then at most
 /// [`MAX_PIECE_STICKERS`] for each named piece. The result bound is the logical size of an answer of that many of the
@@ -172,12 +232,33 @@ pub fn positions_tariff(pieces: usize) -> RowTariff {
     RowTariff { kernel_cost, result_bound: empty.saturating_add(n.saturating_mul(record)) }
 }
 
+/// The `labels` row's draft tariff for `slots` named slots (DET.55; the command table prices the row when it
+/// freezes). The kernel cost counts the labels the row reads, one for each named slot: the row reads the head's label
+/// array where it stands and inverts nothing. The result bound is the logical size of an answer of that many of the
+/// largest labels, 259,799 each.
+pub fn labels_tariff(slots: usize) -> RowTariff {
+    let n = slots as u128;
+    let (empty, label) = label_sizes();
+    RowTariff { kernel_cost: n, result_bound: empty.saturating_add(n.saturating_mul(label)) }
+}
+
 /// The tariff of a `positions` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for another
 /// declared type, `KN5:input.argument_form` for an argument that is not a list of integers.
-pub fn tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+pub fn positions_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
     declared_fields(ty).ok_or(TYPE_MISMATCH)?;
     let pieces = named_pieces(arg).ok_or(code::ARGUMENT_FORM)?;
     Ok(positions_tariff(pieces.len()))
+}
+
+/// The tariff of a `labels` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for a declared
+/// type other than `List<Nat>` or `List<Int>`, `KN5:input.argument_form` for an argument that is not a list of
+/// integers.
+pub fn labels_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    if !whole_list(ty) {
+        return Err(TYPE_MISMATCH);
+    }
+    let slots = named_slots(arg).ok_or(code::ARGUMENT_FORM)?;
+    Ok(labels_tariff(slots.len()))
 }
 
 /// One record of the answer, its fields in `order`.
@@ -194,11 +275,27 @@ fn record(row: &PiecePosition, order: &[Field]) -> Value {
     Value::record(order.iter().map(|&field| (name(field), value(field))).collect())
 }
 
-/// The answer of a `positions` read at `layer`'s head, with [`tariff`]'s refusals, the layer's refusal with Jumble on
-/// and the kernel's refusal of a piece outside 0 to 177,119.
+/// The answer of a `positions` read at `layer`'s head, with [`positions_read_tariff`]'s refusals, the layer's refusal
+/// with Jumble on and the kernel's refusal of a piece outside 0 to 177,119.
 pub fn positions<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
     let order = declared_fields(ty).ok_or(TYPE_MISMATCH)?;
     let pieces = named_pieces(arg).ok_or(code::ARGUMENT_FORM)?;
     let rows = layer.positions(&pieces).map_err(|error| error.code)?;
     Ok(Value::list(rows.iter().map(|row| record(row, &order)).collect()))
+}
+
+/// The answer of a `labels` read at `layer`'s head, with [`labels_read_tariff`]'s refusals, the refusal with Jumble on
+/// that [`CommandLayer::positions`] gives, and the refusal of a slot outside 0 to 259,799. A read changes nothing.
+pub fn labels<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    if !whole_list(ty) {
+        return Err(TYPE_MISMATCH);
+    }
+    let slots = named_slots(arg).ok_or(code::ARGUMENT_FORM)?;
+    if layer.jumbled().is_some() {
+        return Err(code::RETAINED_TOOL_NEEDS_JUMBLE_OFF);
+    }
+    let labels = layer.snapshot().labels();
+    let label = |slot: &i64| usize::try_from(*slot).ok().and_then(|slot| labels.get(slot)).map(|&l| Value::int(l));
+    let answer: Option<Vec<Value>> = slots.iter().map(label).collect();
+    answer.map(Value::list).ok_or(code::NAMED_OBJECT_INVALID)
 }

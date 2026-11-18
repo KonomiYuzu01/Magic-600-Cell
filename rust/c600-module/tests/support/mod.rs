@@ -43,6 +43,8 @@ pub struct Engine {
     pub labels: Vec<u32>,
     pub pending: (Vec<i32>, String),
     pub previews: Vec<(Vec<i32>, String)>,
+    /// The menu-word previews it built (LB1.8; LP2 draft): the letters `[cap, item]` and the target.
+    pub menu_previews: Vec<(Vec<[u32; 2]>, String)>,
     pub views: Vec<Vec<u8>>,
     pub traps: u32,
 }
@@ -75,6 +77,7 @@ impl Engine {
             labels: vec![1, 0, 2, 3],
             pending: (vec![B], "c1".into()),
             previews: Vec::new(),
+            menu_previews: Vec::new(),
             views: Vec::new(),
             traps: 0,
         }
@@ -143,14 +146,20 @@ impl Host for Engine {
                     ("protection", Value::tag("clear")),
                 ]))
             }
+            Request::ProposeMenu { letters, target, .. } => {
+                self.menu_previews.push((letters.to_vec(), target.to_string()));
+                Ok(Value::receipt(vec![
+                    ("base", Value::text("rev-7")),
+                    ("effect", Value::text("moves 2 slots")),
+                    ("id", Value::text(&format!("menu-preview-{}", self.menu_previews.len()))),
+                    ("protection", Value::tag("clear")),
+                ]))
+            }
             Request::Clock => {
                 self.traps += 1;
                 Ok(Value::text(PLANTED[0]))
             }
-            Request::FileRead { .. }
-            | Request::Declassified { .. }
-            | Request::SnapshotWith { .. }
-            | Request::ProposeMenu { .. } => {
+            Request::FileRead { .. } | Request::Declassified { .. } | Request::SnapshotWith { .. } => {
                 self.traps += 1;
                 Ok(Value::text(PLANTED[1]))
             }

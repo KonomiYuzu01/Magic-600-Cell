@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-18] decision | Word keys use trace-key/1; a receipt is not evidence
+Recorded the owner's two card answers of 17 November 2026 in [owner-decisions-2026-11-17-c5-evidence](decisions/owner-decisions-2026-11-17-c5-evidence.md): C5's word keys use LB1.10's draft `trace-key/1` for 600-cell-Full words, so CT-LB1-06 proceeds on its Full half; and a receipt does not count as evidence, so nothing changes in code or frozen text.
+
 ## [2026-11-18] update | The renderer core in the product tree, with the pose path
 `renderer/core/` is the product copy of the selected S-A2 core with W-J's per-piece pose path as ABI 3 (`sa2_scene_load_wj`, `sa2_scene_lattice_check`; every ABI 2 call and layout kept), copied from the selection evidence at 0f067202 with a digest per source in its `PROVENANCE.md`, which `tests/test_renderer_core.py` checks. W1 to W4 now draw through W-J's shaders with identity poses, as W-J's W3 run did, so the core has a new build identity: the W-J runs and the three cold W3 runs on it (freeze condition 1) are still unrun, and nothing about it is Windows/DirectX or performance evidence yet.
 

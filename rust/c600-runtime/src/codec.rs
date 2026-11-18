@@ -518,6 +518,8 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
             // A generator is one owner's cursor on a sealed stream (DET.61; LP2 draft). It stays in its run: a copy
             // in another process would be a second cursor, which only DET.61's alias makes.
             Value::Generator(_) => return Err(Unencodable("a generator, which stays in its run")),
+            // LP2's draft word stream (DET.63) stays in its run too: its digest crosses as text.
+            Value::WordStream(_) => return Err(Unencodable("a word stream, which stays in its run")),
             Value::List(l) => {
                 e.u8(tag::LIST);
                 e.count(l.items().len());
@@ -1049,6 +1051,8 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         Ty::Generator => e.u8(27),
         // LP2's draft captured bytes (DET.62).
         Ty::Bytes => e.u8(28),
+        // LP2's draft word stream (DET.63).
+        Ty::WordStream => e.u8(29),
     }
     Ok(())
 }
@@ -1135,6 +1139,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         26 => Ty::Field(field_from(d.u8()?)?),
         27 => Ty::Generator,
         28 => Ty::Bytes,
+        29 => Ty::WordStream,
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }
