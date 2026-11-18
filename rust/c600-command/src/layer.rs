@@ -467,14 +467,15 @@ impl Meta {
         }
     }
 
-    /// A stored transaction's, for its replay: a replayed release needs no new confirmation.
+    /// A stored transaction's, for its replay: a replayed release counts only the confirmation stored with it, so a
+    /// release stored without one does not replay (finding B7; the owner's reading of 18 November 2026).
     fn replay(transaction: &Transaction) -> Meta {
         Meta {
             caller: transaction.caller.clone(),
             command: transaction.command.clone(),
             row: transaction.row.clone(),
             request: transaction.request.clone(),
-            confirm: true,
+            confirm: transaction.confirm,
         }
     }
 }
@@ -720,6 +721,15 @@ impl<S: Store> CommandLayer<S> {
     /// does not hold answers `unknown_outcome` ([`CommandLayer::kernel_outcome`], LI.30). A crossing into Jumble on
     /// replays only under its twist menu ([`CommandLayer::open_with_menu`]); here it leaves the layer in read-only
     /// recovery before it.
+    ///
+    /// The replay checks again what the live path admitted for two kinds of action (finding B7; the owner's reading of
+    /// 18 November 2026): a commit replays only from the shell's caller and derives under the protected set and the
+    /// policy in force at its place in the journal, and a protection change, or the undo or redo of one, that releases
+    /// an orbit replays only with the confirmation stored with it. A journal action that fails either check leaves the
+    /// layer in read-only recovery before it with `KN5:consistency.unadmitted_journal_action` (draft), so the session
+    /// does not open as an intact writable one. A journal carries no authentication: an edit that rewrites a
+    /// program-made action as the solver's own (its caller, its command ID) and that the live path would have admitted
+    /// from the shell is not detected.
     pub fn open(kernel: Arc<Kernel>, table: Table, secret: Secret, store: S) -> Result<CommandLayer<S>, Error>
     where
         S: Reopen,
@@ -799,6 +809,13 @@ impl<S: Store> CommandLayer<S> {
     /// Replays one durable transaction at a reopen and adopts it as stored.
     fn replay(&mut self, stored: &Transaction) -> Result<(), Error> {
         let broken = |detail: &str| Error::new(code::READ_ONLY_RECOVERY, format!("{}: {detail}", stored.event));
+        let unadmitted =
+            |detail: &str| Error::new(code::UNADMITTED_JOURNAL_ACTION, format!("{}: {detail}", stored.event));
+        // A release replays only with its stored confirmation (B7).
+        let release = |error: Error| match error.code {
+            code::CONFIRMATION_REQUIRED => unadmitted("a release of a protected orbit without its confirmation"),
+            _ => error,
+        };
         if stored.order != self.order + 1 {
             return Err(broken("the action order is broken"));
         }
@@ -810,11 +827,21 @@ impl<S: Store> CommandLayer<S> {
                 if self.jumbled.is_some() {
                     return Err(broken("a retained commit while Jumble is on"));
                 }
+                // Only the solver's own action commits (KN5.11, KN5.15), and the live path derives a commit under the
+                // protected set and the policy in force (B7).
+                if !matches!(stored.caller, Caller::Shell) {
+                    return Err(unadmitted("a commit whose caller is not the shell"));
+                }
                 let recipe = self.kernel.recipe(&stored.recipe)?;
-                let none = ProtectedSet::none();
-                match self.kernel.derive(&self.current, &recipe, &none).map_err(kernel_error)? {
+                match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
                     Derivation::Derived(d) => self.commit_adoption(meta, recipe, d.state, d.word, None),
-                    Derivation::Refused(r) => return Err(r.refusal.into()),
+                    Derivation::Refused(r) => {
+                        let error = Error::from(r.refusal);
+                        return Err(match error.code {
+                            code::ORBIT_WOULD_MOVE => unadmitted("a commit that moves a protected orbit"),
+                            _ => error,
+                        });
+                    }
                 }
             }
             TransactionKind::Undo | TransactionKind::Redo => {
@@ -825,12 +852,12 @@ impl<S: Store> CommandLayer<S> {
                 if stored.target != stack.last().copied() {
                     return Err(broken("the action does not invert or repeat the top of its stack"));
                 }
-                self.plan_step(meta, direction, &ProtectedSet::none())?
+                self.plan_step(meta, direction, &ProtectedSet::none()).map_err(release)?
             }
             TransactionKind::Protection => {
                 let orbits: Vec<i64> = stored.orbits.iter().map(|&orbit| orbit as i64).collect();
                 let set = self.kernel.protected_set(&orbits)?;
-                self.plan_orbits(meta, set)?
+                self.plan_orbits(meta, set).map_err(release)?
             }
             TransactionKind::Workspace => {
                 let (Some(job), Some(result)) = (stored.job, stored.result.clone()) else {

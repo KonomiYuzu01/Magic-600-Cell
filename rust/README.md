@@ -30,6 +30,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) with their catalogue row, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
+| `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -1122,17 +1123,27 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 ## Status of M6: the session store
 
 - `c600-session` keeps one session in one journal on a `Disk`: `FsDisk` over a directory, or `MemDisk` in memory for
-  the tests. `MemDisk` fails a chosen write (an error, a partial write, or a write that persisted but reported
-  failure), holds a write so a test can act while it is in flight, tears unsynced appends and loses unsynced data in
-  a crash, and counts reads and writes.
+  the tests only, behind the crate feature `mem-disk`. `MemDisk` fails a chosen write (an error, a partial write, or
+  a write that persisted but reported failure), holds a write so a test can act while it is in flight, tears unsynced
+  appends and loses unsynced data in a crash, and counts reads and writes.
 - The session lock (KN4.1: only the engine opens the session files; Fable lead L9). A store takes it before it
   reads the journal, so one process opens a session at a time. `FsDisk` holds an exclusive lock on the empty file
   `lock` in its directory (std's `File::try_lock`: `LockFileEx` on Windows, `flock` on Unix) until the disk is
   dropped. The operating system releases it when the process ends, a hard exit included, as it did for 0.4's
   `engine.lock` (1.0-A3's V03.4: a lock conflict is a typed error, not a crash). A second opener of a held session,
   in this process or another, is refused with `KN4:busy.session_locked` before it reads or writes the journal or a
-  state object. That covers `Session::open` and `create` and `JournalStore::open` and `create`. `MemDisk` takes no
-  lock: it lives in one process, and its clones stand for a restart in the crash tests. This is not the lock of
+  state object. That covers `Session::open` and `create` and `JournalStore::open` and `create`. Every disk takes
+  the lock (finding E2 of the KN5 boundary attack, the owner's reading of 18 November 2026,
+  `docs/wiki/decisions/owner-decisions-2026-11-18.md`): one clone of a `MemDisk` holds it until that clone is dropped
+  or the disk crashes, so a second store on a held memory disk is refused the same way, and a clone opened after the
+  holder is gone stands for a restart in the crash tests. A lock on a file holds only while the file keeps its name
+  (E1). A journal without a `lock` file refuses the opener, and a holder puts back a removed `lock` when it is
+  dropped. On Windows `FsDisk` opens `lock` through the platform layer `c600-platform` with a handle that denies
+  delete sharing, so nothing deletes or renames it, or removes the session directory, while it is held; outside
+  Windows a `lock` removed and created again while the session is held lets a second opener in. A hard exit leaves
+  `lock` in place. When something outside the store removed it, `FsDisk::open_anyway`, the engine's explicit "open
+  anyway" (no UI), puts it back and opens; it refuses while this machine's lock is held, and it does not see a lock
+  that another machine or a sync service holds on a shared folder. This is not the lock of
   KN4.2's R-15, which is the in-process lock that 0.4 held while it wrote a response (B-005); M6 calls that one the
   core lock. Drafts: the file's name and the code, which chapter 13 does not register (a row for LP3's amendment
   list, PHS.52).

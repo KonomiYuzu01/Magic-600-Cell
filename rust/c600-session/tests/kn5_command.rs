@@ -42,8 +42,10 @@ fn create(disk: &MemDisk) -> Fixture {
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
-/// The session the disk holds, reopened under a new layer and shell with `secret`.
+/// The session the disk holds, reopened under a new layer and shell with `secret`, as a restart
+/// (`MemDisk::end_holder`).
 fn reopen(disk: &MemDisk, secret: [u8; 32]) -> Fixture {
+    disk.end_holder();
     let store = JournalStore::open(Box::new(disk.clone())).expect("the journal opens");
     let layer = match CommandLayer::open(common::kernel(), Table::h08(), Secret::fixed(secret), store) {
         Ok(layer) => layer,
@@ -251,6 +253,7 @@ fn every_open_draws_a_new_epoch() {
         let id = g.shell.prepare(&g.layer, "operation.preview", draft_args(&word(&[2]))).unwrap().command;
         assert!(!ids.contains(&id), "{id} repeats");
         ids.push(id);
+        drop(g);
         let mut store = JournalStore::open(Box::new(disk.clone())).unwrap();
         let history = store.history().unwrap();
         assert_eq!(history.epochs, epochs[1..]);
