@@ -71,9 +71,9 @@ foreach ($key in 'environment','validation_environment') {
     }
 }
 if ($launch.separator.Count -ne 1 -or $launch.separator[0] -ne '--') { throw 'launch.json has the wrong framework argument separator.' }
-# The ABI 3 core loads these five shaders from the DLL's folder (renderer/core/check_core.py SHADERS).
+# The ABI 4 core reads these eight shaders from the DLL's folder (renderer/core/check_core.py SHADERS).
 $nativeDirectory = Split-Path -Parent $launch.dll
-foreach ($shader in 'count_vs.dxil','draw_ps.dxil','draw_vs.dxil','geometry_cs.dxil','lattice_cs.dxil') {
+foreach ($shader in 'count_vs.dxil','draw_ps.dxil','draw_vs.dxil','geometry_cs.dxil','id_ps.dxil','lattice_cs.dxil','product_ps.dxil','product_vs.dxil') {
     if (-not (Test-Path -LiteralPath (Join-Path $nativeDirectory $shader) -PathType Leaf)) { throw "The build lacks $shader next to sa2_interop.dll." }
 }
 $dataDirectory = $null

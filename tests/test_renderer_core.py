@@ -1,4 +1,4 @@
-"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 3).
+"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 4).
 
 The core builds only on Windows with MSVC (renderer/core/check_core.py). These checks need only the
 Python standard library and run anywhere. They check that:
@@ -6,7 +6,8 @@ Python standard library and run anywhere. They check that:
   work/experiments/, and every "verbatim" product file equals its source;
 - the provenance table lists exactly the files under renderer/core/;
 - the CMake build names no source outside renderer/core/;
-- the ABI header pins version 3 and keeps every ABI 2 declaration, layout and constant.
+- the ABI header pins version 4, keeps every ABI 2 declaration, layout and constant and the ABI 3
+  additions, and pins the ABI 4 product declarations, struct sizes and constants.
 """
 from __future__ import annotations
 
@@ -134,6 +135,8 @@ class BuildTests(unittest.TestCase):
         for match in re.finditer(r"^compile_shader\(\S+ (\S+) ", self.cmake, re.M):
             sources.append("shaders/" + match.group(1))
         self.assertIn("shaders/lattice.hlsl", sources)
+        self.assertIn("shaders/product.hlsl", sources)
+        self.assertIn("src/product.cpp", sources)
         for source in sources:
             with self.subTest(source=source):
                 self.assertNotIn("..", source)
@@ -147,14 +150,53 @@ class BuildTests(unittest.TestCase):
                   if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
                   and node.targets[0].id in ("SHADERS", "CPU_CHECKS")}
         self.assertEqual(values["SHADERS"], built)
-        self.assertEqual(len(built), 5)
-        self.assertEqual(len(values["CPU_CHECKS"]), 22)
+        self.assertEqual(len(built), 8)
+        self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
+        self.assertEqual(len(values["CPU_CHECKS"]), 30)
         self.assertTrue({"wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls",
                          "wj native writer"} <= values["CPU_CHECKS"])
+        self.assertTrue({"product arguments", "product adopt", "product tickets", "product frames", "product reports",
+                         "product picks", "product device lost", "product describe"} <= values["CPU_CHECKS"])
 
     def test_default_build_directory_is_ignored_work(self):
         batch = (CORE / "build.cmd").read_bytes().decode("ascii")
         self.assertIn(r'set "BUILD=%HERE%..\..\work\build\renderer-core"', batch)
+
+
+ABI3 = {
+    "SA2_API int32_t sa2_scene_load_wj(sa2_context* ctx, const sa2_wj_config* config);",
+    "SA2_API int32_t sa2_scene_lattice_check(sa2_context* ctx, const char* directory_utf8);",
+}
+ABI4 = {
+    "SA2_API int32_t sa2_describe(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size);",
+    "SA2_API int32_t sa2_engine_adopt(sa2_context* ctx, const sa2_engine_image* image, uint64_t* out_revision);",
+    "SA2_API int32_t sa2_prepare(sa2_context* ctx, const sa2_preparation* preparation, uint64_t* out_ticket);",
+    "SA2_API int32_t sa2_poll(sa2_context* ctx, uint64_t ticket, sa2_poll_row* out);",
+    "SA2_API int32_t sa2_activate(sa2_context* ctx, uint64_t resource_set, const uint8_t stamp_digest[32]);",
+    "SA2_API int32_t sa2_cancel(sa2_context* ctx, uint64_t ticket, int32_t reason, uint64_t superseded_by);",
+    "SA2_API int32_t sa2_retire(sa2_context* ctx, uint64_t resource_set);",
+    "SA2_API int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_t* out_frame_id);",
+    "SA2_API int32_t sa2_frame_reports(sa2_context* ctx, sa2_frame_report* rows, uint32_t capacity, uint32_t* out_count);",
+    "SA2_API int32_t sa2_presented(sa2_context* ctx, sa2_presented_row* rows, uint32_t capacity, uint32_t* out_count);",
+    "SA2_API int32_t sa2_pick_request(sa2_context* ctx, uint64_t frame_id, uint32_t x, uint32_t y, uint64_t* out_ticket);",
+    "SA2_API int32_t sa2_pick_poll(sa2_context* ctx, uint64_t ticket, sa2_pick_row* out);",
+    "SA2_API int32_t sa2_recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size);",
+    "SA2_API int32_t sa2_resize(sa2_context* ctx, uint32_t width, uint32_t height);",
+    "SA2_API int32_t sa2_counters(sa2_context* ctx, sa2_counter_values* out);",
+    "SA2_API int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason);",
+}
+ABI4_STRUCTS = {
+    "sa2_engine_image": 80, "sa2_preparation": 112, "sa2_poll_row": 32, "sa2_frame_input": 264,
+    "sa2_frame_report": 104, "sa2_presented_row": 48, "sa2_pick_row": 112, "sa2_counter_values": 64,
+}
+ABI4_DEFINES = {
+    "SA2_E_UNAVAILABLE": "10", "SA2_SLOTS": "259800u", "SA2_PIECES": "177120u", "SA2_MAX_POSES": "177120u",
+    "SA2_POSE_GROUP_ORDER": "7200", "SA2_TICKET_PENDING": "0", "SA2_TICKET_READY": "1", "SA2_TICKET_CANCELLED": "2",
+    "SA2_TICKET_FAILED": "3", "SA2_CANCEL_BY_USER": "0", "SA2_CANCEL_SUPERSEDED": "1", "SA2_CANCEL_REPLACED_REVISION": "2",
+    "SA2_CANCEL_BUDGET": "3", "SA2_PICK_PENDING": "0", "SA2_PICK_READY": "1", "SA2_PICK_STALE": "2",
+    "SA2_PICK_STALE_SURFACE": "1", "SA2_PICK_STALE_VIEW": "2", "SA2_PICK_STALE_TARGET": "3", "SA2_PICK_STALE_ENGINE": "4",
+    "SA2_PICK_STALE_PUBLICATION": "5", "SA2_FRAME_PREVIEW": "1u",
+}
 
 
 class AbiTests(unittest.TestCase):
@@ -162,8 +204,8 @@ class AbiTests(unittest.TestCase):
         self.header = text(CORE / "include" / "sa2_interop.h")
         self.abi2 = text(SA2_HEADER)
 
-    def test_version_is_3(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["3u"])
+    def test_version_is_4(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["4u"])
         self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.abi2, re.M), ["2u"])
 
     def test_abi2_scene_config_layout_is_pinned(self):
@@ -183,14 +225,31 @@ class AbiTests(unittest.TestCase):
                 with self.subTest(define=name):
                     self.assertEqual(new_defines.get(name), value)
 
-    def test_abi3_additions(self):
-        added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, {
-            "SA2_API int32_t sa2_scene_load_wj(sa2_context* ctx, const sa2_wj_config* config);",
-            "SA2_API int32_t sa2_scene_lattice_check(sa2_context* ctx, const char* directory_utf8);",
-        })
+    def test_abi3_additions_are_kept(self):
+        self.assertTrue(ABI3 <= declarations(self.header))
         self.assertIn("sa2_wj_config", structs(self.header))
         self.assertIn('static_assert(sizeof(sa2_wj_config) == 48, "sa2_wj_config requires the x64 ABI");', self.header)
+
+    def test_abi4_additions(self):
+        added = declarations(self.header) - declarations(self.abi2)
+        self.assertEqual(added, ABI3 | ABI4)
+
+    def test_abi4_struct_sizes_are_pinned(self):
+        layouts = structs(self.header)
+        product = text(CORE / "src" / "product.h")
+        for name, size in ABI4_STRUCTS.items():
+            with self.subTest(struct=name):
+                self.assertIn(name, layouts)
+                self.assertTrue(layouts[name].startswith(f"typedef struct {name} {{\n    uint32_t struct_size;"),
+                                "every ABI 4 struct starts with struct_size")
+                self.assertIn(f'static_assert(sizeof({name}) == {size}, "{name} requires the x64 ABI");', self.header)
+                self.assertIn(f"static_assert(sizeof({name}) == {size});", product)
+
+    def test_abi4_constants_are_pinned(self):
+        values = defines(self.header)
+        for name, value in ABI4_DEFINES.items():
+            with self.subTest(define=name):
+                self.assertEqual(values.get(name), value)
 
 
 if __name__ == "__main__":
