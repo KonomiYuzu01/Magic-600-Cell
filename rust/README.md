@@ -1958,11 +1958,12 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 26 of DET.65's 40 traces as `.6cs` programs on both
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 28 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication,
   alias and pointwise-failure traces since LP2's `exact_mul` and `assert`, three generator traces since LP2's
-  `rng_init` and `rng_draw`, the five child traces, child records included, since LP2's child scopes, and
-  `final-loop-test` since LP2's loops); the protocol's bounds,
+  `rng_init` and `rng_draw`, the five child traces, child records included, since LP2's child scopes,
+  `final-loop-test` since LP2's loops, and the two decoding traces since LP2's byte decoding, on bytes the host
+  delivers as a snapshot); the protocol's bounds,
   canonical encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut
   or unknown, the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu
   word's, a menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in
@@ -1978,9 +1979,9 @@ run or not applicable is no pass (PHS.63).
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 14 traces need
-  what the IR draft lacks: a call frame without a slot that holds bindings, text order, byte decoding, a flow check,
-  streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 12 traces need
+  what the IR draft lacks: a call frame without a slot that holds bindings, text order, a child's bytes without a row
+  of their own, a flow check, streaming cursors and an executor for `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route

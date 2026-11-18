@@ -12,7 +12,7 @@
 //! returns, and encoding and emitting the entry's result.
 //!
 //! The limits give every mapped row the trace's headroom. A probe run with wide limits measures the overhead (with
-//! other arguments only where the trace stops on a value: below). For a trace that completes, each limit is the
+//! other inputs only where the trace stops on a value: below). For a trace that completes, each limit is the
 //! program's use plus the trace's slack (limit minus use; memory's use is the peak), and the run uses what the probe
 //! used. For a trace that stops at a row, each cumulative limit is the program's charges before the mapped row plus
 //! the trace's headroom before its row; the memory limit is the program's live memory before that row plus the trace's
@@ -24,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 26 of 40
+//! # Realised: 28 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -54,6 +54,8 @@
 //! | `dimension-before-scope` | DET.60 | `dim()`: a child's `k`, over its kernel cap while the root lacks memory |
 //! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
 //! | `final-loop-test` | DET.55 | `spin()`: `repeat(1, 0, …)` visits `acc` once; the final test is refused on steps |
+//! | `decode-scalar` | DET.62 | `decode()`: the snapshot `b` holds four bytes of one scalar; 16 reserved, 12 released |
+//! | `decode-surrogate` | DET.62 | `decode()`: an encoded surrogate stops the run at its decoding (effect phase) |
 //!
 //! The trace's `display_if` condition is a given value that holds no memory. `pick` binds its comparison with `let`,
 //! so the `display_if` row visits a borrowed condition and releases nothing; the comparison's byte is released at the
@@ -109,11 +111,20 @@
 //! and the initial value, are overhead. The run is refused on steps at `loop_test:1`, the final false test, which
 //! would cost one step (DET.55).
 //!
-//! # Not realised: 14 of 40
+//! The decoding traces decode bytes the host delivers as the snapshot `b` (DET.62; LP2 draft), as LP2's
+//! `det65_programs.rs` does: bytes have no canonical form, so they cannot cross as an argument; the host's answer
+//! crosses to the child in the wire's transfer form (value tag 25). The read is a row of the program's own, and `let`
+//! binds its result, so the decoding borrows the bytes and its row releases only the reservation's excess, as the
+//! trace's does. The decoded text, the trace's `t`, is the entry's value. `decode-surrogate` stops on its value, so
+//! its probe's host delivers as many ASCII bytes instead (`probe_setup`), which read alike and decode.
+//!
+//! # Not realised: 12 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no flow check, text order, byte decoding or streaming cursor; no call frame without a slot holds a binding
-//! (`generator-nested-same-name`); and the region contract `lp1-exec-region-draft-1` has no executor yet.
+//! has no flow check, text order or streaming cursor; no call frame without a slot holds a binding
+//! (`generator-nested-same-name`); a child body takes no argument, so a child's bytes cannot arrive without a row of
+//! their own (`child-decode-error-releases-reservation`); and the region contract `lp1-exec-region-draft-1` has no
+//! executor yet.
 
 mod support;
 
@@ -123,9 +134,9 @@ mod json;
 
 use c600_digest::sha256_hex;
 use c600_ir::Capability;
-use c600_run::interp::RowTariff;
+use c600_run::interp::{RowTariff, Run};
 use c600_run::meter::{Amounts, Outcome, Row, Summary, Tariffs};
-use c600_run::value::Value;
+use c600_run::value::{equal, Value};
 use c600_runtime::{run_in_process, Ended, JobOptions, Runtime};
 use json::Json;
 use num_bigint::BigInt;
@@ -183,13 +194,17 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     return child(record { steps = 4, kernel_cost = 4, memory = 20, output = 0 }, \
     fn() -> Unit { return (); }, fn() -> Unit { return (); });\n    \
     }, fn() -> Unit { return (); });\n    return ();\n}\n\n\
-    export fn spin() -> Nat effects [] {\n    return repeat(1, 0, fn(acc: Nat) -> Nat { return acc; });\n}\n";
+    export fn spin() -> Nat effects [] {\n    return repeat(1, 0, fn(acc: Nat) -> Nat { return acc; });\n}\n\n\
+    export fn decode() -> Text effects [snapshot] {\n    let b = read_snapshot<Bytes>(\"b\");\n    \
+    return text_decode(b);\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 14] = [
+const UNREALISED: [(&str, &str); 12] = [
     (
         "child-decode-error-releases-reservation",
-        "the IR has no byte decoding: arguments and host results cross as values",
+        "its child decodes given bytes in two steps, its call and its decoding; a child body takes no argument, so \
+         its bytes come from a literal, a capture or a host read, each a row of its own inside the child, whose \
+         caps and use the trace fixes",
     ),
     (
         "generator-nested-same-name",
@@ -197,8 +212,6 @@ const UNREALISED: [(&str, &str); 14] = [
          a name with `let`, which takes a frame slot and releases at its scope's exit",
     ),
     ("text-comparison", "the IR has no text order"),
-    ("decode-scalar", "the IR has no byte decoding: arguments and host results cross as values"),
-    ("decode-surrogate", "the IR has no byte decoding: arguments and host results cross as values"),
     (
         "abstract-trace-charges",
         "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR has \
@@ -225,6 +238,9 @@ struct Realisation {
     options: fn(&Json, Amounts) -> JobOptions,
     /// Prepares the caller's session from the trace's `given`.
     setup: fn(&Json, &mut Session),
+    /// The probe's session where it differs from the run's: a trace that stops on decoded bytes probes with bytes
+    /// that read alike and decode (module docs).
+    probe_setup: Option<fn(&Json, &mut Session)>,
     /// Every trace row's `at`, in order, and the program row it maps to.
     map: &'static [(&'static str, &'static str)],
     /// For a stopping trace: steps, kernel cost, memory and output its stopped operation would charge if admitted.
@@ -234,8 +250,8 @@ struct Realisation {
     kernel_extra: u128,
     /// The program text of the node that a stop's source range must cover.
     source_node: Option<&'static str>,
-    /// Holds the trace's expected values to what the run delivered.
-    values: fn(&[(String, Json)], &Session),
+    /// Holds the trace's expected values to what the run delivered: its value or what its host received.
+    values: fn(&[(String, Json)], &Run, &Session),
 }
 
 fn plain(_: &Json, limits: Amounts) -> JobOptions {
@@ -244,7 +260,7 @@ fn plain(_: &Json, limits: Amounts) -> JobOptions {
 
 fn untouched(_: &Json, _: &mut Session) {}
 
-fn no_values(values: &[(String, Json)], _: &Session) {
+fn no_values(values: &[(String, Json)], _: &Run, _: &Session) {
     assert!(values.is_empty(), "a realisation without an observation for the trace's values: {values:?}");
 }
 
@@ -309,7 +325,7 @@ fn refused_snapshot(given: &Json, session: &mut Session) {
 
 /// A generator realisation publishes the trace's drawn values in the trace's order, one as itself and two as
 /// `record { a, b }`: `draws` publishes `record { a = draw-0, b = draw-1 }` before its refused draw.
-fn published_draws(values: &[(String, Json)], session: &Session) {
+fn published_draws(values: &[(String, Json)], _: &Run, session: &Session) {
     let drawn: Vec<Value> = values
         .iter()
         .map(|(_, v)| v.str().expect("a drawn block"))
@@ -331,7 +347,7 @@ fn power(n: u32) -> Value {
 }
 
 /// `mul` publishes its product, the trace's one value.
-fn published_product(values: &[(String, Json)], session: &Session) {
+fn published_product(values: &[(String, Json)], _: &Run, session: &Session) {
     let [(name, product)] = values else { panic!("one value in the trace's values: {values:?}") };
     assert_eq!(name, "mul");
     let product = BigInt::parse_bytes(product.num().expect("a number").as_bytes(), 10).expect("decimal digits");
@@ -342,12 +358,48 @@ fn published_product(values: &[(String, Json)], session: &Session) {
 
 /// The program's unit has the trace's byte count (module docs): `"abcde"` and a line feed for the trace's
 /// `"\u00e9"`. Only an admitted unit reaches the host.
-fn eight_byte_unit(values: &[(String, Json)], session: &Session) {
+fn eight_byte_unit(values: &[(String, Json)], _: &Run, session: &Session) {
     let [(_, fixture)] = values else { panic!("one unit in the trace's values: {values:?}") };
     let fixture = hex(fixture.str().expect("hex bytes"));
     assert_eq!(fixture, b"\"\\u00e9\"", "PS1.2's bytes of \"\u{e9}\"");
     assert_eq!(session.views, [b"\"abcde\"\n"], "only the admitted unit reaches the host");
     assert_eq!(session.views[0].len(), fixture.len(), "the program's unit has the trace's byte count");
+}
+
+/// The trace's bytes to decode (DET.62).
+fn trace_bytes(given: &Json) -> Vec<u8> {
+    hex(text(first_of(given, "text_decode"), "hex"))
+}
+
+/// The host delivers `bytes` as the snapshot `b` (module docs): no kernel cost, and a reservation of exactly the
+/// bytes, so the read settles nothing.
+fn deliver(session: &mut Session, bytes: Vec<u8>) {
+    let tariff = RowTariff { kernel_cost: 0, result_bound: bytes.len() as u128 };
+    session.snapshots.push(("b", tariff, Value::Bytes(bytes.into())));
+}
+
+/// The snapshot `b` holds the trace's bytes.
+fn snapshot_bytes(given: &Json, session: &mut Session) {
+    deliver(session, trace_bytes(given));
+}
+
+/// The probe of a decoding that stops on its bytes: as many ASCII bytes, which read alike and decode (module docs).
+fn ascii_bytes(given: &Json, session: &mut Session) {
+    deliver(session, vec![b'a'; trace_bytes(given).len()]);
+}
+
+/// `decode` returns the decoded text, the trace's one value; a decoding that stops binds nothing.
+fn decoded_text(values: &[(String, Json)], run: &Run, _: &Session) {
+    match values {
+        [] => assert!(run.value.is_none(), "no value is bound: {:?}", run.value),
+        [(name, t)] => {
+            assert_eq!(name, "decode");
+            let want = Value::text(t.str().expect("the decoded text"));
+            let got = run.value.as_ref().expect("the decoded text");
+            assert!(equal(got, &want), "the decoded text is the trace's: {got:?}");
+        }
+        _ => panic!("at most one value in the trace's values: {values:?}"),
+    }
 }
 
 const PICK_TRUE: &[(&str, &str)] = &[
@@ -413,6 +465,7 @@ const SPIN: &[(&str, &str)] = &[
     ("loop/body:0/body", "m.spin:root#body:0 > m.spin:2#visit"),
     ("loop/test:1", "m.spin:root#loop_test:1"),
 ];
+const DECODE: &[(&str, &str)] = &[("decode", "m.decode:1#text_decode")];
 
 fn realisations() -> Vec<Realisation> {
     let base = Realisation {
@@ -422,6 +475,7 @@ fn realisations() -> Vec<Realisation> {
         probe_args: None,
         options: plain,
         setup: untouched,
+        probe_setup: None,
         map: PICK_TRUE,
         stop_would: None,
         kernel_extra: 0,
@@ -612,6 +666,27 @@ fn realisations() -> Vec<Realisation> {
             args: Vec::new,
             map: SPIN,
             stop_would: Some([1, 0, 0, 0]),
+            ..base
+        },
+        Realisation {
+            trace: "decode-scalar",
+            entry: "decode",
+            args: Vec::new,
+            setup: snapshot_bytes,
+            map: DECODE,
+            values: decoded_text,
+            ..base
+        },
+        // The probe decodes three ASCII bytes, admitted at the surrogate's charges (module docs).
+        Realisation {
+            trace: "decode-surrogate",
+            entry: "decode",
+            args: Vec::new,
+            setup: snapshot_bytes,
+            probe_setup: Some(ascii_bytes),
+            map: DECODE,
+            stop_would: Some([1, 3, 12, 0]),
+            values: decoded_text,
             ..base
         },
     ]
@@ -826,7 +901,7 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
 
     // The probe: wide limits, in process.
     let mut session = Session::default();
-    setup(&mut session);
+    (r.probe_setup.unwrap_or(r.setup))(given, &mut session);
     let probe = match run_in_process(&job_with(r.probe_args.unwrap_or(r.args), WIDE), &mut session, None) {
         Ended::Ran(run) => run.summary,
         Ended::Refused(refused) => panic!("{id}: {refused:#?}"),
@@ -929,11 +1004,11 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
         }
         (want, got) => panic!("{id}: the trace stops at {:?}, the run at {got:?}", want.as_ref().map(|s| &s.at)),
     }
-    (r.values)(&trace.values, &session);
+    (r.values)(&trace.values, ran(&end), &session);
 }
 
-/// CT-RTE-04 in part: 26 DET.65 traces realised as programs keep their exact results, charges, stopping points,
-/// child records and source associations on both executors; the other 14 are listed with the reason they are not
+/// CT-RTE-04 in part: 28 DET.65 traces realised as programs keep their exact results, charges, stopping points,
+/// child records and source associations on both executors; the other 12 are listed with the reason they are not
 /// realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
