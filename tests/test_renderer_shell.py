@@ -46,11 +46,11 @@ def rust_symbols() -> list[str]:
     return names
 
 
-def csharp_list(name: str) -> list[str]:
-    source = text(PROJECT / "CoreLibrary.cs")
+def csharp_list(name: str, file: str = "CoreLibrary.cs") -> list[str]:
+    source = text(PROJECT / file)
     block = re.search(rf"\b{name} = new\[\]\s*\{{(.*?)\}};", source, re.S)
-    assert block, f"{name} in CoreLibrary.cs"
-    return re.findall(r'"(sa2_[a-z_]+)"', block.group(1))
+    assert block, f"{name} in {file}"
+    return re.findall(r'"((?:sa2|m6h)_[a-z_0-9]+)"', block.group(1))
 
 
 def csharp_symbols() -> list[str]:
@@ -111,6 +111,32 @@ class ShellProject(unittest.TestCase):
         for name in calls:
             self.assertIn(name, exports, name)
             self.assertNotIn(name, rust_symbols(), name)
+
+    def test_the_host_library_calls_match_its_rust_source(self):
+        source = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        csharp = text(PROJECT / "HostLibrary.cs")
+        exports = re.findall(r'#\[no_mangle\]\s*pub (?:unsafe )?extern "C" fn (m6h_[a-z_]+)\(', source)
+        self.assertIn("m6h_create", exports)
+        self.assertEqual(csharp_list("Exports", "HostLibrary.cs"), exports)
+        rust_version = re.search(r"pub const M6H_ABI_VERSION: u32 = (\d+);", source)
+        csharp_version = re.search(r"public const uint AbiVersion = (\d+);", csharp)
+        self.assertTrue(rust_version and csharp_version)
+        self.assertEqual(rust_version.group(1), csharp_version.group(1))
+        rust_codes = dict(re.findall(r"pub const M6H_(OK|E_[A-Z_]+): i32 = (\d+);", source))
+        csharp_codes = dict(re.findall(r"public const int (\w+) = (\d+);", csharp))
+        names = {"OK": "Ok", "E_INVALID_ARGUMENT": "InvalidArgument", "E_MODEL": "ModelNotLoaded",
+                 "E_CORE": "CoreRefused", "E_HOST": "HostRefused", "E_UNAVAILABLE": "Unavailable",
+                 "E_POISONED": "Poisoned"}
+        self.assertEqual(set(rust_codes), set(names))
+        for rust, name in names.items():
+            self.assertEqual(csharp_codes.get(name), rust_codes[rust], rust)
+        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hPresented \{(.*?)\}", source, re.S)
+        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct Presented\s*\{(.*?)\}", csharp, re.S)
+        self.assertTrue(rust_row and csharp_row)
+        self.assertEqual(re.findall(r"pub (\w+): u64,", rust_row.group(1)),
+                         ["sequence", "device_epoch", "engine_revision", "camera"])
+        self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)),
+                         ["Sequence", "DeviceEpoch", "EngineRevision", "Camera"])
 
     def test_the_build_never_launches(self):
         sys.path.insert(0, str(SHELL))
