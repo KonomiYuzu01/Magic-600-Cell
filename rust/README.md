@@ -1733,6 +1733,14 @@ run or not applicable is no pass (PHS.63).
   beneath an action that leaves, do the actions that wrote one of its other records. A replay
   decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
   `c600-command/tests/filter_apply.rs`.
+- Argument blocks (BND.22; LP3's C6, step 1 item 4; the drafts are in the crate documentation).
+  `CommandLayer::invoke_with_inputs(caller, invocation, inputs)` takes the provenance blocks of an invocation's
+  arguments beside the envelope. The host builds them; for a running program's invocation it builds them from the run's
+  context. Only a row an entry serves takes blocks (`KN5:input.argument_form` otherwise). The host's reader checks each
+  block after the arguments' forms and the gates, and without a reader such an invocation is refused with
+  `KN5:input.row_not_built`. The job holds the blocks as given (`ProgramJob::inputs`), and the host runs the entry with
+  them as its run's inputs. The request digest covers each block's SHA-256 only when there are blocks, so `invoke` keeps
+  every earlier digest. A run still reaches no workspace or file row. Tests: `c600-command/tests/job_inputs.rs`.
 - Filter previews and `filter.apply` (KN0.9, H15.4, LI.41, CT-LI-11; LP3's C6; the drafts are in the crate
   documentation and `c600-command/src/filter.rs`). A `FilterRef` is the result reference `{"job", "digest"}` of a
   completed `structure.layer` job, and it resolves while every record that job wrote keeps the version the write left
