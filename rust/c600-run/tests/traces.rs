@@ -1209,9 +1209,9 @@ fn without_transport(given: &Json) -> Json {
     given
 }
 
-/// CT-DET-30 (part: the reference model over the library meter; not run: transport splits, cold caches and
-/// cancellation in an executor, since streaming words are not built (`rust/README.md` lists KN2.10 as not built; no
-/// owner yet)): the frozen pair `streaming-complete-split` and `streaming-complete-coalesced` differs only in its
+/// CT-DET-30 (part: the reference model over the library meter; RT1's runs are in `det65_programs.rs` and its
+/// cancellation at chunk boundaries in `streams.rs`; not run: transport splits and cold caches, which RT1's
+/// in-process stream does not have (no owner yet)): the frozen pair `streaming-complete-split` and `streaming-complete-coalesced` differs only in its
 /// transport partition, and its frozen results are equal. The chunk rows follow the semantic schedule (DET.63): one row
 /// per chunk of the declared size in order, a final short chunk with its actual share, chunk tariffs that add up to
 /// the stream's full tariff, and the setup cost on the open row only. Under every limit from zero to the use in each

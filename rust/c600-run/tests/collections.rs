@@ -338,9 +338,9 @@ fn int_size(bits: u128) -> u128 {
 }
 
 /// CT-LG2-14 (part: the language half: an exact length beyond the machine-integer range without expansion, and the
-/// letters at exact positions equal to those of the word expanded independently; not run: the kernel's streaming in
-/// declared chunks, DET.63's `word_open` and `chunk` rows, cancellation and admission bounds, which are CT-LG4-03 and
-/// M4): a compressed word doubled 70 times has the exact length 3·2⁷⁰, and its first and last letters come out by
+/// letters at exact positions equal to those of the word expanded independently; the streaming in declared chunks,
+/// DET.63's `word_open` and `chunk` rows, cancellation and admission bounds are CT-LG4-03's, in `streams.rs`): a
+/// compressed word doubled 70 times has the exact length 3·2⁷⁰, and its first and last letters come out by
 /// priced expansions of four letters (LP2 draft). A word joined to itself adds one part, so the result has 71 parts.
 /// The doublings run ten to a function: the checker recurses per `let`, and about 18 nested ones overflow a 2 MB test
 /// thread in a debug build.
