@@ -117,6 +117,7 @@ dependencies = [
  "c600-ir",
  "c600-jumble",
  "c600-kernel",
+ "c600-library",
  "c600-repr",
  "c600-run",
  "c600-syntax",

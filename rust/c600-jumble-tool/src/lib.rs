@@ -8,6 +8,10 @@
 //! - [`word`] reads the `Word` a solver names as literal jumbling letters for `c600_jumble`'s observations, and builds
 //!   LB1.8's literal words of one pinned menu from their letters alone: concatenation, inverse, conjugate, commutator
 //!   and powers, refused with `LB1:input.incompatible_alphabet` across alphabets.
+//! - [`library`] holds the jumbling library entries as 600 Cell Script on the IR draft's menu words (LP2's pull request
+//!   210), each module with its catalogue row: LB1.8's literal words of one pinned menu, and LB3.1's heights,
+//!   whole-word checks and protection at pose level. The entries track, check and protect the solver's named word or
+//!   state; none chooses, outputs or previews a word.
 //! - [`level`] names the level a result reads: poses inside Jumble, labels in 600-cell-Full (KN1.11).
 //! - [`relation`] is one typed relation of the relationship strip at pose level, the current occupant of a sticker
 //!   slot, on and off the lattice (EV3.8, EV3.9).
@@ -17,9 +21,12 @@
 //! - `tests/lb3.rs` runs the kernel halves of CT-LB1-02, CT-LB3-01, CT-LB3-03, CT-LB3-05 with CT-BND-17, CT-LB3-06 and
 //!   CT-LB3-07 on `c600_jumble`'s public API, with milestone M8's end tests (`levels`) and repair list
 //!   (`observe::cuts::repair_list`), and with LP2's ν row (`c600_jumble::nu`) and correction catalogue
-//!   (`c600_jumble::corrections`) for CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07. The
-//!   LB1 and LB3 library entries are language code the IR draft cannot express yet, so each test checks the facts the
-//!   library entry would return; the library entries wait for the IR draft's collections.
+//!   (`c600_jumble::corrections`) for CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07. Each
+//!   test checks the facts the library entry would return.
+//! - `tests/library.rs` checks [`library`]'s modules with LP2's checker and runs them with LP2's interpreter:
+//!   CT-LB1-03's jumbling half in the language, and the library entries of CT-LB3-03 and CT-LB3-06, the latter with a
+//!   whole word's Net and Strict protection at pose level from M8's `levels::derive` (pull request 182). A test host
+//!   serves the KN2.4 rows from `c600_jumble`, and each result is compared with the kernel halves' answers.
 //! - `tests/ct_lb3_04.rs` runs CT-LB3-04 whole at this crate's level, on LP2's `nu` and `correction_set_check` rows:
 //!   off-lattice ν is undefined, the pinned C5 convention round-trips, a planted nonzero fixed I_a coordinate is a
 //!   consistency error, and a drafted correction set is checked as drafted. No 600 Cell Script program calls the rows,
@@ -39,11 +46,11 @@
 //!
 //! - **Entries (LB6.5, LB3.8, LG3.6).** The module `jumble_checker` exports two commands, `check_named_twist(t: Word)`
 //!   and `check_named_word(w: Word)`, for LB6.5's candidate "Named twist/word checker and kept checks". Each proposes
-//!   its `Word` parameter as given. The IR draft has no list types and no word operations, so an entry does not test
-//!   that a named twist is one letter, and the two entries differ in name only; [`word::twist`] reads one letter, in
-//!   Rust. The kept checks (DT-J1 O4) are no entry: a kept check proposed again from storage is the storage-laundering
-//!   case capability separation refuses (BND.39), so the solver names the word again, and the table of kept checks is
-//!   the shell's.
+//!   its `Word` parameter as given. The IR draft has list types and word operations since LP2's pull request 176,
+//!   but these entries do not take them up yet, so no entry tests yet that a named twist is one letter, and the two
+//!   entries differ in name only; [`word::twist`] reads one letter, in Rust. The kept checks (DT-J1 O4) are no entry:
+//!   a kept check proposed again from storage is the storage-laundering case capability separation refuses (BND.39),
+//!   so the solver names the word again, and the table of kept checks is the shell's.
 //! - **Target and row set (BND.57, LB6.5).** Every entry's target is `operation.preview`, the only preview row the
 //!   command layer on main has, so the row set is that one row. The draft command table's jumbling rows
 //!   (`jumble.release.check`, `operation.check`) are not in the command layer, and LB6.5 leaves ENG-0J's row names to
@@ -107,8 +114,11 @@
 //!   observations, `heights` for heights and domain IDs, M8's `levels::sticker_test`, `retained_checkpoint` and
 //!   `label_checkpoint` for A5's end tests, and `observe::cuts::repair_list` for LB3.6's repair list, each of whose
 //!   deltas the test reads again from the pair's own word, and whose y and z it recomputes for one pair with JI.6's
-//!   release check. "No protection conflict" in CT-LB3-06 is a run with no protected piece, and prefix protection in
-//!   CT-LB1-02 is the kernel's pose-level Net protection of one letter (`State::apply`).
+//!   release check. "No protection conflict" in CT-LB3-06 is a run with no protected piece in `tests/lb3.rs`, and in
+//!   `tests/library.rs` also a run whose protected pieces the word leaves in place, clear under Net and Strict. Prefix
+//!   protection in CT-LB1-02 is the kernel's pose-level Net protection of one letter (`State::apply`).
+//! - **Library entries (LB1.8, LB3.1, KN2.4).** The row answers, the arguments, what the entries recompute and the
+//!   refusals are [`library`]'s drafts.
 //! - **ν and drafted correction sets (chapter 03's "ν and drafted correction-set check" and "Correction catalogue";
 //!   A5).** The tests read ν with LP2's `c600_jumble::nu::nu` and check drafted sets with
 //!   `c600_jumble::corrections::correction_set_check`, and add no rule of their own. A drafted set is a list of pairs
@@ -143,18 +153,22 @@
 //! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
 //!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
 //!   (CT-LB3-05, CT-BND-17): LP2.
-//! - Not taken up yet on M8: the whole-word protection of `levels::derive` for CT-LB3-06, and the rim and survey rows
-//!   of CT-LB3-07.
+//! - Not taken up yet on M8: the rim and survey rows of CT-LB3-07.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
-//! - The LB1 and LB3 library entries as language code, not written yet. The IR draft has collection types and word
-//!   operations (pull request 176) and menu words (pull request 210); LB3's ν entry also needs F2 and F5.
+//! - The jumbling library entries through a host: no host bridge or command-layer route serves KN2.4's jumbling rows
+//!   to a program yet, so `tests/library.rs` serves them from `c600_jumble` in [`library`]'s draft answer types.
+//!   CT-LB3-03's agreement with `trees.py` stays M5's Python test on the same kernel API.
+//! - LB3's other entries as language code, not written yet; also the named cap of "Release and whole-word checks",
+//!   with ΔN, Δn_h, Δu, the moved sets and the prefix digests (LB3.8), and the label half of "Protection" after
+//!   crossing. LB3's ν entry also needs F2 and F5.
 //! - The review of the class against the entries and its record (CT-LB6-03, CT-BND-15): BM5.
 
 #![forbid(unsafe_code)]
 
 pub mod level;
+pub mod library;
 pub mod protection;
 pub mod relation;
 pub mod tool;

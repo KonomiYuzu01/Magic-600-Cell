@@ -6,9 +6,10 @@
 //! What runs: the constructors on words of the pinned I_a menu, with no state in existence while they run; the alphabet
 //! refusal `LB1:input.incompatible_alphabet` for the S4 menu, for I_a's rotations in another pinned order and for free
 //! mode; H6030's first letters followed by their inverse from solved, every prefix admitted and the path retraced to
-//! its start; and a conjugate of an admitted letter refused at its first prefix. Not run: the LB1 library entries as
-//! language code, which wait for collection types and word operations in the IR draft (LP2); the 600-cell-Full half
-//! (signed generators); and the word and trace keys of LB1.9 and LB1.10. A pass is source and fixture evidence.
+//! its start; and a conjugate of an admitted letter refused at its first prefix. Not run here: the jumbling half as
+//! language code, which `tests/library.rs` runs on the IR draft's menu words; the 600-cell-Full half (signed
+//! generators), which `c600-library` runs; and the word and trace keys of LB1.9 and LB1.10. A pass is source and
+//! fixture evidence.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
