@@ -2141,17 +2141,39 @@ run or not applicable is no pass (PHS.63).
     leave the order, the undo hints, the revision and the journal bytes unchanged, and a program's or a job's workspace
     write is refused); CT-LB2-03's work-sheet part (setting a named sheet again makes the old preview stale, and a new
     proposal reads the new content, also after a reopen).
+  - `ct_lb2_03_work_sheet_reuse.rs`: CT-LB2-03's work-sheet sentence through the layer's `worksheet.save` and
+    `worksheet.load` rows on the journal, with C5's reader installed (LB7.2, LB7.3, KN0.8, KN5.23). A sheet saved from
+    a draft record comes back equal at a reuse in the same session, after a power loss on a memory disk and in a new
+    session on a file-system disk; each reuse makes a presented preview of the sheet stale, so the press prepared
+    before it commits nothing, and a fresh engine preview commits the sheet's complete operation; a reuse after that
+    commit places the piece roles again and shows the moved piece without retargeting the sheet, and its undo restores
+    the sheet. Each refusal of the two rows that LP2's draft names comes back with the layer's code and changes
+    nothing, the journal's bytes included: no reader, in a session reopened without one; the runtime; a malformed
+    argument; an unknown or removed record and a record with no operation to save or no saved sheet to reuse, a
+    malformed sheet among them; another version; and a block that C5's reader refuses. The refusal of both rows with
+    Jumble on runs in `c600-command`'s `tests/jumble_on.rs`, not here: entering Jumble on needs `c600-jumble`, which is
+    no dependency of this crate.
+- CT-LB2-03 does not run whole. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in
+  `c600-kernel` and `c600-tools` ("C5 next" below, which records chunked transport on the source route for a recipe
+  with a star step, or a word step with another field, as not built); its second sentence, named work-sheet reuse
+  invalidates the old preview, runs on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's
+  journal (above). Still missing: LB7.2's fresh exact analysis of a reused sheet, H-08's `worksheet.compare`, with
+  LB2's gains and losses, and macro versions, which LP2's layer does not build (it refuses `worksheet.compare` with
+  `KN5:input.row_not_built`).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (the word's
   letters as a JSON list, the boundary's block as text; C5's runner writes no record); C5's reader installed under the
   fixture's pins, the host keeping a run's blocks again after a reopen; a built-in tool's stored word for the fresh and
   stale preview, since preview admission refuses a solver tool's word (BND.84); a language overlay row of kind `view`
-  standing in for a view on the layer; and M6's stand-ins for views on M6.
+  standing in for a view on the layer; M6's stand-ins for views on M6; and a test reader that reads every block,
+  standing in for a host's reader that accepted a block C5's reader refuses, so that the journal replays such a record
+  and a sheet saved from it.
 - Waiting for LP2's KN5 implementation: the rest of KN5.26's admission matrix (L1, L2); a session profile, so the reader
   applies a solving session's admission in every session; a durable home for a word's part blocks, without which
   CT-BND-27's recursive parts do not run; EV3.2's view rows (the layer refuses `view.open` and `view.close` with
-  `KN5:input.row_not_built`); and LB7.2's work-sheet structure. M6's session lock covers `JournalStore` too (LP2's pull
-  request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes
-  and LP2 removes once their tests run against it.
+  `KN5:input.row_not_built`); and LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's
+  gains and losses) and macro versions. M6's session lock covers `JournalStore` too (LP2's pull request 195).
+  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2
+  removes once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
