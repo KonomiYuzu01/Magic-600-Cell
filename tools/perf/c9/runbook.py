@@ -12,9 +12,12 @@ cold E3 runs, LX-2, LX-4 (4 h time box, owner 18 November 2026), and route B's t
 UI/3D skew measurement (B2). "Unattended" means the owner need not watch; the W-J, W3 and probe windows still need an
 unlocked desktop and the foreground.
 
+The steps run in the owner runbook's order and carry its labels (A1 to A3 attended, U1 to U8 unattended).
+
 The runbook runs nothing. `--dry-run` checks, without a GPU, window or capture, every prerequisite it can (files and
-tools present, the PresentMon version, the build identity readable, scripts that compile or import, fixtures present)
-and prints one line per step. It exits 1 when a prerequisite of a step that is built is missing; a step whose
+tools present, the PresentMon version, the build identity readable, scripts that compile or import, fixtures present,
+and whether the product shell's sources write the log rows or handle the messages a harness needs: `mentions`, a text
+search, DRAFT) and prints one line per step. It exits 1 when a prerequisite of a step that is built is missing; a step whose
 component is not built yet prints its missing prerequisites as a warning. Time estimates are DRAFTS from the runners'
 own timings (run_scene.ps1: 20 s pause, 4 s preroll, 192 s trace per cold run; the probe: about 31 s per harness).
 
@@ -49,6 +52,11 @@ IDENTITY_FORMAT = 'magic600-c9-acceptance-build-v1'
 GODOT_GLOB = ('GodotEngine.GodotEngine.Mono_*/Godot_v4.7.2-stable_mono_win64/'
               'Godot_v4.7.2-stable_mono_win64_console.exe')
 RUNNER = 'renderer/acceptance/run_scene.ps1'
+SHELL = 'renderer/shell'
+# The owner runbook's labels (C9 draft, 18 November 2026): A attended, U unattended.
+LABELS = {'shell-launch': 'A1', 'b1-input': 'A2', 'e2-key-to-frame': 'A3', 'core-gpu': 'U1', 'b3-probe': 'U2',
+          'b2-skew': 'U3', 'wj-w3': 'U4', 'rpi79-gate': 'U5', 'e3-cold-start': 'U6', 'lx2': 'U7', 'lx4': 'U8'}
+SOURCE_SUFFIXES = ('.cs', '.gd', '.rs', '.py')
 DECLARE = "-Overlays 'none running' -Declare @('frame_generation=false','upscaling=false') -Unattended"
 
 
@@ -109,6 +117,22 @@ STEPS = (
          prerequisites=(('compiles', 'renderer/core/check_core.py'), ('file', 'renderer/core/build.cmd')),
          run_time=('the D3D12 debug layer present', 'no debug-layer error or corruption'),
          sources=('renderer/core/README.md, GPU checks (owner runs)', 'owner decision 2026-11-18 route B')),
+    Step('b3-probe', 'Route B check B3: three cold runs of the present probe', False, 10, None,
+         commands=(f'python -B {PROBE} --topmost --wait-quiet 1800   # three times',),
+         prerequisites=(('compiles', PROBE), ('compiles', 'work/experiments/c9-present-probe/analyze.py'),
+                        ('file', 'work/experiments/c9-present-probe/native/build.cmd'), ('vswhere', None),
+                        ('command', 'dotnet'), ('godot', None)),
+         run_time=('an unlocked desktop', 'mains power'),
+         sources=('owner decision 2026-11-18 route B, check 3',)),
+    Step('b2-skew', 'Route B check B2: skew between the UI frame and the 3D frame', False, 10, None,
+         commands=('<product shell run>, one run directory, with presentmon_capture.py --process-id <shell> '
+                   '--output <run dir>/presentmon.csv --seconds 600 alongside',
+                   'python -B tools/perf/c9/ui_skew.py <run dir> --out <record>.json'
+                   '   # no bar: the numbers go to the owner'),
+         prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('mentions', (SHELL, '"ui_frame"')),
+                        ('mentions', (SHELL, '"ui_swap_chain"'))),
+         run_time=('an unlocked desktop', 'administrator PowerShell for PresentMon'),
+         sources=('owner decision 2026-11-18 route B, check 2',)),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
          False, 50, 'the route-B product build (the W-J and W3 evidence must come from it, not the texture path)',
          commands=wj_w3_commands(),
@@ -133,7 +157,9 @@ STEPS = (
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
-         'the LX-2 fault harness on the product build',
+         'native recursion and the native loop (LP3\'s lx2-faults hook in c600-runtime), and RTE.42 conditions 3 and '
+         '4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault windows, in the shell\'s '
+         'frame loop)',
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
                    '--bin c600-lx2-child   # the injection device of option (a), never shipped',
                    'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
@@ -143,22 +169,23 @@ STEPS = (
                    'and 2)'),
          prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs')),
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
-    Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240,
-         'the LX-4 edit-script harness on the product build',
-         commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <new folder>'
-                   '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',),
-         prerequisites=(('file', 'rust/c600-lx4/src/main.rs'),),
-         run_time=('foreground',), sources=('RTE.52', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
-    Step('b3-probe', 'Route B check B3: three cold runs of the present probe', False, 10, None,
-         commands=(f'python -B {PROBE} --topmost --wait-quiet 1800   # three times',),
-         prerequisites=(('compiles', PROBE), ('compiles', 'work/experiments/c9-present-probe/analyze.py'),
-                        ('file', 'work/experiments/c9-present-probe/native/build.cmd'), ('vswhere', None),
-                        ('command', 'dotnet'), ('godot', None)),
-         run_time=('an unlocked desktop', 'mains power'),
-         sources=('owner decision 2026-11-18 route B, check 3',)),
-    Step('b2-skew', 'Route B check B2: skew between the UI frame and the 3D frame', False, 10,
-         'a skew measurement in the product shell (UI frame times beside the core\'s confirmed presents)',
-         run_time=('an unlocked desktop',), sources=('owner decision 2026-11-18 route B, check 2',)),
+    Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240, None,
+         commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
+                   '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
+                   'python -B tools/perf/c9/lx4.py schedule --fixtures <fixtures>   # 10,800 S/M/L samples',
+                   '<product shell run> with Jumble off on fresh isolated data, PresentMon alongside; then '
+                   'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
+                   '--turn-vk <the shell\'s turn key>',
+                   'the same with Jumble on (--puzzle jumble-on) in a second run directory',
+                   'python -B tools/perf/c9/key_to_frame.py <both run dirs> --out <e2 record>.json   # E2 in the same '
+                   'runs',
+                   'python -B tools/perf/c9/lx4.py analyze --fixtures <fixtures> <both run dirs> --e2 <e2 record>.json '
+                   '--gate <gate summary>.json --out <record>.json'),
+         prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
+                        ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),
+                        ('mentions', (SHELL, '"key"'))),
+         run_time=('foreground', 'the owner starts it from the desktop'),
+         sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )
 
 
@@ -211,6 +238,16 @@ def evaluate(kind, argument, build=None, environ=None):
             return False, f'{argument} does not import'
     if kind == 'command':
         return shutil.which(argument) is not None, f'{argument} on PATH'
+    if kind == 'mentions':
+        folder, token = argument
+        for path in sorted((ROOT / folder).rglob('*')):
+            if path.suffix in SOURCE_SUFFIXES and path.is_file():
+                try:
+                    if token in path.read_text(encoding='utf-8', errors='replace'):
+                        return True, f'{folder} writes or handles {token}'
+                except OSError:
+                    continue
+        return False, f'{folder} does not write or handle {token} yet'
     if kind == 'presentmon':
         found = presentmon_capture.installed(environ)
         if found['path'] is None:
@@ -262,7 +299,7 @@ def line(index, step, results):
         state = f'MISSING: {"; ".join(failed)}'
     else:
         state = f'ready ({len(results)} prerequisite(s) checked)'
-    return f'{index}. {step.id} [{kind}, about {step.minutes} min] {state}'
+    return f'{index}. {step.id} ({LABELS.get(step.id, "-")}) [{kind}, about {step.minutes} min] {state}'
 
 
 def dry_run(steps=STEPS, check=evaluate, out=print):
@@ -281,7 +318,7 @@ def dry_run(steps=STEPS, check=evaluate, out=print):
 
 def listing(steps=STEPS, out=print):
     for index, step in enumerate(steps, 1):
-        out(f"{index}. {step.id}: {step.title}")
+        out(f"{index}. {step.id} ({LABELS.get(step.id, '-')}): {step.title}")
         out(f"   {'attended (foreground)' if step.attended else 'unattended; start only when the quiet gate passes'}; "
             f'about {step.minutes} min (draft)')
         if not step.built:
@@ -289,7 +326,8 @@ def listing(steps=STEPS, out=print):
         for command in step.commands:
             out(f"   {'planned: ' if not step.built else ''}{command}")
         for kind, argument in step.prerequisites:
-            out(f"   needs: {kind}{'' if argument is None else ' ' + argument}")
+            shown = ' '.join(argument) if isinstance(argument, tuple) else argument
+            out(f"   needs: {kind}{'' if argument is None else ' ' + shown}")
         for condition in step.run_time:
             out(f'   at run time: {condition}')
         out(f"   sources: {', '.join(step.sources)}")
