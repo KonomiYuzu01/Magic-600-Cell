@@ -1645,8 +1645,8 @@ run or not applicable is no pass (PHS.63).
   - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
     program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
     run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (a draft code). The
-    check is built and off. LP3's host starts every run through a tool row the shell invokes (section "Status of LP3,
-    C5 next: the process host and the tool's views"), so switching it on changes no LP3 route.
+    check is on. LP3's host starts every run through a tool row the shell invokes (section "Status of LP3, C5 next:
+    the process host and the tool's views"), so the check changes no LP3 route.
   - Finding G1: each run has its own command-ID scope (`runtime/<run>`), so one run cannot use up another run's IDs.
     The scope is derived from the stored caller; the journal format is unchanged.
   - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
@@ -1662,7 +1662,7 @@ run or not applicable is no pass (PHS.63).
     pose move commits only after the solver releases the orbit, with a confirmation (LI.26). A reopen derives a stored
     pose move as the live move does, under the protection in force at its place in the journal (finding B7), so one that
     would move a protected piece leaves the layer in read-only recovery before it with the engine's code.
-  - Tests: `c600-command/tests/attack_runtime.rs` (B1, B6/L17, and B2, ignored while the check is off),
+  - Tests: `c600-command/tests/attack_runtime.rs` (B1, B2 and B6/L17),
     `attack_callers.rs` (G1), `attack_playback.rs` (LD1), `strict_policy.rs`, `attack_protection.rs` (B5) and
     `jumble_twist_menu.rs` (B5 under Net and Strict, a pose move that moves no protected piece, and the reopen).
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
@@ -2374,7 +2374,7 @@ run or not applicable is no pass (PHS.63).
   Once the preview the run proposed is built, the host reports the job with the program's acknowledgement
   (`ToolCommand::acknowledge`), so the solver's command completes as a query; a run refused at its start stage is
   reported as the job's failure with the refusal's code (`start_error`). The layer's check, `c600-command`'s
-  `SOLVER_COMMAND_CHECK`, is still off (the KN5 readings above), and every LP3 route and test already runs this way.
+  `SOLVER_COMMAND_CHECK`, is on (the KN5 readings above), and every LP3 route and test runs this way.
 - `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
   compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
   records, receipts and callers equal across the hosts. On the source route each step that gives the tool a word adds
