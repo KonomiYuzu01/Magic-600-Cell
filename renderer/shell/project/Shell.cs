@@ -152,7 +152,11 @@ public partial class Shell : Control
         _exitAtFirstFrame = System.Environment.GetEnvironmentVariable("M600_EXIT_AT_FIRST_FRAME") == "1";
         if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")
         {
-            _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));
+            _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log, hostLibrary, _host)));
+        }
+        if (System.Environment.GetEnvironmentVariable("M600_LX2") == "1")
+        {
+            _modules.Add(new Lx2.Lx2Module(new ShellContext(window, this, _log, hostLibrary, _host)));
         }
         if (_modules.Count > 0)
         {

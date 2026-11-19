@@ -1,0 +1,281 @@
+\chapter{The ring \texorpdfstring{\(\mathbb Z[\phi]\)}{Z[phi]} and the 120 vertices}
+\label{ch:ArchonFull600Theory_Geometry}
+
+This chapter is Milestone 2 of the handoff: O1, O2, Lemma 1 (counts, norms
+and the three families, with the two external results E1 and E2 as stated
+hypotheses), the supporting-facet test and the completeness of the facet
+list (FC), and the combinatorial part of Lemma 3 (N1). Source line numbers
+refer to \texttt{research/Full\_600cell\_Puzzle\_Theory.tex}.
+
+\section{The exact ring}
+
+\begin{definition}[Golden ratio identities]
+  \label{def:golden-ratio}
+  \lean{ArchonFull600Theory.goldenRatioIdentities}
+  \leanok
+  % SOURCE: Definitions and mathematical sources, lines 273--277
+  % SOURCE QUOTE: \phi=\frac{1+\sqrt5}{2},\qquad \tau=\phi^{-1}=\phi-1.
+  % \end{equation} Thus \begin{equation}
+  % \phi^2=\phi+1,\qquad \tau^2=2-\phi.
+  \textit{Source: Definitions (O1).}
+  Put \(\phi=(1+\sqrt5)/2\) and \(\tau=\phi^{-1}\). Then
+  \(\phi^2=\phi+1\), \(\tau=\phi-1\) and \(\tau^2=2-\phi\).
+\end{definition}
+
+\begin{lemma}[Pair arithmetic]
+  \label{lem:pair-arithmetic}
+  \lean{ArchonFull600Theory.ZPhi.pairArithmetic, ArchonFull600Theory.ZPhi.toReal_mul,
+    ArchonFull600Theory.ZPhi.toReal_injective, ArchonFull600Theory.ZPhi.positive_iff}
+  \leanok
+  % SOURCE: The finite checker and its scope, lines 616--629
+  % SOURCE QUOTE: It represents an element by \((a,b)\) and uses
+  % \begin{equation}
+  % (a+b\phi)(c+d\phi)
+  % =(ac+bd)+(ad+bc+bd)\phi.
+  % \end{equation} Its sign test compares integers after writing
+  % \begin{equation}
+  % 2(a+b\phi)=(2a+b)+b\sqrt5,
+  % \end{equation} with sign cases handled before squaring.
+  \textit{Source: Finite checker (O1).}
+  Represent \(a+b\phi\in\mathbb Z[\phi]\) by the integer pair \((a,b)\).
+  The product \((a,b)(c,d)=(ac+bd,\ ad+bc+bd)\) is the product of
+  \(\mathbb Z[\phi]\); distinct pairs are distinct real numbers; and the
+  sign test, which writes \(2(a+b\phi)=(2a+b)+b\sqrt5\) and handles the sign
+  cases before squaring, accepts a pair exactly when its real value is
+  positive.
+\end{lemma}
+\begin{proof}
+  \leanok
+  The product formula is \(\phi^2=\phi+1\). Injectivity is the
+  irrationality of \(\phi\). For the sign test, compare \(A\) with
+  \(-B\sqrt5\) case by case on the signs of \(A\) and \(B\), squaring only
+  when both sides are nonnegative.
+\end{proof}
+
+\section{The vertex set}
+
+\begin{definition}[The vertex set \(V\)]
+  \label{def:vertex-set}
+  \lean{ArchonFull600Theory.vertexSet, ArchonFull600Theory.vertexTable,
+    ArchonFull600Theory.range_vertexR}
+  \leanok
+  % SOURCE: Lemma 1, lines 344--372; the problem's coordinate families, through the
+  % even permutation taking (phi,1,tau,0) to (0,1,phi,tau) at lines 362--365
+  % SOURCE QUOTE: The permutation taking \begin{equation}
+  % (\phi,1,\tau,0)\quad\text{to}\quad(0,1,\phi,\tau)
+  % \end{equation} has index sequence \((4,2,1,3)\) and is even.
+  \textit{Source: Definitions and Lemma 1 (O2).}
+  \(V\subset\mathbb H=\mathbb R^4\) is the union of the three families
+  \((\pm2,0,0,0)\), \((\pm1,\pm1,\pm1,\pm1)\) and
+  \((0,\pm1,\pm\phi,\pm\tau)\), each with all even permutations of the
+  coordinate positions and independent signs. The table
+  \texttt{vertexTable} lists the same 120 points with coordinates in
+  \(\mathbb Z[\phi]\), in the order of the reference script.
+\end{definition}
+
+\begin{lemma}[Coordinate identification]
+  \label{lem:coordinate-identification}
+  \lean{ArchonFull600Theory.vertexFamilies, ArchonFull600Theory.vertexCount,
+    ArchonFull600Theory.vertexNorm, ArchonFull600Theory.halfVertexSet,
+    ArchonFull600Theory.CoordinateSources, ArchonFull600Theory.coordinateIdentification}
+  \leanok
+  \uses{def:vertex-set}
+  % SOURCE: Lemma 1, lines 342--383
+  % SOURCE QUOTE: The set \(V\) in the problem has \(120\) distinct elements, every
+  % element has norm \(2\), and \(V/2\) is a binary icosahedral subgroup of
+  % \(\operatorname{Sp}(1)\). Its convex hull is a regular 600-cell.
+  \textit{Source: Lemma 1 (L1), with E1 and E2 as hypotheses.}
+  The three families have \(8\), \(16\) and \(96\) elements and are
+  pairwise disjoint, so \(V\) has \(120\) elements. Every element has norm
+  \(2\). \(V/2\) equals the coordinate set of the quaternion coordinate
+  result. Hence, given E1 (that coordinate set is the binary icosahedral
+  group), E2 (the elements of a binary icosahedral group are the vertices of
+  a regular 600-cell) and that multiplication by \(2\) preserves
+  regularity, \(V/2\) is binary icosahedral and \(\operatorname{conv}V\) is
+  a regular 600-cell.
+\end{lemma}
+\begin{proof}
+  \leanok
+  The counts, the disjointness and the norms are finite computations in
+  \(\mathbb Z[\phi]\) on the table, transferred to \(\mathbb H\) by the
+  injective coordinate map. The identification of \(V/2\) with the
+  coordinate set uses the even permutation of index sequence
+  \((4,2,1,3)\). The two external results are fields of the structure
+  \texttt{CoordinateSources}, whose predicates for ``binary icosahedral''
+  and ``regular 600-cell'' are left abstract.
+\end{proof}
+
+\section{The edge graph and the face counts}
+
+\begin{definition}[Edge graph]
+  \label{def:edge-graph}
+  \lean{ArchonFull600Theory.edgeGraph, ArchonFull600Theory.edgeGraph_adj_iff,
+    ArchonFull600Theory.inner_vertexR_le}
+  \leanok
+  \uses{def:vertex-set}
+  % SOURCE: The finite checker and its scope, line 639
+  % SOURCE QUOTE: Joins pairs with inner product \(2\phi\).
+  \textit{Source: Finite checker, step 2.}
+  Two vertices are adjacent when their inner product is \(2\phi\). Every
+  other pair of distinct vertices has a smaller inner product, by the exact
+  sign test on all \(120^2\) pairs.
+\end{definition}
+
+\begin{lemma}[Edge length and exposed vertices]
+  \label{lem:metric-data}
+  \lean{ArchonFull600Theory.exposedVertices, ArchonFull600Theory.edgeLength}
+  \leanok
+  \uses{def:edge-graph}
+  % SOURCE: Lemma 3, lines 448--451
+  % SOURCE QUOTE: Every point of \(V\) is an exposed vertex: the functional
+  % \(x\mapsto v\cdot x\) has its unique maximum at \(v\) among points of
+  % \(V\), since all have norm \(2\). Thus \(P\) has exactly \(120\)
+  % vertices and circumradius \(2\).
+  \textit{Source: Lemma 3 (L3), metric part.}
+  Every point of \(V\) has norm \(2\); the exposed points and the extreme
+  points of \(P=\operatorname{conv}V\) are exactly the \(120\) points of
+  \(V\). Distinct vertices are at distance at least \(2/\phi\), with
+  equality exactly for adjacent vertices.
+\end{lemma}
+\begin{proof}
+  \leanok
+  For \(v\in V\), the functional \(x\mapsto v\cdot x\) is at most
+  \(2\|x\|\le4\) on \(P\), with equality only at \(x=v\) by the equality
+  case of Cauchy--Schwarz. The squared distance of two vertices is
+  \(8-2\,v\cdot w\ge8-4\phi=(2/\phi)^2\).
+\end{proof}
+
+\begin{theorem}[Face counts and links]
+  \label{thm:face-counts}
+  \lean{ArchonFull600Theory.faceCounts, ArchonFull600Theory.vertexLinkCounts,
+    ArchonFull600Theory.incidenceCounts, ArchonFull600Theory.eulerCharacteristic}
+  \leanok
+  \uses{def:edge-graph}
+  % SOURCE: Lemma 3, lines 437--443 and 487--505; handoff N1
+  % SOURCE QUOTE: (f_0,f_1,f_2,f_3)=(120,720,1200,600).
+  % \end{equation} Its facets are regular tetrahedra, five facets meet at
+  % each edge, twenty meet at each vertex, and its vertex links are
+  % icosahedral.
+  \textit{Source: Lemma 3 (L3), combinatorial part, and N1.}
+  The edge graph has \(120\) vertices, \(720\) edges, \(1200\) triangles
+  and \(600\) four-cliques. Every vertex has degree \(12\) and lies in
+  \(12\) edges, \(30\) triangles and \(20\) four-cliques, the numbers of
+  vertices, edges and triangles of its link. Every edge lies in \(5\)
+  triangles and \(5\) four-cliques, and every triangle in exactly \(2\)
+  four-cliques. The alternating sum \(120-720+1200-600\) is \(0\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  A kernel-checked certificate on the adjacency bitmask gives \(12\) common
+  neighbours for every vertex, \(5\) for every edge and \(2\) for every
+  triangle. For any finite graph with constant numbers of common
+  neighbours \(d\), \(k\), \(m\) of vertices, edges and triangles, double
+  counting of nested cliques gives \(2f_1=f_0d\), \(3f_2=f_1k\),
+  \(4f_3=f_2m\) and the local counts.
+\end{proof}
+
+\section{The supporting-facet test and completeness}
+
+\begin{lemma}[Supporting-facet test]
+  \label{lem:supporting-facet}
+  \lean{ArchonFull600Theory.supportingFacet, ArchonFull600Theory.facetGram,
+    ArchonFull600Theory.finrank_cliqueTetra}
+  \leanok
+  \uses{thm:face-counts}
+  % SOURCE: The finite checker and its scope, lines 654--662
+  % SOURCE QUOTE: For a tetrahedron with vertices \(v_1,\ldots,v_4\), the Gram matrix has
+  % diagonal entries \(4\) and off-diagonal entries \(2\phi\). It is
+  % positive definite. Moreover, \begin{equation}
+  % N=\sum_i v_i,\qquad
+  % N\cdot v_i=4+6\phi,\qquad
+  % \|N\|^2=16+24\phi.
+  % \end{equation} Thus the supporting tests certify actual tetrahedral
+  % facets, not merely graph cliques.
+  \textit{Source: Finite checker, step 4 (FC).}
+  Let \(v_1,\ldots,v_4\) be the vertices of a four-clique and
+  \(N=\sum_iv_i\). The Gram matrix of the \(v_i\) has diagonal entries
+  \(4\) and off-diagonal entries \(2\phi\), and it is positive definite.
+  Moreover \(N\cdot v_i=4+6\phi\), \(\|N\|^2=16+24\phi\), and
+  \(N\cdot v<4+6\phi\) at every other vertex. So \(N\cdot x\le4+6\phi\) on
+  \(P\), with equality exactly on the tetrahedron
+  \(\operatorname{conv}\{v_1,\ldots,v_4\}\), whose affine span has
+  dimension \(3\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  \(N\cdot v_i=4+3\cdot2\phi\) and \(\|N\|^2=4(4+6\phi)\). At another
+  vertex each of the four inner products is at most \(2\phi\), and
+  \(8\phi<4+6\phi\) since \(\phi<2\). The face of a finite convex hull
+  cut out by a bounded functional is the hull of the points where the
+  bound is attained. A combination \(\sum c_iv_i\) has squared norm
+  \((4-2\phi)\sum c_i^2+2\phi(\sum c_i)^2\), which vanishes only for
+  \(c=0\); this gives positive definiteness and affine independence.
+\end{proof}
+
+\begin{lemma}[Cliques span exposed faces]
+  \label{lem:clique-face}
+  \lean{ArchonFull600Theory.cliqueFace}
+  \leanok
+  \uses{thm:face-counts}
+  % SOURCE: Lemma 3, lines 461--467
+  % SOURCE QUOTE: Thus the functional \(v+w\) exposes precisely their
+  % segment.
+  \textit{Source: Lemma 3 (L3), the exposure of edges, extended to all cliques.}
+  Let \(s\) be an \(n\)-clique of the edge graph and \(N\) the sum of its
+  vertices. Then \(N\cdot x\le4+2(n-1)\phi\) on \(P\), with equality
+  exactly on the convex hull of the vertices of \(s\). In particular the
+  functional \(v+w\) of an edge exposes precisely its segment, and the
+  triangles and four-cliques span exposed faces of \(P\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  At a vertex of \(s\) the value is \(4+(n-1)2\phi\); at any other vertex
+  it is at most \(n\cdot2\phi\), which is smaller since \(2\phi<4\). The
+  face lemma for finite convex hulls finishes the proof.
+\end{proof}
+
+\begin{definition}[Facets and the polytope facts E4]
+  \label{def:facet-facts}
+  \lean{ArchonFull600Theory.IsFacet, ArchonFull600Theory.FacetsAdjacent,
+    ArchonFull600Theory.FacetFacts}
+  \leanok
+  % SOURCE: Lemma 3, lines 494--495; The finite checker and its scope, lines 664--667; handoff E4
+  % SOURCE QUOTE: The facet adjacency graph of a convex polytope is connected, so a
+  % nonempty such list contains all facets.
+  \textit{Source: handoff E4, as a stated hypothesis.}
+  A facet of \(P\) is a set \(\{x\in P: l(x)=M\}\) for a linear functional
+  \(l\) with \(l\le M\) on \(P\), whose affine span has dimension \(3\).
+  Two facets are adjacent when they are distinct and meet in a set of
+  affine dimension \(2\). The structure \texttt{FacetFacts} records the two
+  standard facts the completeness argument uses: a ridge lies in no facet
+  other than the two that meet in it, and the facet adjacency graph is
+  connected.
+\end{definition}
+
+\begin{theorem}[Completeness of the facet list]
+  \label{thm:facet-completeness}
+  \lean{ArchonFull600Theory.isFacet_cliqueTetra, ArchonFull600Theory.facetCompleteness}
+  \leanok
+  \uses{lem:supporting-facet, def:facet-facts}
+  % SOURCE: The finite checker and its scope, lines 663--667
+  % SOURCE QUOTE: If every triangular ridge of the listed tetrahedra has both its
+  % incident facets in the list, the list is closed under facet adjacency.
+  % The facet adjacency graph of a convex polytope is connected, so a
+  % nonempty such list contains all facets.
+  \textit{Source: Finite checker, completeness argument (FC).}
+  The tetrahedron of every four-clique is a facet of \(P\). Under the
+  polytope facts E4, the facets of \(P\) are exactly these tetrahedra, and
+  there are \(600\) of them.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Let \(G\) be a facet adjacent to the tetrahedron \(T_s\) of a
+  four-clique \(s\). The ridge \(T_s\cap G\) is the hull of the vertices of
+  \(s\) where the functional of \(G\) is attained; it has dimension \(2\),
+  so it is the triangle of a three-clique \(r\subset s\). That triangle
+  lies in exactly two four-cliques, \(s\) and \(s'\), and the ridge lies in
+  \(T_{s'}\), so \(G=T_{s'}\) by E4. Since the facet adjacency graph is
+  connected and the list is nonempty, every facet is listed. Distinct
+  four-cliques give distinct tetrahedra, since a vertex lies in \(T_s\)
+  exactly when it belongs to \(s\).
+\end{proof}

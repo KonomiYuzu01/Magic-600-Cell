@@ -7,6 +7,7 @@ A pass is source evidence only.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import re
@@ -162,6 +163,27 @@ class ShellProject(unittest.TestCase):
                 self.assertEqual(re.findall(r"pub (\w+): u64,", rust_row.group(1)), fields)
                 pascal = ["".join(part.title() for part in field.split("_")) for field in fields]
                 self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)), pascal)
+        # C9 U8's view-job record: the same fields, types and order on both sides.
+        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hViewResult \{(.*?)\}", source, re.S)
+        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct ViewResult\s*\{(.*?)\}", csharp, re.S)
+        self.assertTrue(rust_row and csharp_row)
+        rust_fields = re.findall(r"pub (\w+): (u32|u64|\[u8; 32\]),", rust_row.group(1))
+        self.assertEqual([name for name, _ in rust_fields],
+                         ["status", "kind", "revision", "source_digest", "frame", "cleared_frame", "has_value",
+                          "reserved", "value_sha256"])
+        types = {"u32": "uint", "u64": "ulong", "[u8; 32]": "byte[32]"}
+        expected = [(types[kind], "".join(part.title() for part in name.split("_"))) for name, kind in rust_fields]
+        csharp_fields = [(kind + (f"[{size}]" if size else ""), name) for kind, name, size in
+                         re.findall(r"public (?:fixed )?(\w+) (\w+)(?:\[(\d+)\])?;", csharp_row.group(1))]
+        self.assertEqual(csharp_fields, expected)
+        self.assertIn("size_of::<M6hViewResult>() == 104", source)
+        self.assertIn("sizeof(ViewResult) != 104", csharp)
+        rust_views = dict(re.findall(r"pub const M6H_VIEW_((?:STATUS|KIND)_[A-Z]+): u32 = (\d+);", source))
+        csharp_views = re.findall(r"public const uint View(Status|Kind)(\w+) = (\d+);", csharp)
+        self.assertEqual(set(rust_views), {"STATUS_PENDING", "STATUS_PUBLISHED", "STATUS_REFUSED", "KIND_RUN",
+                                           "KIND_DRAFT"})
+        self.assertEqual({f"{group.upper()}_{name.upper()}": value for group, name, value in csharp_views},
+                         rust_views)
 
     def test_the_event_log_writes_the_rows_the_e2_timer_reads(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
@@ -233,7 +255,8 @@ class ShellProject(unittest.TestCase):
 
     def test_the_shell_gives_modules_the_window_and_its_frames(self):
         module = text(PROJECT / "ShellModule.cs")
-        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log);", module)
+        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log, HostLibrary Host, "
+                      "IntPtr HostHandle);", module)
         for member in ("bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc);",
                        "void OnFrame(HostLibrary.Submitted frame, long qpc);",
                        "void OnPresented(HostLibrary.Presented row);"):
@@ -247,13 +270,18 @@ class ShellProject(unittest.TestCase):
         self.assertIn("catch (Exception error)", receive, "no exception crosses into the native caller")
         shell = text(PROJECT / "Shell.cs")
         self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")', shell)
-        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));", shell)
+        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log, hostLibrary, _host)));", shell)
+        self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_LX2") == "1")', shell)
+        self.assertIn("_modules.Add(new Lx2.Lx2Module(new ShellContext(window, this, _log, hostLibrary, _host)));", shell)
+        self.assertLess(shell.index("new Lx2.Lx2Module"), shell.index("WindowHook.Install(window, _modules);"))
         self.assertIn("WindowHook.Install(window, _modules);", shell)
         self.assertIn("EachModule(module => module.OnFrame(frame, submitted));", shell)
         self.assertIn("EachModule(module => module.OnPresented(row));", shell)
         close = shell[shell.index("private void CloseCore()"):]
         self.assertLess(close.index("WindowHook.Remove();"), close.index("EachModule(module => module.Dispose());"))
         self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("_log?.Dispose();"))
+        # The modules go before the host: a module may call the host until its Dispose.
+        self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("library.Destroy(_host);"))
         # The run row names the window and the puzzle, and a module appends its own rows.
         log = text(PROJECT / "EventLog.cs")
         run = row_fields(log)["run"]
@@ -267,6 +295,12 @@ class ShellProject(unittest.TestCase):
         self.assertIn("public sealed class Lx4Module : IShellModule", stub)
         self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
         for needle in ("Magic600.LX4", '"lx4"', "RegisterWindowMessage"):
+            self.assertNotIn(needle, stub)
+        # LX-2's stub likewise: its fault schedule, rows and fault variables are its owner's.
+        stub = text(PROJECT / "Lx2" / "Lx2Module.cs")
+        self.assertIn("public sealed class Lx2Module : IShellModule", stub)
+        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
+        for needle in ("C600_LX2", '"lx2"', "RegisterWindowMessage", "Context.Host.", "Context.Log."):
             self.assertNotIn(needle, stub)
 
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
@@ -453,7 +487,11 @@ class ProductBuild(unittest.TestCase):
     def test_a_dry_run_creates_and_starts_nothing(self):
         def refuse(*args, **kwargs):
             raise AssertionError("a dry run started a process")
-        for flags in ([], ["--echo"], ["--lx4"], ["--puzzle", "jumble-off", "--lx4", "--echo"], ["--cold-start"]):
+        child = self.temp / "c600-lx2-child.exe"
+        child.write_bytes(b"injection child")
+        lx2 = ["--lx2-injection", str(child)]
+        for flags in ([], ["--echo"], ["--lx4"], ["--puzzle", "jumble-off", "--lx4", "--echo"], ["--cold-start"], lx2,
+                      ["--lx4", *lx2]):
             lines = []
             out = self.temp / "run"
             code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *flags],
@@ -466,9 +504,71 @@ class ProductBuild(unittest.TestCase):
                          "M600_RUNTIME"}
                         | ({"M600_INPUT_ECHO"} if "--echo" in flags else set())
                         | ({"M600_LX4"} if "--lx4" in flags else set())
+                        | ({"M600_LX2"} if "--lx2-injection" in flags else set())
                         | ({"M600_EXIT_AT_FIRST_FRAME"} if "--cold-start" in flags else set()))
             self.assertEqual(names, expected)
             self.assertIn("env: M600_PUZZLE=jumble-off", lines)
+            if "--lx2-injection" in flags:
+                self.assertIn(f"env: M600_RUNTIME={child.resolve()}", lines)
+                digest = hashlib.sha256(b"injection child").hexdigest()
+                self.assertTrue(any(digest in line and "c600-lx2-child.exe" in line for line in lines), lines)
+
+    def test_lx2_injection_is_refused_with_a_cold_start_or_without_its_file(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        child = self.temp / "c600-lx2-child.exe"
+        child.write_bytes(b"injection child")
+        for flags, says in ((["--lx2-injection", str(child), "--cold-start"], "--cold-start measures"),
+                            (["--lx2-injection", str(self.temp / "missing.exe")], "no file missing.exe")):
+            lines = []
+            out = self.temp / "run"
+            code = self.launch.main(["--out", str(out), "--build", str(self.build), *flags], popen=refuse,
+                                    out_stream=lines.append)
+            self.assertEqual(code, 2)
+            self.assertFalse(out.exists())
+            self.assertIn(says, lines[-1])
+            self.assertNotIn(str(self.temp), lines[-1])
+
+    def test_an_lx2_launch_runs_the_child_and_records_its_digest_and_no_path(self):
+        started = {}
+
+        class Process:
+            def wait(self):
+                return 0
+
+        def popen(arguments, cwd, env):
+            started.update(arguments=arguments, cwd=cwd, env=env)
+            return Process()
+        child = self.temp / "c600-lx2-child.exe"
+        child.write_bytes(b"injection child")
+        out = self.temp / "run"
+        machine = FakeMachine()
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r2", "--lx4",
+                                 "--lx2-injection", str(child)], popen=popen, out_stream=lambda line: None,
+                                machine=machine, state=self.temp / "last-exit.json")
+        self.assertEqual(code, 0)
+        env = started["env"]
+        self.assertEqual(env["M600_RUNTIME"], str(child.resolve()))
+        self.assertEqual((env["M600_LX2"], env["M600_LX4"]), ("1", "1"))
+        record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["lx2_injection"],
+                         {"name": "c600-lx2-child.exe", "sha256": hashlib.sha256(b"injection child").hexdigest()})
+        self.assertTrue(record["lx4"])
+        for temp in {str(self.temp), str(self.temp.resolve())}:
+            self.assertNotIn(temp, json.dumps(record))
+            self.assertNotIn(temp.replace("\\", "/"), json.dumps(record))
+        # A launch without the flag records null and keeps the build's runtime.
+        self.assertIsNone(json.loads((self.run_plain() / "launch.json").read_text(encoding="utf-8"))["lx2_injection"])
+
+    def run_plain(self) -> Path:
+        class Process:
+            def wait(self):
+                return 0
+        out = self.temp / "plain"
+        self.assertEqual(self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r3"],
+                                          popen=lambda arguments, cwd, env: Process(), out_stream=lambda line: None,
+                                          machine=FakeMachine(), state=self.temp / "last-exit.json"), 0)
+        return out
 
     def test_jumble_on_is_refused_until_the_host_runs_it(self):
         def refuse(*args, **kwargs):
@@ -550,7 +650,10 @@ class ProductBuild(unittest.TestCase):
         product = self.build_product.verify(self.build)
         env = self.launch.environment(product, self.build, self.temp / "run", "r1", False,
                                       base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p",
-                                            "M600_LX4": "1", "m600_puzzle": "jumble-on"})
+                                            "M600_LX4": "1", "m600_puzzle": "jumble-on", "M600_LX2": "1",
+                                            "C600_LX2_CEILING": "1", "c600_lx2_fault": "kill"})
+        for dropped in ("M600_LX2", "C600_LX2_CEILING", "c600_lx2_fault"):
+            self.assertNotIn(dropped, env)
         self.assertNotIn("M600_INPUT_ECHO", env)
         self.assertNotIn("M600_LX4", env)
         self.assertNotIn("m600_puzzle", env)
