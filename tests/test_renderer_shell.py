@@ -162,6 +162,27 @@ class ShellProject(unittest.TestCase):
                 self.assertEqual(re.findall(r"pub (\w+): u64,", rust_row.group(1)), fields)
                 pascal = ["".join(part.title() for part in field.split("_")) for field in fields]
                 self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)), pascal)
+        # C9 U8's view-job record: the same fields, types and order on both sides.
+        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hViewResult \{(.*?)\}", source, re.S)
+        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct ViewResult\s*\{(.*?)\}", csharp, re.S)
+        self.assertTrue(rust_row and csharp_row)
+        rust_fields = re.findall(r"pub (\w+): (u32|u64|\[u8; 32\]),", rust_row.group(1))
+        self.assertEqual([name for name, _ in rust_fields],
+                         ["status", "kind", "revision", "source_digest", "frame", "cleared_frame", "has_value",
+                          "reserved", "value_sha256"])
+        types = {"u32": "uint", "u64": "ulong", "[u8; 32]": "byte[32]"}
+        expected = [(types[kind], "".join(part.title() for part in name.split("_"))) for name, kind in rust_fields]
+        csharp_fields = [(kind + (f"[{size}]" if size else ""), name) for kind, name, size in
+                         re.findall(r"public (?:fixed )?(\w+) (\w+)(?:\[(\d+)\])?;", csharp_row.group(1))]
+        self.assertEqual(csharp_fields, expected)
+        self.assertIn("size_of::<M6hViewResult>() == 104", source)
+        self.assertIn("sizeof(ViewResult) != 104", csharp)
+        rust_views = dict(re.findall(r"pub const M6H_VIEW_((?:STATUS|KIND)_[A-Z]+): u32 = (\d+);", source))
+        csharp_views = re.findall(r"public const uint View(Status|Kind)(\w+) = (\d+);", csharp)
+        self.assertEqual(set(rust_views), {"STATUS_PENDING", "STATUS_PUBLISHED", "STATUS_REFUSED", "KIND_RUN",
+                                           "KIND_DRAFT"})
+        self.assertEqual({f"{group.upper()}_{name.upper()}": value for group, name, value in csharp_views},
+                         rust_views)
 
     def test_the_event_log_writes_the_rows_the_e2_timer_reads(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))

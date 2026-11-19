@@ -149,8 +149,10 @@ dependencies = [
  "c600-kernel",
  "c600-render",
  "c600-render-ffi",
+ "c600-run",
  "c600-runtime",
  "c600-session",
+ "c600-syntax",
 ]
 
 [[package]]
