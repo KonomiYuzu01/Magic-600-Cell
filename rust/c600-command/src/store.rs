@@ -406,6 +406,35 @@ pub fn identity_from_json(value: &Value) -> Option<IdentityBlock> {
     })
 }
 
+/// A session's profile (BND.15, BND.17; draft): `solving` for every ordinary session, `tool_authoring` for the tool
+/// editor and `research` for a research workspace. The checker and the runtime have their own enum of the same names;
+/// the layer keeps its own, since it depends on no language crate (KN2.6, LI.20), and a host maps them by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Profile {
+    Solving,
+    ToolAuthoring,
+    Research,
+}
+
+impl Profile {
+    /// Every profile, in BND.15's order.
+    pub const ALL: [Profile; 3] = [Profile::Solving, Profile::ToolAuthoring, Profile::Research];
+
+    /// BND.15's name of the profile.
+    pub fn name(self) -> &'static str {
+        match self {
+            Profile::Solving => "solving",
+            Profile::ToolAuthoring => "tool_authoring",
+            Profile::Research => "research",
+        }
+    }
+
+    /// The profile BND.15 names `name`, if any.
+    pub fn from_name(name: &str) -> Option<Profile> {
+        Profile::ALL.into_iter().find(|profile| profile.name() == name)
+    }
+}
+
 /// A session's start, written once when the layer creates it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Genesis {
@@ -419,6 +448,8 @@ pub struct Genesis {
     pub digest: String,
     /// The protected orbits at the start.
     pub orbits: Vec<usize>,
+    /// The session's profile (BND.17; draft): the host sets it at creation, and nothing changes it.
+    pub profile: Profile,
 }
 
 /// What a reopen reads: the genesis, every epoch a layer opened, and the durable transactions in order.
