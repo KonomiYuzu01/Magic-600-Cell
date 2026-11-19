@@ -10,6 +10,9 @@
 //! - **Work:** the language work runs on a worker thread (the `analysis` module), so the frame loop never waits on
 //!   it. [`lx4_update`] sends the buffer's newest revision, takes the answers for that revision, and recomposes the
 //!   three texts: the echo (the lines around the caret), the status and the completion list.
+//! - **Ready:** the first frame after a good Reset that draws the baseline, before any input of the sample, queues
+//!   `ready` with the baseline's digest; lx4.py posts the sample's inputs only after it sees that row, so no timed
+//!   input waits behind the Reset's work.
 //! - **Endpoints:** once a sample's last input has arrived, [`lx4_update`] queues an [`Lx4Shown`] for each endpoint
 //!   the frame shows for the final buffer, each once per sample, and the shell writes them as `lx4` rows with this
 //!   frame's 3D frame id: `echo` names the frame that first showed the sample's first typed key; `stale` the frame
@@ -66,10 +69,12 @@ pub const LX4_TEXT_ECHO: u32 = 0;
 pub const LX4_TEXT_STATUS: u32 = 1;
 pub const LX4_TEXT_COMPLETION: u32 = 2;
 
-/// The endpoints by [`Lx4Shown::endpoint`], with lx4.py's names.
-pub const ENDPOINTS: [&str; 7] = ["echo", "syntax", "completion", "diagnostics", "stale", "rerun", "dependents"];
+/// The endpoints by [`Lx4Shown::endpoint`], with lx4.py's names. `ready` is the handshake, no metric.
+pub const ENDPOINTS: [&str; 8] =
+    ["echo", "syntax", "completion", "diagnostics", "stale", "rerun", "dependents", "ready"];
 pub const ECHO: usize = 0;
 pub const STALE: usize = 4;
+pub const READY: usize = 7;
 
 /// How many lines the echo shows on each side of the caret's.
 pub const CONTEXT: usize = 12;
@@ -235,6 +240,10 @@ impl Lx4Module {
             self.texts[LX4_TEXT_STATUS as usize] = status;
             changed |= 1 << LX4_TEXT_STATUS;
         }
+        let baseline = self.editor.sample.as_ref().is_some_and(|s| s.failure.is_none() && s.received == 0);
+        if baseline && self.view.is_some() {
+            self.push(READY, frame);
+        }
         if self.editor.sample.as_ref().is_some_and(|s| s.complete()) {
             self.queue(frame);
         }
@@ -243,7 +252,6 @@ impl Lx4Module {
 
     /// Queues the endpoints the frame shows for the complete sample's final buffer, each once.
     fn queue(&mut self, frame: u64) {
-        let Some(sample) = self.editor.sample.as_ref().map(|s| s.id) else { return };
         let stale = self.stale();
         let mut due = Vec::new();
         if let Some(echo) = self.echo_frame {
@@ -258,13 +266,19 @@ impl Lx4Module {
             }
         }
         for (endpoint, frame_id) in due {
-            if std::mem::replace(&mut self.queued[endpoint], true) {
-                continue;
-            }
-            let mut buffer_sha256 = [0u8; 64];
-            buffer_sha256.copy_from_slice(self.digest.as_bytes());
-            self.shown.push_back(Lx4Shown { sample, frame_id, endpoint: endpoint as u32, reserved: 0, buffer_sha256 });
+            self.push(endpoint, frame_id);
         }
+    }
+
+    /// Queues `endpoint` for the sample with the buffer's digest, unless the sample queued it already.
+    fn push(&mut self, endpoint: usize, frame_id: u64) {
+        let Some(sample) = self.editor.sample.as_ref().map(|s| s.id) else { return };
+        if std::mem::replace(&mut self.queued[endpoint], true) {
+            return;
+        }
+        let mut buffer_sha256 = [0u8; 64];
+        buffer_sha256.copy_from_slice(self.digest.as_bytes());
+        self.shown.push_back(Lx4Shown { sample, frame_id, endpoint: endpoint as u32, reserved: 0, buffer_sha256 });
     }
 
     /// Whether the frame shows the view stale: its output's producer, the baseline, has a draft in the editor.

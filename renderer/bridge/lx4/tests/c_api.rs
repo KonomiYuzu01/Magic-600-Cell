@@ -207,9 +207,23 @@ fn every_edit_of_the_script_queues_its_endpoints_for_the_result() {
     for (index, edit) in loaded.edits.iter().enumerate() {
         let sample = 7_000 + index as u64;
         let inputs = messages(edit, index as u32, sample);
+        // The handshake: the frame after the Reset draws the baseline and queues `ready`, once.
+        assert_eq!(post(&handle, inputs[0]), LX4_OK, "{}", last_error(handle.0));
+        update(&handle, frame);
+        let ready = drain(&handle);
+        assert_eq!(ready.len(), 1, "{ready:?}");
+        assert_eq!(
+            (ENDPOINTS[ready[0].endpoint as usize], ready[0].sample, ready[0].frame_id),
+            ("ready", sample, frame)
+        );
+        assert_eq!(std::str::from_utf8(&ready[0].buffer_sha256).unwrap(), edit.base_sha256, "ready shows the baseline");
+        frame += 1;
+        update(&handle, frame);
+        assert!(drain(&handle).is_empty(), "ready is queued once");
+        frame += 1;
         // The first typed key is the message after the first Select; the frame after it shows the key.
         let first_key = inputs.iter().position(|i| matches!(i, Input::Char(_) | Input::Back)).unwrap();
-        for &input in &inputs[..=first_key] {
+        for &input in &inputs[1..=first_key] {
             assert_eq!(post(&handle, input), LX4_OK, "{}", last_error(handle.0));
         }
         let echo_frame = frame;

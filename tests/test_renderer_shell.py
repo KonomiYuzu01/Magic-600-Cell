@@ -261,13 +261,13 @@ class ShellProject(unittest.TestCase):
         self.assertIn("puzzle", run)
         self.assertIn("public void Append(Action<Utf8JsonWriter> fields) => Write(fields);", log)
         self.assertIn("log.Describe(window, puzzle);", shell)
-        # The stub has the hook points only: LX-4's messages and rows are its owner's, so the runbook does not call
-        # U8 ready before they exist.
-        stub = text(PROJECT / "Lx4" / "Lx4Module.cs")
-        self.assertIn("public sealed class Lx4Module : IShellModule", stub)
-        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
-        for needle in ("Magic600.LX4", '"lx4"', "RegisterWindowMessage"):
-            self.assertNotIn(needle, stub)
+        # LX-4's module is the C9 measurement line's (tests/test_c9_measure.py checks it against its library): here
+        # only that it is a module that takes LX-4's messages and writes its rows through the log.
+        lx4 = text(PROJECT / "Lx4" / "Lx4Module.cs")
+        self.assertIn("public sealed unsafe class Lx4Module : IShellModule", lx4)
+        for needle in ('Register("Magic600.LX4.Reset")', 'Register("Magic600.LX4.Select")',
+                       'json.WriteString("t", "lx4");', "Context.Log?.Append("):
+            self.assertIn(needle, lx4)
 
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
         chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")

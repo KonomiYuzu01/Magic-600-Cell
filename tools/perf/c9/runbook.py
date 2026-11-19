@@ -200,7 +200,11 @@ STEPS = (
          prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
                         ('compiles', LAUNCH), ('mentions', (SHELL, '"--lx4"')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),
-                        ('mentions', (SHELL, 'WriteString("t", "key")'))),
+                        ('mentions', (SHELL, 'WriteString("t", "key")')),
+                        # The module refuses to start without its library and fixtures (C9 product's launcher and
+                        # product build hand them over).
+                        ('mentions', (LAUNCH, 'M600_LX4_DLL')), ('mentions', (LAUNCH, 'M600_LX4_FIXTURES')),
+                        ('mentions', (BUILD_PRODUCT, 'c600-shell-lx4'))),
          run_time=('foreground', 'the owner starts it from the desktop'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )
@@ -257,7 +261,8 @@ def evaluate(kind, argument, build=None, environ=None):
         return shutil.which(argument) is not None, f'{argument} on PATH'
     if kind == 'mentions':
         folder, token = argument
-        for path in sorted((ROOT / folder).rglob('*')):
+        where = ROOT / folder
+        for path in [where] if where.is_file() else sorted(where.rglob('*')):
             if path.suffix in SOURCE_SUFFIXES and path.is_file():
                 try:
                     if token in path.read_text(encoding='utf-8', errors='replace'):
