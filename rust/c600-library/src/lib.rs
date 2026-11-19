@@ -1,8 +1,9 @@
 //! The base library's first entries as 600 Cell Script (LP3, C5), written as language code over the IR draft (LB1.1):
 //! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
 //! "Exact linear algebra"; the exact-completion half of LB2's row "Residuals and exact completion", over KN2.4's
-//! `positions` and `labels` rows; and LB2's rows "Star and recipe construction" and "Collateral and support", over
-//! KN2.4's `effect` row.
+//! `positions` and `labels` rows; LB2's rows "Star and recipe construction" and "Collateral and support", over
+//! KN2.4's `effect` row; LB2's row "Net and Strict protection", over KN2.4's `protection` row; and LB2's row "Guarded
+//! setups and buffers", over the draft `setups` row of the setup-search exception.
 //!
 //! # Literal words
 //!
@@ -114,10 +115,32 @@
 //! `c600-tools`' host bridge serves the three rows (`c600_tools::kernel_rows`), and `c600-tools/tests/ct_lb2_02.rs`
 //! runs the entries there (CT-LB2-02).
 //!
+//! # Guarded setups and buffers
+//!
+//! The source [`SETUPS_SOURCE`], `src/setups.6cs`, is the module `guarded_setups` in edition `6cs-draft-1`, in the
+//! formatter's canonical layout. It exports one entry, `setups_for(goal: record { orbit: Nat, position: Nat })`, with
+//! the `snapshot` effect: the setup search for a target the solver names (BND.1). It reads the draft `setups` row at
+//! the target as given and answers the row's record as read: the target, the orbit's two buffer positions, the family
+//! examined (`execution_tree`) with the table's digest, and the certified setups, each a frame node of the orbit's
+//! execution tree whose frame lies at the position, with its frame and its setup word, in the table's node order.
+//!
+//! The entry chooses nothing. The solver names the orbit and the position, the answer ranks no setup and marks none
+//! best, and the entry previews and runs nothing: the solver picks a setup, may edit it, and applies it through the
+//! normal command path. Every setup keeps both buffers fixed in every prefix, because the kernel certifies its star:
+//! no setup letter twists a cell of a buffer's caps. An empty answer still names the family it examined, the orbit's
+//! tree, its buffers and the table's digest; a buffer position has no setup.
+//!
+//! [`guarded_setups_and_buffers`] is the row's catalogue entry. The checker infers the effect `snapshot` and the read
+//! row `setups`; the built-in column admits the read only under the setup-search exception
+//! (`c600_check::Row::SetupSearch`), which delivers the answer as read and refuses an entry that inspects it, branches on
+//! it or proposes in the same class. `c600-tools`' host bridge serves the row when the host gives it the certified
+//! table (`c600_tools::kernel_rows::SetupTable`), and `c600-tools/tests/ct_bnd_18.rs` runs the entry there
+//! (CT-BND-18).
+//!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe, report and protection entries through the tool's host bridge. Every result of its tests
-//! is source and fixture evidence.
+//! exact-completion, recipe, report, protection and guarded-setup entries through the tool's host bridge. Every result
+//! of its tests is source and fixture evidence.
 //!
 //! # Drafts
 //!
@@ -213,6 +236,20 @@
 //! - LB2: the catalogue row is Rust data in [`net_and_strict_protection`]. Its Effect field is the checker's
 //!   `ReadSnapshot`; chapter 03's "budgets" is the run's budget, which the row's tariff draws on
 //!   (`c600_tools::kernel_rows`).
+//! - BND.1, setup search: KN2.4 has no setup row, so the entry reads a draft derived-state row named `setups`, the
+//!   name `c600_check`'s setup-search tests use, until the command table freezes at LP3. Chapter 03 backs the row with
+//!   library code over KN2.4's `labels`, `positions` and `effect`; the entry cannot build the setups from those reads,
+//!   because the setup-search exception delivers its value only as read and the built-in column reads only at what the
+//!   solver names, so the row answers them whole and the kernel certifies each one.
+//! - BND.1, the target: the solver names an orbit and a position in it. The row answers every frame node of the orbit's
+//!   execution tree at that position, one per orientation of the third piece, and the solver picks among them; the
+//!   entry never picks a node.
+//! - BND.1: the row answers setups only. A star word is the solver's construction from a setup it picked, through
+//!   `recipes.star_word` or by editing the setup, and applying it is a solver action through the normal command path.
+//! - BND.66, the table: the row reads `assets/execution_trees.json.gz` through the kernel's asset check, so its digest
+//!   is the manifest's, and the kernel certifies every setup's star before the row answers it. A setup the kernel does
+//!   not certify stops the read with `KN2:consistency.star_certificate`.
+//! - LB2: the catalogue row is Rust data in [`guarded_setups_and_buffers`], with the checker's `ReadSnapshot`.
 //!
 //! # Not built
 //!
@@ -223,8 +260,9 @@
 //! - LB2's "Net and Strict protection" for a captured protected state of the session (the command layer's protected
 //!   orbits) and for occupant-only locks; LB3's pose-level protection is C8's (`c600_jumble_tool::library`).
 //! - The rest of LB2's catalogue over `effect`: the orbit catalogue and collateral stage order, seeds and full seed
-//!   analysis, guarded setups and buffers (with setup search, CT-BND-18), blocks and work sheets, and named macro
-//!   analysis.
+//!   analysis, blocks and work sheets, and named macro analysis.
+//! - In "Guarded setups and buffers": the editor in which the solver edits a setup, which is LP4's; setups of the
+//!   jumbled puzzle, which are C8's; and the buffers' current occupants, with the residual half below.
 //! - The residual half of LB2's row "Residuals and exact completion": non-buffer positions, buffer occupants and
 //!   frames.
 //! - The other entries of LB1.8's table, among them the word and trace keys (LB1.9, LB1.10).
@@ -288,6 +326,15 @@ pub const PROTECTION_CHECKS: [&str; 3] = ["net_check", "strict_check", "strict_c
 /// The KN2.4 rows the protection module reads with `read_snapshot`, in name order.
 pub const PROTECTION_ROWS: [&str; 3] = ["labels", "positions", "protection"];
 
+/// The guarded setups source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const SETUPS_SOURCE: &str = include_str!("setups.6cs");
+/// The guarded setups module.
+pub const SETUPS_MODULE: &str = "guarded_setups";
+/// The guarded setups module's exported functions.
+pub const SETUPS_EXPORTS: [&str; 1] = ["setups_for"];
+/// The row the guarded setups module reads with `read_snapshot`: the draft row of the setup-search exception.
+pub const SETUPS_ROWS: [&str; 1] = ["setups"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -311,6 +358,11 @@ pub fn recipes_sha256() -> String {
 /// The SHA-256 of [`PROTECTION_SOURCE`], in hex.
 pub fn protection_sha256() -> String {
     sha256_hex(PROTECTION_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`SETUPS_SOURCE`], in hex.
+pub fn setups_sha256() -> String {
+    sha256_hex(SETUPS_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -444,6 +496,27 @@ pub fn net_and_strict_protection() -> CatalogueRow {
         module: PROTECTION_MODULE,
         functions: &PROTECTION_EXPORTS,
         source_sha256: protection_sha256(),
+    }
+}
+
+/// LB2's row "Guarded setups and buffers", as far as this crate builds it.
+pub fn guarded_setups_and_buffers() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Guarded setups and buffers",
+        level: "Full labels and positions: a target position in a named orbit, the orbit's two buffer positions.",
+        effects: &[Effect::ReadSnapshot],
+        backing: "Library code: `guarded_setups.setups_for` reads the draft derived-state row `setups` (KN2.4 has \
+                  none) with `read_snapshot` at the target the solver names, under the setup-search exception; a host \
+                  serves the row from the certified execution trees, and the kernel certifies each setup's star \
+                  through KN2.4's `effect` (`c600_tools::kernel_rows`).",
+        notes: "Setup search for a target the solver names: the solver names the orbit and the position. The setups \
+                are delivered as read, in the table's node order, with no rank and no best mark; the solver chooses \
+                one and may edit it. Buffers are positions with changing occupants, and every prefix of every setup \
+                keeps both fixed. An empty result names the guarded setup family examined: the orbit's execution \
+                tree, its buffers and the table's digest. The entry answers setups only and previews nothing.",
+        module: SETUPS_MODULE,
+        functions: &SETUPS_EXPORTS,
+        source_sha256: setups_sha256(),
     }
 }
 

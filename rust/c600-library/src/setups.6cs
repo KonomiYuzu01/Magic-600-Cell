@@ -1,0 +1,6 @@
+edition "6cs-draft-1";
+module guarded_setups requires [];
+
+export fn setups_for(goal: record { orbit: Nat, position: Nat }) -> record { buffers: List<Nat>, family: Text, orbit: Nat, position: Nat, setups: List<record { frame: List<Nat>, node: Nat, setup: Word }>, table_sha256: Text } effects [snapshot] {
+    return read_snapshot<record { buffers: List<Nat>, family: Text, orbit: Nat, position: Nat, setups: List<record { frame: List<Nat>, node: Nat, setup: Word }>, table_sha256: Text }>("setups", goal);
+}
