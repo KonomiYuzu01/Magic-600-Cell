@@ -43,7 +43,12 @@
 //!   command layer's head with Jumble on, in I_a, S4 and I_b sessions: each run equals, byte for byte, the same run on
 //!   the same state witnessed apart from the layer, which the two tests above compare with the kernel. With Jumble off
 //!   every read stops with `KN5:input.menu_word_needs_jumble_on`. It also checks what the bridge grants and its
-//!   tariff.
+//!   tariff, and that the `seam_facts` row answers the engine's seam facts for the named cap.
+//! - `tests/ct_rte_07_jumble.rs` runs CT-RTE-07's six jumbling keys of LX-3's frozen corpus (MR01, MR02, MR05, MR06,
+//!   A31 and A32) with literal words, through `c600-module`'s pipeline under the jumbling model identity, with
+//!   [`rows`] as the engine host: ten runs and one SHA-256 for each key, the solving keys refused at the preview point
+//!   by capability separation, a manual proposal as the control, and the accounting against the 600-cell-Full leg.
+//!   The same keys on menu words wait for LP2's word key (LG2.18).
 //! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02 whole (LB3.4),
 //!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
 //!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's

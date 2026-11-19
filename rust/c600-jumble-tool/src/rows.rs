@@ -1,6 +1,6 @@
-//! The jumbling rows' host bridge (LP3, C8): KN2.4's jumbling rows that the library entries read ([`crate::library`]),
-//! answered by `c600_jumble` and served to a run as snapshot reads, in the library's draft answer types (KN5, LP2 draft
-//! until the command table freezes, PHS.52).
+//! The jumbling rows' host bridge (LP3, C8): KN2.4's jumbling rows that the library entries ([`crate::library`]) and
+//! CT-RTE-07's jumbling keys read, answered by `c600_jumble` and served to a run as snapshot reads, in the library's
+//! draft answer types (KN5, LP2 draft until the command table freezes, PHS.52).
 //!
 //! [`Rows::at_head`] reads at the command layer's head with Jumble on: the head's derived value under the pinned menu
 //! ([`CommandLayer::jumbled`]) is the state every row reads and the base that `protection`, `nu` and
@@ -27,6 +27,11 @@
 //! - `correction_set_check`, a list of records `{ id, m }`, the solver's drafted set: ν after the set as the catalogue
 //!   predicts it (`corrections::correction_set_check`), in the same record. The bridge keeps each set it was asked to
 //!   check ([`Rows::drafts`]); it never chooses, ranks or reduces a set.
+//! - `seam_facts`, a cap ID: KN2.4's seam facts of the cap's cut at the state (`observe::seam_facts` with the cap as
+//!   its scope, a whole batch and no cell rows), as a record `{ scope, status, complete, cells, domains, totals,
+//!   undefined }`. `totals` holds N_c and the aligned count when the cap is admissible, and is null with the reason in
+//!   `undefined` when it is not (`cap_not_admissible`). A cap outside 0..599 is `KN2:input.named_object_invalid`
+//!   (JI.45). The row answers for the cap it is asked about; it never surveys, ranks or selects caps.
 //!
 //! A menu word is read as [`crate::word::LiteralWord::letters`] reads it: a word of another alphabet than the state's
 //! is `LB1:input.incompatible_alphabet`. Every field of an answer is written, null when undefined; a declared type that
@@ -38,13 +43,15 @@
 //! other row (`LG3:capability.not_granted`). A row read without the argument it takes, or with one it does not take, or
 //! an argument of another shape, is `KN5:input.argument_form`, refused at the tariff, at the cost of the read's step. A
 //! row's own refusal (an unshipped correction id, a base under another menu, a nonzero fixed coordinate, a protected
-//! piece that would move) stops the run with its code once the read is charged. An error of the jumbling engine is
-//! `KN5:consistency.state_hash_mismatch`, as the command layer reports one (`c600-command`'s `jumble` module).
+//! piece that would move, a cap outside the model) stops the run with its code once the read is charged. An error of
+//! the jumbling engine is `KN5:consistency.state_hash_mismatch`, as the command layer reports one (`c600-command`'s
+//! `jumble` module).
 //!
 //! # Tariff (draft; the command table prices the rows when it freezes)
 //!
 //! The kernel cost is one unit for each piece of the model ([`NP`]) for each pass over a state: one pass for `heights`,
-//! `height_counts` and `nu`, and one more for each letter of a named word or each entry of a drafted set. The result
+//! `height_counts` and `nu`, and one more for each letter of a named word or each entry of a drafted set; two for
+//! `seam_facts`, the cap's classification and its cut. The result
 //! bound is [`RESULT_BOUND`] for every row; an answer above it stops the run with the interpreter's
 //! `KN7:resource_limit.host_exhausted`, never a cut answer.
 
@@ -56,7 +63,9 @@ use c600_jumble::corrections;
 use c600_jumble::levels::{self, Base, Derivation, Partial};
 use c600_jumble::model::NP;
 use c600_jumble::nu::{self, NuVector};
-use c600_jumble::observe::{heights, prefix_observations, word_check, Batch, Fields, PrefixRequest};
+use c600_jumble::observe::{
+    heights, prefix_observations, seam_facts, word_check, Batch, Fields, PrefixRequest, Rows as Cells, Scope,
+};
 use c600_jumble::state::State;
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
@@ -70,7 +79,7 @@ use c600_run::value::Value as RunValue;
 use crate::word::{self, menu_identity, Letter, INCOMPATIBLE_ALPHABET};
 
 /// The rows the bridge serves, each with whether it takes an argument.
-pub const ROWS: [(&str, bool); 7] = [
+pub const ROWS: [(&str, bool); 8] = [
     ("heights", false),
     ("height_counts", false),
     ("replay", true),
@@ -78,6 +87,7 @@ pub const ROWS: [(&str, bool); 7] = [
     ("protection", true),
     ("nu", false),
     ("correction_set_check", true),
+    ("seam_facts", true),
 ];
 
 /// The result bound of every row's answer (a draft): 16 MiB of logical size.
@@ -86,6 +96,12 @@ pub const RESULT_BOUND: u128 = 1 << 24;
 /// The after-state facts that JI.10's prefix observations write in an admitted letter's row, with no optional field
 /// requested.
 const AFTER_FACTS: [&str; 4] = ["phi_before", "phi_after", "delta_phi", "max_left_height"];
+
+/// The fields of the `seam_facts` row's answer, each written, null when the engine's answer has none.
+const SEAM_FIELDS: [&str; 7] = ["cells", "complete", "domains", "scope", "status", "totals", "undefined"];
+
+/// A whole batch: the engine's cells of one cap's cut in chunks, with no budget or cancellation.
+const WHOLE: Batch = Batch { chunk: 1 << 12, budget: None, cancel_after: None };
 
 /// What the rows read: a witnessed base, a state with no witnessed claim, or nothing, with the code every read gets.
 #[derive(Clone, Copy)]
@@ -236,6 +252,11 @@ impl<'a> Rows<'a> {
                 self.drafts.push(draft);
                 served_nu(checked)
             }
+            ("seam_facts", Some(cap)) => {
+                let cap = integer(cap).ok_or(code::ARGUMENT_FORM)?;
+                let mut state = self.state()?.clone();
+                served_seam(seam_facts(ctx, &mut state, Scope::Cap(cap), &WHOLE, Cells::None, None).map_err(engine)?)
+            }
             _ => Err(code::ARGUMENT_FORM),
         }
     }
@@ -287,6 +308,7 @@ fn extent(query: &str, arg: &Json) -> Result<usize, &'static str> {
         "replay" => arg,
         "word_check" | "protection" => arg.get("word").ok_or(code::ARGUMENT_FORM)?,
         "correction_set_check" => return drafted(arg).map(|set| set.len()),
+        "seam_facts" => return integer(arg).map(|_| 1).ok_or(code::ARGUMENT_FORM),
         _ => return Err(code::ARGUMENT_FORM),
     };
     Ok(flat_letters(word)?.len() / 2)
@@ -354,6 +376,19 @@ fn served_replay(mut replay: Value) -> Value {
         }
     }
     replay
+}
+
+/// The seam facts of one cap as the `seam_facts` row serves them: [`SEAM_FIELDS`], null where the engine's answer
+/// writes none (a cap that is not admissible has no cells or domains; an admissible one has no reason). The engine's
+/// JI.45 refusal of a cap outside the model is its code.
+fn served_seam(facts: Value) -> Result<Value, &'static str> {
+    if facts.get("status").and_then(Value::as_str) == Some("refused") {
+        return match facts.get("code").and_then(Value::as_str) {
+            Some(NAMED_OBJECT_INVALID) => Err(NAMED_OBJECT_INVALID),
+            _ => Err(code::STATE_HASH_MISMATCH),
+        };
+    }
+    Ok(json::object(SEAM_FIELDS.map(|name| (name, facts.get(name).cloned().unwrap_or(Value::Null)))))
 }
 
 /// ν's draft answer: its 45 values and no reason when ν is defined, no values and the reason when not.

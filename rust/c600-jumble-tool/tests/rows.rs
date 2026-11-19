@@ -17,7 +17,11 @@
 //! With Jumble off, after `jumble.off`, every read stops with `KN5:input.menu_word_needs_jumble_on`. The bridge grants
 //! no preview, clock or other row (`LG3:capability.not_granted`), refuses a row read in another argument form with
 //! `KN5:input.argument_form` at its tariff, and its draft tariff counts one pass of the model's pieces for the state
-//! and one for each letter of a named word or entry of a drafted set. A pass is source and fixture evidence.
+//! and one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts.
+//!
+//! The `seam_facts` row, which CT-RTE-07's jumbling keys read (`tests/ct_rte_07_jumble.rs`), answers for the cap it is
+//! named: at an admissible cap its N_c equals the engine's rim summary for that cap, a blocked cap has no totals, and a
+//! cap outside the model is `KN2:input.named_object_invalid`. A pass is source and fixture evidence.
 
 mod common;
 
@@ -28,11 +32,14 @@ use c600_ir::{QTy, Ty};
 use c600_jumble::codes::{MENU_BINDING_MISMATCH, MENU_WORD_NEEDS_JUMBLE_ON, NAMED_OBJECT_INVALID};
 use c600_jumble::levels::{Base, Snapshot};
 use c600_jumble::model::NP;
+use c600_jumble::observe::cuts::rim_summary;
+use c600_jumble::observe::{seam_facts, Batch, Rows as Cells, Scope};
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::Twist;
 use c600_jumble_tool::library::{self, HEIGHTS, NU, PROTECTION, WORD_CHECKS};
 use c600_jumble_tool::rows::{Rows, RESULT_BOUND};
 use c600_jumble_tool::word::{Alphabet, LiteralWord};
+use c600_kernel::json::Value as JsonValue;
 use c600_run::encode::encode;
 use c600_run::interp::{load, Host, Loaded, Options, Request};
 use c600_run::menu::MenuAlphabet;
@@ -243,10 +250,14 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
         let with = Request::SnapshotWith { query, arg: &no_word, ty: &nat };
         assert_eq!(rows.tariff(&with).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "{query} takes no argument");
     }
-    for query in ["replay", "word_check", "protection", "correction_set_check"] {
+    for query in ["replay", "word_check", "protection", "correction_set_check", "seam_facts"] {
         let without = Request::Snapshot { query, ty: &nat };
         assert_eq!(rows.tariff(&without).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "{query} takes an argument");
     }
+    let cap = Request::SnapshotWith { query: "seam_facts", arg: br#"{"int":"7"}"#, ty: &nat };
+    assert_eq!(rows.tariff(&cap).map(|t| t.kernel_cost), Ok(2 * pass), "the cap's classification and its cut");
+    let not_a_cap = Request::SnapshotWith { query: "seam_facts", arg: br#"{"letters":[],"menu":{}}"#, ty: &nat };
+    assert_eq!(rows.tariff(&not_a_cap).map(|t| t.kernel_cost), Err(ARGUMENT_FORM));
     let word = br#"{"letters":[[0,1],[2,3],[4,5]],"menu":{}}"#;
     let replay = Request::SnapshotWith { query: "replay", arg: word, ty: &nat };
     assert_eq!(rows.tariff(&replay).map(|t| t.kernel_cost), Ok(4 * pass), "one pass and one for each letter");
@@ -256,4 +267,49 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     let malformed = Request::SnapshotWith { query: "replay", arg: br#"{"letters":[[0]]"#, ty: &nat };
     assert_eq!(rows.tariff(&malformed).map(|t| t.kernel_cost), Err(ARGUMENT_FORM));
     assert!(rows.asked().is_empty(), "a tariff reads no row");
+}
+
+/// The `seam_facts` row at the I_a walk's state after three records: a misaligned admissible cap and a blocked cap, the
+/// first of each in the rim summary's cap order. The row serves the engine's seam facts of the named cap, field by
+/// field, with N_c equal to the rim summary's; a blocked cap has no totals, cells or domains, and says why; a cap
+/// outside the model is refused (JI.45), and an argument that is not an integer is `KN5:input.argument_form`.
+#[test]
+fn the_seam_facts_row_answers_for_the_named_cap() {
+    let fixture = Fixture::load("I_a");
+    let walk = witnessed(&fixture, 3);
+    let summary = rim_summary(engine(), &mut walk.state().clone(), None, None).expect("no engine error");
+    let caps = summary.get("rows").and_then(JsonValue::as_array).expect("a row for each cap");
+    let n_c = |row: &JsonValue| row.get("N_c").and_then(JsonValue::as_i64);
+    let blocked = |row: &JsonValue| row.get("blocked") == Some(&JsonValue::Bool(true));
+    let misaligned = caps.iter().find(|row| n_c(row).is_some_and(|n| n > 0)).expect("a misaligned admissible cap");
+    let blocked = caps.iter().find(|row| blocked(row)).expect("a blocked cap");
+    let cap_of = |row: &JsonValue| row.get("cap").and_then(JsonValue::as_i64).expect("a cap ID");
+    let arg = |text: &str| c600_run::provenance::parse(text.as_bytes()).expect("canonical bytes");
+    let whole = Batch { chunk: 1 << 12, budget: None, cancel_after: None };
+
+    let mut rows = Rows::on(engine(), Base::Snapshot(&walk));
+    for row in [misaligned, blocked] {
+        let cap = cap_of(row);
+        let served = rows.answer("seam_facts", Some(&arg(&format!(r#"{{"int":"{cap}"}}"#)))).expect("served");
+        let mut state = walk.state().clone();
+        let facts = seam_facts(engine(), &mut state, Scope::Cap(cap), &whole, Cells::None, None).expect("no error");
+        let fields = served.as_object().expect("a record");
+        assert_eq!(fields.len(), 7, "cap {cap}: every field written");
+        for (name, value) in fields {
+            assert_eq!(value, facts.get(name).unwrap_or(&JsonValue::Null), "cap {cap}: {name}");
+        }
+        let totals = served.get("totals").expect("written");
+        assert_eq!(totals.get("N_c").and_then(JsonValue::as_i64), n_c(row), "cap {cap}: the rim summary's N_c");
+    }
+    let at_blocked = rows.answer("seam_facts", Some(&arg(&format!(r#"{{"int":"{}"}}"#, cap_of(blocked)))));
+    let at_blocked = at_blocked.expect("served");
+    assert_eq!(at_blocked.get("totals"), Some(&JsonValue::Null));
+    assert_eq!(at_blocked.get("cells"), Some(&JsonValue::Null));
+    assert_eq!(at_blocked.get("undefined").and_then(JsonValue::as_str), Some("cap_not_admissible"));
+    for outside in ["600", "-1"] {
+        let refused = rows.answer("seam_facts", Some(&arg(&format!(r#"{{"int":"{outside}"}}"#))));
+        assert_eq!(refused, Err(NAMED_OBJECT_INVALID), "cap {outside}");
+    }
+    assert_eq!(rows.answer("seam_facts", Some(&arg(r#"{"nat":"7"}"#))), Err(ARGUMENT_FORM));
+    assert_eq!(rows.answer("seam_facts", None), Err(ARGUMENT_FORM));
 }
