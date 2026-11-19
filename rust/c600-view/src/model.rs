@@ -154,11 +154,22 @@ pub struct Installed {
     pub provenance: Provenance,
 }
 
+/// Installed output whose producing module version the editor holds a draft of (EV1.7, EV3.6): the view shows its
+/// stale state from the edit on (RTE.49's stale-state interval), while the output keeps naming the version that
+/// produced it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SourceLag {
+    /// The source digest of the module version that produced the output.
+    pub producer: Digest,
+    /// The source digest of the editor's draft of that version.
+    pub draft: Digest,
+}
+
 /// The host's status of a view's program output (RPI.13, charter D2). Each status carries its typed data.
 ///
-/// Precedence (draft): installed output decides first (`Current`, `Empty` or `Stale`); without it, a failure of the
-/// newest request is `Error`, a newest request waiting for a slot held by fenced work is `Busy`, any other accepted
-/// request is `Loading`, and nothing at all is `Empty`.
+/// Precedence (draft): installed output decides first (`Current`, `Empty` or `Stale`, which a lagging base or source
+/// decides); without it, a failure of the newest request is `Error`, a newest request waiting for a slot held by
+/// fenced work is `Busy`, any other accepted request is `Loading`, and nothing at all is `Empty`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ViewStatus {
     /// Installed output matches the adopted revision.
@@ -170,8 +181,10 @@ pub enum ViewStatus {
     Loading { command: CommandId, revision: Revision },
     /// The newest request failed or was cut off, and no output exists.
     Error { command: CommandId, error: Error },
-    /// Retained output lags the adopted revision; it names its base until matching output arrives (ONE.12).
-    Stale { base: Base, adopted: Revision, refresh: Option<CommandId> },
+    /// Retained output lags the adopted revision (ONE.12), the editor's draft of the module version that produced it
+    /// (`source_lag`; EV3.6), or both. It names its base until matching output arrives. `refresh` is the newest
+    /// request on the view's lane: it brings the base up to date and never clears a source lag (draft).
+    Stale { base: Base, adopted: Revision, refresh: Option<CommandId>, source_lag: Option<SourceLag> },
     /// The newest request waits for the runner slot that fenced work still holds (LI.23).
     Busy { waiting: CommandId, held_by: CommandId },
 }
@@ -207,6 +220,10 @@ pub struct FrameView {
     /// True for Global and Local, which draw the engine bundle.
     pub bundle: bool,
     pub draw: Draw,
+    /// The source lag of the view's installed output: the view shows its stale state (EV3.6, RTE.49). A source lag
+    /// alone does not stop `draw` drawing the output, whose base still matches; a pick still opens the producing
+    /// version (EV1.7, EV3.5).
+    pub source_lag: Option<SourceLag>,
 }
 
 /// The inputs of one frame: one engine revision and its bundle, and every visible view (RM.24, without device data).
@@ -360,6 +377,8 @@ pub struct ViewModel {
     jobs: BTreeMap<JobId, ViewId>,
     ready: Vec<JobId>,
     retiring: BTreeMap<RetireToken, (u64, u64)>,
+    /// The editor's draft of each module version it holds one of, by source digest (EV1.7).
+    drafts: BTreeMap<Digest, Digest>,
     next_generation: u64,
     next_job: u64,
     next_scheduled: u64,
@@ -391,6 +410,7 @@ impl ViewModel {
             jobs: BTreeMap::new(),
             ready: Vec::new(),
             retiring: BTreeMap::new(),
+            drafts: BTreeMap::new(),
             next_generation: 1,
             next_job: 1,
             next_scheduled: 1,
@@ -635,6 +655,45 @@ impl ViewModel {
             }
         }
         self.restore_fallbacks();
+    }
+
+    // ----- source edits (EV1.7, EV3.5, EV3.6, RPI.13, RTE.49)
+
+    /// The editor holds `draft` as the source of module version `version`, both source digests; `draft == version`
+    /// means it holds no draft of that version. Installed output that `version` produced shows its view's stale state
+    /// at once, in [`ViewModel::status`] and the next [`ViewModel::frame_input`] (EV3.6). It is a host comparison of
+    /// digests (RPI.13), not a revision part (ONE.8) or a workspace change (KN0.2).
+    ///
+    /// Nothing runs and nothing is fenced: an unchecked draft never runs, including through a view (EV1.7), so a run
+    /// of `version` goes on and installs with the same lag, and its picks still open `version` (EV3.5). The lag
+    /// clears when the draft returns to the version's bytes; output of a checked draft comes from a view of that
+    /// version, opened after activation (EV1.11, LP4's). One draft per version, so a later call replaces it (draft).
+    /// A version keeps its draft until the editor returns it, so output of a version the editor has since moved on
+    /// from, by activating its draft, stays stale until its view is reopened (draft).
+    pub fn edit_source(&mut self, version: Digest, draft: Digest) {
+        if draft == version {
+            self.drafts.remove(&version);
+        } else {
+            self.drafts.insert(version, draft);
+        }
+    }
+
+    /// The editor's draft of a module version, if it holds one.
+    pub fn draft(&self, version: &Digest) -> Option<Digest> {
+        self.drafts.get(version).copied()
+    }
+
+    /// The source lag of a view's installed output: its producer, a checked module version, has a draft in the
+    /// editor (EV3.6). A built-in producer has none.
+    pub fn source_lag(&self, view: &ViewId) -> Option<SourceLag> {
+        self.lag_of(self.views.get(view)?)
+    }
+
+    fn lag_of(&self, state: &ViewState) -> Option<SourceLag> {
+        let installed = state.installed.as_ref()?;
+        let ViewSource::Overlay { module, .. } = &installed.provenance.producer else { return None };
+        let draft = self.drafts.get(module)?;
+        Some(SourceLag { producer: *module, draft: *draft })
     }
 
     fn restore_fallbacks(&mut self) {
@@ -1084,8 +1143,9 @@ impl ViewModel {
         let runner = lane.and_then(|lane| lane.runner.as_ref());
         let newest = pending.or(runner.filter(|runner| !runner.fenced).map(|runner| runner.command));
         if let Some(installed) = &state.installed {
-            if !installed.base.matches(&adopted) {
-                return Some(ViewStatus::Stale { base: installed.base, adopted, refresh: newest });
+            let source_lag = self.lag_of(state);
+            if !installed.base.matches(&adopted) || source_lag.is_some() {
+                return Some(ViewStatus::Stale { base: installed.base, adopted, refresh: newest, source_lag });
             }
             if installed.content.is_empty() {
                 return Some(ViewStatus::Empty { revision: adopted, base: Some(installed.base) });
@@ -1105,7 +1165,8 @@ impl ViewModel {
     }
 
     /// The inputs of the next frame. Only output whose declared dependencies match the adopted revision is drawn;
-    /// stale output appears only as its view's stale presentation (ONE.12, ONE.63, RPI.13).
+    /// stale output appears only as its view's stale presentation (ONE.12, ONE.63, RPI.13). Output with a source lag
+    /// is still drawn while its base matches, with the lag beside it (EV3.5, EV3.6).
     pub fn frame_input(&self) -> FrameInput {
         let revision = *self.bundle.revision();
         let views = self
@@ -1123,7 +1184,9 @@ impl ViewModel {
                     Some(installed) => Draw::Stale { base: installed.base },
                     None => Draw::Nothing,
                 };
-                Some(FrameView { view: view.clone(), generation: state.generation, bundle: view.is_fixed(), draw })
+                let generation = state.generation;
+                let source_lag = self.lag_of(state);
+                Some(FrameView { view: view.clone(), generation, bundle: view.is_fixed(), draw, source_lag })
             })
             .collect();
         FrameInput { revision, bundle: *self.bundle.digest(), views }
