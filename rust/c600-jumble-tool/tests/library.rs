@@ -822,7 +822,7 @@ fn ct_lb1_03_application_checks_each_prefix_of_a_built_word() {
 
 /// `jumble_heights.height_facts` at `state`, with the rows it read. The run pins no alphabet.
 fn height_facts(loaded: &Loaded, state: &State) -> (RunValue, Vec<String>) {
-    let mut host = rows_at(&state);
+    let mut host = rows_at(state);
     let facts = completed(run(loaded, HEIGHTS.name, "height_facts", Vec::new(), &mut host, None), "height_facts");
     (facts, host.asked().to_vec())
 }
@@ -991,7 +991,7 @@ fn ct_lb3_06_peak_excursion_and_tameness_are_recomputed_by_the_entry() {
         assert_eq!((excursion > 0, tame), (rises, tame_expected), "{name}");
         let end = end.digest(ctx);
         assert_eq!(end == start.digest(ctx), returns, "{name}: the end is the start");
-        let mut host = rows_at(&start);
+        let mut host = rows_at(start);
         let seen = completed(library.run(WORD_CHECKS.name, "word_observations", vec![word], &mut host), name);
         assert_eq!(host.asked(), ["replay"], "{name}");
         assert_eq!((truth(get(&seen, "complete")), number(get(&seen, "played"))), (true, letters.len() as i64));
@@ -1174,7 +1174,7 @@ fn ct_lb3_06_the_step_flag_is_recomputed_and_a_false_flag_refuses_nothing() {
     let pose = state.pose_ids()[first_off];
     let group: Vec<u32> =
         (0..NP).filter(|&p| !state.is_lattice_piece(p) && state.pose_ids()[p] == pose).map(|p| p as u32).collect();
-    let mut host = rows_at(&state);
+    let mut host = rows_at(state);
     let flagged = completed(
         library.run(WORD_CHECKS.name, "step_flag", vec![library.word(&refused), pieces(&group)], &mut host),
         "a refused word",

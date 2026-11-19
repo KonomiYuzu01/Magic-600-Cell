@@ -402,9 +402,12 @@ fn draft(set: &[(u32, i64)]) -> RunValue {
     )
 }
 
+/// A run through the bridge, with the rows it read and the drafted sets it checked.
+type NuRun = (Run, Vec<String>, Vec<Vec<(u32, i64)>>);
+
 /// The entry `entry` run on `base` with `args` through the bridge: the run, and the bridge's record of what it was
 /// asked.
-fn run_nu(entry: &str, args: Vec<RunValue>, base: Base<'_>) -> (Run, Vec<String>, Vec<Vec<(u32, i64)>>) {
+fn run_nu(entry: &str, args: Vec<RunValue>, base: Base<'_>) -> NuRun {
     let mut host = Rows::on(ctx(), base);
     let run = nu_library().run(NU.name, entry, args, &mut host, &Options::new(WIDE)).expect("the run starts");
     (run, host.asked().to_vec(), host.drafts().to_vec())
