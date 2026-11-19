@@ -1,5 +1,5 @@
 //! Runs LX-2's metered and forced-kill trials against a runtime child binary, and its native trials against the
-//! injection child (see the library):
+//! injection child (see the library). Build and run both bins with `--features device`:
 //!
 //! ```text
 //! c600-lx2-faults --runtime <c600-runtime binary> [--injection <c600-lx2-child binary>] [--sessions <new folder>]
@@ -7,11 +7,13 @@
 //! ```
 //!
 //! `--injection` names the fault-injection child of option (a), built from the same source in the same profile as the
-//! product's runtime; the native trials run only on it. With `--sessions` each trial also runs with a session open
-//! (RTE.42 conditions 1 and 2), each in its own subfolder of that folder, which must be new or empty; `--assets` names
-//! the model's folder (default `assets`, from the repository root). It prints one line per trial and writes the record
-//! to `--out`, which must not exist yet. Exit 0 when every trial agrees with its level, 1 when one does not, 2 for a
-//! usage or file error.
+//! product's runtime and with this package's feature `device` (`cargo build -p c600-lx2 --features device --bin
+//! c600-lx2-child`); the native trials (the allocator ceiling, the native recursion and the native loop) run only on
+//! it, and a device built without the feature refuses the armed recursion and loop. With `--sessions` each trial also
+//! runs with a session open (RTE.42 conditions 1 and 2), each in its own subfolder of that folder, which must be new or
+//! empty; `--assets` names the model's folder (default `assets`, from the repository root). It prints one line per
+//! trial and writes the record to `--out`, which must not exist yet. Exit 0 when every trial agrees with its level, 1
+//! when one does not, 2 for a usage or file error.
 
 #![forbid(unsafe_code)]
 

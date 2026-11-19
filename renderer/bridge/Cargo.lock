@@ -119,6 +119,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-runtime"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "c600-session"
 version = "0.0.0"
 dependencies = [
@@ -143,6 +157,7 @@ dependencies = [
  "c600-kernel",
  "c600-render",
  "c600-render-ffi",
+ "c600-runtime",
  "c600-session",
 ]
 
