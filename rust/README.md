@@ -1645,8 +1645,8 @@ run or not applicable is no pass (PHS.63).
   - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
     program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
     run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (a draft code). The
-    check is built and off until LP3 starts its runs through a tool row the shell invokes; nothing outside the tests
-    serves program jobs yet.
+    check is built and off. LP3's host starts every run through a tool row the shell invokes (section "Status of LP3,
+    C5 next: the process host and the tool's views"), so switching it on changes no LP3 route.
   - Finding G1: each run has its own command-ID scope (`runtime/<run>`), so one run cannot use up another run's IDs.
     The scope is derived from the stored caller; the journal format is unchanged.
   - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
@@ -2201,9 +2201,11 @@ run or not applicable is no pass (PHS.63).
   schedule. `python tests/test_lp3_source_route.py` builds `c600-lp3-oracle` and `c600-lp3-source` and passed with:
   - `tools/oracle/compare.py`: all seven cases equal on the source route, 3,201 steps, no omitted field;
   - every source-route trace byte-identical to `c600-lp3-oracle --route command`'s;
-  - the two routes' receipts agreeing on status, job, error code and revision after in all 13,553 pairs, and differing
-    only in command ID, caller and request digest; the 289 preview-ready result digests agree once rebased onto the
-    case recipe's draft, and the six O07 recipes with no literal word are the kernel's refusals on both routes;
+  - the two routes' receipts agreeing on status, job, error code and revision after in all 13,549 pairs, and differing
+    only in command ID, caller and request digest, with each source-route job number moved down by the solver's
+    commands so far (3,195 of them, B2 below); all 3,191 preview-ready result digests agree under the command route's
+    preview number, 289 of them once rebased onto the case recipe's draft, and the six O07 recipes with no literal
+    word are the kernel's refusals on both routes;
   - a negative control: negating the first letter of O06 step 3's literal word before the tool runs makes compare.py
     fail at that step (`expansion_sha256`).
 
@@ -2338,13 +2340,15 @@ run or not applicable is no pass (PHS.63).
   standing in for a view on the layer; M6's stand-ins for views on M6; and a test reader that reads every block,
   standing in for a host's reader that accepted a block C5's reader refuses, so that the journal replays such a record
   and a sheet saved from it.
-- Waiting for LP2's KN5 implementation: the rest of KN5.26's admission matrix (L1, L2); a session profile, so the reader
-  applies a solving session's admission in every session; a durable home for a word's part blocks, without which
-  CT-BND-27's recursive parts do not run; EV3.2's view rows (the layer refuses `view.open` and `view.close` with
-  `KN5:input.row_not_built`); and LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's
-  gains and losses) and macro versions. M6's session lock covers `JournalStore` too (LP2's pull request 195).
-  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2
-  removes once their tests run against it.
+- Built by LP2 since, and LP3's next steps: KN5.26's admission matrix L1 and L2 runs through the layer in
+  `c600-command`'s `tests/kn5_admission.rs` (pull request 270); a durable home for a word's part blocks (pull request
+  272), which LP3's reader takes up by implementing `Provenance::parts` and `admit_kept`, so that CT-BND-27's recursive
+  parts run; and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s view model serves through
+  the layer's `Views` trait for CT-EV3-07. Waiting for LP2: a session profile (BND.14, BND.15), so the reader still
+  applies a solving session's admission in every session; and LB7.2's fresh exact analysis of a reused work sheet
+  (`worksheet.compare`, with LB2's gains and losses) and macro versions. M6's session lock covers `JournalStore` too
+  (LP2's pull request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer
+  supersedes and LP2 removes once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -2356,13 +2360,24 @@ run or not applicable is no pass (PHS.63).
   host, so the program still receives only the fixed acknowledgement. One child serves every run, and after a fault the
   next run starts a fresh one (KN7.13). The child admits the job as tool authoring and the built-in column stays the
   caller's, because `c600_check::admit` has no author or column parameter.
+- Each run starts inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34, the owner's
+  reading of 18 November 2026; draft), on both hosts. The tool's row `tool.full_600_cell.preview_word`
+  (`c600_tools::process::TOOL_ROW`) is a query overlay row whose one argument, `w`, is the word, served by the tool's
+  entry. The shell invokes it with the literal word, the layer admits a program job, and the host takes the job
+  (`invoke_tool`) and runs the entry as the job's run, `job-<id>`, which the bridge stamps on the run's invocations.
+  Once the preview the run proposed is built, the host reports the job with the program's acknowledgement
+  (`ToolCommand::acknowledge`), so the solver's command completes as a query; a run refused at its start stage is
+  reported as the job's failure with the refusal's code (`start_error`). The layer's check, `c600-command`'s
+  `SOLVER_COMMAND_CHECK`, is still off (the KN5 readings above), and every LP3 route and test already runs this way.
 - `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
   compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
-  records, receipts and callers equal across the hosts. Four O07 steps (0, 1, 2 and 8) have a letter outside 1 to 1200
-  in magnitude, which the runtime's wire cannot encode: on both hosts the run is refused at its start stage
-  (`PS1:input.noncanonical_value`; in process `run_in_process` refuses such a word as the parent does) and has no
-  receipt, and the step record keeps the kernel's refusal, which the check compares with the command route's
-  receipt's error.
+  records, receipts and callers equal across the hosts. On the source route each step that gives the tool a word adds
+  two of the shell's receipts, the solver's command running as a new job and its report under the same command with
+  the acknowledgement's digest, and every job number is the command route's moved up by the solver's commands so far.
+  Four O07 steps (0, 1, 2 and 8) have a letter outside 1 to 1200 in magnitude, which the runtime's wire cannot encode:
+  on both hosts the run is refused at its start stage (`PS1:input.noncanonical_value`; in process `run_in_process`
+  refuses such a word as the parent does) with no invocation, and the solver's command fails with that code; the step
+  record keeps the kernel's refusal, which the check compares with the command route's receipt's error.
 - The tool's views: `c600_tools::views` is host code, since the tool publishes no view (LQ21, LG3.13, charter E6). It
   builds the display contract's publication of a proposal and its preview on `c600-display`, the content the headless
   view model installs on `c600-view`, and the presentation report: each composed frame goes to the command layer
@@ -2388,8 +2403,9 @@ run or not applicable is no pass (PHS.63).
     refused by the reader's admission: a hand-entered word passes, a solver tool's word is refused, and a built-in
     tool's word fails closed on its missing part until the host keeps its run's blocks, each refusal installing no
     preview (KN5.26 and CT-KN5-13, part; CT-BND-29, part).
-  - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts; the job
-    carries only the admitted source; both hosts refuse a word with no transfer encoding at the start stage; a runtime
+  - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts, each run
+    inside the solver's command and reported after its preview is built (B2); the job carries only the admitted
+    source; both hosts refuse a word with no transfer encoding at the start stage and fail the solver's command; a runtime
     that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
     CT-BND-07, parts).
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
@@ -2443,8 +2459,8 @@ run or not applicable is no pass (PHS.63).
     built the four common needs in the layer: a dispatch from a stored row to a built-in tool's entry
     (`CommandLayer::serve_row`, pull request 200), argument forms (pull request 202), the runtime's view and workspace
     sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves five
-    rows with their entries; the layer refuses to serve `filter.apply`, which stays not built. C6 changed no file in
-    `c600-command`.
+    rows with their entries. The layer serves `filter.apply` too since pull request 256, and no host runs its entry
+    yet. C6 changed no file in `c600-command`.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -2474,18 +2490,21 @@ run or not applicable is no pass (PHS.63).
     action that writes the entry's record through the reader, at a workspace revision one higher and with no undo entry.
     The source route (the same entry run in process on the same arguments and state, without the layer; not C5's runner)
     gives the same value, views and records; on both routes a stand-in engine answers the two snapshot reads with the
-    state number. The layer refuses malformed and stale arguments before any job, `filter.apply` stays refused, and a
-    running program's query or view job fails at the host, which has no provenance block for its arguments. Since LP2's
-    pull request 237 the layer refuses a workspace row such as `set.save` on a running program's channel with
-    `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18 November 2026: a run never
-    writes the workspace).
-- Not built: `filter.apply` (its gate, the `filter` preview rule, the `FilterPreviewRef` form and a workspace inverse in
-  the command layer); the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's job
-  arguments of the query and view rows; kernel rows for the `filter.preview` and `structure.compare` snapshot reads; a
-  record and an exact-set digest for each saved set; a display that applies the published scope (the APIs are in the
-  crate documentation under "Not built"); the stage checker, HLSL compilation and every device step (CT-LB4-04's rest,
-  C9); the relationship strip (C8 computes one of its typed relations, a slot's current occupant, at pose level);
-  filters of trees, complexes and graphs; a BM5 review record.
+    state number. The layer refuses malformed and stale arguments before any job. The layer serves `filter.apply`, and
+    a test checks its refusal of a stale filter preview; the entry does not run here. A running program's query or view
+    job fails at the host, which builds no provenance block for its arguments (LP2's `invoke_with_inputs`, pull request
+    264, takes them). Since LP2's pull request 237 the layer refuses a workspace row such as `set.save` on a running
+    program's channel with `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18
+    November 2026: a run never writes the workspace).
+- Not built, LP3's next steps: `filter.apply`'s entry run through both routes, with the entry taking the layer's
+  `FilterPreviewRef` (the layer serves the row since LP2's pull request 256); the host's provenance blocks for a running
+  program's job arguments of the query and view rows, through LP2's `invoke_with_inputs` (pull request 264); host rows
+  for the `filter.preview` and `structure.compare` snapshot reads, on LP2's structure rows (pull request 262). LP2 built
+  the `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal
+  since. Also not built: a record and an exact-set digest for each saved set; a display that applies the published scope
+  (the APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage
+  checker is LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's
+  current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

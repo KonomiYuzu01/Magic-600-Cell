@@ -9,14 +9,23 @@ pinned absolute argument, and its one proposal reaches the command layer through
 `operation.preview` invocation. The shell presents the built preview and commits it with the key route's commit chord;
 undo and redo follow the command route's schedule.
 
+Each run starts inside a command the solver invoked (ONE.34; finding B2 of the KN5 boundary attack, the owner's reading
+of 18 November 2026). The shell invokes the tool's row, `tool.full_600_cell.preview_word`, with the literal word; the
+layer admits a program job, and the tool runs as that job's run, `job-<id>`, which the bridge stamps on its invocation.
+Once the run's preview is built the runner reports the job, and the solver's command completes as a query whose result
+is the program's fixed acknowledgement.
+
 `tools/oracle/compare.py` must report every source-route trace equal with no omitted fields (3,201 steps), and each
 source-route trace must be byte-identical to the command route's. The receipts must agree step by step on status, job,
-error code and revision after; they may differ only in command ID, caller and request digest. The preview-ready result
-digest covers the draft's digest, so it must equal the command route's once rebased onto the case recipe's draft. A
-recipe with no literal word (six steps of O07) makes no invocation on the source route, and the command route's receipt
-for it is the kernel's refusal of the recipe. The literal digest the tool proposed must be the trace's expansion digest,
-and a single word's literal digest is the digest of its moves. A negative control negates one letter of one literal word
-before the tool runs: compare.py must then fail at that step.
+error code and revision after; they may differ only in command ID, caller and request digest. On the source route each
+step that gives the tool a word adds two receipts of the shell's, the solver's command running as a new job and its
+report under the same command, and every job number is the command route's moved up by the solver's commands so far.
+The preview-ready result digest covers the draft's digest and the preview's number, so it must equal the command
+route's once rebased onto the case recipe's draft and the command route's number. A recipe with no literal word (six
+steps of O07) makes no invocation on the source route, and the command route's receipt for it is the kernel's refusal of
+the recipe. The literal digest the tool proposed must be the trace's expansion digest, and a single word's literal
+digest is the digest of its moves. A negative control negates one letter of one literal word before the tool runs:
+compare.py must then fail at that step.
 
 The source route then runs a second time on the process host (`c600-lp3-source --host process`): the tool's program
 runs in the child process of `c600-runtime` (`rust/c600-runtime`, built here too), and the same boundary and host
@@ -27,8 +36,8 @@ for the host's name. The summary line, each case and each step record name the h
 Four steps of O07 give the tool a word with a letter outside 1 to 1200 in magnitude. Such a word has no transfer
 encoding, so on both hosts the run is refused at its start stage with `PS1:input.noncanonical_value` and no invocation
 is made: on the process host its job never reaches the child, and in process the run is refused the same way before
-the tool runs. For those steps the kernel's refusal of the recipe, kept in the step record, must be the error of the
-command route's receipt.
+the tool runs. The solver's command then fails with that code. For those steps the kernel's refusal of the recipe,
+kept in the step record, must be the error of the command route's receipt.
 
 Standard library only. A missing Rust toolchain fails the check: a test that did not run is no pass (PHS.63). A pass is
 headless source and fixture evidence for the source route's draft, not Windows/DirectX, input, long-session or
@@ -286,13 +295,53 @@ def draft_digest(recipe: object) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def acknowledgement_digest(revision: dict, job: int) -> str:
+    """The digest of the program's fixed acknowledgement of its one proposal, `{"base": ..., "id": "job-<job>/1"}` in
+    canonical JSON, where the base is the revision the run read, `<session>@<epoch>/<head>`: the result the runner
+    reports for the solver's command once the run ran."""
+    base = f"{revision['session']}@{revision['epoch']}/{revision['head']}"
+    text = json.dumps({"base": base, "id": f"job-{job}/1"}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def moved(job: object, offset: int) -> object:
+    """A command-route job number as the source route numbers it: moved up by the solver's commands so far."""
+    return job + offset if isinstance(job, int) else job
+
+
+def shifted(status: dict, offset: int) -> dict:
+    """A command-route status with its job numbers moved as the source route numbers them."""
+    status = dict(status)
+    if "job" in status:
+        status["job"] = moved(status["job"], offset)
+    if isinstance(status.get("result"), dict) and "job" in status["result"]:
+        status["result"] = {**status["result"], "job": moved(status["result"]["job"], offset)}
+    return status
+
+
+def check_solver_command(where: str, tool: dict, tool_caller: dict, report: dict, report_caller: dict,
+                         last_job: int) -> int:
+    """The solver's command around one run: the shell's invocation of the tool's row, running as a new program job,
+    and the runner's report of that job under the same command and request. Returns the job's number."""
+    job = tool["job"]
+    require(tool_caller == {"caller": "shell"} and isinstance(job, int) and job > last_job
+            and tool["status"] == {"job": job, "name": "running"},
+            f"{where}: the first receipt is not the solver's command running as a new job")
+    require(report_caller == {"caller": "shell"} and report["command"] == tool["command"]
+            and report["request"] == tool["request"] and report["job"] == job,
+            f"{where}: the report is not the solver's command's")
+    return job
+
+
 def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict],
                    recipes: dict[str, dict[int, object]]) -> None:
-    """The two routes' receipts agree step by step but for command ID, caller and request digest."""
+    """The two routes' receipts agree step by step but for command ID, caller and request digest. On the source route
+    each step that gives the tool a word adds the solver's command and its report, and the job numbers move up by one
+    for each such command so far."""
     command = {c["case_id"]: c["receipts"] for c in json.loads(command_file.read_text(encoding="utf-8"))["cases"]}
     source = {c["case_id"]: c for c in json.loads(source_file.read_text(encoding="utf-8"))["cases"]}
     require(set(command) == set(source) == set(STEPS), "the receipts files name other cases")
-    pairs = rebased = withheld = start_refused = requests = 0
+    pairs = ready = rebased = withheld = start_refused = requests = commands = 0
     for name in STEPS:
         a, record_case = command[name], source[name]
         b, callers = record_case["receipts"], record_case["callers"]
@@ -300,10 +349,10 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
         steps = {step["index"]: step for step in traces[name]["steps"]}
         records = record_case["steps"]
         require([r["index"] for r in records] == sorted(steps), f"{name}: the step records differ from the trace")
-        ia = ib = 0
+        ia = ib = tools = last_job = 0
         for record in records:
             index = record["index"]
-            step, recipe, run = steps[index], recipes[name][index], f"{name}-{index}"
+            step, recipe = steps[index], recipes[name][index]
             where = f"{name} step {index}"
             if step["accepted"]:
                 count = 4 if name in INDEPENDENT else 3
@@ -333,26 +382,44 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
             require(record["letters"] == letters, f"{where}: {record['letters']} letters instead of {letters}")
             require(record["case_draft"] == draft_digest(recipe), f"{where}: the case draft's digest differs")
             start = record["start_refusal"]
+            tools += 1
+            commands += 1
             if (name, index) in NO_TRANSFER:
-                require(record["receipts"] == 0 and count == 1 and isinstance(start, dict)
+                require(record["receipts"] == 2 and count == 1 and isinstance(start, dict)
                         and start.get("stage") == "start" and start.get("codes") == [NONCANONICAL],
                         f"{where}: the run on a word with no transfer encoding was not refused at its start stage")
                 kernel = start.get("recipe_refusal")
                 require(isinstance(kernel, dict) and str(kernel.get("code", "")).startswith("KN2:")
                         and a[ia]["status"] == {"name": "refused", "error": kernel} and a[ia]["job"] is None,
                         f"{where}: the command route's refusal is not the kernel's refusal of the recipe")
+                last_job = check_solver_command(where, b[ib], callers[ib], b[ib + 1], callers[ib + 1], last_job)
+                failed = b[ib + 1]["status"]
+                error = failed.get("error")
+                require(failed.get("name") == "failed" and isinstance(error, dict) and error.get("code") == NONCANONICAL
+                        and isinstance(error.get("detail"), str) and error["detail"],
+                        f"{where}: the solver's command did not fail with the start stage's refusal: {failed}")
                 ia += 1
+                ib += 2
                 start_refused += 1
                 continue
             require(start is None, f"{where}: a start-stage refusal of a word with a transfer encoding")
-            require(record["receipts"] == count, f"{where}: {record['receipts']} receipts instead of {count}")
-            for k in range(count):
-                ra, rb, caller = a[ia + k], b[ib + k], callers[ib + k]
+            require(record["receipts"] == count + 2, f"{where}: {record['receipts']} receipts instead of {count + 2}")
+            # The solver's command, the core receipts with its report after the run's first two (after the one
+            # refusal when the layer refused the run's proposal), and then the shell's commit and undo.
+            at = 1 + min(count, 2)
+            job = check_solver_command(where, b[ib], callers[ib], b[ib + at], callers[ib + at], last_job)
+            run = f"job-{job}"
+            positions = [1 + k if k < 2 else 2 + k for k in range(count)]
+            for k, position in enumerate(positions):
+                ra, rb, caller = a[ia + k], b[ib + position], callers[ib + position]
                 expected = {"caller": "runtime", "run": run} if k < 2 else {"caller": "shell"}
                 require(caller == expected, f"{where}, receipt {k}: caller {caller}, expected {expected}")
                 require(k >= 2 or rb["command"] == f"{run}/1", f"{where}, receipt {k}: command {rb['command']}")
-                require(ra["job"] == rb["job"], f"{where}, receipt {k}: the jobs differ")
-                sa, sb = ra["status"], rb["status"]
+                require(rb["job"] == moved(ra["job"], tools), f"{where}, receipt {k}: job {rb['job']}, {ra['job']} "
+                        f"on the command route and {tools} solver's commands so far")
+                require(k > 0 or ra["job"] is None or rb["job"] == job + 1,
+                        f"{where}: the run's preview is not the job after the solver's command")
+                sa, sb = shifted(ra["status"], tools), rb["status"]
                 if k == 1:
                     require(sa.get("name") == "completed" and sa.get("kind") == "preview_ready",
                             f"{where}: the second receipt is not the preview-ready receipt")
@@ -360,18 +427,28 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
                             == {key: v for key, v in sb.items() if key != "result"},
                             f"{where}: the preview-ready receipts differ beyond the result")
                     require(sa["result"]["job"] == sb["result"]["job"], f"{where}: the result jobs differ")
+                    # The preview's number moved with the job numbers, so every preview-ready digest is compared
+                    # under the command route's number; the draft is rebased too where the source route drafted
+                    # the literal word in other steps than the case recipe.
+                    require(sb["result"]["digest"] == record["result"],
+                            f"{where}: the preview-ready result digest is not the digest of the preview's summary")
                     require(sa["result"]["digest"] == record["rebased_result"],
                             f"{where}: the rebased result digest differs from the command route's")
-                    if record["draft"] == record["case_draft"]:
-                        require(sb["result"]["digest"] == sa["result"]["digest"], f"{where}: the result digests differ")
-                    else:
-                        rebased += 1
+                    ready += 1
+                    rebased += record["draft"] != record["case_draft"]
                 else:
                     require(sa == sb, f"{where}, receipt {k}: the statuses differ: {sa} and {sb}")
                 requests += ra["request"] != rb["request"]
                 pairs += 1
+            reported = b[ib + at]["status"]
+            revision = reported.get("revision")
+            require(reported.get("name") == "completed" and reported.get("kind") == "query"
+                    and isinstance(revision, dict)
+                    and reported.get("result") == {"digest": acknowledgement_digest(revision, job), "job": job},
+                    f"{where}: the solver's command did not complete with the program's acknowledgement: {reported}")
+            last_job = max([last_job, job] + [b[ib + p]["job"] for p in positions if isinstance(b[ib + p]["job"], int)])
             ia += count
-            ib += count
+            ib += count + 2
         tail = record_case["tail"]
         accepted = sum(1 for step in steps.values() if step["accepted"])
         require(tail == (0 if name in INDEPENDENT else 2 * accepted), f"{name}: {tail} undo and redo receipts")
@@ -379,13 +456,17 @@ def check_receipts(command_file: Path, source_file: Path, traces: dict[str, dict
         for k in range(tail):
             ra, rb = a[ia + k], b[ib + k]
             require(callers[ib + k] == {"caller": "shell"}, f"{name}, tail receipt {k}: not the shell's")
-            require(ra["job"] == rb["job"] and ra["status"] == rb["status"], f"{name}, tail receipt {k}: differs")
+            require(rb["job"] == moved(ra["job"], tools) and rb["status"] == shifted(ra["status"], tools),
+                    f"{name}, tail receipt {k}: differs")
             requests += ra["request"] != rb["request"]
             pairs += 1
-    print(f"PASS: the routes' receipts agree on status, job, error code and revision after ({pairs} pairs; "
-          f"{rebased} preview-ready digests compared after rebasing onto the case draft; {requests} request digests "
-          f"differ; {withheld} recipes with no literal word refused by the kernel on both routes; {start_refused} "
-          f"words with no transfer encoding refused at the run's start stage, where the command route has the kernel's "
+    print(f"PASS: the routes' receipts agree on status, job, error code and revision after ({pairs} pairs, the source "
+          f"route's job numbers moved up by the solver's commands so far; {commands} solver's commands, each running "
+          f"one tool run as its program job and reported after the run's preview was built; {ready} preview-ready "
+          f"digests compared under the command route's preview number, {rebased} of them after rebasing onto the case "
+          f"draft; {requests} request digests differ; {withheld} recipes "
+          f"with no literal word refused by the kernel on both routes; {start_refused} words with no transfer encoding "
+          f"refused at the run's start stage, where the solver's command fails and the command route has the kernel's "
           f"refusal)")
 
 
@@ -440,8 +521,8 @@ def main() -> int:
         return 1
     print(f"whole check {time.monotonic() - start:.1f} s")
     print("PASS: O01 to O07 replay exactly on the source route: each proposal comes from the 600-cell-Full tool's "
-          "program through the host bridge, and the traces and receipts agree with the command route; all seven cases "
-          "replay the same with the program in the runtime's own process")
+          "program, run inside the command the solver invoked, through the host bridge, and the traces and receipts "
+          "agree with the command route; all seven cases replay the same with the program in the runtime's own process")
     return 0
 
 

@@ -17,17 +17,18 @@ use c600_run::meter::Outcome;
 use c600_run::value::{equal, Value};
 use c600_runtime::{Config, Ended, FaultKind, Runtime, Stage};
 use c600_tools::bridge::{base, word_args, Bridge};
-use c600_tools::process::{job, runtime_beside, Cause, ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::process::{job, runtime_beside, start_error, Cause, ProcessHost, IN_PROCESS, PROCESS};
 use c600_tools::tool::{Tool, LIMITS, MODULE, ROW, SOURCE};
-use process_support::{acknowledgement, fingerprint, process_host, repository, run_on, runtime, session};
+use process_support::{acknowledgement, fingerprint, process_host, report, repository, run_on, runtime, session};
 
 /// Acceptance item 2, the process host. The tool's program runs in another operating-system process than the
 /// command layer, and one child serves every run. For a word the layer admits, a word the layer refuses and a
 /// longer word, the run on the process host has the same meter summary, value and output (the fixed
 /// acknowledgement), the same shell record, the same single runtime invocation of `operation.preview` (command ID,
-/// caller, epoch, arguments, no token) and the same receipt as the run on the in-process host; the preview the layer
-/// then builds and the commit the shell's chord makes are the same, and so are the state, the revision and the
-/// journal length.
+/// caller, epoch, arguments, no token) and the same receipt as the run on the in-process host; the report of the
+/// solver's command that ran the tool, the preview the layer then builds and the commit the shell's chord makes are
+/// the same, and so are the state, the revision and the journal length. On both hosts the run is that command's job
+/// (finding B2 of the KN5 boundary attack, ONE.34).
 ///
 /// RTE.21 and ONE.69 (the runtime in a process of its own), KN5.15 (the child holds no token: the envelope it causes
 /// has none) and BND.42 (the fixed acknowledgement). CT-BND-11 and CT-BND-07 (part, the 600-cell-Full tool on the
@@ -37,15 +38,16 @@ fn process_host_runs_the_tool_in_the_runtimes_child_with_the_same_bridge_and_rec
     let tool = Tool::full_600_cell().unwrap();
     let mut host = process_host();
     let long: Vec<i32> = (1..=600).flat_map(|letter| [letter, -(letter % 7 + 1)]).collect();
-    for (case, word, run) in
-        [("admitted", &[1, -2][..], "run-a"), ("refused by the layer", &[][..], "run-b"), ("long", &long[..], "run-c")]
-    {
+    for (case, word) in [("admitted", &[1, -2][..]), ("refused by the layer", &[][..]), ("long", &long[..])] {
         let mut seen = Vec::new();
         for on_process in [false, true] {
             let (mut layer, mut shell) = session("process");
             let read = base(layer.revision());
             let before = fingerprint(&layer);
-            let (ran, sent) = run_on(on_process.then_some(&mut host), &tool, &mut layer, word, run);
+            let (ran, sent, command) = run_on(on_process.then_some(&mut host), &tool, &mut layer, &mut shell, word);
+            let run = command.run();
+            let run = run.as_str();
+            assert_eq!(run, "job-1", "{case}: the run is the job of the solver's command");
             let ran = ran.unwrap_or_else(|stopped| panic!("{case}: the run ends: {:?}", stopped.cause));
             assert_eq!(ran.run.summary.outcome, Outcome::Completed, "{case}");
             assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, run)[..]), "{case}");
@@ -62,6 +64,7 @@ fn process_host_runs_the_tool_in_the_runtimes_child_with_the_same_bridge_and_rec
             match &one.receipt.status {
                 Status::Running(id) if case != "refused by the layer" => {
                     assert_eq!(layer.run_jobs(), 1, "{case}");
+                    after.push(report(&mut layer, command).to_json().canonical());
                     HeadlessFrames::after(&layer).present(&mut shell, &mut layer, *id).unwrap();
                     after.push(layer.preview().expect("the presented preview").summary().canonical());
                     let committed = shell.press(&mut layer, "Ctrl+Shift+Enter", false).unwrap().unwrap();
@@ -71,6 +74,7 @@ fn process_host_runs_the_tool_in_the_runtimes_child_with_the_same_bridge_and_rec
                 Status::Refused(error) if case == "refused by the layer" => {
                     assert_eq!(error.code, RECIPE_SHAPE, "{case}");
                     assert!(matches!(&shown.answer, Answer::Refused(r) if r.code == RECIPE_SHAPE), "{case}");
+                    after.push(report(&mut layer, command).to_json().canonical());
                 }
                 other => panic!("{case}: {other:?}"),
             }
@@ -160,8 +164,8 @@ fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_as_tool_
 /// Acceptance item 2, a word both hosts refuse alike. A word with a letter outside 1 to 1200 in magnitude has no
 /// transfer encoding (C3's wire: a canonical word), so on the process host the parent refuses its job before any child
 /// is started, and in process `run_in_process` refuses the run before the tool runs, with the same check. Both stop at
-/// the start stage with the interpreter's non-canonical value code: no proposal, no invocation, no receipt, no
-/// change. These are O07's steps 0, 1, 2 and 8.
+/// the start stage with the interpreter's non-canonical value code: no proposal, no invocation, no change. The host
+/// reports the solver's command that ran the tool as failed with that code. These are O07's steps 0, 1, 2 and 8.
 ///
 /// CT-LB2-03 (part: a word the transfer cannot carry is refused whole, never altered or split).
 #[test]
@@ -170,14 +174,17 @@ fn both_hosts_refuse_a_word_with_no_transfer_encoding_at_the_start_stage() {
     let mut host = process_host();
     for word in [&[0][..], &[1201], &[-1201], &[1, 0], &[i32::MIN], &[i32::MAX]] {
         for on_process in [false, true] {
-            let (mut layer, _) = session("process");
+            let (mut layer, mut shell) = session("process");
             let before = fingerprint(&layer);
-            let (ran, sent) = run_on(on_process.then_some(&mut host), &tool, &mut layer, word, "start");
+            let (ran, sent, command) = run_on(on_process.then_some(&mut host), &tool, &mut layer, &mut shell, word);
             let stopped = ran.err().unwrap_or_else(|| panic!("{word:?} ran (process host: {on_process})"));
             assert!(stopped.cause.no_transfer(), "{word:?}: {:?}", stopped.cause);
             let Cause::Refused(refused) = &stopped.cause else { unreachable!() };
             assert_eq!(refused.stage, Stage::Start);
             assert!(stopped.shell.is_empty() && sent.is_empty(), "{word:?}: nothing reached the boundary or the layer");
+            let error = start_error(&stopped.cause).expect("the start-stage refusal's error");
+            let reported = command.finish(&mut layer, Err(error)).expect("the layer holds the tool's job");
+            assert_eq!(reported.status.code(), Some(NONCANONICAL_VALUE), "{word:?}: {reported:?}");
             assert_eq!(fingerprint(&layer), before);
         }
     }
@@ -192,9 +199,9 @@ fn process_host_reports_a_runtime_that_does_not_start() {
     let missing = runtime_beside(&repository().join("rust").join("c600-tools").join("no-such-binary"));
     assert!(!missing.exists());
     let mut host = ProcessHost::new(missing);
-    let (mut layer, _) = session("process");
+    let (mut layer, mut shell) = session("process");
     let before = fingerprint(&layer);
-    let (ran, sent) = run_on(Some(&mut host), &tool, &mut layer, &[1, -2], "lost");
+    let (ran, sent, _command) = run_on(Some(&mut host), &tool, &mut layer, &mut shell, &[1, -2]);
     let stopped = ran.err().expect("no run without a runtime");
     assert!(matches!(&stopped.cause, Cause::Lost(fault) if fault.kind == FaultKind::Spawn), "{:?}", stopped.cause);
     assert!(stopped.shell.is_empty() && sent.is_empty());
@@ -214,8 +221,9 @@ fn read_json(path: &PathBuf) -> Json {
 /// byte-identical to the in-process host's, the summary line, each case and each step given to a host name the host,
 /// and the receipts files are the same but for the host's name. On both hosts O07's four words with no canonical
 /// form are refused at the run's start stage: the step record keeps the kernel's refusal of the recipe and the
-/// start-stage refusal, and the step has no receipt. A host name the runner does not know, and `--runtime` without
-/// the process host, are usage errors.
+/// start-stage refusal, and the step's two receipts are the solver's command that ran the tool and its report,
+/// failed with the non-canonical value code. A host name the runner does not know, and `--runtime` without the
+/// process host, are usage errors.
 #[test]
 fn process_host_flag_replays_cases_with_the_same_traces_and_names_the_host_in_every_record() {
     let assets = repository().join("assets");
@@ -286,8 +294,9 @@ fn process_host_flag_replays_cases_with_the_same_traces_and_names_the_host_in_ev
             assert_eq!(field(rb, "host").as_str(), given.then_some(PROCESS), "{case}");
             let start = field(ra, "start_refusal");
             if !matches!(start, Json::Null) {
-                // No receipt: the run stopped before its proposal, and the record keeps the kernel's refusal.
-                assert_eq!(field(ra, "receipts").as_i64(), Some(0), "{case}");
+                // The solver's command and its failed report: the run stopped before its proposal, and the record
+                // keeps the kernel's refusal.
+                assert_eq!(field(ra, "receipts").as_i64(), Some(2), "{case}");
                 assert_eq!(start.get("stage").and_then(Json::as_str), Some("start"), "{case}");
                 assert_eq!(start.get("codes").map(Json::canonical), Some(codes.clone()), "{case}");
                 let kernel = start.get("recipe_refusal").and_then(|kernel| kernel.get("code"));

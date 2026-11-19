@@ -397,9 +397,11 @@ class ProductBuild(unittest.TestCase):
         product = self.build_product.verify(self.build)
         arguments, env = started["arguments"], started["env"]
         self.assertEqual(Path(arguments[0]).name, self.build_product.prepare_host.GODOT_EXE)
-        self.assertEqual(arguments[arguments.index("--path") + 1], str(self.build / "shell" / "project"))
+        # The launcher resolves --build; on Windows the temporary folder may be an 8.3 short path.
+        build = self.build.resolve()
+        self.assertEqual(arguments[arguments.index("--path") + 1], str(build / "shell" / "project"))
         self.assertEqual(env["M600_BUILD_IDENTITY"], product["identity"])
-        self.assertEqual(env["M600_ASSETS"], str(self.build / "assets"))
+        self.assertEqual(env["M600_ASSETS"], str(build / "assets"))
         self.assertEqual(env["M600_EVENTS_DIR"], str(out.resolve()))
         self.assertEqual(env["M600_RUN_ID"], "r1")
         self.assertEqual(env["M600_SESSION_DIR"], str(out.resolve() / "session"))
@@ -408,8 +410,9 @@ class ProductBuild(unittest.TestCase):
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
         self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"]),
                          ("magic600-c9-launch-v1", product["identity"], 0, False))
-        self.assertNotIn(str(self.temp), json.dumps(record))
-        self.assertNotIn(str(self.temp).replace("\\", "/"), json.dumps(record))
+        for temp in {str(self.temp), str(self.temp.resolve())}:
+            self.assertNotIn(temp, json.dumps(record))
+            self.assertNotIn(temp.replace("\\", "/"), json.dumps(record))
 
     def test_inherited_shell_variables_are_dropped(self):
         product = self.build_product.verify(self.build)

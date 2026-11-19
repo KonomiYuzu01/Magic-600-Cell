@@ -1,17 +1,19 @@
 //! Shared by the process-host, Net, oversize and retry-lead tests: the model, sessions on the command layer, the
-//! runtime's binary, and one run of the tool on either host.
+//! runtime's binary, and one run of the tool on either host inside the command the solver invokes to run it.
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
-use c600_command::{CommandLayer, Secret, Shell, Table};
+use c600_command::{CommandLayer, Receipt, Secret, Shell, Status, Table};
 use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Kernel, ProtectedSet};
 use c600_run::boundary::Store;
 use c600_tools::bridge::{base, Bridge, Sent, Steps};
-use c600_tools::process::{run_in_process, ProcessHost, Stopped, IN_PROCESS, PROCESS, RUNTIME_BINARY};
+use c600_tools::process::{
+    invoke_tool, run_in_process, ProcessHost, Stopped, ToolCommand, IN_PROCESS, PROCESS, RUNTIME_BINARY,
+};
 use c600_tools::tool::{Ran, Tool, SOURCE};
 
 pub fn repository() -> PathBuf {
@@ -108,16 +110,19 @@ pub fn on<'p>(host: &str, process: &'p mut ProcessHost) -> Option<&'p mut Proces
     (host == PROCESS).then_some(process)
 }
 
-/// Runs `tool` on `word` as run `run` through a bridge onto `layer`, in process when `host` is `None` and in the
-/// runtime's child otherwise; returns the run, or why the host left none, and the bridge's invocations.
+/// Runs `tool` on `word` through a bridge onto `layer` inside the command the solver invokes to run it (finding B2 of
+/// the KN5 boundary attack, ONE.34): `shell` invokes the tool's row and the host takes the job, whose run, `job-<id>`,
+/// the entry runs as. In process when `host` is `None` and in the runtime's child otherwise. Returns the run, or why
+/// the host left none, the bridge's invocations and the command, which the caller reports ([`report`]) once the
+/// layer has built the run's preview: a preview is built only while the host holds the run's job.
 pub fn run_on(
     host: Option<&mut ProcessHost>,
     tool: &Tool,
     layer: &mut CommandLayer,
+    shell: &mut Shell,
     word: &[i32],
-    run: &str,
-) -> (Result<Ran, Stopped>, Vec<Sent>) {
-    run_with(host, tool, layer, word, run, None)
+) -> (Result<Ran, Stopped>, Vec<Sent>, ToolCommand) {
+    run_with(host, tool, layer, shell, word, None)
 }
 
 /// [`run_on`] through a bridge given `steps`, the solver's word steps of the run's input recipe.
@@ -125,16 +130,25 @@ pub fn run_with(
     host: Option<&mut ProcessHost>,
     tool: &Tool,
     layer: &mut CommandLayer,
+    shell: &mut Shell,
     word: &[i32],
-    run: &str,
     steps: Option<Steps>,
-) -> (Result<Ran, Stopped>, Vec<Sent>) {
-    let read = base(layer.revision());
-    let mut bridge = Bridge::new(layer, run).with_steps(steps);
+) -> (Result<Ran, Stopped>, Vec<Sent>, ToolCommand) {
+    let command = invoke_tool(shell, layer, tool, word).unwrap_or_else(|error| panic!("the tool's row: {error}"));
+    let (run, read) = (command.run(), base(&command.job.revision));
+    let mut bridge = Bridge::new(layer, &run).with_steps(steps);
     let mut store = Store::default();
     let ran = match host {
-        None => run_in_process(tool, word, run, &read, &mut bridge, &mut store),
-        Some(host) => host.run(tool, SOURCE, word, run, &read, &mut bridge, &mut store),
+        None => run_in_process(tool, word, &run, &read, &mut bridge, &mut store),
+        Some(host) => host.run(tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
     };
-    (ran, bridge.sent)
+    (ran, bridge.sent, command)
+}
+
+/// Reports the job of the solver's command once its run ran, with the program's fixed acknowledgement as the result;
+/// returns the command's receipt, which is completed.
+pub fn report(layer: &mut CommandLayer, command: ToolCommand) -> Receipt {
+    let receipt = command.acknowledge(layer).expect("the layer holds the tool's job");
+    assert!(matches!(receipt.status, Status::Completed(_)), "the tool's command: {receipt:?}");
+    receipt
 }
