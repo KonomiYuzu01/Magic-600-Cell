@@ -107,7 +107,8 @@ public sealed class EventLog : IDisposable
         body.Write(Row(fields));
     }
 
-    private static byte[] Row(Action<Utf8JsonWriter> fields)
+    /// <summary>One JSON object of <paramref name="fields"/> and a line feed.</summary>
+    internal static byte[] Row(Action<Utf8JsonWriter> fields)
     {
         var buffer = new ArrayBufferWriter<byte>();
         using (var json = new Utf8JsonWriter(buffer))
@@ -131,27 +132,36 @@ public sealed class EventLog : IDisposable
         }
         _body = null;
         body.Dispose();
-        var bodyPath = Path.Combine(_directory, BodyName);
-        var partial = Path.Combine(_directory, FileName + ".partial");
+        Seal(_directory, FileName, BodyName, Row(json =>
+        {
+            json.WriteString("t", "run");
+            json.WriteString("format", Format);
+            json.WriteString("run_id", _runId);
+            json.WriteString("build_identity", _buildIdentity);
+            json.WriteNumber("qpc_frequency", Stopwatch.Frequency);
+            json.WriteBoolean("synthetic", false);
+            json.WriteBoolean("foreground_throughout", _foreground);
+            json.WriteString("correctness", "fail");
+            json.WriteString("correctness_control", "none");
+            json.WriteNumber("process_id", System.Environment.ProcessId);
+        }));
+    }
+
+    /// <summary>
+    /// Writes <paramref name="fileName"/> in <paramref name="directory"/>: the <paramref name="header"/> row, then the
+    /// rows of the closed body file, through a partial file that is renamed only when complete; then removes the body.
+    /// </summary>
+    internal static void Seal(string directory, string fileName, string bodyName, byte[] header)
+    {
+        var bodyPath = Path.Combine(directory, bodyName);
+        var partial = Path.Combine(directory, fileName + ".partial");
         using (var log = new FileStream(partial, FileMode.CreateNew, FileAccess.Write))
         {
-            log.Write(Row(json =>
-            {
-                json.WriteString("t", "run");
-                json.WriteString("format", Format);
-                json.WriteString("run_id", _runId);
-                json.WriteString("build_identity", _buildIdentity);
-                json.WriteNumber("qpc_frequency", Stopwatch.Frequency);
-                json.WriteBoolean("synthetic", false);
-                json.WriteBoolean("foreground_throughout", _foreground);
-                json.WriteString("correctness", "fail");
-                json.WriteString("correctness_control", "none");
-                json.WriteNumber("process_id", System.Environment.ProcessId);
-            }));
+            log.Write(header);
             using var rows = new FileStream(bodyPath, FileMode.Open, FileAccess.Read);
             rows.CopyTo(log);
         }
-        File.Move(partial, Path.Combine(_directory, FileName));
+        File.Move(partial, Path.Combine(directory, fileName));
         File.Delete(bodyPath);
     }
 }

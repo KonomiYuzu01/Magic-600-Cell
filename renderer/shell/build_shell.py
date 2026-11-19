@@ -41,12 +41,13 @@ def dotnet_version() -> str:
     return completed.stdout.strip() if completed.returncode == 0 else f"unavailable (exit {completed.returncode})"
 
 
-def build(executable: str | None) -> Path:
+def build(executable: str | None, out: Path | None = None) -> Path:
+    """Build into `out` (a new folder; default work/build/c9-shell/<stamp>/) and return it."""
     executable, nupkgs = prepare_host.locate_without_launch(executable)
     head = prepare_host.git("rev-parse", "HEAD").strip()
     dirty = prepare_host.git("status", "--porcelain", "--", "renderer/shell").strip() != ""
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    out = BUILD_ROOT / stamp
+    if out is None:
+        out = BUILD_ROOT / dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     project, private, logs = out / "project", out / "dotnet", out / "logs"
     # Plain mkdir under the ignored work tree, never %TEMP% (Application Control).
     out.mkdir(parents=True)

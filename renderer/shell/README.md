@@ -25,8 +25,13 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
       `key_to_frame.py` marks every run invalid.
     - The core does not report its swap chain's address, so there is no `swap_chain` and no PresentMon cross-check.
 
-    The E3 startup log (`magic600-c9-startup-v1`) needs a launcher, a session and a correctness check, so it is not
-    written yet.
+    The E3 startup log (`magic600-c9-startup-v1`) needs a session and a correctness check, so it is not written yet.
+  - `InputLog.cs` and the echo in `Shell.cs` serve route B's check B1. When `M600_INPUT_ECHO` is `1`, a panel over the
+    view echoes every key press (not a repeat) and mouse click (not the wheel) that reaches the window, and
+    `input.jsonl` (`magic600-c9-shell-input-v1`, a C9 DRAFT) records each with the QPC of its receipt, the window
+    pixel of a click, and a `run` row with the totals and whether the window kept the foreground. It is a file of its
+    own, because `key_to_frame.py` refuses any row type it does not know. The echo works with or without the core.
+    The foreground counts as lost once the window had it and lost it, or if it never had it (both logs).
   - `CoreSurface.cs` drives the core context's life through the shell calls: `sa2_create`, `sa2_surface_attach` and
     `sa2_scene_load` on open, `sa2_surface_move` and a drained `sa2_resize` while it lives, and `sa2_scene_unload`,
     `sa2_drain`, `sa2_surface_detach` and `sa2_detach` on close. Draft choices: the first hardware adapter, the
@@ -38,7 +43,19 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     calls the shell makes itself and the table does not hold: `sa2_create`, `sa2_scene_load`, the three surface
     calls, `sa2_resize`, `sa2_drain`, `sa2_scene_unload` and `sa2_detach`. The bridge crates load no library
     (CT-RPI-20), so the shell is the only place that loads the core.
-- `build_shell.py`: an offline build into `work/build/c9-shell/<stamp>/`. It uses the harness's offline restore
+- `build_product.py`: the product build on route B, offline, into `work/build/c9-product/<stamp>/`: the core
+  (`renderer/core/build.cmd`, the DLL with its shaders) in `native/`, a release build of `c600-shell-host` in
+  `host/`, the shell (`build_shell.py`) in `shell/`, and a copy of the model's tracked files in `assets/`.
+  `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a
+  digest of the parts. It never launches anything.
+- `launch.py`: the one way to start the shell. It recomputes every part of a product build (default: the newest),
+  creates the run folder `--out` (never an existing one), and starts the pinned Godot (the process that presents)
+  on the build's shell with `M600_CORE_DLL`, `M600_HOST_DLL`, `M600_ASSETS`, `M600_EVENTS_DIR`,
+  `M600_BUILD_IDENTITY` and `M600_RUN_ID`, plus `M600_INPUT_ECHO=1` with `--echo`. It waits for the shell to exit
+  and writes `launch.json` (`magic600-c9-launch-v1`) with the build and run folders written as `<build>` and
+  `<out>`. `--dry-run` checks and prints and starts nothing. Start it from a PowerShell on the desktop: a window
+  started from a background process never gets the foreground.
+- `build_shell.py`: an offline build into `work/build/c9-shell/<stamp>/` (or a folder `build_product.py` names). It uses the harness's offline restore
   (`renderer/acceptance/prepare_host.py`), which takes the packages only from the pinned Godot install, and writes
   `build.json`. It never launches Godot and builds no core and no bridge.
 - `tests/test_renderer_shell.py` checks the project's fixed points without a build:
@@ -50,7 +67,11 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - the host library's exports, version, status codes, and frame and presented rows equal to its Rust source;
   - the event log's `frame` and `presented` fields equal to `key_to_frame.py`'s, with no `key` row and never a
     passing correctness;
-  - `CoreSurface.cs` using every shell call and no other.
+  - `CoreSurface.cs` using every shell call and no other;
+  - the input log's rows, a file and row kinds apart from the E2 log's, and the echo only when asked;
+  - over a fake build: `product.json`'s parts and identity, the refusal of a changed or added part, the launcher's
+    command and environment, a dry run that creates and starts nothing, the refusal of a used run folder, and a
+    `launch.json` without private paths.
 
 ## Status
 
@@ -85,8 +106,12 @@ These parts are drafts of C9 that the sources leave open:
 
 Steps S3, S4 and S5 built offline on 18 November 2026 with no warning. They were never launched.
 
+The product build, the launcher and the input echo: on 18 November 2026 `build_product.py` built the core, the host
+and the shell offline with no warning, and `launch.py --dry-run` checked the build. The shell was not launched: its
+first launch (ABI 5's GPU smoke, part 2) and check B1 are owner-machine steps of the one sitting.
+
 Next steps:
 
 - a turn through the command layer, so that E2 gets `key` rows, and a correctness control for the `run` row;
-- the E3 startup log, once there is a launcher and a session;
-- the owner-machine run of S4 (route B check B1 first), when the owner is not using the machine.
+- the E3 startup log, once there is a session;
+- the owner-machine run of S4 (route B check B1 first), in the one sitting.

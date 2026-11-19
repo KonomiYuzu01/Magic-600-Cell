@@ -9,7 +9,8 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::{
     code, draft_args, Binding, Caller, CommandLayer, Dependency, Error, Invocation, Kind, MemoryStore, Metadata,
-    Overlay, Profile, Provenance, Receipt, Reopen, Secret, Shell, Status, Table, RECORD_ROW,
+    Overlay, Profile, Provenance, Receipt, Reopen, Secret, Shell, Status, Table, WorksheetRef, RECORD_ROW,
+    WORKSHEET_COMPARE_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -165,6 +166,35 @@ fn kn5_26_admits_a_record_word_only_in_a_solving_session() {
             Profile::Solving => {
                 assert_eq!(refused_with(&receipt).map(|e| e.code), Some(code::NOT_GRANTED));
                 assert_eq!(f.admissions.load(Ordering::SeqCst), 1);
+            }
+            _ => {
+                assert!(running(&receipt), "{profile:?}: {:?}", receipt.status);
+                assert_eq!(f.admissions.load(Ordering::SeqCst), 0, "{profile:?}: the reader is not asked");
+                assert_eq!(f.layer.run_jobs(), 1);
+            }
+        }
+    }
+}
+
+/// `worksheet.compare` follows `operation.preview` (KN5.26, draft): its analysis shows what a preview of the saved
+/// sheet's word would, so the reader is asked to admit the sheet's block only in a solving session, and its refusal
+/// stands there. In `tool_authoring` and `research` the comparison is admitted without asking.
+#[test]
+fn a_comparison_admits_the_sheets_word_only_in_a_solving_session() {
+    for profile in PROFILES {
+        let mut f = session(profile);
+        assert!(matches!(f.write("w", Value::Array(vec![Value::Int(1)]), "block").status, Status::Completed(_)));
+        let save = json::object([("draft", json::object([("record", text("w"))])), ("name", text("sheet"))]);
+        let saved = f.shell.invoke(&mut f.layer, WORKSHEET_SAVE_ROW, save).unwrap();
+        assert!(matches!(saved.status, Status::Completed(_)), "{profile:?}: {:?}", saved.status);
+        let sheet = WorksheetRef { record: "sheet".into(), version: f.layer.records()["sheet"].version };
+        let args = json::object([("worksheet", sheet.to_json()), ("draft", json::object([("record", text("w"))]))]);
+        let receipt = f.shell.invoke(&mut f.layer, WORKSHEET_COMPARE_ROW, args).unwrap();
+        match profile {
+            Profile::Solving => {
+                assert_eq!(refused_with(&receipt).map(|e| e.code), Some(code::NOT_GRANTED));
+                assert_eq!(f.admissions.load(Ordering::SeqCst), 1);
+                assert_eq!(f.layer.run_jobs(), 0, "no job was queued");
             }
             _ => {
                 assert!(running(&receipt), "{profile:?}: {:?}", receipt.status);

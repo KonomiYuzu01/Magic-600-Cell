@@ -120,7 +120,10 @@ use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
 use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
-use crate::worksheet::{Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
+use crate::worksheet::{
+    compare_inputs, MacroVersion, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
+    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The mode of a revision with Jumble off: a session starts with Jumble off.
@@ -347,8 +350,18 @@ impl JobOutput {
 }
 
 enum JobKind {
-    Preview { recipe: Recipe, draft: String, resolved: Option<ResolvedDraft>, caller: Caller },
+    Preview {
+        recipe: Recipe,
+        draft: String,
+        resolved: Option<ResolvedDraft>,
+        caller: Caller,
+    },
     Program(ProgramJob),
+    /// `worksheet.compare`'s job: the saved sheet and the draft record it is compared with.
+    Compare {
+        sheet: WorksheetRef,
+        draft: String,
+    },
 }
 
 struct Job {
@@ -358,6 +371,14 @@ struct Job {
     scope: String,
     lane: Lane,
     kind: JobKind,
+}
+
+impl Job {
+    /// Whether the job builds a preview: the exclusive lane also holds `worksheet.compare`'s job, which is no preview
+    /// to show, cancel or discard.
+    fn previews(&self) -> bool {
+        matches!(self.kind, JobKind::Preview { .. })
+    }
 }
 
 /// A node of the move tree: the start (node 0), a commit, a crossing, a pose move or an exit, keyed by its action
@@ -684,8 +705,10 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     /// The filter previews of completed `filter.preview` jobs, by job, while they are fresh (KN0.9; draft). They are
     /// transient: a reopen keeps none.
     filters: BTreeMap<u64, FilterPreview>,
+    /// The newest completed `worksheet.compare` job and its comparison (draft). It is transient: a reopen keeps none.
+    comparison: Option<(u64, Value)>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes are refused, and so are record
-    /// previews in a solving session.
+    /// previews and comparisons in a solving session.
     provenance: Option<Box<dyn Provenance>>,
     /// The host's view model (EV3.2, RPI.83). Without one, `view.open` and `view.close` are refused.
     views: Option<Box<dyn Views>>,
@@ -747,6 +770,7 @@ impl<S: Store> CommandLayer<S> {
             records: BTreeMap::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
+            comparison: None,
             blocks: BTreeMap::new(),
             provenance: None,
             views: None,
@@ -1257,9 +1281,7 @@ impl<S: Store> CommandLayer<S> {
     pub fn preview_state(&self, id: u64) -> Option<PreviewState> {
         match &self.slot {
             Some(p) if p.id == id => Some(p.state),
-            _ if self.jobs.iter().any(|job| job.id == id && job.lane == Lane::Exclusive) => {
-                Some(PreviewState::Building)
-            }
+            _ if self.jobs.iter().any(|job| job.id == id && job.previews()) => Some(PreviewState::Building),
             _ => self.history.get(&id).copied(),
         }
     }
@@ -1610,6 +1632,7 @@ impl<S: Store> CommandLayer<S> {
         self.run = None;
         self.jobs.clear();
         self.running.clear();
+        self.comparison = None;
         self.commit_held = false;
         if let Some(adoption) = self.limbo.take() {
             match self.store.durable(&adoption.transaction.event) {
@@ -1748,7 +1771,7 @@ impl<S: Store> CommandLayer<S> {
             }
             // A preview that is still building waits as a job on the exclusive lane, and `cancel` takes it from there.
             "operation.preview.cancel" => {
-                if self.slot.is_some() || self.jobs.iter().any(|job| job.lane == Lane::Exclusive) {
+                if self.slot.is_some() || self.jobs.iter().any(Job::previews) {
                     Ok(())
                 } else {
                     Err(Error::new(code::NO_FRESH_PREVIEW, "no pending preview"))
@@ -1806,7 +1829,7 @@ impl<S: Store> CommandLayer<S> {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader")))
                 }
             },
-            WORKSHEET_SAVE_ROW | WORKSHEET_LOAD_ROW => match self.provenance {
+            WORKSHEET_SAVE_ROW | WORKSHEET_LOAD_ROW | WORKSHEET_COMPARE_ROW => match self.provenance {
                 Some(_) => self.retained_mode(),
                 None => {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's provenance reader", row.id)))
@@ -1875,7 +1898,9 @@ impl<S: Store> CommandLayer<S> {
     /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), not `protection.orbit.set`, whose
     /// release confirmation is the solver's, not `protection.policy.set`, since the protection a commit is judged under
     /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
-    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2). Of the rows an entry
+    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2), and not
+    /// `worksheet.compare`, the solver's comparison before a reuse (U6-040; draft), whose job would hold the exclusive
+    /// lane the solver's previews take. Of the rows an entry
     /// runs, an overlay row or a served row, only a query or view row: a run alone causes no durable action, so it
     /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (findings
     /// B3 and B4 of the KN5 boundary attack). A run that a solver command started reaches none either: a program
@@ -1888,6 +1913,7 @@ impl<S: Store> CommandLayer<S> {
             && row.id != RECORD_ROW
             && row.id != WORKSHEET_SAVE_ROW
             && row.id != WORKSHEET_LOAD_ROW
+            && row.id != WORKSHEET_COMPARE_ROW
             && (row.overlay.is_none() || matches!(row.kind, Kind::Query | Kind::View))
     }
 
@@ -2025,6 +2051,7 @@ impl<S: Store> CommandLayer<S> {
             RECORD_ROW => self.write_record(caller, invocation, request),
             WORKSHEET_SAVE_ROW => self.save_worksheet(caller, invocation, request),
             WORKSHEET_LOAD_ROW => self.load_worksheet(caller, invocation, request),
+            WORKSHEET_COMPARE_ROW => self.admit_compare(caller, invocation),
             TWIST_ROW => self.twist(caller, invocation, request),
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
@@ -2173,6 +2200,10 @@ impl<S: Store> CommandLayer<S> {
                     self.build_preview(job.id, &job.command, recipe, &draft, resolved, caller);
                     ran += 1;
                 }
+                JobKind::Compare { sheet, draft } => {
+                    self.build_comparison(job.id, &(job.scope, job.command), &sheet, &draft);
+                    ran += 1;
+                }
             }
         }
         self.jobs = keep;
@@ -2258,7 +2289,7 @@ impl<S: Store> CommandLayer<S> {
             self.generation += 1;
             return Ok((None, Status::Completed(done)));
         }
-        if let Some(position) = self.jobs.iter().position(|job| job.id == id && job.lane == Lane::Exclusive) {
+        if let Some(position) = self.jobs.iter().position(|job| job.id == id && job.previews()) {
             let job = self.jobs.remove(position).expect("the position is in range");
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ByUser));
             self.history.insert(id, PreviewState::Cancelled);
@@ -2585,12 +2616,14 @@ impl<S: Store> CommandLayer<S> {
                 keep.push_back(job);
                 continue;
             }
-            if job.lane == Lane::Exclusive {
+            if job.previews() {
                 self.history.insert(job.id, PreviewState::Discarded);
             }
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ReplacedRevision));
         }
         self.jobs = keep;
+        // A comparison analysed the state this action replaced (LB7.2: a stored result never stands in for a fresh one).
+        self.comparison = None;
         let running = std::mem::take(&mut self.running);
         for (id, program) in running {
             if program.kind == Kind::File {
@@ -3228,12 +3261,7 @@ impl<S: Store> CommandLayer<S> {
         let (Some(source), Some(name)) = (source, name) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
         };
-        let Some(value) = self.records.get(source).and_then(|record| record.value.as_ref()) else {
-            return refused(code::NAMED_OBJECT_INVALID, "no such record");
-        };
-        let Some(sheet) = Worksheet::from_draft(&value.payload) else {
-            return refused(code::NAMED_OBJECT_INVALID, "the record holds neither a list of letters nor a work sheet");
-        };
+        let (sheet, value) = self.drafted(source)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
         let sheet = self.place(sheet, None)?;
@@ -3266,17 +3294,7 @@ impl<S: Store> CommandLayer<S> {
         let Some(named) = invocation.args.get("worksheet").and_then(WorksheetRef::from_json) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is named `{\"record\": name, \"version\": n}`");
         };
-        let record = self.records.get(&named.record);
-        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
-            return refused(code::NAMED_OBJECT_INVALID, "no such record");
-        };
-        if version != named.version {
-            return refused(code::REVISION_CHANGED, "the work sheet changed since it was named");
-        }
-        let saved = Worksheet::from_payload(&value.payload).and_then(|sheet| Some((sheet.resolution.clone()?, sheet)));
-        let Some((saved, sheet)) = saved else {
-            return refused(code::NAMED_OBJECT_INVALID, "the record holds no saved work sheet");
-        };
+        let (sheet, saved, value) = self.saved_sheet(&named)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
         let sheet = self.place(sheet, Some(&saved))?;
@@ -3301,6 +3319,221 @@ impl<S: Store> CommandLayer<S> {
         let saved = saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone());
         let resolution = Resolution { saved, now: digest, pieces: placements.collect() };
         Ok(Worksheet { resolution: Some(resolution), ..sheet })
+    }
+
+    /// The sheet draft record `name` saves or compares as ([`Worksheet::from_draft`]), and the record's value. A record
+    /// of letters names itself, at its version and content digest, as the sheet's macro version (solving workflow
+    /// section 4.1; draft). Refused with `KN2:input.named_object_invalid` when the record is missing or holds neither
+    /// letters nor a work sheet.
+    fn drafted(&self, name: &str) -> Result<(Worksheet, &RecordValue), Error> {
+        let record = self.records.get(name);
+        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "no such record"));
+        };
+        let Some(mut sheet) = Worksheet::from_draft(&value.payload) else {
+            let detail = "the record holds neither a list of letters nor a work sheet";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        };
+        if value.letters().is_some() {
+            sheet.macro_version = Some(MacroVersion { record: name.to_owned(), version, digest: value.digest() });
+        }
+        Ok((sheet, value))
+    }
+
+    /// The saved work sheet that `named` names, its placements and its record's value. Refused in this order: a record
+    /// that is missing or holds no value (`KN2:input.named_object_invalid`), a record at another version
+    /// (`KN5:stale.revision_changed`) and a record that holds no saved work sheet (`KN2:input.named_object_invalid`).
+    fn saved_sheet(&self, named: &WorksheetRef) -> Result<(Worksheet, Resolution, &RecordValue), Error> {
+        let record = self.records.get(&named.record);
+        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "no such record"));
+        };
+        if version != named.version {
+            return Err(Error::new(code::REVISION_CHANGED, "the work sheet changed since it was named"));
+        }
+        let saved = Worksheet::from_payload(&value.payload).and_then(|sheet| Some((sheet.resolution.clone()?, sheet)));
+        let Some((saved, sheet)) = saved else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "the record holds no saved work sheet"));
+        };
+        Ok((sheet, saved, value))
+    }
+
+    // ----- worksheet.compare -----
+
+    /// The comparison that completed `worksheet.compare` job `job` made, while it is the newest one and no action has
+    /// moved the state since (draft): the value its completion's result reference digests. A reopen keeps none.
+    pub fn comparison(&self, job: u64) -> Option<&Value> {
+        self.comparison.as_ref().filter(|(id, _)| *id == job).map(|(_, value)| value)
+    }
+
+    /// `worksheet.compare {worksheet, draft}` (LB7.2, LB2's work sheets; U2-065, U5-055, U6-040; draft): compares the
+    /// saved work sheet that `worksheet` names, `{"record": name, "version": n}`, with the current work, a draft
+    /// `{"record": name}` that holds letters or a sheet, and analyses the sheet's complete operation afresh. Admission
+    /// queues a job on the exclusive lane; [`CommandLayer::run_jobs`] runs it at the head
+    /// ([`CommandLayer::compare_now`]). Refused, queuing nothing, in this order: no reader (`KN5:input.row_not_built`),
+    /// Jumble on (`KN5:input.retained_tool_needs_jumble_off`), arguments of another form (`KN5:input.argument_form`),
+    /// the sheet's refusals ([`CommandLayer::saved_sheet`]), the draft's (`KN2:input.named_object_invalid`), the
+    /// reader's refusal of the sheet's block in this session (KN5.26, in a solving session only, as at
+    /// `operation.preview`: the analysis shows what a preview of its word would) and a held exclusive lane
+    /// (`KN7:busy.lane_full`). The runtime may not invoke it.
+    fn admit_compare(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        let Some(reader) = &self.provenance else {
+            return refused(
+                code::ROW_NOT_BUILT,
+                format!("`{WORKSHEET_COMPARE_ROW}` needs the host's provenance reader"),
+            );
+        };
+        self.retained_mode()?;
+        let args = &invocation.args;
+        let named = args.get("worksheet").and_then(WorksheetRef::from_json);
+        let draft = args.get("draft").and_then(Value::as_object).filter(|draft| draft.len() == 1);
+        let draft = draft.and_then(|draft| draft.get("record")).and_then(Value::as_str);
+        let (Some(named), Some(draft)) = (named, draft) else {
+            let detail =
+                "a work sheet `{\"record\": name, \"version\": n}` is compared with a draft `{\"record\": name}`";
+            return refused(code::ARGUMENT_FORM, detail);
+        };
+        let (_, _, value) = self.saved_sheet(&named)?;
+        self.drafted(draft)?;
+        if self.profile == Profile::Solving {
+            reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        }
+        self.exclusive_free()?;
+        let id = self.next_job();
+        let kind = JobKind::Compare { sheet: named, draft: draft.to_owned() };
+        let (command, scope) = (invocation.command.clone(), caller.scope());
+        self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind });
+        self.generation += 1;
+        Ok((Some(id), Status::Running(id)))
+    }
+
+    /// Runs `worksheet.compare` job `id` and settles its receipt: `completed(query)` with the comparison's digest, kept
+    /// as the newest comparison ([`CommandLayer::comparison`]), or failed with [`CommandLayer::compare_now`]'s error.
+    fn build_comparison(&mut self, id: u64, key: &Key, sheet: &WorksheetRef, draft: &str) {
+        let status = match self.compare_now(sheet, draft) {
+            Ok(value) => {
+                let result = ResultRef { job: Some(id), digest: digest(&value) };
+                self.comparison = Some((id, value));
+                let revision = self.revision.clone();
+                Status::Completed(Completion { kind: CompletionKind::Query, revision, result: Some(result) })
+            }
+            Err(error) => Status::Failed(error),
+        };
+        self.settle(key, status);
+        self.generation += 1;
+    }
+
+    /// The comparison at the head (draft). The sheet and the draft are read again, so a write of the sheet since
+    /// admission fails the job with `KN5:stale.revision_changed`, and Jumble on with its refusal. The value is
+    /// `{"worksheet", "draft", "inputs", "resolution", "moved", "macro_version", "analysis"}`:
+    /// - `worksheet` names the sheet as the job read it, `draft` the draft record with its version and content digest;
+    /// - `inputs` compares the sheet's phases, roles, reference and macro version with the draft's ([`compare_inputs`]);
+    /// - `resolution` places the sheet's piece roles again at the head, as `worksheet.load` would, and `moved` names
+    ///   the piece roles whose piece is not where it was saved: shown, never retargeted (section 4.1);
+    /// - `macro_version` is the sheet's macro version (`saved`, `null` when it names none) and its `status`: `none`,
+    ///   `current` (the record is at that version and holds that content), `changed` (otherwise) or `missing` (it
+    ///   holds no value);
+    /// - `analysis` is the fresh exact analysis of the sheet's complete operation from the head under the protection
+    ///   and policy in force ([`CommandLayer::analyse`]). The sheet stores no result that could stand in for it
+    ///   (LB7.2), and a comparison grants nothing: a reuse still needs `worksheet.load` and a fresh engine preview.
+    fn compare_now(&self, named: &WorksheetRef, draft: &str) -> Result<Value, Error> {
+        self.retained_mode()?;
+        let (sheet, saved, _) = self.saved_sheet(named)?;
+        let (work, value) = self.drafted(draft)?;
+        let version = self.records.get(draft).map_or(0, |record| record.version);
+        let current = json::object([
+            ("record", Value::String(draft.to_owned())),
+            ("version", Value::Int(version as i64)),
+            ("digest", Value::String(value.digest())),
+        ]);
+        let inputs = compare_inputs(&sheet, &work);
+        let placed = self.place(sheet.clone(), Some(&saved))?.resolution.expect("place resolves the sheet");
+        let moved = placed.pieces.iter().filter(|p| p.moved()).map(|p| Value::String(p.name.clone())).collect();
+        let status = match &sheet.macro_version {
+            None => "none",
+            Some(saved) => match self.records.get(&saved.record) {
+                Some(WorkspaceRecord { version, value: Some(value) }) => {
+                    if *version == saved.version && value.digest() == saved.digest {
+                        "current"
+                    } else {
+                        "changed"
+                    }
+                }
+                _ => "missing",
+            },
+        };
+        let macro_version = json::object([
+            ("saved", sheet.macro_version.as_ref().map_or(Value::Null, MacroVersion::to_json)),
+            ("status", Value::String(status.to_owned())),
+        ]);
+        Ok(json::object([
+            ("worksheet", named.to_json()),
+            ("draft", current),
+            ("inputs", inputs),
+            ("resolution", placed.to_json()),
+            ("moved", Value::Array(moved)),
+            ("macro_version", macro_version),
+            ("analysis", self.analyse(&sheet.letters())?),
+        ]))
+    }
+
+    /// The exact analysis of `letters` as one complete operation from the head under the protection and policy in
+    /// force (LB2.2, LB2.3; draft): what a preview's summary reports (its literal word, net map, support, conflicts,
+    /// verdict, mode and first refused prefix, and the end state's digest, `null` when protection refuses it) and LB2's
+    /// gains and losses ([`CommandLayer::gains_and_losses`]), which are reported also when protection refuses it.
+    fn analyse(&self, letters: &[i64]) -> Result<Value, Error> {
+        let recipe = self.kernel.word(letters)?;
+        let base = &self.current;
+        let (end, effect, protection) = match self.derive(base, &recipe, &self.protected).map_err(kernel_error)? {
+            Derivation::Derived(d) => (Some(d.state), d.effect, d.protection),
+            Derivation::Refused(r) => (None, r.effect, r.protection),
+        };
+        let (gains, losses) = self.gains_and_losses(base, &effect)?;
+        let verdict = match protection.verdict {
+            Verdict::Clear => "clear",
+            Verdict::Moves => "moves",
+        };
+        let positions = |list: Vec<i64>| Value::Array(list.into_iter().map(Value::Int).collect());
+        Ok(json::object([
+            ("literal", Value::String(effect.expansion_sha256.clone())),
+            ("base", Value::String(base.digest().to_owned())),
+            ("end", end.as_ref().map_or(Value::Null, |s| Value::String(s.digest().to_owned()))),
+            ("net_sha256", Value::String(effect.net_sha256.clone())),
+            ("net_moved_stickers", Value::Int(effect.moved_stickers() as i64)),
+            ("net_moved_pieces", Value::Int(effect.moved_pieces as i64)),
+            ("primitive_count", Value::Int(effect.primitive_count as i64)),
+            ("support", rows_json(&effect.support)),
+            ("conflicts", rows_json(&protection.conflicts)),
+            ("verdict", Value::String(verdict.into())),
+            ("mode", Value::String(policy_name(protection.mode).to_owned())),
+            ("first_refused_prefix", protection.first_refused_prefix.map_or(Value::Null, |n| Value::Int(n as i64))),
+            ("gains", positions(gains)),
+            ("losses", positions(losses)),
+        ]))
+    }
+
+    /// LB2's gains and losses of `effect` applied to `base` (0.4's exact gains and losses; draft): the positions,
+    /// each named by its home piece as KN2.4's `positions` row names it, in increasing order, whose home piece is not
+    /// solved in `base` and is solved after the effect (gains), and the reverse (losses). A position is finished when
+    /// every sticker of its home piece is in its home slot ([`PiecePosition::solved`]), on all labels, whatever a
+    /// filter shows (LB2.2).
+    fn gains_and_losses(&self, base: &Snapshot, effect: &Effect) -> Result<(Vec<i64>, Vec<i64>), Error> {
+        let labels = base.labels();
+        let mut end = labels.to_vec();
+        for (&source, &destination) in effect.source().iter().zip(effect.destination()) {
+            end[destination as usize] = labels[source as usize];
+        }
+        let all: Vec<i64> = (0..c600_kernel::PIECES as i64).collect();
+        let (mut gains, mut losses) = (Vec::new(), Vec::new());
+        for piece in self.kernel.positions(base, &all)? {
+            let after = piece.home.iter().all(|&slot| end[slot as usize] == slot);
+            match (piece.solved(), after) {
+                (false, true) => gains.push(piece.piece as i64),
+                (true, false) => losses.push(piece.piece as i64),
+                _ => {}
+            }
+        }
+        Ok((gains, losses))
     }
 
     // ----- jumble.on -----

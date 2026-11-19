@@ -77,9 +77,9 @@ fn the_effect_class_of_each_row_is_the_one_its_entry_has() {
 /// receipt for an invocation, from the shell and from a running program, carry the layer's not-built code; an overlay
 /// under a stored row's ID is refused as a conflict, so an overlay cannot replace a row; and none of it moves the
 /// revision, the durable log or the undo target of a committed action. The layer's `serve_row` accepts exactly the rows
-/// the list marks served and refuses `filter.apply` with `KN5:input.overlay_row_kind`. Covers no conformance ID in
-/// full: it is item 7's evidence that the layer builds none of the rows itself, and it keeps the list's `served` from
-/// drifting from the layer.
+/// the list marks served, which is all six since LP2's pull request 256. Covers no conformance ID in full: it is
+/// item 7's evidence that the layer builds none of the rows itself, and it keeps the list's `served` from drifting
+/// from the layer.
 #[test]
 fn the_layer_refuses_all_six_rows_and_an_overlay_cannot_replace_one() {
     let mut session = session();

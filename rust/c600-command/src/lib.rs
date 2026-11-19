@@ -89,7 +89,7 @@
 //!   write and a workspace row's completion keep the part blocks the reader holds for the blocks they write
 //!   ([`Provenance::parts`]) with the action, and admission gives them back ([`Provenance::admit_kept`]), so a restored
 //!   workspace keeps a word's recursive parts (BND.24, BND.85, CT-BND-27; draft).
-//! - LB7.2's work sheets ([`worksheet`]; CT-LB2-03's work-sheet part), two rows of H-08:
+//! - LB7.2's work sheets ([`worksheet`]; CT-LB2-03's work-sheet part), three rows of H-08:
 //!   - A work sheet is a workspace record whose payload is `{"worksheet": {...}}` ([`Worksheet::to_payload`]): the
 //!     phases Prepare, Macro and Cleanup, the named roles (a piece, named by its home position, or a position), the
 //!     reference as the draft gave it, and the piece roles' placements. A draft `{"record": name}` of a sheet previews
@@ -102,10 +102,19 @@
 //!     n}` ([`WorksheetRef`]); a record at another version is `KN5:stale.revision_changed`. It places the piece roles
 //!     again, keeps where each was saved, and writes the sheet again with its phases unchanged, so a reuse makes every
 //!     preview that read the sheet stale, also at the same state, and the reuse needs a fresh preview.
-//!   - Both rows need the host's provenance reader (`KN5:input.row_not_built` without it) and Jumble off, and the
-//!     runtime may invoke neither (`LG3:capability.not_granted`). No entry can serve them.
-//!   - Not built: `worksheet.compare` (LB2's analysis, a program job), gains and losses, macro versions, and reading a
-//!     position role's occupant again.
+//!   - A sheet saved from a record of letters keeps the record's name, version and content digest as its macro
+//!     version ([`MacroVersion`]); a sheet saved from a sheet keeps the sheet's.
+//!   - `worksheet.compare` ([`WORKSHEET_COMPARE_ROW`]) takes the `WorksheetRevisionRef` and a draft `{"record": r}`,
+//!     the current work. Its job runs in the layer on the exclusive lane ([`CommandLayer::run_jobs`]), since no entry
+//!     can serve that lane: at the head it compares the sheet's phases, roles, reference and macro version with the
+//!     draft's ([`compare_inputs`]), places the piece roles again, reports the macro version as current, changed or
+//!     missing, and analyses the sheet's complete operation afresh under the protection and policy in force, with
+//!     LB2's gains and losses (the positions whose home piece becomes solved, and the reverse). The comparison is the
+//!     completion's result ([`CommandLayer::comparison`]); it grants nothing, and a reuse still needs `worksheet.load`
+//!     and a fresh engine preview (LB7.2).
+//!   - The three rows need the host's provenance reader (`KN5:input.row_not_built` without it) and Jumble off, and the
+//!     runtime may invoke none (`LG3:capability.not_granted`). No entry can serve them.
+//!   - Not built: reading a position role's occupant again.
 //! - `view.open` and `view.close` ([`view`]; EV3.2, RPI.81 to RPI.83; draft). The layer admits them and the host's
 //!   view model ([`Views`], given with [`CommandLayer::set_views`]) holds the views and RPI.82's budget. The argument
 //!   forms, an overlay source's row and the caller come first (`KN5:input.argument_form`,
@@ -115,13 +124,14 @@
 //!   rows, which are kernel rows too.
 //! - The session's profile ([`Profile`]: `solving`, `tool_authoring` or `research`; BND.14, BND.15, BND.17, KN5.26):
 //!   - The host sets it when it creates the session ([`CommandLayer::new_with_profile`]; [`CommandLayer::new`] is
-//!     `solving`). Every ordinary session is `solving`, and so is the practice copy until LQ2 answers BND.15. No program
-//!     or row sets or changes it, and a host sets a run's profile from [`CommandLayer::profile`].
+//!     `solving`). Every ordinary session is `solving`, and so is the practice copy until LQ2 answers BND.15. No
+//!     program or row sets or changes it, and a host sets a run's profile from [`CommandLayer::profile`].
 //!   - The session's start records it once ([`Genesis::profile`]), and a reopen reads it back. A journal's session
 //!     record without it reads as `solving`, so journals written before it stay valid.
 //!   - KN5.26 applies only in a solving session: there the host's reader admits a record's word at
-//!     `operation.preview`. Elsewhere no reader is asked, and BND.61's check comes when such a record is previewed in a
-//!     solving session. The reader's check at `workspace.set` (PS1.16) runs in every profile.
+//!     `operation.preview`, and a saved sheet's word at `worksheet.compare`. Elsewhere no reader is asked, and
+//!     BND.61's check comes when such a record is previewed in a solving session. The reader's check at
+//!     `workspace.set` (PS1.16) runs in every profile.
 //!   - BND.16's table of the rows a run may invoke by profile follows chapter 07 section 8. In `tool_authoring` and
 //!     `research` a run may not invoke `operation.preview` (`LG3:capability.not_granted`; BND.60: a run's `propose`
 //!     there goes to a capture). The cells that grant a run more outside a solving session, records of the authoring
@@ -530,7 +540,10 @@ pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule,
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
-pub use worksheet::{Placement, Resolution, Role, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
+pub use worksheet::{
+    compare_inputs, MacroVersion, Placement, Resolution, Role, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
+    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+};
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].

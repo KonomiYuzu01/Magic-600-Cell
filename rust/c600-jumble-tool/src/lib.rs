@@ -36,9 +36,14 @@
 //!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's
 //!   slot action of K⁺, and `c600-repr`'s layouts. Each test's documentation says what runs and what does not. C6's
 //!   `c600-repr` runs the 600-cell-Full half of CT-LB4-03 and the unchanged-frame half of CT-EV3-06 (EV3.10).
+//! - `tests/jumble_on_layer.rs` takes up Jumble on in the command layer (LP2's pull requests 212, 217, 218 and 220):
+//!   oracle equality against M5's W-J fixtures, every record of each journal pressed through `jumble.on` and
+//!   `jumble.twist.menu` beside M5's engine, with J1's references at its stages. CT-LB4-03's layout evaluated again at
+//!   a later revision of a jumbled session (`tests/ct_lb4_03.rs`) presses, and undoes, through the same layer;
+//!   `tests/common/mod.rs` holds the session both use.
 //!
-//! The tool runs in-process, as `c600-tools` runs its tool. Nothing here is a command-layer row: no state of the
-//! jumbled puzzle is previewed, committed or undone through `c600-command`.
+//! The tool runs in-process, as `c600-tools` runs its tool. The tool itself is not a command-layer row; the tests
+//! above drive `c600-command` only as a dev-dependency.
 //!
 //! # Drafts
 //!
@@ -143,9 +148,8 @@
 //!
 //! # What waits
 //!
-//! - Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle route through it, is built
-//!   (LP2's pull requests 212, 217, 218 and 220) and not taken up here yet; CT-LB4-03's layout evaluated again at a
-//!   later revision of a jumbled session waits for that.
+//! - Through the command layer, not taken up yet: `jumble.off`, refusals, redo, protected pieces and free mode (LP2's
+//!   route test and `c600-command`'s own tests run them).
 //! - ν and the correction catalogue in 600 Cell Script: the IR draft has no F2 or F5 number kinds, so the tests call
 //!   LP2's `nu` and `correction_set_check` rows in Rust, and LB3's entry "ν and drafted correction-set check" waits as
 //!   language code. The label checkpoint computes no ν itself; the tests supply the `nu` row's value. CT-LB3-01's

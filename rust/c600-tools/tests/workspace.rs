@@ -14,7 +14,7 @@ use c600_kernel::ProtectedSet;
 use c600_run::boundary::{Answer, Store as RunStore};
 use c600_run::provenance::{self, field, Author, Pin, Producer, Profile};
 use c600_tools::bridge::{base, Bridge};
-use c600_tools::process::run_in_process;
+use c600_tools::process::{invoke_tool, run_in_process};
 use c600_tools::tool::{self, named_word_block, Tool};
 use c600_tools::workspace::{self, Reader};
 use process_support::{kernel, secret};
@@ -154,13 +154,15 @@ fn a_record_write_whose_block_the_reader_refuses_is_refused_with_the_readers_err
 /// hold is refused with `PS1:capability.provenance_incompatible`).
 #[test]
 fn a_record_draft_is_admitted_or_refused_by_the_readers_admission() {
-    // The 600-cell-Full tool's proposal of WORD, from a run on a scratch session, with the run's store.
+    // The 600-cell-Full tool's proposal of WORD, from a run on a scratch session inside the command the solver invoked
+    // there, with the run's store.
     let tool = Tool::full_600_cell().expect("the tool builds");
-    let (mut scratch, _) = process_support::session("scratch");
-    let read = base(scratch.revision());
+    let (mut scratch, mut scratch_shell) = process_support::session("scratch");
+    let command = invoke_tool(&mut scratch_shell, &mut scratch, &tool, &WORD).expect("the tool's row");
+    let (name, read) = (command.run(), base(&command.job.revision));
     let mut run = RunStore::default();
-    let mut bridge = Bridge::new(&mut scratch, "scratch-1");
-    let ran = run_in_process(&tool, &WORD, "scratch-1", &read, &mut bridge, &mut run).expect("the tool runs");
+    let mut bridge = Bridge::new(&mut scratch, &name);
+    let ran = run_in_process(&tool, &WORD, &name, &read, &mut bridge, &mut run).expect("the tool runs");
     let [shown] = &ran.shell[..] else { panic!("one proposal: {:?}", ran.shell) };
     assert!(matches!(shown.answer, Answer::Previewed(_)), "{:?}", shown.answer);
     assert_eq!(shown.word, WORD);
