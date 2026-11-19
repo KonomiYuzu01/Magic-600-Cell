@@ -1,0 +1,23 @@
+# LX-4's editor module for C9's product shell (runbook U8): the editor's buffer driven by lx4.py's messages, the
+# language work on a worker thread, and the endpoints the shell logs as `lx4` rows, behind a C interface that the
+# shell's C# module (renderer/shell/project/Lx4) calls. It is a member of renderer/bridge's workspace, outside the
+# language workspace (rust/Cargo.toml), because its C interface needs unsafe code, which CT-RPI-01 keeps out of that
+# workspace. It uses the language crates only through their public interfaces.
+[package]
+name = "c600-shell-lx4"
+description = "LX-4's editor module for the product shell: buffer, front-end work and endpoints behind a C interface (C9 U8, draft)"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+# cdylib for the shell; rlib so that the tests call the C interface directly.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+c600-check = { path = "../../../rust/c600-check" }
+c600-digest = { path = "../../../rust/c600-digest" }
+c600-kernel = { path = "../../../rust/c600-kernel" }
+c600-lx4 = { path = "../../../rust/c600-lx4" }
+c600-syntax = { path = "../../../rust/c600-syntax" }
+c600-view = { path = "../../../rust/c600-view" }
