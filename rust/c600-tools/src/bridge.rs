@@ -8,11 +8,12 @@
 //! layer refuses a runtime invocation of a commit or app row, and any runtime invocation that carries a token
 //! (ADR-L02, KN5.15). The bridge answers the boundary with a short form of the layer's receipt, which only the shell
 //! sees; the program gets the boundary's fixed acknowledgement (BND.42, BND.43). Besides proposals, the bridge serves
-//! two state reads, each to a snapshot read with an argument at the layer's head: KN2.4's `positions` and `labels`
-//! rows ([`crate::kernel_rows`]; KN5, LP2 draft), which LB2's exact completion reads (CT-LB2-04). Capability
-//! separation keeps an entry that reads them from also proposing: admission refuses an entry that does both (LQ21,
-//! LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no workspace
-//! or file write and no clock.
+//! three reads, each to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2 draft): KN2.4's
+//! `positions` and `labels` rows at the layer's head, which LB2's exact completion reads (CT-LB2-04), and KN2.4's
+//! `effect` row, a recipe's net map, which reads no state and which LB2's recipes and reports read (CT-LB2-01).
+//! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
+//! (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no
+//! workspace or file write and no clock.
 //!
 //! The draft carries the word in one word step, with one exception (LB2.3, LB2.4, LB1.11). For one run a host may give
 //! the bridge the solver's word steps of the run's input recipe ([`Steps`]). A proposal of exactly their literal word
@@ -182,6 +183,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::LABELS => {
                 kernel_rows::labels_read_tariff(arg, ty)
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::EFFECT => {
+                kernel_rows::effect_read_tariff(self.layer.kernel(), arg, ty)
+            }
             _ => Err(NOT_GRANTED),
         }
     }
@@ -193,6 +197,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             }
             if *query == kernel_rows::LABELS {
                 return kernel_rows::labels(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::EFFECT {
+                return kernel_rows::effect(self.layer, arg, ty);
             }
         }
         let Request::Propose { word, target, .. } = request else {
