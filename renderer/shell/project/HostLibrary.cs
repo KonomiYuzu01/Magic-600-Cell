@@ -16,10 +16,17 @@ namespace Magic600.Shell;
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 4;
+    public const uint AbiVersion = 5;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
+
+    /// <summary><see cref="OpenSession"/>'s puzzle: 600-cell-Full with Jumble off, index 0 of
+    /// <see cref="EventLog.Puzzles"/>.</summary>
+    public const uint PuzzleJumbleOff = 0;
+    /// <summary><see cref="OpenSession"/>'s puzzle: the jumbled puzzle, index 1 of <see cref="EventLog.Puzzles"/>.
+    /// </summary>
+    public const uint PuzzleJumbleOn = 1;
 
     public const int Ok = 0;
     public const int InvalidArgument = 1;
@@ -260,13 +267,15 @@ public sealed unsafe class HostLibrary : IDisposable
     public int Recover(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_recover"])(host);
 
     /// <summary>
-    /// Opens the turns' session with the twist menu of the record file <paramref name="menu"/> pinned. Without a
+    /// Opens the turns' session of <paramref name="puzzle"/> (<see cref="PuzzleJumbleOff"/> or
+    /// <see cref="PuzzleJumbleOn"/>) with the twist menu of the record file <paramref name="menu"/> pinned. Without a
     /// <paramref name="fixture"/> it is a new journal in <paramref name="folder"/> (created if missing; it must hold
-    /// nothing) at the solved state. With one (the path of a session fixture's fixture.json), <paramref name="folder"/>
-    /// is a fresh copy of the fixture's session, which the host reopens and adopts at the revision that counts the
-    /// fixture's presses. <paramref name="revision"/> is the engine revision the session opened at.
+    /// nothing) at the solved state; with Jumble on it commits jumble.on at once. With one (the path of a session
+    /// fixture's fixture.json, of the same puzzle), <paramref name="folder"/> is a fresh copy of the fixture's
+    /// session, which the host reopens and adopts at the revision its record names. <paramref name="revision"/> is
+    /// the engine revision the session opened at.
     /// </summary>
-    public int OpenSession(IntPtr host, string folder, string menu, string? fixture, out ulong revision)
+    public int OpenSession(IntPtr host, uint puzzle, string folder, string menu, string? fixture, out ulong revision)
     {
         var f = Encoding.UTF8.GetBytes(folder);
         var m = Encoding.UTF8.GetBytes(menu);
@@ -277,8 +286,8 @@ public sealed unsafe class HostLibrary : IDisposable
         fixed (byte* mb = m)
         fixed (byte* xb = x)
         {
-            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, byte*, nuint, ulong*, int>)
-                _exports["m6h_open_session"])(host, fb, (nuint)f.Length, mb, (nuint)m.Length, xb,
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, byte*, nuint, byte*, nuint, byte*, nuint, ulong*, int>)
+                _exports["m6h_open_session"])(host, puzzle, fb, (nuint)f.Length, mb, (nuint)m.Length, xb,
                 (nuint)(x?.Length ?? 0), &opened);
         }
         revision = opened;
