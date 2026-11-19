@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace Magic600.Shell;
@@ -21,7 +22,9 @@ namespace Magic600.Shell;
 /// twist is adopted and shown, <see cref="EventLog"/> writes a key row per measured press, and the close runs the
 /// session's correctness control. C9 U3 (a draft): with the event log, the run row names the core's swap chain, and
 /// every Godot frame that follows a submitted 3D frame gets a ui_frame row (<see cref="EventLog"/> says when its times
-/// are read).
+/// are read). C9 U8 (a draft): the run row names the window and the puzzle (M600_PUZZLE; the host opens only Jumble
+/// off for now), and when M600_LX4 is 1 the shell creates LX-4's module (<see cref="IShellModule"/>), which receives
+/// the window's messages through <see cref="WindowHook"/> before Godot does, and every submitted and presented frame.
 /// </remarks>
 public partial class Shell : Control
 {
@@ -46,6 +49,7 @@ public partial class Shell : Control
     private ulong? _submittedThisFrame;
     private long _preDrawQpc;
     private bool _uiFrames;
+    private readonly List<IShellModule> _modules = new();
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
 
     public override void _Ready()
@@ -85,7 +89,14 @@ public partial class Shell : Control
     {
         var coreLibrary = _core = CoreLibrary.Load(core);
         var hostLibrary = _hostLibrary = HostLibrary.Load(host);
+        var puzzle = EventLog.PuzzleFromEnvironment();
+        if (puzzle != EventLog.Puzzles[0])
+        {
+            // The host opens a session of 600-cell-Full only; Jumble on needs the jumbled puzzle's session and view.
+            throw new NotSupportedException($"the shell does not run {puzzle} yet");
+        }
         var hwnd = DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
+        var window = (IntPtr)hwnd;
         _size = DisplayServer.WindowGetSize();
         var surface = _surface = CoreSurface.Open(coreLibrary, (ulong)hwnd, 0, 0, (uint)_size.X, (uint)_size.Y);
         var code = hostLibrary.Create(coreLibrary, surface.Context, assets, out _host);
@@ -97,6 +108,7 @@ public partial class Shell : Control
         _log = EventLog.FromEnvironment();
         if (_log is { } log)
         {
+            log.Describe(window, puzzle);
             log.SwapChain(surface.SwapChain());
             RenderingServer.FramePreDraw += OnFramePreDraw;
             RenderingServer.FramePostDraw += OnFramePostDraw;
@@ -108,6 +120,30 @@ public partial class Shell : Control
         {
             Require(hostLibrary, "m6h_open_session", hostLibrary.OpenSession(_host, session, menu));
             _session = true;
+        }
+        if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")
+        {
+            _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));
+        }
+        if (_modules.Count > 0)
+        {
+            WindowHook.Install(window, _modules);
+        }
+    }
+
+    /// <summary>Calls every module; a module's exception is reported and never stops the shell's own work.</summary>
+    private void EachModule(Action<IShellModule> call)
+    {
+        foreach (var module in _modules)
+        {
+            try
+            {
+                call(module);
+            }
+            catch (Exception error)
+            {
+                GD.PushError($"a shell module failed: {error.Message}");
+            }
         }
     }
 
@@ -245,6 +281,10 @@ public partial class Shell : Control
         {
             _log?.Frame(frame, submitted);
             _submittedThisFrame = frame.Sequence;
+            if (_modules.Count > 0)
+            {
+                EachModule(module => module.OnFrame(frame, submitted));
+            }
         }
         else if (code == HostLibrary.Unavailable)
         {
@@ -268,6 +308,11 @@ public partial class Shell : Control
             for (var i = 0; i < count; i++)
             {
                 _log?.Presented(_presented[i]);
+                if (_modules.Count > 0)
+                {
+                    var row = _presented[i];
+                    EachModule(module => module.OnPresented(row));
+                }
                 _shownRevision = Math.Max(_shownRevision, _presented[i].EngineRevision);
             }
         } while (count == _presented.Length);
@@ -335,6 +380,10 @@ public partial class Shell : Control
             RenderingServer.FramePostDraw -= OnFramePostDraw;
             _uiFrames = false;
         }
+        // The modules go before the log closes, so that their last rows reach it.
+        WindowHook.Remove();
+        EachModule(module => module.Dispose());
+        _modules.Clear();
         _log?.Dispose();
         _log = null;
         if (_host != IntPtr.Zero && _hostLibrary is { } library)
