@@ -15,8 +15,8 @@
 //!   number of the revision the run reads, and grants nothing else. No kernel row counts the objects a predicate
 //!   selects or compares two cells yet, and both entries read a literal query that takes no argument.
 //! - A job's arguments map to the entry's parameters by name: a cell, a layer and each member to a natural, the
-//!   choice words and the name to text. `filter_counts` takes neither of `filter.preview`'s arguments. A member that
-//!   is no natural fails the job with the layer's argument-form code, since the layer has no form for the members yet.
+//!   choice words and the name to text. `filter_counts` takes neither of `filter.preview`'s arguments. A member
+//!   outside 0 to 177,119 never reaches the host: the layer refuses it at admission with its argument-form code.
 //! - What a run published and wrote is read back from its canonical bytes as the layer's JSON, where an integer is
 //!   `{"int": "n"}`, and a record's provenance is the text of its block.
 //! - A shell job's arguments are what the solver entered, so their block is a manual record under C5's draft contract
@@ -312,7 +312,8 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
     let commit = session.layer.undo_hint(Direction::Undo).expect("the commit").target;
     let served = command_route(&host, &mut session);
     let rows: BTreeSet<&str> = served.iter().map(|one| one.row).collect();
-    assert_eq!(rows, NEEDS.iter().filter(|need| need.served).map(|need| need.row).collect());
+    let others = NEEDS.iter().filter(|need| need.served && need.row != "filter.apply");
+    assert_eq!(rows, others.map(|need| need.row).collect());
 
     for one in &served {
         let (row, job, output) = (one.row, &one.job, &one.output);
@@ -398,17 +399,17 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
 
 /// The layer checks the forms of the rows' arguments before it admits a job, so no malformed or stale argument reaches
 /// an entry: a scope other than `body` or `complete`, a pair of one cell, a cell outside 0 to 599, a negative layer, a
-/// kind other than `identity` or `position` and a name that is no text are refused with `KN5:input.argument_form`, and
-/// a `revision` that is not the current one with `KN5:stale.revision_changed`; none takes a job or moves anything.
-/// The members (`CanonicalObjectRefs`) have no form in the layer yet, so a member that is no natural passes the layer
-/// and the host fails the job, which writes nothing. Covers no conformance ID.
+/// kind other than `identity` or `position`, a member outside 0 to 177,119 (`CanonicalObjectRefs`, the kernel's
+/// `PIECES`) and a name that is no text are refused with `KN5:input.argument_form`, and a `revision` that is not the
+/// current one with `KN5:stale.revision_changed`; none takes a job or moves anything. Covers no conformance ID.
 #[test]
 fn the_layer_checks_the_rows_argument_forms_before_any_job() {
-    let host = ToolHost::new();
     let mut session = session();
     serve(&mut session.layer);
     let mut stale = session.layer.revision().clone();
     stale.state += 1;
+    // A well-formed `FilterRef` that names no predicate: the stale revision is refused before it is resolved.
+    let unresolved = json::object([("digest", text("00")), ("job", Json::Int(999))]);
     let save = |kind: &str, members: &[i64], name: Json| {
         json::object([("kind", text(kind)), ("members", ints(members)), ("name", name)])
     };
@@ -419,9 +420,10 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
         ("structure.layer", json::object([("cell", Json::Int(7)), ("layer", Json::Int(-1))]), code::ARGUMENT_FORM),
         ("set.save", save("other", &[3], text("pair")), code::ARGUMENT_FORM),
         ("set.save", save("identity", &[3], Json::Int(5)), code::ARGUMENT_FORM),
+        ("set.save", save("identity", &[3, -5], text("pair")), code::ARGUMENT_FORM),
         (
             "filter.preview",
-            json::object([("predicate", text("p")), ("revision", stale.to_json())]),
+            json::object([("predicate", unresolved), ("revision", stale.to_json())]),
             code::REVISION_CHANGED,
         ),
     ];
@@ -432,37 +434,54 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
         assert!(session.layer.take_program_job().is_none(), "{row}");
         assert_eq!(session.fixed(), before, "{row}");
     }
-
-    let before = session.fixed();
-    let receipt = session.shell.invoke(&mut session.layer, "set.save", save("identity", &[3, -5], text("pair")));
-    assert!(matches!(receipt.expect("prepared").status, Status::Running(_)));
-    let (_, output, done) = host.serve_next(&mut session.layer).expect("the row's job");
-    assert_eq!(output.map_err(|error| error.code), Err(code::ARGUMENT_FORM));
-    assert_eq!(done.status.code(), Some(code::ARGUMENT_FORM));
-    assert_eq!(session.fixed(), before);
     assert!(session.layer.records().is_empty());
 }
 
-/// `filter.apply` stays not built with the other five rows served: the layer refuses to serve it with
-/// `KN5:input.overlay_row_kind`, since it cannot check the row's gate `fresh_filter_preview`, its filter preview rule
-/// or its undo class `workspace` without the entry, and it refuses the row's availability and its invocation from the
-/// shell and from a running program as not built, with no job and nothing moved. Covers no conformance ID.
+/// `filter.apply` is served with the other five rows, and its gate `fresh_filter_preview` refuses a stale filter
+/// preview. The layer keeps a filter preview for a completed `filter.preview` job, and the availability hint for its
+/// `FilterPreviewRef` is clear while it is fresh. After a commit moves the state, the hint and the shell's invocation
+/// refuse it with `KN5:stale.filter_preview`, as they refuse a reference to a job that made none; a running program
+/// may not invoke the workspace row (`LG3:capability.not_granted`). No refusal takes a job or moves anything. Covers no
+/// conformance ID: `c600-command`'s `tests/filter_apply.rs` runs the row's gate and completion.
 #[test]
-fn filter_apply_stays_not_built_with_the_other_five_served() {
+fn filter_apply_is_served_and_refuses_a_stale_filter_preview() {
+    let host = ToolHost::new();
     let mut session = session();
     session.commit(&[1]);
     serve(&mut session.layer);
     let need = NEEDS.iter().find(|need| need.row == "filter.apply").expect("a listed row");
-    assert!(!need.served);
-    let before = session.fixed();
+    assert!(need.served);
     let overlay = Overlay { module: MODULE.to_owned(), entry: need.entry.expect("an entry").to_owned() };
-    assert_eq!(session.layer.serve_row(need.row, overlay).map_err(|error| error.code), Err(code::OVERLAY_ROW_KIND));
-    assert_eq!(session.layer.availability(need.row).map_err(|error| error.code), Err(code::ROW_NOT_BUILT));
-    let args = json::object([("preview", Json::Int(1))]);
-    let receipt = session.shell.invoke(&mut session.layer, need.row, args).expect("prepared");
-    assert_eq!(receipt.status.code(), Some(code::ROW_NOT_BUILT), "from the shell");
+    let again = session.layer.serve_row(need.row, overlay).map_err(|error| error.code);
+    assert_eq!(again, Err(code::OVERLAY_ROW_CONFLICT));
+
+    let layer_args = json::object([("cell", Json::Int(7)), ("layer", Json::Int(2))]);
+    session.shell.invoke(&mut session.layer, "structure.layer", layer_args).expect("prepared");
+    let (prepared, output, _) = host.serve_next(&mut session.layer).expect("the predicate's job");
+    let digest = output.expect("the predicate").digest();
+    let predicate = json::object([("digest", text(&digest)), ("job", Json::Int(prepared.job as i64))]);
+    let preview_args = json::object([("predicate", predicate), ("revision", session.layer.revision().to_json())]);
+    session.shell.invoke(&mut session.layer, "filter.preview", preview_args).expect("prepared");
+    let (counted, output, _) = host.serve_next(&mut session.layer).expect("the filter preview's job");
+    output.expect("the counts");
+    let kept = session.layer.filter_preview(counted.job).expect("the layer keeps the filter preview");
+    let reference = kept.reference();
+    let fresh = json::object([("preview", reference.clone())]);
+    assert_eq!(session.layer.availability_for(need.row, &fresh), Ok(()), "a fresh filter preview");
+
+    session.commit(&[2]);
+    let before = session.fixed();
+    let unknown = c600_command::filter::preview_ref(999, session.layer.revision().epoch);
+    for preview in [reference, unknown] {
+        let what = format!("{preview:?}");
+        let args = json::object([("preview", preview)]);
+        let hint = session.layer.availability_for(need.row, &args).map_err(|error| error.code);
+        assert_eq!(hint, Err(code::STALE_FILTER_PREVIEW), "{what}");
+        let receipt = session.shell.invoke(&mut session.layer, need.row, args).expect("prepared");
+        assert_eq!(receipt.status.code(), Some(code::STALE_FILTER_PREVIEW), "{what} from the shell");
+    }
     let receipt = session.layer.invoke(&program_channel(), session.runtime_call("rt/apply", need.row));
-    assert_eq!(receipt.status.code(), Some(code::ROW_NOT_BUILT), "from a program");
+    assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "from a program");
     assert!(session.layer.take_program_job().is_none());
     assert_eq!(session.fixed(), before);
     for need in NEEDS.iter().filter(|need| need.served) {

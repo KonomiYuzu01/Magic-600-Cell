@@ -12,6 +12,7 @@ pub mod code {
     pub const COMMIT_IN_FLIGHT: &str = "KN5:busy.commit_in_flight";
     pub const PREVIEW_REPLACED: &str = "KN5:stale.preview_replaced";
     pub const REVISION_CHANGED: &str = "KN5:stale.revision_changed";
+    pub const STALE_FILTER_PREVIEW: &str = "KN5:stale.filter_preview";
     pub const STATE_HASH_MISMATCH: &str = "KN5:consistency.state_hash_mismatch";
     pub const ORBIT_WOULD_MOVE: &str = c600_kernel::codes::ORBIT_WOULD_MOVE;
     pub const COMMIT_FATE: &str = "KN5:unknown_outcome.commit_fate";

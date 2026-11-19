@@ -1,0 +1,5 @@
+{"t": "run", "format": "magic600-c9-startup-v1", "run_id": "fixture-e3", "build_identity": "synthetic-build-0001", "qpc_frequency": 10000000, "synthetic": true, "cold": {"new_process": true, "no_product_process_at_launch": true, "fresh_session_copy": true, "seconds_since_previous_exit": null}}
+{"t": "process_start", "qpc": 50000000}
+{"t": "runtime_loaded", "qpc": 55000000}
+{"t": "session_opened", "qpc": 61000000}
+{"t": "first_correct_frame", "frame_id": 7, "display_qpc": 71500000, "check": "pass"}

@@ -1,0 +1,38 @@
+edition "6cs-draft-1";
+module jumble_word_checks requires [];
+
+export fn word_observations(w: MenuWord) -> record { claims: List<record { end_digest: Text, excursion: Int, max_left_height: Nat, tame: Bool }>, complete: Bool, played: Nat } effects [snapshot] {
+    let replay = read_snapshot<record { complete: Bool, first_refused: List<Nat>, rows: List<record { after: Text, max_left_height: List<Nat>, phi_after: List<Nat> }>, start: record { digest: Text, max_left_height: Nat, phi: Nat } }>("replay", w);
+    let admitted = match replay.complete {
+        true => length(replay.rows);
+        _ => index(replay.first_refused, 0);
+    };
+    let walk = repeat(admitted, record { end = replay.start.digest, max_left_height = replay.start.max_left_height, next = 0, previous = replay.start.phi, tame = true, top = replay.start.phi }, fn(s: record { end: Text, max_left_height: Nat, next: Nat, previous: Nat, tame: Bool, top: Nat }) -> record { end: Text, max_left_height: Nat, next: Nat, previous: Nat, tame: Bool, top: Nat } {
+        let row = index(replay.rows, s.next);
+        let phi = index(row.phi_after, 0);
+        return record { end = row.after, max_left_height = larger(s.max_left_height, index(row.max_left_height, 0)), next = exact_add(s.next, 1), previous = phi, tame = and(s.tame, not(exact_less(s.previous, phi))), top = larger(s.top, phi) };
+    });
+    let claim = record { end_digest = walk.end, excursion = exact_add(walk.top, exact_mul(replay.start.phi, -1)), max_left_height = walk.max_left_height, tame = walk.tame };
+    let claims = match replay.complete {
+        true => push(list<record { end_digest: Text, excursion: Int, max_left_height: Nat, tame: Bool }>(), claim);
+        _ => list<record { end_digest: Text, excursion: Int, max_left_height: Nat, tame: Bool }>();
+    };
+    return record { claims = claims, complete = replay.complete, played = admitted };
+}
+
+export fn step_flag(w: MenuWord, unit: List<Nat>) -> record { admissible: Bool, applied: Nat, step_flag: Bool } effects [snapshot] {
+    let check = read_snapshot<record { admissible: Bool, applied_letters: Nat, lattice_pieces_lifted_off: List<Nat>, others: Nat, others_exact: List<Nat>, others_landed: List<Nat>, unit_on_lattice: List<Nat>, unit_size: List<Nat> }>("word_check", record { unit = unit, word = w });
+    let ended = and(check.admissible, exact_eq(length(check.unit_on_lattice), 1));
+    let flag = match ended {
+        true => and(exact_eq(index(check.unit_on_lattice, 0), index(check.unit_size, 0)), and(exact_eq(index(check.lattice_pieces_lifted_off, 0), 0), exact_eq(exact_add(index(check.others_exact, 0), index(check.others_landed, 0)), check.others)));
+        _ => false;
+    };
+    return record { admissible = check.admissible, applied = check.applied_letters, step_flag = flag };
+}
+
+fn larger(a: Nat, b: Nat) -> Nat effects [] {
+    return match exact_less(a, b) {
+        true => b;
+        _ => a;
+    };
+}

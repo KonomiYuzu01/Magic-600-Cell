@@ -2,10 +2,10 @@
 //! plan, C6 and C5's item 1). KN5 has one implementation, and LP3 adds no token, receipt, undo or outcome logic of its
 //! own. LP2 built the four common needs in the layer (pull requests 200, 202 and 203), so a host serves five of the
 //! rows with the entries named here ([`RowNeed::served`]): `filter.preview`, `view.effect.scope`, `set.save`,
-//! `structure.compare` and `structure.layer`. The layer refuses to serve `filter.apply` and refuses its invocation as
-//! not built. The table below is a requirement list, checked against the stored H-08 table, the layer's `serve_row`
-//! and the shipped entries by this crate's tests, which also run the five served rows through the command and source
-//! routes (`tests/served_rows.rs`); it runs nothing itself.
+//! `structure.compare` and `structure.layer`. The layer serves `filter.apply` too since LP2's pull request 256, and no
+//! host runs its entry yet. The table below is a requirement list, checked against the stored H-08 table, the layer's
+//! `serve_row` and the shipped entries by this crate's tests, which also run the five served rows through the command
+//! and source routes (`tests/served_rows.rs`); it runs nothing itself.
 
 use c600_command::{CompletionKind, Kind, Lane, PreviewRule, UndoClass};
 use c600_ir::Effect;
@@ -67,11 +67,11 @@ pub const COMMON: [Common; 4] = [
     Common {
         need: "Argument forms for the H-08 types these rows take (FilterRef, RevisionRef, FilterPreviewRef, \
                CanonicalObjectRefs, CellIdPair, CellId), checked before a job is admitted.",
-        met: "The layer's argument forms (pull request 202) check `Nat`, `Text`, the choice words, `CellId`, \
-              `CellIdPair` and `RevisionRef` before it admits a job, and refuse a revision that is not the current one \
-              as stale. `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs` have no form yet and pass unchecked. \
-              The IR draft has no identity or reference type, so the entries still take naturals, a list of naturals \
-              and text in their place.",
+        met: "The layer's argument forms (pull requests 202, 256 and 269) check `Nat`, `Text`, the choice words, \
+              `CellId`, `CellIdPair`, `RevisionRef`, `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs` before \
+              it admits a job, and refuse a revision that is not the current one as stale. The IR draft has no \
+              identity or reference type, so the entries still take naturals, a list of naturals and text in their \
+              place.",
     },
     Common {
         need: "A workspace revision that moves.",
@@ -103,9 +103,10 @@ pub const NEEDS: [RowNeed; 6] = [
               state number, not a count. The layer checks the form of `revision` and refuses one that is not the \
               current revision as stale before any job; the job completes as `completed(query)` at its revision with \
               the output's digest as the result reference, and nothing is written.",
-        remains: "A kernel row that counts the objects a predicate selects, and an entry that passes the predicate to \
-                  it (`filter_counts` reads a literal query with no argument); the `FilterRef` form; and, for \
-                  `filter.apply`, a store of filter previews by result reference with their dependencies.",
+        remains: "An entry that passes the predicate to a snapshot read, and a host row that answers it from LP2's \
+                  `CommandLayer::layer_counts` (pull request 262: the positions and slots of one layer around a cell); \
+                  `filter_counts` reads a literal query with no argument. The `FilterRef` form and the store of filter \
+                  previews are the layer's since pull request 256.",
     },
     RowNeed {
         row: "filter.apply",
@@ -124,13 +125,17 @@ pub const NEEDS: [RowNeed; 6] = [
         undo_entry: "one workspace action in the durable action order, holding the filter before and after, which \
                      `session.undo` dispatches as a workspace action and which leaves the journal's state actions and \
                      the slot map as they were.",
-        served: false,
-        met: "Nothing of its own: the layer refuses to serve the row (`KN5:input.overlay_row_kind`), since it cannot \
-              check the gate, the preview rule or the undo class without the entry, and refuses an invocation as not \
-              built.",
-        remains: "The gate's freshness check against a store of filter previews, the `filter` preview rule, the \
-                  `FilterPreviewRef` form, and a workspace action with its inverse, which `session.undo` dispatches: \
-                  the layer holds no inverse of a program's write. Then `serve_row` can accept the row.",
+        served: true,
+        met: "The layer serves the row (LP2's filter previews, `c600-command`'s `filter` module). It checks the \
+              `FilterPreviewRef` form, a job and the epoch it ran in, and keeps a filter preview for each completed \
+              `filter.preview` job with KN0.9's dependencies: the epoch, identity, mode and state, and the digest of \
+              the resolved filter, which holds each record the predicate's job wrote with its content digest and \
+              version. The gate \
+              `fresh_filter_preview` refuses a missing or stale filter preview with `KN5:stale.filter_preview` before \
+              any job, reading neither the word-preview slot nor a presentation, and fails the job with that code, \
+              writing nothing, when the filter preview went stale while the job ran. The completion is one workspace \
+              action that `session.undo` and `session.redo` invert and repeat as workspace actions.",
+        remains: "Nothing in the command layer for the row's admission, gate, completion or undo.",
     },
     RowNeed {
         row: "view.effect.scope",
@@ -170,11 +175,11 @@ pub const NEEDS: [RowNeed; 6] = [
         undo_entry: "none: H-08 gives the row the undo class `none`, so a saved set is removed by its own row, not by \
                      undo.",
         served: true,
-        met: "Served by `save_set`. The layer checks `kind` and `name`; the job completes as one durable workspace \
-              action at a revision whose workspace number is one higher, writing the record `set.save` through the \
-              host's provenance reader, with the output's digest as the result reference and no undo entry.",
-        remains: "The `CanonicalObjectRefs` form, so that the layer refuses a member that is no canonical object; a \
-                  record for each saved set, where the entry writes the one record `set.save`; and the exact-set \
+        met: "Served by `save_set`. The layer checks `kind`, `members` (pull request 269: pieces or positions, each \
+              below the kernel's piece count) and `name`; the job completes as one durable workspace action at a \
+              revision whose workspace number is one higher, writing the record `set.save` through the host's \
+              provenance reader, with the output's digest as the result reference and no undo entry.",
+        remains: "A record for each saved set, where the entry writes the one record `set.save`; and the exact-set \
                   digest as the result reference, where the layer gives the output's digest.",
     },
     RowNeed {
@@ -196,8 +201,8 @@ pub const NEEDS: [RowNeed; 6] = [
               state number, not a comparison. The layer checks the `CellIdPair` form; the job completes as \
               `completed(query)` at its revision with the output's digest as the result reference, and nothing is \
               written. The entry's answer is the job's view.",
-        remains: "A kernel row that compares two cells, and an entry that passes the cells to it (`compare_cells` \
-                  reads a literal query with no argument).",
+        remains: "An entry that passes the cells to a snapshot read, and a host row that answers it from LP2's \
+                  `CommandLayer::compare_cells` (pull request 262); the entry reads a literal query with no argument.",
     },
     RowNeed {
         row: "structure.layer",
@@ -220,7 +225,8 @@ pub const NEEDS: [RowNeed; 6] = [
               durable workspace action at a revision whose workspace number is one higher, writing the record \
               `structure.layer` through the host's provenance reader, with the output's digest as the result reference \
               and no undo entry.",
-        remains: "The `FilterRef` form, so that `filter.preview` takes this row's result reference as its predicate, \
-                  and the kernel row that reads the prepared predicate it names.",
+        remains: "Nothing in the layer since pull requests 256 and 262: `filter.preview` takes this row's result \
+                  reference as a `FilterRef`, and the layer counts the named layer with `CommandLayer::layer_counts`, \
+                  which a host row serves to `filter.preview` (LP3's, see that row).",
     },
 ];

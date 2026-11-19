@@ -178,7 +178,10 @@ pub fn support_report(limits: &LimitProfile) -> SupportReport {
     for row in 1..=24 {
         let id = format!("F{row:02}");
         let support = if row == 5 {
-            Support::Unsupported(Error::unsupported(&id, "user vertex stages need the stage checker"))
+            Support::Unsupported(Error::unsupported(
+                &id,
+                "user vertex stages need a backend that compiles and bounds them",
+            ))
         } else {
             let stages = if row == 4 {
                 STAGES.iter().map(|&(name, params)| stage_def(name, params)).collect()
@@ -191,7 +194,10 @@ pub fn support_report(limits: &LimitProfile) -> SupportReport {
     }
     features.insert(
         "F26".to_owned(),
-        Support::Unsupported(Error::unsupported("F26", "user fragment stages need the stage checker")),
+        Support::Unsupported(Error::unsupported(
+            "F26",
+            "user fragment stages need a backend that compiles and bounds them",
+        )),
     );
     SupportReport {
         interface_version: 1,

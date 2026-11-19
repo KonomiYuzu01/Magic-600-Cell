@@ -954,8 +954,9 @@ fn ct_bnd_26_a_picked_tool_word_keeps_the_entry_block_and_is_refused() {
     }
 }
 
-/// CT-BND-27 (part: the record a restore must preserve; not run: persisting and restoring a workspace, which the
-/// session store builds (M6)): a tool word's workspace record, copied as a restore finds it, keeps its block and its
+/// CT-BND-27 (part: the record a restore must preserve; persisting and restoring a workspace on the command layer
+/// over the journal runs in `c600-session`'s `tests/part_blocks.rs`): a tool word's workspace record, copied as a
+/// restore finds it, keeps its block and its
 /// recursive parts by content digest, and a solving preview of the restored word is refused at admission with
 /// `LG3:capability.not_granted` and installs no preview.
 #[test]

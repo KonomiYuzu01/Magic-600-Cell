@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, draft_args, CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table,
-    POLICY_ROW, RECORD_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    code, digest, draft_args, CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status,
+    Table, POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -23,7 +23,7 @@ const FILTER: &str = "filter.preview";
 const FIND: &str = "command.find";
 
 /// The stored rows the command layer builds itself.
-const LAYER_ROWS: [&str; 10] = [
+const LAYER_ROWS: [&str; 11] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -34,6 +34,7 @@ const LAYER_ROWS: [&str; 10] = [
     RECORD_ROW,
     WORKSHEET_SAVE_ROW,
     WORKSHEET_LOAD_ROW,
+    WORKSHEET_COMPARE_ROW,
 ];
 
 fn repository() -> PathBuf {
@@ -114,6 +115,16 @@ impl Fixture {
         self.shell.invoke(&mut self.layer, row, args).unwrap()
     }
 
+    /// A predicate a `structure.layer` job prepared that wrote no record, as the `FilterRef` that names it.
+    fn predicate(&mut self) -> Value {
+        let receipt = self.invoke(LAYER, json::object([("cell", Value::Int(1)), ("layer", Value::Int(2))]));
+        let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
+        assert_eq!(self.layer.take_program_job().map(|taken| taken.job), Some(job));
+        let done = self.layer.finish_program_job(job, Ok(Value::Null)).unwrap();
+        assert!(matches!(done.status, Status::Completed(_)), "{:?}", done.status);
+        json::object([("digest", Value::String(digest(&Value::Null))), ("job", Value::Int(job as i64))])
+    }
+
     /// The rows of the program jobs waiting, in order, taken.
     fn take_all(&mut self) -> Vec<(String, Value)> {
         std::iter::from_fn(|| self.layer.take_program_job()).map(|job| (job.row, job.args)).collect()
@@ -122,8 +133,8 @@ impl Fixture {
 
 /// A served row's arguments have their types' forms: `CellIdPair` is two cells from 0 to 599, `CellId` one, `Nat` an
 /// integer of at least 0, `Text` a string, and a choice of words one of its words. A malformed argument is refused with
-/// `KN5:input.argument_form` and takes no job. `CanonicalObjectRefs`, whose form is not written down yet, passes
-/// unchecked.
+/// `KN5:input.argument_form` and takes no job. `CanonicalObjectRefs` is a list of pieces or positions, each 0 to
+/// 177,119 (the kernel's `PIECES`), empty and repeated members included (draft).
 #[test]
 fn a_served_rows_arguments_have_their_types_forms() {
     let mut f = fixture(&[COMPARE, LAYER, SAVE, SCOPE]);
@@ -143,8 +154,18 @@ fn a_served_rows_arguments_have_their_types_forms() {
 
     let save =
         |kind: Value, members: Value, name: Value| json::object([("kind", kind), ("members", members), ("name", name)]);
-    for (kind, members) in [("identity", parse("[3, 5]")), ("position", text("not yet checked"))] {
-        assert!(running(&f.invoke(SAVE, save(text(kind), members, text("pair")))), "{kind}");
+    let last = (c600_kernel::PIECES - 1).to_string();
+    let members_ok = ["[3, 5]".to_string(), "[]".to_string(), "[7, 7]".to_string(), format!("[0, {last}]")];
+    for (kind, members) in [("identity", &members_ok[0]), ("position", &members_ok[1])] {
+        assert!(running(&f.invoke(SAVE, save(text(kind), parse(members), text("pair")))), "{kind}");
+    }
+    for members in &members_ok[2..] {
+        assert!(running(&f.invoke(SAVE, save(text("identity"), parse(members), text("pair")))), "{members}");
+    }
+    let past = c600_kernel::PIECES.to_string();
+    for bad in ["[-1]", &format!("[3, {past}]"), "[1.5]", "[\"3\"]", "[[3]]", "[null]", "3", "\"[3]\"", "{}", "null"] {
+        let receipt = f.invoke(SAVE, save(text("position"), parse(bad), text("pair")));
+        assert_eq!(refusal(&receipt), code::ARGUMENT_FORM, "{bad}");
     }
     for (kind, name) in [(text("both"), text("pair")), (Value::Int(1), text("pair")), (text("identity"), Value::Int(7))]
     {
@@ -159,7 +180,7 @@ fn a_served_rows_arguments_have_their_types_forms() {
     assert!(running(&f.invoke(SCOPE, json::object([("scope", text("complete"))]))));
 
     let rows: Vec<String> = f.take_all().into_iter().map(|(row, _)| row).collect();
-    assert_eq!(rows, [COMPARE, COMPARE, LAYER, SAVE, SAVE, SCOPE]);
+    assert_eq!(rows, [COMPARE, COMPARE, LAYER, SAVE, SAVE, SAVE, SAVE, SCOPE]);
 }
 
 /// An argument of an optional type may be left out: `recording.play`'s `from` is `Nat?`. Given, it has `Nat`'s form;
@@ -206,11 +227,12 @@ fn an_optional_argument_may_be_left_out() {
 /// A `RevisionRef` names a revision: KN0.2's nine-key object, its text fields text and its counters naturals. A
 /// malformed one is refused with `KN5:input.argument_form`; a well-formed one that is not the current revision in every
 /// field, after a commit, after a workspace action or in another mode, is refused with `KN5:stale.revision_changed`
-/// (EV4.14). Neither takes a job. `FilterRef` passes unchecked.
+/// (EV4.14). Neither takes a job. The predicate is one a `structure.layer` job prepared, which stays valid throughout.
 #[test]
 fn a_revision_ref_names_the_current_revision() {
-    let mut f = fixture(&[FILTER]);
-    let filter = |revision: Value| json::object([("predicate", text("any form for now")), ("revision", revision)]);
+    let mut f = fixture(&[FILTER, LAYER]);
+    let predicate = f.predicate();
+    let filter = |revision: Value| json::object([("predicate", predicate.clone()), ("revision", revision)]);
     let first = f.layer.revision().to_json();
     assert!(running(&f.invoke(FILTER, filter(first.clone()))));
 
@@ -241,7 +263,7 @@ fn a_revision_ref_names_the_current_revision() {
     }
     let other_mode = set("mode", text("jumble_on"));
     assert_eq!(refusal(&f.invoke(FILTER, filter(other_mode))), code::REVISION_CHANGED);
-    let later = set("workspace", Value::Int(1));
+    let later = set("workspace", Value::Int(f.layer.revision().workspace as i64 + 1));
     assert_eq!(refusal(&f.invoke(FILTER, filter(later))), code::REVISION_CHANGED);
 
     let policy = f.invoke(POLICY_ROW, json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))]));

@@ -753,3 +753,34 @@ fn the_positions_read_answers_the_kernel_s_rows_at_the_head() {
     assert!(matches!(f.undo(Direction::Undo).status, Status::Committed(_)));
     assert!(f.layer.positions(&all).unwrap().iter().all(|row| row.solved()));
 }
+
+/// The layer's half of the host rows that serve `structure.compare` and `filter.preview` (LP2 draft; LP3's C6, step 1
+/// item 3). `CommandLayer::compare_cells`, `cell_layers` and `layer_counts` answer the kernel's structure rows, the
+/// same before and after a commit, since they read no state. A cell outside 0 to 599 or a layer past the cell's last
+/// is the kernel's `KN2:input.named_object_invalid` with its text. A read changes nothing. Covers no conformance ID.
+#[test]
+fn the_structure_reads_answer_the_kernel_s_rows() {
+    let mut f = fixture(&[]);
+    let kernel = kernel();
+    let read = |layer: &CommandLayer| {
+        let compared = layer.compare_cells(0, 599).unwrap();
+        (compared, layer.cell_layers(17).unwrap(), layer.layer_counts(17, 3).unwrap())
+    };
+    let solved = read(&f.layer);
+    let expected = (kernel.compare_cells(0, 599), kernel.cell_layers(17), kernel.layer_counts(17, 3));
+    assert_eq!(solved, (expected.0.unwrap(), expected.1.unwrap(), expected.2.unwrap()));
+    assert_eq!((solved.0.steps, solved.2.pieces, solved.2.slots), (14, 9362, 16156));
+    assert!(matches!(f.commit(&word(&[1, 2, -1])).status, Status::Committed(_)));
+
+    let before = f.fixed();
+    assert_eq!(read(&f.layer), solved);
+    let errors = [
+        (f.layer.compare_cells(0, 600).unwrap_err(), "Cell must be 0..599"),
+        (f.layer.cell_layers(-1).unwrap_err(), "Cell must be 0..599"),
+        (f.layer.layer_counts(17, 16).unwrap_err(), "Layer must be L0..L15 for the chosen color"),
+    ];
+    for (error, text) in errors {
+        assert_eq!((error.code, error.detail.as_str()), (code::NAMED_OBJECT_INVALID, text));
+    }
+    assert_eq!(f.fixed(), before);
+}

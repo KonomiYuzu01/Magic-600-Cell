@@ -1,0 +1,583 @@
+//! A fake core for headless tests: ABI 5's product calls in Rust, following the header's rules for tickets, frames,
+//! reports, picks and device loss. Nothing runs on a GPU: uploads, frames and ID passes stay pending until
+//! [`FakeCore::complete`], and the ID pass reads the instance of the slot a test placed at a pixel
+//! ([`FakeCore::place`]). It does not model resize, trace windows, the 256-ticket and 1024-pick bounds or engine
+//! ring staleness.
+//!
+//! [`FakeCore::new`] is a `sa2_attach` context (the Godot-texture route): it cannot confirm a presentation or recover.
+//! [`FakeCore::on_surface`] is a `sa2_create` context with an attached surface (route B, accepted for now by the owner
+//! on 18 Nov 2026, pending three owner-machine checks): its frames name [`TARGET_SURFACE`], [`FakeCore::show`]
+//! confirms a frame's presentation under the exact rule, and `recover` rebuilds a removed device.
+
+use std::collections::{BTreeMap, VecDeque};
+
+use crate::abi::*;
+use crate::api::{CoreAbi, EngineImage, PreparationInput};
+
+/// `DXGI_ERROR_DEVICE_REMOVED`, the reason a removed fake device reports.
+pub const DEVICE_REMOVED_REASON: i32 = 0x887A_0005_u32 as i32;
+/// The fake display clock's step per confirmed frame, in QPC ticks: one 60 Hz refresh at a 10 MHz counter.
+pub const DISPLAY_TICKS: u64 = 166_667;
+
+#[derive(Clone, Debug)]
+struct Ticket {
+    row: Sa2PollRow,
+    view: u64,
+    view_generation: u64,
+    visibility: Vec<u8>,
+    instances: BTreeMap<usize, u32>,
+}
+
+#[derive(Clone, Debug)]
+struct Set {
+    view: u64,
+    view_generation: u64,
+    visibility: Vec<u8>,
+    instances: BTreeMap<usize, u32>,
+    active: bool,
+    retired: bool,
+}
+
+#[derive(Clone, Debug)]
+struct Frame {
+    id: u64,
+    input: Sa2FrameInput,
+    completed: bool,
+    error: Status,
+    reported: bool,
+}
+
+#[derive(Clone, Debug)]
+struct Pick {
+    row: Sa2PickRow,
+    done: bool,
+    set: u64,
+}
+
+/// The fake core.
+#[derive(Debug)]
+pub struct FakeCore {
+    pub device_epoch: u64,
+    /// The frame target size every frame's viewport must equal.
+    pub target_size: (u32, u32),
+    /// A `sa2_create` context with an attached surface (route B).
+    surface: bool,
+    /// Confirmed presentations not yet read, in frame order.
+    confirmed: VecDeque<Sa2PresentedRow>,
+    /// The newest frame a presentation confirmation passed: no frame up to it is confirmed later.
+    shown_up_to: u64,
+    /// The fake display clock: the `display_qpc` of the last confirmed frame.
+    pub display_qpc: u64,
+    removed: bool,
+    adopted: Option<u64>,
+    next_ticket: u64,
+    tickets: BTreeMap<u64, Ticket>,
+    sets: BTreeMap<u64, Set>,
+    next_frame: u64,
+    frames: VecDeque<Frame>,
+    surfaces: BTreeMap<u64, (u64, u64)>,
+    views: BTreeMap<u64, u64>,
+    next_pick: u64,
+    picks: BTreeMap<u64, Pick>,
+    placed: BTreeMap<(u32, u32), usize>,
+    counters: Sa2CounterValues,
+    error: String,
+    /// Every preparation, as the core copied it: the view, its instances by slot and its visibility.
+    pub prepared: Vec<(u64, BTreeMap<usize, u32>, Vec<u8>)>,
+    /// Every accepted frame input, in submission order.
+    pub submitted: Vec<Sa2FrameInput>,
+    /// Every adopted engine revision with its first label.
+    pub adoptions: Vec<(u64, u32)>,
+}
+
+impl FakeCore {
+    pub fn new(target_size: (u32, u32)) -> FakeCore {
+        FakeCore {
+            device_epoch: 1,
+            target_size,
+            surface: false,
+            confirmed: VecDeque::new(),
+            shown_up_to: 0,
+            display_qpc: 0,
+            removed: false,
+            adopted: None,
+            next_ticket: 1,
+            tickets: BTreeMap::new(),
+            sets: BTreeMap::new(),
+            next_frame: 1,
+            frames: VecDeque::new(),
+            surfaces: BTreeMap::new(),
+            views: BTreeMap::new(),
+            next_pick: 1,
+            picks: BTreeMap::new(),
+            placed: BTreeMap::new(),
+            counters: Sa2CounterValues::new(),
+            error: String::new(),
+            prepared: Vec::new(),
+            submitted: Vec::new(),
+            adoptions: Vec::new(),
+        }
+    }
+
+    /// A `sa2_create` context with a surface of `target_size` attached (route B).
+    pub fn on_surface(target_size: (u32, u32)) -> FakeCore {
+        FakeCore { surface: true, ..FakeCore::new(target_size) }
+    }
+
+    /// The display shows a completed, drawn frame and a statistics row names its own present count: the frame is
+    /// confirmed at the fake display clock advanced by [`DISPLAY_TICKS`], and every older frame not yet confirmed
+    /// never will be (the exact rule). False, and nothing changes, without a surface or for a frame that is not
+    /// retained, did not draw or is not newer than the last shown.
+    pub fn show(&mut self, frame_id: u64) -> bool {
+        if !self.surface || self.removed || frame_id <= self.shown_up_to {
+            return false;
+        }
+        let Some(frame) = self.frames.iter().find(|f| f.id == frame_id && f.completed && f.error == Status::OK) else {
+            return false;
+        };
+        let i = frame.input;
+        let preview = i.flags & FRAME_PREVIEW != 0;
+        self.display_qpc += DISPLAY_TICKS;
+        self.confirmed.push_back(Sa2PresentedRow {
+            previews: u32::from(preview),
+            frame_id,
+            device_epoch: i.device_epoch,
+            surface: i.surface,
+            sequence: i.sequence,
+            preview: if preview { i.preview } else { 0 },
+            display_qpc: self.display_qpc,
+            ..Sa2PresentedRow::new()
+        });
+        self.shown_up_to = frame_id;
+        true
+    }
+
+    /// A faulty core, for tests: every confirmed presentation not yet read names `sequence` in place of its frame's.
+    pub fn misbind_presented(&mut self, sequence: u64) {
+        self.confirmed.iter_mut().for_each(|row| row.sequence = sequence);
+    }
+
+    /// The ID pass finds `slot` at pixel `(x, y)` of every frame.
+    /// A faulty core, for tests: every pick not yet reported answers with `publication_generation` in place of its
+    /// frame's.
+    pub fn misbind_picks(&mut self, publication_generation: u64) {
+        self.picks.values_mut().for_each(|pick| pick.row.publication_generation = publication_generation);
+    }
+
+    pub fn place(&mut self, x: u32, y: u32, slot: usize) {
+        self.placed.insert((x, y), slot);
+    }
+
+    /// The GPU reaches every fence: uploads become ready (a cancelled one stays cancelled, RM.17), frames complete
+    /// and ID passes answer.
+    pub fn complete(&mut self) {
+        for ticket in self.tickets.values_mut() {
+            if ticket.row.state == TICKET_PENDING {
+                ticket.row.state = TICKET_READY;
+                let set = ticket.row.resource_set;
+                self.sets.insert(
+                    set,
+                    Set {
+                        view: ticket.view,
+                        view_generation: ticket.view_generation,
+                        visibility: ticket.visibility.clone(),
+                        instances: ticket.instances.clone(),
+                        active: false,
+                        retired: false,
+                    },
+                );
+            }
+        }
+        self.frames.iter_mut().for_each(|f| f.completed = true);
+        let newest = self.frames.back().map(|f| f.input);
+        for pick in self.picks.values_mut().filter(|p| !p.done) {
+            pick.done = true;
+            if pick.row.state == PICK_STALE {
+                continue;
+            }
+            let stale = newest.and_then(|n| {
+                if n.surface == pick.row.surface && n.surface_generation > pick.row.surface_generation {
+                    Some(PICK_STALE_SURFACE)
+                } else if n.view == pick.row.view && n.view_generation > pick.row.view_generation {
+                    Some(PICK_STALE_VIEW)
+                } else {
+                    None
+                }
+            });
+            if let Some(field) = stale {
+                pick.row.state = PICK_STALE;
+                pick.row.stale = field;
+                continue;
+            }
+            pick.row.state = PICK_READY;
+            let set = self.sets.get(&pick.set);
+            let slot = self.placed.get(&(pick.row.x, pick.row.y));
+            pick.row.instance = match (set, slot) {
+                (Some(set), Some(&slot)) if set.visibility[slot] == 1 => set.instances.get(&slot).copied().unwrap_or(0),
+                _ => 0,
+            };
+        }
+    }
+
+    /// The device is removed: pending and ready tickets fail and unreported frames that the GPU did not complete
+    /// report `SA2_E_DEVICE_REMOVED`.
+    pub fn remove_device(&mut self) {
+        self.removed = true;
+        for ticket in self.tickets.values_mut() {
+            if matches!(ticket.row.state, TICKET_PENDING | TICKET_READY) {
+                ticket.row = Sa2PollRow { state: TICKET_FAILED, reason: Status::DEVICE_REMOVED.0, ..Sa2PollRow::new() };
+            }
+        }
+        for frame in self.frames.iter_mut().filter(|f| !f.completed) {
+            frame.completed = true;
+            frame.error = Status::DEVICE_REMOVED;
+        }
+    }
+
+    fn fail<T>(&mut self, status: Status, message: &str) -> Result<T, Status> {
+        self.error = format!("fake core: {message}");
+        Err(status)
+    }
+
+    fn alive(&mut self) -> Result<(), Status> {
+        if self.removed {
+            return self.fail(Status::DEVICE_REMOVED, "the device is removed");
+        }
+        Ok(())
+    }
+
+    fn removed_json(&self) -> String {
+        if self.removed {
+            format!("\"0x{:08x}\"", DEVICE_REMOVED_REASON as u32)
+        } else {
+            "null".to_owned()
+        }
+    }
+}
+
+impl CoreAbi for FakeCore {
+    fn describe(&self) -> Result<String, Status> {
+        let supported = |row: &str| format!("\"{row}\":{{\"status\":\"supported\",\"layout_version\":1}}");
+        let unsupported =
+            |row: &str, why: &str| format!("\"{row}\":{{\"status\":\"unsupported\",\"reason\":\"{why}\"}}");
+        let (f22, f23) = if self.surface {
+            (supported("F22"), supported("F23"))
+        } else {
+            (
+                unsupported("F22", "recover: ABI 4 cannot recover a removed device (RPI.46)"),
+                unsupported(
+                    "F23",
+                    "read_presented: the core owns no swap chain and cannot confirm a presentation (RM.26)",
+                ),
+            )
+        };
+        let rows = [
+            supported("F01"),
+            supported("F02"),
+            supported("F18"),
+            f22,
+            f23,
+            supported("J01"),
+            supported("J02"),
+            unsupported("J13", "no grip, piece or certificate-point IDs"),
+        ];
+        Ok(format!(
+            "{{\"interface_version\":{},\"backend_build\":\"{}\",\"device_epoch\":{},\"device_removed\":{},\
+             \"features\":{{{}}},\"evidence\":[]}}",
+            ABI_VERSION,
+            "0".repeat(64),
+            self.device_epoch,
+            self.removed_json(),
+            rows.join(",")
+        ))
+    }
+
+    fn engine_adopt(&mut self, image: &EngineImage<'_>) -> Result<u64, Status> {
+        if image.labels.len() != SLOTS || image.labels.iter().any(|&l| l as usize >= SLOTS) {
+            return self.fail(Status::INVALID_ARGUMENT, "the labels are not SA2_SLOTS labels below SA2_SLOTS");
+        }
+        if self.adopted.is_some_and(|a| image.revision <= a) {
+            return self.fail(Status::WRONG_STATE, "the revision does not increase");
+        }
+        self.adopted = Some(image.revision);
+        self.adoptions.push((image.revision, image.labels[0]));
+        self.counters.bytes_uploaded += (SLOTS * 4) as u64;
+        Ok(image.revision)
+    }
+
+    fn prepare(&mut self, input: &PreparationInput<'_>) -> Result<u64, Status> {
+        if input.visibility.len() != SLOTS || input.interaction.len() != SLOTS || input.instances.len() != SLOTS {
+            return self.fail(Status::INVALID_ARGUMENT, "a preparation array is not SA2_SLOTS long");
+        }
+        if input.visibility.iter().chain(input.interaction).any(|&v| v > 1) {
+            return self.fail(Status::INVALID_ARGUMENT, "a set holds a value other than 0 or 1");
+        }
+        self.alive()?;
+        if input.device_epoch != self.device_epoch {
+            return self.fail(Status::WRONG_STATE, "the preparation names another device epoch");
+        }
+        let ticket = self.next_ticket;
+        self.next_ticket += 1;
+        let instances: BTreeMap<usize, u32> =
+            input.instances.iter().enumerate().filter(|(_, &i)| i != 0).map(|(s, &i)| (s, i)).collect();
+        self.prepared.push((input.view, instances.clone(), input.visibility.to_vec()));
+        self.tickets.insert(
+            ticket,
+            Ticket {
+                row: Sa2PollRow { state: TICKET_PENDING, resource_set: 1000 + ticket, ..Sa2PollRow::new() },
+                view: input.view,
+                view_generation: input.view_generation,
+                visibility: input.visibility.to_vec(),
+                instances,
+            },
+        );
+        self.counters.bytes_uploaded += (SLOTS * 6) as u64;
+        Ok(ticket)
+    }
+
+    fn poll(&mut self, ticket: u64) -> Result<Sa2PollRow, Status> {
+        match self.tickets.get(&ticket) {
+            None => self.fail(Status::WRONG_STATE, "an unknown or forgotten ticket"),
+            Some(t) if t.row.state == TICKET_READY => Ok(t.row),
+            Some(t) => Ok(Sa2PollRow { resource_set: 0, ..t.row }),
+        }
+    }
+
+    fn activate(&mut self, resource_set: u64, _stamp_digest: &[u8; 32]) -> Result<(), Status> {
+        self.alive()?;
+        match self.sets.get_mut(&resource_set) {
+            Some(set) if !set.active && !set.retired => {
+                set.active = true;
+                Ok(())
+            }
+            _ => self.fail(Status::WRONG_STATE, "the set is not ready, or already active or retired"),
+        }
+    }
+
+    fn cancel(&mut self, ticket: u64, reason: i32, superseded_by: u64) -> Result<(), Status> {
+        if !(CANCEL_BY_USER..=CANCEL_BUDGET).contains(&reason) {
+            return self.fail(Status::INVALID_ARGUMENT, "an unknown cancel reason");
+        }
+        let Some(t) = self.tickets.get_mut(&ticket) else {
+            return self.fail(Status::WRONG_STATE, "an unknown ticket");
+        };
+        if matches!(t.row.state, TICKET_CANCELLED | TICKET_FAILED) {
+            return Ok(());
+        }
+        let set = t.row.resource_set;
+        if self.sets.get(&set).is_some_and(|s| s.active) {
+            return self.fail(Status::WRONG_STATE, "the ticket's set is active; retire it");
+        }
+        let by = if reason == CANCEL_SUPERSEDED { superseded_by } else { 0 };
+        t.row = Sa2PollRow { state: TICKET_CANCELLED, reason, superseded_by: by, ..Sa2PollRow::new() };
+        self.sets.remove(&set);
+        Ok(())
+    }
+
+    fn retire(&mut self, resource_set: u64) -> Result<(), Status> {
+        match self.sets.get_mut(&resource_set) {
+            Some(set) if !set.retired => {
+                set.retired = true;
+                set.active = false;
+                self.tickets.retain(|_, t| t.row.resource_set != resource_set);
+                Ok(())
+            }
+            _ => self.fail(Status::WRONG_STATE, "an unknown or retired set"),
+        }
+    }
+
+    fn frame_submit(&mut self, input: &Sa2FrameInput) -> Result<u64, Status> {
+        if input.struct_size as usize != std::mem::size_of::<Sa2FrameInput>() || input.reserved != 0 {
+            return self.fail(Status::INVALID_ARGUMENT, "struct_size or reserved");
+        }
+        if input.flags & !FRAME_PREVIEW != 0 || input.camera_matrix.iter().any(|v| !v.is_finite()) {
+            return self.fail(Status::INVALID_ARGUMENT, "unknown flags or a non-finite camera");
+        }
+        if input.target >= RING_SLOTS && input.target != TARGET_SURFACE {
+            return self.fail(Status::INVALID_ARGUMENT, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
+        }
+        if self.surface != (input.target == TARGET_SURFACE) {
+            return self.fail(Status::WRONG_STATE, "the target is not this context's route");
+        }
+        self.alive()?;
+        if input.device_epoch != self.device_epoch || Some(input.engine_revision) != self.adopted {
+            return self.fail(Status::WRONG_STATE, "the frame names another epoch or engine revision");
+        }
+        if (input.viewport_width, input.viewport_height) != self.target_size {
+            return self.fail(Status::WRONG_STATE, "the viewport is not the target's size");
+        }
+        if let Some(&(generation, sequence)) = self.surfaces.get(&input.surface) {
+            if input.surface_generation < generation || input.sequence <= sequence {
+                return self.fail(Status::WRONG_STATE, "the surface generation or sequence goes back");
+            }
+        }
+        if self.views.get(&input.view).is_some_and(|&g| input.view_generation < g) {
+            return self.fail(Status::WRONG_STATE, "the view generation goes back");
+        }
+        if input.resource_set != 0 {
+            let fits = self
+                .sets
+                .get(&input.resource_set)
+                .is_some_and(|s| s.active && s.view == input.view && s.view_generation == input.view_generation);
+            if !fits {
+                return self.fail(Status::WRONG_STATE, "the set is not active for the frame's view generation");
+            }
+        }
+        self.surfaces.insert(input.surface, (input.surface_generation, input.sequence));
+        self.views.insert(input.view, input.view_generation);
+        let id = self.next_frame;
+        self.next_frame += 1;
+        self.frames.push_back(Frame { id, input: *input, completed: false, error: Status::OK, reported: false });
+        self.submitted.push(*input);
+        self.counters.frames_submitted += 1;
+        Ok(id)
+    }
+
+    fn frame_reports(&mut self, rows: &mut [Sa2FrameReport]) -> Result<usize, Status> {
+        let mut n = 0;
+        for frame in self.frames.iter_mut().filter(|f| !f.reported) {
+            if n == rows.len() || !frame.completed {
+                break;
+            }
+            frame.reported = true;
+            let i = frame.input;
+            let evals = if frame.error == Status::OK { 120 * 600 } else { 0 };
+            rows[n] = Sa2FrameReport {
+                error: frame.error.0,
+                frame_id: frame.id,
+                device_epoch: i.device_epoch,
+                surface: i.surface,
+                surface_generation: i.surface_generation,
+                sequence: i.sequence,
+                engine_revision: i.engine_revision,
+                view: i.view,
+                view_generation: i.view_generation,
+                publication_generation: i.publication_generation,
+                gpu_time_ns: if frame.error == Status::OK { 1_000_000 } else { 0 },
+                view_vertex_evals: evals,
+                ..Sa2FrameReport::new()
+            };
+            self.counters.frames_reported += 1;
+            self.counters.view_vertex_evals_last = evals;
+            self.counters.view_vertex_evals_total += evals;
+            n += 1;
+        }
+        while self.frames.iter().filter(|f| f.reported).count() > 64 {
+            self.frames.pop_front();
+        }
+        Ok(n)
+    }
+
+    fn presented(&mut self, rows: &mut [Sa2PresentedRow]) -> Result<usize, Status> {
+        if !self.surface {
+            return self.fail(Status::UNAVAILABLE, "the core owns no swap chain and cannot confirm a presentation");
+        }
+        self.alive()?;
+        let n = rows.len().min(self.confirmed.len());
+        for (row, confirmed) in rows.iter_mut().zip(self.confirmed.drain(..n)) {
+            *row = confirmed;
+        }
+        Ok(n)
+    }
+
+    fn pick_request(&mut self, frame_id: u64, x: u32, y: u32) -> Result<u64, Status> {
+        self.alive()?;
+        let Some(frame) = self.frames.iter().find(|f| f.id == frame_id && f.error == Status::OK) else {
+            return self.fail(Status::WRONG_STATE, "the frame is not retained or did not draw");
+        };
+        let i = frame.input;
+        if x >= i.viewport_width || y >= i.viewport_height {
+            return self.fail(Status::INVALID_ARGUMENT, "the pixel is outside the viewport");
+        }
+        let mut row = Sa2PickRow {
+            frame_id,
+            device_epoch: i.device_epoch,
+            surface: i.surface,
+            surface_generation: i.surface_generation,
+            view: i.view,
+            view_generation: i.view_generation,
+            publication_generation: i.publication_generation,
+            camera: i.camera,
+            visibility: i.visibility,
+            interaction: i.interaction,
+            viewport_width: i.viewport_width,
+            viewport_height: i.viewport_height,
+            x,
+            y,
+            ..Sa2PickRow::new()
+        };
+        let done = i.resource_set == 0 || self.sets.get(&i.resource_set).is_none_or(|s| s.retired);
+        if i.resource_set != 0 && done {
+            row.state = PICK_STALE;
+            row.stale = PICK_STALE_PUBLICATION;
+        } else if done {
+            row.state = PICK_READY;
+        } else {
+            self.counters.id_passes += 1;
+        }
+        let ticket = self.next_pick;
+        self.next_pick += 1;
+        self.picks.insert(ticket, Pick { row, done, set: i.resource_set });
+        Ok(ticket)
+    }
+
+    fn pick_poll(&mut self, ticket: u64) -> Result<Sa2PickRow, Status> {
+        self.alive()?;
+        match self.picks.get(&ticket) {
+            None => self.fail(Status::WRONG_STATE, "an unknown or reported pick"),
+            Some(pick) if !pick.done => Ok(Sa2PickRow { state: PICK_PENDING, instance: 0, ..pick.row }),
+            Some(_) => Ok(self.picks.remove(&ticket).expect("present").row),
+        }
+    }
+
+    fn recover(&mut self) -> (Status, String) {
+        let result = |status: &str, reason: &str, epoch: u64, removed: &str| {
+            format!(
+                "{{\"status\":\"{status}\",\"reason\":\"{reason}\",\"device_epoch\":{epoch},\"device_removed\":{removed}}}"
+            )
+        };
+        if !self.surface {
+            self.error = "fake core: ABI 4 cannot recover a device".to_owned();
+            let removed = self.removed_json();
+            return (
+                Status::UNAVAILABLE,
+                result("unavailable", "ABI 4 cannot recover a device (RPI.46)", self.device_epoch, &removed),
+            );
+        }
+        if !self.removed {
+            self.error = "fake core: the device is not removed; nothing to recover".to_owned();
+            let reason = "the device is not removed; nothing to recover";
+            return (Status::WRONG_STATE, result("not_removed", reason, self.device_epoch, "null"));
+        }
+        // The old epoch's tickets, sets, picks and frames are gone: unread reports are dropped and old frames are
+        // never confirmed. The adopted engine image is kept (RM.16), and numbers keep counting.
+        let removed = self.removed_json();
+        self.counters.reports_dropped += self.frames.iter().filter(|f| !f.reported).count() as u64;
+        self.frames.clear();
+        self.tickets.clear();
+        self.sets.clear();
+        self.picks.clear();
+        self.confirmed.clear();
+        self.shown_up_to = self.next_frame - 1;
+        self.removed = false;
+        self.device_epoch += 1;
+        let reason = "recovered on a new device of the same adapter (RPI.46)";
+        (Status::OK, result("recovered", reason, self.device_epoch, &removed))
+    }
+
+    fn counters(&self) -> Result<Sa2CounterValues, Status> {
+        Ok(self.counters)
+    }
+
+    fn device_status(&self) -> (Status, i32) {
+        if self.removed {
+            (Status::DEVICE_REMOVED, DEVICE_REMOVED_REASON)
+        } else {
+            (Status::OK, 0)
+        }
+    }
+
+    fn last_error(&self) -> String {
+        self.error.clone()
+    }
+}

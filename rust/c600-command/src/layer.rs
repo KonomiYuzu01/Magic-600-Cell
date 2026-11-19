@@ -32,7 +32,8 @@
 //!
 //! KN5's stage 3, the workspace store ([`crate::workspace`]): `workspace.set` ([`RECORD_ROW`]) writes one record, and
 //! a draft `{"record": name}` previews the letters the record holds, with the record's content digest and version in
-//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26). LB7.2's work
+//! its draft digest (KN0.8), after the host's provenance reader admits the record's block (KN5.26) with the part
+//! blocks the session keeps (CT-BND-27; [`crate::workspace`]). LB7.2's work
 //! sheets ([`crate::worksheet`]) are records too: `worksheet.save` writes one from a draft record, and `worksheet.load`
 //! places its piece roles again and writes it again, so a preview of the sheet goes stale (CT-LB2-03). KN5's stage 5
 //! ([`crate::frame`]): [`CommandLayer::present`] reads the adapter's frame reports, only a frame that shows the pending
@@ -90,6 +91,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+use c600_digest::sha256_hex;
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
 use c600_jumble::levels::{self, Base, Derived};
 use c600_jumble::q5::{identity4, transpose};
@@ -98,10 +100,11 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    Derivation, Effect, IdentityBlock, Kernel, PiecePosition, ProtectedSet, Protection, ProtectionMode, Recipe,
-    Snapshot, Step, SupportRow, Verdict,
+    CellComparison, Derivation, Effect, IdentityBlock, Kernel, LayerCounts, PiecePosition, ProtectedSet, Protection,
+    ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
+use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
 use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
@@ -113,10 +116,14 @@ use crate::store::{
     identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Reopen, Store, Transaction,
     TransactionKind,
 };
-use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table};
+use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
-use crate::worksheet::{Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW};
+use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
+use crate::worksheet::{
+    compare_inputs, MacroVersion, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
+    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+};
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The mode of a revision with Jumble off: a session starts with Jumble off.
@@ -283,6 +290,10 @@ pub struct ProgramJob {
     /// The revision the job reads.
     pub revision: Revision,
     pub overlay: Overlay,
+    /// The provenance blocks of the job's arguments (BND.22; LP2 draft), as the caller's host gave them with
+    /// [`CommandLayer::invoke_with_inputs`], in their order; empty after [`CommandLayer::invoke`]. The layer checked
+    /// each block with the host's reader and holds it as given. The host runs the entry with them as its run's inputs.
+    pub inputs: Vec<Vec<u8>>,
 }
 
 impl ProgramJob {
@@ -338,8 +349,18 @@ impl JobOutput {
 }
 
 enum JobKind {
-    Preview { recipe: Recipe, draft: String, resolved: Option<ResolvedDraft>, caller: Caller },
+    Preview {
+        recipe: Recipe,
+        draft: String,
+        resolved: Option<ResolvedDraft>,
+        caller: Caller,
+    },
     Program(ProgramJob),
+    /// `worksheet.compare`'s job: the saved sheet and the draft record it is compared with.
+    Compare {
+        sheet: WorksheetRef,
+        draft: String,
+    },
 }
 
 struct Job {
@@ -349,6 +370,14 @@ struct Job {
     scope: String,
     lane: Lane,
     kind: JobKind,
+}
+
+impl Job {
+    /// Whether the job builds a preview: the exclusive lane also holds `worksheet.compare`'s job, which is no preview
+    /// to show, cancel or discard.
+    fn previews(&self) -> bool {
+        matches!(self.kind, JobKind::Preview { .. })
+    }
 }
 
 /// A node of the move tree: the start (node 0), a commit, a crossing, a pose move or an exit, keyed by its action
@@ -380,6 +409,12 @@ enum Change {
         name: String,
         before: Option<RecordValue>,
         after: Option<RecordValue>,
+    },
+    /// A workspace completion of a stored row whose undo class is `workspace` (draft; LP3's C6): its records' values
+    /// before and after it, in the order of their names.
+    Records {
+        before: Vec<RecordWrite>,
+        after: Vec<RecordWrite>,
     },
     /// A protection-policy change: the policy before and after it.
     Policy {
@@ -419,7 +454,8 @@ enum Tree {
     },
     Undo,
     Redo,
-    /// A workspace completion, which no undo reaches.
+    /// A workspace completion that no undo reaches: a language-defined row's, or a stored row's whose undo class is
+    /// `none`.
     None,
 }
 
@@ -594,6 +630,34 @@ fn nat(value: Option<&Value>) -> Option<u64> {
     value.and_then(Value::as_i64).and_then(|n| u64::try_from(n).ok())
 }
 
+/// The names of the records an action wrote: one for a record write, each of a workspace completion's, none otherwise.
+fn written(change: &Change) -> Box<dyn Iterator<Item = &str> + '_> {
+    match change {
+        Change::Record { name, .. } => Box::new(std::iter::once(name.as_str())),
+        Change::Records { after, .. } => Box::new(after.iter().map(|write| write.name.as_str())),
+        _ => Box::new(std::iter::empty()),
+    }
+}
+
+/// The actions of an undo or redo `stack` that a write no step reaches cuts off (draft): walked from the top, in the
+/// order the steps would take them, an action that wrote a record of `cut` leaves the stack, since its step would write
+/// over that write. The records it wrote then join the cut for the actions beneath it. On the undo stack its writes
+/// stand beyond every step, so an undo beneath it would write over them; on the redo stack its writes are undone and
+/// stay so, so a redo beneath it would start from values its own undo does not expect. An action above one that leaves
+/// keeps its place: its step finds what it wrote.
+fn cut_stack(changes: &BTreeMap<u64, Change>, stack: &[u64], cut: &BTreeSet<String>) -> BTreeSet<u64> {
+    let mut cut = cut.clone();
+    let mut dropped = BTreeSet::new();
+    for &order in stack.iter().rev() {
+        let Some(change) = changes.get(&order) else { continue };
+        if written(change).any(|name| cut.contains(name)) {
+            cut.extend(written(change).map(str::to_owned));
+            dropped.insert(order);
+        }
+    }
+    dropped
+}
+
 /// The command layer for one session.
 pub struct CommandLayer<S: Store = MemoryStore> {
     kernel: Arc<Kernel>,
@@ -628,8 +692,21 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     run: Option<(u64, FrameStamp)>,
     /// The workspace records by name (KN5's stage 3).
     records: BTreeMap<String, WorkspaceRecord>,
+    /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
+    /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
+    blocks: BTreeMap<String, String>,
+    /// The completed jobs of the rows that prepare a predicate, by job, while their writes stand: what a `FilterRef`
+    /// names ([`crate::filter`]; draft). A replay rebuilds them.
+    predicates: BTreeMap<u64, Predicate>,
+    /// The filter previews of completed `filter.preview` jobs, by job, while they are fresh (KN0.9; draft). They are
+    /// transient: a reopen keeps none.
+    filters: BTreeMap<u64, FilterPreview>,
+    /// The newest completed `worksheet.compare` job and its comparison (draft). It is transient: a reopen keeps none.
+    comparison: Option<(u64, Value)>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
     provenance: Option<Box<dyn Provenance>>,
+    /// The host's view model (EV3.2, RPI.83). Without one, `view.open` and `view.close` are refused.
+    views: Option<Box<dyn Views>>,
     /// The twist menu the host pinned (KN3.8). Without one, `twist.apply` and `jumble.on` are refused.
     twists: Option<Twists>,
     /// The jumbling engine's value at the head while Jumble is on (draft; [`crate::jumble`]). `None` with Jumble off.
@@ -685,7 +762,12 @@ impl<S: Store> CommandLayer<S> {
             frame: None,
             run: None,
             records: BTreeMap::new(),
+            predicates: BTreeMap::new(),
+            filters: BTreeMap::new(),
+            comparison: None,
+            blocks: BTreeMap::new(),
             provenance: None,
+            views: None,
             twists: None,
             jumbled: None,
             history: BTreeMap::new(),
@@ -938,6 +1020,10 @@ impl<S: Store> CommandLayer<S> {
         if !agrees(&planned.transaction, stored) {
             return Err(broken("the replay does not reach the recorded action"));
         }
+        // An action journals only the part blocks the session did not keep yet ([`Self::parts_to_keep`]).
+        if stored.blocks.iter().any(|block| self.blocks.contains_key(&sha256_hex(block.as_bytes()))) {
+            return Err(broken("the action keeps a part block the session keeps already"));
+        }
         self.adopt(Adoption { transaction: stored.clone(), ..planned });
         Ok(())
     }
@@ -1044,6 +1130,30 @@ impl<S: Store> CommandLayer<S> {
         Ok(self.kernel.positions(&self.current, pieces)?)
     }
 
+    /// The structure row that `structure.compare` reads (draft; LP3's C6, step 1 item 3): two cells compared, as
+    /// [`Kernel::compare_cells`] counts their face steps, with its refusal of a cell outside 0 to 599. Jumble on
+    /// refuses it, as it refuses [`CommandLayer::positions`] (LG2.8). A read changes nothing.
+    pub fn compare_cells(&self, first: i64, second: i64) -> Result<CellComparison, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.compare_cells(first, second)?)
+    }
+
+    /// The counts that `filter.preview` reads for a layer predicate (draft; LP3's C6, step 1 item 3): the positions
+    /// and slots of each layer around `cell`, as [`Kernel::cell_layers`] counts them. Jumble on refuses it, as it
+    /// refuses [`CommandLayer::positions`] (LG2.8), since the positions are the retained model's. A read changes
+    /// nothing.
+    pub fn cell_layers(&self, cell: i64) -> Result<Vec<LayerCounts>, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.cell_layers(cell)?)
+    }
+
+    /// One layer of [`CommandLayer::cell_layers`], as [`Kernel::layer_counts`] counts it, with its refusal of a layer
+    /// past the cell's last.
+    pub fn layer_counts(&self, cell: i64, layer: i64) -> Result<LayerCounts, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.layer_counts(cell, layer)?)
+    }
+
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
     /// revision's digest and an action's `pre` and `post` are this digest.
     fn state_digest(&self) -> &str {
@@ -1137,9 +1247,7 @@ impl<S: Store> CommandLayer<S> {
     pub fn preview_state(&self, id: u64) -> Option<PreviewState> {
         match &self.slot {
             Some(p) if p.id == id => Some(p.state),
-            _ if self.jobs.iter().any(|job| job.id == id && job.lane == Lane::Exclusive) => {
-                Some(PreviewState::Building)
-            }
+            _ if self.jobs.iter().any(|job| job.id == id && job.previews()) => Some(PreviewState::Building),
             _ => self.history.get(&id).copied(),
         }
     }
@@ -1170,6 +1278,107 @@ impl<S: Store> CommandLayer<S> {
             protection: self.revision.protection,
             draft: draft.to_owned(),
         }
+    }
+
+    /// The filter preview that completed `filter.preview` job `job` made, while the layer keeps it (KN0.9; draft): a
+    /// `FilterPreviewRef` names it by `job` and the epoch it was made in ([`FilterPreview::reference`]). The layer
+    /// keeps a filter preview while it is fresh and drops stale ones as it keeps a new one, so a missing preview and a
+    /// stale one are refused alike.
+    pub fn filter_preview(&self, job: u64) -> Option<&FilterPreview> {
+        self.filters.get(&job)
+    }
+
+    /// The current filter-preview dependencies for a resolved filter's digest (KN0.9).
+    pub fn filter_deps(&self, filter: &str) -> FilterPreviewDeps {
+        FilterPreviewDeps {
+            epoch: self.revision.epoch,
+            identity: self.revision.identity.clone(),
+            mode: self.revision.mode,
+            state: self.revision.state,
+            filter: filter.to_owned(),
+        }
+    }
+
+    /// KN0.9's `filter_fresh(f)`: `f`'s dependencies equal the same fields read now, its filter's records read again.
+    pub fn filter_fresh(&self, f: &FilterPreview) -> bool {
+        let reads = f.resolved.reads.iter().map(|read| RecordRead::of(&read.record, self.records.get(&read.record)));
+        let now = ResolvedFilter { source: f.resolved.source.clone(), reads: reads.collect() };
+        self.filter_deps(&now.digest()) == f.deps
+    }
+
+    /// Resolves a `FilterRef` ([`crate::filter`]): it must name a completed job of a predicate row with that result
+    /// digest whose writes still stand, or it is refused with `KN2:input.named_object_invalid`. The read set holds each
+    /// record the job wrote, with its content digest and version.
+    fn resolve_filter(&self, source: &Value) -> Result<ResolvedFilter, Error> {
+        let named = filter::filter_ref(source)
+            .and_then(|(job, digest)| self.predicates.get(&job).filter(|predicate| predicate.digest == digest));
+        let Some(predicate) = named else {
+            let detail = "the predicate names no completed job that prepared one with that result";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        };
+        let reads: Vec<RecordRead> =
+            predicate.writes.iter().map(|(name, _)| RecordRead::of(name, self.records.get(name))).collect();
+        if predicate.writes.iter().zip(&reads).any(|((_, version), read)| read.version != *version) {
+            let detail = "a record the predicate's job wrote has been written again since";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        }
+        Ok(ResolvedFilter { source: source.clone(), reads })
+    }
+
+    /// Every `FilterRef` argument of `args` must resolve ([`CommandLayer::resolve_filter`]) when a job is admitted.
+    fn check_filter_refs(&self, row: &Row, args: &BTreeMap<String, Value>) -> Result<(), Error> {
+        for (name, value) in args {
+            if row.arguments.get(name).is_some_and(|ty| ty.strip_suffix('?').unwrap_or(ty) == "FilterRef") {
+                self.resolve_filter(value)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// The gate `fresh_filter_preview` (LI.41), for a row that takes it: the filter preview its `FilterPreviewRef`
+    /// argument names must be one the layer keeps, made in the reference's epoch, and fresh
+    /// ([`CommandLayer::filter_fresh`]), or the row is refused with `KN5:stale.filter_preview`. Job IDs start again
+    /// after a reopen, so the epoch keeps a reference from before it off a later preview with the same job ID. The gate
+    /// reads neither the word-preview slot nor a presentation. The layer checks it when it admits the job and again
+    /// when the job's output is published (KN0.9).
+    fn fresh_filter_gate(&self, row: &Row, args: &Value) -> Result<(), Error> {
+        if !row.has_gate(FRESH_FILTER_PREVIEW) {
+            return Ok(());
+        }
+        let named = row.arguments.iter().find(|(_, ty)| ty.as_str() == "FilterPreviewRef").map(|(name, _)| name);
+        let reference = named.and_then(|name| filter::filter_preview_ref(args.get(name)?));
+        let kept = reference.and_then(|(job, epoch)| self.filters.get(&job).filter(|f| f.deps.epoch == epoch));
+        let Some(f) = kept else {
+            let detail = "the filter preview the row names is not one the layer keeps";
+            return Err(Error::new(code::STALE_FILTER_PREVIEW, detail));
+        };
+        if !self.filter_fresh(f) {
+            let detail = "the filter preview's dependencies differ from the current ones";
+            return Err(Error::new(code::STALE_FILTER_PREVIEW, detail));
+        }
+        Ok(())
+    }
+
+    /// Keeps the filter preview a completed `filter.preview` job made: bound to the revision the job read and to its
+    /// predicate, resolved now, and dropping the filter previews that are stale. A predicate that no longer resolves
+    /// keeps nothing, so a `FilterPreviewRef` to the job is refused as stale.
+    fn keep_filter_preview(&mut self, program: &ProgramJob, result: ResultRef) {
+        let typed = |ty: &str| ty.strip_suffix('?').unwrap_or(ty) == "FilterRef";
+        let Some(row) = self.table.row(&program.row) else { return };
+        let predicate = row.arguments.iter().find(|(_, ty)| typed(ty)).and_then(|(name, _)| program.args.get(name));
+        let Some(Ok(resolved)) = predicate.map(|source| self.resolve_filter(source)) else { return };
+        let deps = FilterPreviewDeps {
+            epoch: program.revision.epoch,
+            identity: program.revision.identity.clone(),
+            mode: program.revision.mode,
+            state: program.revision.state,
+            filter: resolved.digest(),
+        };
+        let stale: Vec<u64> = self.filters.iter().filter(|(_, f)| !self.filter_fresh(f)).map(|(&job, _)| job).collect();
+        for job in stale {
+            self.filters.remove(&job);
+        }
+        self.filters.insert(program.job, FilterPreview { job: program.job, result, deps, resolved });
     }
 
     /// `kernel.undo_hint`: the current order and the eligible target for `direction`, read together (LI.9).
@@ -1308,6 +1517,13 @@ impl<S: Store> CommandLayer<S> {
         self.generation += 1;
     }
 
+    /// Gives the layer the host's view model (EV3.2, RPI.83; [`crate::view`]). Without one, `view.open` and
+    /// `view.close` are refused with `KN5:input.row_not_built`.
+    pub fn set_views(&mut self, views: Box<dyn Views>) {
+        self.views = Some(views);
+        self.generation += 1;
+    }
+
     /// Pins the twist menu that `twist.apply` resolves its exact requests against and that `jumble.on` enters under
     /// (KN3.8; draft), with the exact model `context` it is read in, which must be the session's model
     /// (`KN1:input.identity_mismatch`). A pin replaces the one before; with Jumble on, only by a menu with the
@@ -1333,6 +1549,12 @@ impl<S: Store> CommandLayer<S> {
     /// The workspace records by name, each with its version and value (KN5's stage 3).
     pub fn records(&self) -> &BTreeMap<String, WorkspaceRecord> {
         &self.records
+    }
+
+    /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
+    /// CT-BND-27; draft): what the host's reader held for the blocks of the records written, kept with those writes.
+    pub fn blocks(&self) -> &BTreeMap<String, String> {
+        &self.blocks
     }
 
     /// The value record `name` holds, if any.
@@ -1376,6 +1598,7 @@ impl<S: Store> CommandLayer<S> {
         self.run = None;
         self.jobs.clear();
         self.running.clear();
+        self.comparison = None;
         self.commit_held = false;
         if let Some(adoption) = self.limbo.take() {
             match self.store.durable(&adoption.transaction.event) {
@@ -1410,8 +1633,9 @@ impl<S: Store> CommandLayer<S> {
     /// binding that LI.19 keys by the arguments' digest): [`CommandLayer::availability`]'s answer, then the argument
     /// checks an invocation makes before admission. The arguments are an object, a confirmable row's `confirm` is a
     /// boolean, the names fit the row's arguments, and each argument of a type whose form the layer knows has that
-    /// form and, for a `RevisionRef`, names the current revision. Like every hint it grants nothing: an invocation
-    /// checks its actual arguments and the current inputs again.
+    /// form and, for a `RevisionRef`, names the current revision; a `FilterRef` resolves, and a row that takes the gate
+    /// `fresh_filter_preview` names a fresh filter preview. Like every hint it grants nothing: an invocation checks its
+    /// actual arguments and the current inputs again.
     pub fn availability_for(&self, row: &str, args: &Value) -> Result<(), Error> {
         self.binding(self.known(row)?, args)
     }
@@ -1422,7 +1646,10 @@ impl<S: Store> CommandLayer<S> {
 
     fn binding(&self, row: &Row, args: &Value) -> Result<(), Error> {
         self.gates(row)?;
-        forms::check(row, argument_names(row, args)?, &self.revision)
+        let named = argument_names(row, args)?;
+        forms::check(row, named, &self.revision)?;
+        self.check_filter_refs(row, named)?;
+        self.fresh_filter_gate(row, args)
     }
 
     /// The availability of a row that an entry runs: a data-only conjunction over its stored metadata (KN5.7, LI.20),
@@ -1510,7 +1737,7 @@ impl<S: Store> CommandLayer<S> {
             }
             // A preview that is still building waits as a job on the exclusive lane, and `cancel` takes it from there.
             "operation.preview.cancel" => {
-                if self.slot.is_some() || self.jobs.iter().any(|job| job.lane == Lane::Exclusive) {
+                if self.slot.is_some() || self.jobs.iter().any(Job::previews) {
                     Ok(())
                 } else {
                     Err(Error::new(code::NO_FRESH_PREVIEW, "no pending preview"))
@@ -1568,11 +1795,15 @@ impl<S: Store> CommandLayer<S> {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader")))
                 }
             },
-            WORKSHEET_SAVE_ROW | WORKSHEET_LOAD_ROW => match self.provenance {
+            WORKSHEET_SAVE_ROW | WORKSHEET_LOAD_ROW | WORKSHEET_COMPARE_ROW => match self.provenance {
                 Some(_) => self.retained_mode(),
                 None => {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's provenance reader", row.id)))
                 }
+            },
+            VIEW_OPEN_ROW | VIEW_CLOSE_ROW => match self.views {
+                Some(_) => Ok(()),
+                None => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id))),
             },
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
@@ -1605,8 +1836,8 @@ impl<S: Store> CommandLayer<S> {
 
     /// The request digest: the envelope without the token's authenticator (LI.5) and the caller the host stamped
     /// (ruling 4).
-    fn request(&self, caller: &Caller, invocation: &Invocation) -> String {
-        digest(&json::object([
+    fn request(&self, caller: &Caller, invocation: &Invocation, inputs: &[Vec<u8>]) -> String {
+        let mut request = json::object([
             ("session", Value::String(self.revision.session.clone())),
             ("epoch", Value::Int(invocation.epoch as i64)),
             ("caller", caller.to_json()),
@@ -1614,7 +1845,14 @@ impl<S: Store> CommandLayer<S> {
             ("row", Value::String(invocation.row.clone())),
             ("args", invocation.args.clone()),
             ("token", invocation.token.as_ref().map_or(Value::Null, |t| t.binding.to_json())),
-        ]))
+        ]);
+        // The digest of each argument block, only when there are any: an invocation without blocks keeps the request
+        // digest it had before blocks existed, in stored receipts and journals too.
+        if let (false, Value::Object(fields)) = (inputs.is_empty(), &mut request) {
+            let blocks = inputs.iter().map(|block| Value::String(c600_digest::sha256_hex(block))).collect();
+            fields.insert("inputs".to_owned(), Value::Array(blocks));
+        }
+        digest(&request)
     }
 
     /// The envelope's full digest: the request digest and the token's authenticator (ruling 4).
@@ -1626,7 +1864,9 @@ impl<S: Store> CommandLayer<S> {
     /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), not `protection.orbit.set`, whose
     /// release confirmation is the solver's, not `protection.policy.set`, since the protection a commit is judged under
     /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
-    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2). Of the rows an entry
+    /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2), and not
+    /// `worksheet.compare`, the solver's comparison before a reuse (U6-040; draft), whose job would hold the exclusive
+    /// lane the solver's previews take. Of the rows an entry
     /// runs, an overlay row or a served row, only a query or view row: a run alone causes no durable action, so it
     /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (findings
     /// B3 and B4 of the KN5 boundary attack). A run that a solver command started reaches none either: a program
@@ -1639,6 +1879,7 @@ impl<S: Store> CommandLayer<S> {
             && row.id != RECORD_ROW
             && row.id != WORKSHEET_SAVE_ROW
             && row.id != WORKSHEET_LOAD_ROW
+            && row.id != WORKSHEET_COMPARE_ROW
             && (row.overlay.is_none() || matches!(row.kind, Kind::Query | Kind::View))
     }
 
@@ -1667,8 +1908,23 @@ impl<S: Store> CommandLayer<S> {
     /// the epoch under its full digest and never attaches to the command ID, so a later authentic envelope with the ID
     /// is treated as the first (ruling 4); every other answer attaches to the ID (KN5.21).
     pub fn invoke(&mut self, caller: &Caller, invocation: Invocation) -> Receipt {
+        self.invoke_with_inputs(caller, invocation, Vec::new())
+    }
+
+    /// [`CommandLayer::invoke`] with the provenance blocks of the invocation's arguments (BND.22; LP2 draft). A program
+    /// sets no field of a block: the host builds them, for a running program's invocation from the run's context, and
+    /// passes them here beside the envelope, never inside it. Blocks change none of the checks before the row is
+    /// dispatched (epoch, row, caller, token, recovery, argument names), whose refusals come first. Only a row an entry
+    /// serves takes blocks; another row that passed those checks refuses them with `KN5:input.argument_form`. For a
+    /// served row, the layer checks each block with the host's reader after the arguments' forms, the `FilterRef`s and
+    /// the gate, as for a record's block (PS1.16): a block the reader refuses is refused with its error, and with no
+    /// reader the invocation is refused with `KN5:input.row_not_built`. It holds the blocks as given, on the job
+    /// ([`ProgramJob::inputs`]), with no limit of its own on their number or size: the host's channel carries them. The
+    /// request digest covers each block's SHA-256 when there are any, so a retry with other blocks is other content
+    /// (KN5.21), and an invocation without blocks keeps its digest.
+    pub fn invoke_with_inputs(&mut self, caller: &Caller, invocation: Invocation, inputs: Vec<Vec<u8>>) -> Receipt {
         let scope = caller.scope();
-        let request = self.request(caller, &invocation);
+        let request = self.request(caller, &invocation, &inputs);
         let full = Self::envelope(&invocation, &request);
         let retained = self.retained.get(&(scope.clone(), full.clone())).filter(|r| r.command == invocation.command);
         if let Some(receipt) = retained {
@@ -1678,7 +1934,7 @@ impl<S: Store> CommandLayer<S> {
         if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
             return self.kernel_outcome(caller, &invocation.command, &request);
         }
-        let (job, status) = match self.dispatch(caller, &invocation, &request) {
+        let (job, status) = match self.dispatch(caller, &invocation, &request, &inputs) {
             Ok(answer) => answer,
             Err(error) => (None, Status::Refused(error)),
         };
@@ -1697,6 +1953,7 @@ impl<S: Store> CommandLayer<S> {
         caller: &Caller,
         invocation: &Invocation,
         request: &str,
+        inputs: &[Vec<u8>],
     ) -> Result<(Option<u64>, Status), Error> {
         if invocation.epoch != self.revision.epoch {
             return refused(code::EPOCH_CHANGED, "the envelope belongs to another engine epoch");
@@ -1725,6 +1982,9 @@ impl<S: Store> CommandLayer<S> {
                 Some(_) => refused(code::ARGUMENT_FORM, format!("`{}` takes no token", row.id)),
             };
         }
+        if !inputs.is_empty() && row.overlay.is_none() {
+            return refused(code::ARGUMENT_FORM, format!("`{}` runs no entry, so it takes no argument blocks", row.id));
+        }
         match row.id.as_str() {
             "operation.preview" => self.admit_preview(caller, invocation),
             "operation.execute" => self.execute(caller, invocation, request),
@@ -1736,13 +1996,18 @@ impl<S: Store> CommandLayer<S> {
             RECORD_ROW => self.write_record(caller, invocation, request),
             WORKSHEET_SAVE_ROW => self.save_worksheet(caller, invocation, request),
             WORKSHEET_LOAD_ROW => self.load_worksheet(caller, invocation, request),
+            WORKSHEET_COMPARE_ROW => self.admit_compare(caller, invocation),
             TWIST_ROW => self.twist(caller, invocation, request),
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
+            VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
-                self.admit_program(caller, invocation, &row)
+                self.check_filter_refs(&row, args)?;
+                self.fresh_filter_gate(&row, &invocation.args)?;
+                self.check_inputs(&row, inputs)?;
+                self.admit_program(caller, invocation, &row, inputs)
             }
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
         }
@@ -1751,6 +2016,55 @@ impl<S: Store> CommandLayer<S> {
     fn next_job(&mut self) -> u64 {
         self.jobs_issued += 1;
         self.jobs_issued
+    }
+
+    // ----- view.open, view.close -----
+
+    /// `view.open {view, source}` and `view.close {view}` (EV3.2, RPI.83; [`crate::view`]). Refused, calling no host,
+    /// in this order: no view model (`KN5:input.row_not_built`); the argument forms, and an overlay source that does
+    /// not name an overlay row of kind `view` or whose arguments do not fit it (`KN5:input.argument_form`), name a
+    /// revision that is not current or a `FilterRef` that does not resolve (that row's own refusals); a run not inside
+    /// a command the solver invoked (`LG3:capability.not_granted`). Then the host's view model answers; an admitted
+    /// open or close is `accepted` with no job, the layer's final answer for either row.
+    fn view_row(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        row: &Row,
+        args: &BTreeMap<String, Value>,
+    ) -> Result<(Option<u64>, Status), Error> {
+        if self.views.is_none() {
+            return refused(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id));
+        }
+        forms::check_forms(row, args)?;
+        let view = args.get("view").and_then(Value::as_str).unwrap_or_default();
+        let source = match args.get("source").and_then(ViewSourceRef::from_json) {
+            Some(source) if row.id == VIEW_OPEN_ROW => Some(source),
+            _ => None,
+        };
+        if let Some(ViewSourceRef::Overlay { row: name, arguments, .. }) = &source {
+            let Some(overlay) = self.table.row(name).filter(|r| r.overlay.is_some() && r.kind == Kind::View) else {
+                return refused(code::ARGUMENT_FORM, format!("`{name}` is not an overlay row of kind `view`"));
+            };
+            if !forms::names_fit(overlay, arguments.keys().map(String::as_str)) {
+                return refused(code::ARGUMENT_FORM, format!("`{name}` takes {:?}", overlay.arguments));
+            }
+            forms::check(overlay, arguments, &self.revision)?;
+            self.check_filter_refs(overlay, arguments)?;
+        }
+        if let Caller::Runtime { run } = caller {
+            if !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (RPI.83)");
+                return refused(code::NOT_GRANTED, detail);
+            }
+        }
+        let views = self.views.as_mut().expect("checked above");
+        let command = invocation.command.as_str();
+        match &source {
+            Some(source) => views.open(command, view, source)?,
+            None => views.close(command, view)?,
+        }
+        Ok((None, Status::Accepted))
     }
 
     // ----- operation.preview -----
@@ -1800,7 +2114,7 @@ impl<S: Store> CommandLayer<S> {
         let Some(reader) = &self.provenance else {
             return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
         };
-        reader.admit(value.provenance.as_bytes())?;
+        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
         Ok(ResolvedDraft { source: draft.clone(), letters, reads: vec![RecordRead::of(name, record)] })
     }
 
@@ -1826,6 +2140,10 @@ impl<S: Store> CommandLayer<S> {
                 JobKind::Program(_) => keep.push_back(job),
                 JobKind::Preview { recipe, draft, resolved, caller } => {
                     self.build_preview(job.id, &job.command, recipe, &draft, resolved, caller);
+                    ran += 1;
+                }
+                JobKind::Compare { sheet, draft } => {
+                    self.build_comparison(job.id, &(job.scope, job.command), &sheet, &draft);
                     ran += 1;
                 }
             }
@@ -1913,7 +2231,7 @@ impl<S: Store> CommandLayer<S> {
             self.generation += 1;
             return Ok((None, Status::Completed(done)));
         }
-        if let Some(position) = self.jobs.iter().position(|job| job.id == id && job.lane == Lane::Exclusive) {
+        if let Some(position) = self.jobs.iter().position(|job| job.id == id && job.previews()) {
             let job = self.jobs.remove(position).expect("the position is in range");
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ByUser));
             self.history.insert(id, PreviewState::Cancelled);
@@ -2081,6 +2399,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -2095,7 +2414,8 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// Steps 9 and 10: writes the action and adopts it only when the store answers that it is durable.
-    fn transact(&mut self, adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
+    fn transact(&mut self, mut adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
+        adoption.transaction.blocks = self.parts_to_keep(&adoption.transaction);
         match self.store.transact(&adoption.transaction) {
             Fate::Durable => {
                 let receipt = self.adopt(adoption);
@@ -2109,6 +2429,26 @@ impl<S: Store> CommandLayer<S> {
                 Ok((None, Status::UnknownOutcome))
             }
         }
+    }
+
+    /// The part blocks a record write or a workspace row's completion keeps (CT-BND-27; draft): those the host's reader
+    /// holds for the blocks the action writes ([`Provenance::parts`]) that the session does not keep yet, in the order
+    /// of their digests. An undo or redo writes values whose parts were kept when they were first written.
+    fn parts_to_keep(&self, transaction: &Transaction) -> Vec<String> {
+        let (Some(reader), TransactionKind::Record | TransactionKind::Workspace) = (&self.provenance, transaction.kind)
+        else {
+            return Vec::new();
+        };
+        let mut new = BTreeMap::new();
+        for value in transaction.record.iter().chain(&transaction.records).filter_map(|write| write.value.as_ref()) {
+            for part in reader.parts(value.provenance.as_bytes()) {
+                let digest = sha256_hex(part.as_bytes());
+                if !self.blocks.contains_key(&digest) {
+                    new.insert(digest, part);
+                }
+            }
+        }
+        new.into_values().collect()
     }
 
     /// Step 10: applies a durable action, stores its durable receipt and returns it. Only an action that moves the
@@ -2138,18 +2478,34 @@ impl<S: Store> CommandLayer<S> {
             record.version += 1;
             record.value = value.clone();
         }
-        // No undo reaches a workspace row's writes, so an undo or redo of an earlier write of one of its records would
-        // write over them. Those earlier writes leave both stacks (draft).
-        if !transaction.records.is_empty() {
-            let written: BTreeSet<&str> = transaction.records.iter().map(|write| write.name.as_str()).collect();
-            let rewrites = |order: &u64| matches!(self.changes.get(order), Some(Change::Record { name, .. }) if written.contains(name.as_str()));
-            let dropped: Vec<u64> =
-                self.undo.iter().chain(&self.redo).filter(|order| rewrites(order)).copied().collect();
+        // The part blocks it keeps stay for the session, an undo's included (CT-BND-27).
+        for block in &transaction.blocks {
+            self.blocks.entry(sha256_hex(block.as_bytes())).or_insert_with(|| block.clone());
+        }
+        // No undo reaches a workspace completion of a row whose undo class is not `workspace`, so an undo or redo of an
+        // earlier write of one of its records would write over it. The actions that wrote one leave both stacks
+        // (draft), and the cut runs on beneath them ([`cut_stack`]). An undoable completion, and an undo or redo of
+        // one, keep them: the stack inverts them in order.
+        if matches!(tree, Tree::None) && !transaction.records.is_empty() {
+            let cut: BTreeSet<String> = transaction.records.iter().map(|write| write.name.clone()).collect();
+            let mut dropped = cut_stack(&self.changes, &self.undo, &cut);
+            dropped.extend(cut_stack(&self.changes, &self.redo, &cut));
             self.undo.retain(|order| !dropped.contains(order));
             self.redo.retain(|order| !dropped.contains(order));
             for order in dropped {
                 self.changes.remove(&order);
             }
+        }
+        // A predicate row's completion is what a `FilterRef` names while its writes stand ([`crate::filter`]). Those
+        // whose writes another action wrote over are dropped.
+        let predicate = transaction.kind == TransactionKind::Workspace
+            && filter::PREDICATE_ROWS.contains(&transaction.row.as_str());
+        if let (true, Some(job), Some(result)) = (predicate, transaction.job, &transaction.result) {
+            let records = &self.records;
+            let version = |name: &str| records.get(name).map_or(0, |record| record.version);
+            self.predicates.retain(|_, predicate| predicate.writes.iter().all(|(name, at)| version(name) == *at));
+            let writes = transaction.records.iter().map(|write| (write.name.clone(), version(&write.name))).collect();
+            self.predicates.insert(job, Predicate { digest: result.clone(), writes });
         }
         // A policy change, or its undo or redo.
         if let Some(policy) = transaction.policy {
@@ -2202,12 +2558,14 @@ impl<S: Store> CommandLayer<S> {
                 keep.push_back(job);
                 continue;
             }
-            if job.lane == Lane::Exclusive {
+            if job.previews() {
                 self.history.insert(job.id, PreviewState::Discarded);
             }
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ReplacedRevision));
         }
         self.jobs = keep;
+        // A comparison analysed the state this action replaced (LB7.2: a stored result never stands in for a fresh one).
+        self.comparison = None;
         let running = std::mem::take(&mut self.running);
         for (id, program) in running {
             if program.kind == Kind::File {
@@ -2373,6 +2731,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let side = Side::Stay;
         match change {
@@ -2407,6 +2766,13 @@ impl<S: Store> CommandLayer<S> {
             Change::Record { name, before, after } => {
                 let to = if direction == Direction::Undo { before } else { after };
                 transaction.record = Some(RecordWrite { name, value: to });
+                transaction.revision.workspace += 1;
+                Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
+            }
+            // A workspace completion's inverse: each of its records takes its value before or after the completion
+            // again, as one action, and their versions and the workspace revision advance (KN5.20, LI.26; draft).
+            Change::Records { before, after } => {
+                transaction.records = if direction == Direction::Undo { before } else { after };
                 transaction.revision.workspace += 1;
                 Ok(Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side })
             }
@@ -2604,6 +2970,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -2664,6 +3031,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -2690,9 +3058,21 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// A language-defined workspace row's completion: one durable action that advances the workspace revision, writes
-    /// the job's records and keeps the state, the preview slot and the jobs (KN5.23). No undo reaches it.
+    /// A workspace row's job completion: one durable action that advances the workspace revision, writes the job's
+    /// records and keeps the state, the preview slot and the jobs (KN5.23). A stored row whose undo class is
+    /// `workspace` makes an undoable action, which `session.undo` and `session.redo` invert and repeat as a workspace
+    /// inverse ([`Change::Records`]), when it writes a record: one that writes none changes nothing an undo could
+    /// restore, so it takes no undo entry. No undo reaches any other row's completion (draft).
     fn workspace_adoption(&self, meta: Meta, job: u64, result: String, records: Vec<RecordWrite>) -> Adoption {
+        let tree = match self.workspace_undoable(&meta.row) && !records.is_empty() {
+            true => {
+                let value = |name: &str| self.records.get(name).and_then(|record| record.value.clone());
+                let before =
+                    records.iter().map(|write| RecordWrite { name: write.name.clone(), value: value(&write.name) });
+                Tree::Push { node: None, change: Change::Records { before: before.collect(), after: records.clone() } }
+            }
+            false => Tree::None,
+        };
         let order = self.order + 1;
         let digest = self.state_digest().to_owned();
         let mut revision = self.revision.clone();
@@ -2720,9 +3100,17 @@ impl<S: Store> CommandLayer<S> {
             records,
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
-        let tree = Tree::None;
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
+    }
+
+    /// Whether a completion of workspace row `row` is undoable: a stored row whose undo class is `workspace`. A replay
+    /// reads the same answer before the host serves its rows again, since H-08's table holds the stored rows; a
+    /// language-defined row's completion is never undoable (draft).
+    fn workspace_undoable(&self, row: &str) -> bool {
+        !self.table.language_defined(row)
+            && self.table.row(row).is_some_and(|row| row.kind == Kind::Workspace && row.undo == UndoClass::Workspace)
     }
 
     // ----- workspace.set -----
@@ -2782,6 +3170,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: None,
+            blocks: Vec::new(),
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -2814,12 +3203,7 @@ impl<S: Store> CommandLayer<S> {
         let (Some(source), Some(name)) = (source, name) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
         };
-        let Some(value) = self.records.get(source).and_then(|record| record.value.as_ref()) else {
-            return refused(code::NAMED_OBJECT_INVALID, "no such record");
-        };
-        let Some(sheet) = Worksheet::from_draft(&value.payload) else {
-            return refused(code::NAMED_OBJECT_INVALID, "the record holds neither a list of letters nor a work sheet");
-        };
+        let (sheet, value) = self.drafted(source)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
         let sheet = self.place(sheet, None)?;
@@ -2852,17 +3236,7 @@ impl<S: Store> CommandLayer<S> {
         let Some(named) = invocation.args.get("worksheet").and_then(WorksheetRef::from_json) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is named `{\"record\": name, \"version\": n}`");
         };
-        let record = self.records.get(&named.record);
-        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
-            return refused(code::NAMED_OBJECT_INVALID, "no such record");
-        };
-        if version != named.version {
-            return refused(code::REVISION_CHANGED, "the work sheet changed since it was named");
-        }
-        let saved = Worksheet::from_payload(&value.payload).and_then(|sheet| Some((sheet.resolution.clone()?, sheet)));
-        let Some((saved, sheet)) = saved else {
-            return refused(code::NAMED_OBJECT_INVALID, "the record holds no saved work sheet");
-        };
+        let (sheet, saved, value) = self.saved_sheet(&named)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
         let sheet = self.place(sheet, Some(&saved))?;
@@ -2887,6 +3261,218 @@ impl<S: Store> CommandLayer<S> {
         let saved = saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone());
         let resolution = Resolution { saved, now: digest, pieces: placements.collect() };
         Ok(Worksheet { resolution: Some(resolution), ..sheet })
+    }
+
+    /// The sheet draft record `name` saves or compares as ([`Worksheet::from_draft`]), and the record's value. A record
+    /// of letters names itself, at its version and content digest, as the sheet's macro version (solving workflow
+    /// section 4.1; draft). Refused with `KN2:input.named_object_invalid` when the record is missing or holds neither
+    /// letters nor a work sheet.
+    fn drafted(&self, name: &str) -> Result<(Worksheet, &RecordValue), Error> {
+        let record = self.records.get(name);
+        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "no such record"));
+        };
+        let Some(mut sheet) = Worksheet::from_draft(&value.payload) else {
+            let detail = "the record holds neither a list of letters nor a work sheet";
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        };
+        if value.letters().is_some() {
+            sheet.macro_version = Some(MacroVersion { record: name.to_owned(), version, digest: value.digest() });
+        }
+        Ok((sheet, value))
+    }
+
+    /// The saved work sheet that `named` names, its placements and its record's value. Refused in this order: a record
+    /// that is missing or holds no value (`KN2:input.named_object_invalid`), a record at another version
+    /// (`KN5:stale.revision_changed`) and a record that holds no saved work sheet (`KN2:input.named_object_invalid`).
+    fn saved_sheet(&self, named: &WorksheetRef) -> Result<(Worksheet, Resolution, &RecordValue), Error> {
+        let record = self.records.get(&named.record);
+        let Some((version, value)) = record.and_then(|record| Some((record.version, record.value.as_ref()?))) else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "no such record"));
+        };
+        if version != named.version {
+            return Err(Error::new(code::REVISION_CHANGED, "the work sheet changed since it was named"));
+        }
+        let saved = Worksheet::from_payload(&value.payload).and_then(|sheet| Some((sheet.resolution.clone()?, sheet)));
+        let Some((saved, sheet)) = saved else {
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, "the record holds no saved work sheet"));
+        };
+        Ok((sheet, saved, value))
+    }
+
+    // ----- worksheet.compare -----
+
+    /// The comparison that completed `worksheet.compare` job `job` made, while it is the newest one and no action has
+    /// moved the state since (draft): the value its completion's result reference digests. A reopen keeps none.
+    pub fn comparison(&self, job: u64) -> Option<&Value> {
+        self.comparison.as_ref().filter(|(id, _)| *id == job).map(|(_, value)| value)
+    }
+
+    /// `worksheet.compare {worksheet, draft}` (LB7.2, LB2's work sheets; U2-065, U5-055, U6-040; draft): compares the
+    /// saved work sheet that `worksheet` names, `{"record": name, "version": n}`, with the current work, a draft
+    /// `{"record": name}` that holds letters or a sheet, and analyses the sheet's complete operation afresh. Admission
+    /// queues a job on the exclusive lane; [`CommandLayer::run_jobs`] runs it at the head
+    /// ([`CommandLayer::compare_now`]). Refused, queuing nothing, in this order: no reader (`KN5:input.row_not_built`),
+    /// Jumble on (`KN5:input.retained_tool_needs_jumble_off`), arguments of another form (`KN5:input.argument_form`),
+    /// the sheet's refusals ([`CommandLayer::saved_sheet`]), the draft's (`KN2:input.named_object_invalid`), the
+    /// reader's refusal of the sheet's block in this session (KN5.26: the analysis shows what a preview of its word
+    /// would) and a held exclusive lane (`KN7:busy.lane_full`). The runtime may not invoke it.
+    fn admit_compare(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        let Some(reader) = &self.provenance else {
+            return refused(
+                code::ROW_NOT_BUILT,
+                format!("`{WORKSHEET_COMPARE_ROW}` needs the host's provenance reader"),
+            );
+        };
+        self.retained_mode()?;
+        let args = &invocation.args;
+        let named = args.get("worksheet").and_then(WorksheetRef::from_json);
+        let draft = args.get("draft").and_then(Value::as_object).filter(|draft| draft.len() == 1);
+        let draft = draft.and_then(|draft| draft.get("record")).and_then(Value::as_str);
+        let (Some(named), Some(draft)) = (named, draft) else {
+            let detail =
+                "a work sheet `{\"record\": name, \"version\": n}` is compared with a draft `{\"record\": name}`";
+            return refused(code::ARGUMENT_FORM, detail);
+        };
+        let (_, _, value) = self.saved_sheet(&named)?;
+        self.drafted(draft)?;
+        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        self.exclusive_free()?;
+        let id = self.next_job();
+        let kind = JobKind::Compare { sheet: named, draft: draft.to_owned() };
+        let (command, scope) = (invocation.command.clone(), caller.scope());
+        self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind });
+        self.generation += 1;
+        Ok((Some(id), Status::Running(id)))
+    }
+
+    /// Runs `worksheet.compare` job `id` and settles its receipt: `completed(query)` with the comparison's digest, kept
+    /// as the newest comparison ([`CommandLayer::comparison`]), or failed with [`CommandLayer::compare_now`]'s error.
+    fn build_comparison(&mut self, id: u64, key: &Key, sheet: &WorksheetRef, draft: &str) {
+        let status = match self.compare_now(sheet, draft) {
+            Ok(value) => {
+                let result = ResultRef { job: Some(id), digest: digest(&value) };
+                self.comparison = Some((id, value));
+                let revision = self.revision.clone();
+                Status::Completed(Completion { kind: CompletionKind::Query, revision, result: Some(result) })
+            }
+            Err(error) => Status::Failed(error),
+        };
+        self.settle(key, status);
+        self.generation += 1;
+    }
+
+    /// The comparison at the head (draft). The sheet and the draft are read again, so a write of the sheet since
+    /// admission fails the job with `KN5:stale.revision_changed`, and Jumble on with its refusal. The value is
+    /// `{"worksheet", "draft", "inputs", "resolution", "moved", "macro_version", "analysis"}`:
+    /// - `worksheet` names the sheet as the job read it, `draft` the draft record with its version and content digest;
+    /// - `inputs` compares the sheet's phases, roles, reference and macro version with the draft's ([`compare_inputs`]);
+    /// - `resolution` places the sheet's piece roles again at the head, as `worksheet.load` would, and `moved` names
+    ///   the piece roles whose piece is not where it was saved: shown, never retargeted (section 4.1);
+    /// - `macro_version` is the sheet's macro version (`saved`, `null` when it names none) and its `status`: `none`,
+    ///   `current` (the record is at that version and holds that content), `changed` (otherwise) or `missing` (it
+    ///   holds no value);
+    /// - `analysis` is the fresh exact analysis of the sheet's complete operation from the head under the protection
+    ///   and policy in force ([`CommandLayer::analyse`]). The sheet stores no result that could stand in for it
+    ///   (LB7.2), and a comparison grants nothing: a reuse still needs `worksheet.load` and a fresh engine preview.
+    fn compare_now(&self, named: &WorksheetRef, draft: &str) -> Result<Value, Error> {
+        self.retained_mode()?;
+        let (sheet, saved, _) = self.saved_sheet(named)?;
+        let (work, value) = self.drafted(draft)?;
+        let version = self.records.get(draft).map_or(0, |record| record.version);
+        let current = json::object([
+            ("record", Value::String(draft.to_owned())),
+            ("version", Value::Int(version as i64)),
+            ("digest", Value::String(value.digest())),
+        ]);
+        let inputs = compare_inputs(&sheet, &work);
+        let placed = self.place(sheet.clone(), Some(&saved))?.resolution.expect("place resolves the sheet");
+        let moved = placed.pieces.iter().filter(|p| p.moved()).map(|p| Value::String(p.name.clone())).collect();
+        let status = match &sheet.macro_version {
+            None => "none",
+            Some(saved) => match self.records.get(&saved.record) {
+                Some(WorkspaceRecord { version, value: Some(value) }) => {
+                    if *version == saved.version && value.digest() == saved.digest {
+                        "current"
+                    } else {
+                        "changed"
+                    }
+                }
+                _ => "missing",
+            },
+        };
+        let macro_version = json::object([
+            ("saved", sheet.macro_version.as_ref().map_or(Value::Null, MacroVersion::to_json)),
+            ("status", Value::String(status.to_owned())),
+        ]);
+        Ok(json::object([
+            ("worksheet", named.to_json()),
+            ("draft", current),
+            ("inputs", inputs),
+            ("resolution", placed.to_json()),
+            ("moved", Value::Array(moved)),
+            ("macro_version", macro_version),
+            ("analysis", self.analyse(&sheet.letters())?),
+        ]))
+    }
+
+    /// The exact analysis of `letters` as one complete operation from the head under the protection and policy in
+    /// force (LB2.2, LB2.3; draft): what a preview's summary reports (its literal word, net map, support, conflicts,
+    /// verdict, mode and first refused prefix, and the end state's digest, `null` when protection refuses it) and LB2's
+    /// gains and losses ([`CommandLayer::gains_and_losses`]), which are reported also when protection refuses it.
+    fn analyse(&self, letters: &[i64]) -> Result<Value, Error> {
+        let recipe = self.kernel.word(letters)?;
+        let base = &self.current;
+        let (end, effect, protection) = match self.derive(base, &recipe, &self.protected).map_err(kernel_error)? {
+            Derivation::Derived(d) => (Some(d.state), d.effect, d.protection),
+            Derivation::Refused(r) => (None, r.effect, r.protection),
+        };
+        let (gains, losses) = self.gains_and_losses(base, &effect)?;
+        let verdict = match protection.verdict {
+            Verdict::Clear => "clear",
+            Verdict::Moves => "moves",
+        };
+        let positions = |list: Vec<i64>| Value::Array(list.into_iter().map(Value::Int).collect());
+        Ok(json::object([
+            ("literal", Value::String(effect.expansion_sha256.clone())),
+            ("base", Value::String(base.digest().to_owned())),
+            ("end", end.as_ref().map_or(Value::Null, |s| Value::String(s.digest().to_owned()))),
+            ("net_sha256", Value::String(effect.net_sha256.clone())),
+            ("net_moved_stickers", Value::Int(effect.moved_stickers() as i64)),
+            ("net_moved_pieces", Value::Int(effect.moved_pieces as i64)),
+            ("primitive_count", Value::Int(effect.primitive_count as i64)),
+            ("support", rows_json(&effect.support)),
+            ("conflicts", rows_json(&protection.conflicts)),
+            ("verdict", Value::String(verdict.into())),
+            ("mode", Value::String(policy_name(protection.mode).to_owned())),
+            ("first_refused_prefix", protection.first_refused_prefix.map_or(Value::Null, |n| Value::Int(n as i64))),
+            ("gains", positions(gains)),
+            ("losses", positions(losses)),
+        ]))
+    }
+
+    /// LB2's gains and losses of `effect` applied to `base` (0.4's exact gains and losses; draft): the positions,
+    /// each named by its home piece as KN2.4's `positions` row names it, in increasing order, whose home piece is not
+    /// solved in `base` and is solved after the effect (gains), and the reverse (losses). A position is finished when
+    /// every sticker of its home piece is in its home slot ([`PiecePosition::solved`]), on all labels, whatever a
+    /// filter shows (LB2.2).
+    fn gains_and_losses(&self, base: &Snapshot, effect: &Effect) -> Result<(Vec<i64>, Vec<i64>), Error> {
+        let labels = base.labels();
+        let mut end = labels.to_vec();
+        for (&source, &destination) in effect.source().iter().zip(effect.destination()) {
+            end[destination as usize] = labels[source as usize];
+        }
+        let all: Vec<i64> = (0..c600_kernel::PIECES as i64).collect();
+        let (mut gains, mut losses) = (Vec::new(), Vec::new());
+        for piece in self.kernel.positions(base, &all)? {
+            let after = piece.home.iter().all(|&slot| end[slot as usize] == slot);
+            match (piece.solved(), after) {
+                (false, true) => gains.push(piece.piece as i64),
+                (true, false) => losses.push(piece.piece as i64),
+                _ => {}
+            }
+        }
+        Ok((gains, losses))
     }
 
     // ----- jumble.on -----
@@ -2979,6 +3565,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: Some(entry.record.clone()),
+            blocks: Vec::new(),
         };
         let (identity, record) = (entry.identity, entry.record);
         let change = Change::Crossing { before: self.head, after: order, identity, record };
@@ -3145,6 +3732,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: None,
             crossing: Some(exit.record.clone()),
+            blocks: Vec::new(),
         };
         let point = ExitPoint { poses: head.clone(), retained: self.current.clone(), record: exit.record };
         let change = Change::Exit { before: self.head, after: order, point: Box::new(point) };
@@ -3289,6 +3877,7 @@ impl<S: Store> CommandLayer<S> {
             records: Vec::new(),
             rotation: Some(rotation),
             crossing: None,
+            blocks: Vec::new(),
         };
         let change = Change::Pose { before: self.head, after: order };
         let tree = Tree::Push { node: Some((order, node)), change };
@@ -3384,11 +3973,25 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- language-defined rows -----
 
+    /// The argument blocks of an invocation that an entry serves (BND.22): the host's reader checks each block's form,
+    /// as for a record's block (PS1.16). The layer reads nothing else in them.
+    fn check_inputs(&self, row: &Row, inputs: &[Vec<u8>]) -> Result<(), Error> {
+        if inputs.is_empty() {
+            return Ok(());
+        }
+        let Some(reader) = &self.provenance else {
+            let detail = format!("`{}`'s argument blocks need the host's provenance reader", row.id);
+            return Err(Error::new(code::ROW_NOT_BUILT, detail));
+        };
+        inputs.iter().try_for_each(|block| reader.check(block))
+    }
+
     fn admit_program(
         &mut self,
         caller: &Caller,
         invocation: &Invocation,
         row: &Row,
+        inputs: &[Vec<u8>],
     ) -> Result<(Option<u64>, Status), Error> {
         let overlay = row.overlay.clone().expect("an overlay row");
         if row.lane == Lane::Program {
@@ -3419,6 +4022,7 @@ impl<S: Store> CommandLayer<S> {
             caller: caller.clone(),
             revision: self.revision.clone(),
             overlay,
+            inputs: inputs.to_vec(),
         };
         self.jobs.push_back(Job {
             id,
@@ -3454,12 +4058,20 @@ impl<S: Store> CommandLayer<S> {
     ///
     /// Before the layer takes the output, it checks it: only a workspace row's job writes records
     /// (`LG3:capability.not_granted` otherwise), and every record's provenance block passes the host's reader, as for
-    /// `workspace.set` (PS1.16). A job whose output fails a check fails with that error and leaves nothing written. A
-    /// workspace row's records are written in its completion's one durable action, and no undo reaches them.
+    /// `workspace.set` (PS1.16), and a row that takes the gate `fresh_filter_preview` must pass it again, or the job
+    /// fails with `KN5:stale.filter_preview` (KN0.9). A job whose output fails a check fails with that error and leaves
+    /// nothing written. A workspace row's records are written in its completion's one durable action, which
+    /// `session.undo` reaches only for a stored row whose undo class is `workspace`. A completed `filter.preview` job's
+    /// result is kept as a filter preview ([`CommandLayer::filter_preview`]).
     pub fn finish_program_job_with(&mut self, job: u64, result: Result<JobOutput, Error>) -> Option<Receipt> {
         let program = self.running.remove(&job)?;
         let key = (program.caller.scope(), program.command.clone());
-        let status = match result.and_then(|output| self.admit_output(&program, output)) {
+        // The gate `fresh_filter_preview` must hold again when the output is published (KN0.9).
+        let gate = |output: JobOutput| match self.table.row(&program.row) {
+            Some(row) => self.fresh_filter_gate(row, &program.args).map(|()| output),
+            None => Ok(output),
+        };
+        let status = match result.and_then(|output| self.admit_output(&program, output)).and_then(gate) {
             Err(error) => Status::Failed(error),
             Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
                 Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
@@ -3493,8 +4105,11 @@ impl<S: Store> CommandLayer<S> {
                         )
                     }
                 };
-                let result = Some(ResultRef { job: Some(job), digest: output.digest() });
-                Status::Completed(Completion { kind, revision: program.revision.clone(), result })
+                let result = ResultRef { job: Some(job), digest: output.digest() };
+                if program.row == filter::FILTER_PREVIEW_ROW && kind == CompletionKind::Query {
+                    self.keep_filter_preview(&program, result.clone());
+                }
+                Status::Completed(Completion { kind, revision: program.revision.clone(), result: Some(result) })
             }
         };
         self.settle(&key, status);

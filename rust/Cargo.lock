@@ -40,6 +40,7 @@ dependencies = [
  "c600-digest",
  "c600-jumble",
  "c600-kernel",
+ "c600-run",
 ]
 
 [[package]]
@@ -50,7 +51,9 @@ version = "0.0.0"
 name = "c600-display"
 version = "0.0.0"
 dependencies = [
+ "c600-check",
  "c600-digest",
+ "c600-ir",
  "c600-jumble",
  "c600-kernel",
 ]
@@ -115,6 +118,7 @@ dependencies = [
  "c600-ir",
  "c600-jumble",
  "c600-kernel",
+ "c600-library",
  "c600-repr",
  "c600-run",
  "c600-syntax",
@@ -141,6 +145,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-lx2"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-command",
+ "c600-digest",
+ "c600-kernel",
+ "c600-run",
+ "c600-runtime",
+ "c600-session",
+ "c600-tools",
+]
+
+[[package]]
+name = "c600-lx4"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-module"
 version = "0.0.0"
 dependencies = [
@@ -154,6 +180,15 @@ dependencies = [
 [[package]]
 name = "c600-platform"
 version = "0.0.0"
+
+[[package]]
+name = "c600-render"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-display",
+ "c600-kernel",
+]
 
 [[package]]
 name = "c600-repr"

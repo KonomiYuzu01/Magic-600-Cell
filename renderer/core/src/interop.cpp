@@ -3,14 +3,17 @@
 #include "frame_target.h"
 #include <d3d12sdklayers.h>
 #include <dxgi1_6.h>
+#include <dcomp.h>
 #include <wrl/client.h>
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -87,6 +90,79 @@ struct Debug {
     std::vector<int32_t> ids;
     std::vector<std::string> descriptions;
 };
+
+// ABI 5, route B. Route B is accepted for now by the owner on 18 Nov 2026,
+// pending three owner-machine checks (docs/wiki/decisions/
+// owner-decisions-2026-11-18-route-b.md). The device factory, the composition
+// swap chain, the DirectComposition layer and the recovery order are adapted
+// from the C9 present probe (work/experiments/c9-present-probe/native/src/
+// c9pp.cpp, PR 245; see PROVENANCE.md).
+constexpr DXGI_FORMAT SurfaceFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+constexpr UINT SurfaceFlags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+constexpr UINT SurfaceLatency = 2;
+constexpr GUID ClsidDeviceFactory = {0x114863bf, 0xc386, 0x4aee, {0xb3, 0x9d, 0x8f, 0x0b, 0xbb, 0x06, 0x29, 0x55}};
+static_assert(SA2_SURFACE_BUFFERS == SA2_RING_SLOTS, "a surface buffer uses its ring slot's RTV and query results");
+// A composition swap chain and its back buffers; each buffer records with an
+// allocator and a list of its own and keeps its last frame's fence value.
+struct Chain {
+    ComPtr<IDXGISwapChain3> swapchain;
+    HANDLE waitable = nullptr;
+    std::array<Slot, SA2_SURFACE_BUFFERS> buffers;
+    Chain() = default;
+    Chain(const Chain&) = delete;
+    Chain& operator=(const Chain&) = delete;
+    ~Chain() { if (waitable) CloseHandle(waitable); }
+};
+// The attached surface: the window, the visual's rectangle in client pixels,
+// the DirectComposition objects and the current generation's swap chain.
+struct Surface {
+    HWND hwnd = nullptr;
+    int32_t x = 0, y = 0;
+    uint32_t width = 0, height = 0;
+    uint64_t generation = 0;
+    ComPtr<IDCompositionDesktopDevice> dcomp;
+    ComPtr<IDCompositionTarget> target;
+    ComPtr<IDCompositionVisual2> visual;
+    std::unique_ptr<Chain> chain;
+};
+// A sa2_create context's scene config, kept so a recovery can load the scene
+// again on the new device. The strings are copies; load points a copy of the
+// config at them.
+struct SceneSource {
+    bool wj = false, has_inject = false;
+    sa2_scene_config scene{};
+    sa2_wj_config jumble{};
+    std::string inject, menu, data;
+    void keep(const sa2_scene_config& config) {
+        *this = SceneSource{};
+        scene = config;
+        scene.inject = nullptr;
+        has_inject = config.inject != nullptr;
+        if (has_inject) inject = config.inject;
+    }
+    void keep(const sa2_wj_config& config) {
+        *this = SceneSource{};
+        wj = true;
+        jumble = config;
+        jumble.menu = jumble.data_utf8 = jumble.inject = nullptr;
+        has_inject = config.inject != nullptr;
+        if (has_inject) inject = config.inject;
+        menu = config.menu;
+        data = config.data_utf8;
+    }
+    std::unique_ptr<sa2::Scene> load(ID3D12Device* device, uint32_t width, uint32_t height) const {
+        if (wj) {
+            auto config = jumble;
+            config.menu = menu.c_str();
+            config.data_utf8 = data.c_str();
+            config.inject = has_inject ? inject.c_str() : nullptr;
+            return std::make_unique<sa2::Scene>(device, config, width, height);
+        }
+        auto config = scene;
+        config.inject = has_inject ? inject.c_str() : nullptr;
+        return std::make_unique<sa2::Scene>(device, config, width, height);
+    }
+};
 }
 
 struct sa2_context {
@@ -107,6 +183,17 @@ struct sa2_context {
     DWORD callback_cookie = 0;
     bool callback_registered = false, drained = false;
     uint64_t godot_drain_value = 0, own_drain_value = 0, last_frame = 0, last_ready = 0, last_free = 0;
+    // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
+    // three owner-machine checks): a sa2_create context owns its device, and
+    // godot_queue is then the core's own DIRECT queue. requested is the config
+    // as given, for a recovery's setup.
+    bool created = false;
+    ComPtr<IDXGIFactory4> factory;
+    LUID adapter{};
+    sa2_config requested{};
+    uint64_t device_epoch = sa2::DeviceEpoch, surface_generation = 0;
+    std::unique_ptr<Surface> surface;
+    SceneSource source;
     ~sa2_context() { if (completion) CloseHandle(completion); }
     ID3D12CommandQueue* producer() const { return own_queue ? own_queue.Get() : godot_queue.Get(); }
 };
@@ -309,6 +396,7 @@ public:
     uint32_t width() const override { return slot_.width; }
     uint32_t height() const override { return slot_.height; }
     uint32_t ring() const override { return index_; }
+    DXGI_FORMAT format() const override { return DXGI_FORMAT_R8G8B8A8_UNORM; }
     void wait(uint64_t frame) override {
         if (frame) wait_fence(ctx_, ctx_->ready.Get(), frame, deadline(ctx_->config.wait_timeout_ms));
     }
@@ -330,6 +418,67 @@ private:
     sa2_context* ctx_;
     uint32_t index_;
     Slot& slot_;
+};
+
+// ABI 5's frame target (route B; accepted for now by the owner on 18 Nov
+// 2026, pending three owner-machine checks): the attached surface's current
+// back buffer, presented with SA2_SURFACE_SYNC_INTERVAL (c9pp.cpp's frame).
+// The buffer moves between COMMON (PRESENT) and RENDER_TARGET.
+Surface& attached(sa2_context* ctx) {
+    require(ctx->surface && ctx->surface->chain, "no surface is attached", SA2_E_WRONG_STATE);
+    return *ctx->surface;
+}
+class SurfaceTarget final : public sa2::FrameTarget {
+public:
+    explicit SurfaceTarget(sa2_context* ctx) : ctx_(ctx), surface_(attached(ctx)), chain_(*surface_.chain),
+        index_(chain_.swapchain->GetCurrentBackBufferIndex()), buffer_(chain_.buffers.at(index_)) {
+        require(buffer_.resource != nullptr, "the surface's back buffer is not acquired", SA2_E_WRONG_STATE);
+    }
+    uint32_t width() const override { return surface_.width; }
+    uint32_t height() const override { return surface_.height; }
+    uint32_t ring() const override { return index_; }
+    DXGI_FORMAT format() const override { return SurfaceFormat; }
+    void wait(uint64_t frame) override {
+        if (frame) wait_fence(ctx_, ctx_->ready.Get(), frame, deadline(ctx_->config.wait_timeout_ms));
+    }
+    ID3D12GraphicsCommandList* open() override {
+        // The buffer's previous frame first: a timeout there leaves the
+        // frame-latency waitable untouched.
+        wait_previous(ctx_, buffer_);
+        const auto status = WaitForSingleObjectEx(chain_.waitable, ctx_->config.wait_timeout_ms, FALSE);
+        if (status == WAIT_TIMEOUT) {
+            live(ctx_);
+            throw Failure(SA2_E_TIMEOUT, "the surface's frame-latency wait timed out");
+        }
+        if (status != WAIT_OBJECT_0) {
+            const auto error = GetLastError();
+            check_hr(ctx_->device.Get(), error ? HRESULT_FROM_WIN32(error) : E_FAIL, "WaitForSingleObjectEx(frame latency)");
+        }
+        reset(ctx_, buffer_);
+        transition(ctx_, buffer_, SA2_STATE_COMMON, SA2_STATE_RENDER_TARGET, true);
+        return buffer_.list.Get();
+    }
+    D3D12_CPU_DESCRIPTOR_HANDLE view() const override { return rtv(ctx_, index_); }
+    void close(uint64_t frame) override {
+        transition(ctx_, buffer_, SA2_STATE_RENDER_TARGET, SA2_STATE_COMMON, false);
+        ctx_->last_frame = frame;
+        execute(ctx_, buffer_, ctx_->ready.Get(), frame);
+        ctx_->last_ready = frame;
+        check_hr(ctx_->device.Get(), chain_.swapchain->Present(SA2_SURFACE_SYNC_INTERVAL, 0), "IDXGISwapChain::Present");
+        // The frame's own present count; a failed read leaves the frame
+        // unconfirmable, never confirmed by another frame's row.
+        UINT count = 0;
+        if (SUCCEEDED(chain_.swapchain->GetLastPresentCount(&count)) && count) count_ = count;
+    }
+    std::optional<uint32_t> present_count() const { return count_; }
+    uint64_t generation() const { return surface_.generation; }
+private:
+    sa2_context* ctx_;
+    Surface& surface_;
+    Chain& chain_;
+    uint32_t index_;
+    Slot& buffer_;
+    std::optional<uint32_t> count_;
 };
 
 // The loaded scene for a stateful product call, outside a trace; latches a device removal.
@@ -383,6 +532,341 @@ void write_json(const std::string& text, char* buffer, uint32_t buffer_size, uin
 void require_text_output(char* buffer, uint32_t buffer_size, uint32_t* out_size) {
     require(out_size != nullptr && (buffer != nullptr || buffer_size == 0), "null size output, or a NULL buffer with a nonzero buffer_size");
 }
+
+// sa2_attach's config checks and context setup, shared with sa2_create and an
+// ABI 5 recovery.
+void validate_config(sa2_context** out, const sa2_config* config) {
+    require(out && config && config->struct_size == sizeof(*config), "invalid config struct_size or output");
+    require(config->queue_mode == SA2_QUEUE_SAME || config->queue_mode == SA2_QUEUE_OWN, "invalid queue_mode");
+    require(config->barrier_api >= SA2_BARRIERS_MATCH_GODOT && config->barrier_api <= SA2_BARRIERS_ENHANCED, "invalid barrier_api");
+    state(config->state_before_write); state(config->state_after_write);
+    require(config->debug_callback == 0 || config->debug_callback == 1, "invalid debug_callback");
+}
+void command_list(sa2_context* ctx, Slot& slot, const std::wstring& label) {
+    check_hr(ctx->device.Get(), ctx->device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&slot.allocator)), "CreateCommandAllocator");
+    name(ctx, slot.allocator.Get(), (label + L" command allocator").c_str());
+    check_hr(ctx->device.Get(), ctx->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, slot.allocator.Get(), nullptr, IID_PPV_ARGS(&slot.list)), "CreateCommandList");
+    name(ctx, slot.list.Get(), (label + L" command list").c_str());
+    check_hr(ctx->device.Get(), slot.list->Close(), "Close new command list");
+    if (ctx->config.barrier_api == SA2_BARRIERS_ENHANCED) {
+        const auto hr = slot.list.As(&slot.list7);
+        if (FAILED(hr)) {
+            if (FAILED(ctx->device->GetDeviceRemovedReason()) || hr != E_NOINTERFACE) check_hr(ctx->device.Get(), hr, "QueryInterface(ID3D12GraphicsCommandList7)");
+            throw Failure(SA2_E_UNSUPPORTED, hr_text("QueryInterface(ID3D12GraphicsCommandList7)", hr));
+        }
+    }
+}
+// On ctx->device and ctx->godot_queue: the config with its barrier API
+// resolved, the fences, the optional own queue, the RTV heap and the slots'
+// command lists.
+void setup(sa2_context* ctx, const sa2_config& config) {
+    ctx->config = config;
+    const bool enhanced = enhanced_supported(ctx->device.Get());
+    if (config.barrier_api == SA2_BARRIERS_MATCH_GODOT) ctx->config.barrier_api = enhanced ? SA2_BARRIERS_ENHANCED : SA2_BARRIERS_LEGACY;
+    if (ctx->config.barrier_api == SA2_BARRIERS_ENHANCED) {
+        require(enhanced, "enhanced barriers are not supported", SA2_E_UNSUPPORTED);
+        const auto hr = ctx->device.As(&ctx->device10);
+        if (FAILED(hr)) {
+            if (FAILED(ctx->device->GetDeviceRemovedReason()) || hr != E_NOINTERFACE) check_hr(ctx->device.Get(), hr, "QueryInterface(ID3D12Device10)");
+            throw Failure(SA2_E_UNSUPPORTED, hr_text("QueryInterface(ID3D12Device10)", hr));
+        }
+    }
+    ctx->completion = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    if (!ctx->completion) check_hr(ctx->device.Get(), HRESULT_FROM_WIN32(GetLastError()), "CreateEventW");
+    ctx->ready = fence(ctx, L"SA2 ready fence");
+    ctx->free = fence(ctx, L"SA2 free fence");
+    ctx->godot_drain = fence(ctx, L"SA2 Godot drain fence");
+    if (config.queue_mode == SA2_QUEUE_OWN) {
+        D3D12_COMMAND_QUEUE_DESC desc{};
+        desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        check_hr(ctx->device.Get(), ctx->device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ctx->own_queue)), "CreateCommandQueue");
+        name(ctx, ctx->own_queue.Get(), L"SA2 own queue");
+        ctx->own_drain = fence(ctx, L"SA2 own drain fence");
+    }
+    D3D12_DESCRIPTOR_HEAP_DESC heap{};
+    heap.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    heap.NumDescriptors = SA2_RING_SLOTS;
+    check_hr(ctx->device.Get(), ctx->device->CreateDescriptorHeap(&heap, IID_PPV_ARGS(&ctx->rtv_heap)), "CreateDescriptorHeap");
+    name(ctx, ctx->rtv_heap.Get(), L"SA2 RTV heap");
+    ctx->rtv_step = ctx->device->GetDescriptorHandleIncrementSize(heap.Type);
+    for (uint32_t i = 0; i < SA2_RING_SLOTS; ++i) command_list(ctx, ctx->slots[i], L"SA2 slot " + std::to_wstring(i));
+}
+// The debug callback counts into user's Debug (a recovery's new device counts
+// into the context it recovers).
+void register_callback(sa2_context* ctx, sa2_context* user) {
+    if (!ctx->config.debug_callback) return;
+    const auto hr = ctx->device.As(&ctx->info_queue);
+    if (FAILED(hr) && (hr != E_NOINTERFACE || removed(ctx))) check_hr(ctx->device.Get(), hr, "QueryInterface(ID3D12InfoQueue1)");
+    if (ctx->info_queue) {
+        check_hr(ctx->device.Get(), ctx->info_queue->RegisterMessageCallback(debug_callback, D3D12_MESSAGE_CALLBACK_IGNORE_FILTERS, user, &ctx->callback_cookie), "RegisterMessageCallback");
+        ctx->callback_registered = true;
+    }
+}
+void unregister_callback(sa2_context* ctx) noexcept {
+    if (ctx->callback_registered) ctx->info_queue->UnregisterMessageCallback(ctx->callback_cookie); // the result is not needed: the queue goes with its device
+    ctx->callback_registered = false;
+}
+
+// Route B (accepted for now by the owner on 18 Nov 2026, pending three
+// owner-machine checks). The core's own device, made as c9pp.cpp makes it:
+// the D3D12 device factory, told not to store the device as the process's
+// singleton, so it is never Godot's device; without the factory the call is
+// unsupported (no D3D12CreateDevice fallback, which could return Godot's).
+// luid 0: the first hardware adapter. An adapter the LUID does not name
+// answers missing.
+void open_device(sa2_context* ctx, uint64_t luid, int32_t missing) {
+    if (!ctx->factory || !ctx->factory->IsCurrent()) {
+        ctx->factory.Reset();
+        check_hr(nullptr, CreateDXGIFactory2(0, IID_PPV_ARGS(&ctx->factory)), "CreateDXGIFactory2");
+    }
+    ComPtr<IDXGIAdapter1> adapter;
+    if (luid) {
+        const LUID id{static_cast<DWORD>(luid & 0xFFFFFFFFu), static_cast<LONG>(static_cast<uint32_t>(luid >> 32))};
+        const auto hr = ctx->factory->EnumAdapterByLuid(id, IID_PPV_ARGS(&adapter));
+        if (hr == DXGI_ERROR_NOT_FOUND || hr == E_INVALIDARG) throw Failure(missing, hr_text("EnumAdapterByLuid", hr));
+        check_hr(nullptr, hr, "EnumAdapterByLuid");
+    } else {
+        for (UINT i = 0; !adapter; ++i) {
+            ComPtr<IDXGIAdapter1> candidate;
+            const auto hr = ctx->factory->EnumAdapters1(i, &candidate);
+            if (hr == DXGI_ERROR_NOT_FOUND) break;
+            check_hr(nullptr, hr, "EnumAdapters1");
+            DXGI_ADAPTER_DESC1 desc{};
+            check_hr(nullptr, candidate->GetDesc1(&desc), "IDXGIAdapter1::GetDesc1");
+            if (!(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)) adapter = candidate;
+        }
+        require(adapter != nullptr, "no hardware adapter", SA2_E_UNSUPPORTED);
+    }
+    DXGI_ADAPTER_DESC1 desc{};
+    check_hr(nullptr, adapter->GetDesc1(&desc), "IDXGIAdapter1::GetDesc1");
+    ctx->adapter = desc.AdapterLuid;
+    const HMODULE module = GetModuleHandleW(L"d3d12.dll");
+    const auto get = module ? reinterpret_cast<PFN_D3D12_GET_INTERFACE>(reinterpret_cast<void*>(GetProcAddress(module, "D3D12GetInterface"))) : nullptr;
+    ComPtr<ID3D12DeviceFactory> factory;
+    const HRESULT got = get ? get(ClsidDeviceFactory, IID_PPV_ARGS(&factory)) : HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
+    if (FAILED(got)) throw Failure(SA2_E_UNSUPPORTED, hr_text("D3D12GetInterface(CLSID_D3D12DeviceFactory)", got));
+    check_hr(nullptr, factory->SetFlags(D3D12_DEVICE_FACTORY_FLAG_DISALLOW_STORING_NEW_DEVICE_AS_SINGLETON), "ID3D12DeviceFactory::SetFlags");
+    check_hr(nullptr, factory->CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ctx->device)), "ID3D12DeviceFactory::CreateDevice");
+    D3D12_COMMAND_QUEUE_DESC queue{};
+    queue.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    check_hr(ctx->device.Get(), ctx->device->CreateCommandQueue(&queue, IID_PPV_ARGS(&ctx->godot_queue)), "CreateCommandQueue");
+    name(ctx, ctx->godot_queue.Get(), L"SA2 core queue");
+}
+uint64_t luid_value(LUID luid) {
+    return (uint64_t(static_cast<uint32_t>(luid.HighPart)) << 32) | luid.LowPart;
+}
+// The ring-slot calls on a sa2_create context, after their argument checks.
+void slot_route(sa2_context* ctx) {
+    require(!ctx->created, "a sa2_create context draws on its surface and has no ring slots (route B)", SA2_E_WRONG_STATE);
+}
+// The swap chain's back buffers as the surface's render targets, with the
+// ring slots' RTVs (c9pp.cpp create_rtvs).
+void acquire_buffers(sa2_context* ctx, Chain& chain, uint32_t width, uint32_t height) {
+    for (uint32_t i = 0; i < SA2_SURFACE_BUFFERS; ++i) {
+        auto& buffer = chain.buffers[i];
+        ComPtr<ID3D12Resource> resource;
+        check_hr(ctx->device.Get(), chain.swapchain->GetBuffer(i, IID_PPV_ARGS(&resource)), "IDXGISwapChain::GetBuffer");
+        name(ctx, resource.Get(), (L"SA2 surface buffer " + std::to_wstring(i)).c_str());
+        ctx->device->CreateRenderTargetView(resource.Get(), nullptr, rtv(ctx, i));
+        buffer.resource = resource.Get();
+        buffer.external_reference = std::move(resource);
+        buffer.width = width; buffer.height = height;
+        buffer.pending_fence = nullptr;
+        buffer.pending_value = buffer.last_shown = 0;
+    }
+}
+void release_buffers(Chain& chain) {
+    for (auto& buffer : chain.buffers) {
+        buffer.resource = nullptr;
+        buffer.external_reference.Reset();
+        buffer.readback.Reset();
+        buffer.pending_fence = nullptr;
+        buffer.pending_value = 0;
+    }
+}
+// c9pp.cpp create_swapchain, on the producer queue.
+std::unique_ptr<Chain> make_chain(sa2_context* ctx, uint32_t width, uint32_t height) {
+    auto chain = std::make_unique<Chain>();
+    for (uint32_t i = 0; i < SA2_SURFACE_BUFFERS; ++i) command_list(ctx, chain->buffers[i], L"SA2 surface buffer " + std::to_wstring(i));
+    DXGI_SWAP_CHAIN_DESC1 desc{};
+    desc.Width = width;
+    desc.Height = height;
+    desc.Format = SurfaceFormat;
+    desc.SampleDesc.Count = 1;
+    desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    desc.BufferCount = SA2_SURFACE_BUFFERS;
+    desc.Scaling = DXGI_SCALING_STRETCH;
+    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+    desc.Flags = SurfaceFlags;
+    ComPtr<IDXGISwapChain1> first;
+    check_hr(ctx->device.Get(), ctx->factory->CreateSwapChainForComposition(ctx->producer(), &desc, nullptr, &first), "CreateSwapChainForComposition");
+    check_hr(ctx->device.Get(), first.As(&chain->swapchain), "QueryInterface(IDXGISwapChain3)");
+    check_hr(ctx->device.Get(), chain->swapchain->SetMaximumFrameLatency(SurfaceLatency), "SetMaximumFrameLatency");
+    chain->waitable = chain->swapchain->GetFrameLatencyWaitableObject();
+    require(chain->waitable != nullptr, "GetFrameLatencyWaitableObject returned NULL", SA2_E_D3D12);
+    acquire_buffers(ctx, *chain, width, height);
+    return chain;
+}
+// c9pp.cpp create_dcomp: a DirectComposition device, a target for the window
+// beneath its topmost content, and one visual at the surface's offset showing
+// the swap chain. The surface takes the objects only when all succeeded.
+void compose(sa2_context* ctx, Surface& surface, IDXGISwapChain3* swapchain) {
+    ComPtr<IDCompositionDesktopDevice> dcomp;
+    ComPtr<IDCompositionTarget> target;
+    ComPtr<IDCompositionVisual2> visual;
+    auto* device = ctx->device.Get();
+    check_hr(device, DCompositionCreateDevice3(nullptr, IID_PPV_ARGS(&dcomp)), "DCompositionCreateDevice3");
+    check_hr(device, dcomp->CreateTargetForHwnd(surface.hwnd, FALSE, &target), "CreateTargetForHwnd(hwnd, FALSE)");
+    check_hr(device, dcomp->CreateVisual(&visual), "CreateVisual");
+    check_hr(device, visual->SetContent(swapchain), "IDCompositionVisual::SetContent");
+    check_hr(device, visual->SetOffsetX(static_cast<float>(surface.x)), "IDCompositionVisual::SetOffsetX");
+    check_hr(device, visual->SetOffsetY(static_cast<float>(surface.y)), "IDCompositionVisual::SetOffsetY");
+    check_hr(device, target->SetRoot(visual.Get()), "IDCompositionTarget::SetRoot");
+    check_hr(device, dcomp->Commit(), "IDCompositionDevice::Commit");
+    surface.dcomp = std::move(dcomp);
+    surface.target = std::move(target);
+    surface.visual = std::move(visual);
+}
+// The size a scene loads at: the attached surface's on a sa2_create context,
+// else the complete three-slot ring's.
+std::pair<uint32_t, uint32_t> load_size(sa2_context* ctx) {
+    if (ctx->created) {
+        const auto& surface = attached(ctx);
+        return {surface.width, surface.height};
+    }
+    const auto& first = slot_at(ctx, 0);
+    for (const auto& slot : ctx->slots) {
+        require(slot.resource != nullptr, "register the complete three-slot ring before load", SA2_E_WRONG_STATE);
+        require(slot.width == first.width && slot.height == first.height, "scene slots must be equally sized");
+    }
+    return {first.width, first.height};
+}
+template<class Config> void load_scene(sa2_context* ctx, const Config& config) {
+    require(!ctx->scene, "a scene is already loaded", SA2_E_WRONG_STATE);
+    const auto [width, height] = load_size(ctx);
+    live(ctx);
+    if (!ctx->created) {
+        ctx->scene = std::make_unique<sa2::Scene>(ctx->device.Get(), config, width, height);
+        return;
+    }
+    SceneSource source;
+    source.keep(config);
+    auto scene = source.load(ctx->device.Get(), width, height);
+    scene->product.set_device_epoch(ctx->device_epoch);
+    ctx->scene = std::move(scene);
+    ctx->source = std::move(source);
+}
+// sa2_resize on a sa2_create context (c9pp.cpp c9pp_resize): the swap chain's
+// buffers, then, with a loaded scene, its size-bound resources.
+void resize_surface(sa2_context* ctx, uint32_t width, uint32_t height) {
+    require(width <= SA2_SURFACE_MAX_PX && height <= SA2_SURFACE_MAX_PX, "width and height must be at most SA2_SURFACE_MAX_PX");
+    auto& surface = attached(ctx);
+    sa2::Scene* scene = ctx->scene ? &product_scene(ctx) : nullptr;
+    require_drained(ctx);
+    live(ctx);
+    auto& chain = *surface.chain;
+    release_buffers(chain);
+    const auto hr = chain.swapchain->ResizeBuffers(SA2_SURFACE_BUFFERS, width, height, SurfaceFormat, SurfaceFlags);
+    if (FAILED(hr)) {
+        try { acquire_buffers(ctx, chain, surface.width, surface.height); } catch (...) {} // a frame then answers SA2_E_WRONG_STATE
+        check_hr(ctx->device.Get(), hr, "IDXGISwapChain::ResizeBuffers");
+    }
+    surface.width = width;
+    surface.height = height;
+    surface.generation = ++ctx->surface_generation;
+    acquire_buffers(ctx, chain, width, height);
+    if (scene) {
+        scene->resize(width, height);
+        scene->product.resized();
+    }
+}
+// sa2_recover on a sa2_create context (route B; accepted for now by the owner
+// on 18 Nov 2026, pending three owner-machine checks). c9pp.cpp c9pp_recover's
+// order, made transactional: the new device, queue, swap chain and scene are
+// built first, and the old device's objects are released only when all of
+// them exist, so a failed recovery leaves the context removed and retryable.
+int32_t recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* out_size) {
+    const int32_t reason = removed_reason(ctx);
+    if (reason >= 0) {
+        write_json(sa2::recover_result("not_removed", "the device is not removed; nothing to recover", ctx->device_epoch, 0).dump(), buffer, buffer_size, out_size);
+        throw Failure(SA2_E_WRONG_STATE, "the device is not removed; nothing to recover");
+    }
+    const uint64_t epoch = ctx->device_epoch + 1;
+    const auto success = sa2::recover_result("recovered", "recovered on a new device of the same adapter (RPI.46)", epoch, reason).dump();
+    if (buffer_size < success.size() + 1) write_json(success, buffer, buffer_size, out_size); // SA2_E_INVALID_ARGUMENT before any change
+    if (ctx->scene) require(ctx->scene->product.removed() && ctx->scene->product.device_epoch() == ctx->device_epoch,
+        "the scene's device epoch differs from the context's", SA2_E_WRONG_STATE);
+    auto fresh = std::make_unique<sa2_context>();
+    std::unique_ptr<Chain> chain;
+    std::unique_ptr<sa2::Scene> scene;
+    try {
+        auto* surface = ctx->surface.get();
+        if (surface && surface->visual && surface->dcomp) {
+            surface->visual->SetContent(nullptr); // the old swap chain's device is gone (c9pp.cpp); results are not needed
+            surface->dcomp->Commit();
+        }
+        fresh->created = true;
+        fresh->factory = ctx->factory;
+        open_device(fresh.get(), luid_value(ctx->adapter), SA2_E_D3D12);
+        setup(fresh.get(), ctx->requested);
+        register_callback(fresh.get(), ctx);
+        if (surface) chain = make_chain(fresh.get(), surface->width, surface->height);
+        if (ctx->scene) scene = ctx->source.load(fresh->device.Get(), ctx->scene->record.width, ctx->scene->record.height);
+        if (surface) {
+            HRESULT hr = surface->visual && surface->dcomp ? surface->visual->SetContent(chain->swapchain.Get()) : E_POINTER;
+            if (SUCCEEDED(hr)) hr = surface->dcomp->Commit();
+            if (FAILED(hr)) {
+                // The kept DirectComposition objects are unusable: rebuild them
+                // on the same window and rectangle (c9pp.cpp).
+                surface->visual.Reset();
+                surface->target.Reset();
+                surface->dcomp.Reset();
+                compose(fresh.get(), *surface, chain->swapchain.Get());
+            }
+        }
+    } catch (const std::exception& error) {
+        unregister_callback(fresh.get());
+        try {
+            write_json(sa2::recover_result("failed", error.what(), ctx->device_epoch, reason).dump(), buffer, buffer_size, out_size);
+        } catch (const std::exception&) {} // a buffer too small for the failure: its size is in *out_size
+        throw;
+    }
+    // Commit; nothing below throws. The old device's objects move into fresh
+    // and are released with it.
+    unregister_callback(ctx);
+    std::swap(ctx->config, fresh->config);
+    std::swap(ctx->device, fresh->device);
+    std::swap(ctx->device10, fresh->device10);
+    std::swap(ctx->godot_queue, fresh->godot_queue);
+    std::swap(ctx->own_queue, fresh->own_queue);
+    std::swap(ctx->ready, fresh->ready);
+    std::swap(ctx->free, fresh->free);
+    std::swap(ctx->godot_drain, fresh->godot_drain);
+    std::swap(ctx->own_drain, fresh->own_drain);
+    std::swap(ctx->rtv_heap, fresh->rtv_heap);
+    std::swap(ctx->info_queue, fresh->info_queue);
+    std::swap(ctx->slots, fresh->slots);
+    std::swap(ctx->completion, fresh->completion);
+    std::swap(ctx->rtv_step, fresh->rtv_step);
+    std::swap(ctx->callback_cookie, fresh->callback_cookie);
+    std::swap(ctx->callback_registered, fresh->callback_registered);
+    std::swap(ctx->factory, fresh->factory);
+    ctx->adapter = fresh->adapter;
+    ctx->drained = false;
+    if (ctx->surface) {
+        ctx->surface->chain = std::move(chain);
+        ctx->surface->generation = ++ctx->surface_generation;
+    }
+    if (ctx->scene) {
+        scene->product = std::move(ctx->scene->product);
+        scene->product.recovered(epoch);
+        ctx->scene = std::move(scene);
+    }
+    ctx->device_epoch = epoch;
+    write_json(success, buffer, buffer_size, out_size);
+    return SA2_OK;
+}
 }
 
 extern "C" {
@@ -435,11 +919,7 @@ int32_t sa2_probe(uint64_t device, uint64_t queue, uint64_t adapter, sa2_device_
 int32_t sa2_attach(uint64_t device, uint64_t queue, const sa2_config* config, sa2_context** out) {
     if (out) *out = nullptr;
     return invoke(nullptr, "sa2_attach", [&] {
-        require(out && config && config->struct_size == sizeof(*config), "invalid config struct_size or output");
-        require(config->queue_mode == SA2_QUEUE_SAME || config->queue_mode == SA2_QUEUE_OWN, "invalid queue_mode");
-        require(config->barrier_api >= SA2_BARRIERS_MATCH_GODOT && config->barrier_api <= SA2_BARRIERS_ENHANCED, "invalid barrier_api");
-        state(config->state_before_write); state(config->state_after_write);
-        require(config->debug_callback == 0 || config->debug_callback == 1, "invalid debug_callback");
+        validate_config(out, config);
         auto ctx = std::make_unique<sa2_context>();
         ctx->device = interface_handle<ID3D12Device>(device);
         ctx->godot_queue = interface_handle<ID3D12CommandQueue>(queue, ctx->device.Get());
@@ -447,59 +927,81 @@ int32_t sa2_attach(uint64_t device, uint64_t queue, const sa2_config* config, sa
         ComPtr<ID3D12Device> queue_device;
         check_hr(ctx->device.Get(), ctx->godot_queue->GetDevice(IID_PPV_ARGS(&queue_device)), "ID3D12CommandQueue::GetDevice");
         require(same_identity(ctx->device.Get(), queue_device.Get(), ctx->device.Get()), "queue device differs from given device");
-        ctx->config = *config;
-        const bool enhanced = enhanced_supported(ctx->device.Get());
-        if (config->barrier_api == SA2_BARRIERS_MATCH_GODOT) ctx->config.barrier_api = enhanced ? SA2_BARRIERS_ENHANCED : SA2_BARRIERS_LEGACY;
-        if (ctx->config.barrier_api == SA2_BARRIERS_ENHANCED) {
-            require(enhanced, "enhanced barriers are not supported", SA2_E_UNSUPPORTED);
-            const auto hr = ctx->device.As(&ctx->device10);
-            if (FAILED(hr)) {
-                if (FAILED(ctx->device->GetDeviceRemovedReason()) || hr != E_NOINTERFACE) check_hr(ctx->device.Get(), hr, "QueryInterface(ID3D12Device10)");
-                throw Failure(SA2_E_UNSUPPORTED, hr_text("QueryInterface(ID3D12Device10)", hr));
-            }
-        }
-        ctx->completion = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-        if (!ctx->completion) check_hr(ctx->device.Get(), HRESULT_FROM_WIN32(GetLastError()), "CreateEventW");
-        ctx->ready = fence(ctx.get(), L"SA2 ready fence");
-        ctx->free = fence(ctx.get(), L"SA2 free fence");
-        ctx->godot_drain = fence(ctx.get(), L"SA2 Godot drain fence");
-        if (config->queue_mode == SA2_QUEUE_OWN) {
-            D3D12_COMMAND_QUEUE_DESC desc{};
-            desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-            check_hr(ctx->device.Get(), ctx->device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ctx->own_queue)), "CreateCommandQueue");
-            name(ctx.get(), ctx->own_queue.Get(), L"SA2 own queue");
-            ctx->own_drain = fence(ctx.get(), L"SA2 own drain fence");
-        }
-        D3D12_DESCRIPTOR_HEAP_DESC heap{};
-        heap.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        heap.NumDescriptors = SA2_RING_SLOTS;
-        check_hr(ctx->device.Get(), ctx->device->CreateDescriptorHeap(&heap, IID_PPV_ARGS(&ctx->rtv_heap)), "CreateDescriptorHeap");
-        name(ctx.get(), ctx->rtv_heap.Get(), L"SA2 RTV heap");
-        ctx->rtv_step = ctx->device->GetDescriptorHandleIncrementSize(heap.Type);
-        for (uint32_t i = 0; i < SA2_RING_SLOTS; ++i) {
-            auto& slot = ctx->slots[i];
-            check_hr(ctx->device.Get(), ctx->device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&slot.allocator)), "CreateCommandAllocator");
-            name(ctx.get(), slot.allocator.Get(), (L"SA2 slot " + std::to_wstring(i) + L" command allocator").c_str());
-            check_hr(ctx->device.Get(), ctx->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, slot.allocator.Get(), nullptr, IID_PPV_ARGS(&slot.list)), "CreateCommandList");
-            name(ctx.get(), slot.list.Get(), (L"SA2 slot " + std::to_wstring(i) + L" command list").c_str());
-            check_hr(ctx->device.Get(), slot.list->Close(), "Close new command list");
-            if (ctx->config.barrier_api == SA2_BARRIERS_ENHANCED) {
-                const auto hr = slot.list.As(&slot.list7);
-                if (FAILED(hr)) {
-                    if (FAILED(ctx->device->GetDeviceRemovedReason()) || hr != E_NOINTERFACE) check_hr(ctx->device.Get(), hr, "QueryInterface(ID3D12GraphicsCommandList7)");
-                    throw Failure(SA2_E_UNSUPPORTED, hr_text("QueryInterface(ID3D12GraphicsCommandList7)", hr));
-                }
-            }
-        }
-        if (config->debug_callback) {
-            const auto hr = ctx->device.As(&ctx->info_queue);
-            if (FAILED(hr) && (hr != E_NOINTERFACE || removed(ctx.get()))) check_hr(ctx->device.Get(), hr, "QueryInterface(ID3D12InfoQueue1)");
-            if (ctx->info_queue) {
-                check_hr(ctx->device.Get(), ctx->info_queue->RegisterMessageCallback(debug_callback, D3D12_MESSAGE_CALLBACK_IGNORE_FILTERS, ctx.get(), &ctx->callback_cookie), "RegisterMessageCallback");
-                ctx->callback_registered = true;
-            }
-        }
+        setup(ctx.get(), *config);
+        register_callback(ctx.get(), ctx.get());
         *out = ctx.release();
+        return SA2_OK;
+    });
+}
+
+// ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending three
+// owner-machine checks).
+int32_t sa2_create(uint64_t adapter_luid, const sa2_config* config, sa2_context** out) {
+    if (out) *out = nullptr;
+    return invoke(nullptr, "sa2_create", [&] {
+        validate_config(out, config);
+        auto ctx = std::make_unique<sa2_context>();
+        ctx->created = true;
+        ctx->requested = *config;
+        open_device(ctx.get(), adapter_luid, SA2_E_INVALID_ARGUMENT);
+        setup(ctx.get(), *config);
+        register_callback(ctx.get(), ctx.get());
+        *out = ctx.release();
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, int32_t y, uint32_t width, uint32_t height) {
+    return invoke(ctx, "sa2_surface_attach", [&] {
+        context(ctx);
+        const auto window = reinterpret_cast<HWND>(static_cast<uintptr_t>(hwnd));
+        require(hwnd != 0 && IsWindow(window), "hwnd is not a window");
+        require(width >= SA2_MIN_TEXTURE_PX && height >= SA2_MIN_TEXTURE_PX && width <= SA2_SURFACE_MAX_PX && height <= SA2_SURFACE_MAX_PX,
+            "width and height must lie in SA2_MIN_TEXTURE_PX .. SA2_SURFACE_MAX_PX");
+        require(ctx->created, "only a sa2_create context has a surface (route B)", SA2_E_WRONG_STATE);
+        require(!ctx->surface, "a surface is already attached", SA2_E_WRONG_STATE);
+        live(ctx);
+        auto surface = std::make_unique<Surface>();
+        surface->hwnd = window;
+        surface->x = x; surface->y = y;
+        surface->width = width; surface->height = height;
+        surface->chain = make_chain(ctx, width, height);
+        compose(ctx, *surface, surface->chain->swapchain.Get());
+        surface->generation = ++ctx->surface_generation;
+        ctx->surface = std::move(surface);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y) {
+    return invoke(ctx, "sa2_surface_move", [&] {
+        context(ctx);
+        require(ctx->surface != nullptr, "no surface is attached", SA2_E_WRONG_STATE);
+        auto& surface = *ctx->surface;
+        require(surface.visual && surface.dcomp, "the surface's composition objects are gone; sa2_recover rebuilds them", SA2_E_WRONG_STATE);
+        // No GPU work, so no device check: it works during device loss.
+        check_hr(nullptr, surface.visual->SetOffsetX(static_cast<float>(x)), "IDCompositionVisual::SetOffsetX");
+        check_hr(nullptr, surface.visual->SetOffsetY(static_cast<float>(y)), "IDCompositionVisual::SetOffsetY");
+        check_hr(nullptr, surface.dcomp->Commit(), "IDCompositionDevice::Commit");
+        surface.x = x;
+        surface.y = y;
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_surface_detach(sa2_context* ctx) {
+    return invoke(ctx, "sa2_surface_detach", [&] {
+        context(ctx);
+        require(ctx->surface != nullptr, "no surface is attached", SA2_E_WRONG_STATE);
+        require(!ctx->scene, "scene remains loaded", SA2_E_WRONG_STATE);
+        require_drained(ctx);
+        // As c9pp.cpp's detach: the results are not needed, since releasing
+        // the target removes the visual tree in any case.
+        auto& surface = *ctx->surface;
+        if (surface.visual) surface.visual->SetContent(nullptr);
+        if (surface.target) surface.target->SetRoot(nullptr);
+        if (surface.dcomp) surface.dcomp->Commit();
+        ctx->surface.reset();
         return SA2_OK;
     });
 }
@@ -510,6 +1012,7 @@ int32_t sa2_create_texture(sa2_context* ctx, uint32_t width, uint32_t height, in
         context(ctx);
         require(out_resource && width >= 128 && height >= 128, "output is null or texture smaller than 128");
         const auto initial = state(initial_state);
+        slot_route(ctx);
         live(ctx);
         D3D12_HEAP_PROPERTIES heap{};
         heap.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -545,6 +1048,7 @@ int32_t sa2_release_texture(sa2_context* ctx, uint64_t resource, uint32_t* out_r
     return invoke(ctx, "sa2_release_texture", [&] {
         context(ctx);
         require(resource && out_refcount_after, "zero resource or null output");
+        slot_route(ctx);
         auto* pointer = reinterpret_cast<ID3D12Resource*>(static_cast<uintptr_t>(resource));
         const auto found = ctx->textures.find(pointer);
         require(found != ctx->textures.end(), "texture was not created by this context");
@@ -561,6 +1065,7 @@ int32_t sa2_register_slot(sa2_context* ctx, uint32_t index, uint64_t resource, u
     return invoke(ctx, "sa2_register_slot", [&] {
         auto& slot = slot_at(ctx, index, false);
         require(resource && width >= 128 && height >= 128 && (godot_owned == 0 || godot_owned == 1), "invalid resource, dimensions or ownership");
+        slot_route(ctx);
         live(ctx);
         auto texture = interface_handle<ID3D12Resource>(resource, ctx->device.Get());
         ComPtr<ID3D12Device> device;
@@ -610,6 +1115,7 @@ int32_t sa2_signal_godot_free(sa2_context* ctx, uint64_t frame) {
     return invoke(ctx, "sa2_signal_godot_free", [&] {
         context(ctx);
         require(frame != UINT64_MAX, "reserved fence value");
+        slot_route(ctx);
         require(frame >= ctx->last_free, "free frame decreased", SA2_E_WRONG_STATE);
         live(ctx);
         signal(ctx, ctx->godot_queue.Get(), ctx->free.Get(), frame);
@@ -642,6 +1148,7 @@ int32_t sa2_produce(sa2_context* ctx, uint32_t index, uint64_t frame, uint32_t s
 int32_t sa2_godot_wait_ready(sa2_context* ctx, uint64_t frame) {
     return invoke(ctx, "sa2_godot_wait_ready", [&] {
         context(ctx);
+        slot_route(ctx);
         if (!ctx->own_queue) return SA2_OK;
         require(frame <= ctx->last_ready, "ready frame has never been produced", SA2_E_WRONG_STATE);
         live(ctx);
@@ -813,6 +1320,7 @@ int32_t sa2_detach(sa2_context* ctx) {
     return invoke(ctx, "sa2_detach", [&] {
         context(ctx);
         require(!ctx->scene, "scene remains loaded", SA2_E_WRONG_STATE);
+        require(!ctx->surface, "the surface remains attached", SA2_E_WRONG_STATE);
         for (const auto& slot : ctx->slots) require(!slot.resource, "slots remain registered", SA2_E_WRONG_STATE);
         require(ctx->textures.empty(), "created textures remain unreleased", SA2_E_WRONG_STATE);
         require_drained(ctx);
@@ -830,14 +1338,7 @@ int32_t sa2_scene_load(sa2_context* ctx, const sa2_scene_config* config) {
     return invoke(ctx, "sa2_scene_load", [&] {
         sa2::validate_scene_config(config);
         context(ctx);
-        require(!ctx->scene, "a scene is already loaded", SA2_E_WRONG_STATE);
-        const auto& first = slot_at(ctx, 0);
-        for (const auto& slot : ctx->slots) {
-            require(slot.resource != nullptr, "register the complete three-slot ring before load", SA2_E_WRONG_STATE);
-            require(slot.width == first.width && slot.height == first.height, "scene slots must be equally sized");
-        }
-        live(ctx);
-        ctx->scene = std::make_unique<sa2::Scene>(ctx->device.Get(), *config, first.width, first.height);
+        load_scene(ctx, *config);
         return SA2_OK;
     });
 }
@@ -846,14 +1347,7 @@ int32_t sa2_scene_load_wj(sa2_context* ctx, const sa2_wj_config* config) {
     return invoke(ctx, "sa2_scene_load_wj", [&] {
         sa2::validate_wj_config(config);
         context(ctx);
-        require(!ctx->scene, "a scene is already loaded", SA2_E_WRONG_STATE);
-        const auto& first = slot_at(ctx, 0);
-        for (const auto& slot : ctx->slots) {
-            require(slot.resource != nullptr, "register the complete three-slot ring before load", SA2_E_WRONG_STATE);
-            require(slot.width == first.width && slot.height == first.height, "scene slots must be equally sized");
-        }
-        live(ctx);
-        ctx->scene = std::make_unique<sa2::Scene>(ctx->device.Get(), *config, first.width, first.height);
+        load_scene(ctx, *config);
         return SA2_OK;
     });
 }
@@ -1012,7 +1506,7 @@ int32_t sa2_describe(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint3
         require_text_output(buffer, buffer_size, out_size);
         const auto identity = sa2::scene_identity().dump();
         const auto build = sb::sha256(std::span(reinterpret_cast<const uint8_t*>(identity.data()), identity.size()));
-        write_json(sa2::describe(build, removed_reason(ctx)).dump(), buffer, buffer_size, out_size);
+        write_json(sa2::describe(build, removed_reason(ctx), ctx->device_epoch, ctx->created && ctx->surface != nullptr).dump(), buffer, buffer_size, out_size);
         return SA2_OK;
     });
 }
@@ -1098,8 +1592,14 @@ int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_
         require(out_frame_id != nullptr, "null frame ID output");
         sa2::validate_frame_input(input);
         auto& scene = product_scene(ctx);
-        SlotTarget slot(ctx, input->target);
-        sa2::FrameTarget& target = slot;
+        std::optional<SlotTarget> slot;
+        std::optional<SurfaceTarget> surface;
+        if (input->target == SA2_TARGET_SURFACE) surface.emplace(ctx);
+        else {
+            slot_route(ctx);
+            slot.emplace(ctx, input->target);
+        }
+        sa2::FrameTarget& target = surface ? static_cast<sa2::FrameTarget&>(*surface) : *slot;
         require(target.width() == scene.record.width && target.height() == scene.record.height,
             "the frame target is not at the scene's size", SA2_E_WRONG_STATE);
         require(ctx->last_frame < UINT64_MAX - 1, "frame IDs are exhausted", SA2_E_WRONG_STATE);
@@ -1108,15 +1608,17 @@ int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_
         scene.require_healthy();
         live(ctx);
         scene.wait_geometry(ctx->config.wait_timeout_ms);
-        scene.product_ready(ctx->producer());
+        scene.product_ready(ctx->producer(), target.format());
         if (plan.upload) target.wait(plan.upload_wait); // the copy's staging was last read by that frame
         auto* list = target.open();
         try {
             harvest(ctx, scene); // the target's previous frame completed: read its ring results before this frame reuses them
-            scene.product_frame(list, *input, plan, target.view(), target.ring());
+            scene.product_frame(list, *input, plan, target.view(), target.ring(), target.format());
             target.close(frame);
         } catch (...) { scene.poison(); throw; }
         scene.product.commit(*input, plan, frame, target.ring());
+        if (surface && surface->present_count())
+            scene.product.presents().presented(*input, frame, surface->generation(), *surface->present_count());
         *out_frame_id = frame;
         release(ctx, scene);
         return SA2_OK;
@@ -1143,7 +1645,25 @@ int32_t sa2_presented(sa2_context* ctx, sa2_presented_row* rows, uint32_t capaci
         context(ctx);
         require(out_count != nullptr, "null count output");
         sa2::validate_rows(rows, capacity);
-        throw Failure(SA2_E_UNAVAILABLE, "the core owns no swap chain and cannot confirm a presentation (RM.26)");
+        if (!ctx->surface) throw Failure(SA2_E_UNAVAILABLE, "the core owns no swap chain and cannot confirm a presentation (RM.26)");
+        // ABI 5 (route B; accepted for now by the owner on 18 Nov 2026,
+        // pending three owner-machine checks): one statistics sample per call.
+        auto& scene = product_scene(ctx);
+        if (scene.product.removed()) throw Failure(SA2_E_DEVICE_REMOVED, "device removed (" + sa2::removed_text(scene.product.removed_reason()) + ")");
+        const auto& surface = *ctx->surface;
+        DXGI_FRAME_STATISTICS statistics{};
+        const HRESULT hr = surface.chain->swapchain->GetFrameStatistics(&statistics);
+        UINT last = 0;
+        const HRESULT last_hr = surface.chain->swapchain->GetLastPresentCount(&last);
+        if (FAILED(hr) || FAILED(last_hr)) {
+            scene.product.observe_removal(ctx->device->GetDeviceRemovedReason());
+            if (scene.product.removed()) throw Failure(SA2_E_DEVICE_REMOVED, "device removed (" + sa2::removed_text(scene.product.removed_reason()) + ")");
+            return SA2_OK; // no row, such as DXGI_ERROR_FRAME_STATISTICS_DISJOINT: *out_count stays 0
+        }
+        scene.product.presents().sample(
+            {static_cast<int32_t>(hr), surface.generation, statistics.PresentCount, last, statistics.SyncQPCTime.QuadPart});
+        *out_count = scene.product.presents().rows(rows, capacity);
+        return SA2_OK;
     });
 }
 
@@ -1187,6 +1707,7 @@ int32_t sa2_recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32
     return invoke(ctx, "sa2_recover", [&]() -> int32_t {
         context(ctx);
         require_text_output(buffer, buffer_size, out_size);
+        if (ctx->created) return recover(ctx, buffer, buffer_size, out_size);
         write_json(sa2::recover_report(removed_reason(ctx)).dump(), buffer, buffer_size, out_size);
         throw Failure(SA2_E_UNAVAILABLE, "ABI 4 cannot recover a device: it owns no swap chain and no device (RPI.46)");
     });
@@ -1196,6 +1717,10 @@ int32_t sa2_resize(sa2_context* ctx, uint32_t width, uint32_t height) {
     return invoke(ctx, "sa2_resize", [&] {
         context(ctx);
         require(width >= SA2_MIN_TEXTURE_PX && height >= SA2_MIN_TEXTURE_PX, "width and height must be at least SA2_MIN_TEXTURE_PX");
+        if (ctx->created) {
+            resize_surface(ctx, width, height);
+            return SA2_OK;
+        }
         auto& scene = product_scene(ctx);
         require_drained(ctx);
         live(ctx);
