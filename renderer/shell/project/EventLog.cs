@@ -37,12 +37,18 @@ namespace Magic600.Shell;
 /// frame in the same process frame. Its qpc is read at RenderingServer's frame_pre_draw, before Godot draws and
 /// presents the frame, so that the UI present lies between the row's qpc and the next row's; drawn_qpc is read at
 /// frame_post_draw, which on Godot's RenderingDevice path comes after the present.
+///
+/// Modules (C9 U8, a draft): the run row also carries window, the shell's HWND as an integer, and puzzle, the puzzle the
+/// shell runs (<see cref="Puzzles"/>, from M600_PUZZLE). A module writes its own rows through <see cref="Append"/>.
 /// </remarks>
 public sealed class EventLog : IDisposable
 {
     public const string Format = "magic600-c9-shell-events-v1";
     public const string FileName = "events.jsonl";
     public const string BodyName = "events.body.jsonl";
+
+    /// <summary>The puzzles M600_PUZZLE may name; the first is the default. lx4.py runs one of each.</summary>
+    public static readonly string[] Puzzles = { "jumble-off", "jumble-on" };
 
     private readonly string _directory;
     private readonly string _runId;
@@ -58,6 +64,8 @@ public sealed class EventLog : IDisposable
     private bool _correct;
     private string _control = "none";
     private string? _detail;
+    private long? _window;
+    private string _puzzle = Puzzles[0];
 
     private EventLog(string directory, string runId, string buildIdentity)
     {
@@ -98,6 +106,31 @@ public sealed class EventLog : IDisposable
 
     /// <summary>The machine's QueryPerformanceCounter, which Stopwatch reads on Windows.</summary>
     public static long Now() => Stopwatch.GetTimestamp();
+
+    /// <summary>
+    /// The puzzle M600_PUZZLE names, or the default when it is not set. Another value throws, so that a run never
+    /// records a puzzle it did not ask for.
+    /// </summary>
+    public static string PuzzleFromEnvironment()
+    {
+        var puzzle = System.Environment.GetEnvironmentVariable("M600_PUZZLE");
+        if (string.IsNullOrEmpty(puzzle))
+        {
+            return Puzzles[0];
+        }
+        if (Array.IndexOf(Puzzles, puzzle) < 0)
+        {
+            throw new ArgumentException($"M600_PUZZLE must be one of {string.Join(", ", Puzzles)}");
+        }
+        return puzzle;
+    }
+
+    /// <summary>The run row's window (the shell's HWND) and puzzle.</summary>
+    public void Describe(IntPtr window, string puzzle)
+    {
+        _window = (long)window;
+        _puzzle = puzzle;
+    }
 
     /// <summary>Records that the window was not the foreground window at some point of the run.</summary>
     public void LostForeground() => _foreground = false;
@@ -221,6 +254,12 @@ public sealed class EventLog : IDisposable
         json.WriteNumber("display_qpc", row.DisplayQpc);
     });
 
+    /// <summary>
+    /// A module's own row, written in order with the shell's rows. <paramref name="fields"/> writes the row's fields,
+    /// beginning with its "t"; key_to_frame.py skips only the row kinds it lists as other rows.
+    /// </summary>
+    public void Append(Action<Utf8JsonWriter> fields) => Write(fields);
+
     private void Write(Action<Utf8JsonWriter> fields)
     {
         if (_body is not { } body)
@@ -288,6 +327,15 @@ public sealed class EventLog : IDisposable
                 json.WriteNull("swap_chain");
             }
             json.WriteNull("ui_swap_chain");
+            if (_window is { } window)
+            {
+                json.WriteNumber("window", window);
+            }
+            else
+            {
+                json.WriteNull("window");
+            }
+            json.WriteString("puzzle", _puzzle);
         }));
     }
 

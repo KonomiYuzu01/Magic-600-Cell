@@ -231,6 +231,44 @@ class ShellProject(unittest.TestCase):
         self.assertNotIn("sa2_surface_swap_chain", csharp_list("ShellCalls"))
         self.assertIn("sa2_surface_swap_chain", header_exports())
 
+    def test_the_shell_gives_modules_the_window_and_its_frames(self):
+        module = text(PROJECT / "ShellModule.cs")
+        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log);", module)
+        for member in ("bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc);",
+                       "void OnFrame(HostLibrary.Submitted frame, long qpc);",
+                       "void OnPresented(HostLibrary.Presented row);"):
+            self.assertIn(member, module)
+        hook = text(PROJECT / "WindowHook.cs")
+        self.assertIn("private const int GwlpWndProc = -4;", hook)
+        self.assertIn("[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]", hook)
+        self.assertIn("return CallWindowProcW(_original, window, message, wParam, lParam);", hook)
+        receive = hook[hook.index("private static nint Receive"):]
+        self.assertLess(receive.index("var qpc = EventLog.Now();"), receive.index("foreach"))
+        self.assertIn("catch (Exception error)", receive, "no exception crosses into the native caller")
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")', shell)
+        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));", shell)
+        self.assertIn("WindowHook.Install(window, _modules);", shell)
+        self.assertIn("EachModule(module => module.OnFrame(frame, submitted));", shell)
+        self.assertIn("EachModule(module => module.OnPresented(row));", shell)
+        close = shell[shell.index("private void CloseCore()"):]
+        self.assertLess(close.index("WindowHook.Remove();"), close.index("EachModule(module => module.Dispose());"))
+        self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("_log?.Dispose();"))
+        # The run row names the window and the puzzle, and a module appends its own rows.
+        log = text(PROJECT / "EventLog.cs")
+        run = row_fields(log)["run"]
+        self.assertIn("window", run)
+        self.assertIn("puzzle", run)
+        self.assertIn("public void Append(Action<Utf8JsonWriter> fields) => Write(fields);", log)
+        self.assertIn("log.Describe(window, puzzle);", shell)
+        # The stub has the hook points only: LX-4's messages and rows are its owner's, so the runbook does not call
+        # U8 ready before they exist.
+        stub = text(PROJECT / "Lx4" / "Lx4Module.cs")
+        self.assertIn("public sealed class Lx4Module : IShellModule", stub)
+        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
+        for needle in ("Magic600.LX4", '"lx4"', "RegisterWindowMessage"):
+            self.assertNotIn(needle, stub)
+
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
         chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")
         known = set()
@@ -391,17 +429,39 @@ class ProductBuild(unittest.TestCase):
     def test_a_dry_run_creates_and_starts_nothing(self):
         def refuse(*args, **kwargs):
             raise AssertionError("a dry run started a process")
-        for echo in ([], ["--echo"]):
+        for flags in ([], ["--echo"], ["--lx4"], ["--puzzle", "jumble-off", "--lx4", "--echo"]):
             lines = []
             out = self.temp / "run"
-            code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *echo],
+            code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *flags],
                                     popen=refuse, out_stream=lines.append)
             self.assertEqual(code, 0, lines)
             self.assertFalse(out.exists())
             names = {line.split("=", 1)[0][len("env: "):] for line in lines if line.startswith("env: ")}
-            expected = {"M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
-                        "M600_RUN_ID", "M600_SESSION_DIR", "M600_TWIST_MENU"} | ({"M600_INPUT_ECHO"} if echo else set())
+            expected = ({"M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
+                         "M600_RUN_ID", "M600_SESSION_DIR", "M600_TWIST_MENU", "M600_PUZZLE"}
+                        | ({"M600_INPUT_ECHO"} if "--echo" in flags else set())
+                        | ({"M600_LX4"} if "--lx4" in flags else set()))
             self.assertEqual(names, expected)
+            self.assertIn("env: M600_PUZZLE=jumble-off", lines)
+
+    def test_jumble_on_is_refused_until_the_host_runs_it(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        lines = []
+        out = self.temp / "run"
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--puzzle", "jumble-on"],
+                                popen=refuse, out_stream=lines.append)
+        self.assertEqual(code, 2)
+        self.assertFalse(out.exists())
+        self.assertIn("does not run jumble-on yet", lines[-1])
+        # The launcher and the shell name the same puzzles, and both refuse every other one.
+        log = text(PROJECT / "EventLog.cs")
+        puzzles = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};", log)
+        self.assertTrue(puzzles)
+        self.assertEqual(tuple(re.findall(r'"([a-z-]+)"', puzzles.group(1))), self.launch.PUZZLES)
+        self.assertEqual(self.launch.RUNNABLE_PUZZLES, self.launch.PUZZLES[:1])
+        self.assertIn('throw new NotSupportedException($"the shell does not run {puzzle} yet");',
+                      text(PROJECT / "Shell.cs"))
 
     def test_a_used_run_folder_or_a_changed_build_is_refused(self):
         def refuse(*args, **kwargs):
@@ -442,9 +502,12 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(env["M600_SESSION_DIR"], str(out.resolve() / "session"))
         self.assertEqual(env["M600_TWIST_MENU"], str(build / "menu" / "wj-I_a.json"))
         self.assertNotIn("M600_INPUT_ECHO", env)
+        self.assertNotIn("M600_LX4", env)
+        self.assertEqual(env["M600_PUZZLE"], "jumble-off")
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
-        self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"]),
-                         ("magic600-c9-launch-v1", product["identity"], 0, False))
+        self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"],
+                          record["puzzle"], record["lx4"]),
+                         ("magic600-c9-launch-v1", product["identity"], 0, False, "jumble-off", False))
         for temp in {str(self.temp), str(self.temp.resolve())}:
             self.assertNotIn(temp, json.dumps(record))
             self.assertNotIn(temp.replace("\\", "/"), json.dumps(record))
@@ -452,8 +515,12 @@ class ProductBuild(unittest.TestCase):
     def test_inherited_shell_variables_are_dropped(self):
         product = self.build_product.verify(self.build)
         env = self.launch.environment(product, self.build, self.temp / "run", "r1", False,
-                                      base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p"})
+                                      base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p",
+                                            "M600_LX4": "1", "m600_puzzle": "jumble-on"})
         self.assertNotIn("M600_INPUT_ECHO", env)
+        self.assertNotIn("M600_LX4", env)
+        self.assertNotIn("m600_puzzle", env)
+        self.assertEqual(env["M600_PUZZLE"], "jumble-off")
         self.assertNotIn("m600_core_dll", env)
         self.assertEqual(env["PATH"], "p")
         self.assertEqual(env["M600_CORE_DLL"], str(self.build / "native" / "sa2_interop.dll"))
