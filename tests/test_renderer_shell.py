@@ -254,7 +254,8 @@ class ShellProject(unittest.TestCase):
 
     def test_the_shell_gives_modules_the_window_and_its_frames(self):
         module = text(PROJECT / "ShellModule.cs")
-        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log);", module)
+        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log, HostLibrary Host, "
+                      "IntPtr HostHandle);", module)
         for member in ("bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc);",
                        "void OnFrame(HostLibrary.Submitted frame, long qpc);",
                        "void OnPresented(HostLibrary.Presented row);"):
@@ -268,13 +269,15 @@ class ShellProject(unittest.TestCase):
         self.assertIn("catch (Exception error)", receive, "no exception crosses into the native caller")
         shell = text(PROJECT / "Shell.cs")
         self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")', shell)
-        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));", shell)
+        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log, hostLibrary, _host)));", shell)
         self.assertIn("WindowHook.Install(window, _modules);", shell)
         self.assertIn("EachModule(module => module.OnFrame(frame, submitted));", shell)
         self.assertIn("EachModule(module => module.OnPresented(row));", shell)
         close = shell[shell.index("private void CloseCore()"):]
         self.assertLess(close.index("WindowHook.Remove();"), close.index("EachModule(module => module.Dispose());"))
         self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("_log?.Dispose();"))
+        # The modules go before the host: a module may call the host until its Dispose.
+        self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("library.Destroy(_host);"))
         # The run row names the window and the puzzle, and a module appends its own rows.
         log = text(PROJECT / "EventLog.cs")
         run = row_fields(log)["run"]
