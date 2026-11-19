@@ -83,9 +83,40 @@
 //! `c600-tools`' host bridge does (`c600_tools::kernel_rows`), and `c600-tools/tests/ct_lb2_01.rs` runs them there on
 //! the differential oracle's recipes (CT-LB2-01).
 //!
+//! # Net and Strict protection
+//!
+//! The source [`PROTECTION_SOURCE`], `src/protection.6cs`, is the module `protection` in edition `6cs-draft-1`, in
+//! the formatter's canonical layout. A captured lock crosses the entries as exact pairs at level `labels`,
+//! `record { kind: Text, labels: List<Nat>, slots: List<Nat> }`: slot `slots[i]` must hold label `labels[i]`. Six
+//! entries:
+//!
+//! - Three captures read the head at what the solver names and answer a lock. `position_lock(slots)` takes the labels
+//!   at the named slots from `labels`. `identity_lock(pieces)` takes each named piece's current slots, which must hold
+//!   its home labels, from `positions`. `block_lock(pieces)` takes the pieces' home slots, which must hold their own
+//!   labels: the completed block's predicate.
+//! - Three checks read KN2.4's `protection` at the named lock and recipe (a recipe in the step records of
+//!   `recipes`) and answer LB2.3's report. `net_check` judges the end of the complete operation, and `strict_check`
+//!   judges every executed prefix from the empty one. `strict_check_within(lock, recipe, limit)` judges the prefixes up
+//!   to `limit` primitives only.
+//!
+//! A report carries its input, the lock and the expansion's digest and length, and its level, `labels`. Its mode and
+//! its coverage are `checked`, the number of judged states, and `required`: 1 for Net, the primitives plus one for
+//! Strict. It also carries the lock's slots that fail at the judged state that fails, in the lock's order, and Strict's
+//! first refused prefix, -1 when none is refused. Its verdict is one of three:
+//!
+//! - `fails`: a judged state breaks the lock.
+//! - `clear`: every required state was judged and none breaks it.
+//! - `unknown`: otherwise. It carries `errors: [LB2:protection.incomplete_coverage]`, so an incomplete check is never
+//!   safe.
+//!
+//! [`net_and_strict_protection`] is the row's catalogue entry. The six entries have the checker's effect `snapshot` and
+//! read the rows [`PROTECTION_ROWS`] names, so under capability separation they read state and prepare no preview.
+//! `c600-tools`' host bridge serves the three rows (`c600_tools::kernel_rows`), and `c600-tools/tests/ct_lb2_02.rs`
+//! runs the entries there (CT-LB2-02).
+//!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe and report entries through the tool's host bridge. Every result of its tests is source and
+//! exact-completion, recipe, report and protection entries through the tool's host bridge. Every result of its tests is source and
 //! fixture evidence.
 //!
 //! # Drafts
@@ -161,6 +192,22 @@
 //! - LB2.2, support: `orbit_report` filters the support with a nested scan of the named orbits (the IR draft's sets are
 //!   not used, so a selection may repeat an orbit or name one the recipe does not move). It answers the full support
 //!   beside the split, so no selection can shorten what the report carries.
+//! - LB2, protection: a lock is a list of exact (slot, label) pairs, the predicate every lock kind reduces to at level
+//!   `labels`, and the `protection` row judges only that. Labels are distinct, so a position lock fixes the stickers at
+//!   its slots, and an identity or a block lock fixes its pieces' stickers. A lock on a slot's occupant piece whatever
+//!   its orientation (an occupant-only lock) is not built.
+//! - LB2, LB3.5: a check names the lock as a parameter, so it judges a lock the solver captured in an earlier run and
+//!   names again. The built-in column refuses a read at a lock built inside the entry from a read, so one entry cannot
+//!   capture and judge in one run (`c600-tools/tests/protection_row.rs`).
+//! - LB2.3, Strict: the row checks the base first. A lock that does not hold at the head fails at the empty prefix,
+//!   whose refused prefix is 0. While the lock holds, a prefix breaks it exactly when its last letter moves a locked
+//!   slot, because labels are distinct; the first refused prefix ends at the first such letter.
+//! - LB2.3, coverage: a check within a limit judges at most `limit` + 1 states. A report that judged fewer than
+//!   `required` states and found no conflict is `unknown`, never `clear`. A conflict found within the limit is a
+//!   `fails` with complete evidence for that prefix.
+//! - LB2: the catalogue row is Rust data in [`net_and_strict_protection`]. Its Effect field is the checker's
+//!   `ReadSnapshot`; chapter 03's "budgets" is the run's budget, which the row's tariff draws on
+//!   (`c600_tools::kernel_rows`).
 //!
 //! # Not built
 //!
@@ -168,10 +215,8 @@
 //!   "Exact linear algebra": kernels (null spaces) and the Z, Q and Q(√5) domains.
 //! - Jumbling words in this crate: the jumbling library entries, on the IR draft's menu words (LP2's pull request
 //!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
-//! - LB2's "Net and Strict protection" as library entries: the tool's host bridge serves the `positions`, `labels` and
-//!   `effect` rows (`c600_tools::kernel_rows`), not KN2.4's `protection`, so CT-LB2-02's tests apply a library-built
-//!   word through the kernel from Rust. CT-LB2-02's Strict half also runs through the tool's route (`c600-tools`), on
-//!   the command layer's Strict policy (LP2's pull request 198).
+//! - LB2's "Net and Strict protection" for a captured protected state of the session (the command layer's protected
+//!   orbits) and for occupant-only locks; LB3's pose-level protection is C8's (`c600_jumble_tool::library`).
 //! - The rest of LB2's catalogue over `effect`: the orbit catalogue and collateral stage order, seeds and full seed
 //!   analysis, guarded setups and buffers (with setup search, CT-BND-18), blocks and work sheets, and named macro
 //!   analysis.
@@ -223,6 +268,21 @@ pub const RECIPES_REPORTS: [&str; 2] = ["effect_report", "orbit_report"];
 /// The KN2.4 row the recipes and reports module reads with `read_snapshot`.
 pub const RECIPES_ROWS: [&str; 1] = ["effect"];
 
+/// The Net and Strict protection source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical
+/// layout.
+pub const PROTECTION_SOURCE: &str = include_str!("protection.6cs");
+/// The Net and Strict protection module.
+pub const PROTECTION_MODULE: &str = "protection";
+/// The Net and Strict protection module's exported functions, in source order.
+pub const PROTECTION_EXPORTS: [&str; 6] =
+    ["position_lock", "identity_lock", "block_lock", "net_check", "strict_check", "strict_check_within"];
+/// The exported functions that capture a lock at the head.
+pub const PROTECTION_LOCKS: [&str; 3] = ["position_lock", "identity_lock", "block_lock"];
+/// The exported functions that judge a captured lock against a recipe.
+pub const PROTECTION_CHECKS: [&str; 3] = ["net_check", "strict_check", "strict_check_within"];
+/// The KN2.4 rows the protection module reads with `read_snapshot`, in name order.
+pub const PROTECTION_ROWS: [&str; 3] = ["labels", "positions", "protection"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -241,6 +301,11 @@ pub fn linalg_sha256() -> String {
 /// The SHA-256 of [`RECIPES_SOURCE`], in hex.
 pub fn recipes_sha256() -> String {
     sha256_hex(RECIPES_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`PROTECTION_SOURCE`], in hex.
+pub fn protection_sha256() -> String {
+    sha256_hex(PROTECTION_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -352,6 +417,28 @@ pub fn collateral_and_support() -> CatalogueRow {
         module: RECIPES_MODULE,
         functions: &RECIPES_REPORTS,
         source_sha256: recipes_sha256(),
+    }
+}
+
+/// LB2's row "Net and Strict protection", as far as this crate builds it.
+pub fn net_and_strict_protection() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Net and Strict protection",
+        level: "Full labels: captured block, identity and position locks as exact slot and label pairs.",
+        effects: &[Effect::ReadSnapshot],
+        backing: "KN2.4's `protection`, read with `read_snapshot` at the named lock and recipe; library code for the \
+                  lock predicates and the report: `protection.position_lock`, `protection.identity_lock` and \
+                  `protection.block_lock` over `labels` and `positions`, `protection.net_check`, \
+                  `protection.strict_check` and `protection.strict_check_within`; a host serves the rows \
+                  (`c600_tools::kernel_rows`).",
+        notes: "Net judges the end of the complete operation; Strict judges every executed prefix, the empty one \
+                first. A report carries its coverage (states checked and required), its input (the lock and the \
+                expansion's digest and length) and its level. Unknown or unchecked coverage is never a safe verdict: a \
+                check that covers fewer states than required and finds no conflict answers `unknown` with \
+                `errors: LB2:protection.incomplete_coverage`. A word can have identity net effect and fail Strict.",
+        module: PROTECTION_MODULE,
+        functions: &PROTECTION_EXPORTS,
+        source_sha256: protection_sha256(),
     }
 }
 
