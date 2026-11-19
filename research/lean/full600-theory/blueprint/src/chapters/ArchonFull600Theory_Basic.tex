@@ -28,6 +28,7 @@ the legal subgroup of its permutation group. Words act chronologically:
 % SOURCE QUOTE PROOF: \end{equation} have identical restrictions to the target orbit
 % \(\{1,2,3\}\) but different complete actions. Both are even.
 \begin{proof}
+  \leanok
   Each three-cycle is a product of two transpositions. The extra cycle
   in \(v\) fixes all three target slots, and \(u(4)=4\) while \(v(4)=5\).
 \end{proof}
@@ -55,6 +56,7 @@ the legal subgroup of its permutation group. Words act chronologically:
 % \(a\) then \(b\) sends \(5\) to \(7\), whereas applying \(b\) then \(a\)
 % sends \(5\) to \(6\).
 \begin{proof}
+  \leanok
   The transpositions give the displayed intersections by inspection.
   The two action orders send \(5\) along \(5\mapsto6\mapsto7\) and
   \(5\mapsto5\mapsto6\), respectively.
@@ -75,6 +77,7 @@ the legal subgroup of its permutation group. Words act chronologically:
 % maps its own support to itself; checking a point in either support or
 % outside both gives equality of the two compositions.
 \begin{proof}
+  \leanok
   A permutation preserves its full support by injectivity. If \(s\) is
   in the support of \(P\), then \(s\) and \(P(s)\) are fixed by \(Q\), so
   both compositions send \(s\) to \(P(s)\). The argument interchanging
@@ -92,6 +95,7 @@ the legal subgroup of its permutation group. Words act chronologically:
   complete nonfixed map, a set of ordered pairs in \(\Sigma\times\Sigma\).
 \end{definition}
 \begin{proof}
+  \leanok
   Each moved source has exactly its image as a target. Reconstruct \(W\)
   by fixing every slot absent from the first coordinates of \(E_W\).
 \end{proof}
@@ -130,6 +134,7 @@ the legal subgroup of its permutation group. Words act chronologically:
 % when \(W(u)\ne u\). Every moved source of the conjugate is therefore
 % represented, and no fixed source is included.
 \begin{proof}
+  \leanok
   The action at \(x\) is \(S(W(S^{-1}(x)))\). Write \(x=S(u)\); its
   target is \(S(W(u))\), which differs from \(S(u)\) exactly when
   \(W(u)\ne u\). Every \(x\) has a unique such \(u\). The pair-set
@@ -163,6 +168,7 @@ the legal subgroup of its permutation group. Words act chronologically:
   \(C\) to \(X\). The seed, relocation, and setups belong to \(G\).
 \end{definition}
 \begin{proof}
+  \leanok
   The seed condition specifies the complete permutation, with the
   identity at each slot outside \(\{a,b,c\}\). The coverage condition
   includes \(C\), where the identity serves as a setup.
@@ -226,6 +232,7 @@ the legal subgroup of its permutation group. Words act chronologically:
 % injective: restricting an identity product to one selected orbit makes
 % that factor the identity. This proves the claim.
 \begin{proof}
+  \leanok
   Transport the seed along the legal relocation to obtain the full
   cycle \(t_C=(A\,B\,C)\). Transport \(t_C\) along each setup to obtain
   \(t_X=(A\,B\,X)\). The conjugated witnesses are legal by subgroup
@@ -271,6 +278,7 @@ the legal subgroup of its permutation group. Words act chronologically:
   read in the fixed spatial frame.
 \end{definition}
 \begin{proof}
+  \leanok
   The color at \(s\) after \(g\) is the solved color of the slot sent
   to \(s\) by \(g\). The identity realizes \(c_0\), and \(\Omega\) is
   finite as a set of maps between finite sets.
@@ -294,6 +302,7 @@ the legal subgroup of its permutation group. Words act chronologically:
   \]
 \end{definition}
 \begin{proof}
+  \leanok
   For \(m=6,4,12\), ordering the \(600m\) slots and taking consecutive
   blocks of size \(m\) partitions the slots into \(600\) labeled
   fibers. Exactly \((m!)^{600}\) orderings yield each such partition,
@@ -353,6 +362,7 @@ the legal subgroup of its permutation group. Words act chronologically:
 % nine factors multiply and every unselected sticker remains solved at the
 % ends of the resulting macros. This gives \(B\).
 \begin{proof}
+  \leanok
   On an orbit of size \(600m\), any two colorings with those fiber sizes
   are related by a permutation obtained by matching their fibers.
   The stabilizer of the solved coloring has order \((m!)^{600}\):
@@ -392,6 +402,7 @@ available as letters.
   solved is \(x_w=c_0\circ g_w^{-1}\in\Omega\).
 \end{definition}
 \begin{proof}
+  \leanok
   Appending a letter \(a\) composes \(g_w\) on the left by the
   permutation for \(a\). Subgroup closure puts every \(g_w\) in \(G\).
 \end{proof}
@@ -412,6 +423,7 @@ available as letters.
   word \(w\) with \(x_w=x\), using a finite alphabet realizing \(G\).
 \end{definition}
 \begin{proof}
+  \leanok
   Since a legal permutation attains \(x\) and the alphabet realizes
   \(G\), the set of such lengths is nonempty and has a least element.
 \end{proof}
@@ -438,6 +450,7 @@ available as letters.
 % SOURCE QUOTE PROOF: At most \(q^j\) words have length \(j\). Different words may give the
 % same state
 \begin{proof}
+  \leanok
   Words of length \(j\) are \(j\)-tuples of letters, so there are \(q^j\)
   such words. The state ball is the image of the disjoint union of
   these word sets over \(0\le j\le r\). The geometric sum identity
@@ -468,6 +481,7 @@ comparisons \(kd\le n<(k+1)d\).
   In the natural numbers, \(B>10^{151851}\).
 \end{lemma}
 \begin{proof}
+  \leanok
   Exact evaluation gives \(\lfloor 1000P/(DK)\rfloor=1459\), so
   \(1000B\ge1459K>1000K\).
 \end{proof}
@@ -486,6 +500,7 @@ comparisons \(kd\le n<(k+1)d\).
 % factorials in \(B\) as integer products, perform the indicated exact
 % multinomial divisions, and compare positive integers.
 \begin{proof}
+  \leanok
   Exact evaluation gives
   \(\lfloor1000(1800^{46648}-1)/(1799K)\rfloor=4\).
   Thus \(1800^{46648}-1<1799K<1799B\).
@@ -505,6 +520,7 @@ comparisons \(kd\le n<(k+1)d\).
   In the natural numbers, \(1800^{46649}-1\ge1799B\).
 \end{lemma}
 \begin{proof}
+  \leanok
   Exact evaluation gives
   \(\lfloor1000(1800^{46649}-1)/(1799K)\rfloor=8954\) and
   \(\lfloor1000P/(DK)\rfloor=1459\). Hence
@@ -529,6 +545,7 @@ at which the word-count upper bound reaches \(B\).
 % factorials in \(B\) as integer products, perform the indicated exact
 % multinomial divisions, and compare positive integers.
 \begin{proof}
+  \leanok
   Exact evaluation gives
   \(\lfloor1000\cdot1800^{1000}10^{148595}/K\rfloor=187\).
   Thus \(1800^{1000}10^{148595}<K<B\).
@@ -555,6 +572,7 @@ at which the word-count upper bound reaches \(B\).
 % ball contains fewer than \(B\) states. Lemma 10 gives at least \(B\)
 % reachable states, so some state lies outside that ball.
 \begin{proof}
+  \leanok
   At radius \(46647\), the word-ball bound is
   \((1800^{46648}-1)/1799<B\) by the strict integer comparison.
   Since \(|\Omega|\ge B\), some reachable state is outside this ball
@@ -575,6 +593,7 @@ at which the word-count upper bound reaches \(B\).
   where the maximum ranges over all subsets.
 \end{definition}
 \begin{proof}
+  \leanok
   There are finitely many subsets, including the empty event, so the
   set of event discrepancies has a maximum.
 \end{proof}
@@ -616,6 +635,7 @@ at which the word-count upper bound reaches \(B\).
 % \end{equation} where strictness follows from
 % Equation\textasciitilde{}\eqref{eq:blueprint-2}.
 \begin{proof}
+  \leanok
   The support \(A\) is contained in the image of the set of
   length-\(1000\) words, so \(|A|\le1800^{1000}\). All probability mass
   of \(\mu_{1000}\) lies in \(A\), while \(\nu(A)=|A|/|\Omega|\).
@@ -643,6 +663,7 @@ at which the word-count upper bound reaches \(B\).
 % \end{equation} generates \(\langle R\rangle\). Thus
 % \([D_5,D_5]=\langle R\rangle\).
 \begin{proof}
+  \leanok
   Let \(R(i)=i+1\) and \(F(i)=-i\) on the five residues modulo \(5\).
   The rotation subgroup has order five and abelian quotient of order
   two, so it contains every commutator. The relation
@@ -666,6 +687,7 @@ at which the word-count upper bound reaches \(B\).
 % is normal, and all three-cycles are conjugate within \(A_5\). Since
 % three-cycles generate \(A_5\), its derived subgroup is all of \(A_5\).
 \begin{proof}
+  \leanok
   The even involutions \(u=(1\,2)(4\,5)\) and \(v=(2\,3)(4\,5)\)
   have a three-cycle as their product, by cancellation of the common
   transposition on the last two slots. Their commutator is a square
@@ -701,21 +723,10 @@ at which the word-count upper bound reaches \(B\).
 % t_Y^{-1}t_X=(A\,Y\,X).
 % \end{equation}
 \begin{proof}
+  \leanok
   Enumerate the ordered distinct quadruples in each domain and compare
   both sides on every slot. In the first comparison the left side
   cycles \(A\mapsto Y\mapsto X\mapsto A\) and fixes \(B\). In the
   second it cycles \(x\mapsto y\mapsto z\mapsto x\) and fixes \(A\).
   Every slot outside the quadruple is fixed in each comparison.
-\end{proof}
-
-\section{Starter definition}
-
-\begin{definition}[Starter string]
-  \label{def:hello}
-  \lean{hello}
-  \leanok
-  The string named \texttt{hello} is \texttt{world}.
-\end{definition}
-\begin{proof}
-  The string is given directly by its literal.
 \end{proof}

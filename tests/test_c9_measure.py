@@ -416,6 +416,12 @@ class RunbookTests(NoProcessCase):
         self.assertEqual(attended.count(True), 3)
         lx2 = next(step for step in runbook.STEPS if step.id == 'lx2')
         self.assertTrue(any('--injection' in command for command in lx2.commands))
+        self.assertTrue(all('--features device --bin c600-lx2-' in command for command in lx2.commands))
+        self.assertNotIn('native', lx2.missing)
+        for token in ('pub fn main_with', 'main_with(native::point)'):
+            argument = next(argument for kind, argument in lx2.prerequisites
+                            if kind == 'mentions' and argument[1] == token)
+            self.assertTrue(runbook.evaluate('mentions', argument)[0], argument)
         gpu = next(step for step in runbook.STEPS if step.id == 'core-gpu')
         self.assertTrue(gpu.built and gpu.commands[0].startswith('python -B renderer/core/check_core.py --gpu'))
         self.assertEqual(next(step for step in runbook.STEPS if step.id == 'lx4').minutes, 240)

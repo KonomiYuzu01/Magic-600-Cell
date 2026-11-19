@@ -867,6 +867,31 @@ int32_t recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* 
     write_json(success, buffer, buffer_size, out_size);
     return SA2_OK;
 }
+// C9 U4 (no ABI change): sa2_scene_produce with SA2_TARGET_SURFACE on a
+// sa2_create context draws the loaded W1..W4 or W-J scene into the attached
+// surface's current back buffer and presents it (SurfaceTarget), so the
+// renderer gate's scenes run on route B. The frame's QPC is read after the
+// target's waits, as the slot route reads it after its own checks.
+void scene_surface(sa2_context* ctx, uint64_t frame) {
+    require(ctx->created, "only a sa2_create context has a surface", SA2_E_WRONG_STATE);
+    auto& scene = *ctx->scene;
+    auto& surface = attached(ctx);
+    require(surface.width == scene.record.width && surface.height == scene.record.height,
+        "the surface is not at the scene's load-time size", SA2_E_WRONG_STATE);
+    require(frame > ctx->last_frame, "frame must increase strictly from 1", SA2_E_WRONG_STATE);
+    scene.require_healthy();
+    live(ctx);
+    scene.wait_geometry(ctx->config.wait_timeout_ms);
+    scene.surface_ready();
+    SurfaceTarget target(ctx);
+    auto* list = target.open();
+    try {
+        const auto now = sa2::scene_qpc();
+        scene.record_draw(list, target.ring(), target.view(), now, target.format());
+        scene.sample_vram();
+        target.close(frame);
+    } catch (...) { scene.poison(); throw; }
+}
 }
 
 extern "C" {
@@ -985,6 +1010,19 @@ int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y) {
         check_hr(nullptr, surface.dcomp->Commit(), "IDCompositionDevice::Commit");
         surface.x = x;
         surface.y = y;
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out) {
+    if (out) *out = 0;
+    return invoke(ctx, "sa2_surface_swap_chain", [&] {
+        context(ctx);
+        require(out != nullptr, "null swap-chain output");
+        require(ctx->surface != nullptr && ctx->surface->chain && ctx->surface->chain->swapchain, "no surface is attached",
+                SA2_E_WRONG_STATE);
+        // IDXGISwapChain3 derives singly from IDXGISwapChain, so this is also the IDXGISwapChain pointer.
+        *out = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ctx->surface->chain->swapchain.Get()));
         return SA2_OK;
     });
 }
@@ -1355,8 +1393,13 @@ int32_t sa2_scene_load_wj(sa2_context* ctx, const sa2_wj_config* config) {
 int32_t sa2_scene_produce(sa2_context* ctx, uint32_t index, uint64_t frame) {
     return invoke(ctx, "sa2_scene_produce", [&] {
         context(ctx);
-        require(index < SA2_RING_SLOTS && frame != UINT64_MAX, "invalid slot or reserved fence value");
+        require((index < SA2_RING_SLOTS || index == SA2_TARGET_SURFACE) && frame != UINT64_MAX, "invalid slot or reserved fence value");
         require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        if (index == SA2_TARGET_SURFACE) {
+            scene_surface(ctx, frame);
+            return SA2_OK;
+        }
+        slot_route(ctx);
         auto& slot = slot_at(ctx, index);
         auto& scene = *ctx->scene;
         for (const auto& current : ctx->slots)

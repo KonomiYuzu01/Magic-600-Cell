@@ -25,14 +25,30 @@ namespace Magic600.Shell;
 /// reading); a refused press, and a press no frame showed before the close, names no frame, which the timer counts as
 /// unconfirmed. Frame rows carry the two revisions as extra fields. The run row's correctness is the session's
 /// correctness control (<see cref="HostLibrary.CorrectnessControl"/>), with its record as correctness_detail; without
-/// a session it is "fail" with correctness_control "none". The core does not report its swap chain's address, so
-/// there is no swap_chain and no PresentMon cross-check.
+/// a session it is "fail" with correctness_control "none".
+///
+/// Swap chains (C9 U3, a draft): the run row's swap_chain is the core's composition swap chain as PresentMon prints its
+/// address ("0x" and 16 upper-case hex digits), for key_to_frame.py's cross-check. The shell reads it after the
+/// attach, each resize and each recovery; a run that saw more than one chain, or a core that did not give it, writes
+/// null, so the cross-check is refused rather than half done. Godot exposes no address of its own swap chain, so
+/// ui_swap_chain is null and ui_skew.py has to find the UI chain in the capture as the process's other chain.
+///
+/// UI frames (route B check B2, ui_skew.py's DRAFT ui_frame row): one row per Godot frame that follows a submitted 3D
+/// frame in the same process frame. Its qpc is read at RenderingServer's frame_pre_draw, before Godot draws and
+/// presents the frame, so that the UI present lies between the row's qpc and the next row's; drawn_qpc is read at
+/// frame_post_draw, which on Godot's RenderingDevice path comes after the present.
+///
+/// Modules (C9 U8, a draft): the run row also carries window, the shell's HWND as an integer, and puzzle, the puzzle the
+/// shell runs (<see cref="Puzzles"/>, from M600_PUZZLE). A module writes its own rows through <see cref="Append"/>.
 /// </remarks>
 public sealed class EventLog : IDisposable
 {
     public const string Format = "magic600-c9-shell-events-v1";
     public const string FileName = "events.jsonl";
     public const string BodyName = "events.body.jsonl";
+
+    /// <summary>The puzzles M600_PUZZLE may name; the first is the default. lx4.py runs one of each.</summary>
+    public static readonly string[] Puzzles = { "jumble-off", "jumble-on" };
 
     private readonly string _directory;
     private readonly string _runId;
@@ -42,9 +58,14 @@ public sealed class EventLog : IDisposable
     /// <summary>Presses without their frame yet, in press order: QPC and revision (0 for a refused press).</summary>
     private readonly Queue<(long Qpc, ulong Revision)> _pending = new();
     private long _keys;
+    private long _uiFrames;
+    /// <summary>The core's swap chains in the order the shell saw them; null where the core gave no address.</summary>
+    private readonly List<ulong?> _swapChains = new();
     private bool _correct;
     private string _control = "none";
     private string? _detail;
+    private long? _window;
+    private string _puzzle = Puzzles[0];
 
     private EventLog(string directory, string runId, string buildIdentity)
     {
@@ -85,6 +106,31 @@ public sealed class EventLog : IDisposable
 
     /// <summary>The machine's QueryPerformanceCounter, which Stopwatch reads on Windows.</summary>
     public static long Now() => Stopwatch.GetTimestamp();
+
+    /// <summary>
+    /// The puzzle M600_PUZZLE names, or the default when it is not set. Another value throws, so that a run never
+    /// records a puzzle it did not ask for.
+    /// </summary>
+    public static string PuzzleFromEnvironment()
+    {
+        var puzzle = System.Environment.GetEnvironmentVariable("M600_PUZZLE");
+        if (string.IsNullOrEmpty(puzzle))
+        {
+            return Puzzles[0];
+        }
+        if (Array.IndexOf(Puzzles, puzzle) < 0)
+        {
+            throw new ArgumentException($"M600_PUZZLE must be one of {string.Join(", ", Puzzles)}");
+        }
+        return puzzle;
+    }
+
+    /// <summary>The run row's window (the shell's HWND) and puzzle.</summary>
+    public void Describe(IntPtr window, string puzzle)
+    {
+        _window = (long)window;
+        _puzzle = puzzle;
+    }
 
     /// <summary>Records that the window was not the foreground window at some point of the run.</summary>
     public void LostForeground() => _foreground = false;
@@ -168,6 +214,35 @@ public sealed class EventLog : IDisposable
         });
     }
 
+    /// <summary>The core's swap chain after an attach, a resize or a recovery; null when the core gave no address.</summary>
+    public void SwapChain(ulong? address)
+    {
+        if (_swapChains.Count == 0 || _swapChains[^1] != address)
+        {
+            _swapChains.Add(address);
+        }
+    }
+
+    /// <summary>"0x" and 16 upper-case hex digits, as PresentMon prints a swap chain's address (DRAFT).</summary>
+    internal static string Address(ulong address) => "0x" + address.ToString("X16", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// One Godot frame: <paramref name="qpc"/> read at frame_pre_draw, <paramref name="frameId"/> the 3D frame submitted
+    /// in the same process frame, <paramref name="drawnQpc"/> read at frame_post_draw.
+    /// </summary>
+    public void UiFrame(long qpc, ulong frameId, long drawnQpc)
+    {
+        var seq = _uiFrames++;
+        Write(json =>
+        {
+            json.WriteString("t", "ui_frame");
+            json.WriteNumber("ui_seq", seq);
+            json.WriteNumber("qpc", qpc);
+            json.WriteNumber("frame_id", frameId);
+            json.WriteNumber("drawn_qpc", drawnQpc);
+        });
+    }
+
     /// <summary>A presentation the core confirmed. The sequence is the frame's, as the core's presented row carries it.</summary>
     public void Presented(HostLibrary.Presented row) => Write(json =>
     {
@@ -178,6 +253,12 @@ public sealed class EventLog : IDisposable
         json.WriteNumber("sequence", row.Sequence);
         json.WriteNumber("display_qpc", row.DisplayQpc);
     });
+
+    /// <summary>
+    /// A module's own row, written in order with the shell's rows. <paramref name="fields"/> writes the row's fields,
+    /// beginning with its "t"; key_to_frame.py skips only the row kinds it lists as other rows.
+    /// </summary>
+    public void Append(Action<Utf8JsonWriter> fields) => Write(fields);
 
     private void Write(Action<Utf8JsonWriter> fields)
     {
@@ -237,6 +318,24 @@ public sealed class EventLog : IDisposable
                 json.WriteRawValue(detail);
             }
             json.WriteNumber("process_id", System.Environment.ProcessId);
+            if (_swapChains is [{ } chain])
+            {
+                json.WriteString("swap_chain", Address(chain));
+            }
+            else
+            {
+                json.WriteNull("swap_chain");
+            }
+            json.WriteNull("ui_swap_chain");
+            if (_window is { } window)
+            {
+                json.WriteNumber("window", window);
+            }
+            else
+            {
+                json.WriteNull("window");
+            }
+            json.WriteString("puzzle", _puzzle);
         }));
     }
 
