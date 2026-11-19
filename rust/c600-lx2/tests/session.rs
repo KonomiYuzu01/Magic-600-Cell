@@ -53,6 +53,20 @@ fn each_fault_leaves_the_journal_and_the_state_of_the_control_and_the_session_op
     }
 }
 
+/// The native recursion and loop with a session open, on the device's fault hook (feature `device`).
+#[cfg(feature = "device")]
+#[test]
+fn each_native_fault_on_the_hook_leaves_the_journal_and_the_state_of_the_control_and_the_session_open() {
+    let c = control("native");
+    for trial in [Trial::RecursionNative, Trial::LoopNative] {
+        let r = run("native", trial);
+        assert!(r.agrees(&c), "{trial:?}: {r:#?}");
+        assert_eq!(r.spawns, 1, "{trial:?}: the job ran in the first child");
+        assert_eq!(r.command, expected_command(trial), "{trial:?}: the solver's command fails with the run's code");
+    }
+    assert_eq!(expected_command(Trial::LoopNative), "failed KN7:resource_limit.safety_stop");
+}
+
 #[test]
 fn a_record_that_differs_from_the_control_disagrees() {
     let c = control("disagree");
