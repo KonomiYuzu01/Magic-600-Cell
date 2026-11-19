@@ -7,10 +7,13 @@ the Python standard library, start no process, and run anywhere. They check that
 - the Godot project's interop layer (project/Native.cs) matches the core's ABI 5 header
   renderer/core/include/sa2_interop.h: the x64 layout of every struct it declares, its constants, and the
   signature of every entry point it imports; it declares every ABI 1 to 3 struct and imports every ABI 1 to 3
-  call (the harness uses no ABI 4 or ABI 5 call);
+  call (the texture routes use no ABI 4 or ABI 5 call; route B, C9 U4, imports ABI 5's sa2_create and three
+  surface calls);
 - the injection, menu and scene lists agree across the header, the project and the run script;
 - the run finalizer accepts small synthetic W-J and W3 runs and checks, refuses or fails broken ones, and
-  writes records that the unchanged renderer gate (tools/perf/renderer_gate.py) judges as the evidence was.
+  writes records that the unchanged renderer gate (tools/perf/renderer_gate.py) judges as the evidence was;
+- route B (C9 U4): a synthetic route-B run is measured on the core's declared chain at sync interval 1, and
+  the route-B build keeps the product shell's window settings, Godot's vsync and the guard over override.cfg.
 """
 from __future__ import annotations
 
@@ -290,7 +293,7 @@ class InteropTests(unittest.TestCase):
         for kind, name, value in constants:
             with self.subTest(constant=name):
                 self.assertIn(name, defines)
-                self.assertEqual(int(defines[name].rstrip("u")), int(value))
+                self.assertEqual(int(defines[name].rstrip("u"), 0), int(value))
                 self.assertEqual(kind == "uint", defines[name].endswith("u"))
         wanted = {name for name in defines
                   if re.fullmatch(r"SA2_(ABI_VERSION|OK|E_\w+|QUEUE_\w+|BARRIERS_\w+|STATE_\w+|SCENE_NO_VRAM)", name)}
@@ -694,6 +697,173 @@ class FinalizerTests(unittest.TestCase):
                     "build_identity": "e" * 64, "adapter": fr.DEFAULT_ADAPTER, "states": states}
         self.assertEqual(self.check_record("lattice", "wj", "S4", "lattice", record(0))["status"], "pass")
         self.assertEqual(self.check_record("lattice-fail", "wj", "S4", "lattice", record(4), 2)["status"], "fail")
+
+
+# --- Route B (C9 U4) ------------------------------------------------------------------------------------
+
+CORE_CHAIN = "0x000001F2A3B4E000"       # as the harness declares it (Level2.InitializeSurface: "0x" + X16)
+CORE_CHAIN_CSV = "0x000001f2a3b4e000"   # PresentMon's own spelling, which the record keeps for the gate
+WINDOW_CHAIN = "0x000001F2A3B4C5D0"     # Godot's window chain, also presenting
+
+
+def surface_csv(sync=1) -> str:
+    """The core's chain 5 ticks after each trace entry and Godot's window chain at about 60 Hz."""
+    lines = ["Application,ProcessID,SwapChainAddress,PresentRuntime,SyncInterval,PresentFlags,AllowsTearing,"
+             "PresentMode,Dropped,QPCTime,msBetweenPresents,msBetweenDisplayChange"]
+    rows = [(T0 + frame * STEP + 5, f"godot.exe,{PID},{CORE_CHAIN_CSV},DXGI,{sync},0,0,Composed: Flip,0,"
+             f"{T0 + frame * STEP + 5},20.000,20.000") for frame in range(FRAMES)]
+    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,0,{tick},16.000,16.000")
+             for tick in range(T0 + 3, STOP, 16)]
+    return "\n".join(lines + [line for _, line in sorted(rows)]) + "\n"
+
+
+def surface_run(directory: Path, run_id: str, declared=CORE_CHAIN, sync=1, route="surface") -> Path:
+    write_run(directory, "w3", run_id=run_id)
+    record = read(directory / "harness.json")
+    record["configuration"]["route"] = route
+    record["presentation"] = {"route": "surface", "swap_chain": declared, "sync_interval": 1}
+    write_json(directory / "harness.json", record)
+    (directory / "presentmon.csv").write_bytes(surface_csv(sync).encode("utf-8"))
+    return directory
+
+
+@unittest.skipIf(fr is None, f"finalize_run does not import here: {FINALIZER_ERROR!r}")
+class RouteBFinalizerTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.base = Path(self.temporary.name)
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def test_route_b_runs_measure_the_declared_chain(self):
+        self.assertEqual(fr.SURFACE_SYNC_INTERVAL, 1)
+        self.assertIn("#define SA2_SURFACE_SYNC_INTERVAL 1u", text(HEADER))
+        runs = [surface_run(self.base / f"b{index}", f"c9-w3-b-{index}") for index in range(3)]
+        windows = len(range(T0 + 3, STOP, 16))
+        for run in runs:
+            self.assertEqual(finalize(run), 0)
+            record = read(run / "run.json")
+            self.assertEqual(record["presentmon"]["swap_chain"], CORE_CHAIN_CSV)
+            self.assertEqual(record["l2"]["presentation"],
+                             {"route": "surface", "swap_chain": CORE_CHAIN, "sync_interval": 1,
+                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}]})
+            self.assertEqual(record["l2"]["presentmon"]["rows"], FRAMES)
+            self.assertEqual(record["l2"]["presentmon"]["sync_intervals"], {"1": FRAMES})
+            self.assertIs(record["environment"]["tearing"], False)
+        result = scene_result(gate.summarize_private(runs), "w3")
+        self.assertEqual((result["verdict"], len(result["runs"])), ("met", 3))
+        self.assertAlmostEqual(result["pooled"]["fps"], 50.0)
+
+    def test_texture_runs_keep_their_rules(self):
+        run = write_run(self.base / "texture", "w3", run_id="c9-texture")
+        csv_text = (run / "presentmon.csv").read_text(encoding="utf-8")
+        (run / "presentmon.csv").write_bytes((csv_text + f"godot.exe,{PID},{WINDOW_CHAIN[:-1]}1,DXGI,0,0,1,"
+                                              f"Composed: Flip,0,{T0 + 11},20.000,20.000\n").encode("utf-8"))
+        self.assertEqual(finalize(run), 5)
+        self.assertEqual(read(run / "refusal.json")["reasons"], ["swap-chain"])
+
+    def test_route_b_refusals(self):
+        cases = {
+            "swap-chain": {"declared": "0x000001F2A3B4F000"},   # the declared chain never presented
+            "sync-interval": {"sync": 0},                        # the core presented without vsync
+            "harness": {"route": "export"},                      # a presentation record on a texture route
+        }
+        for reason, options in cases.items():
+            with self.subTest(reason=reason):
+                run = surface_run(self.base / reason, f"c9-{reason}", **options)
+                self.assertEqual(finalize(run), 5)
+                self.assertEqual(read(run / "refusal.json")["reasons"], [reason])
+                self.assertFalse((run / "run.json").exists())
+        for name, declared in (("short", "0x1F2A3B4E000"), ("lower", CORE_CHAIN_CSV), ("zero", "0x" + "0" * 16)):
+            with self.subTest(declared=name):
+                run = surface_run(self.base / name, f"c9-{name}", declared=declared)
+                self.assertEqual(finalize(run), 5)
+                self.assertEqual(read(run / "refusal.json")["reasons"], ["harness"])
+        bare = surface_run(self.base / "bare", "c9-bare")
+        record = read(bare / "harness.json")
+        record["presentation"] = None   # a route-B configuration without the presentation record
+        write_json(bare / "harness.json", record)
+        self.assertEqual(finalize(bare), 5)
+        self.assertEqual(read(bare / "refusal.json")["reasons"], ["harness"])
+
+
+class RouteBBuildTests(unittest.TestCase):
+    """The route-B build: the shell's window settings, Godot's vsync, the runner's flag and the guard."""
+
+    EXECUTABLE = "C:\\godot\\Godot_v4.7.2-stable_mono_win64.exe"
+
+    def setUp(self):
+        try:
+            import prepare_host
+        except (ImportError, OSError) as error:
+            self.skipTest(f"prepare_host does not import here: {error!r}")
+        self.host = prepare_host
+
+    @staticmethod
+    def settings(path: Path) -> dict:
+        section, values = "", {}
+        for line in text(path).splitlines():
+            line = line.strip()
+            if not line or line.startswith(";"):
+                continue
+            if line.startswith("["):
+                section = line.strip("[]")
+            elif "=" in line:
+                key, value = line.split("=", 1)
+                values[f"{section}/{key}" if section else key] = value
+        return values
+
+    def test_override_keeps_the_shell_window_settings(self):
+        override = self.settings(self.host.OVERRIDE)
+        shell = self.settings(ROOT / "renderer" / "shell" / "project" / "project.godot")
+        self.assertEqual(self.host.OVERRIDE, ACCEPTANCE / "route-b" / "override.cfg")
+        self.assertEqual(set(override), {"display/window/size/transparent", "display/window/per_pixel_transparency/allowed",
+                                         "display/window/vsync/vsync_mode", "rendering/viewport/transparent_background",
+                                         "rendering/environment/defaults/default_clear_color"})
+        self.assertEqual(override, {key: shell[key] for key in override})
+        self.assertEqual(self.settings(PROJECT / "project.godot")["display/window/vsync/vsync_mode"], "0")
+        self.assertIn("renderer/acceptance/route-b", self.host.SOURCES)
+
+    def test_launch_keeps_vsync_only_on_route_b(self):
+        build = ROOT / "work" / "build" / "c9-acceptance" / "20261119T000000Z"
+        texture = self.host.launch_value(build, self.EXECUTABLE, {})
+        surface = self.host.launch_value(build, self.EXECUTABLE, {}, "surface")
+        self.assertEqual(texture, self.host.launch_value(build, self.EXECUTABLE, {}, "texture"))
+        self.assertIn("--disable-vsync", texture["arguments"])
+        self.assertEqual(surface["arguments"], [a for a in texture["arguments"] if a != "--disable-vsync"])
+        self.assertEqual({k: v for k, v in surface.items() if k != "arguments"},
+                         {k: v for k, v in texture.items() if k != "arguments"})
+        with self.assertRaises(ValueError):
+            self.host.launch_value(build, self.EXECUTABLE, {}, "export")
+        self.assertEqual(self.host.ROUTES, ("texture", "surface"))
+
+    def test_runner_and_harness_name_the_route(self):
+        runner, arguments = text(ACCEPTANCE / "run_scene.ps1"), text(PROJECT / "Level2Arguments.cs")
+        self.assertIn("if ($route -eq 'surface') { $arguments += @('--sa2-route','surface') }", runner)
+        self.assertIn("@('texture','surface') -cnotcontains $route", runner)
+        self.assertIn('"surface"', re.search(r'case "--sa2-route": a\.route = Choice\(value, ([^)]*)\);', arguments).group(1))
+        level2 = text(PROJECT / "Level2.cs")
+        detach = level2.index('_native.sa2_surface_detach(_context)')
+        self.assertLess(level2.index('_native.sa2_scene_unload(_context)'), detach)
+        self.assertLess(detach, level2.index('_native.sa2_detach(_context)'))
+        self.assertIn("Native.SA2_TARGET_SURFACE, frame", level2)
+
+    @unittest.skipIf(fr is None, f"file_guard does not import here: {FINALIZER_ERROR!r}")
+    def test_guard_protects_a_route_b_override(self):
+        import file_guard
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            project = base / "project"
+            debug = project / ".godot" / "mono" / "temp" / "bin" / "Debug"
+            debug.mkdir(parents=True)
+            (debug / "SA2Smoke.dll").write_bytes(b"")
+            launch = {"format": "magic600-l2-launch-v1", "candidate": "sa2", "executable": str(base / "godot.exe"),
+                      "dll": str(base / "native" / "sa2_interop.dll"), "working_directory": str(project)}
+            names = lambda: {Path(path).name for path in file_guard.protected_set(launch, "sa2")}
+            self.assertNotIn("override.cfg", names())
+            (project / "override.cfg").write_bytes(b"")
+            self.assertIn("override.cfg", names())
 
 
 if __name__ == "__main__":

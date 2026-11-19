@@ -15,8 +15,13 @@ public:
     Scene(ID3D12Device* device, const sa2_scene_config& config, uint32_t width, uint32_t height);
     Scene(ID3D12Device* device, const sa2_wj_config& config, uint32_t width, uint32_t height);
     ~Scene();
-    // The caller has waited for this slot's prior submission before record_draw.
-    void record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t qpc);
+    // The caller has waited for this slot's prior submission before record_draw. format is the target's:
+    // R8G8B8A8_UNORM (ring slot) or, after surface_ready, B8G8R8A8_UNORM (C9 U4: the route-B surface; slot is then
+    // its back buffer's index, below three, so the per-slot buffers keep their one-frame-in-flight rule).
+    void record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t qpc,
+                     DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+    // C9 U4: builds the draw pipeline for the route-B surface once; a failure leaves the scene usable.
+    void surface_ready();
     void sample_vram();
     Json labels(Json& poses); // caller confirmed all scene submissions complete; poses stays null outside W-J
     Json geometry_check(ID3D12CommandQueue* queue, uint32_t timeout, const std::function<void()>& submitting);

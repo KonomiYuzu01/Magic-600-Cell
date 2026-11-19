@@ -207,6 +207,7 @@ ABI5 = {
     "SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, int32_t y, uint32_t width, uint32_t height);",
     "SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);",
     "SA2_API int32_t sa2_surface_detach(sa2_context* ctx);",
+    "SA2_API int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out);",
 }
 ABI5_DEFINES = {
     "SA2_TARGET_SURFACE": "0xFFFFFFFFu", "SA2_SURFACE_SYNC_INTERVAL": "1u", "SA2_SURFACE_BUFFERS": "3u",

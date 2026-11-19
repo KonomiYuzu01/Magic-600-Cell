@@ -4,7 +4,9 @@
 //! Route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks: the shell loads
 //! `sa2_interop.dll`, creates a context on the core's own device with `sa2_create`, attaches the surface beneath its
 //! window, and hands this library the core's function table ([`CoreFunctions`]) and the context. Frames go to the
-//! surface (`SA2_TARGET_SURFACE`). This library loads no library and calls no Windows function (CT-RPI-20).
+//! surface (`SA2_TARGET_SURFACE`). This library loads no library and calls no Windows function (CT-RPI-20). It starts
+//! one process, the language runtime ([`m6h_load_runtime`]), through c600-runtime's parent side, which uses std's
+//! portable process API.
 //!
 //! Drafts that the sources leave open, each to be replaced by LP3's parts:
 //! - One view, which shows the adopted state as one retained publication of every slot, visible and interactive.
@@ -14,6 +16,9 @@
 //!   `twist.apply` (the [`turns`] module) adopts the layer's new state at the next engine revision and publishes the
 //!   view again for it, so the view's output is never stale (RPI.13) for longer than its preparation takes. A frame
 //!   shows a press once its engine revision and its publication's revision have both reached the press's revision.
+//! - Charter E3 (a draft): the session may instead be an existing one, a copy of a session fixture ([`fixture`]),
+//!   which the host adopts at the engine revision that counts the fixture's presses. [`m6h_load_runtime`] starts the
+//!   language runtime's process and keeps it until the handle is destroyed; no job runs in it yet.
 //! - The host context is c600-display's declared fixture context, with the core's own support report in place of the
 //!   declared one. Its tokens, words and stage signatures are fixtures, not the checked library's definitions, and the
 //!   limit profile [`LIMITS`] is a declared value, not a measured one.
@@ -48,12 +53,14 @@ use c600_render::{DisplayTime, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
+pub mod fixture;
 pub mod turns;
+use c600_runtime::parent::{Config as RuntimeConfig, Runtime};
 use turns::{Press, Turns};
 
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
-/// revisions and the session calls.
-pub const M6H_ABI_VERSION: u32 = 2;
+/// revisions and the session calls; version 3 the session fixture and the runtime.
+pub const M6H_ABI_VERSION: u32 = 3;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -70,6 +77,8 @@ pub const M6H_E_UNAVAILABLE: i32 = 5;
 pub const M6H_E_POISONED: i32 = 6;
 /// The session did not open, is already open, or is not open; [`m6h_last_error`] gives the reason.
 pub const M6H_E_SESSION: i32 = 7;
+/// The language runtime did not start, or the handle has started one already; [`m6h_last_error`] gives the reason.
+pub const M6H_E_RUNTIME: i32 = 8;
 
 /// [`M6hKey::press`]: the key-down was no measured press (no twist key, or a repeat).
 pub const M6H_PRESS_NONE: u32 = 0;
@@ -163,6 +172,8 @@ pub struct ShellHost {
     turns: Option<Turns>,
     /// The correctness control's record, once [`m6h_close_session`] made it.
     check: String,
+    /// The language runtime's process, once [`m6h_load_runtime`] started it; dropping it ends the process.
+    runtime: Option<Runtime>,
     presented: VecDeque<M6hPresented>,
     error: String,
     poisoned: bool,
@@ -251,6 +262,7 @@ impl ShellHost {
             digests: BTreeMap::from([(ENGINE_REVISION, state.digest().to_owned())]),
             turns: None,
             check: String::new(),
+            runtime: None,
             presented: VecDeque::new(),
             error: String::new(),
             poisoned: false,
@@ -259,10 +271,18 @@ impl ShellHost {
         Ok(shell)
     }
 
-    /// Adopts `state` at the next engine revision, in the core first and then in the host, and publishes the view
-    /// for it. While the device is lost the publication waits for [`m6h_recover`], which publishes it.
+    /// Adopts `state` at the next engine revision; see [`ShellHost::adopt`].
     fn advance(&mut self, state: &Snapshot) -> Result<u64, Failure> {
-        let revision = self.revision + 1;
+        self.adopt(state, self.revision + 1)
+    }
+
+    /// Adopts `state` at engine revision `revision`, which must follow the adopted one, in the core first and then in
+    /// the host, and publishes the view for it. While the device is lost the publication waits for [`m6h_recover`],
+    /// which publishes it.
+    fn adopt(&mut self, state: &Snapshot, revision: u64) -> Result<u64, Failure> {
+        if revision <= self.revision {
+            return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
+        }
         let base = produce::revision(&self.geometry.identity, revision, state);
         let bundle = engine_bundle(state, &base);
         self.host.backend.adopt_engine(&bundle).map_err(host_error)?;
@@ -533,14 +553,23 @@ unsafe fn utf8<'a>(text: *const u8, len: usize, what: &str) -> Result<&'a str, F
     std::str::from_utf8(bytes).map_err(|_| (M6H_E_INVALID_ARGUMENT, format!("the {what} is not UTF-8")))
 }
 
-/// Opens the turns' session (the [`turns`] module): a new journal in the folder `folder` (UTF-8, `folder_len` bytes;
-/// created if missing, and it must hold nothing yet), at the solved state, with the twist menu of the record file
-/// `menu` (UTF-8, `menu_len` bytes; an object whose `menu` field is the record) pinned. The adopted state must still
-/// be the solved state at [`ENGINE_REVISION`], and a handle opens one session in its life.
+/// Opens the turns' session (the [`turns`] module) in the folder `folder` (UTF-8, `folder_len` bytes), with the twist
+/// menu of the record file `menu` (UTF-8, `menu_len` bytes; an object whose `menu` field is the record) pinned.
+///
+/// - Without a fixture (`fixture` null and `fixture_len` 0) the session is a new journal at the solved state; the
+///   folder is created if missing and must hold nothing yet.
+/// - With one, `fixture` (UTF-8, `fixture_len` bytes) is the path of a session fixture's record ([`fixture`]) and the
+///   folder a fresh copy of its session folder. The session reopens there; its state must be the fixture's. The host
+///   adopts it at engine revision [`ENGINE_REVISION`] plus the fixture's presses and publishes the view for it.
+///
+/// `*out_revision`, when not null, gets the engine revision the session opened at (charter E3's first correct frame
+/// draws it). The adopted state must still be the solved state at [`ENGINE_REVISION`], and a handle opens one session
+/// in its life.
 ///
 /// # Safety
 ///
-/// `handle` is a live handle that no other thread is using; `folder` and `menu` point to their readable bytes.
+/// `handle` is a live handle that no other thread is using; `folder`, `menu` and a non-null `fixture` point to their
+/// readable bytes; `out_revision` is null or writable.
 #[no_mangle]
 pub unsafe extern "C" fn m6h_open_session(
     handle: *mut ShellHost,
@@ -548,18 +577,68 @@ pub unsafe extern "C" fn m6h_open_session(
     folder_len: usize,
     menu: *const u8,
     menu_len: usize,
+    fixture: *const u8,
+    fixture_len: usize,
+    out_revision: *mut u64,
 ) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            let folder = utf8(folder, folder_len, "session folder")?;
-            let menu = utf8(menu, menu_len, "twist menu path")?;
+            let folder = Path::new(utf8(folder, folder_len, "session folder")?);
+            let menu = Path::new(utf8(menu, menu_len, "twist menu path")?);
+            let fixture = match (fixture.is_null(), fixture_len) {
+                (true, 0) => None,
+                _ => Some(Path::new(utf8(fixture, fixture_len, "session fixture path")?)),
+            };
             if shell.turns.is_some() || !shell.check.is_empty() || shell.revision != ENGINE_REVISION {
                 return Err((M6H_E_SESSION, "this handle has opened its session already".to_owned()));
             }
-            let turns = Turns::open(shell.kernel.clone(), &shell.assets, Path::new(folder), Path::new(menu))
-                .map_err(|reason| (M6H_E_SESSION, reason))?;
+            let mut turns = match fixture {
+                None => Turns::open(shell.kernel.clone(), &shell.assets, folder, menu),
+                Some(path) => crate::fixture::read(path)
+                    .and_then(|fixture| Turns::reopen(shell.kernel.clone(), &shell.assets, folder, menu, &fixture)),
+            }
+            .map_err(|reason| (M6H_E_SESSION, reason))?;
+            let (presses, _) = turns.presses();
+            if presses > 0 {
+                let state = turns.state().map_err(|e| (M6H_E_SESSION, e))?;
+                shell.adopt(&state, ENGINE_REVISION + presses)?;
+            }
             shell.turns = Some(turns);
+            if !out_revision.is_null() {
+                out_revision.write(shell.revision);
+            }
+            Ok(())
+        })
+    }
+}
+
+/// Starts the language runtime's process (route RT1) from `program` and waits for its hello, as
+/// [`m6h_load_runtime`] does.
+pub fn start_runtime(program: &Path) -> Result<Runtime, String> {
+    let mut runtime = Runtime::new(RuntimeConfig::new(program));
+    runtime.start().map_err(|fault| format!("the runtime did not start: {fault}"))?;
+    Ok(runtime)
+}
+
+/// Starts the language runtime's process (route RT1, c600-runtime's child) from the program `program` (UTF-8,
+/// `program_len` bytes; the `c600-runtime` binary) and waits for its hello, which names the protocol, the IR version
+/// and the execution contract. The handle keeps the process until [`m6h_destroy`], which ends it; no job runs in it
+/// yet (a draft). A program that does not start, and a second load, answer [`M6H_E_RUNTIME`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `program` points to its readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_load_runtime(handle: *mut ShellHost, program: *const u8, program_len: usize) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let program = utf8(program, program_len, "runtime program path")?;
+            if shell.runtime.is_some() {
+                return Err((M6H_E_RUNTIME, "this handle has started its runtime already".to_owned()));
+            }
+            shell.runtime = Some(start_runtime(Path::new(program)).map_err(|reason| (M6H_E_RUNTIME, reason))?);
             Ok(())
         })
     }

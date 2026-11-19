@@ -1,7 +1,9 @@
 """Finalize framework/DLL/PresentMon evidence without changing its inputs.
 
 C9 acceptance copy of work/experiments/renderer-l2/finalize_run.py (see PROVENANCE.md): the Godot host (sa2)
-only, with run, geometry and lattice modes, and W-J's scenes (ABI 3) beside W1..W4.
+only, with run, geometry and lattice modes, and W-J's scenes (ABI 3) beside W1..W4. A route-B run (C9 U4, the
+harness's presentation record) is measured on the core's own swap chain, which the harness declares, at the
+core's sync interval; the window's own chain is listed as ignored, as renderer_gate lists other chains.
 """
 from __future__ import annotations
 
@@ -49,14 +51,16 @@ CHECKS = {
     'debug-switch': 'A debug switch or the device debug layer is enabled for a gate run.',
     'vram-missing': 'Peak process-local VRAM is not a positive finite number.',
     'presentmon': 'The PresentMon CSV is incomplete, malformed or has no matching trace rows.',
-    'swap-chain': 'More than one swap chain presented during the trace.',
-    'sync-interval': 'A trace present has a nonzero sync interval.',
+    'swap-chain': 'More than one swap chain presented during the trace, or the declared route-B chain did not present.',
+    'sync-interval': 'A measured trace present has another sync interval than its route (0, or 1 on route B).',
     'blind-seconds': 'A checked second contains no displayed present.',
     'trace-steps': 'A checked present step does not contain exactly one trace entry.',
     'operator': 'The gate run has no operator confirmation or fault-injection declaration.',
     'gate-shape': 'The completed record does not satisfy the renderer gate input contract.',
     'output-exists': 'A finalizer output already exists; no file was written.',
 }
+# C9 U4: route B's presentation record (Level2.InitializeSurface) and the core's SA2_SURFACE_SYNC_INTERVAL.
+SURFACE_SYNC_INTERVAL = 1
 CSV_COLUMNS = ('ProcessID', 'SwapChainAddress', 'QPCTime', 'msBetweenPresents',
                'Dropped', 'SyncInterval', 'PresentMode', 'AllowsTearing')
 # The DLL checks its geometry against S-B's reference set and verifies the files' digests in this index.
@@ -148,6 +152,15 @@ def read_harness(directory, candidate, mode, pid):
                          'samples', 'samples_not_visible', 'samples_covered', 'samples_not_foreground',
                          'visible_throughout', 'foreground_throughout', 'presents'))
     fields(h['debug'], ('enabled', 'debug_layer', 'counts', 'messages'))
+    presentation = h.get('presentation')
+    if presentation is not None:
+        fields(presentation, ('route', 'swap_chain', 'sync_interval'))
+        require(presentation['route'] == 'surface' and isinstance(presentation['swap_chain'], str)
+                and re.fullmatch(r'0x[0-9A-F]{16}', presentation['swap_chain']) is not None
+                and int(presentation['swap_chain'], 16) != 0
+                and type(presentation['sync_interval']) is int
+                and presentation['sync_interval'] == SURFACE_SYNC_INTERVAL)
+    require((h['configuration'].get('route') == 'surface') == (presentation is not None))
     return h
 
 
@@ -676,6 +689,26 @@ def read_presentmon(directory, n, pid):
     return sorted(rows, key=lambda row: row['qpc'])
 
 
+def measured_rows(rows, presentation):
+    """The measured rows, their sync interval and the ignored chains.
+
+    The texture routes present on Godot's one chain at interval 0. Route B (C9 U4) measures the core's own
+    chain, which the harness declares, at SURFACE_SYNC_INTERVAL, and lists Godot's window chain as ignored."""
+    if presentation is None:
+        require(len({row['chain'] for row in rows}) == 1)
+        return rows, 0, None
+    declared = int(presentation['swap_chain'], 16)
+    measured, others = [], {}
+    for row in rows:
+        if int(row['chain'], 16) == declared:
+            measured.append(row)
+        else:
+            others[row['chain']] = others.get(row['chain'], 0) + 1
+    require(bool(measured) and len({row['chain'] for row in measured}) == 1)
+    return measured, SURFACE_SYNC_INTERVAL, [{'swap_chain': chain, 'rows': count}
+                                             for chain, count in sorted(others.items())]
+
+
 def check_blind_seconds(rows, n, mode):
     frequency, marks = n['qpc_frequency'], n['markers']
     start, stop = marks['trace_start_qpc'], marks['trace_stop_qpc']
@@ -748,10 +781,11 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                 check('vram-missing', lambda: require(finite(n['vram_peak_mb']) and n['vram_peak_mb'] > 0))
                 rows = check('presentmon', lambda: read_presentmon(directory, n, pid))
                 if rows is not None:
-                    chains = {row['chain'] for row in rows}
-                    check('swap-chain', lambda: require(len(chains) == 1))
-                    if len(chains) == 1:
-                        check('sync-interval', lambda: require(all(row['sync'] == 0 for row in rows)))
+                    split = check('swap-chain', lambda: measured_rows(rows, h.get('presentation')))
+                    rows = None
+                    if split is not None:
+                        rows, interval, ignored = split
+                        check('sync-interval', lambda: require(all(row['sync'] == interval for row in rows)))
                         check('blind-seconds', lambda: check_blind_seconds(rows, n, mode))
                         check('trace-steps', lambda: check_trace_steps(rows, n, entries))
             else:
@@ -802,6 +836,8 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                                             ('target', 'viewport', 'queue_mode', 'barrier_api', 'vram_samples')},
                                  'presentmon': summary, 'condition_reasons': gate.condition_reasons(environment),
                                  'checks': checks}}
+                if h.get('presentation') is not None:
+                    output['l2']['presentation'] = {**h['presentation'], 'swap_chains_ignored': ignored}
                 for key in ('qpc_frequency', 'markers', 'frames', 'injection_applied',
                             'vram_peak_mb', 'turn_ms', 'label_check',
                             'fixture', 'overlay', 'pose_check', 'pose_upload'):
