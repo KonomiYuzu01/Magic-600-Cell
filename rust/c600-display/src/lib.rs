@@ -42,9 +42,10 @@
 //!   engine ([`host::Host::show_preview`]).
 //! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full. On the jumbling puzzle
 //!   the posed row, the certified transform, the certified overlay and the projection chain are produced from M5's
-//!   states ([`jumble`]); of the J07 to J12 payloads only J08's seam table is read from the engine, and the rest
-//!   are still checked only as fixtures. User stages (F05, F26) stay unsupported: no user stage reaches the host's
-//!   publications or frames, and [`stage`] takes up the stages that LP2's checker admits beside the host.
+//!   states ([`jumble`]); the J07 to J09, J11 and J12 payloads are read from the engine ([`jumble::seam_table`],
+//!   [`jumble::observations`]) and J10 is checked only as a fixture. User stages (F05, F26) stay unsupported: no user
+//!   stage reaches the host's publications or frames, and [`stage`] takes up the stages that LP2's checker admits
+//!   beside the host.
 //! - RPI.15, J02 (render/1 section 3): a posed row is validated only for a jumbling identity and a pose-level subject
 //!   (a Jumble-on revision or a derived state at level poses): 177120 pose indices inside the table, finite row-major
 //!   d x d matrices with the identity at pose 0, and one lattice entry per pose, -1 or a K+ index below 7200
@@ -61,7 +62,7 @@
 //! - RPI.17, RM.15: the jumbling fixture report ([`jumble::support_report`]) supports J02 to J05, reports F01, F03
 //!   and F04 unsupported (the jumbling puzzle uses J02, J03 and J05 in their place) and omits J01 and J06 to J12.
 //!   The jumbling context binds the unchanged geometry digests of [`produce::GeometryInput`]; J01's area-weighted
-//!   shrink anchors are not an asset and are not bound.
+//!   shrink anchors are computed from it and are not an asset, so the context does not bind them.
 //! - J03: a jumbling transform is built only from an admissible outcome's certified inside set and the plane the engine
 //!   names for the outcome's twist ([`jumble::transform`]; `c600_jumble::twist::Twist::plane`). The engine's u, v and
 //!   cos θ are exact and u and v unnormalized; the display normalizes them in binary64, rounds to binary32 and takes
@@ -79,6 +80,15 @@
 //!   on-grip or off-grip, with a domain and a cell identity local to that table (ranks of the engine's exact domain
 //!   key and chamber pair). It is complete only when the engine's batch was, so an interrupted batch has no total N.
 //!   It is a payload, not a supported row: no J08 plan is produced or published.
+//! - J01: the shrink anchors are the area-weighted triangle centroids of each base sticker, in binary64 with one
+//!   rounding ([`jumble::shrink_anchors`]); they equal render/1's pinned digest. J06: [`jumble::readback_check`]
+//!   compares a backend's readback of the three bound arrays with the engine bundle by digest and element, with its
+//!   revision, device and frame stamps; no backend runs it here.
+//! - J07, J09, J11, J12 ([`jumble::observations`]): the domain and lattice masks, the rim map and counts, cover
+//!   tables and repair lists, word and release checks, and nu with the shipped correction catalogue are the engine's
+//!   answers copied and bound to the state's pose digest. An answer that did not complete is
+//!   [`jumble::Missing::Incomplete`], never a shorter table; a cut-off repair list supplies no negative. Like J08 they
+//!   are payloads, not supported rows.
 //! - RPI.23, J13: the jumbling slot projection ([`jumble::PoseProjection`]) answers a sticker of a piece at the lattice
 //!   pose k with the slot k·s of its home slot s, from M8's slot action of K+ with A3's frame check
 //!   (`c600_jumble::levels::Tables::piece_slots`; at the identity, the home slot), and a piece off the lattice with
@@ -195,9 +205,8 @@
 //!   acceptance, a stop after it.
 //!
 //! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change) and the
-//! ceilings named above that need a weight table or a backend. For the jumbling puzzle: J01's shrink anchors, J06's
-//! backend readback, plans for the J07 to J12 rows and producers for their payloads other than the seam table (domain
-//! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, and a comparison
+//! ceilings named above that need a weight table or a backend. For the jumbling puzzle: support and plans for the rows
+//! J01 and J06 to J12 (a backend's own rows), J06's readback on a device, J10's exposed-face geometry, and a comparison
 //! of the posed arrays with a J1 stage after the start.
 //! For user stages, waiting for C9's backend: HLSL compilation and its compile record (RPI.78); the vertex evaluation
 //! into a charged buffer, the projection and clip classification that place [`raster`]'s triangles, the expansion of
