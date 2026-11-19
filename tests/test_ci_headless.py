@@ -30,24 +30,57 @@ class SelectChecksTests(unittest.TestCase):
         self.assertEqual(mode, "docs-only")
         self.assertIs(checks, rh.LIGHT_CHECKS)
 
-    def test_anything_else_runs_every_check(self):
-        for changed in (None, [], ["docs/wiki/log.md", "core.py"], ["docs/wiki/data.json"],
-                        ["docs/README.md"], ["research/jumbling/restoration/README.md"], ["README.md"],
-                        ["AGENTS.md"], ["docs/progress/status.json"], ["docs/wiki"], ["docs/wikix/a.md"]):
+    def test_no_diff_and_ci_changes_run_every_check(self):
+        for changed in (None, [], ["tools/ci/run_headless.py"], ["docs/wiki/log.md", ".github/workflows/x.yml"]):
             with self.subTest(changed=changed):
                 mode, _, checks = self.mode(changed)
                 self.assertEqual(mode, "full")
                 self.assertIs(checks, rh.CHECKS)
 
-    def test_markdown_that_a_full_check_reads_runs_every_check(self):
+    def test_anything_else_runs_every_check_but_heavy_ones_outside_its_area(self):
+        light = [c for c in rh.CHECKS if c[0] not in rh.HEAVY_AREAS]
+        for changed in (["docs/wiki/data.json"], ["docs/README.md"], ["README.md"], ["AGENTS.md"],
+                        ["docs/progress/status.json"], ["docs/wiki"], ["docs/wikix/a.md"], ["renderer/shell/x.cs"]):
+            with self.subTest(changed=changed):
+                mode, reason, checks = self.mode(changed)
+                self.assertEqual(mode, "pr")
+                self.assertEqual(checks, light)
+                self.assertIn(f"{len(rh.HEAVY_AREAS)} heavy check(s)", reason)
+
+    def test_heavy_checks_follow_their_area(self):
+        def heavy(changed):
+            return {c[0] for c in self.mode(changed)[2] if c[0] in rh.HEAVY_AREAS}
+        rust = {"tests/test_language_rust.py"} | {p for p in rh.HEAVY_AREAS if "rust_" in p or "command_route" in p}
+        j1 = set(rh.HEAVY_AREAS) - {"tests/test_language_rust.py"}
+        self.assertEqual(heavy(["rust/c600-kernel/src/lib.rs"]), rust)
+        self.assertEqual(heavy(["research/jumbling/differential/x.py"]), j1)
+        self.assertEqual(heavy(["docs/wiki/log.md", "core.py"]), j1)
+        self.assertEqual(heavy(["assets/census.json"]), j1)
+        self.assertEqual(heavy(["tests/test_jumbling_x1_witness.py"]), {"tests/test_jumbling_x1_witness.py"})
+        self.assertEqual(heavy(["docs/progress/1.0/jumbling-midstage.md"]), {"tests/test_jumbling_word_check.py"})
+        self.assertEqual(heavy(["rusty/a.rs", "core.pyx"]), set())
+
+    def test_heavy_checks_are_listed_and_not_light(self):
+        listed = {check[0] for check in rh.CHECKS}
+        light = {check[0] for check in rh.LIGHT_CHECKS}
+        for path in rh.HEAVY_AREAS:
+            with self.subTest(path=path):
+                self.assertIn(path, listed)
+                self.assertNotIn(path, light)
+        # The slowest checks of the run on main are heavy.
+        for path in ("tests/test_jumbling_store_j1.py", "tests/test_jumbling_j1_replay.py",
+                     "tests/test_jumbling_x1_witness.py", "tests/test_language_rust.py"):
+            self.assertIn(path, rh.HEAVY_AREAS)
+
+    def test_markdown_that_a_full_check_reads_runs_the_pull_request_checks(self):
         for path in ("docs/progress/1.0/jumbling-midstage.md", "docs/progress/1.0/packets/renderer/README.md",
                      "docs/progress/1.0/inventory/notes.md", "docs/progress/1.0/dispositions/d.md"):
             with self.subTest(path=path):
-                self.assertEqual(self.mode(["docs/wiki/log.md", path])[0], "full")
+                self.assertEqual(self.mode(["docs/wiki/log.md", path])[0], "pr")
 
-    def test_a_path_named_in_a_full_check_runs_every_check(self):
-        self.assertEqual(self.mode(["docs/progress/1.0/new.md"], {"docs/progress/1.0/new.md"})[0], "full")
-        self.assertEqual(self.mode(["docs/progress/1.0/x/y.md"], {"docs/progress/1.0/x"})[0], "full")
+    def test_a_path_named_in_a_full_check_runs_the_pull_request_checks(self):
+        self.assertEqual(self.mode(["docs/progress/1.0/new.md"], {"docs/progress/1.0/new.md"})[0], "pr")
+        self.assertEqual(self.mode(["docs/progress/1.0/x/y.md"], {"docs/progress/1.0/x"})[0], "pr")
         # A literal that only shares a prefix with the path does not count.
         self.assertEqual(self.mode(["docs/progress/1.0/xy.md"], {"docs/progress/1.0/x"})[0], "docs-only")
 
@@ -117,6 +150,7 @@ class ShardTests(unittest.TestCase):
 
     def test_shard_counts_and_parsing(self):
         self.assertEqual(rh.shard_count("full"), rh.FULL_SHARDS)
+        self.assertEqual(rh.shard_count("pr"), rh.FULL_SHARDS)
         self.assertEqual(rh.shard_count("docs-only"), 1)
         self.assertEqual(rh.parse_shard("2/5"), (2, 5))
         for text in ("0/5", "6/5", "5", "a/b", "1/0", "-1/2"):
