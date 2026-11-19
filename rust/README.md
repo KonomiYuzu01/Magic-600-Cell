@@ -2338,13 +2338,15 @@ run or not applicable is no pass (PHS.63).
   standing in for a view on the layer; M6's stand-ins for views on M6; and a test reader that reads every block,
   standing in for a host's reader that accepted a block C5's reader refuses, so that the journal replays such a record
   and a sheet saved from it.
-- Waiting for LP2's KN5 implementation: the rest of KN5.26's admission matrix (L1, L2); a session profile, so the reader
-  applies a solving session's admission in every session; a durable home for a word's part blocks, without which
-  CT-BND-27's recursive parts do not run; EV3.2's view rows (the layer refuses `view.open` and `view.close` with
-  `KN5:input.row_not_built`); and LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's
-  gains and losses) and macro versions. M6's session lock covers `JournalStore` too (LP2's pull request 195).
-  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2
-  removes once their tests run against it.
+- Built by LP2 since, and LP3's next steps: KN5.26's admission matrix L1 and L2 runs through the layer in
+  `c600-command`'s `tests/kn5_admission.rs` (pull request 270); a durable home for a word's part blocks (pull request
+  272), which LP3's reader takes up by implementing `Provenance::parts` and `admit_kept`, so that CT-BND-27's recursive
+  parts run; and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s view model serves through
+  the layer's `Views` trait for CT-EV3-07. Waiting for LP2: a session profile (BND.14, BND.15), so the reader still
+  applies a solving session's admission in every session; and LB7.2's fresh exact analysis of a reused work sheet
+  (`worksheet.compare`, with LB2's gains and losses) and macro versions. M6's session lock covers `JournalStore` too
+  (LP2's pull request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer
+  supersedes and LP2 removes once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -2443,8 +2445,8 @@ run or not applicable is no pass (PHS.63).
     built the four common needs in the layer: a dispatch from a stored row to a built-in tool's entry
     (`CommandLayer::serve_row`, pull request 200), argument forms (pull request 202), the runtime's view and workspace
     sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves five
-    rows with their entries; the layer refuses to serve `filter.apply`, which stays not built. C6 changed no file in
-    `c600-command`.
+    rows with their entries. The layer serves `filter.apply` too since pull request 256, and no host runs its entry
+    yet. C6 changed no file in `c600-command`.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -2474,18 +2476,21 @@ run or not applicable is no pass (PHS.63).
     action that writes the entry's record through the reader, at a workspace revision one higher and with no undo entry.
     The source route (the same entry run in process on the same arguments and state, without the layer; not C5's runner)
     gives the same value, views and records; on both routes a stand-in engine answers the two snapshot reads with the
-    state number. The layer refuses malformed and stale arguments before any job, `filter.apply` stays refused, and a
-    running program's query or view job fails at the host, which has no provenance block for its arguments. Since LP2's
-    pull request 237 the layer refuses a workspace row such as `set.save` on a running program's channel with
-    `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18 November 2026: a run never
-    writes the workspace).
-- Not built: `filter.apply` (its gate, the `filter` preview rule, the `FilterPreviewRef` form and a workspace inverse in
-  the command layer); the `FilterRef` and `CanonicalObjectRefs` forms; provenance blocks for a running program's job
-  arguments of the query and view rows; kernel rows for the `filter.preview` and `structure.compare` snapshot reads; a
-  record and an exact-set digest for each saved set; a display that applies the published scope (the APIs are in the
-  crate documentation under "Not built"); the stage checker, HLSL compilation and every device step (CT-LB4-04's rest,
-  C9); the relationship strip (C8 computes one of its typed relations, a slot's current occupant, at pose level);
-  filters of trees, complexes and graphs; a BM5 review record.
+    state number. The layer refuses malformed and stale arguments before any job. The layer serves `filter.apply`, and
+    a test checks its refusal of a stale filter preview; the entry does not run here. A running program's query or view
+    job fails at the host, which builds no provenance block for its arguments (LP2's `invoke_with_inputs`, pull request
+    264, takes them). Since LP2's pull request 237 the layer refuses a workspace row such as `set.save` on a running
+    program's channel with `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18
+    November 2026: a run never writes the workspace).
+- Not built, LP3's next steps: `filter.apply`'s entry run through both routes, with the entry taking the layer's
+  `FilterPreviewRef` (the layer serves the row since LP2's pull request 256); the host's provenance blocks for a running
+  program's job arguments of the query and view rows, through LP2's `invoke_with_inputs` (pull request 264); host rows
+  for the `filter.preview` and `structure.compare` snapshot reads, on LP2's structure rows (pull request 262). LP2 built
+  the `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal
+  since. Also not built: a record and an exact-set digest for each saved set; a display that applies the published scope
+  (the APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage
+  checker is LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's
+  current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

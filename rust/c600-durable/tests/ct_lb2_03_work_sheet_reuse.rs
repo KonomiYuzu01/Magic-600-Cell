@@ -121,8 +121,8 @@ fn drafted(inline: &Inline) -> Worksheet {
         Role::Position { name: "target".into(), position: inline.moved },
         Role::Piece { name: "stayed".into(), piece: inline.stayed },
     ];
-    let sheet =
-        Worksheet { phases: [vec![1], vec![2], Vec::new()], roles, reference: string("reference 1"), resolution: None };
+    let (phases, reference) = ([vec![1], vec![2], Vec::new()], string("reference 1"));
+    let sheet = Worksheet { phases, roles, reference, resolution: None, macro_version: None };
     assert_eq!(sheet.letters(), OPERATION.map(i64::from));
     sheet
 }
@@ -278,6 +278,7 @@ fn malformed() -> Vec<(&'static str, Value)> {
         roles,
         reference: Value::Null,
         resolution: None,
+        macro_version: None,
     };
     let piece = |piece: i64| Role::Piece { name: "a".into(), piece };
     let twice = vec![piece(9), Role::Position { name: "a".into(), position: 7 }];
@@ -336,6 +337,7 @@ fn ct_lb2_03_the_work_sheet_rows_refuse_on_the_journal_and_change_nothing() {
         roles: Vec::new(),
         reference: Value::Null,
         resolution: None,
+        macro_version: None,
     };
     assert!(completed(&put(&mut f, "draft", unsaved.to_payload(), &block)));
     for (name, payload) in malformed() {
@@ -367,14 +369,13 @@ fn ct_lb2_03_the_work_sheet_rows_refuse_on_the_journal_and_change_nothing() {
     assert_eq!(fixed(&bare, &disk), unchanged, "a session without the reader");
     drop(bare);
 
-    // With C5's reader installed, both rows are available and `worksheet.compare` is not built. A preview of the sheet
-    // is presented; no refusal below makes it stale.
+    // With C5's reader installed, both rows are available, and so is `worksheet.compare`, which LP2's layer now builds
+    // (its tests are in `c600-command`'s `tests/worksheet.rs`). A preview of the sheet is presented; no refusal below
+    // makes it stale.
     let mut f = Fixture::open(Box::new(disk.clone()));
-    for row in [WORKSHEET_SAVE_ROW, WORKSHEET_LOAD_ROW] {
+    for row in [WORKSHEET_SAVE_ROW, WORKSHEET_LOAD_ROW, "worksheet.compare"] {
         assert_eq!(f.layer.availability(row), Ok(()), "{row}");
     }
-    let compare = f.layer.availability("worksheet.compare").map_err(|error| error.code);
-    assert_eq!(compare, Err(code::ROW_NOT_BUILT));
     assert_eq!(f.layer.record("kept").map(|value| value.provenance.clone()), Some(text(FOREIGN)));
     f.preview(record_draft("sheet"));
 
