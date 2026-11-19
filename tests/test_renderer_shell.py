@@ -605,24 +605,34 @@ class ProductBuild(unittest.TestCase):
                                           machine=FakeMachine(), state=self.temp / "last-exit.json"), 0)
         return out
 
-    def test_jumble_on_is_refused_until_the_host_runs_it(self):
-        def refuse(*args, **kwargs):
-            raise AssertionError("a refused launch started a process")
-        lines = []
+    def test_jumble_on_launches_on_its_own_fixture(self):
+        started = {}
+
+        class Process:
+            def wait(self):
+                return 0
+
+        def popen(arguments, cwd, env):
+            started.update(env=env)
+            return Process()
         out = self.temp / "run"
-        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--puzzle", "jumble-on"],
-                                popen=refuse, out_stream=lines.append)
-        self.assertEqual(code, 2)
-        self.assertFalse(out.exists())
-        self.assertIn("does not draw jumble-on yet", lines[-1])
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r4", "--puzzle",
+                                 "jumble-on"], popen=popen, out_stream=lambda line: None, machine=FakeMachine(),
+                                state=self.temp / "last-exit.json")
+        self.assertEqual(code, 0)
+        self.assertEqual(started["env"]["M600_PUZZLE"], "jumble-on")
+        self.assertEqual(started["env"]["M600_SESSION_FIXTURE"],
+                         str(self.build / "session-fixture-jumble-on" / "fixture.json"))
+        self.assertEqual((out / "session" / "journal").read_bytes(), b"jumbled journal")
+        self.assertEqual(json.loads((out / "launch.json").read_text(encoding="utf-8"))["puzzle"], "jumble-on")
         # The launcher and the shell name the same puzzles, and both refuse every other one.
         log = text(PROJECT / "EventLog.cs")
         puzzles = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};", log)
         self.assertTrue(puzzles)
         self.assertEqual(tuple(re.findall(r'"([a-z-]+)"', puzzles.group(1))), self.launch.PUZZLES)
-        self.assertEqual(self.launch.RUNNABLE_PUZZLES, self.launch.PUZZLES[:1])
+        self.assertFalse(hasattr(self.launch, "RUNNABLE_PUZZLES"), "every puzzle the launcher names runs")
         # The shell runs Jumble on only with a session, whose host opens the jumbled puzzle (LX-4's jumble-on half);
-        # the launcher above refuses it until it passes one.
+        # every launch passes one.
         shell = text(PROJECT / "Shell.cs")
         self.assertNotIn("does not run {puzzle} yet", shell)
         self.assertIn('$"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");',

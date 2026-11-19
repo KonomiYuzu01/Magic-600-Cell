@@ -43,7 +43,8 @@ fn arrays_of_the_wrong_length_never_reach_the_core() {
     assert_eq!(core.engine_adopt(&image(&labels[1..])), Err(Status::INVALID_ARGUMENT));
 
     let index = vec![0i32; PIECES];
-    let poses = [0f32; 32];
+    // Two identity poses: the fake core checks the values as the S-A2 core does.
+    let poses: Vec<f32> = (0..32).map(|i| if i % 16 % 5 == 0 { 1.0 } else { 0.0 }).collect();
     let lattice = [0i32; 2];
     let posed = |pose_index, poses, pose_lattice| EngineImage {
         revision: 1,

@@ -124,7 +124,8 @@ outside the language workspace (CT-RPI-01). It is a draft:
   the indices of the shell's puzzle names. With Jumble on, a new session commits `jumble.on` at once, the twist keys
   commit `jumble.twist.menu` under the pinned menu, and each adoption is a jumbling engine bundle (`pose_index`,
   `poses`, `pose_lattice`) with one posed plan from `c600_display::jumble`. A fixture names its puzzle and opens only as
-  that puzzle. Until c600-render maps posed rows, the core refuses the bundle (J02) and the open answers `M6H_E_HOST`.
+  that puzzle. c600-render hands the core the bundle's pose arrays over the home labels and draws every slot of the
+  posed plan, none pickable (J13 stays unsupported).
 - Every call checks its pointers, catches a panic and answers a status code.
 - The host context is c600-display's declared fixture context (with Jumble on, its jumbling context for the menu's
   identity) with the core's own support report, and the limit profile is a declared draft value. Picking and previews come later.
@@ -132,7 +133,7 @@ outside the language workspace (CT-RPI-01). It is a draft:
   recovery, and the refusals; and the turns: twist keys committed and adopted, the two revisions of the frames, keys
   that are no press, an undo that fails the control, a shown revision the host never adopted, the session's refusals,
   and Jumble on (the entry, the menu row, the pose replay, a jumble-on fixture, the posed bundle and plan that
-  c600-display validates, and the core's J02 refusal today); and the view jobs (`tests/view.rs`): a run that publishes, parse and admission refusals, a run that a newer
+  c600-display validates, and the core's adoption of its pose arrays); and the view jobs (`tests/view.rs`): a run that publishes, parse and admission refusals, a run that a newer
   run supersedes, a twist before a run's delivery and before its installation, a destroy with a run in flight, and
   drafts. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
 

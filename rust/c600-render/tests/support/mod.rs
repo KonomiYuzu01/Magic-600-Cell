@@ -163,7 +163,7 @@ pub fn scenario<C: Driver>(core: C) {
     assert_eq!(backend.core.fake().adoptions, [(12, labels[0] as u32)]);
     let report = backend.describe_backend().expect("a live core describes itself");
     assert_eq!((report.interface_version, report.device_epoch, report.backend_build.len()), (5, 1, 64));
-    for row in ["F01", "F02", "F18", "F20"] {
+    for row in ["F01", "F02", "F18", "F20", "J01", "J02"] {
         match &report.features[row] {
             Support::Supported { layout_version, limits: declared, stages } => {
                 assert_eq!((*layout_version, declared, stages.len()), (1, &limits(), 0), "{row}")
@@ -171,7 +171,7 @@ pub fn scenario<C: Driver>(core: C) {
             other => panic!("{row}: {other:?}"),
         }
     }
-    for row in ["J01", "J02", "F22", "F23", "J13"] {
+    for row in ["F22", "F23", "J13"] {
         let Support::Unsupported(error) = &report.features[row] else { panic!("{row} is supported") };
         assert_eq!((error.code, error.context["feature"].as_str()), (codes::UNSUPPORTED, row));
     }

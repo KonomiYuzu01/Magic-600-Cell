@@ -21,8 +21,8 @@
 //!   `jumble.on` at its start, and the host adopts the poses at the next engine revision as c600-display's posed row
 //!   (J02: `jumble::posed` and `jumble::bundle`), with one posed primitive in the view's plan ([`adoption`]). The host
 //!   context becomes c600-display's declared jumbling context for the menu's identity block, with the core's own
-//!   support report. Until c600-render maps posed rows, its bridge refuses the jumbling bundle (J02): the open answers
-//!   [`M6H_E_HOST`], and nothing is adopted.
+//!   support report. c600-render's bridge hands the core the bundle's pose arrays over the home labels, so each
+//!   sticker keeps its colour and moves with its piece's pose, and draws every slot of the posed plan, none pickable.
 //! - Charter E3 (a draft): the session may instead be an existing one, a copy of a session fixture ([`fixture`]),
 //!   which the host adopts at the engine revision that counts the fixture's presses. [`m6h_load_runtime`] starts the
 //!   language runtime's process and keeps it until the handle is destroyed.

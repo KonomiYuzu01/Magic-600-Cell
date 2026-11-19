@@ -11,10 +11,10 @@ process that presents, not the console wrapper) on the build's shell with the en
 `M600_BUILD_IDENTITY` (the build's identity), `M600_RUN_ID`, and for charter E2's turns `M600_SESSION_DIR` (a new
 session folder, `session` in the run folder) and `M600_TWIST_MENU` (the build's copy of the twist menu); `--echo`
 adds `M600_INPUT_ECHO=1`, the input echo of route B's check B1. `M600_PUZZLE` names the puzzle the shell runs and its
-run row records (`--puzzle`, default jumble-off). The shell's host opens Jumble on, but the core draws its posed
-engine images only once c600-render maps them (C9 product), so the launcher refuses jumble-on until then, before it
-starts anything. `--lx4` adds `M600_LX4=1`, which makes the shell create LX-4's module
-(C9 U8).
+run row records (`--puzzle`, default jumble-off). With Jumble on the shell's host opens the jumbled puzzle and the
+core draws its posed engine images: each sticker keeps its home colour and moves with its piece's pose, and no slot
+is pickable (the core's ID pass stamps no posed instance). `--lx4` adds `M600_LX4=1`, which makes the shell create
+LX-4's module (C9 U8).
 
 LX-2 (RTE.42 conditions 3 and 4, a draft): `--lx2-injection CHILD` names a release build of c600-lx2's injection
 child (`c600-lx2-child`, never shipped), which then replaces the build's runtime as `M600_RUNTIME`, and adds
@@ -86,7 +86,6 @@ PAUSE_S = 20
 CLOCK_SLACK_S = 60
 # The puzzles the shell's run row may name (EventLog.Puzzles) and the ones its host runs now.
 PUZZLES = ("jumble-off", "jumble-on")
-RUNNABLE_PUZZLES = ("jumble-off",)
 
 
 class LaunchError(Exception):
@@ -298,8 +297,6 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
         product = build_product.verify(build)
         if args.resolution and not all(part.isdigit() for part in args.resolution.split("x", 1)):
             raise LaunchError("--resolution must be WxH")
-        if args.puzzle not in RUNNABLE_PUZZLES:
-            raise LaunchError(f"the product does not draw {args.puzzle} yet: c600-render maps no posed engine image")
         injection, child = None, None
         if args.lx2_injection is not None:
             if args.cold_start:
