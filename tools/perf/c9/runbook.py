@@ -53,6 +53,8 @@ GODOT_GLOB = ('GodotEngine.GodotEngine.Mono_*/Godot_v4.7.2-stable_mono_win64/'
               'Godot_v4.7.2-stable_mono_win64_console.exe')
 RUNNER = 'renderer/acceptance/run_scene.ps1'
 SHELL = 'renderer/shell'
+LAUNCH = 'renderer/shell/launch.py'
+BUILD_PRODUCT = 'renderer/shell/build_product.py'
 # The owner runbook's labels (C9 draft, 18 November 2026): A attended, U unattended.
 LABELS = {'shell-launch': 'A1', 'b1-input': 'A2', 'e2-key-to-frame': 'A3', 'core-gpu': 'U1', 'b3-probe': 'U2',
           'b2-skew': 'U3', 'wj-w3': 'U4', 'rpi79-gate': 'U5', 'e3-cold-start': 'U6', 'lx2': 'U7', 'lx4': 'U8'}
@@ -88,29 +90,36 @@ def wj_w3_commands():
 STEPS = (
     Step('shell-launch', 'ABI 5 GPU smoke, part 2: the product shell\'s first launch over a real core', True, 10, None,
          commands=('python -B renderer/core/check_core.py   # the core into work/build/, CPU self-test only',
-                   'cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml '
-                   '-p c600-shell-host',
-                   'python -B renderer/shell/build_shell.py   # builds only, never launches',
-                   'set M600_CORE_DLL, M600_HOST_DLL, M600_ASSETS, M600_EVENTS_DIR (a new folder) and '
-                   'M600_BUILD_IDENTITY; start the built shell from a desktop PowerShell, resize the window twice, '
-                   'close it   # no launcher script yet'),
-         prerequisites=(('compiles', 'renderer/core/check_core.py'), ('file', 'renderer/bridge/Cargo.toml'),
-                        ('compiles', 'renderer/shell/build_shell.py')),
+                   f'python -B {BUILD_PRODUCT}   # the host and the shell into work/build/c9-product/<build>',
+                   f'python -B {LAUNCH} --out <new folder> --dry-run   # verifies every build part, starts nothing; '
+                   'exit 2: no build, or a part does not verify',
+                   f'python -B {LAUNCH} --out <new folder>   # from a desktop PowerShell; resize the window twice, '
+                   'then close it'),
+         prerequisites=(('compiles', 'renderer/core/check_core.py'), ('compiles', LAUNCH),
+                        ('compiles', BUILD_PRODUCT)),
          run_time=('foreground', 'the owner at the machine', 'native resolution, no frame generation or upscaling',
-                   'pass: the 3D view under the transparent window; frame and presented rows with display_qpc in '
-                   'events.jsonl; no error on resize or close'),
+                   'pass: the shell exits 0; launch.json in the run folder; events.jsonl with frame and presented '
+                   'rows (display_qpc); the 3D view under the transparent window; no error on resize or close'),
          sources=('ABI 5 (route B): sa2_create, surface frames, sa2_presented, sa2_resize',
                   'owner decision 2026-11-18 route B')),
     Step('b1-input', 'Route B check B1: input through Godot\'s transparent window over the core\'s layer', True, 10,
-         'the product shell (Godot transparent window over the core\'s DirectComposition layer) and its input check',
-         run_time=('foreground', 'the owner at the machine'),
+         None,
+         commands=(f'python -B {LAUNCH} --out <new folder> --echo   # press keys and click, then close the window',),
+         prerequisites=(('compiles', LAUNCH), ('mentions', (SHELL, 'input.jsonl'))),
+         run_time=('foreground', 'the owner at the machine',
+                   'pass: every key press and click shows on the echo panel and is in <out>/input.jsonl'),
          sources=('owner decision 2026-11-18 route B, check 1',)),
     Step('e2-key-to-frame', 'Charter E2: key to the confirmed first correct frame, at least 100 presses', True, 20,
-         'the product shell\'s E2 event log (magic600-c9-shell-events-v1) and sa2_presented with its display QPC',
-         commands=('<product shell E2 run>, one run directory per run',
+         None,
+         commands=(f'python -B {LAUNCH} --out <new folder>   # the session is always on (<out>/session, twist menu '
+                   'wj-I_a); press at least 100 twists (J, K, L; Shift for the inverse), then close the window',
                    'python -B tools/perf/c9/key_to_frame.py <run dir> [<run dir> ...] --out <record>.json'),
-         prerequisites=(('imports', 'key_to_frame'), ('presentmon', None)),
-         run_time=('foreground', 'the owner at the machine', 'a fresh copy of the session fixture'),
+         prerequisites=(('imports', 'key_to_frame'), ('presentmon', None), ('compiles', LAUNCH),
+                        ('mentions', (SHELL, 'WriteString("t", "key")')),
+                        ('mentions', (SHELL, 'journal-reopen-and-kernel-replay'))),
+         run_time=('foreground', 'the owner at the machine', 'a fresh run folder (the session is new in it)',
+                   'the run row\'s correctness comes from the session\'s control at close '
+                   '(journal-reopen-and-kernel-replay)'),
          sources=('charter E2', 'RTE.43', 'V11.1', 'PHS.64')),
     Step('core-gpu', 'ABI 5 GPU smoke, part 1: the renderer core self-test\'s WARP and hardware modes', False, 15, None,
          commands=('python -B renderer/core/check_core.py --gpu   # pass: check_core: ok (CPU, WARP and hardware)',),
@@ -125,12 +134,14 @@ STEPS = (
          run_time=('an unlocked desktop', 'mains power'),
          sources=('owner decision 2026-11-18 route B, check 3',)),
     Step('b2-skew', 'Route B check B2: skew between the UI frame and the 3D frame', False, 10, None,
-         commands=('<product shell run>, one run directory, with presentmon_capture.py --process-id <shell> '
-                   '--output <run dir>/presentmon.csv --seconds 600 alongside',
+         commands=(f'python -B {LAUNCH} --out <run dir>, with presentmon_capture.py --process-id <shell> '
+                   '--output <run dir>/presentmon.csv --seconds 600 alongside; do not resize the window (a second '
+                   'core chain makes the run unreadable)',
                    'python -B tools/perf/c9/ui_skew.py <run dir> --out <record>.json'
-                   '   # no bar: the numbers go to the owner'),
-         prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('mentions', (SHELL, '"ui_frame"')),
-                        ('mentions', (SHELL, '"ui_swap_chain"'))),
+                   '   # no bar: the numbers go to the owner; check "UI present inside the draw"'),
+         prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('compiles', LAUNCH),
+                        ('mentions', (SHELL, '"ui_frame"')), ('mentions', (SHELL, '"ui_swap_chain"')),
+                        ('mentions', (SHELL, '"drawn_qpc"'))),
          run_time=('an unlocked desktop', 'administrator PowerShell for PresentMon'),
          sources=('owner decision 2026-11-18 route B, check 2',)),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
@@ -150,10 +161,11 @@ STEPS = (
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power'),
          sources=('RPI.79', 'RPI.80', 'owner decision 2026-11-18 (DXC ships)')),
     Step('e3-cold-start', 'Charter E3: three cold runs, process start to the first correct frame, each at most 3 s',
-         False, 10, 'the launcher and the product shell\'s startup log (magic600-c9-startup-v1)',
-         commands=('<launcher> three times, 20 s apart, each on a fresh session copy',
+         False, 10, None,
+         commands=(f'python -B {LAUNCH} --out <new folder> --cold-start   # three times; the launcher waits out '
+                   'the 20 s pause and the shell exits at the first correct frame',
                    'python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3> --out <record>.json'),
-         prerequisites=(('imports', 'cold_start'),),
+         prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('mentions', (SHELL, '"--cold-start"'))),
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
@@ -173,17 +185,19 @@ STEPS = (
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
                    '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
                    'python -B tools/perf/c9/lx4.py schedule --fixtures <fixtures>   # 10,800 S/M/L samples',
-                   '<product shell run> with Jumble off on fresh isolated data, PresentMon alongside; then '
+                   f'python -B {LAUNCH} --out <run dir> --lx4 --puzzle jumble-off, PresentMon alongside; then '
                    'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
-                   '--turn-vk <the shell\'s turn key>',
-                   'the same with Jumble on (--puzzle jumble-on) in a second run directory',
+                   '--turn-key KeyJ',
+                   'the same with --puzzle jumble-on in a second run directory   # refused until the host opens '
+                   'the jumbled puzzle\'s session and view (C9 product, 19 November 2026)',
                    'python -B tools/perf/c9/key_to_frame.py <both run dirs> --out <e2 record>.json   # E2 in the same '
                    'runs',
                    'python -B tools/perf/c9/lx4.py analyze --fixtures <fixtures> <both run dirs> --e2 <e2 record>.json '
                    '--gate <gate summary>.json --out <record>.json'),
          prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
+                        ('compiles', LAUNCH), ('mentions', (SHELL, '"--lx4"')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),
-                        ('mentions', (SHELL, '"key"'))),
+                        ('mentions', (SHELL, 'WriteString("t", "key")'))),
          run_time=('foreground', 'the owner starts it from the desktop'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )

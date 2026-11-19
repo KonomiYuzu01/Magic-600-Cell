@@ -14,15 +14,27 @@ presents are seen only by PresentMon.
 Log rows (DRAFT, format `magic600-c9-shell-events-v1`, beside E2's rows; key_to_frame.py describes `run`, `frame`
 and `presented`):
 
-- the `run` row also carries `process_id` and `ui_swap_chain`: Godot's swap chain as PresentMon prints its address;
-- `{"t": "ui_frame", "ui_seq": int, "qpc": int, "frame_id": int}`: one row per Godot frame, `ui_seq` 0, 1, 2, ...,
-  `qpc` read when Godot has drawn the frame and before it presents it (DRAFT: RenderingServer's frame_post_draw), and
-  `frame_id` the 3D frame the shell submitted in the same process frame, which is the 3D state the UI frame shows.
+- the `run` row also carries `process_id` and `ui_swap_chain`: Godot's swap chain as PresentMon prints its address.
+  Godot exposes no swap chain, so the shell writes `ui_swap_chain: null` with `swap_chain`, the core's own
+  composition chain ("0x" and 16 hex digits, from the core's optional export sa2_surface_swap_chain); the UI chain is
+  then the one other swap chain of `process_id` in the capture, and a run whose capture shows no other chain or more
+  than one is unreadable. The core writes `swap_chain: null` when the run saw more than one chain of its own (a resize
+  or a recovery) or the core gave no address, and such a run is unreadable too (C9 product, 19 November 2026). Chains
+  compare by their numeric value when both are hexadecimal, so leading zeros and case do not matter;
+- `{"t": "ui_frame", "ui_seq": int, "qpc": int, "frame_id": int, "drawn_qpc": int}`: one row per Godot frame that
+  has a 3D frame submitted in the same process frame (a Godot frame without one gets no row, and `ui_seq` stays
+  contiguous), `ui_seq` 0, 1, 2, ..., `qpc` read before Godot draws the frame (RenderingServer's frame_pre_draw: on
+  Godot 4.7's RenderingDevice path the present happens inside the draw, before frame_post_draw), `drawn_qpc` read at
+  frame_post_draw and kept for the check below, and `frame_id` the 3D frame the shell submitted in the same process
+  frame, which is the 3D state the UI frame shows.
 
 Matching (DRAFT). A UI frame's display time is that of the first displayed present of the UI swap chain in the
 PresentMon capture whose present call starts at or after the row's `qpc` and before the next row's `qpc`; a UI frame
 with no such present, or with two, is unmatched. Its 3D display time is the core's confirmed `display_qpc` of its
-`frame_id` (route B); a frame without a confirmed present is unmatched. The skew of a matched pair is the UI display
+`frame_id` (route B); a frame without a confirmed present is unmatched. The reading that Godot presents inside the
+draw comes from Godot's source and is unverified on the machine, so each run reports how many matched UI presents
+start at or before their row's `drawn_qpc` (`present_in_draw`); a share well below one says the window is off by a
+frame. The skew of a matched pair is the UI display
 time minus the 3D display time, in ms: positive when the UI appears after the 3D view. Unmatched frames get no value
 and are counted, never filled in. A run is invalid on a contradiction (UI rows out of order, a UI row naming an
 unknown frame, frames or presents that key_to_frame.py also refuses), when the window lost the foreground, when the
@@ -55,7 +67,8 @@ BAR = {'text': 'Route B check 2: a measurement of the skew between the UI frame 
                 'owner judges them'),
        'limit_ms': None, 'observations_min': PAIRS_MIN,
        'source': ['owner decision 2026-11-18 route B, check 2', 'RM.26', 'ONE.41']}
-DRAFTS = ['ui_frame rows in magic600-c9-shell-events-v1', 'UI frame time = Godot frame_post_draw',
+DRAFTS = ['ui_frame rows in magic600-c9-shell-events-v1',
+          'UI frame time = Godot frame_pre_draw (present inside the draw on the RenderingDevice path)',
           'UI present = first displayed present of the UI swap chain after the row and before the next',
           'at least 100 matched pairs per run', 'one refresh = median confirmed 3D present interval']
 
@@ -65,13 +78,15 @@ def check_rows(rows):
     for row in rows[1:]:
         if row.get('t') == 'ui_frame':
             require(all(integer(row.get(field)) for field in ('ui_seq', 'qpc', 'frame_id')), 'bad-ui_frame')
+            require(row.get('drawn_qpc') is None or (integer(row['drawn_qpc']) and row['drawn_qpc'] >= row['qpc']),
+                    'bad-ui_frame')
     return head
 
 
 def read_ui_presents(path, process_id, swap_chain, frequency):
-    """(present start ticks, display ticks or None) of the UI swap chain's presents in a PresentMon v1 CSV."""
-    columns, presents = CAPTURE_COLUMNS, []
-    chain = swap_chain.strip().casefold()
+    """(present start ticks, display ticks or None) of the UI swap chain's presents (`swap_chain` as chain_key
+    gives it) in a PresentMon v1 CSV."""
+    columns, presents, chain = CAPTURE_COLUMNS, [], swap_chain
     try:
         with Path(path).open(encoding='utf-8-sig', newline='') as stream:
             reader = csv.DictReader(stream, strict=True)
@@ -81,7 +96,7 @@ def read_ui_presents(path, process_id, swap_chain, frequency):
             for row in reader:
                 if csv_integer(row.get(columns['process'])) != process_id:
                     continue
-                if (row.get(columns['swap_chain']) or '').strip().casefold() != chain:
+                if chain_key(row.get(columns['swap_chain'])) != chain:
                     continue
                 start = csv_integer(row.get(columns['time']))
                 require(start is not None, 'bad-field')
@@ -99,6 +114,49 @@ def read_ui_presents(path, process_id, swap_chain, frequency):
     except (csv.Error, UnicodeError):
         raise RunError('bad-field') from None
     return sorted(presents)
+
+
+def chain_key(text):
+    """A swap chain address in comparable form: its value when it is hexadecimal, else the case-folded text."""
+    text = (text or '').strip()
+    try:
+        return int(text, 16)
+    except ValueError:
+        return text.casefold()
+
+
+def capture_chains(path, process_id):
+    """The swap chains (as chain_key gives them) of `process_id`'s presents in a PresentMon v1 CSV."""
+    columns, chains = CAPTURE_COLUMNS, set()
+    try:
+        with Path(path).open(encoding='utf-8-sig', newline='') as stream:
+            reader = csv.DictReader(stream, strict=True)
+            header = reader.fieldnames or []
+            require(all(name in header for name in (columns['process'], columns['swap_chain'])),
+                    'presentmon-missing-column')
+            for row in reader:
+                if csv_integer(row.get(columns['process'])) == process_id:
+                    if (row.get(columns['swap_chain']) or '').strip():
+                        chains.add(chain_key(row.get(columns['swap_chain'])))
+    except OSError:
+        raise RunError('missing-file') from None
+    except (csv.Error, UnicodeError):
+        raise RunError('bad-field') from None
+    return chains
+
+
+def ui_chain(head, capture):
+    """(Godot's swap chain, whether it was inferred): declared in the run row, or the one chain of the process in the
+    capture other than the core's `swap_chain` when `ui_swap_chain` is null."""
+    declared, core = head.get('ui_swap_chain'), head.get('swap_chain')
+    if declared is None and 'swap_chain' in head:
+        require(isinstance(core, str) and bool(core.strip()), 'core-swap-chain-unknown')
+        others = capture_chains(capture, head['process_id']) - {chain_key(core)}
+        require(len(others) <= 1, 'ui-swap-chain-ambiguous')
+        require(len(others) == 1, 'ui-swap-chain-absent')
+        return next(iter(others)), True
+    require(isinstance(declared, str) and bool(declared.strip()), 'ui-swap-chain-undeclared')
+    return chain_key(declared), False
 
 
 def pair(ui_rows, frames, presented, ui_presents, frequency, contradictions):
@@ -124,6 +182,8 @@ def pair(ui_rows, frames, presented, ui_presents, frequency, contradictions):
             entry['status'] = '3d-unconfirmed'
         else:
             entry['skew_ms'] = (window[0][1] - presented[row['frame_id']]['display_qpc']) * 1000 / frequency
+            if row.get('drawn_qpc') is not None:
+                entry['present_in_draw'] = window[0][0] <= row['drawn_qpc']
         if entry['skew_ms'] is None and entry['status'] == 'matched':
             entry['status'] = 'unmatched'
         entries.append(entry)
@@ -160,8 +220,10 @@ def analyze(rows, ui_presents):
     for entry in entries:
         counts[entry['status']] = counts.get(entry['status'], 0) + 1
     refresh = refresh_ms(presented, frequency)
+    in_draw = [entry['present_in_draw'] for entry in entries if 'present_in_draw' in entry]
     run = {'run_id': head['run_id'], 'build_identity': head['build_identity'], 'synthetic': head['synthetic'],
            'ui_frames': len(entries), 'pairs': len(skews), 'statuses': dict(sorted(counts.items())),
+           'present_in_draw': {'checked': len(in_draw), 'within': sum(in_draw)},
            'contradictions': sorted(contradictions), 'stats': summary(skews, refresh)}
     if contradictions:
         reasons.add('contradiction')
@@ -182,11 +244,12 @@ def read_run(directory):
         rows = evidence.read_jsonl(directory / EVENTS)
         head = check_rows(rows)
         require((directory / CAPTURE).is_file(), 'no-capture')
-        require(integer(head.get('process_id')) and isinstance(head.get('ui_swap_chain'), str)
-                and bool(head['ui_swap_chain'].strip()), 'ui-swap-chain-undeclared')
-        presents = read_ui_presents(directory / CAPTURE, head['process_id'], head['ui_swap_chain'],
-                                    head['qpc_frequency'])
-        return analyze(rows, presents)
+        require(integer(head.get('process_id')), 'ui-swap-chain-undeclared')
+        chain, inferred = ui_chain(head, directory / CAPTURE)
+        presents = read_ui_presents(directory / CAPTURE, head['process_id'], chain, head['qpc_frequency'])
+        run = analyze(rows, presents)
+        run['ui_swap_chain'], run['ui_swap_chain_inferred'] = chain, inferred
+        return run
     except RunError as error:
         return {'run_id': directory.name, 'build_identity': None, 'synthetic': None, 'status': 'unreadable',
                 'reasons': [str(error)], 'skews_ms': [], 'stats': None}
@@ -235,10 +298,13 @@ def main(argv=None):
     record = build(args.runs, argv, args.synthetic)
     for run in record['result']['runs']:
         absolute = (run.get('stats') or {}).get('absolute')
-        print(f"{run['run_id']}: {run['status']}"
-              f"{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}; UI frames "
-              f"{run.get('ui_frames', 0)}, pairs {run.get('pairs', 0)}"
-              f"{'; |skew| p95 %.1f ms' % absolute['p95'] if absolute else ''}")
+        in_draw = run.get('present_in_draw') or {}
+        line = (f"{run['run_id']}: {run['status']}"
+                f"{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}; UI frames "
+                f"{run.get('ui_frames', 0)}, pairs {run.get('pairs', 0)}")
+        if in_draw.get('checked'):
+            line += f"; UI present inside the draw {in_draw['within']} of {in_draw['checked']}"
+        print(line + (f"; |skew| p95 {absolute['p95']:.1f} ms" if absolute else ''))
     evidence.report(record)
     if args.out:
         try:
