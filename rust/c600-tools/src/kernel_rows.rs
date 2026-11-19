@@ -97,8 +97,10 @@
 //!
 //! Net judges the end of the complete operation at the head: the sticker that ends in slot `p` started in `σ⁻¹(p)`, so
 //! `p`'s end label is the head's label at `σ⁻¹(p)`. Strict judges every executed prefix of the literal expansion, the
-//! empty one first, up to `limit` primitives when one is given. `T` is a record with these five fields, in any order:
+//! empty one first, up to `limit` primitives when one is given. `T` is a record with these six fields, in any order:
 //!
+//! - `level: Text`, `"labels"`: the level the row judges at. KN2.4 types the row by puzzle and level (labels for Full,
+//!   poses for jumbling), and this row answers Full at labels, so a lock holds exact labels.
 //! - `checked: Nat`, the number of states judged. Net judges one. Strict judges the prefixes up to the first one that
 //!   breaks the lock, or up to the limit or the end.
 //! - `conflicts: List<Nat>`, the lock's slots that fail at the judged state that fails, in the lock's order; empty when
@@ -651,25 +653,30 @@ pub const PROTECTION: &str = "protection";
 /// the slots each generator its word uses moves, at most once per generator.
 pub const GENERATORS: usize = 1200;
 
+/// The level the `protection` row judges at: 600-cell-Full's labels (KN2.4 types the row by puzzle and level).
+pub const PROTECTION_LEVEL: &str = "labels";
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ProtectionField {
     Checked,
     Conflicts,
     ExpansionSha256,
+    Level,
     PrimitiveCount,
     RefusedPrefix,
 }
 
 /// The fields of the `protection` row's record, by name.
-const PROTECTION_FIELDS: [(&str, ProtectionField); 5] = [
+const PROTECTION_FIELDS: [(&str, ProtectionField); 6] = [
     ("checked", ProtectionField::Checked),
     ("conflicts", ProtectionField::Conflicts),
     ("expansion_sha256", ProtectionField::ExpansionSha256),
+    ("level", ProtectionField::Level),
     ("primitive_count", ProtectionField::PrimitiveCount),
     ("refused_prefix", ProtectionField::RefusedPrefix),
 ];
 
-/// The fields of a declared `protection` answer type in its order; None unless it is a record with the row's five
+/// The fields of a declared `protection` answer type in its order; None unless it is a record with the row's six
 /// fields, each declared with a type that holds its values, and no display qualifier.
 fn protection_fields(ty: &QTy) -> Option<Vec<ProtectionField>> {
     let Ty::Record(fields) = &ty.ty else { return None };
@@ -682,7 +689,7 @@ fn protection_fields(ty: &QTy) -> Option<Vec<ProtectionField>> {
         let fits = match field {
             ProtectionField::Checked | ProtectionField::PrimitiveCount => whole(declared),
             ProtectionField::Conflicts => whole_list(declared),
-            ProtectionField::ExpansionSha256 => *declared == exact(Ty::Text),
+            ProtectionField::ExpansionSha256 | ProtectionField::Level => *declared == exact(Ty::Text),
             ProtectionField::RefusedPrefix => *declared == exact(Ty::Int),
         };
         if order.contains(&field) || !fits {
@@ -694,12 +701,13 @@ fn protection_fields(ty: &QTy) -> Option<Vec<ProtectionField>> {
 }
 
 /// The type the `protection` row answers, with its fields in name order:
-/// `record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, refused_prefix: Int }`.
+/// `record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, primitive_count: Nat,
+/// refused_prefix: Int }`.
 pub fn protection_type() -> QTy {
     let field = |field: ProtectionField| match field {
         ProtectionField::Checked | ProtectionField::PrimitiveCount => exact(Ty::Nat),
         ProtectionField::Conflicts => list(Ty::Nat),
-        ProtectionField::ExpansionSha256 => exact(Ty::Text),
+        ProtectionField::ExpansionSha256 | ProtectionField::Level => exact(Ty::Text),
         ProtectionField::RefusedPrefix => exact(Ty::Int),
     };
     exact(Ty::Record(PROTECTION_FIELDS.iter().map(|&(name, f)| (name.to_owned(), field(f))).collect()))
@@ -759,7 +767,7 @@ fn protection_check(arg: &[u8]) -> Option<Check> {
     Some(Check { pairs, mode, recipe })
 }
 
-/// The logical size of an empty `protection` answer with all five fields at their largest but no conflict, and what
+/// The logical size of an empty `protection` answer with all six fields at their largest but no conflict, and what
 /// one conflict adds at most: a slot of 259,799.
 fn protection_sizes() -> (u128, u128) {
     static SIZES: OnceLock<(u128, u128)> = OnceLock::new();
@@ -769,6 +777,7 @@ fn protection_sizes() -> (u128, u128) {
             ProtectionField::Checked | ProtectionField::PrimitiveCount | ProtectionField::RefusedPrefix => most.clone(),
             ProtectionField::Conflicts => Value::list(Vec::new()),
             ProtectionField::ExpansionSha256 => Value::text(&"0".repeat(64)),
+            ProtectionField::Level => Value::text(PROTECTION_LEVEL),
         };
         let empty = Value::record(PROTECTION_FIELDS.iter().map(|&(name, f)| (name, value(f))).collect()).size();
         let (none, one) = (Value::list(Vec::new()).size(), Value::list(vec![Value::int((SLOTS - 1) as i64)]).size());
@@ -909,6 +918,7 @@ pub fn protection<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Re
         ProtectionField::Checked => Value::int(judgement.checked),
         ProtectionField::Conflicts => Value::list(judgement.conflicts.iter().map(|&slot| Value::int(slot)).collect()),
         ProtectionField::ExpansionSha256 => Value::text(&effect.expansion_sha256),
+        ProtectionField::Level => Value::text(PROTECTION_LEVEL),
         ProtectionField::PrimitiveCount => Value::int(effect.primitive_count as u64),
         ProtectionField::RefusedPrefix => Value::int(judgement.refused_prefix.map_or(-1, |prefix| prefix as i64)),
     };

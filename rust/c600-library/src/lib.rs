@@ -99,9 +99,9 @@
 //!   judges every executed prefix from the empty one. `strict_check_within(lock, recipe, limit)` judges the prefixes up
 //!   to `limit` primitives only.
 //!
-//! A report carries its input, the lock and the expansion's digest and length, and its level, `labels`. Its mode and
-//! its coverage are `checked`, the number of judged states, and `required`: 1 for Net, the primitives plus one for
-//! Strict. It also carries the lock's slots that fail at the judged state that fails, in the lock's order, and Strict's
+//! A report carries its input, the lock and the expansion's digest and length, and the level the row answers, `labels`.
+//! It carries its mode and its coverage: `checked`, the number of judged states, and `required`, 1 for Net and the
+//! primitives plus one for Strict. It also carries the lock's slots that fail at the judged state that fails, in the lock's order, and Strict's
 //! first refused prefix, -1 when none is refused. Its verdict is one of three:
 //!
 //! - `fails`: a judged state breaks the lock.
@@ -116,8 +116,8 @@
 //!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe, report and protection entries through the tool's host bridge. Every result of its tests is source and
-//! fixture evidence.
+//! exact-completion, recipe, report and protection entries through the tool's host bridge. Every result of its tests
+//! is source and fixture evidence.
 //!
 //! # Drafts
 //!
@@ -205,6 +205,11 @@
 //! - LB2.3, coverage: a check within a limit judges at most `limit` + 1 states. A report that judged fewer than
 //!   `required` states and found no conflict is `unknown`, never `clear`. A conflict found within the limit is a
 //!   `fails` with complete evidence for that prefix.
+//! - KN2.4, protection: chapter 01 types one `protection` row by puzzle and level, labels for Full and poses for
+//!   jumbling. The tool's bridge serves Full at labels, with a lock argument `{lock, mode, recipe, limit?}`, answers
+//!   `level: "labels"`, and refuses with Jumble on. C8's jumbling library reads the pose-level form
+//!   `{mode, pieces, word}` from `c600-jumble-tool`'s own test host. A host that serves both tells them apart by the
+//!   Jumble state; the command table settles the row's one form when it freezes.
 //! - LB2: the catalogue row is Rust data in [`net_and_strict_protection`]. Its Effect field is the checker's
 //!   `ReadSnapshot`; chapter 03's "budgets" is the run's budget, which the row's tariff draws on
 //!   (`c600_tools::kernel_rows`).

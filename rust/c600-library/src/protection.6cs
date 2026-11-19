@@ -17,21 +17,21 @@ export fn block_lock(pieces: List<Nat>) -> record { kind: Text, labels: List<Nat
 }
 
 export fn net_check(lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>) -> record { checked: Nat, conflicts: List<Nat>, errors: List<Text>, expansion_sha256: Text, level: Text, lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, primitive_count: Nat, refused_prefix: Int, required: Nat, verdict: Text } effects [snapshot] {
-    let row = read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, refused_prefix: Int }>("protection", record { lock = lock, mode = "net", recipe = recipe });
+    let row = read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, primitive_count: Nat, refused_prefix: Int }>("protection", record { lock = lock, mode = "net", recipe = recipe });
     return report(lock, "net", 1, row);
 }
 
 export fn strict_check(lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>) -> record { checked: Nat, conflicts: List<Nat>, errors: List<Text>, expansion_sha256: Text, level: Text, lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, primitive_count: Nat, refused_prefix: Int, required: Nat, verdict: Text } effects [snapshot] {
-    let row = read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, refused_prefix: Int }>("protection", record { lock = lock, mode = "strict", recipe = recipe });
+    let row = read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, primitive_count: Nat, refused_prefix: Int }>("protection", record { lock = lock, mode = "strict", recipe = recipe });
     return report(lock, "strict", exact_add(row.primitive_count, 1), row);
 }
 
 export fn strict_check_within(lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>, limit: Nat) -> record { checked: Nat, conflicts: List<Nat>, errors: List<Text>, expansion_sha256: Text, level: Text, lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, primitive_count: Nat, refused_prefix: Int, required: Nat, verdict: Text } effects [snapshot] {
-    let row = read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, refused_prefix: Int }>("protection", record { limit = limit, lock = lock, mode = "strict", recipe = recipe });
+    let row = read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, primitive_count: Nat, refused_prefix: Int }>("protection", record { limit = limit, lock = lock, mode = "strict", recipe = recipe });
     return report(lock, "strict", exact_add(row.primitive_count, 1), row);
 }
 
-fn report(lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, required: Nat, row: record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, refused_prefix: Int }) -> record { checked: Nat, conflicts: List<Nat>, errors: List<Text>, expansion_sha256: Text, level: Text, lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, primitive_count: Nat, refused_prefix: Int, required: Nat, verdict: Text } effects [] {
+fn report(lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, required: Nat, row: record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, primitive_count: Nat, refused_prefix: Int }) -> record { checked: Nat, conflicts: List<Nat>, errors: List<Text>, expansion_sha256: Text, level: Text, lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, primitive_count: Nat, refused_prefix: Int, required: Nat, verdict: Text } effects [] {
     let fails = not(exact_eq(length(row.conflicts), 0));
     let complete = exact_eq(row.checked, required);
     let verdict = match fails {
@@ -48,7 +48,7 @@ fn report(lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode
             _ => list<Text>("LB2:protection.incomplete_coverage");
         };
     };
-    return record { checked = row.checked, conflicts = row.conflicts, errors = errors, expansion_sha256 = row.expansion_sha256, level = "labels", lock = lock, mode = mode, primitive_count = row.primitive_count, refused_prefix = row.refused_prefix, required = required, verdict = verdict };
+    return record { checked = row.checked, conflicts = row.conflicts, errors = errors, expansion_sha256 = row.expansion_sha256, level = row.level, lock = lock, mode = mode, primitive_count = row.primitive_count, refused_prefix = row.refused_prefix, required = required, verdict = verdict };
 }
 
 fn homes_of(rows: List<record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, slots: List<Nat> }>, from: Nat) -> List<Nat> effects [] {

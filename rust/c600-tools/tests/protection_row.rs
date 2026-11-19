@@ -19,9 +19,11 @@ use c600_run::interp::{load, Host, Loaded, Options, Request, Run};
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::meter::{Amounts, Outcome};
 use c600_run::provenance::{Author, Producer, Profile};
-use c600_run::value::Value;
+use c600_run::value::{equal, Value};
 use c600_tools::bridge::{base, Bridge};
-use c600_tools::kernel_rows::{protection_tariff, protection_type, GENERATORS, MAX_PRIMITIVES, PROTECTION};
+use c600_tools::kernel_rows::{
+    protection_tariff, protection_type, GENERATORS, MAX_PRIMITIVES, PROTECTION, PROTECTION_LEVEL,
+};
 use c600_tools::tool::{checker, contract, lower_source, named_word_block, pins};
 
 const MODULE: &str = "judge";
@@ -30,34 +32,40 @@ const MODULE: &str = "judge";
 /// a row the bridge does not serve, and one that reads the row at a lock it captured itself.
 const SOURCE: &str = "edition \"6cs-draft-1\";\nmodule judge requires [];\n\n\
     export fn verdict(check: record { lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, \
-    recipe: Word }) -> record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, \
-    refused_prefix: Int } effects [snapshot] {\n    \
-    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, \
-    refused_prefix: Int }>(\"protection\", check);\n}\n\n\
+    recipe: Word }) -> record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
+    primitive_count: Nat, refused_prefix: Int } effects [snapshot] {\n    \
+    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
+    primitive_count: Nat, refused_prefix: Int }>(\"protection\", check);\n}\n\n\
     export fn within(check: record { limit: Int, lock: record { kind: Text, labels: List<Int>, slots: List<Int> }, \
-    mode: Text, recipe: Word }) -> record { refused_prefix: Int, primitive_count: Int, expansion_sha256: Text, \
-    conflicts: List<Int>, checked: Int } effects [snapshot] {\n    \
-    return read_snapshot<record { refused_prefix: Int, primitive_count: Int, expansion_sha256: Text, \
+    mode: Text, recipe: Word }) -> record { refused_prefix: Int, primitive_count: Int, level: Text, \
+    expansion_sha256: Text, conflicts: List<Int>, checked: Int } effects [snapshot] {\n    \
+    return read_snapshot<record { refused_prefix: Int, primitive_count: Int, level: Text, expansion_sha256: Text, \
     conflicts: List<Int>, checked: Int }>(\"protection\", check);\n}\n\n\
     export fn short(check: record { lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, \
     recipe: Word }) -> record { checked: Nat } effects [snapshot] {\n    \
     return read_snapshot<record { checked: Nat }>(\"protection\", check);\n}\n\n\
-    export fn nat_prefix(check: record { lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, \
+    export fn no_level(check: record { lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, \
     recipe: Word }) -> record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, \
-    refused_prefix: Nat } effects [snapshot] {\n    \
+    refused_prefix: Int } effects [snapshot] {\n    \
     return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, \
-    refused_prefix: Nat }>(\"protection\", check);\n}\n\n\
-    export fn of_word(w: Word) -> record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, \
+    refused_prefix: Int }>(\"protection\", check);\n}\n\n\
+    export fn nat_prefix(check: record { lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, \
+    recipe: Word }) -> record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
+    primitive_count: Nat, refused_prefix: Nat } effects [snapshot] {\n    \
+    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
+    primitive_count: Nat, refused_prefix: Nat }>(\"protection\", check);\n}\n\n\
+    export fn of_word(w: Word) -> record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
     primitive_count: Nat, refused_prefix: Int } effects [snapshot] {\n    \
-    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, \
-    refused_prefix: Int }>(\"protection\", w);\n}\n\n\
+    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
+    primitive_count: Nat, refused_prefix: Int }>(\"protection\", w);\n}\n\n\
     export fn colours(w: Word) -> record { checked: Nat } effects [snapshot] {\n    \
     return read_snapshot<record { checked: Nat }>(\"colours\", w);\n}\n\n\
     export fn capture_and_check(slots: List<Nat>, recipe: Word) -> record { checked: Nat, conflicts: List<Nat>, \
-    expansion_sha256: Text, primitive_count: Nat, refused_prefix: Int } effects [snapshot] {\n    \
+    expansion_sha256: Text, level: Text, primitive_count: Nat, refused_prefix: Int } effects [snapshot] {\n    \
     let lock = record { kind = \"position\", labels = read_snapshot<List<Nat>>(\"labels\", slots), slots = slots };\n    \
-    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, primitive_count: Nat, \
-    refused_prefix: Int }>(\"protection\", record { lock = lock, mode = \"strict\", recipe = recipe });\n}\n";
+    return read_snapshot<record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, \
+    primitive_count: Nat, refused_prefix: Int }>(\"protection\", record { lock = lock, mode = \"strict\", \
+    recipe = recipe });\n}\n";
 
 const LIMITS: Amounts = Amounts { steps: 1 << 20, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
 
@@ -142,8 +150,16 @@ fn check(lock: Value, mode: &str, word: &[i32], limit: Option<i64>) -> Value {
     Value::record(fields)
 }
 
+/// Whether an answer is a record whose `level` is [`PROTECTION_LEVEL`], `labels`.
+fn at_labels(answer: &Value) -> bool {
+    let Value::Record(fields) = answer else { return false };
+    let labels = Value::text(PROTECTION_LEVEL);
+    fields.fields().iter().any(|(name, value)| name.as_str() == "level" && equal(value, &labels))
+}
+
 /// The row answers the fields an entry declares, in its order, whole-number fields declared `Nat` or `Int`: Net with
-/// one judged state, Strict with the prefixes it judged, the input's digest and length, and the conflicts. A read
+/// one judged state, Strict with the prefixes it judged, the input's digest and length, the conflicts and the level,
+/// `labels`. A read
 /// changes nothing.
 #[test]
 fn a_library_entry_reads_a_verdict() {
@@ -155,18 +171,20 @@ fn a_library_entry_reads_a_verdict() {
     let answer = read.value.as_ref().expect("an answer");
     let Value::Record(fields) = answer else { panic!("a record") };
     let names: Vec<&str> = fields.fields().iter().map(|(name, _)| name.as_str()).collect();
-    assert_eq!(names, ["checked", "conflicts", "expansion_sha256", "primitive_count", "refused_prefix"]);
+    assert_eq!(names, ["checked", "conflicts", "expansion_sha256", "level", "primitive_count", "refused_prefix"]);
+    assert!(at_labels(answer), "the row judges at labels");
 
     let within = check(lock(&slots, &slots), "strict", &[1, -1], Some(1));
     let read = run(&mut layer, "within", within);
     let Some(Value::Record(fields)) = read.value.as_ref() else { panic!("a record: {:?}", read.summary.stop) };
     let names: Vec<&str> = fields.fields().iter().map(|(name, _)| name.as_str()).collect();
-    assert_eq!(names, ["refused_prefix", "primitive_count", "expansion_sha256", "conflicts", "checked"]);
+    assert_eq!(names, ["refused_prefix", "primitive_count", "level", "expansion_sha256", "conflicts", "checked"]);
+    assert!(read.value.as_ref().is_some_and(at_labels), "the row judges at labels");
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }
 
-/// The row's refusals (LP2 draft, recorded in `c600_tools::kernel_rows`). A declared type the row does not answer is
-/// `LG2:type.mismatch`, and an argument of another form (a word; a mode other than `net` and `strict`; a limit with
+/// The row's refusals (LP2 draft, recorded in `c600_tools::kernel_rows`). A declared type the row does not answer (a
+/// field missing, `level` among them, or `refused_prefix` declared `Nat`) is `LG2:type.mismatch`, and an argument of another form (a word; a mode other than `net` and `strict`; a limit with
 /// Net or a negative one; a lock whose lists differ in length or that has no kind) is `KN5:input.argument_form`: each
 /// before the row runs, so the read costs what a read of a row the bridge does not serve costs with the same argument.
 /// A slot or a label outside 0 to 259,799 is `KN2:input.named_object_invalid`, and a recipe the kernel refuses stops
@@ -179,6 +197,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     let no_kind = Value::record(vec![("labels", nats(&[0])), ("slots", nats(&[0]))]);
     for (entry, arg, code) in [
         ("short", check(held(), "net", &[1], None), TYPE_MISMATCH),
+        ("no_level", check(held(), "net", &[1], None), TYPE_MISMATCH),
         ("nat_prefix", check(held(), "net", &[1], None), TYPE_MISMATCH),
         ("of_word", Value::word(&[1]), code::ARGUMENT_FORM),
         ("verdict", check(held(), "both", &[1], None), code::ARGUMENT_FORM),
@@ -228,6 +247,7 @@ fn the_tariff_covers_the_largest_answer() {
         ("checked", most.clone()),
         ("conflicts", Value::list(vec![Value::int((SLOTS - 1) as u64); SLOTS])),
         ("expansion_sha256", Value::text(&"f".repeat(64))),
+        ("level", Value::text(PROTECTION_LEVEL)),
         ("primitive_count", most.clone()),
         ("refused_prefix", most),
     ]);
