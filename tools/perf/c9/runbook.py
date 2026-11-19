@@ -181,9 +181,7 @@ STEPS = (
                         ('mentions', (SHELL, '"--cold-start"'))),
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
-    Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
-         'RTE.42 conditions 3 and 4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault '
-         'windows, in the shell\'s frame loop)',
+    Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 75, None,
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
                    '--features device --bin c600-lx2-child   # the injection device of option (a) on c600-runtime\'s '
                    'fault hook, never shipped',
@@ -192,11 +190,27 @@ STEPS = (
                    '--runtime <product build c600-runtime> --injection <c600-lx2-child release build> '
                    '--sessions <new folder> --out <record>.json'
                    '   # metered, forced-kill, allocator-ceiling, native recursion and native loop trials, alone '
-                   'and in a session (conditions 1 and 2)'),
+                   'and in a session (conditions 1 and 2)',
+                   'cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
+                   '   # LX-4\'s module set and edit script, once; U8 uses the same fixtures',
+                   'python -B tools/perf/c9/lx2.py post --fixtures <fixtures> --dry-run   # the fault plan and its '
+                   'time; posts nothing',
+                   f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --lx2-injection '
+                   '<c600-lx2-child release build>, PresentMon alongside; then python -B tools/perf/c9/lx2.py post '
+                   '--fixtures <fixtures> --run <run dir>   # every fault\'s windows with echo samples, about 10 '
+                   'minutes (at most about 50); it closes the shell after the last fault',
+                   'python -B tools/perf/c9/lx2.py analyze --fixtures <fixtures> <run dir> --faults <record>.json '
+                   '--out <lx2 record>.json   # conditions 3 and 4 per fault, with 1 and 2 from the faults record'),
          prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs'),
                         ('mentions', ('rust/c600-runtime/src', 'pub fn main_with')),
-                        ('mentions', ('rust/c600-lx2/src', 'main_with(native::point)'))),
-         sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
+                        ('mentions', ('rust/c600-lx2/src', 'main_with(native::point)')),
+                        ('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx2'), ('presentmon', None),
+                        ('compiles', LAUNCH), ('mentions', (LAUNCH, '"--lx2-injection"')),
+                        ('mentions', (SHELL, 'Magic600.LX2.Phase')), ('mentions', (SHELL, 'WriteString("t", "lx2")')),
+                        ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, 'WriteString("t", "key")')),
+                        ('mentions', (LAUNCH, 'M600_LX4_DLL')), ('mentions', (LAUNCH, 'M600_LX4_FIXTURES'))),
+         run_time=('foreground', 'the owner starts it from the desktop, which stays unlocked'),
+         sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09', 'charter E2', 'renderer gate')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240, None,
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
                    '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
