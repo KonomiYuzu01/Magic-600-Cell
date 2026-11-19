@@ -1,0 +1,9 @@
+# Lake build artifacts
+/.lake/
+
+# Blueprint build artifacts
+/blueprint/lean_decls
+/blueprint/print/
+/blueprint/web/
+/blueprint/src/web.bbl
+/blueprint/src/web.paux
