@@ -28,9 +28,13 @@ values in integer ticks:
 - `presented`: one `sa2_presented` row: `frame_id`, `device_epoch`, `surface`, `sequence`, `display_qpc`
   (SyncQPCTime of the core's own frame statistics).
 
-The same log also carries, for B2, a `ui_frame` row per Godot frame (`ui_seq`, `qpc`, `frame_id`) and
-`ui_swap_chain` in the `run` row; for LX-4, an `lx4` row per endpoint (`sample`, `endpoint`, `frame_id`,
-`buffer_sha256`) and `puzzle` and `window` in the `run` row. `key_to_frame.py` skips those rows; `ui_skew.py` and
+The same log also carries, for B2, a `ui_frame` row per Godot frame (`ui_seq`, `qpc` before the draw, `frame_id`,
+`drawn_qpc` after it) and
+`ui_swap_chain` in the `run` row (null with the core's `swap_chain` set: `ui_skew.py` then takes the one other chain of
+the process in the capture); for LX-4, an `lx4` row per endpoint (`sample`, `endpoint`, `frame_id`,
+`buffer_sha256`) and `puzzle` and `window` in the `run` row. `lx4.py post` turns with a physical turn key
+(`--turn-key`, default KeyJ) and sends each key message with the key's scan code (VK_BACK too), since the shell routes
+by Godot's physical keycode. `key_to_frame.py` skips those rows; `ui_skew.py` and
 `lx4.py` describe them.
 
 **E3, `startup.jsonl`, format `magic600-c9-startup-v1`**: `run` (with `cold`: `new_process`,
