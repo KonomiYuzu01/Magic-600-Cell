@@ -1,7 +1,8 @@
 //! The base library's first entries as 600 Cell Script (LP3, C5), written as language code over the IR draft (LB1.1):
 //! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
-//! "Exact linear algebra"; and the exact-completion half of LB2's row "Residuals and exact completion", over KN2.4's
-//! `positions` and `labels` rows.
+//! "Exact linear algebra"; the exact-completion half of LB2's row "Residuals and exact completion", over KN2.4's
+//! `positions` and `labels` rows; and LB2's rows "Star and recipe construction" and "Collateral and support", over
+//! KN2.4's `effect` row.
 //!
 //! # Literal words
 //!
@@ -55,9 +56,37 @@
 //! pinned research references: the 36-macro correction library's ν rows have rank 34 over F2 and 2 over F5, and the
 //! F5 cycle criterion of the general method's senior review.
 //!
+//! # Recipes, frames and support
+//!
+//! The source [`RECIPES_SOURCE`], `src/recipes.6cs`, is the module `recipes` in edition `6cs-draft-1`, in the
+//! formatter's canonical layout. A recipe crosses the entries as a list of step records,
+//! `List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>`, in 0.4's order: a word step
+//! (`kind = "word"`) carries its letters with `node`, `orbit` and `sign` 0, and a star step (`kind = "star"`) its
+//! orbit, node and sign with the empty word. Seven entries:
+//!
+//! - `word_step(letters: Word)` and `star_step(orbit: Nat, node: Nat, sign: Int)` build one step record each; they
+//!   are pure.
+//! - `star_word(setup: Word, relocation: Word, seed: Word) -> Word` writes out setup⁻¹, relocation⁻¹, seed, relocation,
+//!   setup in that order, the star of sign 1 as a literal word; its `inverse` is the star of sign -1. It is pure.
+//! - `effect_report(recipe)` answers KN2.4's `effect` of the whole recipe: the full source-to-destination map
+//!   (`source`, `destination`), the moved stickers and pieces, the support per orbit, the digests of the net map and
+//!   of the literal expansion, and the expansion's length.
+//! - `orbit_report(recipe, orbits: List<Int>)` answers the full support with its rows split into the `selected`
+//!   orbits' rows and the `others`, with the net map's digest and the moved stickers (LB2.2).
+//! - `frame_image(recipe, frame: List<Nat>) -> List<Nat>` answers the image of an ordered slot tuple under the
+//!   recipe's map, slot for slot, and `frame_maps(recipe, from: List<Nat>, to: List<Nat>) -> Bool` whether the map
+//!   takes `from` to `to` in order.
+//!
+//! [`star_and_recipe_construction`] and [`collateral_and_support`] are the two rows' catalogue entries. The four
+//! entries that read KN2.4's `effect` have the checker's effect `snapshot` and the read row `effect`, so under
+//! capability separation they read state and prepare no preview. They run on a host that serves the row:
+//! `c600-tools`' host bridge does (`c600_tools::kernel_rows`), and `c600-tools/tests/ct_lb2_01.rs` runs them there on
+//! the differential oracle's recipes (CT-LB2-01).
+//!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion entry through the tool's host bridge. Every result of its tests is source and fixture evidence.
+//! exact-completion, recipe and report entries through the tool's host bridge. Every result of its tests is source and
+//! fixture evidence.
 //!
 //! # Drafts
 //!
@@ -112,6 +141,26 @@
 //! - LB1.5, LB1.6: the entry is generic elimination on supplied equations. Composing it with ν and the correction rows
 //!   to choose a combination is the research tier's correction-combination solve; the entry reads neither, and its
 //!   catalogue row carries the marker.
+//! - LB2, recipes: KN2.4's `effect` reads no state, but the IR draft has no form for a kernel call that is not a state
+//!   read, so the entries read it with `read_snapshot` and carry the effect `snapshot`, where chapter 03 says "pure,
+//!   budgets" for star construction and "pure for an effect" for support. Both catalogue rows record the checker's
+//!   `ReadSnapshot`; the constructors stay pure.
+//! - LB2, recipes: one recipe type, the step records, so every entry takes 0.4's mixed recipes. A word goes in through
+//!   `word_step`. The step record carries all five fields for both kinds (`node`, `orbit` and `sign` 0 for a word,
+//!   the empty word for a star), because the IR draft has no variant type; the row refuses any other combination with
+//!   `KN5:input.argument_form` (`c600_tools::kernel_rows`).
+//! - LB2.4, LB3.5: an entry reads `effect` at the recipe as given, a parameter of the entry, because the built-in
+//!   column reads only for what the solver named. A recipe built inside the entry, such as `[word_step(star_word(...))]`,
+//!   cannot be its argument there; the solver or the host builds the recipe with the constructors and names it.
+//! - LB2, star construction: `star_word` takes the setup path, relocation and seed as words the caller names; the
+//!   library holds no copy of the model's trees. `tests/ct_lb2_01.rs` takes them from `assets/execution_trees.json.gz`
+//!   and the kernel's normalized star, and shows that the word has the star step's expansion and effect.
+//! - LB2, frames: the image of a slot is looked up in the sorted `source` list by binary search over offsets
+//!   2^17 - 1 down to 0, which covers all 259,800 slots; a slot the map does not move, and a number that is no slot,
+//!   is its own image. `frame_maps` compares the image tuple with `to` as lists, so order and length count.
+//! - LB2.2, support: `orbit_report` filters the support with a nested scan of the named orbits (the IR draft's sets are
+//!   not used, so a selection may repeat an orbit or name one the recipe does not move). It answers the full support
+//!   beside the split, so no selection can shorten what the report carries.
 //!
 //! # Not built
 //!
@@ -119,11 +168,13 @@
 //!   "Exact linear algebra": kernels (null spaces) and the Z, Q and Q(√5) domains.
 //! - Jumbling words in this crate: the jumbling library entries, on the IR draft's menu words (LP2's pull request
 //!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
-//! - Library entries over kernel rows other than exact completion, such as LB2's "Star and recipe construction" and
-//!   "Net and Strict protection": the tool's host bridge serves the `positions` and `labels` rows only
-//!   (`c600_tools::kernel_rows`), so CT-LB2-02's tests apply a library-built word through the kernel from Rust.
-//!   CT-LB2-02's Strict half also runs through the tool's route (`c600-tools`), on the command layer's Strict policy
-//!   (LP2's pull request 198).
+//! - LB2's "Net and Strict protection" as library entries: the tool's host bridge serves the `positions`, `labels` and
+//!   `effect` rows (`c600_tools::kernel_rows`), not KN2.4's `protection`, so CT-LB2-02's tests apply a library-built
+//!   word through the kernel from Rust. CT-LB2-02's Strict half also runs through the tool's route (`c600-tools`), on
+//!   the command layer's Strict policy (LP2's pull request 198).
+//! - The rest of LB2's catalogue over `effect`: the orbit catalogue and collateral stage order, seeds and full seed
+//!   analysis, guarded setups and buffers (with setup search, CT-BND-18), blocks and work sheets, and named macro
+//!   analysis.
 //! - The residual half of LB2's row "Residuals and exact completion": non-buffer positions, buffer occupants and
 //!   frames.
 //! - The other entries of LB1.8's table, among them the word and trace keys (LB1.9, LB1.10).
@@ -158,6 +209,20 @@ pub const LINALG_MODULE: &str = "linalg";
 /// The exact linear algebra module's exported functions.
 pub const LINALG_EXPORTS: [&str; 4] = ["rank_f2", "solve_f2", "rank_f5", "solve_f5"];
 
+/// The recipes and reports source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const RECIPES_SOURCE: &str = include_str!("recipes.6cs");
+/// The recipes and reports module.
+pub const RECIPES_MODULE: &str = "recipes";
+/// The recipes and reports module's exported functions, in source order.
+pub const RECIPES_EXPORTS: [&str; 7] =
+    ["word_step", "star_step", "star_word", "frame_image", "frame_maps", "effect_report", "orbit_report"];
+/// The exported functions behind LB2's row "Star and recipe construction".
+pub const RECIPES_CONSTRUCTION: [&str; 5] = ["word_step", "star_step", "star_word", "frame_image", "frame_maps"];
+/// The exported functions behind LB2's row "Collateral and support".
+pub const RECIPES_REPORTS: [&str; 2] = ["effect_report", "orbit_report"];
+/// The KN2.4 row the recipes and reports module reads with `read_snapshot`.
+pub const RECIPES_ROWS: [&str; 1] = ["effect"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -171,6 +236,11 @@ pub fn completion_sha256() -> String {
 /// The SHA-256 of [`LINALG_SOURCE`], in hex.
 pub fn linalg_sha256() -> String {
     sha256_hex(LINALG_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`RECIPES_SOURCE`], in hex.
+pub fn recipes_sha256() -> String {
+    sha256_hex(RECIPES_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -244,6 +314,44 @@ pub fn exact_linear_algebra() -> CatalogueRow {
         module: LINALG_MODULE,
         functions: &LINALG_EXPORTS,
         source_sha256: linalg_sha256(),
+    }
+}
+
+/// LB2's row "Star and recipe construction", as far as this crate builds it.
+pub fn star_and_recipe_construction() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Star and recipe construction",
+        level: "Full words and exact slot-tuple frames.",
+        effects: &[Effect::ReadSnapshot],
+        backing:
+            "Library code: `recipes.word_step`, `recipes.star_step` and `recipes.star_word` build recipe steps and \
+                  star words; `recipes.frame_image` and `recipes.frame_maps` read KN2.4's `effect` with \
+                  `read_snapshot`; a host serves the row (`c600_tools::kernel_rows`).",
+        notes: "A star word is setup⁻¹, relocation⁻¹, seed, relocation, setup in that order, a literal word; its \
+                inverse is the star with sign -1. Steps carry their full witnesses: a word step its letters, a star \
+                step its orbit, node and sign, and the kernel expands it. Frames are ordered slot tuples, imaged \
+                slot by slot through the full source-to-destination map. The `effect` row reads no state.",
+        module: RECIPES_MODULE,
+        functions: &RECIPES_CONSTRUCTION,
+        source_sha256: recipes_sha256(),
+    }
+}
+
+/// LB2's row "Collateral and support", as far as this crate builds it.
+pub fn collateral_and_support() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Collateral and support",
+        level: "Full labels.",
+        effects: &[Effect::ReadSnapshot],
+        backing: "KN2.4's `effect`, read with `read_snapshot`; library code for the reports: `recipes.effect_report` \
+                  and `recipes.orbit_report`.",
+        notes: "Support per orbit and the full source-to-destination map of the whole recipe, in the kernel's \
+                chronological order. An orbit selection splits the support into selected and other rows and never \
+                shortens the full support. Empty net support says identity at the end; it says nothing about \
+                intermediate support.",
+        module: RECIPES_MODULE,
+        functions: &RECIPES_REPORTS,
+        source_sha256: recipes_sha256(),
     }
 }
 

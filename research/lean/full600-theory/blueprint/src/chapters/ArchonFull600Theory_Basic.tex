@@ -1,0 +1,721 @@
+\chapter{Permutation core}
+\label{ch:ArchonFull600Theory_Basic}
+
+\section{Complete permutation actions}
+
+Let \(\Sigma\) be the finite set of all sticker slots and let \(G\) be
+the legal subgroup of its permutation group. Words act chronologically:
+\(P Q\) acts by \(Q\circ P\). A cycle \((a\,b\,c)\) sends \(a\) to \(b\),
+\(b\) to \(c\), and \(c\) to \(a\), fixing the other slots. Write
+\(\operatorname{supp}(P)=\{s\in\Sigma:P(s)\ne s\}\) for the full support.
+
+\begin{lemma}[Agreement on a target orbit]
+  \label{lem:scope-same-restriction}
+  \lean{ArchonFull600Theory.scopeSameRestriction}
+  \leanok
+  % SOURCE: Theory supplement, Scope tests, lines 1528--1533 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: First, on six stickers the permutations \begin{equation}
+  % u=(1\,2\,3),
+  % \qquad
+  % v=(1\,2\,3)(4\,5\,6)
+  % \end{equation} have identical restrictions to the target orbit
+  % \(\{1,2,3\}\) but different complete actions. Both are even.
+  \textit{Source: Theory supplement, Scope test S1.}
+  On the six stickers \(1,\ldots,6\), let \(u=(1\,2\,3)\) and
+  \(v=(1\,2\,3)(4\,5\,6)\). Both are even, their restrictions to
+  \(\{1,2,3\}\) agree, and \(u\ne v\).
+\end{lemma}
+% SOURCE QUOTE PROOF: \end{equation} have identical restrictions to the target orbit
+% \(\{1,2,3\}\) but different complete actions. Both are even.
+\begin{proof}
+  Each three-cycle is a product of two transpositions. The extra cycle
+  in \(v\) fixes all three target slots, and \(u(4)=4\) while \(v(4)=5\).
+\end{proof}
+
+\begin{lemma}[Disjoint visible supports]
+  \label{lem:scope-visible-disjoint}
+  \lean{ArchonFull600Theory.scopeVisibleDisjoint}
+  \leanok
+  % SOURCE: Theory supplement, Scope tests, lines 1539--1546 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: Second, consider \begin{equation}
+  % a=(1\,2)(5\,6),
+  % \qquad
+  % b=(3\,4)(6\,7).
+  % \end{equation} If only stickers \(1,2,3,4\) are displayed, their visible
+  % supports are disjoint. But their full actions do not commute: applying
+  % \(a\) then \(b\) sends \(5\) to \(7\), whereas applying \(b\) then \(a\)
+  % sends \(5\) to \(6\).
+  \textit{Source: Theory supplement, Scope test S2.}
+  On the seven stickers \(1,\ldots,7\), let \(a=(1\,2)(5\,6)\) and
+  \(b=(3\,4)(6\,7)\). Their supports intersect the displayed set
+  \(\{1,2,3,4\}\) in the disjoint sets \(\{1,2\}\) and \(\{3,4\}\).
+  The full actions fail to commute, with \(b(a(5))=7\) and \(a(b(5))=6\).
+\end{lemma}
+% SOURCE QUOTE PROOF: applying
+% \(a\) then \(b\) sends \(5\) to \(7\), whereas applying \(b\) then \(a\)
+% sends \(5\) to \(6\).
+\begin{proof}
+  The transpositions give the displayed intersections by inspection.
+  The two action orders send \(5\) along \(5\mapsto6\mapsto7\) and
+  \(5\mapsto5\mapsto6\), respectively.
+\end{proof}
+
+\begin{lemma}[Commutation on disjoint full supports]
+  \label{lem:disjoint-full-supports}
+  \lean{ArchonFull600Theory.disjointFullSupportsCommute}
+  \leanok
+  % SOURCE: Theory supplement, Scope tests, lines 1548--1551 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: permutations with disjoint full supports commute.
+  \textit{Source: Theory supplement, Scope test S3.}
+  If \(\operatorname{supp}(P)\) and \(\operatorname{supp}(Q)\) are
+  disjoint, then \(Q\circ P=P\circ Q\) on \(\Sigma\).
+\end{lemma}
+% SOURCE QUOTE PROOF: Each
+% permutation fixes the support of the other pointwise, and a permutation
+% maps its own support to itself; checking a point in either support or
+% outside both gives equality of the two compositions.
+\begin{proof}
+  A permutation preserves its full support by injectivity. If \(s\) is
+  in the support of \(P\), then \(s\) and \(P(s)\) are fixed by \(Q\), so
+  both compositions send \(s\) to \(P(s)\). The argument interchanging
+  \(P\) and \(Q\) covers the support of \(Q\). Both fix every other \(s\).
+\end{proof}
+
+\begin{definition}[Complete nonfixed map]
+  \label{def:nonfixed-map}
+  \lean{ArchonFull600Theory.nonfixedMap}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 14, lines 1434--1437 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: E_W=\{(u,W(u)):W(u)\ne u\}.
+  \textit{Source: Theory supplement, Lemma~14.}
+  For a permutation \(W\), let \(E_W=\{(u,W(u)):W(u)\ne u\}\) be its
+  complete nonfixed map, a set of ordered pairs in \(\Sigma\times\Sigma\).
+\end{definition}
+\begin{proof}
+  Each moved source has exactly its image as a target. Reconstruct \(W\)
+  by fixing every slot absent from the first coordinates of \(E_W\).
+\end{proof}
+
+\begin{lemma}[Complete endpoint transport]
+  \label{lem:endpoint-transport}
+  \lean{ArchonFull600Theory.transportNonfixedMap}
+  \leanok
+  \uses{def:nonfixed-map}
+  % SOURCE: Theory supplement, Lemma 14, lines 1433--1444 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: Let \(W\) and \(S\) be verified legal sticker permutations, with
+  % chronological witnesses. Suppose the complete nonfixed map of \(W\) is
+  % \begin{equation}
+  % E_W=\{(u,W(u)):W(u)\ne u\}.
+  % \end{equation} Then the complete nonfixed map of the chronological
+  % conjugate \(S^{-1}WS\) is \begin{equation}
+  % E_{S^{-1}WS}
+  % =
+  % \{(S(u),S(W(u))):(u,W(u))\in E_W\}.
+  % \end{equation} Thus transporting both endpoints computes exactly the
+  % same full permutation as replaying the conjugated legal witness,
+  % including all collateral.
+  \textit{Source: Theory supplement, Lemma~14.}
+  Let \(W,S\in G\) have chronological legal witnesses. The complete
+  nonfixed map of the chronological conjugate satisfies
+  \[
+    E_{S^{-1}WS}=\{(S(u),S(v)):(u,v)\in E_W\}.
+  \]
+\end{lemma}
+% SOURCE QUOTE PROOF: As an ordinary function, the chronological word \(S^{-1}WS\) is
+% \begin{equation}
+% S\circ W\circ S^{-1}.
+% \end{equation} For each \(u\), \begin{equation}
+% (S\circ W\circ S^{-1})(S(u))=S(W(u)).
+% \end{equation} Since \(S\) is bijective, \(S(W(u))\ne S(u)\) exactly
+% when \(W(u)\ne u\). Every moved source of the conjugate is therefore
+% represented, and no fixed source is included.
+\begin{proof}
+  The action at \(x\) is \(S(W(S^{-1}(x)))\). Write \(x=S(u)\); its
+  target is \(S(W(u))\), which differs from \(S(u)\) exactly when
+  \(W(u)\ne u\). Every \(x\) has a unique such \(u\). The pair-set
+  equality determines the conjugated action on all slots, including
+  collateral cycles.
+\end{proof}
+
+\section{Independent alternating actions}
+
+\begin{definition}[Pure-controller certificate]
+  \label{def:pure-controller}
+  \lean{ArchonFull600Theory.PureControllerCertificate}
+  \leanok
+  % SOURCE: Theory supplement, hypothesis C, lines 851--860 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: \textbf{C --- Nine pure-controller certificates.} For \begin{equation}
+  % \mathcal I=\{1,4,5,7,18,19,27,31,33\},
+  % \end{equation} each orbit has a legal word whose complete sticker
+  % permutation is a single three-cycle in that orbit and fixes every other
+  % sticker. A verified legal relocation produces a cycle
+  % \((A_o\,B_o\,C_o)\). For every other position \(X\) in that orbit, a
+  % verified legal setup fixes the two buffer sticker slots \(A_o,B_o\)
+  % pointwise and sends \(C_o\) to \(X\). Coverage means valid transitions
+  % and coverage of every nonbuffer destination, not merely a reported
+  % search-node count.
+  \textit{Source: Theory supplement, hypothesis C.}
+  A certificate for a selected orbit \(O\subseteq\Sigma\) gives a legal
+  seed whose complete permutation is \((a\,b\,c)\) for distinct
+  \(a,b,c\in O\), and a legal relocation sending \(a,b,c\) respectively
+  to the distinct slots \(A,B,C\in O\). For each \(X\in O\setminus\{A,B\}\)
+  there is a legal setup \(S_X\) fixing \(A,B\) individually and sending
+  \(C\) to \(X\). The seed, relocation, and setups belong to \(G\).
+\end{definition}
+\begin{proof}
+  The seed condition specifies the complete permutation, with the
+  identity at each slot outside \(\{a,b,c\}\). The coverage condition
+  includes \(C\), where the identity serves as a setup.
+\end{proof}
+
+\begin{lemma}[Independent supported alternating actions]
+  \label{lem:supported-alternating-actions}
+  \lean{ArchonFull600Theory.supportedAlternatingActions}
+  \leanok
+  \uses{def:pure-controller,lem:endpoint-transport,lem:disjoint-full-supports}
+  % SOURCE: Theory supplement, Lemma 9, lines 1087--1090 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: Under R and C, \(G\) contains a subgroup acting as \begin{equation}
+  % A_{3600}\times A_{2400}\times A_{7200}^{\,7}
+  % \end{equation} on the nine selected single-sticker orbits and fixing
+  % every other sticker.
+  \textit{Source: Theory supplement, Lemma~9.}
+  Let \(O_i\subseteq\Sigma\) be the pairwise disjoint selected orbits for
+  \(i\in\mathcal I=\{1,4,5,7,18,19,27,31,33\}\), preserved setwise by
+  \(G\). Suppose \(O_1\) has size \(3600\), \(O_{33}\) has size \(2400\),
+  the other seven have size \(7200\), and each has a pure-controller
+  certificate. There is an injective homomorphism
+  \[
+    \prod_{i\in\mathcal I}\operatorname{Alt}(O_i)\longrightarrow G
+  \]
+  sending a family of even permutations to its prescribed action on
+  each \(O_i\) and fixing every other sticker. The degrees give
+  \(A_{3600}\times A_{2400}\times A_{7200}^{\,7}\).
+\end{lemma}
+% SOURCE QUOTE PROOF: Words execute from left to right. Let \begin{equation}
+% t_C=(A\,B\,C)
+% \end{equation} be a relocated pure controller. If \(S\) fixes \(A,B\)
+% and sends \(C\) to \(X\), then the chronological word \begin{equation}
+% S^{-1}t_CS
+% \end{equation} has ordinary functional action
+% \(S\circ t_C\circ S^{-1}\), so it is exactly \begin{equation}
+% t_X=(A\,B\,X).
+% \end{equation} Conjugating the complete pure permutation gives a
+% complete pure permutation. Temporary collateral during its legal witness
+% is irrelevant to this net support statement.
+%
+% For distinct nonbuffer positions \(X,Y\), direct evaluation gives
+% \begin{equation}
+% t_Y^{-1}t_X=(A\,Y\,X).
+% \end{equation} Together with the original stars and their inverses,
+% these supply every three-cycle containing \(A\). For distinct
+% \(x,y,z\ne A\), \begin{equation}
+% (A\,x\,y)(A\,z\,x)=(x\,y\,z).
+% \end{equation} Thus the stars generate every three-cycle.
+%
+% Every even permutation is a product of three-cycles. For example,
+% express it as an even number of transpositions and pair them; a pair
+% sharing a point is a three-cycle, identical transpositions cancel, and a
+% disjoint pair can be rewritten as \begin{equation}
+% (a\,b)(c\,d)=(a\,b\,c)(a\,d\,c)
+% \end{equation} in the chronological convention. Conversely, every star
+% is even. The supported subgroup generated on this orbit is therefore
+% exactly \(A_N\).
+%
+% The nine supported subgroups have disjoint full sticker supports. They
+% commute, and the multiplication map from their direct product is
+% injective: restricting an identity product to one selected orbit makes
+% that factor the identity. This proves the claim.
+\begin{proof}
+  Transport the seed along the legal relocation to obtain the full
+  cycle \(t_C=(A\,B\,C)\). Transport \(t_C\) along each setup to obtain
+  \(t_X=(A\,B\,X)\). The conjugated witnesses are legal by subgroup
+  closure, and each resulting cycle fixes the entire complement of
+  its three slots.
+
+  For distinct nonbuffer \(X,Y\), chronological evaluation gives
+  \(t_Y^{-1}t_X=(A\,Y\,X)\): the product sends \(A\) to \(Y\), \(Y\) to
+  \(X\), \(X\) to \(A\), and fixes \(B\) and all other slots. Together
+  with the stars and their inverses this gives every three-cycle
+  containing \(A\). For distinct \(x,y,z\ne A\), the chronological
+  product \((A\,x\,y)(A\,z\,x)\) fixes \(A\) and cycles \(x,y,z\).
+  Thus every three-cycle on \(O_i\), extended by the identity, is legal.
+
+  An even permutation is a product of pairs of transpositions. Equal
+  transpositions cancel, a pair sharing one point forms a three-cycle,
+  and a disjoint pair factors as
+  \((a\,b)(c\,d)=(a\,b\,c)(a\,d\,c)\) in chronological order.
+  Hence all even permutations of \(O_i\) extend by the identity to
+  elements of \(G\). Conversely, each star restricts to an even
+  permutation on \(O_i\).
+
+  The extended factors commute by disjointness of their full supports,
+  so their product is a homomorphism from the direct product. Its
+  restriction to \(O_i\) recovers the \(i\)-th factor, proving
+  injectivity and the prescribed action. The factors each fix the
+  complement of the union of the orbits.
+\end{proof}
+
+\section{Reachable fixed-frame colorings}
+
+\begin{definition}[Reachable colorings]
+  \label{def:reachable-colorings}
+  \lean{ArchonFull600Theory.reachableColorings}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 10, lines 1138--1141 and 1176--1178 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: the set \(\Omega\) of reachable fixed-frame face-color
+  % states
+  \textit{Source: Theory supplement, Lemma~10.}
+  For a finite palette \(\Lambda\) and solved coloring
+  \(c_0\colon\Sigma\to\Lambda\), set
+  \(\Omega=\{c_0\circ g^{-1}:g\in G\}\). Positions and symbols are
+  read in the fixed spatial frame.
+\end{definition}
+\begin{proof}
+  The color at \(s\) after \(g\) is the solved color of the slot sent
+  to \(s\) by \(g\). The identity realizes \(c_0\), and \(\Omega\) is
+  finite as a set of maps between finite sets.
+\end{proof}
+
+\begin{definition}[Balanced-color count]
+  \label{def:balanced-color-count}
+  \lean{ArchonFull600Theory.balancedColorCount}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 10, lines 1142--1145 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: B=
+  % \frac{3600!}{(6!)^{600}}\,
+  % \frac{2400!}{(4!)^{600}}\,
+  % \left[\frac{7200!}{(12!)^{600}}\right]^7.
+  \textit{Source: Theory supplement, Lemma~10.}
+  Define the natural number
+  \[
+    B=\frac{3600!}{(6!)^{600}}\,
+      \frac{2400!}{(4!)^{600}}\,
+      \left(\frac{7200!}{(12!)^{600}}\right)^7.
+  \]
+\end{definition}
+\begin{proof}
+  For \(m=6,4,12\), ordering the \(600m\) slots and taking consecutive
+  blocks of size \(m\) partitions the slots into \(600\) labeled
+  fibers. Exactly \((m!)^{600}\) orderings yield each such partition,
+  so each factorial quotient is exact.
+\end{proof}
+
+\begin{lemma}[Balanced-color lower bound]
+  \label{lem:balanced-color-lower-bound}
+  \lean{ArchonFull600Theory.balancedColorLowerBound}
+  \leanok
+  \uses{def:pure-controller,def:reachable-colorings,def:balanced-color-count,lem:supported-alternating-actions}
+  % SOURCE: Theory supplement, hypothesis C, lines 862--864, and Lemma 10, lines 1138--1147 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: The solved coloring has \(600\) distinct home-cell symbols, with six
+  % copies of each in O01, four in O33, and twelve in each of the other
+  % seven selected orbits.
+  % SOURCE QUOTE: Under R and C, the set \(\Omega\) of reachable fixed-frame face-color
+  % states satisfies \begin{equation}
+  % |\Omega|\ge B,
+  % \end{equation} where \begin{equation}
+  % B=
+  % \frac{3600!}{(6!)^{600}}\,
+  % \frac{2400!}{(4!)^{600}}\,
+  % \left[\frac{7200!}{(12!)^{600}}\right]^7.
+  % \end{equation} These states can be attained with every unselected orbit
+  % solved at macro boundaries.
+  \textit{Source: Theory supplement, Lemma~10 and hypothesis C.}
+  Assume the nine orbits and certificates of
+  Lemma~\ref{lem:supported-alternating-actions}. Let \(\Lambda\) have
+  \(600\) distinct symbols and \(c_0\) have six copies of each on
+  \(O_1\), four on \(O_{33}\), and twelve on each of the other seven.
+  Then at least \(B\) colorings are attained by legal permutations
+  fixing every slot outside the selected orbits. In particular
+  \(|\Omega|\ge B\), and each unselected orbit is solved at the
+  boundaries of the witnessing macros.
+\end{lemma}
+% SOURCE QUOTE PROOF: Consider one selected orbit with \(N=600m\) positions and \(m\) copies
+% of each color. The stabilizer of its solved coloring in \(S_N\) is
+% \begin{equation}
+% Q=(S_m)^{600}.
+% \end{equation} Since \(m\in\{4,6,12\}\), this stabilizer contains a
+% transposition of two equal-colored positions and hence an odd
+% permutation. Therefore \begin{equation}
+% |A_N\cap Q|=\frac{|Q|}{2}.
+% \end{equation} The number of colorings in the \(A_N\) orbit is
+% \begin{equation}
+% \frac{|A_N|}{|A_N\cap Q|}
+% =
+% \frac{N!/2}{(m!)^{600}/2}
+% =
+% \frac{N!}{(m!)^{600}}.
+% \end{equation}
+%
+% The odd same-color transposition is used only to describe the coloring
+% stabilizer. It need not itself be a legal move.
+%
+% Lemma 9 gives independent alternating actions with full purity, so the
+% nine factors multiply and every unselected sticker remains solved at the
+% ends of the resulting macros. This gives \(B\).
+\begin{proof}
+  On an orbit of size \(600m\), any two colorings with those fiber sizes
+  are related by a permutation obtained by matching their fibers.
+  The stabilizer of the solved coloring has order \((m!)^{600}\):
+  it permutes each fiber independently. Since \(m\ge 2\), swapping two
+  slots of a single fiber gives an odd element of the stabilizer.
+  Precomposing an odd matching permutation with this swap makes it
+  even and preserves its action on the solved coloring. Thus the
+  alternating action attains the full symmetric orbit of size
+  \((600m)!/(m!)^{600}\) by orbit--stabilizer.
+
+  Use the supported actions independently for the nine orbits. Different
+  choices of orbit colorings give different full colorings, and each
+  supported macro fixes the slots outside these orbits at its boundary.
+  Multiplying the nine cardinalities gives \(B\).
+\end{proof}
+
+\section{Word length and total variation}
+
+For the concrete bounds let the alphabet have the \(1800\) labels
+\(\{H_c,T_c,T_c^{-1}:c\in\mathcal C\}\), one for each of the three
+letter types at each of \(600\) caps. Each label contributes one to
+length. Its interpretation is the corresponding permutation in \(G\).
+The legal alphabet realizes \(G\) by words, as its inverses are also
+available as letters.
+
+\begin{definition}[Coloring after a word]
+  \label{def:word-coloring}
+  \lean{ArchonFull600Theory.wordColoring}
+  \leanok
+  \uses{def:reachable-colorings}
+  % SOURCE: Theory supplement, Lemma 11, lines 1191--1194 and 1206--1207 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: At most \(q^j\) words have length \(j\). Different words may give the
+  % same state
+  \textit{Source: Theory supplement, Lemma~11.}
+  Interpret a word \(w\) as the chronological product \(g_w\) of its
+  letters' permutations, starting with the identity. Its output from
+  solved is \(x_w=c_0\circ g_w^{-1}\in\Omega\).
+\end{definition}
+\begin{proof}
+  Appending a letter \(a\) composes \(g_w\) on the left by the
+  permutation for \(a\). Subgroup closure puts every \(g_w\) in \(G\).
+\end{proof}
+
+\begin{definition}[Distance from solved]
+  \label{def:word-distance}
+  \lean{ArchonFull600Theory.wordDistance}
+  \leanok
+  \uses{def:word-coloring,def:reachable-colorings}
+  % SOURCE: Theory supplement, Lemma 11, lines 1191--1195 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: Under R and C, use the unit-cost alphabet \begin{equation}
+  % \mathcal A=\{H_c,T_c,T_c^{-1}:c\in\mathcal C\},
+  % \qquad q=1800.
+  % \end{equation} Some reachable face-color state has distance at least
+  % \(46648\) from solved.
+  \textit{Source: Theory supplement, Lemma~11.}
+  For \(x\in\Omega\), define \(d(c_0,x)\) as the least length of a
+  word \(w\) with \(x_w=x\), using a finite alphabet realizing \(G\).
+\end{definition}
+\begin{proof}
+  Since a legal permutation attains \(x\) and the alphabet realizes
+  \(G\), the set of such lengths is nonempty and has a least element.
+\end{proof}
+
+\begin{lemma}[Word-ball count]
+  \label{lem:word-ball-count}
+  \lean{ArchonFull600Theory.wordBallCount}
+  \leanok
+  \uses{def:reachable-colorings,def:word-distance,def:word-coloring}
+  % SOURCE: Theory supplement, Lemma 11, lines 1206--1213 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: |\{x:d(\mathrm{solved},x)\le d\}|
+  % \le
+  % \sum_{j=0}^dq^j
+  % =
+  % \frac{q^{d+1}-1}{q-1}.
+  \textit{Source: Theory supplement, Lemma~11.}
+  If the finite alphabet realizing \(G\) has \(q\ge 2\) letters, then
+  for each \(r\ge 0\),
+  \[
+    |\{x\in\Omega:d(c_0,x)\le r\}|\le
+    \sum_{j=0}^{r}q^j=\frac{q^{r+1}-1}{q-1}.
+  \]
+\end{lemma}
+% SOURCE QUOTE PROOF: At most \(q^j\) words have length \(j\). Different words may give the
+% same state
+\begin{proof}
+  Words of length \(j\) are \(j\)-tuples of letters, so there are \(q^j\)
+  such words. The state ball is the image of the disjoint union of
+  these word sets over \(0\le j\le r\). The geometric sum identity
+  follows by multiplication by \(q-1>0\) and telescoping.
+\end{proof}
+
+For the integer comparisons below put \(K=10^{151851}\). Evaluate
+factorials and powers by successive integer products. In the
+calculation of \(B\), the common denominator and numerator are
+\[
+  D=(6!)^{600}(4!)^{600}(12!)^{4200},\qquad
+  P=3600!\,2400!\,(7200!)^7.
+\]
+The three exact divisions defining \(B\) give \(D B=P\). Each floor
+\(\lfloor n/d\rfloor=k\) below can be checked by the two integer
+comparisons \(kd\le n<(k+1)d\).
+
+\begin{lemma}[Scale of the color count]
+  \label{lem:n7-color-count}
+  \lean{ArchonFull600Theory.balancedColorCountGtPower}
+  \leanok
+  \uses{def:balanced-color-count}
+  % SOURCE: Theory supplement, Distinct symmetry and motion groups, lines 1358--1360 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: Under C, the
+  % lower bound \(B>10^{151851}\) alone already separates the scale of the
+  % legal action from the finite geometric group.
+  \textit{Source: Theory supplement, Distinct symmetry and motion groups, and handoff check N7.}
+  In the natural numbers, \(B>10^{151851}\).
+\end{lemma}
+\begin{proof}
+  Exact evaluation gives \(\lfloor 1000P/(DK)\rfloor=1459\), so
+  \(1000B\ge1459K>1000K\).
+\end{proof}
+
+\begin{lemma}[Radius \(46647\) comparison]
+  \label{lem:n8-radius-lower}
+  \lean{ArchonFull600Theory.radius46647Comparison}
+  \leanok
+  \uses{def:balanced-color-count,lem:n7-color-count}
+  % SOURCE: Theory supplement, Lemma 11, lines 1215--1218 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: 1800^{46648}-1<1799B,
+  \textit{Source: Theory supplement, Lemma~11, and handoff check N8.}
+  In the natural numbers, \(1800^{46648}-1<1799B\).
+\end{lemma}
+% SOURCE QUOTE PROOF: They can be evaluated without logarithms: form the
+% factorials in \(B\) as integer products, perform the indicated exact
+% multinomial divisions, and compare positive integers.
+\begin{proof}
+  Exact evaluation gives
+  \(\lfloor1000(1800^{46648}-1)/(1799K)\rfloor=4\).
+  Thus \(1800^{46648}-1<1799K<1799B\).
+\end{proof}
+
+\begin{lemma}[Radius \(46648\) cross-check]
+  \label{lem:n8-radius-cross-check}
+  \lean{ArchonFull600Theory.radius46648CrossCheck}
+  \leanok
+  \uses{def:balanced-color-count}
+  % SOURCE: Theory supplement, Lemma 11, lines 1225--1229 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: As an arithmetic
+  % cross-check, \begin{equation}
+  % 1800^{46649}-1\ge1799B.
+  % \end{equation}
+  \textit{Source: Theory supplement, Lemma~11, and handoff check N8.}
+  In the natural numbers, \(1800^{46649}-1\ge1799B\).
+\end{lemma}
+\begin{proof}
+  Exact evaluation gives
+  \(\lfloor1000(1800^{46649}-1)/(1799K)\rfloor=8954\) and
+  \(\lfloor1000P/(DK)\rfloor=1459\). Hence
+  \(1800^{46649}-1\ge 2\cdot1799K\) and \(B<2K\).
+\end{proof}
+
+By Lemmas~\ref{lem:n8-radius-lower} and~\ref{lem:n8-radius-cross-check}
+and monotonicity of the geometric sum, \(46648\) is the first radius
+at which the word-count upper bound reaches \(B\).
+
+\begin{lemma}[Thousand-letter support comparison]
+  \label{lem:n9-support-comparison}
+  \lean{ArchonFull600Theory.thousandLetterSupportComparison}
+  \leanok
+  \uses{def:balanced-color-count,lem:n7-color-count}
+  % SOURCE: Theory supplement, Lemma 11, lines 1220--1221 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: 1800^{1000}\,10^{148595}<B.
+  \textit{Source: Theory supplement, Lemma~11, and handoff check N9.}
+  In the natural numbers, \(1800^{1000}10^{148595}<B\).
+\end{lemma}
+% SOURCE QUOTE PROOF: They can be evaluated without logarithms: form the
+% factorials in \(B\) as integer products, perform the indicated exact
+% multinomial divisions, and compare positive integers.
+\begin{proof}
+  Exact evaluation gives
+  \(\lfloor1000\cdot1800^{1000}10^{148595}/K\rfloor=187\).
+  Thus \(1800^{1000}10^{148595}<K<B\).
+\end{proof}
+
+\begin{lemma}[Worst-case distance]
+  \label{lem:word-distance-lower-bound}
+  \lean{ArchonFull600Theory.wordDistanceLowerBound}
+  \leanok
+  \uses{def:pure-controller,def:reachable-colorings,def:word-distance,lem:balanced-color-lower-bound,lem:word-ball-count,lem:n8-radius-lower}
+  % SOURCE: Theory supplement, Lemma 11, lines 1191--1195 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: Under R and C, use the unit-cost alphabet \begin{equation}
+  % \mathcal A=\{H_c,T_c,T_c^{-1}:c\in\mathcal C\},
+  % \qquad q=1800.
+  % \end{equation} Some reachable face-color state has distance at least
+  % \(46648\) from solved.
+  \textit{Source: Theory supplement, Lemma~11.}
+  Assume the orbit, certificate, and solved-coloring hypotheses of
+  Lemma~\ref{lem:balanced-color-lower-bound} and the specified
+  \(1800\)-letter unit-cost alphabet realizing \(G\). There is an
+  \(x\in\Omega\) with \(d(c_0,x)\ge46648\).
+\end{lemma}
+% SOURCE QUOTE PROOF: By Equation\textasciitilde{}\eqref{eq:blueprint-1}, the radius-\(46647\)
+% ball contains fewer than \(B\) states. Lemma 10 gives at least \(B\)
+% reachable states, so some state lies outside that ball.
+\begin{proof}
+  At radius \(46647\), the word-ball bound is
+  \((1800^{46648}-1)/1799<B\) by the strict integer comparison.
+  Since \(|\Omega|\ge B\), some reachable state is outside this ball
+  and its integer distance is at least \(46648\).
+\end{proof}
+
+\begin{definition}[Total variation on a finite set]
+  \label{def:total-variation}
+  \lean{ArchonFull600Theory.totalVariation}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 11, lines 1237--1239 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: \|\mu-\nu\|_{\mathrm{TV}}
+  % =\max_E|\mu(E)-\nu(E)|,
+  \textit{Source: Theory supplement, Lemma~11.}
+  On a finite set, a probability law assigns nonnegative real weights
+  summing to one, and \(\mu(E)\) is their sum over the event \(E\).
+  Set \(\operatorname{TV}(\mu,\nu)=\max_E|\mu(E)-\nu(E)|\),
+  where the maximum ranges over all subsets.
+\end{definition}
+\begin{proof}
+  There are finitely many subsets, including the empty event, so the
+  set of event discrepancies has a maximum.
+\end{proof}
+
+\begin{lemma}[Thousand-letter total variation]
+  \label{lem:total-variation-lower-bound}
+  \lean{ArchonFull600Theory.totalVariationLowerBound}
+  \leanok
+  \uses{def:pure-controller,def:reachable-colorings,def:word-coloring,def:total-variation,lem:balanced-color-lower-bound,lem:n9-support-comparison}
+  % SOURCE: Theory supplement, Lemma 11, lines 1197--1202 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: If \(\mu_{1000}\) is any distribution produced by \(1000\) successive
+  % letters of this alphabet from solved and \(\nu\) is uniform on
+  % \(\Omega\), then \begin{equation}
+  % \|\mu_{1000}-\nu\|_{\mathrm{TV}}
+  % >1-10^{-148595}.
+  % \end{equation}
+  \textit{Source: Theory supplement, Lemma~11.}
+  Assume the orbit, certificate, and solved-coloring hypotheses of
+  Lemma~\ref{lem:balanced-color-lower-bound} and the specified
+  \(1800\)-letter alphabet realizing \(G\). Let \(\mu_{1000}\) be any
+  probability law on \(\Omega\) supported on outputs of length-\(1000\)
+  words from solved, and let \(\nu\) be uniform on \(\Omega\). Then
+  \[
+    \operatorname{TV}(\mu_{1000},\nu)>1-10^{-148595}.
+  \]
+\end{lemma}
+% SOURCE QUOTE PROOF: Let \(A\) be the support of \(\mu_{1000}\). Then \begin{equation}
+% |A|\le1800^{1000},\qquad \mu_{1000}(A)=1.
+% \end{equation} Using the definition \begin{equation}
+% \|\mu-\nu\|_{\mathrm{TV}}
+% =\max_E|\mu(E)-\nu(E)|,
+% \end{equation} we obtain \begin{equation}
+% \begin{aligned}
+% \|\mu_{1000}-\nu\|_{\mathrm{TV}}
+% &\ge1-\frac{|A|}{|\Omega|}\\
+% &\ge1-\frac{1800^{1000}}{B}\\
+% &>1-10^{-148595},
+% \end{aligned}
+% \end{equation} where strictness follows from
+% Equation\textasciitilde{}\eqref{eq:blueprint-2}.
+\begin{proof}
+  The support \(A\) is contained in the image of the set of
+  length-\(1000\) words, so \(|A|\le1800^{1000}\). All probability mass
+  of \(\mu_{1000}\) lies in \(A\), while \(\nu(A)=|A|/|\Omega|\).
+  Evaluate the event discrepancy at \(A\) and use \(|\Omega|\ge B\) to
+  bound it below by \(1-1800^{1000}/B\). The strict integer
+  comparison, divided by the positive numbers \(B\) and \(10^{148595}\),
+  makes this greater than \(1-10^{-148595}\).
+\end{proof}
+
+\section{Finite group checks}
+
+\begin{lemma}[Derived subgroup of the dihedral group]
+  \label{lem:n5-dihedral}
+  \lean{ArchonFull600Theory.dihedralFiveCommutatorCard}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 8, lines 1047--1051 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: \([D_5,D_5]=\langle R\rangle\).
+  \textit{Source: Theory supplement, Lemma~8, and handoff check N5.}
+  In the order-ten dihedral group \(D_5\), the derived subgroup
+  \([D_5,D_5]\) is the rotation subgroup and has five elements.
+\end{lemma}
+% SOURCE QUOTE PROOF: For \(D_5\), the quotient by \(\langle R\rangle\) is
+% \(C_2\), while \begin{equation}
+% [R,F]=R^2
+% \end{equation} generates \(\langle R\rangle\). Thus
+% \([D_5,D_5]=\langle R\rangle\).
+\begin{proof}
+  Let \(R(i)=i+1\) and \(F(i)=-i\) on the five residues modulo \(5\).
+  The rotation subgroup has order five and abelian quotient of order
+  two, so it contains every commutator. The relation
+  \(F R F^{-1}=R^{-1}\) gives \([R,F]=R^2\), a generator of that
+  subgroup. Both inclusions follow.
+\end{proof}
+
+\begin{lemma}[Derived subgroup of the alternating group]
+  \label{lem:n5-alternating}
+  \lean{ArchonFull600Theory.alternatingFivePerfect}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 8, lines 1053--1057 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: For completeness, \(A_5\) is perfect
+  \textit{Source: Theory supplement, Lemma~8, and handoff check N5.}
+  The derived subgroup of \(A_5=\operatorname{Alt}(\{1,\ldots,5\})\)
+  is \(A_5\) itself and has \(60\) elements.
+\end{lemma}
+% SOURCE QUOTE PROOF: For completeness, \(A_5\) is perfect: take \begin{equation}
+% u=(1\,2)(4\,5),\qquad v=(2\,3)(4\,5).
+% \end{equation} Their commutator is a three-cycle. The derived subgroup
+% is normal, and all three-cycles are conjugate within \(A_5\). Since
+% three-cycles generate \(A_5\), its derived subgroup is all of \(A_5\).
+\begin{proof}
+  The even involutions \(u=(1\,2)(4\,5)\) and \(v=(2\,3)(4\,5)\)
+  have a three-cycle as their product, by cancellation of the common
+  transposition on the last two slots. Their commutator is a square
+  of this three-cycle and is again a three-cycle. Any two three-cycles
+  are conjugate by a relabeling, and swapping the two unused labels
+  before relabeling corrects its parity if needed. Normality puts all
+  three-cycles in the derived subgroup. They generate \(A_5\), of
+  order \(5!/2=60\).
+\end{proof}
+
+\begin{lemma}[Finite checks of the cycle identities]
+  \label{lem:n6-cycle-identities}
+  \lean{ArchonFull600Theory.threeCycleIdentityChecks}
+  \leanok
+  % SOURCE: Theory supplement, Lemma 9, lines 1106--1113 (read from references/Full_600cell_Puzzle_Theory.tex)
+  % SOURCE QUOTE: For distinct nonbuffer positions \(X,Y\), direct evaluation gives
+  % \begin{equation}
+  % t_Y^{-1}t_X=(A\,Y\,X).
+  % \end{equation} Together with the original stars and their inverses,
+  % these supply every three-cycle containing \(A\). For distinct
+  % \(x,y,z\ne A\), \begin{equation}
+  % (A\,x\,y)(A\,z\,x)=(x\,y\,z).
+  % \end{equation} Thus the stars generate every three-cycle.
+  \textit{Source: Theory supplement, Lemma~9, and handoff check N6.}
+  In each domain \(\{1,\ldots,n\}\) with \(4\le n\le9\), let
+  \(t_Z=(A\,B\,Z)\). For pairwise distinct \(A,B,X,Y\), one has
+  \(t_Y^{-1}t_X=(A\,Y\,X)\). For pairwise distinct \(A,x,y,z\), one has
+  \((A\,x\,y)(A\,z\,x)=(x\,y\,z)\). Both equalities use chronological
+  order and hold on the full domain.
+\end{lemma}
+% SOURCE QUOTE PROOF: For distinct nonbuffer positions \(X,Y\), direct evaluation gives
+% \begin{equation}
+% t_Y^{-1}t_X=(A\,Y\,X).
+% \end{equation}
+\begin{proof}
+  Enumerate the ordered distinct quadruples in each domain and compare
+  both sides on every slot. In the first comparison the left side
+  cycles \(A\mapsto Y\mapsto X\mapsto A\) and fixes \(B\). In the
+  second it cycles \(x\mapsto y\mapsto z\mapsto x\) and fixes \(A\).
+  Every slot outside the quadruple is fixed in each comparison.
+\end{proof}
+
+\section{Starter definition}
+
+\begin{definition}[Starter string]
+  \label{def:hello}
+  \lean{hello}
+  \leanok
+  The string named \texttt{hello} is \texttt{world}.
+\end{definition}
+\begin{proof}
+  The string is given directly by its literal.
+\end{proof}

@@ -130,7 +130,7 @@ class ShellProject(unittest.TestCase):
         csharp_codes = dict(re.findall(r"public const int (\w+) = (\d+);", csharp))
         names = {"OK": "Ok", "E_INVALID_ARGUMENT": "InvalidArgument", "E_MODEL": "ModelNotLoaded",
                  "E_CORE": "CoreRefused", "E_HOST": "HostRefused", "E_UNAVAILABLE": "Unavailable",
-                 "E_POISONED": "Poisoned", "E_SESSION": "SessionRefused"}
+                 "E_POISONED": "Poisoned", "E_SESSION": "SessionRefused", "E_RUNTIME": "RuntimeRefused"}
         self.assertEqual(set(rust_codes), set(names))
         for rust, name in names.items():
             self.assertEqual(csharp_codes.get(name), rust_codes[rust], rust)
@@ -195,6 +195,79 @@ class ShellProject(unittest.TestCase):
         # A press waits for a frame that draws its revision over a publication of it; the rest close without one.
         self.assertIn("f.EngineRevision >= press.Revision && f.PublicationRevision >= press.Revision", log)
         self.assertIn("WriteKey(press.Qpc, null);", log)
+
+    def test_the_event_log_writes_the_rows_the_ui_skew_tool_reads(self):
+        sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
+        try:
+            import key_to_frame
+        finally:
+            sys.path.pop(0)
+        self.assertIn("ui_frame", key_to_frame.OTHER_ROWS)
+        log = text(PROJECT / "EventLog.cs")
+        written = row_fields(log)
+        self.assertEqual(written["ui_frame"], ["ui_seq", "qpc", "frame_id", "drawn_qpc"])
+        self.assertIn("var seq = _uiFrames++;", log)
+        # The run row names the one swap chain of the run, or null; Godot's own chain is never named.
+        self.assertEqual([field for field in written["run"] if "swap_chain" in field],
+                         ["swap_chain", "swap_chain", "ui_swap_chain"])
+        self.assertIn("if (_swapChains is [{ } chain])", log)
+        self.assertIn('json.WriteNull("swap_chain");', log)
+        self.assertIn('json.WriteNull("ui_swap_chain");', log)
+        self.assertIn('"0x" + address.ToString("X16", System.Globalization.CultureInfo.InvariantCulture)', log)
+        shell = text(PROJECT / "Shell.cs")
+        for line in ("RenderingServer.FramePreDraw += OnFramePreDraw;", "RenderingServer.FramePostDraw += OnFramePostDraw;",
+                     "RenderingServer.FramePreDraw -= OnFramePreDraw;", "RenderingServer.FramePostDraw -= OnFramePostDraw;",
+                     "_log?.UiFrame(_preDrawQpc, frameId, drawn);", "_submittedThisFrame = frame.Sequence;"):
+            self.assertIn(line, shell)
+        self.assertEqual(shell.count("SwapChain(surface.SwapChain());"), 3, "after the attach, a resize and a recovery")
+        process = shell[shell.index("public override void _Process"):shell.index("private void OnFramePreDraw")]
+        self.assertLess(process.index("_submittedThisFrame = null;"), process.index("library.Frame(_host, out var frame)"))
+        close = shell[shell.index("private void CloseCore()"):]
+        self.assertLess(close.index("FramePostDraw -= OnFramePostDraw"), close.index("_log?.Dispose();"))
+        # The core's diagnostic export is declared and resolved as optional.
+        core = text(PROJECT / "CoreLibrary.cs")
+        self.assertIn('public const string SwapChainCall = "sa2_surface_swap_chain";', core)
+        self.assertIn("NativeLibrary.TryGetExport(handle, SwapChainCall, out var swapChain);", core)
+        self.assertNotIn("sa2_surface_swap_chain", csharp_list("ShellCalls"))
+        self.assertIn("sa2_surface_swap_chain", header_exports())
+
+    def test_the_shell_gives_modules_the_window_and_its_frames(self):
+        module = text(PROJECT / "ShellModule.cs")
+        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log);", module)
+        for member in ("bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc);",
+                       "void OnFrame(HostLibrary.Submitted frame, long qpc);",
+                       "void OnPresented(HostLibrary.Presented row);"):
+            self.assertIn(member, module)
+        hook = text(PROJECT / "WindowHook.cs")
+        self.assertIn("private const int GwlpWndProc = -4;", hook)
+        self.assertIn("[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]", hook)
+        self.assertIn("return CallWindowProcW(_original, window, message, wParam, lParam);", hook)
+        receive = hook[hook.index("private static nint Receive"):]
+        self.assertLess(receive.index("var qpc = EventLog.Now();"), receive.index("foreach"))
+        self.assertIn("catch (Exception error)", receive, "no exception crosses into the native caller")
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")', shell)
+        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));", shell)
+        self.assertIn("WindowHook.Install(window, _modules);", shell)
+        self.assertIn("EachModule(module => module.OnFrame(frame, submitted));", shell)
+        self.assertIn("EachModule(module => module.OnPresented(row));", shell)
+        close = shell[shell.index("private void CloseCore()"):]
+        self.assertLess(close.index("WindowHook.Remove();"), close.index("EachModule(module => module.Dispose());"))
+        self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("_log?.Dispose();"))
+        # The run row names the window and the puzzle, and a module appends its own rows.
+        log = text(PROJECT / "EventLog.cs")
+        run = row_fields(log)["run"]
+        self.assertIn("window", run)
+        self.assertIn("puzzle", run)
+        self.assertIn("public void Append(Action<Utf8JsonWriter> fields) => Write(fields);", log)
+        self.assertIn("log.Describe(window, puzzle);", shell)
+        # The stub has the hook points only: LX-4's messages and rows are its owner's, so the runbook does not call
+        # U8 ready before they exist.
+        stub = text(PROJECT / "Lx4" / "Lx4Module.cs")
+        self.assertIn("public sealed class Lx4Module : IShellModule", stub)
+        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
+        for needle in ("Magic600.LX4", '"lx4"', "RegisterWindowMessage"):
+            self.assertNotIn(needle, stub)
 
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
         chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")
@@ -305,7 +378,9 @@ class ProductBuild(unittest.TestCase):
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
                  "host/c600_shell_host.dll": b"host", f"shell/project/{self.build_product.build_shell.ASSEMBLY}": b"asm",
                  "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
-                 "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}"}
+                 "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}", "runtime/c600-runtime.exe": b"runtime",
+                 "session-fixture/fixture.json": b"{}", "session-fixture/session/lock": b"",
+                 "session-fixture/session/journal": b"journal"}
         for name, data in files.items():
             (self.build / name).parent.mkdir(parents=True, exist_ok=True)
             (self.build / name).write_bytes(data)
@@ -319,7 +394,8 @@ class ProductBuild(unittest.TestCase):
         product = self.build_product.verify(self.build)
         self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
                                                  "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
-                                                 "menu:wj-I_a.json"})
+                                                 "menu:wj-I_a.json", "runtime:c600-runtime.exe", "fixture:fixture.json",
+                                                 "fixture:session/lock", "fixture:session/journal"})
         self.assertTrue(product["identity"].startswith("c9-product-"))
         self.assertTrue(all(not Path(part["path"]).is_absolute() for part in product["parts"].values()))
 
@@ -333,6 +409,27 @@ class ProductBuild(unittest.TestCase):
         (self.build / "shell" / "project" / "Extra.cs").write_bytes(b"extra")
         with self.assertRaises(self.build_product.ProductError):
             self.build_product.verify(self.build)
+
+    def test_a_build_without_a_fixture_session_is_refused(self):
+        shutil.rmtree(self.build / "session-fixture" / "session")
+        with self.assertRaises(self.build_product.ProductError):
+            self.build_product.record(self.build, self.godot, "0" * 40, False)
+        with self.assertRaises(self.build_product.ProductError):
+            self.build_product.verify(self.build)
+
+    def test_the_build_writes_its_fixture_with_its_own_model_menu_and_runtime(self):
+        command = self.build_product.fixture_command(self.build)
+        self.assertEqual(Path(command[0]).name, "c600-shell-session-fixture.exe")
+        flags = dict(zip(command[1::2], command[2::2]))
+        self.assertEqual(flags, {"--assets": str(self.build / "assets"), "--menu": str(self.build / "menu" / "wj-I_a.json"),
+                                 "--out": str(self.build / "session-fixture"),
+                                 "--runtime": str(self.build / "runtime" / "c600-runtime.exe")})
+        self.assertEqual(self.build_product.runtime_command()[:6],
+                         ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
+        self.assertEqual(self.build_product.runtime_command()[-2:], ["-p", "c600-runtime"])
+        main = text(ROOT / "renderer" / "bridge" / "host" / "src" / "bin" / "c600-shell-session-fixture.rs")
+        for flag in flags:
+            self.assertIn(f'"{flag}" =>', main)
 
     def test_the_twist_menu_is_a_tracked_menu_record(self):
         source = ROOT / self.build_product.MENU_SOURCE
@@ -356,17 +453,41 @@ class ProductBuild(unittest.TestCase):
     def test_a_dry_run_creates_and_starts_nothing(self):
         def refuse(*args, **kwargs):
             raise AssertionError("a dry run started a process")
-        for echo in ([], ["--echo"]):
+        for flags in ([], ["--echo"], ["--lx4"], ["--puzzle", "jumble-off", "--lx4", "--echo"], ["--cold-start"]):
             lines = []
             out = self.temp / "run"
-            code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *echo],
+            code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *flags],
                                     popen=refuse, out_stream=lines.append)
             self.assertEqual(code, 0, lines)
             self.assertFalse(out.exists())
             names = {line.split("=", 1)[0][len("env: "):] for line in lines if line.startswith("env: ")}
-            expected = {"M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
-                        "M600_RUN_ID", "M600_SESSION_DIR", "M600_TWIST_MENU"} | ({"M600_INPUT_ECHO"} if echo else set())
+            expected = ({"M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
+                         "M600_RUN_ID", "M600_SESSION_DIR", "M600_TWIST_MENU", "M600_PUZZLE", "M600_SESSION_FIXTURE",
+                         "M600_RUNTIME"}
+                        | ({"M600_INPUT_ECHO"} if "--echo" in flags else set())
+                        | ({"M600_LX4"} if "--lx4" in flags else set())
+                        | ({"M600_EXIT_AT_FIRST_FRAME"} if "--cold-start" in flags else set()))
             self.assertEqual(names, expected)
+            self.assertIn("env: M600_PUZZLE=jumble-off", lines)
+
+    def test_jumble_on_is_refused_until_the_host_runs_it(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        lines = []
+        out = self.temp / "run"
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--puzzle", "jumble-on"],
+                                popen=refuse, out_stream=lines.append)
+        self.assertEqual(code, 2)
+        self.assertFalse(out.exists())
+        self.assertIn("does not run jumble-on yet", lines[-1])
+        # The launcher and the shell name the same puzzles, and both refuse every other one.
+        log = text(PROJECT / "EventLog.cs")
+        puzzles = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};", log)
+        self.assertTrue(puzzles)
+        self.assertEqual(tuple(re.findall(r'"([a-z-]+)"', puzzles.group(1))), self.launch.PUZZLES)
+        self.assertEqual(self.launch.RUNNABLE_PUZZLES, self.launch.PUZZLES[:1])
+        self.assertIn('throw new NotSupportedException($"the shell does not run {puzzle} yet");',
+                      text(PROJECT / "Shell.cs"))
 
     def test_a_used_run_folder_or_a_changed_build_is_refused(self):
         def refuse(*args, **kwargs):
@@ -392,7 +513,7 @@ class ProductBuild(unittest.TestCase):
             return Process()
         out = self.temp / "run"
         code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r1"], popen=popen,
-                                out_stream=lambda line: None)
+                                out_stream=lambda line: None, machine=FakeMachine(), state=self.temp / "last-exit.json")
         self.assertEqual(code, 0)
         product = self.build_product.verify(self.build)
         arguments, env = started["arguments"], started["env"]
@@ -406,10 +527,21 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(env["M600_RUN_ID"], "r1")
         self.assertEqual(env["M600_SESSION_DIR"], str(out.resolve() / "session"))
         self.assertEqual(env["M600_TWIST_MENU"], str(build / "menu" / "wj-I_a.json"))
+        self.assertEqual(env["M600_SESSION_FIXTURE"], str(build / "session-fixture" / "fixture.json"))
+        self.assertEqual(env["M600_RUNTIME"], str(build / "runtime" / "c600-runtime.exe"))
         self.assertNotIn("M600_INPUT_ECHO", env)
+        self.assertNotIn("M600_LX4", env)
+        self.assertNotIn("M600_EXIT_AT_FIRST_FRAME", env)
+        self.assertEqual(env["M600_PUZZLE"], "jumble-off")
+        # The run's session is a fresh copy of the fixture's, its lock file included.
+        self.assertEqual((out / "session" / "journal").read_bytes(), b"journal")
+        self.assertTrue((out / "session" / "lock").is_file())
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
-        self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"]),
-                         ("magic600-c9-launch-v1", product["identity"], 0, False))
+        self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"],
+                          record["puzzle"], record["lx4"], record["cold_start"]),
+                         ("magic600-c9-launch-v1", product["identity"], 0, False, "jumble-off", False, False))
+        rows = [json.loads(line) for line in (out / "startup.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([row["t"] for row in rows], ["run", "process_start"])
         for temp in {str(self.temp), str(self.temp.resolve())}:
             self.assertNotIn(temp, json.dumps(record))
             self.assertNotIn(temp.replace("\\", "/"), json.dumps(record))
@@ -417,11 +549,165 @@ class ProductBuild(unittest.TestCase):
     def test_inherited_shell_variables_are_dropped(self):
         product = self.build_product.verify(self.build)
         env = self.launch.environment(product, self.build, self.temp / "run", "r1", False,
-                                      base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p"})
+                                      base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p",
+                                            "M600_LX4": "1", "m600_puzzle": "jumble-on"})
         self.assertNotIn("M600_INPUT_ECHO", env)
+        self.assertNotIn("M600_LX4", env)
+        self.assertNotIn("m600_puzzle", env)
+        self.assertEqual(env["M600_PUZZLE"], "jumble-off")
         self.assertNotIn("m600_core_dll", env)
         self.assertEqual(env["PATH"], "p")
         self.assertEqual(env["M600_CORE_DLL"], str(self.build / "native" / "sa2_interop.dll"))
+
+
+class FakeMachine:
+    """A machine whose clocks the test sets: the counter at 10 MHz, the wall clock and the boot's tick count."""
+
+    def __init__(self, wall=1_000_000.0, ticks_ms=5_000_000, images=()):
+        self.now_wall, self.now_ticks, self.counter, self.images, self.slept = wall, ticks_ms, 1_000_000_000, images, []
+
+    def qpc(self):
+        self.counter += 1
+        return self.counter
+
+    def qpc_frequency(self):
+        return 10_000_000
+
+    def ticks_ms(self):
+        return self.now_ticks
+
+    def wall(self):
+        return self.now_wall
+
+    def sleep(self, seconds):
+        self.slept.append(seconds)
+        self.now_wall += seconds
+        self.now_ticks += int(seconds * 1000)
+
+    def process_images(self):
+        if isinstance(self.images, Exception):
+            raise self.images
+        return list(self.images)
+
+
+class ColdStart(unittest.TestCase):
+    """Charter E3's launch: the pause, the cold flags and the sealed startup log that cold_start.py reads."""
+
+    setUp = ProductBuild.setUp
+
+    def cold_start_tool(self):
+        sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
+        try:
+            return importlib.import_module("cold_start")
+        finally:
+            sys.path.remove(str(ROOT / "tools" / "perf" / "c9"))
+
+    def launch_once(self, machine, state, name, shell_rows=None, flags=("--cold-start",)):
+        started = {}
+
+        class Process:
+            def wait(self):
+                return 0
+
+        def popen(arguments, cwd, env):
+            started.update(env=env, qpc=machine.counter)
+            events = Path(env["M600_EVENTS_DIR"])
+            if shell_rows is not None:
+                body = "".join(json.dumps(row(machine.counter)) + "\n" for row in shell_rows)
+                (events / self.launch.STARTUP_BODY).write_text(body, encoding="utf-8", newline="\n")
+            return Process()
+        out = self.temp / name
+        lines = []
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", name, *flags], popen=popen,
+                                out_stream=lines.append, machine=machine, state=state)
+        self.assertEqual(code, 0, lines)
+        return out, started, lines
+
+    def test_a_cold_start_waits_seals_its_log_and_the_timer_reads_it(self):
+        machine, state = FakeMachine(), self.temp / "last-exit.json"
+        # The previous exit was 5 s ago: the launcher waits the other 15 s.
+        state.write_text(json.dumps({"format": self.launch.LAST_EXIT_FORMAT, "wall": machine.now_wall - 5,
+                                     "ticks_ms": machine.now_ticks - 5000}), encoding="utf-8")
+        shell = [lambda start: {"t": "session_opened", "qpc": start + 2_000_000},
+                 lambda start: {"t": "runtime_loaded", "qpc": start + 5_000_000},
+                 lambda start: {"t": "first_correct_frame", "frame_id": 3, "display_qpc": start + 12_000_000,
+                                "check": "pass"}]
+        out, started, lines = self.launch_once(machine, state, "cold-1", shell)
+        self.assertEqual(machine.slept, [15.0])
+        self.assertIn("waiting 15.0 s", lines[0])
+        self.assertEqual(started["env"]["M600_EXIT_AT_FIRST_FRAME"], "1")
+        self.assertFalse((out / self.launch.STARTUP_BODY).exists(), "the body is removed once sealed")
+        rows = [json.loads(line) for line in (out / "startup.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([row["t"] for row in rows],
+                         ["run", "process_start", "session_opened", "runtime_loaded", "first_correct_frame"])
+        self.assertEqual(rows[1]["qpc"], started["qpc"], "process_start is the counter right before the process")
+        self.assertEqual(rows[0]["cold"], {"new_process": True, "no_product_process_at_launch": True,
+                                           "fresh_session_copy": True, "seconds_since_previous_exit": 20.0})
+        self.assertEqual((rows[0]["format"], rows[0]["synthetic"], rows[0]["qpc_frequency"]),
+                         ("magic600-c9-startup-v1", False, 10_000_000))
+        tool = self.cold_start_tool()
+        self.assertEqual(tool.LOG_FORMAT, self.launch.STARTUP_FORMAT)
+        self.assertEqual(tool.PAUSE_S, self.launch.PAUSE_S)
+        run = tool.read_run(out)
+        self.assertEqual((run["status"], run["within_bar"]), ("valid", True), run)
+        self.assertAlmostEqual(run["seconds"], 1.2)
+        self.assertTrue(json.loads((out / "launch.json").read_text(encoding="utf-8"))["cold_start"])
+        # The exit is recorded, so a launch right after it waits the full pause.
+        self.assertEqual(json.loads(state.read_text(encoding="utf-8"))["ticks_ms"], machine.now_ticks)
+        out, _, _ = self.launch_once(machine, state, "cold-2", shell)
+        self.assertEqual(machine.slept, [15.0, 20.0])
+        self.assertEqual(tool.read_run(out)["status"], "valid")
+
+    def test_a_shell_that_wrote_nothing_still_gives_a_failed_run(self):
+        out, _, _ = self.launch_once(FakeMachine(), self.temp / "last-exit.json", "silent")
+        rows = [json.loads(line) for line in (out / "startup.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([row["t"] for row in rows], ["run", "process_start"])
+        self.assertIsNone(rows[0]["cold"]["seconds_since_previous_exit"])
+        run = self.cold_start_tool().read_run(out)
+        self.assertEqual(run["status"], "failed", run)
+
+    def test_a_running_product_or_an_unread_process_list_is_not_cold(self):
+        godot = json.loads((self.build / "product.json").read_text(encoding="utf-8"))["godot"]["executable"]
+        for images in ([godot], [str(self.build.resolve() / "runtime" / "c600-runtime.exe")], OSError("no")):
+            with self.subTest(images=images):
+                name = f"busy-{len(list(self.temp.glob('busy-*')))}"
+                out, _, _ = self.launch_once(FakeMachine(images=images), self.temp / "last-exit.json", name, [])
+                head = json.loads((out / "startup.jsonl").read_text(encoding="utf-8").splitlines()[0])
+                self.assertFalse(head["cold"]["no_product_process_at_launch"])
+        self.assertFalse(self.launch.product_running(FakeMachine(images=["C:/other/godot.exe"]), {godot}))
+
+    def test_a_previous_exit_from_another_boot_counts_as_none(self):
+        machine, state = FakeMachine(), self.temp / "last-exit.json"
+        since = self.launch.seconds_since_previous_exit
+        self.assertIsNone(since(machine, state))
+        self.launch.record_exit(machine, state)
+        machine.sleep(30)
+        self.assertEqual(since(machine, state), 30.0)
+        machine.now_ticks = 1000  # the tick count restarted: another boot
+        self.assertIsNone(since(machine, state))
+        machine.now_ticks, machine.now_wall = 5_030_000 + 100_000, machine.now_wall + 10  # clocks 90 s apart
+        self.assertIsNone(since(machine, state))
+        state.write_text("not json", encoding="utf-8")
+        self.assertIsNone(since(machine, state))
+        # The record sits beside the builds, and the newest build is still found.
+        self.assertEqual(self.launch.LAST_EXIT.parent, self.build_product.BUILD_ROOT)
+        (self.temp / self.launch.LAST_EXIT.name).write_text("{}", encoding="utf-8")
+        self.assertEqual(self.build_product.newest(self.temp), self.build)
+
+    def test_the_shell_writes_the_rows_the_cold_start_timer_reads(self):
+        startup = text(PROJECT / "StartupLog.cs")
+        self.assertIn(f'public const string BodyName = "{self.launch.STARTUP_BODY}";', startup)
+        for event in ("session_opened", "runtime_loaded"):
+            self.assertIn(f'Event("{event}", qpc)', startup)
+        for field in ('"t", "first_correct_frame"', '"frame_id"', '"display_qpc"', '"check", pass ? "pass" : "fail"'):
+            self.assertIn(field, startup)
+        shell = text(PROJECT / "Shell.cs")
+        names = set(re.findall(r'GetEnvironmentVariable\("(M600_[A-Z0-9_]+)"\)', shell))
+        self.assertTrue({"M600_SESSION_FIXTURE", "M600_RUNTIME", "M600_EXIT_AT_FIRST_FRAME"} <= names)
+        self.assertTrue(names <= set(self.launch.SHELL_VARIABLES), names - set(self.launch.SHELL_VARIABLES))
+        self.assertIn('GetEnvironmentVariable("M600_EXIT_AT_FIRST_FRAME") == "1"', shell)
+        self.assertIn("_startup?.SessionOpened(EventLog.Now());", shell)
+        self.assertIn("_startup?.RuntimeLoaded(EventLog.Now());", shell)
 
 
 if __name__ == "__main__":

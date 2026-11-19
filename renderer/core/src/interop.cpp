@@ -989,6 +989,19 @@ int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y) {
     });
 }
 
+int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out) {
+    if (out) *out = 0;
+    return invoke(ctx, "sa2_surface_swap_chain", [&] {
+        context(ctx);
+        require(out != nullptr, "null swap-chain output");
+        require(ctx->surface != nullptr && ctx->surface->chain && ctx->surface->chain->swapchain, "no surface is attached",
+                SA2_E_WRONG_STATE);
+        // IDXGISwapChain3 derives singly from IDXGISwapChain, so this is also the IDXGISwapChain pointer.
+        *out = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ctx->surface->chain->swapchain.Get()));
+        return SA2_OK;
+    });
+}
+
 int32_t sa2_surface_detach(sa2_context* ctx) {
     return invoke(ctx, "sa2_surface_detach", [&] {
         context(ctx);

@@ -565,7 +565,7 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test runs now, with no need of the owner's machine, the on-screen half (C9) or an item LP2 has not
-built. 37 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 28 have a part that runs now, and 17
+built. 38 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 27 have a part that runs now, and 17
 have no part that runs yet. The milestone is in parentheses; "next" marks LP3 work that needs nothing more from LP2 and
 is not built yet.
 
