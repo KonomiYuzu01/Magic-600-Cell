@@ -134,7 +134,7 @@ pub const JUMBLE_ON_MODE: &str = "jumble_on";
 pub const POLICY_ROW: &str = "protection.policy.set";
 /// Whether a run's preview is admitted only inside a command the solver invoked (finding B2 of the KN5 boundary attack,
 /// ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must start its runs through a tool row
-/// the shell invokes, as LP3's host does once it moves its runs inside a tool row.
+/// the shell invokes, as LP3's host does on both its hosts.
 const SOLVER_COMMAND_CHECK: bool = true;
 /// A star certificate failure has no registered code yet (draft).
 pub const CERTIFICATE: &str = "KN2:consistency.star_certificate";
