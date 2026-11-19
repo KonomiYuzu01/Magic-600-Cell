@@ -1060,6 +1060,7 @@ void run_cpu(Suite& suite, const Options& options) {
         invalid(sa2_surface_attach(nullptr, 1, 0, 0, 256, 256), "sa2_surface_attach");
         invalid(sa2_surface_move(nullptr, 0, 0), "sa2_surface_move");
         invalid(sa2_surface_detach(nullptr), "sa2_surface_detach");
+        invalid(sa2_scene_produce(nullptr, SA2_TARGET_SURFACE, 1), "sa2_scene_produce"); // C9 U4: the surface scene path
         uint64_t chain = 1;
         invalid(sa2_surface_swap_chain(nullptr, &chain), "sa2_surface_swap_chain");
         expect(chain == 0, "sa2_surface_swap_chain left its output set on failure");

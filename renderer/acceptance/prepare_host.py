@@ -1,13 +1,17 @@
 """Prepare an offline build of the C9 acceptance host; never launch Godot, PresentMon or a GPU device.
 
 The host is S-A2 as tested: the official Godot 4.7.2 .NET editor binary running renderer/acceptance/project
-(net8.0) on the product core renderer/core (ABI 3). Derived from work/experiments/renderer-sa2/prepare_l2.py and
+(net8.0) on the product core renderer/core (ABI 5). Derived from work/experiments/renderer-sa2/prepare_l2.py and
 run_smoke.build (see PROVENANCE.md). Everything is written under work/build/c9-acceptance/<UTC>/:
 native/ (the core), project/ (a copy of the Godot project, built offline), dotnet/ (private NuGet and
 .NET folders), logs/, c9-build-identity.json and launch.json. The core's CPU self-test runs after the native
 build; no GPU mode runs.
 
-  python -B renderer/acceptance/prepare_host.py [--godot <exe>]
+--route surface (C9 U4) builds the route-B variant: the same sources plus renderer/acceptance/route-b/override.cfg
+in project/ (a transparent window with vsync, as the product shell's), no --disable-vsync in launch.json, and
+"route": "surface" in the build identity, which run_scene.ps1 reads to pass --sa2-route surface.
+
+  python -B renderer/acceptance/prepare_host.py [--godot <exe>] [--route texture|surface]
   python -B renderer/acceptance/prepare_host.py --verify <build directory> [--godot <exe>]
 """
 from __future__ import annotations
@@ -44,9 +48,12 @@ ENVIRONMENT_KEYS = ("M600_GODOT_NUPKGS", "NUGET_PACKAGES", "DOTNET_CLI_HOME", "N
                     "DOTNET_CLI_TELEMETRY_OPTOUT", "DOTNET_NOLOGO", "DOTNET_SKIP_FIRST_TIME_EXPERIENCE",
                     "DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE", "DOTNET_ADD_GLOBAL_TOOLS_TO_PATH")
 # The build's sources: the Godot project and the whole product core. Generated folders are excluded.
-SOURCES = ("renderer/acceptance/project", "renderer/core")
+SOURCES = ("renderer/acceptance/project", "renderer/acceptance/route-b", "renderer/core")
 EXCLUDED = {".godot", "bin", "obj", "__pycache__"}
 IDENTITY = "c9-build-identity.json"
+# C9 U4: the texture routes (Godot shows the core's ring) and route B (the core presents on its own surface).
+ROUTES = ("texture", "surface")
+OVERRIDE = HERE / "route-b" / "override.cfg"
 
 
 def sha256(path):
@@ -157,14 +164,17 @@ def part_digests(build, executable):
     return {name: {"path": str(path.resolve()), "sha256": sha256(path)} for name, path in sorted(paths.items())}
 
 
-def launch_value(build, executable, environment):
-    """prepare_l2.launch_value for this build's folders, unchanged in form."""
+def launch_value(build, executable, environment, route="texture"):
+    """prepare_l2.launch_value for this build's folders, unchanged in form; route B keeps Godot's vsync."""
     project, native = (build / "project").resolve(), (build / "native").resolve()
     if Path(executable).name != GODOT_EXE:
         raise ValueError("level 2 must launch the process that presents, not the console wrapper")
+    if route not in ROUTES:
+        raise ValueError("unknown route")
+    vsync = [] if route == "surface" else ["--disable-vsync"]
     return {"format": "magic600-l2-launch-v1", "candidate": "sa2", "executable": str(Path(executable).resolve()),
             "dll": str(native / "sa2_interop.dll"), "working_directory": str(project),
-            "arguments": ["--path", str(project), "--rendering-driver", "d3d12", "--disable-vsync", "--render-thread", "safe"],
+            "arguments": ["--path", str(project), "--rendering-driver", "d3d12", *vsync, "--render-thread", "safe"],
             "run_arguments": ["--log-file", "{out}\\godot.log"], "validation_arguments": ["--gpu-validation"],
             "separator": ["--"], "environment": dict(environment), "validation_environment": {}}
 
@@ -183,7 +193,9 @@ def code_vectors():
     return vectors
 
 
-def build_host(executable, nupkgs):
+def build_host(executable, nupkgs, route="texture"):
+    if route not in ROUTES:
+        raise ValueError("unknown route")
     source = source_identity()
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     build = BUILD_ROOT / stamp
@@ -207,6 +219,9 @@ def build_host(executable, nupkgs):
     check_core.check_sources(native)
     check_core.check_result(native / "sa2_selftest.exe", native, "cpu", code_vectors())
     shutil.copytree(HERE / "project", project, ignore=shutil.ignore_patterns(*EXCLUDED))
+    if route == "surface":
+        # Godot reads res://override.cfg over the verbatim project.godot (C9 U4).
+        shutil.copyfile(OVERRIDE, project / "override.cfg")
     print(f"dotnet build: {project}", flush=True)
     command = ["dotnet", "build", "SA2Smoke.csproj", "-c", "Debug", "-nologo", "-nodeReuse:false", "-p:UseSharedCompilation=false"]
     run_logged(command, project, env, 900, logs / "dotnet-build")
@@ -218,10 +233,10 @@ def build_host(executable, nupkgs):
     environment = {key: env[key] for key in ENVIRONMENT_KEYS}
     environment[INJECT] = None
     identity = {"format": "magic600-c9-acceptance-build-v1", "source": source, "godot_version": GODOT_VERSION,
-                "abi_version": 3, "project": str(project.resolve()), "native": str(native.resolve()),
+                "abi_version": 5, "route": route, "project": str(project.resolve()), "native": str(native.resolve()),
                 "cpu_selftest": "pass", "environment": environment, "parts": part_digests(build, executable)}
     write_new(build / IDENTITY, identity)
-    write_new(build / "launch.json", launch_value(build, executable, environment))
+    write_new(build / "launch.json", launch_value(build, executable, environment, route))
     return build
 
 
@@ -237,8 +252,14 @@ def verify(build, executable):
         raise RuntimeError("prepared build paths do not match its directory")
     if part_digests(build, executable) != identity["parts"]:
         raise RuntimeError("prepared source or binary digests changed; rebuild")
+    # Builds from before C9 U4 carry no route: they are texture builds.
+    route = identity.get("route", "texture")
+    if route not in ROUTES or ("project:override.cfg" in identity["parts"]) != (route == "surface"):
+        raise RuntimeError("the build's route and its override.cfg disagree; rebuild")
+    if route == "surface" and identity["parts"]["project:override.cfg"]["sha256"] != sha256(OVERRIDE):
+        raise RuntimeError("renderer/acceptance/route-b changed since this build; rebuild")
     launch = json.loads((build / "launch.json").read_text(encoding="utf-8"))
-    if launch != launch_value(build, executable, identity["environment"]):
+    if launch != launch_value(build, executable, identity["environment"], route):
         raise RuntimeError("launch.json does not match the build; rebuild")
     if source_identity()["sha256"] != identity["source"]["sha256"]:
         raise RuntimeError("renderer/core or renderer/acceptance/project changed since this build; rebuild")
@@ -249,7 +270,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--godot", type=Path, help="the pinned non-console or console exe; neither is started")
     parser.add_argument("--verify", type=Path, metavar="BUILD", help="check a prepared build; build nothing")
+    parser.add_argument("--route", choices=ROUTES, help="build the texture host (default) or route B's (C9 U4)")
     args = parser.parse_args(argv)
+    if args.verify and args.route:
+        parser.error("--route applies to a build; --verify reads the route from the build identity")
     if os.name != "nt":
         parser.exit(1, "the C9 acceptance host requires the owner's Windows build tools\n")
     try:
@@ -258,9 +282,9 @@ def main(argv=None):
             identity = verify(args.verify, executable)
             print(f"build verified: source {identity['source']['sha256'][:12]} at {identity['source']['head'][:12]}"
                   f"{'' if identity['source']['matches_head'] else ' (uncommitted source)'}; "
-                  f"{len(identity['parts'])} parts unchanged")
+                  f"route {identity.get('route', 'texture')}; {len(identity['parts'])} parts unchanged")
         else:
-            print(build_host(executable, nupkgs))
+            print(build_host(executable, nupkgs, args.route or "texture"))
         return 0
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
         print(f"C9 acceptance host preparation failed: {error}", file=sys.stderr)
