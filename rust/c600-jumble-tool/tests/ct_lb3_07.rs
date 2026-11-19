@@ -3,11 +3,13 @@
 //! skip or correction combination leaks through the inspector entries."
 //!
 //! The entries are the modules of `c600_jumble_tool::library` that LB6.5's candidate jumbling inspectors use: LB3.1's
-//! "Rim and seam facts; N" (`jumble_rim`), "Covers at a named cap" (`jumble_covers`) and "Correction catalogue"
-//! (`jumble_corrections`), new here, and the named-word checks (`jumble_word_checks`) and the drafted correction-set
-//! check (`jumble_nu`). Each runs through LP2's interpreter against C8's host bridge (`c600_jumble_tool::rows`) on a
-//! witnessed snapshot of the I_a walk, and each answer is compared with `c600_jumble`'s, computed apart. A recording
-//! host keeps every row the run reads with its argument, so a test sees what an entry asked as well as what it answers.
+//! "Rim and seam facts; N" (`jumble_rim`), "Covers at a named cap" (`jumble_covers`), "Correction catalogue"
+//! (`jumble_corrections`), "Admissibility and blocked-twist check" (`jumble_admissibility`), "Straddlers and u at a
+//! named cap" (`jumble_straddlers`) and "Units and clean-step contract" (`jumble_units`), and the named-word checks
+//! (`jumble_word_checks`) and the drafted correction-set check (`jumble_nu`). Each runs through LP2's interpreter
+//! against C8's host bridge (`c600_jumble_tool::rows`) on a witnessed snapshot of the I_a walk, and each answer is
+//! compared with `c600_jumble`'s, computed apart. A recording host keeps every row the run reads with its argument, so
+//! a test sees what an entry asked as well as what it answers.
 //!
 //! - The rim entry answers one row for every cap, in cap-ID order, blocked and closed caps included, each with the
 //!   kernel's facts at this revision and nothing about a twist; it reads the rim summary and the seam scan once each
@@ -16,11 +18,15 @@
 //!   rank or selection, and recomputes the face-piece definition from the kernel's counts.
 //! - The catalogue entry reads the solver's id once and answers that correction only, under I_a's menu only; the
 //!   drafted check reads exactly the sets the solver drafted.
+//! - The admissibility entries read the solver's one letter or named grip once and answer that twist or grip only;
+//!   the straddlers entry reads the named cap once and answers its straddlers with exact certificates, and u.
+//! - The units entries read every off unit, or the solver's named unit, once; the clean-step entry reads the solver's
+//!   word and unit once and answers the clean-step contract for that unit only.
 //! - The named-word checks read their row once, with the named word as its argument, and answer no word.
 //!
 //! No answer has a field whose name is a recommendation, a next cap, a ranking, a selection or a correction (a check of
-//! names), and the new entries hold no field of a twist's outcome. Under capability separation every entry reads state
-//! and prepares no preview. `tests/lb3.rs` runs the kernel half of CT-LB3-07 and `c600-tools/tests/lb3_checker.rs`
+//! names), and the rim, covers, straddlers and units entries hold no field of a twist's outcome. Under capability
+//! separation every entry reads state and prepares no preview. `tests/lb3.rs` runs the kernel half of CT-LB3-07 and `c600-tools/tests/lb3_checker.rs`
 //! the checker half. A pass is source and fixture evidence.
 
 use std::collections::BTreeSet;
@@ -34,11 +40,13 @@ use c600_jumble::corrections;
 use c600_jumble::levels::{Base, Snapshot};
 use c600_jumble::model::{NP, POLES};
 use c600_jumble::observe::cuts::{covers, rim_summary};
-use c600_jumble::observe::{seam_facts, Batch, Rows as Cells, Scope};
-use c600_jumble::state::{State, Status};
+use c600_jumble::observe::{seam_facts, units, word_check, Batch, Rows as Cells, Scope};
+use c600_jumble::state::{Certificate, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
-use c600_jumble_tool::library::{self, Module, CORRECTIONS, COVERS, NU, RIM, WORD_CHECKS};
+use c600_jumble_tool::library::{
+    self, Module, ADMISSIBILITY, CORRECTIONS, COVERS, NU, RIM, STRADDLERS, UNITS, WORD_CHECKS,
+};
 use c600_jumble_tool::rows::Rows;
 use c600_jumble_tool::word::Alphabet;
 use c600_kernel::json::{self, Value};
@@ -317,20 +325,124 @@ fn canonical(module: &Module) {
     assert!(!module.source.contains('\r') && module.source.ends_with('\n'), "{}: LF line endings", module.name);
 }
 
-/// CT-LB3-07 (part: the inspector entries' sources). `jumble_rim`, `jumble_covers` and `jumble_corrections` parse with
-/// no diagnostic, keep the canonical layout and LF line endings, request no capability and check with no diagnostic.
-/// Each exported entry has the one effect `snapshot` and reads only its rows: under capability separation it reads
-/// state and prepares no preview. No function names a proposal target, the helpers are pure, and the covers and
-/// catalogue entries take one named cap or one id, nothing more. The catalogue rows name the entries, the effect and
-/// the digest of each module's source.
+/// Letters of the pinned menu, `[cap, item]` each, as a run's menu word.
+fn menu_word(pairs: &[[i32; 2]]) -> RunValue {
+    let pinned = fixture().pinned();
+    let letters: Vec<[u32; 2]> = pairs.iter().map(|&[cap, item]| [cap as u32, item as u32]).collect();
+    RunValue::menu_word(pinned.shared_identity(), &letters).expect("a menu word")
+}
+
+/// Piece IDs as a run's list.
+fn piece_list(pieces: &[i64]) -> RunValue {
+    RunValue::list(pieces.iter().map(|&p| RunValue::int(p)).collect())
+}
+
+/// The letters of a menu word argument in the run's canonical bytes.
+fn read_letters(arg: &Json) -> Vec<[i64; 2]> {
+    let Some(Json::List(list)) = arg.get("letters") else { panic!("a menu word's letters") };
+    let int = |x: &Json| match x {
+        Json::Int(n) => *n,
+        other => panic!("no integer: {other:?}"),
+    };
+    let letter = |pair: &Json| {
+        let Json::List(pair) = pair else { panic!("a letter") };
+        [int(&pair[0]), int(&pair[1])]
+    };
+    list.iter().map(letter).collect()
+}
+
+/// The integers of a list argument in the run's canonical bytes.
+fn read_ints(arg: &Json) -> Vec<i64> {
+    let Json::List(list) = arg else { panic!("a list") };
+    let int = |x: &Json| x.get("int").and_then(Json::as_text).and_then(|n| n.parse().ok()).expect("an integer");
+    list.iter().map(int).collect()
+}
+
+/// The single integer argument of a read, as the run's canonical bytes hold it.
+fn read_int(arg: &Option<Json>) -> Option<i64> {
+    arg.as_ref().and_then(|arg| arg.get("int")).and_then(Json::as_text).and_then(|n| n.parse().ok())
+}
+
+fn engine_ints(value: &Value, key: &str) -> Vec<i64> {
+    let list = value.get(key).and_then(Value::as_array).unwrap_or_else(|| panic!("no list `{key}`"));
+    list.iter().map(|v| v.as_i64().expect("an integer")).collect()
+}
+
+/// An exact number of Q(√5) as `[a, b, d]` text: a run's `Q5`. The run and the engine both keep it in lowest terms with
+/// d > 0, so equal numbers have equal text.
+fn q5_text(value: &RunValue) -> [String; 3] {
+    match value {
+        RunValue::Q5(q) => [q.a.to_string(), q.b.to_string(), q.d.to_string()],
+        other => panic!("no Q5: {other:?}"),
+    }
+}
+
+/// The engine's JSON triple of an exact number as `[a, b, d]` text.
+fn engine_q5(value: &Value) -> [String; 3] {
+    let text = |v: &Value| match v {
+        Value::Int(n) => n.to_string(),
+        Value::Number(lexeme) => lexeme.to_string(),
+        other => panic!("no integer: {}", other.canonical()),
+    };
+    match value.as_array() {
+        Some([a, b, d]) => [text(a), text(b), text(d)],
+        _ => panic!("no triple: {}", value.canonical()),
+    }
+}
+
+/// A certificate of the run is the engine's, field for field: the piece, the cut, both vertices and both exact points.
+fn same_certificate(ours: &RunValue, theirs: &Certificate, what: &str) {
+    let theirs = theirs.to_json();
+    let RunValue::Record(record) = ours else { panic!("{what}: a certificate is a record") };
+    assert_eq!(record.fields().len(), 11, "{what}: the certificate's fields");
+    for name in ["grip", "orbit", "piece", "transport", "vertex_above", "vertex_below"] {
+        assert_eq!(Some(number(get(ours, name))), engine_int(&theirs, name), "{what}: {name}");
+    }
+    let checked = "points_checked_against_all_constraints";
+    assert_eq!(Some(truth(get(ours, checked))), engine_flag(&theirs, checked), "{what}");
+    for name in ["h_above", "h_below"] {
+        assert_eq!(q5_text(get(ours, name)), engine_q5(theirs.get(name).expect("a height")), "{what}: {name}");
+    }
+    for name in ["point_above", "point_below"] {
+        let point: Vec<[String; 3]> = items(get(ours, name)).iter().map(q5_text).collect();
+        let engine = theirs.get(name).and_then(Value::as_array).expect("a point");
+        assert_eq!(point.len(), 4, "{what}: {name} has four coordinates");
+        assert_eq!(point, engine.iter().map(engine_q5).collect::<Vec<_>>(), "{what}: {name}");
+    }
+}
+
+/// A unit of the run is the engine's: its members, pose, domain, heights and branches.
+fn same_unit(ours: &RunValue, theirs: &Value, what: &str) {
+    for name in ["branches", "heights", "members"] {
+        assert_eq!(numbers(get(ours, name)), engine_ints(theirs, name), "{what}: {name}");
+    }
+    for name in ["domain", "pose"] {
+        assert_eq!(Some(string(get(ours, name))), engine_text(theirs, name), "{what}: {name}");
+    }
+}
+
+/// CT-LB3-07 (part: the inspector entries' sources). `jumble_rim`, `jumble_covers`, `jumble_corrections`,
+/// `jumble_admissibility`, `jumble_straddlers` and `jumble_units` parse with no diagnostic, keep the canonical layout and
+/// LF line endings, request no capability and check with no diagnostic. Each exported entry has the one effect
+/// `snapshot` and reads only its rows: under capability separation it reads state and prepares no preview. No function
+/// names a proposal target, the helpers are pure, and each entry takes the solver's named objects only: a cap, an id, a
+/// letter, a grip, a unit, or a word with a unit, or nothing. The catalogue rows name the entries, the effect and the
+/// digest of each module's source.
 #[test]
 fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
-    let reads: [(&str, &[&str]); 3] = [
-        ("rim_facts", &["rim_summary", "seam_facts"]),
-        ("covers_at", &["covers"]),
-        ("correction", &["correction_lookup"]),
+    // Each entry, the rows it reads and its parameters: a named cap, id, twist, grip, unit or word, or nothing.
+    let reads: [(&str, &[&str], usize); 9] = [
+        ("rim_facts", &["rim_summary", "seam_facts"], 0),
+        ("covers_at", &["covers"], 1),
+        ("correction", &["correction_lookup"], 1),
+        ("twist_check", &["classify"], 1),
+        ("grip_status", &["survey"], 1),
+        ("straddlers_at", &["straddlers"], 1),
+        ("off_units", &["units"], 0),
+        ("named_unit", &["units"], 1),
+        ("clean_step", &["word_check"], 2),
     ];
-    for module in [RIM, COVERS, CORRECTIONS] {
+    for module in [RIM, COVERS, CORRECTIONS, ADMISSIBILITY, STRADDLERS, UNITS] {
         canonical(&module);
         let program = lower_source(module.source).expect("the module lowers");
         let [lowered] = &program.modules[..] else { panic!("one module, not {}", program.modules.len()) };
@@ -340,6 +452,7 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
         assert_eq!(exports, module.exports);
         let report = check(&program).expect("well-formed IR");
         assert!(report.diagnostics.is_empty(), "{}: {:#?}", module.name, report.diagnostics);
+        let mut module_rows = BTreeSet::new();
         for function in &lowered.functions {
             let name = format!("{}.{}", module.name, function.name);
             let summary = report.summary(module.name, &function.name).expect("a summary");
@@ -356,19 +469,28 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
             assert_eq!(summary.state_reads, BTreeSet::from([StateRead::Snapshot]), "{name}");
             let separated = separation(summary, &Policy::interim());
             assert_eq!(separated, Separation { reads_state: true, prepares_previews: false }, "{name}");
-            let (_, expected) = reads.iter().find(|(f, _)| *f == function.name).expect("an entry of the table");
+            let (_, expected, params) =
+                reads.iter().find(|(f, ..)| *f == function.name).expect("an entry of the table");
             let rows: BTreeSet<Row> = expected.iter().map(|q| Row::Read(q.to_string())).collect();
             assert_eq!(summary.rows, rows, "{name}: the rows it reads");
-            assert_eq!(*expected, module.rows, "{name}: the module's rows");
-            let params = function.params.len();
-            assert_eq!(params, usize::from(function.name != "rim_facts"), "{name}: a named cap or id, or nothing");
+            module_rows.extend(expected.iter().copied());
+            assert_eq!(function.params.len(), *params, "{name}: the solver's named objects, or nothing");
         }
+        assert_eq!(module_rows.into_iter().collect::<Vec<_>>(), module.rows, "{}: the module's rows", module.name);
     }
 
     let catalogue = [
         (library::rim_and_seam_facts(), RIM, "Rim and seam facts; N", "Jumbling poses"),
         (library::covers_at_a_named_cap(), COVERS, "Covers at a named cap", "Jumbling poses"),
         (library::correction_catalogue(), CORRECTIONS, "Correction catalogue", "Jumbling labelled action"),
+        (
+            library::admissibility_and_blocked_twist_check(),
+            ADMISSIBILITY,
+            "Admissibility and blocked-twist check",
+            "Jumbling poses",
+        ),
+        (library::straddlers_and_u_at_a_named_cap(), STRADDLERS, "Straddlers and u at a named cap", "Jumbling poses"),
+        (library::units_and_clean_step_contract(), UNITS, "Units and clean-step contract", "Jumbling poses"),
     ];
     for (row, module, entry, level) in catalogue {
         assert_eq!(row.entry, entry);
@@ -656,19 +778,6 @@ fn ct_lb3_07_named_word_checks_answer_only_their_named_word() {
     let unit: Vec<u32> =
         (0..NP).filter(|&p| !state.is_lattice_piece(p) && state.pose_ids()[p] == pose).map(|p| p as u32).collect();
     let unit_value = RunValue::list(unit.iter().map(|&p| RunValue::int(p)).collect());
-    let read_letters = |arg: &Json| -> Vec<[i64; 2]> {
-        let Some(Json::List(list)) = arg.get("letters") else { panic!("a menu word's letters") };
-        list.iter()
-            .map(|pair| {
-                let Json::List(pair) = pair else { panic!("a letter") };
-                let int = |x: &Json| match x {
-                    Json::Int(n) => *n,
-                    other => panic!("no integer: {other:?}"),
-                };
-                [int(&pair[0]), int(&pair[1])]
-            })
-            .collect()
-    };
     let expected: Vec<[i64; 2]> = pairs.iter().map(|&[cap, item]| [i64::from(cap), i64::from(item)]).collect();
 
     let mut host = Recording::on(walk());
@@ -691,5 +800,205 @@ fn ct_lb3_07_named_word_checks_answer_only_their_named_word() {
     for (name, answer) in [("word_observations", &observed), ("step_flag", &flagged)] {
         assert!(!holds_a_word(answer), "{name}: no word and no letter table");
         assert_no_field(answer, &LEAKS, name);
+    }
+}
+
+/// CT-LB3-07 (part: "named-word checks answer only their named word", on the admissibility entries). At the walk,
+/// `twist_check` reads `classify` once, with the solver's one letter as its argument, and answers that twist only, as
+/// `State::apply` answers it on a copy of the state: a letter at the walk's first blocked cap is blocked, moves nothing
+/// and carries the engine's certificate (the piece, the cut, both vertices and both exact points, each coordinate an
+/// exact number of Q(√5)); the fixture's next letter is admissible, moves the engine's inside set and carries none.
+/// `grip_status` reads `survey` once with the solver's named grip and answers that grip's status, the engine's; a grip
+/// outside the model stops the run with `KN2:input.named_object_invalid` after the one read. No answer holds a word or
+/// names a recommendation or a selection.
+#[test]
+fn ct_lb3_07_a_named_twist_and_grip_are_checked_alone() {
+    let fixture = fixture();
+    let (misaligned, blocked) = walk_caps();
+    let next = fixture.pairs(&fixture.twists(12..13))[0];
+    for (label, pair) in [("blocked", [blocked as i32, 0]), ("next", next)] {
+        let mut host = Recording::on(walk());
+        let checked = completed(run(ADMISSIBILITY.name, "twist_check", vec![menu_word(&[pair])], &mut host), label);
+        assert_eq!(host.queries(), ["classify"], "{label}: one read");
+        let letters = read_letters(host.reads[0].1.as_ref().expect("an argument"));
+        assert_eq!(letters, [[i64::from(pair[0]), i64::from(pair[1])]], "{label}: the named letter, as given");
+        let twist = fixture.menu.for_cap(ctx(), pair[0] as usize).expect("the menu's items").remove(pair[1] as usize);
+        let outcome = walk().state().clone().apply(ctx(), &twist, None, &[]).expect("no engine error");
+        assert_eq!(string(get(&checked, "status")), outcome.status.as_str(), "{label}");
+        let counts = ["grip", "moved", "uncertain"].map(|name| number(get(&checked, name)));
+        assert_eq!(counts, [outcome.grip as i64, outcome.moved() as i64, outcome.uncertain as i64], "{label}");
+        let code = outcome.refusal.as_ref().map(|(code, _)| *code);
+        assert_eq!(optional(get(&checked, "code")).map(string), code, "{label}");
+        match (optional(get(&checked, "certificate")), &outcome.straddle) {
+            (Some(ours), Some(theirs)) => same_certificate(ours, theirs, label),
+            (None, None) => {}
+            (ours, theirs) => panic!("{label}: certificate {ours:?}, the engine's {theirs:?}"),
+        }
+        if label == "blocked" {
+            assert_eq!((outcome.status, outcome.moved()), (Status::Blocked, 0), "a blocked twist moves nothing");
+            assert!(outcome.straddle.is_some(), "a blocked twist has a certified straddler");
+        } else {
+            assert_eq!(outcome.status, Status::Admissible);
+            assert!(outcome.moved() > 0 && outcome.straddle.is_none());
+        }
+        assert!(!holds_a_word(&checked), "{label}: no word and no letter table");
+        assert_no_field(&checked, &LEAKS, label);
+        assert_no_field(&checked, &SELECTIONS, label);
+    }
+
+    for (cap, expected) in [(misaligned, Status::Admissible), (blocked, Status::Blocked)] {
+        let mut host = Recording::on(walk());
+        let status = completed(run(ADMISSIBILITY.name, "grip_status", vec![RunValue::int(cap)], &mut host), "grip");
+        assert_eq!(host.queries(), ["survey"], "grip {cap}: one read");
+        assert_eq!(read_int(&host.reads[0].1), Some(cap), "grip {cap}: the named grip, as given");
+        let engine = walk().state().clone().survey(ctx(), &[cap as usize], None).expect("no engine error");
+        assert_eq!(engine, [expected], "grip {cap}");
+        assert_eq!((number(get(&status, "cap")), string(get(&status, "status"))), (cap, expected.as_str()));
+        assert_no_field(&status, &LEAKS, "grip_status");
+        assert_no_field(&status, &SELECTIONS, "grip_status");
+        assert_no_field(&status, &OUTCOMES, "grip_status");
+    }
+    let mut host = Recording::on(walk());
+    let outside = run(ADMISSIBILITY.name, "grip_status", vec![RunValue::int(POLES as i64)], &mut host);
+    assert_eq!((outside.summary.outcome, outside.summary.code), (Outcome::Error, Some(codes::NAMED_OBJECT_INVALID)));
+    assert_eq!(host.queries(), ["survey"], "the named grip only");
+}
+
+/// CT-LB3-07 (part: "named-word checks answer only their named word", on the straddlers entry). `straddlers_at(c)`
+/// reads `straddlers` once with the solver's named cap c and answers the engine's straddler set at c: its pieces in
+/// ascending order, one certificate each, field for field, its status, u the number of its pieces, and complete while
+/// no piece is uncertain. At the walk's first blocked cap u is positive; at its first misaligned admissible cap and at
+/// solved there is no straddler and u is zero. A cap outside the model stops the run with
+/// `KN2:input.named_object_invalid` after the one read. No answer holds a word or names a recommendation, a selection
+/// or a twist's outcome.
+#[test]
+fn ct_lb3_07_straddlers_and_u_answer_the_named_cap() {
+    let (misaligned, blocked) = walk_caps();
+    let solved = Snapshot::solved(ctx(), Some(fixture().menu.clone()));
+    for (label, snapshot, cap) in
+        [("blocked", walk(), blocked), ("misaligned", walk(), misaligned), ("solved", &solved, 0)]
+    {
+        let mut host = Recording::on(snapshot);
+        let set = completed(run(STRADDLERS.name, "straddlers_at", vec![RunValue::int(cap)], &mut host), label);
+        assert_eq!(host.queries(), ["straddlers"], "{label}: one read");
+        assert_eq!(read_int(&host.reads[0].1), Some(cap), "{label}: the named cap, as given");
+        let engine = snapshot.state().clone().straddler_set(ctx(), cap as usize, None).expect("no engine error");
+        let pieces: Vec<i64> = engine.pieces.iter().map(|&p| i64::from(p)).collect();
+        assert_eq!(numbers(get(&set, "pieces")), pieces, "{label}: the engine's straddlers");
+        assert!(pieces.windows(2).all(|w| w[0] < w[1]), "{label}: ascending");
+        assert_eq!(number(get(&set, "u")), pieces.len() as i64, "{label}: u counts the straddlers");
+        assert_eq!((number(get(&set, "cap")), string(get(&set, "status"))), (cap, engine.status()), "{label}");
+        assert_eq!(truth(get(&set, "complete")), engine.uncertain == 0, "{label}");
+        let certificates = items(get(&set, "certificates"));
+        assert_eq!(certificates.len(), engine.certificates.len(), "{label}: one certificate each");
+        for (index, (ours, theirs)) in certificates.iter().zip(&engine.certificates).enumerate() {
+            same_certificate(ours, theirs, &format!("{label}: certificate {index}"));
+        }
+        assert_eq!(pieces.is_empty(), label != "blocked", "{label}: {} straddlers", pieces.len());
+        assert!(!holds_a_word(&set), "{label}: no word and no letter table");
+        assert_no_field(&set, &LEAKS, label);
+        assert_no_field(&set, &SELECTIONS, label);
+        assert_no_field(&set, &OUTCOMES, label);
+    }
+    let mut host = Recording::on(walk());
+    let outside = run(STRADDLERS.name, "straddlers_at", vec![RunValue::int(POLES as i64)], &mut host);
+    assert_eq!((outside.summary.outcome, outside.summary.code), (Outcome::Error, Some(codes::NAMED_OBJECT_INVALID)));
+    assert_eq!(host.queries(), ["straddlers"], "the named cap only");
+}
+
+/// CT-LB3-07 (part: units and the clean-step contract). At the walk, `off_units` reads `units` once with "all" and
+/// answers the engine's units, the exact-pose groups of the off pieces ordered by smallest member, each with its
+/// members, pose, domain, heights and branches, and their count; `named_unit` reads `units` once with the solver's
+/// pieces and answers that unit only. Pieces on the lattice, or of two poses, stop the run with
+/// `KN2:input.named_object_invalid`. `clean_step(w, U)` reads `word_check` once with the solver's word and unit, as
+/// given, and answers the engine's whole-word check of them: whether every letter was admissible, the letters applied,
+/// the lattice pieces lifted off, the other off pieces kept and landed, those changed, and whether U landed. It holds
+/// when the word is admissible, U lands, no lattice piece is lifted off and every other off piece keeps its pose or
+/// lands, which is LB3.8's step flag: the inverse of the walk's journal is clean for U and the fixture's next five
+/// letters are not, and a word whose first letter is blocked answers nothing past its refused prefix.
+#[test]
+fn ct_lb3_07_units_and_clean_steps_answer_the_named_unit_and_word() {
+    let fixture = fixture();
+    let state = walk().state();
+    let mut host = Recording::on(walk());
+    let all = completed(run(UNITS.name, "off_units", vec![], &mut host), "off_units");
+    assert_eq!(host.queries(), ["units"], "one read");
+    assert_eq!(host.reads[0].1, Some(Json::text("all")), "every off unit");
+    let engine = units(ctx(), state, None).expect("no engine error");
+    let engine_units = engine.get("units").and_then(Value::as_array).expect("the engine's units");
+    let ours = items(get(&all, "units"));
+    assert_eq!(ours.len(), engine_units.len());
+    assert!(ours.len() > 1 && truth(get(&all, "complete")), "{} units", ours.len());
+    assert_eq!(number(get(&all, "count")), ours.len() as i64);
+    for (index, (unit, theirs)) in ours.iter().zip(engine_units).enumerate() {
+        same_unit(unit, theirs, &format!("unit {index}"));
+    }
+    let members: Vec<Vec<i64>> = ours.iter().map(|unit| numbers(get(unit, "members"))).collect();
+    assert!(members.windows(2).all(|w| w[0][0] < w[1][0]), "ordered by smallest member");
+    let off = (0..NP).filter(|&p| !state.is_lattice_piece(p)).count();
+    assert_eq!(members.iter().map(Vec::len).sum::<usize>(), off, "every off piece in one unit");
+    assert_no_field(&all, &LEAKS, "off_units");
+    assert_no_field(&all, &SELECTIONS, "off_units");
+    assert_no_field(&all, &OUTCOMES, "off_units");
+
+    let mut host = Recording::on(walk());
+    let named = completed(run(UNITS.name, "named_unit", vec![piece_list(&members[1])], &mut host), "named_unit");
+    assert_eq!(host.queries(), ["units"], "one read");
+    assert_eq!(read_ints(host.reads[0].1.as_ref().expect("an argument")), members[1], "the named unit, as given");
+    same_unit(&named, &engine_units[1], "the named unit");
+    let lattice = (0..NP).find(|&p| state.is_lattice_piece(p)).expect("a piece on the lattice") as i64;
+    for (label, pieces) in [("on the lattice", vec![lattice]), ("two poses", vec![members[0][0], members[1][0]])] {
+        let mut host = Recording::on(walk());
+        let refused = run(UNITS.name, "named_unit", vec![piece_list(&pieces)], &mut host);
+        let stopped = (refused.summary.outcome, refused.summary.code);
+        assert_eq!(stopped, (Outcome::Error, Some(codes::NAMED_OBJECT_INVALID)), "{label}");
+        assert_eq!(host.queries(), ["units"], "{label}: the named pieces only");
+    }
+
+    let unit = &members[0];
+    let (_, blocked) = walk_caps();
+    let alphabet = fixture.alphabet();
+    let journal = alphabet.word(&fixture.pairs(&fixture.twists(0..12))).expect("letters of the menu");
+    let next = alphabet.word(&fixture.pairs(&fixture.twists(12..17))).expect("letters of the menu");
+    let refused = alphabet.word(&[[blocked as i32, 0]]).expect("a letter of the menu");
+    for (label, word, clean) in
+        [("inverse", journal.inverse(), true), ("next", next, false), ("blocked", refused, false)]
+    {
+        let mut host = Recording::on(walk());
+        let step =
+            completed(run(UNITS.name, "clean_step", vec![menu_word(word.pairs()), piece_list(unit)], &mut host), label);
+        assert_eq!(host.queries(), ["word_check"], "{label}: one read");
+        let arg = host.reads[0].1.as_ref().expect("an argument");
+        let pairs: Vec<[i64; 2]> = word.pairs().iter().map(|&[cap, item]| [i64::from(cap), i64::from(item)]).collect();
+        assert_eq!(read_letters(arg.get("word").expect("the word")), pairs, "{label}: the named word, as given");
+        assert_eq!(&read_ints(arg.get("unit").expect("the unit")), unit, "{label}: the named unit, as given");
+
+        let letters = word.letters(ctx(), state).expect("letters of the state's menu");
+        let check = word_check(ctx(), state, &letters, Some(unit.as_slice()), None, None).expect("no engine error");
+        assert_eq!(Some(truth(get(&step, "admissible"))), engine_flag(&check, "admissible"), "{label}");
+        assert_eq!(Some(number(get(&step, "applied"))), engine_int(&check, "applied_letters"), "{label}");
+        assert_eq!(Some(number(get(&step, "others"))), engine_int(&check, "others"), "{label}");
+        assert_eq!(&numbers(get(&step, "unit")), unit, "{label}: the named unit");
+        let ends = [("lattice_lifted", "lattice_pieces_lifted_off"), ("others_kept", "others_exact")];
+        for (ours, theirs) in ends.into_iter().chain([("others_landed", "others_landed")]) {
+            assert_eq!(optional(get(&step, ours)).map(number), engine_int(&check, theirs), "{label}: {ours}");
+        }
+        assert_eq!(optional(get(&step, "unit_landed")).map(truth), engine_flag(&check, "unit_landed"), "{label}");
+        let changed = match check.get("others_changed_ids") {
+            Some(Value::Null) => Vec::new(),
+            Some(_) => engine_ints(&check, "others_changed_ids"),
+            None => panic!("{label}: no field `others_changed_ids`"),
+        };
+        assert_eq!(numbers(get(&step, "others_changed")), changed, "{label}");
+        let holds = truth(get(&step, "holds"));
+        assert_eq!(Some(holds), engine_flag(&check, "step_flag"), "{label}: LB3.8's step flag, recomputed");
+        assert_eq!(holds, clean, "{label}");
+        if label == "blocked" {
+            assert!(!truth(get(&step, "admissible")) && number(get(&step, "applied")) == 0, "a refused first letter");
+            assert!(optional(get(&step, "unit_landed")).is_none(), "nothing past the refused prefix");
+        }
+        assert!(!holds_a_word(&step), "{label}: no word and no letter table");
+        assert_no_field(&step, &LEAKS, label);
+        assert_no_field(&step, &SELECTIONS, label);
     }
 }

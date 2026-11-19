@@ -1,0 +1,10 @@
+edition "6cs-draft-1";
+module jumble_admissibility requires [];
+
+export fn twist_check(w: MenuWord) -> record { certificate: List<record { grip: Nat, h_above: Q5, h_below: Q5, orbit: Nat, piece: Nat, point_above: List<Q5>, point_below: List<Q5>, points_checked_against_all_constraints: Bool, transport: Nat, vertex_above: Nat, vertex_below: Nat }>, code: List<Text>, grip: Nat, moved: Nat, status: Text, uncertain: Nat } effects [snapshot] {
+    return read_snapshot<record { certificate: List<record { grip: Nat, h_above: Q5, h_below: Q5, orbit: Nat, piece: Nat, point_above: List<Q5>, point_below: List<Q5>, points_checked_against_all_constraints: Bool, transport: Nat, vertex_above: Nat, vertex_below: Nat }>, code: List<Text>, grip: Nat, moved: Nat, status: Text, uncertain: Nat }>("classify", w);
+}
+
+export fn grip_status(grip: Nat) -> record { cap: Nat, status: Text } effects [snapshot] {
+    return read_snapshot<record { cap: Nat, status: Text }>("survey", grip);
+}
