@@ -25,6 +25,11 @@ namespace Magic600.Shell;
 /// are read). C9 U8 (a draft): the run row names the window and the puzzle (M600_PUZZLE; the host opens only Jumble
 /// off for now), and when M600_LX4 is 1 the shell creates LX-4's module (<see cref="IShellModule"/>), which receives
 /// the window's messages through <see cref="WindowHook"/> before Godot does, and every submitted and presented frame.
+/// Charter E3 (C9 U6, a draft): when M600_SESSION_FIXTURE names a session fixture's record, M600_SESSION_DIR is a
+/// fresh copy of its session, which the host reopens at the revision that counts the fixture's presses; when
+/// M600_RUNTIME names the c600-runtime binary, the host starts the language runtime's process; with the event log,
+/// <see cref="StartupLog"/> records both and the first correct frame, and when M600_EXIT_AT_FIRST_FRAME is 1 the shell
+/// quits once that frame is shown.
 /// </remarks>
 public partial class Shell : Control
 {
@@ -50,6 +55,14 @@ public partial class Shell : Control
     private long _preDrawQpc;
     private bool _uiFrames;
     private readonly List<IShellModule> _modules = new();
+    private StartupLog? _startup;
+    /// <summary>The engine revision the session opened at (charter E3's R0).</summary>
+    private ulong _openRevision;
+    /// <summary>The first submitted frame that draws R0 over a publication of R0 or later.</summary>
+    private ulong? _firstSubmitted;
+    /// <summary>The first confirmed presentation of that frame or a later one: its sequence and display time.</summary>
+    private (ulong FrameId, ulong DisplayQpc)? _firstShown;
+    private bool _exitAtFirstFrame;
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
 
     public override void _Ready()
@@ -113,14 +126,26 @@ public partial class Shell : Control
             RenderingServer.FramePreDraw += OnFramePreDraw;
             RenderingServer.FramePostDraw += OnFramePostDraw;
             _uiFrames = true;
+            _startup = StartupLog.FromEnvironment();
         }
         var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
         var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
         if (!string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu))
         {
-            Require(hostLibrary, "m6h_open_session", hostLibrary.OpenSession(_host, session, menu));
+            var fixture = System.Environment.GetEnvironmentVariable("M600_SESSION_FIXTURE");
+            var opened = hostLibrary.OpenSession(_host, session, menu, string.IsNullOrEmpty(fixture) ? null : fixture,
+                out _openRevision);
+            Require(hostLibrary, "m6h_open_session", opened);
+            _startup?.SessionOpened(EventLog.Now());
             _session = true;
         }
+        var runtime = System.Environment.GetEnvironmentVariable("M600_RUNTIME");
+        if (!string.IsNullOrEmpty(runtime))
+        {
+            Require(hostLibrary, "m6h_load_runtime", hostLibrary.LoadRuntime(_host, runtime));
+            _startup?.RuntimeLoaded(EventLog.Now());
+        }
+        _exitAtFirstFrame = System.Environment.GetEnvironmentVariable("M600_EXIT_AT_FIRST_FRAME") == "1";
         if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")
         {
             _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));
@@ -281,6 +306,11 @@ public partial class Shell : Control
         {
             _log?.Frame(frame, submitted);
             _submittedThisFrame = frame.Sequence;
+            if (_session && _firstSubmitted is null && frame.EngineRevision >= _openRevision
+                && frame.PublicationRevision >= _openRevision)
+            {
+                _firstSubmitted = frame.Sequence;
+            }
             if (_modules.Count > 0)
             {
                 EachModule(module => module.OnFrame(frame, submitted));
@@ -314,6 +344,14 @@ public partial class Shell : Control
                     EachModule(module => module.OnPresented(row));
                 }
                 _shownRevision = Math.Max(_shownRevision, _presented[i].EngineRevision);
+                if (_firstShown is null && _firstSubmitted is { } first && _presented[i].Sequence >= first)
+                {
+                    _firstShown = (_presented[i].Sequence, _presented[i].DisplayQpc);
+                    if (_exitAtFirstFrame)
+                    {
+                        GetTree().Quit();
+                    }
+                }
             }
         } while (count == _presented.Length);
     }
@@ -354,7 +392,10 @@ public partial class Shell : Control
         CloseCore();
     }
 
-    /// <summary>Closes the session: its correctness control runs once, and the run row carries its outcome.</summary>
+    /// <summary>
+    /// Closes the session: its correctness control runs once, and the run row carries its outcome; the startup log's
+    /// first correct frame carries it too (a control that did not run counts as a failure).
+    /// </summary>
     private void CloseSession()
     {
         if (!_session || _hostLibrary is not { } library)
@@ -366,9 +407,16 @@ public partial class Shell : Control
         if (code != HostLibrary.Ok)
         {
             GD.PushError($"m6h_close_session: {code}: {library.LastError(_host)}");
-            return;
+            pass = false;
         }
-        _log?.Correctness(pass, HostLibrary.CorrectnessControl, library.Check(_host));
+        else
+        {
+            _log?.Correctness(pass, HostLibrary.CorrectnessControl, library.Check(_host));
+        }
+        if (_firstShown is { } shown)
+        {
+            _startup?.FirstCorrectFrame(shown.FrameId, shown.DisplayQpc, pass);
+        }
     }
 
     /// <summary>Closes the event log, the host, the surface and the libraries; the input echo stays.</summary>
@@ -384,6 +432,8 @@ public partial class Shell : Control
         WindowHook.Remove();
         EachModule(module => module.Dispose());
         _modules.Clear();
+        _startup?.Dispose();
+        _startup = null;
         _log?.Dispose();
         _log = null;
         if (_host != IntPtr.Zero && _hostLibrary is { } library)

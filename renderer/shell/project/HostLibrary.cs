@@ -16,7 +16,7 @@ namespace Magic600.Shell;
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 2;
+    public const uint AbiVersion = 3;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -32,6 +32,8 @@ public sealed unsafe class HostLibrary : IDisposable
     public const int Poisoned = 6;
     /// <summary>The session did not open, is already open, or is not open.</summary>
     public const int SessionRefused = 7;
+    /// <summary>The language runtime did not start, or the host has started one already.</summary>
+    public const int RuntimeRefused = 8;
 
     /// <summary><see cref="KeyResult.Press"/>: no measured press (no twist key, or a repeat).</summary>
     public const uint PressNone = 0;
@@ -54,6 +56,7 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_read_presented",
         "m6h_recover",
         "m6h_open_session",
+        "m6h_load_runtime",
         "m6h_key_down",
         "m6h_key_up",
         "m6h_focus_lost",
@@ -213,18 +216,42 @@ public sealed unsafe class HostLibrary : IDisposable
     public int Recover(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_recover"])(host);
 
     /// <summary>
-    /// Opens the turns' session: a new journal in <paramref name="folder"/> (created if missing; it must hold nothing)
-    /// at the solved state, with the twist menu of the record file <paramref name="menu"/> pinned.
+    /// Opens the turns' session with the twist menu of the record file <paramref name="menu"/> pinned. Without a
+    /// <paramref name="fixture"/> it is a new journal in <paramref name="folder"/> (created if missing; it must hold
+    /// nothing) at the solved state. With one (the path of a session fixture's fixture.json), <paramref name="folder"/>
+    /// is a fresh copy of the fixture's session, which the host reopens and adopts at the revision that counts the
+    /// fixture's presses. <paramref name="revision"/> is the engine revision the session opened at.
     /// </summary>
-    public int OpenSession(IntPtr host, string folder, string menu)
+    public int OpenSession(IntPtr host, string folder, string menu, string? fixture, out ulong revision)
     {
         var f = Encoding.UTF8.GetBytes(folder);
         var m = Encoding.UTF8.GetBytes(menu);
+        var x = fixture is null ? null : Encoding.UTF8.GetBytes(fixture);
+        ulong opened = 0;
+        int code;
         fixed (byte* fb = f)
         fixed (byte* mb = m)
+        fixed (byte* xb = x)
         {
-            return ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, int>)_exports["m6h_open_session"])(
-                host, fb, (nuint)f.Length, mb, (nuint)m.Length);
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, byte*, nuint, ulong*, int>)
+                _exports["m6h_open_session"])(host, fb, (nuint)f.Length, mb, (nuint)m.Length, xb,
+                (nuint)(x?.Length ?? 0), &opened);
+        }
+        revision = opened;
+        return code;
+    }
+
+    /// <summary>
+    /// Starts the language runtime's process from <paramref name="program"/> (the c600-runtime binary) and waits for
+    /// its hello; the host keeps it until <see cref="Destroy"/>.
+    /// </summary>
+    public int LoadRuntime(IntPtr host, string program)
+    {
+        var p = Encoding.UTF8.GetBytes(program);
+        fixed (byte* pb = p)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, int>)_exports["m6h_load_runtime"])(
+                host, pb, (nuint)p.Length);
         }
     }
 
