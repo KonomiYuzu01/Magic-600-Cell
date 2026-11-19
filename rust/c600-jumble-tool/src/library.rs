@@ -1,10 +1,13 @@
-//! The jumbling library entries as 600 Cell Script (LP3, C8; chapter 03's LB1.8 and LB3.1 catalogues), on the IR
-//! draft's menu words (LP2's pull request 210). Four modules, each in edition `6cs-draft-1` (syntax candidate A) and
-//! in the formatter's canonical layout, checked and run by LP2's checker and interpreter:
+//! The jumbling library entries as 600 Cell Script (LP3, C8; chapter 03's LB1.8, LB1.10 and LB3.1 catalogues), on
+//! the IR draft's menu words (LP2's pull request 210). Five modules, each in edition `6cs-draft-1` (syntax candidate
+//! A) and in the formatter's canonical layout, checked and run by LP2's checker and interpreter:
 //!
 //! - `menu_words` ([`MENU_WORDS`]): LB1.8's literal words of one pinned menu, the jumbling half. `power` repeats a menu
 //!   word, or its inverse for a negative power; the IR draft's own operations concatenate, invert, conjugate and
 //!   commute menu words. It is pure: it reads no state and names no proposal target.
+//! - `menu_traces` ([`MENU_TRACES`]): LB1.10's trace equality keys, the jumbling half. `same_trace` compares the keys
+//!   of two menu words under the relation `jumble-locality/1` the run pins ([`crate::locality::relation`]), and
+//!   `trace_commute` asks whether xy and yx have one key. It is pure, like `menu_words`.
 //! - `jumble_heights` ([`HEIGHTS`]): LB3.1's "Heights, branches, domains and Φ". `height_facts` reads KN2.4's `heights`
 //!   and `height_counts` and adds, by exact sums, Φ = Σ max(0, h − 2) over the left heights, the largest left height,
 //!   and the pieces at heights (0,0) and on the lattice's domain.
@@ -101,8 +104,16 @@ pub const PROTECTION: Module = Module {
     rows: &["protection"],
 };
 
+/// LB1.10's trace equality keys of menu words, the jumbling half.
+pub const MENU_TRACES: Module = Module {
+    name: "menu_traces",
+    source: include_str!("menu_traces.6cs"),
+    exports: &["same_trace", "trace_commute"],
+    rows: &[],
+};
+
 /// The library's modules.
-pub const MODULES: [Module; 4] = [MENU_WORDS, HEIGHTS, WORD_CHECKS, PROTECTION];
+pub const MODULES: [Module; 5] = [MENU_WORDS, MENU_TRACES, HEIGHTS, WORD_CHECKS, PROTECTION];
 
 /// Parses and lowers the library's modules and `clients`, one module each, into one program
 /// (`c600_library::lower_sources`). A client imports `menu_words` by [`Module::sha256`].
@@ -137,6 +148,22 @@ pub fn literal_words() -> CatalogueRow {
                 another alphabet, or a menu word in a run with none pinned, is `LB1:input.incompatible_alphabet`, as \
                 is a `Word` where `power` takes a `MenuWord`, which the checker gives.",
         ..row("Literal words", "Jumbling menu letters of one pinned menu.", &[], MENU_WORDS)
+    }
+}
+
+/// LB1's row "Trace equality keys", the jumbling half (LB1.10).
+pub fn trace_equality_keys() -> CatalogueRow {
+    CatalogueRow {
+        backing: "Library code: `menu_traces.same_trace` and `menu_traces.trace_commute` over the IR draft's \
+                  `trace_key` on menu words and `exact_eq` (LP2's pull request 251), under the relation \
+                  `jumble-locality/1` that the run pins beside its menu alphabet (`locality::relation`).",
+        notes: "Two literal words of one pinned menu have one key exactly when adjacent swaps of letters at \
+                independent grips reach one from the other; letters at one grip never swap. Every occurrence stays, \
+                identity letters and an item beside its inverse among them, so a key keeps each grip's domain test. \
+                The key recognizes commuting swaps only and searches for no word. A key under another menu, model, \
+                key or relation version is `LB1:input.key_contract_mismatch`, and a word of another alphabet is \
+                `LB1:input.incompatible_alphabet`. Word keys are separate (LG2.18's jumbling word key is not built).",
+        ..row("Trace equality keys", "Jumbling menu words under `jumble-locality/1`.", &[], MENU_TRACES)
     }
 }
 

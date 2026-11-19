@@ -9,9 +9,11 @@
 //!   LB1.8's literal words of one pinned menu from their letters alone: concatenation, inverse, conjugate, commutator
 //!   and powers, refused with `LB1:input.incompatible_alphabet` across alphabets.
 //! - [`library`] holds the jumbling library entries as 600 Cell Script on the IR draft's menu words (LP2's pull request
-//!   210), each module with its catalogue row: LB1.8's literal words of one pinned menu, and LB3.1's heights,
-//!   whole-word checks and protection at pose level. The entries track, check and protect the solver's named word or
-//!   state; none chooses, outputs or previews a word.
+//!   210), each module with its catalogue row: LB1.8's literal words of one pinned menu, LB1.10's trace equality keys
+//!   of menu words, and LB3.1's heights, whole-word checks and protection at pose level. The entries track, check and
+//!   protect the solver's named word or state; none chooses, outputs or previews a word.
+//! - [`locality`] builds the relation `jumble-locality/1` that a jumbling run pins beside its menu alphabet, from the
+//!   table `c600_jumble::locality` regenerates from the loaded model (LB1.10; LP2's pull request 251).
 //! - [`level`] names the level a result reads: poses inside Jumble, labels in 600-cell-Full (KN1.11).
 //! - [`relation`] is one typed relation of the relationship strip at pose level, the current occupant of a sticker
 //!   slot, on and off the lattice (EV3.8, EV3.9).
@@ -41,6 +43,10 @@
 //!   `jumble.twist.menu` beside M5's engine, with J1's references at its stages. CT-LB4-03's layout evaluated again at
 //!   a later revision of a jumbled session (`tests/ct_lb4_03.rs`) presses, and undoes, through the same layer;
 //!   `tests/common/mod.rs` holds the session both use.
+//! - `tests/ct_lb1_06.rs` runs CT-LB1-06's jumbling half on the model in `assets/`: the relation [`locality`] pins,
+//!   the keys of bca, cab and abc, identity letters and an item beside its inverse kept, equal keys with equal
+//!   admissibility and end digests on M5's states, the library entry `menu_traces` in the language, and refusals of a
+//!   key under another menu or version.
 //!
 //! The tool runs in-process, as `c600-tools` runs its tool. The tool itself is not a command-layer row; the tests
 //! above drive `c600-command` only as a dev-dependency.
@@ -173,6 +179,7 @@
 
 pub mod level;
 pub mod library;
+pub mod locality;
 pub mod protection;
 pub mod relation;
 pub mod tool;
