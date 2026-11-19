@@ -5,8 +5,8 @@ export view filter_counts() -> Unit effects [snapshot, view] {
     return publish_view(read_snapshot<Nat>("filter.preview"));
 }
 
-export command apply_filter(preview: Nat) -> Unit effects [workspace] {
-    return write_workspace<Nat>("filter.apply", preview);
+export command apply_filter(preview: record { epoch: Nat, job: Nat }) -> Unit effects [workspace] {
+    return write_workspace<record { epoch: Nat, job: Nat }>("filter.apply", preview);
 }
 
 export command effect_scope(scope: Text) -> Unit effects [view] {

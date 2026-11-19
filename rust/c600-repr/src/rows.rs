@@ -1,10 +1,9 @@
 //! What each of the tool's six rows needs from the command layer, what the layer meets of it and what remains (LP3
 //! plan, C6 and C5's item 1). KN5 has one implementation, and LP3 adds no token, receipt, undo or outcome logic of its
-//! own. LP2 built the four common needs in the layer (pull requests 200, 202 and 203), so a host serves five of the
-//! rows with the entries named here ([`RowNeed::served`]): `filter.preview`, `view.effect.scope`, `set.save`,
-//! `structure.compare` and `structure.layer`. The layer serves `filter.apply` too since LP2's pull request 256, and no
-//! host runs its entry yet. The table below is a requirement list, checked against the stored H-08 table, the layer's
-//! `serve_row` and the shipped entries by this crate's tests, which also run the five served rows through the command
+//! own. LP2 built the four common needs in the layer (pull requests 200, 202 and 203) and `filter.apply`'s gate,
+//! preview rule and workspace inverse (pull request 256), so a host serves all six rows with the entries named here
+//! ([`RowNeed::served`]). The table below is a requirement list, checked against the stored H-08 table, the layer's
+//! `serve_row` and the shipped entries by this crate's tests, which also run the six served rows through the command
 //! and source routes (`tests/served_rows.rs`); it runs nothing itself.
 
 use c600_command::{CompletionKind, Kind, Lane, PreviewRule, UndoClass};
@@ -54,8 +53,9 @@ pub const COMMON: [Common; 4] = [
         met: "`CommandLayer::serve_row` (pull request 200): an invocation of a served row admits a program job for \
               the entry, and the host ends the job with `finish_program_job_with`. The layer serves only a view, \
               workspace, query or file row on the `none`, `view` or `program` lane with no gate, preview rule, action \
-              guard, token or undo entry, so it serves five of the six rows. Serving is not journaled: a host serves \
-              its rows again at every open.",
+              guard, token or undo entry, which is five of the six rows; since pull request 256 it serves \
+              `filter.apply` too, with its gate, preview rule and workspace undo entry. Serving is not journaled: a \
+              host serves its rows again at every open.",
     },
     Common {
         need: "The source route's other end: the runtime's view and workspace sinks delivered to the layer as the \
@@ -70,8 +70,8 @@ pub const COMMON: [Common; 4] = [
         met: "The layer's argument forms (pull requests 202, 256 and 269) check `Nat`, `Text`, the choice words, \
               `CellId`, `CellIdPair`, `RevisionRef`, `FilterRef`, `FilterPreviewRef` and `CanonicalObjectRefs` before \
               it admits a job, and refuse a revision that is not the current one as stale. The IR draft has no \
-              identity or reference type, so the entries still take naturals, a list of naturals and text in their \
-              place.",
+              identity or reference type, so the entries still take naturals, a list of naturals, text and, for a \
+              `FilterPreviewRef`, a record of two naturals in their place.",
     },
     Common {
         need: "A workspace revision that moves.",
@@ -134,8 +134,12 @@ pub const NEEDS: [RowNeed; 6] = [
               `fresh_filter_preview` refuses a missing or stale filter preview with `KN5:stale.filter_preview` before \
               any job, reading neither the word-preview slot nor a presentation, and fails the job with that code, \
               writing nothing, when the filter preview went stale while the job ran. The completion is one workspace \
-              action that `session.undo` and `session.redo` invert and repeat as workspace actions.",
-        remains: "Nothing in the command layer for the row's admission, gate, completion or undo.",
+              action that `session.undo` and `session.redo` invert and repeat as workspace actions. Served by \
+              `apply_filter`, which takes the `FilterPreviewRef` as a record of its epoch and job and writes it as the \
+              record `filter.apply`; in the tests the row runs through the command and source routes, and the next \
+              undo removes the record.",
+        remains: "Nothing in the layer for the row's admission, gate, completion or undo. No display applies the \
+                  applied filter yet.",
     },
     RowNeed {
         row: "view.effect.scope",
