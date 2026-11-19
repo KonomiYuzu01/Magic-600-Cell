@@ -1,7 +1,8 @@
 """LX-4's harness on route B (C9; chapter 11, RTE.47 to RTE.53, CT-RTE-12, CT-EV1-06). Standard library only.
 
     python -B tools/perf/c9/lx4.py schedule --fixtures DIR
-    python -B tools/perf/c9/lx4.py post --fixtures DIR --puzzle jumble-off|jumble-on --run DIR [--turn-vk N] [--dry-run]
+    python -B tools/perf/c9/lx4.py post --fixtures DIR --puzzle jumble-off|jumble-on --run DIR
+        [--turn-key KeyJ|KeyK|KeyL] [--dry-run]
     python -B tools/perf/c9/lx4.py analyze --fixtures DIR RUN_DIR [RUN_DIR ...] [--e2 RECORD] [--gate SUMMARY]
         [--out RECORD.json] [--synthetic]
 
@@ -34,9 +35,14 @@ Metrics and the script's edit that drives each (DRAFT mapping of RTE.49's interv
 Messages (DRAFT protocol; the product shell implements it): registered `Magic600.LX4.Reset` (wParam the edit's index
 in EDITS.json, lParam the sample id): the editor loads the edit's target baseline and checks its digest. Then for
 each replacement, in descending offset order: registered `Magic600.LX4.Select` (wParam start, lParam end, UTF-8 byte
-offsets in the current buffer), then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter), or WM_KEYDOWN and
-WM_KEYUP of VK_BACK when the insert is empty. Automatic insertions (indent, closing brackets) are off, so the buffer
-equals the script's result. A turn is WM_KEYDOWN and WM_KEYUP of the shell's turn key (`--turn-vk`).
+offsets in the current buffer), then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or
+WM_KEYDOWN and WM_KEYUP of VK_BACK with its scan code 0x0E when the insert is empty. Automatic insertions (indent,
+closing brackets) are off, so the buffer equals the script's result. A turn is WM_KEYDOWN and WM_KEYUP of one of the
+shell's turn keys (`--turn-key`, default KeyJ: physical J, K and L are twists 1, 2 and 3), with the key's scan code in
+lParam bits 16 to 23: the shell routes by Godot's physical keycode, which Godot takes from the scan code, so a bare
+virtual-key code with scan code 0 does not turn. Godot's loop translates a turn's key-down into a WM_CHAR with the same
+scan code; the shell's LX-4 module keeps such characters out of the buffer, and the harness's own WM_CHARs carry scan
+code 0, so the two never mix.
 
 Logs. The harness writes `lx4-posts.jsonl` in the run directory (format `magic600-c9-lx4-posts-v1`): a `run` row,
 one `post` row per message (`sample`, `index`, `message`, `qpc` read just before PostMessageW, `ok`) and one `sample`
@@ -102,6 +108,11 @@ BARS = {'echo': {'S': (50, 67), 'M': (50, 67), 'L': (50, 67)},
 RESET, SELECT = 'Magic600.LX4.Reset', 'Magic600.LX4.Select'
 WM_KEYDOWN, WM_KEYUP, WM_CHAR, VK_BACK = 0x0100, 0x0101, 0x0102, 0x08
 KEYUP_LPARAM = 0xC0000001
+SCAN_BACK = 0x0E
+# The shell's turn keys (C9 product, 19 November 2026): W3C code -> (virtual-key code, scan code). Shift gives the
+# inverse twist; the harness turns forward only.
+TURN_KEYS = {'KeyJ': (0x4A, 0x24), 'KeyK': (0x4B, 0x25), 'KeyL': (0x4C, 0x26)}
+TURN_KEY = 'KeyJ'
 BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1,000/1,500 ms; RTE.53: every bar in '
                 'each of three series at S, M and L on both puzzles, with the renderer gate and charter E2 in the '
                 'same runs'),
@@ -203,12 +214,20 @@ def timing_of(metric):
     return W_METRIC[2] if metric == W_METRIC[0] else METRICS[metric][1]
 
 
-def messages(edits, sample, turn_vk=None):
+def key_lparams(scan):
+    """(WM_KEYDOWN lParam, WM_KEYUP lParam) of one press of the key with `scan`: repeat count 1 and the scan code in
+    bits 16 to 23; the key-up also sets the previous-state and transition bits."""
+    return 1 | scan << 16, KEYUP_LPARAM | scan << 16
+
+
+def messages(edits, sample, turn_key=TURN_KEY):
     """[(message name or number, wParam, lParam)] and the timed message's index."""
     if sample['metric'] == 'turn':
-        if turn_vk is None:
-            raise FixtureError("the shell's turn key is not known (--turn-vk)")
-        return [(WM_KEYDOWN, turn_vk, 1), (WM_KEYUP, turn_vk, KEYUP_LPARAM)], 0
+        if turn_key not in TURN_KEYS:
+            raise FixtureError(f"{turn_key!r} is not one of the shell's turn keys ({', '.join(TURN_KEYS)})")
+        vk, scan = TURN_KEYS[turn_key]
+        down, up = key_lparams(scan)
+        return [(WM_KEYDOWN, vk, down), (WM_KEYUP, vk, up)], 0
     edit = edits[sample['edit']]
     out, keys = [(RESET, sample['edit'], sample['id'])], []
     for replacement in sorted(edit['replacements'], key=lambda r: -r['offset']):
@@ -221,7 +240,8 @@ def messages(edits, sample, turn_vk=None):
                 out.append((WM_CHAR, int.from_bytes(units[unit:unit + 2], 'little'), 1))
         else:
             keys.append(len(out))
-            out.extend([(WM_KEYDOWN, VK_BACK, 1), (WM_KEYUP, VK_BACK, KEYUP_LPARAM)])
+            down, up = key_lparams(SCAN_BACK)
+            out.extend([(WM_KEYDOWN, VK_BACK, down), (WM_KEYUP, VK_BACK, up)])
     return out, keys[0] if timing_of(sample['metric']) == 'first' else keys[-1]
 
 
@@ -299,7 +319,7 @@ class Tail:
         return out
 
 
-def post_run(fixtures, puzzle, run_dir, turn_vk, system, clock=time.monotonic, sleep=time.sleep, out=print):
+def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, sleep=time.sleep, out=print):
     """Posts one puzzle's schedule to the shell named in run_dir/events.jsonl; 0 when every sample completed."""
     manifest, edits, digests = load_fixtures(fixtures)
     run_dir = Path(run_dir)
@@ -321,7 +341,7 @@ def post_run(fixtures, puzzle, run_dir, turn_vk, system, clock=time.monotonic, s
 
         write({'t': 'run', 'format': POSTS_FORMAT, 'run_id': head.get('run_id'), 'puzzle': puzzle,
                'build_identity': head.get('build_identity'), 'qpc_frequency': system.frequency(),
-               'synthetic': False, 'turn_vk': turn_vk, **digests,
+               'synthetic': False, 'turn_key': turn_key, **digests,
                'harness_sha256': sha256_bytes(Path(__file__).read_bytes())})
         endpoints, keys = set(), 0
 
@@ -337,7 +357,7 @@ def post_run(fixtures, puzzle, run_dir, turn_vk, system, clock=time.monotonic, s
             drain()
             keys = 0
             started = clock()
-            sent, timed = messages(edits, sample, turn_vk)
+            sent, timed = messages(edits, sample, turn_key)
             ok_all = system.alive(hwnd)
             for index, (message, wparam, lparam) in enumerate(sent):
                 number = names.get(message, message)
@@ -557,7 +577,8 @@ def main(argv=None, system_factory=Windows):
     poster.add_argument('--fixtures', type=Path, required=True)
     poster.add_argument('--puzzle', choices=PUZZLES, required=True)
     poster.add_argument('--run', type=Path, help="the shell's run directory (holds its events.jsonl)")
-    poster.add_argument('--turn-vk', type=lambda text: int(text, 0), help="the shell's turn key (virtual-key code)")
+    poster.add_argument('--turn-key', choices=tuple(TURN_KEYS), default=TURN_KEY,
+                        help=f"the shell's turn key, a physical key (default {TURN_KEY})")
     poster.add_argument('--dry-run', action='store_true', help='read the fixtures and print; post nothing')
     analysis = commands.add_parser('analyze', help='judge run directories against RTE.49 and RTE.53')
     analysis.add_argument('--fixtures', type=Path, required=True)
@@ -577,20 +598,17 @@ def main(argv=None, system_factory=Windows):
             if args.dry_run:
                 _, edits, digests = load_fixtures(args.fixtures)
                 samples = schedule(edits, args.puzzle)
-                sent = sum(len(messages(edits, sample, args.turn_vk if args.turn_vk is not None else 0)[0])
-                           for sample in samples)
-                first, timed = messages(edits, samples[0])
+                sent = sum(len(messages(edits, sample, args.turn_key)[0]) for sample in samples)
+                first, timed = messages(edits, samples[0], args.turn_key)
                 print(f'{args.puzzle}: {len(samples)} samples, {sent} messages; fixtures {digests["manifest_sha256"]}')
                 print(f'sample 0 ({samples[0]["size"]} {samples[0]["metric"]}): {len(first)} messages, timed {timed}')
-                if args.turn_vk is None:
-                    print("not ready to post: the shell's turn key is not known (--turn-vk)")
+                vk, scan = TURN_KEYS[args.turn_key]
+                print(f'turn key {args.turn_key}: virtual key 0x{vk:02X}, scan code 0x{scan:02X}')
                 print('dry run: no window was looked for and nothing was posted')
                 return 0
             if args.run is None:
                 parser.error('post needs --run unless --dry-run')
-            if args.turn_vk is None:
-                parser.error("post needs the shell's turn key (--turn-vk)")
-            return post_run(args.fixtures, args.puzzle, args.run, args.turn_vk, system_factory())
+            return post_run(args.fixtures, args.puzzle, args.run, args.turn_key, system_factory())
         record = build(args.fixtures, args.runs, argv, args.e2, args.gate, args.synthetic)
     except FixtureError as error:
         print(f'lx4: {error}', file=sys.stderr)
