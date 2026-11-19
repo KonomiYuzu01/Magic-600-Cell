@@ -1,23 +1,26 @@
 //! The jumbling rows' host bridge at the command layer's head (LP3, C8; `c600_jumble_tool::rows`): the library entries
-//! of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 run through `Rows::at_head` on sessions of the jumbled puzzle
-//! through the command layer with Jumble on, as `tests/common` drives them: `jumble.on` at solved under a W-J fixture's
-//! pinned menu, then one `jumble.twist.menu` press for each of the fixture's first journal records.
+//! of CT-LB1-03, CT-LB3-03, CT-LB3-04, CT-LB3-06 and CT-LB3-07 run through `Rows::at_head` on sessions of the jumbled
+//! puzzle through the command layer with Jumble on, as `tests/common` drives them: `jumble.on` at solved under a W-J
+//! fixture's pinned menu, then one `jumble.twist.menu` press for each of the fixture's first journal records.
 //!
 //! At each head, each entry run through the bridge at the head equals its run through the bridge on the same state,
 //! witnessed apart from the layer by the same records (`Rows::on`), byte for byte: outcome, code, the value's canonical
-//! bytes, the rows read and the drafted sets checked. `tests/library.rs` and `tests/ct_lb3_04.rs` compare the entries
-//! run on such snapshots with `c600_jumble`'s answers, so the head serves the kernel's answers on the head's state. The
-//! heads are I_a and S4 after 0, 1 and 12 records and I_b after 1. The words are the fixture's own next 20 records, as
-//! menu words of its alphabet; the step flag's unit is the head's first exact-pose group off the lattice, and at
-//! solved, where there is none, the row refuses piece 0 as a unit (`KN2:input.named_object_invalid`). The corrections
-//! are words of the I_a menu: under S4 and I_b `nu` answers and the drafted check refuses the menu
-//! (`KN2:input.menu_binding_mismatch`); under I_a an unshipped id stops the drafted check
-//! (`KN2:input.named_object_invalid`).
+//! bytes, the rows read and the drafted sets checked. `tests/library.rs`, `tests/ct_lb3_04.rs` and `tests/ct_lb3_07.rs`
+//! compare the entries run on such snapshots with `c600_jumble`'s answers, so the head serves the kernel's answers on
+//! the head's state. The heads are I_a and S4 after 0, 1 and 12 records and I_b after 1. The words are the fixture's
+//! own next 20 records, as menu words of its alphabet; the step flag's unit is the head's first exact-pose group off
+//! the lattice, and at solved, where there is none, the row refuses piece 0 as a unit
+//! (`KN2:input.named_object_invalid`). The corrections are words of the I_a menu: under S4 and I_b `nu` answers and the
+//! drafted check refuses the menu (`KN2:input.menu_binding_mismatch`); under I_a an unshipped id stops the drafted
+//! check (`KN2:input.named_object_invalid`).
 //!
 //! With Jumble off, after `jumble.off`, every read stops with `KN5:input.menu_word_needs_jumble_on`. The bridge grants
-//! no preview, clock or other row (`LG3:capability.not_granted`), refuses a row read in another argument form with
-//! `KN5:input.argument_form` at its tariff, and its draft tariff counts one pass of the model's pieces for the state
-//! and one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts.
+//! no preview, clock or other row, the research survey's all-items `survey` among them (`LG3:capability.not_granted`),
+//! refuses a row read in another argument form with `KN5:input.argument_form` at its tariff, and its draft tariff
+//! counts one pass of the model's pieces for the state and one for each letter of a named word or entry of a drafted
+//! set, two for a named cap's seam facts or the whole scan, one more for each cap for the rim summary, one more for a
+//! named cap and each of its 80 meeting caps for covers, and one for a named correction id. Covers take one cap and the
+//! catalogue lookup one id, never `all` or a list.
 //!
 //! The `seam_facts` row, which CT-RTE-07's jumbling keys read (`tests/ct_rte_07_jumble.rs`), answers for the cap it is
 //! named: at an admissible cap its N_c equals the engine's rim summary for that cap, a blocked cap has no totals, and a
@@ -31,13 +34,13 @@ use c600_command::code::ARGUMENT_FORM;
 use c600_ir::{QTy, Ty};
 use c600_jumble::codes::{MENU_BINDING_MISMATCH, MENU_WORD_NEEDS_JUMBLE_ON, NAMED_OBJECT_INVALID};
 use c600_jumble::levels::{Base, Snapshot};
-use c600_jumble::model::NP;
+use c600_jumble::model::{NP, POLES};
 use c600_jumble::observe::cuts::rim_summary;
 use c600_jumble::observe::{seam_facts, Batch, Rows as Cells, Scope};
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::Twist;
-use c600_jumble_tool::library::{self, HEIGHTS, NU, PROTECTION, WORD_CHECKS};
-use c600_jumble_tool::rows::{Rows, RESULT_BOUND};
+use c600_jumble_tool::library::{self, CORRECTIONS, COVERS, HEIGHTS, NU, PROTECTION, RIM, WORD_CHECKS};
+use c600_jumble_tool::rows::{Rows, MEETING_CAPS, RESULT_BOUND};
 use c600_jumble_tool::word::{Alphabet, LiteralWord};
 use c600_kernel::json::Value as JsonValue;
 use c600_run::encode::encode;
@@ -52,7 +55,7 @@ use common::{committed, engine, Fixture, Session};
 /// Run limits wide enough for every run here.
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
-/// The library's six modules, lowered together, checked with no diagnostic and loaded once.
+/// The library's nine modules, lowered together, checked with no diagnostic and loaded once.
 fn loaded() -> &'static Loaded {
     static LOADED: OnceLock<Loaded> = OnceLock::new();
     LOADED.get_or_init(|| {
@@ -132,8 +135,9 @@ fn unit(state: &State) -> Vec<u32> {
 }
 
 /// The calls run at each head, each with a label: CT-LB3-03's heights entry, CT-LB1-03's application and CT-LB3-06's
-/// step flag with `unit` and protection on `word`, and CT-LB3-04's ν entries with drafted sets, an unshipped id among
-/// them.
+/// step flag with `unit` and protection on `word`, CT-LB3-04's ν entries with drafted sets, an unshipped id among
+/// them, and CT-LB3-07's inspector entries: the rim facts, the covers at cap 57 and the catalogue's correction 27,
+/// which only a head under I_a answers.
 fn calls(pinned: &MenuAlphabet, word: &LiteralWord, unit: &[u32]) -> Vec<(&'static str, Call)> {
     let w = menu_word(pinned, word);
     let call = |module: &'static str, entry: &'static str, args: Vec<RunValue>| Call { module, entry, args };
@@ -147,6 +151,9 @@ fn calls(pinned: &MenuAlphabet, word: &LiteralWord, unit: &[u32]) -> Vec<(&'stat
         ("ν, empty draft", call(NU.name, "drafted_check", vec![draft(&[])])),
         ("ν, two entries", call(NU.name, "drafted_check", vec![draft(&[(2, 1), (3, -1)])])),
         ("ν, unshipped id", call(NU.name, "drafted_check", vec![draft(&[(2, 1), (36, 1)])])),
+        ("rim", call(RIM.name, "rim_facts", vec![])),
+        ("covers", call(COVERS.name, "covers_at", vec![RunValue::int(57u32)])),
+        ("correction", call(CORRECTIONS.name, "correction", vec![RunValue::int(27u32)])),
     ]
 }
 
@@ -161,8 +168,8 @@ fn witnessed(fixture: &Fixture, count: usize) -> Snapshot {
     Snapshot::witnessed(engine(), state, journal, None).expect("no engine error").expect("the journal witnesses it")
 }
 
-/// CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 (part: the library entries through the host bridge at the command
-/// layer's head with Jumble on).
+/// CT-LB1-03, CT-LB3-03, CT-LB3-04, CT-LB3-06 and CT-LB3-07 (part: the library entries through the host bridge at the
+/// command layer's head with Jumble on).
 #[test]
 fn the_library_entries_read_the_layers_head_through_the_bridge() {
     let heads: [(&str, &[usize]); 3] = [("I_a", &[0, 1, 12]), ("S4", &[0, 1, 12]), ("I_b", &[1])];
@@ -189,9 +196,12 @@ fn the_library_entries_read_the_layers_head_through_the_bridge() {
                 assert_eq!(at_head, apart, "{what}");
                 assert!(!at_head.asked.is_empty(), "{what}: the entry reads its rows");
                 // A unit holds pieces off the lattice. The corrections are words of the I_a menu: under another menu
-                // `nu` answers and the drafted check refuses the menu; under I_a only the unshipped id stops a run.
+                // `nu` answers and the drafted check and the catalogue lookup refuse the menu; under I_a only the
+                // unshipped id stops a run.
                 let expected = match (name, label.starts_with('ν'), label) {
                     (_, false, "step flag") if on_lattice => Some(NAMED_OBJECT_INVALID),
+                    ("I_a", false, "correction") => None,
+                    (_, false, "correction") => Some(MENU_BINDING_MISMATCH),
                     (_, false, _) => None,
                     (_, true, "ν") => None,
                     ("I_a", true, "ν, unshipped id") => Some(NAMED_OBJECT_INVALID),
@@ -241,7 +251,7 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     assert_eq!(rows.tariff(&Request::Clock).map(|t| t.kernel_cost), Err(NOT_GRANTED));
     let propose = Request::Propose { word: &[1, 2], target: "operation.preview", request: b"{}" };
     assert_eq!(rows.tariff(&propose).map(|t| t.kernel_cost), Err(NOT_GRANTED));
-    for query in ["positions", "labels", "state", "nu_check"] {
+    for query in ["positions", "labels", "state", "nu_check", "survey"] {
         assert_eq!(rows.tariff(&Request::Snapshot { query, ty: &nat }).map(|t| t.kernel_cost), Err(NOT_GRANTED));
     }
     for query in ["heights", "height_counts", "nu"] {
@@ -250,7 +260,13 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
         let with = Request::SnapshotWith { query, arg: &no_word, ty: &nat };
         assert_eq!(rows.tariff(&with).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "{query} takes no argument");
     }
-    for query in ["replay", "word_check", "protection", "correction_set_check", "seam_facts"] {
+    let rim = rows.tariff(&Request::Snapshot { query: "rim_summary", ty: &nat }).map(|t| t.kernel_cost);
+    assert_eq!(rim, Ok((1 + POLES as u128) * pass), "one pass and one for each cap's classification");
+    let rim_with = Request::SnapshotWith { query: "rim_summary", arg: &no_word, ty: &nat };
+    assert_eq!(rows.tariff(&rim_with).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "rim_summary takes no argument");
+    let taking =
+        ["replay", "word_check", "protection", "correction_set_check", "seam_facts", "covers", "correction_lookup"];
+    for query in taking {
         let without = Request::Snapshot { query, ty: &nat };
         assert_eq!(rows.tariff(&without).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "{query} takes an argument");
     }
@@ -258,6 +274,19 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     assert_eq!(rows.tariff(&cap).map(|t| t.kernel_cost), Ok(2 * pass), "the cap's classification and its cut");
     let not_a_cap = Request::SnapshotWith { query: "seam_facts", arg: br#"{"letters":[],"menu":{}}"#, ty: &nat };
     assert_eq!(rows.tariff(&not_a_cap).map(|t| t.kernel_cost), Err(ARGUMENT_FORM));
+    let all = Request::SnapshotWith { query: "seam_facts", arg: br#""all""#, ty: &nat };
+    assert_eq!(rows.tariff(&all).map(|t| t.kernel_cost), Ok(2 * pass), "the whole scan");
+    let other = Request::SnapshotWith { query: "seam_facts", arg: br#""some""#, ty: &nat };
+    assert_eq!(rows.tariff(&other).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "a cap or all, nothing else");
+    let covers = Request::SnapshotWith { query: "covers", arg: br#"{"int":"7"}"#, ty: &nat };
+    let meeting = 1 + MEETING_CAPS as u128;
+    assert_eq!(rows.tariff(&covers).map(|t| t.kernel_cost), Ok((1 + meeting) * pass), "the cap and its meeting caps");
+    let covers_all = Request::SnapshotWith { query: "covers", arg: br#""all""#, ty: &nat };
+    assert_eq!(rows.tariff(&covers_all).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "covers takes one named cap");
+    let lookup = Request::SnapshotWith { query: "correction_lookup", arg: br#"{"int":"27"}"#, ty: &nat };
+    assert_eq!(rows.tariff(&lookup).map(|t| t.kernel_cost), Ok(pass), "one pass for the named id");
+    let ids = Request::SnapshotWith { query: "correction_lookup", arg: br#"[{"int":"2"},{"int":"3"}]"#, ty: &nat };
+    assert_eq!(rows.tariff(&ids).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "one id, never a list of ids");
     let word = br#"{"letters":[[0,1],[2,3],[4,5]],"menu":{}}"#;
     let replay = Request::SnapshotWith { query: "replay", arg: word, ty: &nat };
     assert_eq!(rows.tariff(&replay).map(|t| t.kernel_cost), Ok(4 * pass), "one pass and one for each letter");
