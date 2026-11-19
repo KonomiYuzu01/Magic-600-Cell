@@ -48,8 +48,9 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     The foreground counts as lost once the window had it and lost it, or if it never had it (both logs).
   - `CoreSurface.cs` drives the core context's life through the shell calls: `sa2_create`, `sa2_surface_attach` and
     `sa2_scene_load` on open, `sa2_surface_move` and a drained `sa2_resize` while it lives, and `sa2_scene_unload`,
-    `sa2_drain`, `sa2_surface_detach` and `sa2_detach` on close. Draft choices: the first hardware adapter, the
-    acceptance harness's default config, and scene 1.
+    `sa2_drain`, `sa2_surface_detach` and `sa2_detach` on close. It opens Godot's own adapter (the LUID of Godot's
+    D3D12 physical device), not DXGI's first hardware adapter. Draft choices: the acceptance harness's default
+    config, and scene 1.
   - `HostLibrary.cs` loads the native host library (`c600_shell_host.dll`, step S3), resolves its `m6h_*` exports,
     refuses another version than 2, and wraps each call. `Create` hands the library the core's table and a context.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function

@@ -41,7 +41,7 @@ const REALISED: [&str; 39] = [
     "MR15", "MR16", "P01", "P02", "P03", "P04", "S01", "S02",
 ];
 
-const M5: &str = "waits for M5: a jumbling key";
+const M5: &str = "a jumbling key: realised on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`";
 const M6: &str = "waits for M6: a recorded pick or accumulation across runs needs the session store";
 const ROW_ARGUMENT: &str = "not expressible: a row whose argument is the run's input; a snapshot query is a literal";
 const HOST_EVENT: &str = "not realised: a host event (a cancel, a deadline or a lost runtime) inside a loop or a \

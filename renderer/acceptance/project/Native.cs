@@ -65,6 +65,8 @@ public unsafe sealed class Native : IDisposable
     public const int SA2_E_IO = 9;
     public const int SA2_E_UNAVAILABLE = 10;
     public const uint SA2_SCENE_NO_VRAM = 1;
+    public const uint SA2_TARGET_SURFACE = 4294967295;
+    public const uint SA2_SURFACE_SYNC_INTERVAL = 1;
     public const int SA2_QUEUE_SAME = 0;
     public const int SA2_QUEUE_OWN = 1;
     public const int SA2_BARRIERS_MATCH_GODOT = 0;
@@ -110,6 +112,11 @@ public unsafe sealed class Native : IDisposable
     public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_scene_unload;
     public readonly delegate* unmanaged[Cdecl]<nint, Sa2WjConfig*, int> sa2_scene_load_wj;
     public readonly delegate* unmanaged[Cdecl]<nint, byte*, int> sa2_scene_lattice_check;
+    // ABI 5, route B (C9 U4: --sa2-route surface).
+    public readonly delegate* unmanaged[Cdecl]<ulong, Sa2Config*, nint*, int> sa2_create;
+    public readonly delegate* unmanaged[Cdecl]<nint, ulong, int, int, uint, uint, int> sa2_surface_attach;
+    public readonly delegate* unmanaged[Cdecl]<nint, ulong*, int> sa2_surface_swap_chain;
+    public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_surface_detach;
     private readonly nint _library;
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
@@ -168,10 +175,31 @@ public unsafe sealed class Native : IDisposable
             sa2_scene_unload = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_scene_unload");
             sa2_scene_load_wj = (delegate* unmanaged[Cdecl]<nint, Sa2WjConfig*, int>)Export("sa2_scene_load_wj");
             sa2_scene_lattice_check = (delegate* unmanaged[Cdecl]<nint, byte*, int>)Export("sa2_scene_lattice_check");
+            sa2_create = (delegate* unmanaged[Cdecl]<ulong, Sa2Config*, nint*, int>)Export("sa2_create");
+            sa2_surface_attach = (delegate* unmanaged[Cdecl]<nint, ulong, int, int, uint, uint, int>)Export("sa2_surface_attach");
+            sa2_surface_swap_chain = (delegate* unmanaged[Cdecl]<nint, ulong*, int>)Export("sa2_surface_swap_chain");
+            sa2_surface_detach = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_surface_detach");
         }
         catch { NativeLibrary.Free(_library); throw; }
     }
 
     private nint Export(string name) => NativeLibrary.GetExport(_library, name);
+
+    // C9 U4: the LUID of the adapter Godot renders on, read from Godot's IDXGIAdapter (its PhysicalDevice driver
+    // resource) with IDXGIAdapter::GetDesc, vtable slot 8 (IUnknown 0-2, IDXGIObject 3-6, EnumOutputs 7).
+    // DXGI_ADAPTER_DESC is 304 bytes on x64 with AdapterLuid (LowPart, HighPart) at offset 296. sa2_create opens
+    // that adapter, so route B draws on Godot's GPU even where DXGI lists another hardware adapter first. The value is
+    // never recorded.
+    public static ulong AdapterLuid(ulong adapter)
+    {
+        if (adapter == 0) throw new InvalidOperationException("adapter-unavailable");
+        byte* description = stackalloc byte[304];
+        nint* table = *(nint**)adapter;
+        var getDesc = (delegate* unmanaged[Stdcall]<nint, byte*, int>)table[8];
+        if (getDesc((nint)adapter, description) < 0) throw new InvalidOperationException("adapter-description");
+        ulong luid = ((ulong)*(uint*)(description + 300) << 32) | *(uint*)(description + 296);
+        if (luid == 0) throw new InvalidOperationException("adapter-luid");
+        return luid;
+    }
     public void Dispose() => NativeLibrary.Free(_library);
 }
