@@ -53,6 +53,8 @@ public sealed class Level2Result
     public Dictionary<string, object> debug = new() { ["enabled"] = null, ["debug_layer"] = null, ["counts"] = null, ["messages"] = null };
     // C9 U4, route B only: {route, swap_chain, sync_interval} of the core's own swap chain; null on the texture routes.
     public Dictionary<string, object> presentation;
+    // C9 U5c, --sa2-stages only: the attached user-stage pair (Level2.AttachStages); null without user stages.
+    public Dictionary<string, object> stages;
 
     public Level2Result(Level2Arguments a)
     {

@@ -1,7 +1,9 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -42,6 +44,16 @@ public partial class Level2 : Node
     private ulong _pendingShown;
     private uint _pendingWarmupSlot;
     private bool _pendingWarmup;
+    // C9 U5c (--sa2-stages): the compiled handles (vertex, fragment), whether the pair is attached, the last reported
+    // row's frame, the first and last traced scene frame, and every sa2_stage_report row as one JSON line.
+    private readonly ulong[] _stageHandles = new ulong[2];
+    private bool _stagesAttached;
+    private ulong _lastStageRow, _traceFirst, _traceLast;
+    private readonly List<string> _stageRows = new();
+    private static readonly string[] StageKinds = { "vertex", "fragment" };
+    private const string StageContract = "m600-stage-hlsl/1", StageArraysFormat = "magic600-stage-arrays/1";
+    // The built-in projection's distance (renderer/core/src/scene.cpp constants()); the gate vertex stage's d4.
+    private const float BuiltinD4 = 1.18f;
 
     public override void _Ready()
     {
@@ -504,6 +516,7 @@ public partial class Level2 : Node
             Flush();
             Require("sa2_drain", _native.sa2_drain(_context, 5000));
             LoadScene();
+            if (_args.stages_path != null) AttachStages();
         }
         if (_args.mode == "geometry" || _args.mode == "lattice")
         {
@@ -551,7 +564,7 @@ public partial class Level2 : Node
             // Route B: the core draws and presents the frame itself; Godot shows only its transparent window.
             if (_firstProduce == 0) _firstProduce = Level2Windows.Clock();
             Require("sa2_scene_produce", _native.sa2_scene_produce(_context, Native.SA2_TARGET_SURFACE, frame));
-            if (_traceBegun) _result.window["presents"] = Convert.ToInt64(_result.window["presents"]) + 1;
+            Produced(frame);
             return;
         }
         Require("sa2_signal_godot_free", _native.sa2_signal_godot_free(_context, frame - 1));
@@ -560,7 +573,180 @@ public partial class Level2 : Node
         Require("sa2_godot_wait_ready", _native.sa2_godot_wait_ready(_context, frame));
         CopyDisplay((uint)(frame % 3));
         _pendingShown = frame;
-        if (_traceBegun) _result.window["presents"] = Convert.ToInt64(_result.window["presents"]) + 1;
+        Produced(frame);
+    }
+
+    private void Produced(ulong frame)
+    {
+        if (_traceBegun)
+        {
+            _result.window["presents"] = Convert.ToInt64(_result.window["presents"]) + 1;
+            // The trace's frames are the scene frames from its first produce to its last (trace.jsonl counts them).
+            if (_traceFirst == 0) _traceFirst = frame;
+            _traceLast = frame;
+        }
+        CollectStageRows();
+    }
+
+    // C9 U5c: the build's stage pair (prepare_host.py --stages) is compiled with the core's DXC and attached to the
+    // loaded W1..W4 scene before its first frame, outside any trace. Each compile record goes to the run folder; a
+    // failed compile ends the run as "stage-compile" with its record kept. The overdraw allowance is the smaller of
+    // the two declared values; the arrays come from arrays.json, whose vertex d4 must be the built-in 1.18f.
+    private unsafe void AttachStages()
+    {
+        string folder = _args.stages_path;
+        byte[][] texts = new byte[2][];
+        uint[][] arrays = new uint[2][];
+        uint[] overdraws = new uint[2];
+        string[] digests = new string[2], hashes = new string[2];
+        uint d4;
+        try
+        {
+            using JsonDocument given = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(folder, "arrays.json")));
+            if (given.RootElement.GetProperty("format").GetString() != StageArraysFormat) throw new InvalidDataException();
+            for (int k = 0; k < 2; k++)
+            {
+                string kind = StageKinds[k], hlsl = Path.Combine(folder, kind + ".hlsl"), json = Path.Combine(folder, kind + ".json");
+                texts[k] = File.ReadAllBytes(hlsl);
+                using JsonDocument record = JsonDocument.Parse(File.ReadAllBytes(json));
+                JsonElement r = record.RootElement;
+                hashes[k] = Convert.ToHexString(SHA256.HashData(texts[k])).ToLowerInvariant();
+                if (r.GetProperty("kind").GetString() != kind || r.GetProperty("contract").GetString() != StageContract
+                    || r.GetProperty("hlsl_sha256").GetString() != hashes[k] || texts[k].Length > Native.SA2_STAGE_HLSL_MAX_BYTES)
+                    throw new InvalidDataException();
+                overdraws[k] = r.GetProperty("overdraw").GetUInt32();
+                digests[k] = r.GetProperty("digest").GetString();
+                arrays[k] = StageArrays(r.GetProperty("arrays"), given.RootElement.GetProperty(kind));
+                _result.files["stage:" + kind + ".hlsl"] = Path.GetFullPath(hlsl);
+                _result.files["stage:" + kind + ".json"] = Path.GetFullPath(json);
+            }
+            JsonElement distance = given.RootElement.GetProperty("vertex").GetProperty("d4");
+            if (distance.GetArrayLength() != 1) throw new InvalidDataException();
+            d4 = uint.Parse(distance[0].GetString().AsSpan(2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture);
+        }
+        // Any unreadable, malformed or mismatched stage file: the folder is not the build's stage pair.
+        catch (Exception) { throw new InvalidOperationException("stage-files"); }
+        uint builtin = BitConverter.SingleToUInt32Bits(BuiltinD4);
+        _result.files["stage:arrays.json"] = Path.GetFullPath(Path.Combine(folder, "arrays.json"));
+        string native = Path.GetDirectoryName(_native.ModulePath);
+        foreach (string library in new[] { "dxcompiler.dll", "dxil.dll" })
+        {
+            string path = Path.Combine(native, library);
+            if (!File.Exists(path)) throw new InvalidOperationException("stage-compiler-missing");
+            _result.files["dxc:" + library] = path;
+        }
+        uint overdraw = Math.Min(overdraws[0], overdraws[1]);
+        _result.stages = new() {
+            ["directory"] = folder, ["contract"] = StageContract, ["overdraw"] = overdraw,
+            ["d4"] = new Dictionary<string, object> { ["bits"] = "0x" + d4.ToString("x8"), ["builtin_bits"] = "0x" + builtin.ToString("x8"),
+                ["equal"] = d4 == builtin },
+            ["attached"] = false, ["rows"] = 0, ["trace_frames"] = null
+        };
+        if (d4 != builtin) throw new InvalidOperationException("stage-d4");
+        for (int k = 0; k < 2; k++)
+        {
+            string kind = StageKinds[k];
+            byte[] record = new byte[Native.SA2_STAGE_RECORD_BYTES];
+            ulong handle = 0; uint size = 0; int status;
+            fixed (byte* text = texts[k])
+            fixed (byte* output = record)
+                status = _native.sa2_stage_compile(_context, k == 0 ? Native.SA2_STAGE_VERTEX : Native.SA2_STAGE_FRAGMENT, text,
+                    (uint)texts[k].Length, &handle, output, (uint)record.Length, &size);
+            NativeStatus("sa2_stage_compile", status);
+            _stageHandles[k] = handle;
+            string compiled = null;
+            if (size > 1 && size <= record.Length)
+            {
+                WriteNew(Path.Combine(_args.out_path, "stage-compile-" + kind + ".json"), record.AsSpan(0, (int)size - 1));
+                try { using JsonDocument written = JsonDocument.Parse(record.AsMemory(0, (int)size - 1)); compiled = written.RootElement.GetProperty("status").GetString(); }
+                catch (Exception e) when (e is JsonException || e is KeyNotFoundException || e is InvalidOperationException) { }
+            }
+            _result.stages[kind] = new Dictionary<string, object> { ["digest"] = digests[k], ["hlsl_sha256"] = hashes[k],
+                ["overdraw"] = overdraws[k], ["arrays"] = arrays[k].Length, ["handle"] = handle, ["compile"] = compiled ?? "unrecorded" };
+            if (status != Native.SA2_OK || handle == 0) throw new InvalidOperationException("stage-compile");
+        }
+        fixed (uint* vertex = arrays[0])
+        fixed (uint* fragment = arrays[1])
+            Require("sa2_scene_stages", _native.sa2_scene_stages(_context, _stageHandles[0], _stageHandles[1], overdraw,
+                vertex, (uint)arrays[0].Length, fragment, (uint)arrays[1].Length));
+        _stagesAttached = true;
+        _result.stages["attached"] = true;
+    }
+
+    // One stage's arrays in its declared layout ({name, offset, length}), from arrays.json's bit patterns for that kind.
+    private static uint[] StageArrays(JsonElement layout, JsonElement given)
+    {
+        int total = 0, names = 0;
+        foreach (JsonElement entry in layout.EnumerateArray())
+            total = Math.Max(total, checked(entry.GetProperty("offset").GetInt32() + entry.GetProperty("length").GetInt32()));
+        uint[] values = new uint[total];
+        bool[] filled = new bool[total];
+        foreach (JsonElement entry in layout.EnumerateArray())
+        {
+            int offset = entry.GetProperty("offset").GetInt32(), length = entry.GetProperty("length").GetInt32();
+            JsonElement bits = given.GetProperty(entry.GetProperty("name").GetString());
+            if (offset < 0 || length <= 0 || bits.GetArrayLength() != length) throw new InvalidDataException();
+            for (int i = 0; i < length; i++)
+            {
+                string text = bits[i].GetString();
+                if (text.Length != 10 || !text.StartsWith("0x", StringComparison.Ordinal) || filled[offset + i]) throw new InvalidDataException();
+                values[offset + i] = uint.Parse(text.AsSpan(2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture);
+                filled[offset + i] = true;
+            }
+            names++;
+        }
+        int declared = 0;
+        foreach (JsonProperty _ in given.EnumerateObject()) declared++;
+        if (declared != names || Array.IndexOf(filled, false) >= 0) throw new InvalidDataException();
+        return values;
+    }
+
+    // Every completed chain frame once, in frame order: report until the frame number stops rising (sa2_interop.h).
+    private unsafe void CollectStageRows()
+    {
+        if (!_stagesAttached) return;
+        while (true)
+        {
+            Sa2StageFrame row = new() { struct_size = Native.StageFrameSize };
+            Require("sa2_stage_report", _native.sa2_stage_report(_context, &row));
+            if (row.struct_size != Native.StageFrameSize) throw new InvalidOperationException("stage-report");
+            if (row.frame <= _lastStageRow) return;
+            _lastStageRow = row.frame;
+            _stageRows.Add(JsonSerializer.Serialize(new Dictionary<string, object> {
+                ["frame"] = row.frame, ["stopped"] = row.stopped, ["bound"] = row.bound, ["allowance"] = row.allowance,
+                ["vertex_stage"] = row.vertex_stage, ["fragment_stage"] = row.fragment_stage,
+                ["user_pixel_invocations"] = row.user_pixel_invocations, ["builtin_pixel_invocations"] = row.builtin_pixel_invocations }));
+        }
+    }
+
+    // After a successful drain every chain frame has completed: take the last rows, detach, release both handles and
+    // write stage-frames.jsonl.
+    private unsafe void FinishStages()
+    {
+        CollectStageRows();
+        Require("sa2_scene_stages", _native.sa2_scene_stages(_context, 0, 0, 0, null, 0, null, 0));
+        _stagesAttached = false;
+        ReleaseStages();
+        StringBuilder rows = new();
+        foreach (string row in _stageRows) rows.Append(row).Append('\n');
+        WriteNew(Path.Combine(_args.out_path, "stage-frames.jsonl"), Encoding.UTF8.GetBytes(rows.ToString()));
+        _result.stages["rows"] = _stageRows.Count;
+        _result.stages["trace_frames"] = _traceFirst == 0 ? null
+            : new Dictionary<string, object> { ["first"] = _traceFirst, ["last"] = _traceLast };
+    }
+
+    private unsafe void ReleaseStages()
+    {
+        for (int k = 0; k < 2; k++)
+            if (_stageHandles[k] != 0) { Require("sa2_stage_release", _native.sa2_stage_release(_context, _stageHandles[k])); _stageHandles[k] = 0; }
+    }
+
+    private static void WriteNew(string path, ReadOnlySpan<byte> contents)
+    {
+        using FileStream stream = new(path, FileMode.CreateNew, System.IO.FileAccess.Write, FileShare.None);
+        stream.Write(contents);
+        stream.WriteByte((byte)'\n');
+        stream.Flush(true);
     }
 
     private unsafe void EndTrace()
@@ -605,6 +791,12 @@ public partial class Level2 : Node
             if (drain != Native.SA2_OK && drain != Native.SA2_E_DEVICE_REMOVED) throw new InvalidOperationException("sa2_drain");
             // A removal reported here is a device failure (exit 1), even after a complete trace; teardown goes on.
             if (drain == Native.SA2_E_DEVICE_REMOVED) Fail(1, "sa2_drain");
+            // C9 U5c: the chain's rows, detach and release; after a failed compile, release what was compiled.
+            if (drain == Native.SA2_OK)
+            {
+                if (_stagesAttached) FinishStages();
+                else ReleaseStages();
+            }
             if (_writeRun && !Aborted && drain == Native.SA2_OK)
             {
                 byte[] directory = Encoding.UTF8.GetBytes(_args.out_path + "\0");

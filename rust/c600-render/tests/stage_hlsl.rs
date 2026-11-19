@@ -559,11 +559,11 @@ fn the_gate_pair_admits_and_generates() {
     assert_eq!(limits.tier, 1);
     assert_eq!(limits.weights.len(), 12);
     assert!(limits.weights.values().all(|w| *w == 1));
-    assert_eq!((limits.max_ops, limits.max_overdraw, limits.max_loop_count, limits.max_loop_depth), (256, 8, 8, 2));
+    assert_eq!((limits.max_ops, limits.max_overdraw, limits.max_loop_count, limits.max_loop_depth), (256, 108, 8, 2));
 
     let vertex = admitted_with(&gate("vertex.6cs"), &limits);
     assert_eq!(vertex.kind(), StageKind::Vertex);
-    assert_eq!((vertex.counted_ops(), vertex.declaration().ops, vertex.declaration().overdraw), (9, 9, 8));
+    assert_eq!((vertex.counted_ops(), vertex.declaration().ops, vertex.declaration().overdraw), (9, 9, 108));
     let text = hlsl(&vertex);
     assert!(text.starts_with("// m600-stage-hlsl/1 vertex "));
     assert!(text.contains("abs(m600_v3) <= asfloat(0x39800000u)) m600_cov = 1u;"), "{text}");
@@ -583,7 +583,7 @@ fn the_gate_pair_admits_and_generates() {
 
     let fragment = admitted_with(&gate("fragment.6cs"), &limits);
     assert_eq!(fragment.kind(), StageKind::Fragment);
-    assert_eq!((fragment.counted_ops(), fragment.declaration().ops, fragment.declaration().overdraw), (6, 6, 8));
+    assert_eq!((fragment.counted_ops(), fragment.declaration().ops, fragment.declaration().overdraw), (6, 6, 108));
     let text = hlsl(&fragment);
     assert!(text.starts_with("// m600-stage-hlsl/1 fragment "));
     assert!(!text.contains("StructuredBuffer"));
@@ -610,7 +610,7 @@ fn the_limits_file_is_strict() {
     let bad = [
         good.replace("\"max_ops\"", "\"max_opps\""),
         good.replace("\"approx_abs\"", "\"approx_abz\""),
-        good.replace("\"max_overdraw\": 8", "\"max_overdraw\": -8"),
+        good.replace("\"max_overdraw\": 108", "\"max_overdraw\": -108"),
         good.replace("\"max_loop_depth\": 2", "\"max_loop_depth\": 2.5"),
         good.replace("\"tier\": 1,", ""),
         good.replace("\"tier\": 1,", "\"tier\": 1, \"note\": 1,").replacen("\"note\": \"", "\"other\": \"", 1),
@@ -641,7 +641,7 @@ fn the_record_names_the_text() {
     assert_eq!(s("digest"), describe(&stage).digest);
     assert_eq!(s("hlsl_sha256"), c600_digest::sha256_hex(generated.hlsl.as_bytes()));
     assert_eq!(value.get("ops").and_then(Value::as_i64), Some(9));
-    assert_eq!(value.get("overdraw").and_then(Value::as_i64), Some(8));
+    assert_eq!(value.get("overdraw").and_then(Value::as_i64), Some(108));
     let arrays = value.get("arrays").and_then(Value::as_array).unwrap();
     assert_eq!(arrays.len(), 1);
     assert_eq!(arrays[0].canonical(), r#"{"length":1,"name":"d4","offset":0}"#);

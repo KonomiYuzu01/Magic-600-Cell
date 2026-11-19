@@ -3,7 +3,9 @@ edition "6cs-draft-1";
 # `renderer/core/shaders/geometry.hlsl`, `p = d4 * xyz / (d4 - w)` after the view's rotation, with `d4` a declared
 # array input. Near the projection's pole, where `d4 - w` vanishes, the point is excluded (coverage 1) with LX-7's
 # radius 2^-12. Every weight 1 counts 9 operations: index 1, approx_sub 1, exclude 1, approx_mul 3, approx_div 3.
-stage vertex chart ops 9 overdraw 8 inputs [d4: 1];
+# The overdraw is sized from W3 (C9 U5c): 5/4 of the largest raster bound per pixel over W3's frames at 1920x1080,
+# 2560x1440 and 2560x1600, computed headless by renderer/acceptance/overdraw, rounded up (README.md, "User stages").
+stage vertex chart ops 9 overdraw 108 inputs [d4: 1];
 
 export fn main(x: Approx<P24>, y: Approx<P24>, z: Approx<P24>, w: Approx<P24>, d4: List<Approx<P24>>) -> record { x: Approx<P24>, y: Approx<P24>, z: Approx<P24> } effects [] {
     let d = index(d4, 0);
