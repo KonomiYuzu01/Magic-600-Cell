@@ -1090,7 +1090,8 @@ class Lx2Tests(NoProcessCase):
         for fault in lx2.FAULTS:
             result = run['faults'][fault]
             self.assertEqual((result['windows'], result['effective']), (4, 4), fault)
-            self.assertEqual((result['e2']['confirmed'], result['echo']['timed']), (4, 4), fault)
+            self.assertEqual((result['e2']['turns'], result['e2']['confirmed'], result['echo']['timed']), (4, 4, 4),
+                             fault)
             # Two frames and three other presents per window; the slow presents between windows are left out.
             self.assertEqual(result['gate']['presents'], 20, fault)
             self.assertEqual(result['gate']['result']['max_ms'], 16.0, fault)

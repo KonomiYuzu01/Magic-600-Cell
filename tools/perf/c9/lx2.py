@@ -498,7 +498,8 @@ def analyze_run(rows, post_rows, edits, digests, *, launch=None, presents=None, 
         entries = [entry for key, entry in zip(keys, run['per_key']) if inside(key['qpc'])]
         latencies = [entry['latency_ms'] for entry in entries if entry['status'] == 'confirmed']
         unconfirmed = len(entries) - len(latencies)
-        e2 = {'confirmed': len(latencies), 'unconfirmed': unconfirmed,
+        e2 = {'turns': sum(window['turns'] for window in effective), 'confirmed': len(latencies),
+              'unconfirmed': unconfirmed,
               'stats': statistics(latencies) if latencies else None,
               'state': state_of(len(latencies) >= OBSERVATIONS_MIN,
                                 not unconfirmed and latencies and nearest_rank(latencies, 95) <= E2_P95_MS)}

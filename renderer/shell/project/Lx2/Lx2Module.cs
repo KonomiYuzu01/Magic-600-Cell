@@ -645,6 +645,10 @@ public sealed class Lx2Module : IShellModule
                 {
                     // It exited on its own meanwhile.
                 }
+                catch (Win32Exception)
+                {
+                    // It is already terminating (access denied); the wait below decides, and it is not counted.
+                }
                 if (!process.WaitForExit(FindMs))
                 {
                     throw new TimeoutException($"injection child {process.Id} did not exit within {FindMs} ms");
