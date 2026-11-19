@@ -135,6 +135,7 @@ impl Run {
         unsafe {
             m6h_open_session(
                 self.host,
+                M6H_PUZZLE_JUMBLE_OFF,
                 folder.as_ptr(),
                 folder.len(),
                 menu.as_ptr(),
