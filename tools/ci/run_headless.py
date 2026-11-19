@@ -8,8 +8,10 @@ evidence (AGENTS.md "Evidence and publishing").
 
 With --base (or RUN_HEADLESS_BASE, which the workflow sets for pull requests),
 a pull request whose changes are only Markdown in the documentation trees
-below runs the light checks (owner, 3 November 2026); any other change, an
-unreadable diff and every push to main run all checks.
+below runs the light checks (owner, 3 November 2026). Any other pull request
+runs every check except the heavy ones whose area it does not change (owner,
+19 November 2026); a change to the CI itself, an unreadable diff, every push
+to main and the nightly run run all checks.
 
 The workflow runs a full set as parallel shards: --plan-github gives the
 shard numbers, and --shard K/N runs the K-th of N time-balanced shards.
@@ -193,6 +195,34 @@ FULL_CHECK_DOCS = (
 )
 _PATH_LITERAL = re.compile(r"""['"]([A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-]+)+/?)['"]""")
 
+# The heavy checks and the areas whose change makes a pull request run them (owner, 19 November 2026: no
+# pull request waits for them; every push to main and the nightly run run them all). A check's own file
+# always counts. An entry ending in "/" is a tree, any other entry one file.
+_J1 = ("research/jumbling/", "assets/", "core.py")  # the Python jumbling reference J1 and the model it reads
+_RUST = ("rust/",)  # the Rust workspace of the language
+HEAVY_AREAS: dict[str, tuple[str, ...]] = {
+    **{f"tests/test_jumbling_{name}.py": _J1 for name in (
+        "store_j1", "j1_replay", "x1_witness", "observations", "nu", "straddlers",
+        "leads_repair", "leads_covers", "leads_scale")},
+    "tests/test_jumbling_word_check.py": _J1 + ("docs/progress/1.0/jumbling-midstage.md",),
+    "tests/test_language_rust.py": _RUST,
+    **{f"tests/test_jumbling_{name}.py": _RUST + _J1 for name in (
+        "rust_candidate", "command_route", "rust_attacks", "rust_m8_observations", "rust_m8_levels",
+        "rust_nu", "rust_corrections")},
+}
+# A change under these trees changes the CI itself and runs every check.
+CI_TREES = ("tools/ci/", ".github/")
+
+
+def _in(path: str, entry: str) -> bool:
+    return path == entry or (entry.endswith("/") and path.startswith(entry))
+
+
+def heavy_check_runs(check: str, changed: list[str]) -> bool:
+    """True if a pull request that changes `changed` runs the heavy check `check`."""
+    areas = (check,) + HEAVY_AREAS[check]
+    return any(_in(path, entry) for path in changed for entry in areas)
+
 
 def changed_files(base: str, root: Path = ROOT) -> list[str] | None:
     """Paths changed from the merge base of base and HEAD, or None if git cannot say."""
@@ -229,12 +259,20 @@ def select_checks(changed: list[str] | None, literals: set[str]) -> tuple[str, s
     if not changed:
         return "full", "no pull-request diff", CHECKS
     for path in changed:
+        if path.startswith(CI_TREES):
+            return "full", f"{path} changes the CI", CHECKS
+    for path in changed:
+        reason = ""
         if not path.endswith(".md") or not path.startswith(DOCS_ONLY_TREES):
-            return "full", f"{path} is not Markdown in a documentation tree", CHECKS
-        if any(path == entry or (entry.endswith("/") and path.startswith(entry)) for entry in FULL_CHECK_DOCS):
-            return "full", f"{path} is read by a full check", CHECKS
-        if any(path == literal or path.startswith(literal + "/") for literal in literals):
-            return "full", f"{path} is named in a full check", CHECKS
+            reason = f"{path} is not Markdown in a documentation tree"
+        elif any(_in(path, entry) for entry in FULL_CHECK_DOCS):
+            reason = f"{path} is read by a full check"
+        elif any(path == literal or path.startswith(literal + "/") for literal in literals):
+            reason = f"{path} is named in a full check"
+        if reason:
+            checks = [c for c in CHECKS if c[0] not in HEAVY_AREAS or heavy_check_runs(c[0], changed)]
+            left = len(CHECKS) - len(checks)
+            return "pr", f"{reason}; {left} heavy check(s) outside the changed area run on main", checks
     return "docs-only", f"{len(changed)} changed Markdown file(s) in the documentation trees", LIGHT_CHECKS
 
 
@@ -273,7 +311,7 @@ FULL_SHARDS = 5
 
 
 def shard_count(mode: str) -> int:
-    return FULL_SHARDS if mode == "full" else 1
+    return 1 if mode == "docs-only" else FULL_SHARDS
 
 
 def shards(checks: list[list[str]], count: int) -> list[list[list[str]]]:
@@ -306,7 +344,7 @@ def main() -> int:
     parser.add_argument("--plan-github", action="store_true",
                         help="print the mode and the shard numbers as GitHub step outputs, and exit")
     parser.add_argument("--shard", type=parse_shard, metavar="K/N", help="run shard K of N of the selected checks")
-    parser.add_argument("--expect-mode", choices=("full", "docs-only"),
+    parser.add_argument("--expect-mode", choices=("full", "pr", "docs-only"),
                         help="fail unless the selected mode is this one (the plan job's mode)")
     args = parser.parse_args()
     if args.list:
@@ -354,8 +392,8 @@ def main() -> int:
         print(f"{name:<{width}}  {outcome:<18} {elapsed:7.1f} s")
     failed = [name for name, outcome, _ in results if outcome != "pass"]
     print(f"\n{len(results) - len(failed)} of {len(results)} checks passed ({mode} mode)")
-    if mode == "docs-only":
-        print("The other checks did not run; all of them run on main after the merge.")
+    if mode != "full":
+        print("The other checks did not run; all of them run on main after the merge and every night.")
     return 1 if failed else 0
 
 

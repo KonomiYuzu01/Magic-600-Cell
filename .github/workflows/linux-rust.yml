@@ -15,23 +15,58 @@
 # check, and builds the release adapter with the locked, vendored crates. Each system compares the
 # candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared
 # with each other.
+#
+# The plan job selects the jobs with tools/ci/run_headless.py (owner, 19 November 2026): a pull
+# request runs `cargo test` only when it selects tests/test_language_rust.py, and each J1
+# comparison only when it selects that check; every push to main and the nightly run run all.
 name: Linux Rust tests
 
 on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: "17 18 * * *" # nightly full run on main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: linux-rust-${{ github.ref }}
+  group: linux-rust-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      rust: ${{ steps.plan.outputs.rust }}
+      j1: ${{ steps.plan.outputs.j1 }}
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # the selection comes from the diff against the pull request's base
+          filter: blob:none
+
+      - name: Select the jobs
+        id: plan
+        env:
+          RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 tools/ci/run_headless.py --plan > "$RUNNER_TEMP/plan.txt"
+          head -n 1 "$RUNNER_TEMP/plan.txt"
+          if grep -qx tests/test_language_rust.py "$RUNNER_TEMP/plan.txt"; then rust=true; else rust=false; fi
+          j1=$(sed -n 's|^tests/test_jumbling_rust_\(.*\)\.py$|"\1"|p' "$RUNNER_TEMP/plan.txt" | paste -sd, -)
+          echo "rust=$rust" >> "$GITHUB_OUTPUT"
+          echo "j1=[$j1]" >> "$GITHUB_OUTPUT"
+          echo "rust=$rust j1=[$j1]"
+
   cargo-test:
+    needs: plan
+    if: needs.plan.outputs.rust == 'true'
     name: cargo test (ubuntu-24.04)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -54,6 +89,8 @@ jobs:
         run: cargo test --locked --offline --no-fail-fast
 
   j1:
+    needs: plan
+    if: needs.plan.outputs.j1 != '[]'
     name: J1 comparison, ${{ matrix.check }} (ubuntu-24.04)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -64,7 +101,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [candidate, attacks, m8_observations, m8_levels, nu, corrections]
+        check: ${{ fromJSON(needs.plan.outputs.j1) }}
     steps:
       - name: Check out the exact committed bytes
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

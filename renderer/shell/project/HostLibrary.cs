@@ -16,7 +16,10 @@ namespace Magic600.Shell;
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 1;
+    public const uint AbiVersion = 2;
+
+    /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
+    public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
 
     public const int Ok = 0;
     public const int InvalidArgument = 1;
@@ -27,6 +30,17 @@ public sealed unsafe class HostLibrary : IDisposable
     public const int Unavailable = 5;
     /// <summary>An earlier call panicked; only <see cref="LastError"/> and <see cref="Destroy"/> are left.</summary>
     public const int Poisoned = 6;
+    /// <summary>The session did not open, is already open, or is not open.</summary>
+    public const int SessionRefused = 7;
+
+    /// <summary><see cref="KeyResult.Press"/>: no measured press (no twist key, or a repeat).</summary>
+    public const uint PressNone = 0;
+    /// <summary><see cref="KeyResult.Press"/>: a twist key committed twist.apply.</summary>
+    public const uint PressCommitted = 1;
+    /// <summary><see cref="KeyResult.Press"/>: a twist key that the router or the layer refused.</summary>
+    public const uint PressRefused = 2;
+    /// <summary><see cref="KeyResult.Press"/>: no measured press, but an undo or redo changed the state.</summary>
+    public const uint PressOther = 3;
 
     /// <summary>The library's exports, in the order the Rust source declares them.</summary>
     public static readonly IReadOnlyList<string> Exports = new[]
@@ -39,6 +53,12 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_frame",
         "m6h_read_presented",
         "m6h_recover",
+        "m6h_open_session",
+        "m6h_key_down",
+        "m6h_key_up",
+        "m6h_focus_lost",
+        "m6h_close_session",
+        "m6h_check",
         "m6h_last_error",
         "m6h_destroy",
     };
@@ -50,6 +70,20 @@ public sealed unsafe class HostLibrary : IDisposable
         public ulong Sequence;
         public ulong DeviceEpoch;
         public ulong Surface;
+        /// <summary>The engine revision whose labels the frame draws.</summary>
+        public ulong EngineRevision;
+        /// <summary>The engine revision of the publication the frame draws, or 0 for none.</summary>
+        public ulong PublicationRevision;
+    }
+
+    /// <summary>What m6h_key_down did with one key-down (the Rust M6hKey).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KeyResult
+    {
+        public uint Press;
+        public uint Reserved;
+        /// <summary>The adopted engine revision after the key; for a committed press, the one that shows it.</summary>
+        public ulong EngineRevision;
     }
 
     /// <summary>One confirmed presentation, as m6h_read_presented writes it (the Rust M6hPresented).</summary>
@@ -178,10 +212,73 @@ public sealed unsafe class HostLibrary : IDisposable
 
     public int Recover(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_recover"])(host);
 
-    /// <summary>The reason for the handle's last failed call, or with a zero handle for the last failed create.</summary>
-    public string LastError(IntPtr host)
+    /// <summary>
+    /// Opens the turns' session: a new journal in <paramref name="folder"/> (created if missing; it must hold nothing)
+    /// at the solved state, with the twist menu of the record file <paramref name="menu"/> pinned.
+    /// </summary>
+    public int OpenSession(IntPtr host, string folder, string menu)
     {
-        var call = (delegate* unmanaged[Cdecl]<IntPtr, byte*, uint, uint*, int>)_exports["m6h_last_error"];
+        var f = Encoding.UTF8.GetBytes(folder);
+        var m = Encoding.UTF8.GetBytes(menu);
+        fixed (byte* fb = f)
+        fixed (byte* mb = m)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, int>)_exports["m6h_open_session"])(
+                host, fb, (nuint)f.Length, mb, (nuint)m.Length);
+        }
+    }
+
+    /// <summary>Routes one key-down, <paramref name="chord"/> in c600-input's form (Shift+KeyJ).</summary>
+    public int KeyDown(IntPtr host, string chord, bool repeat, out KeyResult key)
+    {
+        var c = Encoding.UTF8.GetBytes(chord);
+        KeyResult k = default;
+        int code;
+        fixed (byte* cb = c)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, uint, KeyResult*, int>)_exports["m6h_key_down"])(
+                host, cb, (nuint)c.Length, repeat ? 1u : 0u, &k);
+        }
+        key = k;
+        return code;
+    }
+
+    /// <summary>Routes a key-up of <paramref name="chord"/>; its modifiers are ignored.</summary>
+    public int KeyUp(IntPtr host, string chord)
+    {
+        var c = Encoding.UTF8.GetBytes(chord);
+        fixed (byte* cb = c)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, int>)_exports["m6h_key_up"])(
+                host, cb, (nuint)c.Length);
+        }
+    }
+
+    /// <summary>The window lost the keyboard focus: the router releases its held keys.</summary>
+    public int FocusLost(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_focus_lost"])(host);
+
+    /// <summary>
+    /// Closes the session and runs its correctness control once. <paramref name="shownRevision"/> is the engine
+    /// revision of the newest presented frame (0 for none); <see cref="Check"/> gives the control's record.
+    /// </summary>
+    public int CloseSession(IntPtr host, ulong shownRevision, out bool pass)
+    {
+        uint p = 0;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint*, int>)_exports["m6h_close_session"])(
+            host, shownRevision, &p);
+        pass = code == Ok && p == 1;
+        return code;
+    }
+
+    /// <summary>The correctness control's record as canonical JSON, empty before the close.</summary>
+    public string Check(IntPtr host) => Text(host, "m6h_check");
+
+    /// <summary>The reason for the handle's last failed call, or with a zero handle for the last failed create.</summary>
+    public string LastError(IntPtr host) => Text(host, "m6h_last_error");
+
+    private string Text(IntPtr host, string export)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, byte*, uint, uint*, int>)_exports[export];
         uint size = 0;
         call(host, null, 0, &size);
         if (size == 0)
