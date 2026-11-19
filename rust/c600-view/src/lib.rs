@@ -15,8 +15,9 @@
 //! - [`provenance`]: LG3.9's [`Profile`]s, BND.27's [`BoundaryClass`] and the [`Provenance`] block that display
 //!   content keeps (RPI.45, BND.22, BND.26).
 //! - [`model`]: the [`ViewModel`]: Global, Local and further views (RPI.42, RPI.81 to RPI.83), the view lane (KN7.2,
-//!   LI.22 to LI.25, ONE.64, RPI.12), revision binding and statuses (ONE.12, ONE.63, ONE.65, RPI.13), visibility and
-//!   its rebuild counters (RPI.11, RM.17, RM.25) and the view budget (RM.19, RM.38, RM.39, RPI.82).
+//!   LI.22 to LI.25, ONE.64, RPI.12), revision binding and statuses (ONE.12, ONE.63, ONE.65, RPI.13), the stale
+//!   state of a source edit (EV1.7, EV3.6), visibility and its rebuild counters (RPI.11, RM.17, RM.25) and the view
+//!   budget (RM.19, RM.38, RM.39, RPI.82).
 //!
 //! # Seams
 //!
@@ -36,8 +37,10 @@
 //! counter half), CT-RPI-36, CT-RPI-37, CT-RM-02, the accounting rows 1, 2, 7 and 9 of CT-RM-09, CT-ONE-30 and
 //! CT-EV3-08 (its admission semantics), each test named after its ID. An ID with a named part runs only that part.
 //! It also holds L11's three leads, `l11_a` to `l11_c`: a burst while the view is blocked, output of an older engine
-//! epoch, and a recomputation naming `view.open` or `view.close`. CT-RM-09's rows 3 to 6, 8 and 10 run their headless
-//! parts in `c600-display` (`tests/ct_rm_09.rs`), on stages that LP2's stage checker admits.
+//! epoch, and a recomputation naming `view.open` or `view.close`; and the stale state of a source edit, `ev1_07_` and
+//! the `ev3_06_` tests (EV1.7, EV3.5, EV3.6; the state RTE.49's stale-state interval times, which nothing here
+//! times). CT-RM-09's rows 3 to 6, 8 and 10 run their headless parts in `c600-display` (`tests/ct_rm_09.rs`), on
+//! stages that LP2's stage checker admits.
 //!
 //! # Drafts
 //!
@@ -107,6 +110,15 @@
 //! - RPI.11, RM.17, RM.25: a rebuild is a host-scheduled recomputation, a program run, a preparation (a payload
 //!   validated and turned into the resources of a new generation, installed or not) or an install, and [`Counters`]
 //!   counts each per view. A reused read result counts as a preparation and an install, not as a program run.
+//! - EV1.7, EV3.5, EV3.6, RPI.13, RTE.49: a source edit makes a view stale through a host comparison of digests,
+//!   not a revision part (ONE.8) or a workspace change (KN0.2). The editor states its draft of a module version
+//!   ([`ViewModel::edit_source`]); installed output whose producer block names that version (an overlay producer)
+//!   is `stale` with a [`SourceLag`] from that call on, in its status and its frame. Nothing runs or is fenced, the
+//!   output is still drawn while its base matches, and its picks still open the producing version. ONE.12's table
+//!   names the view-stale condition for a lagging revision only; this is the reading of EV3.6 and RTE.49 for a
+//!   lagging source, and the two show together. The lag clears when the draft returns to the version's bytes, or
+//!   for a view reopened on the checked draft after activation (EV1.11 is LP4's). One draft per version; a version
+//!   keeps its draft until the editor returns it.
 //!
 //! # Not built
 //!
@@ -143,8 +155,8 @@ pub use bundle::{validate_engine_bundle, BundleCandidate, BundlePart, CompleteBu
 pub use error::{code, BundleFault, Context, Error, Form, PlanFault};
 pub use limits::{Field, LimitProfile, OutputAllowance, ProfileError};
 pub use model::{
-    Counters, Declared, Draw, FrameInput, FrameView, Installed, Job, Origin, RetireToken, RunOutcome, StageUse, Usage,
-    ViewId, ViewModel, ViewSource, ViewStatus, Workload,
+    Counters, Declared, Draw, FrameInput, FrameView, Installed, Job, Origin, RetireToken, RunOutcome, SourceLag,
+    StageUse, Usage, ViewId, ViewModel, ViewSource, ViewStatus, Workload,
 };
 pub use provenance::{BoundaryClass, Profile, Provenance};
 pub use publication::{Content, MapDescriptor, PlanDescriptor, PublicationInput, Transport};
