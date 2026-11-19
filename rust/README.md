@@ -1990,6 +1990,17 @@ run or not applicable is no pass (PHS.63).
   rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
   bundle from an older epoch is refused with `refresh_required`, and output attaches only within its own epoch
   (KN0.2, ONE.60, ONE.63).
+- Source edits (for C9's LX-4): `ViewModel::edit_source(version, draft)` takes the editor's draft of a module version,
+  both source digests. Installed output whose producer block names that version is `stale` from that call on, with a
+  `SourceLag` (the producing version and the draft) in `ViewStatus::Stale` and in its `FrameView`; returning the draft
+  to the version's bytes clears it. It is a host comparison of digests (RPI.13), not a revision part (ONE.8) or a
+  workspace change (KN0.2): nothing runs and nothing is fenced, since an unchecked draft never runs, even through a
+  view (EV1.7), and the output is still drawn while its base matches, its picks opening the producing version (EV3.5,
+  EV3.6). ONE.12's table names the view-stale condition for a lagging revision only; a lagging source is the
+  integrator's reading of EV3.6 and RTE.49's stale-state interval, and the two show together. A view shows a checked
+  draft's output once it is reopened on it after activation (EV1.11 is LP4's). Drafts: one draft per version, kept
+  until the editor returns it. Tests: `ev1_07_` and the `ev3_06_` tests in `view_rows.rs`. Nothing is timed; LX-4
+  times the state on the owner's machine (C9).
 - Not built in the views: CT-RPI-26's gate half (charter E2 and the R-19 captures) and CT-EV3-08's measured half
   (RM.39's measured ceilings) wait for C9; LQ2's policy table and display refusal wait for the joint setting.
 - `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
