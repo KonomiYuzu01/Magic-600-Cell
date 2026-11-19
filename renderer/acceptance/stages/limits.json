@@ -1,0 +1,22 @@
+{
+  "note": "The renderer gate's stage limits (C9 U5a). These are the run's declared values, not measured ones: tier 1, every tier-1 weight 1 relative to approx_add, and the fixed checker bounds.",
+  "tier": 1,
+  "weights": {
+    "approx_abs": 1,
+    "approx_add": 1,
+    "approx_and": 1,
+    "approx_div": 1,
+    "approx_less": 1,
+    "approx_mul": 1,
+    "approx_neg": 1,
+    "approx_not": 1,
+    "approx_sub": 1,
+    "display_if": 1,
+    "exclude": 1,
+    "index": 1
+  },
+  "max_ops": 256,
+  "max_overdraw": 8,
+  "max_loop_count": 8,
+  "max_loop_depth": 2
+}
