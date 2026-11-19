@@ -181,7 +181,7 @@ STEPS = (
                         ('mentions', (SHELL, '"--cold-start"'))),
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
-    Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 75, None,
+    Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 79, None,
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
                    '--features device --bin c600-lx2-child   # the injection device of option (a) on c600-runtime\'s '
                    'fault hook, never shipped',
@@ -197,8 +197,9 @@ STEPS = (
                    'time; posts nothing',
                    f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --lx2-injection '
                    '<c600-lx2-child release build>, PresentMon alongside; then python -B tools/perf/c9/lx2.py post '
-                   '--fixtures <fixtures> --run <run dir>   # every fault\'s windows with echo samples, about 10 '
-                   'minutes (at most about 50); it closes the shell after the last fault',
+                   '--fixtures <fixtures> --run <run dir>   # each metered fault\'s limit windows (its job runs to '
+                   'the host\'s 60 s safety stop, no commit), then every fault\'s turn windows, with echo samples, '
+                   'about 13 minutes (at most about 70); it closes the shell after the last phase',
                    'python -B tools/perf/c9/lx2.py analyze --fixtures <fixtures> <run dir> --faults <record>.json '
                    '--out <lx2 record>.json   # conditions 3 and 4 per fault, with 1 and 2 from the faults record'),
          prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs'),

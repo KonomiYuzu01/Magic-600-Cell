@@ -19,48 +19,59 @@ the plan and its time; it finds no window and posts nothing. Without `--dry-run`
 shell and the foreground (the owner starts it from the desktop, with the desktop unlocked).
 
 Faults, in this order (`FAULTS`; wParam 1 to 7 of the registered message `Magic600.LX2.Phase`): `alloc_metered`,
-`recursion_metered` and `loop_metered` (view jobs the meter would stop at its limit), `forced_kill` (the module kills
-the child that runs the job), `alloc_ceiling` (the child's allocator refuses past c600-lx2's 32 MiB ceiling, so the
-child aborts), `recursion_native` and `loop_native` (the injection device's native recursion until the stack
-overflows, and native loop until the host's view deadline, 60 s, ends the child). The shell's LX-2 module
+`recursion_metered` and `loop_metered` (view jobs the meter stops at its limit), `forced_kill` (the module kills the
+child that runs the job), `alloc_ceiling` (the child's allocator refuses past c600-lx2's 32 MiB ceiling, so the child
+aborts), `recursion_native` and `loop_native` (the injection device's native recursion until the stack overflows, and
+native loop until the host's view deadline, 60 s, ends the child). The shell's LX-2 module
 (renderer/shell/project/Lx2/Lx2Module.cs) runs the windows; its summary is the protocol. A window runs from the module's
-`start` row (the fault's view job submitted) to its `recovered` row (a control probe published after the fault), with
-one turn of the shell's turn key J that the module posts where the fault has taken effect (the native loop: one every
-500 ms while its child spins), and back to back while a phase lasts.
+`start` row (the fault's view job submitted) to its `recovered` row (a control probe published after the fault), and
+windows run back to back while a phase lasts. Each window has a kind (`KINDS`):
+
+- A turn window holds one turn of the shell's turn key J that the module posts where the fault has taken effect (the
+  native loop: one every 500 ms while its child spins). In a metered fault's turn window the commit cancels the view
+  job (`KN7:cancelled.revision_replaced`), a typed end.
+- A limit window (metered faults only; wParam 8 to 10, `len(FAULTS)` plus the fault's number) posts no turn: the job
+  runs to the limit that stops it in the product, with no commit, and the window counts when its end is one of
+  `LIMIT_ENDS`: the meter's limit or the host's view deadline (`KN7:resource_limit.safety_stop`), whichever comes
+  first. Under the product's view limits (2^32 steps, 2^32 bytes) the 60 s deadline always comes first
+  (`LIMIT_FACTS`, in every record).
+
+The phases run in `PHASES` order: each metered fault's limit windows, then its turn windows; then the other faults'
+turn windows.
 
 `post` waits for the LX-2 and LX-4 module rows in the shell's live log (`events.body.jsonl`, lx4.py), then for each
-fault: posts the fault's phase; runs LX-4 echo samples back to back (the S module's inside-body edit, timed on its first
-typed key, as lx4.py's echo metric, every `ECHO_PACE_S`); counts the module's turns and the echo samples whose timed
-post falls inside a window of this fault, the open window included; posts phase 0 once both reach `TARGET` or after
+phase: posts it; runs LX-4 echo samples back to back (the S module's inside-body edit, timed on its first typed key, as
+lx4.py's echo metric, every `ECHO_PACE_S`); counts the module's turns and the echo samples whose timed post falls
+inside a window of this fault and kind, the open window included; posts phase 0 once its targets are reached (a limit
+phase: `TARGET` echo samples; a metered fault's turn phase: `TARGET` turns; another fault's: both) or after
 `TIME_BOX_S` (the module takes it after the window that runs); and waits for the module's `phase_end` row. After the
-last fault it posts WM_CLOSE to the shell's window, as closing the window would, so that the shell seals its log and
+last phase it posts WM_CLOSE to the shell's window, as closing the window would, so that the shell seals its log and
 launch.py writes launch.json (`--keep-open` leaves the shell running). It writes `lx2-posts.jsonl`
-(`magic600-c9-lx2-posts-v1`): a `run` row, `phase` rows, `post` and `sample` rows as lx4.py's (with the fault), one
-`fault` row per fault with its counts, and a `close` row.
+(`magic600-c9-lx2-posts-v1`): a `run` row, `phase` rows, `post` and `sample` rows as lx4.py's (with the fault and
+kind), one `fault` row per phase with its counts, and a `close` row.
 
 `analyze` reads the sealed `events.jsonl`, `lx2-posts.jsonl`, `launch.json`, `presentmon.csv` and the faults record:
 
-- A window counts only when it is effective: it ended with `recovered`, and it holds an accepted turn and the fault's
-  view job ended refused; a metered fault's turn came before its job ended; forced_kill killed at least one child; the
-  native faults ran armed (their variable as the module sets it) and the native recursion and the allocator ceiling
-  ended with the child's loss (`KN7:resource_limit.runtime_lost`); the native loop's child lived at least
-  `LOOP_LIFE_MIN_S` before it exited.
+- A window counts only when it is effective: it ended with `recovered` and the fault's view job ended refused. A turn
+  window holds an accepted turn; a metered fault's turn came before its job ended; forced_kill killed at least one
+  child; the native faults ran armed (their variable as the module sets it) and the native recursion and the allocator
+  ceiling ended with the child's loss (`KN7:resource_limit.runtime_lost`); the native loop's child lived at least
+  `LOOP_LIFE_MIN_S` before it exited. A limit window holds no turn row, and its job ended with one of the fault's
+  `LIMIT_ENDS`.
 - Condition 4, per fault: the key rows (charter E2, key_to_frame.py's rules and run checks) whose press lies inside an
-  effective window of the fault: at least 100 confirmed, none unconfirmed, nearest-rank p95 at most 100 ms.
-- Condition 3, per fault: LX-4's echo samples whose timed post lies inside an effective window, timed as lx4.py times
-  them (to the core-confirmed present of the frame its echo row names): at least 100, none failed, p95 at most 50 ms
-  and p99 at most 67 ms; and the renderer gate over the core swap chain's presents whose QPC time lies inside an
-  effective window (`renderer_gate.judge` over PresentMon's msBetweenPresents): at least `GATE_FRAMES_MIN` presents,
-  fps at least 30 and p99 at most 33.3 ms.
+  effective turn window of the fault: at least 100 confirmed, none unconfirmed, nearest-rank p95 at most 100 ms.
+- Condition 3, per fault, over its effective limit windows (a metered fault) or turn windows (the others): LX-4's echo
+  samples whose timed post lies inside one, timed as lx4.py times them (to the core-confirmed present of the frame its
+  echo row names): at least 100, none failed, p95 at most 50 ms and p99 at most 67 ms; and the renderer gate over the
+  core swap chain's presents whose QPC time lies inside one (`renderer_gate.judge` over PresentMon's
+  msBetweenPresents): at least `GATE_FRAMES_MIN` presents, fps at least 30 and p99 at most 33.3 ms.
 - Conditions 1 and 2: the faults record agrees, every fault and the control ran alone and in a session that stayed
   open and agreed with the control, and its injection device is the child launch.json names.
 
 The verdict is `met` only when every condition holds for every fault; `not-met` when a condition with enough data
 fails; `insufficient` otherwise; `invalid` when the run is (key_to_frame.py's run checks, a module error, posts or
-fixtures of another run). Limitations (in every record): in the shell, the first commit of a metered fault's window
-cancels its view job (`KN7:cancelled.revision_replaced`), so the job does not reach its limit there; the metered
-windows measure commits while the metered job runs, and c600-lx2-faults shows each limit. The whole run uses the
-injection child. The view jobs read no host rows (NoHost), as LX-4's.
+fixtures of another run). Limitations (in every record): the whole run uses the injection child; the view jobs read
+no host rows (NoHost), as LX-4's.
 """
 from __future__ import annotations
 
@@ -84,6 +95,25 @@ import renderer_gate  # noqa: E402
 FAULTS = ('alloc_metered', 'recursion_metered', 'loop_metered', 'forced_kill', 'alloc_ceiling', 'recursion_native',
           'loop_native')
 METERED = FAULTS[:3]
+KINDS = ('limit', 'turn')
+# (wParam, fault, kind) in the order post runs them: a metered fault's limit windows, then its turn windows.
+PHASES = tuple(phase for number, fault in enumerate(FAULTS, 1) for phase in (
+    ((len(FAULTS) + number, fault, 'limit'), (number, fault, 'turn')) if fault in METERED else
+    ((number, fault, 'turn'),)))
+# The meter's typed end at its limit, per metered fault, and the host's typed end at its view deadline.
+BUDGET = {'alloc_metered': 'KN7:budget.memory', 'recursion_metered': 'KN7:budget.memory',
+          'loop_metered': 'KN7:budget.steps'}
+SAFETY_STOP = 'KN7:resource_limit.safety_stop'
+# The ends that make a limit window count: the limit that stops the job in the product, the meter's or the host's view
+# deadline, whichever comes first (top integrator, 19 November 2026, option 1; the owner may override it).
+LIMIT_ENDS = {fault: (code, SAFETY_STOP) for fault, code in BUDGET.items()}
+# Stated facts about the limit windows (in every record, under `limit_windows`).
+LIMIT_FACTS = [
+    'the limit windows end at the host\'s 60 s view deadline (KN7:resource_limit.safety_stop), under the '
+    'product\'s own view limits, with no commits',
+    'c600-lx2\'s view_limits_probe (in process, release build, 19 November 2026, the CPU shared with a build) shows '
+    'that the 2^32 meter limits are not reachable within 60 s: the loop runs about 6 M steps/s (2^28 steps in 44 s); '
+    'the recursion reached 2^30 bytes in 58 s; the allocation\'s push grows quadratically, 2^18 bytes in 37 s']
 NATIVE_LOST = ('alloc_ceiling', 'recursion_native')
 # What the module sets in the shell's process before the job of a native fault (Lx2Module.Arm).
 ARMED = {'alloc_ceiling': 'C600_LX2_CEILING=33554432', 'recursion_native': 'C600_LX2_FAULT=recursion@0',
@@ -111,21 +141,21 @@ VIEW_DEADLINE_S = 60.0
 LOOP_LIFE_MIN_S = 0.9 * VIEW_DEADLINE_S
 # DRAFT: a window's recovery, the probe's run (with a fresh child after a fault), for the time estimate only.
 RECOVERY_S = 0.3
-SOURCES = ['RTE.42', 'RTE.43', 'RTE.49', 'CT-RTE-10', 'charter E2', 'renderer gate', 'option (a), 18 November 2026']
+SOURCES = ['RTE.42', 'RTE.43', 'RTE.49', 'CT-RTE-10', 'charter E2', 'renderer gate', 'option (a), 18 November 2026',
+           'limit and turn windows, top integrator, 19 November 2026']
 BAR = {'text': ('RTE.42: every fault meets (1) journal and state hash equal to a control run, (2) a typed outcome '
                 'with the session open, (3) the renderer gate and the LX-4 echo bar during the fault window, (4) at '
                 'least 100 commits during fault windows under charter E2'),
-       'rule': ('per fault, over its effective windows (start row to recovered row): E2 keys confirmed, at least 100, '
-                'none unconfirmed, nearest-rank p95 <= 100 ms; LX-4 echo samples at least 100, none failed, p95 <= '
-                '50 ms and p99 <= 67 ms; the gate over at least 300 presents, fps >= 30 and p99 <= 33.3 ms; '
-                'conditions 1 and 2 from c600-lx2-faults with sessions'),
+       'rule': ('per fault, over its effective windows (start row to recovered row): E2 keys in turn windows '
+                'confirmed, at least 100, none unconfirmed, nearest-rank p95 <= 100 ms; in limit windows (a metered '
+                'fault, its job run to its limit with no commit) or turn windows (the others), LX-4 echo samples at '
+                'least 100, none failed, p95 <= 50 ms and p99 <= 67 ms, and the gate over at least 300 presents, fps '
+                '>= 30 and p99 <= 33.3 ms; conditions 1 and 2 from c600-lx2-faults with sessions'),
        'e2_p95_ms': E2_P95_MS, 'echo_bar_ms': list(ECHO_BAR_MS), 'gate': {'fps_min': FPS_MIN, 'p99_max_ms': P99_MAX_MS,
                                                                           'presents_min': GATE_FRAMES_MIN},
-       'observations_min': OBSERVATIONS_MIN, 'faults': list(FAULTS), 'source': SOURCES}
+       'observations_min': OBSERVATIONS_MIN, 'faults': list(FAULTS),
+       'limit_ends': {fault: list(codes) for fault, codes in LIMIT_ENDS.items()}, 'source': SOURCES}
 LIMITATIONS = [
-    'in the shell, the first commit of a metered fault\'s window cancels its view job '
-    '(KN7:cancelled.revision_replaced), so the job does not reach its limit there; the metered windows measure '
-    'commits while the metered job runs, and c600-lx2-faults (conditions 1 and 2) shows each limit',
     'the whole run uses the injection child (c600-lx2-child, never shipped) in place of the build\'s runtime; '
     'launch.json and the faults record name the same child',
     'the view jobs read no host rows (NoHost), as LX-4\'s']
@@ -133,7 +163,10 @@ DRAFTS = ['fault order, message Magic600.LX2.Phase and the lx2 rows', 'window = 
           'effective-window rules per fault', f'post targets {TARGET} turns and echo samples per fault, time box '
           f'{TIME_BOX_S:g} s', f'lead {LEAD_S:g} s, native-loop pace {PACE_S:g} s, gap {GAP_S:g} s',
           f'gate over presents inside windows, at least {GATE_FRAMES_MIN}', 'an in-window echo failure fails the bar',
-          'one echo sample per fault every 0.25 s (S inside-body, first key)']
+          'one echo sample per fault every 0.25 s (S inside-body, first key)',
+          'limit windows: wParam len(FAULTS) plus the fault\'s number, before its turn windows; the ends that count '
+          '(LIMIT_ENDS, the integrator\'s choice; the owner may override it)',
+          'a limit window\'s length: the host\'s view deadline (time estimate only)']
 
 
 def echo_edit(edits):
@@ -144,21 +177,35 @@ def echo_edit(edits):
 
 
 def estimate():
-    """The plan's seconds per fault: (nominal, time-boxed bound) with TARGET turns and echo samples (DRAFT)."""
-    out = {}
+    """The plan's seconds per phase, in PHASES order: (fault, kind, nominal, time-boxed bound) with its targets (DRAFT;
+    a limit window runs to the host's view deadline, the end measured under the host's view limits)."""
+    out = []
     one_turn = TARGET * (LEAD_S + RECOVERY_S + GAP_S)
     loop_turns = int((VIEW_DEADLINE_S - LEAD_S) / PACE_S) + 1
     loop = math.ceil(TARGET / loop_turns) * (VIEW_DEADLINE_S + RECOVERY_S + GAP_S)
-    for fault in FAULTS:
-        nominal = loop if fault == 'loop_native' else one_turn
-        out[fault] = (round(nominal), round(TIME_BOX_S + VIEW_DEADLINE_S + RECOVERY_S + GAP_S))
+    limit = math.ceil(TARGET * ECHO_PACE_S / VIEW_DEADLINE_S) * (VIEW_DEADLINE_S + RECOVERY_S + GAP_S)
+    bound = round(TIME_BOX_S + VIEW_DEADLINE_S + RECOVERY_S + GAP_S)
+    for _, fault, kind in PHASES:
+        nominal = limit if kind == 'limit' else loop if fault == 'loop_native' else one_turn
+        out.append((fault, kind, round(nominal), bound))
     return out
+
+
+def targets_met(fault, kind, turns, echoes):
+    """Whether a phase has its targets: a limit phase its echo samples, a metered fault's turn phase its turns (its
+    condition 3 comes from the limit windows), another fault's phase both."""
+    if kind == 'limit':
+        return echoes >= TARGET
+    if fault in METERED:
+        return turns >= TARGET
+    return turns >= TARGET and echoes >= TARGET
 
 
 # ---- post (live: Windows, the running shell, the foreground) ----
 
 class Live:
-    """What the poster reads from the shell's live log: LX-4's endpoints and LX-2's windows, turns and phase ends."""
+    """What the poster reads from the shell's live log: LX-4's endpoints and LX-2's windows, turns and phase ends, by
+    fault and kind."""
 
     def __init__(self, tail):
         self.tail, self.endpoints, self.windows, self.turns = tail, set(), {}, {}
@@ -169,20 +216,21 @@ class Live:
             if row.get('t') == 'lx4':
                 self.endpoints.add((row.get('sample'), row.get('endpoint')))
             elif row.get('t') == MODULE and integer(row.get('qpc')):
-                event, fault, window = row.get('event'), row.get('fault'), row.get('window')
+                event, window = row.get('event'), row.get('window')
+                phase = (row.get('fault'), row.get('kind'))
                 if event == 'start' and integer(window):
-                    self.windows[window] = {'fault': fault, 'start': row['qpc'], 'end': None}
+                    self.windows[window] = {'phase': phase, 'start': row['qpc'], 'end': None}
                 elif event == 'recovered' and window in self.windows:
                     self.windows[window]['end'] = row['qpc']
                 elif event == 'turn' and row.get('ok') is True:
-                    self.turns[fault] = self.turns.get(fault, 0) + 1
+                    self.turns[phase] = self.turns.get(phase, 0) + 1
                 elif event == 'phase_end':
-                    self.phase_ends.append(fault)
+                    self.phase_ends.append(phase)
                 elif event == 'error':
                     self.errors.append(str(row.get('reason')))
 
-    def inside(self, fault, qpc):
-        return any(window['fault'] == fault and window['start'] <= qpc
+    def inside(self, phase, qpc):
+        return any(window['phase'] == phase and window['start'] <= qpc
                    and (window['end'] is None or qpc <= window['end']) for window in self.windows.values())
 
 
@@ -199,8 +247,8 @@ def module_rows(tail, names, clock, sleep, timeout=lx4.START_TIMEOUT_S):
 
 
 def post_run(fixtures, run_dir, system, clock=time.monotonic, sleep=time.sleep, out=print, close=True):
-    """Runs every fault's phase in the shell whose LX-2 and LX-4 module rows are in run_dir's live log; 0 when every
-    phase ended with its targets and every echo sample completed."""
+    """Runs every phase in the shell whose LX-2 and LX-4 module rows are in run_dir's live log; 0 when every phase
+    ended with its targets and every echo sample completed."""
     _, edits, digests = lx4.load_fixtures(fixtures)
     edit = echo_edit(edits)
     run_dir = Path(run_dir)
@@ -223,43 +271,45 @@ def post_run(fixtures, run_dir, system, clock=time.monotonic, sleep=time.sleep, 
             log.write(json.dumps(row, separators=(',', ':')) + '\n')
             log.flush()
 
-        def phase(number, fault):
+        def phase(number, fault, kind):
             qpc = system.qpc()
             ok = system.post(hwnd, names[PHASE], number, 0)
-            write({'t': 'phase', 'fault': fault, 'wparam': number, 'qpc': qpc, 'ok': ok})
+            write({'t': 'phase', 'fault': fault, 'kind': kind, 'wparam': number, 'qpc': qpc, 'ok': ok})
             return ok
 
         write({'t': 'run', 'format': POSTS_FORMAT, 'run_id': head.get('run_id'),
                'build_identity': head.get('build_identity'), 'qpc_frequency': system.frequency(), 'synthetic': False,
-               'faults': list(FAULTS), 'echo_edit': edit, 'target': TARGET, **digests,
+               'faults': list(FAULTS), 'phases': [list(entry) for entry in PHASES], 'echo_edit': edit,
+               'target': TARGET, **digests,
                'harness_sha256': lx4.sha256_bytes(Path(__file__).read_bytes())})
-        for number, fault in enumerate(FAULTS, 1):
-            if not phase(number, fault):
-                out(f'{fault}: the phase message did not post')
+        for number, fault, kind in PHASES:
+            key, label = (fault, kind), f'{fault} ({kind})'
+            if not phase(number, fault, kind):
+                out(f'{label}: the phase message did not post')
                 return 4
             started, stopping, timed, failures = clock(), None, [], 0
             while True:
                 live.drain()
                 if live.errors:
                     out(f'the LX-2 module stopped: {live.errors[0]}')
-                    phase(0, None)
+                    phase(0, None, None)
                     return 4
-                turns = live.turns.get(fault, 0)
-                echoes = sum(live.inside(fault, qpc) for qpc in timed)
-                if stopping is None and ((turns >= TARGET and echoes >= TARGET) or clock() - started >= TIME_BOX_S):
-                    if not phase(0, None):
-                        out(f'{fault}: the stop message did not post')
+                turns = live.turns.get(key, 0)
+                echoes = sum(live.inside(key, qpc) for qpc in timed)
+                if stopping is None and (targets_met(fault, kind, turns, echoes) or clock() - started >= TIME_BOX_S):
+                    if not phase(0, None, None):
+                        out(f'{label}: the stop message did not post')
                         return 4
                     stopping = clock()
                 if stopping is not None:
-                    if fault in live.phase_ends:
+                    if key in live.phase_ends:
                         break
                     if clock() - stopping >= PHASE_END_TIMEOUT_S:
-                        out(f'{fault}: the module wrote no phase_end within {PHASE_END_TIMEOUT_S:g} s')
+                        out(f'{label}: the module wrote no phase_end within {PHASE_END_TIMEOUT_S:g} s')
                         return 4
                 sample_id += 1
                 begun = clock()
-                status, foreground, qpc = echo_sample(system, hwnd, names, edits, edit, sample_id, fault, live, write,
+                status, foreground, qpc = echo_sample(system, hwnd, names, edits, edit, sample_id, key, live, write,
                                                       clock, sleep)
                 if status == 'done' and foreground:
                     timed.append(qpc)
@@ -267,12 +317,12 @@ def post_run(fixtures, run_dir, system, clock=time.monotonic, sleep=time.sleep, 
                     failures += 1
                 sleep(max(0.0, ECHO_PACE_S - (clock() - begun)))
             live.drain()
-            turns, echoes = live.turns.get(fault, 0), sum(live.inside(fault, qpc) for qpc in timed)
+            turns, echoes = live.turns.get(key, 0), sum(live.inside(key, qpc) for qpc in timed)
             seconds = round(clock() - started, 1)
-            write({'t': 'fault', 'fault': fault, 'turns': turns, 'echo_samples': echoes, 'failed_samples': failures,
-                   'seconds': seconds})
-            out(f'{fault}: {turns} turns, {echoes} echo samples in windows, {failures} failed samples, {seconds} s')
-            if turns < TARGET or echoes < TARGET or failures:
+            write({'t': 'fault', 'fault': fault, 'kind': kind, 'turns': turns, 'echo_samples': echoes,
+                   'failed_samples': failures, 'seconds': seconds})
+            out(f'{label}: {turns} turns, {echoes} echo samples in windows, {failures} failed samples, {seconds} s')
+            if not targets_met(fault, kind, turns, echoes) or failures:
                 code = 3
         if close:
             qpc = system.qpc()
@@ -280,8 +330,10 @@ def post_run(fixtures, run_dir, system, clock=time.monotonic, sleep=time.sleep, 
     return code
 
 
-def echo_sample(system, hwnd, names, edits, edit, sample_id, fault, live, write, clock, sleep):
-    """One LX-4 echo sample, posted as lx4.py posts it: (status, foreground, the timed post's QPC or None)."""
+def echo_sample(system, hwnd, names, edits, edit, sample_id, phase, live, write, clock, sleep):
+    """One LX-4 echo sample in the phase (fault, kind), posted as lx4.py posts it: (status, foreground, the timed
+    post's QPC or None)."""
+    fault, kind = phase
     sent, timed = lx4.messages(edits, {'id': sample_id, 'edit': edit, 'metric': ECHO})
     started, status, timed_qpc = clock(), None, None
     ok_all = system.alive(hwnd)
@@ -301,15 +353,16 @@ def echo_sample(system, hwnd, names, edits, edit, sample_id, fault, live, write,
         ok_all = ok_all and ok
         if index == timed:
             timed_qpc = qpc
-        write({'t': 'post', 'sample': sample_id, 'fault': fault, 'index': index, 'message': number, 'wparam': wparam,
-               'lparam': lparam, 'qpc': qpc, 'ok': ok, 'timed': index == timed})
+        write({'t': 'post', 'sample': sample_id, 'fault': fault, 'kind': kind, 'index': index, 'message': number,
+               'wparam': wparam, 'lparam': lparam, 'qpc': qpc, 'ok': ok, 'timed': index == timed})
         if message == lx4.RESET and not (ok_all and wait_for((sample_id, lx4.READY))):
             status = 'not-ready'
             break
     if status is None:
         status = 'done' if ok_all and wait_for((sample_id, ECHO)) else 'timeout'
     foreground = system.foreground(hwnd)
-    write({'t': 'sample', 'sample': sample_id, 'fault': fault, 'status': status, 'foreground': foreground})
+    write({'t': 'sample', 'sample': sample_id, 'fault': fault, 'kind': kind, 'status': status,
+           'foreground': foreground})
     return status, foreground, timed_qpc
 
 
@@ -334,16 +387,25 @@ def read_windows(rows):
 
 
 def judge_window(number, events, frequency):
-    """One window: its fault, bounds and whether it is effective (and why not)."""
+    """One window: its fault, kind, bounds, end code and whether it is effective (and why not)."""
     start, recovered = first(events.get('start', [])), first(events.get('recovered', []))
-    if start is None or start.get('fault') not in FAULTS:
+    if start is None or start.get('fault') not in FAULTS or start.get('kind') not in KINDS:
         return None
-    fault = start['fault']
+    fault, kind = start['fault'], start['kind']
+    if kind == 'limit' and fault not in METERED:
+        return None
     fault_end = first(events.get('fault_end', []))
     turns = [row for row in events.get('turn', []) if row.get('ok') is True]
     why = None
     if recovered is None:
         why = 'not-recovered'
+    elif kind == 'limit':
+        if events.get('turn'):
+            why = 'turned'
+        elif fault_end is None or fault_end.get('status') != 'refused':
+            why = 'job-not-refused'
+        elif fault_end.get('code') not in LIMIT_ENDS[fault]:
+            why = 'limit-not-reached'
     elif not turns:
         why = 'no-turn'
     elif fault_end is None or fault_end.get('status') != 'refused':
@@ -364,7 +426,7 @@ def judge_window(number, events, frequency):
             why = 'child-not-seen'
         elif (ended['exit_qpc'] - start['qpc']) / frequency < LOOP_LIFE_MIN_S:
             why = 'child-ended-early'
-    return {'window': number, 'fault': fault, 'start': start['qpc'],
+    return {'window': number, 'fault': fault, 'kind': kind, 'start': start['qpc'],
             'end': recovered['qpc'] if recovered else None, 'effective': why is None, 'why': why,
             'code': fault_end.get('code') if fault_end else None, 'turns': len(turns)}
 
@@ -419,8 +481,8 @@ def state_of(enough, met):
 
 
 def echo_times(rows, posts, done, edits, edit, frames, presented, frequency, contradictions):
-    """Per echo sample: (fault, anchor QPC, latency in ms or None, failure or None), timed as lx4.py times it; an echo
-    row that names an unknown frame or a frame submitted before the post adds a contradiction, as in lx4.py."""
+    """Per echo sample: ((fault, kind), anchor QPC, latency in ms or None, failure or None), timed as lx4.py times it;
+    an echo row that names an unknown frame or a frame submitted before the post adds a contradiction, as in lx4.py."""
     endpoints = {}
     for row in rows:
         if row.get('t') == 'lx4':
@@ -454,7 +516,7 @@ def echo_times(rows, posts, done, edits, edit, frames, presented, frequency, con
         elif row['frame_id'] not in presented:
             failure = 'unconfirmed'
         latency = None if failure else (presented[row['frame_id']]['display_qpc'] - anchor) * 1000 / frequency
-        samples.append((sent[0].get('fault'), anchor, latency, failure))
+        samples.append(((sent[0].get('fault'), sent[0].get('kind')), anchor, latency, failure))
     return samples
 
 
@@ -490,43 +552,53 @@ def analyze_run(rows, post_rows, edits, digests, *, launch=None, presents=None, 
         reasons.add('contradiction')
     per_fault = {}
     for fault in FAULTS:
-        effective = [window for window in judged if window['fault'] == fault and window['effective']]
+        def effective(kind):
+            return [window for window in judged if (window['fault'], window['kind']) == (fault, kind)
+                    and window['effective']]
 
-        def inside(qpc):
-            return any(window['start'] <= qpc <= window['end'] for window in effective)
+        def inside(windows, qpc):
+            return any(window['start'] <= qpc <= window['end'] for window in windows)
 
-        entries = [entry for key, entry in zip(keys, run['per_key']) if inside(key['qpc'])]
+        turn_windows = effective('turn')
+        over = 'limit' if fault in METERED else 'turn'
+        echo_windows = effective(over)
+        entries = [entry for key, entry in zip(keys, run['per_key']) if inside(turn_windows, key['qpc'])]
         latencies = [entry['latency_ms'] for entry in entries if entry['status'] == 'confirmed']
         unconfirmed = len(entries) - len(latencies)
-        e2 = {'turns': sum(window['turns'] for window in effective), 'confirmed': len(latencies),
+        e2 = {'over': 'turn', 'turns': sum(window['turns'] for window in turn_windows), 'confirmed': len(latencies),
               'unconfirmed': unconfirmed,
               'stats': statistics(latencies) if latencies else None,
               'state': state_of(len(latencies) >= OBSERVATIONS_MIN,
                                 not unconfirmed and latencies and nearest_rank(latencies, 95) <= E2_P95_MS)}
-        timed = [latency for owner, anchor, latency, failure in echoes if owner == fault and inside(anchor)
-                 and failure is None]
-        failed = sorted(failure for owner, anchor, latency, failure in echoes if owner == fault and inside(anchor)
-                        and failure is not None)
-        echo = {'timed': len(timed), 'failed': failed, 'stats': statistics(timed) if timed else None,
+        samples = [(latency, failure) for owner, anchor, latency, failure in echoes
+                   if owner == (fault, over) and inside(echo_windows, anchor)]
+        timed = [latency for latency, failure in samples if failure is None]
+        failed = sorted(failure for latency, failure in samples if failure is not None)
+        echo = {'over': over, 'timed': len(timed), 'failed': failed, 'stats': statistics(timed) if timed else None,
                 'state': state_of(len(timed) >= OBSERVATIONS_MIN,
                                   not failed and timed and nearest_rank(timed, 95) <= ECHO_BAR_MS[0]
                                   and nearest_rank(timed, 99) <= ECHO_BAR_MS[1])}
         if presents is None:
-            gate = {'presents': 0, 'state': 'insufficient', 'reason': 'presentmon-missing'}
+            gate = {'over': over, 'presents': 0, 'state': 'insufficient', 'reason': 'presentmon-missing'}
         else:
-            values = [interval for qpc, interval in presents if inside(qpc)]
+            values = [interval for qpc, interval in presents if inside(echo_windows, qpc)]
             judged_gate = renderer_gate.judge(values) if values else None
-            gate = {'presents': len(values), 'result': judged_gate,
+            gate = {'over': over, 'presents': len(values), 'result': judged_gate,
                     'state': state_of(len(values) >= GATE_FRAMES_MIN, bool(judged_gate and judged_gate['met']))}
-        ineffective = {}
-        for window in judged:
-            if window['fault'] == fault and not window['effective']:
-                ineffective[window['why']] = ineffective.get(window['why'], 0) + 1
-        per_fault[fault] = {'windows': sum(window['fault'] == fault for window in judged), 'effective': len(effective),
-                            'ineffective': dict(sorted(ineffective.items())),
-                            'window_seconds': round(sum(window['end'] - window['start'] for window in effective)
-                                                    / frequency, 3),
-                            'e2': e2, 'echo': echo, 'gate': gate}
+        by_kind = {}
+        for kind in KINDS if fault in METERED else ('turn',):
+            mine = [window for window in judged if (window['fault'], window['kind']) == (fault, kind)]
+            ineffective, ends = {}, {}
+            for window in mine:
+                if not window['effective']:
+                    ineffective[window['why']] = ineffective.get(window['why'], 0) + 1
+                ends[str(window['code'])] = ends.get(str(window['code']), 0) + 1
+            counted = [window for window in mine if window['effective']]
+            by_kind[kind] = {'windows': len(mine), 'effective': len(counted),
+                             'ineffective': dict(sorted(ineffective.items())), 'ends': dict(sorted(ends.items())),
+                             'seconds': round(sum(window['end'] - window['start'] for window in counted)
+                                              / frequency, 3)}
+        per_fault[fault] = {'windows': by_kind, 'e2': e2, 'echo': echo, 'gate': gate}
     conditions_1_2 = judge_faults(faults_record, launch)
     return {'run_id': head['run_id'], 'build_identity': head['build_identity'], 'synthetic': head['synthetic'],
             'status': 'invalid' if reasons else 'valid', 'reasons': sorted(reasons), 'module_errors': errors,
@@ -616,7 +688,9 @@ def build(fixtures, directory, faults_path, argv, synthetic_flag=False):
     if Path(faults_path).is_file():
         inputs.append(evidence.file_entry('faults', faults_path))
     synthetic = evidence.is_synthetic([events], [run.get('synthetic')], synthetic_flag)
-    result = {'fixtures': digests, 'run': run, 'limitations': LIMITATIONS}
+    result = {'fixtures': digests, 'run': run, 'limitations': LIMITATIONS,
+              'limit_windows': {'ends': {fault: list(codes) for fault, codes in LIMIT_ENDS.items()},
+                                'facts': LIMIT_FACTS}}
     return evidence.make_record(
         'lx2-fault-windows', 'performance', synthetic=synthetic, build_identity=run.get('build_identity'),
         inputs=inputs, tools=evidence.tool_versions(__file__, ('c9/key_to_frame.py', 'c9/lx4.py', 'renderer_gate.py')),
@@ -646,13 +720,18 @@ def main(argv=None, system_factory=lx4.Windows):
                 _, edits, digests = lx4.load_fixtures(args.fixtures)
                 sent, timed = lx4.messages(edits, {'id': 1, 'edit': echo_edit(edits), 'metric': ECHO})
                 plan = estimate()
-                print(f'faults: {", ".join(FAULTS)} (Magic600.LX2.Phase wParam 1 to {len(FAULTS)}, 0 stops)')
-                print(f'per fault: {TARGET} turns and {TARGET} echo samples in windows, time box {TIME_BOX_S:g} s; '
-                      f'echo sample: {len(sent)} messages, timed {timed}; fixtures {digests["manifest_sha256"]}')
-                for fault, (nominal, bound) in plan.items():
-                    print(f'  {fault}: about {nominal} s, at most {bound} s')
-                print(f'shell time: about {math.ceil(sum(n for n, _ in plan.values()) / 60)} min, at most '
-                      f'{math.ceil(sum(b for _, b in plan.values()) / 60)} min (DRAFT)')
+                print(f'faults: {", ".join(FAULTS)} (Magic600.LX2.Phase wParam 1 to {len(FAULTS)} for turn windows, '
+                      f'{len(FAULTS) + 1} to {len(FAULTS) + len(METERED)} for the metered faults\' limit windows, '
+                      '0 stops)')
+                print(f'per phase, time box {TIME_BOX_S:g} s: a limit phase {TARGET} echo samples in windows, a '
+                      f'metered fault\'s turn phase {TARGET} turns, another fault\'s both; echo sample: {len(sent)} '
+                      f'messages, timed {timed}; fixtures {digests["manifest_sha256"]}')
+                print('limit windows count with: ' + '; '.join(f'{fault} {" or ".join(codes)}'
+                                                               for fault, codes in LIMIT_ENDS.items()))
+                for fault, kind, nominal, bound in plan:
+                    print(f'  {fault} ({kind} windows): about {nominal} s, at most {bound} s')
+                print(f'shell time: about {math.ceil(sum(entry[2] for entry in plan) / 60)} min, at most '
+                      f'{math.ceil(sum(entry[3] for entry in plan) / 60)} min (DRAFT)')
                 print('dry run: no window was looked for and nothing was posted')
                 return 0
             if args.run is None:
@@ -665,9 +744,11 @@ def main(argv=None, system_factory=lx4.Windows):
     run = record['result']['run']
     print(f"{run['run_id']}: {run['status']}{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}")
     for fault, result in (run.get('faults') or {}).items():
-        print(f"  {fault}: {result['effective']} of {result['windows']} windows effective; E2 "
-              f"{result['e2']['state']} ({result['e2']['confirmed']} keys), echo {result['echo']['state']} "
-              f"({result['echo']['timed']}), gate {result['gate']['state']} ({result['gate']['presents']} presents)")
+        counts = ', '.join(f"{entry['effective']} of {entry['windows']} {kind} windows"
+                           for kind, entry in result['windows'].items())
+        print(f"  {fault}: {counts} effective; E2 {result['e2']['state']} ({result['e2']['confirmed']} keys), echo "
+              f"{result['echo']['state']} ({result['echo']['timed']}), gate {result['gate']['state']} "
+              f"({result['gate']['presents']} presents)")
     if 'conditions_1_2' in run:
         print(f"  conditions 1 and 2: {run['conditions_1_2']['state']}")
     evidence.report(record)

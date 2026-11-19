@@ -19,9 +19,10 @@ namespace Magic600.Shell.Lx2;
 /// the shell does not open the core.
 ///
 /// Phases: the registered message Magic600.LX2.Phase (wParam a fault's number, 1 to 7 in <see cref="Faults"/>' order,
-/// or 0 to stop) starts a phase, which runs fault windows of that fault back to back until another phase message; a
-/// change is taken only between windows, after the runtime has recovered and the fault variables are clear. The module
-/// consumes the message.
+/// for its turn windows; 8 to 10, <see cref="Faults"/>.Length plus a metered fault's number, for that fault's limit
+/// windows; or 0 to stop) starts a phase, which runs windows of that fault and kind back to back until another phase
+/// message; a change is taken only between windows, after the runtime has recovered and the fault variables are clear.
+/// The module consumes the message.
 ///
 /// A window: the fault's view job (<see cref="HostLibrary.RunView"/>, under the host's view limits and deadline), one
 /// turn this module posts to the shell's window as the shell's turn key J (WM_KEYDOWN and WM_KEYUP with scan code
@@ -30,7 +31,10 @@ namespace Magic600.Shell.Lx2;
 /// fault posts its turn where the fault has taken effect: the metered faults <see cref="LeadMs"/> after the start,
 /// while the job runs; forced_kill right after it killed the child that runs the job; the native recursion and the
 /// allocator ceiling after the job ended with the child's loss; the native loop from <see cref="LeadMs"/> after the
-/// start while its child spins. A probe a turn cancels is sent again, so the window ends after the commit.
+/// start while its child spins. A probe a turn cancels is sent again, so the window ends after the commit. A metered
+/// fault's limit window posts no turn: its job runs until it ends (its meter's limit or the host's view deadline), so
+/// that the renderer and LX-4's echo are measured while the fault runs to its end with no commit; its turn windows
+/// measure the commits.
 ///
 /// Native faults (the injection child's variables, which it reads when it starts; C9 product's two holes, 19 November
 /// 2026): before the job the module ends every live injection child and waits until it has exited, so that the job's
@@ -38,7 +42,8 @@ namespace Magic600.Shell.Lx2;
 /// nothing queued. It clears them again after the job has ended (the native loop: once its armed child is seen), before
 /// the probe spawns the next child.
 ///
-/// Rows, {"t": "lx2", "event", "qpc", "window", "fault", ...}: phase and phase_end (windows); start (ticket, armed,
+/// Rows, {"t": "lx2", "event", "qpc", "window", "fault", "kind" ("limit" or "turn"; null with "fault"), ...}: phase
+/// and phase_end (windows); start (ticket, armed,
 /// ended_before: the children ended before an armed start); turn (ok); kill (killed); fault_end (status, code);
 /// child_exit (found, pid, exit_code); probe_refused (code); recovered (probes); error (reason), after which the module
 /// does nothing more. A window runs from its start row to its recovered row. When it starts, the module writes its
@@ -118,6 +123,8 @@ public sealed class Lx2Module : IShellModule
     private readonly long _frequency = Stopwatch.Frequency;
     private int _requested;
     private int _phase;
+    private int _fault;
+    private bool _limit;
     private Stage _stage = Stage.Idle;
     private long _window;
     private long _windows;
@@ -201,7 +208,7 @@ public sealed class Lx2Module : IShellModule
         {
             return false;
         }
-        if (wParam > (nuint)Faults.Length)
+        if (wParam > (nuint)(Faults.Length + LoopMetered))
         {
             Error($"Magic600.LX2.Phase names no fault: {wParam}");
         }
@@ -261,6 +268,8 @@ public sealed class Lx2Module : IShellModule
                         Row("phase_end", json => json.WriteNumber("windows", windows));
                     }
                     _phase = _requested;
+                    _limit = _phase > Faults.Length;
+                    _fault = _limit ? _phase - Faults.Length : _phase;
                     _windows = 0;
                     if (_phase != 0)
                     {
@@ -320,7 +329,7 @@ public sealed class Lx2Module : IShellModule
         _kill = null;
         _watch = null;
         _childPid = 0;
-        if (Native(_phase))
+        if (Native(_fault))
         {
             var runtime = _runtime;
             _prepare = Task.Run(() => EndChildren(runtime));
@@ -334,7 +343,7 @@ public sealed class Lx2Module : IShellModule
 
     private void Submit(long now)
     {
-        var code = Context.Host.RunView(Context.HostHandle, Source(_phase), Entry, out var ticket);
+        var code = Context.Host.RunView(Context.HostHandle, Source(_fault), Entry, out var ticket);
         if (code != HostLibrary.Ok)
         {
             Error($"RunView answered {code}: {Context.Host.LastError(Context.HostHandle)}");
@@ -358,7 +367,7 @@ public sealed class Lx2Module : IShellModule
             }
             json.WriteNumber("ended_before", ended);
         });
-        if (_phase == LoopNative)
+        if (_fault == LoopNative)
         {
             var runtime = _runtime;
             _watch = Task.Run(() => Watch(runtime));
@@ -377,10 +386,10 @@ public sealed class Lx2Module : IShellModule
             });
         }
         var elapsed = Ms(now - _start);
-        switch (_phase)
+        switch (_fault)
         {
             case AllocMetered or RecursionMetered or LoopMetered:
-                if (!_turned && !_faultFinal && elapsed >= LeadMs)
+                if (!_limit && !_turned && !_faultFinal && elapsed >= LeadMs)
                 {
                     Turn();
                 }
@@ -533,7 +542,7 @@ public sealed class Lx2Module : IShellModule
 
     private void Arm()
     {
-        (string Name, string Value)? variable = _phase switch
+        (string Name, string Value)? variable = _fault switch
         {
             AllocCeiling => (CeilingVariable, CeilingBytes.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             RecursionNative => (FaultVariable, "recursion@0"),
@@ -569,7 +578,8 @@ public sealed class Lx2Module : IShellModule
     {
         var qpc = at ?? EventLog.Now();
         var window = _window;
-        var fault = _phase == 0 ? null : Faults[_phase - 1];
+        var fault = _phase == 0 ? null : Faults[_fault - 1];
+        var kind = _limit ? "limit" : "turn";
         Context.Log?.Append(json =>
         {
             json.WriteString("t", "lx2");
@@ -579,10 +589,12 @@ public sealed class Lx2Module : IShellModule
             if (fault is null)
             {
                 json.WriteNull("fault");
+                json.WriteNull("kind");
             }
             else
             {
                 json.WriteString("fault", fault);
+                json.WriteString("kind", kind);
             }
             fields?.Invoke(json);
         });
