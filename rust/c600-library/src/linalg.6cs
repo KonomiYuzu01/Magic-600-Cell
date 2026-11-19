@@ -1,0 +1,239 @@
+edition "6cs-draft-1";
+module linalg requires [];
+
+export fn rank_f2(rows: List<List<Int>>) -> Nat effects [] {
+    return reduce_f2(field_rows_f2(rows), width(rows)).rank;
+}
+
+export fn solve_f2(rows: List<List<Int>>, rhs: List<Int>) -> record { rank: Nat, solution: List<Nat>, solvable: Bool } effects [] {
+    let unknowns = width(rows);
+    let reduced = reduce_f2(field_rows_f2(augmented(rows, rhs)), unknowns);
+    let solvable = consistent_f2(reduced.rows, reduced.rank, unknowns);
+    let solution = match solvable {
+        true => solution_f2(reduced.rows, reduced.pivots, unknowns);
+        _ => list<Nat>();
+    };
+    return record { rank = reduced.rank, solution = solution, solvable = solvable };
+}
+
+export fn rank_f5(rows: List<List<Int>>) -> Nat effects [] {
+    return reduce_f5(field_rows_f5(rows), width(rows)).rank;
+}
+
+export fn solve_f5(rows: List<List<Int>>, rhs: List<Int>) -> record { rank: Nat, solution: List<Nat>, solvable: Bool } effects [] {
+    let unknowns = width(rows);
+    let reduced = reduce_f5(field_rows_f5(augmented(rows, rhs)), unknowns);
+    let solvable = consistent_f5(reduced.rows, reduced.rank, unknowns);
+    let solution = match solvable {
+        true => solution_f5(reduced.rows, reduced.pivots, unknowns);
+        _ => list<Nat>();
+    };
+    return record { rank = reduced.rank, solution = solution, solvable = solvable };
+}
+
+fn width(rows: List<List<Int>>) -> Nat effects [] {
+    return match exact_eq(length(rows), 0) {
+        true => 0;
+        _ => length(index(rows, 0));
+    };
+}
+
+fn augmented(rows: List<List<Int>>, rhs: List<Int>) -> List<List<Int>> effects [] {
+    return repeat(length(rows), list<List<Int>>(), fn(done: List<List<Int>>) -> List<List<Int>> {
+        let k = length(done);
+        return push(done, push(index(rows, k), index(rhs, k)));
+    });
+}
+
+fn pivot_at(pivots: List<Nat>, column: Nat) -> record { found: Bool, next: Nat, row: Nat } effects [] {
+    return repeat(length(pivots), record { found = false, next = 0, row = 0 }, fn(s: record { found: Bool, next: Nat, row: Nat }) -> record { found: Bool, next: Nat, row: Nat } {
+        let hit = and(not(s.found), exact_eq(index(pivots, s.next), column));
+        let row = match hit {
+            true => s.next;
+            _ => s.row;
+        };
+        return record { found = or(s.found, hit), next = exact_add(s.next, 1), row = row };
+    });
+}
+
+fn field_rows_f2(rows: List<List<Int>>) -> List<List<F2>> effects [] {
+    return repeat(length(rows), list<List<F2>>(), fn(done: List<List<F2>>) -> List<List<F2>> {
+        let row = index(rows, length(done));
+        return push(done, repeat(length(row), list<F2>(), fn(cells: List<F2>) -> List<F2> {
+            return push(cells, to_f2(index(row, length(cells))));
+        }));
+    });
+}
+
+fn pivot_row_f2(rows: List<List<F2>>, column: Nat, from: Nat) -> record { at: Nat, found: Bool, next: Nat } effects [] {
+    return repeat(length(rows), record { at = 0, found = false, next = 0 }, fn(s: record { at: Nat, found: Bool, next: Nat }) -> record { at: Nat, found: Bool, next: Nat } {
+        let hit = and(not(s.found), and(not(exact_less(s.next, from)), not(exact_eq(residue(index(index(rows, s.next), column)), 0))));
+        let at = match hit {
+            true => s.next;
+            _ => s.at;
+        };
+        return record { at = at, found = or(s.found, hit), next = exact_add(s.next, 1) };
+    });
+}
+
+fn swap_f2(rows: List<List<F2>>, i: Nat, j: Nat) -> List<List<F2>> effects [] {
+    return repeat(length(rows), list<List<F2>>(), fn(done: List<List<F2>>) -> List<List<F2>> {
+        let k = length(done);
+        let row = match exact_eq(k, i) {
+            true => index(rows, j);
+            _ => match exact_eq(k, j) {
+                true => index(rows, i);
+                _ => index(rows, k);
+            };
+        };
+        return push(done, row);
+    });
+}
+
+fn scaled_f2(row: List<F2>, factor: F2) -> List<F2> effects [] {
+    return repeat(length(row), list<F2>(), fn(done: List<F2>) -> List<F2> {
+        return push(done, field_mul(factor, index(row, length(done))));
+    });
+}
+
+fn minus_multiple_f2(row: List<F2>, factor: F2, pivot: List<F2>) -> List<F2> effects [] {
+    return repeat(length(row), list<F2>(), fn(done: List<F2>) -> List<F2> {
+        let j = length(done);
+        return push(done, field_sub(index(row, j), field_mul(factor, index(pivot, j))));
+    });
+}
+
+fn eliminate_f2(rows: List<List<F2>>, at: Nat, column: Nat) -> List<List<F2>> effects [] {
+    let pivot = scaled_f2(index(rows, at), field_inverse(index(index(rows, at), column)));
+    return repeat(length(rows), list<List<F2>>(), fn(done: List<List<F2>>) -> List<List<F2>> {
+        let k = length(done);
+        let row = match exact_eq(k, at) {
+            true => pivot;
+            _ => match exact_eq(residue(index(index(rows, k), column)), 0) {
+                true => index(rows, k);
+                _ => minus_multiple_f2(index(rows, k), index(index(rows, k), column), pivot);
+            };
+        };
+        return push(done, row);
+    });
+}
+
+fn reduce_f2(rows: List<List<F2>>, columns: Nat) -> record { column: Nat, pivots: List<Nat>, rank: Nat, rows: List<List<F2>> } effects [] {
+    return repeat(columns, record { column = 0, pivots = list<Nat>(), rank = 0, rows = rows }, fn(s: record { column: Nat, pivots: List<Nat>, rank: Nat, rows: List<List<F2>> }) -> record { column: Nat, pivots: List<Nat>, rank: Nat, rows: List<List<F2>> } {
+        let found = pivot_row_f2(s.rows, s.column, s.rank);
+        return match found.found {
+            true => record { column = exact_add(s.column, 1), pivots = push(s.pivots, s.column), rank = exact_add(s.rank, 1), rows = eliminate_f2(swap_f2(s.rows, s.rank, found.at), s.rank, s.column) };
+            _ => record { column = exact_add(s.column, 1), pivots = s.pivots, rank = s.rank, rows = s.rows };
+        };
+    });
+}
+
+fn consistent_f2(rows: List<List<F2>>, rank: Nat, column: Nat) -> Bool effects [] {
+    let s = repeat(length(rows), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let zero = or(exact_less(s.next, rank), exact_eq(residue(index(index(rows, s.next), column)), 0));
+        return record { holds = and(s.holds, zero), next = exact_add(s.next, 1) };
+    });
+    return s.holds;
+}
+
+fn solution_f2(rows: List<List<F2>>, pivots: List<Nat>, unknowns: Nat) -> List<Nat> effects [] {
+    return repeat(unknowns, list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        let at = pivot_at(pivots, length(done));
+        let value = match at.found {
+            true => residue(index(index(rows, at.row), unknowns));
+            _ => 0;
+        };
+        return push(done, value);
+    });
+}
+
+fn field_rows_f5(rows: List<List<Int>>) -> List<List<F5>> effects [] {
+    return repeat(length(rows), list<List<F5>>(), fn(done: List<List<F5>>) -> List<List<F5>> {
+        let row = index(rows, length(done));
+        return push(done, repeat(length(row), list<F5>(), fn(cells: List<F5>) -> List<F5> {
+            return push(cells, to_f5(index(row, length(cells))));
+        }));
+    });
+}
+
+fn pivot_row_f5(rows: List<List<F5>>, column: Nat, from: Nat) -> record { at: Nat, found: Bool, next: Nat } effects [] {
+    return repeat(length(rows), record { at = 0, found = false, next = 0 }, fn(s: record { at: Nat, found: Bool, next: Nat }) -> record { at: Nat, found: Bool, next: Nat } {
+        let hit = and(not(s.found), and(not(exact_less(s.next, from)), not(exact_eq(residue(index(index(rows, s.next), column)), 0))));
+        let at = match hit {
+            true => s.next;
+            _ => s.at;
+        };
+        return record { at = at, found = or(s.found, hit), next = exact_add(s.next, 1) };
+    });
+}
+
+fn swap_f5(rows: List<List<F5>>, i: Nat, j: Nat) -> List<List<F5>> effects [] {
+    return repeat(length(rows), list<List<F5>>(), fn(done: List<List<F5>>) -> List<List<F5>> {
+        let k = length(done);
+        let row = match exact_eq(k, i) {
+            true => index(rows, j);
+            _ => match exact_eq(k, j) {
+                true => index(rows, i);
+                _ => index(rows, k);
+            };
+        };
+        return push(done, row);
+    });
+}
+
+fn scaled_f5(row: List<F5>, factor: F5) -> List<F5> effects [] {
+    return repeat(length(row), list<F5>(), fn(done: List<F5>) -> List<F5> {
+        return push(done, field_mul(factor, index(row, length(done))));
+    });
+}
+
+fn minus_multiple_f5(row: List<F5>, factor: F5, pivot: List<F5>) -> List<F5> effects [] {
+    return repeat(length(row), list<F5>(), fn(done: List<F5>) -> List<F5> {
+        let j = length(done);
+        return push(done, field_sub(index(row, j), field_mul(factor, index(pivot, j))));
+    });
+}
+
+fn eliminate_f5(rows: List<List<F5>>, at: Nat, column: Nat) -> List<List<F5>> effects [] {
+    let pivot = scaled_f5(index(rows, at), field_inverse(index(index(rows, at), column)));
+    return repeat(length(rows), list<List<F5>>(), fn(done: List<List<F5>>) -> List<List<F5>> {
+        let k = length(done);
+        let row = match exact_eq(k, at) {
+            true => pivot;
+            _ => match exact_eq(residue(index(index(rows, k), column)), 0) {
+                true => index(rows, k);
+                _ => minus_multiple_f5(index(rows, k), index(index(rows, k), column), pivot);
+            };
+        };
+        return push(done, row);
+    });
+}
+
+fn reduce_f5(rows: List<List<F5>>, columns: Nat) -> record { column: Nat, pivots: List<Nat>, rank: Nat, rows: List<List<F5>> } effects [] {
+    return repeat(columns, record { column = 0, pivots = list<Nat>(), rank = 0, rows = rows }, fn(s: record { column: Nat, pivots: List<Nat>, rank: Nat, rows: List<List<F5>> }) -> record { column: Nat, pivots: List<Nat>, rank: Nat, rows: List<List<F5>> } {
+        let found = pivot_row_f5(s.rows, s.column, s.rank);
+        return match found.found {
+            true => record { column = exact_add(s.column, 1), pivots = push(s.pivots, s.column), rank = exact_add(s.rank, 1), rows = eliminate_f5(swap_f5(s.rows, s.rank, found.at), s.rank, s.column) };
+            _ => record { column = exact_add(s.column, 1), pivots = s.pivots, rank = s.rank, rows = s.rows };
+        };
+    });
+}
+
+fn consistent_f5(rows: List<List<F5>>, rank: Nat, column: Nat) -> Bool effects [] {
+    let s = repeat(length(rows), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let zero = or(exact_less(s.next, rank), exact_eq(residue(index(index(rows, s.next), column)), 0));
+        return record { holds = and(s.holds, zero), next = exact_add(s.next, 1) };
+    });
+    return s.holds;
+}
+
+fn solution_f5(rows: List<List<F5>>, pivots: List<Nat>, unknowns: Nat) -> List<Nat> effects [] {
+    return repeat(unknowns, list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        let at = pivot_at(pivots, length(done));
+        let value = match at.found {
+            true => residue(index(index(rows, at.row), unknowns));
+            _ => 0;
+        };
+        return push(done, value);
+    });
+}
