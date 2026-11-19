@@ -1,0 +1,247 @@
+\chapter{The finite geometric symmetry group}
+\label{ch:ArchonFull600Theory_Symmetry}
+
+This chapter is Milestone 3 of the handoff: O3, O5, Lemma 4 without its
+Coxeter presentation (the orders \(7200\) and \(14400\), the kernel
+computation and the stabilizer bound from the icosahedral link), and the
+first part of DS, the covering of \(SO(4)\) by
+\(\operatorname{Sp}(1)\times\operatorname{Sp}(1)\). The presentation
+\(K\cong W(H_4)\) is Milestone 4. Source line numbers refer to
+\texttt{research/Full\_600cell\_Puzzle\_Theory.tex}.
+
+\section{The binary icosahedral group}
+
+\begin{theorem}[\(V/2\) is a group of order 120]
+  \label{thm:binary-icosahedral}
+  \lean{ArchonFull600Theory.binaryIcosahedral, ArchonFull600Theory.binaryIcosahedralGroup,
+    ArchonFull600Theory.halfVertexSet_closure}
+  \leanok
+  % SOURCE: Definitions and mathematical sources, lines 280--289
+  % SOURCE QUOTE: Identify \(\mathbb R^4\) with the quaternion algebra \(\mathbb H\) using
+  % the ordered orthonormal basis \(1,i,j,k\). [...] The binary icosahedral group \(I^*\)
+  % is the inverse image of the rotation group of a regular icosahedron under
+  % \operatorname{Sp}(1)\longrightarrow SO(3)
+  \textit{Source: Definitions (O3); computation: the closure loop of
+  \texttt{verify\_regular\_geometry.py}.}
+  The set \(V/2\) of \(120\) unit quaternions contains \(1\) and \(-1\) and
+  is closed under the quaternion product and under conjugation. With the
+  group structure of \(\operatorname{Sp}(1)\) it is therefore a subgroup
+  \(I^*\) with \(120\) elements, which is how \(I^*\) is defined here.
+  That this subgroup is the inverse image of the icosahedral rotation
+  group is E1, which stays a hypothesis
+  (Chapter~\ref{ch:ArchonFull600Theory_Geometry}).
+\end{theorem}
+\begin{proof}
+  \leanok
+  Exact products in \(\mathbb Z[\phi]\) show that left multiplication by
+  the vertices \(8\) and \(30\) permutes \(V/2\), with the two permutation
+  tables checked by the kernel. A breadth-first tree of words in these two
+  vertices, with a parent table and strictly decreasing word lengths,
+  writes every element of \(V/2\) as such a word; induction on the word
+  length shows that left multiplication by any element of \(V/2\) permutes
+  \(V/2\). A third table shows that conjugation permutes \(V/2\).
+\end{proof}
+
+\section{The maps \texorpdfstring{\(L_{p,q}\)}{L(p,q)} and \texorpdfstring{\(J\)}{J}}
+
+\begin{definition}[\(L_{p,q}\) and \(J\)]
+  \label{def:lpq}
+  \lean{ArchonFull600Theory.lpq, ArchonFull600Theory.lpqHom, ArchonFull600Theory.conjIso,
+    ArchonFull600Theory.conjIso_lpq_conjIso}
+  \leanok
+  % SOURCE: Lemma 4, lines 524--527, 547, 561--567 and 581--585
+  % SOURCE QUOTE: L_{p,q}(x)=pxq^{-1}. [...] Quaternion norm multiplicativity makes
+  % \(L_{p,q}\) orthogonal. [...] J(x)=\bar x [...] J L_{p,q}J=L_{q,p},
+  \textit{Source: Lemma 4 (O5).}
+  For unit quaternions \(p,q\), the map \(L_{p,q}(x)=pxq^{-1}=px\bar q\) is
+  an orthogonal map of \(\mathbb H\), and \((p,q)\mapsto L_{p,q}\) is a
+  homomorphism from \(\operatorname{Sp}(1)\times\operatorname{Sp}(1)\).
+  Quaternion conjugation \(J(x)=\bar x\) is orthogonal, and
+  \(JL_{p,q}J=L_{q,p}\).
+\end{definition}
+
+\begin{lemma}[The kernel]
+  \label{lem:lpq-kernel}
+  \lean{ArchonFull600Theory.lpq_eq_one_iff, ArchonFull600Theory.ker_lpqHom}
+  \leanok
+  \uses{def:lpq}
+  % SOURCE: Lemma 4, lines 553--558
+  % SOURCE QUOTE: If \(L_{p,q}\) is the identity, evaluating at \(1\) gives \(p=q\). This
+  % quaternion must then commute with every quaternion. Commuting with \(i\)
+  % and \(j\) forces it to be real, so it is \(1\) or \(-1\). The kernel is
+  % precisely \{(1,1),(-1,-1)\}.
+  \textit{Source: Lemma 4, kernel calculation.}
+  \(L_{p,q}\) is the identity exactly when \((p,q)=(1,1)\) or
+  \((p,q)=(-1,-1)\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  Evaluating at \(1\) gives \(p=q\), so \(p\) commutes with every
+  quaternion. The \(j\)- and \(k\)-components of \(pi=ip\) and the
+  \(k\)-component of \(pj=jp\) make the imaginary part zero, and
+  \(|p|=1\) gives \(p=\pm1\).
+\end{proof}
+
+\begin{lemma}[Determinants]
+  \label{lem:lpq-det}
+  \lean{ArchonFull600Theory.orthDet_lpq, ArchonFull600Theory.orthDet_conjIso,
+    ArchonFull600Theory.det_mulLeft}
+  \leanok
+  \uses{def:lpq}
+  % SOURCE: Lemma 4, lines 547--550 and 563--567
+  % SOURCE QUOTE: Its determinant is positive: the same construction on the connected space
+  % \(\operatorname{Sp}(1)\times\operatorname{Sp}(1)\) depends continuously on \((p,q)\)
+  % and includes the identity. [...] Its real matrix is
+  % \operatorname{diag}(1,-1,-1,-1), so \(\det J=-1\).
+  \textit{Source: Lemma 4.}
+  \(\det L_{p,q}=1\) for unit quaternions \(p,q\), and
+  \(\det J=-1\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  In the basis \(1,i,j,k\), left multiplication by \(a\) has determinant
+  \(|a|^4\), and \(J\) has matrix \(\operatorname{diag}(1,-1,-1,-1)\).
+  Since \(L_{p,q}(x)=p\,\overline{q\,\bar x}\), its determinant is
+  \(|p|^4\cdot(-1)\cdot|q|^4\cdot(-1)=1\). This replaces the source's
+  continuity argument by a direct computation.
+\end{proof}
+
+\section{The covering of \texorpdfstring{\(SO(4)\)}{SO(4)}}
+
+\begin{theorem}[Orthogonal maps of \(\mathbb H\)]
+  \label{thm:orthogonal-lpq}
+  \lean{ArchonFull600Theory.orthogonal_eq_lpq, ArchonFull600Theory.orthDet_eq_one_or,
+    ArchonFull600Theory.reflection_mem_quaternionForms}
+  \leanok
+  \uses{def:lpq, lem:lpq-det}
+  % SOURCE: Distinct symmetry and motion groups, lines 1350--1355; handoff E6
+  % SOURCE QUOTE: To see the continuous covering directly, take \(A\in SO(4)\) and put
+  % \(p=A(1)\). [...] Every such three-dimensional rotation is \(x\mapsto qxq^{-1}\)
+  % for a unit quaternion \(q\), so \(A\) has a unit-quaternion-pair representation.
+  \textit{Source: Distinct groups (DS), with E6 proved rather than assumed.}
+  Every orthogonal map of \(\mathbb H\) is \(L_{p,q}\) or \(L_{p,q}J\) for
+  unit quaternions \(p,q\); in particular its determinant is \(1\) or
+  \(-1\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  The reflection in the hyperplane orthogonal to \(v\neq0\) is
+  \(x\mapsto-v\bar xv/|v|^2=L_{u,-\bar u}J(x)\) with \(u=v/|v|\), from the
+  identity \(v\bar xv=2\langle v,x\rangle v-|v|^2x\). The maps \(L_{p,q}\)
+  and \(L_{p,q}J\) are closed under composition, since
+  \(JL_{p,q}=L_{q,p}J\) and \(J^2=1\). Every orthogonal map of a
+  finite-dimensional real inner product space is a product of reflections
+  (the Cartan--Dieudonn\'e theorem, in Mathlib). This replaces the source's
+  route through \(SO(3)\).
+\end{proof}
+
+\begin{theorem}[DS, part 1: the double cover]
+  \label{thm:double-cover}
+  \lean{ArchonFull600Theory.doubleCoverSO4, ArchonFull600Theory.specialOrthogonal}
+  \leanok
+  \uses{lem:lpq-kernel, lem:lpq-det, thm:orthogonal-lpq}
+  % SOURCE: Distinct symmetry and motion groups, lines 1339--1340 and 1350--1355
+  % SOURCE QUOTE: \(\operatorname{Sp}(1)\times\operatorname{Sp}(1)\) & Double cover of
+  % \(SO(4)\), with diagonal \(\{\pm(1,1)\}\) kernel [...] The kernel calculation is the
+  % same as in Lemma 4.
+  \textit{Source: Distinct groups (DS), covering part.}
+  The homomorphism \((p,q)\mapsto L_{p,q}\) maps
+  \(\operatorname{Sp}(1)\times\operatorname{Sp}(1)\) onto \(SO(4)\), the
+  orthogonal maps of \(\mathbb H\) of determinant \(1\), and its kernel is
+  \(\{(1,1),(-1,-1)\}\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  The image lies in \(SO(4)\) by the determinant lemma. An element of
+  \(SO(4)\) is \(L_{p,q}\) or \(L_{p,q}J\), and the second form has
+  determinant \(-1\). The kernel is the kernel lemma.
+\end{proof}
+
+\section{The groups \texorpdfstring{\(K\)}{K} and \texorpdfstring{\(K^+\)}{K+}}
+
+\begin{definition}[\(K\) and \(K^+\)]
+  \label{def:symmetry-group}
+  \lean{ArchonFull600Theory.symmetryGroup, ArchonFull600Theory.rotationGroup,
+    ArchonFull600Theory.mem_symmetryGroup_iff, ArchonFull600Theory.isometry_mem_symmetryGroup}
+  \leanok
+  % SOURCE: Overview table, lines 236--239
+  % SOURCE QUOTE: \(K^+\) & 7,200 elements & Orientation-preserving rigid symmetries of
+  % the whole polytope \\ \(K=W(H_4)\) & 14,400 elements & Full rigid symmetry group,
+  % including reflections
+  \textit{Source: overview table (O5).}
+  \(K\) is the group of orthogonal maps of \(\mathbb H\) that map
+  \(P=\operatorname{conv}V\) onto itself, and \(K^+=K\cap SO(4)\). An
+  orthogonal map lies in \(K\) exactly when it maps \(V\) onto itself. Every
+  isometry of \(\mathbb H\) that maps \(P\) onto itself is an element
+  of \(K\) (in particular it fixes \(0\)), so \(K\) is the full rigid
+  symmetry group.
+\end{definition}
+\begin{proof}
+  \leanok
+  \(V\) is the set of extreme points of \(P\), and linear bijections
+  preserve extreme points and convex hulls. An isometry \(f\) with
+  \(f(P)=P\) maps the closed ball of radius \(2\) about \(0\), which
+  contains \(P\), to one about \(c=f(0)\), so \(|\pm v-c|\le2\) for the
+  vertex \(v=2\); then \(8+2|c|^2=|v-c|^2+|v+c|^2\le8\) gives \(c=0\), and
+  the Mazur--Ulam theorem makes \(f\) linear.
+\end{proof}
+
+\begin{lemma}[Stabilizer bound]
+  \label{lem:stabilizer-bound}
+  \lean{ArchonFull600Theory.card_stabilizer_le, ArchonFull600Theory.stabilizer_injective,
+    ArchonFull600Theory.card_linkTriangles, ArchonFull600Theory.eq_of_eqOn_clique}
+  \leanok
+  \uses{def:symmetry-group}
+  % SOURCE: Lemma 4, lines 569--578
+  % SOURCE QUOTE: An upper bound is still necessary. Fix a vertex \(v\). Its stabilizer
+  % acts faithfully on the icosahedral vertex figure: the vertex direction
+  % and the three-dimensional span of that figure together span
+  % \(\mathbb R^4\). An orthogonal symmetry of an icosahedron is determined
+  % by the image of one ordered triangular face. There are at most
+  % 20\cdot6=120 such images.
+  \textit{Source: Lemma 4, upper bound.}
+  The stabilizer in \(K\) of vertex \(0\) has at most \(20\cdot6=120\)
+  elements, and \(|K|\le120\cdot120=14400\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  \(K\) permutes the vertices and preserves the edge graph. A symmetry
+  fixing vertex \(0\) maps the facet \(\{0,30,31,32\}\) to vertex \(0\)
+  and an ordered triangle of pairwise adjacent neighbours of vertex
+  \(0\). The four vertices of a facet are linearly independent, so they
+  are a basis of \(\mathbb H\) and the symmetry is determined by these
+  images. The twelve neighbours of vertex \(0\) have \(120\) ordered
+  triangles, a kernel count. Orbit--stabilizer with an orbit of at most
+  \(120\) vertices gives the bound on \(|K|\), and also that \(K\) is
+  finite.
+\end{proof}
+
+\begin{theorem}[Lemma 4 without the presentation]
+  \label{thm:finite-symmetry-group}
+  \lean{ArchonFull600Theory.finiteSymmetryGroup, ArchonFull600Theory.rotationGroupEquiv,
+    ArchonFull600Theory.card_rotationGroup, ArchonFull600Theory.card_symmetryGroup,
+    ArchonFull600Theory.mem_symmetryGroup_iff_lpq, ArchonFull600Theory.ker_icosianRotation}
+  \leanok
+  \uses{thm:binary-icosahedral, lem:lpq-kernel, lem:lpq-det, lem:stabilizer-bound}
+  % SOURCE: Lemma 4, lines 524--531 and 550--585
+  % SOURCE QUOTE: K^+\cong (I^*\times I^*)/\langle(-1,-1)\rangle,
+  % \qquad |K^+|=7200, \end{equation} and quaternion conjugation extends this to \(K\) of
+  % order \(14400\). [...] The exhibited maps attain this upper bound, proving both
+  % group orders and the description of \(K^+\).
+  \textit{Source: Lemma 4.}
+  \(K^+\cong(I^*\times I^*)/\langle(-1,-1)\rangle\) through
+  \((p,q)\mapsto L_{p,q}\), and \(|K^+|=7200\). \(J\) lies in \(K\) but not
+  in \(K^+\), and \(|K|=14400\). Every element of \(K\) is \(L_{p,q}\) or
+  \(L_{p,q}J\) with \(p,q\in I^*\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  Closure of \(I^*\) under products and conjugation shows that
+  \(L_{p,q}\) and \(J\) map \(V\) to itself. On \(I^*\times I^*\), which has
+  \(14400\) elements, the kernel of \((p,q)\mapsto L_{p,q}\) is
+  \(\{(1,1),(-1,-1)\}\), so its image in \(K^+\) has \(7200\) elements. The
+  maps \(A\mapsto A\) and \(A\mapsto AJ\) embed two disjoint copies of
+  \(K^+\) in \(K\), so \(2|K^+|\le|K|\le14400\). Hence the image is all of
+  \(K^+\), \(|K^+|=7200\) and \(|K|=14400\). An element of \(K\) of
+  determinant \(-1\) is \(AJ\) with \(A=(AJ)J\in K^+\).
+\end{proof}

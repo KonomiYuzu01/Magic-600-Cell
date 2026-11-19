@@ -3,3 +3,6 @@ import ArchonFull600Theory.GoldenInt
 import ArchonFull600Theory.Vertices
 import ArchonFull600Theory.EdgeGraph
 import ArchonFull600Theory.Facets
+import ArchonFull600Theory.BinaryIcosahedral
+import ArchonFull600Theory.QuaternionMaps
+import ArchonFull600Theory.Symmetry
