@@ -527,8 +527,10 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   head equals the same run on a state witnessed apart (`tests/rows.rs`), so CT-LB1-03, CT-LB3-03 and CT-LB3-06 now run
   whole. `jumble_nu` reads ν and checks a drafted set in F2 and F5 through the bridge (`tests/ct_lb3_04.rs`,
   `tests/rows.rs`). The bridge also serves J08's `seam_facts` for a named cap (pull request 306).
-  Not taken up yet: the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel
-  names no plane for its twists, and which engine names one is not settled.
+  Not taken up yet: a survey entry (LB3.5 keeps the survey's all-items loop out of the rim entry). The rim and seam
+  facts, covers at a named cap and the correction catalogue are language code (`jumble_rim`, `jumble_covers`,
+  `jumble_corrections`, pull request 308). F03 on 600-cell-Full has no swept preview: the retained kernel names no plane
+  for its twists, and which engine names one is not settled.
 - **C9, the on-screen half, on the selected renderer.** The owner signed the renderer freeze on 16 November 2026
   ([freeze record](../../wiki/decisions/renderer-freeze.md), ADR-R01): S-A2, the S-B Direct3D 12 drawing core as a
   shared native library hosted by Godot 4.7.2 .NET. The owner started C9 on 18 November 2026 as a line of its own, with
@@ -592,7 +594,7 @@ is not built yet.
 | CT-LB3-04 | source | Now (C8, on LP2's `nu` and `correction_set_check`, pull requests 201 and 206; the entry also runs as language code, C8's `jumble_nu` on the IR draft's F2 and F5 (pull request 222), through C8's host bridge, on a witnessed snapshot and at the head of a jumbled session, pull request 299) | - |
 | CT-LB3-05 | source | A job that names its cap through the command layer (KN5, LP2); the repair-list inspector library entry, not written yet. Built: the named-cap repair list (pull request 176) and the built-in column's repair-list exception (pull request 229) | The kernel half on `observe::cuts::repair_list` (C8) |
 | CT-LB3-06 | source | Now (the kernel half on exact word fixtures (C8); the library entries: peak, excursion, tameness and the step flag recomputed from the rows, and a whole word's Net and Strict protection at pose level, equal to the kernel's and to `levels::derive`'s, through C8's host bridge on witnessed snapshots and at the head of a jumbled session (C8, pull request 299)) | - |
-| CT-LB3-07 | source | The inspector library entries, not written yet. Built: LB3.5's recommendation rule in `c600-check` (pull request 213), the rim summary, covers and release check (pull request 176) and the correction catalogue (pull request 206) | The checker half for outcome tables and named-word checks (C5) and for recommendations and reads (LP2, pull request 213); the jumbling half on the kernel, its correction part on LP2's `nu` and `correction_set_check` (C8) |
+| CT-LB3-07 | source | The other inspector entries in the language: LB3.1's "Straddlers and u at a named cap", "Units and clean-step contract", "Repair list at a named cap" and "Retained checkpoint, label checkpoint, sticker test" (C8). Built: LB3.5's recommendation rule in `c600-check` (pull request 213), the rim summary, covers and release check (pull request 176) and the correction catalogue (pull request 206) | The checker half for outcome tables and named-word checks (C5) and for recommendations and reads (LP2, pull request 213); the jumbling half on the kernel, its correction part on LP2's `nu` and `correction_set_check` (C8); the inspector entries `jumble_rim`, `jumble_covers` and `jumble_corrections` in the language, with the named-word checks and the drafted check, each read recorded with its argument (C8, pull request 308, `c600-jumble-tool/tests/ct_lb3_07.rs`) |
 | CT-LB4-01 | source | Now (C6) | - |
 | CT-LB4-02 | synthetic | Now (C6) | - |
 | CT-LB4-03 | source | Now (C6's 600-cell-Full half; C8's jumbling half at pose level, at lattice poses other than the identity through `c600-display`'s pose projection on M8's slot action of K⁺, and at a later revision of a jumbled session, pressed and undone with Jumble on in the command layer) | - |

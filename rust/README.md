@@ -2644,6 +2644,12 @@ run or not applicable is no pass (PHS.63).
     correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
     rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
     or a recommendation, ranking or correction field).
+  - `c600-jumble-tool/tests/ct_lb3_07.rs`: CT-LB3-07 on the inspector entries `jumble_rim`, `jumble_covers` and
+    `jumble_corrections` in the language, with the named-word checks and the drafted check, through the bridge on
+    witnessed snapshots of the I_a walk (pull request 308). Each read is recorded with its argument. The rim entry
+    answers every cap in cap-ID order and nothing of a twist. The covers and catalogue entries read the solver's named
+    cap or id only, and the catalogue refuses another menu. No answer names a recommendation, a next cap, a ranking or a
+    selection.
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -2737,15 +2743,16 @@ run or not applicable is no pass (PHS.63).
   for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
 - Not built: J10's producer (exposed-face geometry, LP2); J01 and J06 to J12 as supported rows (a backend's own rows,
   C9); the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
-  CT-RTE-07's jumbling keys on menu words (LG2.18's jumbling word key, LP2); LB3's other entries as language code, and
+  CT-RTE-07's jumbling keys on menu words (LG2.18's jumbling word key, LP2); LB3's other entries as language code (the
+  rim and seam facts, covers at a named cap, the correction catalogue and the ν and correction-set entry are built), and
   LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; CT-LB1-02's key half (LG2.18's jumbling
   word key, LP2); BM5's review records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at
   the J1 fixture's mid and end stages are compared only in the whole-journal runs, on request. Not taken up yet from M8
-  (pull requests 176 and 182): the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the
-  retained kernel names no plane for its twists, and which engine names one is not settled. Also waiting: the repair
-  list through the command layer, with a job that names its cap (KN5), the BND.2 wording of an empty list and no key
-  that skips caps with an empty list (LP2); the built-in column's repair-list exception is in `c600-check` since LP2's
-  pull request 229.
+  (pull requests 176 and 182): a survey entry (LB3.5 keeps the survey's all-items loop out of the rim entry). F03 on
+  600-cell-Full has no swept preview: the retained kernel names no plane for its twists, and which engine names one is
+  not settled. Also waiting: the repair list through the command layer, with a job that names its cap (KN5), the BND.2
+  wording of an empty list and no key that skips caps with an empty list (LP2); the built-in column's repair-list
+  exception is in `c600-check` since LP2's pull request 229.
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
