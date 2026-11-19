@@ -33,6 +33,7 @@ Each row pairs one harness file with one source. A file built from two sources h
 | `renderer/acceptance/overdraw/Cargo.toml` | new | - | the overdraw sizing tool `c9-overdraw`, a workspace of its own over the language crates `c600-check`, `c600-digest`, `c600-display`, `c600-ir`, `c600-kernel`, `c600-render` and `c600-syntax` (C9 U5c) |
 | `renderer/acceptance/overdraw/Cargo.lock` | new | - | its lockfile: the path crates and the vendored crates of `rust/vendor` only (C9 U5c) |
 | `renderer/acceptance/overdraw/.cargo/config.toml` | new | - | points Cargo at `rust/vendor`, so the build needs no network (C9 U5c) |
+| `renderer/acceptance/overdraw/rustfmt.toml` | new | - | formats the crate as `rust/rustfmt.toml` formats the crates it links (C9 U5c) |
 | `renderer/acceptance/overdraw/src/main.rs` | new | - | RPI.72's raster bound of W3 with the gate stages, headless: every vertex through c600-render's binary32 CPU reference, every triangle through c600-display's `raster::bound`, at 1920x1080, 2560x1440 and 2560x1600 over the camera frames and sampled turn angles; proposes the overdraw with a margin of 5/4 and charges RM.38's `frame_work` against the shell host's `shell-draft/1`; `--merge` joins the parts of a split sweep (C9 U5c) |
 | `renderer/acceptance/stages/arrays.json` | new | - | the gate stages' array values as binary32 bit patterns; vertex `d4` is the built-in 1.18f (C9 U5c) |
 | `renderer/acceptance/README.md` | new | - | what a run needs and the exact commands |

@@ -41,6 +41,15 @@
 //! agree apart from the range and the thread count and that their frames are contiguous with no repeat, and writes
 //! one file of the same form: the header, every row in frame order and the summary of all rows. Exit codes: 0 done;
 //! 2 a usage, asset, stage or part error.
+//!
+//! Outside CI: the crate is a workspace of its own (its own `Cargo.lock`, and `.cargo/config.toml` pointing at
+//! `rust/vendor`) with path dependencies on c600-render, c600-display and their path crates. Neither the rust
+//! workspace's tests, CI nor the landing rules' reruns build it, so a change to those crates, `raster::bound` and the
+//! stage reference included, is not caught here. Its result, overdraw 108, is pinned in the gate stages
+//! (`renderer/acceptance/stages/vertex.6cs`, `fragment.6cs` and `limits.json`) and in
+//! `rust/c600-render/tests/stage_hlsl.rs`. To recheck it after such a change, run `cargo test --locked --offline`
+//! here (the crate has no unit tests: the run builds it against the current crates), then the sweep that
+//! `renderer/acceptance/README.md` gives, and compare the summary's proposed overdraw with 108.
 
 use std::fmt::Write as _;
 use std::io::Write as _;
