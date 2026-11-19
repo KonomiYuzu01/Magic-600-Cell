@@ -27,7 +27,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, with KN2.4's `positions`, `labels` and `effect` rows as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and five of them served there by a test host through the command and source routes, with a stand-in engine that answers the two snapshot reads with the state number (LP3, C6) |
-| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
+| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), the jumbling rows' host bridge (`rows`: KN2.4's jumbling rows and `seam_facts` as snapshot reads, also at the command layer's head with Jumble on), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`), LB1.8's F2 and F5 ranks and solutions (the module `linalg` in `linalg.6cs`, CT-LB1-01's F2 and F5 part), LB2's exact completion (`completion.exact_completion` in `completion.6cs`) and LB2's recipes and reports (the module `recipes` in `recipes.6cs`), the last two run whole through the tool's host bridge in `c600-tools`' tests (CT-LB2-04 and CT-LB2-01), with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
@@ -2057,15 +2057,16 @@ run or not applicable is no pass (PHS.63).
   (RPI.78), the checker's codes in their registered forms, the raster bound's pixel conventions (rounded outward,
   clipped, then widened to quads; a line's quad has no caps), one comma-separated `digests` entry in
   `stage_work_exceeded`'s context, and no frame report for a device fault or a later frame of a quarantined chain.
-- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs a backend for
-  HLSL compilation and composition on a device (RPI.78; C9); an exact checker of isometry and homomorphism for the
+- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs a backend for HLSL
+  compilation and composition on a device (RPI.78; C9); an exact checker of isometry and homomorphism for the
   stereographic chart, which is not a projective map (both stay `not_established`); charts and properties outside the
-  drafted repertoire, the GPU agreement check (RPI.35) and a production precision rule (RPI.36). CT-RPI-08's jumbling
-  rows and the posed producer wait for M5; a decoder from the interpreter's values (the IR draft has list types since
-  pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired into the host, until a backend
-  compiles and bounds user stages; CT-RM-09's rows 3 to 6, 8 and 10 wait for C9 for their device parts: the vertex
-  evaluation and projection, U on a device and the skipped work (CT-RM-10, CT-RPI-31), and fault injection
-  (CT-RPI-34); RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its backend.
+  drafted repertoire, the GPU agreement check (RPI.35) and a production precision rule (RPI.36). CT-RPI-08's rows J01
+  and J06 to J12 stay unsupported until a backend's own rows (C9), and J10's producer waits for exposed-face geometry
+  (LP2); a decoder from the interpreter's values (the IR draft has list types since pull request 176); F05 and F26 stay
+  unsupported, and the quarantine is not wired into the host, until a backend compiles and bounds user stages;
+  CT-RM-09's rows 3 to 6, 8 and 10 wait for C9 for their device parts: the vertex evaluation and projection, U on a
+  device and the skipped work (CT-RM-10, CT-RPI-31), and fault injection (CT-RPI-34); RM.38's weight table, device loss
+  and `display_unsupported` belong to the renderer and its backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 
@@ -2096,14 +2097,16 @@ run or not applicable is no pass (PHS.63).
   only, the closure digest, the in-memory approval record `c600-approval-draft`, and the separation refusal at the
   preview point, which stays in this crate until C5's host bridge. Dynamic code is `LG3:capability.not_granted` by the
   owner's decision of 16 November 2026 (PHS.52).
-- CT-RTE-08's persisted words run in `c600-durable` (C7), on M6's store and through the command layer. Not built:
-  CT-RTE-07's other 36 keys: 6 jumbling keys (M5); 6 keys that need the session store (C7); 12 keys the IR draft could
-  not express when C4 was built (early stop, exact multiplication and remainder; not checked again yet against LP2's
-  exact multiplication and loops, pull requests 216 and 234) or that pass a run's input as a query argument, which LP2's
+- CT-RTE-08's persisted words run in `c600-durable` (C7), on M6's store and through the command layer, and CT-RTE-07's
+  six jumbling keys on M5's rows with literal words in `c600-jumble-tool` (C8, `tests/ct_rte_07_jumble.rs`). Not built:
+  CT-RTE-07's other 30 keys: 6 keys that need the session store (C7); 12 keys the IR draft could not express when C4 was
+  built (early stop, exact multiplication and remainder; not checked again yet against LP2's exact multiplication and
+  loops, pull requests 216 and 234) or that pass a run's input as a query argument, which LP2's
   `read_snapshot<T>("q", x)` now expresses and only the tool's bridge answers, for `positions` (LP2's pull request 226),
   `labels` (C5's exact completion) and `effect` (C5's recipes and reports, pull request 294) only; and 12 budget keys,
   whose amounts follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need
-  host events inside a loop, the host's row cache or the command layer's rows. The Linux leg did not run.
+  host events inside a loop, the host's row cache or the command layer's rows. The jumbling keys' menu-word half waits
+  for LG2.18's jumbling word key (LP2). The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2606,15 +2609,21 @@ run or not applicable is no pass (PHS.63).
   flag, recomputed from KN2.4's `replay` and `word_check`) and "Protection" at pose level
   ([`jumble_protection.6cs`](c600-jumble-tool/src/jumble_protection.6cs): a whole word's Net and Strict verdicts from
   KN2.4's `protection`, M8's `levels::derive`). `menu_words` and `menu_traces` read no state; each other entry reads
-  only its KN2.4 rows with `read_snapshot`, so it reads state and prepares no preview. None names a proposal target. No
-  host bridge serves the jumbling rows to a program yet, so the rows' answer types are the crate's drafts.
+  only its KN2.4 rows with `read_snapshot`, so it reads state and prepares no preview. None names a proposal target.
+- The crate's `rows` is the jumbling rows' host bridge (pull request 299): it serves KN2.4's jumbling rows to a run as
+  snapshot reads, at the command layer's head with Jumble on (`Rows::at_head`), on a witnessed base (`Rows::on`) or at a
+  state (`Rows::at_state`). It uses the crate's draft answer types and a draft tariff (one pass of the model's pieces
+  for the state and one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts),
+  and it grants those rows only. Since pull request 306 it also serves J08's `seam_facts` for a named cap, which
+  CT-RTE-07's jumbling keys read.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03 with the plane the engine names for the twist (`twist::Twist::plane`; a jumbling twist has
   a swept preview, a half-turn at θ = π in the engine's direction), the certified overlays J04 (the full named-cap set,
   the cap-map witness and the named cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13,
   which places a sticker at any lattice pose by M8's slot action of K⁺ with A3's frame check
-  (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05. Under a jumbling identity the validator
-  now checks a posed row instead of refusing it; 600-cell-Full is unchanged.
+  (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05, and, since pull request 301, the
+  producers of J01, J06, J07, J09, J11 and J12. Under a jumbling identity the validator now checks a posed row instead
+  of refusing it; 600-cell-Full is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
     LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
@@ -2640,13 +2649,13 @@ run or not applicable is no pass (PHS.63).
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
     admissibility guarantee and is refused at the prefix that straddles, at the first or a later one).
   - `c600-jumble-tool/tests/library.rs`: the library's modules checked by LP2's checker and run by LP2's interpreter,
-    each result compared with the kernel halves; a test host serves the KN2.4 rows from `c600_jumble`. CT-LB1-03's
-    jumbling half in the language (`menu_words` pure and in canonical layout; `power` and the IR draft's constructors
-    build the kernel half's words in a run with no host; a menu word of the S4 menu, of I_a in another pinned order or
-    in a run with no alphabet pinned refused before the run with `LB1:input.incompatible_alphabet`, as the checker
-    refuses a `Word` where `power` takes a `MenuWord`, and the rows refuse a word at a state of another alphabet; a
-    built word and its inverse retrace an admitted path prefix by prefix; a built conjugate refused at its first
-    prefix), CT-LB3-03's library entry (per-pose heights, branches, domain IDs and counts, Φ and the largest left
+    each result compared with the kernel halves; the host bridge `rows` serves the KN2.4 rows (pull request 299).
+    CT-LB1-03's jumbling half in the language (`menu_words` pure and in canonical layout; `power` and the IR draft's
+    constructors build the kernel half's words in a run with no host; a menu word of the S4 menu, of I_a in another
+    pinned order or in a run with no alphabet pinned refused before the run with `LB1:input.incompatible_alphabet`, as
+    the checker refuses a `Word` where `power` takes a `MenuWord`, and the rows refuse a word at a state of another
+    alphabet; a built word and its inverse retrace an admitted path prefix by prefix; a built conjugate refused at its
+    first prefix), CT-LB3-03's library entry (per-pose heights, branches, domain IDs and counts, Φ and the largest left
     height equal to the kernel's on six menu-reached states; Φ = 0 with height-2 pieces fails the sticker test; in free
     mode every piece reads heights (0,0) while the moved pieces form one pose class off the lattice, with the exact
     coset's domain ID) and CT-LB3-06's library entry (peak, excursion, tameness and the step flag recomputed from the
@@ -2669,8 +2678,19 @@ run or not applicable is no pass (PHS.63).
     row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
     drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
     unshipped id refused whole. Three tests run LB3's entry `jumble_nu` (`library::NU`, `src/jumble_nu.6cs`) in the
-    language on the IR draft's F2 and F5 (LP2's pull request 222), through a test host that serves the two rows:
-    off-lattice ν undefined, the planted refusal, and drafted sets checked to the prediction with the change Σ m·row.
+    language on the IR draft's F2 and F5 (LP2's pull request 222), through the host bridge `rows` on a witnessed base
+    (pull request 299): off-lattice ν undefined, the planted refusal, and drafted sets checked to the prediction with
+    the change Σ m·row.
+  - `c600-jumble-tool/tests/rows.rs`: the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through
+    `rows` at the head of jumbled sessions (I_a, S4, I_b), each run equal to the same run on a witnessed snapshot, byte
+    for byte; with Jumble off, every read stops with `KN5:input.menu_word_needs_jumble_on`; the bridge's grants and
+    draft tariff; and the `seam_facts` row at a named cap, whose N_c equals the engine's rim summary (pull requests 299
+    and 306).
+  - `c600-jumble-tool/tests/ct_rte_07_jumble.rs`: CT-RTE-07's six jumbling keys (MR01, MR02, MR05, MR06, A31 and A32) on
+    M5's rows with literal words, each re-expressed in `.6cs` and run ten times through `c600-module`'s boundary as the
+    Full leg runs its keys, with one SHA-256 over the canonical results, the rows read, the proposals and the store; a
+    manual-proposal control and the accounting against the Full leg. The menu-word half waits for LG2.18's key (LP2;
+    pull request 306).
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2708,19 +2728,24 @@ run or not applicable is no pass (PHS.63).
     whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
     sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
     projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
+  - `c600-display/tests/jumbling_payloads.rs`: CT-RPI-08's producers of J01 (render/1's pinned shrink anchors), J06 (the
+    readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
+    (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
+    engine's `correction_set_check`), pull request 301.
 - Not taken up yet from LP2: through the command layer, `jumble.off`, the refusals, redo, protected pieces and free
   mode (LP2's route test and `c600-command`'s own tests run them). C8 uses the IR draft's F2 and F5 (pull request 222)
   for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
-- Not built: the producers of the rows J01 and J06 to J12 (J10 also needs exposed-face geometry, LP2); a host bridge or
-  command-layer route that serves KN2.4's jumbling rows to a program (the library's tests serve them from
-  `c600_jumble`); LB3's other entries as language code, and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the
-  prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2); BM5's review records; the relationship strip's
-  data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end stages are compared only in the
-  whole-journal runs, on request. Not taken up yet from M8 (pull requests 176 and 182): the rim and survey rows of
-  CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its twists, and which
-  engine names one is not settled. Also waiting: the repair list through the command layer, with a job that names its
-  cap (KN5), the BND.2 wording of an empty list and no key that skips caps with an empty list (LP2); the built-in
-  column's repair-list exception is in `c600-check` since LP2's pull request 229.
+- Not built: J10's producer (exposed-face geometry, LP2); J01 and J06 to J12 as supported rows (a backend's own rows,
+  C9); the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
+  CT-RTE-07's jumbling keys on menu words (LG2.18's jumbling word key, LP2); LB3's other entries as language code, and
+  LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; CT-LB1-02's key half (LG2.18's jumbling
+  word key, LP2); BM5's review records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at
+  the J1 fixture's mid and end stages are compared only in the whole-journal runs, on request. Not taken up yet from M8
+  (pull requests 176 and 182): the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept preview: the
+  retained kernel names no plane for its twists, and which engine names one is not settled. Also waiting: the repair
+  list through the command layer, with a job that names its cap (KN5), the BND.2 wording of an empty list and no key
+  that skips caps with an empty list (LP2); the built-in column's repair-list exception is in `c600-check` since LP2's
+  pull request 229.
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
