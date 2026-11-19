@@ -2140,6 +2140,12 @@ run or not applicable is no pass (PHS.63).
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
+- LX-2's fault hook (the feature `lx2-faults`, off by default and in the product build): `child::main_with(hook)` runs
+  the child as `child::main` does and calls `hook(answers)` on the interpreter's thread, with the answers the child has
+  received, before each call frame and each result is written, next to where debug builds rehearse faults.
+  `FAULT_HOOK` says whether a build has it. The faults belong to the binary that gives the hook (c600-lx2's injection
+  device); this crate has none. The test child `c600-runtime-hooked`, built only with the feature, records the hook's
+  calls (`fault_hook.rs`, run with `--features lx2-faults`; without the feature it checks that `FAULT_HOOK` is false).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 31 of DET.65's 40 traces as `.6cs` programs on both executors
   (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication, alias and
@@ -2820,7 +2826,8 @@ run or not applicable is no pass (PHS.63).
   names its child (`product` or `injection device`); `injection_device` is null without `--injection`, and otherwise
   carries the device's file name and SHA-256, "product source + injection device", the variable, the ceiling and the
   meter limit. Each session row names the journal by row count and digest, never the folder.
-- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need a hook inside
-  `c600-runtime`, which is LP3's to shape. Also not here: the barrier's release acknowledgement and conditions 3 and 4
-  (the renderer gate, LX-4's echo bar and E2 commits during fault windows), which need the shell's frame loop on the
-  owner's machine. Evidence kind: source and synthetic; nothing is timing.
+- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need the device on
+  `c600-runtime`'s fault hook (the feature `lx2-faults`, LP3's), which c600-lx2 does not use yet. Also not here: the
+  barrier's release acknowledgement and conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2 commits during
+  fault windows), which need the shell's frame loop on the owner's machine. Evidence kind: source and synthetic;
+  nothing is timing.
