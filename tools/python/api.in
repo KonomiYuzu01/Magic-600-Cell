@@ -1,0 +1,3 @@
+# Paid Anthropic API environment (tools/.venv/api), Windows x64 CPython 3.14 only.
+# The ADR line's A1 to A3 runs on the owner's Anthropic API (owner, 19 Nov 2026); no product code imports it.
+anthropic==2.10.0
