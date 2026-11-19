@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -18,9 +19,14 @@ namespace Magic600.Shell;
 /// with the run row first, because the run row's foreground_throughout is known only at the end. A shell that never
 /// closes leaves only events.body.jsonl, which the timer does not read.
 ///
-/// What the log cannot yet say: there is no turn without the command layer, so there are no key rows; there is no
-/// correctness control, so correctness is "fail" with correctness_control "none", and the timer marks the run invalid;
-/// the core does not report its swap chain's address, so there is no swap_chain and no PresentMon cross-check.
+/// Key rows (charter E2, a draft): with the turns' session open, every measured press, a twist key's key-down that
+/// committed or was refused, gets a key row in press order. A committed press that the host adopted at engine revision
+/// R names the first submitted frame that draws revision R over a publication of revision R or later (the conservative
+/// reading); a refused press, and a press no frame showed before the close, names no frame, which the timer counts as
+/// unconfirmed. Frame rows carry the two revisions as extra fields. The run row's correctness is the session's
+/// correctness control (<see cref="HostLibrary.CorrectnessControl"/>), with its record as correctness_detail; without
+/// a session it is "fail" with correctness_control "none". The core does not report its swap chain's address, so
+/// there is no swap_chain and no PresentMon cross-check.
 /// </remarks>
 public sealed class EventLog : IDisposable
 {
@@ -33,6 +39,12 @@ public sealed class EventLog : IDisposable
     private readonly string _buildIdentity;
     private FileStream? _body;
     private bool _foreground = true;
+    /// <summary>Presses without their frame yet, in press order: QPC and revision (0 for a refused press).</summary>
+    private readonly Queue<(long Qpc, ulong Revision)> _pending = new();
+    private long _keys;
+    private bool _correct;
+    private string _control = "none";
+    private string? _detail;
 
     private EventLog(string directory, string runId, string buildIdentity)
     {
@@ -77,15 +89,84 @@ public sealed class EventLog : IDisposable
     /// <summary>Records that the window was not the foreground window at some point of the run.</summary>
     public void LostForeground() => _foreground = false;
 
-    /// <summary>A frame handed to the core, at the QPC read just before the call.</summary>
-    public void Frame(HostLibrary.Submitted frame, long qpc) => Write(json =>
+    /// <summary>
+    /// A measured press at <paramref name="qpc"/> (read when the key-down arrived): committed and adopted at
+    /// <paramref name="revision"/>, or refused when it is 0. Its key row waits for the frame that shows it.
+    /// </summary>
+    public void Press(long qpc, ulong revision)
     {
-        json.WriteString("t", "frame");
-        json.WriteNumber("frame_id", frame.Sequence);
-        json.WriteNumber("qpc", qpc);
-        json.WriteNumber("device_epoch", frame.DeviceEpoch);
-        json.WriteNumber("surface", frame.Surface);
-    });
+        _pending.Enqueue((qpc, revision));
+        Drain(null);
+    }
+
+    /// <summary>The session's correctness control: whether it passed and its record (canonical JSON).</summary>
+    public void Correctness(bool pass, string control, string detail)
+    {
+        _correct = pass;
+        _control = control;
+        _detail = string.IsNullOrEmpty(detail) ? null : detail;
+    }
+
+    /// <summary>A frame handed to the core, at the QPC read just before the call.</summary>
+    public void Frame(HostLibrary.Submitted frame, long qpc)
+    {
+        Write(json =>
+        {
+            json.WriteString("t", "frame");
+            json.WriteNumber("frame_id", frame.Sequence);
+            json.WriteNumber("qpc", qpc);
+            json.WriteNumber("device_epoch", frame.DeviceEpoch);
+            json.WriteNumber("surface", frame.Surface);
+            json.WriteNumber("engine_revision", frame.EngineRevision);
+            json.WriteNumber("publication_revision", frame.PublicationRevision);
+        });
+        Drain(frame);
+    }
+
+    /// <summary>
+    /// Writes the key rows that are settled, in press order: refused presses, and committed presses that
+    /// <paramref name="frame"/> shows. A press that waits for its frame holds back every later one.
+    /// </summary>
+    private void Drain(HostLibrary.Submitted? frame)
+    {
+        while (_pending.TryPeek(out var press))
+        {
+            ulong? frameId;
+            if (press.Revision == 0)
+            {
+                frameId = null;
+            }
+            else if (frame is { } f && f.EngineRevision >= press.Revision && f.PublicationRevision >= press.Revision)
+            {
+                frameId = f.Sequence;
+            }
+            else
+            {
+                return;
+            }
+            _pending.Dequeue();
+            WriteKey(press.Qpc, frameId);
+        }
+    }
+
+    private void WriteKey(long qpc, ulong? frameId)
+    {
+        var seq = _keys++;
+        Write(json =>
+        {
+            json.WriteString("t", "key");
+            json.WriteNumber("seq", seq);
+            json.WriteNumber("qpc", qpc);
+            if (frameId is { } id)
+            {
+                json.WriteNumber("frame_id", id);
+            }
+            else
+            {
+                json.WriteNull("frame_id");
+            }
+        });
+    }
 
     /// <summary>A presentation the core confirmed. The sequence is the frame's, as the core's presented row carries it.</summary>
     public void Presented(HostLibrary.Presented row) => Write(json =>
@@ -107,7 +188,8 @@ public sealed class EventLog : IDisposable
         body.Write(Row(fields));
     }
 
-    private static byte[] Row(Action<Utf8JsonWriter> fields)
+    /// <summary>One JSON object of <paramref name="fields"/> and a line feed.</summary>
+    internal static byte[] Row(Action<Utf8JsonWriter> fields)
     {
         var buffer = new ArrayBufferWriter<byte>();
         using (var json = new Utf8JsonWriter(buffer))
@@ -122,36 +204,57 @@ public sealed class EventLog : IDisposable
         return row;
     }
 
-    /// <summary>Writes events.jsonl: the run row, then every row recorded, and removes the body.</summary>
+    /// <summary>
+    /// Writes events.jsonl: the run row, then every row recorded, and removes the body. Presses that no frame showed
+    /// get their key rows without a frame first.
+    /// </summary>
     public void Dispose()
     {
         if (_body is not { } body)
         {
             return;
         }
+        while (_pending.TryDequeue(out var press))
+        {
+            WriteKey(press.Qpc, null);
+        }
         _body = null;
         body.Dispose();
-        var bodyPath = Path.Combine(_directory, BodyName);
-        var partial = Path.Combine(_directory, FileName + ".partial");
+        Seal(_directory, FileName, BodyName, Row(json =>
+        {
+            json.WriteString("t", "run");
+            json.WriteString("format", Format);
+            json.WriteString("run_id", _runId);
+            json.WriteString("build_identity", _buildIdentity);
+            json.WriteNumber("qpc_frequency", Stopwatch.Frequency);
+            json.WriteBoolean("synthetic", false);
+            json.WriteBoolean("foreground_throughout", _foreground);
+            json.WriteString("correctness", _correct ? "pass" : "fail");
+            json.WriteString("correctness_control", _control);
+            if (_detail is { } detail)
+            {
+                json.WritePropertyName("correctness_detail");
+                json.WriteRawValue(detail);
+            }
+            json.WriteNumber("process_id", System.Environment.ProcessId);
+        }));
+    }
+
+    /// <summary>
+    /// Writes <paramref name="fileName"/> in <paramref name="directory"/>: the <paramref name="header"/> row, then the
+    /// rows of the closed body file, through a partial file that is renamed only when complete; then removes the body.
+    /// </summary>
+    internal static void Seal(string directory, string fileName, string bodyName, byte[] header)
+    {
+        var bodyPath = Path.Combine(directory, bodyName);
+        var partial = Path.Combine(directory, fileName + ".partial");
         using (var log = new FileStream(partial, FileMode.CreateNew, FileAccess.Write))
         {
-            log.Write(Row(json =>
-            {
-                json.WriteString("t", "run");
-                json.WriteString("format", Format);
-                json.WriteString("run_id", _runId);
-                json.WriteString("build_identity", _buildIdentity);
-                json.WriteNumber("qpc_frequency", Stopwatch.Frequency);
-                json.WriteBoolean("synthetic", false);
-                json.WriteBoolean("foreground_throughout", _foreground);
-                json.WriteString("correctness", "fail");
-                json.WriteString("correctness_control", "none");
-                json.WriteNumber("process_id", System.Environment.ProcessId);
-            }));
+            log.Write(header);
             using var rows = new FileStream(bodyPath, FileMode.Open, FileAccess.Read);
             rows.CopyTo(log);
         }
-        File.Move(partial, Path.Combine(_directory, FileName));
+        File.Move(partial, Path.Combine(directory, fileName));
         File.Delete(bodyPath);
     }
 }

@@ -9,6 +9,7 @@
     "renderer-spike": "Stage 2.4 renderer experiments",
     "media": "Stages 5 and 7",
     "release": "Stage 8",
+    "api": "Paid Anthropic API runs the owner confirms (ADR line A1 to A3); never product code",
     "optional": "Install only when needed"
   },
   "owner_required": [
@@ -926,6 +927,44 @@
         "pypi.org",
         "files.pythonhosted.org"
       ]
+    },
+    {
+      "id": "anthropic-sdk",
+      "purpose": "Anthropic Python SDK for the owner-confirmed paid API runs (ADR line A1 to A3); no product code imports it",
+      "profiles": [
+        "api"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "2.10.0",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/api",
+      "requirements": "tools/python/api.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "import anthropic; print(anthropic.__version__)"
+      ],
+      "expect": "^2\\.10\\.0$",
+      "license": "Apache-2.0",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "note": "Holds no key: the SDK reads ANTHROPIC_API_KEY from the owner's environment at run time. Each run needs the owner's confirmation of provider, models and budget, and writes one ledger line per call (AGENTS.md, Records and budgets).",
+      "uninstall": "delete tools/.venv/api"
     },
     {
       "id": "clip-vit-b-16",

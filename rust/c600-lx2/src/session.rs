@@ -6,16 +6,20 @@
 //! sequence:
 //!
 //! 1. the solver previews, presents and commits the word [`BEFORE`] from the shell;
-//! 2. the trial's job runs in the runtime child given by the caller, through the product's own bridge
-//!    (`c600_tools::bridge::Bridge`, caller `Runtime`) and boundary onto the layer. Its proposal of SCENARIO.json's
-//!    runtime word becomes the layer's pending preview before the fault. For `forced_kill` the child's process is
-//!    killed inside that perform, the barrier;
-//! 3. the solver presents and commits the run's preview from the shell;
+//! 2. the solver invokes the tool's row from the shell (`c600_tools::process::invoke_tool`), and the trial's job runs
+//!    as that command's program job, `job-<id>`, in the runtime child given by the caller, through the product's own
+//!    bridge (`c600_tools::bridge::Bridge`, caller `Runtime`) and boundary onto the layer: a run prepares a preview only
+//!    inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34). Its proposal of
+//!    SCENARIO.json's runtime word becomes the layer's pending preview before the fault. For `forced_kill` the child's
+//!    process is killed inside that perform, the barrier;
+//! 3. the layer builds the run's preview while the host still holds the job; the host then reports the job: the
+//!    program's fixed acknowledgement when the run completed, the cut-off's or the fault's code otherwise. The solver
+//!    presents and commits the preview from the shell;
 //! 4. the solver previews, presents and commits the word [`AFTER`].
 //!
-//! A trial agrees when the job ends with its expected typed outcome, every solver command of steps 3 and 4 is accepted
-//! (the session stays open), the journal's records and the state hash equal the control's, and a reopen of the disk
-//! replays the same state hash. RTE.43: "unchanged" concerns the fault's effect, so the control runs the same commands
+//! A trial agrees when the job ends with its expected typed outcome, the solver's command that ran it ends as that
+//! outcome says ([`expected_command`]), every solver command of steps 3 and 4 is accepted (the session stays open), the
+//! journal's records and the state hash equal the control's, and a reopen of the disk replays the same state hash. RTE.43: "unchanged" concerns the fault's effect, so the control runs the same commands
 //! without the fault.
 //!
 //! A native trial ([`Trial::native`]) runs on the injection device of option (a), `c600-lx2-child`, which the caller
@@ -30,7 +34,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use c600_check::Profile;
-use c600_command::{CommandLayer, HeadlessFrames, Secret, Shell, Status, Table};
+use c600_command::{CommandLayer, Error as LayerError, HeadlessFrames, Receipt, Secret, Shell, Status, Table};
 use c600_digest::sha256_hex;
 use c600_kernel::json;
 use c600_kernel::{Kernel, ProtectedSet};
@@ -41,6 +45,7 @@ use c600_runtime::{Job, JobOptions, Killer, Runtime};
 use c600_session::disk::FsDisk;
 use c600_session::{journal, JournalStore};
 use c600_tools::bridge::{base, word_args, Bridge};
+use c600_tools::process::{invoke_tool, ToolCommand};
 use c600_tools::tool::{BoundaryClass, Manifest, Tool};
 
 use crate::{observe_trial, Observed, Trial, DEADLINE};
@@ -49,8 +54,6 @@ use crate::{observe_trial, Observed, Trial, DEADLINE};
 pub const BEFORE: [i32; 2] = [1, -2];
 /// The word the solver commits after the job.
 pub const AFTER: [i32; 1] = [3];
-/// The run's name: the proposal IDs and the runtime caller carry it.
-pub const RUN: &str = "lx2-run";
 /// The name of M6's journal file on the disk.
 const JOURNAL: &str = "journal";
 /// The per-launch secret of the layer and the shell (a fixed test value).
@@ -63,6 +66,8 @@ const COMMIT: &str = "Ctrl+Shift+Enter";
 pub struct SessionRecord {
     pub trial: Trial,
     pub observed: Observed,
+    /// How the solver's command that ran the job ended, in [`expected_command`]'s form.
+    pub command: String,
     /// Every solver command after the job was accepted.
     pub open: bool,
     /// The journal's records after the sequence, as canonical JSON.
@@ -79,11 +84,46 @@ impl SessionRecord {
     /// Whether the record meets RTE.42 conditions 1 and 2 against `control`, the control trial's record.
     pub fn agrees(&self, control: &SessionRecord) -> bool {
         self.observed == self.trial.expected()
+            && self.command == expected_command(self.trial)
             && self.open
             && self.replayed.as_deref() == Some(self.state.as_str())
             && self.journal == control.journal
             && self.state == control.state
             && !self.journal.is_empty()
+    }
+}
+
+/// How the solver's command that runs `trial`'s job must end: `completed` (the program's fixed acknowledgement) when
+/// the run completes, `failed <code>` with the cut-off's or the fault's code otherwise.
+pub fn expected_command(trial: Trial) -> String {
+    match trial.expected() {
+        Observed::Completed => "completed".into(),
+        Observed::CutOff(code) | Observed::Fault(_, code) => format!("failed {code}"),
+        Observed::Other(what) => format!("other: {what}"),
+    }
+}
+
+/// The solver's command as its receipt ended, in [`expected_command`]'s form; `not reported` when the host did not
+/// report the job or the layer no longer held it.
+fn command_status(receipt: Option<Receipt>) -> String {
+    match receipt.map(|receipt| receipt.status) {
+        Some(Status::Completed(_)) => "completed".into(),
+        Some(Status::Failed(error)) => format!("failed {}", error.code),
+        Some(other) => format!("{other:?}"),
+        None => "not reported".into(),
+    }
+}
+
+/// Reports the job of the solver's command with the run's outcome, as a host does once the run's preview is built: the
+/// program's fixed acknowledgement for a run that completed, the cut-off's or the fault's code for one that did not.
+/// A run that ended otherwise is not reported, and the solver's commit cancels its job.
+fn report(layer: &mut CommandLayer<JournalStore>, command: ToolCommand, observed: &Observed) -> Option<Receipt> {
+    match observed {
+        Observed::Completed => command.acknowledge(layer),
+        Observed::CutOff(code) | Observed::Fault(_, code) => {
+            command.finish(layer, Err(LayerError::new(code, observed.describe())))
+        }
+        Observed::Other(_) => None,
     }
 }
 
@@ -143,12 +183,17 @@ impl Host for KillAtBarrier<'_> {
     }
 }
 
-/// Builds, presents and commits preview `id` from the shell; whether the commit was accepted.
-fn commit_preview(layer: &mut CommandLayer<JournalStore>, shell: &mut Shell, id: u64) -> bool {
-    if layer.run_jobs() != 1 || HeadlessFrames::after(layer).present(shell, layer, id).is_err() {
+/// Presents and commits the built preview `id` from the shell; whether the commit was accepted.
+fn present_and_commit(layer: &mut CommandLayer<JournalStore>, shell: &mut Shell, id: u64) -> bool {
+    if HeadlessFrames::after(layer).present(shell, layer, id).is_err() {
         return false;
     }
     matches!(shell.press(layer, COMMIT, false), Ok(Some(receipt)) if matches!(receipt.status, Status::Committed(_)))
+}
+
+/// Builds, presents and commits preview `id` from the shell; whether the commit was accepted.
+fn commit_preview(layer: &mut CommandLayer<JournalStore>, shell: &mut Shell, id: u64) -> bool {
+    layer.run_jobs() == 1 && present_and_commit(layer, shell, id)
 }
 
 /// Previews, presents and commits `word` from the shell; whether every step was accepted.
@@ -178,6 +223,7 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
     let failed = |observed: Observed, spawns: u64| SessionRecord {
         trial,
         observed,
+        command: "not run".into(),
         open: false,
         journal: Vec::new(),
         state: String::new(),
@@ -206,14 +252,22 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
         return failed(Observed::Fault(fault.kind, fault.code()), rt.spawns());
     }
     let mut open = commit_word(&mut layer, &mut shell, &BEFORE);
-    let read = base(layer.revision());
+    let command = match invoke_tool(&mut shell, &mut layer, &tool, &crate::RUNTIME_WORD) {
+        Ok(command) => command,
+        Err(reason) => {
+            let spawns = rt.spawns();
+            rt.stop();
+            return failed(Observed::Other(format!("the tool's command: {reason}")), spawns);
+        }
+    };
+    let (run, read) = (command.run(), base(&command.job.revision));
     let killer = if trial == Trial::ForcedKill { rt.killer() } else { None };
     let job = job(trial, &source);
     let (result, preview) = {
-        let mut bridge = Bridge::new(&mut layer, RUN);
+        let mut bridge = Bridge::new(&mut layer, &run);
         let mut shown = Shown::default();
         let result = {
-            let mut boundary = Boundary::new(&mut bridge, &mut shown, tool.context(RUN, &read));
+            let mut boundary = Boundary::new(&mut bridge, &mut shown, tool.context(&run, &read));
             let mut host = KillAtBarrier { inner: &mut boundary, killer };
             rt.run(&job, &mut host, Some(DEADLINE))
         };
@@ -224,7 +278,11 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
         (result, preview)
     };
     let observed = observe_trial(trial, result);
-    open &= preview.is_some_and(|id| commit_preview(&mut layer, &mut shell, id));
+    // The run's preview is built only while the host holds the job, and a commit cancels the job, so the host reports
+    // the job between the two.
+    let built = preview.is_some() && layer.run_jobs() == 1;
+    let command = command_status(report(&mut layer, command, &observed));
+    open &= built && preview.is_some_and(|id| present_and_commit(&mut layer, &mut shell, id));
     open &= commit_word(&mut layer, &mut shell, &AFTER);
     let spawns = rt.spawns();
     rt.stop();
@@ -237,7 +295,7 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
         .and_then(|disk| JournalStore::open(Box::new(disk)).ok())
         .and_then(|store| CommandLayer::open(kernel.clone(), Table::h08(), Secret::fixed(SECRET), store).ok())
         .map(|layer| layer.snapshot().digest().to_owned());
-    SessionRecord { trial, observed, open, journal, state, replayed, spawns }
+    SessionRecord { trial, observed, command, open, journal, state, replayed, spawns }
 }
 
 /// The session-level records as a JSON array for the trial record, each row against `records[0]`, the control. The
@@ -248,10 +306,11 @@ pub fn sessions_json(records: &[SessionRecord]) -> String {
         .iter()
         .map(|r| {
             format!(
-                "    {{\"trial\": \"{}\", \"child\": \"{}\", \"observed\": \"{}\", \"open\": {}, \"journal_rows\": {}, \"journal_sha256\": \"{}\", \"state\": \"{}\", \"replayed_equal\": {}, \"agrees_with_control\": {}}}",
+                "    {{\"trial\": \"{}\", \"child\": \"{}\", \"observed\": \"{}\", \"command\": \"{}\", \"open\": {}, \"journal_rows\": {}, \"journal_sha256\": \"{}\", \"state\": \"{}\", \"replayed_equal\": {}, \"agrees_with_control\": {}}}",
                 r.trial.name(),
                 if r.trial.native() { "injection device" } else { "product" },
                 r.observed.describe().replace(['"', '\\'], "_"),
+                r.command.replace(['"', '\\'], "_"),
                 r.open,
                 r.journal.len(),
                 sha256_hex(r.journal.join("\n").as_bytes()),

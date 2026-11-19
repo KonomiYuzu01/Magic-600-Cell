@@ -8,8 +8,12 @@
 //!
 //! Drafts that the sources leave open, each to be replaced by LP3's parts:
 //! - One view, which shows the adopted state as one retained publication of every slot, visible and interactive.
-//!   There is no picking, preview, command layer or session store yet.
-//! - The adopted state is the shipped model's solved state at engine revision [`ENGINE_REVISION`].
+//!   There is no picking or preview yet.
+//! - The adopted state starts as the shipped model's solved state at engine revision [`ENGINE_REVISION`]. With a
+//!   session open ([`m6h_open_session`], charter E2), each twist key the shell routes ([`m6h_key_down`]) that commits
+//!   `twist.apply` (the [`turns`] module) adopts the layer's new state at the next engine revision and publishes the
+//!   view again for it, so the view's output is never stale (RPI.13) for longer than its preparation takes. A frame
+//!   shows a press once its engine revision and its publication's revision have both reached the press's revision.
 //! - The host context is c600-display's declared fixture context, with the core's own support report in place of the
 //!   declared one. Its tokens, words and stage signatures are fixtures, not the checked library's definitions, and the
 //!   limit profile [`LIMITS`] is a declared value, not a measured one.
@@ -25,8 +29,9 @@ use std::cell::RefCell;
 use std::collections::{BTreeMap, VecDeque};
 use std::ffi::c_void;
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::ptr;
+use std::sync::Arc;
 
 use c600_display::array::Array;
 use c600_display::codes;
@@ -36,14 +41,19 @@ use c600_display::plan::*;
 use c600_display::produce::{self, full_set, GeometryInput};
 use c600_display::validate::{BoundArray, EngineBundle, LimitProfile};
 use c600_display::{Error, Status as CommandStatus};
+use c600_kernel::json::Value;
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::TARGET_SURFACE;
 use c600_render::{DisplayTime, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
-/// The version of this C interface. The shell refuses a library that answers another.
-pub const M6H_ABI_VERSION: u32 = 1;
+pub mod turns;
+use turns::{Press, Turns};
+
+/// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
+/// revisions and the session calls.
+pub const M6H_ABI_VERSION: u32 = 2;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -58,6 +68,19 @@ pub const M6H_E_HOST: i32 = 4;
 pub const M6H_E_UNAVAILABLE: i32 = 5;
 /// An earlier call panicked; only [`m6h_last_error`] and [`m6h_destroy`] are left.
 pub const M6H_E_POISONED: i32 = 6;
+/// The session did not open, is already open, or is not open; [`m6h_last_error`] gives the reason.
+pub const M6H_E_SESSION: i32 = 7;
+
+/// [`M6hKey::press`]: the key-down was no measured press (no twist key, or a repeat).
+pub const M6H_PRESS_NONE: u32 = 0;
+/// [`M6hKey::press`]: a twist key committed `twist.apply`.
+pub const M6H_PRESS_COMMITTED: u32 = 1;
+/// [`M6hKey::press`]: a twist key that the router or the layer refused; the state did not change.
+pub const M6H_PRESS_REFUSED: u32 = 2;
+/// [`M6hKey::press`]: no measured press, but another row changed the state (the draft map's `session.undo` and
+/// `session.redo`). The host adopts and shows the new state; the correctness control then fails, since its replay
+/// knows only twists.
+pub const M6H_PRESS_OTHER: u32 = 3;
 
 /// The one view of the draft.
 pub const VIEW: ViewId = ViewId(1);
@@ -76,6 +99,21 @@ pub struct M6hFrame {
     pub sequence: u64,
     pub device_epoch: u64,
     pub surface: u64,
+    /// The engine revision whose labels the frame draws (the stamp's).
+    pub engine_revision: u64,
+    /// The engine revision of the publication the frame draws, or 0 when it draws none.
+    pub publication_revision: u64,
+}
+
+/// What [`m6h_key_down`] did with one key-down.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct M6hKey {
+    /// [`M6H_PRESS_NONE`], [`M6H_PRESS_COMMITTED`], [`M6H_PRESS_REFUSED`] or [`M6H_PRESS_OTHER`].
+    pub press: u32,
+    pub reserved: u32,
+    /// The adopted engine revision after the key: for a committed press, the revision that shows it.
+    pub engine_revision: u64,
 }
 
 /// One confirmed presentation (RM.26), as [`m6h_read_presented`] writes it.
@@ -114,8 +152,17 @@ impl M6hPresented {
 /// What a handle points to.
 pub struct ShellHost {
     host: Host<RenderBackend<DllCore>>,
+    kernel: Arc<Kernel>,
+    geometry: GeometryInput,
+    assets: PathBuf,
     publication: Publication,
     next_command: u64,
+    /// The adopted engine revision, and each adopted revision's state digest.
+    revision: u64,
+    digests: BTreeMap<u64, String>,
+    turns: Option<Turns>,
+    /// The correctness control's record, once [`m6h_close_session`] made it.
+    check: String,
     presented: VecDeque<M6hPresented>,
     error: String,
     poisoned: bool,
@@ -179,7 +226,7 @@ fn publication(geometry: &GeometryInput, state: &Snapshot, base: &RevisionRef) -
 
 impl ShellHost {
     fn create(core: DllCore, assets: &Path) -> Result<ShellHost, Failure> {
-        let kernel = Kernel::load(assets).map_err(model_error)?;
+        let kernel = Arc::new(Kernel::load(assets).map_err(model_error)?);
         let geometry = GeometryInput::load(assets).map_err(model_error)?;
         let state = kernel.solved();
         let base = produce::revision(&geometry.identity, ENGINE_REVISION, &state);
@@ -196,13 +243,41 @@ impl ShellHost {
         let mut shell = ShellHost {
             host,
             publication: publication(&geometry, &state, &base),
+            kernel,
+            geometry,
+            assets: assets.to_path_buf(),
             next_command: 1,
+            revision: ENGINE_REVISION,
+            digests: BTreeMap::from([(ENGINE_REVISION, state.digest().to_owned())]),
+            turns: None,
+            check: String::new(),
             presented: VecDeque::new(),
             error: String::new(),
             poisoned: false,
         };
         shell.publish()?;
         Ok(shell)
+    }
+
+    /// Adopts `state` at the next engine revision, in the core first and then in the host, and publishes the view
+    /// for it. While the device is lost the publication waits for [`m6h_recover`], which publishes it.
+    fn advance(&mut self, state: &Snapshot) -> Result<u64, Failure> {
+        let revision = self.revision + 1;
+        let base = produce::revision(&self.geometry.identity, revision, state);
+        let bundle = engine_bundle(state, &base);
+        self.host.backend.adopt_engine(&bundle).map_err(host_error)?;
+        self.host.adopt(&bundle).map_err(host_error)?;
+        self.revision = revision;
+        self.digests.insert(revision, state.digest().to_owned());
+        self.publication = publication(&self.geometry, state, &base);
+        match self.publish() {
+            Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
+            Err(failure) => Err(failure),
+        }
+    }
+
+    fn turns(&mut self) -> Result<&mut Turns, Failure> {
+        self.turns.as_mut().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))
     }
 
     /// Publishes the view's publication under a new command and starts its preparation.
@@ -357,8 +432,8 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
     }
 }
 
-/// Polls the host, then submits a frame of the view to the surface and writes its sequence, device epoch and surface
-/// to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are read and dropped here.
+/// Polls the host, then submits a frame of the view to the surface and writes its sequence, device epoch, surface and
+/// revisions to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are read and dropped here.
 ///
 /// # Safety
 ///
@@ -371,11 +446,17 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
             shell.host.pump();
             let stamp = shell.host.frame(VIEW).map_err(host_error)?;
             let _ = shell.host.backend.read_frame_reports();
+            let publication_revision = match shell.host.installed(VIEW) {
+                Some(installed) if stamp.publication_generation != 0 => installed.publication.base.state,
+                _ => 0,
+            };
             if !out.is_null() {
                 out.write(M6hFrame {
                     sequence: stamp.sequence,
                     device_epoch: stamp.device_epoch,
                     surface: stamp.surface,
+                    engine_revision: stamp.engine_revision,
+                    publication_revision,
                 });
             }
             Ok(())
@@ -438,6 +519,190 @@ pub unsafe extern "C" fn m6h_recover(handle: *mut ShellHost) -> i32 {
     }
 }
 
+/// `len` bytes at `text` as UTF-8.
+///
+/// # Safety
+///
+/// `text` is null or points to `len` readable bytes that stay valid while the answer is used.
+unsafe fn utf8<'a>(text: *const u8, len: usize, what: &str) -> Result<&'a str, Failure> {
+    if text.is_null() {
+        return Err((M6H_E_INVALID_ARGUMENT, format!("a null {what}")));
+    }
+    // SAFETY: the contract.
+    let bytes = unsafe { std::slice::from_raw_parts(text, len) };
+    std::str::from_utf8(bytes).map_err(|_| (M6H_E_INVALID_ARGUMENT, format!("the {what} is not UTF-8")))
+}
+
+/// Opens the turns' session (the [`turns`] module): a new journal in the folder `folder` (UTF-8, `folder_len` bytes;
+/// created if missing, and it must hold nothing yet), at the solved state, with the twist menu of the record file
+/// `menu` (UTF-8, `menu_len` bytes; an object whose `menu` field is the record) pinned. The adopted state must still
+/// be the solved state at [`ENGINE_REVISION`], and a handle opens one session in its life.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `folder` and `menu` point to their readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_open_session(
+    handle: *mut ShellHost,
+    folder: *const u8,
+    folder_len: usize,
+    menu: *const u8,
+    menu_len: usize,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let folder = utf8(folder, folder_len, "session folder")?;
+            let menu = utf8(menu, menu_len, "twist menu path")?;
+            if shell.turns.is_some() || !shell.check.is_empty() || shell.revision != ENGINE_REVISION {
+                return Err((M6H_E_SESSION, "this handle has opened its session already".to_owned()));
+            }
+            let turns = Turns::open(shell.kernel.clone(), &shell.assets, Path::new(folder), Path::new(menu))
+                .map_err(|reason| (M6H_E_SESSION, reason))?;
+            shell.turns = Some(turns);
+            Ok(())
+        })
+    }
+}
+
+/// Routes one key-down through the session's input router: `chord` (UTF-8, `chord_len` bytes) is c600-input's chord
+/// form, a W3C `code` with its modifiers (`Shift+KeyJ`), and `repeat` is nonzero for the platform's auto-repeat. A
+/// twist key that commits adopts the new state at the next engine revision and publishes the view for it; `*out`
+/// says which press it was and the adopted revision after it. A chord the router does not know answers
+/// [`M6H_E_INVALID_ARGUMENT`], and no open session [`M6H_E_SESSION`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `chord` points to its readable bytes; `out` is null or
+/// writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_key_down(
+    handle: *mut ShellHost,
+    chord: *const u8,
+    chord_len: usize,
+    repeat: u32,
+    out: *mut M6hKey,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let chord = utf8(chord, chord_len, "chord")?;
+            let press = shell.turns()?.key_down(chord, repeat != 0).map_err(|e| (M6H_E_INVALID_ARGUMENT, e))?;
+            let code = match press {
+                Press::None => M6H_PRESS_NONE,
+                Press::Refused => M6H_PRESS_REFUSED,
+                Press::Committed | Press::Other => {
+                    let state = shell.turns()?.state().map_err(|e| (M6H_E_SESSION, e))?;
+                    shell.advance(&state)?;
+                    if press == Press::Committed {
+                        M6H_PRESS_COMMITTED
+                    } else {
+                        M6H_PRESS_OTHER
+                    }
+                }
+            };
+            if !out.is_null() {
+                out.write(M6hKey { press: code, reserved: 0, engine_revision: shell.revision });
+            }
+            Ok(())
+        })
+    }
+}
+
+/// Routes a key-up of `chord` (as for [`m6h_key_down`]; its modifiers are ignored).
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `chord` points to its readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_key_up(handle: *mut ShellHost, chord: *const u8, chord_len: usize) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let chord = utf8(chord, chord_len, "chord")?;
+            shell.turns()?.key_up(chord).map_err(|e| (M6H_E_INVALID_ARGUMENT, e))
+        })
+    }
+}
+
+/// Tells the session's input router that the window lost the keyboard focus, which releases its held keys.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_focus_lost(handle: *mut ShellHost) -> i32 {
+    // SAFETY: the contract.
+    unsafe { with_host(handle, |shell| shell.turns()?.focus_lost().map_err(|e| (M6H_E_SESSION, e))) }
+}
+
+/// Closes the session and runs its correctness control once ([`turns::Turns::check`]). `shown_revision` is the engine
+/// revision of the newest frame the shell saw presented (0 for none). `*out_pass` gets 1 when the control passed and
+/// 0 otherwise; [`m6h_check`] gives its record. Later key calls answer [`M6H_E_SESSION`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `out_pass` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_close_session(handle: *mut ShellHost, shown_revision: u64, out_pass: *mut u32) -> i32 {
+    if out_pass.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let mut turns = shell.turns.take().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))?;
+            let shown = (shown_revision != 0)
+                .then(|| (shown_revision, shell.digests.get(&shown_revision).cloned().unwrap_or_default()));
+            let record = turns.check(shown);
+            let pass = matches!(record.get("pass"), Some(Value::Bool(true)));
+            shell.check = record.canonical();
+            out_pass.write(u32::from(pass));
+            Ok(())
+        })
+    }
+}
+
+/// Writes `text` with a NUL to `buffer` and its size with the NUL to `*out_size`; a smaller buffer answers
+/// [`M6H_E_INVALID_ARGUMENT`] and writes nothing, as the core's JSON calls do.
+///
+/// # Safety
+///
+/// `buffer` points to `capacity` writable bytes (or is null); `out_size` is writable.
+unsafe fn copy_text(text: &str, buffer: *mut u8, capacity: u32, out_size: *mut u32) -> i32 {
+    let needed = text.len() + 1;
+    // SAFETY: the contract.
+    unsafe {
+        *out_size = needed as u32;
+        if buffer.is_null() || (capacity as usize) < needed {
+            return M6H_E_INVALID_ARGUMENT;
+        }
+        ptr::copy_nonoverlapping(text.as_ptr(), buffer, text.len());
+        *buffer.add(text.len()) = 0;
+    }
+    M6H_OK
+}
+
+/// The correctness control's record that [`m6h_close_session`] made, as NUL-terminated canonical JSON (the run
+/// row's `correctness_detail`), sized as [`m6h_last_error`] sizes its text. Before the close the record is empty.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `buffer` points to `capacity` writable bytes (or is
+/// null); `out_size` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_check(handle: *mut ShellHost, buffer: *mut u8, capacity: u32, out_size: *mut u32) -> i32 {
+    if out_size.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    match unsafe { handle.as_ref() } {
+        // SAFETY: the contract.
+        Some(shell) => unsafe { copy_text(&shell.check, buffer, capacity, out_size) },
+        None => M6H_E_INVALID_ARGUMENT,
+    }
+}
+
 /// The reason for the handle's last failed call, or with a null handle for this thread's last failed
 /// [`m6h_create`], as NUL-terminated UTF-8. `*out_size` gets the size with the NUL; a smaller buffer answers
 /// [`M6H_E_INVALID_ARGUMENT`] and writes nothing, as the core's JSON calls do.
@@ -461,17 +726,8 @@ pub unsafe extern "C" fn m6h_last_error(
         Some(shell) => shell.error.clone(),
         None => CREATE_ERROR.with(|e| e.borrow().clone()),
     };
-    let needed = text.len() + 1;
     // SAFETY: the contract.
-    unsafe {
-        *out_size = needed as u32;
-        if buffer.is_null() || (capacity as usize) < needed {
-            return M6H_E_INVALID_ARGUMENT;
-        }
-        ptr::copy_nonoverlapping(text.as_ptr(), buffer, text.len());
-        *buffer.add(text.len()) = 0;
-    }
-    M6H_OK
+    unsafe { copy_text(&text, buffer, capacity, out_size) }
 }
 
 /// Frees the handle. The core's context stays the shell's to detach.

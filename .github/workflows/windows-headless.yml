@@ -4,22 +4,27 @@
 # machine. The runners have no personal data and get no secrets.
 #
 # The plan job chooses the mode (tools/ci/run_headless.py): a pull request that changes
-# only Markdown in the documentation trees runs the light checks in one shard; anything
-# else, and every push to main, runs all checks in time-balanced parallel shards. The
-# headless job passes only when the plan and every shard passed.
+# only Markdown in the documentation trees runs the light checks in one shard; any other
+# pull request runs every check except the heavy ones outside its changed area (owner,
+# 19 November 2026); every push to main and the nightly run run all checks. Checks run in
+# time-balanced parallel shards. The headless job passes only when the plan and every
+# shard passed. Checkouts are blob-less partial clones with the full history: a test that
+# reads an old file version fetches that blob on demand from the public repository.
 name: Windows headless checks
 
 on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: "17 18 * * *" # nightly full run on main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: windows-headless-${{ github.ref }}
+  group: windows-headless-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,6 +41,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0 # the mode comes from the diff against the pull request's base
+          filter: blob:none
 
       - name: Choose the mode and the shards
         id: plan
@@ -58,6 +64,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0 # tests check evidence commits and file history
+          filter: blob:none
 
       - name: Set up the pinned CPython
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
