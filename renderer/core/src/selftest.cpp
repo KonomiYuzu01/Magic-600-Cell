@@ -1,6 +1,7 @@
 #include "test.h"
 #include "scene_record.h"
 #include "product.h"
+#include "stage_rules.h"
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -1191,6 +1192,134 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(live.at("status").string() == "not_removed" && live.at("device_removed").null() && live.at("device_epoch").integer() == 1,
             "the not_removed answer is wrong");
     });
+    // C9 U5: the frozen compiler profile, the composed pass source, the stage text's rules and the compile record.
+    suite.check("stage arguments", [] {
+        namespace st = sa2::stages;
+        const auto names = [](uint32_t kind) {
+            std::vector<std::string> out;
+            for (const auto& pass : st::passes(kind)) out.push_back(std::string(pass.entry) + " " + pass.profile);
+            return out;
+        };
+        expect(names(SA2_STAGE_VERTEX) == std::vector<std::string>{"m600_eval_stage cs_6_2"}, "the vertex stage's passes changed");
+        expect(names(SA2_STAGE_FRAGMENT) == std::vector<std::string>{"m600_fragment_ps ps_6_2"}, "the fragment stage's passes changed");
+        expect(names(st::CoreKind) == std::vector<std::string>{"m600_eval_builtin cs_6_2", "m600_bound cs_6_2", "m600_decide cs_6_2",
+            "m600_pass_vs vs_6_2", "psMain ps_6_2"}, "the core's passes changed");
+        bool unknown = false;
+        try { st::passes(3); } catch (const std::invalid_argument&) { unknown = true; }
+        expect(unknown, "an unknown stage kind has passes");
+        for (const uint32_t kind : {uint32_t(SA2_STAGE_VERTEX), uint32_t(SA2_STAGE_FRAGMENT), st::CoreKind})
+            for (const auto& pass : st::passes(kind))
+                expect(st::arguments(pass) == std::vector<std::string>{"-T", pass.profile, "-E", pass.entry, "-HV", "2021", "-Gis",
+                    "-denorm", "preserve", "-O3", "-Ges", "-WX"}, "the compiler arguments are not the frozen profile");
+        expect(std::string(st::kind_name(SA2_STAGE_VERTEX)) == "vertex" && std::string(st::kind_name(SA2_STAGE_FRAGMENT)) == "fragment"
+            && std::string(st::kind_name(st::CoreKind)) == "core", "the kind names changed");
+        // The stage text's rules.
+        const std::string good = "float3 m600_fragment(float c, float s, float x, float y, float z, float t) { return x; } // \xC3\xA9";
+        expect(st::text_refusal(good.data(), uint32_t(good.size())).empty(), "UTF-8 stage text was refused");
+        expect(!st::text_refusal(nullptr, 1).empty() && !st::text_refusal(good.data(), 0).empty(), "null or empty text was accepted");
+        expect(!st::text_refusal(good.data(), SA2_STAGE_HLSL_MAX_BYTES + 1).empty(), "text past SA2_STAGE_HLSL_MAX_BYTES was accepted");
+        for (const std::string bad : {std::string("a\0b", 3), std::string("\x80"), std::string("\xC0\x80"), std::string("\xED\xA0\x80"),
+                                      std::string("\xF4\x90\x80\x80"), std::string("\xE2\x82")})
+            expect(!st::text_refusal(bad.data(), uint32_t(bad.size())).empty(), "a NUL or ill-formed UTF-8 was accepted");
+        expect(st::utf8_clean("a\xC0" "b\xE2\x82\xAC") == "a?b\xE2\x82\xAC", "utf8_clean kept an ill-formed byte");
+        expect(st::names_identifier("StructuredBuffer<float> m600_vertex_arrays : register(t20);", "m600_vertex_arrays")
+            && !st::names_identifier("m600_vertex_arrays2 + xm600_vertex_arrays", "m600_vertex_arrays"), "whole identifiers are misread");
+        // The composed source: the define, the stage, its guards, then the core's files after #line markers.
+        const st::CoreSources core{"G\n", "// draw\n#include \"geometry.hlsl\"\nD", "S"};
+        const std::string stage = "uint m600_vertex() { return m600_vertex_arrays[0]; }";
+        expect(st::compose(SA2_STAGE_VERTEX, stage, core) == "#define M600_STAGE_VERTEX 1\n#line 1 \"stage.hlsl\"\n" + stage
+            + "\n#ifndef M600_VERTEX_ARRAYS_DECLARED\n#define M600_VERTEX_ARRAYS_DECLARED 1\n#endif\n#line 1 \"geometry.hlsl\"\nG\n"
+              "#line 1 \"draw.hlsl\"\n// draw\n\nD\n#line 1 \"stages.hlsl\"\nS\n", "the composed vertex source is wrong");
+        expect(st::compose(SA2_STAGE_FRAGMENT, "x\n", core) == "#define M600_STAGE_FRAGMENT 1\n#line 1 \"stage.hlsl\"\nx\n"
+            "#line 1 \"geometry.hlsl\"\nG\n#line 1 \"draw.hlsl\"\n// draw\n\nD\n#line 1 \"stages.hlsl\"\nS\n", "the composed fragment source is wrong");
+        expect(st::compose(st::CoreKind, "ignored", core).starts_with("#line 1 \"geometry.hlsl\"\n"), "the core source carries stage text");
+        bool missing = false;
+        try { st::compose(st::CoreKind, {}, {"G", "D", "S"}); } catch (const std::runtime_error&) { missing = true; }
+        expect(missing, "draw.hlsl without its include line was composed");
+        // The record fits its buffer: the error is cut at a character boundary.
+        Json record(Json::Object{});
+        record["format"] = st::RecordFormat;
+        record["error"] = std::string(300, 'e') + "\xC3\xA9" + std::string(300, 'f');
+        const auto truncated = [](const Json& parsed) { return std::get<bool>(parsed.at("error_truncated").value); };
+        const auto whole = Json::parse(st::fit_record(record, 4096));
+        expect(!truncated(whole) && whole.at("error").string() == record.at("error").string(), "a fitting record was truncated");
+        for (uint32_t capacity = 300; capacity < 400; ++capacity) {
+            const auto cut = st::fit_record(record, capacity);
+            const auto parsed = Json::parse(cut);
+            const auto error = parsed.at("error").string();
+            expect(cut.size() <= capacity && truncated(parsed), "a long record was not truncated to its buffer");
+            expect(st::text_refusal(error.data(), uint32_t(error.size())).empty() || error.empty(), "the record's error was cut inside a character");
+        }
+    });
+    // C9 U5: RPI.72 step 3 exactly as rust/c600-display/src/raster.rs, with CT-RM-09's vectors and the core's clip classification.
+    suite.check("raster bound", [] {
+        namespace st = sa2::stages;
+        using Shape = st::Shape;
+        const auto placed = [](std::array<float, 2> a, std::array<float, 2> b, std::array<float, 2> c) {
+            st::Triangle t;
+            t.shape = Shape::Placed;
+            t.corners = {a, b, c};
+            return t;
+        };
+        const auto shaped = [](Shape shape) {
+            st::Triangle t;
+            t.shape = shape;
+            return t;
+        };
+        const float nan = std::numeric_limits<float>::quiet_NaN();
+        const struct { st::Triangle triangle; uint64_t count; } singles[] = {
+            {placed({2.5f, 2.5f}, {5.5f, 2.5f}, {2.5f, 5.5f}), 16}, {placed({3, 3}, {5, 3}, {3, 5}), 16},
+            {placed({-10, -10}, {3, -10}, {-10, 3}), 16}, {placed({20, 20}, {30, 20}, {20, 30}), 0},
+            {placed({8, 2}, {8, 6}, {8, 10}), 0}, {placed({2, 8}, {6, 8}, {10, 8}), 0}, {placed({nan, 0}, {1, 0}, {0, 1}), 0},
+            {shaped(Shape::CrossesNear), 256}, {shaped(Shape::Outside), 0}, {shaped(Shape::Undefined), 0}};
+        for (const auto& single : singles) expect(st::count(16, 16, single.triangle) == single.count, "a single triangle's count differs from raster.rs");
+        expect(st::count(15, 15, placed({14.2f, 0.2f}, {14.8f, 0.2f}, {14.2f, 0.8f})) == 4, "the odd-surface quad differs from raster.rs");
+        expect(st::count(15, 15, shaped(Shape::CrossesNear)) == 225, "the near-plane count differs from raster.rs");
+        const auto speck = placed({5.2f, 5.2f}, {5.8f, 5.2f}, {5.2f, 5.8f});
+        const st::Triangle unbounded[] = {shaped(Shape::CrossesNear), shaped(Shape::Outside), shaped(Shape::Undefined)};
+        const st::Triangle near_speck[] = {shaped(Shape::CrossesNear), speck};
+        const st::RasterPass first[] = {{unbounded, 1}}, second[] = {{near_speck, 1}};
+        expect(st::bound(16, 16, first) == 256 && st::bound(16, 16, second) == 260, "the clip classes' bound differs from raster.rs");
+        const std::array<std::array<float, 2>, 6> v{{{0, 0}, {16, 0}, {16, 8}, {16, 16}, {8, 16}, {0, 16}}};
+        const auto fan = [&](std::initializer_list<std::array<int, 3>> indices) {
+            std::vector<st::Triangle> out;
+            for (const auto& i : indices) out.push_back(placed(v[i[0]], v[i[1]], v[i[2]]));
+            return out;
+        };
+        const auto spread = fan({{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 5}, {1, 2, 3}});
+        const auto overlap = fan({{0, 1, 3}, {0, 3, 5}, {1, 5, 2}, {0, 2, 4}, {1, 4, 0}});
+        const st::RasterPass spread_pass[] = {{spread, 1}}, overlap_pass[] = {{overlap, 1}}, two_passes[] = {{spread, 2}, {spread, 2}};
+        expect(st::bound(16, 16, spread_pass) == 768 && st::bound(16, 16, overlap_pass) == 1280, "the fan bounds differ from raster.rs");
+        expect(st::allowance(16, 16, 4) == 1024 && st::bound(16, 16, two_passes) == 3072, "the allowance or the pass sum differs from raster.rs");
+        const st::Triangle whole[] = {shaped(Shape::CrossesNear)};
+        const st::RasterPass huge[] = {{whole, UINT32_MAX}, {whole, UINT32_MAX}};
+        bool overflow = false;
+        try { st::bound(65535, 65535, huge); } catch (const std::overflow_error&) { overflow = true; }
+        expect(overflow, "a bound past 64 bits was not refused");
+        // The core's classification and viewport transform (stages.hlsl m600_count).
+        using C = st::Clip;
+        const auto px = st::pixel(C{0, 0, 0.5f, 1}, 16, 16), corner = st::pixel(C{-2, 2, 1, 2}, 16, 16);
+        expect(px == std::array<float, 2>{8, 8} && corner == std::array<float, 2>{0, 0}, "the viewport transform changed");
+        const C in{0, 0, 0.5f, 1}, right{2, 0, 0.5f, 1}, behind{0, 0, -0.5f, 1};
+        expect(st::classify({in, in, C{nan, 0, 0, 1}}, 16, 16).shape == Shape::Undefined, "a nonfinite vertex is not undefined");
+        expect(st::classify({right, right, right}, 16, 16).shape == Shape::Outside, "a triangle beyond x = w is not outside");
+        expect(st::classify({behind, behind, behind}, 16, 16).shape == Shape::Outside, "a triangle behind z = 0 is not outside");
+        expect(st::classify({in, right, behind}, 16, 16).shape == Shape::CrossesNear, "a vertex behind z = 0 does not cross the near plane");
+        expect(st::classify({in, right, C{0, 0, 0, -1}}, 16, 16).shape == Shape::CrossesNear, "w <= 0 does not cross the near plane");
+        const auto inside = st::classify({in, C{0.5f, 0, 0.5f, 1}, C{0, 0.5f, 0.5f, 1}}, 16, 16);
+        expect(inside.shape == Shape::Placed && st::count(16, 16, inside) == 16, "a placed triangle's count is wrong");
+        // eval_bound over device records: a placed triangle and one with an undefined vertex (code 1).
+        std::vector<uint32_t> words(24);
+        const C records[] = {in, C{0.5f, 0, 0.5f, 1}, C{0, 0.5f, 0.5f, 1}, in, in};
+        for (size_t i = 0; i < 5; ++i) std::memcpy(&words[i * 4], records[i].data(), 16);
+        words[20] = words[21] = words[22] = 0;
+        words[23] = 0x7FC00001u;
+        expect(st::coverage_code(&words[20]) == 1 && st::coverage_code(&words[0]) == 0, "the coverage code is misread");
+        expect(st::eval_bound(words, 16, 16) == 16, "eval_bound differs from the formula");
+        bool partial = false;
+        try { st::eval_bound(std::span<const uint32_t>(words.data(), 20), 16, 16); } catch (const std::invalid_argument&) { partial = true; }
+        expect(partial, "a partial triangle was bounded");
+    });
 }
 Options parse(int argc, char** argv) {
     Options options;
@@ -1201,6 +1330,7 @@ Options parse(int argc, char** argv) {
             expect(options.mode.empty(), "choose exactly one mode");
             options.mode = arg.substr(2);
         } else if (arg == "--debug") options.debug = true;
+        else if (arg == "--stages") options.stages = true;
         else if (arg == "--out") options.out = value();
         else if (arg == "--vectors") options.vectors = value();
         else if (arg == "--child") options.child = value();
@@ -1208,6 +1338,8 @@ Options parse(int argc, char** argv) {
     }
     expect(!options.mode.empty(), "choose --cpu, --warp or --hardware");
     expect(options.child.empty() || options.mode != "cpu", "child checks require a device mode");
+    // C9 U5: the user-stage check runs on WARP only, never on a hardware adapter.
+    expect(!options.stages || (options.mode == "warp" && options.child.empty()), "--stages requires --warp");
     return options;
 }
 }
@@ -1219,6 +1351,7 @@ int main(int argc, char** argv) {
         if (!options.child.empty()) return sa2test::run_child(options);
         sa2test::Suite suite;
         if (options.mode == "cpu") sa2test::run_cpu(suite, options);
+        else if (options.stages) sa2test::run_stages(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

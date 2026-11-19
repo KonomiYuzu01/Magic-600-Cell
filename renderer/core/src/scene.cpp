@@ -2,7 +2,9 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <algorithm>
+#include <bit>
 #include <chrono>
+#include <fstream>
 #include <cstring>
 #include <optional>
 #include <limits>
@@ -108,6 +110,32 @@ struct ProductGpu {
     }
 };
 constexpr uint64_t QueryStride = 256, StatisticsOffset = 16;
+// C9 U5: one attached chain with its arrays (t20, t21) and their descriptors. A frame's report row holds the attach
+// it drew with, so a later attach never releases what a frame in flight reads.
+struct StageAttach {
+    std::shared_ptr<const stages::Chain> chain;
+    Buffer arrays; // upload heap: the vertex arrays from element 0, the fragment arrays from fragment_first
+    ComPtr<ID3D12DescriptorHeap> heap; // shader-visible: t20, t21
+    int64_t start = 0; // QPC at attach
+};
+struct StageRow {
+    uint64_t frame = 0; // 0 until stage_frame names it
+    bool drawn = false, dumped = false;
+    std::shared_ptr<StageAttach> attach;
+};
+// The scene's stage resources, created on the first attach. Default-heap buffers decay to COMMON after every
+// ExecuteCommandLists, so each frame starts their tracked states at COMMON and transitions them explicitly.
+struct StageGpu {
+    Buffer eval, frame, read, dump; // read: per ring 256 bytes (the frame row, then two pipeline-statistics rows)
+    ComPtr<ID3D12QueryHeap> statistics; // per ring r: 2r the user draw, 2r + 1 the built-in draw
+    std::array<StageRow, SA2_RING_SLOTS> rows;
+    std::shared_ptr<StageAttach> attached;
+    sa2_stage_frame last{};
+    std::filesystem::path dump_path; // M600_SA2_STAGE_EVAL_DUMP, read at the first attach
+    uint64_t dumped = 0; // the frame the dump buffer holds
+};
+constexpr uint64_t StageRowBytes = 256, StageStatistics = 64, StageStatisticsBytes = sizeof(D3D12_QUERY_DATA_PIPELINE_STATISTICS);
+static_assert(StageStatistics + 2 * StageStatisticsBytes <= StageRowBytes);
 }
 
 struct Scene::Impl {
@@ -151,6 +179,7 @@ struct Scene::Impl {
     bool initialized = false, healthy = true;
     uint64_t readback_capacity = 0, row_bytes = 64, lattice_bytes = 4, stride = sb::LabelBytes;
     std::unique_ptr<ProductGpu> product; // ABI 4; null until product_ready
+    std::unique_ptr<StageGpu> user; // C9 U5's user stages; null until the first sa2_scene_stages attach
 
     Impl(ID3D12Device* attached, const SceneRecord& record) : device(attached) {
         if (record.jumbling()) {
@@ -393,11 +422,14 @@ struct Scene::Impl {
             }
         }
     }
+    // C9 U5: signature replaces the scene's root signature (the stage root signature shares its first eighteen parameters).
     void bind(ID3D12GraphicsCommandList* list, const Constants& c, Buffer& constants_buffer, uint8_t* data,
-              Buffer& label, std::array<Buffer, 3>& pose, bool compute, Buffer* destination = nullptr) {
+              Buffer& label, std::array<Buffer, 3>& pose, bool compute, Buffer* destination = nullptr,
+              ID3D12RootSignature* signature = nullptr) {
         std::memcpy(data, &c, sizeof(c));
-        if (compute) { list->SetComputeRootSignature(root.Get()); list->SetComputeRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress()); }
-        else { list->SetGraphicsRootSignature(root.Get()); list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress()); }
+        auto* const used = signature ? signature : root.Get();
+        if (compute) { list->SetComputeRootSignature(used); list->SetComputeRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress()); }
+        else { list->SetGraphicsRootSignature(used); list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress()); }
         for (UINT i = 0; i < 7; ++i) {
             auto address = (i < 5 ? geometry[i] : i == 5 ? label : geometry[5]).resource->GetGPUVirtualAddress();
             if (compute) list->SetComputeRootShaderResourceView(i + 1, address); else list->SetGraphicsRootShaderResourceView(i + 1, address);
@@ -422,6 +454,202 @@ struct Scene::Impl {
         const float colour[4] = {0.13f, 0.145f, 0.16f, 1}; list->ClearRenderTargetView(rtv, colour, 0, nullptr);
         list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
         list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); list->DrawInstanced(sb::Vertices, sb::Cells, 0, 0);
+    }
+    // C9 U5: the stage resources, made once per scene on the first attach.
+    void user_create() {
+        if (user) return;
+        auto s = std::make_unique<StageGpu>();
+        const auto uav = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        s->eval = buffer(stages::EvalBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON, uav);
+        name(s->eval.resource.Get(), L"SA2 stage eval buffer");
+        s->frame = buffer(64, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON, uav);
+        name(s->frame.resource.Get(), L"SA2 stage frame row");
+        s->read = buffer(StageRowBytes * SA2_RING_SLOTS, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+        name(s->read.resource.Get(), L"SA2 stage frame readback");
+        D3D12_QUERY_HEAP_DESC queries{D3D12_QUERY_HEAP_TYPE_PIPELINE_STATISTICS, 2 * SA2_RING_SLOTS, 0};
+        hr(device, device->CreateQueryHeap(&queries, IID_PPV_ARGS(&s->statistics)), "CreateQueryHeap(stage statistics)");
+        name(s->statistics.Get(), L"SA2 stage statistics");
+        // Test hook (sa2_interop.h): the eval buffer of the last frame drawn with a chain, written by sa2_stage_report.
+        wchar_t path[MAX_PATH * 4]{};
+        const DWORD length = GetEnvironmentVariableW(L"M600_SA2_STAGE_EVAL_DUMP", path, DWORD(std::size(path)));
+        if (length > 0 && length < std::size(path)) {
+            s->dump = buffer(stages::EvalBytes, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+            name(s->dump.resource.Get(), L"SA2 stage eval dump");
+            s->dump_path = path;
+        }
+        user = std::move(s);
+    }
+    // Builds the attach completely before it replaces the current one, so a failure keeps the current chain.
+    void user_attach(std::shared_ptr<const stages::Chain> chain, int64_t now) {
+        if (!chain) {
+            if (user) user->attached.reset();
+            return;
+        }
+        user_create();
+        auto attach = std::make_shared<StageAttach>();
+        attach->chain = chain;
+        attach->start = now;
+        const uint64_t vertex = std::max<uint64_t>(1, chain->vertex_arrays.size());
+        const uint64_t fragment = std::max<uint64_t>(1, chain->fragment_arrays.size());
+        const uint64_t fragment_first = (vertex + 63) / 64 * 64;
+        attach->arrays = buffer((fragment_first + fragment) * 4, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        name(attach->arrays.resource.Get(), L"SA2 stage arrays");
+        auto* data = map(attach->arrays);
+        std::memset(data, 0, size_t(attach->arrays.size));
+        if (!chain->vertex_arrays.empty()) std::memcpy(data, chain->vertex_arrays.data(), chain->vertex_arrays.size() * 4);
+        if (!chain->fragment_arrays.empty())
+            std::memcpy(data + fragment_first * 4, chain->fragment_arrays.data(), chain->fragment_arrays.size() * 4);
+        attach->arrays.resource->Unmap(0, nullptr);
+        D3D12_DESCRIPTOR_HEAP_DESC heap{D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0};
+        hr(device, device->CreateDescriptorHeap(&heap, IID_PPV_ARGS(&attach->heap)), "CreateDescriptorHeap(stage arrays)");
+        name(attach->heap.Get(), L"SA2 stage array descriptors");
+        auto cpu = attach->heap->GetCPUDescriptorHandleForHeapStart();
+        const uint64_t first[] = {0, fragment_first}, count[] = {vertex, fragment};
+        for (size_t i = 0; i < 2; ++i) {
+            D3D12_SHADER_RESOURCE_VIEW_DESC view{};
+            view.Format = DXGI_FORMAT_UNKNOWN;
+            view.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+            view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            view.Buffer = {first[i], UINT(count[i]), 4, D3D12_BUFFER_SRV_FLAG_NONE};
+            device->CreateShaderResourceView(attach->arrays.resource.Get(), &view, cpu);
+            cpu.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        }
+        user->attached = std::move(attach);
+    }
+    // Takes ring's report row; the caller knows that its frame completed. The dump file is written only when asked
+    // (sa2_stage_report) and only for the frame the dump buffer still holds.
+    void user_read(uint32_t ring, bool write_dump) {
+        auto& s = *user;
+        auto& row = s.rows[ring];
+        if (row.drawn && row.frame) {
+            std::array<uint8_t, StageRowBytes> bytes{};
+            const D3D12_RANGE range{SIZE_T(ring * StageRowBytes), SIZE_T((ring + 1) * StageRowBytes)}, none{0, 0};
+            void* data = nullptr;
+            hr(device, s.read.resource->Map(0, &range, &data), "Map(stage frame readback)");
+            std::memcpy(bytes.data(), static_cast<uint8_t*>(data) + range.Begin, bytes.size());
+            s.read.resource->Unmap(0, &none);
+            if (row.frame > s.last.frame) {
+                auto word = [&](size_t at) { uint32_t v; std::memcpy(&v, bytes.data() + at, 4); return uint64_t(v); };
+                D3D12_QUERY_DATA_PIPELINE_STATISTICS user_draw{}, builtin_draw{};
+                std::memcpy(&user_draw, bytes.data() + StageStatistics, sizeof(user_draw));
+                std::memcpy(&builtin_draw, bytes.data() + StageStatistics + StageStatisticsBytes, sizeof(builtin_draw));
+                sa2_stage_frame out{};
+                out.struct_size = sizeof(out);
+                out.stopped = uint32_t(word(32));
+                out.frame = row.frame;
+                out.bound = word(16) | (word(20) << 32);
+                out.allowance = word(24) | (word(28) << 32);
+                out.vertex_stage = row.attach->chain->vertex;
+                out.fragment_stage = row.attach->chain->fragment;
+                out.user_pixel_invocations = user_draw.PSInvocations;
+                out.builtin_pixel_invocations = builtin_draw.PSInvocations;
+                s.last = out;
+            }
+            if (write_dump && row.dumped && row.frame == s.dumped && !s.dump_path.empty()) {
+                const D3D12_RANGE whole{0, SIZE_T(stages::EvalBytes)};
+                hr(device, s.dump.resource->Map(0, &whole, &data), "Map(stage eval dump)");
+                std::ofstream file(s.dump_path, std::ios::binary | std::ios::trunc);
+                file.write(static_cast<const char*>(data), std::streamsize(stages::EvalBytes));
+                file.close();
+                s.dump.resource->Unmap(0, &none);
+                s.dumped = 0;
+                scene_require(bool(file), "cannot write the stage eval dump", SA2_E_IO);
+            }
+        }
+        row = {};
+    }
+    // RPI.72 steps 1 to 4 and the predicated draws of one frame with the attached chain (C9 U5).
+    void draw_user(ID3D12GraphicsCommandList* list, const Constants& c, uint32_t slot, Buffer& label, std::array<Buffer, 3>& pose,
+                   ID3D12PipelineState* builtin, D3D12_CPU_DESCRIPTOR_HANDLE rtv, DXGI_FORMAT format, int64_t now,
+                   int64_t ticks_per_second, UINT width, UINT height) {
+        scene_require(slot < SA2_RING_SLOTS, "the stage report row needs a ring index below SA2_RING_SLOTS");
+        auto& s = *user;
+        user_read(slot, false); // the slot's previous frame completed before its list was reset
+        const auto attach = s.attached;
+        const auto& chain = *attach->chain;
+        auto* const signature = chain.root.Get();
+        s.eval.state = s.frame.state = D3D12_RESOURCE_STATE_COMMON;
+        const uint64_t allowance = stages::allowance(width, height, chain.overdraw);
+        const float seconds = float(double(now - attach->start) / double(ticks_per_second));
+        const uint32_t frame_constants[stages::FrameConstantCount] = {
+            width, height, uint32_t(allowance), uint32_t(allowance >> 32), std::bit_cast<uint32_t>(seconds), 0, 0, 0};
+        const auto table = attach->heap->GetGPUDescriptorHandleForHeapStart();
+        const auto eval = s.eval.resource->GetGPUVirtualAddress(), row = s.frame.resource->GetGPUVirtualAddress();
+        auto bind_user = [&](bool compute) {
+            bind(list, c, cb[slot], cb_data[slot], label, pose, compute, nullptr, signature);
+            if (compute) {
+                list->SetComputeRoot32BitConstants(stages::FrameConstants, stages::FrameConstantCount, frame_constants, 0);
+                list->SetComputeRootDescriptorTable(stages::ArrayTable, table);
+                list->SetComputeRootShaderResourceView(stages::EvalRead, eval);
+                list->SetComputeRootUnorderedAccessView(stages::EvalWrite, eval);
+                list->SetComputeRootUnorderedAccessView(stages::FrameWrite, row);
+            } else {
+                list->SetGraphicsRoot32BitConstants(stages::FrameConstants, stages::FrameConstantCount, frame_constants, 0);
+                list->SetGraphicsRootDescriptorTable(stages::ArrayTable, table);
+                list->SetGraphicsRootShaderResourceView(stages::EvalRead, eval);
+                list->SetGraphicsRootUnorderedAccessView(stages::EvalWrite, eval);
+                list->SetGraphicsRootUnorderedAccessView(stages::FrameWrite, row);
+            }
+        };
+        // U and the predicate start at zero.
+        transition(list, s.frame, D3D12_RESOURCE_STATE_COPY_DEST);
+        list->CopyBufferRegion(s.frame.resource.Get(), 0, zero.resource.Get(), 0, 16);
+        transition(list, s.frame, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        transition(list, s.eval, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        ID3D12DescriptorHeap* heaps[] = {attach->heap.Get()};
+        list->SetDescriptorHeaps(1, heaps);
+        // eval: every (cell, vertex) through the chain's vertex stage into clip positions and coverage codes.
+        list->SetPipelineState(chain.eval.Get());
+        bind_user(true);
+        list->Dispatch((stages::Vertices + stages::EvalGroup - 1) / stages::EvalGroup, stages::Cells, 1);
+        const bool dump = s.dump.resource != nullptr;
+        transition(list, s.eval, dump ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_COPY_SOURCE
+                                      : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        // bound: U over every triangle; decide: the predicate and the report row.
+        list->SetPipelineState(chain.bound.Get());
+        list->Dispatch((stages::Triangles + stages::EvalGroup - 1) / stages::EvalGroup, stages::Cells, 1);
+        D3D12_RESOURCE_BARRIER uav{};
+        uav.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        uav.UAV.pResource = s.frame.resource.Get();
+        list->ResourceBarrier(1, &uav);
+        list->SetPipelineState(chain.decide.Get());
+        list->Dispatch(1, 1, 1);
+        transition(list, s.frame, D3D12_RESOURCE_STATE_PREDICATION | D3D12_RESOURCE_STATE_COPY_SOURCE);
+        list->CopyBufferRegion(s.read.resource.Get(), slot * StageRowBytes, s.frame.resource.Get(), 0, 64);
+        if (dump) list->CopyBufferRegion(s.dump.resource.Get(), 0, s.eval.resource.Get(), 0, stages::EvalBytes);
+        // The target is cleared outside predication; then the user draw runs unless the frame stopped, and the
+        // built-in draw runs only when it stopped.
+        D3D12_VIEWPORT viewport{0, 0, float(width), float(height), 0, 1};
+        D3D12_RECT rect{0, 0, LONG(width), LONG(height)};
+        list->RSSetViewports(1, &viewport);
+        list->RSSetScissorRects(1, &rect);
+        const auto dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
+        list->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+        const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
+        list->ClearRenderTargetView(rtv, colour, 0, nullptr);
+        list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+        list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        list->BeginQuery(s.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, 2 * slot);
+        list->SetPredication(s.frame.resource.Get(), 8, D3D12_PREDICATION_OP_EQUAL_ZERO);
+        list->SetPipelineState(chain.draw[format == DXGI_FORMAT_B8G8R8A8_UNORM ? 1 : 0].Get());
+        bind_user(false);
+        list->DrawInstanced(stages::Vertices, stages::Cells, 0, 0);
+        list->SetPredication(nullptr, 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
+        list->EndQuery(s.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, 2 * slot);
+        list->BeginQuery(s.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, 2 * slot + 1);
+        list->SetPredication(s.frame.resource.Get(), 8, D3D12_PREDICATION_OP_NOT_EQUAL_ZERO);
+        list->SetPipelineState(builtin);
+        bind(list, c, cb[slot], cb_data[slot], label, pose, false);
+        list->DrawInstanced(sb::Vertices, sb::Cells, 0, 0);
+        list->SetPredication(nullptr, 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
+        list->EndQuery(s.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, 2 * slot + 1);
+        list->ResolveQueryData(s.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, 2 * slot, 2, s.read.resource.Get(),
+                               slot * StageRowBytes + StageStatistics);
+        auto& out = s.rows[slot];
+        out.frame = 0;
+        out.drawn = true;
+        out.dumped = dump;
+        out.attach = attach;
     }
     // ABI 4. Builds every product resource into a new object, so a failure leaves the scene as it was.
     std::unique_ptr<ProductGpu> product_create(ID3D12CommandQueue* queue) {
@@ -824,7 +1052,14 @@ void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CP
     if (record.config.scene == 2 || record.config.scene == 3) { sb::rotate(g.q, 0, 3, 0.002); ++g.camera; }
     const auto c = constants(g.shape, g.q, float(record.width) / float(record.height), record.config.scene == 3 && timed ? float(turn.theta) : 0);
     // W1..W4 bind identity poses (never re-uploaded) through W-J's pose path.
-    g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, record.width, record.height, false);
+    // C9 U5: an untraced frame draws with the attached user chain; every other frame takes the built-in path.
+    if (g.user && g.user->attached && !timed)
+        g.draw_user(list, c, slot, g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, format, now, record.frequency,
+                    record.width, record.height);
+    else {
+        if (g.user && slot < SA2_RING_SLOTS) g.user_read(slot, false);
+        g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, record.width, record.height, false);
+    }
     if (copy) {
         const auto index = uint64_t(g.records.copies.size());
         scene_require(index < g.readback_capacity, "preserved label readback capacity exceeded; end the trace within trace_ms");
@@ -1106,5 +1341,33 @@ void Scene::resize(uint32_t width, uint32_t height) {
     g.depth = std::move(depth);
     record.width = width; record.height = height;
     if (g.product) { g.product->id_target.Reset(); g.product->id_heap.Reset(); }
+}
+void Scene::stages_attach(std::shared_ptr<const stages::Chain> chain, int64_t qpc) {
+    scene_require(!chain || !gpu->jumble, "user stages draw W1..W4 only", SA2_E_WRONG_STATE);
+    gpu->user_attach(std::move(chain), qpc);
+}
+bool Scene::stages_use(uint64_t handle) const {
+    const auto& user = gpu->user;
+    if (!handle || !user || !user->attached) return false;
+    const auto& chain = *user->attached->chain;
+    return chain.vertex == handle || chain.fragment == handle;
+}
+void Scene::stage_frame(uint32_t ring, uint64_t frame) {
+    auto& user = gpu->user;
+    if (!user || ring >= SA2_RING_SLOTS) return;
+    auto& row = user->rows[ring];
+    if (!row.drawn || row.frame) return;
+    row.frame = frame;
+    if (row.dumped) user->dumped = frame;
+}
+void Scene::stage_report(uint64_t completed, sa2_stage_frame& out) {
+    auto& g = *gpu;
+    if (g.user)
+        for (uint32_t ring = 0; ring < SA2_RING_SLOTS; ++ring) {
+            const auto& row = g.user->rows[ring];
+            if (row.drawn && row.frame && row.frame <= completed) g.user_read(ring, true);
+        }
+    out = g.user ? g.user->last : sa2_stage_frame{};
+    out.struct_size = sizeof(out);
 }
 }
