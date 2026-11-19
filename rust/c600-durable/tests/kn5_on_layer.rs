@@ -3,19 +3,33 @@
 //! `session.undo` and `session.redo` walk across both kinds, also after a power loss; and a view cannot write
 //! workspace state or make undo stale. Each test names the conformance parts it covers with PHS.62 markers.
 //!
-//! Waits for the host's view model (crate documentation): EV3.2's view rows. The layer leaves `view.open` and
-//! `view.close` to the host's view model (LP2's pull request 271), which this test does not install yet, so both
-//! answer `KN5:input.row_not_built` and a view is stood in for by a language overlay row of kind `view` (KN5.3), whose
-//! program job the test finishes as the host would.
+//! EV3.2's view rows reach the host's view model, `c600-view`'s, through C5's `ModelViews` (LP2's pull request 271).
+//! A view's evaluation is not built: the view is a language overlay row of kind `view` (KN5.3), whose program job the
+//! test finishes as the host would.
 
 mod common;
 
-use c600_command::{code, Completion, CompletionKind, Direction, Kind, Overlay, Status, RECORD_ROW};
+use std::sync::{Arc, Mutex};
+
+use c600_command::{
+    code, Completion, CompletionKind, Direction, Error as CommandError, Kind, Overlay, Status, ViewSourceRef,
+    RECORD_ROW, VIEW_CLOSE_ROW, VIEW_OPEN_ROW,
+};
+use c600_digest::{sha256, sha256_hex};
 use c600_kernel::json::{self, Value};
 use c600_session::disk::MemDisk;
 use c600_tools::bridge::Bridge;
+use c600_tools::views::{model_revision, ModelViews};
+use c600_view as view;
 use common::layer::{completed, record_args, refused, Fixture};
 use common::{manual, JOURNAL};
+
+/// The view row of the CT-EV3-07 view test.
+const PANEL: &str = "tool.c7.panel";
+/// The source text that stands in for the view row's checked module; its SHA-256 is the module digest of the view's
+/// source.
+const PANEL_SOURCE: &[u8] = b"tools/c7 panel";
+const BIG: u64 = 1 << 40;
 
 /// One `session.undo` or `session.redo` of the action on top of its stack, which must commit. Returns the hint's
 /// order and target, the state digest after the step and the record `sheet`'s letters after it.
@@ -82,36 +96,55 @@ fn ct_ev3_07_a_workspace_command_and_commits_share_one_undo_order() {
 }
 
 /// CT-EV3-07 (part: a view cannot write workspace state or make undo stale, on the layer over the journal after a
-/// commit and a workspace command: a program's `workspace.set` and `session.undo`, delivered through the host's bridge
-/// on its run's channel, are refused, and a view, stood in for by a language overlay row of kind `view` invoked by a
-/// program and by the shell, publishes at the revision it was admitted at; none of them writes the journal or moves
-/// the revision, the records or the action order, and the undo hint taken before them still undoes the latest action,
-/// the workspace command; not run: EV3.2's view rows, which need the host's view model, and a view's evaluation, which
-/// the test's finished job stands in for; C6's checker leg is `c600-repr`'s `tests/ct_ev3.rs`), EV3.2, EV4.15,
-/// KN5.3, KN5.15, ONE.77.
+/// commit and a workspace command, with the host's view model behind EV3.2's view rows: the solver opens a view of
+/// the language overlay row `tool.c7.panel`, of kind `view`, through the shell, and the view model holds it; the
+/// view's run, which the host starts for the view and not inside a command the solver invoked, is refused
+/// `workspace.set`, `view.open` and `view.close` (`LG3:capability.not_granted`) and the commit row `session.undo`,
+/// and no refused row reaches the view model; the row, invoked on the view's run and by the shell, publishes at the
+/// revision it was admitted at; the solver closes the view; none of this writes the journal or moves the revision,
+/// the records or the action order, and the undo hint taken before them still undoes the latest action, the
+/// workspace command; not run: a view's evaluation, which the test's finished job stands in for; C6's checker leg is
+/// `c600-repr`'s `tests/ct_ev3.rs`), EV3.2, EV4.15, KN5.3, KN5.15, ONE.77, RPI.83.
 #[test]
 fn ct_ev3_07_a_view_cannot_write_the_workspace_or_make_undo_stale() {
     let disk = MemDisk::new();
     let mut f = Fixture::create(Box::new(disk.clone()));
     let panel = Overlay { module: "tools/c7".into(), entry: "panel".into() };
-    f.layer.register_overlay("tool.c7.panel", Kind::View, &[], panel).expect("a view row");
+    f.layer.register_overlay(PANEL, Kind::View, &[], panel).expect("a view row");
     f.commit(&[1]);
     assert!(completed(&f.write("sheet", &[1, 2], &manual())));
     let hint = f.hint(Direction::Undo);
     let before = (f.kept(), disk.durable(JOURNAL).expect("a journal"));
-    for row in ["view.open", "view.close"] {
+    for row in [VIEW_OPEN_ROW, VIEW_CLOSE_ROW] {
         assert_eq!(f.layer.availability(row).map_err(|error| error.code), Err(code::ROW_NOT_BUILT), "{row}");
     }
+    let views = install_views(&mut f);
+    for row in [VIEW_OPEN_ROW, VIEW_CLOSE_ROW] {
+        assert_eq!(f.layer.availability(row).map_err(|error| error.code), Ok(()), "{row}");
+    }
+    let opened = f.shell.invoke(&mut f.layer, VIEW_OPEN_ROW, open_args("panel")).expect("prepared");
+    assert_eq!((opened.job, &opened.status), (None, &Status::Accepted));
+    assert_eq!(open_views(&views), ["global", "local", "panel"]);
 
     let mut bridge = Bridge::new(&mut f.layer, "view-1");
     let write = bridge.invoke(RECORD_ROW, record_args("sheet", &[2, 1], &manual()), None);
     assert_eq!(refused(&write), Some(code::NOT_GRANTED));
     let undo = bridge.invoke("session.undo", json::object([("hint", hint.to_json())]), None);
     assert_eq!(refused(&undo), Some(code::COMMIT_ROW_REFUSED));
-    let from_program = bridge.invoke("tool.c7.panel", json::object([]), None);
+    for (row, args) in [(VIEW_OPEN_ROW, open_args("other")), (VIEW_CLOSE_ROW, close_args("panel"))] {
+        assert_eq!(refused(&bridge.invoke(row, args, None)), Some(code::NOT_GRANTED), "a view's {row}");
+    }
+    let from_program = bridge.invoke(PANEL, json::object([]), None);
     publish(&mut f, from_program.status);
-    let from_shell = f.shell.invoke(&mut f.layer, "tool.c7.panel", json::object([])).expect("prepared");
+    let from_shell = f.shell.invoke(&mut f.layer, PANEL, json::object([])).expect("prepared");
     publish(&mut f, from_shell.status);
+    assert_eq!(open_views(&views), ["global", "local", "panel"]);
+
+    let closed = f.shell.invoke(&mut f.layer, VIEW_CLOSE_ROW, close_args("panel")).expect("prepared");
+    assert_eq!((closed.job, &closed.status), (None, &Status::Accepted));
+    assert_eq!(open_views(&views), ["global", "local"]);
+    let reached: Vec<_> = (1..=3).map(|n| views.command(view::CommandId::Caller(n))).collect();
+    assert_eq!(reached, [Some(opened.command), Some(closed.command), None], "only the solver's two commands");
 
     assert_eq!((f.kept(), disk.durable(JOURNAL).expect("a journal")), before, "nothing was written");
     assert_eq!(f.hint(Direction::Undo), hint);
@@ -120,12 +153,68 @@ fn ct_ev3_07_a_view_cannot_write_the_workspace_or_make_undo_stale() {
     assert_eq!(f.layer.record("sheet"), None, "the workspace command was the latest action");
 }
 
+/// Installs the host's view model behind the layer's view rows, at the layer's current revision with Global and Local
+/// open, under a fixture profile whose every ceiling is generous. The labels part of its bundle is the state's label
+/// digest; the metadata and styles parts are fixture digests bound to the revision. The host serves one source, the
+/// overlay row [`PANEL`], as a solver's own view of the state, with no class (BND.27); any other source is refused
+/// with `KN5:input.argument_form`, naming the argument.
+fn install_views(f: &mut Fixture) -> ModelViews {
+    let head = f.layer.revision();
+    let revision = model_revision(head).expect("a label digest");
+    let part = |kind: view::PartKind, digest: [u8; 32]| view::BundlePart { kind, revision, digest };
+    let fixture = |name: &str| sha256(format!("{name} of {}", head.to_json().canonical()).as_bytes());
+    let parts = vec![
+        part(view::PartKind::Metadata, fixture("metadata")),
+        part(view::PartKind::Labels, sha256(head.digest.as_bytes())),
+        part(view::PartKind::Styles, fixture("styles")),
+    ];
+    let candidate = view::BundleCandidate { revision, mode: view::Mode::JumbleOff, parts };
+    let entries: Vec<(&str, u64, &str)> =
+        view::Field::ALL.iter().map(|field| (field.name(), BIG, field.unit())).collect();
+    let profile = view::LimitProfile::from_entries("generous", &entries).expect("a complete fixture profile");
+    let none = view::Workload::default();
+    let model =
+        view::ViewModel::new(view::Profile::Solving, profile, &candidate, none, none).expect("Global and Local fit");
+    let views = ModelViews::new(Arc::new(Mutex::new(model)), declare);
+    f.layer.set_views(Box::new(views.clone()));
+    views
+}
+
+fn declare(source: &ViewSourceRef) -> Result<view::Declared, CommandError> {
+    match source {
+        ViewSourceRef::Overlay { row, .. } if row == PANEL => {
+            let workload = view::Workload { vertex_evals: 1, cpu_bytes: 1, gpu_bytes: 1, ..view::Workload::default() };
+            let output = view::OutputAllowance::new(BIG, 16);
+            Ok(view::Declared { depends: view::Depends::STATE, workload, output, class: None })
+        }
+        _ => Err(CommandError::new(code::ARGUMENT_FORM, "source")),
+    }
+}
+
+/// `view.open` of a view `name` of [`PANEL`], with no arguments.
+fn open_args(name: &str) -> Value {
+    let module = Value::String(sha256_hex(PANEL_SOURCE));
+    let row = Value::String(PANEL.into());
+    let overlay = json::object([("row", row), ("module", module), ("arguments", json::object([]))]);
+    json::object([("view", Value::String(name.into())), ("source", json::object([("overlay", overlay)]))])
+}
+
+fn close_args(name: &str) -> Value {
+    json::object([("view", Value::String(name.into()))])
+}
+
+/// The view model's open views, in open order.
+fn open_views(views: &ModelViews) -> Vec<String> {
+    let model = views.model().lock().expect("the view model");
+    model.views().iter().map(|id| id.as_str().to_owned()).collect()
+}
+
 /// Runs the view's program job that `status` admitted, as the host would, and checks its publication: a transient
 /// `completed(view_published)` at the revision the job was admitted at.
 fn publish(f: &mut Fixture, status: Status) {
     let Status::Running(id) = status else { panic!("the view was not admitted: {status:?}") };
     let job = f.layer.take_program_job().expect("the view's job");
-    assert_eq!((job.job, job.row.as_str()), (id, "tool.c7.panel"));
+    assert_eq!((job.job, job.row.as_str()), (id, PANEL));
     let admitted = job.revision.clone();
     let published = f.layer.finish_program_job(job.job, Ok(Value::String("a panel".into()))).expect("a receipt");
     let Status::Completed(Completion { kind: CompletionKind::ViewPublished, revision, .. }) = &published.status else {

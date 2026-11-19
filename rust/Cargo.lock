@@ -71,6 +71,7 @@ dependencies = [
  "c600-session",
  "c600-syntax",
  "c600-tools",
+ "c600-view",
 ]
 
 [[package]]
