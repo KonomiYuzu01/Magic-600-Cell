@@ -518,7 +518,7 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
     assert_ne!(broken.kplus.frame_idx[cell], 0, "the frame of a cell other than cell 0 is not the identity");
     broken.kplus.frame_idx[cell] = 0;
 
-    let error = levels::labels(&broken, &state).err().expect("A3's frame check refuses the planted frame");
+    let error = levels::labels(&broken, &state).expect_err("A3's frame check refuses the planted frame");
     let projection = PoseProjection::new(&broken, &state);
     assert!(matches!(&projection, Err(Missing::Engine(reason)) if *reason == error.0), "{:?}", projection.err());
 }
