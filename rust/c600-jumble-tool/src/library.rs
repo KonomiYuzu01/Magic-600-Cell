@@ -1,6 +1,7 @@
 //! The jumbling library entries as 600 Cell Script (LP3, C8; chapter 03's LB1.8, LB1.10 and LB3.1 catalogues), on
-//! the IR draft's menu words (LP2's pull request 210). Five modules, each in edition `6cs-draft-1` (syntax candidate
-//! A) and in the formatter's canonical layout, checked and run by LP2's checker and interpreter:
+//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Six modules, each in
+//! edition `6cs-draft-1` (syntax candidate A) and in the formatter's canonical layout, checked and run by LP2's checker
+//! and interpreter:
 //!
 //! - `menu_words` ([`MENU_WORDS`]): LB1.8's literal words of one pinned menu, the jumbling half. `power` repeats a menu
 //!   word, or its inverse for a negative power; the IR draft's own operations concatenate, invert, conjugate and
@@ -16,6 +17,9 @@
 //!   `step_flag` reads KN2.4's `word_check` for a named unit and recomputes LB3.8's step flag from its end facts.
 //! - `jumble_protection` ([`PROTECTION`]): LB3.1's "Protection" at pose level. `word_protection` reads KN2.4's
 //!   `protection` of a literal word in both modes, Net and Strict, each verdict with its level.
+//! - `jumble_nu` ([`NU`]): LB3.1's "ν and drafted correction-set check". `nu_facts` reads KN2.4's `nu` and lifts ν's
+//!   45 values into F2 (43 bits) and F5 (the two C5 values); `drafted_check` also reads `correction_set_check` for
+//!   the solver's drafted set and computes, in F2 and F5, the change the set makes: ν after the set less ν.
 //!
 //! Every entry tracks, analyses or checks the solver's named word or state; none chooses or outputs a word, and none
 //! previews or executes anything (no `propose`). A run pins the word's alphabet with [`crate::word::Alphabet::pinned`].
@@ -36,7 +40,12 @@
 //!   kernel API this way and refuses another declared shape with `LG2:type.mismatch`.
 //! - **Arguments (KN2.5).** The word rows take the solver's literal word: `replay` takes the menu word itself,
 //!   `word_check` a record `{ unit, word }` with the named unit, and `protection` a record `{ mode, pieces, word }`
-//!   with the mode as the text `net` or `strict`. The heights rows take none: they are per-revision facts.
+//!   with the mode as the text `net` or `strict`. The heights rows and `nu` take none: they are per-revision facts.
+//!   `correction_set_check` takes the drafted set as a list of records `{ id, m }`, the correction's id and its signed
+//!   multiplicity, in the solver's order.
+//! - **ν's answer (KN2.4, A5).** `nu` and `correction_set_check` answer a record `{ reason, values }`: ν's 45 values
+//!   as integers and no reason when ν is defined, no values and the reason (`off_lattice`) when it is not. A field
+//!   value has no canonical form, so the entries return residues, each value's least non-negative representative.
 //! - **Recomputed separately (LB3.7, LB3.8).** `word_observations` reads each admitted prefix's Φ and largest left
 //!   height and none of the kernel's final claims: the peak includes the start, the excursion is the greatest rise of
 //!   Φ over the start with the last letter included, and the word is tame when no letter raises Φ. A word with a
@@ -112,8 +121,16 @@ pub const MENU_TRACES: Module = Module {
     rows: &[],
 };
 
+/// LB3.1's ν and drafted correction-set check, on F2 and F5.
+pub const NU: Module = Module {
+    name: "jumble_nu",
+    source: include_str!("jumble_nu.6cs"),
+    exports: &["nu_facts", "drafted_check"],
+    rows: &["correction_set_check", "nu"],
+};
+
 /// The library's modules.
-pub const MODULES: [Module; 5] = [MENU_WORDS, MENU_TRACES, HEIGHTS, WORD_CHECKS, PROTECTION];
+pub const MODULES: [Module; 6] = [MENU_WORDS, MENU_TRACES, HEIGHTS, WORD_CHECKS, PROTECTION, NU];
 
 /// Parses and lowers the library's modules and `clients`, one module each, into one program
 /// (`c600_library::lower_sources`). A client imports `menu_words` by [`Module::sha256`].
@@ -207,6 +224,28 @@ pub fn protection() -> CatalogueRow {
             "Jumbling poses; the label half after crossing is not built here.",
             &[Effect::ReadSnapshot],
             PROTECTION,
+        )
+    }
+}
+
+/// LB3.1's row "ν and drafted correction-set check".
+pub fn nu_and_drafted_correction_set_check() -> CatalogueRow {
+    CatalogueRow {
+        backing: "Library code: `jumble_nu.nu_facts` over KN2.4's `nu` and `jumble_nu.drafted_check` over KN2.4's \
+                  `nu` and `correction_set_check`, each read with `read_snapshot`, on the IR draft's F2 and F5 \
+                  (LP2's pull request 222).",
+        notes: "ν's 45 values in the fixed C5 convention of A5: 43 bits in F2, then the two C5 values in F5. Off the \
+                lattice ν is undefined, with its reason and no values, never stale coordinates, zeros or a partial \
+                ν. A drafted set is the solver's list of (id, signed multiplicity); the check answers ν after the set \
+                and the change the set makes, computed in F2 and F5, and selects, ranks or reduces no set. A nonzero \
+                fixed I_a coordinate on a reachable I_a result is `KN2:consistency.fixed_nu_nonzero`, an id the \
+                catalogue does not ship is `KN2:input.named_object_invalid`, and a base under another menu is \
+                `KN2:input.menu_binding_mismatch`.",
+        ..row(
+            "ν and drafted correction-set check",
+            "Jumbling labels, on the lattice only.",
+            &[Effect::ReadSnapshot],
+            NU,
         )
     }
 }

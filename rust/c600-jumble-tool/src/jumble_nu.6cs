@@ -1,0 +1,74 @@
+edition "6cs-draft-1";
+module jumble_nu requires [];
+
+export fn nu_facts() -> record { defined: Bool, nonzero: Nat, reason: List<Text>, values: List<Nat> } effects [snapshot] {
+    let nu = read_snapshot<record { reason: List<Text>, values: List<Int> }>("nu");
+    let value = lifted(nu.values);
+    return record { defined = defined(nu.values), nonzero = nonzero(value), reason = nu.reason, values = residues(value) };
+}
+
+export fn drafted_check(drafted: List<record { id: Nat, m: Int }>) -> record { change: List<Nat>, defined: Bool, nonzero: Nat, predicted: List<Nat>, reason: List<Text> } effects [snapshot] {
+    let nu = read_snapshot<record { reason: List<Text>, values: List<Int> }>("nu");
+    let check = read_snapshot<record { reason: List<Text>, values: List<Int> }>("correction_set_check", drafted);
+    let both = and(defined(nu.values), defined(check.values));
+    let predicted = lifted(check.values);
+    let change = match both {
+        true => residues(difference(predicted, lifted(nu.values)));
+        _ => list<Nat>();
+    };
+    return record { change = change, defined = both, nonzero = nonzero(predicted), predicted = residues(predicted), reason = check.reason };
+}
+
+fn defined(values: List<Int>) -> Bool effects [] {
+    return exact_eq(length(values), 45);
+}
+
+fn lifted(values: List<Int>) -> record { bits: List<F2>, c5: List<F5> } effects [] {
+    let n = match defined(values) {
+        true => 43;
+        _ => 0;
+    };
+    let m = match defined(values) {
+        true => 2;
+        _ => 0;
+    };
+    let bits = repeat(n, list<F2>(), fn(done: List<F2>) -> List<F2> {
+        return push(done, to_f2(index(values, length(done))));
+    });
+    let c5 = repeat(m, list<F5>(), fn(done: List<F5>) -> List<F5> {
+        return push(done, to_f5(index(values, exact_add(43, length(done)))));
+    });
+    return record { bits = bits, c5 = c5 };
+}
+
+fn difference(a: record { bits: List<F2>, c5: List<F5> }, b: record { bits: List<F2>, c5: List<F5> }) -> record { bits: List<F2>, c5: List<F5> } effects [] {
+    let bits = repeat(length(a.bits), list<F2>(), fn(done: List<F2>) -> List<F2> {
+        let k = length(done);
+        return push(done, field_sub(index(a.bits, k), index(b.bits, k)));
+    });
+    let c5 = repeat(length(a.c5), list<F5>(), fn(done: List<F5>) -> List<F5> {
+        let k = length(done);
+        return push(done, field_sub(index(a.c5, k), index(b.c5, k)));
+    });
+    return record { bits = bits, c5 = c5 };
+}
+
+fn residues(v: record { bits: List<F2>, c5: List<F5> }) -> List<Nat> effects [] {
+    let bits = repeat(length(v.bits), list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        return push(done, residue(index(v.bits, length(done))));
+    });
+    return repeat(length(v.c5), record { next = 0, out = bits }, fn(s: record { next: Nat, out: List<Nat> }) -> record { next: Nat, out: List<Nat> } {
+        return record { next = exact_add(s.next, 1), out = push(s.out, residue(index(v.c5, s.next))) };
+    }).out;
+}
+
+fn nonzero(v: record { bits: List<F2>, c5: List<F5> }) -> Nat effects [] {
+    let all = residues(v);
+    return repeat(length(all), record { count = 0, next = 0 }, fn(s: record { count: Nat, next: Nat }) -> record { count: Nat, next: Nat } {
+        let step = match exact_eq(index(all, s.next), 0) {
+            true => 0;
+            _ => 1;
+        };
+        return record { count = exact_add(s.count, step), next = exact_add(s.next, 1) };
+    }).count;
+}

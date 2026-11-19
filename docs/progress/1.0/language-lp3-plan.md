@@ -251,6 +251,15 @@ acceptance check and stop condition.
   work, and the injection and detection of a device fault (CT-RM-10, CT-RPI-31, CT-RPI-34). So do CT-RPI-26's gate half
   and CT-EV3-08's measured half. Two tests in `c600-tools` and `c600-repr` still build stage descriptions as fixtures;
   they can read admitted stages with those crates' next pieces.
+- C2, source edits (`rust/c600-view`, branch `claude/lp3-view-source-stale`), built for C9's LX-4 (its question U8,
+  19 November 2026): `ViewModel::edit_source` takes the editor's draft of a module version, and output that version
+  produced shows its view's stale state from that call on, with the producing version and the draft in its status and
+  its frame. Nothing runs or is fenced (EV1.7); the output is still drawn while its base matches, and its picks still
+  open the producing version (EV3.5, EV3.6). This is the integrator's reading of EV3.6 and RTE.49's stale-state
+  interval: ONE.12's table names the view-stale condition for a lagging revision only, and a lagging source is a second
+  trigger of the same D2 state, which shows beside the first and never stands in for it. No frozen text changes. A view
+  runs the checked draft once it is reopened on it after activation (EV1.11 and CT-EV1-08 are LP4's). LX-4 times the
+  state on the owner's machine (C9); nothing here is timed.
 
 Acceptance for each piece: `cargo test --locked --offline` and `cargo fmt --all --check` pass in `rust/`; each listed
 test's part exists and names its part; nothing needs a renderer, a GPU or a timing; no file under

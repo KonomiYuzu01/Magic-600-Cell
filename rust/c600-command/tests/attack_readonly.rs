@@ -10,8 +10,8 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    draft_args, Caller, CommandLayer, Direction, Error, HeadlessFrames, Invocation, MemoryStore, Provenance, Receipt,
-    Secret, Shell, Status, Table, RECORD_ROW,
+    draft_args, Caller, CommandLayer, Direction, Error, HeadlessFrames, Invocation, Kind, MemoryStore, Overlay,
+    Provenance, Receipt, Secret, Shell, Status, Table, RECORD_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -52,9 +52,21 @@ struct Fixture {
     shell: Shell,
     frames: HeadlessFrames,
     sent: u64,
+    run: String,
 }
 
 impl Fixture {
+    /// A run inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34): the shell invokes a
+    /// tool's query row, and the host takes its job and runs it as the job's run (`ProgramJob::run`), which lasts until
+    /// the host reports the job. Only such a run prepares a preview.
+    fn solver_run(&mut self) -> String {
+        let overlay = Overlay { module: "tools/full".into(), entry: "run".into() };
+        self.layer.register_overlay("tool.full.run", Kind::Query, &[], overlay).unwrap();
+        let receipt = self.shell.invoke(&mut self.layer, "tool.full.run", json::object([])).unwrap();
+        assert!(matches!(receipt.status, Status::Running(_)), "the tool's row: {:?}", receipt.status);
+        self.layer.take_program_job().expect("the tool's job").run()
+    }
+
     /// The solver's preview of `recipe`, built and presented; its ID.
     fn preview(&mut self, recipe: &Value) -> u64 {
         let receipt = self.shell.invoke(&mut self.layer, "operation.preview", draft_args(recipe)).unwrap();
@@ -64,17 +76,17 @@ impl Fixture {
         id
     }
 
-    /// One envelope on a run's channel, with no token.
+    /// One envelope on the run's channel, with no token.
     fn runtime(&mut self, row: &str, args: Value) -> Receipt {
         self.sent += 1;
         let invocation = Invocation {
-            command: format!("run-1/{}", self.sent),
+            command: format!("{}/{}", self.run, self.sent),
             row: row.to_owned(),
             args,
             token: None,
             epoch: self.layer.revision().epoch,
         };
-        self.layer.invoke(&Caller::Runtime { run: "run-1".into() }, invocation)
+        self.layer.invoke(&Caller::Runtime { run: self.run.clone() }, invocation)
     }
 
     /// Everything durable the layer shows.
@@ -100,7 +112,7 @@ fn previews_reads_and_refusals_change_nothing_durable() {
     let mut layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
     layer.set_provenance(Box::new(Reader));
     let shell = Shell::new(Secret::fixed(SECRET), "shell");
-    let mut f = Fixture { layer, shell, frames: HeadlessFrames::new(), sent: 0 };
+    let mut f = Fixture { layer, shell, frames: HeadlessFrames::new(), sent: 0, run: String::new() };
 
     // A session with something to lose: one commit, one record write, one undo (so both stacks hold a target).
     let id = f.preview(&word(&[1]));
@@ -147,11 +159,12 @@ fn previews_reads_and_refusals_change_nothing_durable() {
     assert_eq!(f.durable(), before, "availability and hints");
 
     // A run: its preview and the preview's job, and one envelope for every row of the table with the arguments of a
-    // preview. A row may refuse the arguments or the caller; none may change anything durable.
+    // preview. A row may refuse the arguments or the caller; none may change anything durable. The run is inside a tool
+    // command the solver invoked (finding B2), so its preview is admitted and built.
+    f.run = f.solver_run();
     let previewed = f.runtime("operation.preview", draft_args(&word(&[8])));
-    if matches!(previewed.status, Status::Running(_)) {
-        f.layer.run_jobs();
-    }
+    assert!(matches!(previewed.status, Status::Running(_)), "the run's preview: {:?}", previewed.status);
+    assert_eq!(f.layer.run_jobs(), 1, "the run's preview job");
     for row in &rows {
         let _ = f.runtime(row, draft_args(&word(&[9])));
         f.layer.run_jobs();
