@@ -7,6 +7,7 @@
 #include <wrl/client.h>
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -137,9 +138,11 @@ struct Harness {
     UINT64 readback_bytes = 0, consumer_value = 0;
     ULONG device_before = 0, queue_before = 0;
     uint32_t width = 0, height = 0;
+    DWORD wait = timeout_ms; // the core's wait timeout and the consumer's; the U5c measurement raises it for WARP
 
-    Harness(const Options& options, int32_t queue_mode, int32_t barriers, bool is_external, const Device* shared = nullptr)
-        : env(shared ? *shared : Device(options)), enhanced(barriers == SA2_BARRIERS_ENHANCED), external(is_external) {
+    Harness(const Options& options, int32_t queue_mode, int32_t barriers, bool is_external, const Device* shared = nullptr,
+            DWORD wait_ms = timeout_ms)
+        : env(shared ? *shared : Device(options)), enhanced(barriers == SA2_BARRIERS_ENHANCED), external(is_external), wait(wait_ms) {
         sa2_device_info info{};
         info.struct_size = sizeof(info);
         api(nullptr, sa2_probe(handle(env.device.Get()), handle(env.queue.Get()), handle(env.adapter.Get()), &info));
@@ -163,7 +166,7 @@ struct Harness {
         config.queue_mode = queue_mode;
         config.barrier_api = barriers;
         config.state_before_write = config.state_after_write = SA2_STATE_ALL_SHADER_RESOURCE;
-        config.wait_timeout_ms = timeout_ms;
+        config.wait_timeout_ms = wait;
         config.debug_callback = 1;
         api(nullptr, sa2_attach(handle(env.device.Get()), handle(env.queue.Get()), &config, &ctx));
     }
@@ -171,7 +174,7 @@ struct Harness {
         // Even failed tests must finish queued consumer and producer work before
         // their owning COM pointers unwind. An unconfirmed drain exits in DLL.
         if (!ctx) return;
-        sa2_drain(ctx, timeout_ms);
+        sa2_drain(ctx, wait);
         sa2_scene_unload(ctx); // WRONG_STATE is harmless for ABI 1 configurations.
         for (uint32_t i = 0; i < SA2_RING_SLOTS; ++i) {
             if (registered[i]) sa2_unregister_slot(ctx, i);
@@ -289,7 +292,7 @@ struct Harness {
         env.queue->ExecuteCommandLists(1, commands);
         check(env.queue->Signal(consumer_done.Get(), ++consumer_value), "Signal consumer completion");
         check(consumer_done->SetEventOnCompletion(consumer_value, completion.get()), "SetEventOnCompletion(consumer)");
-        expect(WaitForSingleObject(completion.get(), timeout_ms) == WAIT_OBJECT_0, "consumer fence wait failed or timed out");
+        expect(WaitForSingleObject(completion.get(), wait) == WAIT_OBJECT_0, "consumer fence wait failed or timed out");
         const auto completed = consumer_done->GetCompletedValue();
         expect(completed != UINT64_MAX && completed >= consumer_value && SUCCEEDED(env.device->GetDeviceRemovedReason()), "consumer completion was not confirmed");
         if (!code_image) return;
@@ -303,7 +306,7 @@ struct Harness {
         expect(valid && decoded == sa2::Fields{frame, index, generation}, "consumer corners do not decode to this frame, slot and generation");
     }
     void finish(bool debug) {
-        api(ctx, sa2_drain(ctx, timeout_ms));
+        api(ctx, sa2_drain(ctx, wait));
         clear_ring();
         if (debug) {
             struct sa2_debug_counts counts{};
@@ -741,26 +744,148 @@ void scene_stages(const Options& options) {
     ++frame;
     expect(check_frame(stage_produce(harness, frame), 0, fragment.handle, UINT32_MAX, false).singular == 0,
         "the built-in vertex stage reported a singular vertex");
-    const auto last = frame;
     // Releases: an attached handle is refused, a free one is released once.
     expect(sa2_stage_release(ctx, fragment.handle) == SA2_E_WRONG_STATE, "an attached stage was released");
     api(ctx, sa2_stage_release(ctx, vertex.handle));
     expect(sa2_stage_release(ctx, vertex.handle) == SA2_E_INVALID_ARGUMENT
         && sa2_scene_stages(ctx, vertex.handle, fragment.handle, 1, nullptr, 0, nullptr, 0) == SA2_E_INVALID_ARGUMENT,
         "a released handle was released or attached again");
-    // A traced frame takes the built-in path and the chain cannot change inside the trace.
+    // U5c: a traced frame draws with the chain (W3's turn included) and the chain cannot change inside the trace.
     api(ctx, sa2_scene_trace_begin(ctx));
     expect(sa2_scene_stages(ctx, 0, 0, 0, nullptr, 0, nullptr, 0) == SA2_E_WRONG_STATE, "the chain changed inside a trace");
     ++frame;
-    expect(stage_produce(harness, frame).frame == last, "a traced frame drew with the chain");
+    check_frame(stage_produce(harness, frame), 0, fragment.handle, UINT32_MAX, false);
     api(ctx, sa2_scene_trace_end(ctx));
+    const auto last = frame;
+    // U5c: sa2_stage_report writes every chain frame once, in frame order, when several complete between two calls.
+    for (uint32_t i = 0; i < 2; ++i) {
+        ++frame;
+        const auto slot = frame % SA2_RING_SLOTS;
+        api(ctx, sa2_signal_godot_free(ctx, frame - 1));
+        api(ctx, sa2_scene_produce(ctx, slot, frame));
+        api(ctx, sa2_godot_wait_ready(ctx, frame));
+        harness.consume(frame, 0, false);
+        api(ctx, sa2_mark_shown(ctx, slot, frame));
+    }
+    std::vector<uint64_t> reported;
+    for (int i = 0; i < 4; ++i) {
+        api(ctx, sa2_stage_report(ctx, &report));
+        reported.push_back(report.frame);
+    }
+    expect(reported == std::vector<uint64_t>{frame - 1, frame, frame, frame},
+        "two completed chain frames were not reported once each in frame order");
+    const auto queued = frame;
+    expect(queued == last + 2, "the queued frames are not the two after the traced frame");
     // Detached: the built-in path again; then the last handle is released.
     api(ctx, sa2_scene_stages(ctx, 0, 0, 0, nullptr, 0, nullptr, 0));
     ++frame;
-    expect(stage_produce(harness, frame).frame == last, "a frame after the detach drew with the chain");
+    expect(stage_produce(harness, frame).frame == queued, "a frame after the detach drew with the chain");
     api(ctx, sa2_stage_release(ctx, fragment.handle));
     expect(sa2_stage_release(ctx, fragment.handle) == SA2_E_INVALID_ARGUMENT, "a released fragment stage was released again");
     api(ctx, sa2_drain(ctx, timeout_ms));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// C9 U5c's overdraw measurement (--warp --measure-stages DIR, WARP only). DIR is c600-stage-hlsl's output for the two
+// stages (vertex.hlsl, vertex.json, fragment.hlsl, fragment.json) with the arrays file beside them (arrays.json:
+// {"format": "magic600-stage-arrays/1", "vertex": {name: ["0x<binary32 bits>", ...]}, "fragment": {...}}). It loads W3
+// at --size, attaches the pair with overdraw UINT32_MAX so that no frame stops, produces --frames untraced frames
+// (the camera turns 0.002 rad in the x-w plane per frame) and then --traced frames inside a trace (W3's turns at
+// --turn-ms), and writes one JSON line per frame with the device's U to --out: a measurement, never a check.
+std::string file_text(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    expect(bool(in), ("cannot read " + file.string()).c_str());
+    std::ostringstream text;
+    text << in.rdbuf();
+    return text.str();
+}
+// One stage's arrays as binary32 bit patterns in the stage record's offset order; arrays.json must give every
+// declared array exactly its length and name no other array.
+std::vector<uint32_t> stage_arrays(const Json& stage, const Json& values) {
+    std::vector<uint32_t> out;
+    const auto& declared = stage.at("arrays").array();
+    expect(declared.size() == values.object().size(), "arrays.json names a different set of arrays than the stage");
+    for (const auto& array : declared) {
+        expect(array.at("offset").integer() == int64_t(out.size()), "a stage array is not at the sum of the earlier lengths");
+        const auto& given = values.at(array.at("name").string()).array();
+        expect(int64_t(given.size()) == array.at("length").integer(), "an array's value count differs from its length");
+        for (const auto& value : given) {
+            const auto& text = value.string();
+            expect(text.size() == 10 && text.rfind("0x", 0) == 0
+                && text.find_first_not_of("0123456789abcdef", 2) == std::string::npos,
+                "an array value is not a lowercase 0x-prefixed binary32 bit pattern");
+            out.push_back(uint32_t(std::stoul(text.substr(2), nullptr, 16)));
+        }
+    }
+    return out;
+}
+void measure_stages(const Options& options) {
+    expect(options.mode == "warp" && !options.out.empty(), "the stage measurement runs on WARP with --out");
+    constexpr DWORD measure_wait = 600000; // WARP draws W3's 6.1 million triangles at the owner's resolution
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false, nullptr, measure_wait);
+    auto* ctx = harness.ctx;
+    const uint32_t width = options.width, height = options.height;
+    harness.make_ring(width, height);
+    const auto& folder = options.measure;
+    const auto values = Json::parse(file_text(folder / "arrays.json"));
+    expect(values.at("format").string() == "magic600-stage-arrays/1", "arrays.json is not magic600-stage-arrays/1");
+    struct Loaded {
+        Json record;
+        StageCompile compiled;
+        std::vector<uint32_t> arrays;
+    };
+    auto load = [&](const char* kind, uint32_t code) {
+        Loaded out;
+        const auto text = file_text(folder / (std::string(kind) + ".hlsl"));
+        out.record = Json::parse(file_text(folder / (std::string(kind) + ".json")));
+        expect(out.record.at("kind").string() == kind && out.record.at("hlsl_sha256").string() == digest(text),
+            "a stage record does not describe its HLSL file");
+        out.compiled = compile_stage(ctx, code, text);
+        expect(out.compiled.status == SA2_OK, ("a stage did not compile: " + out.compiled.error).c_str());
+        out.arrays = stage_arrays(out.record, values.at(kind));
+        return out;
+    };
+    const auto vertex = load("vertex", SA2_STAGE_VERTEX), fragment = load("fragment", SA2_STAGE_FRAGMENT);
+    // The trace's label readback holds one copy per traced frame at most (one turn change per frame).
+    const auto trace_ms = uint32_t(std::min(3600000.0, std::ceil(options.turn_ms * (options.traced + 2))));
+    sa2_scene_config config{sizeof(sa2_scene_config), 3, options.turn_ms, nullptr, SA2_SCENE_NO_VRAM, std::max(trace_ms, 1u)};
+    api(ctx, sa2_scene_load(ctx, &config));
+    api(ctx, sa2_scene_stages(ctx, vertex.compiled.handle, fragment.compiled.handle, UINT32_MAX, vertex.arrays.data(),
+        uint32_t(vertex.arrays.size()), fragment.arrays.data(), uint32_t(fragment.arrays.size())));
+    std::ofstream out(options.out, std::ios::binary);
+    expect(bool(out), "cannot write the measurement");
+    const uint64_t pixels = uint64_t(width) * height;
+    auto stage = [](const Loaded& loaded) {
+        return Json(Json::Object{{"digest", loaded.record.at("digest")}, {"hlsl_sha256", loaded.record.at("hlsl_sha256")},
+                                 {"overdraw", loaded.record.at("overdraw")}, {"handle", loaded.compiled.handle}});
+    };
+    out << Json(Json::Object{{"format", "magic600-stage-overdraw-measure/1"}, {"adapter", "warp"}, {"scene", 3},
+        {"width", width}, {"height", height}, {"pixels", pixels}, {"turn_ms", options.turn_ms}, {"trace_ms", config.trace_ms},
+        {"untraced_frames", options.frames}, {"traced_frames", options.traced}, {"overdraw_attached", UINT32_MAX},
+        {"camera_step_rad", 0.002}, {"compiler", vertex.compiled.record.at("compiler")},
+        {"vertex", stage(vertex)}, {"fragment", stage(fragment)}}).dump() << '\n' << std::flush;
+    const uint32_t total = options.frames + options.traced;
+    uint64_t largest = 0, largest_frame = 0;
+    for (uint32_t frame = 1; frame <= total; ++frame) {
+        const bool traced = frame > options.frames;
+        if (traced && frame == options.frames + 1) api(ctx, sa2_scene_trace_begin(ctx));
+        const auto start = std::chrono::steady_clock::now();
+        const auto row = stage_produce(harness, frame);
+        const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        expect(row.frame == frame && row.stopped == 0 && row.user_pixel_invocations > 0 && row.builtin_pixel_invocations == 0,
+            "a measured frame has no report row of its own, stopped or skipped the user draw");
+        if (row.bound > largest) largest = row.bound, largest_frame = frame;
+        out << Json(Json::Object{{"frame", frame}, {"traced", traced}, {"camera_steps", frame}, {"bound", row.bound},
+            {"per_pixel", double(row.bound) / double(pixels)}, {"user_ps", row.user_pixel_invocations},
+            {"seconds", seconds}}).dump() << '\n' << std::flush;
+        if (frame % 25 == 0 || frame == total)
+            std::cout << "measure: frame " << frame << '/' << total << " U " << row.bound << " (" << double(row.bound) / double(pixels)
+                      << " per pixel), largest " << largest << " at frame " << largest_frame << ", " << seconds << " s\n" << std::flush;
+    }
+    if (options.traced) api(ctx, sa2_scene_trace_end(ctx));
+    expect(bool(out), "the measurement was not written completely");
+    api(ctx, sa2_drain(ctx, measure_wait));
     api(ctx, sa2_scene_unload(ctx));
     harness.finish(options.debug);
 }
@@ -867,6 +992,11 @@ void run_gpu(Suite& suite, const Options& options) {
 void run_stages(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the stage check runs on WARP only");
     suite.check("stages w3 warp", [&] { scene_stages(options); });
+}
+
+// C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.
+void run_measure(const Options& options) {
+    measure_stages(options);
 }
 
 int run_child(const Options& options) {

@@ -3,6 +3,7 @@
 #include "product.h"
 #include "stage_rules.h"
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -1331,6 +1332,28 @@ Options parse(int argc, char** argv) {
             options.mode = arg.substr(2);
         } else if (arg == "--debug") options.debug = true;
         else if (arg == "--stages") options.stages = true;
+        else if (arg == "--measure-stages") options.measure = value();
+        else if (arg == "--size") {
+            const auto text = value();
+            const auto x = text.find('x');
+            expect(x != std::string::npos && x > 0 && x + 1 < text.size()
+                && text.find_first_not_of("0123456789x") == std::string::npos && text.find('x', x + 1) == std::string::npos,
+                "--size must be WIDTHxHEIGHT");
+            const auto w = std::stoul(text.substr(0, x)), h = std::stoul(text.substr(x + 1));
+            expect(w >= 16 && h >= 16 && w <= 16384 && h <= 16384, "--size must be within 16..16384 on each side");
+            options.width = uint32_t(w), options.height = uint32_t(h);
+        } else if (arg == "--frames" || arg == "--traced") {
+            const auto text = value();
+            expect(!text.empty() && text.size() <= 6 && text.find_first_not_of("0123456789") == std::string::npos,
+                "--frames and --traced take 0..999999");
+            (arg == "--frames" ? options.frames : options.traced) = uint32_t(std::stoul(text));
+        } else if (arg == "--turn-ms") {
+            size_t end = 0;
+            const auto text = value();
+            options.turn_ms = std::stod(text, &end);
+            expect(end == text.size() && std::isfinite(options.turn_ms) && options.turn_ms > 0 && options.turn_ms <= 10000,
+                "--turn-ms must be in (0, 10000]");
+        }
         else if (arg == "--out") options.out = value();
         else if (arg == "--vectors") options.vectors = value();
         else if (arg == "--child") options.child = value();
@@ -1340,6 +1363,9 @@ Options parse(int argc, char** argv) {
     expect(options.child.empty() || options.mode != "cpu", "child checks require a device mode");
     // C9 U5: the user-stage check runs on WARP only, never on a hardware adapter.
     expect(!options.stages || (options.mode == "warp" && options.child.empty()), "--stages requires --warp");
+    // C9 U5c: the overdraw measurement also runs on WARP only, alone.
+    expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
+        && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
     return options;
 }
 }
@@ -1349,6 +1375,11 @@ int main(int argc, char** argv) {
     try {
         const auto options = sa2test::parse(argc, argv);
         if (!options.child.empty()) return sa2test::run_child(options);
+        if (!options.measure.empty()) {
+            sa2test::run_measure(options);
+            std::cout << "measure: ok\n";
+            return 0;
+        }
         sa2test::Suite suite;
         if (options.mode == "cpu") sa2test::run_cpu(suite, options);
         else if (options.stages) sa2test::run_stages(suite, options);

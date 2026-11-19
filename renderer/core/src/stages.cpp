@@ -157,9 +157,13 @@ Output run(const Dxc& library, const std::string& source, const Pass& pass) {
     return out;
 }
 
-// Every pass of one compile, in order; the first failure ends it and the later passes are "not_run".
+// Every pass of one compile, in order; the first failure ends it and the later passes are "not_run". A failure is a
+// record, never an exception (C9 U5c): a source that cannot be composed or a compiler object that cannot be created
+// fails the compile with its status and code like a DXC error does.
 struct Compiled {
     bool ok = true;
+    const char* status = "compile_failed"; // the record status of a failure
+    int32_t code = SA2_E_CHECK_FAILED; // and its status code
     Json records{Json::Array{}};
     std::vector<std::vector<uint8_t>> dxil;
     std::string error;
@@ -168,9 +172,16 @@ Compiled compile_passes(const Dxc& library, uint32_t kind, std::string_view text
     const CoreSources core{embedded_text(embedded::geometry, embedded::geometry_size),
                            embedded_text(embedded::draw, embedded::draw_size),
                            embedded_text(embedded::stages, embedded::stages_size)};
-    const std::string source = compose(kind, text, core);
-    const auto source_sha = sha256(source);
     Compiled out;
+    std::string source;
+    Json source_sha = nullptr;
+    try {
+        source = compose(kind, text, core);
+        source_sha = sha256(source);
+    } catch (const std::exception& error) {
+        out.ok = false;
+        out.error = std::string("composing the pass source failed: ") + error.what();
+    }
     Json::Array records;
     for (const auto& pass : passes(kind)) {
         Json record{Json::Object{}};
@@ -184,15 +195,27 @@ Compiled compile_passes(const Dxc& library, uint32_t kind, std::string_view text
         if (!out.ok) {
             record["status"] = "not_run";
         } else {
-            auto result = run(library, source, pass);
-            if (result.ok) {
-                record["status"] = "compiled";
-                record["dxil_sha256"] = sb::sha256(result.dxil);
-                out.dxil.push_back(std::move(result.dxil));
-            } else {
+            try {
+                auto result = run(library, source, pass);
+                if (result.ok) {
+                    record["status"] = "compiled";
+                    record["dxil_sha256"] = sb::sha256(result.dxil);
+                    out.dxil.push_back(std::move(result.dxil));
+                } else {
+                    record["status"] = "failed";
+                    out.ok = false;
+                    out.error = std::string(pass.entry) + " (" + pass.profile + "): " + result.errors;
+                }
+            } catch (const Failure& error) { // DxcCreateInstance(CLSID_DxcCompiler) for this pass
                 record["status"] = "failed";
                 out.ok = false;
-                out.error = std::string(pass.entry) + " (" + pass.profile + "): " + result.errors;
+                out.status = "compiler_unavailable";
+                out.code = error.status;
+                out.error = std::string(pass.entry) + " (" + pass.profile + "): " + error.what();
+            } catch (const std::exception& error) {
+                record["status"] = "failed";
+                out.ok = false;
+                out.error = std::string(pass.entry) + " (" + pass.profile + "): " + error.what();
             }
         }
         records.push_back(std::move(record));
@@ -285,12 +308,14 @@ int32_t Registry::compile(uint32_t kind, std::string_view text, uint64_t handle,
         library = &dxc();
     } catch (const Failure& error) {
         return fail("compiler_unavailable", error.what(), error.status);
+    } catch (const std::exception& error) {
+        return fail("compiler_unavailable", error.what(), SA2_E_UNAVAILABLE);
     }
     record["compiler"] = library->info;
     if (!core) {
         auto built = compile_passes(*library, CoreKind, {});
         record["core_passes"] = built.records;
-        if (!built.ok) return fail("compile_failed", built.error, SA2_E_CHECK_FAILED);
+        if (!built.ok) return fail(built.status, built.error, built.code);
         Core made;
         try {
             made.root = stage_root(device);
@@ -309,7 +334,7 @@ int32_t Registry::compile(uint32_t kind, std::string_view text, uint64_t handle,
     record["core_passes"] = core_passes;
     auto built = compile_passes(*library, kind, text);
     record["passes"] = built.records;
-    if (!built.ok) return fail("compile_failed", built.error, SA2_E_CHECK_FAILED);
+    if (!built.ok) return fail(built.status, built.error, built.code);
     Stage stage;
     stage.kind = kind;
     try {

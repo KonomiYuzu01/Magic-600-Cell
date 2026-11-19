@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <bit>
 #include <chrono>
+#include <deque>
 #include <fstream>
 #include <cstring>
 #include <optional>
@@ -130,12 +131,16 @@ struct StageGpu {
     ComPtr<ID3D12QueryHeap> statistics; // per ring r: 2r the user draw, 2r + 1 the built-in draw
     std::array<StageRow, SA2_RING_SLOTS> rows;
     std::shared_ptr<StageAttach> attached;
-    sa2_stage_frame last{};
+    sa2_stage_frame last{}; // the row sa2_stage_report wrote last
+    // C9 U5c: completed rows sa2_stage_report has not written yet, in frame order, so that a caller that reports
+    // after every frame sees every chain frame once even when several complete between two calls.
+    std::deque<sa2_stage_frame> waiting;
     std::filesystem::path dump_path; // M600_SA2_STAGE_EVAL_DUMP, read at the first attach
     uint64_t dumped = 0; // the frame the dump buffer holds
 };
 constexpr uint64_t StageRowBytes = 256, StageStatistics = 64, StageStatisticsBytes = sizeof(D3D12_QUERY_DATA_PIPELINE_STATISTICS);
 static_assert(StageStatistics + 2 * StageStatisticsBytes <= StageRowBytes);
+constexpr size_t StageWaitingRows = 4096; // sa2_interop.h: completed rows kept for sa2_stage_report
 }
 
 struct Scene::Impl {
@@ -528,7 +533,7 @@ struct Scene::Impl {
             hr(device, s.read.resource->Map(0, &range, &data), "Map(stage frame readback)");
             std::memcpy(bytes.data(), static_cast<uint8_t*>(data) + range.Begin, bytes.size());
             s.read.resource->Unmap(0, &none);
-            if (row.frame > s.last.frame) {
+            if (row.frame > s.last.frame) { // never a row sa2_stage_report has already written
                 auto word = [&](size_t at) { uint32_t v; std::memcpy(&v, bytes.data() + at, 4); return uint64_t(v); };
                 D3D12_QUERY_DATA_PIPELINE_STATISTICS user_draw{}, builtin_draw{};
                 std::memcpy(&user_draw, bytes.data() + StageStatistics, sizeof(user_draw));
@@ -543,7 +548,12 @@ struct Scene::Impl {
                 out.fragment_stage = row.attach->chain->fragment;
                 out.user_pixel_invocations = user_draw.PSInvocations;
                 out.builtin_pixel_invocations = builtin_draw.PSInvocations;
-                s.last = out;
+                // In frame order: the rings complete in frame order but are read in ring order.
+                auto at = s.waiting.end();
+                while (at != s.waiting.begin() && std::prev(at)->frame > out.frame) --at;
+                s.waiting.insert(at, out);
+                // A caller that never reports keeps at most StageWaitingRows rows; the oldest go first.
+                while (s.waiting.size() > StageWaitingRows) s.waiting.pop_front();
             }
             if (write_dump && row.dumped && row.frame == s.dumped && !s.dump_path.empty()) {
                 const D3D12_RANGE whole{0, SIZE_T(stages::EvalBytes)};
@@ -605,7 +615,11 @@ struct Scene::Impl {
         const bool dump = s.dump.resource != nullptr;
         transition(list, s.eval, dump ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_COPY_SOURCE
                                       : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-        // bound: U over every triangle; decide: the predicate and the report row.
+        // bound: U over every triangle; decide: the predicate and the report row. U counts one sample and one pass
+        // (RPI.72's samples and passes factors are 1): a W1..W4 scene frame draws its target at MSAA 1
+        // (sa2_scene_config) with one draw of the chain, and the product's ID pass (sa2_pick_request) never runs inside
+        // sa2_scene_produce; the stage pipelines are made with SampleDesc.Count 1 (stages.cpp). A chain on a
+        // multisampled target or in a frame with an ID pass would need both factors.
         list->SetPipelineState(chain.bound.Get());
         list->Dispatch((stages::Triangles + stages::EvalGroup - 1) / stages::EvalGroup, stages::Cells, 1);
         D3D12_RESOURCE_BARRIER uav{};
@@ -1052,8 +1066,9 @@ void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CP
     if (record.config.scene == 2 || record.config.scene == 3) { sb::rotate(g.q, 0, 3, 0.002); ++g.camera; }
     const auto c = constants(g.shape, g.q, float(record.width) / float(record.height), record.config.scene == 3 && timed ? float(turn.theta) : 0);
     // W1..W4 bind identity poses (never re-uploaded) through W-J's pose path.
-    // C9 U5: an untraced frame draws with the attached user chain; every other frame takes the built-in path.
-    if (g.user && g.user->attached && !timed)
+    // C9 U5: a frame draws with the attached user chain, traced or not (U5c: the gate's measured frames are the
+    // traced ones; the chain cannot change inside a trace); a frame without a chain takes the built-in path.
+    if (g.user && g.user->attached)
         g.draw_user(list, c, slot, g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, format, now, record.frequency,
                     record.width, record.height);
     else {
@@ -1367,6 +1382,11 @@ void Scene::stage_report(uint64_t completed, sa2_stage_frame& out) {
             const auto& row = g.user->rows[ring];
             if (row.drawn && row.frame && row.frame <= completed) g.user_read(ring, true);
         }
+    // The oldest completed row not yet written; with none waiting, the last row again.
+    if (g.user && !g.user->waiting.empty()) {
+        g.user->last = g.user->waiting.front();
+        g.user->waiting.pop_front();
+    }
     out = g.user ? g.user->last : sa2_stage_frame{};
     out.struct_size = sizeof(out);
 }

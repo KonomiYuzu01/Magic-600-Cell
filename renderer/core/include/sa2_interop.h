@@ -981,8 +981,10 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
  * (nonzero, never reused, not even after sa2_recover). A failure keeps
  * nothing, sets *out_handle to 0, writes the record with code
  * "EV3:input.stage_compile_failed" and returns SA2_E_CHECK_FAILED for a
- * compile error, SA2_E_UNAVAILABLE without the compiler, or the D3D12 status
- * of a failed pipeline; the built-in chain stays usable. Text that is empty,
+ * compile error (or a pass source that cannot be composed: its source_sha256
+ * is null), SA2_E_UNAVAILABLE without the compiler (also when DXC cannot
+ * create a compiler object for a pass), or the D3D12 status of a failed
+ * pipeline; the built-in chain stays usable. Text that is empty,
  * longer than SA2_STAGE_HLSL_MAX_BYTES, not UTF-8 or holds a NUL:
  * SA2_E_INVALID_ARGUMENT, nothing compiled.
  *
@@ -991,18 +993,24 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
  * (binary32 bit patterns, at most SA2_STAGE_ARRAY_MAX each) to the loaded W1..W4
  * scene; (0, 0) detaches. It needs a loaded scene outside a trace
  * (SA2_E_WRONG_STATE); W-J refuses an attach. A failure keeps the current
- * chain. Every later untraced sa2_scene_produce frame, on a ring slot or the
- * surface, runs RPI.72: eval (compute: the built-in chain up to Q*world, the
- * vertex stage, camera and clip, into one record per vertex), bound (compute:
- * U, raster.rs's exact 64-bit raster bound at one sample), decide (stopped
- * when U > width * height * overdraw), then the user draw predicated on not
- * stopped and the built-in draw predicated on stopped. A triangle with an
- * undefined vertex is drawn outside the clip volume. A traced frame and a
- * frame without a chain draw exactly as before.
+ * chain. Every later sa2_scene_produce frame, traced or not (C9 U5c: the
+ * gate's measured frames are traced), on a ring slot or the surface, runs
+ * RPI.72: eval (compute: the built-in chain up to Q*world, the W3 turn of a
+ * traced frame included, the vertex stage, camera and clip, into one record
+ * per vertex), bound (compute: U, raster.rs's exact 64-bit raster bound at one
+ * sample and one pass: scene frames draw at MSAA 1 and run no ID pass),
+ * decide (stopped when U > width * height * overdraw), then the user draw
+ * predicated on not stopped and the built-in draw predicated on stopped. A
+ * triangle with an undefined vertex is drawn outside the clip volume. A frame
+ * without a chain draws exactly as before.
  *
- * sa2_stage_report writes the newest completed frame drawn with a chain
- * (frame 0 before the first). sa2_stage_release releases a handle; an attached
- * one answers SA2_E_WRONG_STATE.
+ * sa2_stage_report writes the oldest completed frame drawn with a chain that
+ * it has not written yet, so a caller that reports after every frame, and
+ * again while the frame number still rises, sees every chain frame once in
+ * frame order; with none waiting it writes the last written row again (frame
+ * 0 before the first). At most 4096 completed rows wait; past that the oldest
+ * are dropped. sa2_stage_release releases a handle; an attached one answers
+ * SA2_E_WRONG_STATE.
  *
  * Test hook: with M600_SA2_STAGE_EVAL_DUMP set to a file path when a scene
  * first attaches a chain, every chain frame also copies its eval records
