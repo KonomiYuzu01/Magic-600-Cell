@@ -1,0 +1,23 @@
+edition "6cs-draft-1";
+module jumble_covers requires [];
+
+export fn covers_at(cap: Nat) -> record { answers: List<record { c_covers_d: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> }, cap: Nat, d_covers_c: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> } }>, cap: Nat, domain: List<Nat>, input_digest: Text, message: List<Text>, status: Text } effects [snapshot] {
+    let table = read_snapshot<record { answers: List<record { c_covers_d: record { counts: List<record { aligned_inside: Nat, aligned_outside: Nat, inside: Nat, outside: Nat }>, reason: List<Text>, straddlers: List<Nat> }, cap: Nat, d_covers_c: record { counts: List<record { aligned_inside: Nat, aligned_outside: Nat, inside: Nat, outside: Nat }>, reason: List<Text>, straddlers: List<Nat> } }>, domain: List<Nat>, input_digest: Text, message: List<Text>, parameters: record { cap: Nat, threshold: Nat }, status: Text }>("covers", cap);
+    let threshold = table.parameters.threshold;
+    let answers = repeat(length(table.answers), list<record { c_covers_d: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> }, cap: Nat, d_covers_c: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> } }>(), fn(done: List<record { c_covers_d: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> }, cap: Nat, d_covers_c: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> } }>) -> List<record { c_covers_d: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> }, cap: Nat, d_covers_c: record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> } }> {
+        let row = index(table.answers, length(done));
+        return push(done, record { c_covers_d = direction(row.c_covers_d.counts, row.c_covers_d.reason, row.c_covers_d.straddlers, threshold), cap = row.cap, d_covers_c = direction(row.d_covers_c.counts, row.d_covers_c.reason, row.d_covers_c.straddlers, threshold) });
+    });
+    return record { answers = answers, cap = table.parameters.cap, domain = table.domain, input_digest = table.input_digest, message = table.message, status = table.status };
+}
+
+fn direction(counts: List<record { aligned_inside: Nat, aligned_outside: Nat, inside: Nat, outside: Nat }>, reason: List<Text>, straddlers: List<Nat>, threshold: Nat) -> record { aligned_inside: Nat, aligned_outside: Nat, applicable: Bool, covers: Bool, inside: Nat, outside: Nat, reason: List<Text>, straddlers: List<Nat> } effects [] {
+    let applicable = exact_eq(length(counts), 1);
+    let c = match applicable {
+        true => index(counts, 0);
+        _ => record { aligned_inside = 0, aligned_outside = 0, inside = 0, outside = 0 };
+    };
+    let balanced = and(and(exact_eq(c.inside, c.outside), exact_eq(c.outside, c.aligned_inside)), exact_eq(c.aligned_inside, c.aligned_outside));
+    let covers = and(applicable, and(not(exact_less(c.inside, threshold)), balanced));
+    return record { aligned_inside = c.aligned_inside, aligned_outside = c.aligned_outside, applicable = applicable, covers = covers, inside = c.inside, outside = c.outside, reason = reason, straddlers = straddlers };
+}

@@ -39,6 +39,12 @@
 //!   consistency error, and a drafted correction set is checked as drafted. Three of its tests run LB3's entry
 //!   [`library::NU`] in the language on the IR draft's F2 and F5 (LP2's pull request 222), through [`rows`] on
 //!   witnessed bases.
+//! - `tests/ct_lb3_07.rs` runs CT-LB3-07 on the inspector library entries in the language: LB3.1's "Rim and seam
+//!   facts; N" ([`library::RIM`]), "Covers at a named cap" ([`library::COVERS`]) and "Correction catalogue"
+//!   ([`library::CORRECTIONS`]), with the named-word checks and the drafted check, through [`rows`] on witnessed
+//!   bases. Each answer is compared with `c600_jumble`'s and each entry's reads are recorded with their arguments: the
+//!   rim entry answers every cap in cap-ID order and nothing of a twist, the covers and catalogue entries read the
+//!   solver's named cap or id only, and no answer names a recommendation, a next cap, a ranking or a selection.
 //! - `tests/rows.rs` runs the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through [`rows`] at the
 //!   command layer's head with Jumble on, in I_a, S4 and I_b sessions: each run equals, byte for byte, the same run on
 //!   the same state witnessed apart from the layer, which the two tests above compare with the kernel. With Jumble off
@@ -162,24 +168,30 @@
 //!   fixed in the test (`MIRROR`) whose lattice configuration has b5 = 1. The ν row and the drafted check refuse it
 //!   with `KN2:consistency.fixed_nu_nonzero`; under the true I_b menu the ν row gives the same configuration's value,
 //!   with no consistency error. This settles nothing in the chapters.
-//! - **CT-LB3-07's correction part.** The inspector library entries are not written, so the test reads as their
-//!   output what the tool's word entry and LP2's rows answer on the kernel: the whole-word check of a correction's
+//! - **CT-LB3-07's correction part.** The kernel half in `tests/lb3.rs` reads as the inspector entries' output what
+//!   the tool's word entry and LP2's rows answer on the kernel: the whole-word check of a correction's
 //!   literal word named by its id, the ν row, the drafted check and the label checkpoint's evidence. A leak is a field
 //!   whose name names a recommendation, a next cap, a ranking or a correction, or a field holding a list of lists; the
-//!   test reads names and shapes, not values. This settles nothing in the chapters.
+//!   test reads names and shapes, not values. `tests/ct_lb3_07.rs` runs the entries themselves with the same names
+//!   and, for the rim and covers entries, the further names of LB3.5's selections and of a twist's outcome. This
+//!   settles nothing in the chapters.
 //!
 //! # What waits
 //!
 //! - Through the command layer, not taken up yet: refusals, redo, protected pieces and free mode, and `jumble.off`
 //!   beyond reading the bridge with Jumble off (LP2's route test and `c600-command`'s own tests run them).
 //! - ν: LB3's entry "ν and drafted correction-set check" is language code ([`library::NU`]) and reads its rows through
-//!   [`rows`]. The correction catalogue's own entry is not written. The label checkpoint computes no ν itself; the
-//!   tests supply the `nu` row's value. CT-LB3-01's checker half, the end tests' typed verdicts, is LP2's (pull request
-//!   213).
+//!   [`rows`], and so does the correction catalogue's entry ([`library::CORRECTIONS`]). The label checkpoint computes
+//!   no ν itself; the tests supply the `nu` row's value. CT-LB3-01's checker half, the end tests' typed verdicts, is
+//!   LP2's (pull request 213).
 //! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
 //!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
 //!   (CT-LB3-05, CT-BND-17): LP2.
-//! - Not taken up yet on M8: the rim and survey rows of CT-LB3-07.
+//! - Not taken up yet: a survey entry. LB3.5 keeps the survey's all-items loop out of the rim entry, and
+//!   [`library::RIM`] reads the rim summary and one whole seam scan only.
+//! - Not written in the language yet: the other entries that LB6.5's jumbling inspectors use, LB3.1's "Straddlers and
+//!   u at a named cap", "Units and clean-step contract", "Repair list at a named cap" and "Retained checkpoint, label
+//!   checkpoint, sticker test". Until they are, and `tests/ct_lb3_07.rs` runs them too, CT-LB3-07 runs in part.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
