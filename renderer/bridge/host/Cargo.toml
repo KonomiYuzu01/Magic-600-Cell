@@ -14,10 +14,15 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+# The turns (charter E2): KN5's command layer over M6's journal, LP3's input router and KN3's twist menu.
+c600-command = { path = "../../../rust/c600-command" }
 c600-display = { path = "../../../rust/c600-display" }
+c600-input = { path = "../../../rust/c600-input" }
+c600-jumble = { path = "../../../rust/c600-jumble" }
 c600-kernel = { path = "../../../rust/c600-kernel" }
 c600-render = { path = "../../../rust/c600-render" }
 c600-render-ffi = { path = ".." }
+c600-session = { path = "../../../rust/c600-session" }
 
 [dev-dependencies]
 c600-digest = { path = "../../../rust/c600-digest" }

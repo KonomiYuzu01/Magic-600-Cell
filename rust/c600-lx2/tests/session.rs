@@ -4,7 +4,7 @@
 
 mod common;
 
-use c600_lx2::session::{run_session_trial, SessionRecord};
+use c600_lx2::session::{expected_command, run_session_trial, SessionRecord};
 use c600_lx2::{Observed, Trial};
 
 /// Runs `trial` with its session in a fresh folder named for the test.
@@ -24,6 +24,7 @@ fn control(test: &str) -> SessionRecord {
 fn the_control_commits_three_words_and_a_reopen_replays_its_state() {
     let c = control("control");
     assert_eq!((c.observed.clone(), c.open, c.spawns), (Observed::Completed, true, 1));
+    assert_eq!(c.command, "completed", "the solver's command gets the program's fixed acknowledgement");
     assert_eq!(c.replayed.as_deref(), Some(c.state.as_str()));
     assert!(c.journal.len() >= 3, "three commits are journaled: {:?}", c.journal);
 }
@@ -47,6 +48,8 @@ fn each_fault_leaves_the_journal_and_the_state_of_the_control_and_the_session_op
             c.journal.len()
         );
         assert_eq!(r.spawns, 1, "{trial:?}: the job ran in the first child");
+        assert_eq!(r.command, expected_command(trial), "{trial:?}: the solver's command fails with the run's code");
+        assert!(r.command.starts_with("failed "), "{trial:?}: {}", r.command);
     }
 }
 
@@ -62,4 +65,7 @@ fn a_record_that_differs_from_the_control_disagrees() {
     let mut unreplayed = c.clone();
     unreplayed.replayed = None;
     assert!(!unreplayed.agrees(&c));
+    let mut unreported = c.clone();
+    unreported.command = "not reported".into();
+    assert!(!unreported.agrees(&c));
 }
