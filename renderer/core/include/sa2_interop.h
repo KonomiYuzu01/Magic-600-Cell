@@ -856,6 +856,17 @@ SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, i
  */
 SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);
 
+/* Diagnostics for C9's measurements, no ABI change: writes the address of the
+ * surface's current swap chain (its IDXGISwapChain interface pointer) to *out,
+ * so that the shell can name the core's swap chain among the presents of a
+ * PresentMon capture (DRAFT: the owner-machine run confirms that PresentMon
+ * prints this address). A resize or a recovery makes a new swap chain with a
+ * new address. No GPU work; it works during device loss. A NULL out:
+ * SA2_E_INVALID_ARGUMENT; no surface: SA2_E_WRONG_STATE. A shell may treat the
+ * export as optional, since an ABI 5 core built before it lacks it.
+ */
+SA2_API int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out);
+
 /* Detaches the surface: clears the visual's content and the target's root,
  * commits, and releases the swap chain and the DirectComposition objects.
  * Needs the scene unloaded and a confirmed sa2_drain (a removed device permits

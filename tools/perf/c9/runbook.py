@@ -169,17 +169,20 @@ STEPS = (
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
-         'native recursion and the native loop (LP3\'s lx2-faults hook in c600-runtime), and RTE.42 conditions 3 and '
-         '4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault windows, in the shell\'s '
-         'frame loop)',
+         'RTE.42 conditions 3 and 4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault '
+         'windows, in the shell\'s frame loop)',
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
-                   '--bin c600-lx2-child   # the injection device of option (a), never shipped',
-                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
+                   '--features device --bin c600-lx2-child   # the injection device of option (a) on c600-runtime\'s '
+                   'fault hook, never shipped',
+                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
+                   '--features device --bin c600-lx2-faults -- '
                    '--runtime <product build c600-runtime> --injection <c600-lx2-child release build> '
                    '--sessions <new folder> --out <record>.json'
-                   '   # metered, forced-kill and allocator-ceiling trials, alone and in a session (conditions 1 '
-                   'and 2)'),
-         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs')),
+                   '   # metered, forced-kill, allocator-ceiling, native recursion and native loop trials, alone '
+                   'and in a session (conditions 1 and 2)'),
+         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs'),
+                        ('mentions', ('rust/c600-runtime/src', 'pub fn main_with')),
+                        ('mentions', ('rust/c600-lx2/src', 'main_with(native::point)'))),
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240, None,
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'

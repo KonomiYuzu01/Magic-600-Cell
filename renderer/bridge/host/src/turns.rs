@@ -4,6 +4,10 @@
 //! - The session is `JournalStore` on `FsDisk` (the product's disk, with the session lock) in a folder that must be new
 //!   or empty, at the solved state, protecting nothing. The layer pins the twist menu the shell names (draft: the I_a
 //!   menu of `research/jumbling/fixtures/wj-I_a.json`, the menu KN3's and c600-input's tests pin; G6 owns the menu).
+//! - Or the session is an existing one (charter E3, a draft): [`Turns::reopen`] reopens a fresh copy of a session
+//!   fixture's folder ([`crate::fixture`]) with `CommandLayer::open_with_menu` and the same menu. Its state must be the
+//!   fixture's, and the fixture's committed presses become the session's first presses, so the control below covers
+//!   them as well as the run's.
 //! - Keys go through `c600_input::Router` on its draft default map (US QWERTY): `KeyJ`, `KeyK` and `KeyL`, with Shift
 //!   for the inverse, are its twist keys. The router's grip is slot 0, cap 0 (draft: `grip.rebind` and `grip.select`
 //!   are not built, so the cap never changes). Every other key reaches the router too; the rows it names that the layer
@@ -33,6 +37,8 @@ use c600_kernel::request::{Binding, MenuPin};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot};
 use c600_session::disk::FsDisk;
 use c600_session::JournalStore;
+
+use crate::fixture::Fixture;
 
 /// The layer's and the shell's token secret: a fixed draft value, as LX-2's sessions use.
 const SECRET: [u8; 32] = [7; 32];
@@ -79,6 +85,31 @@ fn menu(exact: &Exact, record: &Value) -> Result<Menu, String> {
     Menu::from_record(exact, record).map_err(|error| format!("the twist menu does not read: {error}"))
 }
 
+/// What a new and a reopened session both read: the menu record, the exact model, the pinned menu, and the router on
+/// its draft default map with the menu pinned by its two digests.
+struct Pinned {
+    exact: Arc<Exact>,
+    record: Value,
+    menu: Menu,
+    router: Router,
+}
+
+impl Pinned {
+    fn read(assets: &Path, menu_file: &Path) -> Result<Pinned, String> {
+        let text = std::fs::read(menu_file).map_err(|error| format!("the twist menu file: {error}"))?;
+        let file = json::parse(&text).map_err(|error| format!("the twist menu file is not JSON: {error:?}"))?;
+        let record = file.get("menu").cloned().ok_or("the twist menu file has no `menu` record")?;
+        let exact = Arc::new(Exact::load(assets).map_err(|error| format!("the exact model: {error:?}"))?);
+        let menu = menu(&exact, &record)?;
+        let pin = MenuPin { set: menu.identity.clone(), order: menu.order.clone() };
+        let keymap = KeyMap::default_for(LAYOUT).map_err(|findings| format!("the default key map: {findings:?}"))?;
+        let mut keys = Keys::new(vec![Slot { cap: Value::Int(CAP), frame: Value::Null }]);
+        keys.menu = Some(pin);
+        keys.grip = Some(0);
+        Ok(Pinned { exact, record, menu, router: Router::new(keymap, keys) })
+    }
+}
+
 /// KN3.7's binding from `twist.apply`'s arguments: `rotation`'s fields and the row's `cap`, as the layer reads it.
 fn binding(args: &Value) -> Result<Binding, String> {
     let mut fields = args.get("rotation").and_then(Value::as_object).cloned().ok_or("a press without its rotation")?;
@@ -94,12 +125,7 @@ impl Turns {
         if std::fs::read_dir(folder).is_ok_and(|mut entries| entries.next().is_some()) {
             return Err("the session folder is not empty; a run never reuses a session".to_owned());
         }
-        let text = std::fs::read(menu_file).map_err(|error| format!("the twist menu file: {error}"))?;
-        let file = json::parse(&text).map_err(|error| format!("the twist menu file is not JSON: {error:?}"))?;
-        let record = file.get("menu").cloned().ok_or("the twist menu file has no `menu` record")?;
-        let exact = Arc::new(Exact::load(assets).map_err(|error| format!("the exact model: {error:?}"))?);
-        let pinned = menu(&exact, &record)?;
-        let pin = MenuPin { set: pinned.identity.clone(), order: pinned.order.clone() };
+        let Pinned { exact, record, menu, router } = Pinned::read(assets, menu_file)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::create(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let mut layer = CommandLayer::new(
@@ -111,23 +137,63 @@ impl Turns {
             kernel.solved(),
             ProtectedSet::none(),
         );
-        layer.pin_menu(exact.clone(), pinned).map_err(|error| format!("the menu pin: {error:?}"))?;
-        let keymap = KeyMap::default_for(LAYOUT).map_err(|findings| format!("the default key map: {findings:?}"))?;
-        let mut keys = Keys::new(vec![Slot { cap: Value::Int(CAP), frame: Value::Null }]);
-        keys.menu = Some(pin);
-        keys.grip = Some(0);
-        Ok(Turns {
+        layer.pin_menu(exact.clone(), menu).map_err(|error| format!("the menu pin: {error:?}"))?;
+        Ok(Turns::with(kernel, exact, record, folder, layer, router, Vec::new()))
+    }
+
+    /// The existing session that `fixture` describes, reopened in `folder` (a fresh copy of the fixture's session
+    /// folder) with the twist menu of `menu_file` pinned as [`Turns::open`] pins it. The reopened state's digest must
+    /// be the fixture's; the fixture's committed presses become this session's first presses.
+    pub fn reopen(
+        kernel: Arc<Kernel>,
+        assets: &Path,
+        folder: &Path,
+        menu_file: &Path,
+        fixture: &Fixture,
+    ) -> Result<Turns, String> {
+        if !folder.is_dir() {
+            return Err("the session folder does not exist; a reopen needs a copy of the fixture's session".to_owned());
+        }
+        let Pinned { exact, record, menu, router } = Pinned::read(assets, menu_file)?;
+        let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
+        let store = JournalStore::open(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
+        let layer = CommandLayer::open_with_menu(
+            kernel.clone(),
+            Table::h08(),
+            Secret::fixed(SECRET),
+            store,
+            exact.clone(),
+            menu,
+        )
+        .map_err(|error| format!("the reopen: {error:?}"))?;
+        let digest = layer.snapshot().digest();
+        if digest != fixture.digest {
+            return Err(format!("the reopened session's state {digest} is not the fixture's {}", fixture.digest));
+        }
+        Ok(Turns::with(kernel, exact, record, folder, layer, router, fixture.committed.clone()))
+    }
+
+    fn with(
+        kernel: Arc<Kernel>,
+        exact: Arc<Exact>,
+        record: Value,
+        folder: &Path,
+        layer: CommandLayer<JournalStore>,
+        router: Router,
+        committed: Vec<Value>,
+    ) -> Turns {
+        Turns {
             kernel,
             exact,
             record,
             folder: folder.to_path_buf(),
             layer: Some(layer),
             shell: Shell::new(Secret::fixed(SECRET), "shell"),
-            router: Router::new(keymap, keys),
-            committed: Vec::new(),
+            router,
+            committed,
             refused: 0,
             others: 0,
-        })
+        }
     }
 
     fn layer(&mut self) -> Result<&mut CommandLayer<JournalStore>, String> {
@@ -182,8 +248,14 @@ impl Turns {
         Ok(self.layer()?.snapshot().clone())
     }
 
+    /// The committed presses, a reopened fixture's first, and the refused ones.
     pub fn presses(&self) -> (u64, u64) {
         (self.committed.len() as u64, self.refused)
+    }
+
+    /// The arguments of every committed press, in order, a reopened fixture's first.
+    pub fn committed(&self) -> &[Value] {
+        &self.committed
     }
 
     /// The correctness control, once: closes the layer (its lock is released), reopens the journal, replays every
@@ -192,7 +264,7 @@ impl Turns {
     /// adds one). The answer is the run row's `correctness_detail` object.
     pub fn check(&mut self, shown: Option<(u64, String)>) -> Value {
         let live = self.layer.take().map(|layer| layer.snapshot().digest().to_owned());
-        let reopened = self.reopen();
+        let reopened = self.reopened_digest();
         let replayed = self.replay();
         let (shown_revision, shown_digest) = shown.map_or((Value::Null, Value::Null), |(revision, digest)| {
             (Value::Int(revision as i64), Value::String(digest))
@@ -229,7 +301,8 @@ impl Turns {
         ])
     }
 
-    fn reopen(&self) -> Result<String, String> {
+    /// The digest of the state that a reopen of the closed session's journal replays.
+    fn reopened_digest(&self) -> Result<String, String> {
         let disk = FsDisk::new(&self.folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::open(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let table = Table::h08();

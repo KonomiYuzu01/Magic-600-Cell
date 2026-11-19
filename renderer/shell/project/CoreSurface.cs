@@ -130,6 +130,21 @@ public sealed unsafe class CoreSurface : IDisposable
         Check("sa2_resize", ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)Call("sa2_resize"))(Context, width, height));
     }
 
+    /// <summary>
+    /// The address of the surface's current swap chain (a resize or a recovery makes a new one), or null when the core
+    /// lacks <see cref="CoreLibrary.SwapChainCall"/> or does not answer it.
+    /// </summary>
+    public ulong? SwapChain()
+    {
+        if (_core.SwapChainFunction == IntPtr.Zero || Context == IntPtr.Zero)
+        {
+            return null;
+        }
+        ulong address = 0;
+        var status = ((delegate* unmanaged[Cdecl]<IntPtr, ulong*, int>)_core.SwapChainFunction)(Context, &address);
+        return status == 0 && address != 0 ? address : null;
+    }
+
     private int Drain() => ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)Call("sa2_drain"))(Context, DrainTimeoutMs);
 
     /// <summary>
