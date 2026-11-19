@@ -250,6 +250,15 @@ acceptance check and stop condition.
   work, and the injection and detection of a device fault (CT-RM-10, CT-RPI-31, CT-RPI-34). So do CT-RPI-26's gate half
   and CT-EV3-08's measured half. Two tests in `c600-tools` and `c600-repr` still build stage descriptions as fixtures;
   they can read admitted stages with those crates' next pieces.
+- C2, source edits (`rust/c600-view`, branch `claude/lp3-view-source-stale`), built for C9's LX-4 (its question U8,
+  19 November 2026): `ViewModel::edit_source` takes the editor's draft of a module version, and output that version
+  produced shows its view's stale state from that call on, with the producing version and the draft in its status and
+  its frame. Nothing runs or is fenced (EV1.7); the output is still drawn while its base matches, and its picks still
+  open the producing version (EV3.5, EV3.6). This is the integrator's reading of EV3.6 and RTE.49's stale-state
+  interval: ONE.12's table names the view-stale condition for a lagging revision only, and a lagging source is a second
+  trigger of the same D2 state, which shows beside the first and never stands in for it. No frozen text changes. A view
+  runs the checked draft once it is reopened on it after activation (EV1.11 and CT-EV1-08 are LP4's). LX-4 times the
+  state on the owner's machine (C9); nothing here is timed.
 
 Acceptance for each piece: `cargo test --locked --offline` and `cargo fmt --all --check` pass in `rust/`; each listed
 test's part exists and names its part; nothing needs a renderer, a GPU or a timing; no file under
@@ -512,12 +521,13 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   publishes the view again, which `Host::recover` does not do yet: RM.23, LP3's); and LX-4's module set and edit script
   with LX-2's metered, forced-kill and allocator-ceiling trials (pull request 268: `rust/c600-lx4` and `rust/c600-lx2`,
   measurement tools whose runs need the owner's machine; the `lx2-faults` hook in `c600-runtime` that the fault trials
-  need is LP3's, next). The tests: the windows tests CT-ONE-26, CT-RPI-13, CT-RPI-21, CT-RPI-24, CT-RPI-31, CT-RPI-33,
-  CT-RPI-34, CT-RM-05, CT-RM-06, CT-RM-10, CT-BND-20 and CT-RTE-10; the performance tests CT-KN7-06, CT-LG4-09,
-  CT-EV1-06, CT-ONE-25, CT-RPI-26, CT-RTE-11 and CT-RTE-12; the renderer halves of CT-LB4-04 and CT-EV3-08. The runs
-  follow PHS.64 on one frozen candidate, with their bars unchanged, and are done together on the owner's machine (owner,
-  16 November 2026), with W-J's runs (ADR-R01.3, option A: a failing run reopens the selection), RPI.79's gate run on
-  the product build and route B's three checks; LX-4's time box is 4 hours, on the same day (owner, 18 November 2026).
+  need is LP3's and came after it). The tests: the windows tests CT-ONE-26, CT-RPI-13, CT-RPI-21, CT-RPI-24, CT-RPI-31,
+  CT-RPI-33, CT-RPI-34, CT-RM-05, CT-RM-06, CT-RM-10, CT-BND-20 and CT-RTE-10; the performance tests CT-KN7-06,
+  CT-LG4-09, CT-EV1-06, CT-ONE-25, CT-RPI-26, CT-RTE-11 and CT-RTE-12; the renderer halves of CT-LB4-04 and CT-EV3-08.
+  The runs follow PHS.64 on one frozen candidate, with their bars unchanged, and are done together on the owner's
+  machine (owner, 16 November 2026), with W-J's runs (ADR-R01.3, option A: a failing run reopens the selection),
+  RPI.79's gate run on the product build and route B's three checks; LX-4's time box is 4 hours, on the same day (owner,
+  18 November 2026).
 - **C10, the exit.** H-08 freezes (PHS.53), with the draft codes registered under PHS.52; every acceptance item has
   evidence on one frozen candidate; the 82 tests run whole; the owner signs off.
 
