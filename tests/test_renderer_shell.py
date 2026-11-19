@@ -405,7 +405,7 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(env["M600_EVENTS_DIR"], str(out.resolve()))
         self.assertEqual(env["M600_RUN_ID"], "r1")
         self.assertEqual(env["M600_SESSION_DIR"], str(out.resolve() / "session"))
-        self.assertEqual(env["M600_TWIST_MENU"], str(self.build / "menu" / "wj-I_a.json"))
+        self.assertEqual(env["M600_TWIST_MENU"], str(build / "menu" / "wj-I_a.json"))
         self.assertNotIn("M600_INPUT_ECHO", env)
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
         self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"]),
