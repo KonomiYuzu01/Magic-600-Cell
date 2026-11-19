@@ -8,6 +8,12 @@
 //! record's version, so a preview that read the sheet goes stale (KN0.8) and the reuse needs a fresh engine preview
 //! with its fresh exact analysis; a sheet stores no analysis that could stand in for it (LB7.2). A sheet's record
 //! previews as its complete operation through the draft `{"record": name}` ([`crate::RecordValue::operation`]).
+//!
+//! A sheet saved from a record of letters keeps that record's name, version and content digest as its macro version
+//! ([`MacroVersion`]); a sheet saved from a sheet keeps the sheet's (solving workflow section 4.1: a saved work sheet
+//! keeps its macro versions). `worksheet.compare` ([`WORKSHEET_COMPARE_ROW`]) compares a saved sheet with the current
+//! work, a draft record ([`compare_inputs`]), and analyses the sheet's complete operation afresh at the head; the layer
+//! builds its job.
 
 use std::collections::BTreeMap;
 
@@ -19,6 +25,9 @@ pub const WORKSHEET_SAVE_ROW: &str = "worksheet.save";
 
 /// The row that reuses a saved work sheet (H-08).
 pub const WORKSHEET_LOAD_ROW: &str = "worksheet.load";
+
+/// The row that compares a saved work sheet with the current work (H-08: a query row with a job).
+pub const WORKSHEET_COMPARE_ROW: &str = "worksheet.compare";
 
 /// The names of the three phases in the stored form, in the order the complete operation runs them.
 const PHASES: [&str; 3] = ["prepare", "macro", "cleanup"];
@@ -146,7 +155,36 @@ impl Resolution {
     }
 }
 
-/// A work sheet: its phases, its roles, its reference and, once saved, its placements.
+/// The macro a sheet's Macro phase was saved from: a workspace record of letters, its version and its content digest
+/// at the save ([`crate::RecordValue::digest`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MacroVersion {
+    pub record: String,
+    pub version: u64,
+    pub digest: String,
+}
+
+impl MacroVersion {
+    pub fn to_json(&self) -> Value {
+        json::object([
+            ("record", Value::String(self.record.clone())),
+            ("version", Value::Int(self.version as i64)),
+            ("digest", Value::String(self.digest.clone())),
+        ])
+    }
+
+    /// Reads [`MacroVersion::to_json`]'s form strictly.
+    pub fn from_json(value: &Value) -> Option<MacroVersion> {
+        let fields = value.as_object().filter(|fields| fields.len() == 3)?;
+        Some(MacroVersion {
+            record: fields.get("record")?.as_str()?.to_owned(),
+            version: u64::try_from(fields.get("version")?.as_i64()?).ok()?,
+            digest: fields.get("digest")?.as_str()?.to_owned(),
+        })
+    }
+}
+
+/// A work sheet: its phases, its roles, its reference, its macro version and, once saved, its placements.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Worksheet {
     /// Prepare, Macro and Cleanup, each a list of letters.
@@ -158,6 +196,8 @@ pub struct Worksheet {
     pub reference: Value,
     /// `None` in a draft that has not been saved.
     pub resolution: Option<Resolution>,
+    /// The macro its Macro phase was saved from; `None` for a sheet that names none.
+    pub macro_version: Option<MacroVersion>,
 }
 
 impl Worksheet {
@@ -176,7 +216,8 @@ impl Worksheet {
     }
 
     /// The stored form: `{"worksheet": {"phases": {"prepare", "macro", "cleanup"}, "roles", "reference",
-    /// "resolution"}}`, the resolution left out while the sheet has none.
+    /// "resolution", "macro_version"}}`, the resolution left out while the sheet has none and the macro version while
+    /// it names none.
     pub fn to_payload(&self) -> Value {
         let list = |phase: &Vec<i64>| Value::Array(phase.iter().map(|&letter| Value::Int(letter)).collect());
         let phases = PHASES.iter().zip(&self.phases).map(|(name, phase)| ((*name).to_owned(), list(phase)));
@@ -187,6 +228,9 @@ impl Worksheet {
         ]);
         if let Some(resolution) = &self.resolution {
             fields.insert("resolution".to_owned(), resolution.to_json());
+        }
+        if let Some(version) = &self.macro_version {
+            fields.insert("macro_version".to_owned(), version.to_json());
         }
         json::object([("worksheet", Value::Object(fields))])
     }
@@ -201,7 +245,11 @@ impl Worksheet {
             None => None,
             Some(value) => Some(Resolution::from_json(value)?),
         };
-        (fields.len() == 3 + usize::from(resolution.is_some())).then_some(())?;
+        let macro_version = match fields.get("macro_version") {
+            None => None,
+            Some(value) => Some(MacroVersion::from_json(value)?),
+        };
+        (fields.len() == 3 + usize::from(resolution.is_some()) + usize::from(macro_version.is_some())).then_some(())?;
         let phases = fields.get("phases")?.as_object().filter(|phases| phases.len() == PHASES.len())?;
         let phase = |name: &str| letters(phases.get(name)?);
         let roles: Vec<Role> = fields.get("roles")?.as_array()?.iter().map(Role::from_json).collect::<Option<_>>()?;
@@ -213,6 +261,7 @@ impl Worksheet {
             roles,
             reference: fields.get("reference")?.clone(),
             resolution,
+            macro_version,
         };
         let placed = |r: &Resolution| {
             let placed: Vec<(String, i64)> = r.pieces.iter().map(|p| (p.name.clone(), p.piece)).collect();
@@ -221,15 +270,55 @@ impl Worksheet {
         sheet.resolution.as_ref().is_none_or(placed).then_some(sheet)
     }
 
-    /// The sheet a draft record's payload saves as: a list of letters is a Macro phase alone, with no role and no
-    /// reference; a work sheet keeps its phases, roles and reference, and its placements are made again.
+    /// The sheet a draft record's payload saves as: a list of letters is a Macro phase alone, with no role, no
+    /// reference and no macro version (the layer names the record as the macro version); a work sheet keeps its
+    /// phases, roles, reference and macro version, and its placements are made again.
     pub fn from_draft(payload: &Value) -> Option<Worksheet> {
         if let Some(sheet) = Worksheet::from_payload(payload) {
             return Some(Worksheet { resolution: None, ..sheet });
         }
         let phases = [Vec::new(), letters(payload)?, Vec::new()];
-        Some(Worksheet { phases, roles: Vec::new(), reference: Value::Null, resolution: None })
+        Some(Worksheet { phases, roles: Vec::new(), reference: Value::Null, resolution: None, macro_version: None })
     }
+}
+
+/// How a saved sheet's inputs stand against the current work (`worksheet.compare`; U2-065, U5-055, U6-040; draft):
+/// `{"phases": {"prepare", "macro", "cleanup"}, "roles", "reference", "macro_version"}`. Each phase, the reference and
+/// the macro version is `true` when the draft's is the same. `roles` lists every role name of either sheet, in order of
+/// name, as `{"name", "saved", "draft", "status"}`: the role in each sheet (`null` where it has none) and `same`,
+/// `changed`, `missing` (only the saved sheet has it) or `added` (only the draft has it). A comparison is a report: it
+/// binds, selects and retargets nothing (solving workflow section 4.1).
+pub fn compare_inputs(saved: &Worksheet, draft: &Worksheet) -> Value {
+    let phases = PHASES.iter().zip(saved.phases.iter().zip(&draft.phases));
+    let phases = phases.map(|(name, (saved, draft))| ((*name).to_owned(), Value::Bool(saved == draft)));
+    let by_name = |sheet: &Worksheet| -> BTreeMap<String, Role> {
+        sheet.roles.iter().map(|role| (role.name().to_owned(), role.clone())).collect()
+    };
+    let (old, new) = (by_name(saved), by_name(draft));
+    let mut names: Vec<&String> = old.keys().chain(new.keys()).collect();
+    names.sort_unstable();
+    names.dedup();
+    let roles = names.into_iter().map(|name| {
+        let (before, after) = (old.get(name), new.get(name));
+        let status = match (before, after) {
+            (Some(before), Some(after)) if before == after => "same",
+            (Some(_), Some(_)) => "changed",
+            (Some(_), None) => "missing",
+            _ => "added",
+        };
+        json::object([
+            ("name", Value::String(name.clone())),
+            ("saved", before.map_or(Value::Null, Role::to_json)),
+            ("draft", after.map_or(Value::Null, Role::to_json)),
+            ("status", Value::String(status.to_owned())),
+        ])
+    });
+    json::object([
+        ("phases", Value::Object(phases.collect())),
+        ("roles", Value::Array(roles.collect())),
+        ("reference", Value::Bool(saved.reference == draft.reference)),
+        ("macro_version", Value::Bool(saved.macro_version == draft.macro_version)),
+    ])
 }
 
 /// H-08's `WorksheetRevisionRef` in its draft form, `{"record": name, "version": n}`: a sheet's record and the record

@@ -7,7 +7,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::{
     code, digest, draft_args, CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status,
-    Table, POLICY_ROW, RECORD_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    Table, POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -23,7 +23,7 @@ const FILTER: &str = "filter.preview";
 const FIND: &str = "command.find";
 
 /// The stored rows the command layer builds itself.
-const LAYER_ROWS: [&str; 10] = [
+const LAYER_ROWS: [&str; 11] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -34,6 +34,7 @@ const LAYER_ROWS: [&str; 10] = [
     RECORD_ROW,
     WORKSHEET_SAVE_ROW,
     WORKSHEET_LOAD_ROW,
+    WORKSHEET_COMPARE_ROW,
 ];
 
 fn repository() -> PathBuf {
