@@ -4,21 +4,22 @@
 //! (`word::Alphabet::pinned`). The kernel halves in `tests/ct_lb1_03.rs` and `tests/lb3.rs` are the reference: each
 //! value the language code returns is compared with `c600_jumble`'s answer, or with the same fact computed apart.
 //!
-//! No host bridge serves KN2.4's jumbling rows to programs, so the test host `Rows` answers them from `c600_jumble`'s
-//! public API at one state, in the library's draft answer types (`c600_jumble_tool::library`, Drafts): `heights` and
+//! C8's host bridge, `c600_jumble_tool::rows::Rows`, serves KN2.4's jumbling rows from `c600_jumble`'s public API in
+//! the library's draft answer types (`c600_jumble_tool::library`, Drafts), here on a witnessed snapshot (`Rows::on`) or
+//! at a state with no witnessed claim (`Rows::at_state`), where `protection` is not granted: `heights` and
 //! `height_counts` from `observe::heights`, `replay` from `observe::prefix_observations`, `word_check` from
 //! `observe::word_check` and `protection` from M8's `levels::derive` (pull request 182). It reads a menu word's letters
 //! as `word::LiteralWord::letters` reads them, refusing a word of another alphabet than the state's with
 //! `LB1:input.incompatible_alphabet`, writes every field of an answer, null when undefined, refuses a declared type
 //! that the answer does not have, or a declared field that it does not write, with `LG2:type.mismatch`, and grants
-//! snapshot reads only.
+//! snapshot reads of its rows only.
 //!
 //! What runs: CT-LB1-03's jumbling half in the language; CT-LB3-03's library entry, against the kernel's heights; and
-//! CT-LB3-06's library entry, with a whole word's Net and Strict protection at pose level. Not run here: the entries
-//! through a host bridge or the command layer, which serve no jumbling row to programs yet; the agreement of heights
-//! with `trees.py`, which M5's `tests/test_jumbling_rust_candidate.py` runs on the same kernel API; and LB3.8's named
-//! cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests, which no entry takes yet. A pass is source and fixture
-//! evidence.
+//! CT-LB3-06's library entry, with a whole word's Net and Strict protection at pose level. `tests/rows.rs` runs the
+//! same entries at the command layer's head with Jumble on, through the same bridge. Not run here: the agreement of
+//! heights with `trees.py`, which M5's `tests/test_jumbling_rust_candidate.py` runs on the same kernel API; and LB3.8's
+//! named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests, which no entry takes yet. A pass is source and
+//! fixture evidence.
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
@@ -26,7 +27,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_check::{check, separation, Policy, Row, Separation, StateRead, TYPE_MISMATCH};
 use c600_digest::sha256_hex;
-use c600_ir::{Callee, Effect, Expr, Lit, QTy, Ty};
+use c600_ir::{Callee, Effect, Expr, Lit};
 use c600_jumble::levels::{self, Base, Derivation, Snapshot, Verdict};
 use c600_jumble::model::NP;
 use c600_jumble::observe::{
@@ -37,15 +38,14 @@ use c600_jumble::state::{State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_jumble_tool::library::{self, Module, HEIGHTS, MENU_WORDS, PROTECTION, WORD_CHECKS};
-use c600_jumble_tool::word::{self, menu_identity, Alphabet, Letter, LiteralWord, INCOMPATIBLE_ALPHABET};
+use c600_jumble_tool::rows::Rows;
+use c600_jumble_tool::word::{self, Alphabet, Letter, LiteralWord, INCOMPATIBLE_ALPHABET};
 use c600_kernel::json::{self, Value};
 use c600_kernel::ProtectionMode;
 use c600_library::{lower_source, lower_sources};
-use c600_run::interp::{self, load, Host, Loaded, NoHost, Options, Request, RowTariff, Run, Sink};
-use c600_run::menu::{MenuAlphabet, MenuIdentity};
-use c600_run::meter::code::NOT_GRANTED;
+use c600_run::interp::{self, load, Host, Loaded, NoHost, Options, Run};
+use c600_run::menu::MenuAlphabet;
 use c600_run::meter::{Amounts, Outcome};
-use c600_run::provenance::{self, Json};
 use c600_run::value::{entry_key, entry_value, Value as RunValue};
 use c600_syntax::{format, parse};
 
@@ -242,180 +242,14 @@ fn pieces(list: &[u32]) -> RunValue {
     RunValue::list(list.iter().map(|&p| RunValue::int(p)).collect())
 }
 
-/// The test host: KN2.4's jumbling rows answered by `c600_jumble` at one state, in the library's draft answer types.
-/// It grants snapshot reads only, never a preview, a file, the clock or a sink, and keeps the names of the rows read.
-struct Rows {
-    state: State,
-    /// The witnessed snapshot of the state: the base the `protection` row derives from.
-    snapshot: Option<Snapshot>,
-    asked: Vec<String>,
+/// The bridge's rows on a witnessed snapshot (`c600_jumble_tool::rows`).
+fn rows_on(snapshot: &Snapshot) -> Rows<'_> {
+    Rows::on(ctx(), Base::Snapshot(snapshot))
 }
 
-impl Rows {
-    fn at(snapshot: &Snapshot) -> Rows {
-        Rows { state: snapshot.state().clone(), snapshot: Some(snapshot.clone()), asked: Vec::new() }
-    }
-
-    /// A state with no witnessed claim, at which the `protection` row is not granted.
-    fn of(state: State) -> Rows {
-        Rows { state, snapshot: None, asked: Vec::new() }
-    }
-
-    /// The literal letters of a menu word in the run's canonical bytes, refused with
-    /// `LB1:input.incompatible_alphabet` when its alphabet is not the state's, as `LiteralWord::letters` refuses them.
-    fn letters(&self, word: &Json) -> Result<Vec<Letter>, &'static str> {
-        let named = word.get("menu").ok_or(TYPE_MISMATCH)?;
-        let part = |key: &str| named.get(key).and_then(Json::as_text).map(str::to_owned).ok_or(TYPE_MISMATCH);
-        let identity = MenuIdentity {
-            puzzle: part("puzzle")?,
-            model_id: part("model_id")?,
-            menu_id: part("menu_id")?,
-            menu_order: part("menu_order")?,
-            contract_rev: part("contract_rev")?,
-        };
-        if identity.differing(&menu_identity(&ctx().identity(self.state.menu()))).is_some() {
-            return Err(INCOMPATIBLE_ALPHABET);
-        }
-        let menu = self.state.menu().ok_or(INCOMPATIBLE_ALPHABET)?;
-        let Some(Json::List(pairs)) = word.get("letters") else { return Err(TYPE_MISMATCH) };
-        let mut flat = Vec::new();
-        for pair in pairs {
-            let Json::List(pair) = pair else { return Err(TYPE_MISMATCH) };
-            for x in pair {
-                let Json::Int(x) = x else { return Err(TYPE_MISMATCH) };
-                flat.push(i32::try_from(*x).map_err(|_| TYPE_MISMATCH)?);
-            }
-        }
-        word::letters(ctx(), menu, &flat).map_err(|_| TYPE_MISMATCH)
-    }
-
-    fn answer(&self, query: &str, arg: Option<&Json>) -> Result<Value, &'static str> {
-        let ctx = ctx();
-        let state = &self.state;
-        match (query, arg) {
-            ("heights", None) => Ok(heights(ctx, state).expect("heights")),
-            ("height_counts", None) => Ok(field(&heights(ctx, state).expect("heights"), "height_counts").clone()),
-            ("replay", Some(word)) => Ok(served_replay(observed(state, &self.letters(word)?))),
-            ("word_check", Some(arg)) => {
-                let letters = self.letters(arg.get("word").ok_or(TYPE_MISMATCH)?)?;
-                let unit = naturals(arg.get("unit").ok_or(TYPE_MISMATCH)?)?;
-                let check = word_check(ctx, state, &letters, Some(&unit), None, None).expect("a word check");
-                if text(&check, "status") == "ok" {
-                    Ok(check)
-                } else {
-                    assert_eq!(text(&check, "code"), codes::NAMED_OBJECT_INVALID);
-                    Err(codes::NAMED_OBJECT_INVALID)
-                }
-            }
-            ("protection", Some(arg)) => {
-                let snapshot = self.snapshot.as_ref().ok_or(NOT_GRANTED)?;
-                let letters = self.letters(arg.get("word").ok_or(TYPE_MISMATCH)?)?;
-                let mode = match arg.get("mode").and_then(Json::as_text) {
-                    Some("net") => ProtectionMode::Net,
-                    Some("strict") => ProtectionMode::Strict,
-                    _ => return Err(TYPE_MISMATCH),
-                };
-                let protect = naturals(arg.get("pieces").ok_or(TYPE_MISMATCH)?)?;
-                let protect: Vec<u32> =
-                    protect.iter().map(|&p| u32::try_from(p).map_err(|_| TYPE_MISMATCH)).collect::<Result<_, _>>()?;
-                let identity = ctx.identity(state.menu());
-                let derivation =
-                    levels::derive(ctx, Base::Snapshot(snapshot), &identity, &twists(&letters), mode, &protect);
-                match derivation.expect("no engine error") {
-                    Err(refusal) => Err(refusal.code),
-                    Ok(Derivation::Derived(derived)) => {
-                        Ok(derived.protection().expect("a protection report").to_json())
-                    }
-                    Ok(Derivation::Refused(refused)) => match &refused.protection {
-                        Some(protection) => Ok(protection.to_json()),
-                        None => Err(refused.refusal.code),
-                    },
-                }
-            }
-            _ => Err(NOT_GRANTED),
-        }
-    }
-}
-
-impl Host for Rows {
-    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
-        match request {
-            Request::Snapshot { .. } | Request::SnapshotWith { .. } => {
-                Ok(RowTariff { kernel_cost: 1, result_bound: 1 << 32 })
-            }
-            _ => Err(NOT_GRANTED),
-        }
-    }
-
-    fn perform(&mut self, request: &Request) -> Result<RunValue, &'static str> {
-        let (query, arg, ty) = match *request {
-            Request::Snapshot { query, ty } => (query, None, ty),
-            Request::SnapshotWith { query, arg, ty } => (query, Some(provenance::parse(arg).ok_or(TYPE_MISMATCH)?), ty),
-            _ => return Err(NOT_GRANTED),
-        };
-        self.asked.push(query.to_owned());
-        convert(&self.answer(query, arg.as_ref())?, ty)
-    }
-
-    fn sink(&mut self, _: &Sink, _: &RunValue, _: &[u8]) -> Result<(), &'static str> {
-        Err(NOT_GRANTED)
-    }
-}
-
-/// The integers of a list in a run's canonical bytes, each written `{"int": "n"}`.
-fn naturals(list: &Json) -> Result<Vec<i64>, &'static str> {
-    let Json::List(items) = list else { return Err(TYPE_MISMATCH) };
-    let natural = |item: &Json| item.get("int").and_then(Json::as_text).and_then(|n| n.parse().ok());
-    items.iter().map(|item| natural(item).ok_or(TYPE_MISMATCH)).collect()
-}
-
-/// The after-state facts that JI.10's prefix observations write in an admitted letter's row, with no optional field
-/// requested.
-const AFTER_FACTS: [&str; 4] = ["phi_before", "phi_after", "delta_phi", "max_left_height"];
-
-/// The prefix observations as the `replay` row serves them: `prefix_observations` writes no after-state facts in the
-/// row of a refused letter, and the row writes them as null, undefined, so that every row has an admitted row's fields.
-fn served_replay(mut replay: Value) -> Value {
-    let Value::Object(fields) = &mut replay else { panic!("prefix observations are an object") };
-    let Some(Value::Array(rows)) = fields.get_mut("rows") else { panic!("prefix observations have rows") };
-    for row in rows {
-        let admitted = row.get("status").and_then(Value::as_str) == Some(Status::Admissible.as_str());
-        let Value::Object(row) = row else { panic!("a row is an object") };
-        for name in AFTER_FACTS {
-            assert_eq!(row.contains_key(name), admitted, "`{name}` in a row that is admitted: {admitted}");
-            row.entry(name.to_string()).or_insert(Value::Null);
-        }
-    }
-    replay
-}
-
-/// A kernel answer as a value of the declared type, by the library's draft answer types: a record takes the declared
-/// fields of a JSON object, each of which the answer writes, null when undefined, so that a declared field that it
-/// does not write, such as a misspelled one, is refused and never read as undefined; a list takes an array, or holds
-/// nothing for null and one value otherwise; a map from text takes an object. Any other shape is `LG2:type.mismatch`.
-fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
-    Ok(match (&ty.ty, value) {
-        (Ty::Bool, Value::Bool(b)) => RunValue::Bool(*b),
-        (Ty::Nat, Value::Int(n)) if *n >= 0 => RunValue::int(*n),
-        (Ty::Int, Value::Int(n)) => RunValue::int(*n),
-        (Ty::Text, Value::String(s)) => RunValue::text(s),
-        (Ty::List(item), Value::Array(values)) => {
-            RunValue::list(values.iter().map(|v| convert(v, item)).collect::<Result<_, _>>()?)
-        }
-        (Ty::List(_), Value::Null) => RunValue::list(Vec::new()),
-        (Ty::List(item), other) => RunValue::list(vec![convert(other, item)?]),
-        (Ty::Map(key, item), Value::Object(entries)) if key.ty == Ty::Text => RunValue::map(
-            entries.iter().map(|(k, v)| Ok((RunValue::text(k), convert(v, item)?))).collect::<Result<_, &str>>()?,
-        ),
-        (Ty::Record(fields), Value::Object(entries)) => {
-            let mut out = Vec::with_capacity(fields.len());
-            for (name, field_ty) in fields {
-                out.push((name.as_str(), convert(entries.get(name).ok_or(TYPE_MISMATCH)?, field_ty)?));
-            }
-            RunValue::record(out)
-        }
-        _ => return Err(TYPE_MISMATCH),
-    })
+/// The bridge's rows at a state with no witnessed claim, at which the `protection` row is not granted.
+fn rows_at(state: &State) -> Rows<'_> {
+    Rows::at_state(ctx(), state)
 }
 
 fn repository() -> PathBuf {
@@ -897,12 +731,12 @@ fn ct_lb1_03_menu_words_of_two_alphabets_do_not_mix() {
     for (what, state) in states {
         let error = w.letters(ctx, &state).expect_err(what);
         assert_eq!(error.code(), Some(INCOMPATIBLE_ALPHABET), "{what}: the kernel half");
-        let mut host = Rows::of(state);
+        let mut host = rows_at(&state);
         let observations = library.run(WORD_CHECKS.name, "word_observations", vec![library.word(&w)], &mut host);
         assert_eq!(stopped(observations, what), INCOMPATIBLE_ALPHABET, "{what}");
         let flagged = library.run(WORD_CHECKS.name, "step_flag", vec![library.word(&w), pieces(&[0])], &mut host);
         assert_eq!(stopped(flagged, what), INCOMPATIBLE_ALPHABET, "{what}");
-        assert_eq!(host.asked, ["replay", "word_check"], "{what}");
+        assert_eq!(host.asked(), ["replay", "word_check"], "{what}");
     }
 }
 
@@ -927,9 +761,9 @@ fn ct_lb1_03_application_checks_each_prefix_of_a_built_word() {
     assert_eq!(library.pairs(&built), w.concat(&w.inverse()).expect("one alphabet").pairs());
     let solved = i_a.solved();
     let start = solved.state().digest(ctx);
-    let mut host = Rows::at(&solved);
+    let mut host = rows_on(&solved);
     let seen = completed(library.run(WORD_CHECKS.name, "word_observations", vec![built.clone()], &mut host), "w w⁻¹");
-    assert_eq!(host.asked, ["replay"]);
+    assert_eq!(host.asked(), ["replay"]);
     assert_eq!((truth(get(&seen, "complete")), number(get(&seen, "played"))), (true, 40));
     assert_eq!(string(get(only(get(&seen, "claims")), "end_digest")), start, "the inverse returns to the start");
     let kernel = observed(solved.state(), &i_a.letters(&library.pairs(&built)));
@@ -948,7 +782,7 @@ fn ct_lb1_03_application_checks_each_prefix_of_a_built_word() {
     let conjugate = library.build("conjugate_of", vec![library.word(&setup), library.word(&admitted)]);
     let literal = admitted.conjugate(&setup).expect("one alphabet");
     assert_eq!(library.pairs(&conjugate), literal.pairs());
-    let mut host = Rows::at(&snapshot);
+    let mut host = rows_on(&snapshot);
     let observations = library.run(WORD_CHECKS.name, "word_observations", vec![conjugate.clone()], &mut host);
     let seen = completed(observations, "the conjugate");
     assert_eq!((truth(get(&seen, "complete")), number(get(&seen, "played"))), (false, 0));
@@ -983,14 +817,14 @@ fn ct_lb1_03_application_checks_each_prefix_of_a_built_word() {
     assert_eq!(string(get(claim, "end_digest")), state.digest(ctx), "the empty word ends at the start");
     assert_eq!((number(get(claim, "excursion")), truth(get(claim, "tame"))), (0, true));
     assert_eq!(number(get(claim, "max_left_height")), phi_and_peak(state).1);
-    assert_eq!(host.asked, ["replay", "protection", "replay", "replay"]);
+    assert_eq!(host.asked(), ["replay", "protection", "replay", "replay"]);
 }
 
 /// `jumble_heights.height_facts` at `state`, with the rows it read. The run pins no alphabet.
 fn height_facts(loaded: &Loaded, state: &State) -> (RunValue, Vec<String>) {
-    let mut host = Rows::of(state.clone());
+    let mut host = rows_at(&state);
     let facts = completed(run(loaded, HEIGHTS.name, "height_facts", Vec::new(), &mut host, None), "height_facts");
-    (facts, host.asked)
+    (facts, host.asked().to_vec())
 }
 
 /// The entry's per-pose rows, with their pose keys.
@@ -1055,12 +889,13 @@ fn ct_lb3_03_heights_and_domain_ids_agree_with_the_kernel() {
         assert_eq!(numbers(get(counts, "max_above_6")), optional(field(expected, "max_above_6")), "{name}");
     }
 
-    let mut host = Rows::of(i_a.solved().state().clone());
+    let solved = i_a.solved();
+    let mut host = rows_at(solved.state());
     let misread = run(&loaded, "misread", "lattice_key", Vec::new(), &mut host, None);
     assert_eq!(stopped(misread, "a misread type"), TYPE_MISMATCH);
     let misspelled = run(&loaded, "misread", "misspelled", Vec::new(), &mut host, None);
     assert_eq!(stopped(misspelled, "a misspelled list field"), TYPE_MISMATCH);
-    assert_eq!(host.asked, ["heights", "heights"]);
+    assert_eq!(host.asked(), ["heights", "heights"]);
 }
 
 /// CT-LB3-03 (part: the library entry, "Φ = 0 with height-2 pieces does not pass the sticker test", with M8's
@@ -1156,9 +991,9 @@ fn ct_lb3_06_peak_excursion_and_tameness_are_recomputed_by_the_entry() {
         assert_eq!((excursion > 0, tame), (rises, tame_expected), "{name}");
         let end = end.digest(ctx);
         assert_eq!(end == start.digest(ctx), returns, "{name}: the end is the start");
-        let mut host = Rows::of(start.clone());
+        let mut host = rows_at(&start);
         let seen = completed(library.run(WORD_CHECKS.name, "word_observations", vec![word], &mut host), name);
-        assert_eq!(host.asked, ["replay"], "{name}");
+        assert_eq!(host.asked(), ["replay"], "{name}");
         assert_eq!((truth(get(&seen, "complete")), number(get(&seen, "played"))), (true, letters.len() as i64));
         let claim = only(get(&seen, "claims"));
         let claimed = (
@@ -1259,10 +1094,10 @@ fn ct_lb3_06_the_step_flag_is_recomputed_and_a_false_flag_refuses_nothing() {
     for (name, word, expected) in [("the unit lands", &lands, true), ("lattice pieces are lifted", &lifts, false)] {
         let letters = i_a.letters(word.pairs());
         let (_, _, _, end) = recomputed(&start, &letters);
-        let mut host = Rows::of(start.clone());
+        let mut host = rows_at(&start);
         let args = vec![library.word(word), pieces(&unit)];
         let flagged = completed(library.run(WORD_CHECKS.name, "step_flag", args, &mut host), name);
-        assert_eq!(host.asked, ["word_check"], "{name}");
+        assert_eq!(host.asked(), ["word_check"], "{name}");
         let answer = (truth(get(&flagged, "admissible")), number(get(&flagged, "applied")));
         assert_eq!(answer, (true, 1), "{name}");
         assert_eq!(truth(get(&flagged, "step_flag")), expected, "{name}");
@@ -1299,7 +1134,7 @@ fn ct_lb3_06_the_step_flag_is_recomputed_and_a_false_flag_refuses_nothing() {
     ];
     for (name, word, length, terms) in isolating {
         let letters = i_a.letters(word.pairs());
-        let mut host = Rows::of(start.clone());
+        let mut host = rows_at(&start);
         let args = vec![library.word(&word), pieces(&unit)];
         let flagged = completed(library.run(WORD_CHECKS.name, "step_flag", args, &mut host), name);
         let answer =
@@ -1318,7 +1153,7 @@ fn ct_lb3_06_the_step_flag_is_recomputed_and_a_false_flag_refuses_nothing() {
     let kept: Vec<u32> =
         unit.iter().copied().filter(|&p| lifted.pose_of(p as usize) == start.pose_of(p as usize)).collect();
     assert!(!kept.is_empty(), "the lifting letter leaves pieces of the unit in place");
-    let mut host = Rows::at(&snapshot);
+    let mut host = rows_on(&snapshot);
     let args = vec![library.word(&lifts), pieces(&kept)];
     let verdicts = completed(library.run(PROTECTION.name, "word_protection", args, &mut host), "protection");
     for (mode, name) in [(ProtectionMode::Net, "net"), (ProtectionMode::Strict, "strict")] {
@@ -1339,7 +1174,7 @@ fn ct_lb3_06_the_step_flag_is_recomputed_and_a_false_flag_refuses_nothing() {
     let pose = state.pose_ids()[first_off];
     let group: Vec<u32> =
         (0..NP).filter(|&p| !state.is_lattice_piece(p) && state.pose_ids()[p] == pose).map(|p| p as u32).collect();
-    let mut host = Rows::of(state.clone());
+    let mut host = rows_at(&state);
     let flagged = completed(
         library.run(WORD_CHECKS.name, "step_flag", vec![library.word(&refused), pieces(&group)], &mut host),
         "a refused word",
@@ -1394,10 +1229,10 @@ fn ct_lb3_06_whole_word_protection_at_pose_level() {
     let protected_ids: Vec<i64> = protected.iter().map(|&p| i64::from(p)).collect();
     for (name, word, expected) in cases {
         let letters = i_a.letters(&library.pairs(&word));
-        let mut host = Rows::at(&raised);
+        let mut host = rows_on(&raised);
         let args = vec![word, pieces(&protected)];
         let verdicts = completed(library.run(PROTECTION.name, "word_protection", args, &mut host), name);
-        assert_eq!(host.asked, ["protection", "protection"], "{name}");
+        assert_eq!(host.asked(), ["protection", "protection"], "{name}");
         for ((mode, finding, _, prefix), kernel_mode) in
             expected.iter().zip([ProtectionMode::Net, ProtectionMode::Strict])
         {
@@ -1412,7 +1247,7 @@ fn ct_lb3_06_whole_word_protection_at_pose_level() {
         }
     }
 
-    let mut host = Rows::at(&raised);
+    let mut host = rows_on(&raised);
     let outside = library.run(PROTECTION.name, "word_protection", vec![back, pieces(&[NP as u32])], &mut host);
     assert_eq!(stopped(outside, "a piece outside the model"), codes::NAMED_OBJECT_INVALID);
 }

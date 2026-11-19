@@ -28,16 +28,16 @@
 //!
 //! Each choice freezes later with the IR, the command table or LB3.9's packaging, which is open.
 //!
-//! - **Row answers (KN2.4, KN2.5, LB3.9).** No host bridge serves the jumbling rows yet, so the rows' answer types are
-//!   this crate's drafts: each is a record of fields named as `c600_jumble`'s answers name them (`observe::heights`,
-//!   `observe::prefix_observations`, `observe::word_check`, `levels::WordProtection`), a JSON object read as a `Map`,
-//!   and a field that may be undefined, such as an end fact after a refused prefix, declared as a list that is empty
-//!   when the field is undefined and holds one value otherwise, since the IR draft has no option type. A program
-//!   declares the fields it reads, in any order. Every answer writes each of its fields, null when undefined: a
-//!   refused letter's row in `replay`, which `observe::prefix_observations` writes without the after-state facts,
-//!   carries them as null. A declared field that the answer does not write, such as a misspelled one, is
-//!   `LG2:type.mismatch` and is never read as undefined. The tests' host (`tests/library.rs`) serves the rows from the
-//!   kernel API this way and refuses another declared shape with `LG2:type.mismatch`.
+//! - **Row answers (KN2.4, KN2.5, LB3.9).** The rows' answer types are this crate's drafts, as the host bridge
+//!   [`crate::rows`] serves them: each is a record of fields named as `c600_jumble`'s answers name them
+//!   (`observe::heights`, `observe::prefix_observations`, `observe::word_check`, `levels::WordProtection`), a JSON
+//!   object read as a `Map`, and a field that may be undefined, such as an end fact after a refused prefix, declared as
+//!   a list that is empty when the field is undefined and holds one value otherwise, since the IR draft has no option
+//!   type. A program declares the fields it reads, in any order. Every answer writes each of its fields, null when
+//!   undefined: a refused letter's row in `replay`, which `observe::prefix_observations` writes without the after-state
+//!   facts, carries them as null. A declared field that the answer does not write, such as a misspelled one, is
+//!   `LG2:type.mismatch` and is never read as undefined. The bridge serves the rows from the kernel API this way and
+//!   refuses another declared shape with `LG2:type.mismatch`.
 //! - **Arguments (KN2.5).** The word rows take the solver's literal word: `replay` takes the menu word itself,
 //!   `word_check` a record `{ unit, word }` with the named unit, and `protection` a record `{ mode, pieces, word }`
 //!   with the mode as the text `net` or `strict`. The heights rows and `nu` take none: they are per-revision facts.

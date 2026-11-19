@@ -4,9 +4,9 @@
 //! entry, as LP2 built them in `c600_jumble::nu` and `c600_jumble::corrections`).
 //!
 //! The first four tests check on the kernel API the facts LB3's entry returns. The last three run the entry itself,
-//! `jumble_nu` (`library::NU`), as 600 Cell Script on the IR draft's F2 and F5 (LP2's pull request 222): a test host
-//! serves the two rows from `c600_jumble` on one base in the library's draft answer type, and the entry lifts ν's
-//! values into F2 and F5 and computes a drafted set's change there. Nothing here chooses, ranks or proposes a
+//! `jumble_nu` (`library::NU`), as 600 Cell Script on the IR draft's F2 and F5 (LP2's pull request 222): C8's host
+//! bridge (`c600_jumble_tool::rows`) serves the two rows on one base in the library's draft answer type, and the entry
+//! lifts ν's values into F2 and F5 and computes a drafted set's change there. Nothing here chooses, ranks or proposes a
 //! correction: every id and multiplicity below is fixed in the test, as a solver names them, and the rows answer with
 //! ν's 45 values only.
 //!
@@ -21,8 +21,8 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use c600_check::{separation, Policy, Row, Separation, StateRead, TYPE_MISMATCH};
-use c600_ir::{Effect, Expr, QTy, Ty};
+use c600_check::{separation, Policy, Row, Separation, StateRead};
+use c600_ir::{Effect, Expr};
 use c600_jumble::corrections;
 use c600_jumble::levels::{self, Base, Derivation, Partial, ReachKind, Reachability, Snapshot, Verdict};
 use c600_jumble::model::POLES;
@@ -32,15 +32,14 @@ use c600_jumble::state::{State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_jumble_tool::library::{self, NU};
+use c600_jumble_tool::rows::Rows;
 use c600_jumble_tool::word;
 use c600_kernel::exact::F5;
 use c600_kernel::json::{self, Value};
-use c600_kernel::{ProtectionMode, Refusal};
+use c600_kernel::ProtectionMode;
 use c600_library::lower_source;
-use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Run, Sink};
-use c600_run::meter::code::NOT_GRANTED;
+use c600_run::interp::{load, Loaded, Options, Run};
 use c600_run::meter::{Amounts, Outcome};
-use c600_run::provenance::{self, Json};
 use c600_run::value::Value as RunValue;
 use c600_syntax::{format, parse};
 
@@ -391,101 +390,6 @@ fn ct_lb3_04_a_drafted_correction_set_is_checked_without_selecting_one() {
 /// Run limits wide enough for every run here.
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
-/// The ν row's draft answer type: ν's 45 values and no reason when ν is defined, no values and the reason when not.
-fn served(result: Result<Partial<NuVector>, Refusal>) -> Result<Value, &'static str> {
-    match result {
-        Err(refusal) => Err(refusal.code),
-        Ok(Partial::Total(value)) => Ok(json::object([("reason", Value::Null), ("values", value.to_json())])),
-        Ok(Partial::Undefined(reason)) => {
-            Ok(json::object([("reason", Value::String(reason)), ("values", Value::Null)]))
-        }
-        Ok(other) => panic!("ν is never partial: {other:?}"),
-    }
-}
-
-/// The test host of the entry: KN2.4's `nu` and `correction_set_check` rows answered by `c600_jumble` on one base, in
-/// the library's draft answer type [`served`]. A row's refusal stops the run with its code. It grants snapshot reads
-/// only, and keeps the names of the rows read and each drafted set it was asked to check.
-struct NuRows<'a> {
-    base: Base<'a>,
-    asked: Vec<String>,
-    drafts: Vec<Vec<(u32, i64)>>,
-}
-
-impl<'a> NuRows<'a> {
-    fn on(base: Base<'a>) -> NuRows<'a> {
-        NuRows { base, asked: Vec::new(), drafts: Vec::new() }
-    }
-
-    fn answer(&mut self, query: &str, arg: Option<&Json>) -> Result<Value, &'static str> {
-        match (query, arg) {
-            ("nu", None) => served(nu::nu(ctx(), self.base).expect("no engine error")),
-            ("correction_set_check", Some(Json::List(set))) => {
-                let int = |item: &Json, key: &str| {
-                    let n = item.get(key).and_then(|n| n.get("int")).and_then(Json::as_text);
-                    n.and_then(|n| n.parse::<i64>().ok()).ok_or(TYPE_MISMATCH)
-                };
-                let draft = set
-                    .iter()
-                    .map(|item| Ok((u32::try_from(int(item, "id")?).map_err(|_| TYPE_MISMATCH)?, int(item, "m")?)))
-                    .collect::<Result<Vec<(u32, i64)>, &'static str>>()?;
-                let checked = corrections::correction_set_check(ctx(), self.base, &draft).expect("no engine error");
-                self.drafts.push(draft);
-                served(checked)
-            }
-            _ => Err(NOT_GRANTED),
-        }
-    }
-}
-
-impl Host for NuRows<'_> {
-    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
-        match request {
-            Request::Snapshot { .. } | Request::SnapshotWith { .. } => {
-                Ok(RowTariff { kernel_cost: 1, result_bound: 1 << 16 })
-            }
-            _ => Err(NOT_GRANTED),
-        }
-    }
-
-    fn perform(&mut self, request: &Request) -> Result<RunValue, &'static str> {
-        let (query, arg, ty) = match *request {
-            Request::Snapshot { query, ty } => (query, None, ty),
-            Request::SnapshotWith { query, arg, ty } => (query, Some(provenance::parse(arg).ok_or(TYPE_MISMATCH)?), ty),
-            _ => return Err(NOT_GRANTED),
-        };
-        self.asked.push(query.to_owned());
-        convert(&self.answer(query, arg.as_ref())?, ty)
-    }
-
-    fn sink(&mut self, _: &Sink, _: &RunValue, _: &[u8]) -> Result<(), &'static str> {
-        Err(NOT_GRANTED)
-    }
-}
-
-/// A kernel answer as a value of the declared type, as the library's tests convert one (`tests/library.rs`): a record
-/// takes the declared fields of a JSON object, each of which the answer writes; a list takes an array, or holds nothing
-/// for null and one value otherwise. Any other shape is `LG2:type.mismatch`.
-fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
-    Ok(match (&ty.ty, value) {
-        (Ty::Int, Value::Int(n)) => RunValue::int(*n),
-        (Ty::Text, Value::String(s)) => RunValue::text(s),
-        (Ty::List(item), Value::Array(values)) => {
-            RunValue::list(values.iter().map(|v| convert(v, item)).collect::<Result<_, _>>()?)
-        }
-        (Ty::List(_), Value::Null) => RunValue::list(Vec::new()),
-        (Ty::List(item), other) => RunValue::list(vec![convert(other, item)?]),
-        (Ty::Record(fields), Value::Object(entries)) => {
-            let mut out = Vec::with_capacity(fields.len());
-            for (name, field_ty) in fields {
-                out.push((name.as_str(), convert(entries.get(name).ok_or(TYPE_MISMATCH)?, field_ty)?));
-            }
-            RunValue::record(out)
-        }
-        _ => return Err(TYPE_MISMATCH),
-    })
-}
-
 fn nu_library() -> &'static Loaded {
     static LOADED: OnceLock<Loaded> = OnceLock::new();
     LOADED.get_or_init(|| load(&lower_source(NU.source).expect("the module lowers")).expect("the module loads"))
@@ -498,11 +402,12 @@ fn draft(set: &[(u32, i64)]) -> RunValue {
     )
 }
 
-/// The entry `entry` run on `base` with `args`: the run, and the host's record of what it was asked.
+/// The entry `entry` run on `base` with `args` through the bridge: the run, and the bridge's record of what it was
+/// asked.
 fn run_nu(entry: &str, args: Vec<RunValue>, base: Base<'_>) -> (Run, Vec<String>, Vec<Vec<(u32, i64)>>) {
-    let mut host = NuRows::on(base);
+    let mut host = Rows::on(ctx(), base);
     let run = nu_library().run(NU.name, entry, args, &mut host, &Options::new(WIDE)).expect("the run starts");
-    (run, host.asked, host.drafts)
+    (run, host.asked().to_vec(), host.drafts().to_vec())
 }
 
 fn field<'v>(value: &'v RunValue, name: &str) -> &'v RunValue {
@@ -642,7 +547,7 @@ fn ct_lb3_04_off_lattice_nu_is_undefined_and_a_planted_fixed_coordinate_stops_th
 /// ν is that row, so that ν less a value differs from ν plus it. On each, `nu_facts` gives ν's 45 values, and each
 /// drafted set the solver names checks to the catalogue's prediction. The change the entry computes in F2 and F5, the
 /// predicted value less ν, is Σ m·row of the drafted rows: a multiplicity counts modulo 2 in the bits and modulo 5 in
-/// the C5 values. The entry checks only the set it was given, as drafted: the host sees each draft once and is asked
+/// the C5 values. The entry checks only the set it was given, as drafted: the bridge sees each draft once and is asked
 /// nothing else. A set with an id the catalogue does not ship stops the run with `KN2:input.named_object_invalid`, and
 /// a base under I_b with `KN2:input.menu_binding_mismatch`.
 #[test]
