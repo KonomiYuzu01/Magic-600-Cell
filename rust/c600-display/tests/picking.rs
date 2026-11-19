@@ -231,7 +231,8 @@ fn ct_rpi_11_delayed_picks_are_discarded_and_unrelated_edits_keep_a_query() {
     assert_eq!(stale_field(&host, &first), "publication_generation");
     assert_eq!(total(&host, &reply(&host, V1, 2), Requested::Occurrence).target, ObjectId::Cell(2));
 
-    let changes: [(&str, fn(&mut Host<MockBackend>)); 4] = [
+    type Change = fn(&mut Host<MockBackend>);
+    let changes: [(&str, Change); 4] = [
         ("camera", |h| h.set_camera(V1)),
         ("viewport", |h| h.set_viewport(V1, (1024, 768))),
         ("visibility", |h| h.set_visibility(V1)),

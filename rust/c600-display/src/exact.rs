@@ -20,6 +20,7 @@ fn gcd(mut x: u128, mut y: u128) -> u128 {
     x
 }
 
+#[allow(clippy::should_implement_trait, reason = "checked arithmetic: `neg` to `div` return None on overflow")]
 impl Q5 {
     pub const ZERO: Q5 = Q5 { a: 0, b: 0, d: 1 };
     pub const ONE: Q5 = Q5 { a: 1, b: 0, d: 1 };
