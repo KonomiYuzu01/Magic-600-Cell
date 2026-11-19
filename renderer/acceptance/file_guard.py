@@ -127,6 +127,10 @@ def protected_set(launch: dict, candidate: str) -> list[str]:
         if candidate == 'sa2':
             directory = _path_form(launch['working_directory'])
             paths.extend(ntpath.join(directory, name) for name in ('project.godot', 'Main.tscn', 'Smoke.cs'))
+            # C9 U4: a route-B build's override.cfg (prepare_host --route surface), which Godot reads at startup.
+            override = ntpath.join(directory, 'override.cfg')
+            if os.path.lexists(override):
+                paths.append(override)
             debug = ntpath.join(directory, '.godot', 'mono', 'temp', 'bin', 'Debug')
             with os.scandir(debug) as entries:
                 assemblies = [entry.path for entry in entries if entry.name.lower().endswith('.dll')

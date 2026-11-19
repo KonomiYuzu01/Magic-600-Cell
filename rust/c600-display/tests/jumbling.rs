@@ -155,8 +155,8 @@ fn home_of(piece: u32) -> u32 {
 /// pass the host validator and installation. The posed arrays of the solved state equal the three array hashes the
 /// J1 fixture records for its start stage; after a twist the lattice entries agree with M5's exact K⁺ test. The
 /// transform row carries the plane the engine names for the twist, so it has a swept preview whose R(θ) is the twist.
-/// Not run: J01's shrink anchors, J06's backend readback, the J07 to J12 payloads and any array hash of a later J1
-/// stage.
+/// J01's shrink anchors, J06's readback check and the J07, J09, J11 and J12 payloads are checked in
+/// `tests/jumbling_payloads.rs`. Not run: a backend's readback and any array hash of a later J1 stage.
 #[test]
 fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
     let world = world();
@@ -518,7 +518,7 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
     assert_ne!(broken.kplus.frame_idx[cell], 0, "the frame of a cell other than cell 0 is not the identity");
     broken.kplus.frame_idx[cell] = 0;
 
-    let error = levels::labels(&broken, &state).err().expect("A3's frame check refuses the planted frame");
+    let error = levels::labels(&broken, &state).expect_err("A3's frame check refuses the planted frame");
     let projection = PoseProjection::new(&broken, &state);
     assert!(matches!(&projection, Err(Missing::Engine(reason)) if *reason == error.0), "{:?}", projection.err());
 }
@@ -528,8 +528,9 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
 /// same row without that plane has none), 3 (full named-cap set against its cap-map witness), 4 and 5 (the full set
 /// over a count ceiling, standalone and scheduled), 6 (an incomplete survey and the named cut's alpha), 7 (an
 /// unsupported projection stage), 8 (complete and interrupted seam totals) and 15 (a certificate-point hit on an
-/// off-lattice piece). Not run on the real model: rows 9 and 11 to 14 (covers and repair, release order, nu and the
-/// correction catalogue), which stay C2's fixture vectors in `crosswalk.rs`; row 10 has no real geometry to check.
+/// off-lattice piece). Rows 9 and 11 to 14 (covers and repair, release order, nu and the correction catalogue) stay
+/// C2's fixture vectors in `crosswalk.rs`, and `tests/jumbling_payloads.rs` checks their producers on the real model;
+/// row 10 has no real geometry to check.
 #[test]
 fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let world = world();

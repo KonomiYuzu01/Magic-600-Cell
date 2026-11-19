@@ -10,16 +10,23 @@ namespace Magic600.Shell;
 /// draft on route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. The library
 /// runs the display host over the bridge. The shell hands it the core's function table
 /// (<see cref="CoreLibrary.Functions"/>) and the context it created with sa2_create, then drives frames through it.
-/// tests/test_renderer_shell.py checks <see cref="Exports"/>, the version, the status codes and the frame and presented
-/// rows against the Rust source.
+/// tests/test_renderer_shell.py checks <see cref="Exports"/>, the version, the status codes and the frame, presented
+/// and view-result rows against the Rust source.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 3;
+    public const uint AbiVersion = 5;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
+
+    /// <summary><see cref="OpenSession"/>'s puzzle: 600-cell-Full with Jumble off, index 0 of
+    /// <see cref="EventLog.Puzzles"/>.</summary>
+    public const uint PuzzleJumbleOff = 0;
+    /// <summary><see cref="OpenSession"/>'s puzzle: the jumbled puzzle, index 1 of <see cref="EventLog.Puzzles"/>.
+    /// </summary>
+    public const uint PuzzleJumbleOn = 1;
 
     public const int Ok = 0;
     public const int InvalidArgument = 1;
@@ -44,6 +51,18 @@ public sealed unsafe class HostLibrary : IDisposable
     /// <summary><see cref="KeyResult.Press"/>: no measured press, but an undo or redo changed the state.</summary>
     public const uint PressOther = 3;
 
+    /// <summary><see cref="ViewResult.Status"/>: the run has not ended yet.</summary>
+    public const uint ViewStatusPending = 0;
+    /// <summary><see cref="ViewResult.Status"/>: the run's publication was installed; a draft at once.</summary>
+    public const uint ViewStatusPublished = 1;
+    /// <summary><see cref="ViewResult.Status"/>: the run ended without a publication; <see cref="LastError"/> gives
+    /// its {"code", "reason"} JSON after <see cref="GetViewResult"/>.</summary>
+    public const uint ViewStatusRefused = 2;
+    /// <summary><see cref="ViewResult.Kind"/>: a run of <see cref="RunView"/>.</summary>
+    public const uint ViewKindRun = 0;
+    /// <summary><see cref="ViewResult.Kind"/>: a draft of <see cref="ViewDraft"/>.</summary>
+    public const uint ViewKindDraft = 1;
+
     /// <summary>The library's exports, in the order the Rust source declares them.</summary>
     public static readonly IReadOnlyList<string> Exports = new[]
     {
@@ -57,6 +76,9 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_recover",
         "m6h_open_session",
         "m6h_load_runtime",
+        "m6h_run_view",
+        "m6h_view_result",
+        "m6h_view_draft",
         "m6h_key_down",
         "m6h_key_up",
         "m6h_focus_lost",
@@ -102,6 +124,31 @@ public sealed unsafe class HostLibrary : IDisposable
         public ulong DisplayQpc;
     }
 
+    /// <summary>A view job's or draft's record, as m6h_view_result writes it (the Rust M6hViewResult).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ViewResult
+    {
+        /// <summary>
+        /// <see cref="ViewStatusPending"/>, <see cref="ViewStatusPublished"/> or <see cref="ViewStatusRefused"/>.
+        /// </summary>
+        public uint Status;
+        /// <summary><see cref="ViewKindRun"/> or <see cref="ViewKindDraft"/>.</summary>
+        public uint Kind;
+        /// <summary>The engine revision adopted at the call: the revision a run's publication shows.</summary>
+        public ulong Revision;
+        /// <summary>The SHA-256 of the run's source text, or the draft's digest.</summary>
+        public fixed byte SourceDigest[32];
+        /// <summary>A run's first confirmed frame that drew its publication; a draft's first stale one.</summary>
+        public ulong Frame;
+        /// <summary>A draft's first confirmed frame after <see cref="Frame"/> that drew current output.</summary>
+        public ulong ClearedFrame;
+        /// <summary>1 when the run completed with a value.</summary>
+        public uint HasValue;
+        public uint Reserved;
+        /// <summary>The SHA-256 of the completed run's value bytes.</summary>
+        public fixed byte ValueSha256[32];
+    }
+
     private IntPtr _library;
     private readonly Dictionary<string, IntPtr> _exports;
 
@@ -120,6 +167,10 @@ public sealed unsafe class HostLibrary : IDisposable
         if (!System.IO.Path.IsPathFullyQualified(path))
         {
             throw new ArgumentException("the host library needs an absolute path", nameof(path));
+        }
+        if (sizeof(ViewResult) != 104)
+        {
+            throw new NotSupportedException($"the view result row is {sizeof(ViewResult)} bytes, the library's 104");
         }
         var library = NativeLibrary.Load(path);
         try
@@ -216,13 +267,15 @@ public sealed unsafe class HostLibrary : IDisposable
     public int Recover(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_recover"])(host);
 
     /// <summary>
-    /// Opens the turns' session with the twist menu of the record file <paramref name="menu"/> pinned. Without a
+    /// Opens the turns' session of <paramref name="puzzle"/> (<see cref="PuzzleJumbleOff"/> or
+    /// <see cref="PuzzleJumbleOn"/>) with the twist menu of the record file <paramref name="menu"/> pinned. Without a
     /// <paramref name="fixture"/> it is a new journal in <paramref name="folder"/> (created if missing; it must hold
-    /// nothing) at the solved state. With one (the path of a session fixture's fixture.json), <paramref name="folder"/>
-    /// is a fresh copy of the fixture's session, which the host reopens and adopts at the revision that counts the
-    /// fixture's presses. <paramref name="revision"/> is the engine revision the session opened at.
+    /// nothing) at the solved state; with Jumble on it commits jumble.on at once. With one (the path of a session
+    /// fixture's fixture.json, of the same puzzle), <paramref name="folder"/> is a fresh copy of the fixture's
+    /// session, which the host reopens and adopts at the revision its record names. <paramref name="revision"/> is
+    /// the engine revision the session opened at.
     /// </summary>
-    public int OpenSession(IntPtr host, string folder, string menu, string? fixture, out ulong revision)
+    public int OpenSession(IntPtr host, uint puzzle, string folder, string menu, string? fixture, out ulong revision)
     {
         var f = Encoding.UTF8.GetBytes(folder);
         var m = Encoding.UTF8.GetBytes(menu);
@@ -233,8 +286,8 @@ public sealed unsafe class HostLibrary : IDisposable
         fixed (byte* mb = m)
         fixed (byte* xb = x)
         {
-            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, byte*, nuint, ulong*, int>)
-                _exports["m6h_open_session"])(host, fb, (nuint)f.Length, mb, (nuint)m.Length, xb,
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, byte*, nuint, byte*, nuint, byte*, nuint, ulong*, int>)
+                _exports["m6h_open_session"])(host, puzzle, fb, (nuint)f.Length, mb, (nuint)m.Length, xb,
                 (nuint)(x?.Length ?? 0), &opened);
         }
         revision = opened;
@@ -253,6 +306,60 @@ public sealed unsafe class HostLibrary : IDisposable
             return ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, int>)_exports["m6h_load_runtime"])(
                 host, pb, (nuint)p.Length);
         }
+    }
+
+    /// <summary>
+    /// Schedules the program text <paramref name="source"/> as the view's job, run from its exported function
+    /// <paramref name="entry"/> in the loaded runtime; returns at once. <see cref="Pump"/> or <see cref="Frame"/>
+    /// delivers the run's publication when it ends; <see cref="GetViewResult"/> reads the record of
+    /// <paramref name="ticket"/>.
+    /// </summary>
+    public int RunView(IntPtr host, string source, string entry, out ulong ticket)
+    {
+        var s = Encoding.UTF8.GetBytes(source);
+        var e = Encoding.UTF8.GetBytes(entry);
+        ulong t = 0;
+        int code;
+        fixed (byte* sb = s)
+        fixed (byte* eb = e)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, ulong*, int>)
+                _exports["m6h_run_view"])(host, sb, (nuint)s.Length, eb, (nuint)e.Length, &t);
+        }
+        ticket = t;
+        return code;
+    }
+
+    /// <summary>
+    /// Reads a view job's or draft's record; a refused one's code and reason are then in <see cref="LastError"/>.
+    /// </summary>
+    public int GetViewResult(IntPtr host, ulong ticket, out ViewResult result)
+    {
+        ViewResult r = default;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong, ViewResult*, int>)_exports["m6h_view_result"])(
+            host, ticket, &r);
+        result = r;
+        return code;
+    }
+
+    /// <summary>
+    /// Names the editor's text by its SHA-256 <paramref name="digest"/> without running it, so that the view reads
+    /// stale while its output came from another text. A draft cancels no run.
+    /// </summary>
+    public int ViewDraft(IntPtr host, ReadOnlySpan<byte> digest, out ulong ticket)
+    {
+        if (digest.Length != 32)
+        {
+            throw new ArgumentException("a digest is 32 bytes", nameof(digest));
+        }
+        ulong t = 0;
+        int code;
+        fixed (byte* d = digest)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, ulong*, int>)_exports["m6h_view_draft"])(host, d, &t);
+        }
+        ticket = t;
+        return code;
     }
 
     /// <summary>Routes one key-down, <paramref name="chord"/> in c600-input's form (Shift+KeyJ).</summary>

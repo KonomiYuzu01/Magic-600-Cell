@@ -3,8 +3,10 @@
 //! next engine revision, frames that name the adopted and the published revision, keys that are no press, an undo
 //! that the host shows and the control reports, the refusals, and the correctness control at the close. Charter E3 (a
 //! draft): a session fixture written through the same turns, a copy of it reopened at the revision that counts its
-//! presses, its refusals, and the runtime load's refusals. Every result is a synthetic fixture outcome, not a GPU run
-//! and not input evidence.
+//! presses, its refusals, and the runtime load's refusals. LX-4's jumble-on half (a draft): `jumble.on` committed at
+//! the open, twist keys that commit `jumble.twist.menu`, the control's pose replay, a jumble-on fixture, the posed
+//! bundle and plan that c600-display validates, and the core's J02 refusal of the posed bundle today. Every result is
+//! a synthetic fixture outcome, not a GPU run and not input evidence.
 
 #[path = "../../tests/common/mod.rs"]
 mod common;
@@ -13,9 +15,13 @@ use std::path::{Path, PathBuf};
 use std::ptr;
 use std::sync::Arc;
 
+use c600_display::jumble;
+use c600_display::produce::{self, GeometryInput};
+use c600_display::validate::{validate, validate_engine_bundle, LimitProfile};
 use c600_kernel::json::{self, Value};
-use c600_kernel::Kernel;
+use c600_kernel::{Kernel, Puzzle as Model};
 use c600_render::FakeCore;
+use c600_shell_host::turns::{Head, Press, Puzzle, Turns};
 use c600_shell_host::*;
 use common::support::SIZE;
 use common::{functions, Shim};
@@ -96,10 +102,15 @@ impl Run {
     }
 
     fn open(&self, folder: &str, menu: &str) -> i32 {
+        self.open_as(M6H_PUZZLE_JUMBLE_OFF, folder, menu)
+    }
+
+    fn open_as(&self, puzzle: u32, folder: &str, menu: &str) -> i32 {
         // SAFETY: a live handle and readable bytes; no fixture and no revision output.
         unsafe {
             m6h_open_session(
                 self.host,
+                puzzle,
                 folder.as_ptr(),
                 folder.len(),
                 menu.as_ptr(),
@@ -113,11 +124,16 @@ impl Run {
 
     /// Opens a copy of a fixture's session; the code and the revision the session opened at.
     fn reopen(&self, folder: &str, menu: &str, fixture: &str) -> (i32, u64) {
+        self.reopen_as(M6H_PUZZLE_JUMBLE_OFF, folder, menu, fixture)
+    }
+
+    fn reopen_as(&self, puzzle: u32, folder: &str, menu: &str, fixture: &str) -> (i32, u64) {
         let mut revision = 0u64;
         // SAFETY: a live handle, readable bytes and a writable revision.
         let code = unsafe {
             m6h_open_session(
                 self.host,
+                puzzle,
                 folder.as_ptr(),
                 folder.len(),
                 menu.as_ptr(),
@@ -195,7 +211,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 3);
+    assert_eq!(m6h_abi_version(), 5);
     let run = Run::new();
     let folder = fresh("pass");
 
@@ -312,11 +328,15 @@ fn a_session_does_not_open_on_a_used_folder_or_a_missing_menu() {
     // SAFETY: invalid UTF-8 and null pointers are refused before any use.
     unsafe {
         let none = ptr::null_mut();
-        assert_eq!(m6h_open_session(run.host, [0xFFu8].as_ptr(), 1, ptr::null(), 0, ptr::null(), 0, none), 1);
-        assert_eq!(m6h_open_session(ptr::null_mut(), ptr::null(), 0, ptr::null(), 0, ptr::null(), 0, none), 1);
+        let off = M6H_PUZZLE_JUMBLE_OFF;
+        assert_eq!(m6h_open_session(run.host, off, [0xFFu8].as_ptr(), 1, ptr::null(), 0, ptr::null(), 0, none), 1);
+        assert_eq!(m6h_open_session(ptr::null_mut(), off, ptr::null(), 0, ptr::null(), 0, ptr::null(), 0, none), 1);
         let (folder, menu) = (fresh("null-fixture"), menu());
         let (f, m) = ((folder.as_ptr(), folder.len()), (menu.as_ptr(), menu.len()));
-        assert_eq!(m6h_open_session(run.host, f.0, f.1, m.0, m.1, ptr::null(), 3, none), M6H_E_INVALID_ARGUMENT);
+        let code = m6h_open_session(run.host, off, f.0, f.1, m.0, m.1, ptr::null(), 3, none);
+        assert_eq!(code, M6H_E_INVALID_ARGUMENT);
+        // A puzzle code outside the two is refused before any use.
+        assert_eq!(m6h_open_session(run.host, 2, f.0, f.1, m.0, m.1, ptr::null(), 0, none), M6H_E_INVALID_ARGUMENT);
         assert_eq!(m6h_key_down(ptr::null_mut(), ptr::null(), 0, 0, ptr::null_mut()), M6H_E_INVALID_ARGUMENT);
         assert_eq!(m6h_close_session(run.host, 0, ptr::null_mut()), M6H_E_INVALID_ARGUMENT);
         let mut size = 0u32;
@@ -446,6 +466,11 @@ fn a_fixture_that_does_not_match_its_session_is_refused() {
     assert!(refused("format", &with("format", Value::String("v0".to_owned())), Some(&session)).contains("is not"));
     assert!(refused("missing", &record, None).contains("does not exist"));
     assert!(refused("presses", &with("committed", Value::Int(1)), Some(&session)).contains("not a list"));
+    let sideways = with("puzzle", Value::String("jumble-sideways".to_owned()));
+    assert!(refused("puzzle", &sideways, Some(&session)).contains("puzzle is unknown"));
+    // The record's revision counts the presses from where its puzzle opens: Jumble on opens one revision later.
+    let on = with("puzzle", Value::String("jumble-on".to_owned()));
+    assert!(refused("puzzle-on", &on, Some(&session)).contains("does not count"));
     // An empty folder holds no journal to reopen.
     let empty = PathBuf::from(fresh("empty"));
     std::fs::create_dir_all(empty.join("x")).expect("a folder");
@@ -469,4 +494,179 @@ fn a_runtime_that_does_not_start_is_refused() {
     assert!(last_error(run.host).contains("did not start"), "{}", last_error(run.host));
     // SAFETY: a null program is refused before any use.
     assert_eq!(unsafe { m6h_load_runtime(run.host, ptr::null(), 0) }, M6H_E_INVALID_ARGUMENT);
+}
+
+fn assets() -> PathBuf {
+    checkout().join("assets")
+}
+
+fn kernel() -> Arc<Kernel> {
+    Arc::new(Kernel::load(&assets()).expect("the model"))
+}
+
+/// A new jumble-on session's turns in a fresh folder.
+fn jumble_on(name: &str) -> (Turns, String) {
+    let folder = fresh(name);
+    let turns = Turns::open(kernel(), &assets(), Path::new(&folder), Path::new(&menu()), Puzzle::JumbleOn)
+        .expect("the session opens and `jumble.on` commits");
+    (turns, folder)
+}
+
+/// LX-4, jumble-on half (a draft): a new jumble-on session commits `jumble.on` at once; the router's twist keys then
+/// commit `jumble.twist.menu` with the same menu item as the row's `letter`, its cap and the layer's revision; a
+/// repeat is no press; the retained state stays the one the crossing entered from; and the control at the close
+/// replays the journal and the poses (the solved labels at revision 1, the solved poses at 2, one press each after).
+#[test]
+fn jumble_on_twist_keys_commit_the_menu_row_and_the_control_replays_the_poses() {
+    let (mut turns, folder) = jumble_on("jumble-on-turns");
+    assert_eq!(turns.puzzle(), Puzzle::JumbleOn);
+    assert_eq!((Puzzle::JumbleOff.opened_at(), Puzzle::JumbleOn.opened_at()), (1, 2));
+    assert_eq!(Puzzle::NAMES.map(Puzzle::from_name), [Some(Puzzle::JumbleOff), Some(Puzzle::JumbleOn)]);
+    let solved = kernel().solved();
+    assert_eq!(turns.state().expect("the retained state").digest(), solved.digest(), "entered from solved");
+    let Head::Jumbled(exact, poses) = turns.head().expect("the head") else { panic!("Jumble on has a posed head") };
+    assert_eq!(poses.off_lattice_count(), 0, "the solved poses");
+    let entered = Head::Jumbled(exact, poses).digest();
+
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    turns.key_up("KeyJ").expect("a key-up");
+    assert_eq!(turns.key_down("Shift+KeyK", false), Ok(Press::Committed));
+    turns.key_up("Shift+KeyK").expect("a key-up");
+    assert_eq!(turns.key_down("KeyL", true), Ok(Press::None), "a repeat is no press");
+    assert_eq!(turns.presses(), (2, 0));
+    // The same keys with Jumble off commit `twist.apply`; each letter is the rotation Jumble off names for its key.
+    let off_folder = fresh("jumble-off-turns");
+    let mut off = Turns::open(kernel(), &assets(), Path::new(&off_folder), Path::new(&menu()), Puzzle::JumbleOff)
+        .expect("a Jumble-off session");
+    for chord in ["KeyJ", "Shift+KeyK"] {
+        assert_eq!(off.key_down(chord, false), Ok(Press::Committed));
+        off.key_up(chord).expect("a key-up");
+    }
+    assert_eq!(turns.committed().len(), off.committed().len());
+    for (args, retained) in turns.committed().iter().zip(off.committed()) {
+        assert!(retained.get("rotation").is_some(), "{}", retained.canonical());
+        assert_eq!(args.get("letter"), retained.get("rotation"), "{}", args.canonical());
+        assert_eq!(args.get("cap"), Some(&Value::Int(0)));
+        assert!(args.get("rotation").is_none(), "no `twist.apply` argument");
+        let mode = args.get("revision").and_then(|revision| revision.get("mode")).and_then(Value::as_str);
+        assert_eq!(mode, Some("jumble_on"));
+    }
+    off.check(None);
+    let _ = std::fs::remove_dir_all(&off_folder);
+    let head = turns.head().expect("the head").digest();
+    assert_ne!(head, entered, "the presses moved the poses");
+    assert_eq!(turns.state().expect("the retained state").digest(), solved.digest(), "no retained twist");
+
+    let control = turns.check(Some((4, head.clone())));
+    assert_eq!(control.get("pass"), Some(&Value::Bool(true)), "{}", control.canonical());
+    assert_eq!((int(&control, "committed"), int(&control, "other_changes")), (Some(2), Some(0)));
+    for key in ["live", "reopened", "replayed", "expected_shown"] {
+        assert_eq!(control.get(key).and_then(Value::as_str), Some(head.as_str()), "{key}");
+    }
+    let _ = std::fs::remove_dir_all(&folder);
+
+    // The solved poses are revision 2's head: a frame of revision 2 shown last, before the press's frame came, is
+    // the entry's digest, and the control still passes, since a shown frame may lag the head.
+    let (mut turns, folder) = jumble_on("jumble-on-entered");
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let control = turns.check(Some((2, entered.clone())));
+    assert_eq!(control.get("expected_shown").and_then(Value::as_str), Some(entered.as_str()));
+    assert_eq!(control.get("pass"), Some(&Value::Bool(true)), "{}", control.canonical());
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// LX-4, jumble-on half: the head's adoption is a jumbling bundle that c600-display's bundle check accepts (labels'
+/// place taken by `pose_index`, `poses` and `pose_lattice`, one revision) and one posed plan that validates against
+/// c600-display's declared jumbling context for the menu's identity block; with Jumble off it is the labels and the
+/// retained plan under the declared Full context, as before.
+#[test]
+fn jumble_on_bundles_and_plans_pass_c600_display_validation() {
+    let geometry = GeometryInput::load(&assets()).expect("the geometry");
+    let limits = || LimitProfile::uniform(LIMITS, 1 << 40);
+    let (mut turns, folder) = jumble_on("jumble-on-bundle");
+    assert_eq!(turns.key_down("KeyL", false), Ok(Press::Committed));
+    let head = turns.head().expect("the head");
+    let (base, bundle, primitive) = adoption(&geometry, &head, 3).expect("the posed row");
+    validate_engine_bundle(&bundle).expect("one revision, three arrays");
+    assert_eq!((bundle.revision.identity.puzzle, bundle.revision.state), (Model::Jumbling, 3));
+    let names: Vec<&str> = bundle.arrays.iter().map(|array| array.name.as_str()).collect();
+    assert_eq!(names, ["pose_index", "poses", "pose_lattice"]);
+    assert_eq!(base.digest, head.digest(), "the revision names the head's pose digest");
+    let ctx = jumble::fixture_context(&geometry, base.identity.clone(), limits());
+    let plan = publication(&geometry, primitive, &base);
+    validate(&plan, &ctx).expect("the posed plan validates");
+    turns.check(None);
+    let _ = std::fs::remove_dir_all(&folder);
+
+    let head = Head::Retained(kernel().solved());
+    let (base, bundle, primitive) = adoption(&geometry, &head, 1).expect("the labels");
+    validate_engine_bundle(&bundle).expect("the labels' bundle");
+    assert_eq!(bundle.revision.identity.puzzle, Model::Full);
+    validate(&publication(&geometry, primitive, &base), &produce::fixture_context(&geometry, limits()))
+        .expect("the retained plan validates");
+}
+
+/// LX-4, jumble-on half, at the C interface (a draft): a jumble-on session commits `jumble.on`, and the host hands
+/// the core the posed bundle of the solved poses at revision 2. Today the core's bridge refuses it (J02, c600-render
+/// maps no posed row yet): the open answers `M6H_E_HOST` with the refusal, the core adopted nothing new, keys find no
+/// session, and the handle keeps the solved state, so a Jumble-off session still opens. C9's posed mapping turns this
+/// refusal into an adoption at revision 2.
+#[test]
+fn a_jumble_on_session_commits_jumble_on_and_the_core_refuses_its_posed_row_today() {
+    let run = Run::new();
+    let folder = fresh("jumble-on-open");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_E_HOST);
+    let error = last_error(run.host);
+    assert!(error.contains("J02") && error.contains("posed"), "{error}");
+    assert_eq!(run.fake().adoptions.len(), 1, "the core adopted nothing new");
+    assert!(Path::new(&folder).join("objects").is_dir(), "the journal holds `jumble.on`");
+    assert_eq!(run.down("KeyJ", false).0, M6H_E_SESSION);
+    let off = fresh("jumble-on-then-off");
+    assert_eq!(run.open(&off, &menu()), M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&off);
+}
+
+/// LX-4's jumble-on fixture (a draft): the product's fixture keys all commit `jumble.twist.menu` after `jumble.on`,
+/// the record names the puzzle and revision 2 plus the presses, a copy reopens with the fixture's head, and the
+/// control replays the fixture's presses. At the C interface a jumble-on fixture opened as Jumble off is refused, and
+/// opened as Jumble on it reaches the core's J02 refusal today.
+#[test]
+fn a_jumble_on_fixture_records_its_puzzle_and_reopens_with_its_head() {
+    let out = PathBuf::from(fresh("jumble-on-fixture"));
+    let record = fixture::write_for(Puzzle::JumbleOn, kernel(), &assets(), Path::new(&menu()), &out, &fixture::KEYS)
+        .expect("the fixture");
+    assert_eq!(record.get("puzzle").and_then(Value::as_str), Some("jumble-on"));
+    assert_eq!(int(&record, "revision"), Some(2 + fixture::KEYS.len() as i64));
+    assert_eq!(record.get("control").and_then(|c| c.get("pass")), Some(&Value::Bool(true)));
+    let record_path = out.join(fixture::RECORD);
+    let read = fixture::read(&record_path).expect("the record reads");
+    assert_eq!((read.puzzle, read.revision, read.committed.len()), (Puzzle::JumbleOn, 26, 24));
+
+    let copy = fresh("jumble-on-fixture-copy");
+    copy_dir(&out.join("session"), Path::new(&copy));
+    let mut turns =
+        Turns::reopen(kernel(), &assets(), Path::new(&copy), Path::new(&menu()), &read).expect("the copy reopens");
+    assert_eq!(turns.head().expect("the head").digest(), read.digest);
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let head = turns.head().expect("the head").digest();
+    let control = turns.check(Some((27, head)));
+    assert_eq!(control.get("pass"), Some(&Value::Bool(true)), "{}", control.canonical());
+    assert_eq!(int(&control, "committed"), Some(25));
+    let _ = std::fs::remove_dir_all(&copy);
+
+    let path = text(record_path);
+    let run = Run::new();
+    let copy = fresh("jumble-on-fixture-off");
+    copy_dir(&out.join("session"), Path::new(&copy));
+    assert_eq!(run.reopen(&copy, &menu(), &path), (M6H_E_SESSION, 0));
+    assert!(last_error(run.host).contains("puzzle is jumble-on, not jumble-off"), "{}", last_error(run.host));
+    let copy = fresh("jumble-on-fixture-on");
+    copy_dir(&out.join("session"), Path::new(&copy));
+    assert_eq!(run.reopen_as(M6H_PUZZLE_JUMBLE_ON, &copy, &menu(), &path), (M6H_E_HOST, 0));
+    assert!(last_error(run.host).contains("J02"), "{}", last_error(run.host));
+    assert_eq!(run.fake().adoptions.len(), 1, "the core adopted nothing new");
+    let _ = std::fs::remove_dir_all(&copy);
+    let _ = std::fs::remove_dir_all(&out);
 }

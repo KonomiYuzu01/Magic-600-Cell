@@ -131,6 +131,7 @@ struct Scene::Impl {
     uint8_t* check_upload_data = nullptr;
     ComPtr<ID3D12RootSignature> root;
     ComPtr<ID3D12PipelineState> draw_pso, count_pso, compute_pso, lattice_pso;
+    ComPtr<ID3D12PipelineState> surface_draw_pso; // C9 U4: draw_pso for the route-B surface (surface_ready)
     ComPtr<ID3D12Resource> depth, check_target, check_depth;
     ComPtr<ID3D12DescriptorHeap> dsv_heap, check_rtv_heap;
     ComPtr<ID3D12CommandAllocator> check_allocator;
@@ -463,6 +464,19 @@ struct Scene::Impl {
         scene_require(p->frequency > 0, "the producer queue reports no timestamp frequency", SA2_E_D3D12);
         return p;
     }
+    // C9 U4: the scene's draw pipeline for the route-B surface's B8G8R8A8 back buffers, from draw_pso's blobs. The
+    // R8G8B8A8 pipelines stay as they are: the geometry check draws count_pso into its own R8G8B8A8 target.
+    void surface_create() {
+        if (surface_draw_pso) return;
+        const auto directory = module_path().parent_path();
+        surface_draw_pso = graphics(scene_bytes(directory / "draw_vs.dxil"), scene_bytes(directory / "draw_ps.dxil"), nullptr,
+                                    DXGI_FORMAT_B8G8R8A8_UNORM, L"SA2 scene surface pipeline");
+    }
+    ID3D12PipelineState* draw_pipeline(DXGI_FORMAT format) {
+        if (format == DXGI_FORMAT_R8G8B8A8_UNORM) return draw_pso.Get();
+        scene_require(format == DXGI_FORMAT_B8G8R8A8_UNORM && surface_draw_pso, "the scene's surface pipeline is not ready");
+        return surface_draw_pso.Get();
+    }
     // ABI 5: the surface pipeline, from the same product blobs.
     ComPtr<ID3D12PipelineState> product_surface_pipeline(ID3D12RootSignature* signature) {
         const auto directory = module_path().parent_path();
@@ -604,7 +618,8 @@ struct Scene::Impl {
         wait(timeout);
     }
     // One frame of W-J's runGpu (renderer-wj/gpu.cpp) on the host's frame and trace window.
-    void record_jumbling(SceneRecord& record, ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t now) {
+    void record_jumbling(SceneRecord& record, ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t now,
+                         ID3D12PipelineState* pipeline) {
         const auto& a = *jumble;
         const bool timed = record.tracing();
         const auto frame = uint64_t(record.trace.size()); wj::Turn turn{0, 0, 0}; WjStep step;
@@ -625,7 +640,7 @@ struct Scene::Impl {
         sb::rotate(q, 0, 3, 0.002); ++camera;
         const auto c = constants(shape, q, float(record.width) / float(record.height), timed ? float(turn.theta) : 0);
         const auto b = protocol.bound;
-        draw(list, c, cb[slot], cb_data[slot], label_buffers[b], pose_buffers[b], draw_pso.Get(), target, record.width, record.height, false);
+        draw(list, c, cb[slot], cb_data[slot], label_buffers[b], pose_buffers[b], pipeline, target, record.width, record.height, false);
         if (step.copy) {
             const auto index = uint64_t(protocol.records.copies.size());
             scene_require(index < readback_capacity, "preserved bundle readback capacity exceeded; end the trace within trace_ms");
@@ -780,9 +795,10 @@ Scene::~Scene() = default;
 void Scene::poison() { gpu->healthy = false; }
 void Scene::require_healthy() const { scene_require(gpu->healthy, "scene recording failed; drain and unload before retrying"); }
 void Scene::wait_geometry(uint32_t timeout) { gpu->wait(timeout); }
-void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t now) {
-    auto& g = *gpu; g.initialize(list);
-    if (g.jumble) { g.record_jumbling(record, list, slot, target, now); return; }
+void Scene::surface_ready() { gpu->surface_create(); }
+void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t now, DXGI_FORMAT format) {
+    auto& g = *gpu; auto* const pipeline = g.draw_pipeline(format); g.initialize(list);
+    if (g.jumble) { g.record_jumbling(record, list, slot, target, now, pipeline); return; }
     const bool timed = record.tracing(), label_scene = record.config.scene >= 3;
     const auto frame = uint64_t(record.trace.size()); sb::Turn turn{0, 0, 0};
     if (timed) turn = sb::turnAt(now, record.start, sb::turnTicks(record.config.scene == 3 ? record.config.turn_ms : 190, record.frequency), g.assets->angle);
@@ -808,7 +824,7 @@ void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CP
     if (record.config.scene == 2 || record.config.scene == 3) { sb::rotate(g.q, 0, 3, 0.002); ++g.camera; }
     const auto c = constants(g.shape, g.q, float(record.width) / float(record.height), record.config.scene == 3 && timed ? float(turn.theta) : 0);
     // W1..W4 bind identity poses (never re-uploaded) through W-J's pose path.
-    g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.pose_buffers[g.bound], g.draw_pso.Get(), target, record.width, record.height, false);
+    g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, record.width, record.height, false);
     if (copy) {
         const auto index = uint64_t(g.records.copies.size());
         scene_require(index < g.readback_capacity, "preserved label readback capacity exceeded; end the trace within trace_ms");

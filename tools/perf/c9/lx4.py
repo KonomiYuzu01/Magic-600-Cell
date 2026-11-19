@@ -357,7 +357,7 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
     head = module_row(tail, 'lx4', clock, sleep)
     if head is None:
         out(f'the shell has written no lx4 module row to {LIVE} within {START_TIMEOUT_S:g} s; start it with --lx4 '
-            'first')
+            '--lx4-fixtures <fixtures> first')
         return 2
     if head.get('puzzle') != puzzle:
         out(f"the shell runs {head.get('puzzle')!r}, not {puzzle!r}")

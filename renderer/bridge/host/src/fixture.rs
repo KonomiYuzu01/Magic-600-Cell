@@ -3,13 +3,14 @@
 //! binary ([`write`]), and the launcher gives each run a fresh copy of its session folder, which the host reopens
 //! ([`crate::m6h_open_session`] with the fixture, [`crate::turns::Turns::reopen`]).
 //!
-//! The fixture is a session made through the shell's own turns: a new session at the solved state, the twist keys of
-//! [`KEYS`] pressed through the input router and committed through the command layer, and the correctness control run
-//! at the close, which must pass. Its folder holds:
+//! The fixture is a session made through the shell's own turns: a new session of one puzzle at the solved state (with
+//! Jumble on, `jumble.on` committed at its start), the twist keys of [`KEYS`] pressed through the input router and
+//! committed through the command layer, and the correctness control run at the close, which must pass. Its folder
+//! holds:
 //! - `session/`: the session's journal (with its `lock` file, which `FsDisk` never removes);
-//! - `fixture.json` ([`RECORD`]): the format [`FORMAT`], the keys, the committed presses' arguments, the engine revision
-//!   that shows the last of them ([`crate::ENGINE_REVISION`] plus the presses), the state's digest, and the control's
-//!   record.
+//! - `fixture.json` ([`RECORD`]): the format [`FORMAT`], the puzzle, the keys, the committed presses' arguments, the
+//!   engine revision that shows the last of them ([`Puzzle::opened_at`] plus the presses), the head's digest, and the
+//!   control's record. A record without a puzzle is a Jumble-off one, as before the jumbled puzzle had fixtures.
 //!
 //! Draft: the presses are a fixed list of the router's three twist keys and their inverses on the one cap the router
 //! grips; the bar names no session size. Nothing here is Windows/DirectX, input or performance evidence.
@@ -20,8 +21,7 @@ use std::sync::Arc;
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
 
-use crate::turns::{Press, Turns};
-use crate::ENGINE_REVISION;
+use crate::turns::{Press, Puzzle, Turns};
 
 /// The record's format.
 pub const FORMAT: &str = "magic600-c9-session-fixture-v1";
@@ -60,22 +60,28 @@ pub const KEYS: [&str; 24] = [
 /// What the host needs of a fixture to reopen its session.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Fixture {
+    /// The session's puzzle.
+    pub puzzle: Puzzle,
     /// The arguments of every committed press, in order.
     pub committed: Vec<Value>,
-    /// The digest of the session's state after them.
+    /// The digest of the session's head after them.
     pub digest: String,
-    /// The engine revision that shows that state: [`ENGINE_REVISION`] plus the presses.
+    /// The engine revision that shows that head: [`Puzzle::opened_at`] plus the presses.
     pub revision: u64,
 }
 
-/// Reads a fixture's record from `path`; refuses another format, a malformed record, or a revision that does not
-/// count the presses.
+/// Reads a fixture's record from `path`; refuses another format, an unknown puzzle, a malformed record, or a revision
+/// that does not count the presses.
 pub fn read(path: &Path) -> Result<Fixture, String> {
     let bytes = std::fs::read(path).map_err(|error| format!("the session fixture: {error}"))?;
     let record = json::parse(&bytes).map_err(|error| format!("the session fixture is not JSON: {error:?}"))?;
     if record.get("format").and_then(Value::as_str) != Some(FORMAT) {
         return Err(format!("the session fixture is not {FORMAT}"));
     }
+    let puzzle = match record.get("puzzle") {
+        None => Puzzle::JumbleOff,
+        Some(name) => name.as_str().and_then(Puzzle::from_name).ok_or("the session fixture's puzzle is unknown")?,
+    };
     let committed = record
         .get("committed")
         .and_then(Value::as_array)
@@ -88,24 +94,37 @@ pub fn read(path: &Path) -> Result<Fixture, String> {
         .and_then(Value::as_i64)
         .and_then(|revision| u64::try_from(revision).ok())
         .ok_or("the session fixture has no revision")?;
-    if revision != ENGINE_REVISION + committed.len() as u64 {
+    if revision != puzzle.opened_at() + committed.len() as u64 {
         return Err(format!(
             "the session fixture's revision {revision} does not count its {} presses",
             committed.len()
         ));
     }
-    Ok(Fixture { committed, digest, revision })
+    Ok(Fixture { puzzle, committed, digest, revision })
 }
 
-/// Makes a fixture in the new folder `out` (it must not exist): a new session in `out/session` with the twist menu of
-/// `menu_file` pinned, each chord of `keys` pressed and released (each must commit), and the control at the close,
-/// which must pass. Writes `out/fixture.json` and answers its record.
+/// Makes a Jumble-off fixture: [`write_for`] with [`Puzzle::JumbleOff`].
 pub fn write(kernel: Arc<Kernel>, assets: &Path, menu_file: &Path, out: &Path, keys: &[&str]) -> Result<Value, String> {
+    write_for(Puzzle::JumbleOff, kernel, assets, menu_file, out, keys)
+}
+
+/// Makes a fixture of `puzzle` in the new folder `out` (it must not exist): a new session in `out/session` with the
+/// twist menu of `menu_file` pinned (with Jumble on, `jumble.on` committed at its start), each chord of `keys` pressed
+/// and released (each must commit), and the control at the close, which must pass. Writes `out/fixture.json` and
+/// answers its record.
+pub fn write_for(
+    puzzle: Puzzle,
+    kernel: Arc<Kernel>,
+    assets: &Path,
+    menu_file: &Path,
+    out: &Path,
+    keys: &[&str],
+) -> Result<Value, String> {
     if out.exists() {
         return Err("the fixture folder already exists; a fixture is never replaced".to_owned());
     }
     std::fs::create_dir_all(out).map_err(|error| format!("the fixture folder: {error}"))?;
-    let mut turns = Turns::open(kernel, assets, &out.join(SESSION), menu_file)?;
+    let mut turns = Turns::open(kernel, assets, &out.join(SESSION), menu_file, puzzle)?;
     for chord in keys {
         match turns.key_down(chord, false)? {
             Press::Committed => {}
@@ -113,8 +132,8 @@ pub fn write(kernel: Arc<Kernel>, assets: &Path, menu_file: &Path, out: &Path, k
         }
         turns.key_up(chord)?;
     }
-    let digest = turns.state()?.digest().to_owned();
-    let revision = ENGINE_REVISION + keys.len() as u64;
+    let digest = turns.head()?.digest();
+    let revision = puzzle.opened_at() + keys.len() as u64;
     let control = turns.check(Some((revision, digest.clone())));
     if control.get("pass") != Some(&Value::Bool(true)) {
         return Err(format!("the fixture's correctness control failed: {}", control.canonical()));
@@ -122,6 +141,7 @@ pub fn write(kernel: Arc<Kernel>, assets: &Path, menu_file: &Path, out: &Path, k
     let record = json::object([
         ("format", Value::String(FORMAT.to_owned())),
         ("session", Value::String(SESSION.to_owned())),
+        ("puzzle", Value::String(puzzle.name().to_owned())),
         ("keys", Value::Array(keys.iter().map(|key| Value::String((*key).to_owned())).collect())),
         ("committed", Value::Array(turns.committed().to_vec())),
         ("revision", Value::Int(revision as i64)),
