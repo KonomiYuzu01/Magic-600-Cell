@@ -9,7 +9,7 @@
 //! half on the literal word `[1, -1]`. Not built: the captured lock of LB2's row "Net and Strict protection" (block,
 //! identity and position locks) and LB2.3's coverage report with `LB2:protection.incomplete_coverage`, which are
 //! library entries over kernel rows; the tool's host bridge answers a snapshot read with an argument for KN2.4's
-//! `positions` and `labels` rows only (`c600_tools::kernel_rows`).
+//! `positions`, `labels` and `effect` rows, not `protection` (`c600_tools::kernel_rows`).
 //! A pass is source and fixture evidence.
 
 mod common;
