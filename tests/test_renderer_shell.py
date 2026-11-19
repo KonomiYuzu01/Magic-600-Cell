@@ -130,11 +130,27 @@ class ShellProject(unittest.TestCase):
         csharp_codes = dict(re.findall(r"public const int (\w+) = (\d+);", csharp))
         names = {"OK": "Ok", "E_INVALID_ARGUMENT": "InvalidArgument", "E_MODEL": "ModelNotLoaded",
                  "E_CORE": "CoreRefused", "E_HOST": "HostRefused", "E_UNAVAILABLE": "Unavailable",
-                 "E_POISONED": "Poisoned"}
+                 "E_POISONED": "Poisoned", "E_SESSION": "SessionRefused"}
         self.assertEqual(set(rust_codes), set(names))
         for rust, name in names.items():
             self.assertEqual(csharp_codes.get(name), rust_codes[rust], rust)
-        rows = {"M6hFrame": ("Submitted", ["sequence", "device_epoch", "surface"]),
+        rust_presses = dict(re.findall(r"pub const M6H_PRESS_([A-Z]+): u32 = (\d+);", source))
+        csharp_presses = dict(re.findall(r"public const uint Press(\w+) = (\d+);", csharp))
+        self.assertEqual(set(rust_presses), {"NONE", "COMMITTED", "REFUSED", "OTHER"})
+        self.assertEqual({name.upper(): value for name, value in csharp_presses.items()}, rust_presses)
+        key = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hKey \{(.*?)\}", source, re.S)
+        csharp_key = re.search(r"LayoutKind\.Sequential\)\]\s*public struct KeyResult\s*\{(.*?)\}", csharp, re.S)
+        self.assertTrue(key and csharp_key)
+        self.assertEqual(re.findall(r"pub (\w+): (u\d+),", key.group(1)),
+                         [("press", "u32"), ("reserved", "u32"), ("engine_revision", "u64")])
+        self.assertEqual(re.findall(r"public (\w+) (\w+);", csharp_key.group(1)),
+                         [("uint", "Press"), ("uint", "Reserved"), ("ulong", "EngineRevision")])
+        control = re.search(r'pub const CONTROL: &str = "([a-z-]+)";',
+                            text(ROOT / "renderer" / "bridge" / "host" / "src" / "turns.rs"))
+        self.assertTrue(control)
+        self.assertIn(f'public const string CorrectnessControl = "{control.group(1)}";', csharp)
+        rows = {"M6hFrame": ("Submitted", ["sequence", "device_epoch", "surface", "engine_revision",
+                                           "publication_revision"]),
                 "M6hPresented": ("Presented", ["sequence", "device_epoch", "surface", "engine_revision", "camera",
                                                "display_qpc"])}
         for rust_name, (csharp_name, fields) in rows.items():
@@ -159,16 +175,54 @@ class ShellProject(unittest.TestCase):
         written = {}
         for block in re.findall(r'json\.WriteString\("t", "(\w+)"\);(.*?)\}\)', log, re.S):
             written[block[0]] = re.findall(r'json\.Write\w+\("(\w+)"', block[1])
-        for kind in ("frame", "presented"):
-            with self.subTest(row=kind):
-                self.assertEqual(written[kind], list(key_to_frame.FIELDS[kind]))
-        self.assertNotIn("key", written, "no key rows until a turn exists")
+        self.assertEqual(written["presented"], list(key_to_frame.FIELDS["presented"]))
+        self.assertEqual(written["frame"], [*key_to_frame.FIELDS["frame"], "engine_revision", "publication_revision"])
+        # A key row: seq and qpc, then frame_id as a number or as null.
+        self.assertEqual(written["key"][:2], list(key_to_frame.FIELDS["key"]))
+        self.assertEqual(written["key"][2:], ["frame_id", "frame_id"])
+        self.assertIn('json.WriteNull("frame_id");', log)
         run = written["run"]
         for field in ("format", "run_id", "build_identity", "qpc_frequency", "synthetic", "foreground_throughout",
-                      "correctness", "process_id"):
+                      "correctness", "correctness_control", "correctness_detail", "process_id"):
             self.assertIn(field, run)
-        self.assertIn('json.WriteString("correctness", "fail");', log, "no correctness control yet: never pass")
+        # Correctness passes only when the session's control passed; without a session it is "fail".
+        self.assertIn('json.WriteString("correctness", _correct ? "pass" : "fail");', log)
+        self.assertEqual(re.findall(r"_correct = (\w+);", log), ["pass"])
+        self.assertIn('private string _control = "none";', log)
+        self.assertIn("_log?.Correctness(pass, HostLibrary.CorrectnessControl, library.Check(_host));",
+                      text(PROJECT / "Shell.cs"))
         self.assertIn('json.WriteBoolean("synthetic", false);', log)
+        # A press waits for a frame that draws its revision over a publication of it; the rest close without one.
+        self.assertIn("f.EngineRevision >= press.Revision && f.PublicationRevision >= press.Revision", log)
+        self.assertIn("WriteKey(press.Qpc, null);", log)
+
+    def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
+        chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")
+        known = set()
+        for name in ("CHARACTER_KEYS", "NAMED_KEYS"):
+            block = re.search(rf"const {name}: \[&str; (\d+)\] = \[(.*?)\];", chord, re.S)
+            self.assertTrue(block, name)
+            codes = re.findall(r'"(\w+)"', block.group(2))
+            self.assertEqual(len(codes), int(block.group(1)))
+            known.update(codes)
+        source = text(PROJECT / "KeyChord.cs")
+        named = set(re.findall(r'=> "(\w+)"', source))
+        self.assertTrue(named and named <= known, sorted(named - known))
+        self.assertIn('return "Key" + (char)value;', source)
+        self.assertIn('return "Digit" + (char)value;', source)
+        self.assertIn('return "F" + (value - (long)Key.F1 + 1);', source)
+        self.assertTrue({f"Key{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"} <= known)
+        self.assertTrue({f"Digit{d}" for d in range(10)} | {f"F{n}" for n in range(1, 13)} <= known)
+        # Modifiers in c600-input's order, the physical key, and the platform's repeat flag.
+        self.assertIn('(key.CtrlPressed ? "Ctrl+" : "") + (key.ShiftPressed ? "Shift+" : "") + (key.AltPressed ? '
+                      '"Alt+" : "")', source)
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("KeyChord.Code(key.PhysicalKeycode)", shell)
+        self.assertIn("library.KeyDown(_host, chord, key.Echo, out var result)", shell)
+        self.assertIn("library.FocusLost(_host);", shell)
+        close = shell[shell.index("private void Close()"):shell.index("private void CloseSession()")]
+        self.assertLess(close.index("CloseSession();"), close.index("CloseCore();"),
+                        "the control runs before the log closes")
 
     def test_the_surface_uses_every_shell_call_and_no_other(self):
         used = set(re.findall(r'Call\("(sa2_[a-z_]+)"\)', text(PROJECT / "CoreSurface.cs")))
@@ -251,7 +305,7 @@ class ProductBuild(unittest.TestCase):
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
                  "host/c600_shell_host.dll": b"host", f"shell/project/{self.build_product.build_shell.ASSEMBLY}": b"asm",
                  "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
-                 "assets/manifest.json": b"{}"}
+                 "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}"}
         for name, data in files.items():
             (self.build / name).parent.mkdir(parents=True, exist_ok=True)
             (self.build / name).write_bytes(data)
@@ -264,7 +318,8 @@ class ProductBuild(unittest.TestCase):
     def test_a_build_verifies_and_names_every_part_it_loads(self):
         product = self.build_product.verify(self.build)
         self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
-                                                 "shell:assembly", "shell:Main.tscn", "assets:manifest.json"})
+                                                 "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
+                                                 "menu:wj-I_a.json"})
         self.assertTrue(product["identity"].startswith("c9-product-"))
         self.assertTrue(all(not Path(part["path"]).is_absolute() for part in product["parts"].values()))
 
@@ -278,6 +333,11 @@ class ProductBuild(unittest.TestCase):
         (self.build / "shell" / "project" / "Extra.cs").write_bytes(b"extra")
         with self.assertRaises(self.build_product.ProductError):
             self.build_product.verify(self.build)
+
+    def test_the_twist_menu_is_a_tracked_menu_record(self):
+        source = ROOT / self.build_product.MENU_SOURCE
+        self.assertIn("menu", json.loads(source.read_text(encoding="utf-8")))
+        self.assertEqual(Path(self.build_product.MENU).name, source.name)
 
     def test_the_identity_follows_every_digest_and_no_order(self):
         identity = self.build_product.identity
@@ -305,7 +365,7 @@ class ProductBuild(unittest.TestCase):
             self.assertFalse(out.exists())
             names = {line.split("=", 1)[0][len("env: "):] for line in lines if line.startswith("env: ")}
             expected = {"M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
-                        "M600_RUN_ID"} | ({"M600_INPUT_ECHO"} if echo else set())
+                        "M600_RUN_ID", "M600_SESSION_DIR", "M600_TWIST_MENU"} | ({"M600_INPUT_ECHO"} if echo else set())
             self.assertEqual(names, expected)
 
     def test_a_used_run_folder_or_a_changed_build_is_refused(self):
@@ -344,6 +404,8 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(env["M600_ASSETS"], str(build / "assets"))
         self.assertEqual(env["M600_EVENTS_DIR"], str(out.resolve()))
         self.assertEqual(env["M600_RUN_ID"], "r1")
+        self.assertEqual(env["M600_SESSION_DIR"], str(out.resolve() / "session"))
+        self.assertEqual(env["M600_TWIST_MENU"], str(build / "menu" / "wj-I_a.json"))
         self.assertNotIn("M600_INPUT_ECHO", env)
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
         self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"]),

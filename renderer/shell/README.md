@@ -15,17 +15,31 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - `Shell.cs` is the root node. When the environment names the core library (`M600_CORE_DLL`), the host library
     (`M600_HOST_DLL`) and the assets folder (`M600_ASSETS`), it opens the core's surface under the whole window,
     creates the host over it, follows window resizes, and submits one frame per process step (step S4, a draft).
+    Charter E2's turns (a draft): when `M600_SESSION_DIR` (a new folder) and `M600_TWIST_MENU` (the twist menu's
+    record) are set as well, the host opens a session there, and every key with a W3C code (`KeyChord.cs`: the
+    physical key after Ctrl, Shift, Alt and Meta) goes through c600-input's router on its draft US QWERTY map. A
+    twist key (`KeyJ`, `KeyK`, `KeyL`, with Shift for the inverse) commits `twist.apply` in the command layer over the
+    session's journal, and the host adopts and publishes the new state at the next engine revision. A lost keyboard
+    focus releases the router's held keys. The close runs the session's correctness control.
   - `EventLog.cs` (step S5, a draft) writes charter E2's event log, `tools/perf/c9`'s DRAFT
     `magic600-c9-shell-events-v1`, when `M600_EVENTS_DIR` names an absolute folder without a log and
     `M600_BUILD_IDENTITY` names the build (`M600_RUN_ID` is optional). Each submitted frame gets a `frame` row at the
     QPC read just before the call, and each confirmed presentation a `presented` row with the core's display time.
-    `events.jsonl` is written on close, with the `run` row first. The log cannot yet say three things:
-    - There is no turn without the command layer, so there are no `key` rows.
-    - There is no correctness control, so `correctness` is `fail` with `correctness_control` `none`, and
-      `key_to_frame.py` marks every run invalid.
+    `events.jsonl` is written on close, with the `run` row first.
+    - Every measured press, a twist key's key-down (not a repeat) that committed or was refused, gets a `key` row in
+      press order. A committed press adopted at engine revision R names the first submitted frame that draws
+      revision R over a publication of revision R or later (the conservative DRAFT reading); a refused press, and a
+      press no frame showed before the close, names no frame, which `key_to_frame.py` counts as unconfirmed. `frame`
+      rows carry `engine_revision` and `publication_revision` as extra fields.
+    - `correctness` is the session's correctness control, `journal-reopen-and-kernel-replay`, with its record as
+      `correctness_detail`: the live state, the state a reopen of the journal replays, and the kernel's own replay of
+      every committed press from the solved state must agree, and the newest presented frame's revision must show
+      the replay's state after that many presses. An undo or redo (Ctrl+Z, Ctrl+Y on the draft map) is shown but
+      fails the control, since its replay knows only twists. Without a session, `correctness` is `fail` with
+      `correctness_control` `none`.
     - The core does not report its swap chain's address, so there is no `swap_chain` and no PresentMon cross-check.
 
-    The E3 startup log (`magic600-c9-startup-v1`) needs a session and a correctness check, so it is not written yet.
+    The E3 startup log (`magic600-c9-startup-v1`) is not written yet.
   - `InputLog.cs` and the echo in `Shell.cs` serve route B's check B1. When `M600_INPUT_ECHO` is `1`, a panel over the
     view echoes every key press (not a repeat) and mouse click (not the wheel) that reaches the window, and
     `input.jsonl` (`magic600-c9-shell-input-v1`, a C9 DRAFT) records each with the QPC of its receipt, the window
@@ -37,7 +51,7 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     `sa2_drain`, `sa2_surface_detach` and `sa2_detach` on close. Draft choices: the first hardware adapter, the
     acceptance harness's default config, and scene 1.
   - `HostLibrary.cs` loads the native host library (`c600_shell_host.dll`, step S3), resolves its `m6h_*` exports,
-    refuses another version than 1, and wraps each call. `Create` hands the library the core's table and a context.
+    refuses another version than 2, and wraps each call. `Create` hands the library the core's table and a context.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function
     table names, in its order, and refuses another ABI version than 5. It also resolves `ShellCalls`, the route-B
     calls the shell makes itself and the table does not hold: `sa2_create`, `sa2_scene_load`, the three surface
@@ -45,13 +59,16 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     (CT-RPI-20), so the shell is the only place that loads the core.
 - `build_product.py`: the product build on route B, offline, into `work/build/c9-product/<stamp>/`: the core
   (`renderer/core/build.cmd`, the DLL with its shaders) in `native/`, a release build of `c600-shell-host` in
-  `host/`, the shell (`build_shell.py`) in `shell/`, and a copy of the model's tracked files in `assets/`.
+  `host/`, the shell (`build_shell.py`) in `shell/`, a copy of the model's tracked files in `assets/`, and a copy of
+  the twist menu the session pins (`research/jumbling/fixtures/wj-I_a.json`, the I_a menu; G6 owns the menu) in
+  `menu/`.
   `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a
   digest of the parts. It never launches anything.
 - `launch.py`: the one way to start the shell. It recomputes every part of a product build (default: the newest),
   creates the run folder `--out` (never an existing one), and starts the pinned Godot (the process that presents)
   on the build's shell with `M600_CORE_DLL`, `M600_HOST_DLL`, `M600_ASSETS`, `M600_EVENTS_DIR`,
-  `M600_BUILD_IDENTITY` and `M600_RUN_ID`, plus `M600_INPUT_ECHO=1` with `--echo`. It waits for the shell to exit
+  `M600_BUILD_IDENTITY`, `M600_RUN_ID`, `M600_SESSION_DIR` (`session` in the run folder) and `M600_TWIST_MENU`,
+  plus `M600_INPUT_ECHO=1` with `--echo`. It waits for the shell to exit
   and writes `launch.json` (`magic600-c9-launch-v1`) with the build and run folders written as `<build>` and
   `<out>`. `--dry-run` checks and prints and starts nothing. Start it from a PowerShell on the desktop: a window
   started from a background process never gets the foreground.
@@ -64,9 +81,11 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - the route-B window settings;
   - the export list and ABI version equal to the bridge's and the header's;
   - every shell call declared by the header and absent from the bridge's table;
-  - the host library's exports, version, status codes, and frame and presented rows equal to its Rust source;
-  - the event log's `frame` and `presented` fields equal to `key_to_frame.py`'s, with no `key` row and never a
-    passing correctness;
+  - the host library's exports, version, status codes, press codes, and frame, key and presented rows equal to its
+    Rust source, and the correctness control's name;
+  - the event log's `key`, `frame` and `presented` fields as `key_to_frame.py` reads them, and a passing
+    correctness only from the session's control;
+  - the chord codes `KeyChord.cs` names, all known to c600-input;
   - `CoreSurface.cs` using every shell call and no other;
   - the input log's rows, a file and row kinds apart from the E2 log's, and the echo only when asked;
   - over a fake build: `product.json`'s parts and identity, the refusal of a changed or added part, the launcher's
@@ -84,11 +103,18 @@ outside the language workspace (CT-RPI-01). It is a draft:
   sequence, device epoch and surface), `m6h_read_presented` (confirmed presentations, each with the display time the
   core read from the confirming statistics row), `m6h_recover` (which publishes the view again for the new device), `m6h_last_error` and
   `m6h_destroy`.
+- ABI 2 adds the turns: `m6h_open_session`, `m6h_key_down` (it answers the press and the adopted revision),
+  `m6h_key_up`, `m6h_focus_lost`, `m6h_close_session` (the correctness control) and `m6h_check` (its record).
+  `src/turns.rs` holds the session: KN5's command layer on M6's journal store over the product disk (`FsDisk`, with
+  its lock), LP3's input router, and KN3's twist menu pinned in both. `m6h_frame` names the frame's engine revision
+  and the revision of the publication it draws.
 - Every call checks its pointers, catches a panic and answers a status code.
 - The host context is c600-display's declared fixture context with the core's own support report, and the limit
-  profile is a declared draft value. Picking, previews, the command layer and the session store come later.
+  profile is a declared draft value. Picking and previews come later.
 - Its tests drive the C interface over the bridge's C shim and the fake core: frames confirmed, a lost device and
-  recovery, and the refusals. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
+  recovery, and the refusals; and the turns: twist keys committed and adopted, the two revisions of the frames, keys
+  that are no press, an undo that fails the control, a shown revision the host never adopted, and the session's
+  refusals. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
 
 Step S1 of the shell, moved to the core's ABI 5:
 
@@ -110,8 +136,11 @@ The product build, the launcher and the input echo: on 18 November 2026 `build_p
 and the shell offline with no warning, and `launch.py --dry-run` checked the build. The shell was not launched: its
 first launch (ABI 5's GPU smoke, part 2) and check B1 are owner-machine steps of the one sitting.
 
+The turns: on 18 November 2026 the host's tests passed over the fake core and the shell built offline with no
+warning. They were never launched; E2's key-to-frame run (runbook step A3) is an owner-machine step of the one
+sitting.
+
 Next steps:
 
-- a turn through the command layer, so that E2 gets `key` rows, and a correctness control for the `run` row;
-- the E3 startup log, once there is a session;
+- the E3 startup log;
 - the owner-machine run of S4 (route B check B1 first), in the one sitting.
