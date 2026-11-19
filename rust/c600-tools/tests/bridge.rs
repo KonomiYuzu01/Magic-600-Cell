@@ -21,6 +21,7 @@ use c600_run::provenance::INCOMPATIBLE;
 use c600_run::value::{equal, Value};
 use c600_tools::bridge::{base, word_args, Bridge};
 use c600_tools::kernel_rows::{labels_type, positions_type, LABELS, POSITIONS};
+use c600_tools::process::{invoke_tool, ToolCommand};
 use c600_tools::tool::{manifest, Manifest, Tool, ROW, SOURCE};
 
 const SESSION: &str = "bridge";
@@ -71,30 +72,41 @@ fn targeting(rows: &'static [&'static str]) -> Tool {
     Tool::new(&source, manifest).unwrap_or_else(|error| panic!("the variant targeting {rows:?} loads: {error}"))
 }
 
-/// Runs `tool` on `word` as run `run` through a bridge onto `layer`; returns the run and the bridge's invocations.
+/// Runs `tool` on `word` inside the command the solver invokes to run it ([`invoke_tool`]; ONE.34, finding B2 of the
+/// KN5 boundary attack): the run is the command's job, `job-<id>`, through a bridge onto `layer`. Returns the run, the
+/// bridge's invocations and the command, which the caller reports.
 fn run_on(
     tool: &Tool,
     layer: &mut CommandLayer,
+    shell: &mut Shell,
     word: &[i32],
-    run: &str,
     pins: Option<Pins>,
-) -> (c600_tools::tool::Ran, Vec<c600_tools::bridge::Sent>) {
-    let mut context = tool.context(run, &base(layer.revision()));
+) -> (c600_tools::tool::Ran, Vec<c600_tools::bridge::Sent>, ToolCommand) {
+    let command = invoke_tool(shell, layer, tool, word).unwrap_or_else(|error| panic!("the tool's row: {error}"));
+    let run = command.run();
+    let mut context = tool.context(&run, &base(&command.job.revision));
     if let Some(pins) = pins {
         context.pins = pins;
     }
-    let mut bridge = Bridge::new(layer, run);
+    let mut bridge = Bridge::new(layer, &run);
     let ran = tool.run_in(word, context, &mut bridge, &mut Store::default()).expect("the run starts");
-    (ran, bridge.sent)
+    (ran, bridge.sent, command)
 }
 
-/// Acceptance item 3, the bridge. The tool's proposal becomes one invocation of `operation.preview` with
-/// `Caller::Runtime` for the run, the fresh command ID `<run>/1`, the layer's current epoch, the literal word as the
-/// absolute argument `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program receives only
-/// the fixed acknowledgement whether the layer admits the preview, the layer refuses the word (the empty word, a recipe
-/// of the wrong shape), or preview admission refuses the proposal before the layer sees it; on the same word the
-/// charges are the same whatever the answer, and only the shell sees the layer's answer. A preview changes no state,
-/// revision or journal.
+/// Reports the solver's command once its run ran: the layer completes the query with the program's acknowledgement.
+fn report(layer: &mut CommandLayer, command: ToolCommand) {
+    let receipt = command.acknowledge(layer).expect("the layer holds the tool's job");
+    assert!(matches!(receipt.status, Status::Completed(_)), "the tool's command: {receipt:?}");
+}
+
+/// Acceptance item 3, the bridge. The tool runs inside the command the solver invoked, as that command's job
+/// `job-<id>`, and its proposal becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, the
+/// fresh command ID `<run>/1`, the layer's current epoch, the literal word as the absolute argument
+/// `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program receives only the fixed
+/// acknowledgement whether the layer admits the preview, the layer refuses the word (the empty word, a recipe of the
+/// wrong shape), or preview admission refuses the proposal before the layer sees it; on the same word the charges are
+/// the same whatever the answer, and only the shell sees the layer's answer. Neither the solver's query nor a preview
+/// changes the state, the revision or the journal.
 ///
 /// CT-BND-11 (part, the 600-cell-Full tool on the command layer: in the solving profile its preview outcome is withheld)
 /// and CT-BND-07 (part, the 600-cell-Full tool on the command layer: whatever the engine answers, the program gets the
@@ -103,18 +115,21 @@ fn run_on(
 fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowledgement() {
     let tool = Tool::full_600_cell().unwrap();
     let mut summaries = Vec::new();
-    for (case, word, run) in [
-        ("admitted", &[1, -2][..], "run-a"),
-        ("refused by the layer", &[][..], "run-b"),
-        ("refused at admission", &[1, -2][..], "run-c"),
-        ("refused at admission", &[][..], "run-d"),
+    for (case, word) in [
+        ("admitted", &[1, -2][..]),
+        ("refused by the layer", &[][..]),
+        ("refused at admission", &[1, -2][..]),
+        ("refused at admission", &[][..]),
     ] {
-        let (mut layer, _) = session();
+        let (mut layer, mut shell) = session();
         let read = base(layer.revision());
         assert_eq!(read, "bridge@1/e0");
         let before = fingerprint(&layer);
         let pins = (case == "refused at admission").then(Pins::default);
-        let (ran, sent) = run_on(&tool, &mut layer, word, run, pins);
+        let (ran, sent, command) = run_on(&tool, &mut layer, &mut shell, word, pins);
+        let run = command.run();
+        let run = run.as_str();
+        assert_eq!(run, "job-1", "{case}: the run is the job of the solver's command");
         assert_eq!(ran.run.summary.outcome, Outcome::Completed, "{case}");
         assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, run)[..]), "{case}");
         let [shown] = &ran.shell[..] else { panic!("{case}: one proposal") };
@@ -145,6 +160,10 @@ fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowled
                 (case, status, answer) => panic!("{case}: {status:?} {answer:?}"),
             }
         }
+        if case == "admitted" {
+            assert_eq!(layer.run_jobs(), 1, "{case}: the preview is built while the host holds the run's job");
+        }
+        report(&mut layer, command);
         assert_eq!(fingerprint(&layer), before, "{case}: a preview changes no state");
         summaries.push(ran.run.summary);
     }
@@ -159,7 +178,7 @@ fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowled
 /// shell sees the refusal, and nothing changes.
 #[test]
 fn the_runtime_reaches_no_commit_or_app_row() {
-    let (mut layer, _) = session();
+    let (mut layer, mut shell) = session();
     let before = fingerprint(&layer);
     let table = Table::h08();
     let rows: Vec<String> =
@@ -176,16 +195,17 @@ fn the_runtime_reaches_no_commit_or_app_row() {
     assert_eq!(bridge.sent.len(), rows.len());
     assert_eq!(fingerprint(&layer), before);
 
-    for (rows, run) in [(TO_EXECUTE, "to-execute"), (TO_EXIT, "to-exit")] {
+    for rows in [TO_EXECUTE, TO_EXIT] {
         let (tool, row) = (targeting(rows), rows[0]);
         assert_eq!(tool.manifest.rows, rows);
         let read = base(layer.revision());
-        let (ran, sent) = run_on(&tool, &mut layer, &[1, -2], run, None);
-        assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, run)[..]), "{row}");
+        let (ran, sent, command) = run_on(&tool, &mut layer, &mut shell, &[1, -2], None);
+        assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, &command.run())[..]), "{row}");
         let [one] = &sent[..] else { panic!("{row}: one invocation") };
         assert_eq!((one.invocation.row.as_str(), one.receipt.status.code()), (row, Some(code::COMMIT_ROW_REFUSED)));
         let [shown] = &ran.shell[..] else { panic!("{row}: one proposal") };
         assert!(matches!(&shown.answer, Answer::Refused(r) if r.code == code::COMMIT_ROW_REFUSED), "{row}");
+        report(&mut layer, command);
         assert_eq!(fingerprint(&layer), before, "{row}");
     }
 }
@@ -220,15 +240,16 @@ fn the_runtime_cannot_set_the_protection_policy() {
         assert_ne!(layer.policy(), kept, "{asked}: the shell's invocation switches the policy");
     }
 
-    let (tool, run) = (targeting(TO_POLICY), "to-policy");
+    let tool = targeting(TO_POLICY);
     assert_eq!(tool.manifest.rows, TO_POLICY);
     let (kept, before, read) = (layer.policy(), fingerprint(&layer), base(layer.revision()));
-    let (ran, sent) = run_on(&tool, &mut layer, &[1, -2], run, None);
-    assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, run)[..]));
+    let (ran, sent, command) = run_on(&tool, &mut layer, &mut shell, &[1, -2], None);
+    assert_eq!(ran.run.output.as_deref(), Some(&acknowledgement(&read, &command.run())[..]));
     let [one] = &sent[..] else { panic!("one invocation") };
     assert_eq!((one.invocation.row.as_str(), one.receipt.status.code()), (POLICY_ROW, Some(code::NOT_GRANTED)));
     let [shown] = &ran.shell[..] else { panic!("one proposal") };
     assert!(matches!(&shown.answer, Answer::Refused(r) if r.code == code::NOT_GRANTED), "{:?}", shown.answer);
+    report(&mut layer, command);
     assert_eq!((layer.policy(), fingerprint(&layer)), (kept, before), "the policy stays");
 }
 
@@ -276,17 +297,19 @@ fn a_runtime_invocation_carrying_a_token_is_refused() {
 fn only_a_token_the_shell_mints_commits_the_pending_preview() {
     let tool = Tool::full_600_cell().unwrap();
     let (mut layer, mut shell) = session();
-    let (ran, sent) = run_on(&tool, &mut layer, &[1, -2], "proposer", None);
+    let (ran, sent, command) = run_on(&tool, &mut layer, &mut shell, &[1, -2], None);
+    let proposer = command.run();
     assert_eq!(ran.run.summary.outcome, Outcome::Completed);
     let Status::Running(id) = sent[0].receipt.status else { panic!("{:?}", sent[0].receipt) };
     assert_eq!(layer.run_jobs(), 1);
+    report(&mut layer, command);
     let before = fingerprint(&layer);
 
     let unpresented = shell.press(&mut layer, "Ctrl+Shift+Enter", false);
     assert_eq!(unpresented.err().map(|error| error.code), Some(code::NO_FRESH_PREVIEW));
     HeadlessFrames::after(&layer).present(&mut shell, &mut layer, id).unwrap();
     let preview = layer.preview().cloned().expect("the pending preview");
-    assert_eq!((preview.id, &preview.caller), (id, &Caller::Runtime { run: "proposer".into() }));
+    assert_eq!((preview.id, &preview.caller), (id, &Caller::Runtime { run: proposer }));
 
     let args = json::object([("preview", Json::Int(id as i64))]);
     let mut bridge = Bridge::new(&mut layer, "committer");

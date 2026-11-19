@@ -29,6 +29,7 @@ use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot};
 use c600_run::boundary::{Answer, Store};
 use c600_tools::bridge::{base as read_base, Bridge};
 use c600_tools::expand::literal_digest;
+use c600_tools::process::invoke_tool;
 use c600_tools::tool::{manifest, BoundaryClass, Manifest, Ran, Tool, ENTRY, MODULE, ROW, SOURCE};
 use c600_tools::views::{
     self, content, declared, derivation, engine_bundle, frame_stamp, imported_view, model_revision, presented_frame,
@@ -78,13 +79,19 @@ fn links() -> Links {
     Links::of(&tool(), SOURCE).expect("the tool's source links")
 }
 
-/// The solver names `word`: the tool runs on it as run `run` through the bridge, and the layer builds the preview.
-fn name_word(layer: &mut CommandLayer, word: &[i32], run: &str) -> Ran {
+/// The solver names `word`: the shell invokes the tool's row with it, and the tool runs on the word inside that
+/// command, as its job's run, through the bridge (ONE.34; finding B2 of the KN5 boundary attack). The layer builds the
+/// preview, and the host then reports the command.
+fn name_word(layer: &mut CommandLayer, shell: &mut Shell, word: &[i32]) -> Ran {
     let tool = tool();
-    let context = tool.context(run, &read_base(layer.revision()));
-    let mut bridge = Bridge::new(layer, run);
+    let command = invoke_tool(shell, layer, &tool, word).unwrap_or_else(|error| panic!("the tool's row: {error}"));
+    let run = command.run();
+    let context = tool.context(&run, &read_base(&command.job.revision));
+    let mut bridge = Bridge::new(layer, &run);
     let ran = tool.run_in(word, context, &mut bridge, &mut Store::default()).expect("the run starts");
     layer.run_jobs();
+    let reported = command.acknowledge(layer).expect("the layer holds the tool's job");
+    assert!(matches!(reported.status, LayerStatus::Completed(_)), "the tool's command: {reported:?}");
     ran
 }
 
@@ -100,9 +107,9 @@ fn view_of(layer: &CommandLayer, ran: &Ran) -> Publication {
 }
 
 /// A layer on which the solver named `word`, its shell, and the view of the proposal.
-fn proposed(word: &[i32], run: &str) -> (CommandLayer, Shell, Publication) {
-    let (mut layer, shell) = session();
-    let ran = name_word(&mut layer, word, run);
+fn proposed(word: &[i32]) -> (CommandLayer, Shell, Publication) {
+    let (mut layer, mut shell) = session();
+    let ran = name_word(&mut layer, &mut shell, word);
     let publication = view_of(&layer, &ran);
     (layer, shell, publication)
 }
@@ -251,7 +258,7 @@ fn ct_ev3_01_the_tools_view_links_back_to_the_source_that_ran() {
     assert!(Links::of(&tool, &SOURCE.replace("preview_word", "preview_words")).is_err(), "nor do its links");
 
     // The checked program to the view's nodes and plans.
-    let (layer, _, publication) = proposed(&[1, -2], "ev3-01");
+    let (layer, _, publication) = proposed(&[1, -2]);
     let base = base_of(&layer);
     let [entry, shown] = &publication.nodes[..] else { panic!("two nodes") };
     assert_eq!((entry.node, entry.kind, &entry.source), (ENTRY_NODE, NodeKind::Container, &Some(links.entry.clone())));
@@ -330,7 +337,7 @@ fn ct_ev3_01_the_tools_view_links_back_to_the_source_that_ran() {
 #[test]
 fn ct_ev3_02_a_burst_adopts_the_newest_bundle_and_skips_obsolete_evaluations() {
     let (mut layer, mut shell) = session();
-    let ran = name_word(&mut layer, &[1, -2], "burst-0");
+    let ran = name_word(&mut layer, &mut shell, &[1, -2]);
     let first = view_of(&layer, &ran);
     let base = base_of(&layer);
     let (mut model, id) = model_with_view(&layer);
@@ -360,7 +367,7 @@ fn ct_ev3_02_a_burst_adopts_the_newest_bundle_and_skips_obsolete_evaluations() {
         frames.present(&mut shell, &mut layer, preview).expect("presented by the built-in chain");
         let receipt = shell.press(&mut layer, COMMIT, false).expect("the commit chord").expect("not a repeat");
         assert!(matches!(receipt.status, LayerStatus::Committed(_)), "{receipt:?}");
-        let ran = name_word(&mut layer, word, &format!("burst-{}", round + 1));
+        let ran = name_word(&mut layer, &mut shell, word);
         newest = view_of(&layer, &ran);
         let adopted = model.adopt(&candidate(&layer)).expect("a complete bundle of one revision");
         assert_eq!((model.adopted(), adopted.state), (&adopted, layer.revision().state), "adopted at once");
@@ -436,7 +443,7 @@ fn outside(word: &[i64]) -> Snapshot {
 #[test]
 fn ct_ev3_03_a_derived_display_names_its_derivation_and_base_and_an_import_its_lineage() {
     let word = [1, -2];
-    let (layer, _, publication) = proposed(&word, "ev3-03");
+    let (layer, _, publication) = proposed(&word);
     let before = (fingerprint(&layer), layer.revision().clone());
     let base = base_of(&layer);
     let preview = layer.preview().expect("the pending preview").clone();
@@ -513,7 +520,7 @@ fn ct_ev3_03_a_derived_display_names_its_derivation_and_base_and_an_import_its_l
 /// current pick, and navigation still opens the pinned producing version.
 #[test]
 fn ct_ev3_04_bindings_are_checked_before_the_source_and_the_producing_version_stays_open() {
-    let (layer, _, publication) = proposed(&[1, -2], "ev3-04");
+    let (layer, _, publication) = proposed(&[1, -2]);
     let (links, base) = (links(), base_of(&layer));
     let producing = links.digest.clone();
     let edited = SOURCE.replace("let r = ", "let receipt = ").replace("(r)", "(receipt)");
@@ -596,8 +603,8 @@ fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
 
     // The layer refuses the empty word: a word step with no move has the wrong recipe shape.
     for (case, word) in [("admitted", &[1, -2][..]), ("repeated letters", &[5, 5, -3]), ("refused", &[])] {
-        let (mut layer, _) = session();
-        let ran = name_word(&mut layer, word, "bnd-19");
+        let (mut layer, mut shell) = session();
+        let ran = name_word(&mut layer, &mut shell, word);
         let [shown] = &ran.shell[..] else { panic!("{case}: one proposal") };
         assert_eq!(shown.word, word, "{case}: the proposal is of the word the solver named");
         let publication = view_of(&layer, &ran);
@@ -658,7 +665,7 @@ fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
     }
 
     // A preview the shell built for its own draft is not the tool's proposal: no view of the proposal holds it.
-    let ran = name_word(&mut layer, &[1, -2], "bnd-19-shell");
+    let ran = name_word(&mut layer, &mut shell, &[1, -2]);
     let recipe = Json::Array(vec![json::object([
         ("kind", Json::String("word".into())),
         ("moves", Json::Array(vec![Json::Int(3), Json::Int(4)])),
@@ -684,7 +691,7 @@ fn ct_bnd_19_the_tools_view_holds_values_only_for_the_word_the_solver_named() {
 /// older than it changes nothing, and the next built-in frame presents the preview again; the chord commits it.
 #[test]
 fn ct_one_29_a_preview_drawn_through_a_user_stage_binds_no_commit_token() {
-    let (mut layer, mut shell, _) = proposed(&[1, -2], "one-29");
+    let (mut layer, mut shell, _) = proposed(&[1, -2]);
     let mut frames = HeadlessFrames::new();
     let refused = |report: Result<Option<u64>, CommandError>| report.err().map(|error| error.code);
     let preview = layer.preview().expect("the pending preview").clone();
