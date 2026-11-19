@@ -3,10 +3,12 @@
 //! KN2.4's `nu` and `correction_set_check` rows, which chapter 03 names for LB3's "ν and drafted correction-set check"
 //! entry, as LP2 built them in `c600_jumble::nu` and `c600_jumble::corrections`).
 //!
-//! The LB3 library entry is language code, so, as in `tests/lb3.rs`, each test checks on the kernel API the facts the
-//! entry would return; the rows are not called from a 600 Cell Script program here, since the IR draft has no F2 or F5
-//! number kinds yet. Nothing here chooses, ranks or proposes a correction: every id and multiplicity below is fixed in
-//! the test, as a solver names them, and the rows answer with ν's 45 values only.
+//! The first four tests check on the kernel API the facts LB3's entry returns. The last three run the entry itself,
+//! `jumble_nu` (`library::NU`), as 600 Cell Script on the IR draft's F2 and F5 (LP2's pull request 222): a test host
+//! serves the two rows from `c600_jumble` on one base in the library's draft answer type, and the entry lifts ν's
+//! values into F2 and F5 and computes a drafted set's change there. Nothing here chooses, ranks or proposes a
+//! correction: every id and multiplicity below is fixed in the test, as a solver names them, and the rows answer with
+//! ν's 45 values only.
 //!
 //! LP2's `rust/c600-jumble/tests/nu.rs` and `rust/c600-jumble/tests/corrections.rs`, with the adapter comparisons
 //! `tests/test_jumbling_rust_nu.py` and `tests/test_jumbling_rust_corrections.py`, check ν's tables, its values against
@@ -15,9 +17,12 @@
 //! (`research/jumbling/restoration/04-card5-lattice-invariants/words/b4-loop-word-6.json`). A pass is source and
 //! fixture evidence.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
+use c600_check::{separation, Policy, Row, Separation, StateRead, TYPE_MISMATCH};
+use c600_ir::{Effect, Expr, QTy, Ty};
 use c600_jumble::corrections;
 use c600_jumble::levels::{self, Base, Derivation, Partial, ReachKind, Reachability, Snapshot, Verdict};
 use c600_jumble::model::POLES;
@@ -26,10 +31,18 @@ use c600_jumble::q5::transpose;
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
+use c600_jumble_tool::library::{self, NU};
 use c600_jumble_tool::word;
 use c600_kernel::exact::F5;
 use c600_kernel::json::{self, Value};
-use c600_kernel::ProtectionMode;
+use c600_kernel::{ProtectionMode, Refusal};
+use c600_library::lower_source;
+use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Run, Sink};
+use c600_run::meter::code::NOT_GRANTED;
+use c600_run::meter::{Amounts, Outcome};
+use c600_run::provenance::{self, Json};
+use c600_run::value::Value as RunValue;
+use c600_syntax::{format, parse};
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -371,4 +384,310 @@ fn ct_lb3_04_a_drafted_correction_set_is_checked_without_selecting_one() {
 
     let refused = corrections::correction_set_check(ctx, Base::Snapshot(&base), &[(2, 1), (36, 1)]);
     assert_eq!(refused.expect("no engine error").expect_err("id 36 is not shipped").code, codes::NAMED_OBJECT_INVALID);
+}
+
+// ----------------------------------------------------------------------------------------- the entry as language code
+
+/// Run limits wide enough for every run here.
+const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
+
+/// The ν row's draft answer type: ν's 45 values and no reason when ν is defined, no values and the reason when not.
+fn served(result: Result<Partial<NuVector>, Refusal>) -> Result<Value, &'static str> {
+    match result {
+        Err(refusal) => Err(refusal.code),
+        Ok(Partial::Total(value)) => Ok(json::object([("reason", Value::Null), ("values", value.to_json())])),
+        Ok(Partial::Undefined(reason)) => {
+            Ok(json::object([("reason", Value::String(reason)), ("values", Value::Null)]))
+        }
+        Ok(other) => panic!("ν is never partial: {other:?}"),
+    }
+}
+
+/// The test host of the entry: KN2.4's `nu` and `correction_set_check` rows answered by `c600_jumble` on one base, in
+/// the library's draft answer type [`served`]. A row's refusal stops the run with its code. It grants snapshot reads
+/// only, and keeps the names of the rows read and each drafted set it was asked to check.
+struct NuRows<'a> {
+    base: Base<'a>,
+    asked: Vec<String>,
+    drafts: Vec<Vec<(u32, i64)>>,
+}
+
+impl<'a> NuRows<'a> {
+    fn on(base: Base<'a>) -> NuRows<'a> {
+        NuRows { base, asked: Vec::new(), drafts: Vec::new() }
+    }
+
+    fn answer(&mut self, query: &str, arg: Option<&Json>) -> Result<Value, &'static str> {
+        match (query, arg) {
+            ("nu", None) => served(nu::nu(ctx(), self.base).expect("no engine error")),
+            ("correction_set_check", Some(Json::List(set))) => {
+                let int = |item: &Json, key: &str| {
+                    let n = item.get(key).and_then(|n| n.get("int")).and_then(Json::as_text);
+                    n.and_then(|n| n.parse::<i64>().ok()).ok_or(TYPE_MISMATCH)
+                };
+                let draft = set
+                    .iter()
+                    .map(|item| Ok((u32::try_from(int(item, "id")?).map_err(|_| TYPE_MISMATCH)?, int(item, "m")?)))
+                    .collect::<Result<Vec<(u32, i64)>, &'static str>>()?;
+                let checked = corrections::correction_set_check(ctx(), self.base, &draft).expect("no engine error");
+                self.drafts.push(draft);
+                served(checked)
+            }
+            _ => Err(NOT_GRANTED),
+        }
+    }
+}
+
+impl Host for NuRows<'_> {
+    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
+        match request {
+            Request::Snapshot { .. } | Request::SnapshotWith { .. } => {
+                Ok(RowTariff { kernel_cost: 1, result_bound: 1 << 16 })
+            }
+            _ => Err(NOT_GRANTED),
+        }
+    }
+
+    fn perform(&mut self, request: &Request) -> Result<RunValue, &'static str> {
+        let (query, arg, ty) = match *request {
+            Request::Snapshot { query, ty } => (query, None, ty),
+            Request::SnapshotWith { query, arg, ty } => (query, Some(provenance::parse(arg).ok_or(TYPE_MISMATCH)?), ty),
+            _ => return Err(NOT_GRANTED),
+        };
+        self.asked.push(query.to_owned());
+        convert(&self.answer(query, arg.as_ref())?, ty)
+    }
+
+    fn sink(&mut self, _: &Sink, _: &RunValue, _: &[u8]) -> Result<(), &'static str> {
+        Err(NOT_GRANTED)
+    }
+}
+
+/// A kernel answer as a value of the declared type, as the library's tests convert one (`tests/library.rs`): a record
+/// takes the declared fields of a JSON object, each of which the answer writes; a list takes an array, or holds nothing
+/// for null and one value otherwise. Any other shape is `LG2:type.mismatch`.
+fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
+    Ok(match (&ty.ty, value) {
+        (Ty::Int, Value::Int(n)) => RunValue::int(*n),
+        (Ty::Text, Value::String(s)) => RunValue::text(s),
+        (Ty::List(item), Value::Array(values)) => {
+            RunValue::list(values.iter().map(|v| convert(v, item)).collect::<Result<_, _>>()?)
+        }
+        (Ty::List(_), Value::Null) => RunValue::list(Vec::new()),
+        (Ty::List(item), other) => RunValue::list(vec![convert(other, item)?]),
+        (Ty::Record(fields), Value::Object(entries)) => {
+            let mut out = Vec::with_capacity(fields.len());
+            for (name, field_ty) in fields {
+                out.push((name.as_str(), convert(entries.get(name).ok_or(TYPE_MISMATCH)?, field_ty)?));
+            }
+            RunValue::record(out)
+        }
+        _ => return Err(TYPE_MISMATCH),
+    })
+}
+
+fn nu_library() -> &'static Loaded {
+    static LOADED: OnceLock<Loaded> = OnceLock::new();
+    LOADED.get_or_init(|| load(&lower_source(NU.source).expect("the module lowers")).expect("the module loads"))
+}
+
+/// A drafted set as the entry takes it: a list of records `{ id, m }`.
+fn draft(set: &[(u32, i64)]) -> RunValue {
+    RunValue::list(
+        set.iter().map(|&(id, m)| RunValue::record(vec![("id", RunValue::int(id)), ("m", RunValue::int(m))])).collect(),
+    )
+}
+
+/// The entry `entry` run on `base` with `args`: the run, and the host's record of what it was asked.
+fn run_nu(entry: &str, args: Vec<RunValue>, base: Base<'_>) -> (Run, Vec<String>, Vec<Vec<(u32, i64)>>) {
+    let mut host = NuRows::on(base);
+    let run = nu_library().run(NU.name, entry, args, &mut host, &Options::new(WIDE)).expect("the run starts");
+    (run, host.asked, host.drafts)
+}
+
+fn field<'v>(value: &'v RunValue, name: &str) -> &'v RunValue {
+    match value {
+        RunValue::Record(record) => record.get(name).unwrap_or_else(|| panic!("no field `{name}`")),
+        other => panic!("no record: {other:?}"),
+    }
+}
+
+fn integer(value: &RunValue) -> i64 {
+    match value {
+        RunValue::Int(n) => n.to_string().parse().expect("an integer of i64"),
+        other => panic!("no integer: {other:?}"),
+    }
+}
+
+fn residues(value: &RunValue) -> Vec<i64> {
+    let RunValue::List(list) = value else { panic!("no List: {value:?}") };
+    list.items().iter().map(integer).collect()
+}
+
+fn texts(value: &RunValue) -> Vec<String> {
+    let RunValue::List(list) = value else { panic!("no List: {value:?}") };
+    list.items()
+        .iter()
+        .map(|v| match v {
+            RunValue::Text(t) => t.as_str().to_owned(),
+            other => panic!("no Text: {other:?}"),
+        })
+        .collect()
+}
+
+fn completed(run: &Run) -> &RunValue {
+    assert_eq!((run.summary.outcome, run.summary.code), (Outcome::Completed, None), "{:?}", run.summary.stop);
+    run.value.as_ref().expect("a value")
+}
+
+/// Every node of an IR expression, in path order.
+fn nodes<'e>(e: &'e Expr, out: &mut Vec<&'e Expr>) {
+    out.push(e);
+    for child in e.children() {
+        nodes(child, out);
+    }
+}
+
+/// CT-LB3-04 (part: LB3's "ν and drafted correction-set check" entry as language code, its source). `jumble_nu`
+/// parses with no diagnostic, keeps the canonical layout with LF endings, requests no capability and checks with no
+/// diagnostic. Both entries have the one effect `snapshot` and read only KN2.4's `nu` and `correction_set_check`:
+/// under capability separation they read state and prepare no preview, and no function names a proposal target. The
+/// entry lifts the rows' values into F2 and F5 (LP2's pull request 222) and subtracts there; the catalogue row names
+/// the entries, the effect and the source's digest.
+#[test]
+fn ct_lb3_04_the_nu_entry_is_language_code_on_f2_and_f5() {
+    let file = parse(NU.source.as_bytes());
+    assert!(file.diagnostics.is_empty() && file.holes.is_empty(), "{:#?}", file.diagnostics);
+    let formatted = format(&file);
+    let layout = formatted.as_deref().unwrap_or_default();
+    assert_eq!(formatted.as_deref(), Some(NU.source), "the canonical layout is\n{layout}");
+    assert!(!NU.source.contains('\r') && NU.source.ends_with('\n'), "LF line endings");
+    let program = lower_source(NU.source).expect("the module lowers");
+    let [module] = &program.modules[..] else { panic!("one module") };
+    assert!(module.capabilities.is_empty());
+    let exports: Vec<&str> = module.functions.iter().filter(|f| f.exported).map(|f| f.name.as_str()).collect();
+    assert_eq!(exports, NU.exports);
+    let report = c600_check::check(&program).expect("well-formed IR");
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    for entry in NU.exports {
+        let summary = report.summary(NU.name, entry).expect("a summary");
+        assert_eq!(summary.effects, BTreeSet::from([Effect::ReadSnapshot]), "{entry}");
+        assert_eq!(summary.state_reads, BTreeSet::from([StateRead::Snapshot]), "{entry}");
+        let reads = Separation { reads_state: true, prepares_previews: false };
+        assert_eq!(separation(summary, &Policy::interim()), reads, "{entry}");
+        let expected: &[&str] = if *entry == "nu_facts" { &["nu"] } else { NU.rows };
+        let rows: BTreeSet<Row> = expected.iter().map(|q| Row::Read(q.to_string())).collect();
+        assert_eq!(summary.rows, rows, "{entry}: the rows it reads");
+    }
+    let mut ops = BTreeSet::new();
+    for function in &module.functions {
+        let mut all = Vec::new();
+        nodes(&function.body, &mut all);
+        assert!(!all.iter().any(|e| matches!(e, Expr::Propose { .. })), "{} names no proposal target", function.name);
+        ops.extend(all.iter().filter_map(|e| match e {
+            Expr::Prim { op, .. } => Some(format!("{op:?}")),
+            _ => None,
+        }));
+    }
+    for op in ["ToField(F2)", "ToField(F5)", "FieldSub", "Residue"] {
+        assert!(ops.contains(op), "the entry uses {op}: {ops:?}");
+    }
+    let row = library::nu_and_drafted_correction_set_check();
+    assert_eq!((row.entry, row.module, row.functions), ("ν and drafted correction-set check", NU.name, NU.exports));
+    assert_eq!(row.effects, &[Effect::ReadSnapshot]);
+    assert_eq!(row.source_sha256, NU.sha256());
+}
+
+/// CT-LB3-04 (part: the entry's first and third sentences in the language). Off the lattice, both entries answer ν
+/// undefined with its reason and no values, never stale coordinates or zeros, and the drafted check gives no change.
+/// A planted nonzero fixed I_a coordinate stops both runs with `KN2:consistency.fixed_nu_nonzero`, the row's refusal,
+/// and no value.
+#[test]
+fn ct_lb3_04_off_lattice_nu_is_undefined_and_a_planted_fixed_coordinate_stops_the_run_in_the_language() {
+    let i_a = i_a();
+    let mut journal = correction(&i_a, 2);
+    let (lift, _) = outside_k_plus(&i_a, witnessed(&i_a, &journal).state());
+    journal.push(lift);
+    let off_base = witnessed(&i_a, &journal);
+    assert!(off_base.state().off_lattice_count() > 0);
+    let (run, asked, _) = run_nu("nu_facts", vec![], Base::Snapshot(&off_base));
+    let facts = completed(&run);
+    assert_eq!(asked, ["nu"]);
+    assert!(matches!(field(facts, "defined"), RunValue::Bool(false)));
+    assert_eq!(texts(field(facts, "reason")), [nu::OFF_LATTICE]);
+    assert!(residues(field(facts, "values")).is_empty());
+    let (run, asked, drafts) = run_nu("drafted_check", vec![draft(&[(2, 1)])], Base::Snapshot(&off_base));
+    let check = completed(&run);
+    assert_eq!(asked, ["nu", "correction_set_check"]);
+    assert_eq!(drafts, [vec![(2, 1)]]);
+    assert!(matches!(field(check, "defined"), RunValue::Bool(false)));
+    assert_eq!(texts(field(check, "reason")), [nu::OFF_LATTICE]);
+    assert!(residues(field(check, "change")).is_empty() && residues(field(check, "predicted")).is_empty());
+
+    let mut planted = menu("I_b");
+    planted.identity = nu::I_A_MENU_IDENTITY.to_owned();
+    let planted = Arc::new(planted);
+    let snapshot = witnessed(&planted, &letters(&planted, &MIRROR));
+    for (entry, args) in [("nu_facts", vec![]), ("drafted_check", vec![draft(&[(2, 1)])])] {
+        let (run, _, _) = run_nu(entry, args, Base::Snapshot(&snapshot));
+        let stop = (run.summary.outcome, run.summary.code);
+        assert_eq!(stop, (Outcome::Error, Some(codes::FIXED_NU_NONZERO)), "{entry}");
+        assert!(run.value.is_none());
+    }
+}
+
+/// CT-LB3-04 (part: the entry's fourth sentence in the language, "a drafted correction set is checked without
+/// selecting one"). Two witnessed bases: the retained word [1, 3, −5] followed by correction 2 under I_a, whose ν is
+/// correction 2's row, all bits; and the first correction with a nonzero C5 value, derived from solved under I_a, whose
+/// ν is that row, so that ν less a value differs from ν plus it. On each, `nu_facts` gives ν's 45 values, and each
+/// drafted set the solver names checks to the catalogue's prediction. The change the entry computes in F2 and F5, the
+/// predicted value less ν, is Σ m·row of the drafted rows: a multiplicity counts modulo 2 in the bits and modulo 5 in
+/// the C5 values. The entry checks only the set it was given, as drafted: the host sees each draft once and is asked
+/// nothing else. A set with an id the catalogue does not ship stops the run with `KN2:input.named_object_invalid`, and
+/// a base under I_b with `KN2:input.menu_binding_mismatch`.
+#[test]
+fn ct_lb3_04_a_drafted_correction_set_is_checked_in_f2_and_f5_in_the_language() {
+    let ctx = ctx();
+    let i_a = i_a();
+    let catalogue = corrections::catalogue().expect("the catalogue reads");
+    let mut journal: Vec<Twist> =
+        [1, 3, -5].iter().map(|&id| levels::primitive(ctx, id).expect("a retained generator")).collect();
+    journal.extend(correction(&i_a, 2));
+    let base = witnessed(&i_a, &journal);
+    assert_eq!(total(nu_row(Base::Snapshot(&base))), row(2));
+    // A row with a nonzero C5 value, so that a multiplicity is read modulo 5 there.
+    let c5 = (0..corrections::COUNT as u32).find(|&id| row(id).c5().iter().any(|v| v.value() != 0)).expect("a C5 row");
+    let c5_base = witnessed(&i_a, &correction(&i_a, c5));
+    assert_eq!(total(nu_row(Base::Snapshot(&c5_base))), row(c5));
+
+    let drafts: [&[(u32, i64)]; 8] =
+        [&[], &[(2, 1)], &[(2, -1)], &[(2, 2)], &[(3, 1), (2, 1)], &[(c5, 1)], &[(c5, 3)], &[(c5, -2), (2, 7)]];
+    for base in [&base, &c5_base] {
+        let value = total(nu_row(Base::Snapshot(base)));
+        let (run, _, _) = run_nu("nu_facts", vec![], Base::Snapshot(base));
+        let facts = completed(&run);
+        assert!(matches!(field(facts, "defined"), RunValue::Bool(true)));
+        assert!(texts(field(facts, "reason")).is_empty());
+        assert_eq!(residues(field(facts, "values")), value.values());
+        assert_eq!(integer(field(facts, "nonzero")), value.nonzero().len() as i64);
+        for set in drafts {
+            let (run, asked, seen) = run_nu("drafted_check", vec![draft(set)], Base::Snapshot(base));
+            let check = completed(&run);
+            assert_eq!(asked, ["nu", "correction_set_check"]);
+            assert_eq!(seen, [set.to_vec()], "the draft as drafted");
+            let predicted = catalogue.predict(&value, set).expect("shipped ids");
+            assert_eq!(residues(field(check, "predicted")), predicted.values(), "{set:?}");
+            let change = set.iter().fold(NuVector::ZERO, |sum, &(id, m)| sum.add_times(&row(id), m));
+            assert_eq!(residues(field(check, "change")), change.values(), "{set:?}");
+            assert!(matches!(field(check, "defined"), RunValue::Bool(true)));
+            assert_eq!(integer(field(check, "nonzero")), predicted.nonzero().len() as i64);
+        }
+    }
+
+    let (run, _, _) = run_nu("drafted_check", vec![draft(&[(2, 1), (36, 1)])], Base::Snapshot(&base));
+    assert_eq!((run.summary.outcome, run.summary.code), (Outcome::Error, Some(codes::NAMED_OBJECT_INVALID)));
+    let i_b = Arc::new(menu("I_b"));
+    let honest = witnessed(&i_b, &letters(&i_b, &MIRROR));
+    let (run, _, _) = run_nu("drafted_check", vec![draft(&[(2, 1)])], Base::Snapshot(&honest));
+    assert_eq!((run.summary.outcome, run.summary.code), (Outcome::Error, Some(codes::MENU_BINDING_MISMATCH)));
 }

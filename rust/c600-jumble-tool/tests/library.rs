@@ -1,5 +1,5 @@
-//! The jumbling library entries as language code (LP3, C8; chapter 03's LB1.8 and LB3.1 catalogues): the four modules
-//! of `c600_jumble_tool::library` in 600 Cell Script, checked by LP2's checker and run by LP2's interpreter on the IR
+//! The jumbling library entries as language code (LP3, C8; chapter 03's LB1.8 and LB3.1 catalogues): four of the
+//! modules of `c600_jumble_tool::library` in 600 Cell Script, checked by LP2's checker and run by LP2's interpreter on the IR
 //! draft's menu words (LP2's pull request 210), with the run's alphabet pinned from the fixture's menu
 //! (`word::Alphabet::pinned`). The kernel halves in `tests/ct_lb1_03.rs` and `tests/lb3.rs` are the reference: each
 //! value the language code returns is compared with `c600_jumble`'s answer, or with the same fact computed apart.
@@ -114,7 +114,7 @@ fn with_library(source: &str) -> String {
     source.replace("LIBRARY", &MENU_WORDS.sha256())
 }
 
-/// The library's four modules with the client and the misreading client, lowered together, checked with no
+/// The library's modules with the client and the misreading client, lowered together, checked with no
 /// diagnostic and loaded.
 fn loaded() -> Loaded {
     let client = with_library(CLIENT);

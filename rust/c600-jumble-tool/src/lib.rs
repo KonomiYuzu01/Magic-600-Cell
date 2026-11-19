@@ -9,9 +9,11 @@
 //!   LB1.8's literal words of one pinned menu from their letters alone: concatenation, inverse, conjugate, commutator
 //!   and powers, refused with `LB1:input.incompatible_alphabet` across alphabets.
 //! - [`library`] holds the jumbling library entries as 600 Cell Script on the IR draft's menu words (LP2's pull request
-//!   210), each module with its catalogue row: LB1.8's literal words of one pinned menu, and LB3.1's heights,
-//!   whole-word checks and protection at pose level. The entries track, check and protect the solver's named word or
-//!   state; none chooses, outputs or previews a word.
+//!   210), each module with its catalogue row: LB1.8's literal words of one pinned menu, LB1.10's trace equality keys
+//!   of menu words, and LB3.1's heights, whole-word checks and protection at pose level. The entries track, check and
+//!   protect the solver's named word or state; none chooses, outputs or previews a word.
+//! - [`locality`] builds the relation `jumble-locality/1` that a jumbling run pins beside its menu alphabet, from the
+//!   table `c600_jumble::locality` regenerates from the loaded model (LB1.10; LP2's pull request 251).
 //! - [`level`] names the level a result reads: poses inside Jumble, labels in 600-cell-Full (KN1.11).
 //! - [`relation`] is one typed relation of the relationship strip at pose level, the current occupant of a sticker
 //!   slot, on and off the lattice (EV3.8, EV3.9).
@@ -29,8 +31,9 @@
 //!   serves the KN2.4 rows from `c600_jumble`, and each result is compared with the kernel halves' answers.
 //! - `tests/ct_lb3_04.rs` runs CT-LB3-04 whole at this crate's level, on LP2's `nu` and `correction_set_check` rows:
 //!   off-lattice ν is undefined, the pinned C5 convention round-trips, a planted nonzero fixed I_a coordinate is a
-//!   consistency error, and a drafted correction set is checked as drafted. No 600 Cell Script program calls the rows,
-//!   since the IR draft has no F2 or F5 number kinds.
+//!   consistency error, and a drafted correction set is checked as drafted. Three of its tests run LB3's entry
+//!   [`library::NU`] in the language on the IR draft's F2 and F5 (LP2's pull request 222), through a test host that
+//!   serves the two rows from `c600_jumble`.
 //! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02 whole (LB3.4),
 //!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
 //!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's
@@ -41,6 +44,10 @@
 //!   `jumble.twist.menu` beside M5's engine, with J1's references at its stages. CT-LB4-03's layout evaluated again at
 //!   a later revision of a jumbled session (`tests/ct_lb4_03.rs`) presses, and undoes, through the same layer;
 //!   `tests/common/mod.rs` holds the session both use.
+//! - `tests/ct_lb1_06.rs` runs CT-LB1-06's jumbling half on the model in `assets/`: the relation [`locality`] pins,
+//!   the keys of bca, cab and abc, identity letters and an item beside its inverse kept, equal keys with equal
+//!   admissibility and end digests on M5's states, the library entry `menu_traces` in the language, and refusals of a
+//!   key under another menu or version.
 //!
 //! The tool runs in-process, as `c600-tools` runs its tool. The tool itself is not a command-layer row; the tests
 //! above drive `c600-command` only as a dev-dependency.
@@ -150,10 +157,11 @@
 //!
 //! - Through the command layer, not taken up yet: `jumble.off`, refusals, redo, protected pieces and free mode (LP2's
 //!   route test and `c600-command`'s own tests run them).
-//! - ν and the correction catalogue in 600 Cell Script: the IR draft has no F2 or F5 number kinds, so the tests call
-//!   LP2's `nu` and `correction_set_check` rows in Rust, and LB3's entry "ν and drafted correction-set check" waits as
-//!   language code. The label checkpoint computes no ν itself; the tests supply the `nu` row's value. CT-LB3-01's
-//!   checker half, the end tests' typed verdicts, is LP2's (pull request 213).
+//! - ν through a host: LB3's entry "ν and drafted correction-set check" is language code ([`library::NU`]), but no
+//!   host bridge or command-layer route serves KN2.4's `nu` and `correction_set_check` rows, so only the tests' host
+//!   runs it. The correction catalogue's own entry is not written. The label checkpoint computes no ν itself; the
+//!   tests supply the `nu` row's value. CT-LB3-01's checker half, the end tests' typed verdicts, is LP2's (pull request
+//!   213).
 //! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
 //!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
 //!   (CT-LB3-05, CT-BND-17): LP2.
@@ -173,6 +181,7 @@
 
 pub mod level;
 pub mod library;
+pub mod locality;
 pub mod protection;
 pub mod relation;
 pub mod tool;

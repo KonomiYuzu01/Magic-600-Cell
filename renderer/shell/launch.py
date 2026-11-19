@@ -7,9 +7,11 @@ The launcher recomputes every part of the product build (`build_product.verify`;
 work/build/c9-product), creates the run folder `--out`, which must not exist yet, and starts the pinned Godot (the
 process that presents, not the console wrapper) on the build's shell with the environment the shell reads:
 `M600_CORE_DLL`, `M600_HOST_DLL`, `M600_ASSETS` (the build's copy of the model), `M600_EVENTS_DIR` (the run folder),
-`M600_BUILD_IDENTITY` (the build's identity) and `M600_RUN_ID`; `--echo` adds `M600_INPUT_ECHO=1`, the input echo of
-route B's check B1. It waits for the shell to exit and writes `launch.json` (`magic600-c9-launch-v1`) beside the
-shell's logs, with the build's own folder and the run folder written as `<build>` and `<out>`.
+`M600_BUILD_IDENTITY` (the build's identity), `M600_RUN_ID`, and for charter E2's turns `M600_SESSION_DIR` (a new
+session folder, `session` in the run folder) and `M600_TWIST_MENU` (the build's copy of the twist menu); `--echo`
+adds `M600_INPUT_ECHO=1`, the input echo of route B's check B1. It waits for the shell to exit and writes
+`launch.json` (`magic600-c9-launch-v1`) beside the shell's logs, with the build's own folder and the run folder
+written as `<build>` and `<out>`.
 
 `--dry-run` checks the build and the run folder and prints the command and the environment; it creates nothing and
 starts nothing. Start the launcher from a PowerShell on the desktop: a window started from a background process never
@@ -36,7 +38,8 @@ import build_product  # noqa: E402
 FORMAT = "magic600-c9-launch-v1"
 RECORD = "launch.json"
 SHELL_VARIABLES = ("M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
-                   "M600_RUN_ID", "M600_INPUT_ECHO")
+                   "M600_RUN_ID", "M600_INPUT_ECHO", "M600_SESSION_DIR", "M600_TWIST_MENU")
+SESSION = "session"
 
 
 class LaunchError(Exception):
@@ -62,7 +65,8 @@ def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, 
            if key.upper() not in SHELL_VARIABLES}
     env.update({"M600_CORE_DLL": str(build / build_product.CORE_DLL), "M600_HOST_DLL": str(build / build_product.HOST_DLL),
                 "M600_ASSETS": str(build / build_product.ASSETS), "M600_EVENTS_DIR": str(out),
-                "M600_BUILD_IDENTITY": product["identity"], "M600_RUN_ID": run_id})
+                "M600_BUILD_IDENTITY": product["identity"], "M600_RUN_ID": run_id,
+                "M600_SESSION_DIR": str(out / SESSION), "M600_TWIST_MENU": str(build / build_product.MENU)})
     if echo:
         env["M600_INPUT_ECHO"] = "1"
     return env

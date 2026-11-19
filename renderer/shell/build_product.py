@@ -1,11 +1,12 @@
 """Build C9's product on route B offline into work/build/c9-product/<stamp>/; never launch Godot, a window or a GPU.
 
-A product build holds three parts, each built from this checkout:
+A product build holds five parts, each built from this checkout:
 
 - `native/`: the S-A2 core (`renderer/core/build.cmd`), `sa2_interop.dll` with the shaders it loads beside it;
 - `host/c600_shell_host.dll`: the shell's native host (`renderer/bridge/host`), a release build;
 - `shell/`: the Godot .NET shell (`build_shell.py`);
-- `assets/`: a copy of the shipped model's tracked files, which the host loads.
+- `assets/`: a copy of the shipped model's tracked files, which the host loads;
+- `menu/`: a copy of the twist menu that the turns' session pins (charter E2, a draft).
 
 `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a digest
 of those parts, which the shell's logs carry (`M600_BUILD_IDENTITY`). `launch.py` starts a product build after
@@ -37,6 +38,10 @@ CORE_DLL = "native/sa2_interop.dll"
 HOST_DLL = "host/c600_shell_host.dll"
 PROJECT = "shell/project"
 ASSETS = "assets"
+# The twist menu that the turns' session pins (charter E2; draft: the I_a menu that KN3's and c600-input's tests pin;
+# G6 owns the menu).
+MENU_SOURCE = "research/jumbling/fixtures/wj-I_a.json"
+MENU = "menu/wj-I_a.json"
 BRIDGE = ROOT / "renderer" / "bridge"
 sys.path.insert(0, str(SHELL))
 sys.path.insert(0, str(ROOT / "renderer" / "acceptance"))
@@ -59,10 +64,10 @@ def host_command() -> list[str]:
 
 def part_paths(build: Path) -> dict[str, Path]:
     """Every file the product loads, by part name: the core with its shaders, the host, the shell's assembly and
-    project files (not Godot's or dotnet's generated folders), and the model's files."""
+    project files (not Godot's or dotnet's generated folders), the model's files and the twist menu."""
     native, project, assets = build / "native", build / PROJECT, build / ASSETS
     paths = {"core:sa2_interop.dll": build / CORE_DLL, "host:c600_shell_host.dll": build / HOST_DLL,
-             "shell:assembly": project / build_shell.ASSEMBLY}
+             "shell:assembly": project / build_shell.ASSEMBLY, "menu:" + Path(MENU).name: build / MENU}
     if native.is_dir():
         paths.update({"core:" + p.name: p for p in native.iterdir() if p.is_file() and p.suffix.lower() == ".dxil"})
     if project.is_dir():
@@ -84,6 +89,14 @@ def copy_assets(target: Path) -> int:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / name, destination)
     return len(names)
+
+
+def copy_menu(target: Path) -> None:
+    """Copy the tracked twist menu record (MENU_SOURCE) to `target`."""
+    if prepare_host.git("ls-files", "--", MENU_SOURCE).strip() != MENU_SOURCE:
+        raise ProductError(f"this checkout tracks no {MENU_SOURCE}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / MENU_SOURCE, target)
 
 
 def identity(digests: dict[str, str]) -> str:
@@ -169,6 +182,7 @@ def build(godot: str | None) -> Path:
     shutil.copy2(BRIDGE / "target" / "release" / "c600_shell_host.dll", host / "c600_shell_host.dll")
     build_shell.build(str(executable), out / "shell")
     print(f"assets: {copy_assets(out / ASSETS)} files", flush=True)
+    copy_menu(out / MENU)
     prepare_host.write_new(out / RECORD, record(out, Path(executable).resolve(), head, dirty))
     verify(out)
     return out

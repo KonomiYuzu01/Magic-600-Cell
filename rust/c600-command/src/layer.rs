@@ -133,10 +133,9 @@ pub const JUMBLE_ON_MODE: &str = "jumble_on";
 /// H-08's row that sets the protection policy, Net or Strict.
 pub const POLICY_ROW: &str = "protection.policy.set";
 /// Whether a run's preview is admitted only inside a command the solver invoked (finding B2 of the KN5 boundary attack,
-/// ONE.34; the owner's reading of 18 November 2026). The check is built and off: LP3's host still starts its runs with
-/// no solver command behind them, and the switch waits until LP3 starts them through a tool row the shell invokes.
-/// Nothing outside the tests serves program jobs yet.
-const SOLVER_COMMAND_CHECK: bool = false;
+/// ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must start its runs through a tool row
+/// the shell invokes, as LP3's host does on both its hosts.
+const SOLVER_COMMAND_CHECK: bool = true;
 /// A star certificate failure has no registered code yet (draft).
 pub const CERTIFICATE: &str = "KN2:consistency.star_certificate";
 
@@ -1241,7 +1240,7 @@ impl<S: Store> CommandLayer<S> {
 
     /// Whether run `run` may prepare a preview now (the owner's readings of 18 November 2026,
     /// `docs/wiki/decisions/owner-decisions-2026-11-18.md`). Only inside a command the solver invoked (finding B2 of the
-    /// KN5 boundary attack, ONE.34): the one check is here, not in each host, and it is built but off
+    /// KN5 boundary attack, ONE.34): the one check is here, not in each host, and it is on
     /// ([`SOLVER_COMMAND_CHECK`]). And not while the solver is shown a preview, which only the solver's action ends
     /// (findings B1 and L17, KN5.12, ONE.42 option (a)).
     fn run_may_preview(&self, run: &str) -> Result<(), Error> {
