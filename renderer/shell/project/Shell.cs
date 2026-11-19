@@ -19,7 +19,9 @@ namespace Magic600.Shell;
 /// M600_SESSION_DIR (a new folder) and M600_TWIST_MENU (the twist menu's record file) are set as well, the host opens
 /// a session there, every key with a W3C code goes through its input router (<see cref="KeyChord"/>), a committed
 /// twist is adopted and shown, <see cref="EventLog"/> writes a key row per measured press, and the close runs the
-/// session's correctness control.
+/// session's correctness control. C9 U3 (a draft): with the event log, the run row names the core's swap chain, and
+/// every Godot frame that follows a submitted 3D frame gets a ui_frame row (<see cref="EventLog"/> says when its times
+/// are read).
 /// </remarks>
 public partial class Shell : Control
 {
@@ -40,6 +42,10 @@ public partial class Shell : Control
     /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
     private ulong _shownRevision;
     private Vector2I _size;
+    /// <summary>The 3D frame submitted in this process frame, for the next ui_frame row.</summary>
+    private ulong? _submittedThisFrame;
+    private long _preDrawQpc;
+    private bool _uiFrames;
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
 
     public override void _Ready()
@@ -89,6 +95,13 @@ public partial class Shell : Control
         }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         _log = EventLog.FromEnvironment();
+        if (_log is { } log)
+        {
+            log.SwapChain(surface.SwapChain());
+            RenderingServer.FramePreDraw += OnFramePreDraw;
+            RenderingServer.FramePostDraw += OnFramePostDraw;
+            _uiFrames = true;
+        }
         var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
         var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
         if (!string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu))
@@ -221,18 +234,25 @@ public partial class Shell : Control
         if (size != _size && size.X > 0 && size.Y > 0)
         {
             surface.Resize((uint)size.X, (uint)size.Y);
+            _log?.SwapChain(surface.SwapChain());
             Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
             _size = size;
         }
+        _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);
         if (code == HostLibrary.Ok)
         {
             _log?.Frame(frame, submitted);
+            _submittedThisFrame = frame.Sequence;
         }
         else if (code == HostLibrary.Unavailable)
         {
             code = library.Recover(_host);
+            if (code == HostLibrary.Ok)
+            {
+                _log?.SwapChain(surface.SwapChain());
+            }
         }
         if (code != HostLibrary.Ok)
         {
@@ -251,6 +271,24 @@ public partial class Shell : Control
                 _shownRevision = Math.Max(_shownRevision, _presented[i].EngineRevision);
             }
         } while (count == _presented.Length);
+    }
+
+    /// <summary>Before Godot draws and presents its frame (RenderingServer's frame_pre_draw).</summary>
+    private void OnFramePreDraw() => _preDrawQpc = EventLog.Now();
+
+    /// <summary>
+    /// After Godot drew its frame (frame_post_draw): one ui_frame row naming the 3D frame submitted in the same process
+    /// frame. A Godot frame without one gets no row.
+    /// </summary>
+    private void OnFramePostDraw()
+    {
+        var drawn = EventLog.Now();
+        if (_submittedThisFrame is { } frameId && _preDrawQpc != 0)
+        {
+            _log?.UiFrame(_preDrawQpc, frameId, drawn);
+        }
+        _submittedThisFrame = null;
+        _preDrawQpc = 0;
     }
 
     public override void _ExitTree()
@@ -291,6 +329,12 @@ public partial class Shell : Control
     /// <summary>Closes the event log, the host, the surface and the libraries; the input echo stays.</summary>
     private void CloseCore()
     {
+        if (_uiFrames)
+        {
+            RenderingServer.FramePreDraw -= OnFramePreDraw;
+            RenderingServer.FramePostDraw -= OnFramePostDraw;
+            _uiFrames = false;
+        }
         _log?.Dispose();
         _log = null;
         if (_host != IntPtr.Zero && _hostLibrary is { } library)

@@ -156,7 +156,7 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
-            "sa2_surface_detach"};
+            "sa2_surface_detach", "sa2_surface_swap_chain"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1060,6 +1060,9 @@ void run_cpu(Suite& suite, const Options& options) {
         invalid(sa2_surface_attach(nullptr, 1, 0, 0, 256, 256), "sa2_surface_attach");
         invalid(sa2_surface_move(nullptr, 0, 0), "sa2_surface_move");
         invalid(sa2_surface_detach(nullptr), "sa2_surface_detach");
+        uint64_t chain = 1;
+        invalid(sa2_surface_swap_chain(nullptr, &chain), "sa2_surface_swap_chain");
+        expect(chain == 0, "sa2_surface_swap_chain left its output set on failure");
         auto frame = frame_input(1, 1);
         frame.target = SA2_TARGET_SURFACE;
         sa2::validate_frame_input(&frame);

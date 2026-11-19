@@ -196,6 +196,41 @@ class ShellProject(unittest.TestCase):
         self.assertIn("f.EngineRevision >= press.Revision && f.PublicationRevision >= press.Revision", log)
         self.assertIn("WriteKey(press.Qpc, null);", log)
 
+    def test_the_event_log_writes_the_rows_the_ui_skew_tool_reads(self):
+        sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
+        try:
+            import key_to_frame
+        finally:
+            sys.path.pop(0)
+        self.assertIn("ui_frame", key_to_frame.OTHER_ROWS)
+        log = text(PROJECT / "EventLog.cs")
+        written = row_fields(log)
+        self.assertEqual(written["ui_frame"], ["ui_seq", "qpc", "frame_id", "drawn_qpc"])
+        self.assertIn("var seq = _uiFrames++;", log)
+        # The run row names the one swap chain of the run, or null; Godot's own chain is never named.
+        self.assertEqual([field for field in written["run"] if "swap_chain" in field],
+                         ["swap_chain", "swap_chain", "ui_swap_chain"])
+        self.assertIn("if (_swapChains is [{ } chain])", log)
+        self.assertIn('json.WriteNull("swap_chain");', log)
+        self.assertIn('json.WriteNull("ui_swap_chain");', log)
+        self.assertIn('"0x" + address.ToString("X16", System.Globalization.CultureInfo.InvariantCulture)', log)
+        shell = text(PROJECT / "Shell.cs")
+        for line in ("RenderingServer.FramePreDraw += OnFramePreDraw;", "RenderingServer.FramePostDraw += OnFramePostDraw;",
+                     "RenderingServer.FramePreDraw -= OnFramePreDraw;", "RenderingServer.FramePostDraw -= OnFramePostDraw;",
+                     "_log?.UiFrame(_preDrawQpc, frameId, drawn);", "_submittedThisFrame = frame.Sequence;"):
+            self.assertIn(line, shell)
+        self.assertEqual(shell.count("SwapChain(surface.SwapChain());"), 3, "after the attach, a resize and a recovery")
+        process = shell[shell.index("public override void _Process"):shell.index("private void OnFramePreDraw")]
+        self.assertLess(process.index("_submittedThisFrame = null;"), process.index("library.Frame(_host, out var frame)"))
+        close = shell[shell.index("private void CloseCore()"):]
+        self.assertLess(close.index("FramePostDraw -= OnFramePostDraw"), close.index("_log?.Dispose();"))
+        # The core's diagnostic export is declared and resolved as optional.
+        core = text(PROJECT / "CoreLibrary.cs")
+        self.assertIn('public const string SwapChainCall = "sa2_surface_swap_chain";', core)
+        self.assertIn("NativeLibrary.TryGetExport(handle, SwapChainCall, out var swapChain);", core)
+        self.assertNotIn("sa2_surface_swap_chain", csharp_list("ShellCalls"))
+        self.assertIn("sa2_surface_swap_chain", header_exports())
+
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
         chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")
         known = set()
