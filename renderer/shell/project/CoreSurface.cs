@@ -12,7 +12,7 @@ namespace Magic600.Shell;
 /// launched, so nothing here is Windows/DirectX, input or performance evidence.
 /// </summary>
 /// <remarks>
-/// Draft choices: the first hardware adapter (adapter LUID 0); the config of the acceptance harness's defaults
+/// Draft choices: Godot's own adapter (its LUID, <see cref="AdapterLuid"/>; C9 U4); the config of the acceptance harness's defaults
 /// (Godot's queue mode, matching barriers, COMMON handover states, 5000 ms waits, no debug callback); scene 1 with a
 /// 1000 ms planned trace.
 /// </remarks>
@@ -89,10 +89,40 @@ public sealed unsafe class CoreSurface : IDisposable
     }
 
     /// <summary>
-    /// Creates a context on the core's own device, attaches its surface at (x, y) in the window's client pixels and
-    /// loads the scene at the surface's size. A failure takes down what was made and throws.
+    /// The LUID of the adapter Godot renders on, read from Godot's D3D12 physical device (an IDXGIAdapter) with
+    /// IDXGIAdapter::GetDesc, vtable slot 8 (IUnknown 0-2, IDXGIObject 3-6, EnumOutputs 7). DXGI_ADAPTER_DESC is 304
+    /// bytes on x64 with AdapterLuid (LowPart, HighPart) at offset 296. sa2_create opens that adapter, so the core
+    /// draws on Godot's GPU even where DXGI lists another hardware adapter first, as on a hybrid laptop (C9 U4; the
+    /// acceptance harness's Native.AdapterLuid reads it the same way).
     /// </summary>
-    public static CoreSurface Open(CoreLibrary core, ulong hwnd, int x, int y, uint width, uint height)
+    public static ulong AdapterLuid(ulong adapter)
+    {
+        if (adapter == 0)
+        {
+            throw new InvalidOperationException("Godot's adapter is unavailable");
+        }
+        var description = stackalloc byte[304];
+        var table = *(IntPtr**)adapter;
+        var getDesc = (delegate* unmanaged[Stdcall]<IntPtr, byte*, int>)table[8];
+        var result = getDesc((IntPtr)adapter, description);
+        if (result < 0)
+        {
+            throw new InvalidOperationException($"IDXGIAdapter::GetDesc answered 0x{result:X8}");
+        }
+        var luid = ((ulong)*(uint*)(description + 300) << 32) | *(uint*)(description + 296);
+        if (luid == 0)
+        {
+            throw new InvalidOperationException("Godot's adapter has no LUID");
+        }
+        return luid;
+    }
+
+    /// <summary>
+    /// Creates a context on the core's own device on the adapter <paramref name="adapterLuid"/> names, attaches its
+    /// surface at (x, y) in the window's client pixels and loads the scene at the surface's size. A failure takes down
+    /// what was made and throws.
+    /// </summary>
+    public static CoreSurface Open(CoreLibrary core, ulong adapterLuid, ulong hwnd, int x, int y, uint width, uint height)
     {
         var surface = new CoreSurface(core);
         try
@@ -100,7 +130,7 @@ public sealed unsafe class CoreSurface : IDisposable
             var config = new Config { StructSize = (uint)sizeof(Config), WaitTimeoutMs = WaitTimeoutMs };
             var context = IntPtr.Zero;
             surface.Check("sa2_create",
-                ((delegate* unmanaged[Cdecl]<ulong, Config*, IntPtr*, int>)surface.Call("sa2_create"))(0, &config, &context));
+                ((delegate* unmanaged[Cdecl]<ulong, Config*, IntPtr*, int>)surface.Call("sa2_create"))(adapterLuid, &config, &context));
             surface.Context = context;
             surface.Check("sa2_surface_attach",
                 ((delegate* unmanaged[Cdecl]<IntPtr, ulong, int, int, uint, uint, int>)surface.Call("sa2_surface_attach"))(

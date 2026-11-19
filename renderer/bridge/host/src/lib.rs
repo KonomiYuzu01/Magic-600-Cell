@@ -6,7 +6,7 @@
 //! window, and hands this library the core's function table ([`CoreFunctions`]) and the context. Frames go to the
 //! surface (`SA2_TARGET_SURFACE`). This library loads no library and calls no Windows function (CT-RPI-20). It starts
 //! one process, the language runtime ([`m6h_load_runtime`]), through c600-runtime's parent side, which uses std's
-//! portable process API.
+//! portable process API, and one thread, which runs the view jobs in that process ([`view`]).
 //!
 //! Drafts that the sources leave open, each to be replaced by LP3's parts:
 //! - One view, which shows the adopted state as one retained publication of every slot, visible and interactive.
@@ -18,7 +18,16 @@
 //!   shows a press once its engine revision and its publication's revision have both reached the press's revision.
 //! - Charter E3 (a draft): the session may instead be an existing one, a copy of a session fixture ([`fixture`]),
 //!   which the host adopts at the engine revision that counts the fixture's presses. [`m6h_load_runtime`] starts the
-//!   language runtime's process and keeps it until the handle is destroyed; no job runs in it yet.
+//!   language runtime's process and keeps it until the handle is destroyed.
+//! - View jobs (C9 U8; the [`view`] module): [`m6h_run_view`] schedules a program text as the view's job and runs it
+//!   in the runtime on a worker thread. A run that completes delivers the reference publication of the revision it
+//!   was scheduled at, with the plan dependency `program` set to the hex SHA-256 of its text; its value is not drawn
+//!   yet. The run serves no host row, its limits [`VIEW_LIMITS`], deadline [`VIEW_DEADLINE`] and output allowance
+//!   [`VIEW_ALLOWANCE`] are declared values, and three refusal codes are the host's own (`m6h:` codes, not in chapter
+//!   13's register). [`m6h_view_draft`] names the editor's digest without a run, so that the view shows stale output
+//!   while the text differs from the one its publication came from. [`m6h_view_result`] reads a ticket's record:
+//!   status, value digest, and the first confirmed frames that drew the run's publication or the draft's stale and
+//!   current output.
 //! - The host context is c600-display's declared fixture context, with the core's own support report in place of the
 //!   declared one. Its tokens, words and stage signatures are fixtures, not the checked library's definitions, and the
 //!   limit profile [`LIMITS`] is a declared value, not a measured one.
@@ -37,6 +46,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use c600_display::array::Array;
 use c600_display::codes;
@@ -55,12 +65,14 @@ use c600_render_ffi::DllCore;
 
 pub mod fixture;
 pub mod turns;
+pub mod view;
+use c600_run::meter::Amounts;
 use c600_runtime::parent::{Config as RuntimeConfig, Runtime};
 use turns::{Press, Turns};
 
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
-/// revisions and the session calls; version 3 the session fixture and the runtime.
-pub const M6H_ABI_VERSION: u32 = 3;
+/// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs.
+pub const M6H_ABI_VERSION: u32 = 4;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -91,12 +103,31 @@ pub const M6H_PRESS_REFUSED: u32 = 2;
 /// knows only twists.
 pub const M6H_PRESS_OTHER: u32 = 3;
 
+/// [`M6hViewResult::status`]: the run has not ended yet.
+pub const M6H_VIEW_STATUS_PENDING: u32 = 0;
+/// [`M6hViewResult::status`]: the run's publication was installed; a draft is recorded at once.
+pub const M6H_VIEW_STATUS_PUBLISHED: u32 = 1;
+/// [`M6hViewResult::status`]: the run ended without a publication; [`m6h_last_error`] gives its code and reason.
+pub const M6H_VIEW_STATUS_REFUSED: u32 = 2;
+/// [`M6hViewResult::kind`]: a run of [`m6h_run_view`].
+pub const M6H_VIEW_KIND_RUN: u32 = 0;
+/// [`M6hViewResult::kind`]: a draft of [`m6h_view_draft`].
+pub const M6H_VIEW_KIND_DRAFT: u32 = 1;
+
 /// The one view of the draft.
 pub const VIEW: ViewId = ViewId(1);
 /// The engine revision of the adopted state.
 pub const ENGINE_REVISION: u64 = 1;
 /// The declared limit profile of the draft, not a measured one.
 pub const LIMITS: &str = "shell-draft/1";
+/// A view job's run limits: declared draft values, not measured ones.
+pub const VIEW_LIMITS: Amounts = Amounts { steps: 1 << 32, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
+/// A view job's wall-clock safety stop (KN7.10), a draft value.
+pub const VIEW_DEADLINE: Duration = Duration::from_secs(60);
+/// The output allowance of a view job's publication in canonical bytes, a draft value: 16 MiB, about ten times the
+/// 1,561,680 bytes that the reference publication of the shipped model with a `program` dependency measured on
+/// 19 Nov 2026.
+pub const VIEW_ALLOWANCE: u64 = 1 << 24;
 
 const IDENTITY: [f32; 16] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
 
@@ -140,6 +171,32 @@ pub struct M6hPresented {
     pub display_qpc: u64,
 }
 
+/// A view job's record, as [`m6h_view_result`] writes it. 104 bytes; `reserved` keeps the layout free of padding.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct M6hViewResult {
+    /// [`M6H_VIEW_STATUS_PENDING`], [`M6H_VIEW_STATUS_PUBLISHED`] or [`M6H_VIEW_STATUS_REFUSED`].
+    pub status: u32,
+    /// [`M6H_VIEW_KIND_RUN`] or [`M6H_VIEW_KIND_DRAFT`].
+    pub kind: u32,
+    /// The engine revision adopted at the call: the revision a run's publication shows.
+    pub revision: u64,
+    /// The SHA-256 of the run's source text, or the draft's digest.
+    pub source_digest: [u8; 32],
+    /// A run's: the first confirmed frame that drew its publication. A draft's: the first confirmed frame after the
+    /// draft that drew stale output. 0 until known.
+    pub frame: u64,
+    /// A draft's: the first confirmed frame after `frame` whose output was no longer stale; 0 until known.
+    pub cleared_frame: u64,
+    /// 1 when the run completed with a value.
+    pub has_value: u32,
+    pub reserved: u32,
+    /// The SHA-256 of the completed run's value bytes (its canonical output unit).
+    pub value_sha256: [u8; 32],
+}
+
+const _: () = assert!(std::mem::size_of::<M6hViewResult>() == 104);
+
 impl M6hPresented {
     /// The row of `frame`, which the core confirmed at `time`; both come from one read of the core's rows.
     fn new(frame: &PresentedFrame, time: &DisplayTime) -> Result<M6hPresented, Failure> {
@@ -172,8 +229,12 @@ pub struct ShellHost {
     turns: Option<Turns>,
     /// The correctness control's record, once [`m6h_close_session`] made it.
     check: String,
-    /// The language runtime's process, once [`m6h_load_runtime`] started it; dropping it ends the process.
-    runtime: Option<Runtime>,
+    /// The language runtime's process and its program, once [`m6h_load_runtime`] started it and until the first
+    /// view job moves it to the worker; dropping it ends the process.
+    runtime: Option<(Runtime, PathBuf)>,
+    /// The command of the newest reference publication ([`ShellHost::publish`]).
+    reference: Option<CommandId>,
+    views: view::Views,
     presented: VecDeque<M6hPresented>,
     error: String,
     poisoned: bool,
@@ -263,6 +324,8 @@ impl ShellHost {
             turns: None,
             check: String::new(),
             runtime: None,
+            reference: None,
+            views: view::Views::default(),
             presented: VecDeque::new(),
             error: String::new(),
             poisoned: false,
@@ -277,8 +340,9 @@ impl ShellHost {
     }
 
     /// Adopts `state` at engine revision `revision`, which must follow the adopted one, in the core first and then in
-    /// the host, and publishes the view for it. While the device is lost the publication waits for [`m6h_recover`],
-    /// which publishes it.
+    /// the host, and publishes the view for it. A view job that read the old revision ends
+    /// `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the device is lost the publication waits
+    /// for [`m6h_recover`], which publishes it.
     fn adopt(&mut self, state: &Snapshot, revision: u64) -> Result<u64, Failure> {
         if revision <= self.revision {
             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
@@ -290,6 +354,7 @@ impl ShellHost {
         self.revision = revision;
         self.digests.insert(revision, state.digest().to_owned());
         self.publication = publication(&self.geometry, state, &base);
+        self.replace_runs();
         match self.publish() {
             Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
             Err(failure) => Err(failure),
@@ -304,6 +369,7 @@ impl ShellHost {
     fn publish(&mut self) -> Result<(), Failure> {
         let command = CommandId(self.next_command);
         self.next_command += 1;
+        self.reference = Some(command);
         let receipt = self.host.publish(command, self.publication.clone());
         match receipt.status {
             CommandStatus::Refused(error) | CommandStatus::Failed(error) => Err(host_error(error)),
@@ -312,6 +378,13 @@ impl ShellHost {
                 Ok(())
             }
         }
+    }
+
+    /// Delivers the view jobs that ended, polls the host, and closes the runs it ended.
+    fn poll(&mut self) {
+        self.collect_views();
+        self.host.pump();
+        self.settle_views();
     }
 }
 
@@ -436,7 +509,8 @@ pub unsafe extern "C" fn m6h_set_viewport(handle: *mut ShellHost, width: u32, he
     }
 }
 
-/// Polls the host: notices a lost device, and installs ready preparations.
+/// Polls the host: delivers the view jobs that ended ([`m6h_run_view`]), notices a lost device, and installs ready
+/// preparations.
 ///
 /// # Safety
 ///
@@ -446,14 +520,15 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            shell.host.pump();
+            shell.poll();
             Ok(())
         })
     }
 }
 
-/// Polls the host, then submits a frame of the view to the surface and writes its sequence, device epoch, surface and
-/// revisions to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are read and dropped here.
+/// Polls the host as [`m6h_pump`] does, then submits a frame of the view to the surface and writes its sequence,
+/// device epoch, surface and revisions to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
+/// read and dropped here.
 ///
 /// # Safety
 ///
@@ -463,13 +538,20 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            shell.host.pump();
+            shell.poll();
             let stamp = shell.host.frame(VIEW).map_err(host_error)?;
             let _ = shell.host.backend.read_frame_reports();
-            let publication_revision = match shell.host.installed(VIEW) {
-                Some(installed) if stamp.publication_generation != 0 => installed.publication.base.state,
-                _ => 0,
+            let drawn = match shell.host.installed(VIEW) {
+                Some(installed) if stamp.publication_generation != 0 => {
+                    let command =
+                        if installed.generation == stamp.publication_generation { installed.command.0 } else { 0 };
+                    Some((installed.publication.base.state, command))
+                }
+                _ => None,
             };
+            let (publication_revision, command) = drawn.unwrap_or((0, 0));
+            let stale = shell.host.stale(VIEW);
+            shell.views.submitted(stamp.sequence, command, stale);
             if !out.is_null() {
                 out.write(M6hFrame {
                     sequence: stamp.sequence,
@@ -513,6 +595,9 @@ pub unsafe extern "C" fn m6h_read_presented(
             let rows_read: Result<Vec<_>, Failure> =
                 frames.iter().zip(&times).map(|(frame, time)| M6hPresented::new(frame, time)).collect();
             shell.presented.extend(rows_read?);
+            for frame in &frames {
+                shell.views.confirmed(frame.stamp.sequence);
+            }
             let n = shell.presented.len().min(capacity as usize);
             for (i, row) in shell.presented.drain(..n).enumerate() {
                 rows.add(i).write(row);
@@ -622,9 +707,10 @@ pub fn start_runtime(program: &Path) -> Result<Runtime, String> {
 }
 
 /// Starts the language runtime's process (route RT1, c600-runtime's child) from the program `program` (UTF-8,
-/// `program_len` bytes; the `c600-runtime` binary) and waits for its hello, which names the protocol, the IR version
-/// and the execution contract. The handle keeps the process until [`m6h_destroy`], which ends it; no job runs in it
-/// yet (a draft). A program that does not start, and a second load, answer [`M6H_E_RUNTIME`].
+/// `program_len` bytes; a binary that runs `c600_runtime::child::main`) and waits for its hello, which names the
+/// protocol, the IR version and the execution contract. The handle keeps the process until [`m6h_destroy`], which
+/// ends it; the view jobs run in it ([`m6h_run_view`]). A program that does not start, and a second load, answer
+/// [`M6H_E_RUNTIME`].
 ///
 /// # Safety
 ///
@@ -635,10 +721,112 @@ pub unsafe extern "C" fn m6h_load_runtime(handle: *mut ShellHost, program: *cons
     unsafe {
         with_host(handle, |shell| {
             let program = utf8(program, program_len, "runtime program path")?;
-            if shell.runtime.is_some() {
+            if shell.runtime.is_some() || shell.views.worker.is_some() {
                 return Err((M6H_E_RUNTIME, "this handle has started its runtime already".to_owned()));
             }
-            shell.runtime = Some(start_runtime(Path::new(program)).map_err(|reason| (M6H_E_RUNTIME, reason))?);
+            let runtime = start_runtime(Path::new(program)).map_err(|reason| (M6H_E_RUNTIME, reason))?;
+            shell.runtime = Some((runtime, PathBuf::from(program)));
+            Ok(())
+        })
+    }
+}
+
+/// Schedules a view job (C9 U8, a draft): runs the program text `source` (UTF-8, `source_len` bytes; one `.6cs`
+/// module) from its exported function `entry` (UTF-8, `entry_len` bytes; no arguments) in the runtime that
+/// [`m6h_load_runtime`] started, and writes the job's ticket, its display-host command id, to `*out_ticket`.
+///
+/// The call returns at once. It schedules the job on the view with `Host::schedule`, which supersedes a run still
+/// pending, and records the adopted engine revision. The job runs on the handle's worker thread, under the limits
+/// [`VIEW_LIMITS`] and the deadline [`VIEW_DEADLINE`], with no capability granted and no host row served. When it
+/// ends, [`m6h_pump`] or [`m6h_frame`] on the caller's thread delivers, for a completed run, the reference
+/// publication of the recorded revision with the plan dependency `program` set to the hex SHA-256 of `source`, under
+/// the output allowance [`VIEW_ALLOWANCE`]. A run that the runtime refuses or that faults, a delivery the host
+/// refuses, a run that a newer one supersedes, and a run whose revision a twist replaced before its publication was
+/// installed end refused; [`m6h_view_result`] reads the record.
+///
+/// No loaded runtime answers [`M6H_E_RUNTIME`]; a null or non-UTF-8 text [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `source` and `entry` point to their readable bytes;
+/// `out_ticket` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_run_view(
+    handle: *mut ShellHost,
+    source: *const u8,
+    source_len: usize,
+    entry: *const u8,
+    entry_len: usize,
+    out_ticket: *mut u64,
+) -> i32 {
+    if out_ticket.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let source = utf8(source, source_len, "program text")?;
+            let entry = utf8(entry, entry_len, "entry name")?;
+            let ticket = shell.run_view(source, entry)?;
+            out_ticket.write(ticket);
+            Ok(())
+        })
+    }
+}
+
+/// Writes the record of the view job or draft `ticket` to `*out` ([`M6hViewResult`]). A refused run's code and
+/// reason are the `{"code", "reason"}` JSON object that [`m6h_last_error`] answers after this call. The frames in the
+/// record come from the confirmed presentations that [`m6h_read_presented`] read. A handle keeps the newest 1024
+/// records; an unknown or dropped ticket answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `out` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_view_result(handle: *mut ShellHost, ticket: u64, out: *mut M6hViewResult) -> i32 {
+    if out.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let record = shell
+                .views
+                .records
+                .get(&ticket)
+                .ok_or_else(|| (M6H_E_INVALID_ARGUMENT, format!("no view job or draft has ticket {ticket}")))?;
+            let row = record.row();
+            if row.status == M6H_VIEW_STATUS_REFUSED {
+                shell.error = record.refusal.clone();
+            }
+            out.write(row);
+            Ok(())
+        })
+    }
+}
+
+/// Names the editor's program text by its SHA-256 `digest` (32 bytes) without running it (C9 U8, a draft), and writes
+/// the draft's ticket to `*out_ticket`. The plan dependency `program` takes the digest, so the view's output reads
+/// stale while it came from another text; the draft's record (kind [`M6H_VIEW_KIND_DRAFT`], status
+/// [`M6H_VIEW_STATUS_PUBLISHED`] at once) gets the first confirmed frame after the call that drew stale output and
+/// the first later one that did not. A draft cancels no run: while a delivered run is being prepared, the dependency
+/// keeps that run's digest, and the draft's digest takes its place once the run has ended.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `digest` points to 32 readable bytes; `out_ticket` is
+/// writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_view_draft(handle: *mut ShellHost, digest: *const u8, out_ticket: *mut u64) -> i32 {
+    if digest.is_null() || out_ticket.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let digest = digest.cast::<[u8; 32]>().read_unaligned();
+            let ticket = shell.view_draft(digest);
+            out_ticket.write(ticket);
             Ok(())
         })
     }
@@ -809,7 +997,8 @@ pub unsafe extern "C" fn m6h_last_error(
     unsafe { copy_text(&text, buffer, capacity, out_size) }
 }
 
-/// Frees the handle. The core's context stays the shell's to detach.
+/// Frees the handle. The core's context stays the shell's to detach. The runtime's process ends, a view job in flight
+/// with it, and the call waits for the worker thread.
 ///
 /// # Safety
 ///

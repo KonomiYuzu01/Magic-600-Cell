@@ -111,7 +111,11 @@ public partial class Shell : Control
         var hwnd = DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
         var window = (IntPtr)hwnd;
         _size = DisplayServer.WindowGetSize();
-        var surface = _surface = CoreSurface.Open(coreLibrary, (ulong)hwnd, 0, 0, (uint)_size.X, (uint)_size.Y);
+        // The core opens Godot's own adapter, not DXGI's first hardware adapter (C9 U4).
+        var device = RenderingServer.GetRenderingDevice()
+            ?? throw new InvalidOperationException("the shell needs Godot's rendering device");
+        var adapter = CoreSurface.AdapterLuid(device.GetDriverResource(RenderingDevice.DriverResource.PhysicalDevice, default, 0));
+        var surface = _surface = CoreSurface.Open(coreLibrary, adapter, (ulong)hwnd, 0, 0, (uint)_size.X, (uint)_size.Y);
         var code = hostLibrary.Create(coreLibrary, surface.Context, assets, out _host);
         if (code != HostLibrary.Ok)
         {
@@ -148,7 +152,11 @@ public partial class Shell : Control
         _exitAtFirstFrame = System.Environment.GetEnvironmentVariable("M600_EXIT_AT_FIRST_FRAME") == "1";
         if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")
         {
-            _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));
+            _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log, hostLibrary, _host)));
+        }
+        if (System.Environment.GetEnvironmentVariable("M600_LX2") == "1")
+        {
+            _modules.Add(new Lx2.Lx2Module(new ShellContext(window, this, _log, hostLibrary, _host)));
         }
         if (_modules.Count > 0)
         {
