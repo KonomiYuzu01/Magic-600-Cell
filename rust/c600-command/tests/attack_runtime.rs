@@ -123,11 +123,9 @@ fn refused(receipt: &Receipt) -> bool {
 /// The owner's reading of 18 November 2026: one check in the command layer, not in each host. A run prepares a preview
 /// only while the host holds the job of a command the solver invoked, and the run is that job's run. A stray run, a run
 /// that names a job it is not, and the job's run after the host reported the job are refused with
-/// `KN5:capability.outside_solver_command`; the run of the solver's command is admitted. The check is built and off
-/// (`SOLVER_COMMAND_CHECK` in `src/layer.rs`) until LP3 starts its runs through a tool row the shell invokes; the
-/// switch takes this test out of `ignore`.
+/// `KN5:capability.outside_solver_command`; the run of the solver's command is admitted. The check is on
+/// (`SOLVER_COMMAND_CHECK` in `src/layer.rs`), so a host must start its runs through a tool row the shell invokes.
 #[test]
-#[ignore = "B2: the layer's check is built and off until LP3's runs start inside a solver command"]
 fn b2_a_preview_outside_a_command_the_solver_invoked_is_refused() {
     let mut f = fixture();
     let receipt = f.runtime("stray-run", "operation.preview", draft_args(&word(&[1])));

@@ -10,8 +10,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError};
 
 use c600_command::{
-    code, draft_args, Caller, CommandLayer, Completion, CompletionKind, Error, HeadlessFrames, Invocation, MemoryStore,
-    PreviewState, Provenance, Receipt, Secret, Shell, Status, Table, RECORD_ROW,
+    code, draft_args, Caller, CommandLayer, Completion, CompletionKind, Error, HeadlessFrames, Invocation, Kind,
+    MemoryStore, Overlay, PreviewState, Provenance, Receipt, Secret, Shell, Status, Table, RECORD_ROW,
 };
 use c600_digest::sha256;
 use c600_kernel::json::{self, Value};
@@ -219,6 +219,17 @@ impl Fixture {
         let slot = self.layer.preview().map(|p| (p.id, p.state));
         let records = format!("{:?}", self.layer.records());
         (format!("{:?}", self.layer.revision()), records, self.layer.store().log.len(), self.layer.generation(), slot)
+    }
+
+    /// A run inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34): the shell invokes a
+    /// tool's query row, and the host takes its job and runs it as the job's run (`ProgramJob::run`), which lasts until
+    /// the host reports the job. Only such a run prepares a preview.
+    fn solver_run(&mut self) -> String {
+        let overlay = Overlay { module: "tools/full".into(), entry: "run".into() };
+        self.layer.register_overlay("tool.full.run", Kind::Query, &[], overlay).unwrap();
+        let receipt = self.shell.invoke(&mut self.layer, "tool.full.run", json::object([])).unwrap();
+        assert!(matches!(receipt.status, Status::Running(_)), "the tool's row: {:?}", receipt.status);
+        self.layer.take_program_job().expect("the tool's job").run()
     }
 
     /// `operation.preview` of record `name` by `caller`, which must be refused at admission with `expected`.
@@ -473,14 +484,15 @@ fn a_record_written_after_admission_never_replaces_the_admitted_letters() {
 /// name}`, so neither a run nor the shell can give a draft a block of its own: a draft with any other key is refused
 /// with `KN5:input.argument_form`. A run's record draft reaches the same adapter as the shell's. A run's own word gets
 /// its block from the runtime's boundary, which stamps the run's producer and admits it before the proposal leaves
-/// the run (`c600-run`'s `tests/boundary.rs`).
+/// the run (`c600-run`'s `tests/boundary.rs`). The run is inside a command the solver invoked (finding B2).
 #[test]
 fn a_draft_carries_no_block_of_the_callers() {
     let mut f = fixture(&[]);
     f.write("tool", &[1, 2], &program(Author::Own, Profile::Solving, &[]));
     f.write("mine", &[1, 2], &manual(&[]));
     let declared = block_text(&manual(&[]));
-    let run = Caller::Runtime { run: "run-1".into() };
+    let name = f.solver_run();
+    let run = Caller::Runtime { run: name.clone() };
     for caller in [Caller::Shell, run.clone()] {
         for draft in [
             json::object([("provenance", declared.clone()), ("recipe", word(&[1, 2]))]),
@@ -493,7 +505,7 @@ fn a_draft_carries_no_block_of_the_callers() {
     }
     let epoch = f.layer.revision().epoch;
     let invocation = Invocation {
-        command: "run-1/9".into(),
+        command: format!("{name}/9"),
         row: "operation.preview".into(),
         args: record_draft("mine"),
         token: None,

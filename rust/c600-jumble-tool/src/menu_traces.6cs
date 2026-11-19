@@ -1,0 +1,10 @@
+edition "6cs-draft-1";
+module menu_traces requires [];
+
+export fn same_trace(x: MenuWord, y: MenuWord) -> Bool effects [] {
+    return exact_eq(trace_key(x), trace_key(y));
+}
+
+export fn trace_commute(x: MenuWord, y: MenuWord) -> Bool effects [] {
+    return same_trace(concat(x, y), concat(y, x));
+}

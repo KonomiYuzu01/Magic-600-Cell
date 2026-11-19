@@ -416,9 +416,60 @@ class RunbookTests(NoProcessCase):
         self.assertEqual(attended.count(True), 3)
         lx2 = next(step for step in runbook.STEPS if step.id == 'lx2')
         self.assertTrue(any('--injection' in command for command in lx2.commands))
+        self.assertTrue(all('--features device --bin c600-lx2-' in command for command in lx2.commands))
+        self.assertNotIn('native', lx2.missing)
+        for token in ('pub fn main_with', 'main_with(native::point)'):
+            argument = next(argument for kind, argument in lx2.prerequisites
+                            if kind == 'mentions' and argument[1] == token)
+            self.assertTrue(runbook.evaluate('mentions', argument)[0], argument)
         gpu = next(step for step in runbook.STEPS if step.id == 'core-gpu')
         self.assertTrue(gpu.built and gpu.commands[0].startswith('python -B renderer/core/check_core.py --gpu'))
         self.assertEqual(next(step for step in runbook.STEPS if step.id == 'lx4').minutes, 240)
+
+    def test_u4_prepares_route_b_and_u6_rebuilds_and_checks_before_the_cold_runs(self):
+        wj = next(step for step in runbook.STEPS if step.id == 'wj-w3')
+        self.assertTrue(wj.built)
+        self.assertTrue(wj.commands[0].startswith('python -B renderer/acceptance/prepare_host.py --route surface'))
+        self.assertTrue(wj.commands[1].startswith('python -B renderer/acceptance/prepare_data.py'))
+        self.assertIn(f'{runbook.DECLARE} -DryRun', wj.commands[2])
+        self.assertTrue(all('-Build <route-B build>' in command and runbook.DECLARE in command
+                            for command in wj.commands[2:-1]))
+        self.assertIn(('dir', runbook.WJ_DATA), wj.prerequisites)
+        self.assertIn(('compiles', runbook.PREPARE_DATA), wj.prerequisites)
+        self.assertIn(('build', 'surface'), wj.prerequisites)
+        e3 = next(step for step in runbook.STEPS if step.id == 'e3-cold-start')
+        self.assertTrue(e3.commands[0].startswith('python -B renderer/shell/build_product.py'))
+        self.assertIn('--cold-start --dry-run', e3.commands[1])
+        self.assertIn('three times', e3.commands[2])
+        self.assertTrue(e3.commands[3].startswith('python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3>'))
+        self.assertIn(('compiles', runbook.BUILD_PRODUCT), e3.prerequisites)
+        for kind, argument in e3.prerequisites:
+            with self.subTest(prerequisite=(kind, argument)):
+                self.assertTrue(runbook.evaluate(kind, argument)[0])
+
+    def test_the_build_check_names_the_route_and_the_default_build_is_route_b(self):
+        root = self.temp / 'root'
+        builds = root / runbook.BUILDS
+        identity = {'format': runbook.IDENTITY_FORMAT, 'source': {'head': 'b' * 40}, 'abi_version': 5}
+        for name, route in (('20261119T100000Z', 'surface'), ('20261119T110000Z', None)):
+            (builds / name).mkdir(parents=True)
+            value = dict(identity, **({} if route is None else {'route': route}))
+            (builds / name / runbook.IDENTITY).write_bytes(json.dumps(value).encode())
+        self.assertEqual(runbook.build_route(builds / '20261119T110000Z'), 'texture')
+        self.assertIsNone(runbook.build_route(builds / 'absent'))
+        self.assertEqual(runbook.newest_build(root).name, '20261119T110000Z')
+        self.assertEqual(runbook.newest_build(root, 'surface').name, '20261119T100000Z')
+        self.assertIsNone(runbook.newest_build(self.temp / 'empty', 'surface'))
+        ok, detail = runbook.evaluate('build', 'surface', build=builds / '20261119T110000Z')
+        self.assertFalse(ok)
+        self.assertIn('route texture, not surface: python -B renderer/acceptance/prepare_host.py --route surface',
+                      detail)
+        ok, detail = runbook.evaluate('build', 'surface', build=builds / '20261119T100000Z')
+        self.assertTrue(ok)
+        self.assertIn('route surface', detail)
+        self.assertTrue(runbook.evaluate('build', None, build=builds / '20261119T110000Z')[0])
+
+    def test_every_step_has_a_time_and_sources(self):
         for step in runbook.STEPS:
             with self.subTest(step=step.id):
                 self.assertTrue(step.minutes > 0 and step.sources)
@@ -466,8 +517,9 @@ class RunbookTests(NoProcessCase):
         self.assertFalse(runbook.evaluate('mentions', ('tools/perf/c9', 'no' + ' such token'))[0])
 
 
-def skew_rows(n, skew_ms, *, header=None, unknown=()):
-    """n 3D frames 1/60 s apart, each displayed 20 ms after submission, with a UI frame 1 ms after each."""
+def skew_rows(n, skew_ms, *, header=None, unknown=(), drawn_ms=None):
+    """n 3D frames 1/60 s apart, each displayed 20 ms after submission, with a UI frame 1 ms after each (and its
+    draw ending `drawn_ms` later)."""
     step = F // 60
     rows = [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': 'skew', 'build_identity': BUILD,
              'qpc_frequency': F, 'synthetic': True, 'foreground_throughout': True, 'correctness': 'pass',
@@ -479,6 +531,8 @@ def skew_rows(n, skew_ms, *, header=None, unknown=()):
                      'display_qpc': start + F // 50})
         rows.append({'t': 'ui_frame', 'ui_seq': index, 'qpc': start + F // 1000,
                      'frame_id': 9999 if index in unknown else index + 1})
+        if drawn_ms is not None:
+            rows[-1]['drawn_qpc'] = start + F // 1000 + round(drawn_ms * F / 1000)
     return rows
 
 
@@ -535,6 +589,43 @@ class UiSkewTests(NoProcessCase):
         self.assertIn('not-foreground', lost['reasons'])
         bare = ui_skew.read_run(self.run_dir(skew_rows(120, 1.0), None, 'bare'))
         self.assertEqual((bare['status'], bare['reasons']), ('unreadable', ['no-capture']))
+
+    def test_a_null_ui_chain_is_the_one_other_chain_of_the_process(self):
+        core = {'ui_swap_chain': None, 'swap_chain': '0xDEADBEEF'}
+        printed = skew_csv(120, 5.0).replace('0xOTHER', '0x00000000deadbeef')
+        run = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, header=core), printed))
+        self.assertEqual(run['status'], 'valid', run['reasons'])
+        self.assertEqual((run['pairs'], run['ui_swap_chain'], run['ui_swap_chain_inferred']), (120, '0xui', True))
+        declared = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0), skew_csv(120, 5.0), 'declared'))
+        self.assertEqual((declared['ui_swap_chain'], declared['ui_swap_chain_inferred']), ('0xui', False))
+        lost = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, header={'ui_swap_chain': None, 'swap_chain': None}),
+                                             skew_csv(120, 5.0), 'lost'))
+        self.assertEqual((lost['status'], lost['reasons']), ('unreadable', ['core-swap-chain-unknown']))
+        core = {'ui_swap_chain': None, 'swap_chain': '0xother'}
+        third = skew_csv(120, 5.0) + ('shell.exe,4242,0xTHIRD,DXGI,1,0,0,0,0.1,16.67,0,Composed: Flip,1.0,1.0,16.67,'
+                                      '0,0.5,2,0,9\n')
+        many = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, header=core), third, 'many'))
+        self.assertEqual((many['status'], many['reasons']), ('unreadable', ['ui-swap-chain-ambiguous']))
+        alone = {'ui_swap_chain': None, 'swap_chain': '0xUI'}
+        only = skew_csv(120, 5.0).replace('0xOTHER', '0xUI')
+        none = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, header=alone), only, 'alone'))
+        self.assertEqual((none['status'], none['reasons']), ('unreadable', ['ui-swap-chain-absent']))
+        bare = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, header={'ui_swap_chain': None}), skew_csv(120, 5.0),
+                                             'undeclared'))
+        self.assertEqual(bare['reasons'], ['ui-swap-chain-undeclared'])
+
+    def test_each_run_reports_whether_the_ui_present_falls_inside_the_draw(self):
+        inside = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, drawn_ms=3.0), skew_csv(120, 5.0)))
+        self.assertEqual(inside['present_in_draw'], {'checked': 120, 'within': 120})
+        late = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0, drawn_ms=0.5), skew_csv(120, 5.0), 'late'))
+        self.assertEqual((late['status'], late['present_in_draw']), ('valid', {'checked': 120, 'within': 0}))
+        old = ui_skew.read_run(self.run_dir(skew_rows(120, 5.0), skew_csv(120, 5.0), 'old'))
+        self.assertEqual(old['present_in_draw'], {'checked': 0, 'within': 0})
+        early = skew_rows(120, 5.0, drawn_ms=3.0)
+        first = next(row for row in early if row['t'] == 'ui_frame')
+        first['drawn_qpc'] = first['qpc'] - 1
+        bad = ui_skew.read_run(self.run_dir(early, skew_csv(120, 5.0), 'early'))
+        self.assertEqual((bad['status'], bad['reasons']), ('unreadable', ['bad-ui_frame']))
 
     def test_the_record_has_no_bar_and_a_synthetic_input_never_passes(self):
         directory = self.run_dir(skew_rows(120, 2.0), skew_csv(120, 2.0))
@@ -624,16 +715,21 @@ class Lx4Tests(NoProcessCase):
         self.assertEqual(sent[1][0], lx4.SELECT)
         self.assertEqual((sent[timed][0], timed), (lx4.WM_CHAR, 2))
         sent, timed = lx4.messages(self.edits, samples[('S', 'syntax')])
-        self.assertEqual(sent[timed][:2], (lx4.WM_KEYDOWN, lx4.VK_BACK))
+        self.assertEqual(sent[timed:timed + 2], [(lx4.WM_KEYDOWN, lx4.VK_BACK, 0x000E0001),
+                                                 (lx4.WM_KEYUP, lx4.VK_BACK, 0xC00E0001)])
         sent, timed = lx4.messages(self.edits, samples[('M', 'completion')])
         self.assertIn((lx4.WM_CHAR, 13, 1), sent)
+        self.assertTrue(all(lparam == 1 for message, _, lparam in sent if message == lx4.WM_CHAR))
         self.assertEqual(timed, len(sent) - 1)
         sent, _ = lx4.messages(self.edits, samples[('L', 'diagnostics')])
         selects = [wparam for message, wparam, _ in sent if message == lx4.SELECT]
         self.assertEqual(selects, sorted(selects, reverse=True))
         turn = next(sample for sample in lx4.schedule(self.edits, 'jumble-off') if sample['metric'] == 'turn')
+        self.assertEqual(lx4.messages(self.edits, turn),
+                         ([(lx4.WM_KEYDOWN, 0x4A, 0x00240001), (lx4.WM_KEYUP, 0x4A, 0xC0240001)], 0))
+        self.assertEqual(lx4.messages(self.edits, turn, 'KeyL')[0][0], (lx4.WM_KEYDOWN, 0x4C, 0x00260001))
         with self.assertRaises(lx4.FixtureError):
-            lx4.messages(self.edits, turn)
+            lx4.messages(self.edits, turn, 'KeyT')
 
     def test_changed_fixtures_are_refused(self):
         (self.temp / 'fixtures' / 'M.6cs').write_bytes(b'changed\n')
@@ -692,7 +788,7 @@ class Lx4Tests(NoProcessCase):
             code = lx4.main(['post', '--fixtures', str(self.temp / 'fixtures'), '--puzzle', 'jumble-on', '--dry-run'],
                             system_factory=forbidden)
         self.assertEqual(code, 0)
-        self.assertIn("turn key is not known", out.getvalue())
+        self.assertIn('turn key KeyJ: virtual key 0x4A, scan code 0x24', out.getvalue())
         self.assertIn('nothing was posted', out.getvalue())
 
     def test_the_poster_waits_for_each_endpoint_and_logs_every_post(self):
@@ -720,7 +816,7 @@ class Lx4Tests(NoProcessCase):
                     with events.open('a') as stream:
                         for metric in (*lx4.METRICS, 'dependents'):
                             stream.write(json.dumps({'t': 'lx4', 'sample': lparam, 'endpoint': metric}) + '\n')
-                if self.answer and message == lx4.WM_KEYDOWN and wparam == 0x54:
+                if self.answer and message == lx4.WM_KEYDOWN and wparam == 0x4A and lparam >> 16 & 0xFF == 0x24:
                     with events.open('a') as stream:
                         stream.write(json.dumps({'t': 'key', 'seq': 0, 'qpc': 1, 'frame_id': None}) + '\n')
                 return hwnd == 66
@@ -734,14 +830,15 @@ class Lx4Tests(NoProcessCase):
         clock = iter(range(10**9))
         with mock.patch.object(lx4, 'PER_SERIES', 2), mock.patch.object(lx4, 'SERIES', 1):
             samples = lx4.schedule(self.edits, 'jumble-off')
-            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 0x54, Fake(),
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', Fake(),
                                 clock=lambda: next(clock) / 100, sleep=lambda seconds: None, out=lambda line: None)
             self.assertEqual(code, 0)
             rows = evidence.read_jsonl(run / lx4.POSTS)
+            self.assertEqual(rows[0]['turn_key'], 'KeyJ')
             self.assertEqual(sum(row['t'] == 'sample' and row['status'] == 'done' for row in rows), len(samples))
             self.assertEqual(sum(row['t'] == 'post' and row['timed'] for row in rows), len(samples))
             (run / lx4.POSTS).unlink()
-            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 0x54, Fake(answer=False),
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', Fake(answer=False),
                                 clock=lambda: next(clock) / 2, sleep=lambda seconds: None, out=lambda line: None)
             self.assertEqual(code, 3)
 

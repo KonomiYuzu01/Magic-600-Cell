@@ -9,10 +9,17 @@ publish.workspace = true
 name = "c600-lx2-faults"
 path = "src/main.rs"
 
-# The fault-injection child of option (a): c600-runtime's child under a ceiling allocator. Never shipped.
+# The fault-injection child of option (a): c600-runtime's child under a ceiling allocator, and with the feature
+# `device` on c600-runtime's fault hook. Never shipped.
 [[bin]]
 name = "c600-lx2-child"
 path = "src/bin/c600-lx2-child.rs"
+
+[features]
+# The device's native recursion and native loop (RTE.42) on c600-runtime's fault hook (LP3's feature `lx2-faults`).
+# Off by default, so that no workspace build turns the hook on in the product's runtime; build the device and run
+# these tests with `-p c600-lx2 --features device`.
+device = ["c600-runtime/lx2-faults"]
 
 [dependencies]
 c600-check = { path = "../c600-check" }

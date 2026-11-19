@@ -1,0 +1,14 @@
+edition "6cs-draft-1";
+module jumble_corrections requires [];
+
+export fn correction(id: Nat) -> record { family: Text, id: Nat, length: Nat, letters: List<List<Nat>>, row: List<Nat>, support: Nat } effects [snapshot] {
+    let found = read_snapshot<record { family: Text, id: Nat, letters: List<List<Nat>>, row: List<Nat> }>("correction_lookup", id);
+    let support = repeat(length(found.row), record { count = 0, next = 0 }, fn(s: record { count: Nat, next: Nat }) -> record { count: Nat, next: Nat } {
+        let step = match exact_eq(index(found.row, s.next), 0) {
+            true => 0;
+            _ => 1;
+        };
+        return record { count = exact_add(s.count, step), next = exact_add(s.next, 1) };
+    });
+    return record { family = found.family, id = found.id, length = length(found.letters), letters = found.letters, row = found.row, support = support.count };
+}

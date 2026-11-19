@@ -335,7 +335,7 @@ fn ct_rpi_07_adoption_makes_mismatched_output_stale() {
     model.adopt(&bundle(r13)).expect("adopted");
     let refresh = model.runner(&v).map(|(_, command)| command);
     assert!(refresh.is_some());
-    assert_eq!(model.status(&v), Some(ViewStatus::Stale { base: old.base, adopted: r13, refresh }));
+    assert_eq!(model.status(&v), Some(ViewStatus::Stale { base: old.base, adopted: r13, refresh, source_lag: None }));
     let frame = model.frame_input();
     assert_eq!(frame.revision, r13);
     for view in &frame.views {
@@ -392,7 +392,7 @@ fn ct_rpi_07_every_d2_status_has_typed_data() {
     let r12 = rev(12, 1, 1, 12);
     model.adopt(&bundle(r12)).expect("adopted");
     let refresh = model.runner(&current).map(|(_, command)| command);
-    assert_eq!(model.status(&current), Some(ViewStatus::Stale { base, adopted: r12, refresh }));
+    assert_eq!(model.status(&current), Some(ViewStatus::Stale { base, adopted: r12, refresh, source_lag: None }));
 }
 
 // ----- CT-RPI-22, limit half
@@ -1422,4 +1422,211 @@ fn l11_c_a_recomputation_a_revision_starts_cannot_open_or_close_a_view() {
     assert!(model.close_view(close, Origin::Solver, &v).expect("a solver command closes v").is_some());
     assert_eq!(model.receipt(waiting), Some(&Status::Cancelled(CancelReason::Superseded { by: close })));
     assert_eq!(model.views(), &[ViewId::global(), ViewId::local()]);
+}
+
+// ----- the stale state of a source edit (EV1.7, EV3.5, EV3.6, RPI.13)
+
+/// The source digest of a module version in these tests.
+fn version(tag: u8) -> Digest {
+    [tag; 32]
+}
+
+/// The overlay source of view `name` on module version `module`.
+fn source_of(name: &str, module: Digest) -> ViewSource {
+    ViewSource::Overlay { row: name.to_string(), module, arguments: vec![1] }
+}
+
+/// Opens a view of module version `module` without running it.
+fn open_of(model: &mut ViewModel, name: &str, module: Digest) -> ViewId {
+    let view = ViewId::new(name);
+    let decl = declared(Depends::STATE, workload(1, 1));
+    model.open_view(OPEN, Origin::Solver, view.clone(), source_of(name, module), decl).expect("it fits");
+    view
+}
+
+/// Opens a view of module version `module` and runs it to current output.
+fn current_of(model: &mut ViewModel, name: &str, module: Digest) -> ViewId {
+    let view = open_of(model, name, module);
+    run_all(model);
+    assert!(matches!(model.status(&view), Some(ViewStatus::Current { .. })), "{:?}", model.status(&view));
+    view
+}
+
+fn drawn(model: &ViewModel, view: &ViewId) -> FrameView {
+    model.frame_input().views.into_iter().find(|drawn| drawn.view == *view).expect("visible")
+}
+
+/// EV3.6, EV1.7, RPI.13: the editor's draft of the version that produced a view's output makes the view stale at
+/// once, in its status and its next frame, by a comparison of digests: nothing runs and nothing is fenced. The output
+/// is still drawn, since its base matches and its picks still open the producing version (EV3.5). A later draft
+/// replaces the first, and returning to the version's bytes makes the view current with nothing rebuilt. RTE.49 times
+/// this state on the owner's machine; nothing is timed here.
+#[test]
+fn ev3_06_a_source_edit_makes_output_stale_at_once_and_runs_nothing() {
+    let r11 = rev(11, 1, 1, 11);
+    let mut model = model_at(profile(&[]), r11);
+    let (a, d) = (version(0xa0), version(0xd0));
+    let v = current_of(&mut model, "v", a);
+    let installed = model.installed(&v).expect("installed").clone();
+    let lane = |model: &ViewModel| (model.counters(&v), model.runner(&v), model.pending(&v));
+    let before = (lane(&model), drawn(&model, &v));
+    assert_eq!(before.1.source_lag, None);
+
+    model.edit_source(a, d);
+    let lag = SourceLag { producer: a, draft: d };
+    assert_eq!((model.draft(&a), model.source_lag(&v)), (Some(d), Some(lag)));
+    let stale = ViewStatus::Stale { base: installed.base, adopted: r11, refresh: None, source_lag: Some(lag) };
+    assert_eq!(model.status(&v), Some(stale));
+    let frame = drawn(&model, &v);
+    assert_eq!((&frame.draw, frame.source_lag), (&before.1.draw, Some(lag)));
+    assert!(matches!(frame.draw, Draw::Output { publication, .. } if publication == installed.digest));
+    assert!(model.take_jobs().is_empty());
+    assert_eq!(lane(&model), before.0);
+    assert_eq!(model.installed(&v), Some(&installed));
+
+    let d2 = version(0xd2);
+    model.edit_source(a, d2);
+    assert_eq!(model.source_lag(&v), Some(SourceLag { producer: a, draft: d2 }));
+    model.edit_source(a, a);
+    assert_eq!((model.draft(&a), model.source_lag(&v)), (None, None));
+    assert_eq!(model.status(&v), Some(ViewStatus::Current { base: installed.base, publication: installed.digest }));
+    assert_eq!((lane(&model), drawn(&model, &v)), before);
+}
+
+/// EV3.6, RPI.45: only output that the edited version produced lags, by the producer its block names. A view of
+/// another version, a built-in view and Local stay current, and a standalone publication to Global whose block names
+/// the edited version lags too, while Global still draws the bundle and the publication. Empty output of the edited
+/// version lags as well: the stale state outranks `Empty`, as it does for a lagging base (RPI.13).
+#[test]
+fn ev3_06_only_output_of_the_edited_version_lags() {
+    let r11 = rev(11, 1, 1, 11);
+    let mut model = model_at(profile(&[]), r11);
+    let (a, b, d) = (version(0xa0), version(0xb0), version(0xd0));
+    let v = current_of(&mut model, "v", a);
+    let w = current_of(&mut model, "w", b);
+    let blank = open_of(&mut model, "blank", a);
+    model.pump(|_| RunOutcome::Published(Content::default()));
+    assert!(matches!(model.status(&blank), Some(ViewStatus::Empty { .. })), "{:?}", model.status(&blank));
+    let built_in = ViewId::new("built-in");
+    let source = ViewSource::BuiltIn { name: "orbits".to_string() };
+    let decl = declared(Depends::STATE, workload(1, 1));
+    model.open_view(OPEN, Origin::Solver, built_in.clone(), source, decl).expect("it fits");
+    run_all(&mut model);
+    let global = ViewId::global();
+    let mut input = publication(&model, &global, content(5), OutputAllowance::new(BIG, 16));
+    input.provenance.producer = source_of("host", a);
+    assert!(matches!(model.publish(CommandId::Caller(1), &global, input), Status::Completed(_)));
+
+    model.edit_source(a, d);
+    let lag = Some(SourceLag { producer: a, draft: d });
+    assert_eq!((model.source_lag(&v), model.source_lag(&global)), (lag, lag));
+    assert!(matches!(model.status(&global), Some(ViewStatus::Stale { source_lag, .. }) if source_lag == lag));
+    assert!(matches!(model.status(&blank), Some(ViewStatus::Stale { source_lag, .. }) if source_lag == lag));
+    let drawn_global = drawn(&model, &global);
+    assert!(drawn_global.bundle && matches!(drawn_global.draw, Draw::Output { .. }), "{drawn_global:?}");
+    assert_eq!(drawn_global.source_lag, lag);
+    for other in [&w, &built_in, &ViewId::local()] {
+        assert_eq!(model.source_lag(other), None, "{other:?}");
+        assert!(!matches!(model.status(other), Some(ViewStatus::Stale { .. })), "{other:?}");
+        assert_eq!(drawn(&model, other).source_lag, None, "{other:?}");
+    }
+}
+
+/// EV1.7: an unchecked draft never runs, including through a view. An edit fences no run of the producing version,
+/// a solver's run after it still runs that checked version, and its output installs with the lag. Without output
+/// there is nothing to lag.
+#[test]
+fn ev1_07_an_edit_fences_nothing_and_runs_only_the_checked_version() {
+    let r11 = rev(11, 1, 1, 11);
+    let mut model = model_at(profile(&[]), r11);
+    let (a, d) = (version(0xa0), version(0xd0));
+    let v = open_of(&mut model, "v", a);
+    let first = model.take_jobs().pop().expect("the first run");
+
+    model.edit_source(a, d);
+    assert!(!model.is_fenced(first.job));
+    assert_eq!(model.receipt(first.command), Some(&Status::Running(first.job)));
+    assert!(matches!(model.status(&v), Some(ViewStatus::Loading { .. })), "{:?}", model.status(&v));
+    assert_eq!(model.source_lag(&v), None);
+    model.finish(first.job, RunOutcome::Published(content(1)));
+    let lag = Some(SourceLag { producer: a, draft: d });
+    assert_eq!(model.source_lag(&v), lag);
+
+    let again = CommandId::Caller(2);
+    assert!(matches!(model.invoke(again, &v, OutputAllowance::new(BIG, 16)), Status::Running(_)));
+    let jobs = model.take_jobs();
+    assert!(matches!(jobs.as_slice(), [job] if job.source == source_of("v", a)), "{jobs:?}");
+    model.finish(jobs[0].job, RunOutcome::Published(content(2)));
+    assert!(matches!(model.receipt(again), Some(Status::Completed(_))));
+    assert_eq!(model.source_lag(&v), lag);
+    assert_eq!(model.installed(&v).map(|installed| &installed.provenance.producer), Some(&source_of("v", a)));
+}
+
+/// ONE.12, EV3.6: a lagging source and a moved revision show together and neither stands in for the other. The view
+/// draws its stale presentation with the lag beside it; the refresh brings the base up to date and keeps the lag,
+/// since it ran the producing version again.
+#[test]
+fn ev3_06_a_source_lag_and_a_moved_revision_show_together() {
+    let r11 = rev(11, 1, 1, 11);
+    let r12 = rev(12, 1, 1, 12);
+    let mut model = model_at(profile(&[]), r11);
+    let (a, d) = (version(0xa0), version(0xd0));
+    let v = current_of(&mut model, "v", a);
+    let old = model.installed(&v).expect("installed").base;
+    model.edit_source(a, d);
+    let lag = Some(SourceLag { producer: a, draft: d });
+
+    model.adopt(&bundle(r12)).expect("adopted");
+    let refresh = model.runner(&v).map(|(_, command)| command);
+    assert!(refresh.is_some());
+    assert_eq!(model.status(&v), Some(ViewStatus::Stale { base: old, adopted: r12, refresh, source_lag: lag }));
+    let frame = drawn(&model, &v);
+    assert_eq!((frame.draw, frame.source_lag), (Draw::Stale { base: old }, lag));
+
+    run_all(&mut model);
+    let base = Base::new(r12, Depends::STATE);
+    assert_eq!(model.status(&v), Some(ViewStatus::Stale { base, adopted: r12, refresh: None, source_lag: lag }));
+    let frame = drawn(&model, &v);
+    assert!(matches!(frame.draw, Draw::Output { base: shown, .. } if shown == base), "{frame:?}");
+    assert_eq!(frame.source_lag, lag);
+}
+
+/// EV3.6, EV1.11: once the checked draft is activated (LP4's service), a view reopened on it is current, while a view
+/// still showing the old version's output stays stale until it is reopened too: the editor's draft of the old version
+/// stays recorded until the editor returns it, and the new version has no draft of its own.
+#[test]
+fn ev3_06_a_view_reopened_on_the_checked_draft_is_current() {
+    let r11 = rev(11, 1, 1, 11);
+    let mut model = model_at(profile(&[]), r11);
+    let (a, d) = (version(0xa0), version(0xd0));
+    let v = current_of(&mut model, "v", a);
+    let w = current_of(&mut model, "w", a);
+    model.edit_source(a, d);
+
+    model.close_view(CommandId::Caller(1), Origin::Solver, &v).expect("closed");
+    let v = current_of(&mut model, "v", d);
+    assert_eq!((model.draft(&a), model.draft(&d)), (Some(d), None));
+    assert_eq!((model.source_lag(&v), drawn(&model, &v).source_lag), (None, None));
+    assert_eq!(model.source_lag(&w), Some(SourceLag { producer: a, draft: d }));
+}
+
+/// EV3.6, RM.39: a hidden view's status carries the lag while the frame leaves the view out; eviction drops the
+/// output and with it the lag, and showing the view runs the producing version again, whose output lags.
+#[test]
+fn ev3_06_a_hidden_view_keeps_its_lag_until_evicted() {
+    let r11 = rev(11, 1, 1, 11);
+    let mut model = model_at(profile(&[]), r11);
+    let (a, d) = (version(0xa0), version(0xd0));
+    let v = current_of(&mut model, "v", a);
+    assert!(model.hide(&v));
+    model.edit_source(a, d);
+    let lag = Some(SourceLag { producer: a, draft: d });
+    assert!(matches!(model.status(&v), Some(ViewStatus::Stale { source_lag, .. }) if source_lag == lag));
+    assert!(model.frame_input().views.iter().all(|drawn| drawn.view != v));
+
+    assert!(model.evict(&v).is_some());
+    assert_eq!(model.source_lag(&v), None);
+    assert_eq!(model.show(&v), Ok(true));
+    run_all(&mut model);
+    assert_eq!(model.source_lag(&v), lag);
 }

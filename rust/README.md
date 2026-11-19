@@ -27,7 +27,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, with KN2.4's `positions` and `labels` rows as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and five of them served there by a test host through the command and source routes, with a stand-in engine that answers the two snapshot reads with the state number (LP3, C6) |
-| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
+| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
@@ -1645,8 +1645,8 @@ run or not applicable is no pass (PHS.63).
   - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
     program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
     run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (a draft code). The
-    check is built and off. LP3's host starts every run through a tool row the shell invokes (section "Status of LP3,
-    C5 next: the process host and the tool's views"), so switching it on changes no LP3 route.
+    check is on. LP3's host starts every run through a tool row the shell invokes (section "Status of LP3, C5 next:
+    the process host and the tool's views"), so the check changes no LP3 route.
   - Finding G1: each run has its own command-ID scope (`runtime/<run>`), so one run cannot use up another run's IDs.
     The scope is derived from the stored caller; the journal format is unchanged.
   - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
@@ -1662,7 +1662,7 @@ run or not applicable is no pass (PHS.63).
     pose move commits only after the solver releases the orbit, with a confirmation (LI.26). A reopen derives a stored
     pose move as the live move does, under the protection in force at its place in the journal (finding B7), so one that
     would move a protected piece leaves the layer in read-only recovery before it with the engine's code.
-  - Tests: `c600-command/tests/attack_runtime.rs` (B1, B6/L17, and B2, ignored while the check is off),
+  - Tests: `c600-command/tests/attack_runtime.rs` (B1, B2 and B6/L17),
     `attack_callers.rs` (G1), `attack_playback.rs` (LD1), `strict_policy.rs`, `attack_protection.rs` (B5) and
     `jumble_twist_menu.rs` (B5 under Net and Strict, a pose move that moves no protected piece, and the reopen).
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
@@ -1808,21 +1808,28 @@ run or not applicable is no pass (PHS.63).
   continuation, `refresh_display`, sends no command. The host's `Refresh` over LP3's view model and the message on
   screen are LP3's (CT-KN5-05 in part). Tests: `c600-command/tests/refresh.rs`, a port of 0.4's
   `tests/test_native_reply_after_commit.py`.
-- LB7.2's work sheets (H-08's `worksheet.save` and `worksheet.load`; solving workflow section 4; the drafts are in the
-  crate documentation). A work sheet is a workspace record whose payload is `{"worksheet": {...}}` (`Worksheet`): the
-  phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a position), the reference as
-  given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a sheet previews its complete
-  operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}` whose record holds letters or a
-  sheet, and a `name`; the sheet keeps that record's provenance block, which the reader checks again, and its piece
-  roles are placed at the head through KN2.4's `positions` row. `worksheet.load` takes H-08's `WorksheetRevisionRef`
-  as `{"record": name, "version": n}` (`WorksheetRef`); another version is `KN5:stale.revision_changed`. It places the
-  piece roles again, keeps where each was saved (`Placement::moved` shows a mismatch, and nothing is retargeted) and
-  writes the sheet again, so every preview that read the sheet goes stale, also at the same state, and the reuse needs
-  a fresh engine preview. Each row is one record write, undoable as a workspace inverse (LB7.2; H-08 gives
-  `worksheet.save` `undo: none`). Both rows need the host's provenance reader and Jumble off; the runtime may invoke
-  neither, and no entry can serve them. Not built: `worksheet.compare`, gains and losses, macro versions, and reading
-  a position role's occupant again. Tests: `c600-command/tests/worksheet.rs` (CT-LB2-03's work-sheet part) and the
-  rows with Jumble on in `jumble_on.rs`.
+- LB7.2's work sheets (H-08's `worksheet.save`, `worksheet.load` and `worksheet.compare`; solving workflow section 4;
+  the drafts are in the crate documentation). A work sheet is a workspace record whose payload is `{"worksheet":
+  {...}}` (`Worksheet`): the phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a
+  position), the reference as given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a
+  sheet previews its complete operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}`
+  whose record holds letters or a sheet, and a `name`; the sheet keeps that record's provenance block, which the
+  reader checks again, and its piece roles are placed at the head through KN2.4's `positions` row. A sheet saved from
+  a record of letters keeps the record's name, version and content digest as its macro version (`MacroVersion`).
+  `worksheet.load` takes H-08's `WorksheetRevisionRef` as `{"record": name, "version": n}` (`WorksheetRef`); another
+  version is `KN5:stale.revision_changed`. It places the piece roles again, keeps where each was saved
+  (`Placement::moved` shows a mismatch, and nothing is retargeted) and writes the sheet again, so every preview that
+  read the sheet goes stale, also at the same state, and the reuse needs a fresh engine preview. Each of the two rows
+  is one record write, undoable as a workspace inverse (LB7.2; H-08 gives `worksheet.save` `undo: none`).
+  `worksheet.compare` takes the `WorksheetRevisionRef` and a draft `{"record": r}`, the current work, and runs as a
+  job on the exclusive lane in the layer (`CommandLayer::run_jobs`), since no entry can serve that lane: at the head
+  it compares the sheet's inputs with the draft's (`compare_inputs`), places the piece roles again, reports the macro
+  version as current, changed or missing, and analyses the sheet's complete operation afresh with LB2's gains and
+  losses. The comparison is the completion's result (`CommandLayer::comparison`); it grants nothing and writes no
+  record. The three rows need the host's provenance reader and Jumble off; the runtime may invoke none, and no entry
+  can serve them. Not built: reading a position role's occupant again. Tests: `c600-command/tests/worksheet.rs`
+  (CT-LB2-03's work-sheet part), the save and load rows with Jumble on in `jumble_on.rs`, and the three rows on M6's
+  journal in `c600-durable` (C7's section below).
 - `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
   committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
   without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and
@@ -1914,7 +1921,9 @@ run or not applicable is no pass (PHS.63).
   chained pose moves, so the moves, the undos and the redos each cross a replay from solved. A blocked item, a record
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
-  budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
+  budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it. C8's
+  `c600-jumble-tool/tests/jumble_on_layer.rs` presses the same layer in process beside M5's engine, every record of the
+  whole journals on request (C8's section below).
 - EV3.2's view rows `view.open` and `view.close` (RPI.81 to RPI.83; the drafts are in `c600-command/src/view.rs`). The
   layer admits them, and the host's view model holds the views, Global and Local and RPI.82's budget: the `Views`
   trait, given with `CommandLayer::set_views`, which LP3's host implements with `c600-view`'s `ViewModel`. Without one
@@ -1990,6 +1999,17 @@ run or not applicable is no pass (PHS.63).
   rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
   bundle from an older epoch is refused with `refresh_required`, and output attaches only within its own epoch
   (KN0.2, ONE.60, ONE.63).
+- Source edits (for C9's LX-4): `ViewModel::edit_source(version, draft)` takes the editor's draft of a module version,
+  both source digests. Installed output whose producer block names that version is `stale` from that call on, with a
+  `SourceLag` (the producing version and the draft) in `ViewStatus::Stale` and in its `FrameView`; returning the draft
+  to the version's bytes clears it. It is a host comparison of digests (RPI.13), not a revision part (ONE.8) or a
+  workspace change (KN0.2): nothing runs and nothing is fenced, since an unchecked draft never runs, even through a
+  view (EV1.7), and the output is still drawn while its base matches, its picks opening the producing version (EV3.5,
+  EV3.6). ONE.12's table names the view-stale condition for a lagging revision only; a lagging source is the
+  integrator's reading of EV3.6 and RTE.49's stale-state interval, and the two show together. A view shows a checked
+  draft's output once it is reopened on it after activation (EV1.11 is LP4's). Drafts: one draft per version, kept
+  until the editor returns it. Tests: `ev1_07_` and the `ev3_06_` tests in `view_rows.rs`. Nothing is timed; LX-4
+  times the state on the owner's machine (C9).
 - Not built in the views: CT-RPI-26's gate half (charter E2 and the R-19 captures) and CT-EV3-08's measured half
   (RM.39's measured ceilings) wait for C9; LQ2's policy table and display refusal wait for the joint setting.
 - `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
@@ -2129,6 +2149,12 @@ run or not applicable is no pass (PHS.63).
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
+- LX-2's fault hook (the feature `lx2-faults`, off by default and in the product build): `child::main_with(hook)` runs
+  the child as `child::main` does and calls `hook(answers)` on the interpreter's thread, with the answers the child has
+  received, before each call frame and each result is written, next to where debug builds rehearse faults.
+  `FAULT_HOOK` says whether a build has it. The faults belong to the binary that gives the hook (c600-lx2's injection
+  device); this crate has none. The test child `c600-runtime-hooked`, built only with the feature, records the hook's
+  calls (`fault_hook.rs`, run with `--features lx2-faults`; without the feature it checks that `FAULT_HOOK` is false).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 31 of DET.65's 40 traces as `.6cs` programs on both executors
   (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication, alias and
@@ -2302,7 +2328,8 @@ run or not applicable is no pass (PHS.63).
     engine. The same word stored by the entry approved as a built-in tool fails closed on its missing part (BND.85)
     until the host keeps the run's blocks again; then its record draft is previewed and presented, a write of another
     record keeps the preview fresh, and a later write of that record makes it stale (`KN5:stale.revision_changed`), so
-    the press prepared before commits nothing.
+    the press prepared before commits nothing. That write keeps the word's part with the record (CT-BND-27; LP2's pull
+    request 272), so after another power loss a host that keeps no block admits the record's preview.
   - `kn5_on_layer.rs`: CT-EV3-07 on the layer over the journal (EV3.2, EV4.15, KN5.20). A commit, the solver's
     `workspace.set` and a commit take places 1 to 3 of one `session.undo` order; a hint taken before a later action of
     either kind is superseded; undo, then redo, walk the three actions in order across both kinds, each after a power
@@ -2314,41 +2341,47 @@ run or not applicable is no pass (PHS.63).
     leave the order, the undo hints, the revision and the journal bytes unchanged, and a program's or a job's workspace
     write is refused); CT-LB2-03's work-sheet part (setting a named sheet again makes the old preview stale, and a new
     proposal reads the new content, also after a reopen).
-  - `ct_lb2_03_work_sheet_reuse.rs`: CT-LB2-03's work-sheet sentence through the layer's `worksheet.save` and
-    `worksheet.load` rows on the journal, with C5's reader installed (LB7.2, LB7.3, KN0.8, KN5.23). A sheet saved from
-    a draft record comes back equal at a reuse in the same session, after a power loss on a memory disk and in a new
-    session on a file-system disk; each reuse makes a presented preview of the sheet stale, so the press prepared
-    before it commits nothing, and a fresh engine preview commits the sheet's complete operation; a reuse after that
-    commit places the piece roles again and shows the moved piece without retargeting the sheet, and its undo restores
-    the sheet. Each refusal of the two rows that LP2's draft names comes back with the layer's code and changes
+  - `ct_lb2_03_work_sheet_reuse.rs`: CT-LB2-03's work-sheet sentence through the layer's `worksheet.save`,
+    `worksheet.load` and `worksheet.compare` rows on the journal, with C5's reader installed (LB7.2, LB7.3, LB2, KN0.8,
+    KN5.23). A sheet saved from a draft record comes back equal at a reuse in the same session, after a power loss on a
+    memory disk and in a new session on a file-system disk; each reuse makes a presented preview of the sheet stale, so
+    the press prepared before it commits nothing, and a fresh engine preview commits the sheet's complete operation; a
+    reuse after that commit places the piece roles again and shows the moved piece without retargeting the sheet, and
+    its undo restores the sheet. A comparison of a sheet with the current work completes as a query whose result
+    digests it, writes nothing, the journal's bytes included, and keeps a presented preview fresh; its fresh analysis
+    of the sheet's complete operation gains nothing, loses the positions the operation unfinishes, as LB2 counts them,
+    and ends where the operation committed inline ends; a sheet saved from a record of letters reports that record as
+    its current macro version. After a power loss on a memory disk the comparisons come back equal, and a later write
+    of the record of letters makes the macro version changed while the sheet's own word is still the one analysed.
+    Each refusal of the three rows that LP2's draft names comes back with the layer's code, queues no job and changes
     nothing, the journal's bytes included: no reader, in a session reopened without one; the runtime; a malformed
-    argument; an unknown or removed record and a record with no operation to save or no saved sheet to reuse, a
-    malformed sheet among them; another version; and a block that C5's reader refuses. The refusal of both rows with
-    Jumble on runs in `c600-command`'s `tests/jumble_on.rs`, not here: entering Jumble on needs `c600-jumble`, which is
-    no dependency of this crate.
+    argument; an unknown or removed record, a record with no operation to save, no saved sheet to reuse or compare, or
+    no work to compare with, a malformed sheet among them; another version; and a block that C5's reader refuses. The
+    refusals of the save and the reuse with Jumble on run in `c600-command`'s `tests/jumble_on.rs`, not here: entering
+    Jumble on needs `c600-jumble`, which is no dependency of this crate. A comparison while the exclusive lane is held
+    runs in `c600-command`'s `tests/worksheet.rs`.
 - CT-LB2-03 does not run whole. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in
   `c600-kernel` and `c600-tools` ("C5 next" below, which records chunked transport on the source route for a recipe
   with a star step, or a word step with another field, as not built); its second sentence, named work-sheet reuse
-  invalidates the old preview, runs on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's
-  journal (above). Still missing: LB7.2's fresh exact analysis of a reused sheet, H-08's `worksheet.compare`, with
-  LB2's gains and losses, and macro versions, which LP2's layer does not build (it refuses `worksheet.compare` with
-  `KN5:input.row_not_built`).
+  invalidates the old preview, with LB7.2's fresh exact analysis of a reused sheet (LP2's `worksheet.compare`, pull
+  request 277), runs on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's journal (above).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (the word's
   letters as a JSON list, the boundary's block as text; C5's runner writes no record); C5's reader installed under the
-  fixture's pins, the host keeping a run's blocks again after a reopen; a built-in tool's stored word for the fresh and
-  stale preview, since preview admission refuses a solver tool's word (BND.84); a language overlay row of kind `view`
-  standing in for a view on the layer; M6's stand-ins for views on M6; and a test reader that reads every block,
-  standing in for a host's reader that accepted a block C5's reader refuses, so that the journal replays such a record
-  and a sheet saved from it.
+  fixture's pins, the host keeping a run's blocks again after a reopen, where the layer gives back only the part blocks
+  it kept with the writes; a built-in tool's stored word for the fresh and stale preview, since preview admission
+  refuses a solver tool's word (BND.84); a language overlay row of kind `view` standing in for a view on the layer;
+  M6's stand-ins for views on M6; and a test reader that reads every block, standing in for a host's reader that
+  accepted a block C5's reader refuses, so that the journal replays such a record and a sheet saved from it.
 - Built by LP2 since, and LP3's next steps: KN5.26's admission matrix L1 and L2 runs through the layer in
   `c600-command`'s `tests/kn5_admission.rs` (pull request 270); a durable home for a word's part blocks (pull request
-  272), which LP3's reader takes up by implementing `Provenance::parts` and `admit_kept`, so that CT-BND-27's recursive
-  parts run; and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s view model serves through
-  the layer's `Views` trait for CT-EV3-07. Waiting for LP2: a session profile (BND.14, BND.15), so the reader still
-  applies a solving session's admission in every session; and LB7.2's fresh exact analysis of a reused work sheet
-  (`worksheet.compare`, with LB2's gains and losses) and macro versions. M6's session lock covers `JournalStore` too
-  (LP2's pull request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer
-  supersedes and LP2 removes once their tests run against it.
+  272), which C5's reader serves with `Provenance::parts` and `admit_kept` (the persisted-word test above, and
+  `c600-tools`' `tests/workspace.rs`); and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s
+  view model is to serve through the layer's `Views` trait for CT-EV3-07 (LP3's next step). LB7.2's fresh exact analysis
+  of a reused work sheet (`worksheet.compare`, with LB2's gains and losses) and macro versions (pull request 277) run on
+  the journal above. Waiting for LP2: a session profile (BND.14, BND.15), so the reader still applies a solving
+  session's admission in every session. M6's session lock covers `JournalStore` too (LP2's pull request 195).
+  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes
+  once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -2368,7 +2401,7 @@ run or not applicable is no pass (PHS.63).
   Once the preview the run proposed is built, the host reports the job with the program's acknowledgement
   (`ToolCommand::acknowledge`), so the solver's command completes as a query; a run refused at its start stage is
   reported as the job's failure with the refusal's code (`start_error`). The layer's check, `c600-command`'s
-  `SOLVER_COMMAND_CHECK`, is still off (the KN5 readings above), and every LP3 route and test already runs this way.
+  `SOLVER_COMMAND_CHECK`, is on (the KN5 readings above), and every LP3 route and test runs this way.
 - `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
   compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
   records, receipts and callers equal across the hosts. On the source route each step that gives the tool a word adds
@@ -2386,9 +2419,12 @@ run or not applicable is no pass (PHS.63).
 - The host's provenance reader, `c600_tools::workspace::Reader` (KN5's stage 3; PS1.16, KN5.26, BND.84, BND.85), is the
   host's `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so
   `workspace.set` refuses a block that is not a canonical FP.17 block; its admission of a `{"record": name}` draft is
-  `c600_run::boundary::admit_preview` over the block and the blocks the host keeps. It takes every session as a solving
-  session, the only profile LP3's host runs, finds a part only among the blocks the host keeps, fails closed on a part
-  it does not find, and drops no kept block. `c600-lp3-source` serves H-08 with the layer's draft rows and installs the
+  `c600_run::boundary::admit_preview` over the block, the blocks the host keeps and the part blocks the session keeps.
+  At a record's write it lists the parts of the record's block that the host keeps, recursively (`Provenance::parts`),
+  which the layer keeps with the action and gives back at admission (`Provenance::admit_kept`; CT-BND-27, LP2's pull
+  request 272), so a reopened session admits a record written while the host kept its parts. It takes every session as
+  a solving session, the only profile LP3's host runs, fails closed on a part that neither the host nor the session
+  keeps, and drops no kept block. `c600-lp3-source` serves H-08 with the layer's draft rows and installs the
   reader, which keeps each run's blocks; the runner writes no record, so its traces and receipts are as before.
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
@@ -2402,7 +2438,9 @@ run or not applicable is no pass (PHS.63).
     and a block that reads is written whatever its admission would say (PS1.16, BND.21); a record draft is admitted or
     refused by the reader's admission: a hand-entered word passes, a solver tool's word is refused, and a built-in
     tool's word fails closed on its missing part until the host keeps its run's blocks, each refusal installing no
-    preview (KN5.26 and CT-KN5-13, part; CT-BND-29, part).
+    preview (KN5.26 and CT-KN5-13, part; CT-BND-29, part); and a record's write keeps the parts of its block that the
+    host keeps, recursively, so a reader that keeps nothing admits the word with the parts the layer keeps, while on
+    its own it fails closed (CT-BND-27, part).
   - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts, each run
     inside the solver's command and reported after its preview is built (B2); the job carries only the admitted
     source; both hosts refuse a word with no transfer encoding at the start stage and fail the solver's command; a runtime
@@ -2526,14 +2564,17 @@ run or not applicable is no pass (PHS.63).
 - The crate's `library` holds the jumbling library entries as 600 Cell Script on the IR draft's menu words (LP2's pull
   request 210), each module in the formatter's canonical layout with its catalogue row: LB1.8's literal words of one
   pinned menu ([`menu_words.6cs`](c600-jumble-tool/src/menu_words.6cs): `power`, beside the IR draft's own `concat`,
-  `inverse`, `conjugate` and `commutator`; pure), and LB3.1's "Heights, branches, domains and Φ"
+  `inverse`, `conjugate` and `commutator`; pure), LB1.10's trace keys of menu words
+  ([`menu_traces.6cs`](c600-jumble-tool/src/menu_traces.6cs): `same_trace` and `trace_commute` under the relation
+  `jumble-locality/1` that the crate's `locality` pins beside the menu alphabet, from the table M5 regenerates from the
+  loaded model; pure), and LB3.1's "Heights, branches, domains and Φ"
   ([`jumble_heights.6cs`](c600-jumble-tool/src/jumble_heights.6cs)), "Release and whole-word checks"
   ([`jumble_word_checks.6cs`](c600-jumble-tool/src/jumble_word_checks.6cs): the chronological observations and the step
   flag, recomputed from KN2.4's `replay` and `word_check`) and "Protection" at pose level
   ([`jumble_protection.6cs`](c600-jumble-tool/src/jumble_protection.6cs): a whole word's Net and Strict verdicts from
-  KN2.4's `protection`, M8's `levels::derive`). `menu_words` reads no state; each other entry reads only its KN2.4 rows
-  with `read_snapshot`, so it reads state and prepares no preview. None names a proposal target. No host bridge serves
-  the jumbling rows to a program yet, so the rows' answer types are the crate's drafts.
+  KN2.4's `protection`, M8's `levels::derive`). `menu_words` and `menu_traces` read no state; each other entry reads
+  only its KN2.4 rows with `read_snapshot`, so it reads state and prepares no preview. None names a proposal target. No
+  host bridge serves the jumbling rows to a program yet, so the rows' answer types are the crate's drafts.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03 with the plane the engine names for the twist (`twist::Twist::plane`; a jumbling twist has
   a swept preview, a half-turn at θ = π in the engine's direction), the certified overlays J04 (the full named-cap set,
@@ -2594,8 +2635,9 @@ run or not applicable is no pass (PHS.63).
     planted nonzero fixed I_a coordinate (b5, on the I_b menu with I_a's identity written over its own) refused by the
     row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
     drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
-    unshipped id refused whole. No 600 Cell Script program calls the rows yet, though the IR draft has F2 and F5 since
-    LP2's pull request 222.
+    unshipped id refused whole. Three tests run LB3's entry `jumble_nu` (`library::NU`, `src/jumble_nu.6cs`) in the
+    language on the IR draft's F2 and F5 (LP2's pull request 222), through a test host that serves the two rows:
+    off-lattice ν undefined, the planted refusal, and drafted sets checked to the prediction with the change Σ m·row.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2605,28 +2647,47 @@ run or not applicable is no pass (PHS.63).
     `KN1:input.level_not_held` for it, also under that subject's own digest; a planted chart inverse is never called;
     four layout filters, one by pose, keep the analysed set, the posed row and the subject; at lattice poses other than
     the identity, a sticker's slot through `c600-display`'s pose projection on M8's slot action of K⁺, checked against
-    the current-occupant relation, also for two pieces that share one pose index).
+    the current-occupant relation, also for two pieces that share one pose index; and at a later revision of a jumbled
+    session, with Jumble on in the command layer: a layout evaluated at a head the layer reaches by presses of a W-J
+    journal's records, evaluated again at the revision the next press makes, where a piece comes onto the lattice, and
+    at the one its undo makes, while the installed earlier evaluation goes stale and a pick under its binding is
+    refused with `EV3:stale.display_pick`).
+  - `c600-jumble-tool/tests/jumble_on_layer.rs`: oracle equality with Jumble on in the command layer (PHS.23's jumbling
+    half; LP2's pull requests 212, 217, 218 and 220). For each W-J fixture (I_a, I_b and S4) one session enters Jumble
+    on at solved and presses J1's journal records through `jumble.twist.menu` beside M5's engine: at every step the
+    press commits, the revision advances by one, its digest is M5's digest of the prefix and the pieces whose pose
+    changed are M5's inside set; at J1's stages the head has J1's digest, counts and posed-row hashes (J02); at the end
+    the posed row and the current-occupant relation (CT-EV3-06) answer as on M5's state. The default run takes the
+    first 130 records of each journal, across two of the layer's flat replays, and reaches J1's start stage; the whole
+    journals, with the mid and end stages, run on request (`--ignored`). Not compared there: refusals, undo and redo,
+    protected pieces and free mode, which LP2's route test and `c600-command`'s own tests run.
+  - `c600-jumble-tool/tests/ct_lb1_06.rs`: CT-LB1-06's jumbling half (LB1.10) on the model in `assets/`: the relation
+    `jumble-locality/1` that `locality` pins agrees with M5's table on every pair of grips; bca and cab key to bca and
+    abc to itself; identity letters and an item beside its inverse stay in the key; words with one key are admitted
+    alike and end at one digest on M5's states, while an identity letter at a straddled grip is refused where the
+    empty word is admitted; `menu_traces` checks as pure code and answers as the keys do; and a key under another
+    menu, contract revision, key version or relation version refuses comparison with
+    `LB1:input.key_contract_mismatch`. Not run: "Word keys remain separate" on the jumbling side (LG2.18's jumbling
+    word key, LP2).
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
     plane among them), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs
     whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
     sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
     projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
-- Not taken up yet from LP2: Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle route
-  through the command layer (pull requests 212, 217, 218 and 220); the F2 and F5 number kinds in the IR draft (pull
-  request 222), for LB3's ν and correction-set entry as language code; and `jumble-locality/1` with `trace_key` on menu
-  words (pull request 251), for CT-LB1-06's jumbling half.
+- Not taken up yet from LP2: through the command layer, `jumble.off`, the refusals, redo, protected pieces and free
+  mode (LP2's route test and `c600-command`'s own tests run them). C8 uses the IR draft's F2 and F5 (pull request 222)
+  for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
 - Not built: the producers of the rows J01 and J06 to J12 (J10 also needs exposed-face geometry, LP2); a host bridge or
   command-layer route that serves KN2.4's jumbling rows to a program (the library's tests serve them from
-  `c600_jumble`); LB3's other entries as language code, LB3's ν and correction-set entry among them, and LB3.8's named
-  cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2);
-  CT-LB1-06's jumbling half, its library entries on `jumble-locality/1`; BM5's review records; a comparison of the posed
-  arrays with the J1 fixture's later stages; the relationship strip's data contract (chapter 06, RPI.65). Not taken up
-  yet from M8 (pull requests 176 and 182): the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept
-  preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also waiting:
-  the repair list through the command layer, with a job that names its cap (KN5), the BND.2 wording of an empty list and
-  no key that skips caps with an empty list (LP2); the built-in column's repair-list exception is in `c600-check` since
-  LP2's pull request 229.
+  `c600_jumble`); LB3's other entries as language code, and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the
+  prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2); BM5's review records; the relationship strip's
+  data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end stages are compared only in the
+  whole-journal runs, on request. Not taken up yet from M8 (pull requests 176 and 182): the rim and survey rows of
+  CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its twists, and which
+  engine names one is not settled. Also waiting: the repair list through the command layer, with a job that names its
+  cap (KN5), the BND.2 wording of an empty list and no key that skips caps with an empty list (LP2); the built-in
+  column's repair-list exception is in `c600-check` since LP2's pull request 229.
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
@@ -2809,7 +2870,8 @@ run or not applicable is no pass (PHS.63).
   names its child (`product` or `injection device`); `injection_device` is null without `--injection`, and otherwise
   carries the device's file name and SHA-256, "product source + injection device", the variable, the ceiling and the
   meter limit. Each session row names the journal by row count and digest, never the folder.
-- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need a hook inside
-  `c600-runtime`, which is LP3's to shape. Also not here: the barrier's release acknowledgement and conditions 3 and 4
-  (the renderer gate, LX-4's echo bar and E2 commits during fault windows), which need the shell's frame loop on the
-  owner's machine. Evidence kind: source and synthetic; nothing is timing.
+- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need the device on
+  `c600-runtime`'s fault hook (the feature `lx2-faults`, LP3's), which c600-lx2 does not use yet. Also not here: the
+  barrier's release acknowledgement and conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2 commits during
+  fault windows), which need the shell's frame loop on the owner's machine. Evidence kind: source and synthetic;
+  nothing is timing.

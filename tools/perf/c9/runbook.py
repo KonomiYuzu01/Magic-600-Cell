@@ -52,7 +52,14 @@ IDENTITY_FORMAT = 'magic600-c9-acceptance-build-v1'
 GODOT_GLOB = ('GodotEngine.GodotEngine.Mono_*/Godot_v4.7.2-stable_mono_win64/'
               'Godot_v4.7.2-stable_mono_win64_console.exe')
 RUNNER = 'renderer/acceptance/run_scene.ps1'
+PREPARE_HOST = 'renderer/acceptance/prepare_host.py'
+PREPARE_DATA = 'renderer/acceptance/prepare_data.py'
+WJ_DATA = 'work/loop-memory/c9-acceptance/wj-data'
+# The acceptance host's route (prepare_host.py --route): U4 needs route B's; a build without one is a texture build.
+SURFACE = 'surface'
 SHELL = 'renderer/shell'
+LAUNCH = 'renderer/shell/launch.py'
+BUILD_PRODUCT = 'renderer/shell/build_product.py'
 # The owner runbook's labels (C9 draft, 18 November 2026): A attended, U unattended.
 LABELS = {'shell-launch': 'A1', 'b1-input': 'A2', 'e2-key-to-frame': 'A3', 'core-gpu': 'U1', 'b3-probe': 'U2',
           'b2-skew': 'U3', 'wj-w3': 'U4', 'rpi79-gate': 'U5', 'e3-cold-start': 'U6', 'lx2': 'U7', 'lx4': 'U8'}
@@ -78,39 +85,51 @@ class Step:
 
 
 def wj_w3_commands():
-    runs = [f"& {RUNNER} -Scene {scene} -Build <product build> {DECLARE}   # three times"
+    prepare = (f'python -B {PREPARE_HOST} --route surface   # route B\'s host into {BUILDS}/<build>, offline; '
+               'no Godot window or GPU device')
+    data = (f'python -B {PREPARE_DATA}   # W-J\'s exports for S4, I_a and I_b into {WJ_DATA}, checked; no GPU')
+    check = (f'& {RUNNER} -Scene <scene> -Build <route-B build> {DECLARE} -DryRun   # per scene (S4, I_a, I_b, w3): '
+             'verifies the build (route: surface) and the W-J data, starts nothing')
+    runs = [f"& {RUNNER} -Scene {scene} -Build <route-B build> {DECLARE}   # three times"
             for scene in ('S4', 'I_a', 'I_b', 'w3')]
     gate = ('python -B tools/perf/renderer_gate.py <run 1> <run 2> <run 3> '
             '--out work/loop-memory/c9-acceptance/<scene>-summary.json   # per scene')
-    return (*runs, gate)
+    return (prepare, data, check, *runs, gate)
 
 
 STEPS = (
     Step('shell-launch', 'ABI 5 GPU smoke, part 2: the product shell\'s first launch over a real core', True, 10, None,
          commands=('python -B renderer/core/check_core.py   # the core into work/build/, CPU self-test only',
-                   'cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml '
-                   '-p c600-shell-host',
-                   'python -B renderer/shell/build_shell.py   # builds only, never launches',
-                   'set M600_CORE_DLL, M600_HOST_DLL, M600_ASSETS, M600_EVENTS_DIR (a new folder) and '
-                   'M600_BUILD_IDENTITY; start the built shell from a desktop PowerShell, resize the window twice, '
-                   'close it   # no launcher script yet'),
-         prerequisites=(('compiles', 'renderer/core/check_core.py'), ('file', 'renderer/bridge/Cargo.toml'),
-                        ('compiles', 'renderer/shell/build_shell.py')),
+                   f'python -B {BUILD_PRODUCT}   # the host and the shell into work/build/c9-product/<build>',
+                   f'python -B {LAUNCH} --out <new folder> --dry-run   # verifies every build part, starts nothing; '
+                   'exit 2: no build, or a part does not verify',
+                   f'python -B {LAUNCH} --out <new folder>   # from a desktop PowerShell; resize the window twice, '
+                   'then close it'),
+         prerequisites=(('compiles', 'renderer/core/check_core.py'), ('compiles', LAUNCH),
+                        ('compiles', BUILD_PRODUCT)),
          run_time=('foreground', 'the owner at the machine', 'native resolution, no frame generation or upscaling',
-                   'pass: the 3D view under the transparent window; frame and presented rows with display_qpc in '
-                   'events.jsonl; no error on resize or close'),
+                   'pass: the shell exits 0; launch.json in the run folder; events.jsonl with frame and presented '
+                   'rows (display_qpc); the 3D view under the transparent window; no error on resize or close'),
          sources=('ABI 5 (route B): sa2_create, surface frames, sa2_presented, sa2_resize',
                   'owner decision 2026-11-18 route B')),
     Step('b1-input', 'Route B check B1: input through Godot\'s transparent window over the core\'s layer', True, 10,
-         'the product shell (Godot transparent window over the core\'s DirectComposition layer) and its input check',
-         run_time=('foreground', 'the owner at the machine'),
+         None,
+         commands=(f'python -B {LAUNCH} --out <new folder> --echo   # press keys and click, then close the window',),
+         prerequisites=(('compiles', LAUNCH), ('mentions', (SHELL, 'input.jsonl'))),
+         run_time=('foreground', 'the owner at the machine',
+                   'pass: every key press and click shows on the echo panel and is in <out>/input.jsonl'),
          sources=('owner decision 2026-11-18 route B, check 1',)),
     Step('e2-key-to-frame', 'Charter E2: key to the confirmed first correct frame, at least 100 presses', True, 20,
-         'the product shell\'s E2 event log (magic600-c9-shell-events-v1) and sa2_presented with its display QPC',
-         commands=('<product shell E2 run>, one run directory per run',
+         None,
+         commands=(f'python -B {LAUNCH} --out <new folder>   # the session is always on (<out>/session, twist menu '
+                   'wj-I_a); press at least 100 twists (J, K, L; Shift for the inverse), then close the window',
                    'python -B tools/perf/c9/key_to_frame.py <run dir> [<run dir> ...] --out <record>.json'),
-         prerequisites=(('imports', 'key_to_frame'), ('presentmon', None)),
-         run_time=('foreground', 'the owner at the machine', 'a fresh copy of the session fixture'),
+         prerequisites=(('imports', 'key_to_frame'), ('presentmon', None), ('compiles', LAUNCH),
+                        ('mentions', (SHELL, 'WriteString("t", "key")')),
+                        ('mentions', (SHELL, 'journal-reopen-and-kernel-replay'))),
+         run_time=('foreground', 'the owner at the machine', 'a fresh run folder (the session is new in it)',
+                   'the run row\'s correctness comes from the session\'s control at close '
+                   '(journal-reopen-and-kernel-replay)'),
          sources=('charter E2', 'RTE.43', 'V11.1', 'PHS.64')),
     Step('core-gpu', 'ABI 5 GPU smoke, part 1: the renderer core self-test\'s WARP and hardware modes', False, 15, None,
          commands=('python -B renderer/core/check_core.py --gpu   # pass: check_core: ok (CPU, WARP and hardware)',),
@@ -125,24 +144,27 @@ STEPS = (
          run_time=('an unlocked desktop', 'mains power'),
          sources=('owner decision 2026-11-18 route B, check 3',)),
     Step('b2-skew', 'Route B check B2: skew between the UI frame and the 3D frame', False, 10, None,
-         commands=('<product shell run>, one run directory, with presentmon_capture.py --process-id <shell> '
-                   '--output <run dir>/presentmon.csv --seconds 600 alongside',
+         commands=(f'python -B {LAUNCH} --out <run dir>, with presentmon_capture.py --process-id <shell> '
+                   '--output <run dir>/presentmon.csv --seconds 600 alongside; do not resize the window (a second '
+                   'core chain makes the run unreadable)',
                    'python -B tools/perf/c9/ui_skew.py <run dir> --out <record>.json'
-                   '   # no bar: the numbers go to the owner'),
-         prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('mentions', (SHELL, '"ui_frame"')),
-                        ('mentions', (SHELL, '"ui_swap_chain"'))),
+                   '   # no bar: the numbers go to the owner; check "UI present inside the draw"'),
+         prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('compiles', LAUNCH),
+                        ('mentions', (SHELL, '"ui_frame"')), ('mentions', (SHELL, '"ui_swap_chain"')),
+                        ('mentions', (SHELL, '"drawn_qpc"'))),
          run_time=('an unlocked desktop', 'administrator PowerShell for PresentMon'),
          sources=('owner decision 2026-11-18 route B, check 2',)),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
-         False, 50, 'the route-B product build (the W-J and W3 evidence must come from it, not the texture path)',
+         False, 50, None,
          commands=wj_w3_commands(),
          prerequisites=(('file', RUNNER), ('compiles', 'renderer/acceptance/finalize_run.py'),
-                        ('compiles', 'renderer/acceptance/prepare_host.py'),
+                        ('compiles', PREPARE_HOST), ('compiles', PREPARE_DATA),
                         ('compiles', 'renderer/acceptance/file_guard.py'), ('imports', 'renderer_gate'),
-                        ('command', 'powershell'), ('presentmon', None), ('build', None), ('godot-launch', None),
-                        ('dir', 'work/loop-memory/c9-acceptance/wj-data')),
+                        ('command', 'powershell'), ('presentmon', None), ('build', SURFACE), ('godot-launch', None),
+                        ('dir', WJ_DATA)),
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power',
-                   'native resolution, no frame generation or upscaling'),
+                   'native resolution, no frame generation or upscaling',
+                   'the W-J and W3 evidence comes from the route-B build, not a texture build'),
          sources=('ADR-R01.3', 'owner decision 2026-11-18 route B')),
     Step('rpi79-gate', 'RPI.79: the renderer gate on the advertised combination with user stages, in one run', False,
          25, 'user shader stages compiled by DXC in the product build (RPI.80)',
@@ -150,53 +172,76 @@ STEPS = (
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power'),
          sources=('RPI.79', 'RPI.80', 'owner decision 2026-11-18 (DXC ships)')),
     Step('e3-cold-start', 'Charter E3: three cold runs, process start to the first correct frame, each at most 3 s',
-         False, 10, 'the launcher and the product shell\'s startup log (magic600-c9-startup-v1)',
-         commands=('<launcher> three times, 20 s apart, each on a fresh session copy',
+         False, 10, None,
+         commands=(f'python -B {BUILD_PRODUCT}   # E3\'s build carries the session fixture and c600-runtime',
+                   f'python -B {LAUNCH} --out <new folder> --cold-start --dry-run   # checks the build, starts '
+                   'nothing',
+                   f'python -B {LAUNCH} --out <run n> --cold-start   # three times, each into a new folder; the '
+                   'launcher waits until 20 s after the previous product exit and copies the fixture fresh; the '
+                   'shell quits at the first correct frame and writes startup.jsonl',
                    'python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3> --out <record>.json'),
-         prerequisites=(('imports', 'cold_start'),),
+         prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('compiles', BUILD_PRODUCT),
+                        ('mentions', (SHELL, '"--cold-start"'))),
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
-         'native recursion and the native loop (LP3\'s lx2-faults hook in c600-runtime), and RTE.42 conditions 3 and '
-         '4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault windows, in the shell\'s '
-         'frame loop)',
+         'RTE.42 conditions 3 and 4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault '
+         'windows, in the shell\'s frame loop)',
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
-                   '--bin c600-lx2-child   # the injection device of option (a), never shipped',
-                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
+                   '--features device --bin c600-lx2-child   # the injection device of option (a) on c600-runtime\'s '
+                   'fault hook, never shipped',
+                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
+                   '--features device --bin c600-lx2-faults -- '
                    '--runtime <product build c600-runtime> --injection <c600-lx2-child release build> '
                    '--sessions <new folder> --out <record>.json'
-                   '   # metered, forced-kill and allocator-ceiling trials, alone and in a session (conditions 1 '
-                   'and 2)'),
-         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs')),
+                   '   # metered, forced-kill, allocator-ceiling, native recursion and native loop trials, alone '
+                   'and in a session (conditions 1 and 2)'),
+         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs'),
+                        ('mentions', ('rust/c600-runtime/src', 'pub fn main_with')),
+                        ('mentions', ('rust/c600-lx2/src', 'main_with(native::point)'))),
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240, None,
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
                    '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
                    'python -B tools/perf/c9/lx4.py schedule --fixtures <fixtures>   # 10,800 S/M/L samples',
-                   '<product shell run> with Jumble off on fresh isolated data, PresentMon alongside; then '
+                   f'python -B {LAUNCH} --out <run dir> --lx4 --puzzle jumble-off, PresentMon alongside; then '
                    'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
-                   '--turn-vk <the shell\'s turn key>',
-                   'the same with Jumble on (--puzzle jumble-on) in a second run directory',
+                   '--turn-key KeyJ',
+                   'the same with --puzzle jumble-on in a second run directory   # refused until the host opens '
+                   'the jumbled puzzle\'s session and view (C9 product, 19 November 2026)',
                    'python -B tools/perf/c9/key_to_frame.py <both run dirs> --out <e2 record>.json   # E2 in the same '
                    'runs',
                    'python -B tools/perf/c9/lx4.py analyze --fixtures <fixtures> <both run dirs> --e2 <e2 record>.json '
                    '--gate <gate summary>.json --out <record>.json'),
          prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
+                        ('compiles', LAUNCH), ('mentions', (SHELL, '"--lx4"')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),
-                        ('mentions', (SHELL, '"key"'))),
+                        ('mentions', (SHELL, 'WriteString("t", "key")'))),
          run_time=('foreground', 'the owner starts it from the desktop'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )
 
 
-def newest_build(root=ROOT):
-    """The newest prepared acceptance build directory that holds an identity file, or None."""
+def build_route(directory):
+    """The route in a build's identity file ('texture' when it names none), or None when it is unreadable."""
+    try:
+        identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeError):
+        return None
+    return identity.get('route', 'texture') if isinstance(identity, dict) else None
+
+
+def newest_build(root=ROOT, route=None):
+    """The newest prepared acceptance build directory that holds an identity file (of that route, when given), or
+    None."""
     candidates = sorted((path.parent for path in (root / BUILDS).glob(f'*/{IDENTITY}')), key=lambda path: path.name)
+    if route is not None:
+        candidates = [path for path in candidates if build_route(path) == route]
     return candidates[-1] if candidates else None
 
 
-def read_identity(directory):
-    """(ok, detail) for a build directory's identity file."""
+def read_identity(directory, route=None):
+    """(ok, detail) for a build directory's identity file; with a route, the build must be that route's."""
     try:
         identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
     except (OSError, ValueError, UnicodeError):
@@ -206,7 +251,12 @@ def read_identity(directory):
     source = identity.get('source')
     if identity.get('format') != IDENTITY_FORMAT or not isinstance(source, dict) or not source.get('head'):
         return False, f'{IDENTITY} is not {IDENTITY_FORMAT}'
-    return True, f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}"
+    built = identity.get('route', 'texture')
+    detail = (f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}, "
+              f'route {built}')
+    if route is not None and built != route:
+        return False, f'{detail}, not {route}: python -B {PREPARE_HOST} --route {route}'
+    return True, detail
 
 
 def godot(environ=None):
@@ -256,7 +306,7 @@ def evaluate(kind, argument, build=None, environ=None):
     if kind == 'build':
         if build is None:
             return False, f'no prepared build under {BUILDS}'
-        return read_identity(build)
+        return read_identity(build, argument)
     if kind == 'godot-launch':
         if build is None:
             return False, 'no launch.json without a build'
@@ -338,14 +388,14 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--list', action='store_true', help='print every step with its commands and prerequisites')
     mode.add_argument('--dry-run', action='store_true', help='check the prerequisites, one line per step')
-    parser.add_argument('--build', type=Path, help='prepared build directory (default: the newest under '
-                        f'{BUILDS})')
+    parser.add_argument('--build', type=Path, help='prepared build directory (default: the newest route-B build '
+                        f'under {BUILDS}, else the newest)')
     parser.add_argument('--check-quiet', action='store_true', help='also run the quiet-machine gate once (info only)')
     args = parser.parse_args(argv)
     if args.list:
         listing()
         return 0
-    build = args.build or newest_build()
+    build = args.build or newest_build(route=SURFACE) or newest_build()
     code = dry_run(check=lambda kind, argument: evaluate(kind, argument, build))
     if args.check_quiet:
         quiet, gate = quiet_machine()
