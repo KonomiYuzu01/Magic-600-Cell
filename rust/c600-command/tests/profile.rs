@@ -104,6 +104,14 @@ impl Fixture {
         };
         self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
     }
+
+    /// The run of the tool's program job, which the shell invoked: a run inside a command the solver invoked (finding
+    /// B2, ONE.34).
+    fn solver_run(&mut self) -> String {
+        let receipt = self.shell.invoke(&mut self.layer, TOOL, json::object([])).unwrap();
+        assert!(running(&receipt), "the tool's row: {:?}", receipt.status);
+        self.layer.take_program_job().expect("the tool's job").run()
+    }
 }
 
 fn refused_with(receipt: &Receipt) -> Option<&Error> {
@@ -208,13 +216,18 @@ fn a_comparison_admits_the_sheets_word_only_in_a_solving_session() {
 /// BND.16's table by profile, chapter 07 section 8 (draft): a run in a `tool_authoring` or `research` session may not
 /// invoke `operation.preview` (BND.60: its `propose` goes to a capture), so an entry that requires the row is
 /// unavailable there, while the solver's own preview is admitted in every profile. In a solving session the run's
-/// preview is admitted as before.
+/// preview is admitted as before, inside a command the solver invoked (finding B2, ONE.34). The profile's refusal comes
+/// before that check, so outside a solving session any run is refused with it.
 #[test]
 fn a_run_prepares_no_engine_preview_outside_a_solving_session() {
     for profile in PROFILES {
         let mut f = session(profile);
         let availability = f.layer.availability(TOOL);
-        let receipt = f.runtime("r1", "operation.preview", draft_args(&word(&[1])));
+        let run = match profile {
+            Profile::Solving => f.solver_run(),
+            _ => "r1".to_owned(),
+        };
+        let receipt = f.runtime(&run, "operation.preview", draft_args(&word(&[1])));
         match profile {
             Profile::Solving => {
                 assert!(running(&receipt), "{:?}", receipt.status);
