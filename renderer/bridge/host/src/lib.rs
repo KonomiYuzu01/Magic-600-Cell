@@ -13,9 +13,16 @@
 //!   There is no picking or preview yet.
 //! - The adopted state starts as the shipped model's solved state at engine revision [`ENGINE_REVISION`]. With a
 //!   session open ([`m6h_open_session`], charter E2), each twist key the shell routes ([`m6h_key_down`]) that commits
-//!   `twist.apply` (the [`turns`] module) adopts the layer's new state at the next engine revision and publishes the
-//!   view again for it, so the view's output is never stale (RPI.13) for longer than its preparation takes. A frame
-//!   shows a press once its engine revision and its publication's revision have both reached the press's revision.
+//!   the puzzle's twist row (the [`turns`] module) adopts the layer's new head at the next engine revision and
+//!   publishes the view again for it, so the view's output is never stale (RPI.13) for longer than its preparation
+//!   takes. A frame shows a press once its engine revision and its publication's revision have both reached the
+//!   press's revision.
+//! - The jumbled puzzle (LX-4's jumble-on half; a draft): a session opened with [`M6H_PUZZLE_JUMBLE_ON`] commits
+//!   `jumble.on` at its start, and the host adopts the poses at the next engine revision as c600-display's posed row
+//!   (J02: `jumble::posed` and `jumble::bundle`), with one posed primitive in the view's plan ([`adoption`]). The host
+//!   context becomes c600-display's declared jumbling context for the menu's identity block, with the core's own
+//!   support report. Until c600-render maps posed rows, its bridge refuses the jumbling bundle (J02): the open answers
+//!   [`M6H_E_HOST`], and nothing is adopted.
 //! - Charter E3 (a draft): the session may instead be an existing one, a copy of a session fixture ([`fixture`]),
 //!   which the host adopts at the engine revision that counts the fixture's presses. [`m6h_load_runtime`] starts the
 //!   language runtime's process and keeps it until the handle is destroyed.
@@ -51,6 +58,7 @@ use std::time::Duration;
 use c600_display::array::Array;
 use c600_display::codes;
 use c600_display::host::{Backend, Host};
+use c600_display::jumble;
 use c600_display::pick::PresentedFrame;
 use c600_display::plan::*;
 use c600_display::produce::{self, full_set, GeometryInput};
@@ -68,11 +76,12 @@ pub mod turns;
 pub mod view;
 use c600_run::meter::Amounts;
 use c600_runtime::parent::{Config as RuntimeConfig, Runtime};
-use turns::{Press, Turns};
+use turns::{Head, Press, Puzzle, Turns};
 
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
-/// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs.
-pub const M6H_ABI_VERSION: u32 = 4;
+/// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
+/// the session's puzzle.
+pub const M6H_ABI_VERSION: u32 = 5;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -94,14 +103,21 @@ pub const M6H_E_RUNTIME: i32 = 8;
 
 /// [`M6hKey::press`]: the key-down was no measured press (no twist key, or a repeat).
 pub const M6H_PRESS_NONE: u32 = 0;
-/// [`M6hKey::press`]: a twist key committed `twist.apply`.
+/// [`M6hKey::press`]: a twist key committed the puzzle's twist row: `twist.apply`, or `jumble.twist.menu` with Jumble
+/// on.
 pub const M6H_PRESS_COMMITTED: u32 = 1;
-/// [`M6hKey::press`]: a twist key that the router or the layer refused; the state did not change.
+/// [`M6hKey::press`]: a twist key that the router or the layer refused; the head did not change.
 pub const M6H_PRESS_REFUSED: u32 = 2;
 /// [`M6hKey::press`]: no measured press, but another row changed the state (the draft map's `session.undo` and
 /// `session.redo`). The host adopts and shows the new state; the correctness control then fails, since its replay
 /// knows only twists.
 pub const M6H_PRESS_OTHER: u32 = 3;
+
+/// [`m6h_open_session`]'s `puzzle`: 600-cell-Full with Jumble off, the shell's `jumble-off` (index 0 of its
+/// `EventLog.Puzzles`).
+pub const M6H_PUZZLE_JUMBLE_OFF: u32 = 0;
+/// [`m6h_open_session`]'s `puzzle`: the jumbled puzzle, the shell's `jumble-on` (index 1 of its `EventLog.Puzzles`).
+pub const M6H_PUZZLE_JUMBLE_ON: u32 = 1;
 
 /// [`M6hViewResult::status`]: the run has not ended yet.
 pub const M6H_VIEW_STATUS_PENDING: u32 = 0;
@@ -258,7 +274,7 @@ fn model_error(error: LoadError) -> Failure {
 }
 
 /// RM.16's engine bundle of `state`: its labels, every slot visible and interactive.
-fn engine_bundle(state: &Snapshot, revision: &RevisionRef) -> EngineBundle {
+pub fn engine_bundle(state: &Snapshot, revision: &RevisionRef) -> EngineBundle {
     let set = full_set();
     let input = produce::retained(state, &set, &set, Vec::new());
     let arrays = [("labels", input.labels), ("visibility", input.visibility), ("interaction", input.interaction)];
@@ -266,9 +282,35 @@ fn engine_bundle(state: &Snapshot, revision: &RevisionRef) -> EngineBundle {
     EngineBundle { revision: revision.clone(), arrays: arrays.into_iter().map(bound).collect() }
 }
 
-/// The draft's publication of [`VIEW`]: one plan with one retained primitive of every slot, and no instances.
-fn publication(geometry: &GeometryInput, state: &Snapshot, base: &RevisionRef) -> Publication {
-    let set = full_set();
+/// The adoption of `head` at engine revision `revision`: its revision reference, its engine bundle and the view's
+/// primitive. With Jumble off they are RM.16's labels and one retained primitive of every slot, each visible and
+/// interactive. With Jumble on they are J02's posed row, bound to the revision, and one posed primitive of it; a posed
+/// row that lacks data answers [`M6H_E_HOST`], and nothing is built from it.
+pub fn adoption(
+    geometry: &GeometryInput,
+    head: &Head,
+    revision: u64,
+) -> Result<(RevisionRef, EngineBundle, Primitive), (i32, String)> {
+    match head {
+        Head::Retained(state) => {
+            let base = produce::revision(&geometry.identity, revision, state);
+            let bundle = engine_bundle(state, &base);
+            let set = full_set();
+            Ok((base, bundle, Primitive::Retained(produce::retained(state, &set, &set, Vec::new()))))
+        }
+        Head::Jumbled(exact, state) => {
+            let base = jumble::revision(exact, state, revision);
+            let posed = jumble::posed(exact, state)
+                .map_err(|missing| (M6H_E_HOST, format!("the posed row lacks data: {missing:?}")))?;
+            let bundle = jumble::bundle(&base, &posed);
+            Ok((base, bundle, Primitive::Posed(posed)))
+        }
+    }
+}
+
+/// The draft's publication of [`VIEW`] at `base`: one plan with the one primitive of [`adoption`], and no instances.
+/// Its geometry binding names `base`'s identity block with the verified geometry's digests.
+pub fn publication(geometry: &GeometryInput, primitive: Primitive, base: &RevisionRef) -> Publication {
     let plan = DisplayPlan {
         plan: PlanId(1),
         base: base.clone(),
@@ -276,8 +318,8 @@ fn publication(geometry: &GeometryInput, state: &Snapshot, base: &RevisionRef) -
         derivation: None,
         reachability: None,
         dimension: 4,
-        geometry: GeometryBinding { identity: geometry.identity.clone(), digests: geometry.digests() },
-        primitives: vec![Primitive::Retained(produce::retained(state, &set, &set, Vec::new()))],
+        geometry: GeometryBinding { identity: base.identity.clone(), digests: geometry.digests() },
+        primitives: vec![primitive],
         charts: Vec::new(),
         instances: Vec::new(),
         source_map: MapId(1),
@@ -300,11 +342,11 @@ impl ShellHost {
     fn create(core: DllCore, assets: &Path) -> Result<ShellHost, Failure> {
         let kernel = Arc::new(Kernel::load(assets).map_err(model_error)?);
         let geometry = GeometryInput::load(assets).map_err(model_error)?;
-        let state = kernel.solved();
-        let base = produce::revision(&geometry.identity, ENGINE_REVISION, &state);
+        let head = Head::Retained(kernel.solved());
+        let (base, bundle, primitive) = adoption(&geometry, &head, ENGINE_REVISION)?;
         let limits = LimitProfile::uniform(LIMITS, 1 << 40);
         let mut backend = RenderBackend::new(core, limits.clone());
-        backend.adopt_engine(&engine_bundle(&state, &base)).map_err(host_error)?;
+        backend.adopt_engine(&bundle).map_err(host_error)?;
         let support = backend.describe_backend().map_err(host_error)?;
         backend.set_frame_target(TARGET_SURFACE);
         backend.set_camera_matrix(VIEW, 0, IDENTITY);
@@ -314,13 +356,13 @@ impl ShellHost {
         host.open_view(VIEW).map_err(host_error)?;
         let mut shell = ShellHost {
             host,
-            publication: publication(&geometry, &state, &base),
+            publication: publication(&geometry, primitive, &base),
             kernel,
             geometry,
             assets: assets.to_path_buf(),
             next_command: 1,
             revision: ENGINE_REVISION,
-            digests: BTreeMap::from([(ENGINE_REVISION, state.digest().to_owned())]),
+            digests: BTreeMap::from([(ENGINE_REVISION, head.digest())]),
             turns: None,
             check: String::new(),
             runtime: None,
@@ -334,26 +376,36 @@ impl ShellHost {
         Ok(shell)
     }
 
-    /// Adopts `state` at the next engine revision; see [`ShellHost::adopt`].
-    fn advance(&mut self, state: &Snapshot) -> Result<u64, Failure> {
-        self.adopt(state, self.revision + 1)
+    /// Adopts `head` at the next engine revision; see [`ShellHost::adopt`].
+    fn advance(&mut self, head: &Head) -> Result<u64, Failure> {
+        self.adopt(head, self.revision + 1)
     }
 
-    /// Adopts `state` at engine revision `revision`, which must follow the adopted one, in the core first and then in
-    /// the host, and publishes the view for it. A view job that read the old revision ends
+    /// Adopts `head` at engine revision `revision`, which must follow the adopted one, in the core first and then in
+    /// the host, and publishes the view for it ([`adoption`]). A head under another identity block than the host
+    /// context's (the jumbled puzzle's poses after the solved labels) first gives the host that block's declared
+    /// context, with the core's own support report. A view job that read the old revision ends
     /// `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the device is lost the publication waits
-    /// for [`m6h_recover`], which publishes it.
-    fn adopt(&mut self, state: &Snapshot, revision: u64) -> Result<u64, Failure> {
+    /// for [`m6h_recover`], which publishes it. A core that refuses the bundle changes nothing.
+    fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
         if revision <= self.revision {
             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
         }
-        let base = produce::revision(&self.geometry.identity, revision, state);
-        let bundle = engine_bundle(state, &base);
+        let (base, bundle, primitive) = adoption(&self.geometry, head, revision)?;
         self.host.backend.adopt_engine(&bundle).map_err(host_error)?;
+        if base.identity != self.host.ctx.identity {
+            let limits = self.host.ctx.limits.clone();
+            let mut ctx = match head {
+                Head::Retained(_) => produce::fixture_context(&self.geometry, limits),
+                Head::Jumbled(..) => jumble::fixture_context(&self.geometry, base.identity.clone(), limits),
+            };
+            ctx.support = self.host.backend.describe_backend().map_err(host_error)?;
+            self.host.ctx = ctx;
+        }
         self.host.adopt(&bundle).map_err(host_error)?;
         self.revision = revision;
-        self.digests.insert(revision, state.digest().to_owned());
-        self.publication = publication(&self.geometry, state, &base);
+        self.digests.insert(revision, head.digest());
+        self.publication = publication(&self.geometry, primitive, &base);
         self.replace_runs();
         match self.publish() {
             Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
@@ -638,18 +690,22 @@ unsafe fn utf8<'a>(text: *const u8, len: usize, what: &str) -> Result<&'a str, F
     std::str::from_utf8(bytes).map_err(|_| (M6H_E_INVALID_ARGUMENT, format!("the {what} is not UTF-8")))
 }
 
-/// Opens the turns' session (the [`turns`] module) in the folder `folder` (UTF-8, `folder_len` bytes), with the twist
-/// menu of the record file `menu` (UTF-8, `menu_len` bytes; an object whose `menu` field is the record) pinned.
+/// Opens the turns' session (the [`turns`] module) of `puzzle` ([`M6H_PUZZLE_JUMBLE_OFF`] or
+/// [`M6H_PUZZLE_JUMBLE_ON`]; another value answers [`M6H_E_INVALID_ARGUMENT`]) in the folder `folder` (UTF-8,
+/// `folder_len` bytes), with the twist menu of the record file `menu` (UTF-8, `menu_len` bytes; an object whose `menu`
+/// field is the record) pinned.
 ///
 /// - Without a fixture (`fixture` null and `fixture_len` 0) the session is a new journal at the solved state; the
-///   folder is created if missing and must hold nothing yet.
-/// - With one, `fixture` (UTF-8, `fixture_len` bytes) is the path of a session fixture's record ([`fixture`]) and the
-///   folder a fresh copy of its session folder. The session reopens there; its state must be the fixture's. The host
-///   adopts it at engine revision [`ENGINE_REVISION`] plus the fixture's presses and publishes the view for it.
+///   folder is created if missing and must hold nothing yet. With Jumble on the session commits `jumble.on` at once,
+///   and the host adopts the solved poses at engine revision [`ENGINE_REVISION`] plus one.
+/// - With one, `fixture` (UTF-8, `fixture_len` bytes) is the path of a session fixture's record ([`fixture`]) of the
+///   same puzzle and the folder a fresh copy of its session folder. The session reopens there; its head must be the
+///   fixture's. The host adopts it at the engine revision the fixture's record names and publishes the view for it.
 ///
 /// `*out_revision`, when not null, gets the engine revision the session opened at (charter E3's first correct frame
 /// draws it). The adopted state must still be the solved state at [`ENGINE_REVISION`], and a handle opens one session
-/// in its life.
+/// in its life. A session whose adoption the host or the core refuses is closed again (its journal stays in the
+/// folder), and the handle keeps the solved state.
 ///
 /// # Safety
 ///
@@ -658,6 +714,7 @@ unsafe fn utf8<'a>(text: *const u8, len: usize, what: &str) -> Result<&'a str, F
 #[no_mangle]
 pub unsafe extern "C" fn m6h_open_session(
     handle: *mut ShellHost,
+    puzzle: u32,
     folder: *const u8,
     folder_len: usize,
     menu: *const u8,
@@ -669,6 +726,11 @@ pub unsafe extern "C" fn m6h_open_session(
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
+            let puzzle = match puzzle {
+                M6H_PUZZLE_JUMBLE_OFF => Puzzle::JumbleOff,
+                M6H_PUZZLE_JUMBLE_ON => Puzzle::JumbleOn,
+                other => return Err((M6H_E_INVALID_ARGUMENT, format!("{other} is not a puzzle of this interface"))),
+            };
             let folder = Path::new(utf8(folder, folder_len, "session folder")?);
             let menu = Path::new(utf8(menu, menu_len, "twist menu path")?);
             let fixture = match (fixture.is_null(), fixture_len) {
@@ -679,15 +741,21 @@ pub unsafe extern "C" fn m6h_open_session(
                 return Err((M6H_E_SESSION, "this handle has opened its session already".to_owned()));
             }
             let mut turns = match fixture {
-                None => Turns::open(shell.kernel.clone(), &shell.assets, folder, menu),
-                Some(path) => crate::fixture::read(path)
-                    .and_then(|fixture| Turns::reopen(shell.kernel.clone(), &shell.assets, folder, menu, &fixture)),
+                None => Turns::open(shell.kernel.clone(), &shell.assets, folder, menu, puzzle),
+                Some(path) => crate::fixture::read(path).and_then(|fixture| {
+                    if fixture.puzzle != puzzle {
+                        let names = (fixture.puzzle.name(), puzzle.name());
+                        return Err(format!("the session fixture's puzzle is {}, not {}", names.0, names.1));
+                    }
+                    Turns::reopen(shell.kernel.clone(), &shell.assets, folder, menu, &fixture)
+                }),
             }
             .map_err(|reason| (M6H_E_SESSION, reason))?;
             let (presses, _) = turns.presses();
-            if presses > 0 {
-                let state = turns.state().map_err(|e| (M6H_E_SESSION, e))?;
-                shell.adopt(&state, ENGINE_REVISION + presses)?;
+            let at = puzzle.opened_at() + presses;
+            if at > ENGINE_REVISION {
+                let head = turns.head().map_err(|e| (M6H_E_SESSION, e))?;
+                shell.adopt(&head, at)?;
             }
             shell.turns = Some(turns);
             if !out_revision.is_null() {
@@ -834,7 +902,7 @@ pub unsafe extern "C" fn m6h_view_draft(handle: *mut ShellHost, digest: *const u
 
 /// Routes one key-down through the session's input router: `chord` (UTF-8, `chord_len` bytes) is c600-input's chord
 /// form, a W3C `code` with its modifiers (`Shift+KeyJ`), and `repeat` is nonzero for the platform's auto-repeat. A
-/// twist key that commits adopts the new state at the next engine revision and publishes the view for it; `*out`
+/// twist key that commits adopts the new head at the next engine revision and publishes the view for it; `*out`
 /// says which press it was and the adopted revision after it. A chord the router does not know answers
 /// [`M6H_E_INVALID_ARGUMENT`], and no open session [`M6H_E_SESSION`].
 ///
@@ -859,8 +927,8 @@ pub unsafe extern "C" fn m6h_key_down(
                 Press::None => M6H_PRESS_NONE,
                 Press::Refused => M6H_PRESS_REFUSED,
                 Press::Committed | Press::Other => {
-                    let state = shell.turns()?.state().map_err(|e| (M6H_E_SESSION, e))?;
-                    shell.advance(&state)?;
+                    let head = shell.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
+                    shell.advance(&head)?;
                     if press == Press::Committed {
                         M6H_PRESS_COMMITTED
                     } else {

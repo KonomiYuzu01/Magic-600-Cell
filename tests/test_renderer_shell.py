@@ -138,6 +138,23 @@ class ShellProject(unittest.TestCase):
         csharp_presses = dict(re.findall(r"public const uint Press(\w+) = (\d+);", csharp))
         self.assertEqual(set(rust_presses), {"NONE", "COMMITTED", "REFUSED", "OTHER"})
         self.assertEqual({name.upper(): value for name, value in csharp_presses.items()}, rust_presses)
+        # The session's puzzle codes (LX-4's jumble-on half): the same values on both sides, each the index of its
+        # name in the shell's puzzle list, which the host's turns name in the same order.
+        rust_puzzles = dict(re.findall(r"pub const M6H_PUZZLE_([A-Z_]+): u32 = (\d+);", source))
+        csharp_puzzles = dict(re.findall(r"public const uint Puzzle(\w+) = (\d+);", csharp))
+        self.assertEqual(rust_puzzles, {"JUMBLE_OFF": "0", "JUMBLE_ON": "1"})
+        self.assertEqual({re.sub(r"(?<!^)(?=[A-Z])", "_", name).upper(): value
+                          for name, value in csharp_puzzles.items()}, rust_puzzles)
+        shell_names = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};",
+                                text(PROJECT / "EventLog.cs"))
+        turns_names = re.search(r"pub const NAMES: \[&'static str; 2\] = \[(.*?)\];",
+                                text(ROOT / "renderer" / "bridge" / "host" / "src" / "turns.rs"))
+        self.assertTrue(shell_names and turns_names)
+        names = re.findall(r'"([a-z-]+)"', shell_names.group(1))
+        self.assertEqual(names, re.findall(r'"([a-z-]+)"', turns_names.group(1)))
+        for rust, value in rust_puzzles.items():
+            self.assertEqual(names.index(rust.lower().replace("_", "-")), int(value), rust)
+        self.assertIn("(uint)Array.IndexOf(EventLog.Puzzles, puzzle)", text(PROJECT / "Shell.cs"))
         key = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hKey \{(.*?)\}", source, re.S)
         csharp_key = re.search(r"LayoutKind\.Sequential\)\]\s*public struct KeyResult\s*\{(.*?)\}", csharp, re.S)
         self.assertTrue(key and csharp_key)
@@ -510,8 +527,12 @@ class ProductBuild(unittest.TestCase):
         self.assertTrue(puzzles)
         self.assertEqual(tuple(re.findall(r'"([a-z-]+)"', puzzles.group(1))), self.launch.PUZZLES)
         self.assertEqual(self.launch.RUNNABLE_PUZZLES, self.launch.PUZZLES[:1])
-        self.assertIn('throw new NotSupportedException($"the shell does not run {puzzle} yet");',
-                      text(PROJECT / "Shell.cs"))
+        # The shell runs Jumble on only with a session, whose host opens the jumbled puzzle (LX-4's jumble-on half);
+        # the launcher above refuses it until it passes one.
+        shell = text(PROJECT / "Shell.cs")
+        self.assertNotIn("does not run {puzzle} yet", shell)
+        self.assertIn('$"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");',
+                      shell)
 
     def test_a_used_run_folder_or_a_changed_build_is_refused(self):
         def refuse(*args, **kwargs):

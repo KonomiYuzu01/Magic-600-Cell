@@ -22,8 +22,9 @@ namespace Magic600.Shell;
 /// twist is adopted and shown, <see cref="EventLog"/> writes a key row per measured press, and the close runs the
 /// session's correctness control. C9 U3 (a draft): with the event log, the run row names the core's swap chain, and
 /// every Godot frame that follows a submitted 3D frame gets a ui_frame row (<see cref="EventLog"/> says when its times
-/// are read). C9 U8 (a draft): the run row names the window and the puzzle (M600_PUZZLE; the host opens only Jumble
-/// off for now), and when M600_LX4 is 1 the shell creates LX-4's module (<see cref="IShellModule"/>), which receives
+/// are read). C9 U8 (a draft): the run row names the window and the puzzle (M600_PUZZLE; Jumble on runs only with a
+/// session, which the host opens in the jumbled puzzle), and when M600_LX4 is 1 the shell creates LX-4's module
+/// (<see cref="IShellModule"/>), which receives
 /// the window's messages through <see cref="WindowHook"/> before Godot does, and every submitted and presented frame.
 /// Charter E3 (C9 U6, a draft): when M600_SESSION_FIXTURE names a session fixture's record, M600_SESSION_DIR is a
 /// fresh copy of its session, which the host reopens at the revision that counts the fixture's presses; when
@@ -103,10 +104,14 @@ public partial class Shell : Control
         var coreLibrary = _core = CoreLibrary.Load(core);
         var hostLibrary = _hostLibrary = HostLibrary.Load(host);
         var puzzle = EventLog.PuzzleFromEnvironment();
-        if (puzzle != EventLog.Puzzles[0])
+        var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
+        var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
+        var withSession = !string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu);
+        if (puzzle != EventLog.Puzzles[0] && !withSession)
         {
-            // The host opens a session of 600-cell-Full only; Jumble on needs the jumbled puzzle's session and view.
-            throw new NotSupportedException($"the shell does not run {puzzle} yet");
+            // The jumbled puzzle exists only in a session: the host enters it with jumble.on at the session's start.
+            throw new NotSupportedException(
+                $"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");
         }
         var hwnd = DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
         var window = (IntPtr)hwnd;
@@ -132,13 +137,12 @@ public partial class Shell : Control
             _uiFrames = true;
             _startup = StartupLog.FromEnvironment();
         }
-        var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
-        var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
-        if (!string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu))
+        if (withSession)
         {
             var fixture = System.Environment.GetEnvironmentVariable("M600_SESSION_FIXTURE");
-            var opened = hostLibrary.OpenSession(_host, session, menu, string.IsNullOrEmpty(fixture) ? null : fixture,
-                out _openRevision);
+            var code = (uint)Array.IndexOf(EventLog.Puzzles, puzzle);
+            var opened = hostLibrary.OpenSession(_host, code, session!, menu!,
+                string.IsNullOrEmpty(fixture) ? null : fixture, out _openRevision);
             Require(hostLibrary, "m6h_open_session", opened);
             _startup?.SessionOpened(EventLog.Now());
             _session = true;
