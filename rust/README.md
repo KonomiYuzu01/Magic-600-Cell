@@ -27,7 +27,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, with KN2.4's `positions` and `labels` rows as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and five of them served there by a test host through the command and source routes, with a stand-in engine that answers the two snapshot reads with the state number (LP3, C6) |
-| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
+| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
@@ -2635,8 +2635,9 @@ run or not applicable is no pass (PHS.63).
     planted nonzero fixed I_a coordinate (b5, on the I_b menu with I_a's identity written over its own) refused by the
     row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
     drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
-    unshipped id refused whole. No 600 Cell Script program calls the rows yet, though the IR draft has F2 and F5 since
-    LP2's pull request 222.
+    unshipped id refused whole. Three tests run LB3's entry `jumble_nu` (`library::NU`, `src/jumble_nu.6cs`) in the
+    language on the IR draft's F2 and F5 (LP2's pull request 222), through a test host that serves the two rows:
+    off-lattice ν undefined, the planted refusal, and drafted sets checked to the prediction with the change Σ m·row.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2675,19 +2676,18 @@ run or not applicable is no pass (PHS.63).
     sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
     projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
 - Not taken up yet from LP2: through the command layer, `jumble.off`, the refusals, redo, protected pieces and free
-  mode (LP2's route test and `c600-command`'s own tests run them); and the F2 and F5 number kinds in the IR draft (pull
-  request 222), for LB3's ν and correction-set entry as language code.
+  mode (LP2's route test and `c600-command`'s own tests run them). C8 uses the IR draft's F2 and F5 (pull request 222)
+  for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
 - Not built: the producers of the rows J01 and J06 to J12 (J10 also needs exposed-face geometry, LP2); a host bridge or
   command-layer route that serves KN2.4's jumbling rows to a program (the library's tests serve them from
-  `c600_jumble`); LB3's other entries as language code, LB3's ν and correction-set entry among them, and LB3.8's named
-  cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2);
-  BM5's review records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1
-  fixture's mid and end stages are compared only in the whole-journal runs, on request. Not taken up yet from M8 (pull
-  requests 176 and 182): the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept
-  preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also waiting:
-  the repair list through the command layer, with a job that names its cap (KN5), the BND.2 wording of an empty list and
-  no key that skips caps with an empty list (LP2); the built-in column's repair-list exception is in `c600-check` since
-  LP2's pull request 229.
+  `c600_jumble`); LB3's other entries as language code, and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the
+  prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2); BM5's review records; the relationship strip's
+  data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end stages are compared only in the
+  whole-journal runs, on request. Not taken up yet from M8 (pull requests 176 and 182): the rim and survey rows of
+  CT-LB3-07. F03 on 600-cell-Full has no swept preview: the retained kernel names no plane for its twists, and which
+  engine names one is not settled. Also waiting: the repair list through the command layer, with a job that names its
+  cap (KN5), the BND.2 wording of an empty list and no key that skips caps with an empty list (LP2); the built-in
+  column's repair-list exception is in `c600-check` since LP2's pull request 229.
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
