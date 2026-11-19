@@ -93,6 +93,16 @@ fn fixture(protected: &[i64]) -> Fixture {
 }
 
 impl Fixture {
+    /// A run inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34): the shell invokes a
+    /// tool's query row, and the host takes its job and runs it as the job's run (`ProgramJob::run`), which lasts until
+    /// the host reports the job. Only such a run prepares a preview.
+    fn solver_run(&mut self) -> String {
+        self.layer.register_overlay("tool.full.run", Kind::Query, &[], overlay("run")).unwrap();
+        let receipt = self.shell.invoke(&mut self.layer, "tool.full.run", json::object([])).unwrap();
+        assert!(matches!(receipt.status, Status::Running(_)), "the tool's row: {:?}", receipt.status);
+        self.layer.take_program_job().expect("the tool's job").run()
+    }
+
     /// Previews `recipe` through the command route and runs the job; returns the preview's ID.
     fn preview(&mut self, recipe: &Value) -> u64 {
         let receipt = self.shell.invoke(&mut self.layer, "operation.preview", draft_args(recipe)).unwrap();
@@ -582,11 +592,11 @@ fn a_protection_conflict_builds_a_preview_and_refuses_its_commit() {
     assert_eq!(f.layer.preview().unwrap().id, id);
 }
 
-/// ADR-L02, KN5.15, CT-ONE-20.
+/// ADR-L02, KN5.15, CT-ONE-20. The run is inside a command the solver invoked (finding B2).
 #[test]
 fn the_runtime_reaches_at_most_a_preview() {
     let mut f = fixture(&[]);
-    let runtime = Caller::Runtime { run: "run-1".into() };
+    let runtime = Caller::Runtime { run: f.solver_run() };
     let call = |command: &str, row: &str, args: Value| Invocation {
         command: command.into(),
         row: row.into(),

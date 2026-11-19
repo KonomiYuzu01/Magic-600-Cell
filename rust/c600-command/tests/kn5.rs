@@ -122,6 +122,16 @@ impl Fixture {
         self.frames.present(&mut self.shell, &mut self.layer, id).unwrap();
     }
 
+    /// A run inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34): the shell invokes a
+    /// tool's query row, and the host takes its job and runs it as the job's run (`ProgramJob::run`), which lasts until
+    /// the host reports the job. Only such a run prepares a preview.
+    fn solver_run(&mut self) -> String {
+        self.layer.register_overlay("tool.full.run", Kind::Query, &[], overlay("run")).unwrap();
+        let receipt = self.shell.invoke(&mut self.layer, "tool.full.run", json::object([])).unwrap();
+        assert!(matches!(receipt.status, Status::Running(_)), "the tool's row: {:?}", receipt.status);
+        self.layer.take_program_job().expect("the tool's job").run()
+    }
+
     /// The commit chord for preview `id`, prepared and not sent.
     fn press(&mut self, id: u64) -> Invocation {
         self.shell.prepare(&self.layer, "operation.execute", preview_args(id)).unwrap()
@@ -598,13 +608,14 @@ fn one_injected_secret_never_repeats_an_epoch() {
 
 /// CT-KN5-04 (part: the runtime's and the shell's command IDs are separate spaces, and the request digest covers the
 /// caller, so a runtime envelope under the shell's next command ID neither takes the ID nor reaches the shell as its
-/// receipt; not run: the host's run IDs), L11 (b), ruling 4.
+/// receipt; not run: the host's run IDs), L11 (b), ruling 4. The run is inside a command the solver invoked (finding
+/// B2), which took `shell/1`, so the shell's next command ID is `shell/2`.
 #[test]
 fn the_runtime_and_the_shell_keep_separate_command_ids() {
     let mut f = fixture(&[]);
-    let runtime = Caller::Runtime { run: "run-1".into() };
+    let runtime = Caller::Runtime { run: f.solver_run() };
     let theirs = Invocation {
-        command: "shell/1".into(),
+        command: "shell/2".into(),
         row: "operation.preview".into(),
         args: draft_args(&word(&[1])),
         token: None,
@@ -614,28 +625,30 @@ fn the_runtime_and_the_shell_keep_separate_command_ids() {
     assert!(running(&proposed), "{:?}", proposed.status);
     assert_eq!(f.layer.run_jobs(), 1);
     let mine = f.shell.prepare(&f.layer, "operation.preview", draft_args(&word(&[1]))).unwrap();
-    assert_eq!(mine.command, "shell/1");
+    assert_eq!(mine.command, "shell/2");
     let pressed = f.shell.send(&mut f.layer, mine.clone());
     assert!(running(&pressed), "{:?}", pressed.status);
     assert_ne!((pressed.job, &pressed.request), (proposed.job, &proposed.request));
     assert_eq!(f.layer.run_jobs(), 1);
-    let theirs_now = f.layer.kernel_outcome(&runtime, "shell/1", &proposed.request);
+    let theirs_now = f.layer.kernel_outcome(&runtime, "shell/2", &proposed.request);
     assert!(matches!(theirs_now.status, Status::Completed(_)) && theirs_now.job == proposed.job);
     assert_eq!(f.layer.invoke(&runtime, theirs), theirs_now);
-    let mine_now = f.layer.outcome("shell/1", &pressed.request).unwrap();
+    let mine_now = f.layer.outcome("shell/2", &pressed.request).unwrap();
     assert!(matches!(mine_now.status, Status::Completed(_)) && mine_now.job == pressed.job);
-    let crossed = f.layer.kernel_outcome(&Caller::Shell, "shell/1", &proposed.request);
+    let crossed = f.layer.kernel_outcome(&Caller::Shell, "shell/2", &proposed.request);
     assert_eq!(code_of(&crossed), code::COMMAND_ID_REUSED);
 }
 
 /// CT-KN5-04 (part: a runtime envelope without the token its row takes does not authenticate, so its refusal is kept
-/// for its own envelope and never takes the runtime's command ID; not run: the host's run IDs), ruling 4.
+/// for its own envelope and never takes the runtime's command ID; not run: the host's run IDs), ruling 4. The run is
+/// inside a command the solver invoked (finding B2).
 #[test]
 fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
     let mut f = fixture(&[]);
-    let runtime = Caller::Runtime { run: "run-1".into() };
+    let run = f.solver_run();
+    let runtime = Caller::Runtime { run: run.clone() };
     let scramble = Invocation {
-        command: "run-1/1".into(),
+        command: format!("{run}/1"),
         row: "jumble.scramble".into(),
         args: json::object([("policy", Value::String("uniform".into()))]),
         token: None,
