@@ -8,6 +8,11 @@
 //! follows it.
 //! The child exits when its input ends (the parent is gone) and exits with a message on standard error when the
 //! parent breaks the protocol. Standard output carries frames only.
+//!
+//! With the feature `lx2-faults` (off in the product build), `main_with` runs the same loop and calls a hook on the
+//! interpreter's thread, with the answers received so far, before each call frame and each result is written, next to
+//! where debug builds rehearse faults. It is the seam for LX-2's injection device (c600-lx2), which keeps its faults
+//! in its own binary.
 
 use std::io::{self, Write};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -132,6 +137,8 @@ impl Proxy<'_> {
         self.next_call = id;
         #[cfg(debug_assertions)]
         self.rehearse_before_send(id, &e.bytes);
+        #[cfg(feature = "lx2-faults")]
+        fault_point(self.link.answers);
         self.link.send(&e.bytes);
         let answer = self.await_answer(id);
         #[cfg(debug_assertions)]
@@ -179,6 +186,28 @@ impl Host for Proxy<'_> {
             other => Err(refused(other)),
         }
     }
+}
+
+/// LX-2's fault hook (feature `lx2-faults`): the hook [`main_with`] was given, for the life of the process.
+#[cfg(feature = "lx2-faults")]
+static HOOK: OnceLock<fn(u64)> = OnceLock::new();
+
+/// LX-2's fault point: before a call frame or a result is sent, the hook sees the answers received so far.
+#[cfg(feature = "lx2-faults")]
+fn fault_point(answers: u64) {
+    if let Some(hook) = HOOK.get() {
+        hook(answers);
+    }
+}
+
+/// Runs the child as [`main`] does, with LX-2's fault hook (feature `lx2-faults`, off in the product build). `hook`
+/// runs on the interpreter's thread with the number of answers the child has received over its life, before each
+/// call frame and before each result is written, so an injection device can fault the child at a point it chooses.
+/// The first hook given stays for the life of the process.
+#[cfg(feature = "lx2-faults")]
+pub fn main_with(hook: fn(answers: u64)) {
+    let _ = HOOK.set(hook);
+    main()
 }
 
 /// Runs the child: `hello`, then jobs until standard input ends.
@@ -246,6 +275,8 @@ pub fn main() {
         if e.bytes.len() > wire::MAX_FRAME {
             die("a result above the frame bound");
         }
+        #[cfg(feature = "lx2-faults")]
+        fault_point(link.answers);
         link.send(&e.bytes);
     }
 }

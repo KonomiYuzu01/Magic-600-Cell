@@ -15,3 +15,13 @@ c600-syntax = { path = "../c600-syntax" }
 num-bigint = { version = "=0.5.1", default-features = false, features = ["std"] }
 num-integer = { version = "=0.1.47", default-features = false, features = ["std"] }
 num-traits = { version = "=0.2.19", default-features = false, features = ["std"] }
+
+[features]
+# LX-2's fault hook (`child::main_with`, `FAULT_HOOK`) for c600-lx2's injection device; off in the product build.
+lx2-faults = []
+
+# A test child that records the fault hook's calls; built only with the hook.
+[[bin]]
+name = "c600-runtime-hooked"
+path = "src/bin/c600-runtime-hooked.rs"
+required-features = ["lx2-faults"]

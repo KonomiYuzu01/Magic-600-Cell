@@ -118,6 +118,12 @@
 //!     executors refuse a compressed word as an argument at the start stage, since it has no DET.59 output form,
 //!     and so no run returns or outputs one; the parent sends one within the bound, and the child refuses it with
 //!     the same detail as `Loaded::run`.
+//! 16. **LX-2's fault hook** (the feature `lx2-faults`, off by default; LX-2 is not run here): `child::main_with` runs
+//!     the child as [`child::main`] does and calls a hook on the interpreter's thread with the answers the child has
+//!     received, before each call frame and each result is written, next to where debug builds rehearse faults.
+//!     The faults belong to the binary that gives the hook (c600-lx2's injection device); this crate has none, and
+//!     [`FAULT_HOOK`] says whether a build has the hook. The product build has the feature off. The test child
+//!     `c600-runtime-hooked`, built only with the feature, records the hook's calls and injects nothing.
 
 #![forbid(unsafe_code)]
 
@@ -133,3 +139,7 @@ pub use program::{run_in_process, Ended, Job, JobOptions, Refused, Stage};
 
 /// The variable that selects a fault rehearsal in a debug build of the child: `<kind>@<answers>`.
 pub const FAULT_VARIABLE: &str = "C600_RUNTIME_FAULT";
+
+/// Whether this build has LX-2's fault hook, `child::main_with` (the feature `lx2-faults`). The product build has it
+/// off.
+pub const FAULT_HOOK: bool = cfg!(feature = "lx2-faults");
