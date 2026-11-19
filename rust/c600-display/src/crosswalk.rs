@@ -176,17 +176,54 @@ pub struct Correction {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Catalogue {
     rows: Vec<Correction>,
-    /// The order of the finite group the nu coordinates live in.
+    /// The modulus of each nu coordinate, in coordinate order.
+    moduli: Vec<i64>,
+    /// The exponent of the finite group the nu coordinates live in: the least common multiple of [`Catalogue::moduli`].
+    /// It is derived from them, and [`Catalogue::predict`] does not read it.
     pub modulus: i64,
 }
 
 impl Catalogue {
-    /// A synthetic catalogue of 36 rows over a nu vector of `width` coordinates modulo `modulus`.
+    /// A synthetic catalogue of 36 rows over a nu vector of `width` coordinates, each modulo `modulus`.
     pub fn fixture(width: usize, modulus: i64) -> Catalogue {
         let rows = (0..CORRECTIONS as u32)
             .map(|id| Correction { id, effect: (0..width).map(|c| (i64::from(id) + c as i64) % modulus).collect() })
             .collect();
-        Catalogue { rows, modulus }
+        Catalogue { rows, moduli: vec![modulus; width], modulus }
+    }
+
+    /// A catalogue as supplied, over coordinates with their own moduli (JI.13: F2 for the bits, F5 for the C5
+    /// values). It must hold the 36 rows with IDs 0 to 35 in order, each effect one residue in 0..m per coordinate of
+    /// modulus m, and every modulus at least 2. Anything else is refused with `EV3:input.display_plan_invalid`, never
+    /// reordered, reduced or padded.
+    pub fn new(rows: Vec<Correction>, moduli: Vec<i64>) -> Result<Catalogue, Error> {
+        if rows.len() != CORRECTIONS {
+            return Err(Error::invalid(format!("the catalogue has {} rows, not {CORRECTIONS}", rows.len())));
+        }
+        if let Some((index, row)) = rows.iter().enumerate().find(|(index, row)| row.id as usize != *index) {
+            return Err(Error::invalid(format!(
+                "row {index} has ID {}: the rows are not IDs 0 to 35 in order",
+                row.id
+            )));
+        }
+        if let Some(&m) = moduli.iter().find(|&&m| m < 2) {
+            return Err(Error::invalid(format!("a coordinate modulus is {m}, below 2")));
+        }
+        for row in &rows {
+            if row.effect.len() != moduli.len() {
+                let (id, width) = (row.id, row.effect.len());
+                return Err(Error::invalid(format!("row {id} has {width} coordinates, not {}", moduli.len())));
+            }
+            if let Some((c, &e)) = row.effect.iter().enumerate().find(|&(c, &e)| !(0..moduli[c]).contains(&e)) {
+                let m = moduli[c];
+                return Err(Error::invalid(format!("row {}: coordinate {c} is {e}, not a residue in 0..{m}", row.id)));
+            }
+        }
+        let modulus = moduli
+            .iter()
+            .try_fold(1i64, |l, &m| (l / gcd(l, m)).checked_mul(m))
+            .ok_or_else(|| Error::invalid("the least common multiple of the moduli does not fit 64 bits"))?;
+        Ok(Catalogue { rows, moduli, modulus })
     }
 
     /// All rows in fixed ID order. It takes no state, so it cannot filter, light or reorder by state.
@@ -194,16 +231,30 @@ impl Catalogue {
         &self.rows
     }
 
-    /// The predicted nu of the caller's multiplicities: the finite-group sum of JI.13. It selects nothing.
+    /// The modulus of each coordinate, in coordinate order.
+    pub fn moduli(&self) -> &[i64] {
+        &self.moduli
+    }
+
+    /// The predicted nu of the caller's multiplicities: the finite-group sum of JI.13, each coordinate modulo its own
+    /// modulus. It selects nothing.
     pub fn predict(&self, multiplicities: &[i64]) -> Vec<i64> {
-        let width = self.rows.first().map_or(0, |row| row.effect.len());
-        let mut nu = vec![0; width];
+        let mut nu = vec![0; self.moduli.len()];
         for (row, &m) in self.rows.iter().zip(multiplicities) {
-            for (n, &e) in nu.iter_mut().zip(&row.effect) {
-                *n = (*n + m * e).rem_euclid(self.modulus);
+            for ((n, &e), &modulus) in nu.iter_mut().zip(&row.effect).zip(&self.moduli) {
+                let sum = i128::from(*n) + i128::from(m.rem_euclid(modulus)) * i128::from(e);
+                *n = sum.rem_euclid(i128::from(modulus)) as i64;
             }
         }
         nu
+    }
+}
+
+fn gcd(a: i64, b: i64) -> i64 {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
     }
 }
 
