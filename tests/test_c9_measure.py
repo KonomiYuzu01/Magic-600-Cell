@@ -774,6 +774,8 @@ class Lx4Tests(NoProcessCase):
         record = lx4.build(self.temp / 'fixtures', directories, ['analyze'])
         self.assertEqual((record['verdict'], record['passes_bar']), ('synthetic', False))
         self.assertEqual(record['result']['timed_sml_samples'], 10_800)
+        self.assertEqual(record['result']['limitations'], lx4.LIMITATIONS)
+        self.assertIn('NoHost', lx4.LIMITATIONS[0])
 
     def test_a_dry_run_posts_nothing(self):
         with contextlib.redirect_stdout(io.StringIO()) as out:

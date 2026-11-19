@@ -66,6 +66,10 @@ renderer gate summary of the same build are met. The decision names RTE.53's cas
 `fail-gate-or-e2`, `owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or
 `all-bars`. The gate summary is checked for its build and verdicts only; that it comes from these runs' captures is
 the integrator's check (`gate_same_run_checked` false).
+
+Limitation (stated in every record, `limitations`; top integrator, 19 November 2026): the module set's views read no
+host rows on either puzzle (the host runs them with `NoHost`), so jumble-off and jumble-on time the same rerun path.
+RTE.51 does not require jumbling rows, and the bars are unchanged.
 """
 from __future__ import annotations
 
@@ -123,6 +127,8 @@ BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1
                 'id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 timed S/M/L samples'),
        'bars_ms': BARS, 'samples': TOTAL_SML,
        'source': ['RTE.47', 'RTE.48', 'RTE.49', 'RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06']}
+LIMITATIONS = ['the module set\'s views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time '
+               'the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged']
 DRAFTS = ['metric to edit-kind mapping', 'schedule order and smoke series', 'message protocol Magic600.LX4.*',
           'lx4 rows in magic600-c9-shell-events-v1', 'unconfirmed sample invalidates its run',
           f'post timeout {TIMEOUT_S:g} s, pace {PACE_S:g} s', 'gate summary checked for build and verdict only',
@@ -570,7 +576,7 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
     result = {'fixtures': digests, 'runs': runs, 'decision': decision, 'series': table,
               'accounting': accounting([schedule(edits, puzzle) for puzzle in PUZZLES]),
               'timed_sml_samples': sum(row['stats']['n'] for row in table if row['series'] > 0 and row['size'] in SIZES),
-              'gate_same_run_checked': False}
+              'gate_same_run_checked': False, 'limitations': LIMITATIONS}
     return evidence.make_record(
         'lx4-editor-latency', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
