@@ -11,8 +11,9 @@ process that presents, not the console wrapper) on the build's shell with the en
 `M600_BUILD_IDENTITY` (the build's identity), `M600_RUN_ID`, and for charter E2's turns `M600_SESSION_DIR` (a new
 session folder, `session` in the run folder) and `M600_TWIST_MENU` (the build's copy of the twist menu); `--echo`
 adds `M600_INPUT_ECHO=1`, the input echo of route B's check B1. `M600_PUZZLE` names the puzzle the shell runs and its
-run row records (`--puzzle`, default jumble-off). The shell's host opens only Jumble off for now, so the launcher
-refuses jumble-on before it starts anything. `--lx4` adds `M600_LX4=1`, which makes the shell create LX-4's module
+run row records (`--puzzle`, default jumble-off). The shell's host opens Jumble on, but the core draws its posed
+engine images only once c600-render maps them (C9 product), so the launcher refuses jumble-on until then, before it
+starts anything. `--lx4` adds `M600_LX4=1`, which makes the shell create LX-4's module
 (C9 U8).
 
 LX-2 (RTE.42 conditions 3 and 4, a draft): `--lx2-injection CHILD` names a release build of c600-lx2's injection
@@ -23,11 +24,12 @@ combines with `--lx4`, so that one run measures the echo bar during the fault wi
 `--cold-start`, which measures the product's own runtime. The launcher drops `C600_LX2_CEILING` and `C600_LX2_FAULT`
 from the environment it passes on: LX-2's module sets them in the shell's process before a respawn of the child.
 
-Charter E3 (C9 U6, a draft): every launch copies the build's session fixture (`session-fixture/session`) fresh to the
-run's `session` folder and sets `M600_SESSION_FIXTURE` (the fixture's record), so that the host reopens that existing
-session, and `M600_RUNTIME` (the build's c600-runtime), so that the host starts the language runtime. `--cold-start`
-waits until 20 s have passed since the previous product exit and adds `M600_EXIT_AT_FIRST_FRAME=1`, so that the shell
-quits once the first correct frame is shown. The launcher reads the performance counter right before it creates the
+Charter E3 (C9 U6, a draft): every launch copies the build's session fixture of its puzzle (`session-fixture/session`,
+with Jumble on `session-fixture-jumble-on/session`) fresh to the run's `session` folder and sets `M600_SESSION_FIXTURE`
+(that fixture's record), so that the host reopens that existing session, and `M600_RUNTIME` (the build's
+c600-runtime), so that the host starts the language runtime. `--cold-start` waits until 20 s have passed since the
+previous product exit and adds `M600_EXIT_AT_FIRST_FRAME=1`, so that the shell quits once the first correct frame is
+shown. The launcher reads the performance counter right before it creates the
 process, and after the shell exits it writes `startup.jsonl` (`magic600-c9-startup-v1`, which
 tools/perf/c9/cold_start.py reads): its run row with the cold flags, its process_start row, then the shell's rows from
 `startup.body.jsonl`, which it removes. Cold flags: a new process; no process of the pinned Godot or the build's
@@ -115,7 +117,7 @@ def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, 
                 "M600_ASSETS": str(build / build_product.ASSETS), "M600_EVENTS_DIR": str(out),
                 "M600_BUILD_IDENTITY": product["identity"], "M600_RUN_ID": run_id,
                 "M600_SESSION_DIR": str(out / SESSION), "M600_TWIST_MENU": str(build / build_product.MENU),
-                "M600_SESSION_FIXTURE": str(build / build_product.FIXTURE_RECORD),
+                "M600_SESSION_FIXTURE": str(build / build_product.fixture_record(puzzle)),
                 "M600_RUNTIME": str(build / build_product.RUNTIME), "M600_PUZZLE": puzzle})
     if echo:
         env["M600_INPUT_ECHO"] = "1"
@@ -297,7 +299,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
         if args.resolution and not all(part.isdigit() for part in args.resolution.split("x", 1)):
             raise LaunchError("--resolution must be WxH")
         if args.puzzle not in RUNNABLE_PUZZLES:
-            raise LaunchError(f"the shell's host does not run {args.puzzle} yet")
+            raise LaunchError(f"the product does not draw {args.puzzle} yet: c600-render maps no posed engine image")
         injection, child = None, None
         if args.lx2_injection is not None:
             if args.cold_start:
@@ -327,7 +329,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
     machine = machine or Machine()
     out.mkdir(parents=True)
     try:
-        shutil.copytree(build / build_product.FIXTURE_SESSION, out / SESSION)
+        shutil.copytree(build / build_product.fixture_session(args.puzzle), out / SESSION)
     except OSError as error:
         out_stream(f"launch: the session fixture did not copy: {error}")
         return 2
