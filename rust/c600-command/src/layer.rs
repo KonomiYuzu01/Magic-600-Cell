@@ -94,6 +94,7 @@ use std::sync::Arc;
 use c600_digest::sha256_hex;
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
 use c600_jumble::levels::{self, Base, Derived};
+use c600_jumble::observe::cuts;
 use c600_jumble::q5::{identity4, transpose};
 use c600_jumble::rotation;
 use c600_jumble::twist::{Menu, Twist};
@@ -112,6 +113,7 @@ use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
 };
+use crate::repair::{self, REPAIR_LIST_ROW};
 use crate::store::{
     identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Profile, Reopen, Store, Transaction,
     TransactionKind,
@@ -361,6 +363,10 @@ enum JobKind {
     Compare {
         sheet: WorksheetRef,
         draft: String,
+    },
+    /// `jumble.repair.list`'s job: the cap the invocation named.
+    Repair {
+        cap: i64,
     },
 }
 
@@ -707,6 +713,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     filters: BTreeMap<u64, FilterPreview>,
     /// The newest completed `worksheet.compare` job and its comparison (draft). It is transient: a reopen keeps none.
     comparison: Option<(u64, Value)>,
+    /// The newest completed `jumble.repair.list` job and its list (draft). It is transient: a reopen keeps none.
+    repairs: Option<(u64, Value)>,
     /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes are refused, and so are record
     /// previews and comparisons in a solving session.
     provenance: Option<Box<dyn Provenance>>,
@@ -771,6 +779,7 @@ impl<S: Store> CommandLayer<S> {
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
+            repairs: None,
             blocks: BTreeMap::new(),
             provenance: None,
             views: None,
@@ -1196,6 +1205,19 @@ impl<S: Store> CommandLayer<S> {
         match self.jumbled {
             Some(_) => Err(Error::new(code::RETAINED_TOOL_NEEDS_JUMBLE_OFF, "the retained workflow needs Jumble off")),
             None => Ok(()),
+        }
+    }
+
+    /// Whether `row`, a query of the jumbling engine's poses, can read them: the host pinned a twist menu
+    /// (`KN5:input.row_not_built` otherwise) and Jumble is on (`KN5:input.menu_word_needs_jumble_on` otherwise; draft:
+    /// the registry has no code of its own for a jumbling query with Jumble off).
+    fn jumble_mode(&self, row: &str) -> Result<(), Error> {
+        match (&self.twists, &self.jumbled) {
+            (None, _) => Err(Error::new(code::ROW_NOT_BUILT, format!("`{row}` needs the host's pinned twist menu"))),
+            (Some(_), None) => {
+                Err(Error::new(MENU_WORD_NEEDS_JUMBLE_ON, format!("`{row}` reads the poses: Jumble is off")))
+            }
+            (Some(_), Some(_)) => Ok(()),
         }
     }
 
@@ -1633,6 +1655,7 @@ impl<S: Store> CommandLayer<S> {
         self.jobs.clear();
         self.running.clear();
         self.comparison = None;
+        self.repairs = None;
         self.commit_held = false;
         if let Some(adoption) = self.limbo.take() {
             match self.store.durable(&adoption.transaction.event) {
@@ -1822,6 +1845,10 @@ impl<S: Store> CommandLayer<S> {
                 (Some(_), true) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
                 (Some(_), false) => Ok(()),
             },
+            REPAIR_LIST_ROW => {
+                self.jumble_mode(REPAIR_LIST_ROW)?;
+                self.exclusive_free()
+            }
             "protection.orbit.set" | POLICY_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
@@ -2056,6 +2083,7 @@ impl<S: Store> CommandLayer<S> {
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
+            REPAIR_LIST_ROW => self.admit_repair(caller, invocation),
             VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
@@ -2202,6 +2230,10 @@ impl<S: Store> CommandLayer<S> {
                 }
                 JobKind::Compare { sheet, draft } => {
                     self.build_comparison(job.id, &(job.scope, job.command), &sheet, &draft);
+                    ran += 1;
+                }
+                JobKind::Repair { cap } => {
+                    self.build_repair(job.id, &(job.scope, job.command), cap);
                     ran += 1;
                 }
             }
@@ -2622,8 +2654,10 @@ impl<S: Store> CommandLayer<S> {
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ReplacedRevision));
         }
         self.jobs = keep;
-        // A comparison analysed the state this action replaced (LB7.2: a stored result never stands in for a fresh one).
+        // A comparison analysed the state this action replaced (LB7.2: a stored result never stands in for a fresh
+        // one), and a repair list speaks only of the input it read (JI.12).
         self.comparison = None;
+        self.repairs = None;
         let running = std::mem::take(&mut self.running);
         for (id, program) in running {
             if program.kind == Kind::File {
@@ -3475,6 +3509,89 @@ impl<S: Store> CommandLayer<S> {
             ("macro_version", macro_version),
             ("analysis", self.analyse(&sheet.letters())?),
         ]))
+    }
+
+    // ----- jumble.repair.list -----
+
+    /// The list that completed `jumble.repair.list` job `job` made, while it is the newest one and no action has moved
+    /// the state since (draft): the value its completion's result reference digests. A reopen keeps none.
+    pub fn repair_list(&self, job: u64) -> Option<&Value> {
+        self.repairs.as_ref().filter(|(id, _)| *id == job).map(|(_, value)| value)
+    }
+
+    /// `jumble.repair.list {snapshot, cap, max_chunk}` (BND.2, the 17 October exception; JI.12, JI.33; draft): the
+    /// repair list at the cap the invocation names, on the head's poses. Admission queues a job on the exclusive lane;
+    /// [`CommandLayer::run_jobs`] runs it ([`CommandLayer::build_repair`]). The row names its cap: an invocation
+    /// without one is refused with `KN5:input.argument_form` before this admission, so no job starts for an unnamed
+    /// cap (BND.64), and nothing here picks a cap. Refused, queuing nothing, in this order:
+    /// - no pinned twist menu (`KN5:input.row_not_built`) or Jumble off (`KN5:input.menu_word_needs_jumble_on`);
+    /// - `cap` not a `CapId` or `max_chunk` not a `PositiveNat` (`KN5:input.argument_form`; [`repair::named_cap`]);
+    /// - `snapshot` not KN0.2's `RevisionRef` (`KN5:input.argument_form`; a derived state reference is not built in the
+    ///   headless layer) or not the current revision (`KN5:stale.revision_changed`);
+    /// - in a solving session, a run that is not inside a command the solver invoked (`LG3:capability.not_granted`):
+    ///   the cap then comes from the solver's command, which the checker's repair-list exception holds to the cap the
+    ///   solver named (BND.2, BND.64; c600-check's `Row::RepairList`). Outside a solving session BND.64 does not apply;
+    /// - a held exclusive lane (`KN7:busy.lane_full`).
+    fn admit_repair(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        self.jumble_mode(REPAIR_LIST_ROW)?;
+        let args = invocation.args.as_object().expect("the dispatch checked that the arguments are an object");
+        let cap = repair::named_cap(args)?;
+        let snapshot = args.get("snapshot").expect("the dispatch checked that the row's arguments are named");
+        let row = self.known(REPAIR_LIST_ROW)?;
+        let as_revision = Row { arguments: [("snapshot".to_owned(), "RevisionRef".to_owned())].into(), ..row.clone() };
+        if let Err(error) = forms::check_forms(&as_revision, args) {
+            let detail = "`snapshot` names a revision, KN0.2's RevisionRef; a derived state is not built here";
+            return Err(Error::new(error.code, detail));
+        }
+        if *snapshot != self.revision.to_json() {
+            return refused(code::REVISION_CHANGED, "`snapshot` names a revision that is not current");
+        }
+        if let Caller::Runtime { run } = caller {
+            if self.profile == Profile::Solving && !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (BND.64)");
+                return refused(code::NOT_GRANTED, detail);
+            }
+        }
+        self.exclusive_free()?;
+        let id = self.next_job();
+        let (command, scope) = (invocation.command.clone(), caller.scope());
+        self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind: JobKind::Repair { cap } });
+        self.generation += 1;
+        Ok((Some(id), Status::Running(id)))
+    }
+
+    /// Runs `jumble.repair.list` job `id` and settles its receipt: `completed(query)` with the list's digest, kept as
+    /// the newest list ([`CommandLayer::repair_list`]), or failed with [`CommandLayer::repair_now`]'s error. Unlike a
+    /// run's preview, a run's list is not checked again here: admission held it to a command the solver invoked, and
+    /// the list is a query of the revision it was admitted at that changes nothing and picks no pair.
+    fn build_repair(&mut self, id: u64, key: &Key, cap: i64) {
+        let status = match self.repair_now(cap) {
+            Ok(value) => {
+                let result = ResultRef { job: Some(id), digest: digest(&value) };
+                self.repairs = Some((id, value));
+                let revision = self.revision.clone();
+                Status::Completed(Completion { kind: CompletionKind::Query, revision, result: Some(result) })
+            }
+            Err(error) => Status::Failed(error),
+        };
+        self.settle(key, status);
+        self.generation += 1;
+    }
+
+    /// The repair list at `cap` on the head's poses (draft): the kernel's answer whole
+    /// (`c600_jumble::observe::cuts::repair_list`, with no pair budget and no cancellation), worded by
+    /// [`repair::worded`]. Its `status` is the kernel's: `completed` with its rows, or `error` with no outcomes for a
+    /// blocked or closed cap, a fact about the configuration (BND.4). A state change cancels a queued job
+    /// ([`CommandLayer::end_revision`]), so the job reads the input it was admitted at. An engine fault is
+    /// `KN5:consistency.state_hash_mismatch`, as for the other jumbling rows.
+    fn repair_now(&self, cap: i64) -> Result<Value, Error> {
+        let (Some(twists), Some(jumbled)) = (&self.twists, &self.jumbled) else {
+            let detail = format!("`{REPAIR_LIST_ROW}` reads the poses: Jumble is off");
+            return Err(Error::new(MENU_WORD_NEEDS_JUMBLE_ON, detail));
+        };
+        let list = cuts::repair_list(&twists.context, jumbled.derived.state(), cap, None, None, None);
+        let engine = |error: String| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
+        Ok(repair::worded(list.map_err(engine)?, cap))
     }
 
     /// The exact analysis of `letters` as one complete operation from the head under the protection and policy in
