@@ -162,6 +162,27 @@ class ShellProject(unittest.TestCase):
                 self.assertEqual(re.findall(r"pub (\w+): u64,", rust_row.group(1)), fields)
                 pascal = ["".join(part.title() for part in field.split("_")) for field in fields]
                 self.assertEqual(re.findall(r"public ulong (\w+);", csharp_row.group(1)), pascal)
+        # C9 U8's view-job record: the same fields, types and order on both sides.
+        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hViewResult \{(.*?)\}", source, re.S)
+        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct ViewResult\s*\{(.*?)\}", csharp, re.S)
+        self.assertTrue(rust_row and csharp_row)
+        rust_fields = re.findall(r"pub (\w+): (u32|u64|\[u8; 32\]),", rust_row.group(1))
+        self.assertEqual([name for name, _ in rust_fields],
+                         ["status", "kind", "revision", "source_digest", "frame", "cleared_frame", "has_value",
+                          "reserved", "value_sha256"])
+        types = {"u32": "uint", "u64": "ulong", "[u8; 32]": "byte[32]"}
+        expected = [(types[kind], "".join(part.title() for part in name.split("_"))) for name, kind in rust_fields]
+        csharp_fields = [(kind + (f"[{size}]" if size else ""), name) for kind, name, size in
+                         re.findall(r"public (?:fixed )?(\w+) (\w+)(?:\[(\d+)\])?;", csharp_row.group(1))]
+        self.assertEqual(csharp_fields, expected)
+        self.assertIn("size_of::<M6hViewResult>() == 104", source)
+        self.assertIn("sizeof(ViewResult) != 104", csharp)
+        rust_views = dict(re.findall(r"pub const M6H_VIEW_((?:STATUS|KIND)_[A-Z]+): u32 = (\d+);", source))
+        csharp_views = re.findall(r"public const uint View(Status|Kind)(\w+) = (\d+);", csharp)
+        self.assertEqual(set(rust_views), {"STATUS_PENDING", "STATUS_PUBLISHED", "STATUS_REFUSED", "KIND_RUN",
+                                           "KIND_DRAFT"})
+        self.assertEqual({f"{group.upper()}_{name.upper()}": value for group, name, value in csharp_views},
+                         rust_views)
 
     def test_the_event_log_writes_the_rows_the_e2_timer_reads(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
@@ -233,7 +254,8 @@ class ShellProject(unittest.TestCase):
 
     def test_the_shell_gives_modules_the_window_and_its_frames(self):
         module = text(PROJECT / "ShellModule.cs")
-        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log);", module)
+        self.assertIn("public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log, HostLibrary Host, "
+                      "IntPtr HostHandle);", module)
         for member in ("bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc);",
                        "void OnFrame(HostLibrary.Submitted frame, long qpc);",
                        "void OnPresented(HostLibrary.Presented row);"):
@@ -247,13 +269,15 @@ class ShellProject(unittest.TestCase):
         self.assertIn("catch (Exception error)", receive, "no exception crosses into the native caller")
         shell = text(PROJECT / "Shell.cs")
         self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")', shell)
-        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log)));", shell)
+        self.assertIn("_modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log, hostLibrary, _host)));", shell)
         self.assertIn("WindowHook.Install(window, _modules);", shell)
         self.assertIn("EachModule(module => module.OnFrame(frame, submitted));", shell)
         self.assertIn("EachModule(module => module.OnPresented(row));", shell)
         close = shell[shell.index("private void CloseCore()"):]
         self.assertLess(close.index("WindowHook.Remove();"), close.index("EachModule(module => module.Dispose());"))
         self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("_log?.Dispose();"))
+        # The modules go before the host: a module may call the host until its Dispose.
+        self.assertLess(close.index("EachModule(module => module.Dispose());"), close.index("library.Destroy(_host);"))
         # The run row names the window and the puzzle, and a module appends its own rows.
         log = text(PROJECT / "EventLog.cs")
         run = row_fields(log)["run"]

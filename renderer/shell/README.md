@@ -109,13 +109,24 @@ outside the language workspace (CT-RPI-01). It is a draft:
   `src/turns.rs` holds the session: KN5's command layer on M6's journal store over the product disk (`FsDisk`, with
   its lock), LP3's input router, and KN3's twist menu pinned in both. `m6h_frame` names the frame's engine revision
   and the revision of the publication it draws.
+- ABI 3 adds the session fixture (`m6h_open_session` with a fixture) and `m6h_load_runtime`, which starts the language
+  runtime's process.
+- ABI 4 adds the view jobs (C9 U8, `src/view.rs`): `m6h_run_view` schedules a program text as the view's job and
+  returns at once; the runtime runs it on one worker thread, and `m6h_pump` or `m6h_frame` delivers a completed run's
+  reference publication with the plan dependency `program` (the hex SHA-256 of the text). `m6h_view_result` reads a
+  ticket's record (status, revision, source and value digests, first confirmed frames; a refusal's code and reason as
+  JSON in `m6h_last_error`), and `m6h_view_draft` names the editor's digest so that the view reads stale until a run
+  of that text publishes; a draft cancels no run. A run serves no host row, and its limits, deadline and output
+  allowance are declared draft values. `src/bin/c600-shell-runtime.rs` is the runtime's child process for the tests.
 - Every call checks its pointers, catches a panic and answers a status code.
 - The host context is c600-display's declared fixture context with the core's own support report, and the limit
   profile is a declared draft value. Picking and previews come later.
 - Its tests drive the C interface over the bridge's C shim and the fake core: frames confirmed, a lost device and
   recovery, and the refusals; and the turns: twist keys committed and adopted, the two revisions of the frames, keys
   that are no press, an undo that fails the control, a shown revision the host never adopted, and the session's
-  refusals. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
+  refusals; and the view jobs (`tests/view.rs`): a run that publishes, parse and admission refusals, a run that a newer
+  run supersedes, a twist before a run's delivery and before its installation, a destroy with a run in flight, and
+  drafts. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
 
 Step S1 of the shell, moved to the core's ABI 5:
 
