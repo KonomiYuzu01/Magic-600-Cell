@@ -15,9 +15,11 @@ use c600_kernel::{Level, ProtectedSet, ProtectionMode, Verdict};
 use c600_run::meter::Outcome;
 use c600_tools::bridge::{proposal_args, word_args, Steps};
 use c600_tools::expand::{expand, literal_digest, word_steps, Expansion};
-use c600_tools::process::ProcessHost;
+use c600_tools::process::{ProcessHost, ToolCommand};
 use c600_tools::tool::{Tool, ROW};
-use process_support::{chunked, fingerprint, kernel, on, process_host, run_on, run_with, session, session_with, HOSTS};
+use process_support::{
+    chunked, fingerprint, kernel, on, process_host, report, run_on, run_with, session, session_with, HOSTS,
+};
 
 /// 0.4's limits, which LB2.4 keeps: the letters of one word step and the primitives of one recipe.
 const WORD_LIMIT: usize = 100_000;
@@ -37,20 +39,31 @@ fn command_preview(layer: &mut CommandLayer, shell: &mut Shell, recipe: &Json) -
     shell.invoke(layer, ROW, draft_args(recipe)).expect("the shell sends a preview without a token")
 }
 
-/// The tool's route for `word` on one host: the run completes, and its one invocation's receipt comes back.
-fn tool_preview(host: Option<&mut ProcessHost>, tool: &Tool, layer: &mut CommandLayer, word: &[i32]) -> Receipt {
-    let (ran, sent) = run_on(host, tool, layer, word, "tool");
+/// The tool's route for `word` on one host, inside the command the solver invokes to run it: the run completes, and
+/// its one invocation's receipt comes back with the command, which [`present`] reports once the preview is built.
+fn tool_preview(
+    host: Option<&mut ProcessHost>,
+    tool: &Tool,
+    layer: &mut CommandLayer,
+    shell: &mut Shell,
+    word: &[i32],
+) -> (Receipt, ToolCommand) {
+    let (ran, sent, command) = run_on(host, tool, layer, shell, word);
     let ran = ran.unwrap_or_else(|stopped| panic!("the run ends: {:?}", stopped.cause));
     assert_eq!(ran.run.summary.outcome, Outcome::Completed);
     let [one] = &sent[..] else { panic!("one invocation, not {}", sent.len()) };
     assert_eq!(one.invocation.args.canonical(), word_args(word).canonical(), "the word reaches the layer unchanged");
-    one.receipt.clone()
+    (one.receipt.clone(), command)
 }
 
-/// Runs the admitted preview job and presents it in the next headless frame.
-fn present(layer: &mut CommandLayer, shell: &mut Shell, admitted: &Receipt) -> Preview {
+/// Runs the admitted preview job and presents it in the next headless frame. A preview the tool proposed is built
+/// while the host holds its run's job, and the host then reports the solver's `command`.
+fn present(layer: &mut CommandLayer, shell: &mut Shell, admitted: &Receipt, command: Option<ToolCommand>) -> Preview {
     let Status::Running(id) = admitted.status else { panic!("not admitted: {admitted:?}") };
     assert_eq!(layer.run_jobs(), 1);
+    if let Some(command) = command {
+        report(layer, command);
+    }
     HeadlessFrames::after(layer).present(shell, layer, id).expect("the built preview is presented");
     layer.preview().filter(|preview| preview.id == id).cloned().expect("the presented preview")
 }
@@ -112,8 +125,9 @@ fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_t
         for word in [&[g, -g][..], &[g, h, -h, -g]] {
             let (mut layer, mut shell) = session_with("net", protected.clone());
             let before = fingerprint(&layer);
-            let admitted = tool_preview(on(host, &mut process), &tool, &mut layer, &narrow(word));
-            let preview = present(&mut layer, &mut shell, &admitted);
+            let (admitted, command) =
+                tool_preview(on(host, &mut process), &tool, &mut layer, &mut shell, &narrow(word));
+            let preview = present(&mut layer, &mut shell, &admitted, Some(command));
             assert_eq!(preview.literal, literal_digest(&narrow(word)), "{host} {word:?}");
             assert_eq!((preview.effect.moved_stickers(), preview.effect.primitive_count), (0, word.len()), "{host}");
             let row = &preview.protection;
@@ -131,8 +145,8 @@ fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_t
 
         let (mut layer, mut shell) = session_with("net", protected.clone());
         let before = fingerprint(&layer);
-        let admitted = tool_preview(on(host, &mut process), &tool, &mut layer, &[g as i32]);
-        let preview = present(&mut layer, &mut shell, &admitted);
+        let (admitted, command) = tool_preview(on(host, &mut process), &tool, &mut layer, &mut shell, &[g as i32]);
+        let preview = present(&mut layer, &mut shell, &admitted, Some(command));
         assert_eq!(preview.protection.verdict, Verdict::Moves, "{host}");
         assert!(preview.end.is_none() && !preview.protection.conflicts.is_empty(), "{host}");
         let refused = commit(&mut layer, &mut shell);
@@ -186,7 +200,7 @@ fn ct_lb2_02_strict_half_an_identity_word_with_moving_prefixes_fails_strict_thro
         let (mut layer, mut shell) = strict_session("strict", protected.clone());
         let before = fingerprint(&layer);
         let admitted = command_preview(&mut layer, &mut shell, &chunked(&[word]));
-        let command = present(&mut layer, &mut shell, &admitted);
+        let command = present(&mut layer, &mut shell, &admitted, None);
         let refusal = commit(&mut layer, &mut shell);
         assert_eq!(refusal.status.code(), Some(code::ORBIT_WOULD_MOVE), "{word:?}: {refusal:?}");
         assert_eq!(fingerprint(&layer), before, "{word:?}: a refused commit changes nothing");
@@ -194,8 +208,9 @@ fn ct_lb2_02_strict_half_an_identity_word_with_moving_prefixes_fails_strict_thro
         for host in HOSTS {
             let (mut layer, mut shell) = strict_session("strict", protected.clone());
             let before = fingerprint(&layer);
-            let admitted = tool_preview(on(host, &mut process), &tool, &mut layer, &narrow(word));
-            let preview = present(&mut layer, &mut shell, &admitted);
+            let (admitted, tool_command) =
+                tool_preview(on(host, &mut process), &tool, &mut layer, &mut shell, &narrow(word));
+            let preview = present(&mut layer, &mut shell, &admitted, Some(tool_command));
             let strict = kernel.strict_protection(&kernel.word(word).unwrap(), layer.protected()).unwrap();
             assert_eq!(preview.protection, strict, "{host} {word:?}: the kernel's Strict row");
             let row = &preview.protection;
@@ -210,7 +225,8 @@ fn ct_lb2_02_strict_half_an_identity_word_with_moving_prefixes_fails_strict_thro
             let expected = [Some(text("strict")), first.clone(), Some(text("moves")), Some(Json::Null)];
             assert_eq!(keys, expected, "{host} {word:?}: the Strict summary");
 
-            assert_eq!(summary, command.summary(), "{host} {word:?}: the command route's summary");
+            let (ours, theirs) = (but_id(summary), but_id(command.summary()));
+            assert_eq!(ours, (theirs.0 + 1, theirs.1), "{host} {word:?}: the command route's summary");
             assert_eq!(preview.protection, command.protection, "{host} {word:?}: the command route's row");
             assert_eq!(whole(&preview), whole(&command), "{host} {word:?}: the command route's operation");
             let refused = commit(&mut layer, &mut shell);
@@ -225,8 +241,9 @@ fn ct_lb2_02_strict_half_an_identity_word_with_moving_prefixes_fails_strict_thro
         for word in words {
             let (mut layer, mut shell) = strict_session("strict", ProtectedSet::none());
             let before = fingerprint(&layer);
-            let admitted = tool_preview(on(host, &mut process), &tool, &mut layer, &narrow(word));
-            let preview = present(&mut layer, &mut shell, &admitted);
+            let (admitted, command) =
+                tool_preview(on(host, &mut process), &tool, &mut layer, &mut shell, &narrow(word));
+            let preview = present(&mut layer, &mut shell, &admitted, Some(command));
             let strict = kernel.strict_protection(&kernel.word(word).unwrap(), layer.protected()).unwrap();
             assert_eq!(preview.protection, strict, "{host} {word:?}: the kernel's Strict row");
             let row = &preview.protection;
@@ -277,8 +294,8 @@ fn ct_lb2_03_an_oversized_word_is_refused_whole_on_the_command_and_source_routes
     assert_eq!((refusal.code, literal.len()), (RECIPE_SHAPE, WORD_LIMIT + 1));
     assert_eq!(&Error::from(refusal), error, "the expansion's refusal is the command route's");
     for host in HOSTS {
-        let (mut layer, _) = session("oversize");
-        let (ran, sent) = run_on(on(host, &mut process), &tool, &mut layer, &literal, "tool");
+        let (mut layer, mut shell) = session("oversize");
+        let (ran, sent, _command) = run_on(on(host, &mut process), &tool, &mut layer, &mut shell, &literal);
         assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
         let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
         assert_eq!(one.invocation.args.canonical(), draft_args(&recipe).canonical(), "{host}: one unsplit word step");
@@ -293,9 +310,9 @@ fn ct_lb2_03_an_oversized_word_is_refused_whole_on_the_command_and_source_routes
     let admitted = command_preview(&mut layer, &mut shell, &chunked(&[&most]));
     assert!(matches!(admitted.status, Status::Running(_)), "{admitted:?}");
     for host in HOSTS {
-        let (mut layer, _) = session("oversize");
+        let (mut layer, mut shell) = session("oversize");
         let on = on(host, &mut process);
-        let admitted = tool_preview(on, &tool, &mut layer, &narrow(&most));
+        let (admitted, _command) = tool_preview(on, &tool, &mut layer, &mut shell, &narrow(&most));
         assert!(matches!(admitted.status, Status::Running(_)), "{host}: {admitted:?}");
     }
 }
@@ -356,7 +373,7 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
         let recipe = chunked(&pieces);
         let (mut layer, mut shell) = session("chunks");
         let admitted = command_preview(&mut layer, &mut shell, &recipe);
-        let preview = present(&mut layer, &mut shell, &admitted);
+        let preview = present(&mut layer, &mut shell, &admitted, None);
         assert_eq!(preview.recipe.steps().len(), pieces.len());
         let committed = commit(&mut layer, &mut shell);
         assert!(matches!(committed.status, Status::Committed(_)), "{committed:?}");
@@ -375,8 +392,8 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
     for host in HOSTS {
         let (mut layer, mut shell) = session("chunks");
         let on = on(host, &mut process);
-        let admitted = tool_preview(on, &tool, &mut layer, &narrow(&word));
-        assert_eq!(whole(&present(&mut layer, &mut shell, &admitted)), seen[0], "{host}");
+        let (admitted, command) = tool_preview(on, &tool, &mut layer, &mut shell, &narrow(&word));
+        assert_eq!(whole(&present(&mut layer, &mut shell, &admitted, Some(command))), seen[0], "{host}");
     }
 
     let g = 1i64;
@@ -385,14 +402,14 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
     let protected: ProtectedSet = kernel.protected_set(&orbits).unwrap();
     let (mut layer, mut shell) = session_with("chunks", protected);
     let admitted = command_preview(&mut layer, &mut shell, &chunked(&[&[g], &[-g]]));
-    let preview = present(&mut layer, &mut shell, &admitted);
+    let preview = present(&mut layer, &mut shell, &admitted, None);
     assert_eq!((preview.protection.verdict, preview.effect.moved_stickers()), (Verdict::Clear, 0));
     assert!(matches!(commit(&mut layer, &mut shell).status, Status::Committed(_)));
 
     let two = chunked(&[&chunk, &chunk]);
     let (mut layer, mut shell) = session("chunks");
     let admitted = command_preview(&mut layer, &mut shell, &two);
-    let preview = present(&mut layer, &mut shell, &admitted);
+    let preview = present(&mut layer, &mut shell, &admitted, None);
     assert_eq!(preview.recipe.steps().len(), 2);
     let operation = whole(&preview);
     let committed = commit(&mut layer, &mut shell);
@@ -405,11 +422,12 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
     assert!(proposal_args(&literal, Some(&steps)) == draft_args(&two), "the solver's two word steps, unchanged");
     for host in HOSTS {
         let (mut layer, mut shell) = session("chunks");
-        let (ran, sent) = run_with(on(host, &mut process), &tool, &mut layer, &literal, "tool", Some(steps.clone()));
+        let on = on(host, &mut process);
+        let (ran, sent, command) = run_with(on, &tool, &mut layer, &mut shell, &literal, Some(steps.clone()));
         assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
         let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
         assert!(one.invocation.args == draft_args(&two), "{host}: the solver's word steps");
-        let preview = present(&mut layer, &mut shell, &one.receipt);
+        let preview = present(&mut layer, &mut shell, &one.receipt, Some(command));
         assert_eq!(preview.recipe.steps().len(), 2, "{host}");
         assert_eq!(whole(&preview), operation, "{host}: the command route's operation");
         let committed = commit(&mut layer, &mut shell);
@@ -458,8 +476,9 @@ fn ct_lb2_03_a_programs_own_word_over_one_chunk_is_refused_whole_on_the_source_r
         let command = command_preview(&mut layer, &mut shell, &single);
         assert_eq!(command.status.code(), Some(RECIPE_SHAPE), "{command:?}");
         for host in HOSTS {
-            let (mut layer, _) = session("own");
-            let (ran, sent) = run_with(on(host, &mut process), &tool, &mut layer, word, "tool", given.clone());
+            let (mut layer, mut shell) = session("own");
+            let on = on(host, &mut process);
+            let (ran, sent, _command) = run_with(on, &tool, &mut layer, &mut shell, word, given.clone());
             assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
             let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
             assert!(one.invocation.args == draft_args(&single), "{host}: one word step");
@@ -472,6 +491,14 @@ fn ct_lb2_03_a_programs_own_word_over_one_chunk_is_refused_whole_on_the_source_r
 }
 
 /// What makes two previews the same operation: the literal, expansion and net digests, the count and the end state.
+/// A preview's summary split into its ID and the rest. The solver's command on the tool's route takes one job before
+/// the run's preview, so that preview's ID is one past the command route's; the rest of the summaries must match.
+fn but_id(summary: Json) -> (i64, Json) {
+    let Json::Object(mut fields) = summary else { panic!("a summary is an object: {summary:?}") };
+    let id = fields.remove("id").and_then(|id| id.as_i64()).expect("a summary names its preview");
+    (id, Json::Object(fields))
+}
+
 fn whole(preview: &Preview) -> (String, String, String, usize, Option<String>) {
     let effect = &preview.effect;
     let end = preview.end.as_ref().map(|state| state.digest().to_owned());

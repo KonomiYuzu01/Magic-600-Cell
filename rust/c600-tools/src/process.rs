@@ -14,12 +14,21 @@
 //! child, and in process [`run_in_process`] refuses it the same way before the tool runs. `Loaded::run` itself refuses
 //! only a letter of magnitude above 1200, which no alphabet has. Neither run reaches the engine side
 //! ([`Cause::Refused`]).
+//!
+//! On either host a run starts inside a command the solver invoked (ONE.34; finding B2 of the KN5 boundary attack,
+//! the owner's reading of 18 November 2026). The shell invokes the tool's row, [`TOOL_ROW`], with the word, the layer
+//! admits a program job, and the host takes it ([`invoke_tool`]). The host runs the entry as the job's run, `job-<id>`,
+//! which the bridge stamps on the run's invocations. Then it reports the job ([`ToolCommand::finish`]) once the preview
+//! the run proposed is built: the layer prepares and builds a run's preview only while the host holds the job. A run
+//! refused at its start stage is reported as the job's failure.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use c600_check::Profile;
+use c600_command::{CommandLayer, Error as LayerError, Kind, Overlay, ProgramJob, Receipt, Shell, Status};
 use c600_digest::sha256_hex;
+use c600_kernel::json::{self, Value as Json};
 use c600_run::boundary::{Boundary, Context, Shown, Store};
 use c600_run::interp::{code, Host};
 use c600_run::value::Value;
@@ -182,5 +191,105 @@ impl ProcessHost {
         store: &mut Store,
     ) -> Result<Ran, Stopped> {
         self.run_in(tool, source, word, tool.context(name, base), engine, store)
+    }
+}
+
+/// The language-defined row through which the solver runs the built-in tool on a word (KN5.3; draft). It is a query
+/// row whose one argument, `w`, is the word, and the tool's entry serves it.
+pub const TOOL_ROW: &str = "tool.full_600_cell.preview_word";
+
+/// The arguments of [`TOOL_ROW`] for `word`.
+pub fn tool_args(word: &[i32]) -> Json {
+    json::object([("w", Json::Array(word.iter().map(|&letter| Json::Int(letter.into())).collect()))])
+}
+
+/// The word in [`TOOL_ROW`]'s arguments, if they hold one.
+fn args_word(args: &Json) -> Option<Vec<i32>> {
+    let letters = args.as_object()?.get("w")?.as_array()?;
+    letters.iter().map(|letter| letter.as_i64().and_then(|letter| i32::try_from(letter).ok())).collect()
+}
+
+/// Serves [`TOOL_ROW`] with `tool`'s entry on `layer`. A layer that has the row keeps it.
+pub fn serve_tool<S: c600_command::Store>(layer: &mut CommandLayer<S>, tool: &Tool) -> Result<(), LayerError> {
+    if layer.table().row(TOOL_ROW).is_some() {
+        return Ok(());
+    }
+    let overlay = Overlay { module: tool.manifest.module.into(), entry: tool.manifest.entry.into() };
+    layer.register_overlay(TOOL_ROW, Kind::Query, &[("w", "Word")], overlay)
+}
+
+/// A command the solver invoked to run the tool: the shell's invocation of [`TOOL_ROW`] and the program job the host
+/// took for it. The job's run ([`ToolCommand::run`]) is inside the command until the host reports the job
+/// ([`ToolCommand::finish`]).
+#[derive(Debug)]
+pub struct ToolCommand {
+    /// The shell's receipt for the invocation: running, with the job.
+    pub receipt: Receipt,
+    /// The program job the host took.
+    pub job: ProgramJob,
+}
+
+impl ToolCommand {
+    /// The job's run, `job-<id>`: the name the host runs the entry as, which the bridge stamps on the run's invocations.
+    pub fn run(&self) -> String {
+        self.job.run()
+    }
+
+    /// The result of a run that ran: the program's fixed acknowledgement of its one proposal (BND.42), the base the run
+    /// read and the proposal's ID, `{"base": "<base>", "id": "<run>/1"}`.
+    pub fn acknowledgement(&self) -> Json {
+        let read = crate::bridge::base(&self.job.revision);
+        json::object([("base", Json::String(read)), ("id", Json::String(format!("{}/1", self.run())))])
+    }
+
+    /// Reports the job with the run's result and returns the receipt of the solver's command. The host reports it after
+    /// the preview the run proposed is built, since a run's preview is built only while the host holds its job.
+    pub fn finish<S: c600_command::Store>(
+        self,
+        layer: &mut CommandLayer<S>,
+        result: Result<Json, LayerError>,
+    ) -> Option<Receipt> {
+        layer.finish_program_job(self.job.job, result)
+    }
+
+    /// Reports the job of a run that ran, with its [`acknowledgement`](Self::acknowledgement) as the result.
+    pub fn acknowledge<S: c600_command::Store>(self, layer: &mut CommandLayer<S>) -> Option<Receipt> {
+        let result = self.acknowledgement();
+        self.finish(layer, Ok(result))
+    }
+}
+
+/// The command the solver invokes to run `tool` on `word`: the shell invokes [`TOOL_ROW`] with the word, which
+/// [`serve_tool`] serves first if the layer has no such row, and the host takes the program job the layer admitted. The
+/// job must carry the word the host runs. A refusal, the shell's or the layer's, or a job that is not the row's, is
+/// the error's text.
+pub fn invoke_tool<S: c600_command::Store>(
+    shell: &mut Shell,
+    layer: &mut CommandLayer<S>,
+    tool: &Tool,
+    word: &[i32],
+) -> Result<ToolCommand, String> {
+    serve_tool(layer, tool).map_err(|error| format!("{TOOL_ROW} is not served: {}", error.code))?;
+    let receipt = shell.invoke(layer, TOOL_ROW, tool_args(word)).map_err(|error| error.code)?;
+    let id = match &receipt.status {
+        Status::Running(id) => *id,
+        other => return Err(format!("{TOOL_ROW} was answered {other:?}")),
+    };
+    let job = layer.take_program_job().ok_or_else(|| format!("{TOOL_ROW} queued no program job"))?;
+    if job.job != id || job.row != TOOL_ROW || args_word(&job.args).as_deref() != Some(word) {
+        return Err(format!("the program job {} is not {TOOL_ROW}'s on the word", job.job));
+    }
+    Ok(ToolCommand { receipt, job })
+}
+
+/// The error a host reports for its job when the run was refused at the start stage because an argument has no
+/// transfer encoding ([`Cause::no_transfer`]): the interpreter's non-canonical value code with the refusal's detail.
+/// Other causes have no error here.
+pub fn start_error(cause: &Cause) -> Option<LayerError> {
+    match cause {
+        Cause::Refused(refused) if cause.no_transfer() => {
+            Some(LayerError::new(code::NONCANONICAL_VALUE, refused.detail.clone()))
+        }
+        _ => None,
     }
 }

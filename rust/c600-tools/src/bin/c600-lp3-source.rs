@@ -10,30 +10,37 @@
 //! `trace` opens one session per case at the case's initial state, as `c600-lp3-oracle` does, with the same session
 //! name and the same shell. For each step the runner expands the step's recipe to its literal word through the kernel,
 //! outside any program and without a state read ([`c600_tools::expand`]). The tool then runs in the solving profile
-//! with that word as its pinned absolute argument, on the host `--host` names: `in-process` (the default) runs it on
-//! `c600-run` inside this process, and `process` runs it in `c600-runtime`'s child process ([`c600_tools::process`]),
-//! started from `--runtime` or from the `c600-runtime` binary beside this one. On either host the same boundary and
-//! bridge answer the program in this process: its one proposal reaches the command layer through the host bridge
-//! ([`c600_tools::bridge`]) as the runtime's `operation.preview` invocation, and the program receives only the fixed
+//! with that word as its pinned absolute argument, inside a command the solver invoked (ONE.34; finding B2 of the KN5
+//! boundary attack, the owner's reading of 18 November 2026): the shell invokes the tool's row,
+//! [`c600_tools::process::TOOL_ROW`], with the word, the layer admits a program job, and the tool runs as that job's
+//! run, `job-<id>`. It runs on the host `--host` names: `in-process` (the default) runs it on `c600-run` inside this
+//! process, and `process` runs it in `c600-runtime`'s child process ([`c600_tools::process`]), started from
+//! `--runtime` or from the `c600-runtime` binary beside this one. On either host the same boundary and bridge answer
+//! the program in this process: its one proposal reaches the command layer through the host bridge
+//! ([`c600_tools::bridge`]) as the run's `operation.preview` invocation, and the program receives only the fixed
 //! acknowledgement. The runner gives the bridge the solver's word steps of a recipe of plain word steps only, so a
 //! proposal of exactly that recipe's literal word, when it is longer than one chunk of 100,000 letters, goes in the
 //! recipe's own word steps; every other proposal goes in one word step (LB2.3, LB2.4). The layer runs the preview
-//! job; the shell presents the built preview and commits it by the key route's commit chord, `Ctrl+Shift+Enter`, with
-//! a token bound to the presented preview. Undo and redo follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and
-//! `Ctrl+Y`. A recipe with no literal word stops at the expansion with the kernel's refusal; it and a literal word the
-//! layer refuses at admission are `invalid-input` steps. On either host a word the kernel refused that has no transfer
-//! encoding (a letter outside 1 to 1200 in magnitude) is refused at the run's start stage: it is an `invalid-input`
-//! step with no invocation and no receipt.
+//! job, and the runner then reports the solver's command with the program's acknowledgement: the layer builds a run's
+//! preview only while the host holds the run's job. The shell presents the built preview and commits it by the key
+//! route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo follow
+//! `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion with
+//! the kernel's refusal, before any command: it and a literal word the layer refuses at admission are `invalid-input`
+//! steps. On either host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in
+//! magnitude) is refused at the run's start stage: it is an `invalid-input` step whose solver's command fails with
+//! that refusal's code, with no invocation.
 //!
 //! Each session's layer serves H-08 with the command layer's draft rows and holds the host's provenance reader
 //! ([`c600_tools::workspace`]), which keeps every run's blocks, so a host can write and preview workspace records. The
 //! runner writes none.
 //!
 //! The trace has `c600-lp3-oracle`'s form and candidate block, so the two routes' traces compare byte for byte.
-//! `--receipts` writes every receipt the layer gave, in order, with each one's caller and, per step, the host the
+//! `--receipts` writes every receipt the layer gave, the solver's commands and their reports included, in order, with
+//! each one's caller and, per step, the host the
 //! literal word was given to, the literal digest the tool proposed, the kernel's refusal of a recipe with no literal
 //! word, the start-stage refusal of a word with no transfer encoding, and the preview's result digest rebased onto the
-//! case recipe's draft. The summary line, each case and each step record name the host. `--tamper <case>:<index>`
+//! case recipe's draft and the command route's preview number (this one's less the solver's commands so far, since
+//! each takes a job number). The summary line, each case and each step record name the host. `--tamper <case>:<index>`
 //! negates the first letter of that step's literal word before the tool runs, as a negative control; the tampered word
 //! is not the recipe's literal word, so it goes in one word step. Exit codes and the summary line follow
 //! `c600-lp3-oracle`; the timings are informational.
@@ -45,8 +52,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use c600_command::{
-    code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Receipt,
-    Secret, Shell, Status,
+    code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames,
+    Receipt, Secret, Shell, Status,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refusal, Snapshot, SupportRow};
@@ -56,7 +63,10 @@ use c600_runtime::Refused;
 use c600_tools::bridge::{base, proposal_args, Bridge, Steps, WORD_CHUNK};
 use c600_tools::case::{read_document, CASE_FORMAT};
 use c600_tools::expand::{expand, literal_digest, word_steps, Expansion};
-use c600_tools::process::{run_in_process, runtime_beside, stage_name, Cause, ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::process::{
+    invoke_tool, run_in_process, runtime_beside, stage_name, start_error, Cause, ProcessHost, ToolCommand, IN_PROCESS,
+    PROCESS,
+};
 use c600_tools::tool::{Tool, ROW, SOURCE};
 use c600_tools::workspace::{self, Reader};
 
@@ -309,15 +319,18 @@ struct Record {
     /// The start-stage refusal of a word with no transfer encoding, on either host.
     start: Option<Value>,
     draft: Option<String>,
+    /// The digest of the preview's own summary, under this route's preview number and draft.
+    result: Option<String>,
     rebased: Option<String>,
 }
 
 /// What became of one literal word given to the host.
 enum Proposed {
-    /// The tool ran and its one proposal was sent; the layer's receipt.
-    Sent(Receipt),
-    /// The host refused the run at its start stage because the word has no transfer encoding. The tool did not run
-    /// and nothing reached the command layer.
+    /// The tool ran inside the solver's command and its one proposal was sent: the layer's receipt and the command,
+    /// which the step reports once the preview is built.
+    Sent { receipt: Receipt, command: ToolCommand },
+    /// The host refused the run at its start stage because the word has no transfer encoding. The tool did not run,
+    /// no proposal reached the command layer, and the host reported the solver's command as its job's failure.
     NoTransfer(Refused),
 }
 
@@ -332,7 +345,6 @@ struct Session<'k> {
     tool: &'k Tool,
     /// The process host; None runs the tool in process.
     process: Option<&'k mut ProcessHost>,
-    case_id: String,
     layer: CommandLayer,
     /// The layer's provenance reader, which keeps the blocks of every run.
     reader: Reader,
@@ -341,6 +353,9 @@ struct Session<'k> {
     tamper: Option<i64>,
     runs: usize,
     start_refused: usize,
+    /// The solver's commands invoked so far, one per word given to the tool. Each takes a job number, so the command
+    /// route's job and preview numbers are this route's less this count.
+    commands: u64,
     receipts: Vec<Value>,
     callers: Vec<Value>,
 }
@@ -367,12 +382,19 @@ impl Session<'_> {
         Ok(receipt)
     }
 
-    /// Runs the tool on `word` on the session's host, through a bridge given `steps`, the solver's word steps of the
-    /// step's recipe; returns the one invocation's receipt, or the start-stage refusal of a word with no transfer
-    /// encoding, which both hosts give before the run reaches the layer.
-    fn propose(&mut self, index: i64, word: &[i32], steps: Option<Steps>) -> Result<Proposed, Failure> {
-        let run = format!("{}-{index}", self.case_id);
-        let read = base(self.layer.revision());
+    /// Runs the tool on `word` on the session's host, inside the command the solver invokes to run it: the shell
+    /// invokes the tool's row with the word and the host takes the job ([`invoke_tool`]). The entry runs as the job's
+    /// run through a bridge given `steps`, the solver's word steps of the step's recipe. Returns the run's one
+    /// invocation's receipt with the command, which the step reports once the preview is built. Or returns the
+    /// start-stage refusal of a word with no transfer encoding, which both hosts give before the run reaches the layer;
+    /// the host then reports the command as its job's failure.
+    fn propose(&mut self, word: &[i32], steps: Option<Steps>) -> Result<Proposed, Failure> {
+        let command = invoke_tool(&mut self.shell, &mut self.layer, self.tool, word)
+            .map_err(|detail| disagree(format!("the solver's command to run the tool: {detail}")))?;
+        self.commands += 1;
+        self.keep(&command.receipt, &Caller::Shell);
+        let run = command.run();
+        let read = base(&command.job.revision);
         let mut store = RunStore::default();
         // The one invocation's arguments: the word in one word step, or in the solver's word steps (LB2.4).
         let args = proposal_args(word, steps.as_ref());
@@ -386,19 +408,23 @@ impl Session<'_> {
             Ok(ran) => ran,
             Err(stopped) => {
                 let reached = !bridge.sent.is_empty() || !stopped.shell.is_empty();
-                let no_transfer = stopped.cause.no_transfer();
-                return match stopped.cause {
-                    Cause::Refused(refused) if no_transfer && !reached => {
+                drop(bridge);
+                let start = start_error(&stopped.cause).filter(|_| !reached);
+                return match (stopped.cause, start) {
+                    (Cause::Refused(refused), Some(error)) => {
                         self.start_refused += 1;
+                        self.report(command, Some(error))?;
                         Ok(Proposed::NoTransfer(refused))
                     }
-                    Cause::Refused(refused) => Err(disagree(format!(
+                    (Cause::Refused(refused), None) => Err(disagree(format!(
                         "the host refused the tool's run at the {} stage: {}",
                         stage_name(refused.stage),
                         refused.codes.join(" ")
                     ))),
-                    Cause::OtherSource => Err(disagree("the process host was given another source")),
-                    Cause::Lost(fault) => Err(disagree(format!("the runtime's process was lost: {}", fault.code()))),
+                    (Cause::OtherSource, _) => Err(disagree("the process host was given another source")),
+                    (Cause::Lost(fault), _) => {
+                        Err(disagree(format!("the runtime's process was lost: {}", fault.code())))
+                    }
                 };
             }
         };
@@ -425,7 +451,20 @@ impl Session<'_> {
             return Err(disagree("the bridge's invocation is not the runtime's preview of the literal word"));
         }
         self.keep(&sent.receipt, &sent.caller);
-        Ok(Proposed::Sent(sent.receipt.clone()))
+        Ok(Proposed::Sent { receipt: sent.receipt.clone(), command })
+    }
+
+    /// Reports the job of the solver's command that ran the tool and keeps the command's receipt. A run that ran
+    /// returns the program's fixed acknowledgement ([`ToolCommand::acknowledge`]); a run refused at its start stage
+    /// fails with `refusal`.
+    fn report(&mut self, command: ToolCommand, refusal: Option<Error>) -> Result<(), Failure> {
+        let receipt = match refusal {
+            Some(error) => command.finish(&mut self.layer, Err(error)),
+            None => command.acknowledge(&mut self.layer),
+        };
+        let receipt = receipt.ok_or_else(|| disagree("the tool's job was not reported"))?;
+        self.keep(&receipt, &Caller::Shell);
+        Ok(())
     }
 
     /// Expands `recipe`, runs the tool on its literal word, and presents and commits the preview the run proposed.
@@ -448,8 +487,8 @@ impl Session<'_> {
             }
         }
         record.literal = Some((literal_digest(&word), word.len()));
-        let admitted = match (self.propose(index, &word, steps)?, unchecked) {
-            (Proposed::Sent(receipt), _) => receipt,
+        let (admitted, command) = match (self.propose(&word, steps)?, unchecked) {
+            (Proposed::Sent { receipt, command }, _) => (receipt, command),
             // Only a word the kernel already refused may stop here: every letter of a literal word is a generator.
             // The record keeps the kernel's refusal of the recipe beside the start-stage refusal.
             (Proposed::NoTransfer(refused), Some(kernel)) => {
@@ -466,28 +505,37 @@ impl Session<'_> {
         };
         let id = match &admitted.status {
             Status::Running(id) => *id,
-            Status::Refused(error) if error.code.starts_with("KN2:") => return Ok(Outcome::Invalid),
+            Status::Refused(error) if error.code.starts_with("KN2:") => {
+                self.report(command, None)?;
+                return Ok(Outcome::Invalid);
+            }
             other => return Err(unexpected("operation.preview", other)),
         };
         if self.layer.run_jobs() != 1 {
             return Err(disagree("the preview job did not run"));
         }
         // The runtime's command IDs are its own scope (ruling 4), so the lookup names the caller.
-        let caller = Caller::Runtime { run: format!("{}-{index}", self.case_id) };
+        let caller = Caller::Runtime { run: command.run() };
         let built = self.layer.kernel_outcome(&caller, &admitted.command, &admitted.request);
         self.keep(&built, &caller);
         if !matches!(built.status, Status::Completed(Completion { kind: CompletionKind::PreviewReady, .. })) {
             return Err(unexpected("operation.preview", &built.status));
         }
+        // The preview is built, so the host reports the solver's command; the solver then sees the preview.
+        self.report(command, None)?;
         let presented = self.frames.present(&mut self.shell, &mut self.layer, id);
         presented.map_err(|error| disagree(format!("present: {}", error.code)))?;
         let preview = self.layer.preview().filter(|p| p.id == id).ok_or_else(|| disagree("the preview is gone"))?;
-        // The result digest covers the draft's digest. The command route drafts the case's recipe; the source route
-        // drafts the literal word, in one word step or, longer than one chunk, in the recipe's word steps. The rebased
-        // digest is the preview's result over the case recipe's draft.
+        // The result digest covers the draft's digest and the preview's number. The command route drafts the case's
+        // recipe; the source route drafts the literal word, in one word step or, longer than one chunk, in the
+        // recipe's word steps. The command route makes no solver's command, so its preview's number is this one's
+        // less the solver's commands so far. The rebased digest is the preview's result over the case recipe's draft
+        // under the command route's number.
         let mut rebased = preview.clone();
         rebased.deps.draft = digest(&word_draft(recipe));
+        rebased.id = preview.id.checked_sub(self.commands).ok_or_else(|| disagree("a preview before its command"))?;
         record.draft = Some(preview.deps.draft.clone());
+        record.result = Some(digest(&preview.summary()));
         record.rebased = Some(digest(&rebased.summary()));
         let seen = Seen { effect: preview.effect.clone(), conflicts: preview.protection.conflicts.clone() };
         let (base, end) = (preview.base.digest().to_owned(), preview.end.as_ref().map(|s| s.digest().to_owned()));
@@ -633,7 +681,6 @@ fn replay(
         kernel,
         tool,
         process,
-        case_id: case_id.clone(),
         layer,
         reader,
         shell,
@@ -641,6 +688,7 @@ fn replay(
         tamper,
         runs: 0,
         start_refused: 0,
+        commands: 0,
         receipts: Vec::new(),
         callers: Vec::new(),
     };
@@ -701,6 +749,7 @@ fn replay(
             ("start_refusal", record.start.unwrap_or(Value::Null)),
             ("draft", text_or_null(record.draft)),
             ("case_draft", Value::String(digest(&word_draft(recipe)))),
+            ("result", text_or_null(record.result)),
             ("rebased_result", text_or_null(record.rebased)),
         ]));
     }

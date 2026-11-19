@@ -347,11 +347,15 @@ host ran it. Acceptance:
 - Next, in C5's crates: the other 600-cell-Full library entries as language code on what the IR draft now has (F2 and
   F5, loops, `trace-key/1`), with a host row in the tool's bridge for each kernel row an entry reads; the jumbling
   halves, the menu-word library entries among them, are C8's (section 8), and the other parts above wait for LP2.
-- Next, for C5's host: LP2's pull request 247 built the layer's check that a program job's run lies inside a solver
-  command (B2; the owner's reading 2 of 18 November 2026) and left it off (`SOLVER_COMMAND_CHECK`), because LP3's hosts
-  still start their runs with no solver command behind them. Once LP3's hosts, tests and recorded source-route outputs
-  start each run through a tool row the shell invokes, a small pull request switches the check on and runs the B2 attack
-  test that is ignored until then.
+- C5's host, runs inside a solver command (`rust/c600-tools`, `process`), built: LP2's pull request 247 built the
+  layer's check that a program job's run lies inside a solver command (B2; the owner's reading 2 of 18 November 2026)
+  and left it off (`SOLVER_COMMAND_CHECK`). LP3's hosts now start every run through the tool's row
+  `tool.full_600_cell.preview_word`, a query overlay row the shell invokes with the word: the host takes the program
+  job, runs the tool as the job's run `job-<id>`, and reports the job with the program's acknowledgement once the run's
+  preview is built (a run refused at its start stage fails the job with the refusal's code). The source route, both
+  hosts and every `c600-tools` test run this way, and the source-route check counts the solver's command and its
+  report in each step's receipts. Next: the KN5 session's small pull request switches the check on and runs the B2
+  attack test that is ignored until then.
 
 CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-LB2-04 and CT-BND-18 test library entries, which are language code
 (LB1.1). The IR draft `c600-ir-draft-1` has the word operations (LG2.15), compressed words (LG2.16) and collection types
