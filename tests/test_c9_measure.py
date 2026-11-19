@@ -699,6 +699,12 @@ class Lx4Tests(NoProcessCase):
         """LX-4's C# module, its Rust library and lx4.py name the same endpoints, exports, codes and row layout."""
         module = (ROOT / 'renderer/shell/project/Lx4/Lx4Module.cs').read_text(encoding='utf-8')
         library = (ROOT / 'renderer/bridge/lx4/src/lib.rs').read_text(encoding='utf-8')
+        # The module row that lx4.py's live poster reads, and the live log's name as the shell's EventLog spells it.
+        for needle in ('json.WriteString("t", "module");', 'json.WriteString("module", "lx4");',
+                       'json.WriteNumber("window", window);'):
+            self.assertIn(needle, module)
+        self.assertIn(f'public const string BodyName = "{lx4.LIVE}";',
+                      (ROOT / 'renderer/shell/project/EventLog.cs').read_text(encoding='utf-8'))
 
         def csharp_list(name):
             return re.findall(r'"(\w+)"', re.search(name + r' = new\[\]\s*\{(.*?)\};', module, re.S).group(1))
@@ -787,9 +793,11 @@ class Lx4Tests(NoProcessCase):
 
     def test_the_poster_waits_for_ready_and_each_endpoint_and_logs_every_post(self):
         run = self.temp / 'run'
-        write_jsonl(run / 'events.jsonl', [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': 'live',
-                                            'build_identity': BUILD, 'puzzle': 'jumble-off', 'window': 66}])
-        events = run / 'events.jsonl'
+        # The live log: frame rows, then the module row with the window (no run row before the shell's close).
+        write_jsonl(run / lx4.LIVE, [{'t': 'frame', 'frame_id': 1, 'qpc': 1, 'device_epoch': 1, 'surface': 1},
+                                     {'t': 'module', 'module': 'lx4', 'window': 66, 'run_id': 'live',
+                                      'build_identity': BUILD, 'puzzle': 'jumble-off', 'qpc_frequency': F}])
+        events = run / lx4.LIVE
 
         def lx4_row(sample, endpoint):
             with events.open('a') as stream:

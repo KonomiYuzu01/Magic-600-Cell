@@ -23,7 +23,10 @@ namespace Magic600.Shell.Lx4;
 /// says this frame shows first becomes an lx4 row, {"t": "lx4", "sample", "endpoint", "frame_id", "buffer_sha256"},
 /// whose frame_id is the 3D frame submitted in this process frame, as the ui_frame rows name it. The first frame after
 /// a good Reset that draws the baseline writes the sample's ready row, which lx4.py waits for before it posts the
-/// sample's inputs. The look is a placeholder; it stays with the design line.
+/// sample's inputs. When it starts, the module writes its module row, {"t": "module", "module": "lx4", "window",
+/// "run_id", "build_identity", "puzzle", "qpc_frequency"}: the shell seals events.jsonl, with the run row, only at its
+/// close, so lx4.py finds the window in this row of the live events.body.jsonl. The look is a placeholder; it stays
+/// with the design line.
 /// </summary>
 public sealed unsafe class Lx4Module : IShellModule
 {
@@ -147,6 +150,20 @@ public sealed unsafe class Lx4Module : IShellModule
             Dispose();
             throw;
         }
+        var window = (long)context.Window;
+        var runId = System.Environment.GetEnvironmentVariable("M600_RUN_ID") ?? string.Empty;
+        var build = System.Environment.GetEnvironmentVariable("M600_BUILD_IDENTITY") ?? string.Empty;
+        var puzzle = EventLog.PuzzleFromEnvironment();
+        Context.Log?.Append(json =>
+        {
+            json.WriteString("t", "module");
+            json.WriteString("module", "lx4");
+            json.WriteNumber("window", window);
+            json.WriteString("run_id", runId);
+            json.WriteString("build_identity", build);
+            json.WriteString("puzzle", puzzle);
+            json.WriteNumber("qpc_frequency", System.Diagnostics.Stopwatch.Frequency);
+        });
         _echo = AddLabel(new Vector2(16, 16), new Vector2(900, 640));
         _status = AddLabel(new Vector2(940, 16), new Vector2(640, 200));
         _completion = AddLabel(new Vector2(940, 240), new Vector2(640, 400));

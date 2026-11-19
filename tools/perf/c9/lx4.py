@@ -51,7 +51,11 @@ per sample (`status` done, timeout, or not-ready when no `ready` row came within
 was posted; `foreground`). The shell writes `events.jsonl` (`magic600-c9-shell-events-v1`, key_to_frame.py) whose `run`
 row also carries `puzzle` and `window` (the HWND, an integer), with frame, presented and key rows as for E2, and
 `{"t": "lx4", "sample": int, "endpoint": str, "frame_id": int, "buffer_sha256": str}` when a frame first shows an
-endpoint.
+endpoint. The shell seals `events.jsonl` only when it closes, because the run row is known only then; while it runs,
+its rows go to `events.body.jsonl` in buffered blocks. So `post` reads that live body, and the window, run id, build and
+puzzle from the module's own row, `{"t": "module", "module": "lx4", "window": int, "run_id": str, "build_identity":
+str, "puzzle": str, "qpc_frequency": int}`, which the module writes when it starts (`post` waits up to
+`START_TIMEOUT_S` for it).
 
 Rules (DRAFT, as key_to_frame.py). A sample's time runs from its timed post's QPC to the core-confirmed display QPC of
 the frame its endpoint row names. A sample without a confirmed frame gets no time and makes its run invalid; so do a
@@ -87,6 +91,10 @@ from evidence import RunError, integer, require  # noqa: E402
 from b412_summary import nearest_rank, statistics  # noqa: E402
 
 POSTS = 'lx4-posts.jsonl'
+# The shell's live log: its rows while it runs, before it seals events.jsonl at close (EventLog.BodyName).
+LIVE = 'events.body.jsonl'
+MODULE_ROW = 'module'
+START_TIMEOUT_S = 60.0
 POSTS_FORMAT = 'magic600-c9-lx4-posts-v1'
 FIXTURES_FORMAT = 'magic600-c9-lx4-fixtures-v1'
 EDITS_FORMAT = 'magic600-c9-lx4-edits-v1'
@@ -328,14 +336,28 @@ class Tail:
         return out
 
 
+def module_row(tail, name, clock=time.monotonic, sleep=time.sleep, timeout=START_TIMEOUT_S):
+    """The module row of `name` in the shell's live log (its window, run, build and puzzle), or None after `timeout`."""
+    started = clock()
+    while True:
+        for row in tail.rows():
+            if row.get('t') == MODULE_ROW and row.get('module') == name and integer(row.get('window')):
+                return row
+        if clock() - started >= timeout:
+            return None
+        sleep(0.05)
+
+
 def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, sleep=time.sleep, out=print):
-    """Posts one puzzle's schedule to the shell named in run_dir/events.jsonl; 0 when every sample completed."""
+    """Posts one puzzle's schedule to the shell whose LX-4 module row is in run_dir's live log; 0 when every sample
+    completed."""
     manifest, edits, digests = load_fixtures(fixtures)
     run_dir = Path(run_dir)
-    tail = Tail(run_dir / key_to_frame.EVENTS)
-    head = next((row for row in tail.rows() if row.get('t') == 'run'), None)
-    if head is None or head.get('format') != key_to_frame.LOG_FORMAT or not integer(head.get('window')):
-        out('the shell has written no run row with its window to events.jsonl; start the shell first')
+    tail = Tail(run_dir / LIVE)
+    head = module_row(tail, 'lx4', clock, sleep)
+    if head is None:
+        out(f'the shell has written no lx4 module row to {LIVE} within {START_TIMEOUT_S:g} s; start it with --lx4 '
+            'first')
         return 2
     if head.get('puzzle') != puzzle:
         out(f"the shell runs {head.get('puzzle')!r}, not {puzzle!r}")
