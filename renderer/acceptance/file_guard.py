@@ -139,7 +139,7 @@ def protected_set(launch: dict, candidate: str) -> list[str]:
             if os.path.lexists(stages):
                 paths.extend(ntpath.join(ntpath.dirname(dll), name) for name in STAGE_LIBRARIES)
                 paths.extend(ntpath.join(stages, name) for name in STAGE_FILES)
-            debug =ntpath.join(directory, '.godot', 'mono', 'temp', 'bin', 'Debug')
+            debug = ntpath.join(directory, '.godot', 'mono', 'temp', 'bin', 'Debug')
             with os.scandir(debug) as entries:
                 assemblies = [entry.path for entry in entries if entry.name.lower().endswith('.dll')
                               and not entry.is_dir(follow_symlinks=False)]
