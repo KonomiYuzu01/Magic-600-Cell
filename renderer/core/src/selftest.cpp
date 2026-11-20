@@ -1332,6 +1332,7 @@ Options parse(int argc, char** argv) {
             options.mode = arg.substr(2);
         } else if (arg == "--debug") options.debug = true;
         else if (arg == "--stages") options.stages = true;
+        else if (arg == "--poses") options.poses = true;
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--size") {
             const auto text = value();
@@ -1363,6 +1364,9 @@ Options parse(int argc, char** argv) {
     expect(options.child.empty() || options.mode != "cpu", "child checks require a device mode");
     // C9 U5: the user-stage check runs on WARP only, never on a hardware adapter.
     expect(!options.stages || (options.mode == "warp" && options.child.empty()), "--stages requires --warp");
+    // C9 jumble-on: the product pose check runs on WARP only, alone.
+    expect(!options.poses || (options.mode == "warp" && options.child.empty() && !options.stages && options.measure.empty()),
+        "--poses requires --warp, without --stages or --measure-stages");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
@@ -1383,6 +1387,7 @@ int main(int argc, char** argv) {
         sa2test::Suite suite;
         if (options.mode == "cpu") sa2test::run_cpu(suite, options);
         else if (options.stages) sa2test::run_stages(suite, options);
+        else if (options.poses) sa2test::run_poses(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

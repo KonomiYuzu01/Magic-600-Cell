@@ -1,8 +1,8 @@
 """Start C9's product shell from a product build (route B): the one way the owner-machine steps start it.
 
   python -B renderer/shell/launch.py --out NEW_FOLDER [--build DIR] [--run-id ID] [--echo] [--resolution WxH]
-                                     [--puzzle jumble-off|jumble-on] [--lx4] [--lx2-injection CHILD] [--cold-start]
-                                     [--dry-run]
+                                     [--puzzle jumble-off|jumble-on] [--lx4 --lx4-fixtures DIR]
+                                     [--lx2-injection CHILD] [--cold-start] [--dry-run]
 
 The launcher recomputes every part of the product build (`build_product.verify`; default: the newest build under
 work/build/c9-product), creates the run folder `--out`, which must not exist yet, and starts the pinned Godot (the
@@ -11,10 +11,15 @@ process that presents, not the console wrapper) on the build's shell with the en
 `M600_BUILD_IDENTITY` (the build's identity), `M600_RUN_ID`, and for charter E2's turns `M600_SESSION_DIR` (a new
 session folder, `session` in the run folder) and `M600_TWIST_MENU` (the build's copy of the twist menu); `--echo`
 adds `M600_INPUT_ECHO=1`, the input echo of route B's check B1. `M600_PUZZLE` names the puzzle the shell runs and its
-run row records (`--puzzle`, default jumble-off). The shell's host opens Jumble on, but the core draws its posed
-engine images only once c600-render maps them (C9 product), so the launcher refuses jumble-on until then, before it
-starts anything. `--lx4` adds `M600_LX4=1`, which makes the shell create LX-4's module
-(C9 U8).
+run row records (`--puzzle`, default jumble-off). With Jumble on the shell's host opens the jumbled puzzle and the
+core draws its posed engine images: each sticker keeps its home colour and moves with its piece's pose, and no slot
+is pickable (the core's ID pass stamps no posed instance).
+
+LX-4 (C9 U8): `--lx4 --lx4-fixtures DIR` adds `M600_LX4=1`, which makes the shell create LX-4's module,
+`M600_LX4_DLL` (the build's `lx4/c600_shell_lx4.dll`) and `M600_LX4_FIXTURES` (DIR, a folder that `c600-lx4 --out`
+wrote). The module refuses to start without both, so either flag without the other, or a folder without
+`MANIFEST.json`, is refused here. The fixtures are not part of the build: `launch.json` records the SHA-256 of their
+`MANIFEST.json` (never their path).
 
 LX-2 (RTE.42 conditions 3 and 4, a draft): `--lx2-injection CHILD` names a release build of c600-lx2's injection
 child (`c600-lx2-child`, never shipped), which then replaces the build's runtime as `M600_RUNTIME`, and adds
@@ -69,7 +74,10 @@ FORMAT = "magic600-c9-launch-v1"
 RECORD = "launch.json"
 SHELL_VARIABLES = ("M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
                    "M600_RUN_ID", "M600_INPUT_ECHO", "M600_SESSION_DIR", "M600_TWIST_MENU", "M600_PUZZLE", "M600_LX4",
-                   "M600_SESSION_FIXTURE", "M600_RUNTIME", "M600_EXIT_AT_FIRST_FRAME", "M600_LX2")
+                   "M600_LX4_DLL", "M600_LX4_FIXTURES", "M600_SESSION_FIXTURE", "M600_RUNTIME",
+                   "M600_EXIT_AT_FIRST_FRAME", "M600_LX2")
+# The file of an LX-4 fixture folder that the launcher checks and records (renderer/bridge/lx4's fixtures.rs).
+LX4_MANIFEST = "MANIFEST.json"
 # LX-2's fault variables, which the injection child reads at its start: a run starts with them unset, and only LX-2's
 # module sets them, in the shell's process.
 LX2_FAULT_VARIABLES = ("C600_LX2_CEILING", "C600_LX2_FAULT")
@@ -84,9 +92,8 @@ PAUSE_S = 20
 # The wall clock and the boot's tick count may drift apart by this much before the previous exit counts as another
 # boot's.
 CLOCK_SLACK_S = 60
-# The puzzles the shell's run row may name (EventLog.Puzzles) and the ones its host runs now.
+# The puzzles the shell's run row may name (EventLog.Puzzles); its host runs both.
 PUZZLES = ("jumble-off", "jumble-on")
-RUNNABLE_PUZZLES = ("jumble-off",)
 
 
 class LaunchError(Exception):
@@ -107,10 +114,11 @@ def command(product: dict, build: Path, out: Path, resolution: str | None = None
 
 
 def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, base: dict | None = None,
-                puzzle: str = PUZZLES[0], lx4: bool = False, cold_start: bool = False,
+                puzzle: str = PUZZLES[0], lx4: Path | None = None, cold_start: bool = False,
                 lx2_injection: Path | None = None) -> dict:
     """The process environment: `base` (default: this process's) without any shell variable or LX-2 fault variable,
-    then the launch's. `lx2_injection` replaces the build's runtime with LX-2's injection child."""
+    then the launch's. `lx4` is LX-4's fixture folder, which turns its module on with the build's library.
+    `lx2_injection` replaces the build's runtime with LX-2's injection child."""
     env = {key: value for key, value in (os.environ if base is None else base).items()
            if key.upper() not in SHELL_VARIABLES + LX2_FAULT_VARIABLES}
     env.update({"M600_CORE_DLL": str(build / build_product.CORE_DLL), "M600_HOST_DLL": str(build / build_product.HOST_DLL),
@@ -121,8 +129,9 @@ def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, 
                 "M600_RUNTIME": str(build / build_product.RUNTIME), "M600_PUZZLE": puzzle})
     if echo:
         env["M600_INPUT_ECHO"] = "1"
-    if lx4:
-        env["M600_LX4"] = "1"
+    if lx4 is not None:
+        env.update({"M600_LX4": "1", "M600_LX4_DLL": str(build / build_product.LX4_DLL),
+                    "M600_LX4_FIXTURES": str(lx4)})
     if cold_start:
         env["M600_EXIT_AT_FIRST_FRAME"] = "1"
     if lx2_injection is not None:
@@ -138,6 +147,19 @@ def injection_record(child: Path) -> dict:
         for block in iter(lambda: stream.read(1 << 20), b""):
             digest.update(block)
     return {"name": child.name, "sha256": digest.hexdigest()}
+
+
+def lx4_folder(lx4: bool, fixtures: Path | None) -> Path | None:
+    """LX-4's resolved fixture folder, None without `--lx4`; LaunchError for one flag without the other or a folder
+    without its manifest."""
+    if lx4 != (fixtures is not None):
+        raise LaunchError("--lx4 and --lx4-fixtures go together: LX-4's module refuses to start without its fixtures")
+    if fixtures is None:
+        return None
+    folder = fixtures.resolve()
+    if not (folder / LX4_MANIFEST).is_file():
+        raise LaunchError(f"--lx4-fixtures: no {LX4_MANIFEST} in the folder (write it with c600-lx4 --out)")
+    return folder
 
 
 class Machine:
@@ -285,6 +307,8 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
     parser.add_argument("--resolution", help="the window's size as WxH (default: the project's)")
     parser.add_argument("--puzzle", choices=PUZZLES, default=PUZZLES[0], help="the puzzle the shell runs")
     parser.add_argument("--lx4", action="store_true", help="create LX-4's module in the shell (C9 U8)")
+    parser.add_argument("--lx4-fixtures", type=Path, metavar="DIR",
+                        help="LX-4's fixture folder (c600-lx4 --out); needed with --lx4")
     parser.add_argument("--lx2-injection", type=Path, metavar="CHILD",
                         help="LX-2: run on this c600-lx2-child build instead of the build's runtime, with LX-2's module")
     parser.add_argument("--cold-start", action="store_true",
@@ -298,8 +322,6 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
         product = build_product.verify(build)
         if args.resolution and not all(part.isdigit() for part in args.resolution.split("x", 1)):
             raise LaunchError("--resolution must be WxH")
-        if args.puzzle not in RUNNABLE_PUZZLES:
-            raise LaunchError(f"the product does not draw {args.puzzle} yet: c600-render maps no posed engine image")
         injection, child = None, None
         if args.lx2_injection is not None:
             if args.cold_start:
@@ -308,10 +330,12 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
             if not child.is_file():
                 raise LaunchError(f"--lx2-injection: no file {child.name}")
             injection = injection_record(child)
+        fixtures = lx4_folder(args.lx4, args.lx4_fixtures)
+        manifest = None if fixtures is None else injection_record(fixtures / LX4_MANIFEST)["sha256"]
         out = check_out(args.out)
         run_id = args.run_id or run_id_now()
         arguments = command(product, build, out, args.resolution)
-        env = environment(product, build, out, run_id, args.echo, puzzle=args.puzzle, lx4=args.lx4,
+        env = environment(product, build, out, run_id, args.echo, puzzle=args.puzzle, lx4=fixtures,
                           cold_start=args.cold_start, lx2_injection=child)
     except (LaunchError, build_product.ProductError, OSError) as error:
         out_stream(f"launch: {error}")
@@ -354,6 +378,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
     with (out / RECORD).open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(json.dumps({"format": FORMAT, "run_id": run_id, "build_identity": product["identity"],
                                  "echo": args.echo, "puzzle": args.puzzle, "lx4": args.lx4,
+                                 "lx4_fixtures": None if manifest is None else {"manifest_sha256": manifest},
                                  "lx2_injection": injection,
                                  "cold_start": args.cold_start, "command": sanitized(arguments, build, out),
                                  "started_utc": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "seconds": seconds,

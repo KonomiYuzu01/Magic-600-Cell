@@ -11,10 +11,13 @@ use c600_display::array::Array;
 use c600_display::codes;
 use c600_display::error::Error;
 use c600_display::host::{Backend, Poll, Preparation, PublicationStamp, Ticket};
+use c600_display::jumble;
 use c600_display::plan::*;
 use c600_display::produce::{self, full_set};
 use c600_display::receipt::CancelReason;
-use c600_kernel::SLOTS;
+use c600_display::validate::EngineBundle;
+use c600_kernel::{Puzzle, SLOTS};
+use c600_render::abi::PIECES;
 use c600_render::{CoreAbi, FakeCore, RenderBackend};
 
 use support::*;
@@ -32,7 +35,10 @@ fn route_b_confirms_presentations_and_recovers() {
 
 /// A bridge over a fresh fake core, and a stamp for a preparation of `publication`.
 fn prepared(publication: &Publication) -> Result<Ticket, Error> {
-    let mut backend = RenderBackend::new(FakeCore::new(SIZE), limits());
+    prepare_on(&mut RenderBackend::new(FakeCore::new(SIZE), limits()), publication)
+}
+
+fn prepare_on(backend: &mut RenderBackend<FakeCore>, publication: &Publication) -> Result<Ticket, Error> {
     let stamp = PublicationStamp {
         command: CommandId(1),
         view: V1,
@@ -65,12 +71,16 @@ fn preparation_refuses_what_the_core_cannot_draw_or_stamp() {
     let invalid = (codes::PLAN_INVALID, String::new());
     let unsupported = |row: &str| (codes::UNSUPPORTED, row.to_owned());
     assert_eq!(refusal(&publication(&base, vec![retained(), retained()], &sticker)), unsupported("F01"));
-    let posed = PosedInput {
-        pose_index: Array::i32s(vec![1], &[0]),
-        poses: Array::f32s(vec![1, 16], &CAMERA),
-        pose_lattice: Array::i32s(vec![1], &[0]),
+    let posed = || {
+        Primitive::Posed(PosedInput {
+            pose_index: Array::i32s(vec![1], &[0]),
+            poses: Array::f32s(vec![1, 16], &CAMERA),
+            pose_lattice: Array::i32s(vec![1], &[0]),
+        })
     };
-    assert_eq!(refusal(&publication(&base, vec![Primitive::Posed(posed)], &[])), unsupported("J02"));
+    assert!(prepared(&publication(&base, vec![posed()], &[])).is_ok(), "a posed plan draws the adopted poses");
+    assert_eq!(refusal(&publication(&base, vec![posed()], &sticker)), unsupported("J13"), "no posed instance");
+    assert_eq!(refusal(&publication(&base, vec![retained(), posed()], &[])), unsupported("F01"));
     let layout = LayoutInput {
         instances: vec![InstanceId(1)],
         positions: Array::f32s(vec![1, 2], &[0.0, 0.0]),
@@ -85,6 +95,71 @@ fn preparation_refuses_what_the_core_cannot_draw_or_stamp() {
     let shared = [(1, ObjectId::Sticker(at.home)), (2, ObjectId::Slot(at.moved as u32))];
     assert_eq!(refusal(&publication(&base, vec![retained()], &shared)), invalid, "two instances on one slot");
     assert_eq!(refusal(&publication(&base, vec![retained()], &[(1, ObjectId::Slot(SLOTS as u32))])), invalid);
+}
+
+/// A Jumble-on bundle at `revision` with the given pose table (render/1 section 7).
+fn posed_bundle(revision: u64, index: &[i32], poses: &[f32], lattice: &[i32]) -> EngineBundle {
+    let mut base = produce::revision(&geometry().identity, revision, twisted());
+    base.identity.puzzle = Puzzle::Jumbling;
+    let posed = PosedInput {
+        pose_index: Array::i32s(vec![index.len() as u64], index),
+        poses: Array::f32s(vec![(poses.len() / 16) as u64, 4, 4], poses),
+        pose_lattice: Array::i32s(vec![lattice.len() as u64], lattice),
+    };
+    jumble::bundle(&base, &posed)
+}
+
+#[test]
+fn a_posed_bundle_is_adopted_over_the_home_labels_and_its_plan_draws_every_slot() {
+    // Even pieces at the identity, odd pieces turned a quarter in the (x, y) plane, off the lattice.
+    let quarter = [0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+    let index: Vec<i32> = (0..PIECES).map(|piece| (piece % 2) as i32).collect();
+    let poses = [CAMERA, quarter].concat();
+    let bundle = posed_bundle(12, &index, &poses, &[0, -1]);
+    let mut backend = RenderBackend::new(FakeCore::new(SIZE), limits());
+    assert_eq!(backend.adopt_engine(&bundle), Ok(12));
+    let digest = |name: &str| bundle.arrays.iter().find(|a| a.name == name).expect(name).array.desc.digest.clone();
+    assert_eq!(backend.core.adoptions, [(12, 0)], "the home labels: slot 0 shows sticker 0");
+    assert_eq!(backend.core.posed, [(12, 2, [digest("pose_index"), digest("poses"), digest("pose_lattice")])]);
+
+    let base = bundle.revision.clone();
+    let posed = Primitive::Posed(PosedInput {
+        pose_index: Array::i32s(vec![PIECES as u64], &index),
+        poses: Array::f32s(vec![2, 4, 4], &poses),
+        pose_lattice: Array::i32s(vec![2], &[0, -1]),
+    });
+    prepare_on(&mut backend, &publication(&base, vec![posed], &[])).expect("a posed plan prepares");
+    let (view, instances, visibility) = backend.core.prepared[0].clone();
+    assert_eq!((view, instances.len()), (1, 0), "no slot is pickable");
+    assert!(visibility.iter().all(|&v| v == 1), "every slot is drawn where its piece's pose puts it");
+
+    // Shapes the bridge refuses before the core sees them, then values the core refuses.
+    let shape = |bundle: &EngineBundle| backend_refusal(bundle).0;
+    assert_eq!(shape(&posed_bundle(13, &index[1..], &poses, &[0, -1])), codes::PLAN_INVALID, "a piece short");
+    assert_eq!(shape(&posed_bundle(13, &index, &poses, &[0])), codes::PLAN_INVALID, "two poses, one entry");
+    assert_eq!(shape(&posed_bundle(13, &index, &[], &[])), codes::PLAN_INVALID, "no pose");
+    let core = |index: &[i32], poses: &[f32], lattice: &[i32]| {
+        let (code, status) = backend_refusal(&posed_bundle(13, index, poses, lattice));
+        assert_eq!(code, codes::RENDERER_UNAVAILABLE);
+        status
+    };
+    assert_eq!(core(&index, &[quarter, CAMERA].concat(), &[0, -1]), "E_INVALID_ARGUMENT", "pose 0 is the identity");
+    let mut beyond = index.clone();
+    beyond[7] = 2;
+    assert_eq!(core(&beyond, &poses, &[0, -1]), "E_INVALID_ARGUMENT", "an index past the table");
+    assert_eq!(core(&index, &poses, &[0, 7200]), "E_INVALID_ARGUMENT", "a lattice entry past K+");
+    assert_eq!(core(&index, &poses, &[1, -1]), "E_INVALID_ARGUMENT", "entry 0 is the identity's");
+    let mut infinite = poses.clone();
+    infinite[20] = f32::INFINITY;
+    assert_eq!(core(&index, &infinite, &[0, -1]), "E_INVALID_ARGUMENT", "a pose entry is finite");
+}
+
+/// The code and core status of a refused adoption of `bundle` by a fresh bridge.
+fn backend_refusal(bundle: &EngineBundle) -> (&'static str, String) {
+    let mut backend = RenderBackend::new(FakeCore::new(SIZE), limits());
+    let error = backend.adopt_engine(bundle).expect_err("refused");
+    assert!(backend.core.adoptions.is_empty() && backend.core.posed.is_empty(), "nothing was adopted");
+    (error.code, error.context.get("status").cloned().unwrap_or_default())
 }
 
 #[test]
