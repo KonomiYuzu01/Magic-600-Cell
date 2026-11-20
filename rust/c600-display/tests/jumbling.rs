@@ -12,7 +12,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_display::array::Array;
 use c600_display::codes;
-use c600_display::crosswalk::{exposed_geometry, survey_state, SurveyState};
+use c600_display::crosswalk::{survey_state, SurveyState};
 use c600_display::jumble::{self, Missing, PoseProjection};
 use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested};
 use c600_display::plan::*;
@@ -224,9 +224,9 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
 /// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no J02,
 /// a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a twist that is not the
 /// outcome's letter, a transform without the engine's plane, the identity, which turns no plane, a twist other than the
-/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (the refusal
-/// path; M5 supplies none) each give their explicit outcome, and nothing is guessed, truncated or installed. Not run: a
-/// backend's own refusals.
+/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (J10's
+/// refusal, passed through from M5's producer) each give their explicit outcome, and nothing is guessed, truncated or
+/// installed. Not run: a backend's own refusals.
 #[test]
 fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let world = world();
@@ -328,10 +328,15 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     }
     assert_eq!(jumble::named_cap_set(engine, &mut blocked, 600, None), Err(Missing::NoSuchCap { cap: 600 }));
 
-    // J10's refusal path: with no certified exposed-face geometry or size profile supplied (M5 supplies none),
-    // nothing is drawn.
-    let error = exposed_geometry(None, None).expect_err("no exposed-face geometry is supplied");
+    // J10's refusal path: M5's exact geometry producer supplies no certified exposed-face geometry or size profile and
+    // refuses with JI.45's code, so the display refuses with that code, both prerequisites missing and the state the
+    // producer was asked about, and nothing is drawn.
+    let answer = c600_jumble::faces::exposed_faces(engine, state);
+    assert_eq!(answer.get("code").and_then(Value::as_str), Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE));
+    let error = jumble::exposed_faces(engine, state).expect_err("no exposed-face geometry is supplied");
     assert_eq!(error.code, codes::EXPOSED_GEOMETRY_UNAVAILABLE);
+    assert_eq!(error.context["missing"], "geometry and size profile");
+    assert_eq!(error.context["source"], state.digest(engine));
 }
 
 fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, instance: u64) -> PickReply {

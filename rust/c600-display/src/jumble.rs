@@ -10,6 +10,7 @@
 //! - [`named_cap_set`], [`witness`] and [`named_cut`] build the certified overlay row (J04).
 //! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer, and [`observations`] reads the
 //!   payloads of J07, J09, J11 and J12. Like J08 they are payloads, not supported rows.
+//! - [`exposed_faces`] passes J10's refusal through: M5's exact geometry producer supplies no geometry (JI.45).
 //! - [`shrink_anchors`] computes J01's shrink anchors from the unchanged mesh, and [`readback_check`] is J06's
 //!   first-frame readback check of a revision's bound arrays.
 //! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13), with M8's slot
@@ -27,7 +28,7 @@ use c600_kernel::json::Value;
 use c600_kernel::{IdentityBlock, Puzzle};
 
 use crate::array::{Array, Elem};
-use crate::crosswalk::{Seam, SeamTable};
+use crate::crosswalk::{self, Seam, SeamTable};
 use crate::error::{codes, Error};
 use crate::pick::{Partial, Projection};
 use crate::plan::{
@@ -340,6 +341,25 @@ pub fn seam_table(facts: &Value) -> Option<SeamTable> {
         })
         .collect::<Option<Vec<_>>>()?;
     Some(SeamTable { seams, complete })
+}
+
+/// J10's exposed faces at `state` (JI.41, JI.45): [`crosswalk::exposed_geometry`] over what the exact geometry
+/// producer, `c600_jumble::faces::exposed_faces` (LP2's pull request 336), supplied. This edition has no form for
+/// certified exposed-face geometry or a size profile, and the producer refuses every request with
+/// `KN2:input.exposed_geometry_unavailable`, so nothing is supplied and the answer is that refusal. When the producer's
+/// answer is that refusal, the error also names the exact input the producer was asked about (`source`, the state
+/// digest it names). Nothing is drawn, and no mesh, face or size is invented.
+pub fn exposed_faces(engine: &Engine, state: &State) -> Result<String, Error> {
+    let answer = c600_jumble::faces::exposed_faces(engine, state);
+    let status = answer.get("status").and_then(Value::as_str);
+    let code = answer.get("code").and_then(Value::as_str);
+    let source = answer.get("source").and_then(|source| source.get("state_digest")).and_then(Value::as_str);
+    crosswalk::exposed_geometry(None, None).map_err(|error| match source {
+        Some(digest) if status == Some("refused") && code == Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE) => {
+            error.with("source", digest)
+        }
+        _ => error,
+    })
 }
 
 /// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the lattice pose k is
