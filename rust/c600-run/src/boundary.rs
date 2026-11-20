@@ -30,9 +30,13 @@
 //! - The IR draft has one construct for snapshot and workspace reads. The adapter serves a name it stores as a
 //!   workspace record and passes any other read to the engine as a snapshot read.
 //! - Admission checks each block's format first and refuses with `PS1:capability.provenance_incompatible` a block
-//!   that does not read, is in another form, names a pin the policy in force does not hold, or records a pick: the
-//!   store holds no `c600-pick` record yet, so a pick does not resolve (FP.38). A built-in repair-list pick passes
-//!   BND.84 (CT-BND-29) once the session store resolves pick records (M6). Then it refuses with
+//!   that does not read, is in another form, names a pin the policy in force does not hold, or records a pick that
+//!   does not resolve: its Ref is no version-1 `c600-pick` Ref, the store holds no such record ([`Store::picks`]), or
+//!   the record's `chosen` differs from the block's (FP.38). A resolved pick from a list that is no fixed entry or
+//!   fixed object set (the record's `fixed` is false) is refused with `LG3:capability.not_granted`: BND.54 serves the
+//!   solver's own pick under BND.55, which stays open until the joint setting, so the interim admits none (LP2 draft;
+//!   it fails closed). A pick from a fixed entry, such as a built-in setup search or repair list, passes, and admission
+//!   follows the listed entry's block in `parts` (BND.85, CT-BND-29). Then it refuses with
 //!   `LG3:capability.not_granted` author `unknown`, research output and a solver-authored program's output.
 //! - The engine's preview call does not take the block yet (KN5.9); the shell record keeps it beside the answer.
 //! - A menu-word proposal ([`Request::ProposeMenu`], LB1.8) is admitted, answered and captured as a literal-word one;
@@ -66,11 +70,15 @@ pub struct Stored {
     pub block: Vec<u8>,
 }
 
-/// Workspace records, granted files and every block the runtime has kept, by content digest.
+/// Workspace records, granted files, every block the runtime has kept, and the session store's pick records, by
+/// content digest.
 #[derive(Clone, Debug, Default)]
 pub struct Store {
     pub records: BTreeMap<Place, Stored>,
     pub blocks: BTreeMap<[u8; 32], Vec<u8>>,
+    /// FP.38's `c600-pick` records as FP.5 bytes, by the SHA-256 of those bytes: what a block's `pick` Ref names. The
+    /// host writes one when the solver picks (BND.54).
+    pub picks: BTreeMap<[u8; 32], Vec<u8>>,
 }
 
 impl Store {
@@ -78,6 +86,13 @@ impl Store {
     pub fn keep(&mut self, block: &[u8]) -> [u8; 32] {
         let digest = sha256(block);
         self.blocks.entry(digest).or_insert_with(|| block.to_vec());
+        digest
+    }
+
+    /// Keeps a pick record's bytes under their content digest (FP.11, FP.38) and returns the digest.
+    pub fn keep_pick(&mut self, record: &[u8]) -> [u8; 32] {
+        let digest = sha256(record);
+        self.picks.entry(digest).or_insert_with(|| record.to_vec());
         digest
     }
 }
@@ -93,7 +108,7 @@ pub struct Pins {
 /// every part, recursively and in listed order, and performs no flow analysis. A refusal names the first block that
 /// fails; the command layer gives the same answer at `operation.preview`.
 pub fn admit_preview(block: &[u8], store: &Store, pins: &Pins) -> Result<(), Refusal> {
-    let mut pending = admit_one(block, pins, "the word's block")?;
+    let mut pending = admit_one(block, store, pins, "the word's block")?;
     pending.reverse();
     let mut seen = BTreeSet::new();
     while let Some(digest) = pending.pop() {
@@ -105,14 +120,14 @@ pub fn admit_preview(block: &[u8], store: &Store, pins: &Pins) -> Result<(), Ref
             let detail = format!("{what} has no stored content and reads unknown (BND.21, BND.85)");
             return Err(Refusal { code: NOT_GRANTED, detail });
         };
-        let mut parts = admit_one(bytes, pins, &what)?;
+        let mut parts = admit_one(bytes, store, pins, &what)?;
         parts.reverse();
         pending.extend(parts);
     }
     Ok(())
 }
 
-fn admit_one(bytes: &[u8], pins: &Pins, what: &str) -> Result<Vec<[u8; 32]>, Refusal> {
+fn admit_one(bytes: &[u8], store: &Store, pins: &Pins, what: &str) -> Result<Vec<[u8; 32]>, Refusal> {
     let refuse = |code: &'static str, why: &str| Err(Refusal { code, detail: format!("{what} {why}") });
     let Ok(b) = provenance::read(bytes) else {
         return refuse(INCOMPATIBLE, "does not read as an FP.17 block and reads unknown (BND.21)");
@@ -127,7 +142,25 @@ fn admit_one(bytes: &[u8], pins: &Pins, what: &str) -> Result<Vec<[u8; 32]>, Ref
         return refuse(INCOMPATIBLE, "names a checker pin the policy in force does not hold (FP.17)");
     }
     if field::has_pick(&b) {
-        return refuse(INCOMPATIBLE, "records a pick whose `c600-pick` record does not resolve here (FP.38)");
+        let Some(digest) = field::pick_record(&b) else {
+            return refuse(
+                INCOMPATIBLE,
+                "records a pick whose Ref names no version-1 `c600-pick` record (FP.11, FP.38)",
+            );
+        };
+        let record =
+            store.picks.get(&digest).and_then(|r| provenance::parse(r).filter(|j| provenance::canonical(j) == *r));
+        let Some((fixed, chosen)) = record.as_ref().and_then(field::pick_payload) else {
+            return refuse(INCOMPATIBLE, "records a pick whose `c600-pick` record does not resolve here (FP.38)");
+        };
+        if field::pick_chosen(&b) != Some(chosen) {
+            return refuse(INCOMPATIBLE, "records a pick whose `chosen` differs from its record's (FP.38)");
+        }
+        if !fixed {
+            let why = "records a pick from a list that is no fixed entry or fixed object set, which the interim \
+                       does not admit while BND.55 is open (BND.54)";
+            return refuse(NOT_GRANTED, why);
+        }
     }
     let author = field::author(&b);
     if author == "unknown" {

@@ -13,6 +13,8 @@
 //! - [`migrate`]: FP.29's migration record, the function-edition change, and FP.28's publication, which validates
 //!   everything, writes a new generation and only then switches the active pointer (PS2.1 to PS2.9).
 //! - [`legacy`]: 0.4's preview certificate (PS1.39) and its import states (PS3.7).
+//! - [`pick`]: FP.38's `c600-pick` record and the resolution of FP.17's `pick` field in FP.10's order (BND.54,
+//!   BND.85).
 //! - [`run`]: the run record (PS1.31) with chapter 09's `ReproKey` (DET.1), its reading (DET.30, KN7.4) and the store's
 //!   half of reproduction (DET.7).
 //!
@@ -65,6 +67,7 @@ pub mod codec;
 pub mod facts;
 pub mod legacy;
 pub mod migrate;
+pub mod pick;
 pub mod record;
 pub mod run;
 pub mod word;

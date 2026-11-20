@@ -557,7 +557,11 @@ pub fn import(contract: &Pin, source: &[u8]) -> Json {
 
 /// Read accessors for a block that passed [`validate`].
 pub mod field {
-    use super::{unhex, Json, Pin};
+    use super::{is_digest_ref, unhex, Json, Pin};
+
+    /// FP.4's format of a pick record (FP.38).
+    pub const PICK_FORMAT: &str = "c600-pick";
+    const PICK_PAYLOAD: [&str; 5] = ["list", "fixed", "options", "chosen", "target"];
 
     pub fn form(b: &Json) -> &str {
         b.get("block").map_or("", |m| m.field_text("form"))
@@ -577,6 +581,44 @@ pub mod field {
 
     pub fn has_pick(b: &Json) -> bool {
         b.get("pick").is_some_and(|p| p != &Json::Null)
+    }
+
+    /// The content digest of the record a block's `pick` names, when its Ref is a version-1 `c600-pick` Ref of FP.11's
+    /// exact shape (FP.38). `None` when the block records no pick or its Ref names another kind or version or has
+    /// another shape.
+    pub fn pick_record(b: &Json) -> Option<[u8; 32]> {
+        let reference = b.get("pick")?.get("record")?;
+        let content = reference.get("content")?;
+        let named = reference.has_exactly(&["format", "version", "content"])
+            && reference.field_text("format") == PICK_FORMAT
+            && reference.get("version") == Some(&Json::Int(1))
+            && is_digest_ref(content, "content");
+        if named {
+            unhex(content.field_text("sha256"))
+        } else {
+            None
+        }
+    }
+
+    /// The `chosen` DigestRef of a block's `pick`.
+    pub fn pick_chosen(b: &Json) -> Option<&Json> {
+        b.get("pick")?.get("chosen")
+    }
+
+    /// FP.38's `fixed` and `chosen` of a version-1 `c600-pick` record: null `provenance` and a payload of exactly
+    /// FP.38's fields, with a Bool `fixed` and a `DigestRef(content)` in `chosen`. `None` for any other record.
+    pub fn pick_payload(record: &Json) -> Option<(bool, &Json)> {
+        let payload = record.get("payload")?;
+        let chosen = payload.get("chosen")?;
+        let pick = record.field_text("format") == PICK_FORMAT
+            && record.get("version") == Some(&Json::Int(1))
+            && record.get("provenance") == Some(&Json::Null)
+            && payload.has_exactly(&PICK_PAYLOAD)
+            && is_digest_ref(chosen, "content");
+        match payload.get("fixed") {
+            Some(Json::Bool(fixed)) if pick => Some((*fixed, chosen)),
+            _ => None,
+        }
     }
 
     fn pin(v: Option<&Json>) -> Option<Pin> {

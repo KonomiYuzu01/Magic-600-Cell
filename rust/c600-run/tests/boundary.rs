@@ -193,11 +193,11 @@ fn frozen_digest(vectors: &str, name: &str) -> String {
 }
 
 /// CT-FP-02 (part: complete manual and import blocks under both forms, a pick with no resolving record, a missing
-/// profile, an incompatible form and no permission; not run: a non-null built-in pick under each form, which resolves
-/// only when the session store holds `c600-pick` records (FP.38, M6)) and CT-BND-22 (part: flow-form blocks stay in
-/// their form; the row runs in `conformance_bnd.rs`), with FP.17, FP.18 and FP.38: the four example blocks read and
-/// digest as frozen, the runtime builds the capability-form ones byte for byte, their policy use without the fixture
-/// pin is refused with `PS1:capability.provenance_incompatible`, and a malformed block never reads.
+/// profile, an incompatible form and no permission; the non-null built-in pick under each form, which needs the
+/// packet's `c600-pick` records, runs in `c600-session`'s `tests/persist_picks.rs`) and CT-BND-22 (part: flow-form
+/// blocks stay in their form; the row runs in `conformance_bnd.rs`), with FP.17, FP.18 and FP.38: the four example
+/// blocks read and digest as frozen, the runtime builds the capability-form ones byte for byte, their policy use
+/// without the fixture pin is refused with `PS1:capability.provenance_incompatible`, and a malformed block never reads.
 #[test]
 fn fp18_blocks_validate_and_match_the_frozen_digests() {
     let examples = provenance::parse(&std::fs::read(format!("{PACKET}examples.json")).unwrap()).expect("examples");

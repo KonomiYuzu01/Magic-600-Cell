@@ -157,10 +157,46 @@ fn output_of(author: Author, profile: Profile, read_state: bool) -> Vec<u8> {
 }
 
 /// A word the solver picked or typed (BND.23): `manual` and `own`, with the listed entries' blocks as its parts
-/// (BND.85). The pick record itself waits for the session store (FP.38, M6).
+/// (BND.85). [`recorded`] adds the pick that names its `c600-pick` record.
 fn picked(entries: &[&[u8]]) -> Vec<u8> {
     let parts = entries.iter().map(|e| provenance::digest_ref("content", &sha256(e))).collect();
     provenance::canonical(&edit(&provenance::manual(&contract()), "parts", Some(Json::List(parts))))
+}
+
+/// FP.38's `c600-pick` record of the solver's pick of `[1, -2]` from a list whose entry is `entry`, with BND.54's
+/// `fixed` as given, under the identity block of the format packet's `picks` vectors.
+fn pick_record(entry: &[u8], fixed: bool) -> Json {
+    let content = |bytes: &[u8]| provenance::digest_ref("content", &sha256(bytes));
+    let identity = Json::object([
+        ("puzzle", Json::text("full")),
+        ("model_id", Json::text("58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9")),
+        ("menu_id", Json::Null),
+        ("menu_order", Json::Null),
+        ("contract_rev", Json::Null),
+    ]);
+    let payload = Json::object([
+        ("list", content(entry)),
+        ("fixed", Json::Bool(fixed)),
+        ("options", content(b"[[1,-2]]\n")),
+        ("chosen", content(b"[1,-2]\n")),
+        ("target", Json::text("t")),
+    ]);
+    Json::object([
+        ("format", Json::text("c600-pick")),
+        ("version", Json::Int(1)),
+        ("identity", identity),
+        ("provenance", Json::Null),
+        ("payload", payload),
+    ])
+}
+
+/// `word` with FP.17's `pick` naming `record` by its content digest, with the record's `chosen` (FP.38).
+fn recorded(word: &[u8], record: &Json) -> Vec<u8> {
+    let digest = provenance::digest_ref("content", &sha256(&provenance::canonical(record)));
+    let reference = Json::object([("format", Json::text("c600-pick")), ("version", Json::Int(1)), ("content", digest)]);
+    let chosen = record.get("payload").and_then(|p| p.get("chosen")).cloned().expect("a chosen option");
+    let pick = Json::object([("record", reference), ("chosen", chosen)]);
+    provenance::canonical(&edit(&provenance::read(word).unwrap(), "pick", Some(pick)))
 }
 
 fn edit(json: &Json, key: &str, value: Option<Json>) -> Json {
@@ -895,12 +931,14 @@ fn with_pick_record(word: &[u8]) -> Vec<u8> {
     provenance::canonical(&edit(&block, "pick", Some(Json::object([("record", reference), ("chosen", digest)]))))
 }
 
-/// CT-BND-08 (part: a picked word's block keeps the listed entry's block in `parts` and preview admission follows it;
-/// not run: the pick record, which resolves only when the session store holds `c600-pick` records (FP.38, M6), and
-/// BND.55's label rule, which is open until the joint setting (LQ2)): a word picked from a one-item list a solver's
-/// tool built keeps that entry's block, so admission refuses it with `LG3:capability.not_granted`, directly and
-/// through a later run; a word picked from a fixed entry of a built-in list passes. A pick that names an unresolved
-/// record is refused with `PS1:capability.provenance_incompatible`.
+/// CT-BND-08 (part: a picked word's block keeps the listed entry's block in `parts`, and preview admission resolves
+/// the pick's `c600-pick` record and follows the entry; not run: BND.55's label rule, which is open until the joint
+/// setting (LQ2)): a word picked from a one-item list a solver's tool built keeps that entry's block, so admission
+/// refuses it with `LG3:capability.not_granted`, directly and through a later run; a word picked from a fixed entry of
+/// a built-in list passes. With its record kept (FP.38), a pick from a fixed entry is admitted as the entry's block
+/// allows, and a pick from a list that is no fixed entry is refused with `LG3:capability.not_granted` while BND.55 is
+/// open (LP2 draft; it fails closed). A pick whose record is not kept, or whose `chosen` differs from its record's, is
+/// refused with `PS1:capability.provenance_incompatible`.
 #[test]
 fn ct_bnd_08_a_one_item_pick_keeps_the_entry_block() {
     let one_item = output_of(Author::Own, Profile::ToolAuthoring, true);
@@ -912,7 +950,35 @@ fn ct_bnd_08_a_one_item_pick_keeps_the_entry_block() {
         assert_eq!(admit_preview(&word, &store, &pins()).map_err(|r| r.code), expected);
         assert_eq!(preview_stored(&mut store, None, Some(&word)), expected);
         assert_eq!(admit_preview(&with_pick_record(&word), &store, &pins()).unwrap_err().code, INCOMPATIBLE);
+        for (is_fixed, expected) in [(true, expected), (false, Err(NOT_GRANTED))] {
+            let record = pick_record(&entry, is_fixed);
+            let word = recorded(&word, &record);
+            let unresolved = admit_preview(&word, &store, &pins()).unwrap_err();
+            assert_eq!(unresolved.code, INCOMPATIBLE, "fixed {is_fixed}: the record is not kept");
+            store.keep_pick(&provenance::canonical(&record));
+            match admit_preview(&word, &store, &pins()) {
+                Ok(()) => assert_eq!(expected, Ok(()), "fixed {is_fixed}"),
+                Err(refusal) => {
+                    assert_eq!(Err(refusal.code), expected, "fixed {is_fixed}");
+                    let first = is_fixed || refusal.detail.contains("BND.55");
+                    assert!(first, "the pick is refused before its parts: {}", refusal.detail);
+                }
+            }
+            assert_eq!(preview_stored(&mut store, None, Some(&word)), expected, "fixed {is_fixed}");
+        }
     }
+
+    let entry = output_of(Author::BuiltIn, Profile::Solving, false);
+    let record = pick_record(&entry, true);
+    let word = provenance::read(&recorded(&picked(&[&entry]), &record)).unwrap();
+    let pick = edit(word.get("pick").unwrap(), "chosen", Some(provenance::digest_ref("content", &[3; 32])));
+    let differs = provenance::canonical(&edit(&word, "pick", Some(pick)));
+    let mut store = Store::default();
+    store.keep(&entry);
+    store.keep_pick(&provenance::canonical(&record));
+    let refusal = admit_preview(&differs, &store, &pins()).unwrap_err();
+    assert_eq!(refusal.code, INCOMPATIBLE);
+    assert!(refusal.detail.contains("`chosen` differs"), "{}", refusal.detail);
 }
 
 /// Saves a word through a built-in solving run to the workspace and a file, then copies the store as a restore would
@@ -930,27 +996,31 @@ fn saved_and_restored(input: &[u8]) -> Store {
     restored
 }
 
-/// CT-BND-26 (part: composition and a file round trip through runs, with the entry block in `parts`; not run: draft
-/// insertion, which the command layer and the session build (LP3, M6), and the pick record (FP.38, M6)): a word picked
-/// from the list of a tool of each solver-authored class, `own`, `forked_built_in`, `imported` and `unknown`, keeps the
-/// listed entry's block when a later run takes it in and stores it, and through a file; the word's letters are kept,
-/// and every later preview in a solving session refuses it with `LG3:capability.not_granted`, the tool block nested
-/// two levels down in `parts`.
+/// CT-BND-26 (part: composition and a file round trip through runs, with the entry block in `parts`, also behind a
+/// pick whose `c600-pick` record is kept (FP.38); not run: draft insertion, which the command layer and the session
+/// build (LP3, M6)): a word picked from the list of a tool of each solver-authored class, `own`, `forked_built_in`,
+/// `imported` and `unknown`, keeps the listed entry's block when a later run takes it in and stores it, and through a
+/// file; the word's letters are kept, and every later preview in a solving session refuses it with
+/// `LG3:capability.not_granted`, the tool block nested two levels down in `parts`.
 #[test]
 fn ct_bnd_26_a_picked_tool_word_keeps_the_entry_block_and_is_refused() {
     for author in [Author::Own, Author::ForkedBuiltIn, Author::Imported, Author::Unknown] {
         let entry = output_of(author, Profile::ToolAuthoring, true);
-        let word = picked(&[&entry]);
-        let mut store = saved_and_restored(&word);
-        store.keep(&entry);
-        let saved = block_at(&store, &file("saved.6cw"));
-        assert_eq!(field::parts(&saved), [sha256(&word)]);
-        assert_eq!(field::parts(&provenance::read(&store.blocks[&sha256(&word)]).unwrap()), [sha256(&entry)]);
-        assert!(equal(&store.records[&file("saved.6cw")].value, &Value::word(&[1, -2])), "the word is kept");
-        for place in [ws("saved"), file("saved.6cw")] {
-            assert_eq!(preview_stored(&mut store, Some(place.clone()), None), Err(NOT_GRANTED), "{author:?} {place:?}");
+        let record = pick_record(&entry, true);
+        for word in [picked(&[&entry]), recorded(&picked(&[&entry]), &record)] {
+            let mut store = saved_and_restored(&word);
+            store.keep(&entry);
+            store.keep_pick(&provenance::canonical(&record));
+            let saved = block_at(&store, &file("saved.6cw"));
+            assert_eq!(field::parts(&saved), [sha256(&word)]);
+            assert_eq!(field::parts(&provenance::read(&store.blocks[&sha256(&word)]).unwrap()), [sha256(&entry)]);
+            assert!(equal(&store.records[&file("saved.6cw")].value, &Value::word(&[1, -2])), "the word is kept");
+            for place in [ws("saved"), file("saved.6cw")] {
+                let answer = preview_stored(&mut store, Some(place.clone()), None);
+                assert_eq!(answer, Err(NOT_GRANTED), "{author:?} {place:?}");
+            }
+            assert_eq!(preview_stored(&mut store, None, Some(&word)), Err(NOT_GRANTED), "{author:?} directly");
         }
-        assert_eq!(preview_stored(&mut store, None, Some(&word)), Err(NOT_GRANTED), "{author:?} directly");
     }
 }
 
@@ -972,11 +1042,10 @@ fn ct_bnd_27_a_restored_tool_word_is_refused_at_admission() {
     assert_eq!(preview_stored(&mut restored, Some(ws("saved")), None), Err(NOT_GRANTED));
 }
 
-/// CT-BND-28 (part: missing content of a part and of a nested part; not run: following a pick's origin through its
-/// record, which resolves in the session store (FP.38, M6)): a picked word whose listed entry has no stored content, or
-/// whose entry is a built-in block citing a part with no stored content, is refused at preview admission with
-/// `LG3:capability.not_granted`: the absence reads `unknown`, never as the word's own `manual` block or the entry's
-/// built-in producer.
+/// CT-BND-28 (part: missing content of a part and of a nested part, also behind a pick whose `c600-pick` record is
+/// kept (FP.38)): a picked word whose listed entry has no stored content, or whose entry is a built-in block citing a
+/// part with no stored content, is refused at preview admission with `LG3:capability.not_granted`: the absence reads
+/// `unknown`, never as the word's own `manual` block, its resolved pick or the entry's built-in producer.
 #[test]
 fn ct_bnd_28_missing_origin_content_fails_closed() {
     let missing = picked(&[&b"never stored"[..]]);
@@ -993,22 +1062,38 @@ fn ct_bnd_28_missing_origin_content_fails_closed() {
         assert!(refusal.detail.contains("no stored content"), "{what}: {}", refusal.detail);
         assert_eq!(preview_stored(&mut store, None, Some(&word)), Err(NOT_GRANTED), "{what}");
     }
+
+    let record = pick_record(b"never stored", true);
+    let word = recorded(&picked(&[&b"never stored"[..]]), &record);
+    let mut store = Store::default();
+    store.keep_pick(&provenance::canonical(&record));
+    let refusal = admit_preview(&word, &store, &pins()).unwrap_err();
+    assert_eq!(refusal.code, NOT_GRANTED, "a recorded pick");
+    assert!(refusal.detail.contains("no stored content"), "a recorded pick: {}", refusal.detail);
 }
 
 /// CT-BND-29 (part: hand-entered words, imported macros and a built-in-list entry kept in a picked word's parts, with
-/// their ordinary pin gates, and retyping; not run: the pick record (FP.38, M6) and retyping through the command layer
-/// (LP3)): a hand-entered word, an imported 0.4 macro and a word picked from a built-in list pass BND.84's producer
-/// check and build a preview, unless an ordinary gate fails: a contract pin the policy does not hold refuses with
+/// their ordinary pin gates, the pick's `c600-pick` record (FP.38), and retyping; not run: retyping through the command
+/// layer (LP3)): a hand-entered word, an imported 0.4 macro and a word picked from a built-in list, with its pick
+/// record kept or not, pass BND.84's producer check and build a preview, unless an ordinary gate fails: a contract pin
+/// the policy does not hold refuses with
 /// `PS1:capability.provenance_incompatible`. A word retyped from a tool's saved word is a new hand-entered word with
 /// no parts: the host infers no tool origin for it.
 #[test]
 fn ct_bnd_29_manual_imported_and_built_in_list_words_pass_the_producer_check() {
     let built_in_entry = output_of(Author::BuiltIn, Profile::Solving, false);
-    for (what, word) in
-        [("hand-entered", manual()), ("imported", imported()), ("built-in pick", picked(&[&built_in_entry]))]
-    {
+    let record = pick_record(&built_in_entry, true);
+    let recorded_pick = recorded(&picked(&[&built_in_entry]), &record);
+    let words = [
+        ("hand-entered", manual()),
+        ("imported", imported()),
+        ("built-in pick", picked(&[&built_in_entry])),
+        ("built-in pick with its record", recorded_pick),
+    ];
+    for (what, word) in words {
         let mut store = Store::default();
         store.keep(&built_in_entry);
+        store.keep_pick(&provenance::canonical(&record));
         assert_eq!(preview_stored(&mut store, None, Some(&word)), Ok(()), "{what}");
         let other = Pins { contracts: vec![Pin::of("fixture-2", b"another contract\n")], checkers: vec![checker()] };
         assert_eq!(admit_preview(&word, &store, &other).unwrap_err().code, INCOMPATIBLE, "{what}");
@@ -1024,10 +1109,10 @@ fn ct_bnd_29_manual_imported_and_built_in_list_words_pass_the_producer_check() {
 }
 
 /// CT-BND-30 (part: research blocks reached through a picked word's parts, recursive parts, a file and a restored
-/// workspace record; not run: the shipped research library and its output, which are not built yet, drafts (LP3, M6)
-/// and the pick record (FP.38, M6)): a research-profile block refuses a solving preview at the same admission point
-/// with `LG3:capability.not_granted` (BND.61, BND.85): directly, as a picked word's listed entry, two levels down in
-/// `parts`, and through a file and a restored workspace record; no route grants the preview.
+/// workspace record, also behind a pick whose `c600-pick` record is kept (FP.38); not run: the shipped research library
+/// and its output, which are not built yet, and drafts (LP3, M6)): a research-profile block refuses a solving preview
+/// at the same admission point with `LG3:capability.not_granted` (BND.61, BND.85): directly, as a picked word's listed
+/// entry, two levels down in `parts`, and through a file and a restored workspace record; no route grants the preview.
 #[test]
 fn ct_bnd_30_research_blocks_refuse_the_preview_on_every_route() {
     let research = output_of(Author::BuiltIn, Profile::Research, false);
@@ -1036,12 +1121,18 @@ fn ct_bnd_30_research_blocks_refuse_the_preview_on_every_route() {
         false,
         &[sha256(&research)],
     ));
-    let routes =
-        [("directly", research.clone()), ("picked", picked(&[&research])), ("nested", picked(&[&through_built_in]))];
+    let record = pick_record(&research, true);
+    let routes = [
+        ("directly", research.clone()),
+        ("picked", picked(&[&research])),
+        ("nested", picked(&[&through_built_in])),
+        ("picked with its record", recorded(&picked(&[&research]), &record)),
+    ];
     for (what, word) in routes {
         let mut store = Store::default();
         store.keep(&research);
         store.keep(&through_built_in);
+        store.keep_pick(&provenance::canonical(&record));
         let refusal = admit_preview(&word, &store, &pins()).unwrap_err();
         assert_eq!(refusal.code, NOT_GRANTED, "{what}");
         assert!(refusal.detail.contains("research output"), "{what}: {}", refusal.detail);
@@ -1049,6 +1140,7 @@ fn ct_bnd_30_research_blocks_refuse_the_preview_on_every_route() {
         let mut restored = saved_and_restored(&word);
         restored.keep(&research);
         restored.keep(&through_built_in);
+        restored.keep_pick(&provenance::canonical(&record));
         for place in [ws("saved"), file("saved.6cw")] {
             assert_eq!(preview_stored(&mut restored, Some(place.clone()), None), Err(NOT_GRANTED), "{what} {place:?}");
         }
@@ -1089,12 +1181,13 @@ fn ct_bnd_22_an_older_block_keeps_its_form_and_its_gated_use_is_refused() {
 // ---------------------------------------------------------------------------------------------------------------------
 // CT-KN5-13: the preview-admission adapter.
 
-/// CT-KN5-13 (part: the BND.84/BND.85 adapter of M3; not run: picks through their records (FP.38, M6), draft insertion
-/// (LP3, M6) and KN5.9's preview itself, which the kernel builds (M4)): in a solving session the adapter refuses a word
-/// a solver's tool produced, through composition in a later run, a file round trip and a restored workspace record,
-/// and fails closed on missing origin content, all with `LG3:capability.not_granted`. Hand-entered words, imported 0.4
-/// macros and a built-in-list entry pass. A permitted word whose preview has a protection conflict is not refused by
-/// the adapter: the engine builds the preview and the shell holds its verdict.
+/// CT-KN5-13 (part: the BND.84/BND.85 adapter of M3, with a pick through its `c600-pick` record (FP.38); not run:
+/// draft insertion (LP3, M6) and KN5.9's preview itself, which the kernel builds (M4)): in a solving session the
+/// adapter refuses a word a solver's tool produced, through composition in a later run, a file round trip and a
+/// restored workspace record, and fails closed on missing origin content, all with `LG3:capability.not_granted`.
+/// Hand-entered words, imported 0.4 macros and a built-in-list entry, picked with its record or without, pass. A
+/// permitted word whose preview has a protection conflict is not refused by the adapter: the engine builds the
+/// preview and the shell holds its verdict.
 #[test]
 fn ct_kn5_13_the_adapter_refuses_tool_words_and_passes_the_rest() {
     let tool = output_of(Author::Own, Profile::ToolAuthoring, true);
@@ -1105,9 +1198,11 @@ fn ct_kn5_13_the_adapter_refuses_tool_words_and_passes_the_rest() {
     assert_eq!(preview_stored(&mut Store::default(), None, Some(&tool)), Err(NOT_GRANTED), "composition");
     assert_eq!(preview_stored(&mut Store::default(), None, Some(&picked(&[b"gone"]))), Err(NOT_GRANTED));
     let entry = output_of(Author::BuiltIn, Profile::Solving, false);
-    for word in [manual(), imported(), picked(&[&entry])] {
+    let record = pick_record(&entry, true);
+    for word in [manual(), imported(), picked(&[&entry]), recorded(&picked(&[&entry]), &record)] {
         let mut store = Store::default();
         store.keep(&entry);
+        store.keep_pick(&provenance::canonical(&record));
         assert_eq!(preview_stored(&mut store, None, Some(&word)), Ok(()));
     }
     let mut engine = Engine { protection: Some("conflict"), ..Engine::default() };
