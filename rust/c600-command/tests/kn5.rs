@@ -695,6 +695,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("declare_overlay", false),
         ("store_mut", true),
         ("set_program_capacity", false),
+        ("set_budget_ceiling", false),
         ("present", false),
         ("set_provenance", false),
         ("set_views", false),

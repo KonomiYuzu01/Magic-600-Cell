@@ -586,10 +586,11 @@ pub use worksheet::{
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 19] = [
+pub const SOURCES: [(&str, &[u8]); 22] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
+    ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
     ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
@@ -597,6 +598,8 @@ pub const SOURCES: [(&str, &[u8]); 19] = [
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
+    ("c600-command/src/repair.rs", include_bytes!("repair.rs")),
+    ("c600-command/src/sets.rs", include_bytes!("sets.rs")),
     ("c600-command/src/shell.rs", include_bytes!("shell.rs")),
     ("c600-command/src/store.rs", include_bytes!("store.rs")),
     ("c600-command/src/table.rs", include_bytes!("table.rs")),
