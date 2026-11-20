@@ -10,7 +10,9 @@
 //!   or, for the input recipe's literal word longer than one chunk, in the solver's word steps.
 //! - [`kernel_rows`] holds the kernel rows that [`bridge`] serves to a program's snapshot read with an argument (KN5,
 //!   LP2 draft): KN2.4's `positions` and `labels`, which LB2's exact completion in `c600-library` reads (CT-LB2-04),
-//!   and KN2.4's `effect`, which LB2's recipes and reports read (CT-LB2-01).
+//!   KN2.4's `effect`, which LB2's recipes and reports read (CT-LB2-01), and the `protection` row, which LB2's Net and
+//!   Strict protection reads (CT-LB2-02), and the draft `setups` row of the setup-search exception, which LB2's guarded
+//!   setups read (CT-BND-18).
 //! - [`expand`] is the source route's recipe expansion: a case step's recipe to its literal word, through the kernel,
 //!   outside the program and without a state read.
 //! - [`case`] reads the frozen oracle cases O01 to O07.
@@ -35,8 +37,10 @@
 //!
 //! - **Entry.** `full_600_cell.preview_word(w: Word)` is an exported command (LG3.6) that proposes `w` as given. The
 //!   library entries of chapter 03 are language code in `c600-library`, not in this tool: LB1's literal words
-//!   (`words.power`), LB2's exact completion (`completion.exact_completion`) and LB2's recipes and reports (the module
-//!   `recipes`); this crate's tests run the last two through [`bridge`] over [`kernel_rows`] (CT-LB2-04, CT-LB2-01).
+//!   (`words.power`), LB2's exact completion (`completion.exact_completion`), LB2's recipes and reports (the module
+//!   `recipes`), LB2's Net and Strict protection (the module `protection`) and LB2's guarded setups and buffers (the
+//!   module `guarded_setups`); this crate's tests run these four through [`bridge`] over [`kernel_rows`] (CT-LB2-04,
+//!   CT-LB2-01, CT-LB2-02, CT-BND-18).
 //! - **Target.** The proposal's target text names the command-layer row the proposal reaches, `operation.preview`.
 //! - **Result.** The entry returns `record { base, id }`, read with `receipt_base` and `receipt_id`: the two receipt
 //!   fields a previewing program may read (BND.42). A receipt itself has no canonical output form.
@@ -71,21 +75,25 @@
 //!   length (LG2.17) with a result bound of [`bridge::RESULT_BOUND`] bytes until the command table prices the row. The
 //!   answer the shell sees is a receipt `{base, id, status, job}`; the layer's refusal or failure is its error code.
 //!   The acknowledgement's `base` is `<session>@<epoch>/<head>`.
-//! - **Kernel rows** (KN2.4, KN5; [`kernel_rows`]). The bridge serves three reads, each to a snapshot read with an
-//!   argument, and no other: `positions` and `labels` at the layer's head, and `effect`, a recipe's net map, which
-//!   reads no state. `positions` and `labels` each take a list of integers (a `List<Nat>` or a `Set<Nat>`, repeats
-//!   allowed) and answer a list in the argument's order. `positions` answers one record per named piece, 0 to 177,119,
-//!   through `CommandLayer::positions`; `labels` answers one label per named slot, 0 to 259,799, as `List<Nat>` or
-//!   `List<Int>`, read from the head's snapshot because no layer or kernel function serves the row. A label is the home
-//!   slot of the sticker the slot holds: a sticker's identity, never its colour. Both rows refuse in one order: a
-//!   declared type the row does not answer, `LG2:type.mismatch`, and an argument that is not a list of integers,
-//!   `KN5:input.argument_form`, cost the read's step only; then, charged, Jumble on is
-//!   `KN5:input.retained_tool_needs_jumble_off` and a piece or slot out of range `KN2:input.named_object_invalid`.
-//!   Tariffs: `positions` costs one pass over the 259,800 labels plus 20 slots per named piece, and `labels` one unit
-//!   per named slot; each result bound is the size of an answer of that many of the largest items. `effect` takes a
-//!   recipe, a word or a list of word and star steps, and answers the fields its declared record names (the map, its
-//!   digests, the counts and the support per orbit); it refuses in the same order, with the kernel's refusal of a
-//!   recipe in place of a range error. Its argument, answer, codes and tariff are in [`kernel_rows`].
+//! - **Kernel rows** (KN2.4, KN5; [`kernel_rows`]). The bridge serves four reads, each to a snapshot read with an
+//!   argument, and a fifth when the host gives it the setup table, and no other: `positions` and `labels` at the
+//!   layer's head, `effect`, a recipe's net map, which reads no state, and `protection`, a captured lock judged against
+//!   a recipe at the head (the argument is `{lock: {kind, labels, slots}, mode, recipe, limit?}`). `positions` and
+//!   `labels` each take a list of integers (a `List<Nat>` or a `Set<Nat>`, repeats allowed) and answer a list in the
+//!   argument's order. `positions` answers one record per named piece, 0 to 177,119, through `CommandLayer::positions`;
+//!   `labels` answers one label per named slot, 0 to 259,799, as `List<Nat>` or `List<Int>`, read from the head's
+//!   snapshot because no layer or kernel function serves the row. A label is the home slot of the sticker the slot
+//!   holds: a sticker's identity, never its colour. Both rows refuse in one order: a declared type the row does not
+//!   answer, `LG2:type.mismatch`, and an argument that is not a list of integers, `KN5:input.argument_form`, cost the
+//!   read's step only; then, charged, Jumble on is `KN5:input.retained_tool_needs_jumble_off` and a piece or slot out
+//!   of range `KN2:input.named_object_invalid`. Tariffs: `positions` costs one pass over the 259,800 labels plus 20
+//!   slots per named piece, and `labels` one unit per named slot; each result bound is the size of an answer of that
+//!   many of the largest items. `effect` takes a recipe, a word or a list of word and star steps, and answers the
+//!   fields its declared record names (the map, its digests, the counts and the support per orbit); it refuses in the
+//!   same order, with the kernel's refusal of a recipe in place of a range error. The draft `setups` row, read only
+//!   under the built-in column's setup-search exception, answers the certified setups for the target the solver names,
+//!   and the bridge serves it only with the `SetupTable` the host gives it. Each row's argument, answer, codes and
+//!   tariff are in [`kernel_rows`].
 //! - **Source route.** `c600-lp3-source` keeps `c600-lp3-oracle`'s session names, shell prefixes, trace form and
 //!   candidate block (`c600-command-lp3-loop` with the command layer's build), so the two routes' traces compare byte
 //!   for byte; its summary adds the route `source`, this crate's [`build`] and the host. Each step's run is
@@ -197,11 +205,12 @@
 //!   layer's preview verdict at label level over a session's protected set, here the orbits one generator moves, and
 //!   the commit's refusal when that verdict is not clear. The Strict check is the same after the shell sets the
 //!   session's policy to Strict with `protection.policy.set` (LP2's pull request 198; the runtime may not invoke the
-//!   row): the layer judges every executed literal prefix with the kernel's `strict_protection`, the preview's
-//!   summary names the mode and the first refused prefix, and the commit is refused while a prefix moves a protected
-//!   orbit. Not built: the captured lock and "an incomplete prefix check never returns safe" (LB2.3's coverage report
-//!   and `LB2:protection.incomplete_coverage`), which are LP3's library rows over kernel rows the bridge does not
-//!   serve; it serves `positions`, `labels` and `effect` only.
+//!   row): the layer judges every executed literal prefix with the kernel's `strict_protection`, the preview's summary
+//!   names the mode and the first refused prefix, and the commit is refused while a prefix moves a protected orbit. The
+//!   captured lock and "an incomplete prefix check never returns safe" (LB2.3's coverage report and
+//!   `LB2:protection.incomplete_coverage`) are built in `c600-library`'s `protection` module over the bridge's
+//!   `protection` row, and run whole in `tests/ct_lb2_02.rs` (pull request 300); the bridge serves `positions`,
+//!   `labels`, `effect` and `protection`, and `setups` with the setup table.
 //! - **Inspector fixtures** (LB3.5, CT-LB3-07's checker half). No LB3 entry exists as library code, so the test's
 //!   fixtures stand for them: a fixed record of two preview outcomes for an outcome table, and a previewing entry
 //!   that answers the acknowledgement's two fields for a named-word check. The checker decides them by capability
