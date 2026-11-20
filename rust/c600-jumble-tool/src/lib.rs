@@ -181,18 +181,17 @@
 //! - Through the command layer, not taken up yet: refusals, redo, protected pieces and free mode, and `jumble.off`
 //!   beyond reading the bridge with Jumble off (LP2's route test and `c600-command`'s own tests run them).
 //! - ν: LB3's entry "ν and drafted correction-set check" is language code ([`library::NU`]) and reads its rows through
-//!   [`rows`], and so does the correction catalogue's entry ([`library::CORRECTIONS`]). The label checkpoint computes
-//!   no ν itself; the tests supply the `nu` row's value. CT-LB3-01's checker half, the end tests' typed verdicts, is
-//!   LP2's (pull request 213).
-//! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
-//!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
-//!   (CT-LB3-05, CT-BND-17): LP2.
+//!   [`rows`], and so does the correction catalogue's entry ([`library::CORRECTIONS`]). M8's label checkpoint computes
+//!   no ν itself; the `label_checkpoint` row takes the `nu` row's value when the identity labels and a retained witness
+//!   leave ν unknown, as the command layer's exit reads it ([`library::END_TESTS`]). CT-LB3-01's checker half, the end
+//!   tests' typed verdicts, is LP2's (pull request 213).
+//! - The repair list through the command layer: a job that names its cap (KN5), an empty list worded as BND.2 states,
+//!   and no key that skips caps with an empty list (CT-LB3-05, CT-BND-17): LP2. The language entry
+//!   ([`library::REPAIR`]) reads the `repair_list` row for the cap the solver names and returns it as read, under
+//!   `c600-check`'s repair-list exception; no job runs it.
 //! - The survey's all-items loop: not served. LB3.5 keeps it out of the inspector entries, so the `survey` row answers
 //!   the solver's named grip only ([`library::ADMISSIBILITY`]), and [`library::RIM`] reads the rim summary and one
 //!   whole seam scan only.
-//! - Not written in the language yet: the last entries that LB6.5's jumbling inspectors use, LB3.1's "Repair list at a
-//!   named cap" and "Retained checkpoint, label checkpoint, sticker test". Until they are, and `tests/ct_lb3_07.rs`
-//!   runs them too, CT-LB3-07 runs in part.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.

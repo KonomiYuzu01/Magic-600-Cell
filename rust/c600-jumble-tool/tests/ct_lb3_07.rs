@@ -23,17 +23,25 @@
 //! - The units entries read every off unit, or the solver's named unit, once; the clean-step entry reads the solver's
 //!   word and unit once and answers the clean-step contract for that unit only.
 //! - The named-word checks read their row once, with the named word as its argument, and answer no word.
+//! - The end tests (`jumble_end_tests`, LB3.1's "Retained checkpoint, label checkpoint, sticker test") read their row
+//!   once each, the retained checkpoint with the solver's witness word, and answer their test's own verdict type, the
+//!   outcome alone (LG2.9); `tests/rows.rs` runs them through the bridge.
+//! - The repair entry (`jumble_repair`, LB3.1's "Repair list at a named cap") is the owner's one exception (17 October
+//!   2026): it reads the repair list once, for the cap the solver named, and returns it as read. The built-in column
+//!   admits it only under the repair-list exception (BND.2), which refuses a read for another cap and any use of the
+//!   list's value, so its rows keep the engine's neutral order with no mark; `tests/rows.rs` checks what it serves.
 //!
-//! No answer has a field whose name is a recommendation, a next cap, a ranking, a selection or a correction (a check of
-//! names), and the rim, covers, straddlers and units entries hold no field of a twist's outcome. Under capability
-//! separation every entry reads state and prepares no preview. `tests/lb3.rs` runs the kernel half of CT-LB3-07 and `c600-tools/tests/lb3_checker.rs`
-//! the checker half. A pass is source and fixture evidence.
+//! No answer of the other entries has a field whose name is a recommendation, a next cap, a ranking, a selection or a
+//! correction (a check of names), and the rim, covers, straddlers and units entries hold no field of a twist's
+//! outcome. Under capability separation every entry reads state and prepares no preview. `tests/lb3.rs` runs the
+//! kernel half of CT-LB3-07 and `c600-tools/tests/lb3_checker.rs` the checker half. A pass is source and fixture
+//! evidence.
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use c600_check::{check, separation, Policy, Row, Separation, StateRead};
+use c600_check::{admit_built_in, check, separation, Grant, Policy, Row, Separation, StateRead, NOT_GRANTED};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, Expr};
 use c600_jumble::corrections;
@@ -45,7 +53,7 @@ use c600_jumble::state::{Certificate, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_jumble_tool::library::{
-    self, Module, ADMISSIBILITY, CORRECTIONS, COVERS, NU, RIM, STRADDLERS, UNITS, WORD_CHECKS,
+    self, Module, ADMISSIBILITY, CORRECTIONS, COVERS, END_TESTS, NU, REPAIR, RIM, STRADDLERS, UNITS, WORD_CHECKS,
 };
 use c600_jumble_tool::rows::Rows;
 use c600_jumble_tool::word::Alphabet;
@@ -422,7 +430,8 @@ fn same_unit(ours: &RunValue, theirs: &Value, what: &str) {
 }
 
 /// CT-LB3-07 (part: the inspector entries' sources). `jumble_rim`, `jumble_covers`, `jumble_corrections`,
-/// `jumble_admissibility`, `jumble_straddlers` and `jumble_units` parse with no diagnostic, keep the canonical layout and
+/// `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair` and `jumble_end_tests` parse with no
+/// diagnostic, keep the canonical layout and
 /// LF line endings, request no capability and check with no diagnostic. Each exported entry has the one effect
 /// `snapshot` and reads only its rows: under capability separation it reads state and prepares no preview. No function
 /// names a proposal target, the helpers are pure, and each entry takes the solver's named objects only: a cap, an id, a
@@ -431,7 +440,7 @@ fn same_unit(ours: &RunValue, theirs: &Value, what: &str) {
 #[test]
 fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
     // Each entry, the rows it reads and its parameters: a named cap, id, twist, grip, unit or word, or nothing.
-    let reads: [(&str, &[&str], usize); 9] = [
+    let reads: [(&str, &[&str], usize); 13] = [
         ("rim_facts", &["rim_summary", "seam_facts"], 0),
         ("covers_at", &["covers"], 1),
         ("correction", &["correction_lookup"], 1),
@@ -441,8 +450,12 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
         ("off_units", &["units"], 0),
         ("named_unit", &["units"], 1),
         ("clean_step", &["word_check"], 2),
+        ("repair_list_at", &["repair_list"], 1),
+        ("sticker_test", &["sticker_test"], 0),
+        ("retained_checkpoint", &["retained_checkpoint"], 1),
+        ("label_checkpoint", &["label_checkpoint"], 0),
     ];
-    for module in [RIM, COVERS, CORRECTIONS, ADMISSIBILITY, STRADDLERS, UNITS] {
+    for module in [RIM, COVERS, CORRECTIONS, ADMISSIBILITY, STRADDLERS, UNITS, REPAIR, END_TESTS] {
         canonical(&module);
         let program = lower_source(module.source).expect("the module lowers");
         let [lowered] = &program.modules[..] else { panic!("one module, not {}", program.modules.len()) };
@@ -491,6 +504,13 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
         ),
         (library::straddlers_and_u_at_a_named_cap(), STRADDLERS, "Straddlers and u at a named cap", "Jumbling poses"),
         (library::units_and_clean_step_contract(), UNITS, "Units and clean-step contract", "Jumbling poses"),
+        (library::repair_list_at_a_named_cap(), REPAIR, "Repair list at a named cap", "Jumbling poses"),
+        (
+            library::retained_checkpoint_label_checkpoint_sticker_test(),
+            END_TESTS,
+            "Retained checkpoint, label checkpoint, sticker test",
+            "Jumbling poses and explicit label projection",
+        ),
     ];
     for (row, module, entry, level) in catalogue {
         assert_eq!(row.entry, entry);
@@ -504,6 +524,60 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
     }
     assert!(library::rim_and_seam_facts().notes.contains("not the sum of the displayed N_c"));
     assert!(library::correction_catalogue().notes.contains("chooses no combination"));
+}
+
+/// CT-LB3-07 (part: the repair entry under the column's repair-list exception, BND.2 and the owner's decision of 17
+/// October 2026). `jumble_repair.repair_list_at` is admitted as a built-in entry under a class that lists
+/// `repair_list` as the repair list (`c600_check::Row::RepairList`): it reads the list in its own body, for its cap
+/// parameter as given, and returns the value as read, so it reads state and prepares no preview. The same entry
+/// changed is refused with `LG3:capability.not_granted`: reading the list for a cap it did not take (a literal), in a
+/// helper it calls, or using the list's value, by a field or by a condition on it.
+#[test]
+fn ct_lb3_07_the_repair_entry_is_admitted_only_under_the_exception_as_written() {
+    const LIST: &str = "record { input_digest: Text, message: List<Text>, parameters: record { cap: Nat, \
+                        contract_revision: Text, menu_identity: List<Text>, order_digest: List<Text>, tie_rule: Text \
+                        }, rows: List<record { d: Nat, delta: Int, x: Nat, y: Nat, z: Nat }>, status: Text }";
+    let module = |helpers: &str, result: &str, body: &str| {
+        format!(
+            "edition \"6cs-draft-1\";\nmodule jumble_repair requires [];\n\n{helpers}export fn \
+             repair_list_at(cap: Nat) -> {result} effects [snapshot] {{\n{body}}}\n"
+        )
+    };
+    let read = |cap: &str| format!("read_snapshot<{LIST}>(\"repair_list\", {cap})");
+    let as_written = module("", LIST, &format!("    return {};\n", read("cap")));
+    assert_eq!(as_written, REPAIR.source, "the entry as the library writes it");
+    let class = BTreeSet::from([Row::RepairList("repair_list".to_owned())]);
+    let admit = |source: &str| {
+        let program = lower_source(source).expect("the module lowers");
+        admit_built_in(&program, REPAIR.name, "repair_list_at", &class, &Grant::none(), &Policy::interim())
+            .expect("well-formed IR")
+    };
+    let admitted = admit(&as_written);
+    assert!(admitted.is_admitted(), "{:#?}", admitted.diagnostics);
+    assert_eq!(admitted.separation, Separation { reads_state: true, prepares_previews: false });
+
+    let helper = format!("fn list_at(cap: Nat) -> {LIST} effects [snapshot] {{\n    return {};\n}}\n\n", read("cap"));
+    let changed = [
+        ("a cap it did not take", module("", LIST, &format!("    return {};\n", read("57")))),
+        ("a helper's read", module(&helper, LIST, "    return list_at(cap);\n")),
+        ("a field", module("", "Text", &format!("    return {}.status;\n", read("cap")))),
+        (
+            "a condition",
+            module(
+                "",
+                LIST,
+                &format!(
+                    "    let answer = {};\n    return match exact_eq(answer.status, \"completed\") {{\n        true => \
+                     answer;\n        _ => answer;\n    }};\n",
+                    read("cap")
+                ),
+            ),
+        ),
+    ];
+    for (what, source) in changed {
+        let refused = admit(&source);
+        assert!(refused.diagnostics.iter().any(|d| d.code == NOT_GRANTED), "{what}: {:#?}", refused.diagnostics);
+    }
 }
 
 /// CT-LB3-07 (part: "per-revision fact results contain no all-items outcome table", on the rim entry). At the I_a walk

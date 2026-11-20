@@ -1,0 +1,14 @@
+edition "6cs-draft-1";
+module jumble_end_tests requires [];
+
+export fn sticker_test() -> StickerTestVerdict effects [snapshot] {
+    return read_snapshot<StickerTestVerdict>("sticker_test");
+}
+
+export fn retained_checkpoint(w: Word) -> RetainedCheckpointVerdict effects [snapshot] {
+    return read_snapshot<RetainedCheckpointVerdict>("retained_checkpoint", w);
+}
+
+export fn label_checkpoint() -> LabelCheckpointVerdict effects [snapshot] {
+    return read_snapshot<LabelCheckpointVerdict>("label_checkpoint");
+}
