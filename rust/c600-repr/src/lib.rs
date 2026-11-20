@@ -9,6 +9,8 @@
 //!   definitions and the row set, and the form of a review record (BND.37).
 //! - [`rows`]: what each of the tool's six rows needs from the command layer, what the layer meets of it and what
 //!   remains. A host serves all six rows with the tool's entries.
+//! - [`applied`]: the applied filter's display: the layer predicate that `filter.apply` applied, resolved on the
+//!   command layer to the members of its layer, and a representation's layout filtered to them (LB4.4).
 //!
 //! The crate draws nothing and owns no device, renderer, clock or session. It builds on the public APIs of
 //! `c600-display`, `c600-tools`, `c600-check` and `c600-command` and repeats none of their logic: picks are resolved
@@ -71,6 +73,15 @@
 //!   set overlay holding the mechanically analysed set with its exact-set digest. A layout filter rebuilds primitive
 //!   0, the instance list and the source map's entries only. Filters of trees, complexes and graphs, and of layouts
 //!   with edges or triangles, are not built.
+//! - LP3 plan, C6, the applied filter's display ([`applied`]): it shows an applied filter while the layer keeps its
+//!   filter preview and every record the preview read still holds what it read. It does not ask that the preview be
+//!   fresh: `fresh_filter_preview` gates the apply (LI.41), not the display, and a layer predicate reads no state, so
+//!   after a twist its members are still the ones the solver applied. A write of a record the filter read, a reopen,
+//!   which keeps no filter preview, and a newer filter preview that replaced the stale one each leave the layout
+//!   unfiltered, with the reason ([`applied::Unavailable`]). A slot is kept when it is a member, and an identity by its
+//!   home: a sticker when its home slot is a member, a piece when its home position is, a certificate point by its
+//!   witness piece. The members name no cell, grip, cap or orbit, so no occurrence of one is kept while a filter
+//!   applies. A filter of what sits in a layer now would read the state, which the members do not.
 //! - LB4, linked selection: a representation with no occurrence of the selected object answers
 //!   [`layout::Linked::NoImage`], a case of its own beside the images. An unknown relation (EV3.9) is not modelled
 //!   here; `c600_jumble_tool::relation` has one at pose level, a slot's current occupant, with "none: off the
@@ -102,8 +113,10 @@
 //!
 //! - `filter.apply`: built through both routes. The layer serves the row (LP2's pull request 256: the gate
 //!   `fresh_filter_preview`, the `filter` preview rule, the `FilterRef` and `FilterPreviewRef` forms and a workspace
-//!   inverse), and the entry `apply_filter` takes the `FilterPreviewRef` as a record of its epoch and job. What is not
-//!   built: a display that applies the applied filter.
+//!   inverse), and the entry `apply_filter` takes the `FilterPreviewRef` as a record of its epoch and job. [`applied`]
+//!   displays the applied filter with the members of its layer, LP2's `CommandLayer::layer_members` (pull request
+//!   375). What is not built: a display of an applied filter whose filter preview the layer no longer keeps, after a
+//!   reopen or once a newer one replaced it, which needs the applied predicate kept with the record or in the layer.
 //! - A running program's job: LP2's `CommandLayer::invoke_with_inputs` (pull request 264) takes the provenance blocks
 //!   of an invocation's arguments, and `ProgramJob::inputs` holds them. The test host builds a running program's block
 //!   from the run's context (`Boundary::block`), and the job's run takes it as its input. The test host stands in for
@@ -122,6 +135,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod applied;
 pub mod chart;
 pub mod layout;
 pub mod rows;

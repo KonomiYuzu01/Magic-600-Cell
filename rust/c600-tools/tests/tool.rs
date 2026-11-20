@@ -160,7 +160,7 @@ fn a_built_in_previews_only_the_word_the_solver_named() {
     assert_eq!(refused(&program), at("1.0", NOT_GRANTED), "the shadowed parameter is not the solver's word");
 
     let helper =
-        lower_source(&variant("export fn", "preview", &format!("{}{ACK}", &own_word.replace("word[+1, -2]", "w"))));
+        lower_source(&variant("export fn", "preview", &format!("{}{ACK}", own_word.replace("word[+1, -2]", "w"))));
     let found = refused(&helper.unwrap());
     assert_eq!(found, at("entry", EFFECT_UNDECLARED), "a preview is prepared only inside a command (LG3.6)");
 }

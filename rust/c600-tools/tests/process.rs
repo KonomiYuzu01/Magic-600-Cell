@@ -258,7 +258,7 @@ fn process_host_reports_a_runtime_that_does_not_start() {
     let (mut layer, mut shell) = session("process");
     let before = fingerprint(&layer);
     let (ran, sent, _command) = run_on(Some(&mut host), &tool, &mut layer, &mut shell, &[1, -2]);
-    let stopped = ran.err().expect("no run without a runtime");
+    let stopped = ran.expect_err("no run without a runtime");
     assert!(matches!(&stopped.cause, Cause::Lost(fault) if fault.kind == FaultKind::Spawn), "{:?}", stopped.cause);
     assert!(stopped.shell.is_empty() && sent.is_empty());
     assert_eq!(fingerprint(&layer), before);
