@@ -54,8 +54,9 @@ pub enum Unavailable {
     NotKept,
     /// A record the applied filter read has been written since the filter preview read it.
     PredicateWritten,
-    /// The command layer refused the members with this code: with Jumble on,
-    /// `KN5:input.retained_tool_needs_jumble_off`.
+    /// The command layer refused the members with this code, one of `CommandLayer::layer_members`' refusals: with
+    /// Jumble on, `KN5:input.retained_tool_needs_jumble_off`, and for a cell or a layer that names none,
+    /// `KN2:input.named_object_invalid`.
     Refused(&'static str),
 }
 
@@ -135,15 +136,15 @@ fn resolve<S: Store>(layer: &CommandLayer<S>) -> Result<Option<Members>, Unavail
 }
 
 /// The two natural fields of a record whose payload is a record of exactly those fields, each in the canonical form
-/// the tool's entries write, `{"int": "n"}`.
+/// the tool's entries write, `{"int": "n"}` with `n` in decimal digits without a sign or a leading zero.
 fn naturals(record: &RecordValue, keys: [&str; 2]) -> Option<[u64; 2]> {
     (record.payload.as_object()?.len() == keys.len()).then_some(())?;
     let natural = |key: &str| -> Option<u64> {
         let int = record.payload.get(key)?;
         (int.as_object()?.len() == 1).then_some(())?;
         let digits = int.get("int")?.as_str()?;
-        digits.bytes().all(|b| b.is_ascii_digit()).then_some(())?;
-        digits.parse().ok()
+        let n: u64 = digits.parse().ok()?;
+        (n.to_string() == digits).then_some(n)
     };
     Some([natural(keys[0])?, natural(keys[1])?])
 }
@@ -163,13 +164,14 @@ mod tests {
     }
 
     /// A record's two naturals are read only in the form the tool's entries write: a record of exactly the two fields,
-    /// each `{"int": "n"}` with decimal digits that fit.
+    /// each `{"int": "n"}` with canonical decimal digits that fit.
     #[test]
     fn a_record_is_read_only_in_the_form_the_entries_write() {
         let read = |payload: &Value| {
             naturals(&RecordValue { payload: payload.clone(), provenance: "block".to_owned() }, ["epoch", "job"])
         };
         assert_eq!(read(&pair(int("3"), int("12"))), Some([3, 12]));
+        assert_eq!(read(&pair(int("0"), int("18446744073709551615"))), Some([0, u64::MAX]));
         let loose = json::object([("int", Value::String("3".to_owned())), ("more", Value::Null)]);
         for payload in [
             pair(Value::Int(3), Value::Int(12)),
@@ -177,6 +179,9 @@ mod tests {
             json::object([("epoch", int("3")), ("job", int("12")), ("more", int("1"))]),
             pair(int("-3"), int("12")),
             pair(int("+3"), int("12")),
+            pair(int("007"), int("12")),
+            pair(int("3"), int("00")),
+            pair(int(" 3"), int("12")),
             pair(int(""), int("12")),
             pair(int("18446744073709551616"), int("12")),
             pair(loose, int("12")),
