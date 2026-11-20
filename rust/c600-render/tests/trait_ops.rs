@@ -129,15 +129,16 @@ fn a_pick_goes_through_the_host_to_the_id_pass_and_back() {
     assert_eq!(host.read_frame_reports(), Ok(Vec::new()));
     assert_eq!(host.backend.read_frame_reports().expect("the core's rows").len(), 2);
 
-    // A frame the core no longer retains (it keeps the newest 64 reported) is the core's refusal, a core failure,
-    // which even a passive pick returns.
-    for _ in 0..64 {
-        host.frame(V1).expect("a frame");
-    }
+    // A frame with 64 newer frames reported is one the core no longer retains: it is stale at its sequence before the
+    // core is asked (the core would answer only as a failure, `EV3:busy.renderer_unavailable`), so an explicit pick
+    // says so and a passive one gets no ticket. The oldest of the 64 is still retained, and picked.
+    let newer: Vec<FrameStamp> = (0..64).map(|_| host.frame(V1).expect("a frame")).collect();
     host.backend.core.complete();
     assert_eq!(host.backend.read_frame_reports().expect("the core's rows").len(), 64);
-    let error = host.request_pick(&reopened, (10, 20), PickMode::Passive, Requested::Occurrence).expect_err("gone");
-    assert_eq!(error.code, codes::RENDERER_UNAVAILABLE);
+    let error = host.request_pick(&reopened, (10, 20), PickMode::Explicit, Requested::Occurrence).expect_err("gone");
+    assert_eq!((error.code, error.context["field"].as_str()), (codes::STALE_PICK, "sequence"));
+    assert_eq!(host.request_pick(&reopened, (10, 20), PickMode::Passive, Requested::Occurrence), Ok(None));
+    pick(&mut host, &newer[0], PickMode::Passive);
 
     // A frame older than every frame the bridge keeps is stale at its sequence before the core is asked: an explicit
     // pick says so, and a passive one gets no ticket.

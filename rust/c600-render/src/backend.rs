@@ -37,9 +37,12 @@
 //! - A pick through the trait asks the ID pass on the frame with the given stamp; the requested kind and level are the
 //!   host's to resolve (RPI.25). A frame older than every frame the bridge keeps is refused as stale
 //!   (`EV3:stale.display_pick` at `sequence`), so the host drops a passive pick on it; a stamp the bridge never
-//!   submitted is invalid, and so is a point outside the frame's viewport, before the core is asked. The core's
-//!   refusal, for a frame it no longer retains among others, is a core failure: its status does not tell that case from
-//!   its pick bound. A pick the core finds stale is refused as `EV3:stale.display_pick`, naming the field that moved.
+//!   submitted is invalid, and so is a point outside the frame's viewport, before the core is asked. So is a frame the
+//!   core certainly no longer retains: the bridge mirrors the part of the core's rule it sees, a frame with 64 newer
+//!   frames whose reports [`RenderBackend::read_frame_reports`] read, or one of an earlier device epoch. The core's
+//!   own refusal, for a frame it dropped otherwise (an unread report past its bound) among others, is a core failure:
+//!   its status does not tell that case from its pick bound. A pick the core finds stale is refused as
+//!   `EV3:stale.display_pick`, naming the field that moved.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -62,6 +65,9 @@ use crate::api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
 /// Frame records kept for reports, presentations and picks: more than the core retains (every unreported frame up
 /// to its bound of 1024, and the last 64 reported).
 const FRAME_RECORDS: usize = 2048;
+/// Reported frames the core retains for picks (`sa2_pick_request`; `RetainedFrames` in the core): a frame with this
+/// many newer reported frames is gone.
+const REPORTED_RETAINED: usize = 64;
 /// Camera matrices kept per view.
 const CAMERAS: usize = 8;
 /// Display times kept until the caller takes them; the oldest go first.
@@ -130,6 +136,11 @@ pub struct RenderBackend<C: CoreAbi> {
     /// Sets of an earlier device epoch, which the core released at recovery.
     lost_sets: BTreeSet<u64>,
     frames: VecDeque<FrameRecord>,
+    /// The frames whose reports the bridge read, the newest [`REPORTED_RETAINED`], in frame order.
+    reported: VecDeque<u64>,
+    /// The newest frame the core certainly no longer retains for picks, or 0: frames are numbered in submission order
+    /// and never reused, so every frame up to it is gone too.
+    dropped: u64,
     /// Display times of confirmed frames not yet taken.
     displays: VecDeque<DisplayTime>,
     /// The newest failure of `cancel` or `retire`, which the trait cannot return.
@@ -150,6 +161,8 @@ impl<C: CoreAbi> RenderBackend<C> {
             sets: BTreeMap::new(),
             lost_sets: BTreeSet::new(),
             frames: VecDeque::new(),
+            reported: VecDeque::new(),
+            dropped: 0,
             displays: VecDeque::new(),
             fault: None,
             held: None,
@@ -215,7 +228,8 @@ impl<C: CoreAbi> RenderBackend<C> {
 
     /// The core's frame reports, in frame order, each with the stamp of its frame. A row that names other bindings
     /// than its frame fails the whole read, and the rows read before it are dropped with it: a core that
-    /// contradicts its own frames is trusted for none of them.
+    /// contradicts its own frames is trusted for none of them. Each frame read counts toward the core's retention of
+    /// frames for picks, which [`Backend::request_pick`] mirrors.
     pub fn read_frame_reports(&mut self) -> Result<Vec<FrameReport>, Error> {
         let mut reports = Vec::new();
         loop {
@@ -244,6 +258,12 @@ impl<C: CoreAbi> RenderBackend<C> {
                     gpu_time_ns: row.gpu_time_ns,
                     view_vertex_evals: row.view_vertex_evals,
                 });
+                // The core reports in frame order and has dropped a reported frame, at the latest, once 64 newer ones
+                // are reported.
+                self.reported.push_back(row.frame_id);
+                while self.reported.len() > REPORTED_RETAINED {
+                    self.dropped = self.reported.pop_front().unwrap_or(self.dropped);
+                }
             }
             if n < rows.len() {
                 return Ok(reports);
@@ -510,8 +530,9 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     }
 
     /// The ID pass on the frame that `frame` stamps. The ID pass stamps instances only; the host resolves the
-    /// requested kind and level. A frame older than every frame the bridge keeps is stale at its sequence; a stamp
-    /// the bridge never submitted is invalid, and so is a point outside the viewport the frame was submitted with.
+    /// requested kind and level. A frame older than every frame the bridge keeps is stale at its sequence, and so is
+    /// one the core certainly no longer retains (64 newer frames reported, or an earlier device epoch); a stamp the
+    /// bridge never submitted is invalid, and so is a point outside the viewport the frame was submitted with.
     fn request_pick(
         &mut self,
         frame: &FrameStamp,
@@ -527,6 +548,11 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 Error::invalid("the bridge submitted no frame with this stamp")
             });
         };
+        // The core would refuse the frame only with a status that also means its pick bound: a core failure.
+        if record.id <= self.dropped {
+            return Err(Error::new(codes::STALE_PICK, "the pick is stale: the core no longer retains its frame")
+                .with("field", "sequence"));
+        }
         // The viewport `submit_frame` gave the core for this frame: a point outside it is the caller's error, which
         // the core would answer only as a failure.
         let (width, height) = record.input.stamp.viewport;
@@ -559,6 +585,9 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
         }
         let lost = std::mem::take(&mut self.sets);
         self.lost_sets.extend(lost.into_keys());
+        // The old epoch's frames are gone; frame numbers keep counting.
+        self.dropped = self.frames.back().map_or(self.dropped, |newest| newest.id);
+        self.reported.clear();
         self.describe_backend()
     }
 }
