@@ -1,6 +1,6 @@
 [package]
 name = "c600-durable"
-description = "LP3 C7's durable conformance cases: CT-RTE-08's persisted word, CT-EV3-07 and CT-LB2-03's work sheets"
+description = "LP3 C7's durable conformance cases: CT-RTE-08, CT-EV3-07, CT-LB2-03's work sheets and saved sets"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
