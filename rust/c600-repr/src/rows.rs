@@ -177,16 +177,20 @@ pub const NEEDS: [RowNeed; 6] = [
         completion: CompletionKind::Workspace,
         receipt: "completed(workspace) at a revision whose workspace number is one higher, with a result reference to \
                   the saved set's exact-set digest; refused as an argument form when a member is no canonical object \
-                  of the model or `kind` is neither value.",
+                  of the model or `kind` is neither value, and with the draft code `KN5:input.saved_set_exists` \
+                  when the name holds a saved set and the invocation does not carry `replace: true` (U1-057).",
         undo_entry: "none: H-08 gives the row the undo class `none`, so a saved set is removed by its own row, not by \
                      undo.",
         served: true,
         met: "Served by `save_set`. The layer checks `kind`, `members` (pull request 269: pieces or positions, each \
               below the kernel's piece count) and `name`; the job completes as one durable workspace action at a \
-              revision whose workspace number is one higher, writing the record `set.save` through the host's \
-              provenance reader, with the output's digest as the result reference and no undo entry.",
-        remains: "A record for each saved set, where the entry writes the one record `set.save`; and the exact-set \
-                  digest as the result reference, where the layer gives the output's digest.",
+              revision whose workspace number is one higher, with the exact-set digest as the result reference and \
+              no undo entry. In place of the entry's record `set.save` the action writes the saved set's own record \
+              `set/<name>` through the host's provenance reader: its kind, its members ascending and distinct, the \
+              model identity, the name and the capture revision (pull request 337, `c600_command::sets`). A taken \
+              name is refused unless the invocation carries `replace: true`.",
+        remains: "Nothing in the layer. The argument `replace` and the code `KN5:input.saved_set_exists` are drafts \
+                  until the command table freezes at LP3.",
     },
     RowNeed {
         row: "structure.compare",

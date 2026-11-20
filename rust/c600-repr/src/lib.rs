@@ -96,7 +96,9 @@
 //! What the rows still need, with the API a host would use. C6 changed nothing in `c600-command` or the kernel. Of the
 //! items below, LP2 has built the command layer's part of a running program's job and of the two snapshot reads, and
 //! LP3 the host's part of the two reads. LP2 has also built the `CanonicalObjectRefs` form (pull request 269), so the
-//! layer refuses a member that is no piece or position at admission. [`rows::NEEDS`] gives the same per row.
+//! layer refuses a member that is no piece or position at admission, and `set.save`'s saved sets (pull request 337):
+//! the layer writes each saved set's own record `set/<name>` and gives its exact-set digest as the result reference
+//! (`c600_command::sets`), so `set.save` needs nothing more. [`rows::NEEDS`] gives the same per row.
 //!
 //! - `filter.apply`: built through both routes. The layer serves the row (LP2's pull request 256: the gate
 //!   `fresh_filter_preview`, the `filter` preview rule, the `FilterRef` and `FilterPreviewRef` forms and a workspace
@@ -116,8 +118,6 @@
 //!   with `c600_tools::kernel_rows`. What is not built: the reads' tariffs in the command table, which freezes at
 //!   LP3, and a reference type in the IR, so `filter_counts` takes the predicate as a record of its cell and layer,
 //!   which the host reads from the record the predicate's job wrote.
-//! - `set.save`: a record for each saved set, where the entry writes the one record `set.save`, and the saved set's
-//!   exact-set digest as the result reference, where the layer gives the output's digest.
 //! - `view.effect.scope`: a display that applies the published scope.
 
 #![forbid(unsafe_code)]
