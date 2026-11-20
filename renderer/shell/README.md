@@ -64,14 +64,19 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   the twist menu the session pins (`research/jumbling/fixtures/wj-I_a.json`, the I_a menu; G6 owns the menu) in
   `menu/`, a release build of `c600-runtime` in `runtime/`, and charter E3's session fixtures, which the host's
   `c600-shell-session-fixture` writes: Jumble off in `session-fixture/` and Jumble on (`--puzzle jumble-on`) in
-  `session-fixture-jumble-on/`. A launch reopens a fresh copy of its puzzle's fixture.
+  `session-fixture-jumble-on/`. A launch reopens a fresh copy of its puzzle's fixture. A release build of
+  `c600-shell-lx4` (`renderer/bridge/lx4`, LX-4's editor library, C9 U8) goes in `lx4/`; the shell loads it only with
+  `launch.py --lx4`. A build made before this part existed fails the check and must be rebuilt.
   `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a
   digest of the parts. It never launches anything.
 - `launch.py`: the one way to start the shell. It recomputes every part of a product build (default: the newest),
   creates the run folder `--out` (never an existing one), and starts the pinned Godot (the process that presents)
   on the build's shell with `M600_CORE_DLL`, `M600_HOST_DLL`, `M600_ASSETS`, `M600_EVENTS_DIR`,
   `M600_BUILD_IDENTITY`, `M600_RUN_ID`, `M600_SESSION_DIR` (`session` in the run folder) and `M600_TWIST_MENU`,
-  plus `M600_INPUT_ECHO=1` with `--echo`. It waits for the shell to exit
+  plus `M600_INPUT_ECHO=1` with `--echo`. `--lx4 --lx4-fixtures DIR` (the two go together) adds `M600_LX4=1`,
+  `M600_LX4_DLL` (the build's `lx4/c600_shell_lx4.dll`) and `M600_LX4_FIXTURES` (DIR, a folder that `c600-lx4 --out`
+  wrote; it must hold `MANIFEST.json`). The fixtures are not part of the build, so `launch.json` records
+  `MANIFEST.json`'s SHA-256 as `lx4_fixtures` and never the folder. It waits for the shell to exit
   and writes `launch.json` (`magic600-c9-launch-v1`) with the build and run folders written as `<build>` and
   `<out>`. `--dry-run` checks and prints and starts nothing. Start it from a PowerShell on the desktop: a window
   started from a background process never gets the foreground.
@@ -92,8 +97,8 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - `CoreSurface.cs` using every shell call and no other;
   - the input log's rows, a file and row kinds apart from the E2 log's, and the echo only when asked;
   - over a fake build: `product.json`'s parts and identity, the refusal of a changed or added part, the launcher's
-    command and environment, a dry run that creates and starts nothing, the refusal of a used run folder, and a
-    `launch.json` without private paths.
+    command and environment, a dry run that creates and starts nothing, the refusal of a used run folder, `--lx4`
+    refused without its fixtures, and a `launch.json` without private paths.
 
 ## Status
 
@@ -124,7 +129,8 @@ outside the language workspace (CT-RPI-01). It is a draft:
   the indices of the shell's puzzle names. With Jumble on, a new session commits `jumble.on` at once, the twist keys
   commit `jumble.twist.menu` under the pinned menu, and each adoption is a jumbling engine bundle (`pose_index`,
   `poses`, `pose_lattice`) with one posed plan from `c600_display::jumble`. A fixture names its puzzle and opens only as
-  that puzzle. Until c600-render maps posed rows, the core refuses the bundle (J02) and the open answers `M6H_E_HOST`.
+  that puzzle. c600-render hands the core the bundle's pose arrays over the home labels and draws every slot of the
+  posed plan, none pickable (J13 stays unsupported).
 - Every call checks its pointers, catches a panic and answers a status code.
 - The host context is c600-display's declared fixture context (with Jumble on, its jumbling context for the menu's
   identity) with the core's own support report, and the limit profile is a declared draft value. Picking and previews come later.
@@ -132,7 +138,7 @@ outside the language workspace (CT-RPI-01). It is a draft:
   recovery, and the refusals; and the turns: twist keys committed and adopted, the two revisions of the frames, keys
   that are no press, an undo that fails the control, a shown revision the host never adopted, the session's refusals,
   and Jumble on (the entry, the menu row, the pose replay, a jumble-on fixture, the posed bundle and plan that
-  c600-display validates, and the core's J02 refusal today); and the view jobs (`tests/view.rs`): a run that publishes, parse and admission refusals, a run that a newer
+  c600-display validates, and the core's adoption of its pose arrays); and the view jobs (`tests/view.rs`): a run that publishes, parse and admission refusals, a run that a newer
   run supersedes, a twist before a run's delivery and before its installation, a destroy with a run in flight, and
   drafts. `tests/test_render_ffi.py` runs them. Evidence kind: source and fixture.
 

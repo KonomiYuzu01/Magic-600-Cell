@@ -8,9 +8,14 @@
 //! layer refuses a runtime invocation of a commit or app row, and any runtime invocation that carries a token
 //! (ADR-L02, KN5.15). The bridge answers the boundary with a short form of the layer's receipt, which only the shell
 //! sees; the program gets the boundary's fixed acknowledgement (BND.42, BND.43). Besides proposals, the bridge serves
-//! three reads, each to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2 draft): KN2.4's
-//! `positions` and `labels` rows at the layer's head, which LB2's exact completion reads (CT-LB2-04), and KN2.4's
-//! `effect` row, a recipe's net map, which reads no state and which LB2's recipes and reports read (CT-LB2-01).
+//! four reads, each to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2 draft): KN2.4's
+//! `positions` and `labels` rows at the layer's head, which LB2's exact completion reads (CT-LB2-04); KN2.4's
+//! `effect` row, a recipe's net map, which reads no state and which LB2's recipes and reports read (CT-LB2-01); and
+//! KN2.4's `protection` row, a captured lock judged against a recipe at the layer's head, which LB2's Net and Strict
+//! protection reads (CT-LB2-02). When the host gives it the certified guarded setup tables ([`Bridge::with_setups`]),
+//! it serves a fifth read: the draft `setups` row, the certified setups for a target the solver names, which only the
+//! setup-search exception may read and which LB2's guarded setups read (CT-BND-18; BND.1). It answers setups in the
+//! table's order, ranks none and runs none: applying one stays the solver's action.
 //! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
 //! (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no
 //! workspace or file write and no clock.
@@ -21,13 +26,15 @@
 //! ([`proposal_args`]). The bridge never chooses where to cut: every other word goes in one word step, and the layer
 //! refuses it whole when it is longer than one chunk.
 
+use std::sync::Arc;
+
 use c600_command::{Caller, CommandLayer, Invocation, MemoryStore, Receipt, Revision, Status, Store, Token};
 use c600_kernel::json::{self, Value as Json};
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::value::Value;
 
-use crate::kernel_rows;
+use crate::kernel_rows::{self, SetupTable};
 
 /// The result bound of a proposal's answer (a draft; the command table prices the row when it freezes).
 pub const RESULT_BOUND: u128 = 4096;
@@ -118,6 +125,8 @@ pub struct Bridge<'l, S: Store = MemoryStore> {
     run: String,
     /// The solver's word steps of the run's input recipe, if the host gave them.
     steps: Option<Steps>,
+    /// The certified guarded setup tables, if the host gave them: the `setups` row reads them.
+    setups: Option<Arc<SetupTable>>,
     /// Every invocation the bridge sent, in order.
     pub sent: Vec<Sent>,
 }
@@ -125,15 +134,22 @@ pub struct Bridge<'l, S: Store = MemoryStore> {
 impl<'l, S: Store> Bridge<'l, S> {
     /// The host of run `run` on `layer`. A run's name is new in its session: the bridge's command IDs are
     /// `<run>/<n>`, and the layer answers a command ID it knows by its outcome lookup. The bridge has no solver's word
-    /// steps: every proposal goes in one word step.
+    /// steps: every proposal goes in one word step. It has no setup tables: a `setups` read is not granted.
     pub fn new(layer: &'l mut CommandLayer<S>, run: &str) -> Self {
-        Bridge { layer, run: run.to_owned(), steps: None, sent: Vec::new() }
+        Bridge { layer, run: run.to_owned(), steps: None, setups: None, sent: Vec::new() }
     }
 
     /// This bridge with the solver's word steps of the run's input recipe, which the host gives for the run; a
     /// proposal's arguments are then [`proposal_args`] of the word and these steps. None keeps one word step.
     pub fn with_steps(mut self, steps: Option<Steps>) -> Self {
         self.steps = steps;
+        self
+    }
+
+    /// This bridge with the certified guarded setup tables ([`SetupTable::load`]), which the host gives for the run;
+    /// the bridge then serves the `setups` row (CT-BND-18). None keeps the read not granted.
+    pub fn with_setups(mut self, table: Option<Arc<SetupTable>>) -> Self {
+        self.setups = table;
         self
     }
 
@@ -186,6 +202,13 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::EFFECT => {
                 kernel_rows::effect_read_tariff(self.layer.kernel(), arg, ty)
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::PROTECTION => {
+                kernel_rows::protection_read_tariff(self.layer.kernel(), arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::SETUPS => match &self.setups {
+                Some(table) => kernel_rows::setups_read_tariff(table, arg, ty),
+                None => Err(NOT_GRANTED),
+            },
             _ => Err(NOT_GRANTED),
         }
     }
@@ -200,6 +223,15 @@ impl<S: Store> Host for Bridge<'_, S> {
             }
             if *query == kernel_rows::EFFECT {
                 return kernel_rows::effect(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::PROTECTION {
+                return kernel_rows::protection(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::SETUPS {
+                return match &self.setups {
+                    Some(table) => kernel_rows::setups(self.layer, table, arg, ty),
+                    None => Err(NOT_GRANTED),
+                };
             }
         }
         let Request::Propose { word, target, .. } = request else {

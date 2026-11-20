@@ -6,9 +6,9 @@
 //! - CT-LB2-03, its work-sheet part (LB7.2, KN0.8): reusing a named work sheet invalidates the old preview.
 //!
 //! M6 has neither EV3.2's view rows nor LB7.2's work-sheet structure, which KN5's layer builds (crate documentation):
-//! `ct_lb2_03_work_sheet_reuse.rs` runs the work sheets through the layer over M6's journal, and the view rows wait for
-//! the host's view model. Here a view is stood in for by what it stands on in M6 (a query job, an opened snapshot, a
-//! preview and a program's attempts to write), and a work sheet by a record that M6 sets again.
+//! `ct_lb2_03_work_sheet_reuse.rs` runs the work sheets and `kn5_on_layer.rs` the view rows, on the host's view model,
+//! through the layer over M6's journal. Here a view is stood in for by what it stands on in M6 (a query job, an opened
+//! snapshot, a preview and a program's attempts to write), and a work sheet by a record that M6 sets again.
 
 mod common;
 

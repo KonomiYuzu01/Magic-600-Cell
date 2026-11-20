@@ -1,6 +1,6 @@
 # Full 600-cell base theory in Lean
 
-A Lean 4 and Mathlib project for the base theory in [`research/ARCHON-HANDOFF-THEORY.md`](../../ARCHON-HANDOFF-THEORY.md). It holds Milestone 1, the permutation core, Milestone 2, the ring `ℤ[φ]` and the 120 vertices, and Milestone 3, the finite symmetry group, with every proof complete. Milestones 4 to 6 are not started.
+A Lean 4 and Mathlib project for the base theory in [`research/ARCHON-HANDOFF-THEORY.md`](../../ARCHON-HANDOFF-THEORY.md). It holds Milestone 1, the permutation core, Milestone 2, the ring `ℤ[φ]` and the 120 vertices, Milestone 3, the finite symmetry group, Milestone 4, topology and the Coxeter presentation, and Milestone 5, the retained model, with every proof complete. Milestone 6 is not started.
 
 No file has a `sorry`, an `admit`, a `native_decide` or a new axiom. `#print axioms` on every theorem named below lists only `propext`, `Classical.choice` and `Quot.sound`.
 
@@ -109,7 +109,112 @@ The handoff's scope is O3, O5, Lemma 4 without its Coxeter presentation (the ord
 - `I*` is defined as the set `V/2` with the group structure of `Sp(1)`, and Lemma 4 is proved for this group. The source defines `I*` as the inverse image of the rotation group of a regular icosahedron under `Sp(1) → SO(3)`; that the two agree is E1, which stays a hypothesis (`CoordinateSources`, Milestone 2).
 - `K` is defined as a group of orthogonal (linear isometric) maps of `ℍ`. `isometry_mem_symmetryGroup` shows that it contains every rigid symmetry of `P`: an isometry that maps `P` onto itself fixes the centre `0` and is linear by the Mazur–Ulam theorem. `SO(4)` is the group of orthogonal maps of `ℍ = ℝ⁴` (basis `1, i, j, k`) with determinant `1`.
 - DS part 1 is formalized as a statement about groups: `(p, q) ↦ L_{p,q}` is a surjective homomorphism from `Sp(1) × Sp(1)` to `SO(4)` with kernel `{(1, 1), (-1, -1)}`. That it is a covering map of topological spaces, and the `SO(3)` half of E6 (every rotation of the imaginary quaternions is a conjugation), are not stated.
-- Not in Milestone 3 and not formalized: the presentation `K ≅ W(H₄)` with its chain relations (Milestone 4, which uses E3 and E5), the transitivity of `K` on flags, and the second part of DS, the group-role table and the remark that `B > 10^151851` separates `G` from `K` (the inequality itself is N7, Milestone 1).
+- Not in Milestone 3 and not formalized: the presentation `K ≅ W(H₄)` with its chain relations (Milestone 4), the transitivity of `K` on flags, and the second part of DS, the group-role table and the remark that `B > 10^151851` separates `G` from `K` (the inequality itself is N7, Milestone 1).
+
+## Milestone 4: topology and the Coxeter presentation
+
+The handoff's scope is Lemma 2, the radial topology of `∂P`, with the standard topology E3; the Coxeter presentation of Lemma 4, with E5; and Lemma 5, the inradius and the cell-pole normalization. The statements and proofs were written in this session from `research/Full_600cell_Puzzle_Theory.tex` and the handoff. The blueprint chapter `blueprint/src/chapters/ArchonFull600Theory_Topology.tex` quotes the source lines for each.
+
+| Handoff | Lean theorem | Module | Content |
+| --- | --- | --- | --- |
+| L5 | `norm_facetPole`, `norm_sq_facetPole`, `facetPlane_iff` | `Poles` | The pole of a facet is `n = N/4`. It has `‖n‖² = (4 + 6φ)/4 = φ⁴/2`, so `‖n‖ = φ²/√2`. The facet plane `N · x = 4 + 6φ` is the plane `n · x = ‖n‖²`. |
+| L5 | `polytope_eq_halfSpaces`, `isGreatest_inradius` | `Poles` | `P` is the intersection of the 600 facet half-spaces. `φ²/√2` is the largest radius of a closed ball about `0` inside `P`. |
+| L5 | `cellPoleNormalization` | `Poles` | Lemma 5. It contains the facts above, and `‖n₀‖² = φ⁶ + 3 = 8φ²` and `‖n₀‖/r = 4/φ` for `n₀ = (φ³, 1, 1, 1)`. For each chosen facet there is a rotation `Q ∈ SO(4)` such that `σx = (4/φ)Qx` does the following: it sends the facet's pole to `n₀`, every pole to a pole of norm `‖n₀‖`, every facet plane to a plane `ñ · y = ‖ñ‖²`, and every facet to the face of `σP` on that plane. `σP` is the intersection of the half-spaces `ñ · y ≤ ‖ñ‖²`. |
+| L2 | `boundaryHomeomorph` | `Topology` | `x ↦ x/‖x‖` is a homeomorphism from `∂P` onto the unit sphere `S³ ⊆ ℍ`. |
+| L2 | `radialTopology` | `Topology` | Lemma 2. `0` is an interior point of `P`, `P` is compact and lies in the ball of radius 2, and the radial map is a homeomorphism. Under `SphereTopology` (E3), `H_j(∂P; ℤ)` is `ℤ` for `j = 0, 3` and zero otherwise, and `∂P` is simply connected. |
+| L4 | `chamberWalls` | `Coxeter` | The base flag `{v₀} ⊂ {v₀, v₃₀} ⊂ {v₀, v₃₀, v₃₁} ⊂ {v₀, v₃₀, v₃₁, v₃₂}` is a chain of cliques. Its four barycenters span `ℍ`, so a linear isometry that fixes them is the identity. Each wall reflection `sᵢ` lies in `K`, fixes the faces of the other ranks and moves the face of rank `i`. It is the reflection in the span of the other three barycenters. |
+| L4 | `H₄_chain`, `wallRefl_mul_pow`, `orderOf_wallRefl_mul` | `Coxeter` | Mathlib's `CoxeterMatrix.H₄` is the chain `(3, 3, 5)`. `(sᵢsⱼ)^{mᵢⱼ} = 1`, and `sᵢsⱼ` has order exactly `mᵢⱼ`. |
+| L4 | `closure_wallRefl` | `Coxeter` | `s₀, s₁, s₂, s₃` generate `K`. |
+| L4 | `coxeterPresentation`, `coxeterHom_bijective` | `Coxeter` | Lemma 4's presentation. The Coxeter group of type `H₄` maps onto `K` with `sᵢ ↦` the wall reflections. Under `CoxeterSources` (E5, in the form `|W(H₄)| = 14400`) this map is an isomorphism `W(H₄) ≅ K`. |
+
+### How the Milestone 4 proofs work
+
+- Lemma 5, the numbers: `‖N‖² = 4(4 + 6φ)` comes from Milestone 2's supporting-facet computation. The identities `φ⁴ = 3φ + 2` and `φ⁶ = 8φ + 5` give `(4 + 6φ)/4 = φ⁴/2` and `φ⁶ + 3 = 8φ²`. The source says "regularity gives the same inradius at every facet"; here the norm of every pole is computed directly.
+- Lemma 5, the half-space description of `P`: the ball of radius `φ²/√2` lies in `P` because `P` is the intersection of its facet half-spaces (`polytope_eq_halfSpaces`). That intersection is proved by a facet-cone argument.
+  - Take a facet whose normal `N` maximizes `N · x`, and write `x` in the basis of its four vertices.
+  - Suppose a coefficient were negative. The facet across the opposite ridge exists by Milestone 2's common-neighbour count, and it would have a larger `N · x`.
+  - So `x` lies in the cone over the facet, and a point of that cone in the half-space lies in `P`.
+- Lemma 5, the extremal ball and the rotation: no larger ball fits, because each pole lies on the boundary. The rotation is `L_{b,a}` with `a = n/‖n‖` and `b = n₀/‖n₀‖`, which lies in `SO(4)` by Milestone 3.
+- Lemma 2: the source shows that `0` is interior through the cross-polytope `conv{±2eᵢ}`; here the inradius ball of Lemma 5 does this. The radial map is the restriction of Mathlib's gauge rescaling homeomorphism (`gaugeRescaleHomeomorph`) from `P` to the closed unit ball. It maps the frontier onto the unit sphere and agrees with `x ↦ x/‖x‖` there, because the gauge of `P` is `1` on its frontier. So the homeomorphism is proved directly, and the source's compact-to-Hausdorff step is not needed. Homology and simple connectivity move from `S³` to `∂P` along the homeomorphism, through Mathlib's singular homology functor and homotopy equivalence.
+- Lemma 4, the walls: the reflections are in the hyperplanes orthogonal to `v_a - v_b` for the pairs `(0, 30)`, `(30, 31)`, `(31, 32)` and `(32, 42)`. Vertex 42 is the second common neighbour of the triangle `{0, 30, 31}`, so the four pairs move the faces of ranks 0 to 3 of the flag. Four kernel-checked tables over `ℤ[φ]` show that each reflection permutes the 120 vertices: `(u·u) v - 2(v·u) u` is `(u·u)` times a vertex. So each reflection lies in `K`. The same tables give the flag images and, through the barycenters, the mirror as the span of the other three barycenters.
+- Lemma 4, the relations: by Milestone 3, an element of `K` is determined by the images of the four vertices of the base facet. So `(sᵢsⱼ)^m = 1` is a kernel check on those four vertices, and so is the minimality of `mᵢⱼ`.
+- Lemma 4, generation: a breadth-first search over the group, run once outside Lean, gives explicit words in `s₀, …, s₃` for `L_{v₈/2,1}`, `L_{v₃₀/2,1}`, `L_{1,v₈/2}`, `L_{1,v₃₀/2}` and `J`. The kernel checks each word on the base facet. Milestone 3's word tree writes every element of `I*` as a word in `v₈/2` and `v₃₀/2`, and every element of `K` is `L_{p,q}` or `L_{p,q}J`. So the reflections generate `K`.
+- Lemma 4, the presentation: Mathlib's `CoxeterSystem.lift` turns the relations into a homomorphism from `CoxeterMatrix.H₄.Group`. It is onto because the reflections generate `K`. Under `CoxeterSources`, both groups have 14,400 elements, so the surjection is a bijection.
+
+### Statements and hypotheses in Milestone 4
+
+- E3 is not formalized. `SphereTopology` states the three facts about the unit sphere `S³ ⊆ ℍ` that Lemma 2 uses: `S³` is simply connected, its integral singular homology is `ℤ` in degrees 0 and 3, and it is zero in every other degree. Mathlib v4.36.0 has neither the homology of spheres nor the simple connectivity of `S³`. The third part of E3, that a continuous bijection from a compact space to a Hausdorff space is a homeomorphism, is not needed, because the homeomorphism is proved.
+- E5 is not formalized, and it enters by another route than the source's. The source proves that the presentation is complete through closed galleries in the dual cell complex of `S³`. That argument is E5's second part, and it uses Lemma 2's `π₁(∂P) = 1`. It then names the presented group `W(H₄)`, which is E5's first part.
+  - Here `CoxeterSources` states the standard order of the Coxeter group of type `H₄`, `|W(H₄)| = 14400`, for Mathlib's group `CoxeterMatrix.H₄.Group` presented by the chain `(3, 3, 5)`.
+  - Completeness then follows from the proved surjection and the proved order `|K| = 14400`.
+  - So the gallery argument is not formalized, the order of `W(H₄)` is an external fact that the handoff's table of external results does not list, and Lemma 4's presentation does not depend on Lemma 2 here.
+  - Without `CoxeterSources`, `coxeterPresentation` proves the relations with their exact orders, generation, and the surjection from `W(H₄)`.
+- A facet in Lemma 5 is one of the 600 four-cliques of the edge graph, as in Milestone 2. These cut out `P` (`polytope_eq_halfSpaces`). Under E4 they are all the facets of `P` (`facetCompleteness`).
+- Lemma 5's rotation is stated for each chosen facet. The source's remark that the symmetry group of `σP` is the conjugate of `K` under the similarity is not stated.
+- Lemma 4's chambers are not defined as radially projected simplices. `chamberWalls` states what the proof uses about them: the flag, the barycenters, the triviality of the flag stabilizer, and the wall reflections. The simple transitivity of `K` on chambers and the connectivity of chamber adjacency are not stated. Generation is proved through explicit words instead.
+- `∂P` is the frontier of `P` in `ℍ`, and `S³` is `Metric.sphere 0 1` in `ℍ` with the Euclidean norm. Homology is Mathlib's integral singular homology `AlgebraicTopology.singularHomologyFunctor`.
+
+## Milestone 5: the retained model
+
+The handoff's scope is the retained model as a structure: the census table O9, the frame groups and the hypotheses R, F, I, C and E as inputs; Lemmas 6, 7 and 8, with N4 and N5 as decidable checks; and the model-level uses of Lemmas 9 to 11 on the nine selected orbits, with N11. The statements and proofs were written in this session from `research/Full_600cell_Puzzle_Theory.tex` and the handoff. The blueprint chapter `blueprint/src/chapters/ArchonFull600Theory_RetainedModel.tex` quotes the source lines for each.
+
+The hypotheses are inputs, not theorems. Their truth for the real puzzle is evidence (handoff section 4), and nothing here proves them. Each is a separate structure, so each lemma assumes exactly the hypotheses the source names for it.
+
+| Handoff | Lean name | Module | Content |
+| --- | --- | --- | --- |
+| O9 | `censusRows`, `census` and the `run_cmd` check | `Census` | The 35 rows (rank, stickers per piece `k_o`, pieces `N_o`, frame group `H_o`) are typed in. Compiling the module reads `assets/census.json` and stops the build unless every row and the file's totals agree with it. |
+| HR | `censusSums`, `HypothesisR.card_piece`, `HypothesisR.card_sticker` | `Census`, `RetainedModel` | `Σ N_o = 176520`, `600 + Σ k_o N_o = 259800` and `600 + Σ N_o = 177120`. Under R the model has 177120 pieces and 259800 sticker slots. |
+| N4 | `frameTypeCounts`, `invariantOrder` | `Census` | Seven `C₂`, one `D₅`, two `C₅`, one `A₅` and 24 trivial frame groups, so `∏_o 2 |H_o^ab| = 2^43 · 5^2`. |
+| N5 | `FrameGroupType.card_abelianization` | `Census` | `|D₅^ab| = 2` and `|A₅^ab| = 1`, through Milestone 1's `dihedralFiveCommutatorCard` and `alternatingFivePerfect`. |
+| R, F, C, E | `RetainedModel`, `HypothesisR`, `HypothesisF`, `HypothesisC`, `HypothesisE` | `RetainedModel` | The data are the sticker slots, the pieces, the piece map and the primitives `H_c`, `T_c` of the 600 caps. `G` is the subgroup generated by the `H_c` and `T_c`. The four hypotheses are stated over these data. |
+| L6 | `completeSignature_eq_iff`, `completeSignature_smul`, `convex_chamber`, `isPreconnected_patch` | `Chambers` | The geometric part. Two points off the cut hyperplanes have the same complete cap signature exactly when they lie in the same connected component. `M(kx) = k M(x)` for `k ∈ K`. Chambers are convex, and a chamber closure meets a closed facet in a convex set. |
+| L6 | `HypothesisF.closure_primitives`, `HypothesisR.piece_legal`, `HypothesisR.signature_injective`, `HypothesisR.address_injective`, `HypothesisR.rank_multiplicity` | `RetainedModel` | Under F, `H_c` and `T_c` generate the cap's `A₄` action. Under R, the piece map is equivariant under every legal element, and distinct pieces have distinct complete signatures. `(M(A), h)` addresses the sticker slots, and `r(A) = |M(A)| - 1` and `k(A) = |Host(A)|` are the census rank and `k_o`. |
+| L7 | `FrameWreath`, `FrameWreath.natCard`, `HypothesisR.coherentFrames`, `HypothesisR.CoherentFrames.coord`, `HypothesisR.transportedFrames`, `HypothesisR.natCard_ambient` | `FrameCoordinates` | Under R, transported frames exist. They give an injective homomorphism from `G` into `∏_o H_o^{N_o} ⋊ S_{N_o}`, a group of order `∏_o N_o! |H_o|^{N_o}`. |
+| HI, L8 | `HypothesisI`, `FrameWreath.invariant_surjective`, `HypothesisR.index_invariantKernel`, `HypothesisI.invariantBound` | `InvariantBound` | The positional sign and the orientation image map each orbit's wreath product onto `{±1} × H_o^ab`, independently in each orbit. So their joint kernel has index exactly `2^43 · 5^2`. Under R and I, `|G| · 2^43 · 5^2 ≤ ∏_o N_o! |H_o|^{N_o}`. |
+| N11 | `selectedOrbitCensus`, `HypothesisR.card_selectedOrbitStickers`, `HypothesisR.selected_single_sticker` | `Census`, `SelectedOrbits` | The nine selected orbits have one sticker per piece and 3600, 2400 and 7200 sticker slots, that is `600 m` with `m = 6, 4, 12`. |
+| L9 | `HypothesisC.supportedAlternating` | `SelectedOrbits` | Under R and C, `G` contains `A_3600 × A_2400 × A_7200^7`, acting on the nine selected orbits and fixing every other sticker. |
+| L10 | `HypothesisC.balancedColorBound` | `SelectedOrbits` | Under R and C, there are at least `B` reachable face-colour states, and `B` of them are attained with every unselected sticker solved. |
+| L11 | `HypothesisC.wordDistanceBound`, `HypothesisC.totalVariationBound`, `RetainedModel.capWord_surjective` | `SelectedOrbits` | Under R and C, with the alphabet `{H_c, T_c, T_c⁻¹}` of 1800 letters, some state is at word distance at least 46648, and the total variation after 1000 letters is more than `1 - 10^(-148595)`. The alphabet's words realize every legal element. |
+
+### How the Milestone 5 proofs work
+
+- Census: the table is a Lean list, so every count is a kernel `decide`. The JSON check runs at compile time through `run_cmd` and Lean's JSON parser. It compares each row's fields and the file's totals, and a mismatch is a build error.
+- Lemma 6, chambers:
+  - The caps are Milestone 2's 600 four-cliques, with Lemma 5's poles. The cut function `n_c · x - α ‖n_c‖²` is affine, so a chamber is convex.
+  - Two points with the same complete signature lie in one chamber, so in one component. Conversely, no cut function changes sign along a connected set off the cuts (intermediate value theorem), so the signature is constant on a component.
+  - `K` acts on the caps through their vertices and preserves inner products, so it permutes the cut functions.
+- Lemma 6, generation: a kernel check over `A₄` shows that any element of order 2 and any element of order 3 generate it. This is the source's Klein four-group argument. It is moved to each cap's vertex set by an equivalence.
+- Lemma 6, signatures: R names a point of each piece's chamber and says that distinct pieces are distinct chambers ("no hidden identification"). Signature injectivity is derived from the geometric part, not assumed.
+- Lemma 7 follows the source's proof:
+  - Fix a reference piece and a reference sticker order for each orbit. R's transitivity gives a legal transporter to each position.
+  - Labelling `(i, f)` by the transporter's image of reference sticker `f` gives a frame.
+  - The increment of `g` at `i` is the return map `t_{g(i)}⁻¹ g t_i` on the reference piece, which R puts in `H_o`.
+  - The coordinate map is a homomorphism by the wreath-product law. It is injective because the frames cover every moving sticker and the centres are fixed.
+- Lemma 8: the sign and the abelianized product of frame increments are homomorphisms. For surjectivity, a transposition sets the sign and one frame coordinate sets the orientation value. The target has order `∏_o 2 |H_o^ab|`, which is `invariantOrder` through the abelianization orders of the census types. Under I, closure induction puts every legal element in the kernel, and `|kernel| · index = |ambient|` gives the bound.
+- Lemmas 9 to 11 reuse Milestone 1's abstract theorems.
+  - The nine orbits are R's orbit sticker sets. Their disjointness and invariance come from R, and their sizes come from the census through `|O_o| = k_o N_o`.
+  - For Lemma 11, Milestone 1 assumed that the alphabet's words realize every legal element. Here this is proved: words compose by concatenation, the letters include every generator, and in the finite group `G` an inverse is a positive power.
+
+### Statements and hypotheses in Milestone 5
+
+- R, F, C and E are structures in `RetainedModel`. I is in `InvariantBound`, because it refers to the transported coordinates of Lemma 7. The lemmas use the hypotheses the source names:
+  - Lemma 6 uses F for generation and R for the rest.
+  - Lemmas 7 and 8 use R, and Lemma 8 also I.
+  - Lemmas 9 to 11 use R and C.
+  - E is stated but not used here; Lemma 12 (Milestone 6) uses it.
+- R is stated in finite terms:
+  - centres form the class `none`, and the counts are the census numbers;
+  - each piece has a chamber point, and distinct pieces are distinct chambers;
+  - each sticker has a host facet, and the host determines the sticker within its piece;
+  - each piece has a rank, and each orbit a frame group `H_o ≤ S_{k_o}` isomorphic to the census type, with a reference piece and reference frame.
+  - `stabilizer_mem` says that every legal element mapping the reference piece to itself acts on its stickers through `H_o`. This and `frameGroup_equiv` are the reading of "faithful frame groups after coherent transport".
+  - The field `transitive` says that each class is one orbit of `G` on pieces. This is the reading of "moving orbit", and Lemma 7's transporters need it.
+  - `host_injective` is the source's one patch per hosting facet, taken as part of "no hidden identification". The source's convexity reason for it is `isPreconnected_patch`, which is proved for the closed intersection. The open patch with its lower-dimensional boundary removed is not stated.
+- F gives each cap a homomorphism from the even permutations of its four vertices to the permutations of the sticker slots. `H_c` and `T_c` are the images of an element of order 2 and an element of order 3. F does not require this action to be faithful.
+- I asks for some coherent frames in which every `H_c` and `T_c` has even positional permutation and trivial orientation image in every orbit. The source states I in the frames its proof constructs. Allowing any coherent frames weakens the hypothesis, so Lemma 8 here is at least as strong. The source's remark that changing the frames conjugates the coordinates is not formalized.
+- E has a field that the source's words imply but do not write out. `geom_capAction` says that `k ∈ K` conjugates each rotation of cap `c` into the rotation of cap `k • c` that permutes its vertices through `k`. This is the reading of "the subdivision is preserved", and Lemma 12 needs it. E does not tie the chamber points or host facets to the geometric action, so `M(kA) = k M(A)` is proved only for points (`completeSignature_smul`), not as a statement about pieces.
+- The census check runs when `Census.lean` is compiled. Lake does not track `assets/census.json` as an input, so after the file changes, `Census.lean` must be rebuilt (for example from a clean build) for the check to run again.
+- The selected orbits are numbered by Milestone 1's `selectedOrbitIds`. The alphabet of Lemma 11 is indexed through any enumeration `Fin 600 ≃ Cap` of the caps, and the theorems hold for every enumeration.
 
 ## Build
 
@@ -120,9 +225,9 @@ lake exe cache get
 lake build
 ```
 
-With Mathlib's build cache in place, `lake build` rebuilds only this library. `Basic.lean` takes under a minute; `EdgeGraph.lean`, the slowest module, takes about 50 seconds, most of it in the kernel checks of the pair and count certificates. The three Milestone 3 modules take 13 to 25 seconds each on an otherwise idle machine. The build passes with no errors and no linter warnings. Lake still notes, once for each import, that the imported Mathlib modules are designed for the module system; these files are not modules.
+With Mathlib's build cache in place, `lake build` rebuilds only this library. `Basic.lean` takes under a minute; `EdgeGraph.lean`, the slowest module, takes about 50 seconds, most of it in the kernel checks of the pair and count certificates. The three Milestone 3 modules, the three Milestone 4 modules and the six Milestone 5 modules take 10 to 25 seconds each on an otherwise idle machine. The build passes with no errors and no linter warnings. Lake still notes, once for each import, that the imported Mathlib modules are designed for the module system; these files are not modules.
 
 ## How it was produced
 
 - Milestone 1 statements: Archon 0.3.3, an automated Lean formalization loop run outside this repository, in iteration 19 of its `autoformalize` stage, with OpenAI GPT-6.2 Sol at effort `max` through the Codex CLI. The agent logs and Archon's state directory are not included.
-- Milestone 1 proofs and all of Milestones 2 and 3: a Claude Code session (Claude Opus 5.5), without Codex calls.
+- Milestone 1 proofs and all of Milestones 2 to 5: a Claude Code session (Claude Opus 5.5), without Codex calls.

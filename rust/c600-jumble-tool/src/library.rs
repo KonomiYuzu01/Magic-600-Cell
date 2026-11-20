@@ -1,7 +1,7 @@
 //! The jumbling library entries as 600 Cell Script (LP3, C8; chapter 03's LB1.8, LB1.10 and LB3.1 catalogues), on
-//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Twelve modules, each in
-//! edition `6cs-draft-1` (syntax candidate A) and in the formatter's canonical layout, checked and run by LP2's checker
-//! and interpreter:
+//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Fourteen modules,
+//! each in edition `6cs-draft-1` (syntax candidate A) and in the formatter's canonical layout, checked and run by
+//! LP2's checker and interpreter:
 //!
 //! - `menu_words` ([`MENU_WORDS`]): LB1.8's literal words of one pinned menu, the jumbling half. `power` repeats a menu
 //!   word, or its inverse for a negative power; the IR draft's own operations concatenate, invert, conjugate and
@@ -37,9 +37,21 @@
 //!   piece off the lattice and `named_unit` the solver's named unit; `clean_step` reads KN2.4's `word_check` for the
 //!   solver's word and unit and answers the contract's parts: the unit landed, the lattice pieces lifted off and the
 //!   other off pieces kept at their exact pose or landed, and whether the contract holds.
+//! - `jumble_repair` ([`REPAIR`]): LB3.1's "Repair list at a named cap" (LB3.6). `repair_list_at` reads JI.12's
+//!   `repair_list` for the solver's cap and returns it as read: the completed list's pairs (x, d) whose repair lowers
+//!   N, each with its y, z and ΔN, in x-then-d order, none ranked or marked. The entry is the built-in column's
+//!   repair-list exception (`c600_check::Row::RepairList`): it reads only for the cap its parameter names, and it
+//!   delivers the list as read, so the program neither chooses the cap nor orders, marks or filters the pairs.
+//! - `jumble_end_tests` ([`END_TESTS`]): LB3.1's "Retained checkpoint, label checkpoint, sticker test" (LB3.2,
+//!   LB3.3). `sticker_test`, `retained_checkpoint` and `label_checkpoint` read the three end tests, each as its own
+//!   verdict type (`StickerTestVerdict`, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict`; LG2.9), which a
+//!   program matches on `holds`, `fails` and `unestablished` only; the retained checkpoint takes the solver's witness
+//!   word and builds none.
 //!
-//! Every entry tracks, analyses or checks the solver's named word or state; none chooses or outputs a word, and none
-//! previews or executes anything (no `propose`). A run pins the word's alphabet with [`crate::word::Alphabet::pinned`].
+//! Every entry tracks, analyses or checks the solver's named word or state, and none previews or executes anything
+//! (no `propose`). None chooses or outputs a word, except at the one point the owner allowed (17 October 2026): at a
+//! cap the solver names, `repair_list_at` lists the pairs whose three-twist repair lowers N, in a neutral order, and
+//! the solver picks one. A run pins the word's alphabet with [`crate::word::Alphabet::pinned`].
 //!
 //! # Drafts
 //!
@@ -49,10 +61,12 @@
 //!   [`crate::rows`] serves them: each is a record of fields named as `c600_jumble`'s answers name them
 //!   (`observe::heights`, `observe::prefix_observations`, `observe::word_check`, `levels::WordProtection`,
 //!   `observe::cuts::rim_summary`, `observe::cuts::covers`, `corrections::Catalogue::lookup`, `state::Outcome`,
-//!   `state::StraddlerSet`, `observe::units`), a JSON
+//!   `state::StraddlerSet`, `observe::units`, `observe::cuts::repair_list`), a JSON
 //!   object read as a `Map`, and a field that may be undefined, such as an end fact after a refused prefix, declared as
 //!   a list that is empty when the field is undefined and holds one value otherwise, since the IR draft has no option
-//!   type. A program declares the fields it reads, in any order. Every answer writes each of its fields, null when
+//!   type. The end tests' rows are read as the IR draft's verdict types instead (LP2's pull request 213): the outcome
+//!   of M8's `levels::Verdict`, without its evidence, reason or level, which the IR draft's verdict does not carry.
+//!   A program declares the fields it reads, in any order. Every answer writes each of its fields, null when
 //!   undefined: a refused letter's row in `replay`, which `observe::prefix_observations` writes without the after-state
 //!   facts, carries them as null. A declared field that the answer does not write, such as a misspelled one, is
 //!   `LG2:type.mismatch` and is never read as undefined. The bridge serves the rows from the kernel API this way and
@@ -65,6 +79,8 @@
 //!   `correction_lookup` the solver's correction id, and `seam_facts` a cap ID or the text `all` for one whole scan.
 //!   `classify` takes the solver's named twist as a menu word of one letter, `survey` and `straddlers` the solver's
 //!   cap ID, and `units` the named unit as a list of pieces or the text `all` for every unit off the lattice.
+//!   `repair_list` takes the solver's cap ID, `retained_checkpoint` the solver's witness as a 600-cell-Full `Word`
+//!   (signed primitive ids), and `sticker_test` and `label_checkpoint` none.
 //! - **Exact numbers (KN2.4).** A straddle certificate's points and cut heights are numbers of Q(√5), declared `Q5`:
 //!   the bridge reads the engine's `[a, b, d]` for (a + b√5)/d, never a float.
 //! - **ν's answer (KN2.4, A5).** `nu` and `correction_set_check` answer a record `{ reason, values }`: ν's 45 values
@@ -203,8 +219,24 @@ pub const UNITS: Module = Module {
     rows: &["units", "word_check"],
 };
 
+/// LB3.1's repair list at a named cap (LB3.6), under the built-in column's repair-list exception.
+pub const REPAIR: Module = Module {
+    name: "jumble_repair",
+    source: include_str!("jumble_repair.6cs"),
+    exports: &["repair_list_at"],
+    rows: &["repair_list"],
+};
+
+/// LB3.1's retained checkpoint, label checkpoint and sticker test (LB3.2, LB3.3).
+pub const END_TESTS: Module = Module {
+    name: "jumble_end_tests",
+    source: include_str!("jumble_end_tests.6cs"),
+    exports: &["sticker_test", "retained_checkpoint", "label_checkpoint"],
+    rows: &["label_checkpoint", "retained_checkpoint", "sticker_test"],
+};
+
 /// The library's modules.
-pub const MODULES: [Module; 12] = [
+pub const MODULES: [Module; 14] = [
     MENU_WORDS,
     MENU_TRACES,
     HEIGHTS,
@@ -217,6 +249,8 @@ pub const MODULES: [Module; 12] = [
     ADMISSIBILITY,
     STRADDLERS,
     UNITS,
+    REPAIR,
+    END_TESTS,
 ];
 
 /// Parses and lowers the library's modules and `clients`, one module each, into one program
@@ -431,5 +465,52 @@ pub fn units_and_clean_step_contract() -> CatalogueRow {
                 refused prefix leaves the parts undefined and the contract false. Not built: a general clean step's \
                 declared free set, which `word_check` does not take.",
         ..row("Units and clean-step contract", "Jumbling poses.", &[Effect::ReadSnapshot], UNITS)
+    }
+}
+
+/// LB3.1's row "Repair list at a named cap" (LB3.6).
+pub fn repair_list_at_a_named_cap() -> CatalogueRow {
+    CatalogueRow {
+        backing: "KN2.4's `repair_list`: `jumble_repair.repair_list_at` reads it with `read_snapshot` for the \
+                  solver's named cap and returns it as read (JI.12, M8's `observe::cuts::repair_list`, with no pair \
+                  budget and no cancellation), under the built-in column's repair-list exception \
+                  (`c600_check::Row::RepairList`).",
+        notes: "The exception of 17 October: at the cap the solver names, the completed list of the pairs (x, d) \
+                whose repair lowers N, each with its y and z under the pinned tie rule (the smaller pinned index) and \
+                its ΔN, in x-then-d order, none ranked best and with no mark. The solver picks a row; its whole-word \
+                preview is the command layer's. The answer names the cap, the pinned menu and its order, the tie rule \
+                and the input digest. Empty after completion means no repair of this stated shape at this cap, never \
+                that no other lowering word exists. A blocked or closed cap, or free mode, is status `error` with no \
+                rows. The engine's outcome of every pair it tried is not served (CT-LB3-07), and no entry starts a \
+                job for a cap the solver did not name. Not built: the job through the command layer, BND.2's wording \
+                of an empty list, and the shell's keys (LP2).",
+        ..row("Repair list at a named cap", "Jumbling poses.", &[Effect::ReadSnapshot], REPAIR)
+    }
+}
+
+/// LB3.1's row "Retained checkpoint, label checkpoint, sticker test" (LB3.2, LB3.3).
+pub fn retained_checkpoint_label_checkpoint_sticker_test() -> CatalogueRow {
+    CatalogueRow {
+        backing: "KN2.4's `retained_checkpoint`, `label_checkpoint` and `sticker_test`, each read with \
+                  `read_snapshot`: `jumble_end_tests.retained_checkpoint` with the solver's witness word (M8's \
+                  `levels::retained_checkpoint`), `jumble_end_tests.label_checkpoint` under the base's own \
+                  reachability claim (`levels::label_checkpoint`) and `jumble_end_tests.sticker_test` \
+                  (`levels::sticker_test`).",
+        notes: "Three independently named tests with their own premises and conclusions, each answering its own \
+                verdict type, holds, fails or unestablished (LG2.9), which one test's verdict never stands for \
+                another's: the retained checkpoint at poses, from a retained legal witness the solver supplies, \
+                which the entry replays from solved and never builds; the label checkpoint at labels, from the \
+                lattice premises, a witnessed reachability claim of the state itself and ν = 0, with ν from the \
+                identity labels, a retained witness or the ν row; the sticker test at labels, N = 0 and every \
+                labelled slot at home. Unestablished is never fails, and lattice placement or low height alone \
+                establishes none of them. The row's answer also holds the verdict's evidence or reason and the \
+                level it was reached at, which the IR draft's verdict does not carry. The crossing itself is the \
+                command layer's (KN5).",
+        ..row(
+            "Retained checkpoint, label checkpoint, sticker test",
+            "Jumbling poses and explicit label projection; Full labels as applicable.",
+            &[Effect::ReadSnapshot],
+            END_TESTS,
+        )
     }
 }

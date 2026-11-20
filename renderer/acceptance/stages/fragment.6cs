@@ -1,0 +1,11 @@
+edition "6cs-draft-1";
+# The renderer gate's fragment stage (C9 U5a): an opaque colour from the colour class and the built-in shade, with
+# tier-1 operations only. Every weight 1 counts 6 operations: approx_add 1, approx_mul 4, approx_sub 1. The overdraw
+# is the vertex stage's, sized from W3 (C9 U5c; renderer/acceptance/README.md, "User stages").
+stage fragment paint ops 6 overdraw 108;
+
+export fn main(class: Approx<P24>, shade: Approx<P24>) -> record { b: Approx<P24>, g: Approx<P24>, r: Approx<P24> } effects [] {
+    let warm = approx_add(~24"0.25", approx_mul(class, ~24"0.75"));
+    let cool = approx_sub(~24"1", warm);
+    return record { b = approx_mul(cool, shade), g = approx_mul(~24"0.5", shade), r = approx_mul(warm, shade) };
+}

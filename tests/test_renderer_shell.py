@@ -313,12 +313,13 @@ class ShellProject(unittest.TestCase):
         for needle in ('Register("Magic600.LX4.Reset")', 'Register("Magic600.LX4.Select")',
                        'json.WriteString("t", "lx4");', "Context.Log?.Append("):
             self.assertIn(needle, lx4)
-        # LX-2's stub has the hook points only: its fault schedule, rows and fault variables are its owner's.
-        stub = text(PROJECT / "Lx2" / "Lx2Module.cs")
-        self.assertIn("public sealed class Lx2Module : IShellModule", stub)
-        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
-        for needle in ("C600_LX2", '"lx2"', "RegisterWindowMessage", "Context.Host.", "Context.Log."):
-            self.assertNotIn(needle, stub)
+        # LX-2's module likewise (tests/test_c9_measure.py checks its schedule): a module that takes LX-2's phase
+        # message, writes its rows through the log and sets the fault variables only in the shell's process.
+        lx2 = text(PROJECT / "Lx2" / "Lx2Module.cs")
+        self.assertIn("public sealed class Lx2Module : IShellModule", lx2)
+        for needle in ('Register("Magic600.LX2.Phase")', 'json.WriteString("t", "lx2");', "Context.Log?.Append(",
+                       '"C600_LX2_CEILING"', '"C600_LX2_FAULT"'):
+            self.assertIn(needle, lx2)
 
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
         chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")
@@ -427,7 +428,8 @@ class ProductBuild(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.temp, True)
         self.build = self.temp / "20261118T000000Z"
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
-                 "host/c600_shell_host.dll": b"host", f"shell/project/{self.build_product.build_shell.ASSEMBLY}": b"asm",
+                 "host/c600_shell_host.dll": b"host", "lx4/c600_shell_lx4.dll": b"lx4",
+                 f"shell/project/{self.build_product.build_shell.ASSEMBLY}": b"asm",
                  "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
                  "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}", "runtime/c600-runtime.exe": b"runtime",
                  "session-fixture/fixture.json": b"{}", "session-fixture/session/lock": b"",
@@ -442,11 +444,17 @@ class ProductBuild(unittest.TestCase):
         self.godot.write_bytes(b"godot")
         record = self.build_product.record(self.build, self.godot, "0" * 40, False)
         (self.build / "product.json").write_text(json.dumps(record), encoding="utf-8")
+        # LX-4's fixture folder as c600-lx4 --out writes it; the launcher reads only its manifest.
+        self.fixtures = self.temp / "lx4-fixtures"
+        self.fixtures.mkdir()
+        (self.fixtures / "MANIFEST.json").write_bytes(b'{"format": "lx4 fixtures"}')
+        (self.fixtures / "EDITS.json").write_bytes(b"{}")
+        self.lx4 = ["--lx4", "--lx4-fixtures", str(self.fixtures)]
 
     def test_a_build_verifies_and_names_every_part_it_loads(self):
         product = self.build_product.verify(self.build)
         self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
-                                                 "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
+                                                 "lx4:c600_shell_lx4.dll", "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
                                                  "menu:wj-I_a.json", "runtime:c600-runtime.exe", "fixture:fixture.json",
                                                  "fixture:session/lock", "fixture:session/journal",
                                                  "fixture-jumble-on:fixture.json", "fixture-jumble-on:session/lock",
@@ -512,8 +520,15 @@ class ProductBuild(unittest.TestCase):
         self.assertNotEqual(identity(digests), identity({**digests, "b": "3" * 64}))
 
     def test_the_build_never_launches(self):
-        self.assertEqual(self.build_product.host_command()[:6],
-                         ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
+        for command, package in ((self.build_product.host_command(), "c600-shell-host"),
+                                 (self.build_product.lx4_command(), "c600-shell-lx4")):
+            self.assertEqual(command[:6], ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
+            self.assertEqual(command[-2:], ["-p", package])
+        # The library the build copies is the one that LX-4's crate builds.
+        manifest = text(ROOT / "renderer" / "bridge" / "lx4" / "Cargo.toml")
+        self.assertIn('name = "c600-shell-lx4"', manifest)
+        self.assertIn('"cdylib"', manifest)
+        self.assertEqual(self.build_product.LX4_DLL, "lx4/c600_shell_lx4.dll")
         self.assertTrue(str(self.build_product.BUILD_ROOT).replace("\\", "/").endswith("work/build/c9-product"))
         source = text(SHELL / "build_product.py")
         self.assertNotIn("--path", source)
@@ -525,8 +540,8 @@ class ProductBuild(unittest.TestCase):
         child = self.temp / "c600-lx2-child.exe"
         child.write_bytes(b"injection child")
         lx2 = ["--lx2-injection", str(child)]
-        for flags in ([], ["--echo"], ["--lx4"], ["--puzzle", "jumble-off", "--lx4", "--echo"], ["--cold-start"], lx2,
-                      ["--lx4", *lx2]):
+        for flags in ([], ["--echo"], self.lx4, ["--puzzle", "jumble-off", *self.lx4, "--echo"], ["--cold-start"], lx2,
+                      [*self.lx4, *lx2]):
             lines = []
             out = self.temp / "run"
             code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *flags],
@@ -538,7 +553,7 @@ class ProductBuild(unittest.TestCase):
                          "M600_RUN_ID", "M600_SESSION_DIR", "M600_TWIST_MENU", "M600_PUZZLE", "M600_SESSION_FIXTURE",
                          "M600_RUNTIME"}
                         | ({"M600_INPUT_ECHO"} if "--echo" in flags else set())
-                        | ({"M600_LX4"} if "--lx4" in flags else set())
+                        | ({"M600_LX4", "M600_LX4_DLL", "M600_LX4_FIXTURES"} if "--lx4" in flags else set())
                         | ({"M600_LX2"} if "--lx2-injection" in flags else set())
                         | ({"M600_EXIT_AT_FIRST_FRAME"} if "--cold-start" in flags else set()))
             self.assertEqual(names, expected)
@@ -564,6 +579,30 @@ class ProductBuild(unittest.TestCase):
             self.assertIn(says, lines[-1])
             self.assertNotIn(str(self.temp), lines[-1])
 
+    def test_lx4_is_refused_without_its_fixtures_and_hands_the_module_what_it_loads(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        empty = self.temp / "empty"
+        empty.mkdir()
+        for flags, says in ((["--lx4"], "go together"), (["--lx4-fixtures", str(self.fixtures)], "go together"),
+                            (["--lx4", "--lx4-fixtures", str(empty)], "no MANIFEST.json"),
+                            (["--lx4", "--lx4-fixtures", str(self.temp / "missing")], "no MANIFEST.json")):
+            with self.subTest(flags=flags[:2]):
+                lines = []
+                out = self.temp / "run"
+                code = self.launch.main(["--out", str(out), "--build", str(self.build), *flags], popen=refuse,
+                                        out_stream=lines.append)
+                self.assertEqual(code, 2)
+                self.assertFalse(out.exists())
+                self.assertIn(says, lines[-1])
+                self.assertNotIn(str(self.temp), lines[-1])
+        # The variables are the ones the shell's module requires.
+        module = text(PROJECT / "Lx4" / "Lx4Module.cs")
+        for name in ("M600_LX4_DLL", "M600_LX4_FIXTURES"):
+            self.assertIn(f'Required("{name}")', module)
+            self.assertIn(name, self.launch.SHELL_VARIABLES)
+        self.assertIn('GetEnvironmentVariable("M600_LX4") == "1"', text(PROJECT / "Shell.cs"))
+
     def test_an_lx2_launch_runs_the_child_and_records_its_digest_and_no_path(self):
         started = {}
 
@@ -578,17 +617,22 @@ class ProductBuild(unittest.TestCase):
         child.write_bytes(b"injection child")
         out = self.temp / "run"
         machine = FakeMachine()
-        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r2", "--lx4",
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r2", *self.lx4,
                                  "--lx2-injection", str(child)], popen=popen, out_stream=lambda line: None,
                                 machine=machine, state=self.temp / "last-exit.json")
         self.assertEqual(code, 0)
         env = started["env"]
         self.assertEqual(env["M600_RUNTIME"], str(child.resolve()))
         self.assertEqual((env["M600_LX2"], env["M600_LX4"]), ("1", "1"))
+        # LX-4's library from the verified build and the fixture folder, both resolved like --build.
+        self.assertEqual(env["M600_LX4_DLL"], str(self.build.resolve() / "lx4" / "c600_shell_lx4.dll"))
+        self.assertEqual(env["M600_LX4_FIXTURES"], str(self.fixtures.resolve()))
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
         self.assertEqual(record["lx2_injection"],
                          {"name": "c600-lx2-child.exe", "sha256": hashlib.sha256(b"injection child").hexdigest()})
         self.assertTrue(record["lx4"])
+        self.assertEqual(record["lx4_fixtures"],
+                         {"manifest_sha256": hashlib.sha256(b'{"format": "lx4 fixtures"}').hexdigest()})
         for temp in {str(self.temp), str(self.temp.resolve())}:
             self.assertNotIn(temp, json.dumps(record))
             self.assertNotIn(temp.replace("\\", "/"), json.dumps(record))
@@ -605,24 +649,35 @@ class ProductBuild(unittest.TestCase):
                                           machine=FakeMachine(), state=self.temp / "last-exit.json"), 0)
         return out
 
-    def test_jumble_on_is_refused_until_the_host_runs_it(self):
-        def refuse(*args, **kwargs):
-            raise AssertionError("a refused launch started a process")
-        lines = []
+    def test_jumble_on_launches_on_its_own_fixture(self):
+        started = {}
+
+        class Process:
+            def wait(self):
+                return 0
+
+        def popen(arguments, cwd, env):
+            started.update(env=env)
+            return Process()
         out = self.temp / "run"
-        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--puzzle", "jumble-on"],
-                                popen=refuse, out_stream=lines.append)
-        self.assertEqual(code, 2)
-        self.assertFalse(out.exists())
-        self.assertIn("does not draw jumble-on yet", lines[-1])
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), "--run-id", "r4", "--puzzle",
+                                 "jumble-on"], popen=popen, out_stream=lambda line: None, machine=FakeMachine(),
+                                state=self.temp / "last-exit.json")
+        self.assertEqual(code, 0)
+        self.assertEqual(started["env"]["M600_PUZZLE"], "jumble-on")
+        # main() resolves --build (a runner's temp folder may be an 8.3 short name).
+        self.assertEqual(started["env"]["M600_SESSION_FIXTURE"],
+                         str(self.build.resolve() / "session-fixture-jumble-on" / "fixture.json"))
+        self.assertEqual((out / "session" / "journal").read_bytes(), b"jumbled journal")
+        self.assertEqual(json.loads((out / "launch.json").read_text(encoding="utf-8"))["puzzle"], "jumble-on")
         # The launcher and the shell name the same puzzles, and both refuse every other one.
         log = text(PROJECT / "EventLog.cs")
         puzzles = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};", log)
         self.assertTrue(puzzles)
         self.assertEqual(tuple(re.findall(r'"([a-z-]+)"', puzzles.group(1))), self.launch.PUZZLES)
-        self.assertEqual(self.launch.RUNNABLE_PUZZLES, self.launch.PUZZLES[:1])
+        self.assertFalse(hasattr(self.launch, "RUNNABLE_PUZZLES"), "every puzzle the launcher names runs")
         # The shell runs Jumble on only with a session, whose host opens the jumbled puzzle (LX-4's jumble-on half);
-        # the launcher above refuses it until it passes one.
+        # every launch passes one.
         shell = text(PROJECT / "Shell.cs")
         self.assertNotIn("does not run {puzzle} yet", shell)
         self.assertIn('$"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");',
@@ -669,7 +724,8 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(env["M600_SESSION_FIXTURE"], str(build / "session-fixture" / "fixture.json"))
         self.assertEqual(env["M600_RUNTIME"], str(build / "runtime" / "c600-runtime.exe"))
         self.assertNotIn("M600_INPUT_ECHO", env)
-        self.assertNotIn("M600_LX4", env)
+        for name in ("M600_LX4", "M600_LX4_DLL", "M600_LX4_FIXTURES"):
+            self.assertNotIn(name, env)
         self.assertNotIn("M600_EXIT_AT_FIRST_FRAME", env)
         self.assertEqual(env["M600_PUZZLE"], "jumble-off")
         # The run's session is a fresh copy of the fixture's, its lock file included.
@@ -677,8 +733,8 @@ class ProductBuild(unittest.TestCase):
         self.assertTrue((out / "session" / "lock").is_file())
         record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
         self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"],
-                          record["puzzle"], record["lx4"], record["cold_start"]),
-                         ("magic600-c9-launch-v1", product["identity"], 0, False, "jumble-off", False, False))
+                          record["puzzle"], record["lx4"], record["lx4_fixtures"], record["cold_start"]),
+                         ("magic600-c9-launch-v1", product["identity"], 0, False, "jumble-off", False, None, False))
         rows = [json.loads(line) for line in (out / "startup.jsonl").read_text(encoding="utf-8").splitlines()]
         self.assertEqual([row["t"] for row in rows], ["run", "process_start"])
         for temp in {str(self.temp), str(self.temp.resolve())}:
@@ -690,8 +746,9 @@ class ProductBuild(unittest.TestCase):
         env = self.launch.environment(product, self.build, self.temp / "run", "r1", False,
                                       base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p",
                                             "M600_LX4": "1", "m600_puzzle": "jumble-on", "M600_LX2": "1",
-                                            "C600_LX2_CEILING": "1", "c600_lx2_fault": "kill"})
-        for dropped in ("M600_LX2", "C600_LX2_CEILING", "c600_lx2_fault"):
+                                            "C600_LX2_CEILING": "1", "c600_lx2_fault": "kill",
+                                            "M600_LX4_DLL": "elsewhere", "m600_lx4_fixtures": "elsewhere"})
+        for dropped in ("M600_LX2", "C600_LX2_CEILING", "c600_lx2_fault", "M600_LX4_DLL", "m600_lx4_fixtures"):
             self.assertNotIn(dropped, env)
         self.assertNotIn("M600_INPUT_ECHO", env)
         self.assertNotIn("M600_LX4", env)

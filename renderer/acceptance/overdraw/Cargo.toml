@@ -1,0 +1,26 @@
+# The overdraw sizing tool of the C9 acceptance harness (C9 U5c): RPI.72's raster bound U of the renderer gate's
+# scene W3 with the gate stages in its chain, computed headless on the CPU from the stages' binary32 reference
+# (c600-render) and c600-display's raster bound, at the three surface sizes the gate may run at. It sizes the
+# overdraw that renderer/acceptance/stages/ declares; see renderer/acceptance/README.md, "User stages".
+[package]
+name = "c9-overdraw"
+description = "Sizes the renderer gate stages' declared overdraw from RPI.72's raster bound of W3, headless (C9 U5c)"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# A workspace of its own, so that it is no member of rust/Cargo.toml's or renderer/bridge's.
+[workspace]
+
+[dependencies]
+c600-check = { path = "../../../rust/c600-check" }
+c600-digest = { path = "../../../rust/c600-digest" }
+c600-display = { path = "../../../rust/c600-display" }
+c600-ir = { path = "../../../rust/c600-ir" }
+c600-kernel = { path = "../../../rust/c600-kernel" }
+c600-render = { path = "../../../rust/c600-render" }
+c600-syntax = { path = "../../../rust/c600-syntax" }
+
+# The sweep evaluates the stage about 29 million times per camera frame; integer overflow stays checked.
+[profile.release]
+overflow-checks = true

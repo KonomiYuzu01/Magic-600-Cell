@@ -19,8 +19,8 @@
 //!
 //! LP2's `tests/test_jumbling_command_route.py` compares the same layer with J1 itself, step by step, on the first 70
 //! records with undo and redo and the refusals; this test runs every record in Rust against the fixtures' recorded
-//! references. Not compared here: refusals, undo and redo (LP2's route test and `c600-command/tests/jumble_*.rs`),
-//! protected pieces and free mode. A pass is source and fixture evidence.
+//! references. `jumble.off`, the refusals, undo and redo, protected pieces and free mode run beside the tool's own
+//! entries in `tests/jumble_layer_verdicts.rs`. A pass is source and fixture evidence.
 
 mod common;
 

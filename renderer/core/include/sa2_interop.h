@@ -942,6 +942,109 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
  * SA2_E_INVALID_ARGUMENT before any change.
  */
 
+/* C9 U5: user shader stages, additive in ABI 5 (the U5 design names ABI 6;
+ * these calls stay in ABI 5 and change no earlier call). A stage is HLSL text
+ * with one fixed entry:
+ *   vertex:   uint m600_vertex(float x, float y, float z, float w, float t, out float3 position)
+ *             x, y, z, w: the vertex's Q*world; position: the projected 3D
+ *             position; the return value is the coverage code: 0 a point,
+ *             1 singular_neighbourhood, 2 nonfinite (position is used only
+ *             when the code is 0; a nonfinite clip position counts as 2).
+ *   fragment: float3 m600_fragment(float class_, float shade, float x, float y, float z, float t)
+ *             x, y, z: the projected 3D position; the result is the colour.
+ * t is the seconds since the chain was attached. The stage reads its arrays
+ * from StructuredBuffer<float> m600_vertex_arrays : register(t20) and
+ * m600_fragment_arrays : register(t21). The core declares a buffer only when
+ * the stage text does not: when the text names the buffer's identifier, the
+ * composed source defines M600_VERTEX_ARRAYS_DECLARED (or
+ * M600_FRAGMENT_ARRAYS_DECLARED) after the stage text, and the core's own
+ * declaration sits under #ifndef of that guard. A stage that names the buffer
+ * declares it itself, with the register above.
+ *
+ * sa2_stage_compile composes the pass source (the kind's define, the stage
+ * text, the guards, then the core's geometry.hlsl, draw.hlsl and stages.hlsl,
+ * embedded in the DLL at build time) and compiles every pass of the kind with
+ * DXC at run time: exactly -T <vs|ps|cs>_6_2 -E <entry> -HV 2021 -Gis
+ * -denorm preserve -O3 -Ges -WX. dxcompiler.dll and dxil.dll load on first use
+ * from the core DLL's own folder by absolute path, never the search path
+ * (SA2_E_UNAVAILABLE when either is missing; a later call retries). The first
+ * compile on a device also builds the core's own passes. It writes a
+ * NUL-terminated compile record into record (record_size at least
+ * SA2_STAGE_RECORD_BYTES; *out_record_size includes the NUL): {format:
+ * "magic600-stage-compile/1", kind, status: "compiled" | "compile_failed" |
+ * "compiler_unavailable" | "pipeline_failed", code: null or
+ * "EV3:input.stage_compile_failed", handle, stage_sha256, compiler: {library,
+ * version, commit_count, commit_hash, custom_version, validator} from
+ * IDxcVersionInfo, passes and core_passes: [{entry, profile, arguments,
+ * source_sha256 of the composed source, dxil_sha256, status}], error: DXC's
+ * error text, error_truncated}. On success *out_handle is the new handle
+ * (nonzero, never reused, not even after sa2_recover). A failure keeps
+ * nothing, sets *out_handle to 0, writes the record with code
+ * "EV3:input.stage_compile_failed" and returns SA2_E_CHECK_FAILED for a
+ * compile error (or a pass source that cannot be composed: its source_sha256
+ * is null), SA2_E_UNAVAILABLE without the compiler (also when DXC cannot
+ * create a compiler object for a pass), or the D3D12 status of a failed
+ * pipeline; the built-in chain stays usable. Text that is empty,
+ * longer than SA2_STAGE_HLSL_MAX_BYTES, not UTF-8 or holds a NUL:
+ * SA2_E_INVALID_ARGUMENT, nothing compiled.
+ *
+ * sa2_scene_stages attaches a vertex and a fragment stage (0: the built-in
+ * stage of that kind) with the overdraw allowance and the stages' arrays
+ * (binary32 bit patterns, at most SA2_STAGE_ARRAY_MAX each) to the loaded W1..W4
+ * scene; (0, 0) detaches. It needs a loaded scene outside a trace
+ * (SA2_E_WRONG_STATE); W-J refuses an attach. A failure keeps the current
+ * chain. Every later sa2_scene_produce frame, traced or not (C9 U5c: the
+ * gate's measured frames are traced), on a ring slot or the surface, runs
+ * RPI.72: eval (compute: the built-in chain up to Q*world, the W3 turn of a
+ * traced frame included, the vertex stage, camera and clip, into one record
+ * per vertex), bound (compute: U, raster.rs's exact 64-bit raster bound at one
+ * sample and one pass: scene frames draw at MSAA 1 and run no ID pass),
+ * decide (stopped when U > width * height * overdraw), then the user draw
+ * predicated on not stopped and the built-in draw predicated on stopped. A
+ * triangle with an undefined vertex is drawn outside the clip volume. A frame
+ * without a chain draws exactly as before.
+ *
+ * sa2_stage_report writes the oldest completed frame drawn with a chain that
+ * it has not written yet, so a caller that reports after every frame, and
+ * again while the frame number still rises, sees every chain frame once in
+ * frame order; with none waiting it writes the last written row again (frame
+ * 0 before the first). At most 4096 completed rows wait; past that the oldest
+ * are dropped. sa2_stage_release releases a handle; an attached one answers
+ * SA2_E_WRONG_STATE.
+ *
+ * Test hook: with M600_SA2_STAGE_EVAL_DUMP set to a file path when a scene
+ * first attaches a chain, every chain frame also copies its eval records
+ * (sa2 stage records, 16 bytes per vertex: the clip position as four binary32
+ * values, or (0, 0, 0, NaN) with the coverage code in the NaN's low payload
+ * bits) and the sa2_stage_report call that first reports the newest such
+ * frame writes them to that path.
+ */
+#define SA2_STAGE_VERTEX 1u
+#define SA2_STAGE_FRAGMENT 2u
+#define SA2_STAGE_RECORD_BYTES 65536u /* the smallest compile record buffer */
+#define SA2_STAGE_HLSL_MAX_BYTES 1048576u /* the longest stage text */
+#define SA2_STAGE_ARRAY_MAX 1048576u /* the most array values per stage kind */
+
+typedef struct sa2_stage_frame {
+    uint32_t struct_size; /* sizeof(sa2_stage_frame); 64 on x64 */
+    uint32_t stopped; /* 1 when U exceeded the allowance and the built-in draw ran */
+    uint64_t frame; /* the sa2_scene_produce frame; 0 before the first */
+    uint64_t bound; /* U: the raster bound over every triangle of the frame */
+    uint64_t allowance; /* width * height * overdraw */
+    uint64_t vertex_stage; /* the attached handles; 0 for built-in */
+    uint64_t fragment_stage;
+    uint64_t user_pixel_invocations; /* pipeline statistics of the user draw */
+    uint64_t builtin_pixel_invocations; /* and of the built-in fallback draw */
+} sa2_stage_frame;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_stage_frame) == 64, "sa2_stage_frame requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_stage_compile(sa2_context* ctx, uint32_t kind, const char* hlsl_utf8, uint32_t hlsl_size, uint64_t* out_handle, char* record, uint32_t record_size, uint32_t* out_record_size);
+SA2_API int32_t sa2_scene_stages(sa2_context* ctx, uint64_t vertex_stage, uint64_t fragment_stage, uint32_t overdraw, const uint32_t* vertex_arrays, uint32_t vertex_count, const uint32_t* fragment_arrays, uint32_t fragment_count);
+SA2_API int32_t sa2_stage_report(sa2_context* ctx, sa2_stage_frame* out);
+SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);
+
 #ifdef __cplusplus
 }
 #endif

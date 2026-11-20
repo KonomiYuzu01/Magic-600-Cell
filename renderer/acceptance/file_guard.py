@@ -19,6 +19,9 @@ import os
 
 SHADERS = {'count_vs.dxil', 'draw_ps.dxil', 'draw_vs.dxil', 'geometry_cs.dxil', 'id_ps.dxil', 'lattice_cs.dxil',
            'product_ps.dxil', 'product_vs.dxil'}
+# C9 U5c: a stage build (prepare_host --stages) adds DXC beside the core and the stages/ folder beside native/.
+STAGE_LIBRARIES = ('dxcompiler.dll', 'dxil.dll')
+STAGE_FILES = ('arrays.json', 'fragment.hlsl', 'fragment.json', 'vertex.hlsl', 'vertex.json')
 GENERIC_READ, GENERIC_WRITE = 0x80000000, 0x40000000
 FILE_LIST_DIRECTORY = 1
 FILE_SHARE_READ, FILE_SHARE_WRITE = 1, 2
@@ -131,6 +134,11 @@ def protected_set(launch: dict, candidate: str) -> list[str]:
             override = ntpath.join(directory, 'override.cfg')
             if os.path.lexists(override):
                 paths.append(override)
+            # C9 U5c: a stage build's DXC libraries and stage files, which the harness reads and the core loads.
+            stages = ntpath.join(ntpath.dirname(ntpath.dirname(dll)), 'stages')
+            if os.path.lexists(stages):
+                paths.extend(ntpath.join(ntpath.dirname(dll), name) for name in STAGE_LIBRARIES)
+                paths.extend(ntpath.join(stages, name) for name in STAGE_FILES)
             debug = ntpath.join(directory, '.godot', 'mono', 'temp', 'bin', 'Debug')
             with os.scandir(debug) as entries:
                 assemblies = [entry.path for entry in entries if entry.name.lower().endswith('.dll')
