@@ -500,8 +500,12 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   LB2's gains and losses and reports its macro version, writes nothing and keeps a presented preview fresh, and comes
   back equal after a power loss; and each refusal of the three rows that LP2's draft names comes back with the layer's
   code and changes nothing, the journal's bytes included. The refusals with Jumble on run in LP2's `c600-command`
-  tests, not here. On M6's public API: the same CT-EV3-07 parts and CT-LB2-03's work-sheet part. LP2 has since run
-  KN5.26's admission matrix L1 and L2 through the layer (pull request 270) and built EV3.2's view rows (pull request
+  tests, not here. The durable leg of LP2's saved sets (pull request 337; `tests/saved_sets_on_journal.rs`): a save's
+  receipt and the saved set's record come back equal after a power loss and in a new session, the save stays no undo
+  target, and an identical retry, the refusals and a save whose name another save took meanwhile write nothing to the
+  journal; a replacement survives another power loss. On M6's public API: the same CT-EV3-07 parts and CT-LB2-03's
+  work-sheet part. LP2 has since run KN5.26's admission matrix L1 and L2 through the layer (pull request 270) and
+  built EV3.2's view rows (pull request
   271, landed through 272: `view.open`, `view.close` and the `Views` trait), which `c600-view`'s view model serves
   through C5's `ModelViews` (`c600-tools`' `tests/view_host.rs` and the CT-EV3-07 view test above). The session's
   profile (BND.14 to BND.17, LP2's pull request 287): the layer asks the reader to admit a record's word only in a

@@ -58,6 +58,16 @@
 //!   and the reuse; entering Jumble on needs a twist menu pinned from `c600-jumble`, which is no dependency of this
 //!   crate. A comparison while the exclusive lane is held (`KN7:busy.lane_full`) runs in `c600-command`'s
 //!   `tests/worksheet.rs`.
+//! - `tests/saved_sets_on_journal.rs`: the durable leg of LP2's saved-set drafts (`set.save`; U1-057, U4-037, PS1.28,
+//!   KN5.23; LP2's pull request 337) on the layer over the journal with C5's reader, the row served as LP3's host
+//!   serves it at every open. Each test finishes the save's job with the entry's record under a hand-entered block,
+//!   where the host runs the representations tool's `save_set`. A save's receipt and the saved set's record come back
+//!   equal after a power loss on a memory disk and in a new session on a file-system disk, and the exact-set digest
+//!   follows from the record read back. The save takes no undo entry (H-08's undo class `none`), after a reopen too.
+//!   An identical retry, a save under a taken name without `replace: true` (`KN5:input.saved_set_exists`), a `replace`
+//!   that is no boolean and a `workspace.set` under `set/` (`KN5:input.argument_form`), and a save whose name another
+//!   save took meanwhile write nothing to the journal. A save with `replace: true` replaces the set, also after a power
+//!   loss.
 //!
 //! # Whether CT-LB2-03 runs whole
 //!
