@@ -59,12 +59,14 @@ impl Fixture {
     /// One envelope on a run's channel, with no token, stamped as the host stamps it.
     fn runtime(&mut self, run: &str, row: &str, args: Value) -> Receipt {
         self.sent += 1;
+        let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
         let invocation = Invocation {
             command: format!("{run}/{}", self.sent),
             row: row.to_owned(),
             args,
             token: None,
             epoch: self.layer.revision().epoch,
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
         };
         self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
     }

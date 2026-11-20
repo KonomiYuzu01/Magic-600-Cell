@@ -472,7 +472,15 @@ fn the_work_sheet_rows_refuse_and_change_nothing() {
     {
         assert_eq!(f.layer.availability(row), Ok(()), "{row}");
         let epoch = f.layer.revision().epoch;
-        let theirs = Invocation { command: "run-1/1".into(), row: row.into(), args, token: None, epoch };
+        let served = f.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
+        let theirs = Invocation {
+            command: "run-1/1".into(),
+            row: row.into(),
+            args,
+            token: None,
+            epoch,
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
+        };
         f.refused_on(&runtime, theirs, code::NOT_GRANTED, row);
     }
 
@@ -721,7 +729,14 @@ fn the_compare_row_refuses_and_changes_nothing() {
     assert_eq!(f.layer.availability(WORKSHEET_COMPARE_ROW), Ok(()));
     let runtime = Caller::Runtime { run: "run-1".into() };
     let (epoch, args) = (f.layer.revision().epoch, compare_args("sheet", 1, "w"));
-    let theirs = Invocation { command: "run-1/1".into(), row: WORKSHEET_COMPARE_ROW.into(), args, token: None, epoch };
+    let theirs = Invocation {
+        command: "run-1/1".into(),
+        row: WORKSHEET_COMPARE_ROW.into(),
+        args,
+        token: None,
+        epoch,
+        budget: None,
+    };
     f.refused_on(&runtime, theirs, code::NOT_GRANTED, "the runtime");
 
     let at = || WorksheetRef { record: "sheet".into(), version: 1 }.to_json();

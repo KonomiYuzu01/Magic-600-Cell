@@ -75,12 +75,14 @@ impl Fixture {
     /// solver started the run: the layer holds no job for it.
     fn runtime(&mut self, run: &str, row: &str, args: Value) -> Receipt {
         self.sent += 1;
+        let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
         let invocation = Invocation {
             command: format!("{run}/{}", self.sent),
             row: row.to_owned(),
             args,
             token: None,
             epoch: self.layer.revision().epoch,
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
         };
         self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
     }
@@ -226,8 +228,14 @@ fn b1_a_runs_preview_admitted_before_the_frame_does_not_replace_the_shown_previe
     assert_eq!(f.layer.preview_state(theirs), None, "the run's preview was never built");
     // The same command ID and request answer the stored receipt.
     let args = draft_args(&word(&[2]));
-    let again =
-        Invocation { command, row: "operation.preview".into(), args, token: None, epoch: f.layer.revision().epoch };
+    let again = Invocation {
+        command,
+        row: "operation.preview".into(),
+        args,
+        token: None,
+        epoch: f.layer.revision().epoch,
+        budget: None,
+    };
     let settled = f.layer.invoke(&Caller::Runtime { run: run.clone() }, again);
     assert!(matches!(settled.status, Status::Failed(_)), "the run's job: {:?}", settled.status);
     assert_eq!(settled.status.code(), Some(code::PREVIEW_SHOWN));

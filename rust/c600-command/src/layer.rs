@@ -105,6 +105,7 @@ use c600_kernel::{
     ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
+use crate::budget::Budget;
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
@@ -198,6 +199,11 @@ pub struct Invocation {
     /// The originating engine epoch. The request digest covers it, and a transport retry keeps the whole envelope, so
     /// a retry finds its receipt after a restart.
     pub epoch: u64,
+    /// The budget the invocation declares for a program row's job ([`crate::budget`]; KN7.7; draft): explicit, beside
+    /// the epoch and the token, never in the arguments. A row an entry serves refuses an invocation without one
+    /// (`KN7:input.budget_not_declared`) or over the ceiling (`KN7:resource_limit.budget_ceiling`); another row runs
+    /// no program and reads none. The request digest covers a declared budget.
+    pub budget: Option<Budget>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -297,6 +303,9 @@ pub struct ProgramJob {
     /// [`CommandLayer::invoke_with_inputs`], in their order; empty after [`CommandLayer::invoke`]. The layer checked
     /// each block with the host's reader and holds it as given. The host runs the entry with them as its run's inputs.
     pub inputs: Vec<Vec<u8>>,
+    /// The budget the invocation declared, admitted under the ceiling ([`CommandLayer::budget_ceiling`]): the host runs
+    /// the entry under it (KN7.7; draft).
+    pub budget: Budget,
 }
 
 impl ProgramJob {
@@ -601,6 +610,7 @@ fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
         && planned.policy == stored.policy
         && planned.records == stored.records
         && planned.crossing == stored.crossing
+        && planned.budget == stored.budget
         && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
@@ -703,6 +713,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     jobs: VecDeque<Job>,
     running: BTreeMap<u64, ProgramJob>,
     program_capacity: usize,
+    /// The host's budget ceiling, if it set one ([`CommandLayer::set_budget_ceiling`]).
+    host_ceiling: Option<Budget>,
     slot: Option<Preview>,
     /// The newest frame the adapter reported (RM.26).
     frame: Option<PresentedFrame>,
@@ -780,6 +792,7 @@ impl<S: Store> CommandLayer<S> {
             jobs: VecDeque::new(),
             running: BTreeMap::new(),
             program_capacity: 1,
+            host_ceiling: None,
             slot: None,
             frame: None,
             run: None,
@@ -1015,7 +1028,7 @@ impl<S: Store> CommandLayer<S> {
                 };
                 self.jobs_issued = self.jobs_issued.max(job);
                 // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
-                self.workspace_adoption(meta, job, result, stored.records.clone())
+                self.workspace_adoption(meta, job, result, stored.records.clone(), stored.budget)
             }
             // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
             TransactionKind::Record => match stored.record.clone() {
@@ -1330,6 +1343,19 @@ impl<S: Store> CommandLayer<S> {
     /// Sets how many program jobs the program lane holds (LI.22's host setting).
     pub fn set_program_capacity(&mut self, capacity: usize) {
         self.program_capacity = capacity.max(1);
+    }
+
+    /// Sets the host's budget ceiling (BM3; draft). A program row's budget must fit the lower of this and the session
+    /// profile's ceiling ([`Profile::budget_ceiling`]) in each dimension, so a host ceiling above the profile's
+    /// raises nothing.
+    pub fn set_budget_ceiling(&mut self, ceiling: Budget) {
+        self.host_ceiling = Some(ceiling);
+    }
+
+    /// The ceiling a program row's budget must fit: the session profile's, lowered by the host's in each dimension.
+    pub fn budget_ceiling(&self) -> Budget {
+        let profile = self.profile.budget_ceiling();
+        self.host_ceiling.map_or(profile, |host| profile.min(host))
     }
 
     /// The current preview dependencies for a draft digest (KN0.8).
@@ -1921,6 +1947,11 @@ impl<S: Store> CommandLayer<S> {
             let blocks = inputs.iter().map(|block| Value::String(c600_digest::sha256_hex(block))).collect();
             fields.insert("inputs".to_owned(), Value::Array(blocks));
         }
+        // The declared budget, only when there is one: an invocation without one keeps the digest it had before
+        // budgets were declared.
+        if let (Some(budget), Value::Object(fields)) = (&invocation.budget, &mut request) {
+            fields.insert("budget".to_owned(), budget.to_json());
+        }
         digest(&request)
     }
 
@@ -2502,6 +2533,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -2836,6 +2868,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let side = Side::Stay;
         match change {
@@ -3075,6 +3108,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -3136,6 +3170,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3167,7 +3202,14 @@ impl<S: Store> CommandLayer<S> {
     /// `workspace` makes an undoable action, which `session.undo` and `session.redo` invert and repeat as a workspace
     /// inverse ([`Change::Records`]), when it writes a record: one that writes none changes nothing an undo could
     /// restore, so it takes no undo entry. No undo reaches any other row's completion (draft).
-    fn workspace_adoption(&self, meta: Meta, job: u64, result: String, records: Vec<RecordWrite>) -> Adoption {
+    fn workspace_adoption(
+        &self,
+        meta: Meta,
+        job: u64,
+        result: String,
+        records: Vec<RecordWrite>,
+        budget: Option<Budget>,
+    ) -> Adoption {
         let tree = match self.workspace_undoable(&meta.row) && !records.is_empty() {
             true => {
                 let value = |name: &str| self.records.get(name).and_then(|record| record.value.clone());
@@ -3205,6 +3247,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget,
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
@@ -3277,6 +3320,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3760,6 +3804,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: Some(entry.record.clone()),
             blocks: Vec::new(),
+            budget: None,
         };
         let (identity, record) = (entry.identity, entry.record);
         let change = Change::Crossing { before: self.head, after: order, identity, record };
@@ -3927,6 +3972,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: Some(exit.record.clone()),
             blocks: Vec::new(),
+            budget: None,
         };
         let point = ExitPoint { poses: head.clone(), retained: self.current.clone(), record: exit.record };
         let change = Change::Exit { before: self.head, after: order, point: Box::new(point) };
@@ -4072,6 +4118,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: Some(rotation),
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let change = Change::Pose { before: self.head, after: order };
         let tree = Tree::Push { node: Some((order, node)), change };
@@ -4188,6 +4235,8 @@ impl<S: Store> CommandLayer<S> {
         inputs: &[Vec<u8>],
     ) -> Result<(Option<u64>, Status), Error> {
         let overlay = row.overlay.clone().expect("an overlay row");
+        // The budget is admitted before a job ID exists, so a refusal uses nothing (KN7.7, BM3).
+        let budget = Budget::admit(invocation.budget, self.budget_ceiling())?;
         if row.lane == Lane::Program {
             self.program_free()?;
         }
@@ -4217,6 +4266,7 @@ impl<S: Store> CommandLayer<S> {
             revision: self.revision.clone(),
             overlay,
             inputs: inputs.to_vec(),
+            budget,
         };
         self.jobs.push_back(Job {
             id,
@@ -4281,7 +4331,7 @@ impl<S: Store> CommandLayer<S> {
                         request,
                         confirm: false,
                     };
-                    let adoption = self.workspace_adoption(meta, job, result, records);
+                    let adoption = self.workspace_adoption(meta, job, result, records, Some(program.budget));
                     match self.transact(adoption) {
                         Ok((_, status)) => status,
                         Err(error) => Status::Failed(error),
@@ -4426,6 +4476,7 @@ mod tests {
             args: json::object([]),
             token: None,
             epoch: layer.revision().epoch,
+            budget: Some(Budget::DRAFT_CEILING),
         };
         let receipt = layer.invoke(caller, invocation);
         assert!(matches!(receipt.status, Status::Running(_)), "{caller:?}: {:?}", receipt.status);

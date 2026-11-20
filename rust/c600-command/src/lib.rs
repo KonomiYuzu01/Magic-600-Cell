@@ -490,6 +490,20 @@
 //!     invocation without blocks keeps its digest, and a retry with other blocks is other content
 //!     (`KN5:input.command_id_reused`).
 //!   - A run still reaches no workspace or file row (ruling of 18 November 2026). Blocks change no admission.
+//! - Budgets (KN7.7, BM3, DET.27, ERR.27; [`budget`]; CT-RTE-07's B13 and B14; draft):
+//!   - An invocation of a row an entry serves declares its budget in the envelope ([`Invocation::budget`]), beside
+//!     the epoch and the token.
+//!   - The layer admits it after the row's arguments, `FilterRef`s, gate and blocks, and before the lane and before a
+//!     job ID exists, so a refusal uses nothing. A missing budget is `KN7:input.budget_not_declared`. A dimension over
+//!     the ceiling is `KN7:resource_limit.budget_ceiling`, naming the dimension, the request and the ceiling.
+//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::DRAFT_CEILING`] for every profile
+//!     until an owner reading sets the product's values). A host may set a lower one
+//!     ([`CommandLayer::set_budget_ceiling`]); the lower applies in each dimension. The safety stop is not checked.
+//!   - The job carries the admitted budget ([`ProgramJob::budget`]). The request digest covers a declared budget
+//!     under the key `budget`, so an invocation without one keeps its digest, and a retry with another budget is other
+//!     content (`KN5:input.command_id_reused`). A workspace row's completion keeps the budget in its journal entry.
+//!   - Another row runs no program and reads no budget. [`Shell::prepare`] declares the shell's budget on an
+//!     invocation of a row an entry serves ([`Shell::budget`], the draft ceiling by default) and none on another.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
 //!   - A `FilterRef` names a completed job of a row that prepares a predicate (`structure.layer`) by its result
 //!     reference. It resolves while every record that job wrote still holds the job's write, to those records, each
@@ -524,6 +538,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod budget;
 pub mod filter;
 mod forms;
 pub mod frame;
@@ -541,6 +556,7 @@ pub mod view;
 pub mod worksheet;
 pub mod workspace;
 
+pub use budget::Budget;
 pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIEW_ROW, FRESH_FILTER_PREVIEW};
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
@@ -570,10 +586,11 @@ pub use worksheet::{
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 19] = [
+pub const SOURCES: [(&str, &[u8]); 22] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
+    ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
     ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
@@ -581,6 +598,8 @@ pub const SOURCES: [(&str, &[u8]); 19] = [
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
+    ("c600-command/src/repair.rs", include_bytes!("repair.rs")),
+    ("c600-command/src/sets.rs", include_bytes!("sets.rs")),
     ("c600-command/src/shell.rs", include_bytes!("shell.rs")),
     ("c600-command/src/store.rs", include_bytes!("store.rs")),
     ("c600-command/src/table.rs", include_bytes!("table.rs")),

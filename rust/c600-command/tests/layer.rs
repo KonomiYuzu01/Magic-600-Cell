@@ -242,8 +242,14 @@ fn a_commit_needs_its_token_and_a_presented_preview() {
         hint: None,
     };
     let token = Some(Token::mint(&Secret::fixed(SECRET), binding));
-    let unpresented =
-        Invocation { command: "t/1".into(), row: "operation.execute".into(), args: preview_args(id), token, epoch: 1 };
+    let unpresented = Invocation {
+        command: "t/1".into(),
+        row: "operation.execute".into(),
+        args: preview_args(id),
+        token,
+        epoch: 1,
+        budget: None,
+    };
     assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, unpresented)), code::NO_FRESH_PREVIEW);
     let no_token = Invocation {
         command: "t/2".into(),
@@ -251,6 +257,7 @@ fn a_commit_needs_its_token_and_a_presented_preview() {
         args: preview_args(id),
         token: None,
         epoch: 1,
+        budget: None,
     };
     assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, no_token)), code::TOKEN_INVALID);
 
@@ -317,6 +324,7 @@ fn a_token_from_before_a_commit_and_its_undo_is_refused() {
         args: preview_args(q),
         token: Some(Token::mint(&Secret::fixed(SECRET), binding)),
         epoch: 1,
+        budget: None,
     };
     assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, revisited)), code::REVISION_CHANGED);
     assert_eq!(f.fixed(), before);
@@ -603,6 +611,7 @@ fn the_runtime_reaches_at_most_a_preview() {
         args,
         token: None,
         epoch: 1,
+        budget: None,
     };
     let proposal = f.layer.invoke(&runtime, call("rt/1", "operation.preview", draft_args(&word(&[1]))));
     assert!(matches!(proposal.status, Status::Running(_)));

@@ -25,6 +25,8 @@ pub mod code {
     pub const RESULT_GONE: &str = "KN5:stale.result_gone";
     pub const EPOCH_CHANGED: &str = "KN2:stale.epoch_changed";
     pub const LANE_FULL: &str = "KN7:busy.lane_full";
+    pub const BUDGET_NOT_DECLARED: &str = "KN7:input.budget_not_declared";
+    pub const BUDGET_CEILING: &str = "KN7:resource_limit.budget_ceiling";
     pub const REVISION_REPLACED: &str = "KN7:cancelled.revision_replaced";
     pub const BY_USER: &str = "KN7:cancelled.by_user";
     pub const NOT_GRANTED: &str = "LG3:capability.not_granted";

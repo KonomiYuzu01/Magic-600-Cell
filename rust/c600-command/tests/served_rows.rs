@@ -230,6 +230,7 @@ fn a_served_query_row_runs_its_entry_as_a_program_job() {
         args: compare_args(3, 4),
         token: None,
         epoch: before.epoch,
+        budget: Some(c600_command::Budget::DRAFT_CEILING),
     };
     let receipt = f.layer.invoke(&runtime, theirs);
     let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };

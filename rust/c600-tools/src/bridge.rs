@@ -151,14 +151,18 @@ impl<'l, S: Store> Bridge<'l, S> {
 
     /// One invocation of `row` with absolute arguments on this run's channel, stamped [`Caller::Runtime`] for the run,
     /// with a fresh command ID and the layer's current epoch. A proposal never carries a token; `token` is there so a
-    /// test can show that the layer refuses a runtime invocation carrying one.
+    /// test can show that the layer refuses a runtime invocation carrying one. An invocation of a row an entry serves
+    /// declares the draft ceiling as its budget (KN7.7; until the host passes the run's own), and one of another row
+    /// declares none, as the shell does.
     pub fn invoke(&mut self, row: &str, args: Json, token: Option<Token>) -> Receipt {
+        let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
         let invocation = Invocation {
             command: format!("{}/{}", self.run, self.sent.len() + 1),
             row: row.to_owned(),
             args,
             token,
             epoch: self.layer.revision().epoch,
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
         };
         let caller = Caller::Runtime { run: self.run.clone() };
         let receipt = self.layer.invoke(&caller, invocation.clone());

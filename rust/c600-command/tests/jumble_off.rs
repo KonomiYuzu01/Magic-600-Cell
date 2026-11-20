@@ -901,7 +901,14 @@ fn the_runtime_may_not_exit() {
         let runtime = Caller::Runtime { run: "run-1".into() };
         let epoch = f.layer.revision().epoch;
         let args = json::object([("revision", f.layer.revision().to_json())]);
-        let theirs = Invocation { command: "run-1/1".into(), row: JUMBLE_OFF_ROW.into(), args, token: None, epoch };
+        let theirs = Invocation {
+            command: "run-1/1".into(),
+            row: JUMBLE_OFF_ROW.into(),
+            args,
+            token: None,
+            epoch,
+            budget: None,
+        };
         f.refused_on(&runtime, theirs, code::COMMIT_ROW_REFUSED, "the runtime");
     }
 }

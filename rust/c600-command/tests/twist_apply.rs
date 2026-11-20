@@ -671,8 +671,14 @@ fn the_runtime_may_not_twist() {
     for mut f in [fixture(&[]), unpinned(&[])] {
         let runtime = Caller::Runtime { run: "run-1".into() };
         let epoch = f.layer.revision().epoch;
-        let theirs =
-            Invocation { command: "run-1/1".into(), row: TWIST_ROW.into(), args: args(&item(1)), token: None, epoch };
+        let theirs = Invocation {
+            command: "run-1/1".into(),
+            row: TWIST_ROW.into(),
+            args: args(&item(1)),
+            token: None,
+            epoch,
+            budget: None,
+        };
         f.refused_on(&runtime, theirs, code::COMMIT_ROW_REFUSED, "the runtime");
     }
 }

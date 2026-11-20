@@ -400,7 +400,8 @@ fn a_record_write_is_refused_without_its_reader_and_never_reaches_the_runtime() 
     let runtime = Caller::Runtime { run: "run-1".into() };
     let epoch = f.layer.revision().epoch;
     let args = record_args("w", letters(&[1]), "block");
-    let theirs = Invocation { command: "run-1/1".into(), row: RECORD_ROW.into(), args, token: None, epoch };
+    let theirs =
+        Invocation { command: "run-1/1".into(), row: RECORD_ROW.into(), args, token: None, epoch, budget: None };
     f.refused_on(&runtime, theirs, code::NOT_GRANTED, "the runtime");
     let asked = f.shell.prepare(&f.layer, RECORD_ROW, record_args("w", letters(&[1]), "refused")).unwrap();
     let error = f.refused(asked, code::PROVENANCE_INCOMPATIBLE, "a refused block");
