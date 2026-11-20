@@ -6,8 +6,9 @@
 //! "Residuals and exact completion", over KN2.4's `positions` and `labels` rows; LB2's rows "Star and recipe
 //! construction" and "Collateral and support", over KN2.4's `effect` row; LB2's row "Net and Strict protection", over
 //! KN2.4's `protection` row; LB2's row "Guarded setups and buffers", over the draft `setups` row of the
-//! setup-search exception; and LB2's row "Named macro analysis and comparison", over KN2.4's `effect` and `replay`
-//! rows.
+//! setup-search exception; LB2's row "Named macro analysis and comparison", over KN2.4's `effect` and `replay`
+//! rows; and LB2's rows "Seeds and full seed analysis" and "Orbit catalogue and collateral stage order" as far as the
+//! seeds' collateral and its stage order go, over KN2.4's `effect`.
 //!
 //! # Literal words
 //!
@@ -229,13 +230,36 @@
 //! prefix is the report's. [`named_macro_analysis_and_comparison`] is the row's catalogue entry. The two entries have
 //! the checker's effect `snapshot` and read the rows [`MACROS_ROWS`] names, each at a recipe the caller names, so under
 //! capability separation they read state and prepare no preview. Each recipe is a parameter of its own, because the
-//! built-in column admits a read only at a parameter as given (LB3.5), not at a field of one. `c600-tools`' host bridge serves both rows
-//! (`c600_tools::kernel_rows`), and `c600-tools/tests/macros.rs` runs the entries there.
+//! built-in column admits a read only at a parameter as given (LB3.5), not at a field of one. `c600-tools`' host bridge
+//! serves both rows (`c600_tools::kernel_rows`), and `c600-tools/tests/macros.rs` runs the entries there.
+//!
+//! # Seeds and their stage order
+//!
+//! The source [`SEEDS_SOURCE`], `src/seeds.6cs`, is the module `seeds` in edition `6cs-draft-1`, in the formatter's
+//! canonical layout. Two entries:
+//!
+//! - `seed_report(orbit: Int, seed)` reads KN2.4's `effect` at the seed the caller names, a recipe in the step records
+//!   of `recipes`, for the orbit the caller names as its target, and answers the seed's whole net effect: the net map's
+//!   digest, the moved stickers and pieces and the full support per orbit; the expansion's digest and length; the
+//!   pieces and stickers it moves in the target orbit (`orbit_pieces`, `orbit_stickers`, 0 when it moves none there);
+//!   and its collateral, every other orbit its net map moves, in increasing order. The collateral comes from the
+//!   kernel's full map, so an empty list is established by the map, never by omission.
+//! - `stage_order(seeds)`, pure, takes the caller's rows `record { collateral, orbit }`, one per seed, and answers a
+//!   stage order that follows the collateral: an edge o → j for each orbit j in the collateral of o's seed, and o comes
+//!   before j, so every completed orbit stays solved at macro boundaries (solving workflow section 2). Among the rows
+//!   ready at a step it takes the first in the caller's order, so a list already in such an order comes back unchanged,
+//!   and no orbit's ID or rank decides. Rows the edges hold in a cycle are not dropped and no edge is: they come back
+//!   in `cycle`, in the caller's order, and `order` holds the rows placed before it.
+//!
+//! The two entries choose no seed, orbit or target: they analyse and order the seeds the caller names.
+//! [`seeds_and_full_seed_analysis`] and [`collateral_stage_order`] are the rows' catalogue entries. `seed_report` has
+//! the checker's effect `snapshot` and reads the rows [`SEEDS_ROWS`] names at the seed as given; `stage_order` is pure.
+//! `c600-tools/tests/seeds.rs` runs both on the model's 35 seeds in `assets/seed_atlas.json`.
 //!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe, report, protection, guarded-setup and named macro entries through the tool's host bridge,
-//! and the word keys on the model's relation. Every result of its tests is source and fixture evidence.
+//! exact-completion, recipe, report, protection, guarded-setup, named macro and seed entries through the tool's host
+//! bridge, and the word keys on the model's relation. Every result of its tests is source and fixture evidence.
 //!
 //! # Drafts
 //!
@@ -345,6 +369,13 @@
 //!   is the manifest's, and the kernel certifies every setup's star before the row answers it. A setup the kernel does
 //!   not certify stops the read with `KN2:consistency.star_certificate`.
 //! - LB2: the catalogue row is Rust data in [`guarded_setups_and_buffers`], with the checker's `ReadSnapshot`.
+//! - LB2, seeds: as for the recipes, `seed_report` reads `effect` with `read_snapshot` and carries the effect
+//!   `snapshot`, where chapter 03 says "pure for named words"; the catalogue row records the checker's `ReadSnapshot`.
+//!   The caller names the target orbit, and a seed that moves nothing there answers 0 pieces and 0 stickers for it, so
+//!   a seed named with another orbit is reported, not refused.
+//! - LB2, stage order: Kahn's order over the caller's rows, taking at each step the first ready row in the caller's
+//!   list; chapter 03 fixes the edges, not the order among rows that no edge separates. A collateral orbit with no row
+//!   of its own holds nothing back, and a row a cycle holds stays in `cycle` with every row behind it.
 //! - LB1.8, Q(√5) signs: the sign is answered as an `Int`, -1, 0 or 1, because the IR draft has no ordering type; a
 //!   caller compares it with `exact_eq`. The entries take `Q5` only; an `Int` or a `Rat` widens to it with
 //!   `exact_add` or `exact_mul` before the call.
@@ -371,8 +402,11 @@
 //!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
 //! - LB2's "Net and Strict protection" for a captured protected state of the session (the command layer's protected
 //!   orbits) and for occupant-only locks; LB3's pose-level protection is C8's (`c600_jumble_tool::library`).
-//! - The rest of LB2's catalogue over `effect`: the orbit catalogue and collateral stage order, seeds and full seed
-//!   analysis, and blocks and work sheets.
+//! - The rest of LB2's catalogue over `effect`: blocks and work sheets.
+//! - In "Seeds and full seed analysis": the target action as cycles with its exact frames, which need the piece-level
+//!   map, and KN6's certificates; the report says what the kernel's full map moves and certifies nothing more.
+//! - In "Orbit catalogue and collateral stage order": the orbit catalogue, which is model data, and the progress read
+//!   per orbit.
 //! - In "Named macro analysis and comparison": a captured lock in the report, which the `protection` module's checks
 //!   judge on the same recipe, and named macros of the jumbled puzzle, which are C8's.
 //! - In "Guarded setups and buffers": the editor in which the solver edits a setup, which is LP4's; setups of the
@@ -482,6 +516,19 @@ pub const MACROS_EXPORTS: [&str; 2] = ["macro_report", "macro_comparison"];
 /// The KN2.4 rows the named macro analysis module reads with `read_snapshot`, in name order.
 pub const MACROS_ROWS: [&str; 2] = ["effect", "replay"];
 
+/// The seeds source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const SEEDS_SOURCE: &str = include_str!("seeds.6cs");
+/// The seeds module.
+pub const SEEDS_MODULE: &str = "seeds";
+/// The seeds module's exported functions, in source order.
+pub const SEEDS_EXPORTS: [&str; 2] = ["seed_report", "stage_order"];
+/// The exported function behind LB2's row "Seeds and full seed analysis".
+pub const SEEDS_ANALYSIS: [&str; 1] = ["seed_report"];
+/// The exported function behind LB2's row "Orbit catalogue and collateral stage order".
+pub const SEEDS_STAGE_ORDER: [&str; 1] = ["stage_order"];
+/// The KN2.4 row the seeds module reads with `read_snapshot`.
+pub const SEEDS_ROWS: [&str; 1] = ["effect"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -530,6 +577,11 @@ pub fn word_keys_sha256() -> String {
 /// The SHA-256 of [`MACROS_SOURCE`], in hex.
 pub fn macros_sha256() -> String {
     sha256_hex(MACROS_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`SEEDS_SOURCE`], in hex.
+pub fn seeds_sha256() -> String {
+    sha256_hex(SEEDS_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -766,6 +818,43 @@ pub fn named_macro_analysis_and_comparison() -> CatalogueRow {
         module: MACROS_MODULE,
         functions: &MACROS_EXPORTS,
         source_sha256: macros_sha256(),
+    }
+}
+
+/// LB2's row "Seeds and full seed analysis", as far as this crate builds it.
+pub fn seeds_and_full_seed_analysis() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Seeds and full seed analysis",
+        level: "Full labels: the caller's seed as a recipe and its target orbit. The target action as cycles, exact \
+                frames and KN6's certificates are not built.",
+        effects: &[Effect::ReadSnapshot],
+        backing: "KN2.4's `effect`, read with `read_snapshot` at the seed the caller names; library code for the \
+                  report: `seeds.seed_report`; a host serves the row (`c600_tools::kernel_rows`).",
+        notes: "The seed's whole net effect: the net map's digest, the moved stickers and pieces, the full support \
+                per orbit, the expansion's digest and length, what it moves in the target orbit, and its collateral, \
+                every other orbit the net map moves. The collateral is read from the kernel's full map, so an empty \
+                list is established, never assumed by omission; the report certifies nothing beyond that map.",
+        module: SEEDS_MODULE,
+        functions: &SEEDS_ANALYSIS,
+        source_sha256: seeds_sha256(),
+    }
+}
+
+/// LB2's row "Orbit catalogue and collateral stage order", as far as this crate builds it.
+pub fn collateral_stage_order() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Orbit catalogue and collateral stage order",
+        level: "Full labels: the caller's seed rows, each an orbit and its seed's collateral. The orbit catalogue \
+                and the progress read are not built.",
+        effects: &[],
+        backing: "Library code: `seeds.stage_order`, over the collateral that `seeds.seed_report` reads from KN2.4's \
+                  `effect`.",
+        notes: "Stage dependencies follow full seed collateral, not orbit ID order: o comes before j when o's seed \
+                moves orbit j. Ties go to the caller's order, so an order the caller gives that respects every edge \
+                comes back unchanged. Rows a cycle holds are answered in `cycle`; no edge and no effect is dropped.",
+        module: SEEDS_MODULE,
+        functions: &SEEDS_STAGE_ORDER,
+        source_sha256: seeds_sha256(),
     }
 }
 
