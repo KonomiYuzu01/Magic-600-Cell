@@ -1,8 +1,9 @@
-//! The two draft structure rows of LP3's representations tool, served to an entry by the host bridge (KN5; LP3's C6;
+//! The three draft structure rows of LP3's representations tool, served to an entry by the host bridge (KN5; LP3's C6;
 //! drafts until the command table freezes at LP3). An entry's snapshot read with an argument,
-//! `read_snapshot<T>("structure.compare", cells)` or `read_snapshot<T>("filter.preview", predicate)`, runs on
-//! `c600-run` through `Boundary` and [`Bridge`] onto a command layer, and the bridge answers it from LP2's structure
-//! rows, `CommandLayer::compare_cells` and `CommandLayer::layer_counts` (`c600_tools::kernel_rows`). `c600-repr`'s
+//! `read_snapshot<T>("structure.compare", cells)`, `read_snapshot<T>("filter.preview", predicate)` or
+//! `read_snapshot<T>("structure.layer", predicate)`, runs on `c600-run` through `Boundary` and [`Bridge`] onto a
+//! command layer, and the bridge answers it from LP2's structure rows, `CommandLayer::compare_cells`,
+//! `CommandLayer::layer_counts` and `CommandLayer::layer_members` (`c600_tools::kernel_rows`). `c600-repr`'s
 //! `tests/served_rows.rs` runs the representations tool's own entries on the same rows through the command and source
 //! routes. The refusal with Jumble on is not run here: a layer in Jumble on needs a pinned twist menu, which
 //! `c600-jumble` builds, and this crate's tests do not depend on it. Covers no conformance ID.
@@ -13,7 +14,9 @@ use std::sync::{Arc, OnceLock};
 use c600_check::TYPE_MISMATCH;
 use c600_command::{code, CommandLayer, Secret, Table};
 use c600_digest::sha256;
-use c600_kernel::{CellComparison, Derivation, Kernel, LayerCounts, ProtectedSet, Snapshot, PIECES, SLOTS};
+use c600_kernel::{
+    CellComparison, Derivation, Kernel, LayerCounts, LayerMembers, ProtectedSet, Snapshot, PIECES, SLOTS,
+};
 use c600_run::boundary::{Boundary, Context, Store};
 use c600_run::encode::encode;
 use c600_run::interp::{load, Host, Loaded, Options, Request, Run};
@@ -23,8 +26,8 @@ use c600_run::provenance::{Author, Producer, Profile};
 use c600_run::value::{equal, Value};
 use c600_tools::bridge::{base, Bridge};
 use c600_tools::kernel_rows::{
-    filter_preview_tariff, filter_preview_type, structure_compare_tariff, structure_compare_type, CELLS,
-    FILTER_PREVIEW, STRUCTURE_COMPARE,
+    filter_preview_tariff, filter_preview_type, structure_compare_tariff, structure_compare_type,
+    structure_layer_tariff, structure_layer_type, CELLS, FILTER_PREVIEW, STRUCTURE_COMPARE, STRUCTURE_LAYER,
 };
 use c600_tools::tool::{checker, contract, lower_source, named_word_block, pins};
 
@@ -36,9 +39,10 @@ const CELLS_INT: &str = "record { first: Int, second: Int }";
 const PREDICATE_NAT: &str = "record { cell: Nat, layer: Nat }";
 const PREDICATE_INT: &str = "record { cell: Int, layer: Int }";
 
-/// The two answers as the representations tool declares them.
+/// The three answers as the representations tool declares them.
 const COMPARED: &str = "record { first: Nat, second: Nat, steps: Nat }";
 const COUNTS: &str = "record { cell: Nat, layer: Nat, pieces: Nat, slots: Nat }";
+const MEMBERS: &str = "record { cell: Nat, layer: Nat, pieces: List<Nat>, slots: List<Nat> }";
 
 /// A stand-in for an entry over the rows, with variants that declare another order and `Int` for whole numbers,
 /// declare types the rows do not answer, pass another argument or read a row the bridge does not serve.
@@ -52,6 +56,7 @@ fn source() -> String {
     let reordered = "record { steps: Int, second: Int, first: Int }";
     let counted = "record { slots: Int, pieces: Int, layer: Int, cell: Int }";
     let more = "record { cell: Nat, layer: Nat, pieces: Nat, slots: Nat, steps: Nat }";
+    let listed = "record { slots: List<Int>, pieces: List<Int>, layer: Int, cell: Int }";
     [
         "edition \"6cs-draft-1\";\nmodule structures requires [];\n\n".to_owned(),
         entry("compare", CELLS_NAT, COMPARED, STRUCTURE_COMPARE),
@@ -65,6 +70,11 @@ fn source() -> String {
         entry("count_more", PREDICATE_INT, more, FILTER_PREVIEW),
         entry("count_one", "Int", COUNTS, FILTER_PREVIEW),
         entry("count_cells", CELLS_INT, COUNTS, FILTER_PREVIEW),
+        entry("members", PREDICATE_NAT, MEMBERS, STRUCTURE_LAYER),
+        entry("members_any", PREDICATE_INT, listed, STRUCTURE_LAYER),
+        entry("members_counted", PREDICATE_INT, COUNTS, STRUCTURE_LAYER),
+        entry("members_one", "Int", MEMBERS, STRUCTURE_LAYER),
+        entry("members_cells", CELLS_INT, MEMBERS, STRUCTURE_LAYER),
         entry("colours_of_cells", CELLS_INT, COMPARED, "colours"),
         entry("colours_of_layer", PREDICATE_INT, COUNTS, "colours"),
         entry("colours_of_list", "List<Int>", COMPARED, "colours"),
@@ -179,6 +189,15 @@ fn compared(comparison: CellComparison) -> Value {
 fn counts(counts: LayerCounts) -> Value {
     let LayerCounts { cell, layer, pieces, slots } = counts;
     Value::record(vec![("cell", nat(cell)), ("layer", nat(layer)), ("pieces", nat(pieces)), ("slots", nat(slots))])
+}
+
+/// The answer a `structure.layer` read declared as [`MEMBERS`] gives for a layer's members.
+fn members(members: LayerMembers) -> Value {
+    let LayerMembers { cell, layer, pieces, slots } = members;
+    let naturals = |items: Vec<usize>| Value::list(items.into_iter().map(nat).collect());
+    let fields =
+        vec![("cell", nat(cell)), ("layer", nat(layer)), ("pieces", naturals(pieces)), ("slots", naturals(slots))];
+    Value::record(fields)
 }
 
 fn names(value: &Value) -> Vec<String> {
@@ -322,5 +341,72 @@ fn the_tariffs_cover_the_largest_answers() {
     let largest =
         Value::record(vec![("cell", last.clone()), ("layer", last), ("pieces", nat(PIECES)), ("slots", nat(SLOTS))]);
     assert_eq!(largest.size(), filter_preview_tariff().result_bound);
+    assert!(bridge.sent.is_empty(), "a read sends no invocation");
+}
+
+/// An entry reads the members of a layer predicate from `structure.layer`: the positions that `filter.preview` counts
+/// and their home slots, as many as it counts, as LP2's `Kernel::layer_members` gives them. The answer's fields follow
+/// the declared order, and whole numbers may be declared `Int`. The row reads no state: a scrambled session gives the
+/// solved session's answers. Its refusals are `filter.preview`'s: a declared type it does not answer and an argument of
+/// another form before the row runs, a cell or layer outside the model once the read is charged its tariff. The tariff
+/// covers every layer around cells 0, 17 and 599, and its result bound is the size of an answer that holds every
+/// position and every slot, each of the largest value. A read changes nothing and sends no invocation.
+#[test]
+fn an_entry_reads_the_members_of_a_layer() {
+    let mut solved = layer_at(kernel().solved());
+    let mut scrambled = layer_at(scrambled());
+    for layer in [&mut solved, &mut scrambled] {
+        for (cell, named) in [(7, 0), (7, 2), (599, 1)] {
+            let listed = kernel().layer_members(cell, named).expect("a layer");
+            let counted = layer.layer_counts(cell, named).expect("a layer");
+            assert_eq!((listed.pieces.len(), listed.slots.len()), (counted.pieces, counted.slots), "{cell}, {named}");
+            let expected = members(listed);
+            let read = run(layer, "members", predicate(cell, named));
+            assert!(equal(answer(&read), &expected), "{cell}, {named}");
+            let any = run(layer, "members_any", predicate(cell, named));
+            assert_eq!(names(answer(&any)), ["slots", "pieces", "layer", "cell"]);
+            for name in ["cell", "layer", "pieces", "slots"] {
+                assert!(equal(field(answer(&any), name), field(&expected, name)), "{name}");
+            }
+        }
+    }
+
+    for (entry, arg, code, unserved) in [
+        ("members_counted", predicate(7, 2), TYPE_MISMATCH, "colours_of_layer"),
+        ("members_one", Value::int(7), code::ARGUMENT_FORM, "colours_of_one"),
+        ("members_cells", cells(7, 2), code::ARGUMENT_FORM, "colours_of_cells"),
+    ] {
+        let cost = refused(&mut solved, entry, &arg, code);
+        assert_eq!(cost, refused(&mut solved, unserved, &arg, NOT_GRANTED), "{entry}: refused before the row runs");
+    }
+    let charged = structure_layer_tariff().kernel_cost;
+    assert_eq!(charged, 2 * SLOTS as u128 + PIECES as u128);
+    let last = kernel().cell_layers(7).expect("a cell").len() as i64 - 1;
+    let beyond = Value::record(vec![("cell", Value::int(u64::MAX)), ("layer", Value::int(0))]);
+    for arg in [predicate(CELLS as i64, 0), predicate(-1, 0), predicate(7, last + 1), predicate(7, -1), beyond] {
+        let cost = refused(&mut solved, "members_any", &arg, code::NAMED_OBJECT_INVALID);
+        assert_eq!(cost, refused(&mut solved, "colours_of_layer", &arg, NOT_GRANTED) + charged, "{arg:?}: charged");
+    }
+
+    let mut bridge = Bridge::new(&mut solved, "direct");
+    let ty = structure_layer_type();
+    for cell in [0, 17, 599] {
+        for counted in kernel().cell_layers(cell).expect("a cell") {
+            let mut arg = Vec::new();
+            encode(&predicate(cell, counted.layer as i64), &mut arg).expect("a canonical argument");
+            let request = Request::SnapshotWith { query: STRUCTURE_LAYER, arg: &arg, ty: &ty };
+            let tariff = bridge.tariff(&request).unwrap();
+            assert_eq!(tariff, structure_layer_tariff());
+            let got = bridge.perform(&request).unwrap();
+            let expected = members(kernel().layer_members(cell, counted.layer as i64).expect("a layer"));
+            assert!(equal(&got, &expected), "{cell}, layer {}", counted.layer);
+            assert!(got.size() <= tariff.result_bound, "{} > {}", got.size(), tariff.result_bound);
+        }
+    }
+    let all = |n: usize| Value::list(vec![nat(n - 1); n]);
+    let last = nat(CELLS - 1);
+    let largest =
+        Value::record(vec![("cell", last.clone()), ("layer", last), ("pieces", all(PIECES)), ("slots", all(SLOTS))]);
+    assert_eq!(largest.size(), structure_layer_tariff().result_bound);
     assert!(bridge.sent.is_empty(), "a read sends no invocation");
 }
