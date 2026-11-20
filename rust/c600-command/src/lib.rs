@@ -595,8 +595,9 @@ pub use worksheet::{
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 22] = [
+pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
+    ("c600-command/src/availability.rs", include_bytes!("availability.rs")),
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
     ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
