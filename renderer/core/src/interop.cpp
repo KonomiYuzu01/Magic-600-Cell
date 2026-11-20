@@ -194,6 +194,10 @@ struct sa2_context {
     uint64_t device_epoch = sa2::DeviceEpoch, surface_generation = 0;
     std::unique_ptr<Surface> surface;
     SceneSource source;
+    // C9 U5: the device's compiled user stages, made by the first sa2_stage_compile; a recovery drops them. Handles
+    // count up from 1 and are never reused, not even after a recovery.
+    std::unique_ptr<sa2::stages::Registry> stages;
+    uint64_t stage_handles = 0;
     ~sa2_context() { if (completion) CloseHandle(completion); }
     ID3D12CommandQueue* producer() const { return own_queue ? own_queue.Get() : godot_queue.Get(); }
 };
@@ -854,6 +858,7 @@ int32_t recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* 
     std::swap(ctx->factory, fresh->factory);
     ctx->adapter = fresh->adapter;
     ctx->drained = false;
+    std::swap(ctx->stages, fresh->stages); // C9 U5: the old device's stages leave with it; the new scene has no chain
     if (ctx->surface) {
         ctx->surface->chain = std::move(chain);
         ctx->surface->generation = ++ctx->surface_generation;
@@ -888,6 +893,7 @@ void scene_surface(sa2_context* ctx, uint64_t frame) {
     try {
         const auto now = sa2::scene_qpc();
         scene.record_draw(list, target.ring(), target.view(), now, target.format());
+        scene.stage_frame(target.ring(), frame);
         scene.sample_vram();
         target.close(frame);
     } catch (...) { scene.poison(); throw; }
@@ -1416,6 +1422,7 @@ int32_t sa2_scene_produce(sa2_context* ctx, uint32_t index, uint64_t frame) {
         try {
             transition(ctx, slot, ctx->config.state_before_write, SA2_STATE_RENDER_TARGET, true);
             scene.record_draw(slot.list.Get(), index, rtv(ctx, index), now);
+            scene.stage_frame(index, frame);
             scene.sample_vram();
             transition(ctx, slot, SA2_STATE_RENDER_TARGET, ctx->config.state_after_write, false);
             ctx->last_frame = frame;
@@ -1802,6 +1809,84 @@ int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason) {
         *out_removed_reason = hr;
         if (ctx->scene) ctx->scene->product.observe_removal(hr);
         if (hr < 0) throw Failure(SA2_E_DEVICE_REMOVED, "device removed (" + sa2::removed_text(hr) + ")");
+        return SA2_OK;
+    });
+}
+
+// C9 U5 (additive in ABI 5): user shader stages (sa2_interop.h).
+int32_t sa2_stage_compile(sa2_context* ctx, uint32_t kind, const char* hlsl_utf8, uint32_t hlsl_size, uint64_t* out_handle,
+                          char* record, uint32_t record_size, uint32_t* out_record_size) {
+    if (out_handle) *out_handle = 0;
+    if (out_record_size) *out_record_size = 0;
+    return invoke(ctx, "sa2_stage_compile", [&]() -> int32_t {
+        context(ctx);
+        require(out_handle && record && out_record_size, "null handle output, record buffer or record size output");
+        require(record_size >= SA2_STAGE_RECORD_BYTES, "record_size must be at least SA2_STAGE_RECORD_BYTES");
+        require(kind == SA2_STAGE_VERTEX || kind == SA2_STAGE_FRAGMENT, "kind must be SA2_STAGE_VERTEX or SA2_STAGE_FRAGMENT");
+        const auto refusal = sa2::stages::text_refusal(hlsl_utf8, hlsl_size);
+        require(refusal.empty(), refusal.c_str());
+        live(ctx);
+        if (!ctx->stages) ctx->stages = std::make_unique<sa2::stages::Registry>(ctx->device.Get());
+        const uint64_t handle = ctx->stage_handles + 1;
+        Json result;
+        const int32_t status = ctx->stages->compile(kind, std::string_view(hlsl_utf8, hlsl_size), handle, result);
+        const std::string error = result.at("error").string();
+        write_json(sa2::stages::fit_record(std::move(result), record_size - 1), record, record_size, out_record_size);
+        if (status != SA2_OK) throw Failure(status, std::string(sa2::stages::CompileFailed) + ": " + error);
+        ctx->stage_handles = handle;
+        *out_handle = handle;
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_stages(sa2_context* ctx, uint64_t vertex_stage, uint64_t fragment_stage, uint32_t overdraw,
+                         const uint32_t* vertex_arrays, uint32_t vertex_count, const uint32_t* fragment_arrays, uint32_t fragment_count) {
+    return invoke(ctx, "sa2_scene_stages", [&] {
+        context(ctx);
+        require(vertex_count <= SA2_STAGE_ARRAY_MAX && fragment_count <= SA2_STAGE_ARRAY_MAX, "an array count exceeds SA2_STAGE_ARRAY_MAX");
+        require((vertex_arrays || !vertex_count) && (fragment_arrays || !fragment_count), "a NULL array with a nonzero count");
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        auto& scene = *ctx->scene;
+        require(!scene.record.tracing(), "user stages cannot change inside a scene trace", SA2_E_WRONG_STATE);
+        scene.require_healthy();
+        live(ctx);
+        if (!vertex_stage && !fragment_stage) {
+            scene.stages_attach(nullptr, 0);
+            return SA2_OK;
+        }
+        require(ctx->stages && (!vertex_stage || ctx->stages->holds(vertex_stage, SA2_STAGE_VERTEX)),
+            "vertex_stage is neither 0 nor a compiled vertex stage of this device");
+        require(ctx->stages && (!fragment_stage || ctx->stages->holds(fragment_stage, SA2_STAGE_FRAGMENT)),
+            "fragment_stage is neither 0 nor a compiled fragment stage of this device");
+        std::vector<uint32_t> vertex_values, fragment_values;
+        if (vertex_count) vertex_values.assign(vertex_arrays, vertex_arrays + vertex_count);
+        if (fragment_count) fragment_values.assign(fragment_arrays, fragment_arrays + fragment_count);
+        auto chain = ctx->stages->chain(vertex_stage, fragment_stage, overdraw, std::move(vertex_values), std::move(fragment_values));
+        scene.stages_attach(std::move(chain), sa2::scene_qpc());
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_stage_report(sa2_context* ctx, sa2_stage_frame* out) {
+    return invoke(ctx, "sa2_stage_report", [&] {
+        context(ctx);
+        require(out && out->struct_size == sizeof(*out), "invalid stage_frame struct_size");
+        if (ctx->scene) ctx->scene->stage_report(completed(ctx->ready.Get()), *out);
+        else {
+            sa2_stage_frame zero{};
+            zero.struct_size = sizeof(zero);
+            *out = zero;
+        }
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle) {
+    return invoke(ctx, "sa2_stage_release", [&] {
+        context(ctx);
+        require(ctx->stages && ctx->stages->holds(handle, 0), "handle is not a compiled stage of this device");
+        require(!(ctx->scene && ctx->scene->stages_use(handle)), "the stage is attached to the scene; detach it first", SA2_E_WRONG_STATE);
+        ctx->stages->release(handle);
         return SA2_OK;
     });
 }

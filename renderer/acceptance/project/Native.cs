@@ -50,6 +50,15 @@ public unsafe struct Sa2WjConfig
     public uint trace_ms, reserved;
 }
 
+// ABI 5, user stages (C9 U5c: --sa2-stages): one sa2_stage_report row, 64 bytes on x64.
+[StructLayout(LayoutKind.Sequential)]
+public struct Sa2StageFrame
+{
+    public uint struct_size, stopped;
+    public ulong frame, bound, allowance, vertex_stage, fragment_stage;
+    public ulong user_pixel_invocations, builtin_pixel_invocations;
+}
+
 public unsafe sealed class Native : IDisposable
 {
     public const uint SA2_ABI_VERSION = 5;
@@ -77,11 +86,16 @@ public unsafe sealed class Native : IDisposable
     public const int SA2_STATE_PIXEL_SHADER_RESOURCE = 2;
     public const int SA2_STATE_ALL_SHADER_RESOURCE = 3;
     public const int SA2_STATE_COPY_SOURCE = 4;
+    public const uint SA2_STAGE_VERTEX = 1;
+    public const uint SA2_STAGE_FRAGMENT = 2;
+    public const uint SA2_STAGE_RECORD_BYTES = 65536;
+    public const uint SA2_STAGE_HLSL_MAX_BYTES = 1048576;
     public const int DeviceInfoSize = 48;
     public const int ConfigSize = 28;
     public const int DebugCountsSize = 128;
     public const int SceneConfigSize = 32;
     public const int WjConfigSize = 48;
+    public const int StageFrameSize = 64;
 
     public readonly delegate* unmanaged[Cdecl]<uint> sa2_abi_version;
     public readonly delegate* unmanaged[Cdecl]<nint, byte*, uint, int> sa2_last_error;
@@ -117,6 +131,11 @@ public unsafe sealed class Native : IDisposable
     public readonly delegate* unmanaged[Cdecl]<nint, ulong, int, int, uint, uint, int> sa2_surface_attach;
     public readonly delegate* unmanaged[Cdecl]<nint, ulong*, int> sa2_surface_swap_chain;
     public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_surface_detach;
+    // ABI 5, user stages (C9 U5c: --sa2-stages).
+    public readonly delegate* unmanaged[Cdecl]<nint, uint, byte*, uint, ulong*, byte*, uint, uint*, int> sa2_stage_compile;
+    public readonly delegate* unmanaged[Cdecl]<nint, ulong, ulong, uint, uint*, uint, uint*, uint, int> sa2_scene_stages;
+    public readonly delegate* unmanaged[Cdecl]<nint, Sa2StageFrame*, int> sa2_stage_report;
+    public readonly delegate* unmanaged[Cdecl]<nint, ulong, int> sa2_stage_release;
     private readonly nint _library;
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
@@ -139,7 +158,7 @@ public unsafe sealed class Native : IDisposable
     {
         if (sizeof(Sa2DeviceInfo) != DeviceInfoSize || sizeof(Sa2Config) != ConfigSize
             || sizeof(Sa2DebugCounts) != DebugCountsSize || sizeof(Sa2SceneConfig) != SceneConfigSize
-            || sizeof(Sa2WjConfig) != WjConfigSize)
+            || sizeof(Sa2WjConfig) != WjConfigSize || sizeof(Sa2StageFrame) != StageFrameSize)
             throw new InvalidOperationException("ABI struct size mismatch");
         _library = NativeLibrary.Load(absolutePath);
         try
@@ -179,6 +198,10 @@ public unsafe sealed class Native : IDisposable
             sa2_surface_attach = (delegate* unmanaged[Cdecl]<nint, ulong, int, int, uint, uint, int>)Export("sa2_surface_attach");
             sa2_surface_swap_chain = (delegate* unmanaged[Cdecl]<nint, ulong*, int>)Export("sa2_surface_swap_chain");
             sa2_surface_detach = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_surface_detach");
+            sa2_stage_compile = (delegate* unmanaged[Cdecl]<nint, uint, byte*, uint, ulong*, byte*, uint, uint*, int>)Export("sa2_stage_compile");
+            sa2_scene_stages = (delegate* unmanaged[Cdecl]<nint, ulong, ulong, uint, uint*, uint, uint*, uint, int>)Export("sa2_scene_stages");
+            sa2_stage_report = (delegate* unmanaged[Cdecl]<nint, Sa2StageFrame*, int>)Export("sa2_stage_report");
+            sa2_stage_release = (delegate* unmanaged[Cdecl]<nint, ulong, int>)Export("sa2_stage_release");
         }
         catch { NativeLibrary.Free(_library); throw; }
     }

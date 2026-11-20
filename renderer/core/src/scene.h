@@ -1,6 +1,7 @@
 #pragma once
 #include "scene_record.h"
 #include "product.h"
+#include "stages.h"
 #include <d3d12.h>
 #include <memory>
 #include <functional>
@@ -61,5 +62,16 @@ public:
     // Recreates the size-bound resources (depth and the ID target) at the new
     // size after a confirmed drain.
     void resize(uint32_t width, uint32_t height);
+
+    // C9 U5: a user chain on W1..W4's record_draw (sa2_scene_stages). Attaching creates the stage resources on the
+    // first attach (the eval buffer, the frame row, its readback and the statistics queries) and the chain's arrays;
+    // a failure leaves the chain as it was. A null chain detaches. qpc is the attach time, t = 0.
+    void stages_attach(std::shared_ptr<const stages::Chain> chain, int64_t qpc);
+    bool stages_use(uint64_t handle) const; // the attached chain names the handle
+    // After record_draw drew ring's frame with the chain: the frame's number, for its report row.
+    void stage_frame(uint32_t ring, uint64_t frame);
+    // The newest completed frame drawn with a chain, from every row whose frame is at most completed; zeros (frame 0)
+    // before the first.
+    void stage_report(uint64_t completed, sa2_stage_frame& out);
 };
 }
