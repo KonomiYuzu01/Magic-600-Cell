@@ -1,6 +1,7 @@
 //! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; LP2 draft until the
-//! command table freezes, PHS.52). Eight rows so far: five of KN2.4, the draft `setups` row of the setup-search
-//! exception, and the two draft structure rows of LP3's representations tool. LB2's exact completion reads two of them
+//! command table freezes, PHS.52). Nine rows so far: five of KN2.4, the draft `setups` row of the setup-search
+//! exception, the two draft structure rows of LP3's representations tool, and the draft `orbits` row of LB2's orbit
+//! catalogue. LB2's exact completion reads two of them
 //! (`c600_library`'s `completion.exact_completion`; CT-LB2-04: exact completion reads identities, slots and
 //! orientations): `positions`, the position of named pieces, and `labels`, the label of named slots. LB2's recipes
 //! and reports read the third (`c600_library`'s `recipes`; CT-LB2-01): `effect`, a recipe's net map and what it
@@ -10,9 +11,9 @@
 //! prefix by prefix at the head under the session's protected orbits. LB2's guarded setups read the sixth
 //! (`c600_library`'s `guarded_setups`; CT-BND-18): `setups`, the certified setups
 //! for a target the solver names, which only the setup-search exception may read (BND.1). The representations tool's
-//! entries read the last two (`c600_repr`'s `compare_cells` and `filter_counts`, the entries of the command rows of the
+//! entries read the next two (`c600_repr`'s `compare_cells` and `filter_counts`, the entries of the command rows of the
 //! same names; LP3's C6): `structure.compare`, two cells compared, and `filter.preview`, the counts of a layer
-//! predicate.
+//! predicate. LB2's orbit catalogue reads the last (`c600_library`'s `orbits`): `orbits`, the pieces of named orbits.
 //! [`crate::bridge::Bridge`] serves `positions` and `labels` from the command layer's head: `positions` through
 //! [`CommandLayer::positions`], and `labels` from the head's snapshot ([`CommandLayer::snapshot`]), because neither the
 //! command layer nor the kernel has a `labels` row function. It serves `effect` through the kernel's
@@ -21,7 +22,8 @@
 //! serves `replay` through the kernel's [`c600_kernel::Kernel::derive_strict`] at the head's snapshot and the layer's
 //! protected orbits ([`CommandLayer::protected`]), and keeps the head. It serves `setups` from the certified table a host gives it ([`SetupTable`]) and the kernel's star certificate, and
 //! `structure.compare` and `filter.preview` through LP2's structure rows [`CommandLayer::compare_cells`] and
-//! [`CommandLayer::layer_counts`], which read no state.
+//! [`CommandLayer::layer_counts`], which read no state, and `orbits` through the kernel's
+//! [`c600_kernel::Kernel::positions`] at the solved state, which reads no state of the session.
 //!
 //! # `positions`
 //!
@@ -233,6 +235,34 @@
 //! The bridge refuses as for `structure.compare`, and once the read is charged also a layer past the cell's last, with
 //! `KN2:input.named_object_invalid` and 0.4's text ([`CommandLayer::layer_counts`]). The tariff is
 //! [`filter_preview_tariff`].
+//!
+//! # `orbits`
+//!
+//! A program reads the row as `read_snapshot<T>("orbits", orbits)`: LB2's orbit catalogue reads it (`c600_library`'s
+//! `orbits`). KN2.4 has no orbit row, so this row is a draft until the command table freezes at LP3, as `setups` is.
+//! Chapter 03 builds the catalogue as library code over `labels` and `positions`, and `positions` gives a piece's orbit
+//! only for pieces a program names. Read for all 177,120 pieces, it fits the draft budget ceiling's kernel cost
+//! (3,802,200 of 2^40), but sorting its records by orbit takes at least ten steps a piece, about 1,770,000 steps
+//! against the ceiling's 1,048,576 (`Budget::DRAFT_CEILING`). The row answers that membership, and nothing else: an
+//! orbit's progress and its residuals stay library code that takes the positions it reads as a parameter.
+//!
+//! `orbits` is a list of integers, such as a `List<Int>`: orbits -1 to 34, -1 for the fixed cell centres, with repeats
+//! allowed. `T` is a list of records with these two fields, in any order:
+//!
+//! - `orbit: Int`, the named orbit;
+//! - `pieces: List<Nat>`, its pieces, named by their home positions, in increasing order.
+//!
+//! The elements of `pieces` may also be declared with `Int`; no field carries a display qualifier. The answer holds one
+//! record per named orbit, in the argument's order, with its fields in `T`'s order. The row reads no state: it is model
+//! data, the orbit that the kernel's `positions` gives each piece ([`c600_kernel::Kernel::positions`], here at the
+//! solved state), which the `positions` row's `orbit` field gives at every state, with no relabelling. The answers for
+//! the 36 orbits -1 to 34 split the 177,120 pieces between them; 0 to 34 are the kernel's [`ORBITS`] moving orbits.
+//!
+//! The bridge refuses before the row runs, at the cost of the read's step: a declared type other than these,
+//! `LG2:type.mismatch`; an argument that is not a list of integers, `KN5:input.argument_form`. Once the read is
+//! charged: with Jumble on, `KN5:input.retained_tool_needs_jumble_off` (LB2.1), since the orbits are 600-cell-Full's;
+//! and an orbit outside -1 to 34, `KN2:input.named_object_invalid`. The charge stays, as for a refused proposal. The
+//! tariff is [`orbits_tariff`].
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -1705,4 +1735,106 @@ pub fn filter_preview<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -
         "pieces" => layer_counts.pieces,
         _ => layer_counts.slots,
     }))
+}
+
+/// The `orbits` row's query: the pieces of named orbits, which LB2's orbit catalogue reads (a draft, since KN2.4 has
+/// no orbit row).
+pub const ORBITS_ROW: &str = "orbits";
+
+/// The most pieces one orbit of 600-cell-Full has (the kernel's largest orbits; a test checks it). The `orbits` row's
+/// tariff takes it for every named orbit.
+pub const MAX_ORBIT_PIECES: usize = 7200;
+
+/// The fields of the `orbits` row's records, by name.
+const ORBITS_FIELDS: [&str; 2] = ["orbit", "pieces"];
+
+/// The type the `orbits` row answers: `List<record { orbit: Int, pieces: List<Nat> }>`.
+pub fn orbits_type() -> QTy {
+    list(Ty::Record(vec![("orbit".to_owned(), exact(Ty::Int)), ("pieces".to_owned(), list(Ty::Nat))]))
+}
+
+/// The fields of a declared `orbits` answer type in its order; None unless it is a list of records with the row's two
+/// fields, `orbit` declared `Int` and `pieces` a [`whole_list`], and no display qualifier.
+fn orbits_fields(ty: &QTy) -> Option<Vec<&'static str>> {
+    let Ty::List(record) = &ty.ty else { return None };
+    let Ty::Record(fields) = &record.ty else { return None };
+    if ty.display || record.display || fields.len() != ORBITS_FIELDS.len() {
+        return None;
+    }
+    let mut order: Vec<&'static str> = Vec::with_capacity(ORBITS_FIELDS.len());
+    for (name, declared) in fields {
+        let known = *ORBITS_FIELDS.iter().find(|&&known| known == name)?;
+        let holds = if known == "orbit" { *declared == exact(Ty::Int) } else { whole_list(declared) };
+        if order.contains(&known) || !holds {
+            return None;
+        }
+        order.push(known);
+    }
+    Some(order)
+}
+
+/// The logical size of an empty `orbits` answer, and what one record adds to an answer at most: orbit 34, the orbit
+/// of the largest magnitude, with [`MAX_ORBIT_PIECES`] pieces of 177,119 each.
+fn orbits_sizes() -> (u128, u128) {
+    static SIZES: OnceLock<(u128, u128)> = OnceLock::new();
+    *SIZES.get_or_init(|| {
+        let pieces = Value::list(vec![Value::int((PIECES - 1) as i64); MAX_ORBIT_PIECES]);
+        let record = Value::record(vec![("orbit", Value::int(ORBITS as i64 - 1)), ("pieces", pieces)]);
+        let empty = Value::list(Vec::new()).size();
+        (empty, Value::list(vec![record]).size() - empty)
+    })
+}
+
+/// The `orbits` row's draft tariff for `orbits` named orbits (DET.55; the command table prices the row when it
+/// freezes). The kernel cost counts one pass over the home slots of every piece, 259,800 in all, which gives each piece
+/// its orbit, then at most [`MAX_ORBIT_PIECES`] answered pieces for each named orbit. The result bound is the logical
+/// size of an answer of that many of the largest records: orbit 34 with [`MAX_ORBIT_PIECES`] pieces of 177,119.
+pub fn orbits_tariff(orbits: usize) -> RowTariff {
+    let n = orbits as u128;
+    let kernel_cost = (SLOTS as u128).saturating_add(n.saturating_mul(MAX_ORBIT_PIECES as u128));
+    let (empty, record) = orbits_sizes();
+    RowTariff { kernel_cost, result_bound: empty.saturating_add(n.saturating_mul(record)) }
+}
+
+/// The tariff of an `orbits` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for another
+/// declared type, `KN5:input.argument_form` for an argument that is not a list of integers.
+pub fn orbits_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    orbits_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let orbits = integers(arg).ok_or(code::ARGUMENT_FORM)?;
+    Ok(orbits_tariff(orbits.len()))
+}
+
+/// The pieces of every orbit, -1 to 34 at index `orbit + 1`, each in increasing order: the orbit that the kernel's
+/// `positions` gives each piece at the solved state, which is the model's own and the same at every state. The model
+/// holds the orbits -1 to 34 only; the kernel checks them when it loads.
+fn orbit_members(kernel: &Kernel) -> Result<Vec<Vec<usize>>, &'static str> {
+    let every: Vec<i64> = (0..PIECES as i64).collect();
+    let rows = kernel.positions(&kernel.solved(), &every).map_err(|refusal| refusal.code)?;
+    let mut members = vec![Vec::new(); ORBITS + 1];
+    for row in rows {
+        members[(row.orbit + 1) as usize].push(row.piece);
+    }
+    Ok(members)
+}
+
+/// The answer of an `orbits` read, with [`orbits_read_tariff`]'s refusals and, once the read is charged: with Jumble
+/// on, `KN5:input.retained_tool_needs_jumble_off` (LB2.1), since the orbits are 600-cell-Full's; and an orbit outside
+/// -1 to 34, `KN2:input.named_object_invalid`. The row reads no state, and a read changes nothing.
+pub fn orbits<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    let order = orbits_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let orbits = integers(arg).ok_or(code::ARGUMENT_FORM)?;
+    if layer.jumbled().is_some() {
+        return Err(code::RETAINED_TOOL_NEEDS_JUMBLE_OFF);
+    }
+    let index = |orbit: &i64| usize::try_from(orbit.saturating_add(1)).ok().filter(|&index| index <= ORBITS);
+    let named: Vec<usize> = orbits.iter().map(index).collect::<Option<_>>().ok_or(code::NAMED_OBJECT_INVALID)?;
+    let members = orbit_members(layer.kernel())?;
+    let record = |&index: &usize| {
+        let value = |name: &str| match name {
+            "orbit" => Value::int(index as i64 - 1),
+            _ => Value::list(members[index].iter().map(|&piece| Value::int(piece as u64)).collect()),
+        };
+        Value::record(order.iter().map(|&name| (name, value(name))).collect())
+    };
+    Ok(Value::list(named.iter().map(record).collect()))
 }
