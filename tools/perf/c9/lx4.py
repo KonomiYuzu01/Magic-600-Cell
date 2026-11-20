@@ -33,9 +33,10 @@ Metrics and the script's edit that drives each (DRAFT mapping of RTE.49's interv
 | dependents (W) | exported-signature at W00 | the burst's last key | W00's dependents re-checked and shown |
 
 Messages (DRAFT protocol; the product shell implements it): registered `Magic600.LX4.Reset` (wParam the edit's index in
-EDITS.json, lParam the sample id): the editor loads the edit's target baseline and checks its digest, and the first
-frame that draws the baseline writes the sample's `ready` row (a handshake, no metric). The harness posts the rest only
-after it reads that row, so no timed message waits behind the Reset's work. Then for each replacement, in descending
+EDITS.json, with `RERUN_FLAG` (bit 16) added for a rerun sample; lParam the sample id): the editor loads the edit's
+target baseline and checks its digest, and the first frame that draws the baseline writes the sample's `ready` row (a
+handshake, no metric). The harness posts the rest only after it reads that row, so no timed message waits behind the
+Reset's work; while an earlier sample's re-run runs, the row waits for it. Then for each replacement, in descending
 offset order: registered `Magic600.LX4.Select` (wParam start, lParam end, UTF-8 byte offsets in the current buffer),
 which the module acknowledges with an `lx4-select` row ({"t": "lx4-select", "sample", "select"}, the Select's ordinal
 in the sample from 1) once the editor has applied it; the harness posts the replacement's keys only after it reads that
@@ -46,6 +47,13 @@ KeyJ: physical J, K and L are twists 1, 2 and 3), with the key's scan code in lP
 Godot's physical keycode, which Godot takes from the scan code, so a bare virtual-key code with scan code 0 does not
 turn. Godot's loop translates a turn's key-down into a WM_CHAR with the same scan code; the shell's LX-4 module keeps
 such characters out of the buffer, and the harness's own WM_CHARs carry scan code 0, so the two never mix.
+
+The rerun endpoint (RTE.50; C9, 20 Nov 2026). The reference view is the edited S, M or L module run from its
+`exported` function, which imports nothing and reads no host row. After a rerun sample's last input, the shell runs
+the final buffer as the host's view job (`m6h_run_view`, the language runtime with no host rows). The `rerun` row names
+the first core-confirmed frame that drew the run's publication (`m6h_view_result`), with the run's source digest as
+`buffer_sha256`. The host does not draw the run's value yet, so that frame shows the reference publication the run
+delivered (a limitation, below). A refused run writes no row, so the sample times out.
 
 Logs. The harness writes `lx4-posts.jsonl` in the run directory (format `magic600-c9-lx4-posts-v1`): a `run` row, one
 `post` row per message (`sample`, `index`, `message`, `qpc` read just before PostMessageW, `ok`) and one `sample` row
@@ -78,9 +86,10 @@ such a summary (U4's W3 summary) in `gate_reference` with its builds and verdict
 counting it as the gate: the reason then reads `gate-summary-other-build` instead of `gate-summary-missing`. Whether an
 acceptance build of the same commit may stand in for the product build is the owner's question.
 
-Limitation (stated in every record, `limitations`; top integrator, 19 November 2026): the module set's views read no
+Limitations (stated in every record, `limitations`). Top integrator, 19 November 2026: the module set's views read no
 host rows on either puzzle (the host runs them with `NoHost`), so jumble-off and jumble-on time the same rerun path.
-RTE.51 does not require jumbling rows, and the bars are unchanged.
+RTE.51 does not require jumbling rows, and the bars are unchanged. C9, 20 November 2026: the rerun endpoint's frame
+draws the run's reference publication, not its value, which the host does not draw yet.
 """
 from __future__ import annotations
 
@@ -127,6 +136,8 @@ BARS = {'echo': {'S': (50, 67), 'M': (50, 67), 'L': (50, 67)},
         'rerun': {'S': (250, 400), 'M': (250, 400), 'L': (500, 750)},
         'dependents': {'W': (1000, 1500)}}
 RESET, SELECT = 'Magic600.LX4.Reset', 'Magic600.LX4.Select'
+# A rerun sample's Reset carries this flag in wParam beside the edit's index (the library's LX4_RESET_RERUN).
+RERUN_FLAG = 1 << 16
 READY = 'ready'
 # The module's acknowledgment of an applied Select: {"t": SELECTED, "sample", "select"} (C9 fix, 20 Nov 2026).
 SELECTED = 'lx4-select'
@@ -145,7 +156,9 @@ BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1
        'bars_ms': BARS, 'samples': TOTAL_SML,
        'source': ['RTE.47', 'RTE.48', 'RTE.49', 'RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06']}
 LIMITATIONS = ['the module set\'s views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time '
-               'the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged']
+               'the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged',
+               'the rerun endpoint\'s frame is the first confirmed frame that drew the run\'s reference publication; '
+               'the host does not draw the run\'s value yet']
 DRAFTS = ['metric to edit-kind mapping', 'schedule order and smoke series', 'message protocol Magic600.LX4.*',
           'lx4 rows in magic600-c9-shell-events-v1', 'unconfirmed sample invalidates its run',
           f'post timeout {TIMEOUT_S:g} s, pace {PACE_S:g} s', 'gate summary checked for build and verdict only',
@@ -255,7 +268,8 @@ def messages(edits, sample, turn_key=TURN_KEY):
         down, up = key_lparams(scan)
         return [(WM_KEYDOWN, vk, down), (WM_KEYUP, vk, up)], 0
     edit = edits[sample['edit']]
-    out, keys = [(RESET, sample['edit'], sample['id'])], []
+    flag = RERUN_FLAG if sample['metric'] == 'rerun' else 0
+    out, keys = [(RESET, sample['edit'] | flag, sample['id'])], []
     for replacement in sorted(edit['replacements'], key=lambda r: -r['offset']):
         start = replacement['offset']
         out.append((SELECT, start, start + len(replacement['delete'].encode('utf-8'))))

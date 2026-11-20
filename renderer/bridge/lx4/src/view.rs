@@ -4,9 +4,9 @@
 //! view's `source_lag` in the frame input says whether the frame shows the view stale: the view model decides the
 //! state, by a host comparison of digests (RPI.13), not this crate. Nothing runs and nothing is fenced on an edit.
 //!
-//! The view's one run is a fixed publication, as in c600-view's own tests: LX-4 times the stale state, not a view's
-//! output, and running a view on the session's state is C9 product's host call (rerun, RTE.50, not built). The
-//! revision, the engine bundle and the limits are generous fixture values, not product ones.
+//! The view's one run is a fixed publication, as in c600-view's own tests: this view times the stale state, not a
+//! view's output. The re-run (`rerun`, RTE.50) is the host's view job instead, which the shell starts (the crate's
+//! docs, Re-run). The revision, the engine bundle and the limits are generous fixture values, not product ones.
 
 use c600_view::{
     BundleCandidate, BundlePart, CommandId, Content, Declared, Depends, Digest, Field, LimitProfile, MapDescriptor,

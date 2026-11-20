@@ -864,9 +864,17 @@ class Lx4Tests(NoProcessCase):
     def test_messages_reset_select_and_type_and_time_the_metric_key(self):
         samples = {(sample['size'], sample['metric']): sample for sample in lx4.schedule(self.edits, 'jumble-off')}
         sent, timed = lx4.messages(self.edits, samples[('S', 'echo')])
-        self.assertEqual(sent[0][0], lx4.RESET)
+        self.assertEqual(sent[0], (lx4.RESET, samples[('S', 'echo')]['edit'], samples[('S', 'echo')]['id']))
         self.assertEqual(sent[1][0], lx4.SELECT)
         self.assertEqual((sent[timed][0], timed), (lx4.WM_CHAR, 2))
+        # Only a rerun sample's Reset carries the flag; it re-runs the same inside-body edit, timed at the last key.
+        rerun = samples[('S', 'rerun')]
+        sent, timed = lx4.messages(self.edits, rerun)
+        self.assertEqual(rerun['edit'], samples[('S', 'echo')]['edit'])
+        self.assertEqual(sent[0], (lx4.RESET, rerun['edit'] | lx4.RERUN_FLAG, rerun['id']))
+        self.assertEqual(timed, len(sent) - 1)
+        for metric in ('echo', 'syntax', 'completion', 'diagnostics', 'stale'):
+            self.assertLess(lx4.messages(self.edits, samples[('M', metric)])[0][0][1], lx4.RERUN_FLAG, metric)
         sent, timed = lx4.messages(self.edits, samples[('S', 'syntax')])
         self.assertEqual(sent[timed:timed + 2], [(lx4.WM_KEYDOWN, lx4.VK_BACK, 0x000E0001),
                                                  (lx4.WM_KEYUP, lx4.VK_BACK, 0xC00E0001)])
@@ -907,9 +915,14 @@ class Lx4Tests(NoProcessCase):
                              ('InvalidArgument', 'LX4_E_INVALID_ARGUMENT'), ('FixturesRefused', 'LX4_E_FIXTURES'),
                              ('StateRefused', 'LX4_E_STATE'), ('Poisoned', 'LX4_E_POISONED'),
                              ('TextEcho', 'LX4_TEXT_ECHO'), ('TextStatus', 'LX4_TEXT_STATUS'),
-                             ('TextCompletion', 'LX4_TEXT_COMPLETION')):
+                             ('TextCompletion', 'LX4_TEXT_COMPLETION'), ('TextBuffer', 'LX4_TEXT_BUFFER')):
             self.assertEqual(re.search(rf'const \w+ {csharp} = (\d+);', module).group(1),
                              re.search(rf'pub const {rust}: \w+ = (\d+);', library).group(1), csharp)
+        # The re-run: the Reset flag lx4.py posts and the entry the module runs are the library's.
+        self.assertEqual(1 << int(re.search(r'pub const LX4_RESET_RERUN: u32 = 1 << (\d+);', library).group(1)),
+                         lx4.RERUN_FLAG)
+        self.assertEqual(re.search(r'public const string ReferenceEntry = "(\w+)";', module).group(1),
+                         re.search(r'pub const REFERENCE_ENTRY: &str = "(\w+)";', library).group(1))
         types = {'u64': 'ulong', 'u32': 'uint', '[u8; 64]': 'fixed byte[64]'}
         for csharp, rust in (('Update', 'Lx4Update'), ('Shown', 'Lx4Shown')):
             fields = re.search(rf'private struct {csharp}\s*\{{(.*?)\}}', module, re.S).group(1)
@@ -1000,6 +1013,7 @@ class Lx4Tests(NoProcessCase):
         self.assertEqual(record['result']['timed_sml_samples'], 10_800)
         self.assertEqual(record['result']['limitations'], lx4.LIMITATIONS)
         self.assertIn('NoHost', lx4.LIMITATIONS[0])
+        self.assertIn("does not draw the run's value", lx4.LIMITATIONS[1])
 
     def test_a_dry_run_posts_nothing(self):
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -1567,6 +1581,9 @@ class Lx2Tests(NoProcessCase):
             phases = [wparam for message, wparam in fake.posted if message == 0xC003]
             self.assertEqual(phases, [wparam for number, _, _ in lx2.PHASES for wparam in (number, 0)])
             self.assertEqual(phases[:4], [8, 0, 1, 0])
+            # LX-2's echo samples never ask for LX-4's re-run, whose view job would supersede LX-2's.
+            resets = [wparam for message, wparam in fake.posted if message == 0xC001]
+            self.assertTrue(resets and all(wparam < lx4.RERUN_FLAG for wparam in resets))
             self.assertEqual(fake.posted[-1], (lx2.WM_CLOSE, 0))
             self.assertEqual(rows[-1]['t'], 'close')
             # The module stops with an error: phase 0, and no close.

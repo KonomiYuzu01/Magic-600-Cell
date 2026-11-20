@@ -1,8 +1,9 @@
 //! LX-4's editor module through its C interface, on fixtures that c600-lx4 generates into a fresh folder: every edit
 //! of the script replayed as lx4.py posts it (Reset, then per replacement in descending offset order a Select and the
 //! insert's WM_CHAR units or VK_BACK, with the WM_CHAR 0x08 Godot's TranslateMessage makes of VK_BACK), the
-//! endpoints each sample queues and the frames they name, and the refusals. Synthetic frame ids; nothing here is
-//! timing, Windows/DirectX or input evidence.
+//! endpoints each sample queues and the frames they name, the re-run's protocol with the shell, and the refusals.
+//! Synthetic frame ids, and the shell's view job stood in for by the test, except where the reference view runs in
+//! this process; nothing here is timing, Windows/DirectX or input evidence.
 
 use std::cmp::Reverse;
 use std::fs;
@@ -11,8 +12,12 @@ use std::ptr;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
+use c600_digest::{hex, sha256};
+use c600_run::interp::NoHost;
+use c600_run::meter::Amounts;
+use c600_runtime::{run_in_process, Ended, Job, JobOptions};
 use c600_shell_lx4::analysis::prefix;
-use c600_shell_lx4::fixtures::{self, Edit};
+use c600_shell_lx4::fixtures::{self, Edit, Loaded};
 use c600_shell_lx4::*;
 
 /// The fixture folder, generated and validated once per test run.
@@ -148,11 +153,27 @@ fn post(handle: &Handle, input: Input) -> i32 {
     }
 }
 
-/// Runs frames from `frame` until the status has nothing pending and every required endpoint is queued.
+/// The shell's report of a re-run's end.
+fn rerun_ended(handle: &Handle, frame: u64, digest: Option<&[u8; 32]>, reason: &str) -> i32 {
+    let digest = digest.map_or(ptr::null(), |d| d.as_ptr());
+    // SAFETY: a live handle; the digest is null or 32 bytes, the reason `reason.len()` bytes.
+    unsafe { lx4_rerun_ended(handle.0, frame, digest, reason.as_ptr(), reason.len()) }
+}
+
+/// The index of the script's one `kind` edit at `target`.
+fn edit_index(loaded: &Loaded, target: &str, kind: &str) -> usize {
+    let found: Vec<usize> =
+        (0..loaded.edits.len()).filter(|&i| loaded.edits[i].target == target && loaded.edits[i].kind == kind).collect();
+    assert_eq!(found.len(), 1, "{target} {kind}");
+    found[0]
+}
+
+/// Runs frames from `frame` until the status has nothing pending and every required endpoint is queued. These frames
+/// come after the update that may ask for a re-run, so none asks.
 fn frames_until(handle: &Handle, mut frame: u64, required: &[&str], mut rows: Vec<Lx4Shown>) -> (Vec<Lx4Shown>, u64) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        update(handle, frame);
+        assert_eq!(update(handle, frame).rerun, 0, "a re-run is asked for once, by a re-run sample");
         rows.extend(drain(handle));
         let have: Vec<&str> = rows.iter().map(|r| ENDPOINTS[r.endpoint as usize]).collect();
         if !text(handle, LX4_TEXT_STATUS).contains("pending") && required.iter().all(|e| have.contains(e)) {
@@ -193,9 +214,9 @@ fn expectations(edit: &Edit) -> (Vec<&'static str>, Vec<&'static str>) {
 }
 
 #[test]
-fn the_abi_version_is_one() {
+fn the_abi_version_is_two() {
     assert_eq!(lx4_abi_version(), LX4_ABI_VERSION);
-    assert_eq!(LX4_ABI_VERSION, 1);
+    assert_eq!(LX4_ABI_VERSION, 2);
 }
 
 #[test]
@@ -287,6 +308,135 @@ fn every_edit_of_the_script_queues_its_endpoints_for_the_result() {
             assert!(echo.contains(line.trim()), "{what}: the echo shows the typed text: {echo}");
         }
         frame = end + 1;
+    }
+}
+
+/// Posts a re-run sample of `index` (flagged Reset, its ready row, every input) and runs the update after its last
+/// input, which asks for the re-run. Answers that update's frame.
+fn rerun_sample(handle: &Handle, edit: &Edit, index: usize, sample: u64, frame: u64) -> u64 {
+    let inputs = messages(edit, index as u32 | LX4_RESET_RERUN, sample);
+    assert_eq!(post(handle, inputs[0]), LX4_OK, "{}", last_error(handle.0));
+    let ready = update(handle, frame);
+    assert_eq!(ready.rerun, 0, "the baseline is no re-run");
+    let rows = drain(handle);
+    assert_eq!(
+        rows.iter().map(|r| (ENDPOINTS[r.endpoint as usize], r.sample)).collect::<Vec<_>>(),
+        [("ready", sample)]
+    );
+    assert!(text(handle, LX4_TEXT_STATUS).contains("rerun: waiting for the last input"));
+    for &input in &inputs[1..] {
+        assert_eq!(post(handle, input), LX4_OK, "{}", last_error(handle.0));
+    }
+    assert_eq!(update(handle, frame + 1).rerun, 1, "the update after the last input asks for the re-run");
+    frame + 1
+}
+
+#[test]
+fn a_rerun_sample_asks_once_and_queues_rerun_for_the_frame_that_drew_the_run() {
+    let loaded = fixtures::load(folder()).unwrap();
+    let handle = open();
+    let index = edit_index(&loaded, "S", "inside-body");
+    let edit = &loaded.edits[index];
+    let asked = rerun_sample(&handle, edit, index, 31, 1);
+    // The shell runs the buffer: the edit's result.
+    let buffer = text(&handle, LX4_TEXT_BUFFER);
+    assert_eq!(hex(&sha256(buffer.as_bytes())), edit.result_sha256);
+    let (rows, end) = frames_until(&handle, asked + 1, &["echo", "stale", "syntax", "diagnostics"], drain(&handle));
+    assert!(rows.iter().all(|r| ENDPOINTS[r.endpoint as usize] != "rerun"), "no rerun row before the run ends");
+    assert!(text(&handle, LX4_TEXT_STATUS).contains("rerun: running the reference view"));
+    // The run ended: published, first drawn by a later confirmed frame.
+    let drawn = end + 3;
+    assert_eq!(rerun_ended(&handle, drawn, Some(&sha256(buffer.as_bytes())), ""), LX4_OK);
+    let rows = drain(&handle);
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    assert_eq!((ENDPOINTS[rows[0].endpoint as usize], rows[0].sample, rows[0].frame_id), ("rerun", 31, drawn));
+    assert_eq!(std::str::from_utf8(&rows[0].buffer_sha256).unwrap(), edit.result_sha256);
+    assert_eq!(update(&handle, end + 4).rerun, 0);
+    assert!(drain(&handle).is_empty(), "rerun is queued once");
+    assert!(text(&handle, LX4_TEXT_STATUS).contains(&format!("rerun: shown in frame {drawn}")));
+    assert_eq!(rerun_ended(&handle, drawn, Some(&sha256(buffer.as_bytes())), ""), LX4_E_STATE);
+    assert!(last_error(handle.0).contains("no re-run is running"), "{}", last_error(handle.0));
+}
+
+#[test]
+fn ready_waits_for_a_running_rerun_and_a_refused_or_other_run_queues_nothing() {
+    let loaded = fixtures::load(folder()).unwrap();
+    let handle = open();
+    let index = edit_index(&loaded, "M", "inside-body");
+    let edit = &loaded.edits[index];
+    let echo = edit_index(&loaded, "S", "inside-body");
+
+    // A refused run: no row. The next sample's ready waits until the shell reports the end.
+    let asked = rerun_sample(&handle, edit, index, 41, 10);
+    drain(&handle);
+    assert_eq!(post(&handle, Input::Reset(echo as u32, 42)), LX4_OK);
+    update(&handle, asked + 1);
+    assert!(drain(&handle).is_empty(), "ready waits for the running re-run");
+    assert_eq!(rerun_ended(&handle, 0, None, "{\"code\":\"m6h:superseded\"}"), LX4_OK);
+    update(&handle, asked + 2);
+    let rows = drain(&handle);
+    assert_eq!(rows.iter().map(|r| (ENDPOINTS[r.endpoint as usize], r.sample)).collect::<Vec<_>>(), [("ready", 42)]);
+
+    // A published run of another text: no row, and the status says why.
+    let asked = rerun_sample(&handle, edit, index, 43, 20);
+    drain(&handle);
+    assert_eq!(rerun_ended(&handle, asked + 2, Some(&sha256(b"another text")), ""), LX4_OK);
+    update(&handle, asked + 3);
+    assert!(drain(&handle).iter().all(|r| ENDPOINTS[r.endpoint as usize] != "rerun"));
+    assert!(text(&handle, LX4_TEXT_STATUS).contains("rerun: REFUSED: the run's text"));
+
+    // A run that ends after the next Reset still names its own sample and buffer.
+    let asked = rerun_sample(&handle, edit, index, 44, 30);
+    let digest = sha256(text(&handle, LX4_TEXT_BUFFER).as_bytes());
+    drain(&handle);
+    assert_eq!(post(&handle, Input::Reset(echo as u32, 45)), LX4_OK);
+    update(&handle, asked + 1);
+    assert!(drain(&handle).is_empty());
+    assert_eq!(rerun_ended(&handle, asked + 1, Some(&digest), ""), LX4_OK);
+    update(&handle, asked + 2);
+    let rows = drain(&handle);
+    let names: Vec<_> = rows.iter().map(|r| (ENDPOINTS[r.endpoint as usize], r.sample, r.frame_id)).collect();
+    assert_eq!(names, [("rerun", 44, asked + 1), ("ready", 45, asked + 2)]);
+    assert_eq!(std::str::from_utf8(&rows[0].buffer_sha256).unwrap(), edit.result_sha256);
+    assert!(!text(&handle, LX4_TEXT_STATUS).contains("rerun"), "sample 45 is no re-run sample");
+}
+
+/// RTE.50's reference view, as the shell hands it to the host's view job: the module named in the buffer, entry
+/// `REFERENCE_ENTRY`, no arguments, no host rows. At S, M and L, the baseline and the inside-body edit's result both
+/// complete with a value, and the edit changes it. Limits as the host's `VIEW_LIMITS`.
+#[test]
+fn the_reference_view_runs_at_s_m_and_l_without_host_rows() {
+    let loaded = fixtures::load(folder()).unwrap();
+    let handle = open();
+    let run = |source: &str| {
+        let module = c600_syntax::parse(source.as_bytes()).module.map(|m| m.name.text).unwrap_or_default();
+        let limits = Amounts { steps: 1 << 32, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
+        let job = Job {
+            sources: vec![source.as_bytes().to_vec()],
+            module,
+            entry: REFERENCE_ENTRY.into(),
+            args: Vec::new(),
+            options: JobOptions { record: false, ..JobOptions::new(limits) },
+        };
+        match run_in_process(&job, &mut NoHost, None) {
+            Ended::Ran(run) => run.output.expect("a completed run's output"),
+            Ended::Refused(refused) => panic!("{refused:?}"),
+        }
+    };
+    for (n, target) in ["S", "M", "L"].into_iter().enumerate() {
+        let index = edit_index(&loaded, target, "inside-body");
+        let edit = &loaded.edits[index];
+        let sample = 50 + n as u64;
+        let inputs = messages(edit, index as u32 | LX4_RESET_RERUN, sample);
+        assert_eq!(post(&handle, inputs[0]), LX4_OK, "{}", last_error(handle.0));
+        let baseline = text(&handle, LX4_TEXT_BUFFER);
+        assert_eq!(hex(&sha256(baseline.as_bytes())), edit.base_sha256);
+        for &input in &inputs[1..] {
+            assert_eq!(post(&handle, input), LX4_OK, "{}", last_error(handle.0));
+        }
+        let result = text(&handle, LX4_TEXT_BUFFER);
+        assert_eq!(hex(&sha256(result.as_bytes())), edit.result_sha256);
+        assert_ne!(run(&baseline), run(&result), "{target}: the edit changes the view's value");
     }
 }
 
@@ -412,6 +562,7 @@ fn null_arguments_are_refused() {
         assert_eq!(lx4_backspace(ptr::null_mut()), LX4_E_INVALID_ARGUMENT);
         assert_eq!(lx4_update(ptr::null_mut(), 0, &mut update), LX4_E_INVALID_ARGUMENT);
         assert_eq!(lx4_text(ptr::null_mut(), 0, ptr::null_mut(), 0, &mut size), LX4_E_INVALID_ARGUMENT);
+        assert_eq!(lx4_rerun_ended(ptr::null_mut(), 0, ptr::null(), ptr::null(), 0), LX4_E_INVALID_ARGUMENT);
         lx4_destroy(ptr::null_mut());
     }
     let handle = open();
@@ -419,7 +570,9 @@ fn null_arguments_are_refused() {
     unsafe {
         assert_eq!(lx4_update(handle.0, 0, ptr::null_mut()), LX4_E_INVALID_ARGUMENT);
         assert_eq!(lx4_char(handle.0, 32, 0, ptr::null_mut()), LX4_E_INVALID_ARGUMENT);
-        assert_eq!(lx4_text(handle.0, 3, ptr::null_mut(), 0, &mut size), LX4_E_INVALID_ARGUMENT);
+        assert_eq!(lx4_text(handle.0, 4, ptr::null_mut(), 0, &mut size), LX4_E_INVALID_ARGUMENT);
+        assert_eq!(lx4_rerun_ended(handle.0, 0, ptr::null(), ptr::null(), 5), LX4_E_INVALID_ARGUMENT);
+        assert_eq!(lx4_rerun_ended(handle.0, 0, ptr::null(), ptr::null(), 0), LX4_E_STATE, "no re-run is running");
     }
 }
 
