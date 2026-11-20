@@ -74,7 +74,7 @@ impl Secret {
     }
 
     /// HMAC-SHA-256 under this secret.
-    fn mac(&self, message: &[u8]) -> [u8; 32] {
+    pub(crate) fn mac(&self, message: &[u8]) -> [u8; 32] {
         let mut inner = Vec::with_capacity(64 + message.len());
         let mut outer = Vec::with_capacity(64 + 32);
         let mut key = [0u8; 64];

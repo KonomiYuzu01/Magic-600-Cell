@@ -1135,6 +1135,19 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(ledger.rows(rows, 1) == 1 && rows[0].frame_id == 5005, "the oldest confirmed frame was not dropped first");
         ledger.clear();
         expect(ledger.awaiting() == 0 && ledger.confirmed() == 0 && ledger.rows(rows, 4) == 0, "clear left an entry");
+        // C9, owner item 9: route B's traced scene frames, by trace index, under the same rule; presented.jsonl.
+        sa2::TracePresents trace;
+        trace.presented(0, 1, 20);
+        trace.presented(1, 1, 21);
+        trace.presented(2, 1, 22);
+        trace.sample({0, 1, 19, 22, 100});
+        trace.sample({disjoint, 1, 20, 22, 150});
+        expect(trace.awaiting() == 3 && trace.confirmed() == 0 && trace.text().empty(), "an earlier or disjoint row confirmed a traced frame");
+        trace.sample({0, 1, 20, 22, 200});
+        trace.sample({0, 1, 22, 22, 300});
+        expect(trace.awaiting() == 0 && trace.confirmed() == 2, "a row did not confirm its traced frame or drop the passed one");
+        expect(trace.text() == "{\"display_qpc\":200,\"frame\":0,\"present_count\":20}\n{\"display_qpc\":300,\"frame\":2,\"present_count\":22}\n",
+            "presented.jsonl rows differ");
     });
     suite.check("recovery bookkeeping", [] {
         sa2::Product product;

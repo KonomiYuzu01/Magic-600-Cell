@@ -31,18 +31,23 @@ object per line; every QPC value is an integer tick count of the machine's Query
   A frame without its own row is not confirmed (route B).
 
 Rules. A key is matched to its frame by frame id only. A key whose frame has no presented row, or that names no
-frame, is unconfirmed: it gets no time, is printed on stderr and is never filled in from another frame; any
-unconfirmed key makes its run invalid (DRAFT, the conservative reading). These contradictions also make a run invalid:
+frame, is unconfirmed: it gets no time, is printed on stderr and is never filled in from another frame. It counts as
+one failed key, with a time above 100 ms, in its run's p95 and in the pooled p95, and its run stays valid (owner,
+20 November 2026, item 2: docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md). A percentile that falls above
+100 ms where a failed key could stand has no number (None). These contradictions make a run invalid:
 a presented row for a frame the log never named, a frame presented or named twice, a presented row whose device
 epoch or surface differs from its frame, a display before submission, a key naming an unknown frame or a frame
 submitted before the key, keys out of order or naming frames out of order, and presents out of order on one swap
 chain. A run is also invalid when the window lost the foreground, the correctness control failed, it has no keys, or
-its PresentMon capture shows no displayed present of the declared swap chain within 2 ms (DRAFT tolerance,
---display-tolerance-ms) of a confirmed display time. Invalid runs are kept and reported, never pooled (PHS.64).
+its PresentMon capture disagrees: the first present of the declared swap chain at or after a confirmed frame's
+submission is missing or later than the frame's confirmed display time. PresentMon marks every present of the core's
+composition chain Dropped (20 Nov 2026 rehearsal), so the display time comes from the core's frame statistics alone
+and PresentMon checks only that the frame was presented in between, whatever its Dropped column says (owner, 20
+November 2026, item 9). Invalid runs are kept and reported, never pooled (PHS.64).
 
-Verdict: nearest-rank percentiles over the confirmed keys of the valid runs, which must share one build identity.
-Met only if at least 100 confirmed keys are pooled and the pooled p95 and every valid run's p95 are at most 100 ms
-(the B4-12 rule that the pooled value and every run meet a target). One run of 100 presses is enough (RTE.43); B4-12
+Verdict: nearest-rank percentiles over the confirmed and failed keys of the valid runs, which must share one build
+identity. Met only if at least 100 confirmed keys are pooled and the pooled p95 and every valid run's p95, failed keys
+counted, are at most 100 ms (the B4-12 rule that the pooled value and every run meet a target). One run of 100 presses is enough (RTE.43); B4-12
 D5's three series of 100 are not required (DRAFT).
 """
 from __future__ import annotations
@@ -50,13 +55,14 @@ from __future__ import annotations
 import argparse
 import bisect
 import csv
+import math
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import evidence  # noqa: E402
 from evidence import RunError, integer, require  # noqa: E402
-from b412_summary import csv_integer, nearest_rank, number, statistics  # noqa: E402
+from b412_summary import csv_integer  # noqa: E402
 from renderer_gate import CAPTURE_COLUMNS  # noqa: E402
 
 LOG_FORMAT = 'magic600-c9-shell-events-v1'
@@ -64,24 +70,53 @@ EVENTS = 'events.jsonl'
 CAPTURE = 'presentmon.csv'
 P95_MAX_MS = 100.0
 OBSERVATIONS_MIN = 100
-TOLERANCE_MS = 2.0
 DISPLAYED = 'msUntilDisplayed'
 DROPPED = 'Dropped'
 FIELDS = {'key': ('seq', 'qpc'), 'frame': ('frame_id', 'qpc', 'device_epoch', 'surface'),
           'presented': ('frame_id', 'device_epoch', 'surface', 'sequence', 'display_qpc')}
-# Rows of the same log that other tools check (ui_skew.py's ui_frame, lx4.py's lx4, lx2.py's lx2, and the `module`
-# row a shell module writes when it starts, which a live poster reads); E2 skips them, so E2 runs over the same run
-# directories as B2, LX-4 and LX-2 (RTE.51 step 8).
-OTHER_ROWS = ('ui_frame', 'lx4', 'lx2', 'module')
+# Rows of the same log that other tools check (ui_skew.py's ui_frame, lx4.py's lx4 and lx4-select, lx2.py's lx2, and
+# the `module` row a shell module writes when it starts, which a live poster reads); E2 skips them, so E2 runs over the
+# same run directories as B2, LX-4 and LX-2 (RTE.51 step 8).
+OTHER_ROWS = ('ui_frame', 'lx4', 'lx4-select', 'lx2', 'module')
 BAR = {'text': ('Charter E2: A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the target '
                 'machine.'),
        'rule': ('key press to the core-confirmed present of the first frame carrying it; nearest-rank p95 <= 100 ms '
                 'over at least 100 confirmed keys of valid runs of one build; met only if the pooled p95 and every '
-                "valid run's p95 meet it; an unconfirmed key invalidates its run and is never filled in"),
+                "valid run's p95 meet it; a key without a confirmed frame counts as one failed key above 100 ms in its "
+                "run's and the pooled p95, its run stays valid, and it is never filled in"),
        'limit_ms': P95_MAX_MS, 'observations_min': OBSERVATIONS_MIN,
-       'source': ['charter E2', 'RTE.43', 'V11.1', 'B4-12 method', 'PHS.64', 'owner decision 2026-11-18 (route B)']}
+       'source': ['charter E2', 'RTE.43', 'V11.1', 'B4-12 method', 'PHS.64', 'owner decision 2026-11-18 (route B)',
+                  'owner decision 2026-11-20 (LP3 exit, item 2)']}
 DRAFTS = ['log schema magic600-c9-shell-events-v1', 'press time = shell key-down receipt',
-          'unconfirmed key invalidates its run', 'PresentMon display tolerance 2 ms', 'one run of 100 presses suffices']
+          'PresentMon cross-check by present order (route B chain reported Dropped)', 'one run of 100 presses suffices']
+
+
+def e2_percentile(latencies, failed, percentile):
+    """Nearest-rank percentile over the confirmed times and `failed` keys, each above the bar (item 2); None when it
+    lies above the bar where a failed key could stand, since a failed key has no number."""
+    ordered = sorted(latencies)
+    count = len(ordered) + failed
+    if not count:
+        return None
+    rank = (percentile * count + 99) // 100
+    if not failed:
+        return ordered[rank - 1]
+    within = bisect.bisect_right(ordered, P95_MAX_MS)
+    return ordered[rank - 1] if rank <= within else None
+
+
+def e2_statistics(latencies, failed):
+    """A run's or the pool's statistics, failed keys counted (item 2): `n` all keys, `confirmed`, `failed_keys`;
+    `mean` and `max` only without failed keys; `p95_met` is the bar's test. None without keys."""
+    count = len(latencies) + failed
+    if not count:
+        return None
+    stats = {'n': count, 'confirmed': len(latencies), 'failed_keys': failed,
+             'mean': math.fsum(latencies) / len(latencies) if latencies and not failed else None,
+             'p50': e2_percentile(latencies, failed, 50), 'p95': e2_percentile(latencies, failed, 95),
+             'p99': e2_percentile(latencies, failed, 99), 'max': max(latencies) if latencies and not failed else None}
+    stats['p95_met'] = stats['p95'] is not None and stats['p95'] <= P95_MAX_MS
+    return stats
 
 
 def check_rows(rows):
@@ -157,23 +192,20 @@ def match_keys(keys, frames, presented, frequency, contradictions):
     return entries
 
 
-def cross_check(entries, presented, display_ticks, frequency, tolerance_ms):
-    """Confirmed display times without a PresentMon display within the tolerance."""
-    tolerance = tolerance_ms * frequency / 1000
-    frames = sorted({entry['frame_id'] for entry in entries if entry['status'] == 'confirmed'})
+def cross_check(entries, frames, presented, present_ticks):
+    """Confirmed frames whose first present of the declared chain at or after their submission is missing or later
+    than their confirmed display time (owner, 20 November 2026, item 9)."""
+    confirmed = sorted({entry['frame_id'] for entry in entries if entry['status'] == 'confirmed'})
     misses = 0
-    for frame_id in frames:
-        ticks = presented[frame_id]['display_qpc']
-        index = bisect.bisect_left(display_ticks, ticks)
-        near = [display_ticks[i] for i in (index - 1, index) if 0 <= i < len(display_ticks)]
-        if not near or min(abs(value - ticks) for value in near) > tolerance:
+    for frame_id in confirmed:
+        index = bisect.bisect_left(present_ticks, frames[frame_id]['qpc'])
+        if index == len(present_ticks) or present_ticks[index] > presented[frame_id]['display_qpc']:
             misses += 1
-    return {'frames_checked': len(frames), 'disagreements': misses, 'tolerance_ms': tolerance_ms,
-            'presentmon_displays': len(display_ticks)}
+    return {'frames_checked': len(confirmed), 'disagreements': misses, 'presentmon_presents': len(present_ticks)}
 
 
-def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
-    """One run from its log rows and, optionally, PresentMon display ticks of the declared swap chain."""
+def analyze(rows, present_ticks=None):
+    """One run from its log rows and, optionally, the PresentMon present times of the declared swap chain."""
     head = check_rows(rows)
     frequency = head['qpc_frequency']
     contradictions, reasons = set(), set()
@@ -186,15 +218,13 @@ def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
            'keys': len(entries), 'confirmed': len(latencies), 'unconfirmed': len(unconfirmed),
            'no_frame': sum(entry['status'] == 'no-frame' for entry in entries), 'unconfirmed_keys': unconfirmed,
            'contradictions': sorted(contradictions), 'per_key': entries,
-           'stats': statistics(latencies) if latencies else None}
-    if display_ticks is not None:
-        run['presentmon'] = cross_check(entries, presented, sorted(display_ticks), frequency, tolerance_ms)
+           'stats': e2_statistics(latencies, len(unconfirmed))}
+    if present_ticks is not None:
+        run['presentmon'] = cross_check(entries, frames, presented, sorted(present_ticks))
         if run['presentmon']['disagreements']:
             reasons.add('presentmon-disagrees')
     if contradictions:
         reasons.add('contradiction')
-    if unconfirmed:
-        reasons.add('unconfirmed-keys')
     if not entries:
         reasons.add('no-keys')
     if not head['foreground_throughout']:
@@ -206,29 +236,23 @@ def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
     return run
 
 
-def read_display_ticks(path, process_id, swap_chain, frequency):
-    """Display times (QPC ticks) of the declared swap chain's displayed presents in a PresentMon v1 CSV."""
+def read_present_ticks(path, process_id, swap_chain):
+    """Present call times (QPC ticks) of the declared swap chain in a PresentMon v1 CSV, dropped or not: PresentMon
+    marks every present of the core's composition chain Dropped (owner, 20 November 2026, item 9)."""
     columns, ticks = CAPTURE_COLUMNS, []
     chain = swap_chain.strip().casefold()
     try:
         with Path(path).open(encoding='utf-8-sig', newline='') as stream:
             reader = csv.DictReader(stream, strict=True)
             header = reader.fieldnames or []
-            require(all(name in header for name in (columns['process'], columns['swap_chain'], columns['time'],
-                                                    DISPLAYED)), 'presentmon-missing-column')
+            require(all(name in header for name in (columns['process'], columns['swap_chain'], columns['time'])),
+                    'presentmon-missing-column')
             for row in reader:
                 if csv_integer(row.get(columns['process'])) != process_id:
                     continue
                 if (row.get(columns['swap_chain']) or '').strip().casefold() != chain:
                     continue
-                if (row.get(DROPPED) or '0').strip() not in ('0', ''):
-                    continue
-                try:
-                    until = float(row.get(DISPLAYED))
-                except (TypeError, ValueError):
-                    continue
-                if number(until) and until >= 0:
-                    ticks.append(csv_integer(row.get(columns['time'])) + round(until * frequency / 1000))
+                ticks.append(csv_integer(row.get(columns['time'])))
     except OSError:
         raise RunError('missing-file') from None
     except (csv.Error, UnicodeError):
@@ -236,7 +260,7 @@ def read_display_ticks(path, process_id, swap_chain, frequency):
     return ticks
 
 
-def read_run(directory, tolerance_ms=TOLERANCE_MS):
+def read_run(directory):
     """One run directory; an unreadable run is kept as invalid with its reason code."""
     directory = Path(directory)
     try:
@@ -246,9 +270,8 @@ def read_run(directory, tolerance_ms=TOLERANCE_MS):
         if (directory / CAPTURE).is_file():
             require(integer(head.get('process_id')) and isinstance(head.get('swap_chain'), str)
                     and bool(head['swap_chain'].strip()), 'presentmon-undeclared')
-            display = read_display_ticks(directory / CAPTURE, head['process_id'], head['swap_chain'],
-                                         head['qpc_frequency'])
-        return analyze(rows, display, tolerance_ms)
+            display = read_present_ticks(directory / CAPTURE, head['process_id'], head['swap_chain'])
+        return analyze(rows, display)
     except RunError as error:
         return {'run_id': directory.name, 'build_identity': None, 'synthetic': None, 'status': 'unreadable',
                 'reasons': [str(error)], 'latencies_ms': [], 'stats': None}
@@ -262,15 +285,15 @@ def judge(runs):
     if len({run['build_identity'] for run in valid}) > 1:
         return 'invalid', ['mixed-builds'], None
     pooled = [value for run in valid for value in run['latencies_ms']]
-    stats = statistics(pooled)
+    stats = e2_statistics(pooled, sum(run['unconfirmed'] for run in valid))
     if len(pooled) < OBSERVATIONS_MIN:
         return 'insufficient', ['too-few-observations'], stats
-    met = nearest_rank(pooled, 95) <= P95_MAX_MS and all(run['stats']['p95'] <= P95_MAX_MS for run in valid)
+    met = stats['p95_met'] and all(run['stats']['p95_met'] for run in valid)
     return ('met', [], stats) if met else ('not-met', ['p95-over-bar'], stats)
 
 
-def build(directories, argv, synthetic_flag=False, tolerance_ms=TOLERANCE_MS):
-    runs = [read_run(directory, tolerance_ms) for directory in directories]
+def build(directories, argv, synthetic_flag=False):
+    runs = [read_run(directory) for directory in directories]
     verdict, reasons, pooled = judge(runs)
     identities = sorted({run['build_identity'] for run in runs if run['status'] == 'valid'})
     inputs = [evidence.file_entry(f'{run["run_id"]}:{name}', Path(directory) / name)
@@ -283,7 +306,8 @@ def build(directories, argv, synthetic_flag=False, tolerance_ms=TOLERANCE_MS):
     result = {'runs': runs, 'pooled': pooled, 'valid_runs': sum(run['status'] == 'valid' for run in runs),
               'invalid_runs': sum(run['status'] != 'valid' for run in runs),
               'unconfirmed_keys': sum(run.get('unconfirmed', 0) for run in runs),
-              'confirmed_keys': sum(run.get('confirmed', 0) for run in runs if run['status'] == 'valid')}
+              'confirmed_keys': sum(run.get('confirmed', 0) for run in runs if run['status'] == 'valid'),
+              'failed_keys': sum(run.get('unconfirmed', 0) for run in runs if run['status'] == 'valid')}
     return evidence.make_record(
         'charter-e2-key-to-frame', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
@@ -292,27 +316,29 @@ def build(directories, argv, synthetic_flag=False, tolerance_ms=TOLERANCE_MS):
         bar=BAR, result=result, verdict=verdict, reasons=reasons, drafts=DRAFTS)
 
 
+def p95_text(stats):
+    return f"{stats['p95']:.1f} ms" if stats['p95'] is not None else f'above {P95_MAX_MS:.0f} ms (failed keys)'
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(description='Charter E2 key-to-frame timer over route-B shell event logs.')
     parser.add_argument('runs', nargs='+', type=Path, help='run directories holding events.jsonl')
     parser.add_argument('--out', type=Path, help='write the evidence record here (never replaces a file)')
     parser.add_argument('--synthetic', action='store_true', help='mark the inputs as synthetic fixtures')
-    parser.add_argument('--display-tolerance-ms', type=float, default=TOLERANCE_MS)
     args = parser.parse_args(argv)
-    if not (args.display_tolerance_ms > 0):
-        parser.error('--display-tolerance-ms must be positive')
-    record = build(args.runs, argv, args.synthetic, args.display_tolerance_ms)
+    record = build(args.runs, argv, args.synthetic)
     for run in record['result']['runs']:
         stats = run.get('stats')
         print(f"{run['run_id']}: {run['status']}"
               f"{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}; keys {run.get('keys', 0)}, "
               f"confirmed {run.get('confirmed', 0)}, unconfirmed {run.get('unconfirmed', 0)}"
-              f"{'; p95 %.1f ms' % stats['p95'] if stats else ''}")
+              f"{'; p95 %s' % p95_text(stats) if stats else ''}")
         if run.get('unconfirmed'):
             print(f"UNCONFIRMED: run {run['run_id']} has {run['unconfirmed']} key(s) without a confirmed frame "
                   f"(seq {', '.join(map(str, run['unconfirmed_keys'][:20]))}"
-                  f"{', ...' if run['unconfirmed'] > 20 else ''}); they get no time", file=sys.stderr)
+                  f"{', ...' if run['unconfirmed'] > 20 else ''}); they get no time and count as failed keys",
+                  file=sys.stderr)
     evidence.report(record)
     if args.out:
         try:

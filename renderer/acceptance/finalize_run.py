@@ -3,7 +3,11 @@
 C9 acceptance copy of work/experiments/renderer-l2/finalize_run.py (see PROVENANCE.md): the Godot host (sa2)
 only, with run, geometry and lattice modes, and W-J's scenes (ABI 3) beside W1..W4. A route-B run (C9 U4, the
 harness's presentation record) is measured on the core's own swap chain, which the harness declares, at the
-core's sync interval; the window's own chain is listed as ignored, as renderer_gate lists other chains. A run with
+core's sync interval; the window's own chain is listed as ignored, as renderer_gate lists other chains. PresentMon
+marks every present of the core's composition chain Dropped, so a route-B run takes its blind seconds from the
+core's own frame statistics (owner, 20 Nov 2026, item 9): presented.jsonl, the traced frames the core confirmed
+with the product's exact rule, cross-checked against PresentMon (each confirmed frame's own present is in the
+capture before its display time, and the window's chain was displayed in the same second). A run with
 user stages (C9 U5c, the harness's stages record) also needs both compile records, a row for every measured frame
 and no stopped frame; run.json then carries a stages record beside the gate's fields.
 """
@@ -55,7 +59,8 @@ CHECKS = {
     'presentmon': 'The PresentMon CSV is incomplete, malformed or has no matching trace rows.',
     'swap-chain': 'More than one swap chain presented during the trace, or the declared route-B chain did not present.',
     'sync-interval': 'A measured trace present has another sync interval than its route (0, or 1 on route B).',
-    'blind-seconds': 'A checked second contains no displayed present.',
+    'blind-seconds': ('A checked second contains no displayed present (route B: no traced frame that the core\'s own '
+                      'frame statistics confirm displayed in it, or no displayed present of the window\'s chain).'),
     'trace-steps': 'A checked present step does not contain exactly one trace entry.',
     'operator': 'The gate run has no operator confirmation or fault-injection declaration.',
     'gate-shape': 'The completed record does not satisfy the renderer gate input contract.',
@@ -63,9 +68,17 @@ CHECKS = {
     'stage-compile': 'A user-stage compile failed, or its compile record is missing or does not match the build.',
     'stage-rows': 'The user-stage rows are missing or malformed, or a measured frame has no row.',
     'stage-stopped': 'A frame drawn with the user stages stopped: its raster bound exceeded the overdraw allowance.',
+    'presented': ('Route B: presented.jsonl is missing or malformed, or a confirmed frame\'s own present is not in '
+                  'the PresentMon capture before its display time; another route wrote one.'),
 }
 # C9 U5c: the user-stage checks, listed in run.json only for a run with user stages.
 STAGE_CHECKS = ('stage-compile', 'stage-rows', 'stage-stopped')
+# C9, owner item 9 (20 Nov 2026): route B's confirmed frames, listed in run.json only for a route-B run.
+ROUTE_B_CHECKS = ('presented',)
+PRESENTED = 'presented.jsonl'
+PRESENTED_FIELDS = ('display_qpc', 'frame', 'present_count')
+# run.json's presentation record names the source of route B's displayed seconds.
+SURFACE_DISPLAY = 'core-frame-statistics'
 STAGE_KINDS = ('vertex', 'fragment')
 STAGE_FILES = file_guard.STAGE_FILES
 STAGE_LIBRARIES = file_guard.STAGE_LIBRARIES
@@ -725,23 +738,69 @@ def measured_rows(rows, presentation):
     """The measured rows, their sync interval and the ignored chains.
 
     The texture routes present on Godot's one chain at interval 0. Route B (C9 U4) measures the core's own
-    chain, which the harness declares, at SURFACE_SYNC_INTERVAL, and lists Godot's window chain as ignored."""
+    chain, which the harness declares, at SURFACE_SYNC_INTERVAL, and lists Godot's window chain as ignored; the
+    other chains' rows are returned too, for route B's blind seconds."""
     if presentation is None:
         require(len({row['chain'] for row in rows}) == 1)
-        return rows, 0, None
+        return rows, 0, None, None
     declared = int(presentation['swap_chain'], 16)
-    measured, others = [], {}
+    measured, window, others = [], [], {}
     for row in rows:
         if int(row['chain'], 16) == declared:
             measured.append(row)
         else:
+            window.append(row)
             others[row['chain']] = others.get(row['chain'], 0) + 1
     require(bool(measured) and len({row['chain'] for row in measured}) == 1)
     return measured, SURFACE_SYNC_INTERVAL, [{'swap_chain': chain, 'rows': count}
-                                             for chain, count in sorted(others.items())]
+                                             for chain, count in sorted(others.items())], window
 
 
-def check_blind_seconds(rows, n, mode):
+def read_presented(directory, entries):
+    """C9, owner item 9: presented.jsonl, the traced frames that the core's own frame statistics confirmed.
+
+    The core writes one row per confirmed frame in trace order: its trace index, its own present count and the
+    SyncQPCTime of the statistics row that confirmed it (the product's exact rule, sa2_presented's). Each traced
+    frame presents once, so two confirmed frames' counts differ by their trace indices, and the later frame is
+    displayed later."""
+    rows = []
+    with (directory / PRESENTED).open(encoding='utf-8') as stream:
+        for line in stream:
+            row = json.loads(line, parse_constant=reject_constant, object_pairs_hook=object_pairs)
+            canonical(row)
+            require(isinstance(row, dict) and tuple(sorted(row)) == PRESENTED_FIELDS)
+            require(all(integer(row[key]) and 0 < row[key] < 2**64 for key in ('display_qpc', 'present_count')))
+            require(integer(row['frame']) and 0 <= row['frame'] < len(entries))
+            if rows:
+                last = rows[-1]
+                require(row['frame'] > last['frame'] and row['display_qpc'] > last['display_qpc']
+                        and row['present_count'] - last['present_count'] == row['frame'] - last['frame'])
+            rows.append(row)
+    return rows
+
+
+def check_presented(presented, rows, entries):
+    """C9, owner item 9: PresentMon's cross-check of the core's confirmations. A confirmed frame's own present is
+    the first present of the core's chain after its trace entry; it must be in the capture, before the next trace
+    entry, and not after the frame's display time."""
+    ticks = [row['qpc'] for row in rows]
+    times = [entry['qpc'] for entry in entries]
+    for row in presented:
+        frame = row['frame']
+        index = bisect.bisect_right(ticks, times[frame])
+        require(index < len(ticks))
+        present = ticks[index]
+        require(frame + 1 == len(times) or present <= times[frame + 1])
+        require(present <= row['display_qpc'])
+
+
+def check_blind_seconds(rows, n, mode, route_b=None):
+    """Every checked whole second has a displayed present of the measured chain.
+
+    Route B (route_b is (presented, window rows)): PresentMon marks every present of the core's composition chain
+    Dropped. There, every checked second needs the display time of a traced frame that the core's own frame
+    statistics confirmed (owner, 20 Nov 2026, item 9) and, as PresentMon's cross-check, a displayed present of the
+    window's chain."""
     frequency, marks = n['qpc_frequency'], n['markers']
     start, stop = marks['trace_start_qpc'], marks['trace_stop_qpc']
     begin = start + (10 if mode == 'run' else 1) * frequency
@@ -751,9 +810,15 @@ def check_blind_seconds(rows, n, mode):
     # Whole seconds only: a trailing fraction of a second can be shorter than one frame.
     seconds = (end - begin) // frequency
     end = begin + seconds * frequency
-    shown = {(row['qpc'] - begin) // frequency for row in rows
-             if begin <= row['qpc'] < end and row['dropped'] == 0}
-    require(len(shown) == seconds)
+    if route_b is None:
+        shown = {(row['qpc'] - begin) // frequency for row in rows
+                 if begin <= row['qpc'] < end and row['dropped'] == 0}
+        require(len(shown) == seconds)
+        return
+    presented, window = route_b
+    confirmed = {(row['display_qpc'] - begin) // frequency for row in presented if begin <= row['display_qpc'] < end}
+    composed = {(row['qpc'] - begin) // frequency for row in window if begin <= row['qpc'] < end and row['dropped'] == 0}
+    require(len(confirmed) == seconds and len(composed) == seconds)
 
 
 def check_trace_steps(rows, n, entries):
@@ -897,7 +962,14 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
         identity_result = check('identity', lambda: build_identity(h, n, mode, directory, launched_created))
         build, binding = identity_result if identity_result is not None else (None, None)
         staged = h.get('stages') is not None
-        checks = {code: 'pass' for code in sorted(CHECKS) if staged or code not in STAGE_CHECKS}
+        surface = h.get('presentation') is not None
+        checks = {code: 'pass' for code in sorted(CHECKS)
+                  if (staged or code not in STAGE_CHECKS) and (surface or code not in ROUTE_B_CHECKS)}
+        presented = None
+        if not surface or mode != 'run':
+            check('presented', lambda: require(not os.path.lexists(directory / PRESENTED)))
+        elif entries is not None:
+            presented = check('presented', lambda: read_presented(directory, entries))
         stage_record = None
         if not staged:
             check('stage-compile', lambda: require(not any(os.path.lexists(directory / name) for name in STAGE_OUTPUTS)))
@@ -922,9 +994,14 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                     split = check('swap-chain', lambda: measured_rows(rows, h.get('presentation')))
                     rows = None
                     if split is not None:
-                        rows, interval, ignored = split
+                        rows, interval, ignored, window = split
                         check('sync-interval', lambda: require(all(row['sync'] == interval for row in rows)))
-                        check('blind-seconds', lambda: check_blind_seconds(rows, n, mode))
+                        # Route B without readable confirmations is refused as 'presented' alone.
+                        if surface and presented is not None:
+                            check('presented', lambda: check_presented(presented, rows, entries))
+                        if not surface or presented is not None:
+                            check('blind-seconds', lambda: check_blind_seconds(
+                                rows, n, mode, (presented, window) if surface else None))
                         check('trace-steps', lambda: check_trace_steps(rows, n, entries))
             else:
                 rows = None
@@ -975,7 +1052,9 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                                  'presentmon': summary, 'condition_reasons': gate.condition_reasons(environment),
                                  'checks': checks}}
                 if h.get('presentation') is not None:
-                    output['l2']['presentation'] = {**h['presentation'], 'swap_chains_ignored': ignored}
+                    output['l2']['presentation'] = {**h['presentation'], 'swap_chains_ignored': ignored,
+                                                    'display': SURFACE_DISPLAY,
+                                                    'confirmed_frames': len(presented)}
                 for key in ('qpc_frequency', 'markers', 'frames', 'injection_applied',
                             'vram_peak_mb', 'turn_ms', 'label_check',
                             'fixture', 'overlay', 'pose_check', 'pose_upload'):

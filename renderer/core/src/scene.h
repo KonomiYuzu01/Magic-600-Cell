@@ -13,6 +13,7 @@ class Scene {
 public:
     SceneRecord record;
     Product product; // ABI 4's device-free state; it lives and dies with the scene (an ABI 5 recovery moves it to the new scene)
+    TracePresents surface_trace; // C9, owner item 9: route B's traced frames and their confirmations (presented.jsonl)
     Scene(ID3D12Device* device, const sa2_scene_config& config, uint32_t width, uint32_t height);
     Scene(ID3D12Device* device, const sa2_wj_config& config, uint32_t width, uint32_t height);
     ~Scene();
