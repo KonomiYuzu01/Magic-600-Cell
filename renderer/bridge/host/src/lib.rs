@@ -38,8 +38,11 @@
 //! - The host context is c600-display's declared fixture context, with the core's own support report in place of the
 //!   declared one. Its tokens, words and stage signatures are fixtures, not the checked library's definitions, and the
 //!   limit profile [`LIMITS`] is a declared value, not a measured one.
-//! - After a recovery the library publishes the view again, so that it gets resources on the new device (RM.23).
-//!   c600-display's `Host::recover` keeps the old resource set, which the bridge refuses after a recovery.
+//! - Engine adoption goes through the host alone: `Host::adopt` validates the bundle and hands it to c600-render's
+//!   bridge through c600-display's `Backend::adopt_engine`, and records the revision only once the core holds it.
+//! - After a recovery, c600-display's `Host::recover` prepares the installed publication again for the new device
+//!   when it is the library's newest one (RM.23). Otherwise the newest one was never installed (published or adopted
+//!   while the device was lost), and the library publishes it again.
 //!
 //! Calls: a handle is used by one thread at a time, as the core's context is (a `sa2_create` context takes no lock,
 //! and the caller serialises). Every function checks its pointers, catches a panic and answers a status code. A panic
@@ -381,28 +384,33 @@ impl ShellHost {
         self.adopt(head, self.revision + 1)
     }
 
-    /// Adopts `head` at engine revision `revision`, which must follow the adopted one, in the core first and then in
-    /// the host, and publishes the view for it ([`adoption`]). A head under another identity block than the host
-    /// context's (the jumbled puzzle's poses after the solved labels) first gives the host that block's declared
-    /// context, with the core's own support report. A view job that read the old revision ends
-    /// `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the device is lost the publication waits
-    /// for [`m6h_recover`], which publishes it. A core that refuses the bundle changes nothing.
+    /// Adopts `head` at engine revision `revision`, which must follow the adopted one, through the host, which hands it
+    /// to the core and records it once the core holds it, and publishes the view for it ([`adoption`]). A head under
+    /// another identity block than the host context's (the jumbled puzzle's poses after the solved labels) then gives
+    /// the host that block's declared context, with the core's own support report, read before the adoption. A view
+    /// job that read the old revision ends `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the
+    /// device is lost the publication waits for [`m6h_recover`], which publishes it. A host or core that refuses the
+    /// bundle changes nothing.
     fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
         if revision <= self.revision {
             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
         }
         let (base, bundle, primitive) = adoption(&self.geometry, head, revision)?;
-        self.host.backend.adopt_engine(&bundle).map_err(host_error)?;
-        if base.identity != self.host.ctx.identity {
+        let ctx = if base.identity != self.host.ctx.identity {
             let limits = self.host.ctx.limits.clone();
             let mut ctx = match head {
                 Head::Retained(_) => produce::fixture_context(&self.geometry, limits),
                 Head::Jumbled(..) => jumble::fixture_context(&self.geometry, base.identity.clone(), limits),
             };
             ctx.support = self.host.backend.describe_backend().map_err(host_error)?;
+            Some(ctx)
+        } else {
+            None
+        };
+        self.host.adopt(&bundle).map_err(host_error)?;
+        if let Some(ctx) = ctx {
             self.host.ctx = ctx;
         }
-        self.host.adopt(&bundle).map_err(host_error)?;
         self.revision = revision;
         self.digests.insert(revision, head.digest());
         self.publication = publication(&self.geometry, primitive, &base);
@@ -660,7 +668,10 @@ pub unsafe extern "C" fn m6h_read_presented(
     }
 }
 
-/// Recovers a removed device (a new device epoch) and publishes the view again for the new device.
+/// Recovers a removed device (a new device epoch) and starts the view's preparation for the new device. When the
+/// installed publication is the newest one the library published, the host prepares it again under its own command
+/// (RM.23). Otherwise the newest one was never installed, because it was published or adopted while the device was
+/// lost, and the library publishes it again.
 ///
 /// # Safety
 ///
@@ -671,7 +682,12 @@ pub unsafe extern "C" fn m6h_recover(handle: *mut ShellHost) -> i32 {
     unsafe {
         with_host(handle, |shell| {
             shell.host.recover().map_err(host_error)?;
-            shell.publish()
+            if shell.host.installed(VIEW).is_some_and(|installed| Some(installed.command) == shell.reference) {
+                shell.host.pump();
+                Ok(())
+            } else {
+                shell.publish()
+            }
         })
     }
 }

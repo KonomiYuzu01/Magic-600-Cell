@@ -1,7 +1,8 @@
 //! The shell's turns through the host's C interface (C9, charter E2; a draft), over the bridge's C shim and the fake
 //! core on route B: a session in a fresh folder, twist keys committed through the command layer and adopted at the
 //! next engine revision, frames that name the adopted and the published revision, keys that are no press, an undo
-//! that the host shows and the control reports, the refusals, and the correctness control at the close. Charter E3 (a
+//! that the host shows and the control reports, a twist adopted while the device is lost and published at the
+//! recovery, the refusals, and the correctness control at the close. Charter E3 (a
 //! draft): a session fixture written through the same turns, a copy of it reopened at the revision that counts its
 //! presses, its refusals, and the runtime load's refusals. LX-4's jumble-on half (a draft): `jumble.on` committed at
 //! the open, twist keys that commit `jumble.twist.menu`, the control's pose replay, a jumble-on fixture, the posed
@@ -311,6 +312,34 @@ fn a_shown_revision_the_host_never_adopted_fails_the_control() {
     assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
     assert_eq!(run.close(0), (M6H_OK, 0));
     assert_eq!(record_of(run.host).get("shown_revision"), Some(&Value::Null));
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+#[test]
+fn a_twist_while_the_device_is_lost_is_published_at_the_recovery() {
+    let run = Run::new();
+    let folder = fresh("lost");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let prepared = run.fake().prepared.len();
+    run.fake().remove_device();
+    let mut submitted = M6hFrame::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_frame(run.host, &mut submitted) }, M6H_E_UNAVAILABLE);
+
+    // The host adopts the twist while the device is lost (the core keeps its image); its publication waits.
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    assert_eq!(run.fake().adoptions.last().map(|adoption| adoption.0), Some(2));
+    assert_eq!(run.fake().prepared.len(), prepared, "nothing is prepared on a lost device");
+
+    // The installed publication read revision 1, so the recovery publishes revision 2's for the new device.
+    // SAFETY: a live handle.
+    assert_eq!(unsafe { m6h_recover(run.host) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.fake().prepared.len(), prepared + 1, "revision 2's publication is prepared for the new device");
+    run.fake().complete();
+    // SAFETY: a live handle.
+    assert_eq!(unsafe { m6h_pump(run.host) }, M6H_OK);
+    let after = run.frame();
+    assert_eq!((after.device_epoch, after.engine_revision, after.publication_revision), (2, 2, 2));
     let _ = std::fs::remove_dir_all(&folder);
 }
 

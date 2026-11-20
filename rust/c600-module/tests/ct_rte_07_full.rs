@@ -13,8 +13,9 @@
 //! corpus's examined items are the rows the engine served.
 //! [`FALSE_REFUSALS`] and [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key
 //! gives the corpus's code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the
-//! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, and
-//! MR13, MR14, MR19 and MR20, which the built-in column's admission refuses, are realised in `c600-runtime`.
+//! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, as
+//! are B13 and B14, whose budget the command layer admits on the tool's row; MR13, MR14, MR19 and MR20, which the
+//! built-in column's admission refuses, are realised in `c600-runtime`.
 //!
 //! Evidence kind: source and synthetic. The fixture is LX-3's fake data, not Full's mechanics; nothing here measures
 //! time or performance.
@@ -53,8 +54,8 @@ const PICK: &str = "waits for a recorded pick: nothing writes or resolves a `c60
 const RUNTIME: &str = "realised with a runtime process in `c600-tools/tests/ct_rte_07_c5.rs`";
 const ADMISSION: &str = "realised as the built-in column's refusal at admission in \
                          `c600-runtime/tests/ct_rte_07_admission.rs`";
-const COMMAND: &str = "not realised: the budget declaration and the host ceiling belong to the command layer, a \
-                       non-goal; no crate defines `KN7:input.budget_not_declared` or `KN7:resource_limit.budget_ceiling`";
+const COMMAND: &str = "realised at the command layer on the 600-cell-Full tool's row in \
+                       `c600-tools/tests/ct_rte_07_budget.rs`";
 
 /// The keys left, with the reason.
 const LEFT: [(&str, &str); 19] = [

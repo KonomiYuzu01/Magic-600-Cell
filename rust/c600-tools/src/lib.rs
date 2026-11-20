@@ -60,7 +60,12 @@
 //! - **Provenance.** The blocks name a draft capability contract, pinned as `c600-tools-draft-1`, and the checker
 //!   pin `c600-check-lp2-draft` over `c600-check`'s source. The word argument enters with a manual block: the solver
 //!   named it. The producer is the tool's module digest and entry, author `built_in`, profile `solving`.
-//! - **Limits.** One run gets [`tool::LIMITS`]; the run's charges are information only.
+//! - **Limits** (KN7.7; LP2's pull request 348). A run gets the run limits of its job's budget
+//!   ([`process::ToolCommand::limits`], [`tool::limits`]): the budget the solver's command declared, by default the
+//!   shell's, the layer's draft ceiling ([`tool::LIMITS`]), and the layer admitted under its ceiling. A command that
+//!   declares no budget, or one over the ceiling, is refused before a job exists, so the tool does not run. The
+//!   bridge declares the run's budget on the runtime invocations of a row an entry serves
+//!   ([`bridge::Bridge::with_budget`]). The run's charges are information only.
 //! - **Expansion.** A recipe the kernel accepts expands to its letters. A recipe the kernel refuses that is exactly one
 //!   word step of integer moves fitting `i32` passes unchanged as the tool's argument: a word with a letter outside 1
 //!   to 1200 in magnitude is refused at the run's start (see "Words with no transfer encoding"), and the command layer
@@ -164,8 +169,9 @@
 //!   model as its 32 bytes and its arguments as canonical JSON bytes. A model refusal keeps its code and names the view
 //!   or the ceiling's field. A closed view's retirement token waits until the host takes it at its frame boundary.
 //! - **Process host** (RTE.21, ONE.69, LQ9; KN5.15; BND.42). [`process::ProcessHost`] sends one job per run to
-//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`], the
-//!   tool's class rows, the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's.
+//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the job's word, the run limits of the
+//!   job's budget, the tool's class rows, the test tariffs, no grant and no source ranges, so the run's summary is the
+//!   in-process host's.
 //!   The boundary and the bridge stay in the caller's process as the `Host` of `c600_runtime::Runtime::run`: the child
 //!   holds the program and its word, and no token, secret or command layer. One child serves every run of a host; after
 //!   a fault the next run starts a fresh one (KN7.13). A run has no wall-clock deadline unless the caller sets one
@@ -173,9 +179,9 @@
 //! - **Child admission** (ADR-L02, LG3.13, chapter 07 section 8). The job runs in the solving profile and names the
 //!   tool's class rows (`c600_runtime::JobOptions::built_in`, LP2's draft), so the child admits the entry in the
 //!   built-in column itself, with `c600_check::admit_built_in`, as [`tool::Tool::new`] does in the caller
-//!   ([`process::job`]). The process host still sends only the source whose digest is the manifest's. Solving is the
-//!   profile of the place where LP3's hosts start a run, a command in a solving session (BND.17); the tool editor and a
-//!   research workspace, which would set the tool-authoring and research profiles, do not exist yet.
+//!   ([`process::job_under`]). The process host still sends only the source whose digest is the manifest's. Solving is
+//!   the profile of the place where LP3's hosts start a run, a command in a solving session (BND.17); the tool editor
+//!   and a research workspace, which would set the tool-authoring and research profiles, do not exist yet.
 //! - **Words with no transfer encoding** (`PS1:input.noncanonical_value`; `c600-runtime`'s draft 7). A word with a
 //!   letter outside 1 to 1200 in magnitude cannot cross to the child, so on the process host the parent refuses the
 //!   job at the start stage, and in process [`process::run_in_process`] refuses the run there the same way, before
