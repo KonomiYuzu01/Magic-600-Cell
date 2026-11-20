@@ -17,10 +17,10 @@
 //! orders, and its type with the test's index. A trace key (LB1.10; LP2 draft) crosses with its header and its letters,
 //! and a pinned trace relation with its contract, its identity block, its generator count and its independence bits;
 //! the receiver recomputes the relation's digest, and the run checks a key against its relation, since the codec cannot
-//! order letters without one. A menu word key (LG2.18; LP2 draft) crosses with its header and its tokens in their
-//! canonical form, and the run checks its header against its pinned menu. A generator (DET.61; LP2 draft) has no
-//! transfer form, since a copy would be a second cursor on its stream; its type is type tag 27. An F2 or F5 element
-//! (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
+//! order letters without one. A menu word key (LG2.18; LP2 draft; value tag 27) crosses with its header and its tokens
+//! in their canonical form, and the run checks its header against its pinned menu. A generator (DET.61; LP2 draft)
+//! has no transfer form, since a copy would be a second cursor on its stream; its type is type tag 27. An F2 or F5
+//! element (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -329,8 +329,8 @@ pub fn encode_alphabet(m: &MenuAlphabet, e: &mut Enc) -> Result<(), Unencodable>
         Some(items) => {
             e.u8(1);
             e.count(items.len());
-            for m in items {
-                encode_matrix(m, e);
+            for matrix in items {
+                encode_matrix(matrix, e);
             }
         }
     }
