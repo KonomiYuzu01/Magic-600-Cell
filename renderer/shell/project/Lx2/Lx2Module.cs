@@ -533,7 +533,7 @@ public sealed class Lx2Module : IShellModule
     {
         var qpc = EventLog.Now();
         var down = PostMessageW(Context.Window, WmKeyDown, VkJ, (nint)(1 | ScanJ << 16));
-        var up = PostMessageW(Context.Window, WmKeyUp, VkJ, (nint)(0xC0000001L | (long)ScanJ << 16));
+        var up = PostMessageW(Context.Window, WmKeyUp, VkJ, unchecked((nint)(0xC0000001L | (long)ScanJ << 16)));
         _turned = true;
         _lastTurn = qpc;
         var ok = down && up;
