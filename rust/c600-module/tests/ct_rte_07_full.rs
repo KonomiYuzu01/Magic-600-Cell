@@ -1246,7 +1246,8 @@ fn ct_rte_07_full_b03_memory() {
 
 /// B04: two emissions of the text "abcd" under an output of 11. A publication's unit is the JSON and a line feed,
 /// 7 bytes (FP.5): output, encoding work and a buffer released after it, while the literal holds 16 bytes. The first
-/// view is published and the second refused; the literal before it is admitted, so the draft uses one step more.
+/// view is published and the second refused. The draft's five steps are the corpus's two, one for the entry's `call`
+/// and one for each literal.
 #[test]
 fn ct_rte_07_full_b04_output() {
     let source = root(

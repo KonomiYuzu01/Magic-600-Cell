@@ -97,7 +97,7 @@
 //!
 //!   | LX-3 | LX-3's charge | Counterpart | The draft's charge |
 //!   | --- | --- | --- | --- |
-//!   | the run's start | nothing | the entry's `call` | 1 step; the frame, 16 bytes plus 8 per slot (DET.57) |
+//!   | the run's start | nothing | the entry's `call` | 1 step; the frame, 16 bytes plus 8 per slot (DET.57), where a record literal's fields are temporary slots |
 //!   | `tick` | 1 step | `()` | `value`: 1 step, 0 bytes |
 //!   | `kernel` of a row | 1 step; the row's `fixture.json` cost; the result's JSON length as memory | `read_snapshot` of the row | `kernel`: 1 step; the same cost; the host's result bound (4096 in the synthetic engine) reserved, then settled to DET.57's size |
 //!   | `retain` of n bytes | 1 step; n bytes | a text literal of n / 4 scalars | `value`: 1 step; n bytes (4 per scalar) |
