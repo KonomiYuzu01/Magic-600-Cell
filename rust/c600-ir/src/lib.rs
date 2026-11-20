@@ -584,8 +584,8 @@ pub enum Prim {
     /// a conjugate, a quotient or an integer half is a library body over exact arithmetic, not an operation of its own.
     Q5Parts,
     /// `q5_of(a, b, d)`: the `Q5` value (a + b√5)/d of three integers (`Nat` or `Int`), in the canonical form
-    /// `q5_parts` reads (LP2 draft). A zero `d` has no value: the operation is guarded by a pointwise assertion that `d`
-    /// is not zero (DET.55), as `field_inverse` is, and its failure is `LG4:input.pointwise_failed`.
+    /// `q5_parts` reads (LP2 draft). A zero `d` has no value: the operation is guarded by a pointwise assertion that
+    /// `d` is not zero (DET.55), as `field_inverse` is, and its failure is `LG4:input.pointwise_failed`.
     Q5Of,
     /// `assert(p)`: a pointwise assertion (LP2 draft; DET.55, LG4.10), of value `Unit`. The predicate `p` is evaluated
     /// first with ordinary operations; the assertion is one step, and a false predicate ends the run with

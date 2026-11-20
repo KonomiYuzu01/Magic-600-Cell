@@ -1801,9 +1801,9 @@ impl<'a> Machine<'a> {
         Ok(())
     }
 
-    /// `q5_of(a, b, d)` (LP2 draft): the Q(√5) value (a + b√5)/d of three integers, in canonical form. The row is priced
-    /// as the product of a + b√5 and 1/d (DET.57, [`value::q5_of_price`]), and a mistyped operand is rejected before any
-    /// charge. A zero denominator has no value, so the operation is guarded by a pointwise assertion (DET.55), as
+    /// `q5_of(a, b, d)` (LP2 draft): the Q(√5) value (a + b√5)/d of three integers, in canonical form. The row is
+    /// priced as the product of a + b√5 and 1/d (DET.57, [`value::q5_of_price`]), and a mistyped operand is rejected
+    /// before any charge. A zero denominator has no value, so the operation is guarded by a pointwise assertion (DET.55), as
     /// `field_inverse` is: its predicate `denominator_nonzero` reserves its `Bool`, the `assert` step consumes it, and
     /// only then does the construction run. A zero `d` stops with `LG4:input.pointwise_failed` after the `assert` step
     /// and keeps the admitted charges (chapter 13).
