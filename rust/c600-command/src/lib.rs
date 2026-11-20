@@ -83,9 +83,9 @@
 //! - The workspace store ([`workspace`]) holds M6's records: `workspace.set` ([`RECORD_ROW`]) takes `record`, `payload`
 //!   and `provenance`, the provenance block's canonical JSON as text. H-08 has no such row yet, so [`Table::with_drafts`]
 //!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
-//!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and admits a record's
-//!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused. A record write and a
-//!   workspace row's completion keep the part blocks the reader holds for the blocks they write
+//!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and, in a solving
+//!   session, admits a record's word at `operation.preview` (KN5.26); without a reader both are refused. A record
+//!   write and a workspace row's completion keep the part blocks the reader holds for the blocks they write
 //!   ([`Provenance::parts`]) with the action, and admission gives them back ([`Provenance::admit_kept`]), so a restored
 //!   workspace keeps a word's recursive parts (BND.24, BND.85, CT-BND-27; draft).
 //! - LB7.2's work sheets ([`worksheet`]; CT-LB2-03's work-sheet part), three rows of H-08:
@@ -121,6 +121,21 @@
 //!   `accepted` with no job. Without a view model both rows are `KN5:input.row_not_built`.
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
+//! - The session's profile ([`Profile`]: `solving`, `tool_authoring` or `research`; BND.14, BND.15, BND.17, KN5.26):
+//!   - The host sets it when it creates the session ([`CommandLayer::new_with_profile`]; [`CommandLayer::new`] is
+//!     `solving`). Every ordinary session is `solving`, and so is the practice copy until LQ2 answers BND.15. No
+//!     program or row sets or changes it, and a host sets a run's profile from [`CommandLayer::profile`].
+//!   - The session's start records it once ([`Genesis::profile`]), and a reopen reads it back. A journal's session
+//!     record without it reads as `solving`, so journals written before it stay valid.
+//!   - KN5.26 applies only in a solving session: there the host's reader admits a record's word at
+//!     `operation.preview`, and a saved sheet's word at `worksheet.compare`. Elsewhere no reader is asked, and
+//!     BND.61's check comes when such a record is previewed in a solving session. The reader's check at
+//!     `workspace.set` (PS1.16) runs in every profile.
+//!   - BND.16's table of the rows a run may invoke by profile follows chapter 07 section 8. In `tool_authoring` and
+//!     `research` a run may not invoke `operation.preview` (`LG3:capability.not_granted`; BND.60: a run's `propose`
+//!     there goes to a capture). The cells that grant a run more outside a solving session, records of the authoring
+//!     workspace and research records, are not built. The shell's rows are the same in every profile.
+//!   - M6's `Session` (`c600-session`) keeps no profile.
 //! - `twist.apply` ([`TWIST_ROW`]; A6, ONE.46, ONE.78), a live twist with no preview.
 //!   - The argument form. `cap` is KN3.7's cap, an integer from 0 to 599. `rotation` is KN3.7's binding without its
 //!     cap: exactly `request`, `operation` and `menu`. The row's `cap` completes it to the canonical binding, so the
@@ -517,8 +532,8 @@ pub use shell::{
     DISPLAY_OUT_OF_DATE,
 };
 pub use store::{
-    identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
-    Store, Transaction, TransactionKind,
+    identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Profile,
+    Reopen, Store, Transaction, TransactionKind,
 };
 pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
