@@ -714,14 +714,14 @@ CORE_CHAIN_CSV = "0x000001f2a3b4e000"   # PresentMon's own spelling, which the r
 WINDOW_CHAIN = "0x000001F2A3B4C5D0"     # Godot's window chain, also presenting
 
 
-def surface_csv(sync=1, core_dropped=0, window_dropped=lambda tick: 0, core_skip=lambda frame: False) -> str:
+def surface_csv(sync=1, core_dropped=0) -> str:
     """The core's chain 5 ticks after each trace entry and Godot's window chain at about 60 Hz."""
     lines = ["Application,ProcessID,SwapChainAddress,PresentRuntime,SyncInterval,PresentFlags,AllowsTearing,"
              "PresentMode,Dropped,QPCTime,msBetweenPresents,msBetweenDisplayChange"]
     rows = [(T0 + frame * STEP + 5, f"godot.exe,{PID},{CORE_CHAIN_CSV},DXGI,{sync},0,0,Composed: Flip,{core_dropped},"
-             f"{T0 + frame * STEP + 5},20.000,20.000") for frame in range(FRAMES) if not core_skip(frame)]
-    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,{window_dropped(tick)},{tick},"
-              "16.000,16.000") for tick in range(T0 + 3, STOP, 16)]
+             f"{T0 + frame * STEP + 5},20.000,20.000") for frame in range(FRAMES)]
+    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,0,{tick},16.000,16.000")
+             for tick in range(T0 + 3, STOP, 16)]
     return "\n".join(lines + [line for _, line in sorted(rows)]) + "\n"
 
 
@@ -755,8 +755,7 @@ class RouteBFinalizerTests(unittest.TestCase):
             self.assertEqual(record["presentmon"]["swap_chain"], CORE_CHAIN_CSV)
             self.assertEqual(record["l2"]["presentation"],
                              {"route": "surface", "swap_chain": CORE_CHAIN, "sync_interval": 1,
-                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}],
-                              "display": fr.SURFACE_DISPLAY})
+                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}]})
             self.assertEqual(record["l2"]["presentmon"]["rows"], FRAMES)
             self.assertEqual(record["l2"]["presentmon"]["sync_intervals"], {"1": FRAMES})
             self.assertIs(record["environment"]["tearing"], False)
@@ -764,24 +763,13 @@ class RouteBFinalizerTests(unittest.TestCase):
         self.assertEqual((result["verdict"], len(result["runs"])), ("met", 3))
         self.assertAlmostEqual(result["pooled"]["fps"], 50.0)
 
-    def test_route_b_blind_seconds_read_the_window_display(self):
-        """C9 U4, 20 Nov 2026: PresentMon marks every core present Dropped and credits the window's chain."""
-        self.assertEqual(fr.SURFACE_DISPLAY, "core-present-and-window-display")
+    def test_route_b_blind_seconds_keep_presentmons_display_of_the_core_chain(self):
+        """C9 U4, 20 Nov 2026: PresentMon marks every present of the core's composition chain Dropped, so a
+        route-B run stays refused as blind until its display evidence changes in its own PR (owner, item 9)."""
+        self.assertFalse(hasattr(fr, "SURFACE_DISPLAY"))
         run = surface_run(self.base / "dropped", "c9-dropped", core_dropped=1)
-        self.assertEqual(finalize(run), 0)
-        self.assertEqual(read(run / "run.json")["l2"]["presentation"]["display"], fr.SURFACE_DISPLAY)
-        second = T0 + 12 * FREQ   # a whole checked second after the 10 s warm-up
-        cases = {
-            # The window's chain was not displayed for one second.
-            "window-blind": {"core_dropped": 1, "window_dropped": lambda tick: int(second <= tick < second + FREQ)},
-            # The core's chain did not present for one second, although the window was displayed.
-            "core-silent": {"core_skip": lambda frame: second <= T0 + frame * STEP + 5 < second + FREQ},
-        }
-        for name, options in cases.items():
-            with self.subTest(case=name):
-                run = surface_run(self.base / name, f"c9-{name}", **options)
-                self.assertEqual(finalize(run), 5)
-                self.assertIn("blind-seconds", read(run / "refusal.json")["reasons"])
+        self.assertEqual(finalize(run), 5)
+        self.assertIn("blind-seconds", read(run / "refusal.json")["reasons"])
 
     def test_stage_rows_end_with_one_newline(self):
         """C9 U5: the harness wrote a newline per row and WriteNew one more, a blank line the finalizer refuses."""
