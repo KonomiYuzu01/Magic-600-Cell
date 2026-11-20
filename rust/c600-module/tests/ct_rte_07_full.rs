@@ -827,14 +827,14 @@ fn returned_block(package: &Package, function: &str, inputs: &[Vec<u8>]) -> Vec<
     Boundary::new(&mut engine, &mut store, context).block()
 }
 
-/// Runs the built-in solving entry `m.list` with `args`, each entered by hand, and gives the solver's pick of its
+/// Runs the built-in solving entry `m.offered` with `args`, each entered by hand, and gives the solver's pick of its
 /// option 0 (BND.54): the host keeps the list's block, writes FP.38's `c600-pick` record with `fixed` and `target`,
 /// and gives the picked value with its block, a hand-entered value (BND.23) that records the pick and keeps the list's
 /// block in `parts` (BND.85).
 fn listed_and_picked(trial: Trial, args: Vec<Value>, fixed: bool, target: &str) -> (Trial, Value, Vec<u8>) {
     let inputs = vec![manual(); args.len()];
-    let list = returned_block(&trial.package, "list", &inputs);
-    let mut trial = trial.call("list", Author::BuiltIn, Profile::Solving, args, inputs, WIDE);
+    let list = returned_block(&trial.package, "offered", &inputs);
+    let mut trial = trial.call("offered", Author::BuiltIn, Profile::Solving, args, inputs, WIDE);
     let (options, chosen) = {
         let out = trial.last();
         let Some(Value::List(items)) = &out.run.value else { panic!("a list: {:?}", out.run.value) };
@@ -892,7 +892,7 @@ fn refused_pick(trial: &Trial, key: &str, word: &[i32], target: &str) {
 /// draft; it fails closed), and no preview is installed.
 #[test]
 fn ct_rte_07_full_mr17_one_item_target_pick() {
-    let list = "export fn list() -> List<Target> effects [snapshot] {\n    \
+    let list = "export fn offered() -> List<Target> effects [snapshot] {\n    \
         let n = read_snapshot<$INTS>(\"counts\");\n    \
         let i = if(exact_less(n.c0, n.c1), if(exact_less(n.c1, n.c2), 2, 1), if(exact_less(n.c0, n.c2), 2, 0));\n    \
         return list<Target>(if(exact_eq(i, 0), target(\"c0\"), if(exact_eq(i, 1), target(\"c1\"), target(\"c2\"))));\n\
@@ -912,7 +912,7 @@ fn ct_rte_07_full_mr17_one_item_target_pick() {
 /// admission while BND.55 is open (LP2 draft; it fails closed), and no preview is installed.
 #[test]
 fn ct_rte_07_full_mr18_one_item_word_pick() {
-    let list = "export fn list() -> List<Word> effects [snapshot] {\n    \
+    let list = "export fn offered() -> List<Word> effects [snapshot] {\n    \
         let nu = read_snapshot<$NU>(\"nu2\");\n    \
         let w = if(exact_eq(nu.i0, 1), if(exact_eq(nu.i1, 1), word[1, 2], word[1]), \
         if(exact_eq(nu.i1, 1), word[2], word[]));\n    \
@@ -950,7 +950,7 @@ fn picked_setup(list: &str, served: &[&str]) -> Trial {
 #[test]
 fn ct_rte_07_full_a29_picked_setup() {
     let trial = picked_setup(
-        "export fn list(t: Target) -> List<Word> effects [snapshot] {\n    \
+        "export fn offered(t: Target) -> List<Word> effects [snapshot] {\n    \
          return read_snapshot<List<Word>>(\"setup\", t);\n}\n\n",
         &["setup/\"c1\""],
     );
@@ -962,7 +962,7 @@ fn ct_rte_07_full_a29_picked_setup() {
 #[test]
 fn ct_rte_07_full_a30_picked_setup_after_a_report() {
     let trial = picked_setup(
-        "export fn list(t: Target) -> List<Word> effects [snapshot, view] {\n    \
+        "export fn offered(t: Target) -> List<Word> effects [snapshot, view] {\n    \
          let n = read_snapshot<$INTS>(\"counts\");\n    let shown = publish_view(n);\n    \
          return read_snapshot<List<Word>>(\"setup\", t);\n}\n\n",
         &["counts", "setup/\"c1\""],

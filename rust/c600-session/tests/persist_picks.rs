@@ -30,14 +30,14 @@ fn block_of(given: &json::Json) -> Json {
     codec::read_canonical(&codec::canonical(&raw)).expect("the block is FP.5 JSON")
 }
 
-/// FP.38 (source, whole: the packet's thirteen `picks` vectors): a built-in pick resolves to its record under each
+/// FP.38 (source, whole: the packet's fourteen `picks` vectors): a built-in pick resolves to its record under each
 /// LQ21 form and answers the record's `chosen`; a missing record, a Ref to another kind, a differing header or a
 /// differing `chosen` is `PS1:capability.provenance_incompatible`; FP.10's version refusal comes before the Ref's shape
 /// and its kind, and an added Ref field is `PS1:input.persistence_format`.
 #[test]
 fn fp38_picks_resolve_in_fp10_order() {
     let picks = vectors("picks");
-    assert_eq!(picks.len(), 13);
+    assert_eq!(picks.len(), 14);
     let mut resolved = 0;
     for vector in &picks {
         let id = text(vector, "id");
