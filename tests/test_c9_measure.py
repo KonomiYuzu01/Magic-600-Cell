@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT / 'tools/perf/c9'))
 import cold_start  # noqa: E402
 import evidence  # noqa: E402
 import key_to_frame  # noqa: E402
+import lx2  # noqa: E402
 import lx4  # noqa: E402
 import presentmon_capture  # noqa: E402
 import runbook  # noqa: E402
@@ -414,14 +415,21 @@ class RunbookTests(NoProcessCase):
         attended = [step.attended for step in runbook.STEPS]
         self.assertEqual(attended, sorted(attended, reverse=True))
         self.assertEqual(attended.count(True), 3)
-        lx2 = next(step for step in runbook.STEPS if step.id == 'lx2')
-        self.assertTrue(any('--injection' in command for command in lx2.commands))
-        self.assertTrue(all('--features device --bin c600-lx2-' in command for command in lx2.commands))
-        self.assertNotIn('native', lx2.missing)
-        for token in ('pub fn main_with', 'main_with(native::point)'):
-            argument = next(argument for kind, argument in lx2.prerequisites
+        step = next(step for step in runbook.STEPS if step.id == 'lx2')
+        self.assertTrue(any('--injection' in command for command in step.commands))
+        self.assertTrue(all('--features device --bin c600-lx2-' in command for command in step.commands
+                            if '-p c600-lx2 ' in command))
+        # U7 (b): the shell's LX-2 module and lx2.py measure conditions 3 and 4, so the step is built.
+        self.assertIsNone(step.missing)
+        self.assertEqual(step.minutes, 79)
+        self.assertTrue(any('--lx2-injection' in command and 'lx2.py post' in command for command in step.commands))
+        self.assertTrue(any('lx2.py analyze' in command and '--faults' in command for command in step.commands))
+        for token in ('pub fn main_with', 'main_with(native::point)', 'Magic600.LX2.Phase', 'WriteString("t", "lx2")',
+                      '"--lx2-injection"'):
+            argument = next(argument for kind, argument in step.prerequisites
                             if kind == 'mentions' and argument[1] == token)
             self.assertTrue(runbook.evaluate('mentions', argument)[0], argument)
+        self.assertTrue(runbook.evaluate('imports', 'lx2')[0])
         gpu = next(step for step in runbook.STEPS if step.id == 'core-gpu')
         self.assertTrue(gpu.built and gpu.commands[0].startswith('python -B renderer/core/check_core.py --gpu'))
         self.assertEqual(next(step for step in runbook.STEPS if step.id == 'lx4').minutes, 240)
@@ -926,6 +934,455 @@ class Lx4Tests(NoProcessCase):
                  for row in posts]
         run = lx4.analyze_run(events, posts, self.edits, self.digests)
         self.assertEqual((run['status'], run['failures']), ('invalid', {'not-ready': 1}))
+
+
+CHILD_SHA = 'c' * 64
+PRESENTMON_HEAD = ('Application,ProcessID,SwapChainAddress,Runtime,SyncInterval,PresentFlags,Dropped,TimeInSeconds,'
+                   'msInPresentAPI,msBetweenPresents,AllowsTearing,PresentMode,msUntilRenderComplete,msUntilDisplayed,'
+                   'msBetweenDisplayChange,msFlipDelay,msUntilRenderStart,msGPUActive,msSinceInput,QPCTime')
+LX2_CODES = {'alloc_metered': 'KN7:cancelled.revision_replaced', 'recursion_metered': 'KN7:cancelled.revision_replaced',
+             'loop_metered': 'KN7:cancelled.revision_replaced', 'forced_kill': lx2.RUNTIME_LOST,
+             'alloc_ceiling': lx2.RUNTIME_LOST, 'recursion_native': lx2.RUNTIME_LOST,
+             'loop_native': 'KN7:resource_limit.deadline'}
+
+
+def lx2_window_rows(fault, kind, start):
+    """One effective window of `fault` and `kind` as LX-2's module writes it, from its start row to its recovered row;
+    a limit window's job ends at its meter's limit."""
+    ms = F // 1000
+    rows = [{'event': 'start', 'qpc': start, 'ticket': 1, 'armed': lx2.ARMED.get(fault), 'ended_before': 0}]
+    end = start + 600 * ms
+    if kind == 'limit':
+        return rows + [{'event': 'fault_end', 'qpc': start + 400 * ms, 'status': 'refused', 'code': lx2.BUDGET[fault]},
+                       {'event': 'recovered', 'qpc': end, 'probes': 1}]
+    rows.append({'event': 'turn', 'qpc': start + 300 * ms, 'ok': True})
+    if fault in lx2.METERED:
+        rows.append({'event': 'fault_end', 'qpc': start + 350 * ms})
+    elif fault == 'forced_kill':
+        rows += [{'event': 'kill', 'qpc': start + 250 * ms, 'killed': 1},
+                 {'event': 'fault_end', 'qpc': start + 260 * ms}]
+    elif fault in lx2.NATIVE_LOST:
+        rows.append({'event': 'fault_end', 'qpc': start + 200 * ms})
+    else:
+        exit_qpc = start + 55 * F
+        rows += [{'event': 'child_exit', 'qpc': exit_qpc + ms, 'found': True, 'pid': 7, 'exit_code': 1,
+                  'exit_qpc': exit_qpc},
+                 {'event': 'fault_end', 'qpc': exit_qpc + 2 * ms}]
+        end = exit_qpc + 500 * ms
+    for row in rows:
+        if row['event'] == 'fault_end':
+            row.update(status='refused', code=LX2_CODES[fault])
+    rows.append({'event': 'recovered', 'qpc': end, 'probes': 1})
+    return rows
+
+
+def lx2_run(directory, edits, digests, *, windows=4, e2_ms=30.0, echo_ms=20.0, gate_ms=16.0, change=None,
+            build=BUILD):
+    """A run directory with `windows` effective windows per phase, each with one echo sample 100 ms after its start
+    and, in a turn window, one turn at 300 ms: events.jsonl, lx2-posts.jsonl, launch.json and presentmon.csv.
+    `change(fault, kind, index, rows)` may edit a window's lx2 rows; presents between windows are slow, so that only
+    in-window ones pass."""
+    ms = F // 1000
+    edit = lx2.echo_edit(edits)
+    events = [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': 'lx2-run', 'build_identity': build,
+               'qpc_frequency': F, 'synthetic': True, 'foreground_throughout': True, 'correctness': 'pass',
+               'process_id': 4242, 'swap_chain': '0xCORE'},
+              {'t': 'module', 'module': 'lx2', 'window': 66, 'run_id': 'lx2-run', 'build_identity': build}]
+    posts = [{'t': 'run', 'format': lx2.POSTS_FORMAT, 'run_id': 'lx2-run', 'build_identity': build,
+              'qpc_frequency': F, 'synthetic': True, 'faults': list(lx2.FAULTS), 'echo_edit': edit, **digests}]
+    lines = [PRESENTMON_HEAD]
+    state = {'frame': 0, 'key': 0, 'sample': 0, 'window': 0}
+
+    def present(qpc, interval):
+        lines.append(f'shell.exe,4242,0xCORE,DXGI,1,0,0,0,0.1,{interval},0,Composed: Flip,1.0,0.0,{interval},0,0.5,'
+                     f'2,0,{qpc}')
+
+    def framed(submit, display):
+        state['frame'] += 1
+        frame = state['frame']
+        events.append({'t': 'frame', 'frame_id': frame, 'qpc': submit, 'device_epoch': 1, 'surface': 1})
+        events.append({'t': 'presented', 'frame_id': frame, 'device_epoch': 1, 'surface': 1, 'sequence': frame,
+                       'display_qpc': display})
+        present(display, gate_ms)
+        return frame
+
+    t = F
+    for _, fault, kind in lx2.PHASES:
+        events.append({'t': 'lx2', 'event': 'phase', 'qpc': t, 'window': state['window'], 'fault': fault,
+                       'kind': kind})
+        t += ms
+        for index in range(windows):
+            state['window'] += 1
+            rows = lx2_window_rows(fault, kind, t)
+            if change:
+                change(fault, kind, index, rows)
+            state['sample'] += 1
+            sample, anchor = state['sample'], t + 100 * ms
+            for post, qpc in enumerate((anchor - ms, anchor)):
+                posts.append({'t': 'post', 'sample': sample, 'fault': fault, 'kind': kind, 'index': post,
+                              'message': 0xC001 + post, 'wparam': edit, 'lparam': sample, 'qpc': qpc, 'ok': True,
+                              'timed': post == 1})
+            posts.append({'t': 'sample', 'sample': sample, 'fault': fault, 'kind': kind, 'status': 'done',
+                          'foreground': True})
+            echo = framed(anchor + ms, anchor + round(echo_ms * ms))
+            events.append({'t': 'lx4', 'sample': sample, 'endpoint': 'echo', 'frame_id': echo,
+                           'buffer_sha256': edits[edit]['result_sha256']})
+            for offset in (50, 150, 450):
+                present(t + offset * ms, gate_ms)
+            for row in rows:
+                if row['event'] == 'turn' and row.get('ok'):
+                    key = {'t': 'key', 'seq': state['key'], 'qpc': row['qpc'] + ms}
+                    state['key'] += 1
+                    key['frame_id'] = framed(row['qpc'] + 2 * ms, row['qpc'] + ms + round(e2_ms * ms))
+                    events.append(key)
+            events.extend({'t': 'lx2', 'window': state['window'], 'fault': fault, 'kind': kind, **row}
+                          for row in sorted(rows, key=lambda row: row['qpc']))
+            end = max(row['qpc'] for row in rows)
+            present(end + 100 * ms, 100.0)
+            t = end + 200 * ms
+        events.append({'t': 'lx2', 'event': 'phase_end', 'qpc': t, 'window': state['window'], 'fault': fault,
+                       'kind': kind, 'windows': windows})
+    write_jsonl(directory / key_to_frame.EVENTS, events)
+    write_jsonl(directory / lx2.POSTS, posts)
+    (directory / key_to_frame.CAPTURE).write_bytes(('\n'.join(lines) + '\n').encode())
+    (directory / lx2.LAUNCH).write_bytes(json.dumps(
+        {'format': 'magic600-c9-launch-v1', 'run_id': 'lx2-run', 'build_identity': build, 'lx4': True,
+         'lx2_injection': {'name': 'c600-lx2-child.exe', 'sha256': CHILD_SHA}}).encode())
+    return directory
+
+
+def lx2_faults(path, *, disagree=(), sha=CHILD_SHA, sessions=True):
+    trials = ('control', *lx2.FAULTS)
+    path.write_bytes(json.dumps({
+        'format': lx2.FAULTS_FORMAT, 'agrees': not disagree,
+        'runtime': {'file': 'c600-runtime.exe', 'sha256': 'a' * 64,
+                    'injection_device': {'file': 'c600-lx2-child.exe', 'sha256': sha}},
+        'trials': [{'trial': trial, 'agrees': trial not in disagree} for trial in trials],
+        'sessions': [{'trial': trial, 'open': True, 'agrees_with_control': trial not in disagree}
+                     for trial in trials] if sessions else []}).encode())
+    return path
+
+
+class Lx2Tests(NoProcessCase):
+    def setUp(self):
+        super().setUp()
+        self.manifest, self.edits, self.digests = lx4_fixtures(self.temp / 'fixtures')
+        for name, value in (('OBSERVATIONS_MIN', 4), ('GATE_FRAMES_MIN', 10)):
+            patcher = mock.patch.object(lx2, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        self.count = 0
+
+    def record(self, *, disagree=(), sha=CHILD_SHA, sessions=True, **kwargs):
+        self.count += 1
+        directory = lx2_run(self.temp / f'run{self.count}', self.edits, self.digests, **kwargs)
+        faults = lx2_faults(self.temp / f'faults{self.count}.json', disagree=disagree, sha=sha, sessions=sessions)
+        return lx2.build(self.temp / 'fixtures', directory, faults, ['analyze'])
+
+    def test_the_module_and_the_tool_agree_on_faults_timing_and_variables(self):
+        source = (ROOT / 'renderer/shell/project/Lx2/Lx2Module.cs').read_text(encoding='utf-8')
+        block = re.search(r'string\[\] Faults =\s*\{(.*?)\};', source, re.S)
+        self.assertEqual(tuple(re.findall(r'"(\w+)"', block.group(1))), lx2.FAULTS)
+        for name, seconds in (('LeadMs', lx2.LEAD_S), ('PaceMs', lx2.PACE_S), ('GapMs', lx2.GAP_S)):
+            value = re.search(rf'const int {name} = (\d+);', source)
+            self.assertEqual(int(value.group(1)), round(seconds * 1000), name)
+        self.assertIn('public const long CeilingBytes = 32L << 20;', source)
+        self.assertEqual(lx2.ARMED['alloc_ceiling'], f'C600_LX2_CEILING={32 << 20}')
+        for fault, text in (('recursion_native', 'recursion@0'), ('loop_native', 'loop@0')):
+            self.assertEqual(lx2.ARMED[fault], 'C600_LX2_FAULT=' + text)
+            self.assertIn(f'(FaultVariable, "{text}")', source)
+        self.assertIn(f'Register("{lx2.PHASE}")', source)
+        # Limit windows: wParam len(FAULTS) plus a metered fault's number, and the kind each row carries.
+        constants = dict(re.findall(r'private const int (\w+) = (\d+);', source))
+        self.assertEqual([int(constants[name]) for name in ('AllocMetered', 'RecursionMetered', 'LoopMetered')],
+                         [lx2.FAULTS.index(fault) + 1 for fault in lx2.METERED])
+        self.assertIn('if (wParam > (nuint)(Faults.Length + LoopMetered))', source)
+        self.assertIn('_limit = _phase > Faults.Length;', source)
+        self.assertIn('var kind = _limit ? "limit" : "turn";', source)
+        self.assertIn('if (!_limit && !_turned && !_faultFinal && elapsed >= LeadMs)', source)
+        self.assertEqual(lx2.KINDS, ('limit', 'turn'))
+        self.assertEqual([number for number, fault, kind in lx2.PHASES if kind == 'limit'],
+                         [len(lx2.FAULTS) + lx2.FAULTS.index(fault) + 1 for fault in lx2.METERED])
+        self.assertIn('json.WriteString("module", "lx2");', source)
+        self.assertIn('lx2', key_to_frame.OTHER_ROWS)
+
+    def test_a_complete_synthetic_run_meets_every_condition_but_stays_synthetic(self):
+        record = self.record()
+        run = record['result']['run']
+        self.assertEqual((run['status'], run['reasons']), ('valid', []))
+        self.assertEqual(lx2.judge(run), ('met', []))
+        self.assertEqual((record['verdict'], record['passes_bar']), ('synthetic', False))
+        for fault in lx2.FAULTS:
+            result = run['faults'][fault]
+            kinds = lx2.KINDS if fault in lx2.METERED else ('turn',)
+            self.assertEqual(list(result['windows']), list(kinds), fault)
+            for kind in kinds:
+                self.assertEqual((result['windows'][kind]['windows'], result['windows'][kind]['effective']), (4, 4),
+                                 (fault, kind))
+            self.assertEqual((result['e2']['turns'], result['e2']['confirmed'], result['echo']['timed']), (4, 4, 4),
+                             fault)
+            over = 'limit' if fault in lx2.METERED else 'turn'
+            self.assertEqual((result['e2']['over'], result['echo']['over'], result['gate']['over']),
+                             ('turn', over, over), fault)
+            # Per window the echo's frame, the turn's frame (a turn window) and three other presents; the slow
+            # presents between windows are left out.
+            self.assertEqual(result['gate']['presents'], 16 if fault in lx2.METERED else 20, fault)
+            self.assertEqual(result['gate']['result']['max_ms'], 16.0, fault)
+        self.assertEqual(run['faults']['loop_metered']['windows']['limit']['ends'], {'KN7:budget.steps': 4})
+        self.assertEqual(run['conditions_1_2'], {'state': 'met', 'reasons': []})
+        self.assertIn('limitations', record['result'])
+        self.assertFalse(any('revision_replaced' in text for text in record['result']['limitations']))
+        ends = {fault: [lx2.BUDGET[fault], lx2.SAFETY_STOP] for fault in lx2.METERED}
+        self.assertEqual(record['bar']['limit_ends'], ends)
+        self.assertEqual(record['result']['limit_windows']['ends'], ends)
+        self.assertTrue(any('60 s view deadline' in text for text in record['result']['limit_windows']['facts']))
+
+    def test_a_limit_window_counts_only_when_its_job_ended_at_its_limit_with_no_turn(self):
+        def change(fault, kind, index, rows):
+            if kind != 'limit':
+                return
+            end = next(row for row in rows if row['event'] == 'fault_end')
+            if index == 0:
+                end['code'] = lx2.SAFETY_STOP
+            elif index == 1 and fault == 'alloc_metered':
+                rows.insert(1, {'event': 'turn', 'qpc': end['qpc'] - 100 * (F // 1000), 'ok': True})
+            elif index == 1 and fault == 'recursion_metered':
+                end['code'] = 'KN7:cancelled.revision_replaced'
+
+        # The host's view deadline is the limit that stops the job in the product, so it counts; a turn or another
+        # end does not.
+        run = self.record(change=change)['result']['run']
+        why = {'alloc_metered': {'turned': 1}, 'recursion_metered': {'limit-not-reached': 1}, 'loop_metered': {}}
+        for fault in lx2.METERED:
+            limit = run['faults'][fault]['windows']['limit']
+            self.assertEqual((limit['effective'], limit['ineffective']), (4 - sum(why[fault].values()), why[fault]),
+                             fault)
+            # Condition 3 comes from the limit windows alone; the turn windows still carry condition 4.
+            self.assertEqual(run['faults'][fault]['echo']['timed'], limit['effective'], fault)
+            state = 'met' if limit['effective'] == 4 else 'insufficient'
+            self.assertEqual(run['faults'][fault]['echo']['state'], state, fault)
+            self.assertEqual(run['faults'][fault]['e2']['state'], 'met', fault)
+        self.assertEqual(run['faults']['loop_metered']['windows']['limit']['ends'],
+                         {'KN7:budget.steps': 3, lx2.SAFETY_STOP: 1})
+        self.assertEqual(lx2.judge(run)[0], 'insufficient')
+        # LIMIT_ENDS alone decides: with the meter's codes only, the safety stop does not count.
+        with mock.patch.dict(lx2.LIMIT_ENDS, {fault: (lx2.BUDGET[fault],) for fault in lx2.METERED}):
+            run = self.record(change=change)['result']['run']
+        self.assertEqual(run['faults']['loop_metered']['windows']['limit']['ineffective'], {'limit-not-reached': 1})
+        self.assertEqual(run['faults']['alloc_metered']['windows']['limit']['ineffective'],
+                         {'limit-not-reached': 1, 'turned': 1})
+
+    def test_each_fault_counts_only_windows_where_it_took_effect(self):
+        def change(fault, kind, index, rows):
+            if index or kind != 'turn':
+                return
+            events = {row['event']: row for row in rows}
+            if fault in lx2.METERED:
+                events['turn']['qpc'] = events['fault_end']['qpc'] + 1
+            elif fault == 'forced_kill':
+                events['kill']['killed'] = 0
+            elif fault == 'alloc_ceiling':
+                events['start']['armed'] = None
+            elif fault == 'recursion_native':
+                events['fault_end']['code'] = 'KN7:resource_limit.depth'
+            else:
+                events['child_exit']['exit_qpc'] = events['start']['qpc'] + 50 * F
+
+        run = self.record(change=change)['result']['run']
+        why = {'alloc_metered': 'turn-after-the-job-ended', 'recursion_metered': 'turn-after-the-job-ended',
+               'loop_metered': 'turn-after-the-job-ended', 'forced_kill': 'nothing-killed',
+               'alloc_ceiling': 'not-armed', 'recursion_native': 'child-not-lost', 'loop_native': 'child-ended-early'}
+        for fault in lx2.FAULTS:
+            result = run['faults'][fault]
+            turn = result['windows']['turn']
+            self.assertEqual((turn['effective'], turn['ineffective']), (3, {why[fault]: 1}), fault)
+            self.assertEqual(result['e2']['state'], 'insufficient', fault)
+        self.assertEqual(lx2.judge(run)[0], 'insufficient')
+
+    def test_a_window_without_recovery_or_a_refused_job_does_not_count(self):
+        def change(fault, kind, index, rows):
+            if fault == 'alloc_metered' and index == 0:
+                rows[:] = [row for row in rows if row['event'] != 'recovered']
+            if fault in ('forced_kill', 'loop_metered') and index == 0:
+                next(row for row in rows if row['event'] == 'fault_end')['status'] = 'published'
+
+        run = self.record(change=change)['result']['run']
+        for kind in lx2.KINDS:
+            self.assertEqual(run['faults']['alloc_metered']['windows'][kind]['ineffective'], {'not-recovered': 1})
+            self.assertEqual(run['faults']['loop_metered']['windows'][kind]['ineffective'], {'job-not-refused': 1})
+        self.assertEqual(run['faults']['forced_kill']['windows']['turn']['ineffective'], {'job-not-refused': 1})
+
+    def test_slow_commits_a_slow_echo_or_slow_presents_fail_their_condition(self):
+        for kwargs, condition in (({'e2_ms': 150.0}, 'e2'), ({'echo_ms': 70.0}, 'echo'), ({'gate_ms': 40.0}, 'gate')):
+            run = self.record(**kwargs)['result']['run']
+            self.assertEqual(run['status'], 'valid', kwargs)
+            verdict, reasons = lx2.judge(run)
+            self.assertEqual(verdict, 'not-met', kwargs)
+            self.assertEqual({reason.split(':')[1] for reason in reasons}, {f'{condition}-not-met'}, kwargs)
+
+    def test_conditions_1_and_2_come_from_the_faults_record_of_the_same_child(self):
+        run = self.record(disagree=('loop_native',))['result']['run']
+        self.assertEqual(run['conditions_1_2']['state'], 'not-met')
+        self.assertIn('trial-disagrees:loop_native', run['conditions_1_2']['reasons'])
+        self.assertEqual(lx2.judge(run)[0], 'not-met')
+        run = self.record(sha='d' * 64)['result']['run']
+        self.assertEqual(run['conditions_1_2'], {'state': 'insufficient', 'reasons': ['other-injection-child']})
+        run = self.record(sessions=False)['result']['run']
+        self.assertEqual(run['conditions_1_2']['state'], 'insufficient')
+        self.assertIn('session-missing:control', run['conditions_1_2']['reasons'])
+        self.assertEqual(lx2.judge_faults(None, None)['reasons'], ['faults-record-missing'])
+
+    def test_a_module_error_or_another_run_invalidates_the_run(self):
+        def change(fault, kind, index, rows):
+            if fault == 'loop_native' and index == 3:
+                rows.append({'event': 'error', 'qpc': rows[-1]['qpc'] + 1, 'reason': 'probe-attempts'})
+
+        record = self.record(change=change)
+        self.assertEqual((record['verdict'], record['result']['run']['reasons']), ('synthetic', ['module-error']))
+        self.assertEqual(lx2.judge(record['result']['run']), ('invalid', ['module-error']))
+        directory = lx2_run(self.temp / 'other', self.edits, self.digests)
+        launch = json.loads((directory / lx2.LAUNCH).read_text())
+        (directory / lx2.LAUNCH).write_text(json.dumps({**launch, 'build_identity': 'another-build'}))
+        record = lx2.build(self.temp / 'fixtures', directory, lx2_faults(self.temp / 'f.json'), ['analyze'])
+        self.assertEqual(record['result']['run']['reasons'], ['launch-does-not-match-shell'])
+
+    def test_the_dry_run_prints_the_plan_and_posts_nothing(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = lx2.main(['post', '--fixtures', str(self.temp / 'fixtures'), '--dry-run'],
+                            system_factory=forbidden)
+        self.assertEqual(code, 0)
+        text = out.getvalue()
+        self.assertIn('nothing was posted', text)
+        self.assertIn('limit windows count with: alloc_metered KN7:budget.memory or KN7:resource_limit.safety_stop; ',
+                      text)
+        for _, fault, kind in lx2.PHASES:
+            self.assertIn(f'  {fault} ({kind} windows): about ', text)
+        plan = {(fault, kind): nominal for fault, kind, nominal, bound in lx2.estimate()}
+        self.assertEqual(list(plan), [(fault, kind) for _, fault, kind in lx2.PHASES])
+        self.assertEqual(plan['alloc_metered', 'turn'], round(lx2.TARGET * (lx2.LEAD_S + lx2.RECOVERY_S + lx2.GAP_S)))
+        # A limit window runs to the host's view deadline; one holds TARGET echo samples at ECHO_PACE_S.
+        self.assertEqual(plan['loop_metered', 'limit'], round(lx2.VIEW_DEADLINE_S + lx2.RECOVERY_S + lx2.GAP_S))
+        self.assertLess(plan['loop_native', 'turn'], 70)
+
+    def test_the_poster_runs_each_phase_to_its_targets_and_closes_the_shell(self):
+        modules = [{'t': 'module', 'module': name, 'window': 66, 'run_id': 'live', 'build_identity': BUILD,
+                    'puzzle': 'jumble-off', 'qpc_frequency': F} for name in ('lx4', 'lx2')]
+
+        class Fake:
+            """The shell with LX-2's and LX-4's modules: a phase opens a window; each Reset turns once in an open turn
+            window (or closes a window that has turned and opens the next); in a limit window every second Reset closes
+            it and opens the next, with no turn; phase 0 closes the window and ends the phase."""
+
+            def __init__(self, run, error_at=None):
+                self.ticks, self.fault, self.window, self.turned, self.error_at = 0, None, 0, False, error_at
+                self.kind, self.resets = None, 0
+                self.posted, self.live = [], run / lx4.LIVE
+                write_jsonl(self.live, modules)
+
+            def append(self, row):
+                with self.live.open('a') as stream:
+                    stream.write(json.dumps(row) + '\n')
+
+            def register(self, name):
+                return {lx4.RESET: 0xC001, lx4.SELECT: 0xC002, lx2.PHASE: 0xC003}[name]
+
+            def qpc(self):
+                self.ticks += 1
+                return self.ticks
+
+            def frequency(self):
+                return F
+
+            def row(self, event, **fields):
+                self.append({'t': 'lx2', 'event': event, 'qpc': self.qpc(), 'window': self.window,
+                             'fault': self.fault, 'kind': self.kind, **fields})
+
+            def post(self, hwnd, message, wparam, lparam):
+                self.posted.append((message, wparam))
+                if message == 0xC003 and wparam:
+                    limit = wparam > len(lx2.FAULTS)
+                    self.fault = lx2.FAULTS[wparam - len(lx2.FAULTS) - 1 if limit else wparam - 1]
+                    self.kind = 'limit' if limit else 'turn'
+                    self.window, self.turned, self.resets = self.window + 1, False, 0
+                    self.row('phase')
+                    self.row('start')
+                elif message == 0xC003:
+                    self.row('recovered')
+                    self.row('phase_end')
+                    self.fault = self.kind = None
+                elif message == 0xC001:
+                    self.append({'t': 'lx4', 'sample': lparam, 'endpoint': lx4.READY})
+                    if self.fault is not None:
+                        self.resets += 1
+                        if self.turned or (self.kind == 'limit' and self.resets > 2):
+                            self.row('recovered')
+                            self.window += 1
+                            self.resets = 1
+                            self.row('start')
+                        if self.kind == 'turn':
+                            self.row('turn', ok=True)
+                            self.turned = True
+                        if self.error_at == self.window:
+                            self.row('error', reason='probe-attempts')
+                    self.sample = lparam
+                elif message == 0xC002:
+                    self.append({'t': 'lx4', 'sample': self.sample, 'endpoint': 'echo'})
+                return hwnd == 66
+
+            def foreground(self, hwnd):
+                return True
+
+            def alive(self, hwnd):
+                return True
+
+        clock = iter(range(10**9))
+        with mock.patch.object(lx2, 'TARGET', 3):
+            run = self.temp / 'live'
+            fake = Fake(run)
+            code = lx2.post_run(self.temp / 'fixtures', run, fake, clock=lambda: next(clock) / 100,
+                                sleep=lambda seconds: None, out=lambda line: None)
+            self.assertEqual(code, 0)
+            rows = evidence.read_jsonl(run / lx2.POSTS)
+            self.assertEqual(rows[0]['format'], lx2.POSTS_FORMAT)
+            summary = {(row['fault'], row['kind']): row for row in rows if row['t'] == 'fault'}
+            self.assertEqual(list(summary), [(fault, kind) for _, fault, kind in lx2.PHASES])
+            for (fault, kind), row in summary.items():
+                self.assertFalse(row['failed_samples'], (fault, kind))
+                if kind == 'limit':
+                    self.assertEqual(row['turns'], 0)
+                    self.assertGreaterEqual(row['echo_samples'], 3)
+                else:
+                    self.assertGreaterEqual(row['turns'], 3)
+                    if fault not in lx2.METERED:
+                        self.assertGreaterEqual(row['echo_samples'], 3)
+            phases = [wparam for message, wparam in fake.posted if message == 0xC003]
+            self.assertEqual(phases, [wparam for number, _, _ in lx2.PHASES for wparam in (number, 0)])
+            self.assertEqual(phases[:4], [8, 0, 1, 0])
+            self.assertEqual(fake.posted[-1], (lx2.WM_CLOSE, 0))
+            self.assertEqual(rows[-1]['t'], 'close')
+            # The module stops with an error: phase 0, and no close.
+            run = self.temp / 'error'
+            fake = Fake(run, error_at=2)
+            code = lx2.post_run(self.temp / 'fixtures', run, fake, clock=lambda: next(clock) / 100,
+                                sleep=lambda seconds: None, out=lambda line: None)
+            self.assertEqual(code, 4)
+            self.assertEqual(fake.posted[-1], (0xC003, 0))
+            self.assertNotIn('close', [row['t'] for row in evidence.read_jsonl(run / lx2.POSTS)])
+            # A shell started without --lx2-injection: no lx2 module row, nothing posted.
+            only_lx4 = self.temp / 'only-lx4'
+            write_jsonl(only_lx4 / lx4.LIVE, modules[:1])
+            code = lx2.post_run(self.temp / 'fixtures', only_lx4, forbidden_system(), clock=lambda: next(clock),
+                                sleep=lambda seconds: None, out=lambda line: None)
+            self.assertEqual(code, 2)
+
+
+def forbidden_system():
+    class System:
+        def __getattr__(self, name):
+            raise AssertionError(f'the poster called {name} without a module row')
+    return System()
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

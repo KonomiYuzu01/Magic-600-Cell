@@ -187,11 +187,12 @@
 //! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
 //!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
 //!   (CT-LB3-05, CT-BND-17): LP2.
-//! - Not taken up yet: a survey entry. LB3.5 keeps the survey's all-items loop out of the rim entry, and
-//!   [`library::RIM`] reads the rim summary and one whole seam scan only.
-//! - Not written in the language yet: the other entries that LB6.5's jumbling inspectors use, LB3.1's "Straddlers and
-//!   u at a named cap", "Units and clean-step contract", "Repair list at a named cap" and "Retained checkpoint, label
-//!   checkpoint, sticker test". Until they are, and `tests/ct_lb3_07.rs` runs them too, CT-LB3-07 runs in part.
+//! - The survey's all-items loop: not served. LB3.5 keeps it out of the inspector entries, so the `survey` row answers
+//!   the solver's named grip only ([`library::ADMISSIBILITY`]), and [`library::RIM`] reads the rim summary and one
+//!   whole seam scan only.
+//! - Not written in the language yet: the last entries that LB6.5's jumbling inspectors use, LB3.1's "Repair list at a
+//!   named cap" and "Retained checkpoint, label checkpoint, sticker test". Until they are, and `tests/ct_lb3_07.rs`
+//!   runs them too, CT-LB3-07 runs in part.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
