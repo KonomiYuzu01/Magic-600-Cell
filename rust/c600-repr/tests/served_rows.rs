@@ -11,13 +11,18 @@
 //!
 //! Drafts of this host, which settle nothing for the layer, the runtime or the chapters:
 //!
-//! - The engine side answers the entries' two snapshot reads, `filter.preview` and `structure.compare`, with the state
-//!   number of the revision the run reads, and grants nothing else. No kernel row counts the objects a predicate
-//!   selects or compares two cells yet, and both entries read a literal query that takes no argument.
+//! - The engine side answers the entries' two snapshot reads, `filter.preview` and `structure.compare`, with the kernel
+//!   rows that C5's host bridge serves them with (`c600_tools::kernel_rows::filter_preview` and `structure_compare`)
+//!   on the session's command layer, and grants nothing else. The rows are LP2's `CommandLayer::layer_counts` and
+//!   `compare_cells`, which read no state, so they answer the same at every revision.
 //! - A job's arguments map to the entry's parameters by name: a cell, a layer and each member to a natural, the
-//!   choice words and the name to text, and a `FilterPreviewRef` to a record of its epoch and job. `filter_counts`
-//!   takes neither of `filter.preview`'s arguments. A member outside 0 to 177,119 and a malformed `FilterPreviewRef`
-//!   never reach the host: the layer refuses them at admission with its argument-form code.
+//!   choice words and the name to text, a `FilterPreviewRef` to a record of its epoch and job, and the cells of a
+//!   `CellIdPair` to two naturals. `filter_counts` takes the layer predicate that `filter.preview`'s `FilterRef` names,
+//!   as a record of its cell and layer, which the host reads from the record `structure.layer` the layer holds: the
+//!   layer resolved the reference when it admitted the job, so the record is the one the predicate's job wrote, and no
+//!   write has replaced it since. The entry does not take `revision`, which only the layer checks. A member outside 0
+//!   to 177,119 and a malformed `FilterPreviewRef` never reach the host: the layer refuses them at admission with its
+//!   argument-form code.
 //! - What a run published and wrote is read back from its canonical bytes as the layer's JSON, where an integer is
 //!   `{"int": "n"}`, and a record's provenance is the text of its block.
 //! - A job's run takes the blocks the job holds (`ProgramJob::inputs`) as its inputs. A shell invocation carries none:
@@ -48,26 +53,28 @@ use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Sink};
 use c600_run::provenance::{self, field, Author, Producer, Profile};
 use c600_run::value::Value;
 use c600_tools::bridge::base;
+use c600_tools::kernel_rows;
 use c600_tools::tool::{checker, contract, lower_source, named_word_block, pins, LIMITS};
 use c600_tools::workspace;
 
 use common::*;
 
-/// The queries the engine side answers.
-const READS: [&str; 2] = ["filter.preview", "structure.compare"];
-
-/// The engine side of one run: the entries' two snapshot reads, answered with the state number of the revision the run
-/// reads, and the views the run publishes, in order. It grants nothing else.
-struct Engine {
-    state: u64,
+/// The engine side of one run on a session's command layer: the entries' two snapshot reads, answered by the kernel
+/// rows C5's host bridge serves them with (`kernel_rows::filter_preview` and `kernel_rows::structure_compare`), and the
+/// views the run publishes, in order. It grants nothing else.
+struct Engine<'l> {
+    layer: &'l CommandLayer,
     views: Vec<Vec<u8>>,
 }
 
-impl Host for Engine {
+impl Host for Engine<'_> {
     fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
         match request {
-            Request::Snapshot { query, .. } if READS.contains(query) => {
-                Ok(RowTariff { kernel_cost: 1, result_bound: 64 })
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
+                kernel_rows::filter_preview_read_tariff(arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::STRUCTURE_COMPARE => {
+                kernel_rows::structure_compare_read_tariff(arg, ty)
             }
             _ => Err(code::NOT_GRANTED),
         }
@@ -75,7 +82,12 @@ impl Host for Engine {
 
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
         match request {
-            Request::Snapshot { query, .. } if READS.contains(query) => Ok(Value::int(self.state)),
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
+                kernel_rows::filter_preview(self.layer, arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::STRUCTURE_COMPARE => {
+                kernel_rows::structure_compare(self.layer, arg, ty)
+            }
             _ => Err(code::NOT_GRANTED),
         }
     }
@@ -135,26 +147,27 @@ impl ToolHost {
     }
 
     /// The provenance blocks a host gives a running program's invocation (BND.22), built from the context of the run
-    /// `run` of `entry` at `revision`, which took the solver's word as its input: one block, that of what the run
-    /// produces (`Boundary::block`, BND.24), for every argument the run passes.
-    fn blocks(&self, entry: &str, run: &str, revision: &Revision) -> Vec<Vec<u8>> {
-        let (mut engine, mut store) = (Engine { state: revision.state, views: Vec::new() }, Store::default());
+    /// `run` of `entry` at `revision` on `layer`, which took the solver's word as its input: one block, that of what
+    /// the run produces (`Boundary::block`, BND.24), for every argument the run passes.
+    fn blocks(&self, layer: &CommandLayer, entry: &str, run: &str, revision: &Revision) -> Vec<Vec<u8>> {
+        let (mut engine, mut store) = (Engine { layer, views: Vec::new() }, Store::default());
         let context = self.context(entry, run, revision, vec![named_word_block()]);
         vec![Boundary::new(&mut engine, &mut store, context).block()]
     }
 
     /// Runs `entry` on `args` at `revision`, with `inputs` as the blocks of its arguments, through the run-time
-    /// boundary onto the engine side and gives what the run's sinks gave, as the layer takes it. A refusal before the
-    /// run and a stopped run are errors with their codes.
+    /// boundary onto the engine side on `layer` and gives what the run's sinks gave, as the layer takes it. A refusal
+    /// before the run and a stopped run are errors with their codes.
     fn run(
         &self,
+        layer: &CommandLayer,
         entry: &str,
         args: Vec<Value>,
         revision: &Revision,
         run: &str,
         inputs: Vec<Vec<u8>>,
     ) -> Result<JobOutput, Error> {
-        let mut engine = Engine { state: revision.state, views: Vec::new() };
+        let mut engine = Engine { layer, views: Vec::new() };
         let mut store = Store::default();
         let context = self.context(entry, run, revision, inputs);
         self.runs.borrow_mut().push(context.inputs.clone());
@@ -193,8 +206,8 @@ impl ToolHost {
             }
         };
         let output = inputs.and_then(|inputs| {
-            let args = entry_args(&job.row, &job.args)?;
-            self.run(&job.overlay.entry, args, &job.revision, &format!("job/{}", job.job), inputs)
+            let args = entry_args(layer, &job.row, &job.args)?;
+            self.run(layer, &job.overlay.entry, args, &job.revision, &format!("job/{}", job.job), inputs)
         });
         let receipt = layer.finish_program_job_with(job.job, output.clone()).expect("the job was running");
         Some((job, output, receipt))
@@ -233,13 +246,25 @@ fn form(name: &str) -> Error {
     Error::new(code::ARGUMENT_FORM, format!("`{name}` is no argument the entry takes"))
 }
 
-/// The entry's arguments for a job's arguments, by name (a draft of this host).
-fn entry_args(row: &str, args: &Json) -> Result<Vec<Value>, Error> {
+/// A natural as the canonical form writes it, `{"int": "n"}`, read back.
+fn read_nat(value: &Json) -> Option<u64> {
+    value.get("int")?.as_str()?.parse().ok()
+}
+
+/// The entry's arguments for a job's arguments on `layer`, by name (a draft of this host). `filter.preview`'s entry
+/// takes the layer predicate its `FilterRef` names: the record `structure.layer` that the predicate's job wrote, the
+/// one record the tool's `layer_predicate` entry writes. The layer resolved the reference when it admitted the job, so
+/// the record it holds is still that write.
+fn entry_args(layer: &CommandLayer, row: &str, args: &Json) -> Result<Vec<Value>, Error> {
     let arg = |name: &str| args.get(name).ok_or_else(|| form(name));
     let nat = |value: &Json, name: &str| value.as_i64().filter(|n| *n >= 0).map(Value::int).ok_or_else(|| form(name));
     let string = |name: &str| arg(name)?.as_str().map(Value::text).ok_or_else(|| form(name));
     Ok(match row {
-        "filter.preview" => Vec::new(),
+        "filter.preview" => {
+            let predicate = &layer.record("structure.layer").ok_or_else(|| form("predicate"))?.payload;
+            let field = |key: &str| predicate.get(key).and_then(read_nat).ok_or_else(|| form("predicate"));
+            vec![Value::record(vec![("cell", Value::int(field("cell")?)), ("layer", Value::int(field("layer")?))])]
+        }
         "filter.apply" => {
             let preview = arg("preview")?;
             let field = |key: &str| preview.get(key).ok_or_else(|| form("preview")).and_then(|n| nat(n, "preview"));
@@ -265,7 +290,7 @@ fn entry_args(row: &str, args: &Json) -> Result<Vec<Value>, Error> {
 fn typed(row: &str, preview: (u64, u64)) -> Vec<Value> {
     match row {
         "structure.layer" => vec![Value::int(7), Value::int(2)],
-        "filter.preview" => Vec::new(),
+        "filter.preview" => vec![Value::record(vec![("cell", Value::int(7)), ("layer", Value::int(2))])],
         "filter.apply" => {
             let (job, epoch) = preview;
             vec![Value::record(vec![("epoch", Value::int(epoch)), ("job", Value::int(job))])]
@@ -279,11 +304,21 @@ fn typed(row: &str, preview: (u64, u64)) -> Vec<Value> {
     }
 }
 
-/// What the entry of each invocation in [`command_route`] publishes and writes at the state number `state`, `preview`
-/// as in [`typed`].
-fn expected(row: &str, state: u64, preview: (u64, u64)) -> (Vec<Json>, Option<Json>) {
+/// What the entry of each invocation in [`command_route`] publishes and writes, `preview` as in [`typed`]. The two
+/// queries publish the kernel's answers for the predicate's cell 7 and layer 2 and for cells 1 and 2, which read no
+/// state.
+fn expected(row: &str, preview: (u64, u64)) -> (Vec<Json>, Option<Json>) {
+    let size = |n: usize| int(n as u64);
     match row {
-        "filter.preview" | "structure.compare" => (vec![int(state)], None),
+        "filter.preview" => {
+            let counts = kernel().layer_counts(7, 2).expect("a layer of cell 7");
+            let fields = [("cell", 7), ("layer", 2), ("pieces", counts.pieces), ("slots", counts.slots)];
+            (vec![json::object(fields.map(|(name, n)| (name, size(n))))], None)
+        }
+        "structure.compare" => {
+            let compared = kernel().compare_cells(1, 2).expect("two cells");
+            (vec![json::object([("first", int(1)), ("second", int(2)), ("steps", size(compared.steps))])], None)
+        }
         "filter.apply" => {
             let (job, epoch) = preview;
             (Vec::new(), Some(json::object([("epoch", int(epoch)), ("job", int(job))])))
@@ -363,7 +398,7 @@ fn command_route(host: &ToolHost, session: &mut Session) -> Vec<Served> {
 /// state and completes as its kind says. The two queries (`filter.preview`, `structure.compare`) and the view
 /// (`view.effect.scope`) complete transiently at the job's revision with the output's digest as the result reference:
 /// no revision moves, the durable log keeps its length and nothing is written; the two queries' views are the
-/// stand-in engine's state number, not a count or a comparison, and the view's is the scope. The three workspace rows
+/// kernel's layer counts and cell comparison, and the view's is the scope. The three workspace rows
 /// (`filter.apply`, `set.save`, `structure.layer`) each complete as one durable workspace action that writes the
 /// entry's record through C5's reader, with the output's digest as the result reference, at a revision whose workspace
 /// number is one higher. `filter.apply`'s record is the `FilterPreviewRef` it applied, and H-08 gives the row the undo
@@ -389,7 +424,7 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
         let need = NEEDS.iter().find(|need| need.row == row).expect("a listed row");
         assert_eq!((job.kind, &job.caller, &job.revision), (need.kind, &Caller::Shell, &one.before.0), "{row}");
         assert_eq!((job.overlay.module.as_str(), Some(job.overlay.entry.as_str())), (MODULE, need.entry), "{row}");
-        let (views, record) = expected(row, job.revision.state, preview);
+        let (views, record) = expected(row, preview);
         assert_eq!((&output.value, &output.views), (&Json::Null, &views), "{row}");
         let records: Vec<(&str, &Json)> =
             output.records.iter().map(|(name, value)| (name.as_str(), &value.payload)).collect();
@@ -447,11 +482,13 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
 
 /// The same entry on the source route, this host's own run of it in process through `c600-run`'s boundary (not C5's
 /// runner `c600-lp3-source` or the runtime's own process) on the same arguments at the job's revision with no command
-/// layer, gives what the command route gave. For `filter.preview` the predicate does not reach the run: the entry
-/// takes no argument, and only the layer checks it. For `filter.apply` the run takes the `FilterPreviewRef` as a record
-/// of its epoch and job. The two routes give the same returned value, the same published views and the same records,
-/// payload and provenance block, so the applied filter, the saved set and the prepared predicate the layer holds are
-/// the ones the run stored, and the completion's result reference is the source run's digest. What differs is by
+/// layer, gives what the command route gave; the engine side answers both routes' reads from the session's layer. For
+/// `filter.preview` the run takes the layer predicate that the `FilterRef` names, as a record of its cell and layer;
+/// only the layer checks the reference and the revision. For `filter.apply` the run takes the `FilterPreviewRef` as a
+/// record of its epoch and job. The two routes give the same returned value, the same published views and the same
+/// records, payload and provenance block, so the applied filter, the saved set and the prepared predicate the layer
+/// holds are the ones the run stored, and the completion's result reference is the source run's digest. What differs
+/// is by
 /// design: only the command route has a receipt (command ID, request digest, caller and job), the layer's form and
 /// revision checks, `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the
 /// workspace revision it moves and, for `filter.apply`, its undo entry; on the source route the records stay in the
@@ -469,7 +506,7 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
         let (row, job) = (one.row, &one.job);
         let fixed = session.fixed();
         let (name, inputs) = (format!("source/{row}"), vec![named_word_block()]);
-        let source = host.run(&job.overlay.entry, typed(row, preview), &job.revision, &name, inputs);
+        let source = host.run(&session.layer, &job.overlay.entry, typed(row, preview), &job.revision, &name, inputs);
         let source = source.unwrap_or_else(|error| panic!("{row}: {error:?}"));
         assert_eq!(session.fixed(), fixed, "{row}: the source route moves nothing in the layer");
         assert_eq!(source, one.output, "{row}");
@@ -638,7 +675,7 @@ fn a_running_programs_query_and_view_jobs_run_on_blocks_built_from_its_context()
 
     let (caller, revision) = (program_channel(), session.layer.revision().clone());
     let Caller::Runtime { run } = &caller else { unreachable!("the program's channel") };
-    let blocks = host.blocks("compare_cells", run, &revision);
+    let blocks = host.blocks(&session.layer, "compare_cells", run, &revision);
     let block = provenance::read(&blocks[0]).expect("a canonical block");
     assert_eq!((field::author(&block), field::producer(&block)), (Author::BuiltIn.name(), "program"));
     assert_eq!(field::profile(&block), Profile::Solving.name());

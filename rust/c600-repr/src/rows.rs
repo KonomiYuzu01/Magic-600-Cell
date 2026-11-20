@@ -99,13 +99,15 @@ pub const NEEDS: [RowNeed; 6] = [
                   mode, state, protection and the predicate's digest.",
         undo_entry: "none: a query changes nothing.",
         served: true,
-        met: "Served by `filter_counts`, in the tests with a stand-in engine that answers its snapshot read with the \
-              state number, not a count. The layer checks the form of `revision` and refuses one that is not the \
-              current revision as stale before any job; the job completes as `completed(query)` at its revision with \
-              the output's digest as the result reference, and nothing is written.",
-        remains: "An entry that passes the predicate to a snapshot read, and a host row that answers it from LP2's \
-                  `CommandLayer::layer_counts` (pull request 262: the positions and slots of one layer around a cell); \
-                  `filter_counts` reads a literal query with no argument. The `FilterRef` form and the store of filter \
+        met: "Served by `filter_counts`, which passes the layer predicate to its snapshot read `filter.preview`. C5's \
+              host bridge answers the read from LP2's `CommandLayer::layer_counts` (pull request 262: the positions \
+              and slots of one layer around a cell) with `c600_tools::kernel_rows::filter_preview`, and the tests' \
+              host does the same. The layer checks the form of `revision` and refuses one that is not the current \
+              revision as stale before any job; the job completes as `completed(query)` at its revision with the \
+              output's digest as the result reference, and nothing is written.",
+        remains: "The read and its tariff are drafts until the command table freezes at LP3. The entry takes the \
+                  predicate as a record of its cell and layer, which the host reads from the record the predicate's \
+                  job wrote, since the IR draft has no reference type. The `FilterRef` form and the store of filter \
                   previews are the layer's since pull request 256.",
     },
     RowNeed {
@@ -201,12 +203,12 @@ pub const NEEDS: [RowNeed; 6] = [
                   argument form when either cell is not a cell of the model.",
         undo_entry: "none: a query changes nothing.",
         served: true,
-        met: "Served by `compare_cells`, in the tests with a stand-in engine that answers its snapshot read with the \
-              state number, not a comparison. The layer checks the `CellIdPair` form; the job completes as \
-              `completed(query)` at its revision with the output's digest as the result reference, and nothing is \
-              written. The entry's answer is the job's view.",
-        remains: "An entry that passes the cells to a snapshot read, and a host row that answers it from LP2's \
-                  `CommandLayer::compare_cells` (pull request 262); the entry reads a literal query with no argument.",
+        met: "Served by `compare_cells`, which passes the two cells to its snapshot read `structure.compare`. C5's \
+              host bridge answers the read from LP2's `CommandLayer::compare_cells` (pull request 262) with \
+              `c600_tools::kernel_rows::structure_compare`, and the tests' host does the same. The layer checks the \
+              `CellIdPair` form; the job completes as `completed(query)` at its revision with the output's digest as \
+              the result reference, and nothing is written. The entry's answer is the job's view.",
+        remains: "Nothing in the layer. The read and its tariff are drafts until the command table freezes at LP3.",
     },
     RowNeed {
         row: "structure.layer",
@@ -231,6 +233,6 @@ pub const NEEDS: [RowNeed; 6] = [
               and no undo entry.",
         remains: "Nothing in the layer since pull requests 256 and 262: `filter.preview` takes this row's result \
                   reference as a `FilterRef`, and the layer counts the named layer with `CommandLayer::layer_counts`, \
-                  which a host row serves to `filter.preview` (LP3's, see that row).",
+                  which C5's host bridge serves to `filter.preview`'s entry (see that row).",
     },
 ];
