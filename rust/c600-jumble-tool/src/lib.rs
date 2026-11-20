@@ -204,8 +204,10 @@
 //! - The survey's all-items loop: not served. LB3.5 keeps it out of the inspector entries, so the `survey` row answers
 //!   the solver's named grip only ([`library::ADMISSIBILITY`]), and [`library::RIM`] reads the rim summary and one
 //!   whole seam scan only.
-//! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
-//!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
+//! - A producer of the relationship strip's records. The strip's data contract (statement reference, claims, evidence
+//!   and source location; chapter 06, RPI.65) and EV3.8's roles are `c600_display::strip`'s (LP3 C6, pull request
+//!   372). The occupant relation carries none of them itself; CT-EV3-06 (`c600-repr`'s `tests/ct_ev3.rs`) writes it
+//!   as strip records, and no code here does yet.
 //! - CT-LB1-02's library entry "Word equality keys", the jumbling half (domain-preserving merging of menu words as
 //!   library code): not written yet. Its key half runs in `tests/lb3.rs`; the 600-cell-Full half is `c600-library`'s
 //!   `word_keys` (pull request 350).
