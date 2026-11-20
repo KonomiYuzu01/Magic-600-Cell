@@ -55,7 +55,7 @@ November 2026 as a line of its own.
 
 | Work | State | Waits for |
 | --- | --- | --- |
-| Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 |
+| Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3. The draft rows the tool's bridge serves beyond KN2.4's are command-table candidates, which the freeze takes or drops: `setups` (pull request 309), C6's `structure.compare` and `filter.preview` (pull request 262) and `orbits` (pull request 358) |
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
@@ -67,7 +67,7 @@ November 2026 as a line of its own.
 | The on-screen half | Started as a line of its own (owner, 18 November 2026; C9, section 8) | Its components, which that line builds; the owner's runs |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, RPI.79's gate run and the W-J runs on the selected renderer | Waits | The owner's machine, all run together (owner, 16 November 2026; ADR-R01.3); LX-4's time box is 4 hours (owner, 18 November 2026); route B's three checks join them ([route B](../../wiki/decisions/owner-decisions-2026-11-18-route-b.md)) |
 | CT-LB1-06's word keys | Answered: `trace-key/1` (owner, 17 November 2026, [decision](../../wiki/decisions/owner-decisions-2026-11-17-c5-evidence.md)); the 600-cell-Full half is built (LP2's pull request 214), and so is the jumbling half's relation, `jumble-locality/1`, with `trace_key` on menu words (LP2's pull request 251), which C8 pins in `c600-jumble-tool`, where the jumbling half's library entry `menu_traces` runs (C8); "Word keys remain separate" on the jumbling side runs on LG2.18's `word_key` (LP2's pull request 338) under the item matrices that the tool's menu alphabet pins (C8) | Nothing: CT-LB1-06 runs whole (section 9) |
-| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Built in part (C5 library, section 7): LB1's literal words, LB1.8's F2 and F5 ranks and solutions, exact Q(√5) signs (pull request 325) and quaternion and icosian algebra (pull request 347), word equality keys (pull request 350), LB2's exact completion, LB2's recipes and reports, LB2's Net and Strict protection, LB2's guarded setups and buffers, LB2's named macro analysis and comparison (pull request 353) and LB2's seeds and their stage order (pull request 357) on 600-cell-Full; the jumbling entries on menu words (C8, section 8), whose rows C8's host bridge serves, also at the command layer's head with Jumble on (pull request 299) | Nothing from LP2 for the next entries: menu words (pull request 210), `trace-key/1` (pull request 214), F2 and F5 (pull request 222) and loops (pull request 234) are in the IR draft. Entries over kernel rows need a host row for each kernel row they read; the tool's bridge answers the IR draft's snapshot read with an argument for `positions` (LP2's pull requests 199 and 226; the IR freezes at PHS.49), `labels` (C5 library), `effect` (C5 library, pull request 294), `protection` (pull request 300), `replay` (pull request 353) and `orbits` (pull request 358), `setups` when the host gives the bridge the setup table (pull request 309), and `structure.compare` and `filter.preview` on LP2's structure rows (pull request 262; C6); LP3 adds the others. The other entries are not written yet |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Built in part (C5 library, section 7): LB1's literal words, LB1.8's F2 and F5 ranks and solutions, exact Q(√5) signs (pull request 325) and quaternion and icosian algebra (pull request 347), word equality keys (pull request 350), LB2's exact completion, LB2's recipes and reports, LB2's Net and Strict protection, LB2's guarded setups and buffers, LB2's named macro analysis and comparison (pull request 353), LB2's seeds and their stage order (pull request 357) and LB2's orbit catalogue over the draft `orbits` row (pull request 358), with the progress per orbit and the residual half over the caller's `positions` (pull request 363), on 600-cell-Full; the jumbling entries on menu words (C8, section 8), whose rows C8's host bridge serves, also at the command layer's head with Jumble on (pull request 299) | Nothing from LP2 for the next entries: menu words (pull request 210), `trace-key/1` (pull request 214), F2 and F5 (pull request 222) and loops (pull request 234) are in the IR draft. Entries over kernel rows need a host row for each kernel row they read; the tool's bridge answers the IR draft's snapshot read with an argument for `positions` (LP2's pull requests 199 and 226; the IR freezes at PHS.49), `labels` (C5 library), `effect` (C5 library, pull request 294), `protection` (pull request 300), `replay` (pull request 353) and `orbits` (pull request 358), `setups` when the host gives the bridge the setup table (pull request 309), and `structure.compare` and `filter.preview` on LP2's structure rows (pull request 262; C6); LP3 adds the others. The other entries are not written yet |
 
 LP2 deliverables that LP3's tests wait for. The LP2 line confirmed on 16 November 2026 that each is LP2 work: section
 15.3 lists its tests, and PHS.18's product row "Kernel API over both puzzles" and the LP2 plan's M8 row ("section 15.3
@@ -421,6 +421,18 @@ host ran it. Acceptance:
     orbit the caller names and its collateral, from the kernel's full map; `stage_order` orders the caller's rows so
     that every orbit comes before each orbit its seed moves, and returns rows held in a cycle in `cycle`. The entries
     choose no seed, orbit or target. `c600-tools/tests/seeds.rs` runs them on the model's 35 seeds.
+  - C5, library, orbit catalogue, progress per orbit and residuals (`rust/c600-library`, `orbits.6cs`; the draft
+    `orbits` row in `rust/c600-tools`, pull request 358; pull request 363), built: the catalogue and the progress of
+    LB2's "Orbit catalogue and collateral stage order", beside the seeds' stage order, and the residual half of
+    "Residuals and exact completion". `orbit_catalogue` reads the `orbits` row at the orbits the caller names and
+    answers each orbit's pieces, model data; the row supplies membership only. `orbit_progress` and `orbit_residuals`
+    are pure and take as a parameter the `positions` records a host reads at what the solver names (chapter 03, LB3.5).
+    The progress counts the orbit's solved, orientation-wrong and position-wrong pieces; the residuals list the
+    misplaced and misoriented pieces, the buffers' occupants and the pieces whose stickers are split, and say whether
+    the records name exactly the orbit's pieces and whether the orbit is solved. The entries choose no orbit, target or
+    buffer and rank nothing. `c600-tools/tests/orbits.rs` compares them with the kernel's orbit table and progress row
+    on all 36 orbits and runs the largest orbit, 7,200 pieces, within the draft budget ceiling; `orbits_row.rs` covers
+    the row. A colour count and frames relative to a reference the solver names are not built.
 - Next, in C5's crates: the other 600-cell-Full library entries as language code on what the IR draft now has (F2 and
   F5, loops, `trace-key/1`), with a host row in the tool's bridge for each kernel row an entry reads; the jumbling
   halves, the menu-word library entries among them, are C8's (section 8), and the other parts above wait for LP2.
@@ -448,14 +460,15 @@ are language code (LB1.1). The IR draft `c600-ir-draft-1` has the word operation
 and collection types (LG2.20, LG4.3) since LP2's pull request 176, menu words (LB1.8) since pull request 210, LB1.10's
 `trace_key` since pull request 214, the F2 and F5 number kinds since pull request 222 and loops since pull request 234,
 and C5's library writes powers, F2 and F5 ranks and solutions, exact Q(√5) signs, quaternion factors and tree outputs,
-word equality keys, exact completion, recipes and reports, protection, guarded setups, named macro analysis and seeds.
-Entries over kernel rows need a host row for each kernel row they read (LP2's pull request 199 added the IR draft's
-snapshot read with an argument; the tool's bridge answers it for `positions` since LP2's pull request 226, for `labels`
-since C5's exact completion and for `effect` since C5's recipes and reports, pull request 294, for `protection` since
-pull request 300, for `setups` with the setup table since pull request 309, for `replay` since pull request 353 and for
-`orbits`, the pieces of named orbits, since pull request 358); CT-LB2-04's exact completion, CT-LB2-01's recipes and
-reports, CT-LB2-02's protection, CT-BND-18's guarded setups and the macro and seed reports are such entries. Of the
-library entries these tests need, only CT-LB1-02's jumbling half, C8's, is not written yet (section 8).
+word equality keys, exact completion, recipes and reports, protection, guarded setups, named macro analysis, seeds, and
+the orbit catalogue, progress per orbit and residuals. Entries over kernel rows need a host row for each kernel row they
+read (LP2's pull request 199 added the IR draft's snapshot read with an argument; the tool's bridge answers it for
+`positions` since LP2's pull request 226, for `labels` since C5's exact completion and for `effect` since C5's recipes
+and reports, pull request 294, for `protection` since pull request 300, for `setups` with the setup table since pull
+request 309, for `replay` since pull request 353 and for `orbits`, the pieces of named orbits, since pull request 358);
+CT-LB2-04's exact completion, CT-LB2-01's recipes and reports, CT-LB2-02's protection, CT-BND-18's guarded setups, the
+macro and seed reports and the orbit catalogue are such entries. Of the library entries these tests need, only
+CT-LB1-02's jumbling half, C8's, is not written yet (section 8).
 
 C6, the representations tool, headless half (selection 7). Acceptance: CT-LB4-02, the 600-cell-Full half of CT-LB4-03,
 the admission and CPU half of CT-LB4-04, the CPU reference of CT-LB4-01, the counter half of CT-EV3-06, the

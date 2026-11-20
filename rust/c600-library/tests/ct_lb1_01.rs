@@ -24,9 +24,9 @@
 //! against the kernel's own decision on the convergents of √5, where a² - 5b² = ±1 and the sign is hardest to decide,
 //! up to 128-bit coefficients.
 //!
-//! Not run here, and not built: CT-LB1-01's quaternion factor reconstruction and tree outputs, which wait for LP2's
-//! draft exact-arithmetic operations (an inverse, coefficients, integer division), and kernels (null spaces) and rows
-//! over Z, Q and Q(√5). A pass is source and fixture evidence.
+//! CT-LB1-01's quaternion factor reconstruction and tree outputs run in `ct_lb1_01_trees.rs` (pull request 347), so the
+//! test runs whole across the two files. Not built: kernels (null spaces), and ranks and solutions over Z, Q and Q(√5).
+//! A pass is source and fixture evidence.
 
 mod common;
 
