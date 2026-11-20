@@ -1,9 +1,10 @@
 //! The representations tool's rows through the command and source routes (LP3 plan, C6: its rows meet C5's item 1).
 //! A test host serves the six rows `rows::NEEDS` marks served with the entries it names (`CommandLayer::serve_row`),
 //! installs C5's provenance reader, and runs the tool's own entry for each job the layer admits: on the job's
-//! arguments, at the job's revision, in process on `c600-run` through the run-time boundary, in the solving context
-//! that C5's `c600_tools::tool::Tool::context` gives the 600-cell-Full tool's runs. It reports what the run's sinks
-//! gave (`CommandLayer::finish_program_job_with`).
+//! arguments, at the job's revision, under the run limits of the job's budget (KN7.7, `c600_tools::tool::limits`), in
+//! process on `c600-run` through the run-time boundary, in the solving context that C5's
+//! `c600_tools::tool::Tool::context` gives the 600-cell-Full tool's runs. It reports what the run's sinks gave
+//! (`CommandLayer::finish_program_job_with`).
 //!
 //! The command route is the shell's invocation of a row: the layer checks the arguments' forms and admits a program
 //! job, the host runs the entry, and the layer completes the job as the row's kind says. The source route is the same
@@ -54,7 +55,7 @@ use c600_run::provenance::{self, field, Author, Producer, Profile};
 use c600_run::value::Value;
 use c600_tools::bridge::base;
 use c600_tools::kernel_rows;
-use c600_tools::tool::{checker, contract, lower_source, named_word_block, pins, LIMITS};
+use c600_tools::tool::{checker, contract, limits, lower_source, named_word_block, pins};
 use c600_tools::workspace;
 
 use common::*;
@@ -155,25 +156,26 @@ impl ToolHost {
         vec![Boundary::new(&mut engine, &mut store, context).block()]
     }
 
-    /// Runs `entry` on `args` at `revision`, with `inputs` as the blocks of its arguments, through the run-time
-    /// boundary onto the engine side on `layer` and gives what the run's sinks gave, as the layer takes it. A refusal
-    /// before the run and a stopped run are errors with their codes.
+    /// Runs the entry of `job` on `args` at the job's revision, under the run limits of the job's budget (KN7.7), with
+    /// `inputs` as the blocks of its arguments, through the run-time boundary onto the engine side on `layer` and gives
+    /// what the run's sinks gave, as the layer takes it. A refusal before the run and a stopped run are errors with
+    /// their codes.
     fn run(
         &self,
         layer: &CommandLayer,
-        entry: &str,
+        job: &ProgramJob,
         args: Vec<Value>,
-        revision: &Revision,
         run: &str,
         inputs: Vec<Vec<u8>>,
     ) -> Result<JobOutput, Error> {
+        let entry = job.overlay.entry.as_str();
         let mut engine = Engine { layer, views: Vec::new() };
         let mut store = Store::default();
-        let context = self.context(entry, run, revision, inputs);
+        let context = self.context(entry, run, &job.revision, inputs);
         self.runs.borrow_mut().push(context.inputs.clone());
         let ran = {
             let mut boundary = Boundary::new(&mut engine, &mut store, context);
-            self.loaded.run(MODULE, entry, args, &mut boundary, &Options::new(LIMITS))
+            self.loaded.run(MODULE, entry, args, &mut boundary, &Options::new(limits(job.budget)))
         };
         let ran = ran.map_err(|refusal| Error::new(refusal.code, refusal.detail))?;
         let Some(output) = ran.output else {
@@ -207,7 +209,7 @@ impl ToolHost {
         };
         let output = inputs.and_then(|inputs| {
             let args = entry_args(layer, &job.row, &job.args)?;
-            self.run(layer, &job.overlay.entry, args, &job.revision, &format!("job/{}", job.job), inputs)
+            self.run(layer, &job, args, &format!("job/{}", job.job), inputs)
         });
         let receipt = layer.finish_program_job_with(job.job, output.clone()).expect("the job was running");
         Some((job, output, receipt))
@@ -499,19 +501,19 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
 }
 
 /// The same entry on the source route, this host's own run of it in process through `c600-run`'s boundary (not C5's
-/// runner `c600-lp3-source` or the runtime's own process) on the same arguments at the job's revision with no command
-/// layer, gives what the command route gave; the engine side answers both routes' reads from the session's layer. For
-/// `filter.preview` the run takes the layer predicate that the `FilterRef` names, as a record of its cell and layer;
-/// only the layer checks the reference and the revision. For `filter.apply` the run takes the `FilterPreviewRef` as a
-/// record of its epoch and job. The two routes give the same returned value, the same published views and the same
-/// records, payload and provenance block, so the applied filter, the saved set and the prepared predicate the layer
-/// holds are the ones the run stored (for `set.save`, the saved set its record names), and the completion's result
-/// reference is the source run's digest (for `set.save`, the exact set's). What differs is by design: only the command
-/// route has a receipt (command ID, request digest, caller and job), the layer's form and revision checks,
-/// `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the workspace revision it
-/// moves and, for `filter.apply`, its undo entry; on the source route the records stay in the run's store, and the
-/// layer's revision, log and undo hint do not move. The run's name differs and appears in no output, since no entry
-/// proposes. Covers no conformance ID: it is C6's evidence for C5's item 1.
+/// runner `c600-lp3-source` or the runtime's own process) on the same arguments at the job's revision, under the job's
+/// budget and with no command layer, gives what the command route gave; the engine side answers both routes' reads from
+/// the session's layer. For `filter.preview` the run takes the layer predicate that the `FilterRef` names, as a record
+/// of its cell and layer; only the layer checks the reference and the revision. For `filter.apply` the run takes the
+/// `FilterPreviewRef` as a record of its epoch and job. The two routes give the same returned value, the same published
+/// views and the same records, payload and provenance block, so the applied filter, the saved set and the prepared
+/// predicate the layer holds are the ones the run stored (for `set.save`, the saved set its record names), and the
+/// completion's result reference is the source run's digest (for `set.save`, the exact set's). What differs is by
+/// design: only the command route has a receipt (command ID, request digest, caller and job), the layer's form and
+/// revision checks, `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the
+/// workspace revision it moves and, for `filter.apply`, its undo entry; on the source route the records stay in the
+/// run's store, and the layer's revision, log and undo hint do not move. The run's name differs and appears in no
+/// output, since no entry proposes. Covers no conformance ID: it is C6's evidence for C5's item 1.
 #[test]
 fn the_source_route_gives_the_command_routes_value_views_and_records() {
     let host = ToolHost::new();
@@ -524,7 +526,7 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
         let (row, job) = (one.row, &one.job);
         let fixed = session.fixed();
         let (name, inputs) = (format!("source/{row}"), vec![named_word_block()]);
-        let source = host.run(&session.layer, &job.overlay.entry, typed(row, preview), &job.revision, &name, inputs);
+        let source = host.run(&session.layer, job, typed(row, preview), &name, inputs);
         let source = source.unwrap_or_else(|error| panic!("{row}: {error:?}"));
         assert_eq!(session.fixed(), fixed, "{row}: the source route moves nothing in the layer");
         assert_eq!(source, one.output, "{row}");

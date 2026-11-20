@@ -5,6 +5,7 @@
 use std::collections::BTreeSet;
 
 use c600_check::{admit_built_in, Admission, Grant, Policy, Row};
+use c600_command::Budget;
 use c600_digest::{sha256, sha256_hex};
 use c600_ir::{Expr, Function, Lit, Program};
 use c600_run::boundary::{Boundary, Capture, Context, Pins, Shown, Store};
@@ -23,8 +24,16 @@ pub const ENTRY: &str = "preview_word";
 /// The command-layer row the entry's target names.
 pub const ROW: &str = "operation.preview";
 
-/// The run limits of one run of a tool (DET.55): wide enough for a 100,000-letter word, 0.4's word limit.
+/// The run limits of one run of a tool (DET.55): wide enough for a 100,000-letter word, 0.4's word limit. They are
+/// the command layer's draft ceiling ([`Budget::DRAFT_CEILING`]), the budget a shell declares by default.
 pub const LIMITS: Amounts = Amounts { steps: 1 << 20, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
+
+/// The run limits of a program job's budget (KN7.7): the layer's [`Budget`] has the meter's four dimensions under the
+/// same names, so each maps by name. A host runs a job's entry under them ([`crate::process::ToolCommand::limits`]).
+pub fn limits(budget: Budget) -> Amounts {
+    let Budget { steps, kernel_cost, memory, output } = budget;
+    Amounts { steps, kernel_cost, memory, output }
+}
 
 /// The draft capability contract these tools' blocks name until the policy in force names one (FP.17).
 const CONTRACT: &[u8] =
@@ -247,7 +256,8 @@ impl Tool {
         }
     }
 
-    /// Runs the entry on a literal word, the entry's pinned absolute argument, through a boundary onto `engine`.
+    /// Runs the entry on a literal word, the entry's pinned absolute argument, through a boundary onto `engine`, under
+    /// [`LIMITS`].
     pub fn run_in(
         &self,
         word: &[i32],
@@ -255,9 +265,22 @@ impl Tool {
         engine: &mut dyn Host,
         store: &mut Store,
     ) -> Result<Ran, Refusal> {
+        self.run_under(word, context, LIMITS, engine, store)
+    }
+
+    /// Runs the entry on a literal word through a boundary onto `engine` under `limits`: a job's run is under its
+    /// budget's ([`limits`]).
+    pub fn run_under(
+        &self,
+        word: &[i32],
+        context: Context,
+        limits: Amounts,
+        engine: &mut dyn Host,
+        store: &mut Store,
+    ) -> Result<Ran, Refusal> {
         let mut boundary = Boundary::new(engine, store, context);
         let (module, entry) = (self.manifest.module, self.manifest.entry);
-        let run = self.loaded.run(module, entry, vec![Value::word(word)], &mut boundary, &Options::new(LIMITS))?;
+        let run = self.loaded.run(module, entry, vec![Value::word(word)], &mut boundary, &Options::new(limits))?;
         Ok(Ran { run, shell: boundary.shell, captures: boundary.captures })
     }
 

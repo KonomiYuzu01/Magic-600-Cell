@@ -9,17 +9,18 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use c600_check::{Profile, NOT_GRANTED};
-use c600_command::{Caller, HeadlessFrames, Status};
+use c600_command::{Budget, Caller, Error as LayerError, HeadlessFrames, Status};
 use c600_kernel::codes::RECIPE_SHAPE;
 use c600_kernel::json::{self, Value as Json};
 use c600_run::boundary::{Answer, Boundary, Store};
 use c600_run::interp::code::NONCANONICAL_VALUE;
+use c600_run::meter::code::STEPS;
 use c600_run::meter::Outcome;
 use c600_run::value::{equal, Value};
 use c600_runtime::{Config, Ended, FaultKind, Runtime, Stage};
 use c600_tools::bridge::{base, word_args, Bridge};
-use c600_tools::process::{job, runtime_beside, start_error, Cause, ProcessHost, IN_PROCESS, PROCESS};
-use c600_tools::tool::{class_rows, Tool, LIMITS, MODULE, ROW, SOURCE};
+use c600_tools::process::{invoke_tool, job, runtime_beside, start_error, Cause, ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::tool::{class_rows, limits, Tool, LIMITS, MODULE, ROW, SOURCE};
 use process_support::{acknowledgement, fingerprint, process_host, report, repository, run_on, runtime, session};
 
 /// Acceptance item 2, the process host. The tool's program runs in another operating-system process than the
@@ -132,7 +133,7 @@ fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_in_the_b
     assert_eq!(built.options.limits, LIMITS);
     assert!(built.options.grant.is_empty() && built.options.declassifiers.is_empty() && built.options.seed.is_none());
 
-    let (mut layer, _) = session("process");
+    let (mut layer, mut shell) = session("process");
     let before = fingerprint(&layer);
     let mut runtime = Runtime::new(Config::new(process_support::runtime()));
     let rows = built.options.built_in.clone();
@@ -174,9 +175,9 @@ fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_in_the_b
     let mut host = process_host();
     let other = SOURCE.replacen("preview_word", "preview_other", 1);
     assert_ne!(other, SOURCE);
-    let read = base(layer.revision());
-    let mut bridge = Bridge::new(&mut layer, "other");
-    let stopped = host.run(&tool, &other, &[1, -2], "other", &read, &mut bridge, &mut Store::default()).unwrap_err();
+    let command = invoke_tool(&mut shell, &mut layer, &tool, &[1, -2]).expect("the tool's row");
+    let mut bridge = Bridge::new(&mut layer, &command.run());
+    let stopped = host.run(&tool, &other, &command, &mut bridge, &mut Store::default()).unwrap_err();
     assert!(matches!(stopped.cause, Cause::OtherSource) && stopped.shell.is_empty() && bridge.sent.is_empty());
     assert_eq!((host.spawns(), host.child_id()), (0, None), "no child was started for another source");
 }
@@ -209,6 +210,41 @@ fn both_hosts_refuse_a_word_with_no_transfer_encoding_at_the_start_stage() {
         }
     }
     assert_eq!(host.spawns(), 0, "a job with no transfer encoding starts no child");
+}
+
+/// The run's budget (KN7.7; LP2's pull request 348). The solver's command declares the budget its job runs under, and
+/// on both hosts the tool's entry runs under the run limits of the job's budget, not under the draft ceiling: with a
+/// budget of one step the run is cut off with the meter's steps code before it proposes anything, alike on the two
+/// hosts. The host reports the job as failed with that code, and the session is unchanged. The shell's default
+/// budget, the draft ceiling, gives the tool's limits.
+#[test]
+fn both_hosts_run_the_tool_under_the_budget_its_command_declared() {
+    assert_eq!(limits(Budget::DRAFT_CEILING), LIMITS, "the shell's default budget gives the tool's limits");
+    let tool = Tool::full_600_cell().unwrap();
+    let mut host = process_host();
+    let one = Budget { steps: 1, ..Budget::DRAFT_CEILING };
+    let mut summaries = Vec::new();
+    for on_process in [false, true] {
+        let (mut layer, mut shell) = session("budget");
+        shell.budget = Some(one);
+        let before = fingerprint(&layer);
+        let (ran, sent, command) = run_on(on_process.then_some(&mut host), &tool, &mut layer, &mut shell, &[1, -2]);
+        assert_eq!((command.job.budget, command.limits()), (one, limits(one)), "the job runs under its budget");
+        let ran =
+            ran.unwrap_or_else(|stopped| panic!("the run ends (process host: {on_process}): {:?}", stopped.cause));
+        let summary = ran.run.summary;
+        assert_eq!((summary.outcome, summary.code), (Outcome::CutOff, Some(STEPS)), "{summary:?}");
+        assert_eq!(summary.used.steps, 1, "the run used its one step");
+        assert!(ran.shell.is_empty() && sent.is_empty(), "the run proposed nothing (process host: {on_process})");
+        let error = LayerError::new(STEPS, "the run was cut off at its budget's steps");
+        let reported = command.finish(&mut layer, Err(error)).expect("the layer holds the tool's job");
+        assert!(matches!(reported.status, Status::Failed(_)), "the job failed: {reported:?}");
+        assert_eq!(reported.status.code(), Some(STEPS), "{reported:?}");
+        assert!(layer.take_program_job().is_none(), "no job is left queued (process host: {on_process})");
+        assert_eq!(fingerprint(&layer), before, "a cut-off run changes nothing");
+        summaries.push(summary);
+    }
+    assert_eq!(summaries[0], summaries[1], "the meter summaries differ between the hosts");
 }
 
 /// KN7.13 (part, the tool's host): a runtime that cannot be started leaves no run, no invocation and no change, and
