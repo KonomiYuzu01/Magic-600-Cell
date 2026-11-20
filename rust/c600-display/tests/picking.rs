@@ -257,6 +257,10 @@ fn ct_rpi_11_delayed_picks_are_discarded_and_unrelated_edits_keep_a_query() {
     host.pump();
     host.recover().expect("recovers");
     assert_eq!(stale_field(&host, &delayed), "device_epoch");
+    host.pump();
+    let ticket = host.rebinding(V1).expect("prepared again on the new device");
+    host.backend.finish(ticket);
+    host.pump();
 
     let delayed = reply(&host, V1, 1);
     host.set_dependency("state", "13");

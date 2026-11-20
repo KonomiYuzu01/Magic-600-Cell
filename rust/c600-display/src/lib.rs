@@ -118,6 +118,11 @@
 //! - RPI.10, RPI.12, RM.22: a standalone publication whose declared dependencies are not current is refused with
 //!   `EV3:stale.display_plan`; a scheduled one ends `cancelled(replaced_revision)`; a dependency the host does not
 //!   track is taken as current.
+//! - RM.23: after a recovery, a retained publication that is shown in its open view, revalidates and is not stale is
+//!   prepared again under its own command and generations once its view has no pending work; a newer publication that
+//!   installs first replaces it. Until the new resources are active the view draws none of it (a frame is refused as
+//!   renderer unavailable and takes no sequence number) and no pick binds to it. A stale or invalid one, or one whose
+//!   preparation is refused, fails or is cancelled, waits for a new publication. No receipt changes.
 //! - RPI.10: a publication to a view that is not open is invalid.
 //! - RM.24: one surface per view; the frame stamp lists the host's subject label of every installed plan.
 //! - RPI.55, RM.33: [`host::MockBackend`] stands for an adapter; it says nothing about any candidate backend.

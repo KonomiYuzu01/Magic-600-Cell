@@ -599,12 +599,13 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   with a composition surface; `sa2_presented` confirms a frame by the probe's exact rule; `sa2_recover` rebuilds the
   device as a transaction, and the bridge forgets the old epoch's resource sets); the product shell's steps S1 to S5
   (pull request 267, draft: `c600-shell-host` puts `c600-display`'s host behind a C interface, and its `m6h_recover`
-  publishes the view again, which `Host::recover` does not do yet: RM.23, LP3's); and LX-4's module set and edit script
-  with LX-2's metered, forced-kill and allocator-ceiling trials (pull request 268: `rust/c600-lx4` and `rust/c600-lx2`,
-  measurement tools whose runs need the owner's machine; the `lx2-faults` hook in `c600-runtime` that the fault trials
-  need is LP3's and came after it). Since pull request 324, `c600-render` adopts a jumbling bundle's pose arrays on the
-  core's pose path (W-J's) and passes J01 and J02 through as the core describes them (J13 stays unsupported), so the
-  launcher accepts `--puzzle jumble-on`; the pose check runs on WARP only, and nothing has run on a hardware adapter.
+  publishes the view again; since RM.23, LP3's, the host itself prepares a retained publication again after
+  `Host::recover`, so that new publication is no longer needed); and LX-4's module set and edit script with LX-2's
+  metered, forced-kill and allocator-ceiling trials (pull request 268: `rust/c600-lx4` and `rust/c600-lx2`, measurement
+  tools whose runs need the owner's machine; the `lx2-faults` hook in `c600-runtime` that the fault trials need is LP3's
+  and came after it). Since pull request 324, `c600-render` adopts a jumbling bundle's pose arrays on the core's pose
+  path (W-J's) and passes J01 and J02 through as the core describes them (J13 stays unsupported), so the launcher
+  accepts `--puzzle jumble-on`; the pose check runs on WARP only, and nothing has run on a hardware adapter.
   The tests: the windows tests CT-ONE-26, CT-RPI-13, CT-RPI-21, CT-RPI-24, CT-RPI-31, CT-RPI-33, CT-RPI-34, CT-RM-05,
   CT-RM-06, CT-RM-10, CT-BND-20 and CT-RTE-10; the performance tests CT-KN7-06, CT-LG4-09, CT-EV1-06, CT-ONE-25,
   CT-RPI-26, CT-RTE-11 and CT-RTE-12; the renderer halves of CT-LB4-04 and CT-EV3-08. The runs follow PHS.64 on one

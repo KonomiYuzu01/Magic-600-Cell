@@ -247,8 +247,18 @@ pub struct Installed {
     pub validated: Validated,
     pub resources: ResourceSet,
     pub device_epoch: u64,
-    /// False while the device is lost; installed CPU data is retained (RM.23).
+    /// False while the device is lost, and after a recovery until the publication has resources on the new device;
+    /// installed CPU data is retained (RM.23).
     pub available: bool,
+}
+
+/// RM.23: a retained publication on its way to resources on the device of a recovery.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Rebind {
+    /// The host asks the backend at the next [`Host::pump`] in which the view has no pending work.
+    Due,
+    /// The backend prepares it under this ticket.
+    Preparing(Ticket),
 }
 
 /// A view and its surface.
@@ -267,6 +277,7 @@ pub struct View {
     pending: Option<CommandId>,
     installed: Option<Installed>,
     preview: Option<PreviewDisplay>,
+    rebind: Option<Rebind>,
 }
 
 #[derive(Clone, Debug)]
@@ -341,6 +352,7 @@ impl<B: Backend> Host<B> {
             pending: None,
             installed: None,
             preview: None,
+            rebind: None,
         });
         if view.open {
             return Err(Error::new(codes::VIEW_ID_IN_USE, format!("view {} is open", id.0)));
@@ -354,7 +366,8 @@ impl<B: Backend> Host<B> {
         Ok(view.generation)
     }
 
-    /// Closes a view: its pending publication ends `cancelled(by_user)`; identified old data is retained (RM.25).
+    /// Closes a view: its pending publication ends `cancelled(by_user)`, and a retained publication waiting for
+    /// resources on a recovered device (RM.23) waits no longer; identified old data is retained (RM.25).
     pub fn close_view(&mut self, id: ViewId) {
         let pending = self.views.get(&id).and_then(|v| v.pending);
         if let Some(command) = pending {
@@ -363,6 +376,9 @@ impl<B: Backend> Host<B> {
         if let Some(view) = self.views.get_mut(&id) {
             view.open = false;
             view.preview = None;
+            if let Some(Rebind::Preparing(ticket)) = view.rebind.take() {
+                self.backend.cancel(ticket, &CancelReason::ByUser);
+            }
         }
     }
 
@@ -411,7 +427,8 @@ impl<B: Backend> Host<B> {
     }
 
     /// A dependency changes: accepted work that read the old value ends `cancelled(replaced_revision)` (RM.22);
-    /// installed output that read it becomes stale (RPI.13) and keeps its receipt.
+    /// installed output that read it becomes stale (RPI.13) and keeps its receipt, and is no longer prepared again
+    /// for a recovered device (RM.23).
     pub fn set_dependency(&mut self, key: &str, value: &str) {
         self.current.insert(key.to_owned(), value.to_owned());
         let moved: Vec<CommandId> = self
@@ -423,6 +440,13 @@ impl<B: Backend> Host<B> {
             .collect();
         for command in moved {
             self.cancel_with(command, CancelReason::ReplacedRevision);
+        }
+        for view in self.views.values_mut() {
+            let read =
+                view.installed.as_ref().is_some_and(|i| i.validated.dependencies.get(key).is_some_and(|v| v != value));
+            if let Some(Rebind::Preparing(ticket)) = view.rebind.take_if(|_| read) {
+                self.backend.cancel(ticket, &CancelReason::ReplacedRevision);
+            }
         }
     }
 
@@ -458,6 +482,14 @@ impl<B: Backend> Host<B> {
 
     pub fn ticket(&self, command: CommandId) -> Option<Ticket> {
         self.commands.get(&command).and_then(|c| c.ticket)
+    }
+
+    /// The ticket under which the backend prepares the view's retained publication again after a recovery (RM.23).
+    pub fn rebinding(&self, id: ViewId) -> Option<Ticket> {
+        match self.views.get(&id)?.rebind? {
+            Rebind::Preparing(ticket) => Some(ticket),
+            Rebind::Due => None,
+        }
     }
 
     /// Every terminal transition, in serialized order.
@@ -684,7 +716,8 @@ impl<B: Backend> Host<B> {
         }
     }
 
-    /// Polls the backend: notices device loss, installs ready preparations and ends failed or cancelled ones.
+    /// Polls the backend: notices device loss, installs ready preparations and ends failed or cancelled ones; then
+    /// moves retained publications on to resources on a recovered device (RM.23).
     pub fn pump(&mut self) {
         if self.backend.describe_backend().is_err() && !self.lost {
             self.device_lost();
@@ -703,6 +736,7 @@ impl<B: Backend> Host<B> {
                 Poll::Failed(error) => self.fail(command, error),
             }
         }
+        self.rebind();
     }
 
     /// RM.20's atomic installation: a bounded compare-and-swap while the command is the newest accepted one and its
@@ -765,9 +799,13 @@ impl<B: Backend> Host<B> {
         };
         let v = self.views.get_mut(&entry.view).expect("view");
         v.publication_generation = generation;
+        let rebind = v.rebind.take();
         let old = v.installed.replace(installed);
         if let Some(old) = old {
             self.backend.retire(old.resources);
+        }
+        if let Some(Rebind::Preparing(ticket)) = rebind {
+            self.backend.cancel(ticket, &CancelReason::Superseded { by: command });
         }
         self.end(command, JobOutcome::Completed(Box::new(completion)));
     }
@@ -775,7 +813,8 @@ impl<B: Backend> Host<B> {
     // Device loss and recovery.
 
     /// RM.23: the device epoch is invalid; pending work fails with `EV3:busy.renderer_unavailable` unless already
-    /// terminal; installed data is retained but unavailable; picks, reports and the presented-preview latch clear.
+    /// terminal; installed data is retained but unavailable; picks, reports and the presented-preview latch clear,
+    /// and a preparation of retained data for an earlier recovery ends with its epoch.
     pub fn device_lost(&mut self) {
         self.lost = true;
         self.latch = None;
@@ -785,14 +824,18 @@ impl<B: Backend> Host<B> {
             self.fail(command, Error::unavailable("the device was lost before installation"));
         }
         for view in self.views.values_mut() {
+            view.rebind = None;
             if let Some(installed) = view.installed.as_mut() {
                 installed.available = false;
             }
         }
     }
 
-    /// Recovery: a fresh epoch and fresh surfaces; retained publications are revalidated, and valid ones that are
-    /// not stale become available again. No receipt changes.
+    /// RM.23's recovery: a fresh epoch and fresh surfaces. Old resource tokens cannot draw on the new device, so every
+    /// retained publication stays unavailable until it has new resources. One that is shown in its open view,
+    /// revalidates and is not stale is due to be prepared again under its own command and generations; [`Host::pump`]
+    /// asks the backend and activates the result. A stale or invalid one waits for a new publication. No receipt
+    /// changes and nothing is retried.
     pub fn recover(&mut self) -> Result<(), Error> {
         let report = self.backend.recover()?;
         self.epoch = report.device_epoch;
@@ -802,16 +845,74 @@ impl<B: Backend> Host<B> {
         let current = self.current.clone();
         for view in self.views.values_mut() {
             view.surface_generation += 1;
+            view.rebind = None;
             if let Some(installed) = view.installed.as_mut() {
+                installed.available = false;
+                let shown = view.open && installed.view_generation == view.generation;
                 let valid = validate(&installed.publication, &ctx).is_ok();
                 let fresh = installed.validated.dependencies.iter().all(|(k, v)| current.get(k).is_none_or(|c| c == v));
-                if valid && fresh {
-                    installed.available = true;
-                    installed.device_epoch = report_epoch(&ctx);
+                if shown && valid && fresh {
+                    view.rebind = Some(Rebind::Due);
                 }
             }
         }
         Ok(())
+    }
+
+    /// RM.23: prepares each due retained publication on the new device once its view has no pending work (a newer
+    /// publication on its way replaces it when it installs), and activates a finished preparation under the
+    /// publication's own command and generations on the current epoch; the old resources are retired once the new
+    /// ones are active. A refused, failed or cancelled preparation, or one whose dependencies moved, leaves the
+    /// publication unavailable until a new one replaces it. No receipt changes.
+    fn rebind(&mut self) {
+        if self.lost {
+            return;
+        }
+        let views: Vec<ViewId> = self.views.iter().filter(|(_, v)| v.rebind.is_some()).map(|(id, _)| *id).collect();
+        for id in views {
+            let view = &self.views[&id];
+            let (Some(rebind), Some(installed)) = (view.rebind, view.installed.as_ref()) else { continue };
+            let stamp = PublicationStamp {
+                command: installed.command,
+                view: id,
+                view_generation: installed.view_generation,
+                publication_generation: installed.generation,
+                device_epoch: self.epoch,
+                base: installed.publication.base.clone(),
+                dependencies: installed.validated.dependencies.clone(),
+                input_digest: installed.validated.digest.clone(),
+            };
+            let (next, active) = match rebind {
+                Rebind::Due if view.pending.is_some() => continue,
+                Rebind::Due => {
+                    let limits = self.ctx.limits.clone();
+                    let preparation = Preparation { stamp: &stamp, payload: &installed.publication, limits: &limits };
+                    (self.backend.prepare(preparation).ok().map(Rebind::Preparing), None)
+                }
+                Rebind::Preparing(ticket) => match self.backend.poll(ticket) {
+                    Poll::Pending => continue,
+                    Poll::Ready(resources) => {
+                        if self.moved(&stamp.dependencies).is_none() && self.backend.activate(resources, &stamp).is_ok()
+                        {
+                            (None, Some(resources))
+                        } else {
+                            self.backend.retire(resources);
+                            (None, None)
+                        }
+                    }
+                    Poll::Cancelled(_) | Poll::Failed(_) => (None, None),
+                },
+            };
+            let epoch = self.epoch;
+            let view = self.views.get_mut(&id).expect("listed");
+            view.rebind = next;
+            if let (Some(resources), Some(installed)) = (active, view.installed.as_mut()) {
+                let old = std::mem::replace(&mut installed.resources, resources);
+                installed.available = true;
+                installed.device_epoch = epoch;
+                self.backend.retire(old);
+            }
+        }
     }
 
     // Frames and presentation.
@@ -825,14 +926,18 @@ impl<B: Backend> Host<B> {
         Ok(())
     }
 
-    /// Builds the view's frame stamp and submits the frame; returns the stamp (RM.24).
+    /// Builds the view's frame stamp and submits the frame; returns the stamp (RM.24). While the view's publication
+    /// has no resources on the current device (RM.23), the frame is refused and takes no sequence number.
     pub fn frame(&mut self, id: ViewId) -> Result<FrameStamp, Error> {
         if self.lost {
             return Err(Error::unavailable("the device is lost"));
         }
         let view = self.views.get(&id).ok_or_else(|| Error::invalid("no such view"))?;
-        self.sequence += 1;
         let installed = view.installed.as_ref().filter(|i| i.view_generation == view.generation);
+        if installed.is_some_and(|i| !i.available) {
+            return Err(Error::unavailable("the view's publication has no resources on this device yet"));
+        }
+        self.sequence += 1;
         let stamp = FrameStamp {
             device_epoch: self.epoch,
             surface: view.surface,
@@ -1050,8 +1155,4 @@ impl<B: Backend> Host<B> {
     pub fn subjects(&self, id: ViewId) -> Vec<SubjectKind> {
         self.installed(id).map(|i| i.validated.subjects.iter().map(|s| s.kind).collect()).unwrap_or_default()
     }
-}
-
-fn report_epoch(ctx: &Context) -> u64 {
-    ctx.support.device_epoch
 }
