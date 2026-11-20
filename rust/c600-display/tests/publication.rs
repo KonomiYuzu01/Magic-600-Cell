@@ -1,16 +1,17 @@
 //! The host publication state machine (part H): CT-RM-03 with RM.32's supersession and latch vectors, RM.35's paired
-//! ceiling vectors on the two sides of acceptance and RM.36's three device-loss contexts, and CT-RPI-04's late older
-//! completion. A mock backend drives the host; every result is a source fixture outcome, not a backend run.
+//! ceiling vectors on the two sides of acceptance and RM.36's three device-loss contexts, RM.23's recovery, which
+//! prepares a retained publication again before it draws, and CT-RPI-04's late older completion. A mock backend
+//! drives the host; every result is a source fixture outcome, not a backend run.
 
 mod common;
 
 use c600_display::codes;
-use c600_display::host::ResourceSet;
+use c600_display::host::{Backend, Host, MockBackend, Poll, ResourceSet, Ticket};
 use c600_display::pick::{PickMode, PickReply, Presented, PreviewShown, Requested};
 use c600_display::plan::*;
 use c600_display::receipt::{is_reserved, CancelReason, JobOutcome, Status};
 use c600_display::validate::validate;
-use c600_display::Form;
+use c600_display::{Error, Form};
 
 use common::*;
 
@@ -240,6 +241,7 @@ fn ct_rm_03_renderer_loss_after_installation_keeps_completed() {
     let mut host = host(&base);
     install(&mut host, 1, sheet(1, &base, 2));
     let receipt = host.receipt(CommandId(1)).expect("B");
+    let first = host.installed(V1).expect("B").resources;
     let old = PickReply { binding: host.pick_binding(V1).expect("current"), instance: InstanceId(1) };
     host.show_preview(V1, Some(preview(1, &base))).expect("an engine preview");
     host.frame(V1).expect("a frame");
@@ -257,15 +259,209 @@ fn ct_rm_03_renderer_loss_after_installation_keeps_completed() {
     let error = host.resolve_pick(&old, PickMode::Explicit, Requested::Occurrence, &Unasked).expect_err("stale");
     assert_eq!((error.code, error.context["field"].as_str()), (codes::STALE_PICK, "device_epoch"));
 
+    // RM.23: B's old resources cannot draw on the new device, so B stays unavailable until it is prepared again.
     host.recover().expect("recovers");
-    assert!(host.installed(V1).expect("retained").available);
+    assert!(!host.installed(V1).expect("retained").available, "no resources on the new device yet");
+    assert_eq!(host.pick_binding(V1), Err("device_epoch"));
+    assert_eq!(host.frame(V1).expect_err("nothing to draw yet").code, codes::RENDERER_UNAVAILABLE);
+    host.pump();
+    let ticket = host.rebinding(V1).expect("B is prepared again on the new device");
+    host.pump();
+    assert_eq!(host.rebinding(V1), Some(ticket), "it waits for the backend");
+    host.backend.finish(ticket);
+    host.pump();
+    let installed = host.installed(V1).expect("retained");
+    assert!(installed.available);
+    assert_eq!((installed.command, installed.generation), (CommandId(1), 1), "B's own command and generation");
+    assert_eq!(installed.device_epoch, host.ctx.support.device_epoch);
+    assert_ne!(installed.resources, first);
+    assert_eq!(host.backend.retired, vec![first], "the old resources retire once the new ones are active");
+    assert_eq!(host.rebinding(V1), None);
+
     assert_eq!(host.resolve_pick(&old, PickMode::Passive, Requested::Occurrence, &Unasked), Ok(None));
     let error = host.resolve_pick(&old, PickMode::Explicit, Requested::Occurrence, &Unasked).expect_err("stale");
     assert_eq!(error.context["field"], "device_epoch", "no old pick is accepted after recovery");
     let fresh = PickReply { binding: host.pick_binding(V1).expect("current"), instance: InstanceId(1) };
     assert!(host.resolve_pick(&fresh, PickMode::Explicit, Requested::Occurrence, &Unasked).expect("current").is_some());
+    let frame = host.frame(V1).expect("a frame on the new device");
+    assert_eq!((frame.device_epoch, frame.publication_generation), (host.ctx.support.device_epoch, 1));
+    assert_eq!(frame.sequence, 2, "a refused frame takes no sequence number");
     assert_eq!(host.receipt(CommandId(1)), Some(receipt), "recovery creates no retry");
     one_terminal_each(&host);
+}
+
+/// A host whose view 1 shows command 1 after a device loss and a recovery, and the ticket under which the backend
+/// prepares command 1 again on the new device (RM.23).
+fn recovered(base: &RevisionRef) -> (Host<MockBackend>, Ticket) {
+    let mut host = host(base);
+    install(&mut host, 1, sheet(1, base, 2));
+    host.backend.lose_device();
+    host.pump();
+    host.recover().expect("recovers");
+    host.pump();
+    let ticket = host.rebinding(V1).expect("prepared again on the new device");
+    (host, ticket)
+}
+
+#[test]
+fn rm_23_recovery_prepares_a_retained_publication_again_once_its_view_has_no_pending_work() {
+    let base = revision(12);
+    let mut host = host(&base);
+    install(&mut host, 1, sheet(1, &base, 2));
+    let receipt = host.receipt(CommandId(1)).expect("A");
+    let first = host.installed(V1).expect("A").resources;
+    host.backend.lose_device();
+    host.pump();
+    host.recover().expect("recovers");
+
+    // B is accepted before the host asks the backend for A again, so A waits for B.
+    assert_eq!(host.publish(CommandId(2), sheet_from(1, &base, 10, 2)).status, Status::Accepted);
+    host.pump();
+    assert_eq!(host.rebinding(V1), None, "B is pending, so A waits");
+    assert_eq!(host.frame(V1).expect_err("A has no resources yet").code, codes::RENDERER_UNAVAILABLE);
+    assert_eq!(host.cancel(CommandId(2)).expect("B").status, Status::Cancelled(CancelReason::ByUser));
+    host.pump();
+    let ticket = host.rebinding(V1).expect("A is prepared again once nothing is pending");
+
+    // C is accepted while A is prepared again: A draws again until C installs.
+    assert_eq!(host.publish(CommandId(3), sheet_from(1, &base, 20, 1)).status, Status::Accepted);
+    host.backend.finish(ticket);
+    host.pump();
+    let installed = host.installed(V1).expect("A");
+    assert!(installed.available && installed.command == CommandId(1), "A draws again while C is on its way");
+    let rebound = installed.resources;
+    assert_eq!(host.frame(V1).expect("a frame").publication_generation, 1);
+    finish(&mut host, 3);
+    assert_eq!(host.installed(V1).expect("C").command, CommandId(3));
+    assert_eq!(host.backend.retired, vec![first, rebound]);
+
+    // A newer installation ends a preparation that is still running.
+    host.backend.lose_device();
+    host.pump();
+    host.recover().expect("recovers");
+    host.pump();
+    let late = host.rebinding(V1).expect("C is prepared again");
+    install(&mut host, 4, sheet_from(1, &base, 30, 1));
+    assert_eq!(host.rebinding(V1), None);
+    assert_eq!(host.backend.poll(late), Poll::Cancelled(CancelReason::Superseded { by: CommandId(4) }));
+    host.backend.finish(late);
+    host.pump();
+    assert_eq!(host.installed(V1).expect("D").command, CommandId(4));
+    assert!(host.installed(V1).expect("D").available);
+    assert_eq!(host.receipt(CommandId(1)), Some(receipt), "no receipt changes");
+    one_terminal_each(&host);
+}
+
+#[test]
+fn rm_23_a_stale_publication_is_not_prepared_again_and_waits_for_a_new_one() {
+    let base = revision(12);
+    let mut host = host(&base);
+    install(&mut host, 1, sheet(1, &base, 2));
+    host.backend.lose_device();
+    host.pump();
+    host.set_dependency("state", "13");
+    host.recover().expect("recovers");
+    host.pump();
+    assert_eq!(host.rebinding(V1), None, "a stale publication is not prepared again");
+    assert!(!host.installed(V1).expect("retained").available && host.stale(V1));
+    assert_eq!(host.frame(V1).expect_err("nothing to draw").code, codes::RENDERER_UNAVAILABLE);
+    install(&mut host, 2, sheet(1, &revision(13), 2));
+    assert!(host.installed(V1).expect("new").available);
+    assert_eq!(host.frame(V1).expect("a frame").publication_generation, 2);
+    one_terminal_each(&host);
+}
+
+#[test]
+fn rm_23_a_moved_dependency_a_closed_view_or_a_second_loss_ends_the_preparation() {
+    let base = revision(12);
+
+    // The dependency moves while the publication is prepared again: the preparation is cancelled.
+    {
+        let (mut host, ticket) = recovered(&base);
+        host.set_dependency("state", "13");
+        assert_eq!(host.rebinding(V1), None);
+        assert_eq!(host.backend.poll(ticket), Poll::Cancelled(CancelReason::ReplacedRevision));
+        host.backend.finish(ticket);
+        host.pump();
+        assert!(!host.installed(V1).expect("retained").available && host.stale(V1));
+    }
+
+    // The view closes while its publication is prepared again: the preparation is cancelled, and the publication of
+    // the closed generation is not prepared again after the view reopens.
+    {
+        let (mut host, ticket) = recovered(&base);
+        host.close_view(V1);
+        assert_eq!(host.rebinding(V1), None);
+        assert_eq!(host.backend.poll(ticket), Poll::Cancelled(CancelReason::ByUser));
+        assert!(!host.installed(V1).expect("retained").available);
+        host.open_view(V1).expect("view 1 reopens");
+        assert_eq!(
+            host.frame(V1).expect("an empty frame").publication_generation,
+            0,
+            "the old publication is not shown"
+        );
+        host.backend.lose_device();
+        host.pump();
+        host.recover().expect("recovers");
+        host.pump();
+        assert_eq!(host.rebinding(V1), None, "a publication of an earlier view generation is not prepared again");
+    }
+
+    // The device is lost again while the publication is prepared: the next recovery prepares it again.
+    {
+        let (mut host, lost) = recovered(&base);
+        host.backend.lose_device();
+        host.pump();
+        assert_eq!(host.rebinding(V1), None);
+        host.recover().expect("recovers");
+        host.pump();
+        let ticket = host.rebinding(V1).expect("prepared on the newest device");
+        assert_ne!(ticket, lost);
+        host.backend.finish(ticket);
+        host.pump();
+        let installed = host.installed(V1).expect("retained");
+        assert!(installed.available);
+        assert_eq!(installed.device_epoch, host.ctx.support.device_epoch);
+    }
+}
+
+#[test]
+fn rm_23_a_refused_preparation_or_activation_leaves_the_publication_unavailable() {
+    let base = revision(12);
+
+    // The backend refuses to activate the new resources: they retire at once, and a new publication draws.
+    {
+        let (mut host, ticket) = recovered(&base);
+        let old = host.installed(V1).expect("retained").resources;
+        host.backend.fail_activate = Some(Error::unavailable("no memory for the new resources"));
+        host.backend.finish(ticket);
+        host.pump();
+        assert_eq!(host.rebinding(V1), None);
+        assert!(!host.installed(V1).expect("retained").available);
+        assert_eq!(host.backend.retired, vec![ResourceSet(ticket.0)], "the refused resources retire at once");
+        install(&mut host, 2, sheet_from(1, &base, 10, 1));
+        assert!(host.installed(V1).expect("new").available);
+        assert_eq!(host.backend.retired, vec![ResourceSet(ticket.0), old]);
+        one_terminal_each(&host);
+    }
+
+    // The backend refuses the preparation: the host does not ask again, and a new publication draws.
+    {
+        let mut host = host(&base);
+        install(&mut host, 1, sheet(1, &base, 2));
+        host.backend.lose_device();
+        host.pump();
+        host.recover().expect("recovers");
+        host.backend.fail_prepare = Some(Error::unavailable("no memory for the new resources"));
+        host.pump();
+        assert_eq!(host.rebinding(V1), None);
+        assert!(!host.installed(V1).expect("retained").available);
+        host.pump();
+        assert_eq!(host.rebinding(V1), None, "a refused preparation is not asked again");
+        install(&mut host, 2, sheet_from(1, &base, 10, 1));
+        assert!(host.installed(V1).expect("new").available);
+        one_terminal_each(&host);
+    }
 }
 
 #[test]

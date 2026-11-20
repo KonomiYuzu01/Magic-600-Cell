@@ -2018,11 +2018,12 @@ run or not applicable is no pass (PHS.63).
   (RM.39's measured ceilings) wait for C9; LQ2's policy table and display refusal wait for the joint setting.
 - `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
   validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
-  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
-  a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
-  map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
-  Each slot projection holds one level: a subject at the other level gets no slot, with reason
-  `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
+  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25).
+  After a device recovery the host prepares a retained publication again under its own command and generations, and the
+  view draws it only once the new resources are active (RM.23). A mock backend stands in for an adapter (RPI.55, RM.33).
+  Picks resolve by instance ID through the installed source map, never through a chart inverse, and stale picks name the
+  field that changed (RM.10, RM.24, RPI.24, RPI.25). Each slot projection holds one level: a subject at the other level
+  gets no slot, with reason `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
 - Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and its
   exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test, and injectivity, embedding,
   isometry and homomorphism each decided by its own check on `c600_jumble::polytope` (C6), and `admit_chart`, which
@@ -2043,7 +2044,10 @@ run or not applicable is no pass (PHS.63).
   runs CT-RPI-32's headless part on stages that LP2's checker admits, each refusal with the checker's code, and the
   headless parts of CT-RM-09's rows 3 to 6, 8 and 10 (`ct_rm_09.rs`): spread and overlapping plans, samples and the
   ID pass, a near-plane crossing, a line-only layout, a later-frame stop that keeps its receipt, and a chain's stages
-  quarantined together.
+  quarantined together. RM.23's recovery runs in `publication.rs`: a retained publication is prepared again on the new
+  device before it draws, waits while its view has pending work, gives way to a newer publication, and is not prepared
+  again when it is stale or its view was closed; a preparation that is refused, cancelled or lost with the device leaves
+  it unavailable until a new publication or the next recovery.
 - Display drafts: the list in the crate documentation, among them the validation order, string dependency keys, set
   digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error after
   acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the drafted chart
