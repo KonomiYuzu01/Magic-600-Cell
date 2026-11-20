@@ -4,7 +4,7 @@
     python -B tools/perf/c9/lx4.py post --fixtures DIR --puzzle jumble-off|jumble-on --run DIR
         [--turn-key KeyJ|KeyK|KeyL] [--dry-run]
     python -B tools/perf/c9/lx4.py analyze --fixtures DIR RUN_DIR [RUN_DIR ...] [--e2 RECORD] [--gate SUMMARY]
-        [--out RECORD.json] [--synthetic]
+        [--gate-reference SUMMARY] [--out RECORD.json] [--synthetic]
 
 The fixtures are the folder `c600-lx4-fixtures --out` writes (MANIFEST.json, EDITS.json and the modules); every
 module's and edit's digest is checked before anything else happens. `schedule` prints the sample accounting and runs
@@ -72,7 +72,11 @@ are timed, and the E2 record (key_to_frame.py over these same run directories, m
 renderer gate summary of the same build are met. The decision names RTE.53's case: `fail-s-m` (a miss at S or M),
 `fail-gate-or-e2`, `owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or
 `all-bars`. The gate summary is checked for its build and verdicts only; that it comes from these runs' captures is
-the integrator's check (`gate_same_run_checked` false).
+the integrator's check (`gate_same_run_checked` false). renderer_gate.py reads acceptance builds only, never the
+product build these runs use, so today no summary passes the build check (C9, 20 Nov 2026). `--gate-reference` records
+such a summary (U4's W3 summary) in `gate_reference` with its builds and verdicts, and among the inputs, without
+counting it as the gate: the reason then reads `gate-summary-other-build` instead of `gate-summary-missing`. Whether an
+acceptance build of the same commit may stand in for the product build is the owner's question.
 
 Limitation (stated in every record, `limitations`; top integrator, 19 November 2026): the module set's views read no
 host rows on either puzzle (the host runs them with `NoHost`), so jumble-off and jumble-on time the same rerun path.
@@ -589,19 +593,34 @@ def judge(runs, e2, gate, valid_events):
     return 'insufficient', reasons, decision, table
 
 
-def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_flag=False):
+def gate_reference(summary):
+    """A renderer gate summary of another build as recorded beside the verdict: its builds and verdicts, not a gate."""
+    if not (isinstance(summary, dict) and summary.get('format') == 'magic600-renderer-gate-v1'
+            and isinstance(summary.get('scenes'), list)):
+        raise FixtureError('--gate-reference: not a renderer gate summary')
+    return {'counted_as_gate': False,
+            'build_identities': sorted({str(run.get('build_identity')) for scene in summary['scenes']
+                                        for run in scene.get('runs', [])}),
+            'verdicts': {str(scene.get('scene')): scene.get('verdict') for scene in summary['scenes']}}
+
+
+def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_flag=False, reference_path=None):
     _, edits, digests = load_fixtures(fixtures)
     runs = [read_run(directory, edits, digests) for directory in directories]
     events = {Path(directory).name: evidence.sha256(Path(directory) / key_to_frame.EVENTS)
               for directory, run in zip(directories, runs) if run['status'] == 'valid'}
     e2 = other_record(e2_path) if e2_path else None
     gate = other_record(gate_path) if gate_path else None
+    reference = gate_reference(other_record(reference_path)) if reference_path else None
     verdict, reasons, decision, table = judge(runs, e2, gate, set(events.values()))
+    if reference is not None:
+        reasons = ['gate-summary-other-build' if reason == 'gate-summary-missing' else reason for reason in reasons]
     identities = sorted({run['build_identity'] for run in runs if run['status'] == 'valid'})
     inputs = [evidence.file_entry(f'{run["run_id"]}:{name}', Path(directory) / name)
               for directory, run in zip(directories, runs) for name in (key_to_frame.EVENTS, POSTS)
               if (Path(directory) / name).is_file()]
-    inputs += [evidence.file_entry(role, path) for role, path in (('e2', e2_path), ('gate', gate_path)) if path]
+    inputs += [evidence.file_entry(role, path) for role, path in
+               (('e2', e2_path), ('gate', gate_path), ('gate-reference', reference_path)) if path]
     synthetic = evidence.is_synthetic([Path(directory) / key_to_frame.EVENTS for directory in directories],
                                       [run.get('synthetic') for run in runs], synthetic_flag)
     for run in runs:
@@ -609,7 +628,7 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
     result = {'fixtures': digests, 'runs': runs, 'decision': decision, 'series': table,
               'accounting': accounting([schedule(edits, puzzle) for puzzle in PUZZLES]),
               'timed_sml_samples': sum(row['stats']['n'] for row in table if row['series'] > 0 and row['size'] in SIZES),
-              'gate_same_run_checked': False, 'limitations': LIMITATIONS}
+              'gate_same_run_checked': False, 'gate_reference': reference, 'limitations': LIMITATIONS}
     return evidence.make_record(
         'lx4-editor-latency', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
@@ -636,6 +655,8 @@ def main(argv=None, system_factory=Windows):
     analysis.add_argument('runs', nargs='+', type=Path)
     analysis.add_argument('--e2', type=Path, help='key_to_frame.py record over these same run directories')
     analysis.add_argument('--gate', type=Path, help='renderer_gate.py summary of the same build')
+    analysis.add_argument('--gate-reference', type=Path,
+                          help='a renderer_gate.py summary of another build (U4), recorded but never counted as the gate')
     analysis.add_argument('--out', type=Path, help='write the evidence record here (never replaces a file)')
     analysis.add_argument('--synthetic', action='store_true')
     args = parser.parse_args(argv)
@@ -660,7 +681,7 @@ def main(argv=None, system_factory=Windows):
             if args.run is None:
                 parser.error('post needs --run unless --dry-run')
             return post_run(args.fixtures, args.puzzle, args.run, args.turn_key, system_factory())
-        record = build(args.fixtures, args.runs, argv, args.e2, args.gate, args.synthetic)
+        record = build(args.fixtures, args.runs, argv, args.e2, args.gate, args.synthetic, args.gate_reference)
     except FixtureError as error:
         print(f'lx4: {error}', file=sys.stderr)
         return 2

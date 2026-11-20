@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools/perf/c9'))
 import cold_start  # noqa: E402
 import evidence  # noqa: E402
+import foreground  # noqa: E402
 import key_to_frame  # noqa: E402
 import lx2  # noqa: E402
 import lx4  # noqa: E402
@@ -343,7 +344,8 @@ class PresentMonTests(NoProcessCase):
         good = presentmon_capture.build_command(Path('PresentMon.exe'), Path('out.csv'), 10, process_name='a.exe')
         cases = {
             'exactly one process filter is needed': [a for a in good if a not in ('--process_name', 'a.exe')],
-            'a timed capture of 1 to 3600 s is needed': [a for a in good if a not in ('--timed', '10')],
+            f'a timed capture of 1 to {presentmon_capture.SECONDS_MAX} s is needed':
+                [a for a in good if a not in ('--timed', '10')],
             '--terminate_after_timed is missing': good[:-1],
             'the output file must be a .csv file': [('out.txt' if a == 'out.csv' else a) for a in good],
             'unexpected argument --start_etl_logging': good + ['--start_etl_logging'],
@@ -354,6 +356,15 @@ class PresentMonTests(NoProcessCase):
                 self.assertIn(problem, presentmon_capture.check_command(command))
         both = good + ['--process_id', '7']
         self.assertIn('exactly one process filter is needed', presentmon_capture.check_command(both))
+
+    def test_a_capture_covers_u8s_shell_run(self):
+        """U8's shell runs up to 10,500 s per puzzle; the 3600 s cap cut its capture short (C9, 20 Nov 2026)."""
+        command = presentmon_capture.build_command(Path('PresentMon.exe'), Path('out.csv'), 10_800,
+                                                   process_name='a.exe')
+        self.assertEqual(presentmon_capture.check_command(command), [])
+        with self.assertRaises(ValueError):
+            presentmon_capture.build_command(Path('PresentMon.exe'), Path('out.csv'),
+                                             presentmon_capture.SECONDS_MAX + 1, process_name='a.exe')
 
     def test_a_dry_run_without_presentmon_exits_nonzero(self):
         environ = {'ProgramFiles': str(self.temp / 'none'), 'LOCALAPPDATA': str(self.temp / 'none')}
@@ -527,6 +538,25 @@ class RunbookTests(NoProcessCase):
         self.assertFalse(ok)
         self.assertIn('--route surface --stages renderer/acceptance/stages', detail)
 
+    def test_shell_runs_start_the_capture_and_the_poster_before_the_shell(self):
+        """The shell starts last, so it gets the focus (C9, 20 Nov 2026: a capture started after it took it away)."""
+        steps = {step.id: step for step in runbook.STEPS}
+        for step_id in ('b2-skew', 'lx2', 'lx4'):
+            with self.subTest(step=step_id):
+                commands = ' '.join(steps[step_id].commands)
+                self.assertNotIn('alongside', commands)
+                shell = [command for command in steps[step_id].commands if runbook.LAUNCH in command]
+                self.assertTrue(shell)
+                for command in shell:
+                    self.assertLess(command.index('presentmon_capture.py --process-name'),
+                                    command.index(runbook.LAUNCH))
+                    self.assertIn('--build <product build>', command)
+                    self.assertIn(f'unattended.ps1 -Steps {runbook.LABELS[step_id]}', command)
+        analyze = steps['lx4'].commands[-1]
+        self.assertIn('--gate-reference <U4 W3 gate summary>.json', analyze)
+        self.assertNotIn('--gate <', analyze)
+        self.assertIn('tools/perf/c9/unattended.ps1', runbook.__doc__)
+
     def test_every_step_has_a_time_and_sources(self):
         for step in runbook.STEPS:
             with self.subTest(step=step.id):
@@ -551,7 +581,7 @@ class RunbookTests(NoProcessCase):
                               (runbook.RENDER_BACKEND, 'Puzzle::Jumbling =>')}, mentions)
         for puzzle in ('jumble-off', 'jumble-on'):
             launches = [command for command in step.commands
-                        if command.startswith(f'python -B {runbook.LAUNCH} ') and f'--puzzle {puzzle},' in command]
+                        if f'python -B {runbook.LAUNCH} ' in command and f'--puzzle {puzzle},' in command]
             self.assertEqual(len(launches), 1, puzzle)
             self.assertIn(f'tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle {puzzle} --run', launches[0])
         self.assertFalse(any('refused until' in command for command in step.commands))
@@ -884,6 +914,35 @@ class Lx4Tests(NoProcessCase):
         self.assertEqual(lx4.judge(runs, self.e2, self.gate, {'other runs'})[2], 'fail-gate-or-e2')
         failed = {**self.gate, 'scenes': [{'verdict': 'not-met', 'runs': [{'build_identity': BUILD}]}]}
         self.assertEqual(lx4.judge(runs, self.e2, failed, {'events'})[2], 'fail-gate-or-e2')
+
+    def test_a_gate_reference_is_recorded_but_never_counted_as_the_gate(self):
+        """renderer_gate.py reads acceptance builds only; another build's summary is a reference (C9, 20 Nov 2026)."""
+        directories = []
+        for puzzle in lx4.PUZZLES:
+            events, posts = lx4_logs(self.edits, self.digests, puzzle, lambda sample: 10.0)
+            write_jsonl(self.temp / puzzle / 'events.jsonl', events)
+            write_jsonl(self.temp / puzzle / lx4.POSTS, posts)
+            directories.append(self.temp / puzzle)
+        reference = self.temp / 'w3-summary.json'
+        reference.write_bytes(json.dumps({'format': 'magic600-renderer-gate-v1', 'scenes': [
+            {'scene': 'w3', 'verdict': 'met', 'runs': [{'build_identity': 'acceptance-build'}]}]}).encode())
+        record = lx4.build(self.temp / 'fixtures', directories, ['analyze'], reference_path=reference)
+        self.assertEqual(record['result']['gate_reference'],
+                         {'counted_as_gate': False, 'build_identities': ['acceptance-build'], 'verdicts': {'w3': 'met'}})
+        self.assertIn('gate-reference', [entry['role'] for entry in record['inputs']])
+        self.assertIn('gate-summary-other-build', record['reasons'])
+        self.assertNotIn('gate-summary-missing', record['reasons'])
+        plain = lx4.build(self.temp / 'fixtures', directories, ['analyze'])
+        self.assertIsNone(plain['result']['gate_reference'])
+        self.assertIn('gate-summary-missing', plain['reasons'])
+        reference.write_bytes(b'{"format": "something else"}')
+        with self.assertRaises(lx4.FixtureError):
+            lx4.build(self.temp / 'fixtures', directories, ['analyze'], reference_path=reference)
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            code = lx4.main(['analyze', '--fixtures', str(self.temp / 'fixtures'), *map(str, directories),
+                             '--gate-reference', str(reference)])
+        self.assertEqual(code, 2)
+        self.assertIn('not a renderer gate summary', err.getvalue())
 
     def test_a_wrong_buffer_or_an_unconfirmed_sample_invalidates_its_run(self):
         runs = self.runs(lambda sample: 10.0, wrong={5})
@@ -1476,6 +1535,150 @@ def forbidden_system():
         def __getattr__(self, name):
             raise AssertionError(f'the poster called {name} without a module row')
     return System()
+
+
+class FakeDesktop:
+    """foreground.py's system: scripted per check (index = how often last_input was read)."""
+
+    def __init__(self, *, inputs=(), window_at=1, foreground=None, taken=True, closed_at=None, pid=77, tick=1000):
+        self.inputs, self.window_at, self.closed_at, self.pid, self.tick = dict(inputs), window_at, closed_at, pid, tick
+        self.foreground, self.taken, self.check, self.requests, self.raised = foreground or {}, taken, -1, [], []
+
+    def last_input(self):
+        self.check += 1
+        return self.inputs.get(self.check, self.tick)
+
+    def find_window(self, exe):
+        return (0x5150, self.pid) if exe == 'Godot.exe' and self.check >= self.window_at else None
+
+    def topmost(self, window):
+        self.raised.append(window)
+
+    def is_topmost(self, window):
+        return window in self.raised
+
+    def set_foreground(self, window):
+        self.requests.append(window)
+        return self.taken
+
+    def foreground_pid(self):
+        if self.check in self.foreground:
+            return self.foreground[self.check]
+        return self.pid if self.taken else 4
+
+    def visible(self, window):
+        return self.closed_at is None or self.check < self.closed_at
+
+
+class ForegroundTests(NoProcessCase):
+    def watch(self, desktop, hold=True, wait_s=30):
+        lines, clock = [], iter(range(10_000))
+        code = foreground.watch(desktop, 'Godot.exe', hold, wait_s, clock=lambda: next(clock), sleep=lambda s: None,
+                                out=lines.append)
+        return code, [json.loads(line) for line in lines]
+
+    def test_it_asks_once_for_the_foreground_and_ends_when_the_window_closes(self):
+        desktop = FakeDesktop(window_at=3, closed_at=40)
+        code, rows = self.watch(desktop)
+        self.assertEqual(code, 0)
+        self.assertEqual((desktop.requests, desktop.raised), ([0x5150], [0x5150]))
+        self.assertEqual([row['t'] for row in rows], ['start', 'take', 'end'])
+        self.assertEqual((rows[1]['foreground'], rows[1]['topmost'], rows[-1]['reason']), (True, True, 'window-closed'))
+
+    def test_owner_input_ends_the_watch_and_posted_messages_do_not_count(self):
+        code, rows = self.watch(FakeDesktop(inputs={20: 1001}, closed_at=40))
+        self.assertEqual((code, rows[-1]['reason']), (foreground.OWNER_INPUT, 'owner-input'))
+        # Without --hold only input counts: another process in the foreground is no abort.
+        code, rows = self.watch(FakeDesktop(foreground={n: 4 for n in range(100)}, closed_at=40), hold=False)
+        self.assertEqual((code, [row['t'] for row in rows]), (0, ['start', 'window', 'end']))
+
+    def test_the_foreground_counts_as_lost_at_two_checks_in_a_row(self):
+        code, _ = self.watch(FakeDesktop(foreground={10: 4, 12: None}, closed_at=40))
+        self.assertEqual(code, 0)
+        code, rows = self.watch(FakeDesktop(foreground={10: 4, 11: 4}, closed_at=40))
+        self.assertEqual((code, rows[-1]['reason'], rows[-1]['holder']), (foreground.FOREGROUND, 'foreground-lost', 4))
+
+    def test_a_refused_request_and_a_missing_window(self):
+        desktop = FakeDesktop(taken=False)
+        code, rows = self.watch(desktop)
+        self.assertEqual((code, rows[-1]['reason'], desktop.requests), (foreground.FOREGROUND, 'not-taken', [0x5150]))
+        code, rows = self.watch(FakeDesktop(window_at=10_000), wait_s=30)
+        self.assertEqual((code, rows[-1]['reason']), (foreground.NO_WINDOW, 'no-window'))
+
+    def test_the_input_tick_wraps(self):
+        self.assertTrue(foreground.newer(5, 2**32 - 5))
+        self.assertFalse(foreground.newer(2**32 - 5, 5))
+        self.assertFalse(foreground.newer(1000, 1000))
+
+    def test_one_request_and_no_foreground_lock_workaround(self):
+        source = (ROOT / 'tools/perf/c9/foreground.py').read_text(encoding='utf-8')
+        # The code without the module docstring (which names what is avoided) and comments.
+        code = '\n'.join(line for line in source.split('\"\"\"', 2)[2].splitlines() if not line.lstrip().startswith('#'))
+        body = code.split('def watch(', 1)[1].split('\nclass Windows', 1)[0]
+        self.assertEqual(body.count('set_foreground('), 1)
+        self.assertEqual(code.count('.SetForegroundWindow('), 1)
+        for word in ('AttachThreadInput', 'SystemParametersInfo', 'keybd_event', 'SendInput', 'mouse_event',
+                     'AllowSetForegroundWindow', 'LockSetForegroundWindow', 'BringWindowToTop'):
+            self.assertNotIn(word, code)
+
+
+class RunnerTests(unittest.TestCase):
+    """tools/perf/c9/unattended.ps1, read as text (the tests start no PowerShell)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.data = (ROOT / 'tools/perf/c9/unattended.ps1').read_bytes()
+        cls.text = cls.data.decode('ascii')
+
+    def function(self, name):
+        return self.text.split(f'function {name} ', 1)[1].split('\nfunction ', 1)[0]
+
+    def test_it_is_ascii_with_lf_endings_and_names_no_build_stamp(self):
+        self.assertNotIn(b'\r', self.data)
+        self.assertIsNone(re.search(r'\d{8}T\d{6}Z', self.text))
+        for name in ('SceneBuild', 'StageBuild', 'ProductBuild'):
+            self.assertIn(f"[string]${name} = ''", self.text)
+            self.assertIn(f'-{name} is needed for', self.function('Test-Inputs').replace('-$key', f'-{name}'))
+        self.assertIn("'--build', $ProductBuild", self.function('Invoke-ShellRun'))
+
+    def test_the_suffix_and_the_retries(self):
+        self.assertIn("[ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]*$')]\n    [string]$Suffix", self.text)
+        self.assertIn('[ValidateRange(0, 2)]\n    [int]$Retries = 2', self.text)
+        self.assertIn('for ($attempt = 0; $attempt -le $Retries; $attempt++)', self.function('Invoke-ShellStep'))
+        for output in ('"$Runs\\u3$Tag"', '"$Acceptance\\w3-summary$Tag.json"', '"$Runs\\u8-off$Tag"',
+                       '"$Runs\\e3$Tag-$i"', '"$Runs\\u7$Tag-faults.json"'):
+            self.assertIn(output, self.text)
+
+    def test_the_watcher_capture_and_poster_start_before_the_shell(self):
+        run = self.function('Invoke-ShellRun').split('Wait-Gate $Step\n    Write-Host', 1)[1]
+        order = [run.index(label) for label in ('"$label-watch"', '"$label-presentmon"', '"$label-poster"',
+                                                '"$label-launch"')]
+        self.assertEqual(order, sorted(order))
+        for step in ('U3', 'U7', 'U8'):
+            self.assertIn('-Hold', self.function(f'Invoke-{step}'))
+        self.assertNotIn('-Hold', self.function('Invoke-U6'))
+
+    def test_an_abort_sets_the_run_aside_and_stops_its_poster(self):
+        run = self.function('Invoke-ShellRun')
+        self.assertIn("$WatchAbort = @{ 10 = 'owner-input'; 11 = 'foreground-lost' }", self.text)
+        self.assertEqual((foreground.OWNER_INPUT, foreground.FOREGROUND), (10, 11))
+        for needle in ('$measuring = -not ($posterProcess -and $posterProcess.HasExited)',
+                       'Write-Log $Step \'aborted\' $run', '"$run.aborted-$n"',
+                       '"$Runs\\$Name.aborted-$n.presentmon.csv"', 'if (-not $watch.HasExited) { Stop-Tree $watch.Id }'):
+            self.assertIn(needle, run)
+
+    def test_it_changes_no_system_setting_and_takes_no_foreground_itself(self):
+        # The code without the header (which says what the watcher does) and comments.
+        code = '\n'.join(line for line in self.text.split('#>', 1)[1].splitlines()
+                         if not line.lstrip().startswith('#'))
+        for word in ('SetForegroundWindow', 'AttachThreadInput', 'Set-ExecutionPolicy', 'ExecutionPolicy',
+                     'HKLM:', 'HKCU:', 'Set-ItemProperty', 'WerAddExcludedApplication', 'ForegroundLockTimeout'):
+            self.assertNotIn(word, code)
+
+    def test_u8_records_the_gate_summary_as_a_reference(self):
+        u8 = self.function('Invoke-U8')
+        self.assertIn("'--gate-reference'", u8)
+        self.assertNotIn("'--gate'", u8)
 
 
 if __name__ == '__main__':
