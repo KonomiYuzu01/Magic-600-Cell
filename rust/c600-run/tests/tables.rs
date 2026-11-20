@@ -201,7 +201,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::Closure(_) | Value::Fn(_) => "a function of the program, which runs only inside the interpreter",
         Value::Receipt(_) => "a preview receipt, read only through its fields",
         Value::List(_) => "values in order",
-        Value::WordEqualityKey(_) => "a word equality key, which is never letters",
+        Value::WordEqualityKey(_) | Value::MenuWordKey(_) => "a word equality key, which is never letters",
         Value::Set(_) | Value::Map(_) => "distinct exact keys, with values for a map, in canonical key order",
         Value::Compressed(_) => "letters as parts of literal letters, with their exact length",
         Value::MenuWord(_) => "letters of a pinned menu, with the name of their alphabet",

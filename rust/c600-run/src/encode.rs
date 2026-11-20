@@ -193,6 +193,7 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
             | Value::TraceEqualityKey(_)
+            | Value::MenuWordKey(_)
             | Value::Compressed(_)
             | Value::Generator(_)
             | Value::Field(..)

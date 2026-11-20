@@ -5,7 +5,7 @@
 
 mod support;
 
-use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, INCOMPATIBLE_ALPHABET, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
+use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
 use c600_ir::build::*;
 use c600_ir::{ExactRole, Expr, Lit, Prim, Program, ReceiptField, Ty};
 use support::{less, mismatch, only, report, tint, tool, xy};
@@ -217,14 +217,17 @@ fn state_and_preview_operations_take_their_types() {
             assert_eq!((code, function, at, expected, supplied), (WORD_KEY_NOT_EXECUTABLE, "f", *path, "Word", name));
         }
     }
-    // A trace key takes a Full word or a menu word (LB1.10: a menu word's key is under the run's `jumble-locality/1`),
-    // and a word key a Full word only, so a menu word is of another alphabet there.
+    // A trace key and a word key each take a Full word or a menu word (LB1.10: a menu word's trace key is under the
+    // run's `jumble-locality/1`; LG2.18: its word key under the run's menu matrices). A word key of a menu word has the
+    // one type `WordEqualityKey`, and it is still no word.
     let menu = || Expr::Lit(Lit::MenuWord(vec![[0, 1]]));
     let keyed = report(&f(Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![menu()])));
     assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
-    let d = only(&f(Ty::WordEqualityKey, prim(Prim::WordKey, vec![menu()])));
+    let keyed = report(&f(Ty::WordEqualityKey, prim(Prim::WordKey, vec![menu()])));
+    assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
+    let d = only(&f(Ty::MenuWord, prim(Prim::WordKey, vec![menu()])));
     let (code, _, at, expected, supplied) = mismatch(&d);
-    assert_eq!((code, at, expected, supplied), (INCOMPATIBLE_ALPHABET, "0", "Word", "MenuWord"));
+    assert_eq!((code, at, expected, supplied), (WORD_KEY_NOT_EXECUTABLE, "root", "MenuWord", "WordEqualityKey"));
     assert_only(&cmd(Ty::Receipt, propose(word(&[1]), nat(2))), "f", "1", "Target", "Nat");
     assert_only(&cmd(Ty::Text, read_receipt(nat(1), ReceiptField::Id)), "f", "0", "Receipt", "Nat");
     assert_only(&cmd(Ty::Unit, use_exact(ExactRole::Budget, word(&[1]))), "f", "0", "Nat | Int | Budget", "Word");
