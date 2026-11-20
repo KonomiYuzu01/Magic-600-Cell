@@ -33,6 +33,11 @@
 //!   2026): it reads the repair list once, for the cap the solver named, and returns it as read. The built-in column
 //!   admits it only under the repair-list exception (BND.2), which refuses a read for another cap and any use of the
 //!   list's value, so its rows keep the engine's neutral order with no mark; `tests/rows.rs` checks what it serves.
+//! - The crossing entry (`jumble_crossing`, LB3.1's "Mode crossing prerequisites", the Jumble-off half) reads the label
+//!   checkpoint, every unit off the lattice and ν once each, and answers A5's prerequisites of Jumble off: the
+//!   checkpoint's outcome alone, the count of pieces off the lattice, and whether ν is defined with the count of its
+//!   nonzero values, with no correction and no word. `tests/jumble_layer_verdicts.rs` checks them against `jumble.off`.
+//!   The Jumble-on half, Full labels with journal derivation, waits for a KN4 journal query served to programs (KN4.3).
 //!
 //! No answer of the other entries has a field whose name is a recommendation, a next cap, a ranking, a selection or a
 //! correction (a check of names), and the rim, covers, straddlers and units entries hold no field of a twist's
@@ -47,17 +52,19 @@ use std::sync::{Arc, OnceLock};
 use c600_check::{admit_built_in, check, separation, Grant, Policy, Row, Separation, StateRead, NOT_GRANTED};
 use c600_command::code::ARGUMENT_FORM;
 use c600_digest::sha256_hex;
-use c600_ir::{Effect, Expr};
+use c600_ir::{Effect, EndTest, EndTestOutcome, Expr};
 use c600_jumble::corrections;
-use c600_jumble::levels::{Base, Snapshot};
+use c600_jumble::levels::{Base, Partial, Snapshot};
 use c600_jumble::model::{NP, POLES};
+use c600_jumble::nu;
 use c600_jumble::observe::cuts::{covers, rim_summary};
 use c600_jumble::observe::{seam_facts, units, word_check, Batch, Rows as Cells, Scope};
 use c600_jumble::state::{Certificate, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_jumble_tool::library::{
-    self, Module, ADMISSIBILITY, CORRECTIONS, COVERS, END_TESTS, NU, REPAIR, RIM, STRADDLERS, UNITS, WORD_CHECKS,
+    self, Module, ADMISSIBILITY, CORRECTIONS, COVERS, CROSSING, END_TESTS, NU, REPAIR, RIM, STRADDLERS, UNITS,
+    WORD_CHECKS,
 };
 use c600_jumble_tool::rows::Rows;
 use c600_jumble_tool::word::Alphabet;
@@ -434,8 +441,8 @@ fn same_unit(ours: &RunValue, theirs: &Value, what: &str) {
 }
 
 /// CT-LB3-07 (part: the inspector entries' sources). `jumble_rim`, `jumble_covers`, `jumble_corrections`,
-/// `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair` and `jumble_end_tests` parse with no
-/// diagnostic, keep the canonical layout and
+/// `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair`, `jumble_end_tests` and
+/// `jumble_crossing` parse with no diagnostic, keep the canonical layout and
 /// LF line endings, request no capability and check with no diagnostic. Each exported entry has the one effect
 /// `snapshot` and reads only its rows: under capability separation it reads state and prepares no preview. No function
 /// names a proposal target, the helpers are pure, and each entry takes the solver's named objects only: a cap, an id, a
@@ -444,7 +451,7 @@ fn same_unit(ours: &RunValue, theirs: &Value, what: &str) {
 #[test]
 fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
     // Each entry, the rows it reads and its parameters: a named cap, id, twist, grip, unit or word, or nothing.
-    let reads: [(&str, &[&str], usize); 13] = [
+    let reads: [(&str, &[&str], usize); 14] = [
         ("rim_facts", &["rim_summary", "seam_facts"], 0),
         ("covers_at", &["covers"], 1),
         ("correction", &["correction_lookup"], 1),
@@ -458,8 +465,9 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
         ("sticker_test", &["sticker_test"], 0),
         ("retained_checkpoint", &["retained_checkpoint"], 1),
         ("label_checkpoint", &["label_checkpoint"], 0),
+        ("jumble_off_facts", &["label_checkpoint", "nu", "units"], 0),
     ];
-    for module in [RIM, COVERS, CORRECTIONS, ADMISSIBILITY, STRADDLERS, UNITS, REPAIR, END_TESTS] {
+    for module in [RIM, COVERS, CORRECTIONS, ADMISSIBILITY, STRADDLERS, UNITS, REPAIR, END_TESTS, CROSSING] {
         canonical(&module);
         let program = lower_source(module.source).expect("the module lowers");
         let [lowered] = &program.modules[..] else { panic!("one module, not {}", program.modules.len()) };
@@ -515,6 +523,7 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
             "Retained checkpoint, label checkpoint, sticker test",
             "Jumbling poses and explicit label projection",
         ),
+        (library::mode_crossing_prerequisites(), CROSSING, "Mode crossing prerequisites", "Jumbling poses"),
     ];
     for (row, module, entry, level) in catalogue {
         assert_eq!(row.entry, entry);
@@ -528,6 +537,7 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
     }
     assert!(library::rim_and_seam_facts().notes.contains("not the sum of the displayed N_c"));
     assert!(library::correction_catalogue().notes.contains("chooses no combination"));
+    assert!(library::mode_crossing_prerequisites().notes.contains("KN4 journal query"), "the Jumble-on half waits");
 }
 
 /// CT-LB3-07 (part: the repair entry under the column's repair-list exception, BND.2 and the owner's decision of 17
@@ -1165,5 +1175,49 @@ fn ct_lb3_07_units_and_clean_steps_answer_the_named_unit_and_word() {
         assert!(!holds_a_word(&step), "{label}: no word and no letter table");
         assert_no_field(&step, &LEAKS, label);
         assert_no_field(&step, &SELECTIONS, label);
+    }
+}
+
+/// CT-LB3-07 (part: LB3.1's "Mode crossing prerequisites", the Jumble-off half). `jumble_crossing.jumble_off_facts`
+/// reads the label checkpoint, every unit off the lattice and ν once each, in that order, and answers A5's
+/// prerequisites of Jumble off, each the kernel's fact computed apart: the label checkpoint's outcome as its own
+/// verdict type, the count of pieces off the lattice, and whether ν is defined with the count of its nonzero values. On
+/// the I_a walk the pieces off the lattice fail the checkpoint and leave ν undefined; at solved, witnessed by the empty
+/// journal, the checkpoint holds with every piece on the lattice and ν = 0. The answer holds no word, no correction and
+/// no field of a recommendation, a selection or a twist's outcome.
+#[test]
+fn ct_lb3_07_the_crossing_entry_reports_the_jumble_off_prerequisites() {
+    let solved = fixture().after(0);
+    for (label, snapshot, outcome) in
+        [("the walk", walk(), EndTestOutcome::Fails), ("solved", &solved, EndTestOutcome::Holds)]
+    {
+        let state = snapshot.state();
+        let mut host = Recording::on(snapshot);
+        let facts = completed(run(CROSSING.name, "jumble_off_facts", vec![], &mut host), label);
+        assert_eq!(host.queries(), ["label_checkpoint", "units", "nu"], "{label}: one read each");
+        assert_eq!(host.reads[1].1, Some(Json::text("all")), "{label}: every off unit");
+        let checkpoint = get(&facts, "label_checkpoint");
+        let RunValue::EndTest(test, given) = checkpoint else { panic!("{label}: a verdict, not {checkpoint:?}") };
+        assert_eq!((*test, *given), (EndTest::LabelCheckpoint, outcome), "{label}: the outcome alone");
+        let off = number(get(&facts, "off_lattice"));
+        assert_eq!(off, state.off_lattice_count() as i64, "{label}: the pieces off the lattice");
+        let values = match nu::nu(ctx(), Base::Snapshot(snapshot)).expect("no engine error").expect("no refusal") {
+            Partial::Total(value) => Some(value.values()),
+            Partial::Undefined(_) => None,
+            other => panic!("{label}: {other:?}"),
+        };
+        assert_eq!(truth(get(&facts, "nu_defined")), values.is_some(), "{label}: ν is defined as the row says");
+        let nonzero = values.map_or(0, |values| values.iter().filter(|&&v| v != 0).count());
+        assert_eq!(number(get(&facts, "nu_nonzero")), nonzero as i64, "{label}: the nonzero values of ν");
+        match outcome {
+            EndTestOutcome::Holds => {
+                assert!(off == 0 && values.is_some() && nonzero == 0, "{label}: every prerequisite")
+            }
+            _ => assert!(off > 0 && values.is_none(), "{label}: pieces off the lattice and no ν"),
+        }
+        assert!(!holds_a_word(&facts), "{label}: no word and no letter table");
+        assert_no_field(&facts, &LEAKS, label);
+        assert_no_field(&facts, &SELECTIONS, label);
+        assert_no_field(&facts, &OUTCOMES, label);
     }
 }

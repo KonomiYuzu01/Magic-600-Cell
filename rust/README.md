@@ -723,9 +723,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   of its menu (`menu::MenuAlphabet::new`), with the menu's item matrices for word keys
   (`menu::MenuAlphabet::with_matrices`), and the relation from `c600_jumble::locality::Locality::bits` and
   `trace::Relation::jumble_locality`. LP3's C8 pins the alphabet with the matrices (`word::Alphabet::pinned`) and the
-  relation (`locality`) in `c600-jumble-tool`, where CT-LB1-02's key half and "Word keys remain separate", CT-LB1-06's
-  last part, run on M5's states (`tests/lb3.rs`, `tests/ct_lb1_06.rs`). Not built for trace keys: the operations on
-  compressed words, which LP3 does not need, and EV4.9's report of a key's contract.
+  relation (`locality`) in `c600-jumble-tool`, where CT-LB1-02's key half with its library entry `menu_word_keys` and
+  "Word keys remain separate", CT-LB1-06's last part, run on M5's states (`tests/lb3.rs`, `tests/ct_lb1_06.rs`). Not
+  built for trace keys: the operations on compressed words, which LP3 does not need, and EV4.9's report of a key's
+  contract.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -1241,11 +1242,18 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Not built: the language entries over these checks and their results. CT-LB4-01 is built on these checks in LP3's C6
     (`c600-display`'s chart checks). The checks take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
-- J10's exposed faces (LP2's pull request 336; JI.41, JI.45): `c600_jumble::faces::exposed_faces` answers every
-  request with the registered refusal `KN2:input.exposed_geometry_unavailable` and JI.45's context (the feature and
-  the render row J10, the source, `missing`: certified geometry and a size profile, and no draft). It only reads
-  the state and invents no mesh, face, count or size; the geometry waits for certified data and a size profile
-  (`c600-jumble/tests/refusals.rs`).
+- J10's exposed faces (JI.41, JI.45): `c600_jumble::faces` derives the cut 3-faces of the 36 K⁺-orbit
+  representatives' regions exactly in Q(√5) from `assets/` alone and transports them to all 177,120 pieces by
+  K⁺; no mesh asset is read or written, and the model identity, the manifest and render/1 are unchanged. A face is
+  (piece, home pole, side) on the cell of chambers J08's seam rows name. `faces::certify` checks a table
+  independently of the builder: the faces lie on their hyperplanes with affine rank 3, their 2-face cycles are
+  convex and oriented by exact determinant signs (V − E + F = 2, 2V − 4 fan triangles), the hosts are the model's
+  stickers and the boundary closes, every cut cell pairs up, and the counts are EN2's. The admitted size profile
+  (`faces::PROFILE`) is measured headless in `docs/progress/1.0/evidence/j10-exposed-face-size-profile.json`.
+  `faces::exposed_faces` answers with the certified geometry's digest and the profile, bound to the state; the
+  faces are home geometry and the state changes nothing. Without certified geometry or the admitted profile it
+  keeps LP2's refusal (pull request 336), `KN2:input.exposed_geometry_unavailable` with JI.45's context naming
+  what is missing (`c600-jumble/tests/faces.rs`, `tests/refusals.rs`).
 
 ## Status of M6: the session store
 
@@ -1386,9 +1394,14 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the undo chain), and L10's rows 1 to 7 are covered. L9 is fixed by the session lock (above); L8 is deferred.
 - KN5 (LP2): `JournalStore` (`src/command_store.rs`) implements c600-command's `Store` and `Reopen` over the journal,
   in a draft frame format of its own (`c600-command-journal-draft-1`, not the frozen migration format), so the command
-  layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Tests:
-  `tests/kn5_command.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and are
-  removed once their tests run against it.
+  layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Each record
+  value an action writes is a content-addressed record object, `objects/<sha256>` of its canonical bytes, written and
+  synced before the frame that cites it, so FP.9's 64 MiB record bound holds through the journal: a larger value is
+  refused with `PS1:resource_limit.persistence_size` before anything is written, the frame's other fields stay under
+  its 16 MiB draft bound, a missing or altered object ends the history in read-only recovery (KN5.23), and a journal
+  written before record objects still reads its inline values (pull request 388). Tests: `tests/kn5_command.rs` and
+  `tests/record_objects.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and
+  are removed once their tests run against it.
 - M6's own `invoke` keeps the layer's ruling 4: the program gates and the authenticator run before an envelope takes
   its command ID, and their refusal is kept for the epoch under the command ID and the request digest without taking
   the ID, so an envelope with a bad authenticator, or a program's commit or non-job row, sent first under the shell's
@@ -2184,9 +2197,8 @@ run or not applicable is no pass (PHS.63).
   exact checker of isometry and homomorphism for the stereographic chart, which is not a projective map (both stay
   `not_established`); charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
   production precision rule (RPI.36). CT-RPI-08's rows J01 and J06 to J12 stay unsupported until a backend's own rows
-  (C9), and J10's producer waits for certified exposed-face geometry and a size profile (LP2's
-  `faces::exposed_faces` refuses with JI.45's code, pull request 336, and `jumble::exposed_faces` passes the refusal
-  on); a decoder from the interpreter's values (the
+  (C9); J10 stays an unsupported row with its payload built from M5's certified geometry and checked headless
+  (`jumble::exposed_faces`); a decoder from the interpreter's values (the
   IR draft has list types since pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired
   into the host,
   until the host attaches user stages (the core compiles and bounds them, WARP only, C9 U5); CT-RM-09's rows 3 to 6, 8
@@ -2897,16 +2909,19 @@ run or not applicable is no pass (PHS.63).
   `KN1:input.level_not_held`) and one typed relation of the relationship strip at pose level, a slot's current occupant
   on and off the lattice, each lattice piece placed by M8's slot action of K⁺ (`relation`; EV3.8, EV3.9).
 - The crate's `library` holds the jumbling library entries as 600 Cell Script on the IR draft's menu words (LP2's pull
-  request 210) and its F2 and F5 (LP2's pull request 222): fourteen modules, each in the formatter's canonical layout
-  with its catalogue row. `menu_words` and `menu_traces` read no state; each other entry reads only its rows with
-  `read_snapshot`, so it reads state and prepares no preview. None names a proposal target, and none chooses or outputs
-  a word, except at the one point the owner allowed (17 October 2026): at a cap the solver names, `jumble_repair` lists
-  the pairs whose three-twist repair lowers N, in a neutral order, and the solver picks one.
+  request 210) and its F2 and F5 (LP2's pull request 222): sixteen modules, each in the formatter's canonical layout
+  with its catalogue row. `menu_words`, `menu_traces` and `menu_word_keys` read no state; each other entry reads only
+  its rows with `read_snapshot`, so it reads state and prepares no preview. None names a proposal target, and none
+  chooses or outputs a word, except at the one point the owner allowed (17 October 2026): at a cap the solver names,
+  `jumble_repair` lists the pairs whose three-twist repair lowers N, in a neutral order, and the solver picks one.
   - LB1.8's literal words of one pinned menu ([`menu_words.6cs`](c600-jumble-tool/src/menu_words.6cs): `power`, beside
     the IR draft's own `concat`, `inverse`, `conjugate` and `commutator`; pure).
   - LB1.10's trace keys of menu words ([`menu_traces.6cs`](c600-jumble-tool/src/menu_traces.6cs): `same_trace` and
     `trace_commute` under the relation `jumble-locality/1` that the crate's `locality` pins beside the menu alphabet,
     from the table M5 regenerates from the loaded model; pure).
+  - LB1.8's word equality keys of menu words, the jumbling half of "Word equality keys"
+    ([`menu_word_keys.6cs`](c600-jumble-tool/src/menu_word_keys.6cs): `key` and `same_word`, LG2.18's domain-preserving
+    key `word-key/1` under the item matrices that `word::Alphabet::pinned` pins with the menu alphabet; pure).
   - LB3.1's "Heights, branches, domains and Φ" ([`jumble_heights.6cs`](c600-jumble-tool/src/jumble_heights.6cs): Φ, the
     largest left height and the pieces at heights (0,0) and on the lattice's domain, by exact sums over KN2.4's
     `heights` and `height_counts`).
@@ -2934,6 +2949,10 @@ run or not applicable is no pass (PHS.63).
   - LB3.1's "Retained checkpoint, label checkpoint, sticker test"
     ([`jumble_end_tests.6cs`](c600-jumble-tool/src/jumble_end_tests.6cs): each verdict as its own type, LG2.9; the
     retained checkpoint takes the solver's witness word and builds none).
+  - LB3.1's "Mode crossing prerequisites", the Jumble-off half
+    ([`jumble_crossing.6cs`](c600-jumble-tool/src/jumble_crossing.6cs): `jumble_off_facts`, A5's prerequisites of
+    Jumble off, the label checkpoint's outcome, the pieces off the lattice and ν; it decides no crossing. The Jumble-on
+    half waits for a KN4 journal query served to programs, KN4.3).
 - The crate's `rows` is the jumbling rows' host bridge (pull request 299): it serves KN2.4's jumbling rows to a run as
   snapshot reads, at the command layer's head with Jumble on (`Rows::at_head`), on a witnessed base (`Rows::on`) or at a
   state (`Rows::at_state`). It uses the crate's draft answer types and a draft tariff (one pass of the model's pieces
@@ -2946,9 +2965,12 @@ run or not applicable is no pass (PHS.63).
   the cap-map witness and the named cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13,
   which places a sticker at any lattice pose by M8's slot action of K⁺ with A3's frame check
   (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05, and, since pull request 301, the
-  producers of J01, J06, J07, J09, J11 and J12; J10 passes LP2's refusal through (`jumble::exposed_faces`, after pull
-  request 336). Under a jumbling identity the validator now checks a posed row instead of refusing it; 600-cell-Full
-  is unchanged.
+  producers of J01, J06, J07, J09, J11 and J12; J10's payload (`jumble::exposed_faces`) is the instanced layout
+  `magic600-jumbling-exposed-faces/1` built from M5's certified geometry: base faces in binary32 with their fan
+  triangles, the 7,200 K⁺ matrices, each piece's transport and every face's piece, base face, pole, side and cell,
+  checked by `jumble::check_exposed_faces`, with RM.12's check of its input bytes against a supplied ceiling
+  (`jumble::admit_exposed_faces`; no numeric ceiling is fixed yet, RM.13); a refusal of M5's producer passes through. Under a jumbling identity
+  the validator now checks a posed row instead of refusing it; 600-cell-Full is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
     LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
@@ -2957,8 +2979,10 @@ run or not applicable is no pass (PHS.63).
   - `c600-jumble-tool/tests/lb3.rs`: the kernel halves of CT-LB1-02 (at a blocked cap literal a,a⁻¹ is refused at its
     first letter and the empty word is admitted; prefix protection reads literal letters; and its key half, LG2.18's
     word key under I_a's item matrices: the key of a,a⁻¹ at a blocked cap is the identity letter's token there, not
-    the empty key, both words are refused there and the empty word admitted, in Rust and in the language, and on random
-    words from three states each word and its run-merged form have one key, one admissibility and one end digest),
+    the empty key, both words are refused there and the empty word admitted, in Rust and through the library entry
+    `menu_word_keys`, and on random words from three states each word and its run-merged form have one key, one
+    admissibility and one end digest; and the entry itself: canonical, pure, and refused by the checker with
+    `LG2:type.word_key_not_executable` where letters are required, so CT-LB1-02 runs whole with C5's half),
     CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
@@ -2974,19 +2998,23 @@ run or not applicable is no pass (PHS.63).
     correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
     rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
     or a recommendation, ranking or correction field).
-  - `c600-jumble-tool/tests/ct_lb3_07.rs`: CT-LB3-07 on the inspector entries `jumble_rim`, `jumble_covers`,
-    `jumble_corrections`, `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair` and
-    `jumble_end_tests` in the language, with the named-word checks and the drafted check, through the bridge on
-    witnessed snapshots of the I_a walk (pull requests 308, 314 and 321). Each read is recorded with its argument. The
-    rim entry answers every cap in cap-ID order and nothing of a twist. The covers and catalogue entries read the
-    solver's named cap or id only, and the catalogue refuses another menu. No answer names a recommendation, a next cap,
-    a ranking or a selection. The admissibility entries answer the solver's one letter or named grip only, the blocked
-    twist with the engine's exact certificate; the straddlers entry answers the named cap's straddlers with exact
-    certificates, and u; the units entries answer every off unit or the named unit, and the clean-step entry the named
-    word and unit only, its flag LB3.8's. The repair entry (CT-LB3-05's and CT-BND-17's entry part) is admitted only
-    under the built-in column's repair-list exception as written: refused for a literal cap, a helper's read, a field of
-    the read and a condition on it. The survey row answers the named grip only: asked for every grip or for a list of
-    grips, the run stops with `KN5:input.argument_form`, and the bridge refuses the same arguments (pull request 332).
+  - `c600-jumble-tool/tests/ct_lb3_07.rs`: CT-LB3-07 (part) on the inspector entries `jumble_rim`, `jumble_covers`,
+    `jumble_corrections`, `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair`,
+    `jumble_end_tests` and `jumble_crossing` in the language, with the named-word checks and the drafted check, through
+    the bridge on witnessed snapshots of the I_a walk (pull requests 308, 314 and 321). Each read is recorded with its
+    argument. The rim entry answers every cap in cap-ID order and nothing of a twist. The covers and catalogue entries
+    read the solver's named cap or id only, and the catalogue refuses another menu. No answer names a recommendation, a
+    next cap, a ranking or a selection. The admissibility entries answer the solver's one letter or named grip only, the
+    blocked twist with the engine's exact certificate; the straddlers entry answers the named cap's straddlers with
+    exact certificates, and u; the units entries answer every off unit or the named unit, and the clean-step entry the
+    named word and unit only, its flag LB3.8's. The repair entry (CT-LB3-05's and CT-BND-17's entry part) is admitted
+    only under the built-in column's repair-list exception as written: refused for a literal cap, a helper's read, a
+    field of the read and a condition on it. The survey row answers the named grip only: asked for every grip or for a
+    list of grips, the run stops with `KN5:input.argument_form`, and the bridge refuses the same arguments (pull request
+    332). The crossing entry, the Jumble-off half of "Mode crossing prerequisites", reads the label checkpoint, every
+    off unit and ν once each and answers A5's prerequisites of Jumble off, the checkpoint's outcome alone, with no
+    correction and no word. CT-LB3-07 stays part: the Jumble-on half, Full labels with journal derivation, waits for a
+    KN4 journal query served to programs (KN4.3, EN4).
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -3071,7 +3099,10 @@ run or not applicable is no pass (PHS.63).
     refused with the code `word_protection` stops with for the letter; every refusal changes nothing. With an orbit
     protected, under Net and Strict, a press commits or is refused as `word_protection` answers. Redo brings back each
     head with its digest and the tool's reads, and a free binding at the next record's grip is refused with
-    `MENU_BINDING_MISMATCH`. The tests read the layer's decisions and add no rule of their own.
+    `MENU_BINDING_MISMATCH`. At each exit `jumble_crossing`'s prerequisites agree with the layer: the checkpoint's
+    outcome, the head's pieces off the lattice and the `nu` row's ν; a committed exit has them all, and a walk of I_a
+    (the retained word [1, 3, −5] and correction 2) reaches the refusal for a nonzero ν. The tests read the layer's
+    decisions and add no rule of their own.
   - `c600-jumble-tool/tests/jumble_layer_repair.rs` (pull request 339): the repair list through the command layer,
     LP2's job that names its cap (pull request 326), beside the tool's entry `jumble_repair` at the layer's head on
     the I_a walk, in four tests. At a named misaligned cap, at closed caps, at a cap whose completed list is empty,
@@ -3091,11 +3122,13 @@ run or not applicable is no pass (PHS.63).
     half, CT-LB1-06 runs whole.
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
-    plane and J10's refusal from M5's producer among them), CT-RPI-12's off-lattice part on a real jumbling state
+    plane and J10's refusals from M5's producer among them; J10's payload against the exact geometry, with corrupted
+    payloads and forged answers refused), CT-RPI-12's off-lattice part on a real jumbling state
     (with C2's stale half, CT-RPI-12 runs whole), RPI.23 and J13 at lattice poses other than the identity (every
     sticker in the slot of M8's labels, a turned sticker resolved through the host to the slot k·s of the slot action,
-    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and
-    15; row 2's half-turn sweeps at π).
+    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 13
+    and 15; row 2's half-turn sweeps at π; row 14 stays a fixture vector, since A5 keeps the fixed I_a coordinates
+    at 0 at every witnessed I_a state).
   - `c600-display/tests/jumbling_payloads.rs`: CT-RPI-08's producers of J01 (render/1's pinned shrink anchors), J06 (the
     readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
     (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
@@ -3106,12 +3139,11 @@ run or not applicable is no pass (PHS.63).
   (KN5, pull request 326), with BND.2's wording of an empty list and no key that skips caps with an empty list,
   beside the entry `jumble_repair` (`tests/jumble_layer_repair.rs`, above). C8 uses the IR draft's F2 and F5 (pull
   request 222) for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
-- Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
-  refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
+- Not built: J01 and J06 to J12 as supported rows (a backend's own rows, C9);
   the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
-  the jumbling half of CT-LB1-02's library entry "Word equality keys" (its 600-cell-Full half is `c600-library`'s
-  `word_keys`, pull request 350); LB3.1's other rows as language code ("Menus and pinned letters",
-  "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under `library` above,
+  LB3.1's other rows as language code ("Menus and pinned letters", "D and release accounting", and the Jumble-on half
+  of "Mode crossing prerequisites", which waits for a KN4 journal query served to programs, KN4.3 and EN4; thirteen
+  LB3.1 rows are built, one of them in part, under `library` above,
   and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
   records; the relationship strip's design (its data contract is C6's `c600_display::strip`, which carries the
   current-occupant relation in `c600-repr`'s CT-EV3-06 tests). The posed arrays at the J1 fixture's mid and end

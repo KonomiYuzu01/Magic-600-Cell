@@ -1,6 +1,7 @@
 //! CT-LB1-02 (part: the 600-cell-Full half, the library's entry "Word equality keys" on the pinned model's relation.
-//! The jumbling key half, LG2.18's domain-preserving key of menu words on C8's pinned menu matrices, runs in
-//! `c600-jumble-tool/tests/lb3.rs`; not written: the entry's jumbling half as library code)
+//! The jumbling half, the entry `menu_word_keys` in `c600-jumble-tool` with LG2.18's domain-preserving key of menu
+//! words on C8's pinned menu matrices, runs with its key and kernel halves in `c600-jumble-tool/tests/lb3.rs`; with
+//! them CT-LB1-02 runs whole)
 //!
 //! The owner's answer of 17 November 2026 gives C5's word keys of 600-cell-Full words LB1.10's draft `trace-key/1`.
 //! The entry is language code, the library's module `word_keys` (`c600_library::word_equality_keys`), run on

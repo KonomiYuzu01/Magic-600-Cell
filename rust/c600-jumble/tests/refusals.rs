@@ -5,7 +5,8 @@
 //! leave the state unchanged; not run here: the invalid and uncertain letters, which
 //! `tests/test_jumbling_rust_candidate.py` runs). `tests/test_jumbling_rust_attacks.py` runs these rules and the other
 //! leads through the adapter. Render feature J10's exposed faces are refused with
-//! `KN2:input.exposed_geometry_unavailable` while no certified geometry or admitted size profile exists (JI.41).
+//! `KN2:input.exposed_geometry_unavailable` when the certified geometry or the admitted size profile is missing
+//! (JI.41); `faces.rs` tests the certified geometry itself.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -139,15 +140,15 @@ fn a_refused_prefix_makes_no_end_state_assertion() {
     assert_eq!(solved.record(&s.ctx), before);
 }
 
-/// JI.41 and JI.45 for render feature J10: with no certified exposed-face geometry and no admitted size profile, the
-/// producer refuses with `KN2:input.exposed_geometry_unavailable`, names the feature, the exact input and both missing
-/// prerequisites, retains no draft, invents no mesh, and changes nothing.
+/// JI.41 and JI.45 for render feature J10: without the certified exposed-face geometry and the admitted size profile,
+/// the producer's answer refuses with `KN2:input.exposed_geometry_unavailable`, names the feature, the exact input and
+/// both missing prerequisites, retains no draft, invents no mesh, and changes nothing.
 #[test]
-fn exposed_faces_are_unavailable_and_change_nothing() {
+fn exposed_faces_without_certified_inputs_are_unavailable_and_change_nothing() {
     let s = Setup::load();
     let state = s.at(&[(0, 12)]);
     let before = state.record(&s.ctx);
-    let answer = faces::exposed_faces(&s.ctx, &state);
+    let answer = faces::answer(&s.ctx, &state, Err("no certified geometry"), None);
     assert_eq!(text(&answer, "status").as_deref(), Some("refused"));
     assert_eq!(text(&answer, "code").as_deref(), Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE));
     assert_eq!(text(&answer, "feature").as_deref(), Some("exposed_face_meshes"));
@@ -156,7 +157,7 @@ fn exposed_faces_are_unavailable_and_change_nothing() {
     assert_eq!(missing, [Value::String("certified_geometry".into()), Value::String("size_profile".into())]);
     assert_eq!(answer.get("draft"), Some(&Value::Null), "no draft is retained");
     assert!(text(&answer, "continuation").is_some_and(|c| c.contains("unavailable")));
-    for key in ["mesh", "faces", "vertices", "size"] {
+    for key in ["geometry", "profile", "mesh", "faces", "vertices", "size"] {
         assert!(answer.get(key).is_none(), "no fabricated `{key}`");
     }
     let source = answer.get("source").expect("the exact input reference");
@@ -164,7 +165,11 @@ fn exposed_faces_are_unavailable_and_change_nothing() {
     assert_eq!(text(source, "model_id").as_deref(), Some(s.ctx.model.model_id.as_str()));
     assert_eq!(text(source, "menu_id").as_deref(), Some(s.menu.identity.as_str()));
     // Another configuration is another exact input.
-    let other = faces::exposed_faces(&s.ctx, &State::new(Some(s.menu.clone())));
+    let other = faces::answer(&s.ctx, &State::new(Some(s.menu.clone())), Err("no certified geometry"), None);
     assert_ne!(other.get("source"), answer.get("source"));
+    // With the certified inputs the producer answers, and still changes nothing.
+    let available = faces::exposed_faces(&s.ctx, &state);
+    assert_eq!(text(&available, "status").as_deref(), Some("available"));
+    assert_eq!(available.get("source"), answer.get("source"));
     assert_eq!(state.record(&s.ctx), before);
 }

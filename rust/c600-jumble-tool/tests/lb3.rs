@@ -2,7 +2,8 @@
 //! definitions in chapter 03's test table), with CT-BND-17 beside CT-LB3-05. Each test checks, on the kernel API, the
 //! facts the library entry would return: the kernel half. The library entries of CT-LB3-03 and CT-LB3-06 run as
 //! language code in `tests/library.rs`, against the same API, and the entry `jumble_repair` of CT-LB3-05 and CT-BND-17
-//! in `tests/ct_lb3_07.rs`, `tests/rows.rs` and `tests/jumble_layer_repair.rs`. Each test's comment names the part
+//! in `tests/ct_lb3_07.rs`, `tests/rows.rs` and `tests/jumble_layer_repair.rs`; the entry `menu_word_keys` of
+//! CT-LB1-02 runs here as language code beside its kernel and key halves. Each test's comment names the part
 //! that runs here and says whether its ID runs whole with the halves it points to. Milestone M8's
 //! `levels` end tests and `observe::cuts::repair_list` carry CT-LB3-01, the sticker-test sentence of CT-LB3-03, and
 //! CT-LB3-05 with CT-BND-17. LP2's ν row and correction catalogue (`c600_jumble::nu`, `c600_jumble::corrections`)
@@ -19,6 +20,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
+use c600_check::{check, separation, Policy, Separation, WORD_KEY_NOT_EXECUTABLE};
 use c600_digest::sha256_hex;
 use c600_jumble::corrections;
 use c600_jumble::levels::{self, Base, Partial, ReachKind, Reachability, Snapshot, Verdict, Witness};
@@ -32,15 +34,17 @@ use c600_jumble::q5::{identity4, matmul, transpose, Mat4, Q5};
 use c600_jumble::state::{Pose, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
+use c600_jumble_tool::library::{self, MENU_WORD_KEYS};
 use c600_jumble_tool::tool::{tool, CHECK_TWIST, CHECK_WORD};
 use c600_jumble_tool::word::{self, Alphabet, Letter, WordError};
 use c600_kernel::json::{self, Value};
-use c600_library::lower_source;
+use c600_library::lower_sources;
 use c600_run::boundary::Store;
-use c600_run::interp::{load, Host, NoHost, Options, Request, RowTariff, Sink};
+use c600_run::interp::{load, Host, Loaded, NoHost, Options, Request, RowTariff, Sink};
 use c600_run::menu_key;
 use c600_run::meter::{Amounts, Outcome as Ended};
 use c600_run::value::Value as RunValue;
+use c600_syntax::{format, parse};
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -159,10 +163,12 @@ fn play(state: &mut State, letter: &Letter) -> Status {
 }
 
 /// CT-LB1-02 (part: the kernel half of "at a blocked cap, literal a,a⁻¹ is refused; empty is admitted" and of "prefix
-/// protection still reads literal letters"; the library entry's 600-cell-Full half is `c600-library`'s `word_keys`
-/// (pull request 350), and its jumbling half is not written as language code yet. The key half, "the
-/// domain-preserving key is refused" and "keys preserve the end digest", is
-/// `ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest` below).
+/// protection still reads literal letters". The key half, "the domain-preserving key is refused" and "keys preserve
+/// the end digest", is
+/// `ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest` below, and the
+/// library entry's jumbling half, `menu_word_keys`, is
+/// `ct_lb1_02_the_menu_word_keys_source_checks_is_pure_and_refuses_a_key_as_letters`. With the entry's 600-cell-Full
+/// half, `c600-library`'s `word_keys` (pull request 350, `c600-tools/tests/ct_lb1_02.rs`), CT-LB1-02 runs whole).
 ///
 /// At the state after 12 records of the I_a journal, cap `blocked` is blocked. The literal word a,a⁻¹ at that cap
 /// composes to the identity rotation, and the kernel still refuses it at its first letter, with a straddling
@@ -244,10 +250,51 @@ fn ct_lb1_02_a_blocked_cap_refuses_literal_a_a_inverse_and_admits_the_empty_word
 /// Run limits wide enough for the language run of the key half.
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
-/// LG2.18's word key in the language: `same(x, y)` compares the word keys of two menu words of the run's alphabet.
-const WORD_KEYS: &str = "edition \"6cs-draft-1\";\nmodule word_keys requires [];\n\n\
-    export fn same(x: MenuWord, y: MenuWord) -> Bool effects [] {\n    \
-    return exact_eq(word_key(x), word_key(y));\n}\n";
+/// A client of the library entry `menu_word_keys`, imported by its source digest (`KEYS`): `same` asks the entry's
+/// `same_word`, and `keyed` compares the keys that the entry's `key` answers.
+const KEYS_CLIENT: &str = r#"edition "6cs-draft-1";
+module keys_client requires [];
+import menu_word_keys "KEYS";
+
+export fn same(x: MenuWord, y: MenuWord) -> Bool effects [] {
+    return menu_word_keys.same_word(x, y);
+}
+
+export fn keyed(x: MenuWord, y: MenuWord) -> Bool effects [] {
+    return exact_eq(menu_word_keys.key(x), menu_word_keys.key(y));
+}
+"#;
+
+/// A client that uses the entry's keys where letters are required: it returns a key as a menu word, and inverts one.
+const KEYS_MISUSE: &str = r#"edition "6cs-draft-1";
+module keys_misuse requires [];
+import menu_word_keys "KEYS";
+
+export fn letters(w: MenuWord) -> MenuWord effects [] {
+    return menu_word_keys.key(w);
+}
+
+export fn undo(w: MenuWord) -> MenuWord effects [] {
+    return inverse(menu_word_keys.key(w));
+}
+"#;
+
+/// `client` with the entry's source digest in place of `KEYS`.
+fn importing(client: &str) -> String {
+    client.replace("\"KEYS\"", &format!("\"{}\"", MENU_WORD_KEYS.sha256()))
+}
+
+/// The entry `menu_word_keys` and [`KEYS_CLIENT`], lowered and checked together and loaded.
+fn keys_client() -> &'static Loaded {
+    static LOADED: OnceLock<Loaded> = OnceLock::new();
+    LOADED.get_or_init(|| {
+        let client = importing(KEYS_CLIENT);
+        let program = lower_sources(&[MENU_WORD_KEYS.source, &client]).expect("the entry and the client lower");
+        let report = check(&program).expect("well-formed IR");
+        assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+        load(&program).expect("it loads")
+    })
+}
 
 /// The end digest of the literal word `pairs` played letter by letter from `start` with no protection, or `None` when
 /// a prefix is refused.
@@ -263,18 +310,20 @@ fn ended(fixture: &Fixture, start: &State, pairs: &[[u32; 2]]) -> Option<String>
 }
 
 /// CT-LB1-02 (part: the key half, on M5's states, with LG2.18's word key `word-key/1` under I_a's item matrices, which
-/// `word::Alphabet::pinned` pins for a run; the library entry's jumbling half, domain-preserving merging of menu words
-/// as library code, is not written yet; its 600-cell-Full half is `c600-library`'s `word_keys`, pull request 350).
+/// `word::Alphabet::pinned` pins for a run, asked through the library entry `menu_word_keys`; the entry's own checks
+/// are the next test, and the kernel half is the test above. With the entry's 600-cell-Full half, `c600-library`'s
+/// `word_keys` (pull request 350), CT-LB1-02 runs whole).
 ///
 /// At the state after 12 records of the I_a journal, with a blocked cap and an open one, the word key of the literal
 /// word a,a⁻¹ at the blocked cap is one token at that cap whose product is the identity: the key of the identity letter
 /// there, and neither the empty word's key nor the key of a,a⁻¹ at the open cap. A run that pins the alphabet answers
-/// the same in the language. The key keeps the cap's domain test: a,a⁻¹ and the identity letter at the blocked cap,
-/// two words of that key, are both refused, and the empty word is admitted and ends at the start; at the open cap both
-/// words end at the start. Then random words over the blocked cap, the open cap and a third cap, with every item of the
-/// menu: each word and the word that replaces each maximal run at one cap by the letter of the run's product, with the
-/// identity letter after it in every other run, have one key, and from solved and from the states after 4 and 12
-/// records both are refused or both are admitted and end at one digest.
+/// the same through the library entry, by `same_word` and by comparing the keys `key` answers. The key keeps the cap's
+/// domain test: a,a⁻¹ and the identity letter at the blocked cap, two words of that key, are both refused, and the
+/// empty word is admitted and ends at the start; at the open cap both words end at the start. Then random words over
+/// the blocked cap, the open cap and a third cap, with every item of the menu: each word and the word that replaces
+/// each maximal run at one cap by the letter of the run's product, with the identity letter after it in every other
+/// run, have one key, also by the library entry, and from solved and from the states after 4 and 12 records both are
+/// refused or both are admitted and end at one digest.
 #[test]
 fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest() {
     let ctx = ctx();
@@ -306,17 +355,23 @@ fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_pres
     assert_ne!(k, key(&[]), "the identity token is kept");
     assert_ne!(k, key(&[[open, a], [open, inverse]]), "and keeps its cap");
 
-    // The same answers in the language, in a run that pins the alphabet.
-    let loaded = load(&lower_source(WORD_KEYS).expect("the module lowers")).expect("it loads");
+    // The same answers through the library entry, in a run that pins the alphabet: `same_word`, and the keys `key`
+    // answers compared.
     let options = Options { menu: Some(&pinned), ..Options::new(WIDE) };
-    let same = |x: &[[u32; 2]], y: &[[u32; 2]]| {
+    let ask = |entry: &str, x: &[[u32; 2]], y: &[[u32; 2]]| {
         let word = |w: &[[u32; 2]]| RunValue::menu_word(pinned.shared_identity(), w).expect("letters below 600");
-        let ran = loaded.run("word_keys", "same", vec![word(x), word(y)], &mut NoHost, &options).expect("a run");
-        assert_eq!((ran.summary.outcome, ran.summary.code), (Ended::Completed, None), "{x:?} and {y:?}");
+        let ran =
+            keys_client().run("keys_client", entry, vec![word(x), word(y)], &mut NoHost, &options).expect("a run");
+        assert_eq!((ran.summary.outcome, ran.summary.code), (Ended::Completed, None), "{entry}: {x:?} and {y:?}");
         match ran.value {
             Some(RunValue::Bool(answer)) => answer,
-            other => panic!("{x:?} and {y:?}: {other:?}"),
+            other => panic!("{entry}: {x:?} and {y:?}: {other:?}"),
         }
+    };
+    let same = |x: &[[u32; 2]], y: &[[u32; 2]]| {
+        let answer = ask("same", x, y);
+        assert_eq!(ask("keyed", x, y), answer, "`same_word` and `key` agree on {x:?} and {y:?}");
+        answer
     };
     assert!(same(&undone, &[[blocked, id]]));
     assert!(!same(&undone, &[]) && !same(&undone, &[[open, a], [open, inverse]]));
@@ -362,6 +417,7 @@ fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_pres
             }
         }
         assert_eq!(key(&w), key(&v), "{w:?} and {v:?}");
+        assert!(same(&w, &v), "the library entry: {w:?} and {v:?}");
         for (s, from) in states.iter().enumerate() {
             let end = ended(&fixture, from, &w);
             assert_eq!(end, ended(&fixture, from, &v), "state {s}: {w:?} and {v:?}");
@@ -373,6 +429,53 @@ fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_pres
     }
     assert!(merged > 0, "some runs were merged");
     assert!(admitted > 0 && refused > 0, "the states admit some words and refuse others: {admitted}, {refused}");
+}
+
+/// CT-LB1-02 (part: the library entry "Word equality keys", its jumbling half `menu_word_keys`; the key half is the
+/// test above, which asks this entry, and the kernel half is
+/// `ct_lb1_02_a_blocked_cap_refuses_literal_a_a_inverse_and_admits_the_empty_word`. With the entry's 600-cell-Full
+/// half, `c600-library`'s `word_keys` (pull request 350, `c600-tools/tests/ct_lb1_02.rs`), CT-LB1-02 runs whole).
+///
+/// The module parses with no diagnostic, is in the canonical layout with LF endings, requests no capability, exports
+/// `key` and `same_word`, and checks with no diagnostic; both entries are pure, and under capability separation
+/// neither reads state nor prepares previews. The catalogue row names the entry, the module, the functions, no effect
+/// and the source's digest. "Keys do not replace executed letters": a client that returns a key where a menu word is
+/// required, or inverts a key, is refused by the checker with `LG2:type.word_key_not_executable`, once for each.
+#[test]
+fn ct_lb1_02_the_menu_word_keys_source_checks_is_pure_and_refuses_a_key_as_letters() {
+    let source = MENU_WORD_KEYS.source;
+    let file = parse(source.as_bytes());
+    assert!(file.diagnostics.is_empty() && file.holes.is_empty(), "{:#?}", file.diagnostics);
+    assert_eq!(format(&file).as_deref(), Some(source), "the canonical layout");
+    assert!(!source.contains('\r') && source.ends_with('\n'), "LF line endings");
+
+    let program = lower_sources(&[source]).expect("the module lowers");
+    let [module] = &program.modules[..] else { panic!("one module") };
+    assert!(module.capabilities.is_empty());
+    let exports: Vec<&str> = module.functions.iter().filter(|f| f.exported).map(|f| f.name.as_str()).collect();
+    assert_eq!(exports, MENU_WORD_KEYS.exports);
+    let report = check(&program).expect("well-formed IR");
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    for entry in MENU_WORD_KEYS.exports {
+        let summary = report.summary(MENU_WORD_KEYS.name, entry).expect("a summary");
+        assert!(summary.is_pure() && summary.state_reads.is_empty() && summary.rows.is_empty(), "{summary:?}");
+        let none = Separation { reads_state: false, prepares_previews: false };
+        assert_eq!(separation(summary, &Policy::interim()), none);
+    }
+
+    let row = library::word_equality_keys();
+    assert_eq!(
+        (row.entry, row.module, row.functions),
+        ("Word equality keys", MENU_WORD_KEYS.name, MENU_WORD_KEYS.exports)
+    );
+    assert!(row.effects.is_empty() && row.notes.contains("LB1:input.key_contract_mismatch"));
+    assert_eq!(row.source_sha256, MENU_WORD_KEYS.sha256());
+
+    let misuse = importing(KEYS_MISUSE);
+    let program = lower_sources(&[source, &misuse]).expect("the entry and the client lower together");
+    let report = check(&program).expect("well-formed IR");
+    let codes: Vec<&str> = report.diagnostics.iter().map(|d| d.code).collect();
+    assert_eq!(codes, [WORD_KEY_NOT_EXECUTABLE; 2], "{:#?}", report.diagnostics);
 }
 
 /// A5's three end tests on one state: the sticker test, the retained checkpoint with `word` as its witness, and the

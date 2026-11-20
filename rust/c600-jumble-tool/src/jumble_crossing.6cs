@@ -1,0 +1,25 @@
+edition "6cs-draft-1";
+module jumble_crossing requires [];
+
+export fn jumble_off_facts() -> record { label_checkpoint: LabelCheckpointVerdict, nu_defined: Bool, nu_nonzero: Nat, off_lattice: Nat } effects [snapshot] {
+    let checkpoint = read_snapshot<LabelCheckpointVerdict>("label_checkpoint");
+    let off = read_snapshot<record { units: List<record { members: List<Nat> }> }>("units", "all");
+    let nu = read_snapshot<record { reason: List<Text>, values: List<Nat> }>("nu");
+    return record { label_checkpoint = checkpoint, nu_defined = exact_eq(length(nu.values), 45), nu_nonzero = nonzero(nu.values), off_lattice = pieces(off.units) };
+}
+
+fn pieces(units: List<record { members: List<Nat> }>) -> Nat effects [] {
+    return repeat(length(units), record { at = 0, count = 0 }, fn(s: record { at: Nat, count: Nat }) -> record { at: Nat, count: Nat } {
+        return record { at = exact_add(s.at, 1), count = exact_add(s.count, length(index(units, s.at).members)) };
+    }).count;
+}
+
+fn nonzero(values: List<Nat>) -> Nat effects [] {
+    return repeat(length(values), record { at = 0, count = 0 }, fn(s: record { at: Nat, count: Nat }) -> record { at: Nat, count: Nat } {
+        let step = match exact_eq(index(values, s.at), 0) {
+            true => 0;
+            _ => 1;
+        };
+        return record { at = exact_add(s.at, 1), count = exact_add(s.count, step) };
+    }).count;
+}

@@ -123,11 +123,17 @@ impl Store {
         }
     }
 
-    /// Writes and syncs a state object. A failure leaves the journal untouched, so the action that needed the object
+    /// Writes and syncs an object. A failure leaves the journal untouched, so the action that needed the object
     /// is proved absent; an uncited partial object is harmless and is written again when it is next needed.
     pub(crate) fn put_object(&mut self, name: &str, bytes: &[u8]) -> Result<(), Fate> {
         let path = format!("objects/{name}");
         self.disk.create(&path, bytes).and_then(|()| self.disk.sync(&path)).map_err(|_| Fate::RolledBack)
+    }
+
+    /// Syncs an object the disk holds, so that one whose earlier write reached the disk without its sync is durable
+    /// before a frame cites it.
+    pub(crate) fn sync_object(&mut self, name: &str) -> Result<(), Fate> {
+        self.disk.sync(&format!("objects/{name}")).map_err(|_| Fate::RolledBack)
     }
 
     pub(crate) fn get_object(&mut self, name: &str) -> io::Result<Option<Vec<u8>>> {

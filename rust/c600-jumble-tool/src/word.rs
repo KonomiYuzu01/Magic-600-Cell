@@ -221,12 +221,8 @@ impl Alphabet {
     pub fn pinned(&self) -> Result<MenuAlphabet, MenuError> {
         let inverse = self.0.inverse.iter().map(|&item| item as u32).collect();
         let quad = |q: &Q5| Quad::new(q.a().clone(), q.b().clone(), q.d().clone());
-        let items: Vec<ItemMatrix> = self
-            .0
-            .matrices
-            .iter()
-            .map(|m| std::array::from_fn(|i| std::array::from_fn(|j| quad(&m[i][j]))))
-            .collect();
+        let items: Vec<ItemMatrix> =
+            self.0.matrices.iter().map(|m| std::array::from_fn(|i| std::array::from_fn(|j| quad(&m[i][j])))).collect();
         MenuAlphabet::new(menu_identity(self.identity()), POLES as u32, inverse)?.with_matrices(items)
     }
 

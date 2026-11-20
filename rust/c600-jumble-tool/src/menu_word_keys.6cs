@@ -1,0 +1,10 @@
+edition "6cs-draft-1";
+module menu_word_keys requires [];
+
+export fn key(w: MenuWord) -> WordEqualityKey effects [] {
+    return word_key(w);
+}
+
+export fn same_word(x: MenuWord, y: MenuWord) -> Bool effects [] {
+    return exact_eq(word_key(x), word_key(y));
+}

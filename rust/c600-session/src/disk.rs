@@ -1,7 +1,8 @@
 //! The files below the store: a directory on a real file system, or memory that fails, tears and crashes on request.
 //!
-//! A store keeps two kinds of file, named with `/` separators: the journal `journal` and the state objects
-//! `objects/<sha256>`. Nothing written is durable until [`Disk::sync`] returns for that file.
+//! A store keeps two kinds of file, named with `/` separators: the journal `journal` and the content-addressed
+//! objects `objects/<sha256>` (state objects, and the command store's record objects). Nothing written is durable until
+//! [`Disk::sync`] returns for that file.
 //!
 //! A store takes the session lock ([`Disk::lock`]) before it reads the journal, so one process opens a session at
 //! a time (KN4.1). Every disk takes it: [`FsDisk`] locks the file [`LOCK`] in its directory, and `MemDisk`, the memory
