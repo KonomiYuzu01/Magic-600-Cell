@@ -1,5 +1,6 @@
 {
-  "evidence_kind": "headless source evidence: exact geometry derived from assets/ by c600-jumble and certified in exact arithmetic; no renderer, Windows/DirectX or performance evidence",
+  "evidence_kind": "source/fixture measurement: exact geometry derived from assets/ by c600-jumble and certified in exact arithmetic, measured headless; no renderer, Windows/DirectX or performance evidence",
+  "ceilings": "the payload's RM.11 input_bytes are 20921288 (binary32_instanced); no numeric RM.12/RM.20 ceiling is fixed to check them against: RM.11 asks for a LimitProfile only before a feature is advertised as supported, J10 is not (RM.15), and RM.13 leaves production ceilings to be pinned before enablement; c600-display's jumble::admit_exposed_faces applies RM.12 to a supplied ceiling",
   "feature": "J10",
   "format": "magic600-jumbling-exposed-faces/1",
   "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",

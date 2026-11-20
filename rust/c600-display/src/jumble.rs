@@ -606,6 +606,21 @@ pub fn check_exposed_faces(exposed: &ExposedFaces) -> Result<u64, Error> {
     Ok(total)
 }
 
+/// RM.12's fixed admission check of J10's payload against `ceiling`, the componentwise minimum of the host's and the
+/// backend's profiles: after [`check_exposed_faces`], the payload's `input_bytes`, the sum of its arrays' descriptor
+/// byte lengths (RM.11). At the ceiling it passes and returns the bytes; above it is
+/// `EV3:resource_limit.display_plan_ceiling` with the field, the requested count and the ceiling, and nothing is
+/// truncated. No numeric ceiling is fixed yet: RM.11 asks for a `LimitProfile` only before a feature is advertised as
+/// supported, J10 is not (RM.15), and RM.13 leaves production ceilings to be pinned before enablement, so only declared
+/// fixture profiles reach this check.
+pub fn admit_exposed_faces(exposed: &ExposedFaces, ceiling: &LimitProfile) -> Result<u64, Error> {
+    let bytes = check_exposed_faces(exposed)?;
+    if bytes > ceiling.input_bytes {
+        return Err(Error::ceiling("input_bytes", bytes, ceiling.input_bytes));
+    }
+    Ok(bytes)
+}
+
 /// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the lattice pose k is
 /// in the slot k·s of its home slot s: M8's slot action of K⁺ with A3's frame check (`levels::Tables::piece_slots`),
 /// which at the identity is the home slot. A piece off the lattice has no slot, and none is invented: the answer is

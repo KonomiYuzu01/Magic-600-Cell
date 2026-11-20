@@ -368,7 +368,9 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
 /// profile's faces on each side and the 600 core cells, each face on the side the piece's signature names. Another
 /// state gives the same arrays. A corrupted payload (among them one naming another profile, and whole face rows out of
 /// piece order) and an answer that does not bind (among them a refusal naming an input J10 does not have) are
-/// `EV3:input.display_bundle_mismatch`, and nothing is repaired. J10 stays unsupported in the support report (RM.15).
+/// `EV3:input.display_bundle_mismatch`, and nothing is repaired. Against a declared fixture ceiling the payload's
+/// input bytes pass at the ceiling and one byte over is `EV3:resource_limit.display_plan_ceiling` (RM.12; no numeric
+/// ceiling is fixed). J10 stays unsupported in the support report (RM.15).
 /// Not run: a backend's drawing and readback (C9).
 #[test]
 fn ct_rpi_08_j10_exposed_faces_are_produced_and_checked() {
@@ -529,6 +531,24 @@ fn ct_rpi_08_j10_exposed_faces_are_produced_and_checked() {
         let error = jumble::exposed_faces_from(engine, state, &wrong).expect_err("an answer that does not bind");
         assert_eq!((error.code, error.context["feature"].as_str()), (codes::BUNDLE_MISMATCH, "J10"));
     }
+    // RM.12 against a declared fixture ceiling (no numeric ceiling is fixed, RM.13): the payload's input bytes pass
+    // at the ceiling, and one byte over is refused whole with the field, the requested count and the ceiling.
+    let bytes = faces::PROFILE.instanced_bytes();
+    let mut ceiling = limits(1 << 40);
+    ceiling.input_bytes = bytes;
+    assert_eq!(jumble::admit_exposed_faces(exposed, &ceiling), Ok(bytes));
+    ceiling.input_bytes = bytes - 1;
+    let error = jumble::admit_exposed_faces(exposed, &ceiling).expect_err("one byte over the ceiling");
+    assert_eq!(
+        (
+            error.code,
+            error.context["field"].as_str(),
+            error.context["requested"].clone(),
+            error.context["ceiling"].clone()
+        ),
+        (codes::PLAN_CEILING, "input_bytes", bytes.to_string(), (bytes - 1).to_string())
+    );
+
     let mut unknown = faces::answer(engine, state, Err("no certified geometry"), None);
     let Value::Object(fields) = &mut unknown else { panic!("an object") };
     fields.insert("missing".to_owned(), Value::Array(vec![Value::String("mesh".to_owned())]));

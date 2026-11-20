@@ -2930,7 +2930,8 @@ run or not applicable is no pass (PHS.63).
   producers of J01, J06, J07, J09, J11 and J12; J10's payload (`jumble::exposed_faces`) is the instanced layout
   `magic600-jumbling-exposed-faces/1` built from M5's certified geometry: base faces in binary32 with their fan
   triangles, the 7,200 K⁺ matrices, each piece's transport and every face's piece, base face, pole, side and cell,
-  checked by `jumble::check_exposed_faces`; a refusal of M5's producer passes through. Under a jumbling identity
+  checked by `jumble::check_exposed_faces`, with RM.12's check of its input bytes against a supplied ceiling
+  (`jumble::admit_exposed_faces`; no numeric ceiling is fixed yet, RM.13); a refusal of M5's producer passes through. Under a jumbling identity
   the validator now checks a posed row instead of refusing it; 600-cell-Full is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;

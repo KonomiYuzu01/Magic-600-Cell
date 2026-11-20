@@ -420,7 +420,8 @@ fn size_profile_evidence_is_current() {
         ]));
     }
     let evidence: Vec<(&str, Value)> = vec![
-        ("evidence_kind", Value::String("headless source evidence: exact geometry derived from assets/ by c600-jumble and certified in exact arithmetic; no renderer, Windows/DirectX or performance evidence".to_owned())),
+        ("evidence_kind", Value::String("source/fixture measurement: exact geometry derived from assets/ by c600-jumble and certified in exact arithmetic, measured headless; no renderer, Windows/DirectX or performance evidence".to_owned())),
+        ("ceilings", Value::String(format!("the payload's RM.11 input_bytes are {} (binary32_instanced); no numeric RM.12/RM.20 ceiling is fixed to check them against: RM.11 asks for a LimitProfile only before a feature is advertised as supported, J10 is not (RM.15), and RM.13 leaves production ceilings to be pinned before enablement; c600-display's jumble::admit_exposed_faces applies RM.12 to a supplied ceiling", PROFILE.instanced_bytes()))),
         ("feature", Value::String("J10".to_owned())),
         ("format", Value::String(faces::FORMAT.to_owned())),
         ("model_id", Value::String(ctx.model.model_id.clone())),
