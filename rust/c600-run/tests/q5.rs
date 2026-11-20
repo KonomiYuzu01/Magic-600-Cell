@@ -154,6 +154,9 @@ fn a_zero_denominator_stops_at_its_assertion() {
         assert_eq!(rows(&r.summary, "assert"), [(1, 0, 0)], "{a} {b}");
         assert!(rows(&r.summary, "q5_of").is_empty(), "the guarded operation does not run");
         assert!(r.value.is_none() && r.output.is_none());
+        // The predicate's byte is released before the stop, so only the three two-byte operands are live, and
+        // cleanup frees them.
+        assert_eq!((r.summary.live_before_cleanup, r.summary.live_after_cleanup), (6, 0), "{a} {b}");
     }
 }
 
