@@ -1696,7 +1696,8 @@ impl<S: Store> CommandLayer<S> {
     /// refusals retained for the epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
     /// store answers that it holds it durably and dropped if the store answers that it does not; either answer ends its
     /// recovery. While the store cannot tell, the transaction stays unknown and the layer stays in read-only recovery,
-    /// so no later action takes its place in the order; a later restart settles it.
+    /// so no later action takes its place in the order; a later restart settles it. An action whose write a panic
+    /// interrupted is settled the same way.
     pub fn restart(&mut self, secret: Secret) {
         self.secret = secret;
         self.used.clear();
@@ -2567,18 +2568,30 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// Steps 9 and 10: writes the action and adopts it only when the store answers that it is durable.
+    /// Steps 9 and 10: writes the action and adopts it only when the store answers that it is durable. From the write
+    /// until the adoption ends, the layer holds the action as one whose fate is unknown, in read-only recovery
+    /// (CT-KN5-05, L12 of the KN5 attack leads): a panic that unwinds out of the store's write leaves the action
+    /// pending for [`CommandLayer::restart`], which settles it from the store's answer as after an unknown fate, and
+    /// a panic in the adoption leaves the layer read-only until the session is reopened from its store.
     fn transact(&mut self, mut adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
         adoption.transaction.blocks = self.parts_to_keep(&adoption.transaction);
-        match self.store.transact(&adoption.transaction) {
+        let unfinished = Error::new(code::COMMIT_FATE, "an action's write or adoption did not finish");
+        let before = self.recovery.replace(unfinished);
+        let pending = self.limbo.insert(adoption);
+        match self.store.transact(&pending.transaction) {
             Fate::Durable => {
+                let adoption = self.limbo.take().expect("the action being written");
                 let receipt = self.adopt(adoption);
+                self.recovery = before;
                 Ok((receipt.job, receipt.status))
             }
-            Fate::RolledBack(error) => Ok((None, Status::Failed(error))),
+            Fate::RolledBack(error) => {
+                self.limbo = None;
+                self.recovery = before;
+                Ok((None, Status::Failed(error)))
+            }
             Fate::Unknown => {
                 self.recovery = Some(Error::new(code::COMMIT_FATE, "the store cannot say whether the action landed"));
-                self.limbo = Some(adoption);
                 self.generation += 1;
                 Ok((None, Status::UnknownOutcome))
             }
