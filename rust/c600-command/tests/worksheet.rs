@@ -798,6 +798,37 @@ fn the_compare_row_refuses_and_changes_nothing() {
     assert_eq!(f.layer.run_jobs(), 0);
 }
 
+/// L16 (a) of the KN5 attack leads (KN5.9, KN7.1, KN7.2; CT-KN7-05's other order, after
+/// `the_compare_row_refuses_and_changes_nothing`'s preview first): a comparison waiting on the exclusive lane refuses a
+/// preview with `lane_full`, and the presented preview stays pending and presented. L13 (b) (KN5.6, CT-KN5-12): the
+/// comparison's terminal has advanced the generation by the time its receipt is read, and a preview is admitted again.
+#[test]
+fn a_waiting_comparison_holds_the_exclusive_lane_against_a_preview() {
+    let mut f = fixture();
+    assert!(completed(&f.write("letters", letters(&[5]), "block")));
+    assert!(completed(&f.save("letters", "sheet")));
+    let p = f.preview_with(draft_args(&word(&[1])));
+    f.present(p);
+    let receipt = f.shell.invoke(&mut f.layer, WORKSHEET_COMPARE_ROW, compare_args("sheet", 1, "letters")).unwrap();
+    let Status::Running(job) = receipt.status else { panic!("comparison not admitted: {:?}", receipt.status) };
+    assert_eq!(f.layer.availability("operation.preview").unwrap_err().code, code::LANE_FULL);
+    f.refused("operation.preview", draft_args(&word(&[2])), code::LANE_FULL, "a waiting comparison");
+    assert_eq!(f.layer.preview().map(|pending| pending.id), Some(p));
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Presented));
+    assert!(f.layer.availability("operation.execute").is_ok());
+
+    let before = f.layer.generation();
+    assert_eq!(f.layer.run_jobs(), 1);
+    let settled = f.layer.outcome(&receipt.command, &receipt.request).expect("a settled receipt");
+    assert!(matches!(settled.status, Status::Completed(Completion { kind: CompletionKind::Query, .. })));
+    assert!(f.layer.generation() > before, "the comparison's terminal advanced the generation");
+    assert!(f.layer.comparison(job).is_some());
+    assert!(f.layer.availability("operation.preview").is_ok());
+    let q = f.preview_with(draft_args(&word(&[2])));
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Replaced));
+    assert_eq!(f.layer.preview_state(q), Some(PreviewState::Ready));
+}
+
 /// The draft rulings in `src/lib.rs`: the job reads the sheet and the draft record again when it runs, so a sheet
 /// written between the admission and the run fails the job with `revision_changed`, and no comparison is kept. A queued
 /// comparison holds the exclusive lane but is no preview: it is not building, and `operation.preview.cancel` does not

@@ -8,8 +8,8 @@ use std::sync::{Arc, OnceLock};
 use c600_command::token::args_digest;
 use c600_command::{
     code, draft_args, word_draft, ActionHint, Caller, CancelReason, CommandLayer, Completion, CompletionKind,
-    Direction, Error, Fate, HeadlessFrames, Invocation, Kind, Lane, MemoryStore, Overlay, PreviewRule, PreviewState,
-    Receipt, Secret, Shell, Status, Table, Token, TokenBinding,
+    Direction, Error, Fate, FrameChain, HeadlessFrames, Invocation, Kind, Lane, MemoryStore, Overlay, PreviewRule,
+    PreviewState, Receipt, Secret, Shell, Status, Table, Token, TokenBinding,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{archive, Derivation, Kernel, ProtectedSet, Snapshot, Verdict, PIECES};
@@ -461,6 +461,50 @@ fn availability_follows_the_preview_lifecycle() {
     assert_eq!(f.layer.preview_state(id), Some(PreviewState::Cancelled));
     assert_eq!(f.layer.availability("operation.execute").unwrap_err().code, code::NO_FRESH_PREVIEW);
     assert_eq!(f.layer.revision().state, 0);
+}
+
+/// L13 (b) of the KN5 attack leads (KN5.6, KN5.25, CT-KN5-12): a program job's terminal advances the generation
+/// before the host reads its receipt, whether the job completed or failed. A preview's build does so in
+/// `availability_follows_the_preview_lifecycle`, and a comparison's in `tests/worksheet.rs`.
+#[test]
+fn a_program_jobs_terminal_advances_the_generation() {
+    let mut f = fixture(&[]);
+    f.layer.register_overlay("tool.q", Kind::Query, &[], overlay("q")).unwrap();
+    for result in [Ok(Value::Null), Err(Error::new(code::NOT_GRANTED, "the test program failed"))] {
+        let started = f.shell.invoke(&mut f.layer, "tool.q", json::object([])).unwrap();
+        assert!(matches!(started.status, Status::Running(_)), "{:?}", started.status);
+        let job = f.layer.take_program_job().unwrap().job;
+        let before = f.layer.generation();
+        let receipt = f.layer.finish_program_job(job, result).unwrap();
+        assert!(!matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);
+        assert!(f.layer.generation() > before, "{:?}", receipt.status);
+        assert_eq!(f.layer.outcome(&started.command, &started.request), Some(receipt));
+    }
+}
+
+/// L13 (c) of the KN5 attack leads (LI.21, KN5.6, CT-KN5-12): the adapter loses its device while a preview is
+/// presented, and the first frame of the recovered device shows no preview. The preview is ready again and no longer
+/// presented: the shell's binding ends, `operation.execute` is unavailable with `no_fresh_preview`, and the generation
+/// has advanced. A later frame of the new device that draws the preview presents it again.
+#[test]
+fn a_lost_device_ends_the_presentation_and_advances_the_generation() {
+    let mut f = fixture(&[]);
+    let p = f.preview(&word(&[1]));
+    f.present(p);
+    assert!(f.layer.availability("operation.execute").is_ok());
+    let before = f.layer.generation();
+    f.frames.recover();
+    let blank = f.frames.other(None, FrameChain::BuiltIn);
+    assert_eq!(f.shell.present(&mut f.layer, p, &blank).unwrap_err().code, code::NO_FRESH_PREVIEW);
+    assert!(f.layer.generation() > before);
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Ready));
+    assert!(f.shell.presented().is_none());
+    assert_eq!(f.layer.availability("operation.execute").unwrap_err().code, code::NO_FRESH_PREVIEW);
+    let before = f.layer.generation();
+    f.present(p);
+    assert!(f.layer.generation() > before);
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Presented));
+    assert!(f.layer.availability("operation.execute").is_ok());
 }
 
 /// CT-KN7-05 (R-16).
