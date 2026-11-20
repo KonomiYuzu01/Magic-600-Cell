@@ -102,9 +102,13 @@ fn a_pick_goes_through_the_host_to_the_id_pass_and_back() {
         other => panic!("{other:?}"),
     }
 
-    // A point outside the surface is the core's refusal; a frame the bridge never submitted is refused before it.
+    // A point outside the frame's viewport and a frame the bridge never submitted are the caller's errors, refused
+    // before the core is asked (the core would answer a point outside as a failure, `EV3:busy.renderer_unavailable`),
+    // so even a passive pick returns them.
     let outside = host.request_pick(&frame, (SIZE.0, 0), PickMode::Explicit, Requested::Occurrence);
-    assert_eq!(outside.expect_err("outside").code, codes::RENDERER_UNAVAILABLE);
+    assert_eq!(outside.expect_err("outside").code, codes::PLAN_INVALID);
+    let below = host.request_pick(&frame, (0, SIZE.1), PickMode::Passive, Requested::Occurrence);
+    assert_eq!(below.expect_err("below").code, codes::PLAN_INVALID);
     let unknown = FrameStamp { sequence: frame.sequence + 1, ..frame.clone() };
     let refused = host.request_pick(&unknown, (10, 20), PickMode::Explicit, Requested::Occurrence);
     assert_eq!(refused.expect_err("never submitted").code, codes::PLAN_INVALID);

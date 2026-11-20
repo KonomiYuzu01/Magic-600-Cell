@@ -34,12 +34,12 @@
 //! - The trait's frame reports are empty: RM.41's reports name frames that stopped a user stage, and the product path
 //!   runs none (`sa2_frame_report.fallback` is always 0). The core's row of every frame stays with
 //!   [`RenderBackend::read_frame_reports`].
-//! - A pick through the trait asks the ID pass on the frame with the given stamp; the requested kind and level are
-//!   the host's to resolve (RPI.25). A frame older than every frame the bridge keeps is refused as stale
+//! - A pick through the trait asks the ID pass on the frame with the given stamp; the requested kind and level are the
+//!   host's to resolve (RPI.25). A frame older than every frame the bridge keeps is refused as stale
 //!   (`EV3:stale.display_pick` at `sequence`), so the host drops a passive pick on it; a stamp the bridge never
-//!   submitted is invalid. The core's refusal, for a frame it no longer retains among others, is a core failure:
-//!   its status does not tell that case from its pick bound. A pick the core finds stale is refused as
-//!   `EV3:stale.display_pick`, naming the field that moved.
+//!   submitted is invalid, and so is a point outside the frame's viewport, before the core is asked. The core's
+//!   refusal, for a frame it no longer retains among others, is a core failure: its status does not tell that case from
+//!   its pick bound. A pick the core finds stale is refused as `EV3:stale.display_pick`, naming the field that moved.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -511,7 +511,7 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
 
     /// The ID pass on the frame that `frame` stamps. The ID pass stamps instances only; the host resolves the
     /// requested kind and level. A frame older than every frame the bridge keeps is stale at its sequence; a stamp
-    /// the bridge never submitted is invalid.
+    /// the bridge never submitted is invalid, and so is a point outside the viewport the frame was submitted with.
     fn request_pick(
         &mut self,
         frame: &FrameStamp,
@@ -527,6 +527,12 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 Error::invalid("the bridge submitted no frame with this stamp")
             });
         };
+        // The viewport `submit_frame` gave the core for this frame: a point outside it is the caller's error, which
+        // the core would answer only as a failure.
+        let (width, height) = record.input.stamp.viewport;
+        if point.0 >= width || point.1 >= height {
+            return Err(Error::invalid("the point lies outside the frame's viewport"));
+        }
         let id = record.id;
         RenderBackend::request_pick(self, id, point.0, point.1).map(|ticket| host::PickTicket(ticket.0))
     }
