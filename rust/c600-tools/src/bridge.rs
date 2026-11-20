@@ -24,19 +24,24 @@
 //! workspace or file write and no clock.
 //!
 //! The draft carries the word in one word step, with one exception (LB2.3, LB2.4, LB1.11). For one run a host may give
-//! the bridge the solver's word steps of the run's input recipe ([`Steps`]). A proposal of exactly their literal word
-//! that is longer than one chunk ([`WORD_CHUNK`]) goes in the solver's word steps, in order, in the one invocation
-//! ([`proposal_args`]). The bridge never chooses where to cut: every other word goes in one word step, and the layer
-//! refuses it whole when it is longer than one chunk.
+//! the bridge the solver's input recipe, exactly as written, with its literal word ([`Steps`]), built only from a
+//! recipe the kernel expanded. A proposal of exactly that literal word that is longer than one chunk ([`WORD_CHUNK`])
+//! goes in the one invocation as the solver's recipe, unchanged, whatever its steps: word steps, star steps, and word
+//! steps with other fields ([`proposal_args`]). The bridge never cuts, splits or rewrites a word or a recipe: every
+//! other word goes in one word step, and the layer refuses it whole when it is longer than one chunk.
 
 use std::sync::Arc;
 
-use c600_command::{Caller, CommandLayer, Invocation, MemoryStore, Receipt, Revision, Status, Store, Token};
+use c600_command::{
+    draft_args, Caller, CommandLayer, Invocation, MemoryStore, Receipt, Revision, Status, Store, Token,
+};
 use c600_kernel::json::{self, Value as Json};
+use c600_kernel::Kernel;
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::value::Value;
 
+use crate::expand::{expand, Expansion};
 use crate::kernel_rows::{self, SetupTable};
 
 /// The result bound of a proposal's answer (a draft; the command table prices the row when it freezes).
@@ -53,63 +58,50 @@ pub fn base(revision: &Revision) -> String {
 /// The absolute arguments of a proposal of a literal word in one word step:
 /// `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}`.
 pub fn word_args(word: &[i32]) -> Json {
-    steps_args(&[word])
+    let moves = Json::Array(word.iter().map(|&letter| Json::Int(i64::from(letter))).collect());
+    let step = json::object([("kind", Json::String("word".into())), ("moves", moves)]);
+    draft_args(&Json::Array(vec![step]))
 }
 
-/// The absolute arguments of a proposal of a literal word in word steps, in order:
-/// `{"draft": {"recipe": [{"kind": "word", "moves": [...]}, ...]}}`. One step gives [`word_args`].
-pub fn steps_args(steps: &[&[i32]]) -> Json {
-    let step = |word: &&[i32]| {
-        let moves = Json::Array(word.iter().map(|&letter| Json::Int(i64::from(letter))).collect());
-        json::object([("kind", Json::String("word".into())), ("moves", moves)])
-    };
-    json::object([("draft", json::object([("recipe", Json::Array(steps.iter().map(step).collect()))]))])
-}
-
-/// The solver's word steps of one run's input recipe: the recipe's literal word and the length of each of its word
-/// steps, in order. A host gives them to the bridge only for an input recipe of plain word steps; a recipe with a star
-/// step or a word step with another field has none ([`crate::expand::word_steps`]), and its literal word goes in one
-/// word step.
+/// The solver's input recipe of one run, exactly as written, and its literal word: the kernel's expansion of that
+/// recipe. A host gives it to the bridge for the run ([`Bridge::with_steps`]); it is built only from a recipe the
+/// kernel expanded, so the literal word is never a word, a length or a cut a host chose.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Steps {
     literal: Vec<i32>,
-    lengths: Vec<usize>,
+    recipe: Json,
 }
 
 impl Steps {
-    /// The word steps of `literal` with these lengths, in order; None when the lengths do not add up to the literal
-    /// word's length. That is the only check: the host passes the lengths of the input recipe's own word steps
-    /// ([`crate::expand::word_steps`] of the recipe whose literal word is `literal`), never lengths it chose.
-    pub fn new(literal: &[i32], lengths: Vec<usize>) -> Option<Steps> {
-        let total = lengths.iter().try_fold(0usize, |total, &length| total.checked_add(length))?;
-        (total == literal.len()).then(|| Steps { literal: literal.to_vec(), lengths })
+    /// The solver's `recipe` with its literal word, when the kernel expands it ([`Expansion::Literal`]): any steps
+    /// the kernel admits, star steps and word steps with other fields included. None when the kernel refuses it.
+    pub fn of(kernel: &Kernel, recipe: &Json) -> Option<Steps> {
+        match expand(kernel, recipe) {
+            Expansion::Literal(literal) => Some(Steps { literal, recipe: recipe.clone() }),
+            Expansion::Unchecked { .. } | Expansion::Refused(_) => None,
+        }
     }
 
-    /// `word` cut at the solver's step boundaries when it is exactly the literal word, letter for letter; None for
-    /// any other word, one of the same length included.
-    pub fn cut<'w>(&self, word: &'w [i32]) -> Option<Vec<&'w [i32]>> {
-        if word != self.literal.as_slice() {
-            return None;
-        }
-        let mut rest = word;
-        let mut steps = Vec::with_capacity(self.lengths.len());
-        for &length in &self.lengths {
-            let (step, tail) = rest.split_at(length);
-            steps.push(step);
-            rest = tail;
-        }
-        Some(steps)
+    /// The literal word: the kernel's expansion of the solver's recipe.
+    pub fn literal(&self) -> &[i32] {
+        &self.literal
+    }
+
+    /// The solver's recipe, exactly as written.
+    pub fn recipe(&self) -> &Json {
+        &self.recipe
     }
 }
 
-/// The absolute arguments of a proposal of `word`, given the solver's word steps of the run's input recipe, if the
-/// host gave them (LB2.3, LB2.4, LB1.11). A word longer than one chunk that is exactly the literal of `steps` goes in
-/// the solver's word steps, in order ([`steps_args`]). Every other word goes in one word step ([`word_args`]): a word
-/// of at most one chunk, whatever the solver's steps, and a word that is not the solver's literal, which the layer
-/// refuses whole when it is longer than one chunk. The bridge never chooses where to cut.
+/// The absolute arguments of a proposal of `word`, given the solver's input recipe of the run, if the host gave it
+/// (LB2.3, LB2.4, LB1.11). A word longer than one chunk that is exactly the literal word of `steps`, letter for
+/// letter, goes as the solver's recipe, unchanged: `{"draft": {"recipe": <the solver's recipe>}}`, whatever its
+/// steps. Every other word goes in one word step ([`word_args`]): a word of at most one chunk, whatever the recipe,
+/// and a word that is not the solver's literal, which the layer refuses whole when it is longer than one chunk. The
+/// bridge never cuts, splits or rewrites a word or a recipe.
 pub fn proposal_args(word: &[i32], steps: Option<&Steps>) -> Json {
-    match steps.filter(|_| word.len() > WORD_CHUNK).and_then(|steps| steps.cut(word)) {
-        Some(cut) => steps_args(&cut),
+    match steps.filter(|steps| word.len() > WORD_CHUNK && word == steps.literal.as_slice()) {
+        Some(steps) => draft_args(&steps.recipe),
         None => word_args(word),
     }
 }
@@ -126,7 +118,7 @@ pub struct Sent {
 pub struct Bridge<'l, S: Store = MemoryStore> {
     layer: &'l mut CommandLayer<S>,
     run: String,
-    /// The solver's word steps of the run's input recipe, if the host gave them.
+    /// The solver's input recipe of the run and its literal word, if the host gave them.
     steps: Option<Steps>,
     /// The certified guarded setup tables, if the host gave them: the `setups` row reads them.
     setups: Option<Arc<SetupTable>>,
@@ -136,14 +128,15 @@ pub struct Bridge<'l, S: Store = MemoryStore> {
 
 impl<'l, S: Store> Bridge<'l, S> {
     /// The host of run `run` on `layer`. A run's name is new in its session: the bridge's command IDs are
-    /// `<run>/<n>`, and the layer answers a command ID it knows by its outcome lookup. The bridge has no solver's word
-    /// steps: every proposal goes in one word step. It has no setup tables: a `setups` read is not granted.
+    /// `<run>/<n>`, and the layer answers a command ID it knows by its outcome lookup. The bridge has no solver's
+    /// recipe: every proposal goes in one word step. It has no setup tables: a `setups` read is not granted.
     pub fn new(layer: &'l mut CommandLayer<S>, run: &str) -> Self {
         Bridge { layer, run: run.to_owned(), steps: None, setups: None, sent: Vec::new() }
     }
 
-    /// This bridge with the solver's word steps of the run's input recipe, which the host gives for the run; a
-    /// proposal's arguments are then [`proposal_args`] of the word and these steps. None keeps one word step.
+    /// This bridge with the solver's input recipe of the run and its literal word ([`Steps::of`]), which the host gives
+    /// for the run; a proposal's arguments are then [`proposal_args`] of the word and the recipe. None keeps one word
+    /// step.
     pub fn with_steps(mut self, steps: Option<Steps>) -> Self {
         self.steps = steps;
         self

@@ -94,7 +94,7 @@ sticker-test results, LB3.2) and CT-LB3-07's recommendation rule (LB3.5), which 
 a field in `c600-runtime`'s job options, so the runtime's child applies the built-in column itself, not yet confirmed;
 and a list of words in the IR, or KN2.10's
 streaming, for chunked recipes on the source route, both of which LP2 has since built (pull requests 176 and 170).
-LP3 built chunked transport on the source route in the host and the bridge, which carry the solver's own word steps
+LP3 built chunked transport on the source route in the host and the bridge, which carry the solver's own recipe
 (C5, section 7). LP2 built the built-in column as `c600_check::admit_built_in` (PR 170); the three built-in tools admit
 their entries with it, under class rows that are an LP3 draft until BND.57's rows by class exist as data.
 
@@ -327,12 +327,13 @@ host ran it. Acceptance:
   block that the host keeps, recursively, which the layer keeps with the record's write (CT-BND-27; LP2's pull request
   272). `c600-lp3-source` installs it, and C7's tests on the layer run with it.
 - C5, chunked transport on the source route (`rust/c600-tools`, `bridge`), built: of item 2, CT-LB2-03's chunking part
-  on the source route (LB2.3, LB2.4, LB1.11). For one run the host gives the bridge the solver's word steps of a recipe
-  of plain word steps only; a proposal of exactly that recipe's literal word longer than one chunk (100,000 letters)
-  goes in those steps in its one invocation, and every other proposal in one word step, so O01 to O07's invocations do
-  not change. Two full chunks preview on both hosts with the command route's digests and end state and commit as one
-  transaction; a word that is not the input literal is refused whole. A recipe with a star step, or with a word step
-  that has another field, keeps one word step.
+  on the source route (LB2.3, LB2.4, LB1.11). For one run the host gives the bridge the solver's recipe, exactly as
+  written, for any recipe the kernel expanded; a proposal of exactly that recipe's literal word longer than one chunk
+  (100,000 letters) goes as that recipe in its one invocation, and every other proposal in one word step, so O01 to
+  O07's invocations do not change. Two full chunks preview on both hosts with the command route's digests and end state
+  and commit as one transaction; a word that is not the input literal is refused whole. A recipe with a star step, or
+  with a word step that has another field, goes the same way, unchanged, and previews and commits as on the command
+  route (`net_oversize.rs`; pull request 342).
 - C5, library (`rust/c600-library`), built: LB1's literal words as language code
   (LB1.1, LB1.8). The module `words` (`words.6cs`) exports a pure `power`; concatenation, inverse, conjugate and
   commutator are the IR draft's own operations (LG2.15); the row's catalogue entry is Rust data. Of the tests:
@@ -611,7 +612,7 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test runs now, with no need of the owner's machine, the on-screen half (C9) or an item LP2 has not
-built. 45 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 22 have a part that runs now, and 15
+built. 46 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 21 have a part that runs now, and 15
 have no part that runs yet. The milestone is in parentheses; "next" marks LP3 work that needs nothing more from LP2 and
 is not built yet.
 
@@ -625,7 +626,7 @@ is not built yet.
 | CT-LB1-06 | source | "Word keys remain separate" on the jumbling side, on LG2.18's jumbling word key, not built (LP2) | The 600-cell-Full half on `trace-key/1` (owner, 17 November 2026): in source, at run time and on the pinned model's relation (LP2's pull request 214: `c600-syntax/tests/conformance_lg2.rs`, `c600-run/tests/trace_keys.rs`, `c600-tools/tests/supports.rs`); the jumbling relation on the pinned model (LP2's pull request 251: `c600-jumble/tests/locality.rs`); the jumbling half on `jumble-locality/1`, which `c600-jumble-tool` pins, with its keys on M5's states and the library entry `menu_traces` (C8: `c600-jumble-tool/tests/ct_lb1_06.rs`) |
 | CT-LB2-01 | source | Now (C5 library: LB2's recipes and reports, LP3's library code in `c600-library`'s `recipes.6cs` over KN2.4's `effect`, run through the tool's bridge, which serves `effect` since pull request 294 and reads no state for it; `c600-tools/tests/ct_lb2_01.rs`) | - |
 | CT-LB2-02 | source | Now (C5 library: LB2's "Net and Strict protection" and LB2.3's coverage report as `c600-library`'s `protection.6cs` over a `protection` host row, pull request 300; run whole in `c600-tools/tests/ct_lb2_02.rs`) | - |
-| CT-LB2-03 | source | Chunked transport on the source route for a recipe with a star step, or a word step with another field, which C5 records as not built (C5) | The oversize refusal and the source route's chunked transport (C5); named work-sheet reuse through the layer's `worksheet.save` and `worksheet.load`, and LB7.2's fresh exact analysis of a reused sheet through `worksheet.compare` with LB2's gains and losses and macro versions (LP2's pull request 277), on M6's journal; reuse on M6's own API (C7) |
+| CT-LB2-03 | source | Now (the oversize refusal on both routes and chunked transport, on the source route for any recipe the kernel expanded (C5, pull request 342); named work-sheet reuse through the layer's `worksheet.save` and `worksheet.load`, and LB7.2's fresh exact analysis of a reused sheet through `worksheet.compare` with LB2's gains and losses and macro versions (LP2's pull request 277), on M6's journal; reuse on M6's own API (C7)) | - |
 | CT-LB2-04 | source | Now (C5 library: LB2's exact-completion entry, LP3's library code over KN2.4's `positions` and `labels`, run through the tool's bridge, which serves `positions` since LP2's pull request 226 and `labels` since this entry; `c600-tools/tests/exact_completion.rs`) | - |
 | CT-LB3-01 | source | Now (C8's kernel half on M8's levels, the ν case included, with ν from LP2's `nu` row; the checker half, the end tests' typed verdicts, is LP2's, pull request 213) | - |
 | CT-LB3-02 | source | Now (C8; M5's `rust/c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03) | - |

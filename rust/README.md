@@ -2220,9 +2220,10 @@ run or not applicable is no pass (PHS.63).
   admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
   `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
   `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. For one run the host may give the bridge the
-  solver's word steps of a recipe of plain word steps only: a proposal of exactly that recipe's literal word longer than
-  100,000 letters then goes in those word steps, in order, in the one invocation, and every other proposal in one word
-  step; the bridge never chooses where to cut (LB2.3, LB2.4). The program still receives only the fixed acknowledgement;
+  solver's recipe, exactly as written, for any recipe the kernel expanded, star steps and word steps with other fields
+  included: a proposal of exactly that recipe's literal word longer than 100,000 letters then goes as that recipe,
+  unchanged, in the one invocation, and every other proposal in one word step; the bridge never cuts, splits or rewrites
+  a word or a recipe (LB2.3, LB2.4). The program still receives only the fixed acknowledgement;
   the layer's receipt goes to the shell. Besides proposals, the bridge serves four reads, each to a snapshot read with
   an argument (`c600_tools::kernel_rows`): KN2.4's `positions` row since LP2's pull request 226; its `labels` row, the
   home slot of the sticker in each named slot, which LB2's exact completion reads; and its `effect` row, a recipe's net
@@ -2418,9 +2419,9 @@ run or not applicable is no pass (PHS.63).
     refusals of the save and the reuse with Jumble on run in `c600-command`'s `tests/jumble_on.rs`, not here: entering
     Jumble on needs `c600-jumble`, which is no dependency of this crate. A comparison while the exclusive lane is held
     runs in `c600-command`'s `tests/worksheet.rs`.
-- CT-LB2-03 does not run whole. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in
-  `c600-kernel` and `c600-tools` ("C5 next" below, which records chunked transport on the source route for a recipe
-  with a star step, or a word step with another field, as not built); its second sentence, named work-sheet reuse
+- CT-LB2-03 runs whole, across crates. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs
+  in `c600-kernel` and `c600-tools` ("C5 next" below, which records chunked transport on the source route for any recipe
+  the kernel expanded); its second sentence, named work-sheet reuse
   invalidates the old preview, with LB7.2's fresh exact analysis of a reused sheet (LP2's `worksheet.compare`, pull
   request 277), runs on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's journal (above).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (the word's
@@ -2494,6 +2495,13 @@ run or not applicable is no pass (PHS.63).
   a solving session, the only profile LP3's host runs, fails closed on a part that neither the host nor the session
   keeps, and drops no kept block. `c600-lp3-source` serves H-08 with the layer's draft rows and installs the
   reader, which keeps each run's blocks; the runner writes no record, so its traces and receipts are as before.
+- Chunked transport on the source route (CT-LB2-03's chunking part; LB2.3, LB2.4, LB1.11) carries the solver's recipe
+  exactly as written for any recipe the kernel expanded, star steps and word steps with other fields included. The host
+  gives the bridge the input recipe with its literal word (`c600_tools::bridge::Steps`, made only from the kernel's
+  expansion), and a proposal of exactly that literal word over 100,000 letters goes as
+  `{"draft": {"recipe": <the solver's recipe>}}` in its one invocation, so the source route admits it exactly when the
+  command route admits the same draft. Every other proposal goes in one word step, and the bridge never cuts, splits or
+  rewrites a word or a recipe.
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
     fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
@@ -2532,8 +2540,10 @@ run or not applicable is no pass (PHS.63).
     transaction); CT-LB2-03's oversize refusal (100,001 letters refused whole on both routes with the same code,
     100,000 admitted) and its chunking part: on the command route, and on the source route a recipe of two full chunks
     previews in the solver's two word steps with the command route's digests and end state and commits as one
-    transaction, while a word of 200,000 letters that is not the input recipe's literal word, or comes without the
-    solver's word steps, is refused whole with the recipe-shape code.
+    transaction, and so does a recipe over one chunk with a star step or a word step with another field, sent as the
+    solver's recipe, unchanged; a word over one chunk that is not the input recipe's literal word, or comes without the
+    solver's recipe, is refused whole with the recipe-shape code, and a star recipe's literal word of at most one chunk
+    goes in one word step.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
   - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (ruling 4, owner decision of
@@ -2544,10 +2554,8 @@ run or not applicable is no pass (PHS.63).
 - Not built: an import row; grip, cell or piece objects for a word's letters (the kernel has no letter-to-grip map); a
   view declaring both of the manifest's classes (`c600-view`'s `Declared` holds one class); a view's evaluation for the
   view model's scheduled runs (the host running the view's program and installing its content); named work-sheet reuse,
-  which C7 runs on the layer; chunked transport on the source route for a recipe with a star step or a word step with
-  another field (its literal word over 100,000 letters goes in one word step and is refused whole); the child's own
-  built-in admission. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull request
-  213).
+  which C7 runs on the layer. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
+  request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.

@@ -61,14 +61,15 @@
 //!
 //! # Whether CT-LB2-03 runs whole
 //!
-//! It does not. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in `c600-kernel`'s
-//! `tests/kernel.rs` (the kernel half) and in `c600-tools`' `tests/net_oversize.rs` and `tests/process.rs` (the command
-//! and source routes), and C5 records chunked transport on the source route for a recipe with a star step, or a word
-//! step with another field, as not built. Its second sentence, named work-sheet reuse invalidates the old preview, with
-//! LB7.2's fresh exact analysis of a reused sheet (H-08's `worksheet.compare`, a query row with a job, with LB2's gains
-//! and losses, and macro versions; LP2's pull request 277), runs through the layer's rows on the layer's memory store
-//! (`c600-command`'s `tests/worksheet.rs`) and on M6's journal (`tests/ct_lb2_03_work_sheet_reuse.rs`). The layer does
-//! not build reading a position role's occupant again; this crate builds no KN5 logic, so that waits for LP2.
+//! It does, across crates. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in
+//! `c600-kernel`'s `tests/kernel.rs` (the kernel half) and in `c600-tools`' `tests/net_oversize.rs` and
+//! `tests/process.rs` (the command and source routes; on the source route for any recipe the kernel expanded, star
+//! steps and word steps with other fields included). Its second sentence, named work-sheet reuse invalidates the old
+//! preview, with LB7.2's fresh exact analysis of a reused sheet (H-08's `worksheet.compare`, a query row with a job,
+//! with LB2's gains and losses, and macro versions; LP2's pull request 277), runs through the layer's rows on the
+//! layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's journal
+//! (`tests/ct_lb2_03_work_sheet_reuse.rs`). The layer does not build reading a position role's occupant again, which
+//! neither sentence names; this crate builds no KN5 logic, so that waits for LP2.
 //!
 //! # Drafts
 //!
