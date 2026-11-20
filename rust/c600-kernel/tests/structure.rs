@@ -1,9 +1,9 @@
-//! LP2, the structure rows of the 600 cells (LP3's C6, step 1 item 3): two cells compared (`Kernel::compare_cells`)
-//! and the breadth-first layers around a cell with their pieces and slots (`Kernel::cell_layers`,
-//! `Kernel::layer_counts`), which `structure.compare` and `filter.preview` read. The expected values come from 0.4's
-//! `core.py` on the same assets: `Model.cell_distances`, `Model.adj` and `Model.layer_mask`, with the pieces counted as
-//! `layer_mask` selects them and the slots as `np.diff(face_offsets)` sums them. The two digests cover every cell and
-//! layer, and every pair of cells. A pass is source evidence.
+//! LP2, the structure rows of the 600 cells (LP3's C6, step 1 item 3): two cells compared (`Kernel::compare_cells`) and
+//! the breadth-first layers around a cell with their pieces and slots (`Kernel::cell_layers`, `Kernel::layer_counts`,
+//! `Kernel::layer_members`), which `structure.compare`, `filter.preview` and `structure.layer` read. The expected
+//! values come from 0.4's `core.py` on the same assets: `Model.cell_distances`, `Model.adj` and `Model.layer_mask`,
+//! with the pieces counted as `layer_mask` selects them and the slots as `np.diff(face_offsets)` sums them. The two
+//! digests cover every cell and layer, and every pair of cells. A pass is source evidence.
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -109,5 +109,42 @@ fn a_cell_or_layer_outside_the_model_is_refused() {
     for bad in [-1, 16, i64::MAX] {
         let refusal = kernel.layer_counts(0, bad).unwrap_err();
         assert_eq!((refusal.code, refusal.message.as_str()), layer, "{bad}");
+    }
+}
+
+/// A layer's members are what its counts count: `layer_members` names as many positions and slots as `layer_counts`
+/// counts, each list strictly increasing, with the same refusals. The slots are the positions' home slots, layer 0
+/// holds every slot of the cell itself, and a cell's layers together name every position. Covers no conformance ID.
+#[test]
+fn a_layers_members_are_what_its_counts_count() {
+    let kernel = kernel();
+    for cell in [0, 17, 599] {
+        let mut named = vec![false; PIECES];
+        for counted in kernel.cell_layers(cell).unwrap() {
+            let members = kernel.layer_members(cell, counted.layer as i64).unwrap();
+            assert_eq!((members.cell, members.layer), (counted.cell, counted.layer));
+            assert_eq!((members.pieces.len(), members.slots.len()), (counted.pieces, counted.slots), "{counted:?}");
+            assert!(members.pieces.windows(2).all(|pair| pair[0] < pair[1]), "{counted:?}");
+            assert!(members.slots.windows(2).all(|pair| pair[0] < pair[1]), "{counted:?}");
+            assert!(members.pieces.iter().all(|&piece| piece < PIECES), "{counted:?}");
+            assert!(members.slots.iter().all(|&slot| slot < SLOTS), "{counted:?}");
+            for &piece in &members.pieces {
+                named[piece] = true;
+            }
+        }
+        assert!(named.iter().all(|&named| named), "cell {cell}: its layers name every position");
+    }
+
+    let members = kernel.layer_members(17, 0).unwrap();
+    let pieces: Vec<i64> = members.pieces.iter().map(|&piece| piece as i64).collect();
+    let rows = kernel.positions(&kernel.solved(), &pieces).unwrap();
+    let mut home: Vec<usize> = rows.iter().flat_map(|row| row.home.iter().map(|&slot| slot as usize)).collect();
+    home.sort_unstable();
+    assert_eq!(home, members.slots, "the positions' home slots");
+    assert!((17 * 433..18 * 433).all(|slot| members.slots.binary_search(&slot).is_ok()), "the cell's own slots");
+
+    for (cell, layer) in [(-1, 0), (600, 0), (i64::MAX, 0), (0, -1), (0, 16), (0, i64::MAX)] {
+        let refusal = kernel.layer_members(cell, layer).unwrap_err();
+        assert_eq!(refusal, kernel.layer_counts(cell, layer).unwrap_err(), "{cell} {layer}");
     }
 }

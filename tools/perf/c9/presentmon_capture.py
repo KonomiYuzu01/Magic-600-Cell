@@ -35,7 +35,8 @@ PINNED_VERSION = '2.6.0.0'
 PINNED_RELATIVE = ('Intel', 'PresentMon', 'PresentMonConsoleApplication', 'PresentMon-2.6.0-x64.exe')
 SESSION = 'magic600-c9-capture'
 SESSION_PATTERN = re.compile(r'magic600-[a-z0-9-]+-capture')
-SECONDS_MAX = 3600
+# U8's shell runs about 1 h 45 min per puzzle with a 10,500 s cap; 3600 s cut its capture short (C9, 20 Nov 2026).
+SECONDS_MAX = 14400
 FILTERS = ('--process_name', '--process_id')
 REQUIRED_FLAGS = ('--v1_metrics', '--qpc_time', '--terminate_after_timed')
 VALUED = ('--process_name', '--process_id', '--output_file', '--session_name', '--timed')
@@ -209,7 +210,7 @@ def check_command(command):
         problems.append('the output file must be a .csv file')
     timed = values.get('--timed', '')
     if not (re.fullmatch(r'[1-9]\d*', timed) and int(timed) <= SECONDS_MAX):
-        problems.append('a timed capture of 1 to 3600 s is needed')
+        problems.append(f'a timed capture of 1 to {SECONDS_MAX} s is needed')
     if not SESSION_PATTERN.fullmatch(values.get('--session_name', '')):
         problems.append('a magic600-*-capture session name is needed')
     problems.extend(f'{flag} is missing' for flag in REQUIRED_FLAGS if flag not in arguments)

@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-20] decision | Regular cleanup of dormant worktrees and files
+The owner decided that this project's dormant worktrees and other files on the owner's machine are cleaned regularly to free SSD space. `CLAUDE.md` now has the main session do it once a day while sessions work, before each owner-machine sitting and below 100 GB free, and says what counts as dormant, what may go and what is never deleted ([record](decisions/owner-decisions-2026-11-20-disk-cleanup.md)).
+
+## [2026-11-20] decision | LP3's exit card answered
+The owner answered LP3's nine exit items: eight take the recommended option, and charter E2's counting rule takes option 2, so a key without a confirmed frame counts as one failed key and its run stays valid. CT-RTE-04's form-2 traces and three IR amendment candidates and the five later draft codes go into the PHS.52 amendment at the command-table freeze, `replay` and `protection` keep one name each, push keeps its price, B12 is recorded cold only, and E3 stays 3 s with faster startup ([record](decisions/owner-decisions-2026-11-20-lp3-exit.md)).
+
 ## [2026-11-20] decision | Smaller Rust build caches and cleanup at session end
 The owner decided that debug and test builds keep line tables only for the workspace crates and no debug info for the external crates (`rust/Cargo.toml`, `renderer/bridge/Cargo.toml`), and that a session cleans its own worktree's build caches when its work there is finished (`CLAUDE.md` step 7), after full debug info had let the worktrees' caches fill the disk ([record](decisions/owner-decisions-2026-11-20-build-caches.md)).
 

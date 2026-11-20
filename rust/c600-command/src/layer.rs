@@ -101,10 +101,11 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    CellComparison, Derivation, Effect, IdentityBlock, Kernel, LayerCounts, PiecePosition, ProtectedSet, Protection,
-    ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
+    CellComparison, Derivation, Effect, IdentityBlock, Kernel, LayerCounts, LayerMembers, PiecePosition, ProtectedSet,
+    Protection, ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
+use crate::availability::Availability;
 use crate::budget::Budget;
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
@@ -1232,6 +1233,14 @@ impl<S: Store> CommandLayer<S> {
         Ok(self.kernel.layer_counts(cell, layer)?)
     }
 
+    /// The members that `structure.layer` reads for a layer predicate (draft; LP3's C6): the positions of one layer
+    /// around `cell` and their home slots, as [`Kernel::layer_members`] gives them, with the refusals of
+    /// [`CommandLayer::layer_counts`]. A read changes nothing.
+    pub fn layer_members(&self, cell: i64, layer: i64) -> Result<LayerMembers, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.layer_members(cell, layer)?)
+    }
+
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
     /// revision's digest and an action's `pre` and `post` are this digest.
     fn state_digest(&self) -> &str {
@@ -1764,6 +1773,30 @@ impl<S: Store> CommandLayer<S> {
     /// actual arguments and the current inputs again.
     pub fn availability_for(&self, row: &str, args: &Value) -> Result<(), Error> {
         self.binding(self.known(row)?, args)
+    }
+
+    /// KN5.6's availability table for the shell's `bindings` (draft; L13 (d) of the KN5 attack leads): a static
+    /// binding answers as [`CommandLayer::availability_for`] does for its arguments, a computed one as
+    /// [`CommandLayer::availability`] does, and an unknown row with `KN5:input.unknown_row`. The answers, the revision,
+    /// the generation (KN5.25) and the context digest are read at one moment, as LI.19 stamps them. Bindings with the
+    /// same key share one entry. No language code runs, no program starts and no lane is reserved, and the table grants
+    /// nothing: an invocation checks its actual arguments and the current inputs again.
+    pub fn availability_table<'a>(&self, bindings: impl IntoIterator<Item = (&'a str, &'a Binding)>) -> Availability {
+        let rows = bindings
+            .into_iter()
+            .map(|(row, binding)| {
+                let answer = match binding {
+                    Binding::Static(args) => self.availability_for(row, args),
+                    Binding::Computed => self.availability(row),
+                };
+                (Availability::key(row, binding), answer.map_err(|error| error.code))
+            })
+            .collect();
+        // The shell's grants follow from the caller and the session's profile, so their names stand for the context. A
+        // new input of the grants joins this digest.
+        let profile = Value::String(self.profile.name().to_owned());
+        let context = json::object([("caller", Value::String("shell".to_owned())), ("profile", profile)]);
+        Availability { revision: self.revision.clone(), generation: self.generation, context: digest(&context), rows }
     }
 
     fn known(&self, id: &str) -> Result<&Row, Error> {

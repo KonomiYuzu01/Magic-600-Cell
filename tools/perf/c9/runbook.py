@@ -13,6 +13,12 @@ UI/3D skew measurement (B2). "Unattended" means the owner need not watch; the W-
 unlocked desktop and the foreground.
 
 The steps run in the owner runbook's order and carry its labels (A1 to A3 attended, U1 to U8 unattended).
+`tools/perf/c9/unattended.ps1` runs U1 to U8 with one command from an administrator PowerShell on the desktop. In each
+shell run (U3, U6, U7, U8) it starts PresentMon and the poster without a window and `launch.py` last, so the shell gets
+the focus (C9, 20 Nov 2026: a capture started after the shell took it away). For U3, U7 and U8 `foreground.py` then
+makes the shell topmost and asks once for the foreground (no foreground-lock workaround); a shell run in which the
+owner's input arrives or the shell loses the foreground is stopped, set aside as `<name>.aborted-<n>` and run again,
+at most twice.
 
 The runbook runs nothing. `--dry-run` checks, without a GPU, window or capture, every prerequisite it can (files and
 tools present, the PresentMon version, the build identity readable, scripts that compile or import, fixtures present,
@@ -161,9 +167,11 @@ STEPS = (
          run_time=('an unlocked desktop', 'mains power'),
          sources=('owner decision 2026-11-18 route B, check 3',)),
     Step('b2-skew', 'Route B check B2: skew between the UI frame and the 3D frame', False, 10, None,
-         commands=(f'python -B {LAUNCH} --out <run dir>, with presentmon_capture.py --process-id <shell> '
-                   '--output <run dir>/presentmon.csv --seconds 600 alongside; do not resize the window (a second '
-                   'core chain makes the run unreadable)',
+         commands=('first presentmon_capture.py --process-name <the build\'s Godot executable> --output <capture>.csv '
+                   '--seconds 600 without a window, then, last, '
+                   f'python -B {LAUNCH} --build <product build> --out <run dir>, so the shell gets the focus; touch '
+                   'no other window, do not resize the shell (a second core chain makes the run unreadable), close '
+                   'it after 540 s and copy <capture>.csv to <run dir>/presentmon.csv   # unattended.ps1 -Steps U3',
                    'python -B tools/perf/c9/ui_skew.py <run dir> --out <record>.json'
                    '   # no bar: the numbers go to the owner; check "UI present inside the draw"'),
          prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('compiles', LAUNCH),
@@ -223,11 +231,15 @@ STEPS = (
                    '   # LX-4\'s module set and edit script, once; U8 uses the same fixtures',
                    'python -B tools/perf/c9/lx2.py post --fixtures <fixtures> --dry-run   # the fault plan and its '
                    'time; posts nothing',
-                   f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --lx2-injection '
-                   '<c600-lx2-child release build>, PresentMon alongside; then python -B tools/perf/c9/lx2.py post '
-                   '--fixtures <fixtures> --run <run dir>   # each metered fault\'s limit windows (its job runs to '
-                   'the host\'s 60 s safety stop, no commit), then every fault\'s turn windows, with echo samples, '
-                   'about 13 minutes (at most about 70); it closes the shell after the last phase',
+                   'first presentmon_capture.py --process-name <the build\'s Godot executable> --output '
+                   '<capture>.csv --seconds 4800 and python -B tools/perf/c9/lx2.py post --fixtures <fixtures> --run '
+                   '<run dir>, both without a window (the poster waits for the shell), then, last, '
+                   f'python -B {LAUNCH} --build <product build> --out <run dir> --lx4 --lx4-fixtures <fixtures> '
+                   '--lx2-injection <c600-lx2-child release build>, so the shell gets the focus; touch no other window '
+                   '  # unattended.ps1 -Steps U7; each metered fault\'s limit windows (its job runs to the host\'s 60 s '
+                   'safety stop, no commit), then every fault\'s turn windows, with echo samples, about 13 minutes (at '
+                   'most about 70); the poster closes the shell after the last phase; copy <capture>.csv to '
+                   '<run dir>/presentmon.csv',
                    'python -B tools/perf/c9/lx2.py analyze --fixtures <fixtures> <run dir> --faults <record>.json '
                    '--out <lx2 record>.json   # conditions 3 and 4 per fault, with 1 and 2 from the faults record'),
          prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs'),
@@ -244,19 +256,24 @@ STEPS = (
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
                    '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
                    'python -B tools/perf/c9/lx4.py schedule --fixtures <fixtures>   # 10,800 S/M/L samples',
-                   f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --puzzle jumble-off, '
-                   'PresentMon alongside; then '
-                   'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
-                   '--turn-key KeyJ',
-                   f'python -B {LAUNCH} --out <second run dir> --lx4 --lx4-fixtures <fixtures> --puzzle jumble-on, '
-                   'PresentMon alongside; then '
-                   'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-on '
-                   '--run <second run dir> --turn-key KeyJ   # the host reopens the build\'s jumble-on session and '
-                   'the core draws its posed engine images',
+                   'first presentmon_capture.py --process-name <the build\'s Godot executable> --output '
+                   '<capture>.csv --seconds 10800 and python -B tools/perf/c9/lx4.py post --fixtures <fixtures> '
+                   '--puzzle jumble-off --run <run dir> --turn-key KeyJ, both without a window (the poster waits for '
+                   f'the shell), then, last, python -B {LAUNCH} --build <product build> --out <run dir> --lx4 '
+                   '--lx4-fixtures <fixtures> --puzzle jumble-off, so the shell gets the focus; touch no other window; '
+                   'copy <capture>.csv to <run dir>/presentmon.csv   # unattended.ps1 -Steps U8',
+                   'first presentmon_capture.py --process-name <the build\'s Godot executable> --output '
+                   '<second capture>.csv --seconds 10800 and python -B tools/perf/c9/lx4.py post --fixtures <fixtures> '
+                   '--puzzle jumble-on --run <second run dir> --turn-key KeyJ, both without a window, then, last, '
+                   f'python -B {LAUNCH} --build <product build> --out <second run dir> --lx4 --lx4-fixtures <fixtures> '
+                   '--puzzle jumble-on, so the shell gets the focus; touch no other window; copy <second capture>.csv '
+                   'to <second run dir>/presentmon.csv   # unattended.ps1 -Steps U8; the host reopens the build\'s '
+                   'jumble-on session and the core draws its posed engine images',
                    'python -B tools/perf/c9/key_to_frame.py <both run dirs> --out <e2 record>.json   # E2 in the same '
                    'runs',
                    'python -B tools/perf/c9/lx4.py analyze --fixtures <fixtures> <both run dirs> --e2 <e2 record>.json '
-                   '--gate <gate summary>.json --out <record>.json'),
+                   '--gate-reference <U4 W3 gate summary>.json --out <record>.json   # renderer_gate.py measures '
+                   'acceptance builds only, so the summary is recorded, not counted as the gate (lx4.py)'),
          prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
                         ('compiles', LAUNCH), ('mentions', (SHELL, '"--lx4"')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),
