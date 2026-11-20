@@ -285,9 +285,10 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   an entry that reads the list or the setups prepares no preview. A class that lists one query as both exceptions is
   refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
   Outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty list's wording (BND.2), the
-  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
-  (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves). CT-BND-18 runs whole in
-  `c600-tools/tests/ct_bnd_18.rs`; `exceptions.rs` keeps its checker half.
+  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5; LP2's
+  pull request 326, `c600-command/tests/repair_list.rs`) (`c600-check/tests/exceptions.rs`: CT-BND-17's and
+  CT-BND-18's checker halves). CT-BND-17 runs whole with LP3's C8 halves (the LP3 plan, section 9) and CT-BND-18
+  in `c600-tools/tests/ct_bnd_18.rs`; `exceptions.rs` keeps their checker halves.
 - Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
   gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word or a menu word under the
   independence relation the run pins (`full-disjoint-support/1` or `jumble-locality/1`). Like a word equality key, a
@@ -439,7 +440,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Exact products and assertions (LP2 drafts). `exact_mul(a, b)` multiplies two exact numbers, widened as
   `exact_add`'s operands are; a `Budget` operand is `LG2:type.mismatch`, since the draft multiplies numbers, not
   costs. `assert(p)` is `Unit`, and its predicate is an exact `Bool`, as an `if` condition is (LG2.20)
-  (`c600-check/tests/mismatch.rs`, `c600-check/tests/exactness.rs`).
+  (`c600-check/tests/mismatch.rs`, `c600-check/tests/exactness.rs`). `q5_parts(x)` takes a number up to `Q5` and
+  gives `record { a: Int, b: Int, d: Int }`, the canonical triple of x = (a + b√5)/d in lowest terms with d > 0
+  (ADR-L03.6, PS1.4); `q5_of(a, b, d)` takes three integers and gives a `Q5`. A `Budget` operand is
+  `LG2:type.mismatch`, and a stage module refuses both (RPI.70; LP2's pull request 340).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -480,7 +484,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   what the unreduced product could need; the reduced product settles the reservation. `assert` is one step with no
   memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
   phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
-  `det65_programs.rs`).
+  `det65_programs.rs`). `q5_parts` charges one unit per widened operand byte and reserves its record exactly;
+  `q5_of` is priced as the product of a + b√5 and 1/d and settles on the canonical value, and a zero denominator
+  stops at its `assert` with `LG4:input.pointwise_failed` before the construction (DET.57; LP2's pull request
+  340, `c600-run/tests/q5.rs`).
 - Whole-state contracts (LP2 draft until the IR freeze; LG4.10, LB1.7). A function of kind `FnKind::Contract`, in
   source `contract settled() -> Bool effects [snapshot] { ... }`, takes no parameter, returns an exact `Bool` and
   needs nothing beyond reading the snapshot and child budgets, so its result is a function of its revision; the checker
@@ -1199,6 +1206,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Not built: the language entries over these checks and their results. CT-LB4-01 is built on these checks in LP3's C6
     (`c600-display`'s chart checks). The checks take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
+- J10's exposed faces (LP2's pull request 336; JI.41, JI.45): `c600_jumble::faces::exposed_faces` answers every
+  request with the registered refusal `KN2:input.exposed_geometry_unavailable` and JI.45's context (the feature and
+  the render row J10, the source, `missing`: certified geometry and a size profile, and no draft). It only reads
+  the state and invents no mesh, face, count or size; the geometry waits for certified data and a size profile
+  (`c600-jumble/tests/refusals.rs`).
 
 ## Status of M6: the session store
 
@@ -2063,8 +2075,10 @@ run or not applicable is no pass (PHS.63).
   exact checker of isometry and homomorphism for the stereographic chart, which is not a projective map (both stay
   `not_established`); charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
   production precision rule (RPI.36). CT-RPI-08's rows J01 and J06 to J12 stay unsupported until a backend's own rows
-  (C9), and J10's producer waits for exposed-face geometry (LP2); a decoder from the interpreter's values (the IR draft
-  has list types since pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired into the host,
+  (C9), and J10's producer waits for certified exposed-face geometry and a size profile (LP2's
+  `faces::exposed_faces` refuses with JI.45's code, pull request 336); a decoder from the interpreter's values (the
+  IR draft has list types since pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired
+  into the host,
   until the host attaches user stages (the core compiles and bounds them, WARP only, C9 U5); CT-RM-09's rows 3 to 6, 8
   and 10 wait for C9 for their device parts: the vertex evaluation and projection, U on a device and the skipped work
   (CT-RM-10, CT-RPI-31), and fault injection (CT-RPI-34); RM.38's weight table, device loss and `display_unsupported`
@@ -2736,7 +2750,8 @@ run or not applicable is no pass (PHS.63).
     certificates, and u; the units entries answer every off unit or the named unit, and the clean-step entry the named
     word and unit only, its flag LB3.8's. The repair entry (CT-LB3-05's and CT-BND-17's entry part) is admitted only
     under the built-in column's repair-list exception as written: refused for a literal cap, a helper's read, a field of
-    the read and a condition on it.
+    the read and a condition on it. The survey row answers the named grip only: asked for every grip or for a list of
+    grips, the run stops with `KN5:input.argument_form`, and the bridge refuses the same arguments (pull request 332).
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -2822,6 +2837,13 @@ run or not applicable is no pass (PHS.63).
     protected, under Net and Strict, a press commits or is refused as `word_protection` answers. Redo brings back each
     head with its digest and the tool's reads, and a free binding at the next record's grip is refused with
     `MENU_BINDING_MISMATCH`. The tests read the layer's decisions and add no rule of their own.
+  - `c600-jumble-tool/tests/jumble_layer_repair.rs` (pull request 339): the repair list through the command layer,
+    LP2's job that names its cap (pull request 326), beside the tool's entry `jumble_repair` at the layer's head on
+    the I_a walk, in four tests. At a named misaligned cap, at closed caps, at a cap whose completed list is empty,
+    after a press that drops the kept list and after its undo, the job's list and the entry's read agree on status,
+    input digest, parameters, message and rows; the job alone words an empty list (BND.2), each run of the entry
+    reads the `repair_list` row once with the named cap, and neither side picks a cap. The tests read the layer's
+    and the tool's answers and add no rule of their own.
   - `c600-jumble-tool/tests/ct_lb1_06.rs`: CT-LB1-06's jumbling half (LB1.10) on the model in `assets/`: the relation
     `jumble-locality/1` that `locality` pins agrees with M5's table on every pair of grips; bca and cab key to bca and
     abc to itself; identity letters and an item beside its inverse stay in the key; words with one key are admitted
@@ -2842,10 +2864,13 @@ run or not applicable is no pass (PHS.63).
     engine's `correction_set_check`), pull request 301.
 - Taken up from LP2 since pull request 323: through the command layer, `jumble.off`, the refusals with Jumble on, redo,
   protected pieces and free mode, each beside the tool's own entries at the layer's head
-  (`tests/jumble_layer_verdicts.rs`, above). C8 uses the IR draft's F2 and F5 (pull request 222) for LB3's ν entry
-  (`src/jumble_nu.6cs`, `library::NU`).
-- Not built: J10's producer (exposed-face geometry, LP2); J01 and J06 to J12 as supported rows (a backend's own rows,
-  C9); the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
+  (`tests/jumble_layer_verdicts.rs`, above); since pull request 339, the repair list as LP2's job that names its cap
+  (KN5, pull request 326), with BND.2's wording of an empty list and no key that skips caps with an empty list,
+  beside the entry `jumble_repair` (`tests/jumble_layer_repair.rs`, above). C8 uses the IR draft's F2 and F5 (pull
+  request 222) for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
+- Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
+  refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
+  the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
   CT-RTE-07's jumbling keys on menu words (LG2.18's jumbling word key, LP2); LB3.1's other rows as language code ("Menus
   and pinned letters", "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under
   `library` above, and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN,
@@ -2853,10 +2878,9 @@ run or not applicable is no pass (PHS.63).
   records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end
   stages are compared only in the whole-journal runs, on request. The survey's all-items loop is not served (LB3.5):
   `survey` answers the solver's named grip only. F03 on 600-cell-Full has no swept preview: the retained kernel names no
-  plane for its twists, and which engine names one is not settled. Also waiting: the repair list through the command
-  layer, with a job that names its cap (KN5), the BND.2 wording of an empty list and no key that skips caps with an
-  empty list (LP2); the language entry `jumble_repair` reads the named cap's list under the built-in column's
-  repair-list exception (LP2's pull request 229), and no job runs it.
+  plane for its twists, and which engine names one is not settled. The language entry `jumble_repair` reads the
+  named cap's list under the built-in column's repair-list exception (LP2's pull request 229) and runs as no job of
+  the layer (the program-job route, above); LP2's job serves the same list (pull request 326, taken up above).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
