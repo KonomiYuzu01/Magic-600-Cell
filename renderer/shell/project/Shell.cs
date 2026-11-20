@@ -140,8 +140,8 @@ public partial class Shell : Control
         if (withSession)
         {
             var fixture = System.Environment.GetEnvironmentVariable("M600_SESSION_FIXTURE");
-            var code = (uint)Array.IndexOf(EventLog.Puzzles, puzzle);
-            var opened = hostLibrary.OpenSession(_host, code, session!, menu!,
+            var puzzleCode = (uint)Array.IndexOf(EventLog.Puzzles, puzzle);
+            var opened = hostLibrary.OpenSession(_host, puzzleCode, session!, menu!,
                 string.IsNullOrEmpty(fixture) ? null : fixture, out _openRevision);
             Require(hostLibrary, "m6h_open_session", opened);
             _startup?.SessionOpened(EventLog.Now());
