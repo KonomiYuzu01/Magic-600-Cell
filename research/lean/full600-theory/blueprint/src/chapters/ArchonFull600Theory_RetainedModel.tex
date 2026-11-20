@@ -1,0 +1,378 @@
+\chapter{The retained model}
+\label{ch:ArchonFull600Theory_RetainedModel}
+
+This chapter is Milestone 5 of the handoff: the census table O9 as a
+checked input, the cut chambers and cap signatures, the retained model
+with the hypotheses R, F, I, C and E as inputs, Lemmas 6, 7 and 8 (with N4
+and N5 as decidable checks), and Lemmas 9 to 11 on the nine selected
+orbits (with N11). The hypotheses are not proved: their truth for the
+real puzzle is evidence, not theory. Source line numbers refer to
+\texttt{research/Full\_600cell\_Puzzle\_Theory.tex}.
+
+\section{The census table}
+
+\begin{definition}[The census table]
+  \label{def:census}
+  \lean{ArchonFull600Theory.FrameGroupType, ArchonFull600Theory.CensusRow,
+    ArchonFull600Theory.censusRows, ArchonFull600Theory.census,
+    ArchonFull600Theory.checkCensusJson}
+  \leanok
+  % SOURCE: hypothesis R, lines 786--829
+  % SOURCE QUOTE: Orbit & Rank & Stickers per piece & Pieces \(N_o\) & Frame group
+  % \(H_o\)
+  \textit{Source: hypothesis R, the table.}
+  The \(35\) rows give the rank, the stickers per piece \(k_o\), the
+  pieces \(N_o\) and the frame group type \(H_o\in\{1,C_2,C_5,D_5,A_5\}\).
+  They are typed in. Compiling the module reads
+  \texttt{assets/census.json} and stops the build unless every row and
+  the file's totals agree with it.
+\end{definition}
+
+\begin{lemma}[Census sums and frame types]
+  \label{lem:census-sums}
+  \lean{ArchonFull600Theory.censusSums, ArchonFull600Theory.frameTypeCounts,
+    ArchonFull600Theory.invariantOrder, ArchonFull600Theory.FrameGroupType.card_carrier,
+    ArchonFull600Theory.FrameGroupType.card_abelianization}
+  \leanok
+  \uses{def:census, lem:n5-dihedral, lem:n5-alternating}
+  % SOURCE: hypothesis R, lines 832--836; Lemma 8, lines 1042--1070
+  % SOURCE QUOTE: \sum_oN_o=176520,\qquad 600+\sum_ok_oN_o=259800.
+  \textit{Source: hypothesis R; N4 and N5.}
+  \(\sum_oN_o=176520\), \(600+\sum_ok_oN_o=259800\) and
+  \(600+\sum_oN_o=177120\). Seven orbits have \(C_2\), one \(D_5\), two
+  \(C_5\), one \(A_5\) and \(24\) the trivial group. The abelianizations
+  have orders \(2,5,2,1,1\) for \(C_2,C_5,D_5,A_5,1\), so
+  \(\prod_o2|H_o^{\mathrm{ab}}|=2^{43}5^2\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  Kernel evaluation over the table. \(|D_5^{\mathrm{ab}}|=10/5\) and
+  \(|A_5^{\mathrm{ab}}|=60/60\) by N5.
+\end{proof}
+
+\begin{lemma}[N11: the selected orbits]
+  \label{lem:selected-census}
+  \lean{ArchonFull600Theory.selectedOrbitCensus}
+  \leanok
+  \uses{def:census}
+  % SOURCE: hypothesis C, lines 862--864
+  % SOURCE QUOTE: The solved coloring has \(600\) distinct home-cell symbols, with six
+  % copies of each in O01, four in O33, and twelve in each of the other seven selected orbits.
+  \textit{Source: hypothesis C and Lemma 10.}
+  The orbits \(\{1,4,5,7,18,19,27,31,33\}\) have one sticker per piece and
+  \(N_o=600m_o\) pieces, with \(m_o=6\) for O01, \(4\) for O33 and \(12\)
+  otherwise.
+\end{lemma}
+\begin{proof}
+  \leanok
+  Kernel evaluation over the table.
+\end{proof}
+
+\section{Caps, cut chambers and signatures}
+
+\begin{definition}[Caps and cut chambers]
+  \label{def:cut-chambers}
+  \lean{ArchonFull600Theory.Cap, ArchonFull600Theory.capDepth, ArchonFull600Theory.capPole,
+    ArchonFull600Theory.cutValue, ArchonFull600Theory.capRegion,
+    ArchonFull600Theory.cutComplement, ArchonFull600Theory.chamber,
+    ArchonFull600Theory.completeSignature}
+  \leanok
+  \uses{lem:facet-pole, def:symmetry-group}
+  % SOURCE: retained-model definitions, lines 738--769
+  % SOURCE QUOTE: \alpha=\frac{121}{125}, \qquad U_c=\{x\in\widetilde P:n_c\cdot
+  % x>\alpha\|n_c\|^2\}.
+  \textit{Source: the retained-model definitions.}
+  The \(600\) caps are the four-cliques of the edge graph, with poles
+  \(n_c\) and \(\alpha=121/125\). The cap region is
+  \(U_c=\{x\in P:n_c\cdot x>\alpha\|n_c\|^2\}\). A chamber is a choice of
+  strict side of every cut hyperplane intersected with
+  \(\operatorname{int}P\), and the complete signature of a point is
+  \(M(x)=\{c:x\in U_c\}\). The model here is \(P\); the cell-pole model
+  \(\widetilde P\) of Lemma 5 multiplies every cut function by
+  \((4/\phi)^2\) (\texttt{cutValue\_cellPoleMap}), so it has the same
+  chambers and signatures. \(K\) acts on the caps through their vertices.
+\end{definition}
+
+\begin{theorem}[Lemma 6, geometric part]
+  \label{thm:signatures}
+  \lean{ArchonFull600Theory.convex_chamber, ArchonFull600Theory.completeSignature_eq_iff,
+    ArchonFull600Theory.completeSignature_smul, ArchonFull600Theory.isPreconnected_patch,
+    ArchonFull600Theory.cutValue_cellPoleMap}
+  \leanok
+  \uses{def:cut-chambers, thm:cell-pole}
+  % SOURCE: retained-model definitions, lines 751--755; Lemma 6, lines 914--935
+  % SOURCE QUOTE: A nonempty such intersection is convex and hence connected.
+  \textit{Source: the retained-model definitions and Lemma 6.}
+  Chambers are convex. Two points of \(\operatorname{int}P\) off every cut
+  hyperplane have the same complete signature exactly when they lie in the
+  same connected component of that set, so complete signatures identify
+  the cut-chamber positions. For \(k\in K\), \(M(kx)=kM(x)\). A chamber
+  closure meets a closed facet in a convex set. The source's patch, this
+  set with its lower-dimensional boundary removed, is not stated.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Cut functions are affine, so the chamber conditions are convex. Along a
+  preconnected set off the cuts no cut function changes sign, by the
+  intermediate value theorem, so the signature is constant on components;
+  conversely equal signatures put both points in one convex chamber. \(K\)
+  preserves inner products and permutes the poles with the caps.
+\end{proof}
+
+\section{The retained model and its hypotheses}
+
+\begin{definition}[The retained model and hypothesis R]
+  \label{def:retained-model}
+  \lean{ArchonFull600Theory.RetainedModel, ArchonFull600Theory.RetainedModel.legalGroup,
+    ArchonFull600Theory.HypothesisR, ArchonFull600Theory.HypothesisR.orbitStickers}
+  \leanok
+  \uses{def:census, def:cut-chambers}
+  % SOURCE: hypothesis R, lines 776--784
+  % SOURCE QUOTE: The retained model is the complete surface subdivision just described, with
+  % no hidden identification of distinct pieces having the same recorded address.
+  \textit{Source: hypothesis R.}
+  The data are sticker slots, pieces, the sticker-to-piece map \(\rho\) and
+  the primitives \(H_c,T_c\) of each cap; \(G=\langle H_c,T_c\rangle\). R
+  says: legal moves carry pieces to pieces; \(600\) one-sticker centres
+  are fixed by every primitive; the \(35\) moving classes have the census
+  sizes, each is one orbit of \(G\) on pieces, and legal moves keep each
+  class; each piece has a point of its chamber and distinct pieces are
+  distinct chambers; each sticker has a host facet that determines it
+  within its piece; ranks are the census ranks; and each orbit has a frame
+  group \(H_o\le S_{k_o}\) of the census type containing every legal
+  return map on a reference piece.
+\end{definition}
+
+\begin{definition}[Hypotheses F, C and E]
+  \label{def:hypotheses-fce}
+  \lean{ArchonFull600Theory.HypothesisF, ArchonFull600Theory.HypothesisC,
+    ArchonFull600Theory.HypothesisE}
+  \leanok
+  \uses{def:retained-model, def:pure-controller, def:symmetry-group}
+  % SOURCE: hypotheses F, C and E, lines 839--872
+  % SOURCE QUOTE: Every cap admits its full tetrahedral rotation group \(A_4\), acting on the
+  % same complete subdivision.
+  \textit{Source: hypotheses F, C and E.}
+  F: each cap's \(A_4\), the even permutations of its four vertices, acts on
+  the sticker slots, and \(H_c\), \(T_c\) are the images of an element of
+  order \(2\) and one of order \(3\). C: the nine selected orbits have
+  pure-controller certificates in \(G\), and the solved colouring has
+  \(600\) symbols with \(6\), \(4\) and \(12\) copies of each. E: \(K\) acts
+  faithfully on the same sticker slots, respects pieces, sends the centre
+  of cap \(c\) to the centre of \(k\cdot c\), and conjugates each rotation
+  of cap \(c\) into the rotation of cap \(k\cdot c\) that permutes its
+  vertices through \(k\).
+\end{definition}
+
+\begin{lemma}[The model's totals]
+  \label{lem:model-totals}
+  \lean{ArchonFull600Theory.HypothesisR.card_piece, ArchonFull600Theory.HypothesisR.card_sticker}
+  \leanok
+  \uses{def:retained-model, lem:census-sums}
+  % SOURCE: hypothesis R, lines 780--781
+  % SOURCE QUOTE: It has \(259800\) sticker slots, \(177120\) surface pieces
+  \textit{Source: hypothesis R.}
+  Under R there are \(177120\) pieces and \(259800\) sticker slots.
+\end{lemma}
+\begin{proof}
+  \leanok
+  Count pieces by class and stickers by piece, and use the census sums.
+\end{proof}
+
+\begin{theorem}[Lemma 6]
+  \label{thm:lemma-six}
+  \lean{ArchonFull600Theory.alternatingFour_words, ArchonFull600Theory.closure_halfTurn_thirdTurn,
+    ArchonFull600Theory.HypothesisF.closure_primitives,
+    ArchonFull600Theory.HypothesisR.pieceAction, ArchonFull600Theory.HypothesisR.piece_legal,
+    ArchonFull600Theory.HypothesisR.signature_injective,
+    ArchonFull600Theory.HypothesisR.address_injective,
+    ArchonFull600Theory.HypothesisR.rank_multiplicity}
+  \leanok
+  \uses{def:retained-model, def:hypotheses-fce, thm:signatures}
+  % SOURCE: Lemma 6, lines 888--903
+  % SOURCE QUOTE: Under R and F, \(H_c,T_c\) generate the full \(A_4\) action at each cap.
+  \textit{Source: Lemma 6.}
+  Under F, \(H_c\) and \(T_c\) generate the cap's \(A_4\) action. Under R,
+  \(\rho(g(s))=\bar g(\rho(s))\) for a homomorphism \(g\mapsto\bar g\) from
+  \(G\); distinct pieces have distinct complete signatures; \((M(A),h)\)
+  addresses the sticker slots; and \(r(A)=|M(A)|-1\) and
+  \(k(A)=|\operatorname{Host}(A)|\) are the census rank and \(k_o\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  A kernel check over \(A_4\) shows that an element of order \(2\) and one
+  of order \(3\) generate it, the source's Klein four-group argument; an
+  equivalence moves it to each cap. Legal moves respect pieces, so they
+  induce a permutation of pieces. Signature injectivity follows from the
+  geometric part and R's distinct chambers, and addresses from it and R's
+  host condition.
+\end{proof}
+
+\section{Lemma 7: transported frames}
+
+\begin{definition}[The ambient wreath product]
+  \label{def:frame-wreath}
+  \lean{ArchonFull600Theory.FrameWreath, ArchonFull600Theory.FrameWreath.mul_perm,
+    ArchonFull600Theory.FrameWreath.mul_frame, ArchonFull600Theory.FrameWreath.natCard}
+  \leanok
+  % SOURCE: Lemma 7, lines 962--966
+  % SOURCE QUOTE: (p,a)(r,b)=(r\circ p,c), \qquad c_i=a_i b_{p(i)}.
+  \textit{Source: Lemma 7.}
+  \(H^X\rtimes S_X\) has elements \((p,a)\), and
+  \(|H^X\rtimes S_X|=|X|!\,|H|^{|X|}\). Mathlib composes right to left, so
+  \((y\,x).p=y.p\circ x.p\) and \((y\,x).a_i=y.a_{x.p(i)}\,x.a_i\): this is
+  the source's chronological law with \(x\) applied first.
+\end{definition}
+
+\begin{theorem}[Lemma 7]
+  \label{thm:lemma-seven}
+  \lean{ArchonFull600Theory.HypothesisR.CoherentFrames, ArchonFull600Theory.HypothesisR.coherentFrames,
+    ArchonFull600Theory.HypothesisR.CoherentFrames.coord,
+    ArchonFull600Theory.HypothesisR.CoherentFrames.coord_apply,
+    ArchonFull600Theory.HypothesisR.CoherentFrames.coord_injective,
+    ArchonFull600Theory.HypothesisR.transportedFrames,
+    ArchonFull600Theory.HypothesisR.natCard_ambient}
+  \leanok
+  \uses{def:retained-model, def:frame-wreath}
+  % SOURCE: Lemma 7, lines 954--961
+  % SOURCE QUOTE: Under R, coherent transported frame choices give an injective homomorphism
+  % \begin{equation} G\hookrightarrow \prod_{o=0}^{34}\left(H_o^{N_o}\rtimes S_{N_o}\right).
+  \textit{Source: Lemma 7.}
+  Under R, coherent transported frames exist and give an injective
+  homomorphism \(G\hookrightarrow\prod_o(H_o^{N_o}\rtimes S_{N_o})\) with
+  \(g(\mathrm{frame}(i,f))=\mathrm{frame}(p(i),a_if)\). The ambient product
+  has order \(\prod_oN_o!\,|H_o|^{N_o}\). The remark that a change of
+  frames conjugates the coordinates is not stated.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Fix a reference piece and frame in each orbit and a legal transporter to
+  every position. The increment of \(g\) at \(i\) is the return map
+  \(t_{g(i)}^{-1}gt_i\) on the reference piece, which R puts in \(H_o\).
+  The coordinate map is a homomorphism by the wreath law and injective
+  because frames cover every moving sticker and the centres are fixed.
+\end{proof}
+
+\section{Lemma 8: invariants and the upper bound}
+
+\begin{lemma}[Lemma 8: the invariants]
+  \label{lem:invariants}
+  \lean{ArchonFull600Theory.FrameWreath.orientation, ArchonFull600Theory.FrameWreath.positionSign,
+    ArchonFull600Theory.FrameWreath.invariant, ArchonFull600Theory.FrameWreath.invariant_surjective,
+    ArchonFull600Theory.invariantPi, ArchonFull600Theory.invariantPi_surjective,
+    ArchonFull600Theory.index_ker_invariantPi,
+    ArchonFull600Theory.HypothesisR.natCard_invariantTarget,
+    ArchonFull600Theory.HypothesisR.index_invariantKernel}
+  \leanok
+  \uses{def:frame-wreath, lem:census-sums, thm:lemma-seven}
+  % SOURCE: Lemma 8, lines 1023--1075
+  % SOURCE QUOTE: \Phi_o(p,a)=\sum_i\chi_o(a_i).
+  \textit{Source: Lemma 8.}
+  On \(H^X\rtimes S_X\), \(\operatorname{sgn}p\) and
+  \(\Phi(p,a)=\sum_i\chi(a_i)\in H^{\mathrm{ab}}\) are homomorphisms, and
+  together they map onto \(\{\pm1\}\times H^{\mathrm{ab}}\) when
+  \(|X|\ge2\). Over the \(35\) orbits the joint invariant maps onto a group
+  of order \(2^{43}5^2\), so its kernel has exactly this index.
+\end{lemma}
+\begin{proof}
+  \leanok
+  A permutation of \(X\) reindexes the abelian sum. A transposition sets
+  the sign and a single frame coordinate sets \(\Phi\). The target order
+  is \(\prod_o2|H_o^{\mathrm{ab}}|\), by the census types.
+\end{proof}
+
+\begin{theorem}[Lemma 8: the conditional upper bound]
+  \label{thm:invariant-bound}
+  \lean{ArchonFull600Theory.HypothesisI, ArchonFull600Theory.HypothesisI.invariantPi_coord,
+    ArchonFull600Theory.HypothesisI.invariantBound}
+  \leanok
+  \uses{lem:invariants, thm:lemma-seven}
+  % SOURCE: hypothesis I, lines 844--849; Lemma 8, lines 1011--1018
+  % SOURCE QUOTE: Under R and I, \begin{equation} |G| \le
+  % \frac{\displaystyle\prod_{o=0}^{34}N_o!\,|H_o|^{N_o}} {2^{43}5^2}.
+  \textit{Source: hypothesis I and Lemma 8.}
+  I: in some coherent transported frames every \(H_c\) and \(T_c\) has even
+  positional permutation and trivial orientation image in every orbit.
+  Under R and I,
+  \(|G|\cdot2^{43}5^2\le\prod_oN_o!\,|H_o|^{N_o}\), so
+  \(|G|\le\prod_oN_o!\,|H_o|^{N_o}/(2^{43}5^2)\), and the denominator is
+  the exact index of the invariant kernel. Equality is not asserted.
+\end{theorem}
+\begin{proof}
+  \leanok
+  By closure induction every legal element lies in the kernel, so \(G\)
+  embeds in it, and \(|\ker|\cdot\mathrm{index}=|\text{ambient}|\).
+\end{proof}
+
+\section{Lemmas 9 to 11 on the selected orbits}
+
+\begin{lemma}[The selected orbits in the model]
+  \label{lem:selected-model}
+  \lean{ArchonFull600Theory.HypothesisR.card_orbitStickers,
+    ArchonFull600Theory.HypothesisR.card_selectedOrbitStickers,
+    ArchonFull600Theory.HypothesisR.selected_single_sticker,
+    ArchonFull600Theory.HypothesisR.selectedOrbitStickers_disjoint,
+    ArchonFull600Theory.HypothesisR.legal_mem_selectedOrbitStickers}
+  \leanok
+  \uses{def:retained-model, lem:selected-census}
+  % SOURCE: Lemma 9, lines 1087--1090
+  % SOURCE QUOTE: on the nine selected single-sticker orbits and fixing every other sticker.
+  \textit{Source: Lemma 9 and N11.}
+  Under R, \(|O_o|=k_oN_o\); the nine selected orbits have one sticker per
+  piece and \(3600\), \(2400\) and \(7200\) sticker slots; they are pairwise
+  disjoint and invariant under \(G\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  Count the stickers of \(O_o\) piece by piece; the rest is R and the
+  census.
+\end{proof}
+
+\begin{lemma}[The cap alphabet realizes \(G\)]
+  \label{lem:cap-words}
+  \lean{ArchonFull600Theory.foldl_moves, ArchonFull600Theory.wordPermutation_append,
+    ArchonFull600Theory.exists_word_pow, ArchonFull600Theory.RetainedModel.capH,
+    ArchonFull600Theory.RetainedModel.capT, ArchonFull600Theory.RetainedModel.capWord_surjective}
+  \leanok
+  \uses{def:retained-model, def:word-coloring}
+  % SOURCE: Lemma 11, lines 1193--1197
+  % SOURCE QUOTE: \mathcal A=\{H_c,T_c,T_c^{-1}:c\in\mathcal C\}, \qquad q=1800.
+  \textit{Source: Lemma 11.}
+  For any enumeration of the caps, every legal element is the value of a
+  word in \(\{H_c,T_c,T_c^{-1}\}\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  Words compose by concatenation and include every generator. In the
+  finite group \(G\), \(x^{-1}=x^{\operatorname{ord}x-1}\) is a positive
+  power.
+\end{proof}
+
+\begin{theorem}[Lemmas 9 to 11 under R and C]
+  \label{thm:selected-lemmas}
+  \lean{ArchonFull600Theory.HypothesisC.supportedAlternating,
+    ArchonFull600Theory.HypothesisC.balancedColorBound,
+    ArchonFull600Theory.HypothesisC.wordDistanceBound,
+    ArchonFull600Theory.HypothesisC.totalVariationBound}
+  \leanok
+  \uses{lem:selected-model, lem:cap-words, def:hypotheses-fce, lem:supported-alternating-actions,
+    lem:balanced-color-lower-bound, lem:word-distance-lower-bound,
+    lem:total-variation-lower-bound}
+  % SOURCE: Lemma 9, lines 1087--1090; Lemma 10, lines 1138--1147; Lemma 11, lines 1191--1202
+  % SOURCE QUOTE: Under R and C, \(G\) contains a subgroup acting as \begin{equation}
+  % A_{3600}\times A_{2400}\times A_{7200}^{\,7} \end{equation}
+  \textit{Source: Lemmas 9, 10 and 11.}
+  Under R and C: \(G\) contains
+  \(A_{3600}\times A_{2400}\times A_{7200}^7\) acting on the nine selected
+  orbits and fixing every other sticker; there are at least \(B\) reachable
+  face-colour states, \(B\) of them with every unselected sticker solved;
+  some state is at word distance at least \(46648\); and a law supported
+  on the states of \(1000\)-letter words is at total variation more than
+  \(1-10^{-148595}\) from the uniform law.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Milestone 1's abstract theorems, with the selected orbits, the
+  certificates and the colouring from R and C, and the realization of
+  \(G\) by words proved above.
+\end{proof}
