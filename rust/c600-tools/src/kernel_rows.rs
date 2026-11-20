@@ -1,7 +1,7 @@
 //! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; LP2 draft until the
-//! command table freezes, PHS.52). Nine rows so far: five of KN2.4, the draft `setups` row of the setup-search
-//! exception, the two draft structure rows of LP3's representations tool, and the draft `orbits` row of LB2's orbit
-//! catalogue. LB2's exact completion reads two of them
+//! command table freezes, PHS.52). Eleven rows so far: five of KN2.4, the draft `setups` row of the setup-search
+//! exception, the three draft structure rows of LP3's representations tool, the draft `orbits` row of LB2's orbit
+//! catalogue, and the draft `journal` row of KN4.3, which LP3's C8 reads. LB2's exact completion reads two of them
 //! (`c600_library`'s `completion.exact_completion`; CT-LB2-04: exact completion reads identities, slots and
 //! orientations): `positions`, the position of named pieces, and `labels`, the label of named slots. LB2's recipes
 //! and reports read the third (`c600_library`'s `recipes`; CT-LB2-01): `effect`, a recipe's net map and what it
@@ -23,7 +23,8 @@
 //! protected orbits ([`CommandLayer::protected`]), and keeps the head. It serves `setups` from the certified table a host gives it ([`SetupTable`]) and the kernel's star certificate, and
 //! `structure.compare` and `filter.preview` through LP2's structure rows [`CommandLayer::compare_cells`] and
 //! [`CommandLayer::layer_counts`], which read no state, and `orbits` through the kernel's
-//! [`c600_kernel::Kernel::positions`] at the solved state, which reads no state of the session.
+//! [`c600_kernel::Kernel::positions`] at the solved state, which reads no state of the session. It serves `journal`
+//! through LP2's [`CommandLayer::journal`], which reads the session's move tree and changes nothing.
 //!
 //! # `positions`
 //!
@@ -282,14 +283,47 @@
 //! charged: with Jumble on, `KN5:input.retained_tool_needs_jumble_off` (LB2.1), since the orbits are 600-cell-Full's;
 //! and an orbit outside -1 to 34, `KN2:input.named_object_invalid`. The charge stays, as for a refused proposal. The
 //! tariff is [`orbits_tariff`].
+//!
+//! # `journal`
+//!
+//! A program reads the row as `read_snapshot<T>("journal", page)`: LP3's C8 reads it to page back from the head to
+//! an exit or the start, for its `exit_root` and `solved_witness` facts. It is KN4.3's frozen query
+//! `journal(session, from: EventId?, limit: Nat, cursor?) -> Page<JournalEntry>`, served as a draft row on the bridge's
+//! own session ([`CommandLayer::journal`]). `page` is a record with these three fields, in any order:
+//!
+//! - `cursor: Text`, "" for a first page, else the `next` of the page before;
+//! - `from: Text`, "" for the head, else an event's name, `e<order>`, the start being `e0`;
+//! - `limit: Nat`, 1 to [`JOURNAL_PAGE_LIMIT`] events.
+//!
+//! The walk goes from `from` along its parents toward the start, newest first, on that event's line only: the path
+//! that `active_exit` and `solved_witness` read. `T` is a record of two fields, in any order:
+//!
+//! - `entries: List<JournalEntry>`, at most `limit` entries, each a record with these five fields, in any order:
+//!   `event: Text`, the event's name; `exit: Text`, an exit's mark, the SHA-256 of its exit record's canonical JSON,
+//!   the value an `exit_root` entry names, never the poses (ONE.56), and "" for every other kind; `kind: Text`, one of
+//!   `start`, `commit`, `crossing`, `pose` and `exit`; `letters: Nat`, a commit's retained recipe length in signed
+//!   primitive letters, 0 for every other kind; `solved: Bool`, for the start whether its state is the solved state,
+//!   false for every other kind;
+//! - `next: Text`, the cursor that continues the walk, "" once the page reaches the start.
+//!
+//! `letters` may also be declared with `Int`; no field carries a display qualifier. The answer's fields are in `T`'s
+//! order. An entry has a bounded size, so a page costs at most `limit` entries, whatever the history's length. The
+//! row answers with Jumble on or off and for the events of every epoch, replays nothing and changes nothing.
+//!
+//! The bridge refuses before the row runs, at the cost of the read's step: a declared type other than these,
+//! `LG2:type.mismatch`; an argument of another form, a `limit` of 0 or above the page limit, or a `from` that is not
+//! an event's name, `KN5:input.argument_form`. Once the read is charged: a `from` the move tree does not hold,
+//! `KN2:stale.revision_gone`; a cursor of another walk, session or launch, `KN5:input.argument_form`. The tariff
+//! is [`journal_tariff`].
 
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::OnceLock;
 
 use c600_check::TYPE_MISMATCH;
+use c600_command::journal::event_order;
 use c600_command::layer::CERTIFICATE;
-use c600_command::{code, CommandLayer, Store};
+use c600_command::{code, CommandLayer, JournalEntry, Store, JOURNAL_PAGE_LIMIT, JOURNAL_ROW};
 use c600_ir::{QTy, Ty};
 use c600_kernel::json::{self as kernel_json, Value as KernelJson};
 use c600_kernel::{archive, verify_assets, Derivation, Effect, Kernel, PiecePosition, ORBITS, PIECES, SLOTS};
@@ -1932,4 +1966,176 @@ pub fn orbits<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result
         Value::record(order.iter().map(|&name| (name, value(name))).collect())
     };
     Ok(Value::list(named.iter().map(record).collect()))
+}
+
+/// The `journal` row's query: KN4.3's page of the move tree's events, which LP3's C8 reads (a draft until the command
+/// table freezes).
+pub const JOURNAL: &str = JOURNAL_ROW;
+
+/// The fields of the `journal` row's answer, by name.
+const PAGE_FIELDS: [&str; 2] = ["entries", "next"];
+
+/// The fields of a `journal` entry, by name.
+const ENTRY_FIELDS: [&str; 5] = ["event", "exit", "kind", "letters", "solved"];
+
+/// The type of a `journal` entry: `record { event: Text, exit: Text, kind: Text, letters: Nat, solved: Bool }`.
+fn entry_type() -> QTy {
+    let field = |name: &str| match name {
+        "letters" => exact(Ty::Nat),
+        "solved" => exact(Ty::Bool),
+        _ => exact(Ty::Text),
+    };
+    exact(Ty::Record(ENTRY_FIELDS.iter().map(|&name| (name.to_owned(), field(name))).collect()))
+}
+
+/// The type the `journal` row answers: `record { entries: List<JournalEntry>, next: Text }`.
+pub fn journal_type() -> QTy {
+    let entries = exact(Ty::List(Box::new(entry_type())));
+    exact(Ty::Record(vec![("entries".to_owned(), entries), ("next".to_owned(), exact(Ty::Text))]))
+}
+
+/// The fields of a declared `journal` entry type in its order; None unless it is a list of records with the entry's
+/// five fields, `letters` declared [`whole`], `solved` `Bool` and the others `Text`, and no display qualifier.
+fn entry_fields(ty: &QTy) -> Option<Vec<&'static str>> {
+    let Ty::List(record) = &ty.ty else { return None };
+    let Ty::Record(fields) = &record.ty else { return None };
+    if ty.display || record.display || fields.len() != ENTRY_FIELDS.len() {
+        return None;
+    }
+    let mut order: Vec<&'static str> = Vec::with_capacity(ENTRY_FIELDS.len());
+    for (name, declared) in fields {
+        let known = *ENTRY_FIELDS.iter().find(|&&known| known == name)?;
+        let holds = match known {
+            "letters" => whole(declared),
+            "solved" => *declared == exact(Ty::Bool),
+            _ => *declared == exact(Ty::Text),
+        };
+        if order.contains(&known) || !holds {
+            return None;
+        }
+        order.push(known);
+    }
+    Some(order)
+}
+
+/// The fields of a declared `journal` answer type in its order, with its entries' fields in their order; None unless
+/// it is a record of `entries`, as [`entry_fields`] takes them, and `next: Text`, with no display qualifier.
+fn journal_fields(ty: &QTy) -> Option<(Vec<&'static str>, Vec<&'static str>)> {
+    let Ty::Record(fields) = &ty.ty else { return None };
+    if ty.display || fields.len() != PAGE_FIELDS.len() {
+        return None;
+    }
+    let mut order: Vec<&'static str> = Vec::with_capacity(PAGE_FIELDS.len());
+    let mut entries = None;
+    for (name, declared) in fields {
+        let known = *PAGE_FIELDS.iter().find(|&&known| known == name)?;
+        if order.contains(&known) {
+            return None;
+        }
+        if known == "next" {
+            if *declared != exact(Ty::Text) {
+                return None;
+            }
+        } else {
+            entries = Some(entry_fields(declared)?);
+        }
+        order.push(known);
+    }
+    Some((order, entries?))
+}
+
+/// A `journal` read's arguments.
+struct JournalRead {
+    /// The event the walk starts at; `None` for the head.
+    from: Option<u64>,
+    limit: u64,
+    /// The cursor of the page before; `None` for a first page.
+    cursor: Option<String>,
+}
+
+/// The arguments of a `journal` read, from its record `{ cursor: Text, from: Text, limit: Nat }` in canonical bytes
+/// (DET.59). None for any other form, a `from` that is neither "" nor an event's name, or a `limit` of 0 or above
+/// [`JOURNAL_PAGE_LIMIT`].
+fn journal_read(arg: &[u8]) -> Option<JournalRead> {
+    let Json::Object(fields) = provenance::parse(arg)? else { return None };
+    if fields.len() != 3 {
+        return None;
+    }
+    let limit = u64::try_from(exact_int(fields.get("limit")?)?).ok()?;
+    if !(1..=JOURNAL_PAGE_LIMIT).contains(&limit) {
+        return None;
+    }
+    let from = match fields.get("from")?.as_text()? {
+        "" => None,
+        name => Some(event_order(name)?),
+    };
+    let cursor = match fields.get("cursor")?.as_text()? {
+        "" => None,
+        cursor => Some(cursor.to_owned()),
+    };
+    Some(JournalRead { from, limit, cursor })
+}
+
+/// The logical size of a `journal` answer with no entries and the longest cursor, and what one entry adds to an answer
+/// at most: the event of the largest order, an exit's mark, the longest kind, `crossing`, and the most letters a count
+/// can hold.
+fn journal_sizes() -> (u128, u128) {
+    static SIZES: OnceLock<(u128, u128)> = OnceLock::new();
+    *SIZES.get_or_init(|| {
+        let event = format!("e{}", u64::MAX);
+        let mark = "0".repeat(64);
+        let next = Value::text(&format!("{event}:{mark}"));
+        let entry = Value::record(vec![
+            ("event", Value::text(&event)),
+            ("exit", Value::text(&mark)),
+            ("kind", Value::text("crossing")),
+            ("letters", Value::int(u64::MAX)),
+            ("solved", Value::Bool(true)),
+        ]);
+        let page = |entries: Vec<Value>| Value::record(vec![("entries", Value::list(entries)), ("next", next.clone())]);
+        let empty = page(Vec::new()).size();
+        (empty, page(vec![entry]).size() - empty)
+    })
+}
+
+/// The `journal` row's draft tariff for a page of `limit` events (DET.55; the command table prices the row when it
+/// freezes). The kernel cost counts one step of the walk for each event answered, whatever the history's length
+/// (R-13). The result bound is the logical size of an answer of that many of the largest entries and the longest
+/// cursor.
+pub fn journal_tariff(limit: u64) -> RowTariff {
+    let n = u128::from(limit);
+    let (empty, entry) = journal_sizes();
+    RowTariff { kernel_cost: n, result_bound: empty.saturating_add(n.saturating_mul(entry)) }
+}
+
+/// The tariff of a `journal` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for another
+/// declared type, `KN5:input.argument_form` for an argument of another form ([`journal_read`]).
+pub fn journal_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    journal_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let read = journal_read(arg).ok_or(code::ARGUMENT_FORM)?;
+    Ok(journal_tariff(read.limit))
+}
+
+/// The answer of a `journal` read, with [`journal_read_tariff`]'s refusals and, once the read is charged, those of
+/// [`CommandLayer::journal`]: a `from` the move tree does not hold, `KN2:stale.revision_gone`, and a cursor of another
+/// walk or session, `KN5:input.argument_form`. The row answers with Jumble on or off, and a read changes nothing.
+pub fn journal<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    let (order, entry_order) = journal_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let read = journal_read(arg).ok_or(code::ARGUMENT_FORM)?;
+    let page = layer.journal(read.from, read.limit, read.cursor.as_deref()).map_err(|error| error.code)?;
+    let entry = |entry: &JournalEntry| {
+        let value = |name: &str| match name {
+            "event" => Value::text(&entry.event()),
+            "exit" => Value::text(entry.exit.as_deref().unwrap_or("")),
+            "kind" => Value::text(entry.kind.name()),
+            "letters" => Value::int(entry.letters),
+            _ => Value::Bool(entry.solved),
+        };
+        Value::record(entry_order.iter().map(|&name| (name, value(name))).collect())
+    };
+    let value = |name: &str| match name {
+        "entries" => Value::list(page.entries.iter().map(entry).collect()),
+        _ => Value::text(page.next.as_deref().unwrap_or("")),
+    };
+    Ok(Value::record(order.iter().map(|&name| (name, value(name))).collect()))
 }

@@ -21,7 +21,9 @@
 //! counts of a layer predicate, and `structure.layer`, its members, through LP2's [`CommandLayer::compare_cells`],
 //! [`CommandLayer::layer_counts`] and [`CommandLayer::layer_members`], which read no state. And it serves the draft
 //! `orbits` read, the pieces of named orbits, which LB2's orbit catalogue reads: model data, the orbit the kernel's
-//! `positions` gives each piece, which reads no state of the session.
+//! `positions` gives each piece, which reads no state of the session. It serves the draft `journal` read too, KN4.3's
+//! page of the session's move tree, newest first, which LP3's C8 reads, through LP2's [`CommandLayer::journal`], which
+//! changes nothing.
 //! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
 //! (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no
 //! workspace or file write and no clock.
@@ -239,6 +241,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::ORBITS_ROW => {
                 kernel_rows::orbits_read_tariff(arg, ty)
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::JOURNAL => {
+                kernel_rows::journal_read_tariff(arg, ty)
+            }
             _ => Err(NOT_GRANTED),
         }
     }
@@ -277,6 +282,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             }
             if *query == kernel_rows::ORBITS_ROW {
                 return kernel_rows::orbits(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::JOURNAL {
+                return kernel_rows::journal(self.layer, arg, ty);
             }
         }
         let Request::Propose { word, target, .. } = request else {

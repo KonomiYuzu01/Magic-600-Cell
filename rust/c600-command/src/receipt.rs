@@ -24,6 +24,8 @@ pub mod code {
     pub const COMMAND_ID_REUSED: &str = "KN5:input.command_id_reused";
     pub const RESULT_GONE: &str = "KN5:stale.result_gone";
     pub const EPOCH_CHANGED: &str = "KN2:stale.epoch_changed";
+    /// A journal event the store does not hold (KN4.3, ONE.17).
+    pub const REVISION_GONE: &str = "KN2:stale.revision_gone";
     pub const LANE_FULL: &str = "KN7:busy.lane_full";
     pub const BUDGET_NOT_DECLARED: &str = "KN7:input.budget_not_declared";
     pub const BUDGET_CEILING: &str = "KN7:resource_limit.budget_ceiling";
