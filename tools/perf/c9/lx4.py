@@ -37,7 +37,9 @@ EDITS.json, lParam the sample id): the editor loads the edit's target baseline a
 frame that draws the baseline writes the sample's `ready` row (a handshake, no metric). The harness posts the rest only
 after it reads that row, so no timed message waits behind the Reset's work. Then for each replacement, in descending
 offset order: registered `Magic600.LX4.Select` (wParam start, lParam end, UTF-8 byte offsets in the current buffer),
-then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or WM_KEYDOWN and WM_KEYUP of VK_BACK
+which the module acknowledges with an `lx4-select` row ({"t": "lx4-select", "sample", "select"}, the Select's ordinal
+in the sample from 1) once the editor has applied it; the harness posts the replacement's keys only after it reads that
+row, because on 20 Nov 2026 (U8) the shell applied Selects after keys posted later. Then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or WM_KEYDOWN and WM_KEYUP of VK_BACK
 with its scan code 0x0E when the insert is empty. Automatic insertions (indent, closing brackets) are off, so the buffer
 equals the script's result. A turn is WM_KEYDOWN and WM_KEYUP of one of the shell's turn keys (`--turn-key`, default
 KeyJ: physical J, K and L are twists 1, 2 and 3), with the key's scan code in lParam bits 16 to 23: the shell routes by
@@ -47,7 +49,8 @@ such characters out of the buffer, and the harness's own WM_CHARs carry scan cod
 
 Logs. The harness writes `lx4-posts.jsonl` in the run directory (format `magic600-c9-lx4-posts-v1`): a `run` row, one
 `post` row per message (`sample`, `index`, `message`, `qpc` read just before PostMessageW, `ok`) and one `sample` row
-per sample (`status` done, timeout, or not-ready when no `ready` row came within the timeout and nothing after the Reset
+per sample (`status` done, timeout, not-selected when a Select's `lx4-select` row did not come within the timeout and
+nothing after it was posted, or not-ready when no `ready` row came within the timeout and nothing after the Reset
 was posted; `foreground`). The shell writes `events.jsonl` (`magic600-c9-shell-events-v1`, key_to_frame.py) whose `run`
 row also carries `puzzle` and `window` (the HWND, an integer), with frame, presented and key rows as for E2, and
 `{"t": "lx4", "sample": int, "endpoint": str, "frame_id": int, "buffer_sha256": str}` when a frame first shows an
@@ -121,6 +124,8 @@ BARS = {'echo': {'S': (50, 67), 'M': (50, 67), 'L': (50, 67)},
         'dependents': {'W': (1000, 1500)}}
 RESET, SELECT = 'Magic600.LX4.Reset', 'Magic600.LX4.Select'
 READY = 'ready'
+# The module's acknowledgment of an applied Select: {"t": SELECTED, "sample", "select"} (C9 fix, 20 Nov 2026).
+SELECTED = 'lx4-select'
 WM_KEYDOWN, WM_KEYUP, WM_CHAR, VK_BACK = 0x0100, 0x0101, 0x0102, 0x08
 KEYUP_LPARAM = 0xC0000001
 SCAN_BACK = 0x0E
@@ -381,6 +386,8 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
             for row in tail.rows():
                 if row.get('t') == 'lx4':
                     endpoints.add((row.get('sample'), row.get('endpoint')))
+                elif row.get('t') == SELECTED:
+                    endpoints.add((row.get('sample'), (SELECTED, row.get('select'))))
                 elif row.get('t') == 'key':
                     keys += 1
 
@@ -398,7 +405,7 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
             keys = 0
             started = clock()
             sent, timed = messages(edits, sample, turn_key)
-            ok_all, status = system.alive(hwnd), None
+            ok_all, status, selects = system.alive(hwnd), None, 0
             for index, (message, wparam, lparam) in enumerate(sent):
                 number = names.get(message, message)
                 qpc = system.qpc()
@@ -408,6 +415,10 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
                        'lparam': lparam, 'qpc': qpc, 'ok': ok, 'timed': index == timed})
                 if message == RESET and not (ok_all and wait_for((sample['id'], READY))):
                     status = 'not-ready'
+                    break
+                selects += message == SELECT
+                if message == SELECT and not (ok_all and wait_for((sample['id'], (SELECTED, selects)))):
+                    status = 'not-selected'
                     break
             if status is None:
                 status = 'done' if ok_all and wait_for((sample['id'], sample['metric'])) else 'timeout'
@@ -464,8 +475,8 @@ def analyze_run(events, post_rows, edits, digests):
         timed = [row for row in posts.get(sample['id'], []) if row.get('timed')]
         state = done.get(sample['id'], {})
         row = endpoints.get((sample['id'], sample['metric']))
-        if state.get('status') == 'not-ready':
-            failure = 'not-ready'
+        if state.get('status') in ('not-ready', 'not-selected'):
+            failure = state['status']
         elif len(timed) != 1 or not all(post.get('ok') for post in posts.get(sample['id'], [])):
             failure = 'post-failed'
         elif state.get('status') != 'done':

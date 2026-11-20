@@ -932,8 +932,9 @@ class Lx4Tests(NoProcessCase):
             """The shell: a Reset's ready row comes only at the harness's next wait, so an input posted before the
             harness reads it counts as early."""
 
-            def __init__(self, answer=True):
+            def __init__(self, answer=True, acknowledge=True):
                 self.answer, self.ticks, self.pending, self.reset, self.early = answer, 0, None, None, 0
+                self.acknowledge, self.sample, self.selects, self.keys = acknowledge, None, 0, []
 
             def register(self, name):
                 return {lx4.RESET: 0xC001, lx4.SELECT: 0xC002}[name]
@@ -948,8 +949,16 @@ class Lx4Tests(NoProcessCase):
             def post(self, hwnd, message, wparam, lparam):
                 if message == 0xC001:
                     self.pending = lparam if self.answer else None
+                    self.sample, self.selects = lparam, 0
                 elif message == 0xC002:
                     self.early += self.pending is not None
+                    if self.answer and self.acknowledge:
+                        self.selects += 1
+                        with events.open('a') as stream:
+                            stream.write(json.dumps({'t': lx4.SELECTED, 'sample': self.sample,
+                                                     'select': self.selects}) + '\n')
+                elif message in (lx4.WM_CHAR, lx4.WM_KEYDOWN) and wparam != 0x4A:
+                    self.keys.append(self.sample)
                     if self.reset is not None:
                         for metric in (*lx4.METRICS, 'dependents'):
                             lx4_row(self.reset, metric)
@@ -995,6 +1004,18 @@ class Lx4Tests(NoProcessCase):
             self.assertEqual(sorted(row['sample'] for row in posts),
                              sorted(sample for sample, state in status.items() if state == 'not-ready'))
             self.assertTrue(all(row['message'] == 0xC001 for row in posts))
+            # C9 fix, 20 Nov 2026: without a Select's lx4-select row, no key of its replacement is posted.
+            (run / lx4.POSTS).unlink()
+            fake = Fake(acknowledge=False)
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', fake,
+                                clock=lambda: next(clock) / 2, sleep=fake.sleep, out=lambda line: None)
+            self.assertEqual((code, fake.keys), (3, []))
+            rows = evidence.read_jsonl(run / lx4.POSTS)
+            status = {row['sample']: row['status'] for row in rows if row['t'] == 'sample'}
+            self.assertEqual(status, {sample['id']: 'done' if sample['metric'] == 'turn' else 'not-selected'
+                                      for sample in samples})
+            last = {row['sample']: row['message'] for row in rows if row['t'] == 'post'}
+            self.assertTrue(all(last[sample] == 0xC002 for sample, state in status.items() if state == 'not-selected'))
 
     def test_a_sample_without_its_ready_row_invalidates_its_run(self):
         events, posts = lx4_logs(self.edits, self.digests, 'jumble-off', lambda sample: 10.0)
@@ -1383,6 +1404,7 @@ class Lx2Tests(NoProcessCase):
                     self.fault = self.kind = None
                 elif message == 0xC001:
                     self.append({'t': 'lx4', 'sample': lparam, 'endpoint': lx4.READY})
+                    self.selects = 0
                     if self.fault is not None:
                         self.resets += 1
                         if self.turned or (self.kind == 'limit' and self.resets > 2):
@@ -1397,6 +1419,8 @@ class Lx2Tests(NoProcessCase):
                             self.row('error', reason='probe-attempts')
                     self.sample = lparam
                 elif message == 0xC002:
+                    self.selects = getattr(self, 'selects', 0) + 1
+                    self.append({'t': lx4.SELECTED, 'sample': self.sample, 'select': self.selects})
                     self.append({'t': 'lx4', 'sample': self.sample, 'endpoint': 'echo'})
                 return hwnd == 66
 

@@ -215,6 +215,8 @@ class Live:
         for row in self.tail.rows():
             if row.get('t') == 'lx4':
                 self.endpoints.add((row.get('sample'), row.get('endpoint')))
+            elif row.get('t') == lx4.SELECTED:
+                self.endpoints.add((row.get('sample'), (lx4.SELECTED, row.get('select'))))
             elif row.get('t') == MODULE and integer(row.get('qpc')):
                 event, window = row.get('event'), row.get('window')
                 phase = (row.get('fault'), row.get('kind'))
@@ -335,7 +337,7 @@ def echo_sample(system, hwnd, names, edits, edit, sample_id, phase, live, write,
     post's QPC or None)."""
     fault, kind = phase
     sent, timed = lx4.messages(edits, {'id': sample_id, 'edit': edit, 'metric': ECHO})
-    started, status, timed_qpc = clock(), None, None
+    started, status, timed_qpc, selects = clock(), None, None, 0
     ok_all = system.alive(hwnd)
 
     def wait_for(key):
@@ -357,6 +359,11 @@ def echo_sample(system, hwnd, names, edits, edit, sample_id, phase, live, write,
                'wparam': wparam, 'lparam': lparam, 'qpc': qpc, 'ok': ok, 'timed': index == timed})
         if message == lx4.RESET and not (ok_all and wait_for((sample_id, lx4.READY))):
             status = 'not-ready'
+            break
+        # As lx4.py: the replacement's keys only after the module acknowledged the Select.
+        selects += message == lx4.SELECT
+        if message == lx4.SELECT and not (ok_all and wait_for((sample_id, (lx4.SELECTED, selects)))):
+            status = 'not-selected'
             break
     if status is None:
         status = 'done' if ok_all and wait_for((sample_id, ECHO)) else 'timeout'
@@ -495,8 +502,8 @@ def echo_times(rows, posts, done, edits, edit, frames, presented, frequency, con
         anchor = timed[0]['qpc'] if timed else sent[0]['qpc']
         row = endpoints.get((sample, ECHO))
         failure = None
-        if state.get('status') == 'not-ready':
-            failure = 'not-ready'
+        if state.get('status') in ('not-ready', 'not-selected'):
+            failure = state['status']
         elif len(timed) != 1 or not all(post.get('ok') for post in sent):
             failure = 'post-failed'
         elif state.get('status') != 'done':
