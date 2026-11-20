@@ -163,7 +163,8 @@ One change to frozen text, made by LP3 at its command-table freeze under PHS.52,
 
 ## What stays open
 
-- Whether a receipt may count as evidence (next milestone card).
+- Whether a receipt may count as evidence (next milestone card). Settled since: a receipt is not evidence (owner,
+  17 November 2026: [owner-decisions-2026-11-17-c5-evidence](owner-decisions-2026-11-17-c5-evidence.md), section 2).
 - The run-time answer to an ungranted clock or file read. The answer in section 3 (a) covers the checker's admission;
   a host that grants nothing still answers the request at run time with `LG3:capability.not_granted`
   (`c600_run::interp::Host`), as before.

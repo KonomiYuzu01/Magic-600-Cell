@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-20] update | The PHS.52 page points to the receipt decision
+[owner-decisions-2026-11-16-phs52](decisions/owner-decisions-2026-11-16-phs52.md) still listed whether a receipt may count as evidence under "What stays open"; that item now points to the owner's answer of 17 November 2026 in [owner-decisions-2026-11-17-c5-evidence](decisions/owner-decisions-2026-11-17-c5-evidence.md) (a receipt is not evidence).
+
 ## [2026-11-20] decision | Regular cleanup of dormant worktrees and files
 The owner decided that this project's dormant worktrees and other files on the owner's machine are cleaned regularly to free SSD space. `CLAUDE.md` now has the main session do it once a day while sessions work, before each owner-machine sitting and below 100 GB free, and says what counts as dormant, what may go and what is never deleted ([record](decisions/owner-decisions-2026-11-20-disk-cleanup.md)).
 

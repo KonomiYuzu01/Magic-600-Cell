@@ -81,7 +81,7 @@ fn adoption_goes_through_the_backend_and_a_refused_bundle_changes_nothing() {
     assert!(host.backend.adoptions.is_empty());
 
     assert_eq!(host.adopt(&bundle(&next.state, &thirteen, [13; 3])), Ok(thirteen.clone()));
-    assert_eq!(host.backend.adoptions, [thirteen.clone()]);
+    assert_eq!(host.backend.adoptions, std::slice::from_ref(&thirteen));
     assert_eq!(host.adopted(), &thirteen);
     assert!(host.stale(V1), "the state dependency moves with the adopted revision");
     assert!(matches!(status(&host, 1), Status::Completed(_)), "no receipt changes");
