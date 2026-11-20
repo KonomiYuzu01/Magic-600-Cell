@@ -5,8 +5,9 @@
 //! words, under the owner's answer of 17 November 2026; the exact-completion half of LB2's row
 //! "Residuals and exact completion", over KN2.4's `positions` and `labels` rows; LB2's rows "Star and recipe
 //! construction" and "Collateral and support", over KN2.4's `effect` row; LB2's row "Net and Strict protection", over
-//! KN2.4's `protection` row; and LB2's row "Guarded setups and buffers", over the draft `setups` row of the
-//! setup-search exception.
+//! KN2.4's `protection` row; LB2's row "Guarded setups and buffers", over the draft `setups` row of the
+//! setup-search exception; and LB2's row "Named macro analysis and comparison", over KN2.4's `effect` and `replay`
+//! rows.
 //!
 //! # Literal words
 //!
@@ -207,10 +208,34 @@
 //! table (`c600_tools::kernel_rows::SetupTable`), and `c600-tools/tests/ct_bnd_18.rs` runs the entry there
 //! (CT-BND-18).
 //!
+//! # Named macro analysis and comparison
+//!
+//! The source [`MACROS_SOURCE`], `src/macros.6cs`, is the module `macros` in edition `6cs-draft-1`, in the formatter's
+//! canonical layout. A macro crosses the entries as a name the caller gives and a recipe in the step records of
+//! `recipes`. Two entries:
+//!
+//! - `macro_report(name: Text, recipe)` reads KN2.4's `effect` and `replay` at the recipe and answers one report: the
+//!   name; the net map's digest, the moved stickers and pieces and the full support per orbit; the expansion's digest
+//!   and length; the session's protected orbits at the head; `net_conflicts`, the protected orbits the net map moves,
+//!   which a commit under Net refuses; and Strict's first refused prefix, -1 when none is refused, with the protected
+//!   orbits in conflict there, from `replay`.
+//! - `macro_comparison(first: Text, first_recipe, second: Text, second_recipe)` reads `effect` at both recipes and
+//!   answers the two names, the support orbits both net maps move (`both`) and those only one moves (`only_first`,
+//!   `only_second`), each in increasing order, and whether the net maps (`same_net`) and the literal expansions
+//!   (`same_expansion`) are equal.
+//!
+//! The entries report the caller's macros and choose none: no answer ranks, selects, previews or applies a macro, and
+//! a comparison is symmetric up to the names' order. Equal net maps say nothing about the intermediate states; Strict's
+//! prefix is the report's. [`named_macro_analysis_and_comparison`] is the row's catalogue entry. The two entries have
+//! the checker's effect `snapshot` and read the rows [`MACROS_ROWS`] names, each at a recipe the caller names, so under
+//! capability separation they read state and prepare no preview. Each recipe is a parameter of its own, because the
+//! built-in column admits a read only at a parameter as given (LB3.5), not at a field of one. `c600-tools`' host bridge serves both rows
+//! (`c600_tools::kernel_rows`), and `c600-tools/tests/macros.rs` runs the entries there.
+//!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe, report, protection and guarded-setup entries through the tool's host bridge, and the word
-//! keys on the model's relation. Every result of its tests is source and fixture evidence.
+//! exact-completion, recipe, report, protection, guarded-setup and named macro entries through the tool's host bridge,
+//! and the word keys on the model's relation. Every result of its tests is source and fixture evidence.
 //!
 //! # Drafts
 //!
@@ -347,7 +372,9 @@
 //! - LB2's "Net and Strict protection" for a captured protected state of the session (the command layer's protected
 //!   orbits) and for occupant-only locks; LB3's pose-level protection is C8's (`c600_jumble_tool::library`).
 //! - The rest of LB2's catalogue over `effect`: the orbit catalogue and collateral stage order, seeds and full seed
-//!   analysis, blocks and work sheets, and named macro analysis.
+//!   analysis, and blocks and work sheets.
+//! - In "Named macro analysis and comparison": a captured lock in the report, which the `protection` module's checks
+//!   judge on the same recipe, and named macros of the jumbled puzzle, which are C8's.
 //! - In "Guarded setups and buffers": the editor in which the solver edits a setup, which is LP4's; setups of the
 //!   jumbled puzzle, which are C8's; and the buffers' current occupants, with the residual half below.
 //! - The residual half of LB2's row "Residuals and exact completion": non-buffer positions, buffer occupants and
@@ -446,6 +473,15 @@ pub const WORD_KEYS_MODULE: &str = "word_keys";
 /// The word equality keys module's exported functions, in source order.
 pub const WORD_KEYS_EXPORTS: [&str; 2] = ["key", "same_word"];
 
+/// The named macro analysis source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const MACROS_SOURCE: &str = include_str!("macros.6cs");
+/// The named macro analysis and comparison module.
+pub const MACROS_MODULE: &str = "macros";
+/// The named macro analysis module's exported functions, in source order.
+pub const MACROS_EXPORTS: [&str; 2] = ["macro_report", "macro_comparison"];
+/// The KN2.4 rows the named macro analysis module reads with `read_snapshot`, in name order.
+pub const MACROS_ROWS: [&str; 2] = ["effect", "replay"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -489,6 +525,11 @@ pub fn trees_sha256() -> String {
 /// The SHA-256 of [`WORD_KEYS_SOURCE`], in hex.
 pub fn word_keys_sha256() -> String {
     sha256_hex(WORD_KEYS_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`MACROS_SOURCE`], in hex.
+pub fn macros_sha256() -> String {
+    sha256_hex(MACROS_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -702,6 +743,29 @@ pub fn guarded_setups_and_buffers() -> CatalogueRow {
         module: SETUPS_MODULE,
         functions: &SETUPS_EXPORTS,
         source_sha256: setups_sha256(),
+    }
+}
+
+/// LB2's row "Named macro analysis and comparison", as far as this crate builds it.
+pub fn named_macro_analysis_and_comparison() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Named macro analysis and comparison",
+        level: "Full labels: the caller's named macros as recipes, judged under the session's protected orbits at \
+                the head.",
+        effects: &[Effect::ReadSnapshot],
+        backing: "KN2.4's `effect` and `replay`, read with `read_snapshot` at the caller's recipes; library code for \
+                  the reports: `macros.macro_report` and `macros.macro_comparison`; a host serves both rows \
+                  (`c600_tools::kernel_rows`). A captured lock is judged by KN2.4's `protection` through the \
+                  `protection` module's checks.",
+        notes: "Reports the effects of the caller's named macros without choosing one: a report per macro (its name, \
+                net map digest, moved stickers and pieces, full support, the expansion's digest and length, the \
+                protected orbits, Net's conflicts and Strict's first refused prefix with its conflicts) and a \
+                comparison of two (the support orbits both or only one moves, and whether the net maps and the \
+                expansions are equal). Nothing is ranked, selected or applied; equal net maps say nothing about the \
+                intermediate states.",
+        module: MACROS_MODULE,
+        functions: &MACROS_EXPORTS,
+        source_sha256: macros_sha256(),
     }
 }
 

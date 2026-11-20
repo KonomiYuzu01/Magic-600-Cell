@@ -344,13 +344,13 @@ fn only_a_token_the_shell_mints_commits_the_pending_preview() {
     assert_eq!(layer.preview_state(id), Some(PreviewState::Committed));
 }
 
-/// The bridge grants a run nothing but proposals and four reads of KN2.4's rows for an argument: `positions`, `labels`,
-/// `effect` and `protection` (`tests/positions_row.rs`, `tests/labels_row.rs`, `tests/effect_row.rs`,
-/// `tests/protection_row.rs`; KN5, LP2 draft): no other state read, `positions` or `labels` without an argument and
-/// another row with one (`replay`, `colours`) included, no declassified value, no workspace or file read or write, no
-/// view, no exact sink and no clock.
+/// The bridge grants a run nothing but proposals and five reads of KN2.4's rows for an argument: `positions`, `labels`,
+/// `effect`, `protection` and `replay` (`tests/positions_row.rs`, `tests/labels_row.rs`, `tests/effect_row.rs`,
+/// `tests/protection_row.rs`, `tests/replay_row.rs`; KN5, LP2 draft): no other state read, `positions` or `labels`
+/// without an argument and another row with one (the jumbling row `rim_summary`, `colours`) included, no declassified
+/// value, no workspace or file read or write, no view, no exact sink and no clock.
 #[test]
-fn the_bridge_grants_only_proposals_and_the_four_row_reads() {
+fn the_bridge_grants_only_proposals_and_the_five_row_reads() {
     let (mut layer, _) = session();
     let before = fingerprint(&layer);
     let mut bridge = Bridge::new(&mut layer, "nothing");
@@ -360,7 +360,7 @@ fn the_bridge_grants_only_proposals_and_the_four_row_reads() {
         Request::Snapshot { query: "best_word", ty: &qty },
         Request::Snapshot { query: POSITIONS, ty: &positions },
         Request::Snapshot { query: LABELS, ty: &labels },
-        Request::SnapshotWith { query: "replay", arg: b"[{\"int\":\"1\"}]\n", ty: &positions },
+        Request::SnapshotWith { query: "rim_summary", arg: b"[{\"int\":\"1\"}]\n", ty: &positions },
         Request::SnapshotWith { query: "colours", arg: b"[{\"int\":\"1\"}]\n", ty: &labels },
         Request::Declassified { id: "best_word", ty: &ty },
         Request::FileRead { path: "notes.txt", ty: &ty },

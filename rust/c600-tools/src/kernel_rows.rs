@@ -1,12 +1,14 @@
 //! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; LP2 draft until the
-//! command table freezes, PHS.52). Seven rows so far: four of KN2.4, the draft `setups` row of the setup-search
+//! command table freezes, PHS.52). Eight rows so far: five of KN2.4, the draft `setups` row of the setup-search
 //! exception, and the two draft structure rows of LP3's representations tool. LB2's exact completion reads two of them
 //! (`c600_library`'s `completion.exact_completion`; CT-LB2-04: exact completion reads identities, slots and
 //! orientations): `positions`, the position of named pieces, and `labels`, the label of named slots. LB2's recipes
 //! and reports read the third (`c600_library`'s `recipes`; CT-LB2-01): `effect`, a recipe's net map and what it
 //! touches. LB2's Net and Strict protection reads the fourth, with `positions` and `labels` for its captures
 //! (`c600_library`'s `protection`; CT-LB2-02): `protection`, a captured lock judged against a recipe at the head.
-//! LB2's guarded setups read the fifth (`c600_library`'s `guarded_setups`; CT-BND-18): `setups`, the certified setups
+//! LB2's named macro analysis reads the fifth, with `effect` (`c600_library`'s `macros`): `replay`, a recipe replayed
+//! prefix by prefix at the head under the session's protected orbits. LB2's guarded setups read the sixth
+//! (`c600_library`'s `guarded_setups`; CT-BND-18): `setups`, the certified setups
 //! for a target the solver names, which only the setup-search exception may read (BND.1). The representations tool's
 //! entries read the last two (`c600_repr`'s `compare_cells` and `filter_counts`, the entries of the command rows of the
 //! same names; LP3's C6): `structure.compare`, two cells compared, and `filter.preview`, the counts of a layer
@@ -16,7 +18,8 @@
 //! command layer nor the kernel has a `labels` row function. It serves `effect` through the kernel's
 //! [`c600_kernel::Kernel::effect`], which reads no state, and `protection` from the head's snapshot and the kernel's
 //! effect and expansion, because the kernel's protection rows judge pieces, not a lock's slot and label pairs. It
-//! serves `setups` from the certified table a host gives it ([`SetupTable`]) and the kernel's star certificate, and
+//! serves `replay` through the kernel's [`c600_kernel::Kernel::derive_strict`] at the head's snapshot and the layer's
+//! protected orbits ([`CommandLayer::protected`]), and keeps the head. It serves `setups` from the certified table a host gives it ([`SetupTable`]) and the kernel's star certificate, and
 //! `structure.compare` and `filter.preview` through LP2's structure rows [`CommandLayer::compare_cells`] and
 //! [`CommandLayer::layer_counts`], which read no state.
 //!
@@ -128,6 +131,39 @@
 //! slot or a label outside 0 to 259,799, `KN2:input.named_object_invalid`. The charge stays, as for a refused proposal.
 //! The tariff is [`protection_tariff`].
 //!
+//! # `replay`
+//!
+//! A program reads the row as `read_snapshot<T>("replay", recipe)`. LB2's named macro analysis reads it
+//! (`c600_library`'s `macros`). `recipe` is a recipe in one of the `effect` row's two forms. The kernel normalizes it
+//! as for `effect`, then replays its literal expansion from the head, letter by letter, under the session's protected
+//! orbits: the command layer's protected set, which `protection.orbit.set` changes ([`CommandLayer::protected`]). It
+//! judges every executed prefix, the empty one first, as the kernel's Strict protection judges a word (KN2.7,
+//! [`c600_kernel::Kernel::derive_strict`]): a prefix is refused when its last letter moves a sticker of a protected
+//! orbit. It does so whatever policy the session has in force; under Net a commit judges only the end of the
+//! operation, which the `effect` row's support and `protected` decide together. KN2.4 types the row by puzzle: this
+//! row answers 600-cell-Full at labels, and the jumbled puzzle's `replay` is C8's (`c600_jumble_tool`'s rows). `T` is
+//! a record with these seven fields, in any order:
+//!
+//! - `level: Text`, `"labels"`, the level the row judges at.
+//! - `protected: List<Nat>`, the session's protected orbits at the head, in increasing order: what the judgement
+//!   covers. With none, no prefix is refused.
+//! - `refused_prefix: Int`, the shortest executed prefix whose last letter moves a protected orbit, or -1 when none
+//!   does.
+//! - `conflicts: List<Nat>`, the protected orbits that the refused prefix's last letter moves, in increasing order;
+//!   empty when no prefix is refused.
+//! - `net_sha256: Text`, the whole word's net map digest, as `effect` gives it, refused prefix or not.
+//! - `expansion_sha256: Text` and `primitive_count: Nat`, the recipe's input: its expansion's digest and length.
+//!
+//! `primitive_count` and the elements of `protected` and `conflicts` may also be declared with `Int`; no field carries
+//! a display qualifier. The answer's fields are in `T`'s order. The row answers no verdict and moves nothing: the
+//! replay derives from the head's snapshot, and the layer keeps its head, its previews and its log. It is not a
+//! preview either: a word is applied only when a program proposes it and the solver commits it.
+//!
+//! The bridge refuses as for `effect`. Before the kernel runs, at the cost of the read's step: a declared type other
+//! than these, `LG2:type.mismatch`; an argument in neither form, `KN5:input.argument_form`. Once the read is charged:
+//! with Jumble on, `KN5:input.retained_tool_needs_jumble_off` (LB2.1); and a recipe the kernel refuses, with the
+//! kernel's code. The charge stays, as for a refused proposal. The tariff is [`replay_tariff`].
+//!
 //! # `setups`
 //!
 //! A program reads the row as `read_snapshot<T>("setups", target)`, and only under the built-in column's setup-search
@@ -207,7 +243,7 @@ use c600_command::layer::CERTIFICATE;
 use c600_command::{code, CommandLayer, Store};
 use c600_ir::{QTy, Ty};
 use c600_kernel::json::{self as kernel_json, Value as KernelJson};
-use c600_kernel::{archive, verify_assets, Effect, Kernel, PiecePosition, ORBITS, PIECES, SLOTS};
+use c600_kernel::{archive, verify_assets, Derivation, Effect, Kernel, PiecePosition, ORBITS, PIECES, SLOTS};
 use c600_run::interp::RowTariff;
 use c600_run::provenance::{self, Json};
 use c600_run::value::Value;
@@ -1006,6 +1042,140 @@ pub fn protection<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Re
     let name = |field: ProtectionField| {
         PROTECTION_FIELDS.iter().find(|(_, f)| *f == field).map(|&(name, _)| name).expect("a field")
     };
+    Ok(Value::record(order.iter().map(|&field| (name(field), value(field))).collect()))
+}
+
+/// The `replay` row's query: KN2.4's `replay` for 600-cell-Full.
+pub const REPLAY: &str = "replay";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReplayField {
+    Conflicts,
+    ExpansionSha256,
+    Level,
+    NetSha256,
+    PrimitiveCount,
+    Protected,
+    RefusedPrefix,
+}
+
+/// The fields of the `replay` row's record, by name.
+const REPLAY_FIELDS: [(&str, ReplayField); 7] = [
+    ("conflicts", ReplayField::Conflicts),
+    ("expansion_sha256", ReplayField::ExpansionSha256),
+    ("level", ReplayField::Level),
+    ("net_sha256", ReplayField::NetSha256),
+    ("primitive_count", ReplayField::PrimitiveCount),
+    ("protected", ReplayField::Protected),
+    ("refused_prefix", ReplayField::RefusedPrefix),
+];
+
+/// The fields of a declared `replay` answer type in its order; None unless it is a record with the row's seven fields,
+/// each declared with a type that holds its values, and no display qualifier.
+fn replay_fields(ty: &QTy) -> Option<Vec<ReplayField>> {
+    let Ty::Record(fields) = &ty.ty else { return None };
+    if ty.display || fields.len() != REPLAY_FIELDS.len() {
+        return None;
+    }
+    let mut order: Vec<ReplayField> = Vec::with_capacity(REPLAY_FIELDS.len());
+    for (name, declared) in fields {
+        let &(_, field) = REPLAY_FIELDS.iter().find(|(known, _)| known == name)?;
+        let fits = match field {
+            ReplayField::PrimitiveCount => whole(declared),
+            ReplayField::Conflicts | ReplayField::Protected => whole_list(declared),
+            ReplayField::ExpansionSha256 | ReplayField::Level | ReplayField::NetSha256 => *declared == exact(Ty::Text),
+            ReplayField::RefusedPrefix => *declared == exact(Ty::Int),
+        };
+        if order.contains(&field) || !fits {
+            return None;
+        }
+        order.push(field);
+    }
+    Some(order)
+}
+
+/// The type the `replay` row answers, with its fields in name order: `record { conflicts: List<Nat>,
+/// expansion_sha256: Text, level: Text, net_sha256: Text, primitive_count: Nat, protected: List<Nat>,
+/// refused_prefix: Int }`.
+pub fn replay_type() -> QTy {
+    let field = |field: ReplayField| match field {
+        ReplayField::PrimitiveCount => exact(Ty::Nat),
+        ReplayField::Conflicts | ReplayField::Protected => list(Ty::Nat),
+        ReplayField::ExpansionSha256 | ReplayField::Level | ReplayField::NetSha256 => exact(Ty::Text),
+        ReplayField::RefusedPrefix => exact(Ty::Int),
+    };
+    exact(Ty::Record(REPLAY_FIELDS.iter().map(|&(name, f)| (name.to_owned(), field(f))).collect()))
+}
+
+/// The logical size of the largest `replay` answer: every orbit, 0 to 34, both protected and in conflict, the digests
+/// as 64 characters, and `primitive_count` and `refused_prefix` [`MAX_PRIMITIVES`].
+fn replay_size() -> u128 {
+    static SIZE: OnceLock<u128> = OnceLock::new();
+    *SIZE.get_or_init(|| {
+        let (orbits, most) =
+            (Value::list((0..ORBITS as i64).map(Value::int).collect()), Value::int(MAX_PRIMITIVES as u64));
+        let value = |field: ReplayField| match field {
+            ReplayField::Conflicts | ReplayField::Protected => orbits.clone(),
+            ReplayField::ExpansionSha256 | ReplayField::NetSha256 => Value::text(&"0".repeat(64)),
+            ReplayField::Level => Value::text(PROTECTION_LEVEL),
+            ReplayField::PrimitiveCount | ReplayField::RefusedPrefix => most.clone(),
+        };
+        Value::record(REPLAY_FIELDS.iter().map(|&(name, f)| (name, value(f))).collect()).size()
+    })
+}
+
+/// The `replay` row's draft tariff for a recipe of `primitives` primitives (DET.55; the command table prices the row
+/// when it freezes). The kernel cost counts two passes over the expansion, one for the net map and one for the
+/// prefixes, and two over the 259,800 slots, one for the map and one for the derived state. The result bound is the
+/// logical size of the largest answer, whatever the recipe.
+pub fn replay_tariff(primitives: usize) -> RowTariff {
+    let passes = (SLOTS as u128).saturating_mul(2).saturating_add((primitives as u128).saturating_mul(2));
+    RowTariff { kernel_cost: passes, result_bound: replay_size() }
+}
+
+/// The tariff of a `replay` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for another
+/// declared type, `KN5:input.argument_form` for an argument in neither of the `effect` row's forms. The kernel
+/// normalizes the recipe to count its primitives; a recipe it refuses is charged for no primitive, and the read then
+/// refuses it with the kernel's code.
+pub fn replay_read_tariff(kernel: &Kernel, arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    replay_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let recipe = effect_recipe(arg).ok_or(code::ARGUMENT_FORM)?;
+    let primitives = kernel.recipe(&recipe).map_or(0, |recipe| recipe.primitive_count());
+    Ok(replay_tariff(primitives))
+}
+
+/// The answer of a `replay` read at `layer`'s head under the session's protected orbits, with [`replay_read_tariff`]'s
+/// refusals, the refusal with Jumble on (LB2.1) and the kernel's refusal of the recipe. A read changes nothing: the
+/// kernel derives from the head's snapshot, and the layer keeps its head.
+pub fn replay<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    let order = replay_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let recipe = effect_recipe(arg).ok_or(code::ARGUMENT_FORM)?;
+    if layer.jumbled().is_some() {
+        return Err(code::RETAINED_TOOL_NEEDS_JUMBLE_OFF);
+    }
+    let kernel = layer.kernel();
+    let recipe = kernel.recipe(&recipe).map_err(|refusal| refusal.code)?;
+    let derivation =
+        kernel.derive_strict(layer.snapshot(), &recipe, layer.protected()).map_err(|error| match error {
+            c600_kernel::Error::Refusal(refusal) => refusal.code,
+            c600_kernel::Error::Certificate(_) => CERTIFICATE,
+        })?;
+    let (effect, protection) = match &derivation {
+        Derivation::Derived(derived) => (&derived.effect, &derived.protection),
+        Derivation::Refused(refused) => (&refused.effect, &refused.protection),
+    };
+    let orbits = |orbits: Vec<i64>| Value::list(orbits.into_iter().map(Value::int).collect());
+    let value = |field: ReplayField| match field {
+        ReplayField::Conflicts => orbits(protection.conflicts.iter().map(|row| i64::from(row.orbit)).collect()),
+        ReplayField::ExpansionSha256 => Value::text(&effect.expansion_sha256),
+        ReplayField::Level => Value::text(PROTECTION_LEVEL),
+        ReplayField::NetSha256 => Value::text(&effect.net_sha256),
+        ReplayField::PrimitiveCount => Value::int(effect.primitive_count as u64),
+        ReplayField::Protected => orbits(protection.protected.iter().map(|&orbit| orbit as i64).collect()),
+        ReplayField::RefusedPrefix => Value::int(protection.first_refused_prefix.map_or(-1, |prefix| prefix as i64)),
+    };
+    let name =
+        |field: ReplayField| REPLAY_FIELDS.iter().find(|(_, f)| *f == field).map(|&(name, _)| name).expect("a field");
     Ok(Value::record(order.iter().map(|&field| (name(field), value(field))).collect()))
 }
 

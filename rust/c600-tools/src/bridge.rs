@@ -8,12 +8,13 @@
 //! layer refuses a runtime invocation of a commit or app row, and any runtime invocation that carries a token
 //! (ADR-L02, KN5.15). The bridge answers the boundary with a short form of the layer's receipt, which only the shell
 //! sees; the program gets the boundary's fixed acknowledgement (BND.42, BND.43). Besides proposals, the bridge serves
-//! four reads, each to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2 draft): KN2.4's
+//! five reads, each to a snapshot read with an argument ([`crate::kernel_rows`]; KN5, LP2 draft): KN2.4's
 //! `positions` and `labels` rows at the layer's head, which LB2's exact completion reads (CT-LB2-04); KN2.4's
-//! `effect` row, a recipe's net map, which reads no state and which LB2's recipes and reports read (CT-LB2-01); and
+//! `effect` row, a recipe's net map, which reads no state and which LB2's recipes and reports read (CT-LB2-01);
 //! KN2.4's `protection` row, a captured lock judged against a recipe at the layer's head, which LB2's Net and Strict
-//! protection reads (CT-LB2-02). When the host gives it the certified guarded setup tables ([`Bridge::with_setups`]),
-//! it serves a fifth read: the draft `setups` row, the certified setups for a target the solver names, which only the
+//! protection reads (CT-LB2-02); and KN2.4's `replay` row for 600-cell-Full, a recipe replayed prefix by prefix at the
+//! layer's head under the session's protected orbits, which LB2's named macro analysis reads. When the host gives it
+//! the certified guarded setup tables ([`Bridge::with_setups`]), it serves a sixth read: the draft `setups` row, the certified setups for a target the solver names, which only the
 //! setup-search exception may read and which LB2's guarded setups read (CT-BND-18; BND.1). It answers setups in the
 //! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the two draft
 //! structure reads of LP3's representations tool (C6): `structure.compare`, two cells compared, and `filter.preview`,
@@ -205,6 +206,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::PROTECTION => {
                 kernel_rows::protection_read_tariff(self.layer.kernel(), arg, ty)
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::REPLAY => {
+                kernel_rows::replay_read_tariff(self.layer.kernel(), arg, ty)
+            }
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::SETUPS => match &self.setups {
                 Some(table) => kernel_rows::setups_read_tariff(table, arg, ty),
                 None => Err(NOT_GRANTED),
@@ -232,6 +236,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             }
             if *query == kernel_rows::PROTECTION {
                 return kernel_rows::protection(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::REPLAY {
+                return kernel_rows::replay(self.layer, arg, ty);
             }
             if *query == kernel_rows::SETUPS {
                 return match &self.setups {
