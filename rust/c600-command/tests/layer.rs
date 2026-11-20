@@ -611,7 +611,7 @@ fn the_runtime_reaches_at_most_a_preview() {
         args,
         token: None,
         epoch: 1,
-        budget: Some(c600_command::Budget::DRAFT_CEILING),
+        budget: None,
     };
     let proposal = f.layer.invoke(&runtime, call("rt/1", "operation.preview", draft_args(&word(&[1]))));
     assert!(matches!(proposal.status, Status::Running(_)));

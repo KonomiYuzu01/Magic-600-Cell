@@ -472,13 +472,14 @@ fn the_work_sheet_rows_refuse_and_change_nothing() {
     {
         assert_eq!(f.layer.availability(row), Ok(()), "{row}");
         let epoch = f.layer.revision().epoch;
+        let served = f.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
         let theirs = Invocation {
             command: "run-1/1".into(),
             row: row.into(),
             args,
             token: None,
             epoch,
-            budget: Some(c600_command::Budget::DRAFT_CEILING),
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
         };
         f.refused_on(&runtime, theirs, code::NOT_GRANTED, row);
     }

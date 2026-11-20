@@ -71,13 +71,14 @@ fn runtime() -> Caller {
 }
 
 fn invocation(layer: &CommandLayer, command: &str, row: &str, args: Value) -> Invocation {
+    let served = layer.table().row(row).is_some_and(|found| found.overlay.is_some());
     Invocation {
         command: command.into(),
         row: row.into(),
         args,
         token: None,
         epoch: layer.revision().epoch,
-        budget: Some(c600_command::Budget::DRAFT_CEILING),
+        budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
     }
 }
 
