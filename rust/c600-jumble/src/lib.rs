@@ -36,6 +36,7 @@ pub mod b64;
 pub mod corrections;
 pub mod dd;
 pub mod eval;
+pub mod faces;
 pub mod kplus;
 pub mod levels;
 pub mod locality;
@@ -81,6 +82,8 @@ pub mod codes {
     pub const MENU_WORD_NEEDS_JUMBLE_ON: &str = "KN5:input.menu_word_needs_jumble_on";
     /// A coordinate that A5 fixes at 0 is nonzero on a state witnessed under I_a ([`crate::nu::nu`]); form freeze.
     pub const FIXED_NU_NONZERO: &str = "KN2:consistency.fixed_nu_nonzero";
+    /// Certified exposed-face geometry or its admitted size profile is absent ([`crate::faces`]; JI.41, JI.45).
+    pub const EXPOSED_GEOMETRY_UNAVAILABLE: &str = "KN2:input.exposed_geometry_unavailable";
 }
 
 /// The one dimension this edition admits (JI.3).
