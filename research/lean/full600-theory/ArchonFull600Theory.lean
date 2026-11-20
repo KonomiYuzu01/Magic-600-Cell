@@ -6,3 +6,6 @@ import ArchonFull600Theory.Facets
 import ArchonFull600Theory.BinaryIcosahedral
 import ArchonFull600Theory.QuaternionMaps
 import ArchonFull600Theory.Symmetry
+import ArchonFull600Theory.Poles
+import ArchonFull600Theory.Topology
+import ArchonFull600Theory.Coxeter

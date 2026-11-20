@@ -66,6 +66,28 @@
 //!   complete }`: the named unit, or with `"all"` the exact-pose groups of the pieces off the lattice ordered by
 //!   smallest member, each `{ members, pose, domain, heights, branches }`. A named unit that is empty, holds a piece
 //!   outside the model or on the lattice, or spans two exact poses is `KN2:input.named_object_invalid` (JI.45).
+//! - `repair_list`, a cap ID: JI.12's repair list at the named cap (`observe::cuts::repair_list`, with no pair budget
+//!   and no cancellation), as a record `{ status, input_digest, parameters, rows, message }`. `parameters` names the
+//!   cap, the pinned menu and its order (null in free mode), the tie rule and the contract revision. `rows` holds the
+//!   completed list's pairs (x, d) whose repair lowers N, each `{ x, d, y, z, delta }`, in the engine's neutral order:
+//!   x in the menu's pinned order, then d in cap-ID order. A blocked or closed named cap, or free mode, answers status
+//!   `error` with its message and no rows; a cap outside the model is `KN2:input.named_object_invalid`. The engine's
+//!   outcome of every pair it tried and its coverage are not served (CT-LB3-07: no all-items outcome table), and no
+//!   field ranks, marks or recommends a pair; the solver picks one (the owner's decision of 17 October 2026, BND.2).
+//! - `sticker_test`, no argument: A5's sticker test of the state (`levels::sticker_test`).
+//! - `retained_checkpoint`, a word of 600-cell-Full's letters, the retained witness the solver names: section 5's
+//!   retained-state checkpoint of the state with that word as its witness (`levels::retained_checkpoint`,
+//!   `Witness::Word`). The bridge never builds a witness.
+//! - `label_checkpoint`, no argument: A5's label checkpoint of the base under the base's own reachability claim
+//!   (`levels::label_checkpoint`). As the command layer's exit from Jumble on reads it, ν comes from the identity
+//!   labels or a retained witness where they show it, and otherwise from the ν row.
+//!
+//! The three end tests answer `{ level, verdict, reason }` and the fields of their evidence ([`STICKER_FIELDS`],
+//! [`RETAINED_FIELDS`], [`LABEL_FIELDS`]), each written, null when the verdict has none: a verdict names the level it
+//! was reached at and never crosses it (KN1.11), and unknown is never no. A label checkpoint's reachability claim is
+//! served as its kind. A program reads an end test's row declared as that test's own verdict type (LB3.2, LG2.9; the
+//! checker refuses any other), and [`convert`] gives it the verdict's outcome only: yes `holds`, no `fails` and unknown
+//! `unestablished`. The IR draft's verdict carries no evidence, reason or level, so those stay in the row's answer.
 //!
 //! A menu word is read as [`crate::word::LiteralWord::letters`] reads it: a word of another alphabet than the state's
 //! is `LB1:input.incompatible_alphabet`. Every field of an answer is written, null when undefined; a declared type that
@@ -87,21 +109,23 @@
 //! `height_counts`, `nu` and `correction_lookup`, and one more for each letter of a named word or each entry of a
 //! drafted set; two for `seam_facts`, the cap's classification and its cut, or the whole scan with `"all"`; one more
 //! for each cap ([`POLES`]) for `rim_summary`; one more for the named cap and each of its [`MEETING_CAPS`] for
-//! `covers`; and two for `classify`, `survey`, `straddlers` and `units`, the named twist's, grip's, cap's or unit's
-//! pass and the state's. The result bound is [`RESULT_BOUND`] for every row; an answer above it stops the run with the
-//! interpreter's `KN7:resource_limit.host_exhausted`, never a cut answer.
+//! `covers`; two for `classify`, `survey`, `straddlers` and `units`, the named twist's, grip's, cap's or unit's pass
+//! and the state's; one for `sticker_test`, one more for each letter of the witness for `retained_checkpoint`, and
+//! two for `label_checkpoint`, the labels and ν. A `repair_list` read is priced at its worst case under the state's
+//! menu ([`repair_passes`]). The result bound is [`RESULT_BOUND`] for every row; an answer above it stops the run
+//! with the interpreter's `KN7:resource_limit.host_exhausted`, never a cut answer.
 
 use std::sync::Arc;
 
 use c600_check::TYPE_MISMATCH;
 use c600_command::{code, CommandLayer, Store};
-use c600_ir::{QTy, Ty};
+use c600_ir::{EndTestOutcome, QTy, Ty};
 use c600_jumble::codes::{IDENTITY_MISMATCH, MENU_BINDING_MISMATCH, MENU_WORD_NEEDS_JUMBLE_ON, NAMED_OBJECT_INVALID};
 use c600_jumble::corrections;
-use c600_jumble::levels::{self, Base, Derivation, Partial};
+use c600_jumble::levels::{self, Base, Derivation, Level, Partial, Verdict, Witness};
 use c600_jumble::model::{NP, POLES};
 use c600_jumble::nu::{self, NuVector};
-use c600_jumble::observe::cuts::{covers, rim_summary};
+use c600_jumble::observe::cuts::{covers, repair_list, rim_summary};
 use c600_jumble::observe::{
     heights, prefix_observations, seam_facts, units, word_check, Batch, Fields, PrefixRequest, Rows as Cells, Scope,
 };
@@ -118,7 +142,7 @@ use c600_run::value::{parse_integer, Quad, Value as RunValue};
 use crate::word::{self, menu_identity, Letter, INCOMPATIBLE_ALPHABET};
 
 /// The rows the bridge serves, each with whether it takes an argument.
-pub const ROWS: [(&str, bool); 15] = [
+pub const ROWS: [(&str, bool); 19] = [
     ("heights", false),
     ("height_counts", false),
     ("replay", true),
@@ -134,6 +158,10 @@ pub const ROWS: [(&str, bool); 15] = [
     ("survey", true),
     ("straddlers", true),
     ("units", true),
+    ("repair_list", true),
+    ("sticker_test", false),
+    ("retained_checkpoint", true),
+    ("label_checkpoint", false),
 ];
 
 /// The caps that meet one cap: the classifications a `covers` read adds to the named cap's own.
@@ -152,6 +180,36 @@ const SEAM_FIELDS: [&str; 7] = ["cells", "complete", "domains", "scope", "status
 /// The fields of each direction of a `covers` answer, each written, null when the engine's answer has none: an answered
 /// direction has no reason or status, and one that is not applicable has no counts, flag or straddlers.
 const COVER_FIELDS: [&str; 5] = ["counts", "covers", "reason", "status", "straddlers"];
+
+/// The fields of a repair list that the `repair_list` row serves: not the engine's `outcomes`, its table of every pair
+/// it tried, nor its `coverage` and `by`, which only a stopped list needs and a list with no budget never is.
+const REPAIR_FIELDS: [&str; 5] = ["input_digest", "message", "parameters", "rows", "status"];
+
+/// The names of a repair-list row's five integers, in the engine's order.
+const REPAIR_ROW: [&str; 5] = ["x", "d", "y", "z", "delta"];
+
+/// The evidence fields of the sticker test's verdicts: a yes's digests and off count, a no's fact with its count.
+pub const STICKER_FIELDS: [&str; 6] = ["collisions", "fact", "labels_digest", "off", "pose_digest", "slots"];
+
+/// The evidence fields of the retained checkpoint's verdicts: a yes's witness and digest, a no's fact with its count or
+/// its centres.
+pub const RETAINED_FIELDS: [&str; 6] = ["centres", "fact", "off", "pose_digest", "source", "witness_word"];
+
+/// The evidence fields of the label checkpoint's verdicts: a yes's digests, ν with its source, the reachability claim's
+/// kind and the contract stamp; a no's fact with its count, centres or ν.
+pub const LABEL_FIELDS: [&str; 11] = [
+    "centres",
+    "collisions",
+    "contract_revision",
+    "fact",
+    "frame_agrees",
+    "labels_digest",
+    "nu",
+    "nu_source",
+    "off",
+    "pose_digest",
+    "reachability",
+];
 
 /// A whole batch: the engine's cells of one cap's cut in chunks, with no budget or cancellation.
 const WHOLE: Batch = Batch { chunk: 1 << 12, budget: None, cancel_after: None };
@@ -400,9 +458,57 @@ impl<'a> Rows<'a> {
                     _ => Err(code::STATE_HASH_MISMATCH),
                 }
             }
+            ("repair_list", Some(cap)) => {
+                let cap = named_cap(cap)?;
+                served_repair(repair_list(ctx, self.state()?, cap as i64, None, None, None).map_err(engine)?)
+            }
+            ("sticker_test", None) => {
+                let verdict = levels::sticker_test(ctx, self.state()?).map_err(engine)?;
+                Ok(served_verdict(&verdict, levels::STICKER_TEST_LEVEL, &STICKER_FIELDS))
+            }
+            ("retained_checkpoint", Some(word)) => {
+                let word = primitive_ids(word)?;
+                let verdict = levels::retained_checkpoint(ctx, self.state()?, Witness::Word(&word)).map_err(engine)?;
+                Ok(served_verdict(&verdict, levels::RETAINED_CHECKPOINT_LEVEL, &RETAINED_FIELDS))
+            }
+            ("label_checkpoint", None) => {
+                let base = self.base()?;
+                let (state, reach) = match base {
+                    Base::Snapshot(snapshot) => (snapshot.state(), snapshot.reachability()),
+                    Base::Derived(derived) => (derived.state(), derived.reachability()),
+                };
+                let checkpoint = |nu: Option<&[i64]>| levels::label_checkpoint(ctx, state, reach, nu).map_err(engine);
+                let mut verdict = checkpoint(None)?;
+                if matches!(verdict, Verdict::Unknown(_)) {
+                    // Neither the identity labels nor a retained witness show ν here: the ν row computes it, as the
+                    // command layer's exit reads it.
+                    if let Partial::Total(row) = nu::nu(ctx, base).map_err(engine)?.map_err(|r| r.code)? {
+                        verdict = checkpoint(Some(&row.values()[..]))?;
+                    }
+                }
+                Ok(served_verdict(&verdict, levels::LABEL_CHECKPOINT_LEVEL, &LABEL_FIELDS))
+            }
             _ => Err(code::ARGUMENT_FORM),
         }
     }
+
+    /// The passes of a `repair_list` read at a named cap under the state's menu, at its worst case: the named cap's
+    /// score and the classification of each of its [`MEETING_CAPS`]; then for each item other than the identity, its
+    /// play, and for each meeting cap that cap's score, the play of y and the named cap's score again. A state with no
+    /// menu, or that the bridge does not read, adds none: the read is then refused or an error.
+    fn repair_passes(&self, arg: &Json) -> Result<usize, &'static str> {
+        integer(arg).ok_or(code::ARGUMENT_FORM)?;
+        let items = self.state().ok().and_then(State::menu).map_or(0, |menu| menu.items.len());
+        Ok(repair_passes(items))
+    }
+}
+
+/// The worst-case passes of a repair list under a menu of `items` items ([`Rows::repair_passes`]).
+pub fn repair_passes(items: usize) -> usize {
+    if items == 0 {
+        return 0;
+    }
+    1 + MEETING_CAPS + (items - 1) * (1 + 3 * MEETING_CAPS)
 }
 
 impl Host for Rows<'_> {
@@ -416,7 +522,12 @@ impl Host for Rows<'_> {
         };
         let takes = ROWS.iter().find(|(row, _)| *row == query).map(|&(_, takes)| takes).ok_or(NOT_GRANTED)?;
         let passes = match (takes, &arg) {
-            (false, None) => 1 + if query == "rim_summary" { POLES } else { 0 },
+            (false, None) => match query {
+                "rim_summary" => 1 + POLES,
+                "label_checkpoint" => 2,
+                _ => 1,
+            },
+            (true, Some(arg)) if query == "repair_list" => 1 + self.repair_passes(arg)?,
             (true, Some(arg)) => 1 + extent(query, arg)?,
             _ => return Err(code::ARGUMENT_FORM),
         };
@@ -432,6 +543,11 @@ impl Host for Rows<'_> {
             _ => return Err(NOT_GRANTED),
         };
         self.asked.push(query.to_owned());
+        if matches!(ty.ty, Ty::EndTest(test) if test.row() != query) {
+            // Only the test's own row answers its verdict (LB3.2): the checker refuses such a read, and so does
+            // the bridge.
+            return Err(TYPE_MISMATCH);
+        }
         convert(&self.answer(query, arg.as_ref())?, ty)
     }
 
@@ -461,6 +577,7 @@ fn extent(query: &str, arg: &Json) -> Result<usize, &'static str> {
         "classify" if flat_letters(arg)?.len() == 2 => return Ok(1),
         "units" if arg.as_text() == Some("all") => return Ok(1),
         "units" => return naturals(arg).map(|_| 1),
+        "retained_checkpoint" => return primitive_ids(arg).map(|word| word.len()),
         _ => return Err(code::ARGUMENT_FORM),
     };
     Ok(flat_letters(word)?.len() / 2)
@@ -484,6 +601,18 @@ fn flat_letters(word: &Json) -> Result<Vec<i32>, &'static str> {
         }
     }
     Ok(flat)
+}
+
+/// The letters of a 600-cell-Full word in a run's canonical bytes, a list of signed integers: the signed 1-based
+/// primitive ids that a retained witness is written in (`levels::primitive`). A letter of magnitude 0 or above 1200 is
+/// `KN5:input.argument_form`, as a run's word never holds one.
+fn primitive_ids(word: &Json) -> Result<Vec<i64>, &'static str> {
+    let Json::List(letters) = word else { return Err(code::ARGUMENT_FORM) };
+    let letter = |l: &Json| match l {
+        Json::Int(l) if (1..=1200).contains(&l.unsigned_abs()) => Ok(*l),
+        _ => Err(code::ARGUMENT_FORM),
+    };
+    letters.iter().map(letter).collect()
 }
 
 /// The integers of a list in a run's canonical bytes, each written `{"int": "n"}`.
@@ -577,6 +706,55 @@ fn served_covers(mut table: Value) -> Result<Value, &'static str> {
     Ok(table)
 }
 
+/// A repair list as the `repair_list` row serves it: [`REPAIR_FIELDS`] of the engine's answer, each row of a completed
+/// list as a record `{ x, d, y, z, delta }` in the engine's order, and null rows for a list that is not completed. The
+/// engine's JI.45 refusal of a cap outside the model is its code.
+fn served_repair(list: Value) -> Result<Value, &'static str> {
+    if list.get("status").and_then(Value::as_str) == Some("refused") {
+        return match list.get("code").and_then(Value::as_str) {
+            Some(NAMED_OBJECT_INVALID) => Err(NAMED_OBJECT_INVALID),
+            _ => Err(code::STATE_HASH_MISMATCH),
+        };
+    }
+    let record = |row: &Value| match row.as_array() {
+        Some(row) if row.len() == REPAIR_ROW.len() => Ok(Value::Object(
+            REPAIR_ROW.iter().zip(row).map(|(name, value)| (name.to_string(), value.clone())).collect(),
+        )),
+        _ => Err(code::STATE_HASH_MISMATCH),
+    };
+    let rows = match list.get("rows") {
+        Some(Value::Array(rows)) => Value::Array(rows.iter().map(record).collect::<Result<_, _>>()?),
+        Some(Value::Null) => Value::Null,
+        _ => return Err(code::STATE_HASH_MISMATCH),
+    };
+    Ok(json::object(REPAIR_FIELDS.map(|name| match name {
+        "rows" => (name, rows.clone()),
+        _ => (name, list.get(name).cloned().unwrap_or(Value::Null)),
+    })))
+}
+
+/// An end test's verdict as its row serves it: the level it was reached at, the verdict, an unknown's reason, and each
+/// of `fields` from a yes's or a no's evidence, null where the verdict writes none. A reachability claim is served as
+/// its kind.
+fn served_verdict(verdict: &Verdict, level: Level, fields: &[&str]) -> Value {
+    let read = verdict.to_json_at(level);
+    let evidence = read.get("evidence");
+    let mut served = vec![
+        ("level".to_owned(), read.get("level").cloned().unwrap_or(Value::Null)),
+        ("verdict".to_owned(), read.get("verdict").cloned().unwrap_or(Value::Null)),
+        ("reason".to_owned(), read.get("reason").cloned().unwrap_or(Value::Null)),
+    ];
+    for &name in fields {
+        let value = evidence.and_then(|evidence| evidence.get(name)).cloned().unwrap_or(Value::Null);
+        let value = match name {
+            "reachability" => value.get("kind").cloned().unwrap_or(Value::Null),
+            _ => value,
+        };
+        served.push((name.to_owned(), value));
+    }
+    Value::Object(served.into_iter().collect())
+}
+
 /// ν's draft answer: its 45 values and no reason when ν is defined, no values and the reason when not.
 fn served_nu(result: Result<Partial<NuVector>, Refusal>) -> Result<Value, &'static str> {
     match result {
@@ -593,10 +771,12 @@ fn served_nu(result: Result<Partial<NuVector>, Refusal>) -> Result<Value, &'stat
 /// fields of a JSON object, each of which the answer writes, null when undefined, so that a declared field that it does
 /// not write, such as a misspelled one, is refused and never read as undefined; a list takes an array, or holds nothing
 /// for null and one value otherwise; a map from text takes an object. An integer may be one that does not fit `i64`, and
-/// a `Q5` takes the engine's `[a, b, d]` for (a + b√5)/d with d nonzero, in lowest terms as a run's `Q5` keeps it. Any
-/// other shape is `LG2:type.mismatch`.
+/// a `Q5` takes the engine's `[a, b, d]` for (a + b√5)/d with d nonzero, in lowest terms as a run's `Q5` keeps it. An
+/// end test's verdict takes its row's answer and keeps the outcome: yes `holds`, no `fails`, unknown `unestablished`.
+/// Any other shape is `LG2:type.mismatch`.
 pub fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
     Ok(match (&ty.ty, value) {
+        (Ty::EndTest(test), Value::Object(_)) => RunValue::EndTest(*test, outcome(value)?),
         (Ty::Bool, Value::Bool(b)) => RunValue::Bool(*b),
         (Ty::Nat, Value::Int(n)) if *n >= 0 => RunValue::int(*n),
         (Ty::Int, Value::Int(n)) => RunValue::int(*n),
@@ -623,6 +803,16 @@ pub fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
         }
         _ => return Err(TYPE_MISMATCH),
     })
+}
+
+/// The outcome of an end test's answer, KN0.5's yes, no or unknown, as the IR draft's verdict names it (LG2.9).
+fn outcome(answer: &Value) -> Result<EndTestOutcome, &'static str> {
+    match answer.get("verdict").and_then(Value::as_str) {
+        Some("yes") => Ok(EndTestOutcome::Holds),
+        Some("no") => Ok(EndTestOutcome::Fails),
+        Some("unknown") => Ok(EndTestOutcome::Unestablished),
+        _ => Err(TYPE_MISMATCH),
+    }
 }
 
 /// A number of Q(√5) as the jumbling engine writes one, `[a, b, d]` for (a + b√5)/d, as a run's `Q5`.
