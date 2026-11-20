@@ -16,11 +16,12 @@
 //! layer's head under the session's protected orbits, which LB2's named macro analysis reads. When the host gives it
 //! the certified guarded setup tables ([`Bridge::with_setups`]), it serves a sixth read: the draft `setups` row, the certified setups for a target the solver names, which only the
 //! setup-search exception may read and which LB2's guarded setups read (CT-BND-18; BND.1). It answers setups in the
-//! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the two draft
-//! structure reads of LP3's representations tool (C6): `structure.compare`, two cells compared, and `filter.preview`,
-//! the counts of a layer predicate, through LP2's [`CommandLayer::compare_cells`] and [`CommandLayer::layer_counts`],
-//! which read no state. And it serves the draft `orbits` read, the pieces of named orbits, which LB2's orbit catalogue
-//! reads: model data, the orbit the kernel's `positions` gives each piece, which reads no state of the session.
+//! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the three draft
+//! structure reads of LP3's representations tool (C6): `structure.compare`, two cells compared, `filter.preview`, the
+//! counts of a layer predicate, and `structure.layer`, its members, through LP2's [`CommandLayer::compare_cells`],
+//! [`CommandLayer::layer_counts`] and [`CommandLayer::layer_members`], which read no state. And it serves the draft
+//! `orbits` read, the pieces of named orbits, which LB2's orbit catalogue reads: model data, the orbit the kernel's
+//! `positions` gives each piece, which reads no state of the session.
 //! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
 //! (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no
 //! workspace or file write and no clock.
@@ -232,6 +233,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
                 kernel_rows::filter_preview_read_tariff(arg, ty)
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::STRUCTURE_LAYER => {
+                kernel_rows::structure_layer_read_tariff(arg, ty)
+            }
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::ORBITS_ROW => {
                 kernel_rows::orbits_read_tariff(arg, ty)
             }
@@ -267,6 +271,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             }
             if *query == kernel_rows::FILTER_PREVIEW {
                 return kernel_rows::filter_preview(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::STRUCTURE_LAYER {
+                return kernel_rows::structure_layer(self.layer, arg, ty);
             }
             if *query == kernel_rows::ORBITS_ROW {
                 return kernel_rows::orbits(self.layer, arg, ty);

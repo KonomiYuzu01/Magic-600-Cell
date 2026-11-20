@@ -236,6 +236,25 @@
 //! `KN2:input.named_object_invalid` and 0.4's text ([`CommandLayer::layer_counts`]). The tariff is
 //! [`filter_preview_tariff`].
 //!
+//! # `structure.layer`
+//!
+//! A program reads the row as `read_snapshot<T>("structure.layer", predicate)`: LP3's representations tool reads it to
+//! show the members of an applied filter (C6), and it is a draft as `structure.compare` is. The command row
+//! `structure.layer` prepares the predicate this row reads; a read and a command row share the name as
+//! `filter.preview`'s do. `predicate` is a layer predicate, as for `filter.preview`. `T` is a record with these four
+//! fields, in any order:
+//!
+//! - `cell: Nat` and `layer: Nat`, the predicate as named;
+//! - `pieces: List<Nat>`, the positions that `filter.preview` counts, named by their home positions, in increasing
+//!   order, and `slots: List<Nat>`, their home slots, in increasing order ([`c600_kernel::LayerMembers`]).
+//!
+//! `cell` and `layer`, and the elements of `pieces` and `slots`, may also be declared with `Int`; no field or element
+//! carries a display qualifier. The answer's fields are in `T`'s order, and the lists hold as many members as
+//! `filter.preview` counts. The members read no state: a position keeps its slots whatever piece it holds.
+//!
+//! The bridge refuses as for `filter.preview` ([`CommandLayer::layer_members`]). The tariff is
+//! [`structure_layer_tariff`].
+//!
 //! # `orbits`
 //!
 //! A program reads the row as `read_snapshot<T>("orbits", orbits)`: LB2's orbit catalogue reads it (`c600_library`'s
@@ -1735,6 +1754,82 @@ pub fn filter_preview<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -
         "pieces" => layer_counts.pieces,
         _ => layer_counts.slots,
     }))
+}
+
+/// The `structure.layer` row's query: the members of a layer predicate, which LP3's representations tool reads (C6; a
+/// draft, since KN2.4 has no structure row).
+pub const STRUCTURE_LAYER: &str = "structure.layer";
+
+/// The fields of the `structure.layer` row's answer, by name.
+const MEMBER_FIELDS: [&str; 4] = ["cell", "layer", "pieces", "slots"];
+
+/// The type the `structure.layer` row answers: `record { cell: Nat, layer: Nat, pieces: List<Nat>, slots: List<Nat> }`.
+pub fn structure_layer_type() -> QTy {
+    let field = |name: &str, ty: QTy| (name.to_owned(), ty);
+    let (cell, layer) = (field("cell", exact(Ty::Nat)), field("layer", exact(Ty::Nat)));
+    exact(Ty::Record(vec![cell, layer, field("pieces", list(Ty::Nat)), field("slots", list(Ty::Nat))]))
+}
+
+/// The fields of a declared `structure.layer` answer type in its order; None unless it is a record with the row's four
+/// fields, `cell` and `layer` each declared [`whole`] and `pieces` and `slots` each a [`whole_list`], and no display
+/// qualifier.
+fn member_fields(ty: &QTy) -> Option<Vec<&'static str>> {
+    let Ty::Record(fields) = &ty.ty else { return None };
+    if ty.display || fields.len() != MEMBER_FIELDS.len() {
+        return None;
+    }
+    let mut order: Vec<&'static str> = Vec::with_capacity(MEMBER_FIELDS.len());
+    for (name, declared) in fields {
+        let known = *MEMBER_FIELDS.iter().find(|&&known| known == name)?;
+        let holds = if matches!(known, "cell" | "layer") { whole(declared) } else { whole_list(declared) };
+        if order.contains(&known) || !holds {
+            return None;
+        }
+        order.push(known);
+    }
+    Some(order)
+}
+
+/// The `structure.layer` row's draft tariff (DET.55; the command table prices the row when it freezes). The kernel cost
+/// counts one pass over the home slots of every position, 259,800 in all, which finds the layer's positions, then one
+/// unit for each position and slot answered, at most 177,120 and 259,800. The result bound is the logical size of an
+/// answer no layer exceeds: a cell and a layer of 599, and every position and every slot, each of the largest value.
+pub fn structure_layer_tariff() -> RowTariff {
+    static BOUND: OnceLock<u128> = OnceLock::new();
+    let result_bound = *BOUND.get_or_init(|| {
+        let last = Value::int((CELLS - 1) as u64);
+        let all = |n: usize| Value::list(vec![Value::int((n - 1) as u64); n]);
+        let fields = vec![("cell", last.clone()), ("layer", last), ("pieces", all(PIECES)), ("slots", all(SLOTS))];
+        Value::record(fields).size()
+    });
+    let kernel_cost = (SLOTS as u128) + (PIECES as u128) + (SLOTS as u128);
+    RowTariff { kernel_cost, result_bound }
+}
+
+/// The tariff of a `structure.layer` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for
+/// another declared type, `KN5:input.argument_form` for an argument of another form.
+pub fn structure_layer_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    member_fields(ty).ok_or(TYPE_MISMATCH)?;
+    layer_predicate(arg).ok_or(code::ARGUMENT_FORM)?;
+    Ok(structure_layer_tariff())
+}
+
+/// The answer of a `structure.layer` read, with [`structure_layer_read_tariff`]'s refusals and, once the read is
+/// charged, those of [`CommandLayer::layer_members`]: with Jumble on, `KN5:input.retained_tool_needs_jumble_off`
+/// (LG2.8), and a cell outside 0 to 599 or a layer past the cell's last, `KN2:input.named_object_invalid`. The members
+/// read no state, and a read changes nothing.
+pub fn structure_layer<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    let order = member_fields(ty).ok_or(TYPE_MISMATCH)?;
+    let (cell, named) = layer_predicate(arg).ok_or(code::ARGUMENT_FORM)?;
+    let members = layer.layer_members(cell, named).map_err(|error| error.code)?;
+    let naturals = |items: &[usize]| Value::list(items.iter().map(|&n| Value::int(n as u64)).collect());
+    let value = |name: &str| match name {
+        "cell" => Value::int(members.cell as u64),
+        "layer" => Value::int(members.layer as u64),
+        "pieces" => naturals(&members.pieces),
+        _ => naturals(&members.slots),
+    };
+    Ok(Value::record(order.iter().map(|&name| (name, value(name))).collect()))
 }
 
 /// The `orbits` row's query: the pieces of named orbits, which LB2's orbit catalogue reads (a draft, since KN2.4 has
