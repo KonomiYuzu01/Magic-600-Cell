@@ -85,10 +85,45 @@ fn imported_macro() -> Vec<u8> {
 
 /// A built-in tool's output that records a pick whose `c600-pick` record does not resolve here (FP.38).
 fn picked() -> Vec<u8> {
-    let digest = provenance::digest_ref("content", &[7; 32]);
-    let record =
-        Json::object([("format", Json::text("c600-pick")), ("version", Json::Int(1)), ("content", digest.clone())]);
-    let pick = Json::object([("record", record), ("chosen", digest)]);
+    pick_output([7; 32], provenance::digest_ref("content", &[7; 32]))
+}
+
+/// A built-in tool's output that records a pick through a `c600-pick` record the host keeps, from a list that is a
+/// fixed entry or not (BND.54, FP.38).
+fn recorded_pick(adapter: &Adapter, fixed: bool) -> Vec<u8> {
+    let content = |bytes: &[u8]| provenance::digest_ref("content", &sha256(bytes));
+    let identity = Json::object([
+        ("puzzle", Json::text("full")),
+        ("model_id", Json::text("58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9")),
+        ("menu_id", Json::Null),
+        ("menu_order", Json::Null),
+        ("contract_rev", Json::Null),
+    ]);
+    let payload = Json::object([
+        ("list", content(b"a built-in list")),
+        ("fixed", Json::Bool(fixed)),
+        ("options", content(b"[[1,2]]\n")),
+        ("chosen", content(b"[1,2]\n")),
+        ("target", Json::text("t")),
+    ]);
+    let record = Json::object([
+        ("format", Json::text("c600-pick")),
+        ("version", Json::Int(1)),
+        ("identity", identity),
+        ("provenance", Json::Null),
+        ("payload", payload),
+    ]);
+    let digest = adapter.kept().keep_pick(&canonical(&record));
+    pick_output(digest, content(b"[1,2]\n"))
+}
+
+/// A built-in tool's output that records a pick of `chosen` through the `c600-pick` record whose content digest is
+/// `record` (FP.17, FP.38).
+fn pick_output(record: [u8; 32], chosen: Json) -> Vec<u8> {
+    let content = provenance::digest_ref("content", &record);
+    let reference =
+        Json::object([("format", Json::text("c600-pick")), ("version", Json::Int(1)), ("content", content)]);
+    let pick = Json::object([("record", reference), ("chosen", chosen)]);
     let producer = Producer {
         contract: contract(),
         checker: pins().checkers.first().cloned(),
@@ -286,11 +321,13 @@ fn refused_words(adapter: &Adapter) -> Vec<(&'static str, Vec<u8>, &'static str)
         ("research output as a part", manual(&[research_at_1]), granted),
         ("a pick that does not resolve", picked(), incompatible),
         ("a pick that does not resolve, as a part", manual(&[picked_at_1]), incompatible),
+        ("a pick from a list that is no fixed entry", recorded_pick(adapter, false), granted),
     ]
 }
 
-/// The admitted words of L1 (f): a hand-entered word, an imported 0.4 macro, a built-in tool's output, and a manual
-/// word that took in a built-in tool's output and an imported macro the host keeps.
+/// The admitted words of L1 (f): a hand-entered word, an imported 0.4 macro, a built-in tool's output, a manual word
+/// that took in a built-in tool's output and an imported macro the host keeps, and a built-in tool's pick from a fixed
+/// entry through a `c600-pick` record the host keeps.
 fn admitted_words(adapter: &Adapter) -> Vec<(&'static str, Vec<u8>)> {
     let built_in = program(Author::BuiltIn, Profile::Solving, &[]);
     let taken = [adapter.keep(&built_in), adapter.keep(&imported_macro())];
@@ -299,21 +336,23 @@ fn admitted_words(adapter: &Adapter) -> Vec<(&'static str, Vec<u8>)> {
         ("an imported 0.4 macro", imported_macro()),
         ("a built-in tool's word", built_in),
         ("a hand-entered word with built-in and imported parts", manual(&taken)),
+        ("a built-in pick from a fixed entry", recorded_pick(adapter, true)),
     ]
 }
 
 /// CT-KN5-13 (part: through the layer with the runtime's adapter, the word of a record is refused at
 /// `operation.preview` admission when its block or any part's block, recursively, is a solver-authored tool's output,
-/// research output, a part with no stored content or a pick that does not resolve, and a hand-entered word, an
-/// imported 0.4 macro and built-in output pass; not run: a pick from the built-in repair list, which resolves only
-/// when the session store holds `c600-pick` records, and the routes that produce such records, draft insertion,
-/// composition and file round trips), CT-BND-26 (part: a tool block for each of `own`, `forked_built_in`, `imported`
-/// and `unknown`, directly and nested in `parts`; not run: the pick routes), CT-BND-28 (part: a missing part, also
-/// nested, never reads as manual or built-in), CT-BND-29 (part: the three producers pass the producer check through
-/// the layer; not run: the repair-list pick) and CT-BND-30 (part: research output directly and in recursive parts),
-/// with KN5.11, KN5.26, BND.21, BND.61, BND.84 and BND.85. A pick that does not resolve answers
-/// `PS1:capability.provenance_incompatible`, as `admit_preview` does (FP.38); the other refusals
-/// `LG3:capability.not_granted`. A record write reads the block alone, so each word is stored, and each refusal leaves
+/// research output, a part with no stored content, a pick that does not resolve or a pick from a list that is no fixed
+/// entry, and a hand-entered word, an imported 0.4 macro, built-in output and a built-in pick from a fixed entry
+/// through its kept `c600-pick` record pass; not run: the routes that write `c600-pick` records, which the session
+/// store builds (M6), draft insertion, composition and file round trips), CT-BND-26 (part: a tool block for each of
+/// `own`, `forked_built_in`, `imported` and `unknown`, directly and nested in `parts`; not run: the pick routes),
+/// CT-BND-28 (part: a missing part, also nested, never reads as manual or built-in), CT-BND-29 (part: the three
+/// producers and a fixed-entry pick pass the producer check through the layer) and CT-BND-30 (part: research output
+/// directly and in recursive parts), with KN5.11, KN5.26, BND.21, BND.54, BND.61, BND.84 and BND.85. A pick that does
+/// not resolve answers `PS1:capability.provenance_incompatible`, as `admit_preview` does (FP.38); the other refusals
+/// `LG3:capability.not_granted`, a pick from a list that is no fixed entry among them while BND.55 is open (LP2
+/// draft). A record write reads the block alone, so each word is stored, and each refusal leaves
 /// the presented preview, the generation and the records as they were.
 #[test]
 fn a_records_word_is_admitted_or_refused_by_every_block_in_its_parts() {
@@ -349,7 +388,8 @@ fn a_records_word_is_admitted_or_refused_by_every_block_in_its_parts() {
 /// installs one. With an adapter that keeps the same blocks, each refusal and each admission is as before the reopen.
 /// With an adapter that keeps none, as a host has after a restart today, every refusal stands, a word with parts now
 /// refused on its first part, and the word with built-in parts is refused too: a missing part reads `unknown`
-/// (BND.21), which fails closed.
+/// (BND.21), which fails closed. A pick whose `c600-pick` record the host lost no longer resolves (FP.38), the
+/// fixed-entry pick included.
 #[test]
 fn a_reopen_keeps_every_refusal_and_fails_closed_on_parts_it_lost() {
     let mut f = fixture(&[]);
@@ -358,7 +398,6 @@ fn a_reopen_keeps_every_refusal_and_fails_closed_on_parts_it_lost() {
         f.write(&format!("r{i}"), &[1, 2], block);
     }
     let admitted = admitted_words(&f.adapter);
-    let with_parts = admitted.len() - 1;
     for (i, (_, block)) in admitted.iter().enumerate() {
         f.write(&format!("a{i}"), &[1, 2], block);
     }
@@ -393,15 +432,31 @@ fn a_reopen_keeps_every_refusal_and_fails_closed_on_parts_it_lost() {
     let mut lost = reopen(&f);
     lost.layer.set_provenance(Box::new(lost.adapter.clone()));
     for (i, (what, block, expected)) in refused.iter().enumerate() {
-        // A word with parts now fails on its first part, which reads `unknown`.
-        let has_parts = !provenance::field::parts(&provenance::read(block).unwrap()).is_empty();
-        lost.refused(&format!("r{i}"), if has_parts { code::NOT_GRANTED } else { *expected }, what);
+        lost.refused(&format!("r{i}"), lost_code(block).unwrap_or(*expected), what);
     }
-    for (i, (what, _)) in admitted.iter().enumerate().take(with_parts) {
-        lost.preview(record_draft(&format!("a{i}")));
-        assert!(lost.layer.preview().is_some(), "{what}");
+    for (i, (what, block)) in admitted.iter().enumerate() {
+        match lost_code(block) {
+            Some(expected) => lost.refused(&format!("a{i}"), expected, &format!("{what}, its parts or pick lost")),
+            None => {
+                lost.preview(record_draft(&format!("a{i}")));
+                assert!(lost.layer.preview().is_some(), "{what}");
+            }
+        }
     }
-    lost.refused(&format!("a{with_parts}"), code::NOT_GRANTED, "a word whose built-in parts the host lost");
+}
+
+/// The code a host that kept no block and no pick record answers for `block`, when it differs from the code with every
+/// block kept: a pick no longer resolves (FP.38), and a word with parts fails on its first part, which reads `unknown`
+/// (BND.21).
+fn lost_code(block: &[u8]) -> Option<&'static str> {
+    let block = provenance::read(block).unwrap();
+    if provenance::field::pick_record(&block).is_some() {
+        Some(code::PROVENANCE_INCOMPATIBLE)
+    } else if !provenance::field::parts(&block).is_empty() {
+        Some(code::NOT_GRANTED)
+    } else {
+        None
+    }
 }
 
 /// CT-KN5-13 (part: an admissible permitted word with a protection conflict still gets KN5.9's preview, L1 (g)), with

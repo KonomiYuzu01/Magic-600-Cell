@@ -10,7 +10,10 @@
 //! the corpus's phase, at the counterpart of the corpus's refused instruction, with the corpus's used amounts mapped
 //! through that table. An interruption key (B08, B09) is the solver's cancel, which the synthetic engine raises
 //! inside a host row of a `repeat` loop: it gives the corpus's outcome and code at the next operation, and the
-//! corpus's examined items are the rows the engine served.
+//! corpus's examined items are the rows the engine served. A pick key (MR17, MR18, A29, A30) is two runs, because the
+//! draft language has no pick inside a run: the first builds the list, the host writes the solver's `c600-pick` record
+//! of option 0 (FP.38, BND.54), and the second previews the picked value, whose block records the pick and keeps the
+//! list's block in `parts` (BND.23, BND.85).
 //! [`FALSE_REFUSALS`] and [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key
 //! gives the corpus's code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the
 //! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, as
@@ -29,10 +32,10 @@ use c600_digest::sha256;
 use c600_ir::{Callee, Expr, Lit, QTy, Ty};
 use c600_module::code::{DIGEST_MISMATCH, NOT_GRANTED};
 use c600_module::{approve, load, verify, Closure, Identity, Outcome, Refusal, RunRequest};
-use c600_run::boundary::{Answer, Place, Store};
+use c600_run::boundary::{Answer, Boundary, Context, Place, Store};
 use c600_run::interp::{CancelFlag, Options};
 use c600_run::meter::{frame_size, Amounts, Outcome as Ended};
-use c600_run::provenance::{self, field, hex, Author, Json, Profile, INCOMPATIBLE};
+use c600_run::provenance::{self, field, hex, Author, Json, Producer, Profile, INCOMPATIBLE};
 use c600_run::value::Value;
 use support::*;
 
@@ -42,15 +45,14 @@ const CORPUS: &str =
 const FREEZE_SHA256: &str = "d7eff17503ee95d45ddca0efe38ec3bb09418b0248a6279afe2dce0a90ea6627";
 
 /// The keys realised here, one test each.
-const REALISED: [&str; 56] = [
+const REALISED: [&str; 60] = [
     "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10", "A11", "A12", "A13", "A14", "A15", "A16",
-    "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A33", "A34", "A35", "B01",
-    "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11",
-    "MR12", "MR15", "MR16", "P01", "P02", "P03", "P04", "S01", "S02",
+    "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A29", "A30", "A33", "A34",
+    "A35", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "MR03", "MR04", "MR07", "MR08", "MR09",
+    "MR10", "MR11", "MR12", "MR15", "MR16", "MR17", "MR18", "P01", "P02", "P03", "P04", "S01", "S02",
 ];
 
 const M5: &str = "a jumbling key: realised on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`";
-const PICK: &str = "waits for a recorded pick: nothing writes or resolves a `c600-pick` record yet (FP.38, BND.54)";
 const RUNTIME: &str = "realised with a runtime process in `c600-tools/tests/ct_rte_07_c5.rs`";
 const ADMISSION: &str = "realised as the built-in column's refusal at admission in \
                          `c600-runtime/tests/ct_rte_07_admission.rs`";
@@ -58,17 +60,13 @@ const COMMAND: &str = "realised at the command layer on the 600-cell-Full tool's
                        `c600-tools/tests/ct_rte_07_budget.rs`";
 
 /// The keys left, with the reason.
-const LEFT: [(&str, &str); 19] = [
+const LEFT: [(&str, &str); 15] = [
     ("MR01", M5),
     ("MR02", M5),
     ("MR05", M5),
     ("MR06", M5),
     ("A31", M5),
     ("A32", M5),
-    ("MR17", PICK),
-    ("MR18", PICK),
-    ("A29", PICK),
-    ("A30", PICK),
     ("MR13", ADMISSION),
     ("MR14", ADMISSION),
     ("MR19", ADMISSION),
@@ -797,6 +795,181 @@ fn ct_rte_07_full_a27_setups_c1() {
 #[test]
 fn ct_rte_07_full_a28_setups_c2() {
     setups("c2", &[&["a", "b"], &["b", "a"]]);
+}
+
+/// MR17, MR18, A29 and A30, run 2: the built-in solving entry `go` proposes `w` at `t`.
+const GO_PICKED: &str = "export fn go(t: Target, w: Word) -> Text effects [preview] {\n    \
+                         let r = propose(w, t);\n    return \"requested\";\n}\n";
+
+/// The block `c600-run`'s boundary records for what a built-in solving run of `m.<function>` returns when it takes
+/// the stored blocks `inputs` (BND.22, BND.24): the producer `c600-module` builds from the approval, whether the entry
+/// may read state, and the inputs as parts. The host keeps it beside the list it shows.
+fn returned_block(package: &Package, function: &str, inputs: &[Vec<u8>]) -> Vec<u8> {
+    let ready = ready(package, entry(function, Author::BuiltIn, Profile::Solving)).expect("the entry is approved");
+    let a = ready.approval();
+    let producer = Producer {
+        contract: a.contract.clone(),
+        checker: Some(a.checker.clone()),
+        author: a.entry.author,
+        module: a.module,
+        entry: a.entry.function.clone(),
+        profile: a.entry.profile,
+    };
+    let reads_state = a.admitted.separation.reads_state;
+    let context = Context {
+        run: "r1".into(),
+        base: "rev-7".into(),
+        producer,
+        reads_state,
+        inputs: inputs.to_vec(),
+        pins: pins(),
+    };
+    let (mut engine, mut store) = (Engine::fixture(), Store::default());
+    Boundary::new(&mut engine, &mut store, context).block()
+}
+
+/// Runs the built-in solving entry `m.offered` with `args`, each entered by hand, and gives the solver's pick of its
+/// option 0 (BND.54): the host keeps the list's block, writes FP.38's `c600-pick` record with `fixed` and `target`,
+/// and gives the picked value with its block, a hand-entered value (BND.23) that records the pick and keeps the list's
+/// block in `parts` (BND.85).
+fn listed_and_picked(trial: Trial, args: Vec<Value>, fixed: bool, target: &str) -> (Trial, Value, Vec<u8>) {
+    let inputs = vec![manual(); args.len()];
+    let list = returned_block(&trial.package, "offered", &inputs);
+    let mut trial = trial.call("offered", Author::BuiltIn, Profile::Solving, args, inputs, WIDE);
+    let (options, chosen) = {
+        let out = trial.last();
+        let Some(Value::List(items)) = &out.run.value else { panic!("a list: {:?}", out.run.value) };
+        (out.run.output.clone().expect("the list's bytes"), items.items()[0].clone())
+    };
+    let content = |bytes: &[u8]| provenance::digest_ref("content", &sha256(bytes));
+    let identity = Json::object([
+        ("puzzle", Json::text("full")),
+        ("model_id", Json::text("58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9")),
+        ("menu_id", Json::Null),
+        ("menu_order", Json::Null),
+        ("contract_rev", Json::Null),
+    ]);
+    let payload = Json::object([
+        ("list", content(&list)),
+        ("fixed", Json::Bool(fixed)),
+        ("options", content(&options)),
+        ("chosen", content(&encoded(&chosen))),
+        ("target", Json::text(target)),
+    ]);
+    let record = Json::object([
+        ("format", Json::text("c600-pick")),
+        ("version", Json::Int(1)),
+        ("identity", identity),
+        ("provenance", Json::Null),
+        ("payload", payload),
+    ]);
+    trial.store.keep(&list);
+    let digest = trial.store.keep_pick(&provenance::canonical(&record));
+    let reference = Json::object([
+        ("format", Json::text("c600-pick")),
+        ("version", Json::Int(1)),
+        ("content", provenance::digest_ref("content", &digest)),
+    ]);
+    let pick = Json::object([("record", reference), ("chosen", content(&encoded(&chosen)))]);
+    let Json::Object(mut block) = provenance::manual(&contract()) else { panic!("a block is an object") };
+    block.insert("parts".into(), Json::List(vec![content(&list)]));
+    block.insert("pick".into(), pick);
+    (trial, chosen, provenance::canonical(&Json::Object(block)))
+}
+
+/// A refused pick key: the picked value's block is refused at preview admission, before the split, because the list
+/// is no fixed entry (BND.54, BND.55).
+fn refused_pick(trial: &Trial, key: &str, word: &[i32], target: &str) {
+    refused_preview(trial, &corpus_code("must-refuse.json", key), false);
+    let shown = &trial.last().shell[0];
+    assert_eq!((shown.word.as_slice(), shown.target.as_str()), (word, target));
+    let Answer::Refused(refusal) = &shown.answer else { panic!("a refusal") };
+    assert!(refusal.detail.contains("BND.55"), "the pick is refused: {}", refusal.detail);
+}
+
+/// MR17: a solving run computes a one-item target list from the counts, the first largest of the corpus's targets,
+/// unrolled over them; the solver picks its only option, and a later run proposes the manual word at the picked
+/// target. The list is no fixed entry, so the picked target is refused at preview admission while BND.55 is open (LP2
+/// draft; it fails closed), and no preview is installed.
+#[test]
+fn ct_rte_07_full_mr17_one_item_target_pick() {
+    let list = "export fn offered() -> List<Target> effects [snapshot] {\n    \
+        let n = read_snapshot<$INTS>(\"counts\");\n    \
+        let i = if(exact_less(n.c0, n.c1), if(exact_less(n.c1, n.c2), 2, 1), if(exact_less(n.c0, n.c2), 2, 0));\n    \
+        return list<Target>(if(exact_eq(i, 0), target(\"c0\"), if(exact_eq(i, 1), target(\"c1\"), target(\"c2\"))));\n\
+        }\n\n";
+    let source = root(&[list, GO_PICKED].concat());
+    let trial = ten(|| {
+        let (trial, target, block) = listed_and_picked(Trial::of(&source, &[]), vec![], false, "c1");
+        let args = vec![target, Value::word(&[A])];
+        trial.call("go", Author::BuiltIn, Profile::Solving, args, vec![block, manual()], WIDE)
+    });
+    assert_eq!(trial.engine.served, ["counts"]);
+    refused_pick(&trial, "MR17", &[A], "c1");
+}
+
+/// MR18: a solving run builds a one-item word list from `nu2`'s corrections; the solver picks its only option, and a
+/// later run proposes it at the manual target. The list is no fixed entry, so the picked word is refused at preview
+/// admission while BND.55 is open (LP2 draft; it fails closed), and no preview is installed.
+#[test]
+fn ct_rte_07_full_mr18_one_item_word_pick() {
+    let list = "export fn offered() -> List<Word> effects [snapshot] {\n    \
+        let nu = read_snapshot<$NU>(\"nu2\");\n    \
+        let w = if(exact_eq(nu.i0, 1), if(exact_eq(nu.i1, 1), word[1, 2], word[1]), \
+        if(exact_eq(nu.i1, 1), word[2], word[]));\n    \
+        return list<Word>(w);\n}\n\n";
+    let source = root(&[list, GO_PICKED].concat());
+    let trial = ten(|| {
+        let (trial, word, block) = listed_and_picked(Trial::of(&source, &[]), vec![], false, "c0");
+        let args = vec![Value::target("c0"), word];
+        trial.call("go", Author::BuiltIn, Profile::Solving, args, vec![manual(), block], WIDE)
+    });
+    assert_eq!(trial.engine.served, ["nu2"]);
+    refused_pick(&trial, "MR18", &[A], "c0");
+}
+
+/// A29 and A30: the setup search for the target the solver names (BND.1), a fixed entry; the solver picks row 0, and
+/// a later run proposes it at that target. The picked word keeps the setup list's block, which may read state, and is
+/// admitted: the proposal's own block reads no state, so the split passes it too, and the engine installs it.
+fn picked_setup(list: &str, served: &[&str]) -> Trial {
+    let source = root(&[list, GO_PICKED].concat());
+    let trial = ten(|| {
+        let (trial, word, block) = listed_and_picked(Trial::of(&source, &[]), vec![Value::target("c1")], true, "c1");
+        let args = vec![Value::target("c1"), word];
+        trial.call("go", Author::BuiltIn, Profile::Solving, args, vec![manual(), block], WIDE)
+    });
+    let out = completed(&trial, &text("requested"));
+    assert!(matches!(out.shell[0].answer, Answer::Previewed(_)) && out.separated.is_empty());
+    assert_eq!(named(&[B]), ["b"], "the corpus's word");
+    assert_eq!(trial.engine.previews, [(vec![B], "c1".to_string())]);
+    assert_eq!(trial.engine.served, served);
+    assert!(trial.store.records.is_empty(), "no workspace write");
+    trial
+}
+
+/// A29: row 0 of the setups for `c1`, picked and previewed at `c1`.
+#[test]
+fn ct_rte_07_full_a29_picked_setup() {
+    let trial = picked_setup(
+        "export fn offered(t: Target) -> List<Word> effects [snapshot] {\n    \
+         return read_snapshot<List<Word>>(\"setup\", t);\n}\n\n",
+        &["setup/\"c1\""],
+    );
+    assert!(trial.engine.views.is_empty());
+}
+
+/// A30: A29 after an unrelated facts report in the same run, which publishes the counts. The report does not choose
+/// the setup or the target, and the pick is admitted: no false refusal here.
+#[test]
+fn ct_rte_07_full_a30_picked_setup_after_a_report() {
+    let trial = picked_setup(
+        "export fn offered(t: Target) -> List<Word> effects [snapshot, view] {\n    \
+         let n = read_snapshot<$INTS>(\"counts\");\n    let shown = publish_view(n);\n    \
+         return read_snapshot<List<Word>>(\"setup\", t);\n}\n\n",
+        &["counts", "setup/\"c1\""],
+    );
+    assert_eq!(trial.engine.views, [encoded(&ints(&[("c0", 2), ("c1", 6), ("c2", 6)]))]);
+    assert!(!FALSE_REFUSALS.contains(&"A30"));
 }
 
 /// A33: a research search over the fixed words returns the first word of least score.
