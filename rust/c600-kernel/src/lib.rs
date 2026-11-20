@@ -63,8 +63,8 @@
 //! `replay` for Full ([`Kernel::replay`]); the streaming of KN2.10 ([`Kernel::chunks`], [`Replay`]); KN2.11's refusal
 //! shape ([`Refused`]); `protection` at label level for named pieces, fixed cell centres included, under Net and Strict
 //! ([`Kernel::piece_protection`], [`Kernel::strict_piece_protection`]), which LP3's C8 reads for LB3.4; the structure
-//! rows that `structure.compare` and `filter.preview` read, for LP3's C6 ([`Kernel::compare_cells`],
-//! [`Kernel::cell_layers`], [`Kernel::layer_counts`]). Draft choices:
+//! rows that `structure.compare`, `filter.preview` and `structure.layer` read, for LP3's C6 ([`Kernel::compare_cells`],
+//! [`Kernel::cell_layers`], [`Kernel::layer_counts`], [`Kernel::layer_members`]). Draft choices:
 //!
 //! - A nonempty [`ProtectedSet`] is bound to the model that built it. The empty set names no orbit, so it belongs to no
 //!   model, and `ProtectedSet::none()` equals `protected_set(&[])`. Every call that takes a set checks it except the
@@ -392,6 +392,20 @@ pub struct LayerCounts {
     pub pieces: usize,
     /// The home slots of those positions.
     pub slots: usize,
+}
+
+/// The members of one breadth-first layer around a cell (LP2 draft): the positions and slots that [`LayerCounts`]
+/// counts, each list in increasing order.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LayerMembers {
+    /// The cell the layers are counted from, 0 to 599.
+    pub cell: usize,
+    /// The layer: its cells' face steps from `cell`.
+    pub layer: usize,
+    /// The positions in the layer, named by their home positions.
+    pub pieces: Vec<usize>,
+    /// The home slots of those positions.
+    pub slots: Vec<usize>,
 }
 
 /// A star step: the orbit's seed relocated and set up by the path to a frame node of the orbit's execution tree.
@@ -900,12 +914,29 @@ impl Kernel {
     /// One layer around `cell`, as [`Kernel::cell_layers`] counts it, with 0.4's `layer_mask` refusal of a layer past
     /// the cell's last.
     pub fn layer_counts(&self, cell: i64, layer: i64) -> Result<LayerCounts, Refusal> {
-        let last = self.structure.last_layer(named_cell(cell)?);
+        let (_, layer) = self.named_layer(cell, layer)?;
+        Ok(self.cell_layers(cell)?[layer])
+    }
+
+    /// The members of one layer around `cell` (LP2 draft, the row `structure.layer` reads), with
+    /// [`Kernel::layer_counts`]' refusals: the positions it counts, named by their home positions, and their home
+    /// slots, each list in increasing order. The members read no state, as the counts do.
+    pub fn layer_members(&self, cell: i64, layer: i64) -> Result<LayerMembers, Refusal> {
+        let (cell, layer) = self.named_layer(cell, layer)?;
+        let (pieces, slots) = self.structure.members(&self.model, cell, layer);
+        Ok(LayerMembers { cell, layer, pieces, slots })
+    }
+
+    /// A cell 0 to 599 and a layer around it from 0 to the cell's last, refused with 0.4's `cell_mask` and
+    /// `layer_mask` texts.
+    fn named_layer(&self, cell: i64, layer: i64) -> Result<(usize, usize), Refusal> {
+        let cell = named_cell(cell)?;
+        let last = self.structure.last_layer(cell);
         let Some(layer) = usize::try_from(layer).ok().filter(|&layer| layer <= last) else {
             let text = format!("Layer must be L0..L{last} for the chosen color");
             return Err(Refusal::new(codes::NAMED_OBJECT_INVALID, text));
         };
-        Ok(self.cell_layers(cell)?[layer])
+        Ok((cell, layer))
     }
 
     /// The number of frame nodes in `orbit`'s execution tree.

@@ -435,8 +435,9 @@
 //!   not built.
 //! - LB2, budgets: both pure entries make one pass over `positions`; on the largest orbit, 7,200 pieces, every piece
 //!   away from Home, each runs within the draft budget ceiling with the `positions` read before it
-//!   (`c600-tools/tests/orbits.rs`). The lists are built with `push`, which copies, so a list of k pieces costs about
-//!   k²/2 of kernel cost, within the ceiling's 2^40.
+//!   (`c600-tools/tests/orbits.rs`). The lists are built with `push`, which is priced as a new list of its length even
+//!   where it extends the list in place (pull request 364), so a list of k pieces costs about k²/2 of kernel cost,
+//!   within the ceiling's 2^40.
 //! - LB2: the catalogue rows are Rust data: [`orbit_catalogue_and_progress`], a second part of the row "Orbit catalogue
 //!   and collateral stage order" beside [`collateral_stage_order`], and [`residuals_per_orbit`], a second part of the
 //!   row "Residuals and exact completion" beside [`residuals_and_exact_completion`], because the parts are separate

@@ -1,6 +1,6 @@
 //! The structure of the 600 cells (LP2 draft for LP3's C6, step 1 item 3): which cells share a face, how many face
-//! steps part two cells, and the breadth-first layers around a cell, as 0.4's structure explorer and filter read them
-//! (`core.py`: `Model.adj`, `cell_distances` and `layer_mask`).
+//! steps part two cells, and the breadth-first layers around a cell with their members, as 0.4's structure explorer and
+//! filter read them (`core.py`: `Model.adj`, `cell_distances` and `layer_mask`).
 //!
 //! 0.4 takes a cell's four neighbours as the four nearest cell centres. Here two cells are neighbours when they share
 //! three of their four vertices, read from the model's 120 vertex pieces (orbit 34): each holds one sticker in each of
@@ -127,5 +127,22 @@ impl Structure {
             }
         }
         counts
+    }
+
+    /// The members of layer `layer` around `cell`, both in range, that [`Structure::layers`] counts for it: the
+    /// positions with a home slot in a cell of that layer, in increasing order, and all their home slots, in
+    /// increasing order. A slot is the home of one position, so no slot repeats.
+    pub(crate) fn members(&self, model: &Model, cell: usize, layer: usize) -> (Vec<usize>, Vec<usize>) {
+        let row = &self.steps[cell * CELLS..(cell + 1) * CELLS];
+        let (mut pieces, mut slots) = (Vec::new(), Vec::new());
+        for piece in 0..PIECES {
+            let home = model.home_slots(piece);
+            if home.iter().any(|&slot| usize::from(row[slot as usize / CELL_STICKERS]) == layer) {
+                pieces.push(piece);
+                slots.extend(home.iter().map(|&slot| slot as usize));
+            }
+        }
+        slots.sort_unstable();
+        (pieces, slots)
     }
 }

@@ -2031,12 +2031,24 @@ run or not applicable is no pass (PHS.63).
   carries the admitted budget (`ProgramJob::budget`), and the request digest covers it. Tests:
   `c600-command/tests/budget.rs`. LP3's hosts run a job's entry under the run limits of its budget, and B13 and B14 also
   run on the 600-cell-Full tool's row (C5's section below).
+- Leads L12, L13 and L16 of the KN5 boundary attack (LP2's pull request 369) and the unavailable presentation outcome
+  (pull request 371), in the command layer:
+  - L12 (CT-KN5-05, part): an action the store wrote before a panic unwound out of the write is held with read-only
+    recovery (`KN5:unknown_outcome.commit_fate`) and settled by `restart` from `Store::durable`, as after an unknown
+    fate (`c600-command/tests/commit_fault.rs`).
+  - L13 (b) and (c): a program job's terminal and a device loss's un-present each advance the generation
+    (`tests/layer.rs`). L13 (a) is structural: the layer's mutators take `&mut self`. L16 (a): `tests/worksheet.rs`.
+    L14 apart from (e), and L16 (b) and (c), were built earlier; L17 is the item "Findings B1 and L17" above.
+  - The unavailable presentation outcome (RM.26, LI.21). When the adapter cannot confirm presentation, for example
+    after a device loss, `CommandLayer::presentation_unavailable` clears the presented-preview latch and never guesses
+    the newest preview it received. `Shell::presentation_unavailable` reports it and ends the shell's preview binding,
+    so no token names the preview meanwhile (`tests/layer.rs`).
 - KN5 not built yet: BND.16's cells that grant a run more outside a solving session (the authoring workspace's records
-  and research records); ruling 6's `file` overlay without a granted file capability, L12 to L14, L16 and L17; the typed
-  workspace rows and limits on a record's payload; a display adapter's own frame reports, for which `HeadlessFrames`
-  stands in. No host caller is built: callers are stamped on two channels, the shell's and LP3's runtime bridge
-  (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session is refused with
-  `KN4:busy.session_locked`.
+  and research records); ruling 6's `file` overlay without a granted file capability (L14 (e), which waits for an owner
+  reading); L13 (d), a draft KN5.6 table object; the typed workspace rows and limits on a record's payload; a display
+  adapter's own frame reports, for which `HeadlessFrames` stands in. No host caller is built: callers are stamped on
+  two channels, the shell's and LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a
+  second opener of a held session is refused with `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.

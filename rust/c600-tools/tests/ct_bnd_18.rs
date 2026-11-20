@@ -285,10 +285,10 @@ fn ct_bnd_18_setup_search_runs_only_for_a_named_target() {
         admit_built_in(&program, "searches", entry, &class, &Grant::none(), &Policy::interim()).unwrap()
     };
     let search = Row::SetupSearch(SETUPS.into());
-    let named = admit("named", &[search.clone()]);
+    let named = admit("named", std::slice::from_ref(&search));
     assert!(named.is_admitted(), "{:?}", named.diagnostics);
     for entry in ["literal", "computed", "first", "skip_empty"] {
-        let refused = admit(entry, &[search.clone()]);
+        let refused = admit(entry, std::slice::from_ref(&search));
         assert!(!refused.is_admitted(), "{entry}");
         assert!(refused.diagnostics.iter().any(|d| d.code == NOT_GRANTED), "{entry}: {:?}", refused.diagnostics);
     }

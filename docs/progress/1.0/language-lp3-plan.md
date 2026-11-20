@@ -190,9 +190,9 @@ across a restart (KN5.21, KN5.23, LI.30). The shell mints the tokens from a per-
 (KN5.14, KN5.15). Acceptance:
 
 1. `cargo test --locked --offline` and `cargo fmt --all --check` pass in `rust/`, in CI through
-   `tests/test_language_rust.py`. The crate's tests cover the command-layer parts of CT-KN5-01, CT-KN5-03, CT-KN5-04,
-   CT-KN5-06, CT-KN5-07, CT-KN5-09, CT-KN5-11, CT-KN5-12, CT-KN7-04, CT-KN7-05, CT-ONE-03, CT-ONE-04, CT-ONE-05,
-   CT-ONE-11, CT-ONE-20, CT-ONE-21, CT-ONE-22 and CT-LI-10, each naming its part.
+   `tests/test_language_rust.py`. The crate's tests cover the command-layer parts of CT-KN5-01, CT-KN5-03 to
+   CT-KN5-07, CT-KN5-09 to CT-KN5-13, CT-KN7-04, CT-KN7-05, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-20,
+   CT-ONE-21, CT-ONE-22 and CT-LI-10, each naming its part, and CT-KN5-08 whole (`tests/availability.rs`).
 2. `tests/test_lp3_loop.py` drives O01 to O07 through the command layer on the command and key routes:
    `tools/oracle/compare.py` reports every step equal with no omitted fields (3,201 steps per route); every accepted
    step commits once; an independent case undoes each commit to its initial state; a chain case undoes and redoes

@@ -101,8 +101,8 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    CellComparison, Derivation, Effect, IdentityBlock, Kernel, LayerCounts, PiecePosition, ProtectedSet, Protection,
-    ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
+    CellComparison, Derivation, Effect, IdentityBlock, Kernel, LayerCounts, LayerMembers, PiecePosition, ProtectedSet,
+    Protection, ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
 use crate::budget::Budget;
@@ -1230,6 +1230,14 @@ impl<S: Store> CommandLayer<S> {
     pub fn layer_counts(&self, cell: i64, layer: i64) -> Result<LayerCounts, Error> {
         self.retained_mode()?;
         Ok(self.kernel.layer_counts(cell, layer)?)
+    }
+
+    /// The members that `structure.layer` reads for a layer predicate (draft; LP3's C6): the positions of one layer
+    /// around `cell` and their home slots, as [`Kernel::layer_members`] gives them, with the refusals of
+    /// [`CommandLayer::layer_counts`]. A read changes nothing.
+    pub fn layer_members(&self, cell: i64, layer: i64) -> Result<LayerMembers, Error> {
+        self.retained_mode()?;
+        Ok(self.kernel.layer_members(cell, layer)?)
     }
 
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
