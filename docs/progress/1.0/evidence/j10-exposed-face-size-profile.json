@@ -1,0 +1,16 @@
+{
+  "evidence_kind": "headless source evidence: exact geometry derived from assets/ by c600-jumble and certified in exact arithmetic; no renderer, Windows/DirectX or performance evidence",
+  "feature": "J10",
+  "format": "magic600-jumbling-exposed-faces/1",
+  "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+  "geometry_digest": "03a453b263d97338f7e267347a71276e8520332e06680a3040a2c67b286f7e19",
+  "profile_id": "sha256:47e42a7b500f3b2fab81441e20b6e5147aa047e4e6e0c7fe94da41c39772a011",
+  "profile": {"base":{"cut":{"faces2":1048,"faces3":235,"triangles":1180,"vertices":1060},"host":{"faces2":390,"faces3":80,"triangles":466,"vertices":393},"in":{"faces2":540,"faces3":122,"triangles":602,"vertices":545},"out":{"faces2":508,"faces3":113,"triangles":578,"vertices":515}},"bytes":{"binary32_base_soup":56640,"binary32_indexed":136215004,"binary32_instanced":20921288,"binary32_soup":207475200,"exact_base_table":36258},"cells":469800,"core_cells":600,"format":"magic600-jumbling-exposed-faces-profile/1","full":{"cut":{"faces2":4020000,"faces3":939000,"triangles":4322400,"vertices":4039200},"host":{"faces2":1250400,"faces3":259800,"triangles":1437600,"vertices":1238400},"in":{"faces2":2011200,"faces3":469800,"triangles":2162400,"vertices":2020800},"out":{"faces2":2008800,"faces3":469200,"triangles":2160000,"vertices":2018400}},"orbits":36,"pieces":177120},
+  "reference": "EH-05, EN2's research/jumbling/differential/leads/results/meshes-2/meshes-summary.json: equal counts, checked by rust/c600-jumble/tests/faces.rs",
+  "states_note": "exposed_faces is total N, the mismatched cut cells of every domain at the state; each has one held side, whose face a renderer draws",
+  "states": [{"domains":1,"exposed_faces":0,"label":"solved","records":0,"state_digest":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},{"domains":2,"exposed_faces":1566,"label":"first record","records":1,"state_digest":"9106a25095cd859e204c38c81913657fd2b304884d5847ccb7d2074e1a309f6c"},{"domains":3,"exposed_faces":4584,"label":"three records","records":3,"state_digest":"9b312e9f40f8c45c5d02136ccb50e5bc972cf91c7c3d562628e80063081baf1e"},{"domains":18,"exposed_faces":40520,"label":"thirty records","records":30,"state_digest":"7681341c043a3fd8dff50963f838190ad426ea4a8daccdd06d320ab198b61dc4"}],
+  "fixture": "research/jumbling/fixtures/wj-I_a.json",
+  "fixture_sha256": "86c6c15de125c5073f7ec433e302e926e54f1839000f3cedf6a6804215bd7334",
+  "producer": "c600-jumble 0.0.0 (faces::geometry)",
+  "command": "cargo test --manifest-path rust/Cargo.toml --locked --offline -p c600-jumble --test faces size_profile_evidence_is_current (C600_WRITE_EVIDENCE=1 writes)"
+}

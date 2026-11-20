@@ -12,13 +12,17 @@ use std::sync::{Arc, OnceLock};
 
 use c600_display::array::Array;
 use c600_display::codes;
-use c600_display::crosswalk::{survey_state, SurveyState};
-use c600_display::jumble::{self, Missing, PoseProjection};
+use c600_display::crosswalk::{self, survey_state, CoverTable, NuObservation, ReleaseLog, RepairList, SurveyState};
+use c600_display::jumble::{self, observations as obs, Missing, PoseProjection};
 use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested};
 use c600_display::plan::*;
+use c600_display::receipt::{CancelReason, Status as Receipt};
 use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context, K_PLUS};
-use c600_jumble::levels;
-use c600_jumble::model::{CELL_SLOTS, NS};
+use c600_jumble::corrections;
+use c600_jumble::faces;
+use c600_jumble::levels::{self, Base, Snapshot};
+use c600_jumble::model::{CELL_SLOTS, NP, NS};
+use c600_jumble::nu;
 use c600_jumble::observe::{seam_facts, Batch, Rows, Scope};
 use c600_jumble::q5::Q5;
 use c600_jumble::regions::near_poles;
@@ -95,6 +99,12 @@ fn assert_engine_plane(transform: &TransformInput, twist: &Twist) {
             assert!((r - display(&twist.matrix[i][j])).abs() < 1e-5, "R(θ) is the twist at ({i}, {j})");
         }
     }
+}
+
+/// J10's payload at the twisted state, built once.
+fn exposed() -> &'static jumble::ExposedFaces {
+    static EXPOSED: OnceLock<jumble::ExposedFaces> = OnceLock::new();
+    EXPOSED.get_or_init(|| jumble::exposed_faces(&world().engine, &world().twisted).expect("certified exposed faces"))
 }
 
 fn first_record(fixture: &Value) -> &Value {
@@ -224,9 +234,9 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
 /// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no J02,
 /// a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a twist that is not the
 /// outcome's letter, a transform without the engine's plane, the identity, which turns no plane, a twist other than the
-/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (J10's
-/// refusal, passed through from M5's producer) each give their explicit outcome, and nothing is guessed, truncated or
-/// installed. Not run: a backend's own refusals.
+/// identity with no plane, a named-cap set its budget left incomplete and an absent certified exposed-face geometry or
+/// size profile (J10's refusal, passed through from M5's producer) each give their explicit outcome, and nothing is
+/// guessed, truncated or installed. Not run: a backend's own refusals.
 #[test]
 fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let world = world();
@@ -328,15 +338,204 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     }
     assert_eq!(jumble::named_cap_set(engine, &mut blocked, 600, None), Err(Missing::NoSuchCap { cap: 600 }));
 
-    // J10's refusal path: M5's exact geometry producer supplies no certified exposed-face geometry or size profile and
-    // refuses with JI.45's code, so the display refuses with that code, both prerequisites missing and the state the
-    // producer was asked about, and nothing is drawn.
+    // J10's refusal path: when M5's producer has no certified exposed-face geometry, no admitted size profile or
+    // neither, it refuses with JI.45's code, so the display refuses with that code, what is missing, the producer's
+    // failed fact and the state it was asked about, and nothing is built or drawn.
+    let certified = faces::geometry(engine).expect("the certified geometry");
+    let cases: [(Result<&faces::Geometry, &str>, Option<&faces::Profile>, &str); 3] = [
+        (Err("no certified geometry"), None, "geometry and size profile"),
+        (Err("no certified geometry"), Some(&faces::PROFILE), "geometry"),
+        (Ok(certified), None, "size profile"),
+    ];
+    for (geometry, profile, missing) in cases {
+        let answer = faces::answer(engine, state, geometry, profile);
+        assert_eq!(answer.get("code").and_then(Value::as_str), Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE));
+        let error = jumble::exposed_faces_from(engine, state, &answer).expect_err("no exposed-face payload");
+        assert_eq!(error.code, codes::EXPOSED_GEOMETRY_UNAVAILABLE);
+        assert_eq!((error.context["missing"].as_str(), error.context["feature"].as_str()), (missing, "J10"));
+        assert_eq!(error.context["source"], state.digest(engine));
+        assert!(!error.context["failed"].is_empty(), "the producer's failed fact");
+    }
+    let support = ctx_for(state).support;
+    assert_eq!(support.feature("J10").expect_err("no supported-feature claim").code, codes::UNSUPPORTED);
+}
+
+/// CT-RPI-08, J10 (JI.41 "Exposed-face meshes", JI.45), produced-and-checked part: M5's certified exposed-face
+/// geometry at a real jumbling state is built into J10's instanced payload, which passes its host-side check with the
+/// admitted profile's sizes. The payload is bound to the certified bytes, the admitted profile and the state; its base
+/// vertices and K⁺ matrices are the binary32 values of the exact ones; a piece's transport applied to its base faces
+/// gives the piece's exact home faces, on their cut hyperplanes, up to binary32 rounding; its face table has the
+/// profile's faces on each side and the 600 core cells, each face on the side the piece's signature names. Another
+/// state gives the same arrays. A corrupted payload (among them one naming another profile, and whole face rows out of
+/// piece order) and an answer that does not bind (among them a refusal naming an input J10 does not have) are
+/// `EV3:input.display_bundle_mismatch`, and nothing is repaired. J10 stays unsupported in the support report (RM.15).
+/// Not run: a backend's drawing and readback (C9).
+#[test]
+fn ct_rpi_08_j10_exposed_faces_are_produced_and_checked() {
+    let world = world();
+    let engine = &world.engine;
+    let state = &world.twisted;
+    let exposed = exposed();
+    let geometry = faces::geometry(engine).expect("the certified geometry");
+    assert_eq!(jumble::check_exposed_faces(exposed), Ok(faces::PROFILE.instanced_bytes()));
+    assert_eq!(exposed.geometry_digest, c600_digest::sha256_hex(&geometry.canonical));
+    assert_eq!(exposed.profile_id, faces::PROFILE.id());
+    assert_eq!(exposed.state_digest, state.digest(engine));
+
+    // The base vertices and the K⁺ matrices are the binary32 values of the exact ones.
+    let display = |x: &Q5| jumble::approximate(x).expect("a finite value");
+    let (vertices, offsets) = (exposed.base_vertices.as_f32(), exposed.base_vertex_offsets.as_u32());
+    for (b, face) in geometry.table.faces.iter().enumerate() {
+        let region = &engine.regions.rep_vertices[face.orbit as usize];
+        let exact: Vec<f32> = face.vertices.iter().flat_map(|&v| region[v as usize].iter().map(display)).collect();
+        assert_eq!(&vertices[4 * offsets[b] as usize..4 * offsets[b + 1] as usize], exact.as_slice(), "base face {b}");
+    }
+    let transports = exposed.transports.as_f32();
+    for k in [0usize, 1, 977, 7199] {
+        let exact: Vec<f32> = engine.kplus.matrix(k as u16, &engine.model).iter().flatten().map(display).collect();
+        assert_eq!(&transports[16 * k..16 * k + 16], exact.as_slice(), "K+ element {k}");
+    }
+
+    // The face table: the profile's faces on each side, the core cells, and each face on its signature's side.
+    let (piece, base, pole) = (exposed.face_piece.as_u32(), exposed.face_base.as_u32(), exposed.face_pole.as_u32());
+    let (side, cell) = (exposed.face_side.bytes.as_slice(), exposed.face_cell.as_u32());
+    let mut sides = [0u64; 2];
+    for row in 0..piece.len() {
+        sides[side[row] as usize] += 1;
+        assert_eq!(side[row] == 1, engine.model.in_sig(piece[row] as usize, pole[row] as usize), "face row {row}");
+    }
+    let (full_in, full_out) = (faces::PROFILE.full_in.faces3, faces::PROFILE.full_out.faces3);
+    assert_eq!(sides, [full_out, full_in]);
+    let core = (0..piece.len()).filter(|&row| cell[2 * row] == NP as u32).count() as u64;
+    assert_eq!(core, faces::PROFILE.core_cells);
+
+    // A piece's transport applied to its base faces gives its exact home faces, on their cut hyperplanes.
+    let transport = exposed.piece_transport.as_u32();
+    let kappa = f64::from(display(&engine.model.kappa));
+    for p in [0usize, 433, 123_456, NP - 1, world.outcome.inside[0] as usize] {
+        let exact = engine.regions.vertices(p, &engine.kplus, &engine.model);
+        let k = transport[p] as usize;
+        assert_eq!(k, usize::from(engine.regions.transport[p]));
+        let m = &transports[16 * k..16 * k + 16];
+        let rows = piece.partition_point(|&q| (q as usize) < p)..piece.partition_point(|&q| (q as usize) <= p);
+        assert_eq!(rows.len(), geometry.orbit_faces(engine.regions.orbit_of[p] as usize).len(), "piece {p}");
+        for row in rows {
+            let face = &geometry.table.faces[base[row] as usize];
+            let normal: Vec<f64> =
+                engine.model.poles[pole[row] as usize].iter().map(|x| f64::from(display(x))).collect();
+            let first = offsets[base[row] as usize] as usize;
+            for (i, &v) in face.vertices.iter().enumerate() {
+                let x = &vertices[4 * (first + i)..4 * (first + i) + 4];
+                let moved: Vec<f64> =
+                    (0..4).map(|r| (0..4).map(|c| f64::from(m[4 * r + c]) * f64::from(x[c])).sum::<f64>()).collect();
+                for (j, y) in moved.iter().enumerate() {
+                    let want = f64::from(display(&exact[v as usize][j]));
+                    assert!((y - want).abs() < 1e-5, "piece {p}, face row {row}: vertex {v}, coordinate {j}");
+                }
+                let on = moved.iter().zip(&normal).map(|(a, b)| a * b).sum::<f64>();
+                assert!((on - kappa).abs() < 1e-4, "piece {p}, face row {row}: vertex {v} off its cut hyperplane");
+            }
+        }
+    }
+
+    // Another state is another input with the same arrays.
+    let solved = jumble::exposed_faces(engine, &world.solved).expect("certified exposed faces");
+    let descriptors = |e: &jumble::ExposedFaces| e.arrays().map(|(name, array)| (name, array.desc.clone()));
+    assert_eq!(descriptors(&solved), descriptors(exposed));
+    assert_eq!((&solved.geometry_digest, &solved.profile_id), (&exposed.geometry_digest, &exposed.profile_id));
+    assert_ne!(solved.state_digest, exposed.state_digest);
+
+    // A corrupted payload is refused whole and nothing is repaired.
+    let refused = |broken: jumble::ExposedFaces, what: &str| {
+        let error = jumble::check_exposed_faces(&broken).expect_err(what);
+        assert_eq!((error.code, error.context["feature"].as_str()), (codes::BUNDLE_MISMATCH, "J10"), "{what}");
+    };
+    let mut values = vertices.clone();
+    values[5] = f32::NAN;
+    let base_vertices = Array::f32s(exposed.base_vertices.desc.shape.clone(), &values);
+    refused(jumble::ExposedFaces { base_vertices, ..exposed.clone() }, "a vertex that is not finite");
+    let mut corners = exposed.base_triangles.as_u32();
+    corners[0] = offsets[1];
+    let base_triangles = Array::u32s(exposed.base_triangles.desc.shape.clone(), &corners);
+    refused(jumble::ExposedFaces { base_triangles, ..exposed.clone() }, "a corner of another face");
+    let mut cut = offsets.clone();
+    cut[3] = cut[2] - 1;
+    let base_vertex_offsets = Array::u32s(exposed.base_vertex_offsets.desc.shape.clone(), &cut);
+    refused(jumble::ExposedFaces { base_vertex_offsets, ..exposed.clone() }, "decreasing offsets");
+    let mut transports_of = transport.clone();
+    transports_of[0] = 7200;
+    let piece_transport = Array::u32s(vec![NP as u64], &transports_of);
+    refused(jumble::ExposedFaces { piece_transport, ..exposed.clone() }, "a transport outside K+");
+    let mut sides_of = side.to_vec();
+    sides_of[0] = 2;
+    let face_side = Array::u8s(exposed.face_side.desc.shape.clone(), &sides_of);
+    refused(jumble::ExposedFaces { face_side, ..exposed.clone() }, "a side that is neither");
+    let mut cells = cell.clone();
+    cells.swap(0, 1);
+    let face_cell = Array::u32s(exposed.face_cell.desc.shape.clone(), &cells);
+    refused(jumble::ExposedFaces { face_cell, ..exposed.clone() }, "a cell whose side is not its piece");
+    let face_piece = Array::u32s(vec![piece.len() as u64 - 1], &piece[1..]);
+    refused(jumble::ExposedFaces { face_piece, ..exposed.clone() }, "a dropped face row");
+    let mut tampered = exposed.face_pole.clone();
+    let mut bytes = tampered.bytes.as_ref().clone();
+    bytes[0] ^= 1;
+    tampered.bytes = Arc::new(bytes);
+    refused(jumble::ExposedFaces { face_pole: tampered, ..exposed.clone() }, "bytes that are not the descriptor's");
+    refused(jumble::ExposedFaces { profile_id: "sha256:other".to_owned(), ..exposed.clone() }, "another profile");
+    let next = piece.iter().position(|&q| q != piece[0]).expect("a second piece");
+    let swap_u32 = |array: &Array, width: usize| {
+        let mut values = array.as_u32();
+        for i in 0..width {
+            values.swap(i, width * next + i);
+        }
+        Array::u32s(array.desc.shape.clone(), &values)
+    };
+    let mut sides_swapped = side.to_vec();
+    sides_swapped.swap(0, next);
+    let reordered = jumble::ExposedFaces {
+        face_piece: swap_u32(&exposed.face_piece, 1),
+        face_base: swap_u32(&exposed.face_base, 1),
+        face_pole: swap_u32(&exposed.face_pole, 1),
+        face_side: Array::u8s(exposed.face_side.desc.shape.clone(), &sides_swapped),
+        face_cell: swap_u32(&exposed.face_cell, 2),
+        ..exposed.clone()
+    };
+    refused(reordered, "two whole face rows out of piece order");
+
+    // An answer that does not bind to the certified bytes, the admitted profile and the state is refused whole.
     let answer = c600_jumble::faces::exposed_faces(engine, state);
-    assert_eq!(answer.get("code").and_then(Value::as_str), Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE));
-    let error = jumble::exposed_faces(engine, state).expect_err("no exposed-face geometry is supplied");
-    assert_eq!(error.code, codes::EXPOSED_GEOMETRY_UNAVAILABLE);
-    assert_eq!(error.context["missing"], "geometry and size profile");
-    assert_eq!(error.context["source"], state.digest(engine));
+    let forged = |path: [&str; 2], value: &str| {
+        let mut forged = answer.clone();
+        let Value::Object(fields) = &mut forged else { panic!("an object") };
+        let target = match path[1] {
+            "" => fields,
+            inner => match fields.get_mut(path[0]) {
+                Some(Value::Object(inner_fields)) => {
+                    assert!(inner_fields.contains_key(inner));
+                    inner_fields
+                }
+                _ => panic!("an object at {}", path[0]),
+            },
+        };
+        let key = if path[1].is_empty() { path[0] } else { path[1] };
+        assert!(target.insert(key.to_owned(), Value::String(value.to_owned())).is_some(), "{key}");
+        forged
+    };
+    for wrong in [
+        forged(["geometry", "digest"], &"0".repeat(64)),
+        forged(["profile_id", ""], "sha256:other"),
+        forged(["source", "state_digest"], &world.solved.digest(engine)),
+    ] {
+        let error = jumble::exposed_faces_from(engine, state, &wrong).expect_err("an answer that does not bind");
+        assert_eq!((error.code, error.context["feature"].as_str()), (codes::BUNDLE_MISMATCH, "J10"));
+    }
+    let mut unknown = faces::answer(engine, state, Err("no certified geometry"), None);
+    let Value::Object(fields) = &mut unknown else { panic!("an object") };
+    fields.insert("missing".to_owned(), Value::Array(vec![Value::String("mesh".to_owned())]));
+    let error = jumble::exposed_faces_from(engine, state, &unknown).expect_err("an input J10 does not have");
+    assert_eq!((error.code, error.context["feature"].as_str()), (codes::BUNDLE_MISMATCH, "J10"));
+    let support = ctx_for(state).support;
+    assert_eq!(support.feature("J10").expect_err("no supported-feature claim").code, codes::UNSUPPORTED);
 }
 
 fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, instance: u64) -> PickReply {
@@ -532,10 +731,11 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
 /// half-turn: with the plane the engine names it has a swept preview at angle π in the engine's direction, and the
 /// same row without that plane has none), 3 (full named-cap set against its cap-map witness), 4 and 5 (the full set
 /// over a count ceiling, standalone and scheduled), 6 (an incomplete survey and the named cut's alpha), 7 (an
-/// unsupported projection stage), 8 (complete and interrupted seam totals) and 15 (a certificate-point hit on an
-/// off-lattice piece). Rows 9 and 11 to 14 (covers and repair, release order, nu and the correction catalogue) stay
-/// C2's fixture vectors in `crosswalk.rs`, and `tests/jumbling_payloads.rs` checks their producers on the real model;
-/// row 10 has no real geometry to check.
+/// unsupported projection stage), 8 (complete and interrupted seam totals), 10 (missing exposed geometry is
+/// unavailable: without M5's certified geometry or its admitted size profile J10 refuses with what is missing, and
+/// with both it is J10's checked payload, never a support claim) and 15 (a certificate-point hit on an off-lattice
+/// piece). Rows 9 and 11 to 13 are [`ct_rm_07_rows_9_and_11_to_13_hold_on_the_real_model`]'s; row 14 stays C2's
+/// fixture vector in `crosswalk.rs`.
 #[test]
 fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let world = world();
@@ -645,6 +845,20 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
         seam_facts(engine, &mut state, Scope::Cap(cap as i64), &whole, Rows::Mismatched, None).expect("seam facts");
     assert!(jumble::seam_table(&one_cap).is_none(), "a cap's answer counts its N_c, never total N");
 
+    // Row 10: without the certified geometry or the admitted size profile J10 is unavailable and names what is
+    // missing; with both it is the checked payload. Neither is a supported-feature claim.
+    for (geometry, profile, missing) in [
+        (Err("no certified geometry"), Some(&c600_jumble::faces::PROFILE), "geometry"),
+        (c600_jumble::faces::geometry(engine).map_err(|_| "uncertified"), None, "size profile"),
+    ] {
+        let answer = c600_jumble::faces::answer(engine, &state, geometry, profile);
+        let error = jumble::exposed_faces_from(engine, &state, &answer).expect_err("unavailable");
+        assert_eq!((error.code, error.context["missing"].as_str()), (codes::EXPOSED_GEOMETRY_UNAVAILABLE, missing));
+    }
+    let payload = jumble::exposed_faces(engine, &state).expect("the certified payload");
+    assert_eq!(jumble::check_exposed_faces(&payload), Ok(c600_jumble::faces::PROFILE.instanced_bytes()));
+    assert_eq!(ctx.support.feature("J10").expect_err("no supported-feature claim").code, codes::UNSUPPORTED);
+
     // Row 15: a certificate point targets its witness piece and grip; off the lattice it has no slot.
     let off = certificate.piece;
     assert!(!state.is_lattice_piece(off as usize), "a straddler is off the lattice");
@@ -662,4 +876,117 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let Some(Partial::Partial { covered, missing }) = resolve(Requested::Slot) else { panic!("off the lattice") };
     assert_eq!((covered.target, missing), (ObjectId::Piece(off), vec!["slot: off_lattice".to_owned()]), "no slot");
     assert!(matches!(resolve(Requested::Sticker), Some(Partial::Undefined(_))), "it is not a sticker hit");
+}
+
+/// The letter of the walk's record `n`: its grip and the item of its `I_a[k]` label in the pinned menu.
+fn letter(n: usize) -> ([i64; 2], Twist) {
+    let world = world();
+    let records = world.fixture.get("journal").and_then(|j| j.get("records")).and_then(Value::as_array);
+    let record = &records.expect("records")[n];
+    let grip = record.get("grip").and_then(Value::as_i64).expect("a grip") as usize;
+    let label = record.get("params").and_then(|p| p.get("label")).and_then(Value::as_str).expect("a label");
+    let item: usize = label.strip_prefix("I_a[").and_then(|l| l.strip_suffix(']')).expect("an I_a").parse().unwrap();
+    let menu = world.solved.menu().expect("the pinned I_a menu");
+    let twists = menu.for_cap(&world.engine, grip).expect("the menu's twists");
+    ([grip as i64, item as i64], twists[item].clone())
+}
+
+/// CT-RM-07, rows 9 and 11 to 13 on M5's real model (RM.37), over the twisted state and the solved one. Row 9: at cap
+/// 57 of the twisted state (misaligned: the engine lists repairs only at an open cap with N_c > 0) the completed cover
+/// table keeps all 80 meeting caps in cap-ID order and the completed repair list at that input is empty, so its only
+/// negative is scoped to that cap and input; the same cap and input under a zero classification budget is cut off and
+/// supplies no negative. Row 11: real release checks C then D keep their tried order at revision 12; release A is
+/// superseded by B and cannot publish late, B appends only once completed, and revision 13 clears the revision-12
+/// checks; without a named unit no check carries a step flag. Row 12: ν of the twisted state is undefined
+/// (`off_lattice`), never zeros, and so is any prediction from it; the catalogue is the shipped 36 rows in ID order,
+/// read with no state. Row 13: at the solved state ν is all zero on the lattice and zero multiplicities predict all
+/// zero, as the engine's `correction_set_check` of the empty set does. Row 14 stays C2's fixture vector in
+/// `crosswalk.rs`: on M5's model the coordinates A5 fixes are 0 at every witnessed I_a state, so no real input
+/// reaches it.
+#[test]
+fn ct_rm_07_rows_9_and_11_to_13_hold_on_the_real_model() {
+    let world = world();
+    let engine = &world.engine;
+    let mut state = world.twisted.clone();
+    let digest = state.digest(engine);
+
+    // Row 9: the complete cover table and the cap/input-scoped empty repair list; a cut-off list has no negative.
+    let c = 57;
+    let covers = obs::covers(engine, &mut state, c, None).expect("a completed cover table");
+    assert_eq!((covers.input.as_str(), covers.table.cap, covers.table.rows().len()), (digest.as_str(), c, 80));
+    assert!(covers.table.rows().windows(2).all(|w| w[0] < w[1]), "cap-ID order");
+    let mut swapped = covers.table.rows().to_vec();
+    swapped.swap(0, 1);
+    assert!(CoverTable::new(c, swapped).is_err(), "rows are never reordered");
+    let repairs = obs::repair_list(engine, &state, c, None, None, None).expect("a list");
+    assert_eq!(repairs.list, RepairList::Completed { cap: c, input: digest.clone(), repairs: Vec::new() });
+    assert_eq!(repairs.list.negative(), Some(format!("no repair at cap {c} for input {digest}")), "scoped");
+    let cut = obs::repair_list(engine, &state, c, None, None, Some(0)).expect("a list");
+    assert_eq!((cut.list.clone(), cut.list.negative()), (RepairList::CutOff { cap: c, input: digest.clone() }, None));
+
+    // Row 11: release order at revision 12, supersession, completion and revision clearing.
+    let (one, two) = (letter(1), letter(2));
+    let checks = [
+        obs::release_check(engine, &state, &one, None, None).expect("C"),
+        obs::release_check(engine, &state, &two, None, None).expect("D"),
+    ];
+    let released = obs::word_check(engine, &state, &[one, two], None, None, None).expect("B's word");
+    assert_eq!((released.processed, released.refused.clone()), (2, None), "B is a complete word");
+    for check in checks.iter().chain([&released]) {
+        assert_eq!(check.start, digest);
+        assert!(matches!(check.step, Partial::Undefined(_)), "no unit, no step flag: {:?}", check.step);
+    }
+    let base = jumble::revision(engine, &state, 12);
+    let mut host = host_with(&base, ctx_for(&state));
+    let mut log = ReleaseLog::new(12);
+    assert!(checks.iter().all(|check| check.keep(&mut log, 12)));
+    let posed = jumble::posed(engine, &state).expect("finite poses");
+    let release = |id: u64| {
+        let shown = vec![instance(id, 1, ObjectId::Piece(world.outcome.inside[0]), 0)];
+        jplan(&base, vec![Primitive::Posed(posed.clone())], vec![], shown)
+    };
+    host.publish(CommandId(1), release(1));
+    host.publish(CommandId(2), release(2));
+    assert_eq!(status(&host, 1), Receipt::Cancelled(CancelReason::Superseded { by: CommandId(2) }));
+    assert!(!log.release(12, &released.word, false), "B appends only after completion");
+    finish(&mut host, 1);
+    assert!(host.installed(V1).is_none(), "A cannot publish late");
+    finish(&mut host, 2);
+    let completed = matches!(status(&host, 2), Receipt::Completed(_));
+    assert!(log.release(12, &released.word, completed));
+    let names = [checks[0].word.clone(), checks[1].word.clone(), released.word.clone()];
+    assert!(names[0] != names[1] && names[1] != names[2] && names[0] != names[2], "three distinct words");
+    assert_eq!(log.entries(), names, "C then D keep their tried order");
+    log.set_revision(13);
+    assert!(log.entries().is_empty(), "revision 13 clears the revision-12 checks");
+    assert!(!checks[0].keep(&mut log, 12), "a revision-12 check no longer records");
+    one_terminal_each(&host);
+
+    // Row 12: off the lattice ν and every prediction are undefined; the catalogue is unfiltered.
+    let catalogue = obs::catalogue().expect("the shipped catalogue");
+    let shipped = corrections::catalogue().expect("the catalogue reads");
+    let ids: Vec<u32> = catalogue.rows().iter().map(|row| row.id).collect();
+    assert_eq!(ids, (0..36).collect::<Vec<u32>>(), "36 rows in fixed ID order");
+    for (row, correction) in catalogue.rows().iter().zip(shipped.rows()) {
+        assert_eq!(row.effect.as_slice(), &correction.row().values()[..], "row {}", row.id);
+    }
+    let word = [world.twist.clone()];
+    let off = Snapshot::witnessed(engine, state.clone(), &word, None).expect("no engine error").expect("witnessed");
+    let observation = obs::nu_observation(engine, Base::Snapshot(&off)).expect("ν");
+    assert_eq!(observation, NuObservation::OffLattice);
+    let undefined = Partial::Undefined(nu::OFF_LATTICE.to_owned());
+    assert_eq!(crosswalk::nu(&observation), Ok(undefined.clone()), "no zero or old ν");
+    let mut some = vec![0i64; 36];
+    some[5] = 2;
+    assert_eq!(obs::predicted(&observation, &catalogue, &some), Ok(undefined));
+
+    // Row 13: all-zero ν on the lattice and zero multiplicities predict all zero, as the engine does.
+    let solved = Snapshot::solved(engine, world.solved.menu_arc());
+    let observation = obs::nu_observation(engine, Base::Snapshot(&solved)).expect("ν");
+    assert_eq!(observation, NuObservation::Lattice { nu: vec![0; 45], fixed: nu::I_A_FIXED.to_vec() });
+    let predicted = obs::predicted(&observation, &catalogue, &[0; 36]).expect("not refused");
+    assert_eq!(predicted, Partial::Total(vec![0; 45]));
+    let checked = corrections::correction_set_check(engine, Base::Snapshot(&solved), &[]).expect("no engine error");
+    let levels::Partial::Total(value) = checked.expect("not refused") else { panic!("ν on the lattice") };
+    assert_eq!(value.values(), &[0; 45][..], "the engine's check of the empty set");
 }

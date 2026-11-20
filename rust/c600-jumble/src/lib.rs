@@ -98,6 +98,8 @@ pub struct Context {
     observe: OnceLock<Result<observe::Tables, String>>,
     /// ν's labelling and frame groups, built on first use ([`nu::tables`]).
     nu: OnceLock<Result<nu::Tables, String>>,
+    /// The certified exposed-face geometry, built on first use ([`faces::geometry`]).
+    faces: OnceLock<Result<faces::Geometry, String>>,
 }
 
 impl Context {
@@ -106,7 +108,7 @@ impl Context {
         let model = Model::load(assets)?;
         let kplus = KPlus::build(&model)?;
         let regions = Regions::build(&model, &kplus)?;
-        Ok(Context { model, kplus, regions, observe: OnceLock::new(), nu: OnceLock::new() })
+        Ok(Context { model, kplus, regions, observe: OnceLock::new(), nu: OnceLock::new(), faces: OnceLock::new() })
     }
 
     /// The jumbling identity block of a state with this menu (free mode: no menu digests).
