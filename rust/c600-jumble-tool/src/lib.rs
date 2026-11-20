@@ -181,6 +181,15 @@
 //!   mode beside the tool's own entries at the layer's head (`rows::Rows::at_head`): the label checkpoint predicts
 //!   each exit, and the twist check and a word's protection predict each press. The tests read the layer's decisions
 //!   and add no rule of their own. This settles nothing in the chapters.
+//! - **The repair list through the command layer (LP2's pull request 326; CT-LB3-05, CT-BND-17).** LP2's
+//!   `jumble.repair.list` is a job that names its cap (KN5): the layer passes M8's list on whole and adds its
+//!   `statement`, BND.2's wording of an empty list, and no key skips caps with an empty list (`c600-command`'s
+//!   `tests/repair_list.rs`). `tests/jumble_layer_repair.rs` runs the job beside the language entry
+//!   ([`library::REPAIR`]) at the layer's head on the I_a walk: at a named misaligned cap, at closed caps and at a cap
+//!   whose completed list is empty, after a press that drops the kept list and after its undo, the two agree on
+//!   status, input digest, parameters, message and rows, the job alone words the list, and each run reads the
+//!   `repair_list` row once with the named cap. The tests read the layer's and the tool's answers and add no rule of
+//!   their own. This settles nothing in the chapters.
 //!
 //! # What waits
 //!
@@ -189,10 +198,6 @@
 //!   no ν itself; the `label_checkpoint` row takes the `nu` row's value when the identity labels and a retained witness
 //!   leave ν unknown, as the command layer's exit reads it ([`library::END_TESTS`]). CT-LB3-01's checker half, the end
 //!   tests' typed verdicts, is LP2's (pull request 213).
-//! - The repair list through the command layer: a job that names its cap (KN5), an empty list worded as BND.2 states,
-//!   and no key that skips caps with an empty list (CT-LB3-05, CT-BND-17): LP2. The language entry
-//!   ([`library::REPAIR`]) reads the `repair_list` row for the cap the solver names and returns it as read, under
-//!   `c600-check`'s repair-list exception; no job runs it.
 //! - The survey's all-items loop: not served. LB3.5 keeps it out of the inspector entries, so the `survey` row answers
 //!   the solver's named grip only ([`library::ADMISSIBILITY`]), and [`library::RIM`] reads the rim summary and one
 //!   whole seam scan only.
