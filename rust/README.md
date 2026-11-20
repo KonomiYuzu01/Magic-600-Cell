@@ -1240,11 +1240,18 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Not built: the language entries over these checks and their results. CT-LB4-01 is built on these checks in LP3's C6
     (`c600-display`'s chart checks). The checks take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
-- J10's exposed faces (LP2's pull request 336; JI.41, JI.45): `c600_jumble::faces::exposed_faces` answers every
-  request with the registered refusal `KN2:input.exposed_geometry_unavailable` and JI.45's context (the feature and
-  the render row J10, the source, `missing`: certified geometry and a size profile, and no draft). It only reads
-  the state and invents no mesh, face, count or size; the geometry waits for certified data and a size profile
-  (`c600-jumble/tests/refusals.rs`).
+- J10's exposed faces (JI.41, JI.45): `c600_jumble::faces` derives the cut 3-faces of the 36 K⁺-orbit
+  representatives' regions exactly in Q(√5) from `assets/` alone and transports them to all 177,120 pieces by
+  K⁺; no mesh asset is read or written, and the model identity, the manifest and render/1 are unchanged. A face is
+  (piece, home pole, side) on the cell of chambers J08's seam rows name. `faces::certify` checks a table
+  independently of the builder: the faces lie on their hyperplanes with affine rank 3, their 2-face cycles are
+  convex and oriented by exact determinant signs (V − E + F = 2, 2V − 4 fan triangles), the hosts are the model's
+  stickers and the boundary closes, every cut cell pairs up, and the counts are EN2's. The admitted size profile
+  (`faces::PROFILE`) is measured headless in `docs/progress/1.0/evidence/j10-exposed-face-size-profile.json`.
+  `faces::exposed_faces` answers with the certified geometry's digest and the profile, bound to the state; the
+  faces are home geometry and the state changes nothing. Without certified geometry or the admitted profile it
+  keeps LP2's refusal (pull request 336), `KN2:input.exposed_geometry_unavailable` with JI.45's context naming
+  what is missing (`c600-jumble/tests/faces.rs`, `tests/refusals.rs`).
 
 ## Status of M6: the session store
 
@@ -2179,9 +2186,8 @@ run or not applicable is no pass (PHS.63).
   exact checker of isometry and homomorphism for the stereographic chart, which is not a projective map (both stay
   `not_established`); charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
   production precision rule (RPI.36). CT-RPI-08's rows J01 and J06 to J12 stay unsupported until a backend's own rows
-  (C9), and J10's producer waits for certified exposed-face geometry and a size profile (LP2's
-  `faces::exposed_faces` refuses with JI.45's code, pull request 336, and `jumble::exposed_faces` passes the refusal
-  on); a decoder from the interpreter's values (the
+  (C9); J10 stays an unsupported row with its payload built from M5's certified geometry and checked headless
+  (`jumble::exposed_faces`); a decoder from the interpreter's values (the
   IR draft has list types since pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired
   into the host,
   until the host attaches user stages (the core compiles and bounds them, WARP only, C9 U5); CT-RM-09's rows 3 to 6, 8
@@ -2945,9 +2951,12 @@ run or not applicable is no pass (PHS.63).
   the cap-map witness and the named cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13,
   which places a sticker at any lattice pose by M8's slot action of K⁺ with A3's frame check
   (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05, and, since pull request 301, the
-  producers of J01, J06, J07, J09, J11 and J12; J10 passes LP2's refusal through (`jumble::exposed_faces`, after pull
-  request 336). Under a jumbling identity the validator now checks a posed row instead of refusing it; 600-cell-Full
-  is unchanged.
+  producers of J01, J06, J07, J09, J11 and J12; J10's payload (`jumble::exposed_faces`) is the instanced layout
+  `magic600-jumbling-exposed-faces/1` built from M5's certified geometry: base faces in binary32 with their fan
+  triangles, the 7,200 K⁺ matrices, each piece's transport and every face's piece, base face, pole, side and cell,
+  checked by `jumble::check_exposed_faces`, with RM.12's check of its input bytes against a supplied ceiling
+  (`jumble::admit_exposed_faces`; no numeric ceiling is fixed yet, RM.13); a refusal of M5's producer passes through. Under a jumbling identity
+  the validator now checks a posed row instead of refusing it; 600-cell-Full is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
     LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
@@ -3099,11 +3108,13 @@ run or not applicable is no pass (PHS.63).
     half, CT-LB1-06 runs whole.
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
-    plane and J10's refusal from M5's producer among them), CT-RPI-12's off-lattice part on a real jumbling state
+    plane and J10's refusals from M5's producer among them; J10's payload against the exact geometry, with corrupted
+    payloads and forged answers refused), CT-RPI-12's off-lattice part on a real jumbling state
     (with C2's stale half, CT-RPI-12 runs whole), RPI.23 and J13 at lattice poses other than the identity (every
     sticker in the slot of M8's labels, a turned sticker resolved through the host to the slot k·s of the slot action,
-    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and
-    15; row 2's half-turn sweeps at π).
+    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 13
+    and 15; row 2's half-turn sweeps at π; row 14 stays a fixture vector, since A5 keeps the fixed I_a coordinates
+    at 0 at every witnessed I_a state).
   - `c600-display/tests/jumbling_payloads.rs`: CT-RPI-08's producers of J01 (render/1's pinned shrink anchors), J06 (the
     readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
     (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
@@ -3114,8 +3125,7 @@ run or not applicable is no pass (PHS.63).
   (KN5, pull request 326), with BND.2's wording of an empty list and no key that skips caps with an empty list,
   beside the entry `jumble_repair` (`tests/jumble_layer_repair.rs`, above). C8 uses the IR draft's F2 and F5 (pull
   request 222) for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
-- Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
-  refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
+- Not built: J01 and J06 to J12 as supported rows (a backend's own rows, C9);
   the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
   LB3.1's other rows as language code ("Menus and pinned letters", "D and release accounting", and the Jumble-on half
   of "Mode crossing prerequisites", which waits for a KN4 journal query served to programs, KN4.3 and EN4; thirteen
