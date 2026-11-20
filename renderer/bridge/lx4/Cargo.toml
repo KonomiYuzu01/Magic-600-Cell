@@ -21,3 +21,8 @@ c600-kernel = { path = "../../../rust/c600-kernel" }
 c600-lx4 = { path = "../../../rust/c600-lx4" }
 c600-syntax = { path = "../../../rust/c600-syntax" }
 c600-view = { path = "../../../rust/c600-view" }
+
+[dev-dependencies]
+# The reference view's in-process run, as the host's view job runs it (tests/c_api.rs).
+c600-run = { path = "../../../rust/c600-run" }
+c600-runtime = { path = "../../../rust/c600-runtime" }

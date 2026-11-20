@@ -28,11 +28,21 @@ namespace Magic600.Shell.Lx4;
 /// "run_id", "build_identity", "puzzle", "qpc_frequency"}: the shell seals events.jsonl, with the run row, only at its
 /// close, so lx4.py finds the window in this row of the live events.body.jsonl. The look is a placeholder; it stays
 /// with the design line.
+///
+/// Re-run (rerun, RTE.50; C9, 20 Nov 2026): a Reset whose wParam carries the library's LX4_RESET_RERUN flag starts a
+/// sample that times the re-run. When lx4_update asks for it, the module runs the buffer's exported function as the
+/// host's view job (m6h_run_view, the language runtime with no host rows), polls the job's record each frame, and
+/// hands the library the first confirmed frame that drew the run's publication with the run's source digest
+/// (lx4_rerun_ended), or the refusal; the library then queues the sample's rerun row for that frame. The host does
+/// not draw the run's value yet.
 /// </summary>
 public sealed unsafe class Lx4Module : IShellModule
 {
     /// <summary>The C interface this module speaks; the library's lx4_abi_version must answer it.</summary>
-    public const uint AbiVersion = 1;
+    public const uint AbiVersion = 2;
+
+    /// <summary>The reference view's entry, the library's REFERENCE_ENTRY.</summary>
+    public const string ReferenceEntry = "exported";
 
     public const int Ok = 0;
     public const int InvalidArgument = 1;
@@ -44,6 +54,7 @@ public sealed unsafe class Lx4Module : IShellModule
     private const uint TextEcho = 0;
     private const uint TextStatus = 1;
     private const uint TextCompletion = 2;
+    private const uint TextBuffer = 3;
 
     private const uint WmKeyDown = 0x0100;
     private const uint WmKeyUp = 0x0101;
@@ -67,6 +78,7 @@ public sealed unsafe class Lx4Module : IShellModule
         "lx4_char",
         "lx4_backspace",
         "lx4_update",
+        "lx4_rerun_ended",
         "lx4_text",
         "lx4_next_shown",
         "lx4_last_error",
@@ -78,6 +90,8 @@ public sealed unsafe class Lx4Module : IShellModule
     {
         public uint Changed;
         public uint Shown;
+        public uint Rerun;
+        public uint Reserved;
     }
 
     /// <summary>An endpoint a frame shows first (the Rust Lx4Shown).</summary>
@@ -106,6 +120,9 @@ public sealed unsafe class Lx4Module : IShellModule
     // The last Reset's sample id and the Selects the editor has applied since (the lx4-select rows' ordinals).
     private ulong _sample;
     private long _selects;
+    // The re-run's view job while its record is not final.
+    private ulong _rerunTicket;
+    private bool _rerunRunning;
 
     public Lx4Module(ShellContext context)
     {
@@ -282,6 +299,12 @@ public sealed unsafe class Lx4Module : IShellModule
         {
             _completion.Text = Text(_handle, "lx4_text", TextCompletion);
         }
+        if (update.Rerun != 0)
+        {
+            StartRerun();
+        }
+        PollRerun();
+        // A rerun row the poll queued is written in this process frame.
         var next = (delegate* unmanaged[Cdecl]<IntPtr, Shown*, uint*, int>)_exports["lx4_next_shown"];
         while (true)
         {
@@ -308,6 +331,65 @@ public sealed unsafe class Lx4Module : IShellModule
 
     public void OnPresented(HostLibrary.Presented row)
     {
+    }
+
+    /// <summary>Runs the buffer's reference view as the host's view job, or ends the re-run refused.</summary>
+    private void StartRerun()
+    {
+        var source = Text(_handle, "lx4_text", TextBuffer);
+        var code = Context.Host.RunView(Context.HostHandle, source, ReferenceEntry, out var ticket);
+        if (code != HostLibrary.Ok)
+        {
+            _rerunRunning = false;
+            RerunEnded(0, null, $"m6h_run_view answered {code}: {Context.Host.LastError(Context.HostHandle)}");
+            return;
+        }
+        // A newer run supersedes the host's pending one, so only the newest ticket is polled.
+        _rerunTicket = ticket;
+        _rerunRunning = true;
+    }
+
+    /// <summary>
+    /// Hands the library the re-run's end once its record is final: published with the first confirmed frame that drew
+    /// its publication, or refused.
+    /// </summary>
+    private void PollRerun()
+    {
+        if (!_rerunRunning)
+        {
+            return;
+        }
+        var code = Context.Host.GetViewResult(Context.HostHandle, _rerunTicket, out var result);
+        if (code != HostLibrary.Ok)
+        {
+            _rerunRunning = false;
+            RerunEnded(0, null, $"m6h_view_result answered {code}: {Context.Host.LastError(Context.HostHandle)}");
+            return;
+        }
+        if (result.Status == HostLibrary.ViewStatusPending
+            || (result.Status == HostLibrary.ViewStatusPublished && result.Frame == 0))
+        {
+            return;
+        }
+        _rerunRunning = false;
+        if (result.Status == HostLibrary.ViewStatusPublished)
+        {
+            RerunEnded(result.Frame, result.SourceDigest, string.Empty);
+        }
+        else
+        {
+            RerunEnded(0, null, Context.Host.LastError(Context.HostHandle));
+        }
+    }
+
+    private void RerunEnded(ulong frame, byte* digest, string reason)
+    {
+        var bytes = Encoding.UTF8.GetBytes(reason);
+        fixed (byte* r = bytes)
+        {
+            Report(((delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, byte*, nuint, int>)_exports["lx4_rerun_ended"])(
+                _handle, frame, digest, r, (nuint)bytes.Length));
+        }
     }
 
     /// <summary>
