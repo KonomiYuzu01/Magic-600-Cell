@@ -225,7 +225,7 @@ lake exe cache get
 lake build
 ```
 
-With Mathlib's build cache in place, `lake build` rebuilds only this library. `Basic.lean` takes under a minute; `EdgeGraph.lean`, the slowest module, takes about 50 seconds, most of it in the kernel checks of the pair and count certificates. The three Milestone 3 modules and the three Milestone 4 modules take 10 to 25 seconds each, and the six Milestone 5 modules 13 to 23 seconds each, on an otherwise idle machine. The build passes with no errors and no linter warnings. Lake still notes, once for each import, that the imported Mathlib modules are designed for the module system; these files are not modules.
+With Mathlib's build cache in place, `lake build` rebuilds only this library. `Basic.lean` takes under a minute; `EdgeGraph.lean`, the slowest module, takes about 50 seconds, most of it in the kernel checks of the pair and count certificates. The three Milestone 3 modules, the three Milestone 4 modules and the six Milestone 5 modules take 10 to 25 seconds each on an otherwise idle machine. The build passes with no errors and no linter warnings. Lake still notes, once for each import, that the imported Mathlib modules are designed for the module system; these files are not modules.
 
 ## How it was produced
 
