@@ -125,7 +125,7 @@ use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
 use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 use crate::worksheet::{
-    compare_inputs, MacroVersion, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
+    compare_inputs, MacroVersion, Occupancy, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
     WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
@@ -1186,6 +1186,26 @@ impl<S: Store> CommandLayer<S> {
     pub fn positions(&self, pieces: &[i64]) -> Result<Vec<PiecePosition>, Error> {
         self.retained_mode()?;
         Ok(self.kernel.positions(&self.current, pieces)?)
+    }
+
+    /// KN2.4's `labels` row at the head, read for whole positions (draft; a work sheet's position roles, U1-057): the
+    /// piece whose stickers fill each named position, or `None` while no one piece fills it. A position's occupant in
+    /// a state is where the position's own piece is in the inverse state, so this is [`Kernel::positions`] on the
+    /// inverse of the head's labels, with its refusal of a position outside 0 to 177,119. Jumble on refuses it, as it
+    /// refuses [`CommandLayer::positions`], even when no position is named. A read changes nothing.
+    fn occupants(&self, positions: &[i64]) -> Result<Vec<Option<i64>>, Error> {
+        self.retained_mode()?;
+        if positions.is_empty() {
+            return Ok(Vec::new());
+        }
+        let labels = self.current.labels();
+        let mut inverse = vec![0i32; labels.len()];
+        for (slot, &label) in labels.iter().enumerate() {
+            inverse[label as usize] = slot as i32;
+        }
+        let inverse = self.kernel.state_from_labels(inverse).expect("the inverse of a permutation of the slots");
+        let found = self.kernel.positions(&inverse, positions)?;
+        Ok(found.into_iter().map(|row| row.position.map(|piece| piece as i64)).collect())
     }
 
     /// The structure row that `structure.compare` reads (draft; LP3's C6, step 1 item 3): two cells compared, as
@@ -3366,8 +3386,10 @@ impl<S: Store> CommandLayer<S> {
 
     /// `worksheet.load` (LB7.2, solving workflow section 4; draft): reuses the saved work sheet that `worksheet` names,
     /// `{"record": name, "version": n}` ([`WorksheetRef`], H-08's `WorksheetRevisionRef` in its draft form). Its piece
-    /// roles are placed again at the head, each keeping where it was saved, so a piece that moved is shown
-    /// ([`Placement::moved`]) and the phases are never retargeted (section 4.1). The sheet is written again as one
+    /// roles are placed again and its position roles' occupants read again at the head, each keeping what it was at
+    /// the save, so a piece that moved ([`Placement::moved`]) and a position whose occupant changed
+    /// ([`Occupancy::changed`]) are shown, and the phases and roles are never retargeted (section 4.1; U1-057,
+    /// U4-037). The sheet is written again as one
     /// record write, undoable as a workspace inverse. The write advances the record's version, so a preview that read
     /// the sheet goes stale (KN0.8; CT-LB2-03) and the reuse needs a fresh engine preview, with its fresh exact
     /// analysis (LB7.2). Refused, writing nothing, in this order: no reader (`KN5:input.row_not_built`), Jumble on
@@ -3397,9 +3419,10 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// `sheet` with its piece roles placed at the head, where KN2.4's `positions` row finds each piece now. A save
-    /// (`saved` is `None`) places them for the first time; a reuse keeps where they were and the digest of the state
-    /// they were saved at. Position roles stay where they are.
+    /// `sheet` with its piece roles placed at the head, where KN2.4's `positions` row finds each piece now, and its
+    /// position roles' occupants read there ([`CommandLayer::occupants`]). A save (`saved` is `None`) places and reads
+    /// them for the first time; a reuse keeps where each piece was, what each position held and the digest of the
+    /// state they were saved at. Position roles stay on their positions.
     fn place(&self, sheet: Worksheet, saved: Option<&Resolution>) -> Result<Worksheet, Error> {
         let roles = sheet.pieces();
         let pieces: Vec<i64> = roles.iter().map(|(_, piece)| *piece).collect();
@@ -3410,8 +3433,19 @@ impl<S: Store> CommandLayer<S> {
             let saved = saved.map_or(now, |resolution| resolution.pieces[i].saved);
             Placement { name, piece, saved, now }
         });
-        let saved = saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone());
-        let resolution = Resolution { saved, now: digest, pieces: placements.collect() };
+        let held = sheet.positions();
+        let at: Vec<i64> = held.iter().map(|(_, position)| *position).collect();
+        let occupants = self.occupants(&at)?;
+        let occupancies = held.into_iter().zip(occupants).enumerate().map(|(i, ((name, position), now))| {
+            let saved = saved.map_or(now, |resolution| resolution.positions[i].saved);
+            Occupancy { name, position, saved, now }
+        });
+        let resolution = Resolution {
+            saved: saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone()),
+            now: digest,
+            pieces: placements.collect(),
+            positions: occupancies.collect(),
+        };
         Ok(Worksheet { resolution: Some(resolution), ..sheet })
     }
 
@@ -3519,11 +3553,13 @@ impl<S: Store> CommandLayer<S> {
 
     /// The comparison at the head (draft). The sheet and the draft are read again, so a write of the sheet since
     /// admission fails the job with `KN5:stale.revision_changed`, and Jumble on with its refusal. The value is
-    /// `{"worksheet", "draft", "inputs", "resolution", "moved", "macro_version", "analysis"}`:
+    /// `{"worksheet", "draft", "inputs", "resolution", "moved", "occupant_changed", "macro_version", "analysis"}`:
     /// - `worksheet` names the sheet as the job read it, `draft` the draft record with its version and content digest;
     /// - `inputs` compares the sheet's phases, roles, reference and macro version with the draft's ([`compare_inputs`]);
-    /// - `resolution` places the sheet's piece roles again at the head, as `worksheet.load` would, and `moved` names
-    ///   the piece roles whose piece is not where it was saved: shown, never retargeted (section 4.1);
+    /// - `resolution` places the sheet's piece roles and reads its position roles' occupants again at the head, as
+    ///   `worksheet.load` would; `moved` names the piece roles whose piece is not where it was saved, and
+    ///   `occupant_changed` the position roles whose position holds another occupant than at the save: shown, never
+    ///   retargeted (section 4.1);
     /// - `macro_version` is the sheet's macro version (`saved`, `null` when it names none) and its `status`: `none`,
     ///   `current` (the record is at that version and holds that content), `changed` (otherwise) or `missing` (it
     ///   holds no value);
@@ -3543,6 +3579,7 @@ impl<S: Store> CommandLayer<S> {
         let inputs = compare_inputs(&sheet, &work);
         let placed = self.place(sheet.clone(), Some(&saved))?.resolution.expect("place resolves the sheet");
         let moved = placed.pieces.iter().filter(|p| p.moved()).map(|p| Value::String(p.name.clone())).collect();
+        let changed = placed.positions.iter().filter(|o| o.changed()).map(|o| Value::String(o.name.clone())).collect();
         let status = match &sheet.macro_version {
             None => "none",
             Some(saved) => match self.records.get(&saved.record) {
@@ -3566,6 +3603,7 @@ impl<S: Store> CommandLayer<S> {
             ("inputs", inputs),
             ("resolution", placed.to_json()),
             ("moved", Value::Array(moved)),
+            ("occupant_changed", Value::Array(changed)),
             ("macro_version", macro_version),
             ("analysis", self.analyse(&sheet.letters())?),
         ]))

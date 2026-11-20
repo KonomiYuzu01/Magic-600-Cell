@@ -1,10 +1,12 @@
 //! LB7.2's work sheets (draft; CT-LB2-03's work-sheet part). A work sheet is a workspace record that holds a saved
 //! operation: its three phases (Prepare, Macro and Cleanup), its named roles and its reference, with its piece roles as
-//! they were placed when it was saved and when it was last reused (solving workflow section 4).
+//! they were placed, and its position roles' occupants, when it was saved and when it was last reused (solving workflow
+//! section 4).
 //!
 //! `worksheet.save` ([`WORKSHEET_SAVE_ROW`]) writes a sheet from a draft record. `worksheet.load`
-//! ([`WORKSHEET_LOAD_ROW`]) reuses one: it places the piece roles again at the head and writes the sheet again with its
-//! phases unchanged, so a piece that moved is shown, never silently retargeted (section 4.1). The write advances the
+//! ([`WORKSHEET_LOAD_ROW`]) reuses one: it places the piece roles again at the head, reads each position role's
+//! occupant again there, and writes the sheet again with its phases unchanged, so a piece that moved and a position
+//! whose occupant changed are shown, never silently retargeted (section 4.1). The write advances the
 //! record's version, so a preview that read the sheet goes stale (KN0.8) and the reuse needs a fresh engine preview
 //! with its fresh exact analysis; a sheet stores no analysis that could stand in for it (LB7.2). A sheet's record
 //! previews as its complete operation through the draft `{"record": name}` ([`crate::RecordValue::operation`]).
@@ -48,7 +50,7 @@ pub enum Role {
     /// A piece the operation acts on, named by its home position as KN2.4's `positions` row names it. A reuse places it
     /// again.
     Piece { name: String, piece: i64 },
-    /// A position, such as the target or a buffer, which stays where it is.
+    /// A position, such as the target or a buffer, which stays where it is. A reuse reads its occupant again.
     Position { name: String, position: i64 },
 }
 
@@ -125,13 +127,59 @@ impl Placement {
     }
 }
 
-/// A sheet's placements: the state digests at the save and at the latest save or reuse, and one placement for each
-/// piece role, in the roles' order.
+/// What a position role's position held when the sheet was saved and what it holds at the sheet's latest save or
+/// reuse: the piece whose stickers fill the position, or `None` while no one piece fills it (KN2.4's `labels` row, as
+/// the layer reads it for a whole position).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Occupancy {
+    pub name: String,
+    pub position: i64,
+    pub saved: Option<i64>,
+    pub now: Option<i64>,
+}
+
+impl Occupancy {
+    /// Whether the position holds another occupant than when the sheet was saved: a mismatch that a reuse shows beside
+    /// [`Placement::moved`]. It is neither silent nor a refusal, and it retargets nothing: the role stays on its
+    /// position.
+    pub fn changed(&self) -> bool {
+        self.saved != self.now
+    }
+
+    pub fn to_json(&self) -> Value {
+        let held = |piece: Option<i64>| piece.map_or(Value::Null, Value::Int);
+        json::object([
+            ("name", Value::String(self.name.clone())),
+            ("position", Value::Int(self.position)),
+            ("saved", held(self.saved)),
+            ("now", held(self.now)),
+        ])
+    }
+
+    /// Reads [`Occupancy::to_json`]'s form strictly.
+    pub fn from_json(value: &Value) -> Option<Occupancy> {
+        let fields = value.as_object().filter(|fields| fields.len() == 4)?;
+        let held = |key: &str| match fields.get(key)? {
+            Value::Null => Some(None),
+            other => id(other).map(Some),
+        };
+        Some(Occupancy {
+            name: fields.get("name")?.as_str()?.to_owned(),
+            position: id(fields.get("position")?)?,
+            saved: held("saved")?,
+            now: held("now")?,
+        })
+    }
+}
+
+/// A sheet's placements: the state digests at the save and at the latest save or reuse, one placement for each piece
+/// role and one occupancy for each position role, each in the roles' order.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Resolution {
     pub saved: String,
     pub now: String,
     pub pieces: Vec<Placement>,
+    pub positions: Vec<Occupancy>,
 }
 
 impl Resolution {
@@ -140,17 +188,20 @@ impl Resolution {
             ("saved", Value::String(self.saved.clone())),
             ("now", Value::String(self.now.clone())),
             ("pieces", Value::Array(self.pieces.iter().map(Placement::to_json).collect())),
+            ("positions", Value::Array(self.positions.iter().map(Occupancy::to_json).collect())),
         ])
     }
 
     /// Reads [`Resolution::to_json`]'s form strictly.
     pub fn from_json(value: &Value) -> Option<Resolution> {
-        let fields = value.as_object().filter(|fields| fields.len() == 3)?;
+        let fields = value.as_object().filter(|fields| fields.len() == 4)?;
         let pieces = fields.get("pieces")?.as_array()?.iter().map(Placement::from_json).collect::<Option<_>>()?;
+        let positions = fields.get("positions")?.as_array()?.iter().map(Occupancy::from_json).collect::<Option<_>>()?;
         Some(Resolution {
             saved: fields.get("saved")?.as_str()?.to_owned(),
             now: fields.get("now")?.as_str()?.to_owned(),
             pieces,
+            positions,
         })
     }
 }
@@ -215,6 +266,15 @@ impl Worksheet {
         self.roles.iter().filter_map(piece).collect()
     }
 
+    /// The position roles' names and positions, in the roles' order.
+    pub fn positions(&self) -> Vec<(String, i64)> {
+        let position = |role: &Role| match role {
+            Role::Position { name, position } => Some((name.clone(), *position)),
+            Role::Piece { .. } => None,
+        };
+        self.roles.iter().filter_map(position).collect()
+    }
+
     /// The stored form: `{"worksheet": {"phases": {"prepare", "macro", "cleanup"}, "roles", "reference",
     /// "resolution", "macro_version"}}`, the resolution left out while the sheet has none and the macro version while
     /// it names none.
@@ -236,8 +296,8 @@ impl Worksheet {
     }
 
     /// Reads [`Worksheet::to_payload`]'s form strictly: every letter fits a letter, every role names a piece or a
-    /// position from 0 to 177,119 under a name of its own, and a resolution places exactly the piece roles, in their
-    /// order. Any other payload is not a work sheet.
+    /// position from 0 to 177,119 under a name of its own, and a resolution places exactly the piece roles and reads
+    /// exactly the position roles, each in their order. Any other payload is not a work sheet.
     pub fn from_payload(payload: &Value) -> Option<Worksheet> {
         let outer = payload.as_object().filter(|outer| outer.len() == 1)?;
         let fields = outer.get("worksheet")?.as_object()?;
@@ -265,7 +325,8 @@ impl Worksheet {
         };
         let placed = |r: &Resolution| {
             let placed: Vec<(String, i64)> = r.pieces.iter().map(|p| (p.name.clone(), p.piece)).collect();
-            placed == sheet.pieces()
+            let held: Vec<(String, i64)> = r.positions.iter().map(|o| (o.name.clone(), o.position)).collect();
+            placed == sheet.pieces() && held == sheet.positions()
         };
         sheet.resolution.as_ref().is_none_or(placed).then_some(sheet)
     }

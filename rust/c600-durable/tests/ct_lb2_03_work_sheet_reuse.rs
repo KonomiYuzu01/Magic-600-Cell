@@ -15,9 +15,9 @@
 mod common;
 
 use c600_command::{
-    code, digest, CommandLayer, Completion, CompletionKind, Direction, Error, MacroVersion, Placement, PreviewState,
-    Provenance, Receipt, RecordValue, Resolution, Role, Secret, Shell, Status, Worksheet, WorksheetRef, RECORD_ROW,
-    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    code, digest, CommandLayer, Completion, CompletionKind, Direction, Error, MacroVersion, Occupancy, Placement,
+    PreviewState, Provenance, Receipt, RecordValue, Resolution, Role, Secret, Shell, Status, Worksheet, WorksheetRef,
+    RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value};
@@ -134,6 +134,8 @@ struct Inline {
     /// A piece the operation moves, as KN2.4's `positions` row reads it, and the position it is in afterwards.
     moved: i64,
     to: i64,
+    /// The piece whose stickers fill the moved piece's home afterwards, if one piece does.
+    occupant: Option<i64>,
     /// A piece the operation leaves where it is.
     stayed: i64,
     /// The end state's digest.
@@ -154,6 +156,7 @@ fn inline() -> Inline {
     Inline {
         moved: moved.piece as i64,
         to: to as i64,
+        occupant: found.iter().find(|p| p.position == Some(moved.piece)).map(|p| p.piece as i64),
         stayed: stayed.piece as i64,
         end: scratch.layer.revision().digest.clone(),
         losses: found.iter().filter(|p| !p.solved()).map(|p| p.piece as i64).collect(),
@@ -187,8 +190,9 @@ fn placed(name: &str, piece: i64) -> Placement {
 /// the disk anew: the records, the actions and their receipts come back, and no preview. A reuse there comes back
 /// equal again and makes the session's own preview stale; a fresh engine preview of the reused sheet commits its
 /// complete operation, the end state of the operation committed inline. Session 3 opens the disk anew and reuses the
-/// sheet after that commit: its piece roles are placed again, the moved piece is shown where it is now, the phases,
-/// the roles and the reference stay as saved, and the reuse's undo restores the sheet as saved.
+/// sheet after that commit: its piece roles are placed again, the moved piece is shown where it is now, the position
+/// role on its home reads the piece that fills it now, the phases, the roles and the reference stay as saved, and the
+/// reuse's undo restores the sheet as saved.
 fn reuse_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     let inline = inline();
     let drafted = drafted(&inline);
@@ -202,7 +206,10 @@ fn reuse_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     let saved = save(&mut f, "draft", "sheet");
     assert!(completed(&draft) && completed(&saved), "{:?} {:?}", draft.status, saved.status);
     let pieces = vec![placed("moved", inline.moved), placed("stayed", inline.stayed)];
-    let resolution = Resolution { saved: solved.clone(), now: solved.clone(), pieces };
+    let target =
+        Occupancy { name: "target".into(), position: inline.moved, saved: Some(inline.moved), now: Some(inline.moved) };
+    let positions = vec![target.clone()];
+    let resolution = Resolution { saved: solved.clone(), now: solved.clone(), pieces, positions };
     let value = RecordValue {
         payload: Worksheet { resolution: Some(resolution), ..drafted.clone() }.to_payload(),
         provenance: text(&block),
@@ -252,8 +259,9 @@ fn reuse_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     power_loss();
 
     // Session 3: the commit left the sheet as it was. A reuse places its piece roles again at the new head (LB2: reuse
-    // resolves roles again) and shows the moved piece where it is now beside where it was saved; the phases, the
-    // roles and the reference stay, so the sheet is never retargeted (solving workflow section 4.1, draft).
+    // resolves roles again) and shows the moved piece where it is now beside where it was saved, and the piece that
+    // fills its home now beside the one saved there; the phases, the roles and the reference stay, so the sheet is
+    // never retargeted (solving workflow section 4.1, draft).
     let mut f = Fixture::open(disk());
     assert_eq!(f.kept(), kept);
     assert_eq!(held(&f, "sheet"), (Some(value.clone()), 3));
@@ -265,9 +273,11 @@ fn reuse_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     );
     let moved = Placement { now: Some(inline.to), ..placed("moved", inline.moved) };
     let pieces = vec![moved, placed("stayed", inline.stayed)];
-    let expected = Resolution { saved: solved, now: inline.end.clone(), pieces };
+    let positions = vec![Occupancy { now: inline.occupant, ..target }];
+    let expected = Resolution { saved: solved, now: inline.end.clone(), pieces, positions };
     assert_eq!(reused.resolution.as_ref(), Some(&expected));
     assert_eq!(expected.pieces.iter().map(Placement::moved).collect::<Vec<_>>(), [true, false]);
+    assert!(expected.positions[0].changed(), "another piece fills the moved piece's home: {:?}", inline.occupant);
 
     // The reuse is an undoable workspace action (LB7.2): its undo restores the sheet as saved.
     let hint = f.hint(Direction::Undo);
@@ -349,6 +359,7 @@ fn ct_lb2_03_a_comparison_writes_nothing_and_comes_back_equal_after_a_power_loss
         assert_eq!((field(analysis, "base"), field(analysis, "end")), (&string(&solved), &string(&inline.end)));
         assert_eq!((field(analysis, "gains"), field(analysis, "losses")), (&ids(&[]), &ids(&inline.losses)));
         assert_eq!(field(value, "moved"), &Value::Array(Vec::new()));
+        assert_eq!(field(value, "occupant_changed"), &Value::Array(Vec::new()));
     }
     assert!(!inline.losses.is_empty());
     assert_eq!(field(&sheet, "macro_version"), &macro_status(None, "none"));
@@ -396,7 +407,7 @@ fn malformed() -> Vec<(&'static str, Value)> {
     };
     let piece = |piece: i64| Role::Piece { name: "a".into(), piece };
     let twice = vec![piece(9), Role::Position { name: "a".into(), position: 7 }];
-    let unplaced = Resolution { saved: String::new(), now: String::new(), pieces: Vec::new() };
+    let unplaced = Resolution { saved: String::new(), now: String::new(), pieces: Vec::new(), positions: Vec::new() };
     let short = br#"{"worksheet": {"phases": {"prepare": [], "macro": [1]}, "roles": [], "reference": null}}"#;
     vec![
         ("twice", sheet(twice, vec![1]).to_payload()),

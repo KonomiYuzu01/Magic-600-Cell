@@ -10,9 +10,9 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::{
     code, digest, draft_args, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames,
-    Invocation, MacroVersion, MemoryStore, Placement, PreviewState, Provenance, Receipt, RecordValue, Resolution, Role,
-    Secret, Shell, Status, Table, Worksheet, WorksheetRef, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW,
-    WORKSHEET_SAVE_ROW,
+    Invocation, MacroVersion, MemoryStore, Occupancy, Placement, PreviewState, Provenance, Receipt, RecordValue,
+    Resolution, Role, Secret, Shell, Status, Table, Worksheet, WorksheetRef, RECORD_ROW, WORKSHEET_COMPARE_ROW,
+    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, PIECES};
@@ -185,6 +185,13 @@ fn pieces_moved_by(moves: &[i64]) -> (i64, i64, i64) {
     (moved.piece as i64, stayed.piece as i64, to as i64)
 }
 
+/// The piece whose stickers fill `position` at the head, found by KN2.4's `positions` row over every piece.
+fn occupant(f: &Fixture, position: i64) -> Option<i64> {
+    let all: Vec<i64> = (0..PIECES as i64).collect();
+    let found = f.layer.positions(&all).unwrap();
+    found.iter().find(|p| p.position.map(|at| at as i64) == Some(position)).map(|p| p.piece as i64)
+}
+
 impl Fixture {
     /// `workspace.set` through the command route.
     fn write(&mut self, name: &str, payload: Value, provenance: &str) -> Receipt {
@@ -300,7 +307,8 @@ impl Fixture {
 /// work sheet under a name, in one record write that keeps the draft record's provenance block. A sheet keeps its
 /// phases, roles, reference and macro version, and a record of letters becomes the Macro phase alone, with no role and
 /// no reference, and names the record, at its version and content digest, as its macro version.
-/// The piece roles are placed at the head, where KN2.4's `positions` row finds them, and position roles stay as given.
+/// The piece roles are placed at the head, where KN2.4's `positions` row finds them, and position roles stay as given,
+/// with the piece that fills each read there.
 /// The state and the presented preview stay and the workspace revision advances. The save is undoable and redoable as a
 /// workspace inverse (LB7.2, where H-08 has `undo: none`), a save under a name in use replaces that record's value, and
 /// a saved sheet saves again as a draft, placed again.
@@ -316,11 +324,12 @@ fn a_saved_work_sheet_keeps_its_operation_and_places_its_pieces() {
         let r = f.layer.revision();
         (r.digest.clone(), r.state, r.workspace)
     };
-    let placed = |pieces| Some(Resolution { saved: solved.clone(), now: solved.clone(), pieces });
+    let placed = |pieces, positions| Some(Resolution { saved: solved.clone(), now: solved.clone(), pieces, positions });
 
     assert!(completed(&f.save("draft", "sheet")));
     let nine = Placement { name: "piece".into(), piece: 9, saved: Some(9), now: Some(9) };
-    let saved = Worksheet { resolution: placed(vec![nine]), ..drafted.clone() };
+    let seven = Occupancy { name: "target".into(), position: 7, saved: Some(7), now: Some(7) };
+    let saved = Worksheet { resolution: placed(vec![nine], vec![seven]), ..drafted.clone() };
     assert_eq!(f.layer.record("sheet"), Some(&RecordValue { payload: saved.to_payload(), provenance: "block".into() }));
     assert_eq!(f.layer.record("draft").map(|value| &value.payload), Some(&drafted.to_payload()));
 
@@ -328,7 +337,7 @@ fn a_saved_work_sheet_keeps_its_operation_and_places_its_pieces() {
     let phases = [Vec::new(), vec![1, 2], Vec::new()];
     let source = f.layer.record("letters").unwrap().digest();
     let macro_version = Some(MacroVersion { record: "letters".into(), version: 1, digest: source });
-    let (roles, resolution) = (Vec::new(), placed(Vec::new()));
+    let (roles, resolution) = (Vec::new(), placed(Vec::new(), Vec::new()));
     let alone = Worksheet { phases, roles, reference: Value::Null, resolution, macro_version };
     assert_eq!(f.sheet("macro"), alone);
     assert_eq!(f.layer.record("macro").unwrap().provenance, "other block");
@@ -404,9 +413,10 @@ fn reusing_a_named_work_sheet_invalidates_the_old_preview() {
 
 /// Solving workflow sections 4.1 and 4.2 (draft): after a commit moves a role's piece, a reuse places the piece again
 /// and shows that it moved, with where it was saved and where it is now, and with the digests of the states of the save
-/// and the reuse. The phases, the reference and the position roles stay as saved, so the mismatch is shown and the
-/// sheet is never retargeted. A later reuse keeps the save's placement, and a reuse's undo restores the sheet as it
-/// was.
+/// and the reuse. The position role on the moved piece's home reads its occupant again: another piece fills it now,
+/// shown beside what it held at the save (U1-057, U4-037). The phases, the reference and the position roles stay as
+/// saved, so each mismatch is shown and the sheet is never retargeted. A later reuse keeps the save's placement and
+/// occupant, and a reuse's undo restores the sheet as it was.
 #[test]
 fn a_reuse_shows_a_moved_piece_and_never_retargets_the_sheet() {
     let (moved, stayed, to) = pieces_moved_by(&[5]);
@@ -428,9 +438,13 @@ fn a_reuse_shows_a_moved_piece_and_never_retargets_the_sheet() {
     ];
     let head = f.layer.revision().digest.clone();
     assert_ne!(head, solved);
-    let expected = Resolution { saved: solved.clone(), now: head, pieces: placements };
+    let held = occupant(&f, moved);
+    assert!(held.is_some() && held != Some(moved), "another piece fills the moved piece's home: {held:?}");
+    let target = Occupancy { name: "target".into(), position: moved, saved: Some(moved), now: held };
+    let expected = Resolution { saved: solved.clone(), now: head, pieces: placements, positions: vec![target] };
     assert_eq!(reused.resolution.as_ref(), Some(&expected));
     assert_eq!(expected.pieces.iter().map(Placement::moved).collect::<Vec<_>>(), [true, false]);
+    assert!(expected.positions[0].changed());
 
     let first = f.layer.record("sheet").cloned();
     assert!(committed(&f.commit(&word(&[5]))));
@@ -439,6 +453,7 @@ fn a_reuse_shows_a_moved_piece_and_never_retargets_the_sheet() {
     let again = f.sheet("sheet").resolution.expect("a saved sheet");
     assert_eq!((again.saved.as_str(), again.now.as_str()), (solved.as_str(), f.layer.revision().digest.as_str()));
     assert_eq!((again.pieces[0].saved, again.pieces[0].now), (Some(moved), now));
+    assert_eq!((again.positions[0].saved, again.positions[0].now), (Some(moved), occupant(&f, moved)));
     assert!(committed(&f.step(Direction::Undo)));
     assert_eq!(f.layer.record("sheet").cloned(), first);
 }
@@ -626,6 +641,7 @@ fn a_comparison_analyses_the_sheet_afresh_and_changes_nothing() {
     assert_eq!(field(&value, "draft"), &draft);
     assert_eq!(field(&value, "worksheet"), &WorksheetRef { record: "sheet".into(), version: 1 }.to_json());
     assert_eq!(field(&value, "moved"), &Value::Array(Vec::new()));
+    assert_eq!(field(&value, "occupant_changed"), &Value::Array(Vec::new()));
 
     assert!(committed(&f.commit(&word(&[5]))));
     assert!(completed(&f.write("inverse", letters(&[-5]), "block")));
@@ -641,7 +657,7 @@ fn a_comparison_analyses_the_sheet_afresh_and_changes_nothing() {
     assert_eq!(field(field(&changed, "analysis"), "literal"), field(&summary, "literal"));
 
     let head = f.layer.revision().digest.clone();
-    let resolution = Some(Resolution { saved: head.clone(), now: head, pieces: Vec::new() });
+    let resolution = Some(Resolution { saved: head.clone(), now: head, pieces: Vec::new(), positions: Vec::new() });
     let nowhere = MacroVersion { record: "nowhere".into(), ..saved.clone() };
     let forged = Worksheet { resolution, macro_version: Some(nowhere.clone()), ..sheet([&[], &[5], &[]], Vec::new()) };
     assert!(completed(&f.write("forged", forged.to_payload(), "block")));
@@ -652,9 +668,9 @@ fn a_comparison_analyses_the_sheet_afresh_and_changes_nothing() {
 
 /// Solving workflow sections 4.1 and 4.2 and U2-065 (draft): a comparison reports, role by role in name order, which
 /// roles the current work keeps, changes, lacks or adds, whether each phase and the reference are the same, and where
-/// the sheet's piece roles are now, placed as a reuse would place them, naming the ones that moved: shown, never
-/// retargeted. A sheet saved from a sheet draft without one names no macro version. Its gains and losses are those of
-/// the sheet's complete operation from the head.
+/// the sheet's piece roles are now, placed as a reuse would place them, naming the ones that moved, and the position
+/// roles whose occupant changed: shown, never retargeted. A sheet saved from a sheet draft without one names no macro
+/// version. Its gains and losses are those of the sheet's complete operation from the head.
 #[test]
 fn a_comparison_reports_roles_placements_gains_and_losses() {
     let (moved, stayed, to) = pieces_moved_by(&[5]);
@@ -696,6 +712,7 @@ fn a_comparison_reports_roles_placements_gains_and_losses() {
     ]);
     assert_eq!(field(&value, "inputs"), &inputs);
     assert_eq!(field(&value, "moved"), &Value::Array(vec![text("moved")]));
+    assert_eq!(field(&value, "occupant_changed"), &Value::Array(vec![text("target")]));
     assert_eq!(field(&value, "macro_version"), &json::object([("saved", Value::Null), ("status", text("none"))]));
     let analysis = field(&value, "analysis");
     assert_eq!((field(analysis, "gains"), field(analysis, "losses")), (&ids(&gains), &ids(&losses)));
