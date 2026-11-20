@@ -1,0 +1,21 @@
+edition "6cs-draft-1";
+module jumble_units requires [];
+
+export fn off_units() -> record { complete: Bool, count: Nat, units: List<record { branches: List<Int>, domain: Text, heights: List<Nat>, members: List<Nat>, pose: Text }> } effects [snapshot] {
+    let all = read_snapshot<record { complete: Bool, units: List<record { branches: List<Int>, domain: Text, heights: List<Nat>, members: List<Nat>, pose: Text }> }>("units", "all");
+    return record { complete = all.complete, count = length(all.units), units = all.units };
+}
+
+export fn named_unit(pieces: List<Nat>) -> record { branches: List<Int>, domain: Text, heights: List<Nat>, members: List<Nat>, pose: Text } effects [snapshot] {
+    let named = read_snapshot<record { units: List<record { branches: List<Int>, domain: Text, heights: List<Nat>, members: List<Nat>, pose: Text }> }>("units", pieces);
+    return index(named.units, 0);
+}
+
+export fn clean_step(w: MenuWord, unit: List<Nat>) -> record { admissible: Bool, applied: Nat, holds: Bool, lattice_lifted: List<Nat>, others: Nat, others_changed: List<Nat>, others_kept: List<Nat>, others_landed: List<Nat>, unit: List<Nat>, unit_landed: List<Bool> } effects [snapshot] {
+    let check = read_snapshot<record { admissible: Bool, applied_letters: Nat, lattice_pieces_lifted_off: List<Nat>, others: Nat, others_changed_ids: List<Nat>, others_exact: List<Nat>, others_landed: List<Nat>, unit: List<Nat>, unit_landed: List<Bool> }>("word_check", record { unit = unit, word = w });
+    let holds = match check.admissible {
+        true => and(index(check.unit_landed, 0), and(exact_eq(index(check.lattice_pieces_lifted_off, 0), 0), exact_eq(exact_add(index(check.others_exact, 0), index(check.others_landed, 0)), check.others)));
+        _ => false;
+    };
+    return record { admissible = check.admissible, applied = check.applied_letters, holds = holds, lattice_lifted = check.lattice_pieces_lifted_off, others = check.others, others_changed = check.others_changed_ids, others_kept = check.others_exact, others_landed = check.others_landed, unit = check.unit, unit_landed = check.unit_landed };
+}

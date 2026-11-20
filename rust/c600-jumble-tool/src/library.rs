@@ -1,5 +1,5 @@
 //! The jumbling library entries as 600 Cell Script (LP3, C8; chapter 03's LB1.8, LB1.10 and LB3.1 catalogues), on
-//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Nine modules, each in
+//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Twelve modules, each in
 //! edition `6cs-draft-1` (syntax candidate A) and in the formatter's canonical layout, checked and run by LP2's checker
 //! and interpreter:
 //!
@@ -27,6 +27,16 @@
 //!   solver's cap and answers both directions for every meeting cap in cap-ID order, with no top-cap verdict.
 //! - `jumble_corrections` ([`CORRECTIONS`]): LB3.1's "Correction catalogue". `correction` reads `correction_lookup`
 //!   for the solver's id and answers that correction's letters, length, ν row and support; it chooses no combination.
+//! - `jumble_admissibility` ([`ADMISSIBILITY`]): LB3.1's "Admissibility and blocked-twist check". `twist_check` reads
+//!   KN2.4's `classify` for the solver's named twist, a menu word of one letter, and `grip_status` reads `survey` for
+//!   the solver's named grip only.
+//! - `jumble_straddlers` ([`STRADDLERS`]): LB3.1's "Straddlers and u at a named cap". `straddlers_at` reads KN2.4's
+//!   `straddlers` for the solver's cap and answers the complete set, each straddler with its exact certificate pair,
+//!   and u, the count of straddlers.
+//! - `jumble_units` ([`UNITS`]): LB3.1's "Units and clean-step contract". `off_units` reads JI.9's `units` of every
+//!   piece off the lattice and `named_unit` the solver's named unit; `clean_step` reads KN2.4's `word_check` for the
+//!   solver's word and unit and answers the contract's parts: the unit landed, the lattice pieces lifted off and the
+//!   other off pieces kept at their exact pose or landed, and whether the contract holds.
 //!
 //! Every entry tracks, analyses or checks the solver's named word or state; none chooses or outputs a word, and none
 //! previews or executes anything (no `propose`). A run pins the word's alphabet with [`crate::word::Alphabet::pinned`].
@@ -38,7 +48,8 @@
 //! - **Row answers (KN2.4, KN2.5, LB3.9).** The rows' answer types are this crate's drafts, as the host bridge
 //!   [`crate::rows`] serves them: each is a record of fields named as `c600_jumble`'s answers name them
 //!   (`observe::heights`, `observe::prefix_observations`, `observe::word_check`, `levels::WordProtection`,
-//!   `observe::cuts::rim_summary`, `observe::cuts::covers`, `corrections::Catalogue::lookup`), a JSON
+//!   `observe::cuts::rim_summary`, `observe::cuts::covers`, `corrections::Catalogue::lookup`, `state::Outcome`,
+//!   `state::StraddlerSet`, `observe::units`), a JSON
 //!   object read as a `Map`, and a field that may be undefined, such as an end fact after a refused prefix, declared as
 //!   a list that is empty when the field is undefined and holds one value otherwise, since the IR draft has no option
 //!   type. A program declares the fields it reads, in any order. Every answer writes each of its fields, null when
@@ -52,6 +63,10 @@
 //!   `correction_set_check` takes the drafted set as a list of records `{ id, m }`, the correction's id and its signed
 //!   multiplicity, in the solver's order. `rim_summary` takes none; `covers` takes the solver's cap ID,
 //!   `correction_lookup` the solver's correction id, and `seam_facts` a cap ID or the text `all` for one whole scan.
+//!   `classify` takes the solver's named twist as a menu word of one letter, `survey` and `straddlers` the solver's
+//!   cap ID, and `units` the named unit as a list of pieces or the text `all` for every unit off the lattice.
+//! - **Exact numbers (KN2.4).** A straddle certificate's points and cut heights are numbers of Q(√5), declared `Q5`:
+//!   the bridge reads the engine's `[a, b, d]` for (a + b√5)/d, never a float.
 //! - **ν's answer (KN2.4, A5).** `nu` and `correction_set_check` answer a record `{ reason, values }`: ν's 45 values
 //!   as integers and no reason when ν is defined, no values and the reason (`off_lattice`) when it is not. A field
 //!   value has no canonical form, so the entries return residues, each value's least non-negative representative.
@@ -164,9 +179,45 @@ pub const CORRECTIONS: Module = Module {
     rows: &["correction_lookup"],
 };
 
+/// LB3.1's admissibility and blocked-twist check, for the solver's named twist or grip.
+pub const ADMISSIBILITY: Module = Module {
+    name: "jumble_admissibility",
+    source: include_str!("jumble_admissibility.6cs"),
+    exports: &["twist_check", "grip_status"],
+    rows: &["classify", "survey"],
+};
+
+/// LB3.1's straddlers and u at a named cap.
+pub const STRADDLERS: Module = Module {
+    name: "jumble_straddlers",
+    source: include_str!("jumble_straddlers.6cs"),
+    exports: &["straddlers_at"],
+    rows: &["straddlers"],
+};
+
+/// LB3.1's units and clean-step contract.
+pub const UNITS: Module = Module {
+    name: "jumble_units",
+    source: include_str!("jumble_units.6cs"),
+    exports: &["off_units", "named_unit", "clean_step"],
+    rows: &["units", "word_check"],
+};
+
 /// The library's modules.
-pub const MODULES: [Module; 9] =
-    [MENU_WORDS, MENU_TRACES, HEIGHTS, WORD_CHECKS, PROTECTION, NU, RIM, COVERS, CORRECTIONS];
+pub const MODULES: [Module; 12] = [
+    MENU_WORDS,
+    MENU_TRACES,
+    HEIGHTS,
+    WORD_CHECKS,
+    PROTECTION,
+    NU,
+    RIM,
+    COVERS,
+    CORRECTIONS,
+    ADMISSIBILITY,
+    STRADDLERS,
+    UNITS,
+];
 
 /// Parses and lowers the library's modules and `clients`, one module each, into one program
 /// (`c600_library::lower_sources`). A client imports `menu_words` by [`Module::sha256`].
@@ -336,5 +387,49 @@ pub fn correction_catalogue() -> CatalogueRow {
             &[Effect::ReadSnapshot],
             CORRECTIONS,
         )
+    }
+}
+
+/// LB3.1's row "Admissibility and blocked-twist check".
+pub fn admissibility_and_blocked_twist_check() -> CatalogueRow {
+    CatalogueRow {
+        backing: "KN2.4's `classify` and `survey`: `jumble_admissibility.twist_check` reads `classify` for the \
+                  solver's named twist and `jumble_admissibility.grip_status` reads `survey` for the solver's named \
+                  grip, each with `read_snapshot` (M8's `State::apply` on a copy and `State::survey`).",
+        notes:
+            "Admissible, blocked, invalid or uncertain for the named twist, with the count of pieces it would move, \
+                the straddle certificate of a blocked twist, the pieces left uncertain and the refusal's code; the \
+                status of the named grip. A refusal changes nothing: the twist acts on a copy of the state read. The \
+                survey row answers one named grip only: the research survey's all-items loop is not served (LB3.5).",
+        ..row("Admissibility and blocked-twist check", "Jumbling poses.", &[Effect::ReadSnapshot], ADMISSIBILITY)
+    }
+}
+
+/// LB3.1's row "Straddlers and u at a named cap".
+pub fn straddlers_and_u_at_a_named_cap() -> CatalogueRow {
+    CatalogueRow {
+        backing: "KN2.4's `straddlers`: `jumble_straddlers.straddlers_at` reads it with `read_snapshot` for the \
+                  solver's named cap (M8's `State::straddler_set`).",
+        notes: "The complete set of the named cap's straddlers, ascending, each with its exact certificate pair: a \
+                point of the posed piece region on either side of the cut, each coordinate in Q(√5), with both cut \
+                heights. u is the count of straddlers; complete means no piece is left uncertain. Empty after \
+                completion means no straddler at that cap and input, not a useful lowering.",
+        ..row("Straddlers and u at a named cap", "Jumbling poses.", &[Effect::ReadSnapshot], STRADDLERS)
+    }
+}
+
+/// LB3.1's row "Units and clean-step contract".
+pub fn units_and_clean_step_contract() -> CatalogueRow {
+    CatalogueRow {
+        backing: "Library code: `jumble_units.off_units` and `jumble_units.named_unit` over JI.9's `units` (the \
+                  exact-pose groups of the off pieces, from the pose table and pose IDs) and `jumble_units.clean_step` \
+                  over KN2.4's `word_check`, each read with `read_snapshot` for the solver's unit and word.",
+        notes: "The units off the lattice, or the named unit, each with its members, exact pose key, domain, heights \
+                and branches; for a named word and unit, the contract's parts: whether the unit landed, the lattice \
+                pieces lifted off, and the other off pieces kept at their exact pose or landed, with the ones changed. \
+                A false contract is an observed failure of that contract, not by itself a refusal to preview; a \
+                refused prefix leaves the parts undefined and the contract false. Not built: a general clean step's \
+                declared free set, which `word_check` does not take.",
+        ..row("Units and clean-step contract", "Jumbling poses.", &[Effect::ReadSnapshot], UNITS)
     }
 }

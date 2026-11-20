@@ -51,6 +51,21 @@
 //!   another order, or in free mode, is `KN2:input.menu_binding_mismatch`, as `Catalogue::twists` refuses it. An id
 //!   the catalogue does not ship is `KN2:input.named_object_invalid`. The lookup answers the named correction only; it
 //!   checks no set and chooses no combination.
+//! - `classify`, a menu word of one letter, the solver's named twist: the twist's outcome at the state
+//!   (`State::apply` on a copy, with no budget and no protected piece), which is not changed, as a record
+//!   `{ grip, status, moved, certificate, uncertain, code }`: `admissible`, `blocked`, `invalid` or `uncertain`, the
+//!   count of pieces the twist would move (none unless admissible), the straddle certificate of a blocked twist, the
+//!   pieces left uncertain and the refusal's code. A word of any other length is `KN5:input.argument_form`.
+//! - `survey`, a cap ID: the status of the named grip only (`State::survey` of that grip), as a record
+//!   `{ cap, status }`. `"all"` or a list is `KN5:input.argument_form`, so the research survey's all-items loop is not
+//!   served (LB3.5); a cap outside 0..599 is `KN2:input.named_object_invalid`.
+//! - `straddlers`, a cap ID: every certified straddler of the named cap (`State::straddler_set`), as a record
+//!   `{ cap, status, pieces, certificates, uncertain }`, the pieces ascending and each certificate with its exact pair
+//!   of points, each coordinate a `Q5`. A cap outside 0..599 is `KN2:input.named_object_invalid`.
+//! - `units`, a list of pieces or the text `"all"`: JI.9's units (`observe::units`), as a record `{ status, units,
+//!   complete }`: the named unit, or with `"all"` the exact-pose groups of the pieces off the lattice ordered by
+//!   smallest member, each `{ members, pose, domain, heights, branches }`. A named unit that is empty, holds a piece
+//!   outside the model or on the lattice, or spans two exact poses is `KN2:input.named_object_invalid` (JI.45).
 //!
 //! A menu word is read as [`crate::word::LiteralWord::letters`] reads it: a word of another alphabet than the state's
 //! is `LB1:input.incompatible_alphabet`. Every field of an answer is written, null when undefined; a declared type that
@@ -71,9 +86,12 @@
 //! The kernel cost is one unit for each piece of the model ([`NP`]) for each pass over a state: one pass for `heights`,
 //! `height_counts`, `nu` and `correction_lookup`, and one more for each letter of a named word or each entry of a
 //! drafted set; two for `seam_facts`, the cap's classification and its cut, or the whole scan with `"all"`; one more
-//! for each cap ([`POLES`]) for `rim_summary`; and one more for the named cap and each of its [`MEETING_CAPS`] for
-//! `covers`. The result bound is [`RESULT_BOUND`] for every row; an answer above it stops the run with the
+//! for each cap ([`POLES`]) for `rim_summary`; one more for the named cap and each of its [`MEETING_CAPS`] for
+//! `covers`; and two for `classify`, `survey`, `straddlers` and `units`, the named twist's, grip's, cap's or unit's
+//! pass and the state's. The result bound is [`RESULT_BOUND`] for every row; an answer above it stops the run with the
 //! interpreter's `KN7:resource_limit.host_exhausted`, never a cut answer.
+
+use std::sync::Arc;
 
 use c600_check::TYPE_MISMATCH;
 use c600_command::{code, CommandLayer, Store};
@@ -85,9 +103,9 @@ use c600_jumble::model::{NP, POLES};
 use c600_jumble::nu::{self, NuVector};
 use c600_jumble::observe::cuts::{covers, rim_summary};
 use c600_jumble::observe::{
-    heights, prefix_observations, seam_facts, word_check, Batch, Fields, PrefixRequest, Rows as Cells, Scope,
+    heights, prefix_observations, seam_facts, units, word_check, Batch, Fields, PrefixRequest, Rows as Cells, Scope,
 };
-use c600_jumble::state::State;
+use c600_jumble::state::{Certificate, State};
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{ProtectionMode, Refusal};
@@ -95,12 +113,12 @@ use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::menu::MenuIdentity;
 use c600_run::meter::code::NOT_GRANTED;
 use c600_run::provenance::{self, Json};
-use c600_run::value::Value as RunValue;
+use c600_run::value::{parse_integer, Quad, Value as RunValue};
 
 use crate::word::{self, menu_identity, Letter, INCOMPATIBLE_ALPHABET};
 
 /// The rows the bridge serves, each with whether it takes an argument.
-pub const ROWS: [(&str, bool); 11] = [
+pub const ROWS: [(&str, bool); 15] = [
     ("heights", false),
     ("height_counts", false),
     ("replay", true),
@@ -112,6 +130,10 @@ pub const ROWS: [(&str, bool); 11] = [
     ("rim_summary", false),
     ("covers", true),
     ("correction_lookup", true),
+    ("classify", true),
+    ("survey", true),
+    ("straddlers", true),
+    ("units", true),
 ];
 
 /// The caps that meet one cap: the classifications a `covers` read adds to the named cap's own.
@@ -329,6 +351,55 @@ impl<'a> Rows<'a> {
                     ("row", correction.row().to_json()),
                 ]))
             }
+            ("classify", Some(word)) => {
+                let letters = self.letters(word)?;
+                let [(_, twist)] = &letters[..] else { return Err(code::ARGUMENT_FORM) };
+                // The named twist acts on a copy: the state read is not changed, whatever the outcome.
+                let outcome = self.state()?.clone().apply(ctx, twist, None, &[]).map_err(engine)?;
+                let code = outcome.refusal.as_ref().map_or(Value::Null, |(code, _)| Value::String((*code).to_owned()));
+                Ok(json::object([
+                    ("certificate", outcome.straddle.as_ref().map_or(Value::Null, Certificate::to_json)),
+                    ("code", code),
+                    ("grip", Value::Int(outcome.grip as i64)),
+                    ("moved", Value::Int(outcome.moved() as i64)),
+                    ("status", Value::String(outcome.status.as_str().to_owned())),
+                    ("uncertain", Value::Int(outcome.uncertain as i64)),
+                ]))
+            }
+            ("survey", Some(cap)) => {
+                let cap = named_cap(cap)?;
+                let statuses = self.state()?.clone().survey(ctx, &[cap], None).map_err(engine)?;
+                let [status] = statuses[..] else { return Err(code::STATE_HASH_MISMATCH) };
+                Ok(json::object([
+                    ("cap", Value::Int(cap as i64)),
+                    ("status", Value::String(status.as_str().to_owned())),
+                ]))
+            }
+            ("straddlers", Some(cap)) => {
+                let cap = named_cap(cap)?;
+                let set = self.state()?.clone().straddler_set(ctx, cap, None).map_err(engine)?;
+                Ok(json::object([
+                    ("cap", Value::Int(cap as i64)),
+                    ("certificates", Value::Array(set.certificates.iter().map(Certificate::to_json).collect())),
+                    ("pieces", Value::Array(set.pieces.iter().map(|&p| Value::Int(i64::from(p))).collect())),
+                    ("status", Value::String(set.status().to_owned())),
+                    ("uncertain", Value::Int(set.uncertain as i64)),
+                ]))
+            }
+            ("units", Some(arg)) => {
+                let named = match arg.as_text() {
+                    Some("all") => None,
+                    _ => Some(naturals(arg)?),
+                };
+                let answer = units(ctx, self.state()?, named.as_deref()).map_err(engine)?;
+                match answer.get("status").and_then(Value::as_str) {
+                    Some("ok") => Ok(answer),
+                    _ if answer.get("code").and_then(Value::as_str) == Some(NAMED_OBJECT_INVALID) => {
+                        Err(NAMED_OBJECT_INVALID)
+                    }
+                    _ => Err(code::STATE_HASH_MISMATCH),
+                }
+            }
             _ => Err(code::ARGUMENT_FORM),
         }
     }
@@ -375,7 +446,8 @@ fn engine(_: impl std::fmt::Debug) -> &'static str {
 }
 
 /// The passes a row's argument adds to its tariff: the letters of a named word, the entries of a drafted set, a named
-/// cap's classification (with its meeting caps' for `covers`), or none for a correction id.
+/// cap's classification (with its meeting caps' for `covers`), the named twist's, grip's or unit's pass, or none for a
+/// correction id.
 fn extent(query: &str, arg: &Json) -> Result<usize, &'static str> {
     let cap = |passes: usize| integer(arg).map(|_| passes).ok_or(code::ARGUMENT_FORM);
     let word = match query {
@@ -383,12 +455,21 @@ fn extent(query: &str, arg: &Json) -> Result<usize, &'static str> {
         "word_check" | "protection" => arg.get("word").ok_or(code::ARGUMENT_FORM)?,
         "correction_set_check" => return drafted(arg).map(|set| set.len()),
         "seam_facts" if arg.as_text() == Some("all") => return Ok(1),
-        "seam_facts" => return cap(1),
+        "seam_facts" | "survey" | "straddlers" => return cap(1),
         "covers" => return cap(1 + MEETING_CAPS),
         "correction_lookup" => return cap(0),
+        "classify" if flat_letters(arg)?.len() == 2 => return Ok(1),
+        "units" if arg.as_text() == Some("all") => return Ok(1),
+        "units" => return naturals(arg).map(|_| 1),
         _ => return Err(code::ARGUMENT_FORM),
     };
     Ok(flat_letters(word)?.len() / 2)
+}
+
+/// A cap the solver names, in a run's canonical bytes: a cap ID of the model, or `KN2:input.named_object_invalid`.
+fn named_cap(cap: &Json) -> Result<usize, &'static str> {
+    let cap = integer(cap).ok_or(code::ARGUMENT_FORM)?;
+    usize::try_from(cap).ok().filter(|&cap| cap < POLES).ok_or(NAMED_OBJECT_INVALID)
 }
 
 /// The integers of a menu word's letters, in order: two for each letter.
@@ -511,12 +592,19 @@ fn served_nu(result: Result<Partial<NuVector>, Refusal>) -> Result<Value, &'stat
 /// A row's answer as a value of the declared type, by the library's draft answer types: a record takes the declared
 /// fields of a JSON object, each of which the answer writes, null when undefined, so that a declared field that it does
 /// not write, such as a misspelled one, is refused and never read as undefined; a list takes an array, or holds nothing
-/// for null and one value otherwise; a map from text takes an object. Any other shape is `LG2:type.mismatch`.
+/// for null and one value otherwise; a map from text takes an object. An integer may be one that does not fit `i64`, and
+/// a `Q5` takes the engine's `[a, b, d]` for (a + b√5)/d with d nonzero, in lowest terms as a run's `Q5` keeps it. Any
+/// other shape is `LG2:type.mismatch`.
 pub fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
     Ok(match (&ty.ty, value) {
         (Ty::Bool, Value::Bool(b)) => RunValue::Bool(*b),
         (Ty::Nat, Value::Int(n)) if *n >= 0 => RunValue::int(*n),
         (Ty::Int, Value::Int(n)) => RunValue::int(*n),
+        (Ty::Nat, Value::Number(lexeme)) if !lexeme.starts_with('-') => {
+            RunValue::int(parse_integer(lexeme).ok_or(TYPE_MISMATCH)?)
+        }
+        (Ty::Int, Value::Number(lexeme)) => RunValue::int(parse_integer(lexeme).ok_or(TYPE_MISMATCH)?),
+        (Ty::Q5, Value::Array(triple)) => q5(triple)?,
         (Ty::Text, Value::String(s)) => RunValue::text(s),
         (Ty::List(item), Value::Array(values)) => {
             RunValue::list(values.iter().map(|v| convert(v, item)).collect::<Result<_, _>>()?)
@@ -535,6 +623,21 @@ pub fn convert(value: &Value, ty: &QTy) -> Result<RunValue, &'static str> {
         }
         _ => return Err(TYPE_MISMATCH),
     })
+}
+
+/// A number of Q(√5) as the jumbling engine writes one, `[a, b, d]` for (a + b√5)/d, as a run's `Q5`.
+fn q5(triple: &[Value]) -> Result<RunValue, &'static str> {
+    let exact = |v: &Value| match v {
+        Value::Int(n) => parse_integer(&n.to_string()),
+        Value::Number(lexeme) => parse_integer(lexeme),
+        _ => None,
+    };
+    let [a, b, d] = triple else { return Err(TYPE_MISMATCH) };
+    if matches!(d, Value::Int(0)) {
+        return Err(TYPE_MISMATCH);
+    }
+    let (a, b, d) = (exact(a).ok_or(TYPE_MISMATCH)?, exact(b).ok_or(TYPE_MISMATCH)?, exact(d).ok_or(TYPE_MISMATCH)?);
+    Ok(RunValue::Q5(Arc::new(Quad::new(a, b, d))))
 }
 
 #[cfg(test)]
@@ -562,5 +665,53 @@ mod tests {
         assert_eq!(extent("word_check", &bytes(r#"{"unit":[],"word":{"letters":[[1,2]]}}"#)), Ok(1));
         assert_eq!(extent("protection", &bytes(r#"{"word":{"letters":[[1]]}}"#)), Ok(0));
         assert_eq!(extent("replay", &bytes(r#"{"letters":[[1,"a"]]}"#)), Err(code::ARGUMENT_FORM));
+    }
+
+    #[test]
+    fn named_twists_grips_caps_and_units_take_one_object() {
+        assert_eq!(extent("classify", &bytes(r#"{"letters":[[1,2]],"menu":{}}"#)), Ok(1));
+        assert_eq!(extent("classify", &bytes(r#"{"letters":[[1,2],[3,4]],"menu":{}}"#)), Err(code::ARGUMENT_FORM));
+        assert_eq!(extent("classify", &bytes(r#"{"letters":[],"menu":{}}"#)), Err(code::ARGUMENT_FORM));
+        for query in ["survey", "straddlers"] {
+            assert_eq!(extent(query, &bytes(r#"{"int":"7"}"#)), Ok(1), "{query}");
+            assert_eq!(extent(query, &bytes(r#""all""#)), Err(code::ARGUMENT_FORM), "{query}: not every grip");
+            assert_eq!(extent(query, &bytes(r#"[{"int":"7"}]"#)), Err(code::ARGUMENT_FORM), "{query}: one cap");
+        }
+        assert_eq!(named_cap(&bytes(r#"{"int":"599"}"#)), Ok(599));
+        assert_eq!(named_cap(&bytes(r#"{"int":"600"}"#)), Err(NAMED_OBJECT_INVALID));
+        assert_eq!(named_cap(&bytes(r#"{"int":"-1"}"#)), Err(NAMED_OBJECT_INVALID));
+        assert_eq!(extent("units", &bytes(r#""all""#)), Ok(1));
+        assert_eq!(extent("units", &bytes(r#"[{"int":"3"},{"int":"9"}]"#)), Ok(1));
+        assert_eq!(extent("units", &bytes(r#"{"int":"3"}"#)), Err(code::ARGUMENT_FORM));
+    }
+
+    #[test]
+    fn an_exact_number_reads_the_engines_form() {
+        let ty = |ty: Ty| QTy { ty, display: false };
+        let n = |s: &str| parse_integer(s).expect("an integer");
+        let quad = |text: &[u8]| match convert(&json::parse(text).expect("JSON"), &ty(Ty::Q5)) {
+            Ok(RunValue::Q5(q)) => Ok(Quad::new(q.a.clone(), q.b.clone(), q.d.clone())),
+            Ok(other) => panic!("no Q5: {other:?}"),
+            Err(code) => Err(code),
+        };
+        assert_eq!(quad(b"[1, 1, 2]"), Ok(Quad::new(n("1"), n("1"), n("2"))), "(1 + √5)/2");
+        assert_eq!(quad(b"[2, 2, -4]"), Ok(Quad::new(n("-1"), n("-1"), n("2"))), "in lowest terms, d > 0");
+        assert_eq!(
+            quad(b"[123456789012345678901234567890, 0, 1]"),
+            Ok(Quad::new(n("123456789012345678901234567890"), n("0"), n("1")))
+        );
+        for refused in ["[1, 1, 0]", "[1, 1]", "[1, \"1\", 2]", "[1.5, 1, 2]"] {
+            assert_eq!(quad(refused.as_bytes()), Err(TYPE_MISMATCH), "{refused}");
+        }
+        let integer = |text: &[u8], t: Ty| match convert(&json::parse(text).expect("JSON"), &ty(t)) {
+            Ok(RunValue::Int(i)) => Ok(i.to_string()),
+            Ok(other) => panic!("no integer: {other:?}"),
+            Err(code) => Err(code),
+        };
+        let big = b"123456789012345678901234567890";
+        assert_eq!(integer(big, Ty::Int), Ok("123456789012345678901234567890".to_owned()));
+        assert_eq!(integer(big, Ty::Nat), Ok("123456789012345678901234567890".to_owned()));
+        assert_eq!(integer(b"-123456789012345678901234567890", Ty::Nat), Err(TYPE_MISMATCH));
+        assert_eq!(integer(b"1.5", Ty::Int), Err(TYPE_MISMATCH));
     }
 }
