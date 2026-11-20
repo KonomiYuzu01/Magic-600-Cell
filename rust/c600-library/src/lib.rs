@@ -1,6 +1,7 @@
 //! The base library's first entries as 600 Cell Script (LP3, C5), written as language code over the IR draft (LB1.1):
 //! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
-//! "Exact linear algebra" and the exact sign and order of its Q(√5) values; the exact-completion half of LB2's row
+//! "Exact linear algebra" and the exact sign and order of its Q(√5) values; LB1.8's row "Quaternion and icosian
+//! algebra" as far as quaternion factors and the tree at 2 go; the exact-completion half of LB2's row
 //! "Residuals and exact completion", over KN2.4's `positions` and `labels` rows; LB2's rows "Star and recipe
 //! construction" and "Collateral and support", over KN2.4's `effect` row; LB2's row "Net and Strict protection", over
 //! KN2.4's `protection` row; and LB2's row "Guarded setups and buffers", over the draft `setups` row of the
@@ -72,6 +73,34 @@
 //! sign says something about the supplied number only (CT-LB1-01). `tests/ct_lb1_01.rs` checks both against the
 //! kernel's exact sign of a + b√5 (`c600_kernel::exact::sign5`, KN3.1), on the convergents of √5, where a² - 5b² = ±1
 //! and the sign is hardest to decide, up to 128-bit coefficients.
+//!
+//! # Quaternion factors and tree outputs
+//!
+//! The source [`TREES_SOURCE`], `src/trees.6cs`, is the module `trees` in edition `6cs-draft-1`, in the formatter's
+//! canonical layout. It exports seven pure functions over the IR draft's `Q5`, with the meaning of
+//! `research/jumbling/theory/trees.py`. A quaternion is `List<Q5>`, x0 + x1 i + x2 j + x3 k, and a pose matrix is
+//! `List<List<Q5>>`, where `m[a][b]` is coefficient a of M e_b.
+//!
+//! - `factors(m)` answers `record { l, r, reconstructs }`: with A[i][j] = tr(E_ij^T M) / 4, where E_ij is the matrix of
+//!   x ↦ e_i x conj(e_j), `l` is A's first column with a non-zero entry and `r` its first row with one, exactly as
+//!   trees.py extracts them (not up to scale), and `reconstructs` is the next entry's answer for them.
+//! - `reconstructs(m, l, r) -> Bool`: true exactly when M e_b = s · l e_b conj(r) for b = 0..3 with one common non-zero
+//!   scalar s; where M is zero, the image must be zero too.
+//! - `v2(x: Q5) -> Int`: the 2-adic valuation, min(v2(a - b), v2(2b)) - v2(d) from `q5_parts`' triple, skipping a zero
+//!   term. `v2(0)` stops at an `assert` with `LG4:input.pointwise_failed`.
+//! - `kval(x)`, the least v2 of the non-zero coordinates of x in trees.py's local basis of the icosian order at 2;
+//!   `dist(x)`, v2 of the norm minus twice `kval`, the distance from v0 to x v0 on the 5-regular tree; and `branch(x)`,
+//!   -1 at distance 0, otherwise the index (0..4) of the tetrahedral subgroup of A5 that equals the set of projective
+//!   unit icosians u with dist(conj(x) u x) ≤ 2 dist(x) - 2.
+//! - `pose_tree(m)` answers `record { branch_l, branch_r, dist_l, dist_r }` for the factors of `m`, and stops at an
+//!   `assert` when they do not reconstruct it.
+//!
+//! The module's constants are trees.py's: the inverse local basis, the 60 projective unit icosians in trees.py's order
+//! and the five tetrahedral subgroups as index sets into them. [`quaternion_and_icosian_algebra`] is the row's
+//! catalogue entry. The checker infers no effect, capability or state read for any of the seven, so an answer says
+//! something about the supplied matrix or quaternion only (CT-LB1-01). `tests/ct_lb1_01_trees.rs` checks every answer
+//! against `tests/fixtures/trees-reference.json`, trees.py's exact answers, and checks that trees.py and its `exact.py`
+//! are still the pinned bytes.
 //!
 //! # Recipes, frames and support
 //!
@@ -272,13 +301,15 @@
 //! - LB1.8, Q(√5) signs: the catalogue row is Rust data in [`exact_q5_signs`], a second part of the row "Exact linear
 //!   algebra" beside [`exact_linear_algebra`], because the two parts are separate modules.
 //!
+//! - LB1.8, quaternions: the IR draft has no subtraction, division or integer remainder, so `trees` negates with
+//!   `exact_mul` by -1, halves an even integer with `q5_parts(q5_of(n, 0, 2))` and reads its parity with
+//!   `residue(to_f2(n))`. The constants are written out as literals, because the module computes no group closure.
+//! - LB1.8, quaternions: the catalogue row is Rust data in [`quaternion_and_icosian_algebra`].
+//!
 //! # Not built
 //!
-//! - The rest of CT-LB1-01: quaternion factor reconstruction over Q(√5) and the tree outputs (the 2-adic valuation,
-//!   heights and branches) against `research/jumbling/theory/trees.py`. They wait for LP2's draft exact-arithmetic
-//!   operations, because the IR draft's `Q5` and `Rat` have only exact addition, multiplication, comparison and
-//!   equality: no inverse or division, no coefficients and no integer division or remainder. The rest of "Exact linear
-//!   algebra": kernels (null spaces), and rows, ranks and solving over Z, Q and Q(√5).
+//! - In "Quaternion and icosian algebra": the cosets γK⁺, and the per-revision batch entries, which are LB3's.
+//! - The rest of "Exact linear algebra": kernels (null spaces), and rows, ranks and solving over Z, Q and Q(√5).
 //! - Jumbling words in this crate: the jumbling library entries, on the IR draft's menu words (LP2's pull request
 //!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
 //! - LB2's "Net and Strict protection" for a captured protected state of the session (the command layer's protected
@@ -366,6 +397,13 @@ pub const QUADRATIC_MODULE: &str = "quadratic";
 /// The exact Q(√5) signs module's exported functions, in source order.
 pub const QUADRATIC_EXPORTS: [&str; 2] = ["sign_q5", "compare_q5"];
 
+/// The quaternion and tree source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const TREES_SOURCE: &str = include_str!("trees.6cs");
+/// The quaternion factors and tree outputs module.
+pub const TREES_MODULE: &str = "trees";
+/// The quaternion factors and tree outputs module's exported functions, in source order.
+pub const TREES_EXPORTS: [&str; 7] = ["factors", "reconstructs", "v2", "kval", "dist", "branch", "pose_tree"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -399,6 +437,11 @@ pub fn setups_sha256() -> String {
 /// The SHA-256 of [`QUADRATIC_SOURCE`], in hex.
 pub fn quadratic_sha256() -> String {
     sha256_hex(QUADRATIC_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`TREES_SOURCE`], in hex.
+pub fn trees_sha256() -> String {
+    sha256_hex(TREES_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -490,6 +533,26 @@ pub fn exact_q5_signs() -> CatalogueRow {
         module: QUADRATIC_MODULE,
         functions: &QUADRATIC_EXPORTS,
         source_sha256: quadratic_sha256(),
+    }
+}
+
+/// LB1.8's row "Quaternion and icosian algebra", as far as this crate builds it: quaternion factors over Q(√5), the
+/// 2-adic valuation and the icosian order's 5-regular tree at 2 (heights and branches).
+pub fn quaternion_and_icosian_algebra() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Quaternion and icosian algebra",
+        level: "Exact pose matrices or algebraic values over Q(√5): quaternion factors, the 2-adic valuation, tree \
+                distances and branches. The cosets γK⁺ and LB3's per-revision batch entries are not built.",
+        effects: &[],
+        backing: "Library code over KN3's Q(√5): `trees.factors`, `trees.reconstructs`, `trees.v2`, `trees.kval`, \
+                  `trees.dist`, `trees.branch` and `trees.pose_tree`, with the IR draft's `exact_add`, `exact_mul`, \
+                  `exact_eq`, `exact_less`, `q5_parts` and `q5_of`.",
+        notes: "Factors (l, r) of a matrix M with M x proportional to l x conj(r), checked exactly; the 2-adic \
+                valuation (v2(0) is refused); the distance and branch of a quaternion on the tree at 2. An answer \
+                says something about the supplied matrix or quaternion only and asserts no puzzle reachability.",
+        module: TREES_MODULE,
+        functions: &TREES_EXPORTS,
+        source_sha256: trees_sha256(),
     }
 }
 

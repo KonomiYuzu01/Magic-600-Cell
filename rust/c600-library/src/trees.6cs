@@ -176,8 +176,8 @@ fn factor_matrix(m: List<List<Q5>>) -> List<List<Q5>> effects [] {
 }
 
 fn coords(x: List<Q5>) -> List<Q5> effects [] {
-    let inverse = local_basis_inverse();
-    return list<Q5>(dot(index(inverse, 0), x), dot(index(inverse, 1), x), dot(index(inverse, 2), x), dot(index(inverse, 3), x));
+    let binv = local_basis_inverse();
+    return list<Q5>(dot(index(binv, 0), x), dot(index(binv, 1), x), dot(index(binv, 2), x), dot(index(binv, 3), x));
 }
 
 fn branch_at(x: List<Q5>, d: Int) -> Int effects [] {
