@@ -110,6 +110,7 @@ use crate::budget::Budget;
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
+use crate::journal::{self, EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT};
 use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
@@ -406,6 +407,11 @@ struct Node {
     recipe: Option<Recipe>,
     /// A pose move's exact twist (draft); `None` for every other node.
     twist: Option<Twist>,
+    /// An exit's mark: the SHA-256 of its exit record's canonical JSON, the value an `exit_root` entry names
+    /// ([`jumble::exit_root_record`]); `None` for every other node. A crossing is the node with none of the three,
+    /// which is not the start. The journal query reads the node's kind from these alone ([`CommandLayer::journal`]),
+    /// since an exit's change leaves `changes` with the redo stack.
+    exit: Option<String>,
     digest: String,
     depth: u64,
 }
@@ -770,7 +776,8 @@ impl<S: Store> CommandLayer<S> {
         protected: ProtectedSet,
     ) -> CommandLayer<S> {
         let identity = digest(&identity_json(&kernel.identity()));
-        let start = Node { parent: 0, recipe: None, twist: None, digest: initial.digest().to_owned(), depth: 0 };
+        let start =
+            Node { parent: 0, recipe: None, twist: None, exit: None, digest: initial.digest().to_owned(), depth: 0 };
         CommandLayer {
             kernel,
             table: table.with_drafts(),
@@ -1239,6 +1246,64 @@ impl<S: Store> CommandLayer<S> {
     pub fn layer_members(&self, cell: i64, layer: i64) -> Result<LayerMembers, Error> {
         self.retained_mode()?;
         Ok(self.kernel.layer_members(cell, layer)?)
+    }
+
+    /// KN4.3's journal query (draft; LP3's C8): at most `limit` events of the move tree, newest first, from the event
+    /// `from` (the head for `None`) along its parents toward the start ([`journal`]). `cursor` continues an earlier
+    /// page of the same walk at its `next`. The move tree is durable, so the walk answers for the events of every
+    /// epoch, with Jumble on or off; its cost is linear in the page and flat in the history, and a read changes
+    /// nothing. Refusals, in this order: a `limit` of 0 or above [`JOURNAL_PAGE_LIMIT`], `KN5:input.argument_form`; a
+    /// `from` the move tree does not hold, `KN2:stale.revision_gone`; a cursor of another walk, session or launch,
+    /// `KN5:input.argument_form`.
+    pub fn journal(&self, from: Option<u64>, limit: u64, cursor: Option<&str>) -> Result<JournalPage, Error> {
+        if limit == 0 || limit > JOURNAL_PAGE_LIMIT {
+            let detail = format!("a journal page holds 1 to {JOURNAL_PAGE_LIMIT} events");
+            return Err(Error::new(code::ARGUMENT_FORM, detail));
+        }
+        let first = from.unwrap_or(self.head);
+        if !self.nodes.contains_key(&first) {
+            let detail = format!("the move tree holds no event {}", journal::event_name(first));
+            return Err(Error::new(code::REVISION_GONE, detail));
+        }
+        let session = &self.revision.session;
+        let mut node = match cursor {
+            None => first,
+            Some(cursor) => journal::cursor_next(cursor, &self.secret, session, from)
+                .filter(|next| self.nodes.contains_key(next))
+                .ok_or_else(|| Error::new(code::ARGUMENT_FORM, "the cursor continues another walk"))?,
+        };
+        let mut entries = Vec::new();
+        loop {
+            entries.push(self.journal_entry(node));
+            if node == 0 {
+                return Ok(JournalPage { entries, next: None });
+            }
+            node = self.nodes[&node].parent;
+            if entries.len() as u64 == limit {
+                return Ok(JournalPage { entries, next: Some(journal::cursor(&self.secret, session, from, node)) });
+            }
+        }
+    }
+
+    /// The journal entry of the move tree's node `order`, which the tree holds. Its kind follows from the node alone:
+    /// the start is node 0, a commit keeps its recipe, a pose move its twist and an exit its mark, and a crossing is
+    /// the node with none of them.
+    fn journal_entry(&self, order: u64) -> JournalEntry {
+        let node = &self.nodes[&order];
+        let kind = if order == 0 {
+            EntryKind::Start
+        } else if node.recipe.is_some() {
+            EntryKind::Commit
+        } else if node.twist.is_some() {
+            EntryKind::Pose
+        } else if node.exit.is_some() {
+            EntryKind::Exit
+        } else {
+            EntryKind::Crossing
+        };
+        let letters = node.recipe.as_ref().map_or(0, |recipe| recipe.primitive_count() as u64);
+        let solved = order == 0 && node.digest == self.kernel.solved().digest();
+        JournalEntry { order, kind, letters, solved, exit: node.exit.clone() }
     }
 
     /// The digest of the state at the head: the labels' digest with Jumble off, the pose digest with Jumble on. The
@@ -2576,7 +2641,8 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
-        let node = Node { parent: self.head, recipe: Some(recipe.clone()), twist: None, digest: post.clone(), depth };
+        let kept = Some(recipe.clone());
+        let node = Node { parent: self.head, recipe: kept, twist: None, exit: None, digest: post.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Commit,
             event,
@@ -3877,7 +3943,8 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
-        let node = Node { parent: self.head, recipe: None, twist: None, digest: entry.digest.clone(), depth };
+        let node =
+            Node { parent: self.head, recipe: None, twist: None, exit: None, digest: entry.digest.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Crossing,
             event,
@@ -4045,7 +4112,8 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
-        let node = Node { parent: self.head, recipe: None, twist: None, digest: post.clone(), depth };
+        let mark = Some(digest(&exit.record));
+        let node = Node { parent: self.head, recipe: None, twist: None, exit: mark, digest: post.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Exit,
             event,
@@ -4191,7 +4259,7 @@ impl<S: Store> CommandLayer<S> {
         let literal = levels::word_digest(std::slice::from_ref(&twist));
         let depth = self.nodes[&self.head].depth + 1;
         let digest = jumbled.digest.clone();
-        let node = Node { parent: self.head, recipe: None, twist: Some(twist), digest, depth };
+        let node = Node { parent: self.head, recipe: None, twist: Some(twist), exit: None, digest, depth };
         let transaction = Transaction {
             kind: TransactionKind::JumbleMove,
             event,
