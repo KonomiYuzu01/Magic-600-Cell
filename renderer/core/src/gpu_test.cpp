@@ -890,6 +890,157 @@ void measure_stages(const Options& options) {
     harness.finish(options.debug);
 }
 
+// C9 jumble-on's WARP check (--warp --poses): the product draw applies an engine image's per-piece poses as W-J's
+// path does. Row-major 4x4 matrices in double; R poses every even piece, Q is the camera.
+using Rows = std::array<double, 16>;
+Rows double_rotation(int a, int b, double theta, int c, int d, double phi) {
+    Rows r{};
+    for (int i = 0; i < 4; ++i) r[i * 5] = 1;
+    const auto plane = [&](int p, int q, double t) {
+        r[p * 4 + p] = std::cos(t); r[p * 4 + q] = -std::sin(t); r[q * 4 + p] = std::sin(t); r[q * 4 + q] = std::cos(t);
+    };
+    plane(a, b, theta); plane(c, d, phi);
+    return r;
+}
+Rows multiply(const Rows& x, const Rows& y) {
+    Rows out{};
+    for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) for (int k = 0; k < 4; ++k) out[r * 4 + c] += x[r * 4 + k] * y[k * 4 + c];
+    return out;
+}
+struct PoseFrames {
+    Harness& harness;
+    uint64_t frame = 0, sequence = 0;
+    // One product frame into the ring slot after the last, read back as R8G8B8A8 words by pixel.
+    std::vector<uint32_t> draw(uint64_t revision, uint64_t view, uint64_t set, const Rows& camera) {
+        auto* ctx = harness.ctx;
+        const uint64_t expected = ++frame;
+        const auto slot = uint32_t(expected % SA2_RING_SLOTS);
+        sa2_frame_input input{};
+        input.struct_size = sizeof(input);
+        input.target = slot;
+        input.device_epoch = 1;
+        input.surface = 1; input.surface_generation = 1; input.sequence = ++sequence;
+        input.engine_revision = revision;
+        input.view = view; input.view_generation = 1; input.publication_generation = 1;
+        input.camera = sequence;
+        input.viewport_width = harness.width; input.viewport_height = harness.height;
+        input.visibility = 1; input.interaction = 1; input.resource_set = set;
+        for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) input.camera_matrix[c * 4 + r] = float(camera[r * 4 + c]); // column-major Q
+        api(ctx, sa2_signal_godot_free(ctx, expected - 1));
+        uint64_t id = 0;
+        api(ctx, sa2_frame_submit(ctx, &input, &id));
+        expect(id == expected, "a pose-check frame did not get the next frame ID");
+        api(ctx, sa2_godot_wait_ready(ctx, id));
+        harness.consume(id, 0, false);
+        std::vector<uint32_t> pixels(size_t(harness.width) * harness.height);
+        void* bytes = nullptr;
+        const D3D12_RANGE read_range{static_cast<SIZE_T>(harness.footprint.Offset), static_cast<SIZE_T>(harness.readback_bytes)};
+        check(harness.readback->Map(0, &read_range, &bytes), "Map pose readback");
+        const auto* base = static_cast<const uint8_t*>(bytes) + harness.footprint.Offset;
+        for (uint32_t y = 0; y < harness.height; ++y)
+            std::memcpy(pixels.data() + size_t(y) * harness.width, base + size_t(y) * harness.footprint.Footprint.RowPitch, size_t(harness.width) * 4);
+        const D3D12_RANGE written{0, 0};
+        harness.readback->Unmap(0, &written);
+        api(ctx, sa2_mark_shown(ctx, slot, id));
+        return pixels;
+    }
+};
+// A resource set of one view that draws the slots whose visible byte is 1; nothing pickable.
+uint64_t pose_set(Harness& harness, uint64_t view, const std::vector<uint8_t>& visible) {
+    auto* ctx = harness.ctx;
+    const std::vector<uint8_t> interaction(SA2_SLOTS, 0);
+    const std::vector<uint32_t> instances(SA2_SLOTS, 0);
+    sa2_preparation preparation{};
+    preparation.struct_size = sizeof(preparation);
+    preparation.command = view; preparation.view = view;
+    preparation.view_generation = 1; preparation.publication_generation = 1;
+    preparation.device_epoch = 1; preparation.base_revision = 1;
+    preparation.visibility = visible.data(); preparation.interaction = interaction.data(); preparation.instances = instances.data();
+    uint64_t ticket = 0;
+    api(ctx, sa2_prepare(ctx, &preparation, &ticket));
+    const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(harness.wait);
+    for (;;) {
+        sa2_poll_row row{sizeof(sa2_poll_row)};
+        api(ctx, sa2_poll(ctx, ticket, &row));
+        if (row.state == SA2_TICKET_READY) {
+            const uint8_t digest[32]{};
+            api(ctx, sa2_activate(ctx, row.resource_set, digest));
+            return row.resource_set;
+        }
+        expect(row.state == SA2_TICKET_PENDING, "a pose-check preparation was cancelled or failed");
+        expect(std::chrono::steady_clock::now() < until, "a pose-check preparation did not become ready in time");
+        Sleep(1);
+    }
+}
+uint64_t adopt_poses(Harness& harness, uint64_t revision, const std::vector<int32_t>& index, const std::vector<float>& poses,
+                     const std::vector<int32_t>& lattice) {
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.pose_count = uint32_t(lattice.size());
+    image.revision = revision;
+    image.labels = labels.data(); image.pose_index = index.data(); image.poses = poses.data(); image.pose_lattice = lattice.data();
+    uint64_t adopted = 0;
+    api(harness.ctx, sa2_engine_adopt(harness.ctx, &image, &adopted));
+    expect(adopted == revision, "the adopted revision is not the image's");
+    return adopted;
+}
+void product_poses(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    const auto pieces = sa2::scene_slot_pieces();
+    expect(pieces.size() == SA2_SLOTS, "the slot -> piece map does not cover every slot");
+    std::vector<uint8_t> even(SA2_SLOTS), odd(SA2_SLOTS), none(SA2_SLOTS, 0);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) {
+        expect(pieces[slot] < SA2_PIECES, "a slot names a piece out of range");
+        even[slot] = uint8_t(pieces[slot] % 2 == 0); odd[slot] = uint8_t(1 - even[slot]);
+    }
+    const auto set_even = pose_set(harness, 1, even), set_odd = pose_set(harness, 2, odd), set_none = pose_set(harness, 3, none);
+    const Rows R = double_rotation(0, 1, 0.7, 2, 3, 0.4), Q = double_rotation(0, 3, 0.35, 1, 2, 0.2), QR = multiply(Q, R);
+    // Revision 1: pose 1 = R for every even piece (lattice -1: off the lattice), pose 0 for the rest.
+    std::vector<float> table(32, 0.0f);
+    for (int i = 0; i < 4; ++i) table[i * 5] = 1.0f;
+    for (int i = 0; i < 16; ++i) table[16 + i] = float(R[i]);
+    std::vector<int32_t> posed(SA2_PIECES);
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) posed[piece] = int32_t(piece % 2 == 0);
+    PoseFrames frames{harness};
+    adopt_poses(harness, 1, posed, table, {0, -1});
+    const auto a_even = frames.draw(1, 1, set_even, Q), a_odd = frames.draw(1, 2, set_odd, Q);
+    // Revision 2: every piece at the identity.
+    adopt_poses(harness, 2, std::vector<int32_t>(SA2_PIECES, 0), std::vector<float>(table.begin(), table.begin() + 16), {0});
+    const auto b_even = frames.draw(2, 1, set_even, QR), b_odd = frames.draw(2, 2, set_odd, Q);
+    const auto c_even = frames.draw(2, 1, set_even, Q), clear = frames.draw(2, 3, set_none, Q);
+    const auto background = clear[0];
+    expect(std::all_of(clear.begin(), clear.end(), [&](uint32_t pixel) { return pixel == background; }),
+        "a frame with no visible slot is not a uniform clear");
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    const auto differing = [](const std::vector<uint32_t>& x, const std::vector<uint32_t>& y) {
+        uint64_t count = 0;
+        for (size_t i = 0; i < x.size(); ++i)
+            for (int shift = 0; shift < 32; shift += 8)
+                if (std::abs(int((x[i] >> shift) & 0xff) - int((y[i] >> shift) & 0xff)) > 2) { ++count; break; }
+        return count;
+    };
+    const uint64_t total = uint64_t(harness.width) * harness.height;
+    const auto cover_even = covered(a_even), cover_odd = covered(a_odd), cover_b = covered(b_even);
+    const auto moved = differing(a_even, b_even), unposed = differing(a_even, c_even);
+    std::cout << "product poses: " << total << " pixels; covered even " << cover_even << ", odd " << cover_odd
+              << ", even under Q R " << cover_b << "; posed vs camera Q R differ at " << moved << ", posed vs unposed at "
+              << unposed << '\n' << std::flush;
+    expect(cover_even >= total / 20 && cover_odd >= total / 20 && cover_b >= total / 20, "a pose-check frame covers less than 5% of the target");
+    expect(a_odd == b_odd, "pieces at pose 0 drew differently next to posed pieces than with an identity table");
+    expect(moved * 100 <= std::max(cover_even, cover_b), "posed pieces do not draw as the unposed pieces under the camera Q R (over 1% differ)");
+    expect(unposed * 5 >= cover_even, "posed pieces draw like unposed ones (under 20% of their pixels differ)");
+    api(harness.ctx, sa2_drain(harness.ctx, harness.wait));
+    api(harness.ctx, sa2_scene_unload(harness.ctx));
+    harness.finish(options.debug);
+}
+
 struct ChildResult { DWORD code = 0; std::string output, error; };
 std::string read_pipe(HANDLE pipe) {
     std::string text;
@@ -992,6 +1143,12 @@ void run_gpu(Suite& suite, const Options& options) {
 void run_stages(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the stage check runs on WARP only");
     suite.check("stages w3 warp", [&] { scene_stages(options); });
+}
+
+// C9 jumble-on: --warp --poses. Only WARP; parse refuses any other mode.
+void run_poses(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the pose check runs on WARP only");
+    suite.check("product poses warp", [&] { product_poses(options); });
 }
 
 // C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.

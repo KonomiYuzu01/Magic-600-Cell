@@ -5,7 +5,7 @@
 //! draft): a session fixture written through the same turns, a copy of it reopened at the revision that counts its
 //! presses, its refusals, and the runtime load's refusals. LX-4's jumble-on half (a draft): `jumble.on` committed at
 //! the open, twist keys that commit `jumble.twist.menu`, the control's pose replay, a jumble-on fixture, the posed
-//! bundle and plan that c600-display validates, and the core's J02 refusal of the posed bundle today. Every result is
+//! bundle and plan that c600-display validates, and the core's adoption of the posed bundle's arrays. Every result is
 //! a synthetic fixture outcome, not a GPU run and not input evidence.
 
 #[path = "../../tests/common/mod.rs"]
@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use c600_display::jumble;
 use c600_display::produce::{self, GeometryInput};
-use c600_display::validate::{validate, validate_engine_bundle, LimitProfile};
+use c600_display::validate::{validate, validate_engine_bundle, EngineBundle, LimitProfile};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, Puzzle as Model};
 use c600_render::FakeCore;
@@ -606,32 +606,47 @@ fn jumble_on_bundles_and_plans_pass_c600_display_validation() {
         .expect("the retained plan validates");
 }
 
-/// LX-4, jumble-on half, at the C interface (a draft): a jumble-on session commits `jumble.on`, and the host hands
-/// the core the posed bundle of the solved poses at revision 2. Today the core's bridge refuses it (J02, c600-render
-/// maps no posed row yet): the open answers `M6H_E_HOST` with the refusal, the core adopted nothing new, keys find no
-/// session, and the handle keeps the solved state, so a Jumble-off session still opens. C9's posed mapping turns this
-/// refusal into an adoption at revision 2.
+/// The core's record of a posed adoption of `bundle`: its revision, its pose count and its arrays' digests.
+fn posed_record(bundle: &EngineBundle) -> (u64, u32, [String; 3]) {
+    let digest = |name: &str| bundle.arrays.iter().find(|a| a.name == name).expect(name).array.desc.digest.clone();
+    let count = bundle.arrays.iter().find(|a| a.name == "pose_lattice").expect("the lattice").array.rows();
+    (bundle.revision.state, count as u32, [digest("pose_index"), digest("poses"), digest("pose_lattice")])
+}
+
+/// LX-4, jumble-on half, at the C interface (a draft): a jumble-on session commits `jumble.on`, and the core adopts
+/// the posed bundle of the solved poses at revision 2 over the home labels: the pose arrays it received are those of
+/// the layer's head (render/1 section 7). A twist key adopts the next poses at revision 3, and the view's publication
+/// for it draws every slot with no pickable instance (J13 stays unsupported).
 #[test]
-fn a_jumble_on_session_commits_jumble_on_and_the_core_refuses_its_posed_row_today() {
+fn a_jumble_on_session_commits_jumble_on_and_the_core_adopts_its_posed_row() {
+    let geometry = GeometryInput::load(&assets()).expect("the geometry");
     let run = Run::new();
     let folder = fresh("jumble-on-open");
-    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_E_HOST);
-    let error = last_error(run.host);
-    assert!(error.contains("J02") && error.contains("posed"), "{error}");
-    assert_eq!(run.fake().adoptions.len(), 1, "the core adopted nothing new");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
     assert!(Path::new(&folder).join("objects").is_dir(), "the journal holds `jumble.on`");
-    assert_eq!(run.down("KeyJ", false).0, M6H_E_SESSION);
-    let off = fresh("jumble-on-then-off");
-    assert_eq!(run.open(&off, &menu()), M6H_OK, "{}", last_error(run.host));
-    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    let (mut turns, layer) = jumble_on("jumble-on-open-layer");
+    let (_, entered, _) = adoption(&geometry, &turns.head().expect("the head"), 2).expect("the posed row");
+    assert_eq!(run.fake().adoptions.last(), Some(&(2, 0)), "the home labels: slot 0 shows sticker 0");
+    assert_eq!(run.fake().posed, [posed_record(&entered)]);
+
+    let prepared = run.fake().prepared.len();
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 3));
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let (_, moved, _) = adoption(&geometry, &turns.head().expect("the head"), 3).expect("the posed row");
+    assert_eq!(run.fake().posed.last(), Some(&posed_record(&moved)), "the press's poses");
+    assert_ne!(run.fake().posed[0].2[0], run.fake().posed[1].2[0], "the press moved pieces to new poses");
+    assert_eq!(run.fake().prepared.len(), prepared + 1, "the view is published again");
+    let (_, instances, visibility) = run.fake().prepared.last().expect("a preparation").clone();
+    assert!(instances.is_empty() && visibility.iter().all(|&v| v == 1), "every slot drawn, none pickable");
+    turns.check(None);
     let _ = std::fs::remove_dir_all(&folder);
-    let _ = std::fs::remove_dir_all(&off);
+    let _ = std::fs::remove_dir_all(&layer);
 }
 
 /// LX-4's jumble-on fixture (a draft): the product's fixture keys all commit `jumble.twist.menu` after `jumble.on`,
 /// the record names the puzzle and revision 2 plus the presses, a copy reopens with the fixture's head, and the
 /// control replays the fixture's presses. At the C interface a jumble-on fixture opened as Jumble off is refused, and
-/// opened as Jumble on it reaches the core's J02 refusal today.
+/// opened as Jumble on the core adopts the fixture head's poses at the revision that counts its presses.
 #[test]
 fn a_jumble_on_fixture_records_its_puzzle_and_reopens_with_its_head() {
     let out = PathBuf::from(fresh("jumble-on-fixture"));
@@ -648,7 +663,8 @@ fn a_jumble_on_fixture_records_its_puzzle_and_reopens_with_its_head() {
     copy_dir(&out.join("session"), Path::new(&copy));
     let mut turns =
         Turns::reopen(kernel(), &assets(), Path::new(&copy), Path::new(&menu()), &read).expect("the copy reopens");
-    assert_eq!(turns.head().expect("the head").digest(), read.digest);
+    let fixture_head = turns.head().expect("the head");
+    assert_eq!(fixture_head.digest(), read.digest);
     assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
     let head = turns.head().expect("the head").digest();
     let control = turns.check(Some((27, head)));
@@ -664,9 +680,12 @@ fn a_jumble_on_fixture_records_its_puzzle_and_reopens_with_its_head() {
     assert!(last_error(run.host).contains("puzzle is jumble-on, not jumble-off"), "{}", last_error(run.host));
     let copy = fresh("jumble-on-fixture-on");
     copy_dir(&out.join("session"), Path::new(&copy));
-    assert_eq!(run.reopen_as(M6H_PUZZLE_JUMBLE_ON, &copy, &menu(), &path), (M6H_E_HOST, 0));
-    assert!(last_error(run.host).contains("J02"), "{}", last_error(run.host));
-    assert_eq!(run.fake().adoptions.len(), 1, "the core adopted nothing new");
+    let opened = run.reopen_as(M6H_PUZZLE_JUMBLE_ON, &copy, &menu(), &path);
+    assert_eq!(opened, (M6H_OK, 26), "{}", last_error(run.host));
+    let geometry = GeometryInput::load(&assets()).expect("the geometry");
+    let (_, bundle, _) = adoption(&geometry, &fixture_head, 26).expect("the posed row");
+    assert_eq!(run.fake().adoptions.last(), Some(&(26, 0)), "the home labels");
+    assert_eq!(run.fake().posed, [posed_record(&bundle)], "the fixture head's poses at revision 26");
     let _ = std::fs::remove_dir_all(&copy);
     let _ = std::fs::remove_dir_all(&out);
 }
