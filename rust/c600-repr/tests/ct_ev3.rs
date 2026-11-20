@@ -1,13 +1,25 @@
-//! CT-EV3-06, its counter half, and CT-EV3-07, its view-cannot-write half, for a representation view (EV3.2, EV3.10,
-//! EV4.15), over the public APIs of `c600-view`, `c600-command`, `c600-check` and this crate. Counters are counted,
-//! never timed. Every result is a source or synthetic fixture outcome.
+//! CT-EV3-06 and CT-EV3-07's view-cannot-write half (EV3.2, EV3.8 to EV3.10, EV4.15), over the public APIs of
+//! `c600-view`, `c600-command`, `c600-check`, `c600-display`, `c600-jumble`, `c600-jumble-tool` and this crate.
+//! CT-EV3-06 has three parts here: the counter half for a representation view, and the relationship strip's records
+//! (`c600_display::strip`) over C8's current occupant on the jumbled puzzle, with the schedule that computes them.
+//! Counters are counted, never timed. Every result is a source or synthetic fixture outcome.
 
 mod common;
 
+use std::collections::BTreeMap;
+use std::sync::{Arc, OnceLock};
+
 use c600_check::{check, EFFECT_UNDECLARED};
 use c600_command::{code, Direction, Kind, Overlay, Status};
-use c600_display::plan::{InstanceId, ObjectId};
+use c600_display::plan::{InstanceId, Key, Level, Mode, NodeId, NodeKind, ObjectId, RevisionRef, ViewNode};
+use c600_display::strip::{self, Extent, Missing, Role, StripRelation};
 use c600_ir::Effect;
+use c600_jumble::levels;
+use c600_jumble::model::{NP, NS};
+use c600_jumble::state::{Pose, State};
+use c600_jumble::twist::{Menu, Twist};
+use c600_jumble_tool::level::Level as RelationLevel;
+use c600_jumble_tool::relation::{self as occupant, current_occupants, PIECES_COLLIDE, RELATION};
 use c600_kernel::json::{self, Value};
 use c600_repr::layout::{linked, Linked, LinkedSelection, Representation};
 use c600_repr::tool::{self, ENTRIES, MODULE, ROWS, SOURCE};
@@ -33,7 +45,12 @@ fn rev(state: u64, workspace: u64) -> view::Revision {
 }
 
 fn bundle(revision: view::Revision) -> view::BundleCandidate {
-    let parts = view::Mode::JumbleOff
+    bundle_in(view::Mode::JumbleOff, revision)
+}
+
+/// A complete engine bundle of `mode` at `revision`; each part's digest names its kind and the revision's counters.
+fn bundle_in(mode: view::Mode, revision: view::Revision) -> view::BundleCandidate {
+    let parts = mode
         .required()
         .iter()
         .map(|kind| {
@@ -45,22 +62,33 @@ fn bundle(revision: view::Revision) -> view::BundleCandidate {
             view::BundlePart { kind: *kind, revision, digest }
         })
         .collect();
-    view::BundleCandidate { revision, mode: view::Mode::JumbleOff, parts }
+    view::BundleCandidate { revision, mode, parts }
 }
 
 /// A view model with one visible representation view of the built-in tool, class `view_aid`, depending on the state.
 fn model_with_view(revision: view::Revision) -> (view::ViewModel, view::ViewId) {
+    model_in(view::Mode::JumbleOff, revision, "representation", "representations")
+}
+
+/// A view model with Jumble `mode` and one visible view `name` of the built-in tool `built_in_name`, class `view_aid`,
+/// depending on the state.
+fn model_in(
+    mode: view::Mode,
+    revision: view::Revision,
+    name: &str,
+    built_in_name: &str,
+) -> (view::ViewModel, view::ViewId) {
     let none = view::Workload::default();
-    let mut model = view::ViewModel::new(view::Profile::Solving, profile(), &bundle(revision), none, none)
+    let mut model = view::ViewModel::new(view::Profile::Solving, profile(), &bundle_in(mode, revision), none, none)
         .expect("Global and Local fit");
-    let v = view::ViewId::new("representation");
+    let v = view::ViewId::new(name);
     let declared = view::Declared {
         depends: view::Depends::STATE,
         workload: view::Workload { vertex_evals: 1, cpu_bytes: 1, gpu_bytes: 1, ..view::Workload::default() },
         output: view::OutputAllowance::new(BIG, 16),
         class: Some(view::BoundaryClass::ViewAid),
     };
-    let source = view::ViewSource::BuiltIn { name: "representations".to_owned() };
+    let source = view::ViewSource::BuiltIn { name: built_in_name.to_owned() };
     model.open_view(view::CommandId::Caller(BIG), view::Origin::Solver, v.clone(), source, declared).expect("it fits");
     (model, v)
 }
@@ -105,9 +133,8 @@ fn atlas(state: u64) -> Representation {
 /// revision moves none either for a view that depends on the state, and one new state revision adds exactly one
 /// recomputation. In this crate, a linked selection is computed once for its inputs: sixty frame reads and sixty
 /// repeated selections of the same object leave the computation count at one, and each changed input (the selected
-/// object, the revision, the target's map entries) adds exactly one. Not run: EV3.8 and EV3.9, that an off-lattice
-/// relation is distinct from unknown, which wait for M5; and the relationship strip's typed relations, which no crate
-/// builds yet, so the relation counted here is this crate's linked selection.
+/// object, the revision, the target's map entries) adds exactly one. The relation counted here is this crate's linked
+/// selection; the strip's own relation, with EV3.8 and EV3.9, runs in the two tests that follow.
 #[test]
 fn ct_ev3_06_counter_half_unchanged_frame_draws_compute_no_relation() {
     let r11 = rev(11, 1);
@@ -169,6 +196,246 @@ fn ct_ev3_06_counter_half_unchanged_frame_draws_compute_no_relation() {
         assert_eq!(selection.frame(), Some(&Linked::NoImage));
     }
     assert_eq!(selection.computations(), 4);
+}
+
+/// The jumbling model (M5), from the repository's assets.
+fn engine() -> &'static c600_jumble::Context {
+    static ENGINE: OnceLock<c600_jumble::Context> = OnceLock::new();
+    ENGINE.get_or_init(|| c600_jumble::Context::load(&assets()).expect("the jumbling model loads"))
+}
+
+/// The pinned I_a fixture of the jumbling research: its menu and its journal.
+fn wj_i_a() -> &'static Value {
+    static DOC: OnceLock<Value> = OnceLock::new();
+    DOC.get_or_init(|| {
+        let repository = assets().parent().expect("the repository").to_path_buf();
+        let bytes = std::fs::read(repository.join("research/jumbling/fixtures/wj-I_a.json")).expect("the I_a fixture");
+        json::parse(&bytes).expect("the I_a fixture is JSON")
+    })
+}
+
+fn i_a() -> Arc<Menu> {
+    Arc::new(Menu::from_record(engine(), wj_i_a().get("menu").expect("a menu")).expect("the pinned I_a menu"))
+}
+
+/// The state after the first `count` records of the I_a journal from solved, each an admissible twist.
+fn after(menu: &Arc<Menu>, count: usize) -> State {
+    let records = wj_i_a().get("journal").and_then(|journal| journal.get("records")).and_then(Value::as_array);
+    let mut state = State::new(Some(menu.clone()));
+    for record in &records.expect("the journal's records")[..count] {
+        let twist = Twist::from_record(engine(), record).expect("a journal record");
+        let outcome = state.apply(engine(), &twist, None, &[]).expect("no engine error");
+        assert_eq!(outcome.status, c600_jumble::state::Status::Admissible);
+    }
+    state
+}
+
+/// Solved except that a second piece of piece 4's K⁺-orbit sits at the lattice pose that carries it into piece 4's
+/// chamber, which then holds two pieces: a raw pose table (KN2.14) that no twist reaches.
+fn crowded_table() -> State {
+    let ctx = engine();
+    let (kp, regions) = (&ctx.kplus, &ctx.regions);
+    let (orbit, to_4) = regions.rep_of(4);
+    let b = (0..NP).find(|&p| p != 4 && regions.rep_of(p).0 == orbit).expect("a second piece of the orbit");
+    let onto = kp.compose(to_4, kp.inv[regions.rep_of(b).1 as usize]);
+    assert_eq!(levels::tables(ctx).expect("the level tables").image(ctx, b, onto), 4);
+    let mut poses = vec![Pose::K(0); NP];
+    poses[b] = Pose::K(onto);
+    levels::state_of(ctx, Some(i_a()), &poses).expect("the raw table reads")
+}
+
+/// C8's current occupant of every sticker slot of `state` (`c600_jumble_tool::relation`), carried as the strip record
+/// of statement `key` at state revision `number`: each slot an operand, each occupant a piece, each missing value
+/// kept with its reason. Its base is the revision whose identity block and pose digest the relation read (KN0.6).
+fn strip_record(key: &Key, state: &State, number: u64) -> StripRelation {
+    let ctx = engine();
+    let slots: Vec<u32> = (0..NS as u32).collect();
+    let occupants = current_occupants(ctx, state, &slots).expect("no engine error").expect("slots of the model");
+    let base = c600_display::jumble::revision(ctx, state, number);
+    assert_eq!((occupants.relation, &occupants.identity, &occupants.read), (RELATION, &base.identity, &base.digest));
+    let result = slots
+        .iter()
+        .map(|&slot| {
+            let value = match occupants.get(slot).expect("every slot is named") {
+                Ok(piece) => Ok(ObjectId::Piece(piece)),
+                Err(occupant::Missing::OffLattice) => Err(Missing::OffLattice),
+                Err(occupant::Missing::Unknown(reason)) => Err(Missing::Unknown(reason.to_owned())),
+            };
+            (ObjectId::Slot(slot), value)
+        })
+        .collect();
+    StripRelation {
+        statement: key.clone(),
+        relation: occupants.relation.to_owned(),
+        operands: Role::Destination,
+        values: Role::CurrentOccupant,
+        identity: occupants.identity,
+        level: match occupants.level {
+            RelationLevel::Poses => Level::Poses,
+            RelationLevel::Labels => Level::Labels,
+        },
+        base,
+        result,
+        evidence: vec!["research/jumbling/fixtures/wj-I_a.json".to_owned()],
+        source: None,
+    }
+}
+
+/// A view node of `kind` at revision `base` whose claims are `claims`, with no content of its own.
+fn node(base: &RevisionRef, kind: NodeKind, claims: &[Key]) -> ViewNode {
+    ViewNode {
+        node: NodeId(1),
+        base: base.clone(),
+        kind,
+        content: Vec::new(),
+        plans: Vec::new(),
+        children: Vec::new(),
+        source: None,
+        commands: Vec::new(),
+        claims: claims.to_vec(),
+    }
+}
+
+/// CT-EV3-06, the strip record (EV3.8, EV3.9; RPI.65; KN0.4, KN0.6, KN1.10). C8's current occupant of every sticker
+/// slot on the pinned I_a menu, carried as `c600_display::strip` records. Solved, the record is total and each slot
+/// answers its home piece. After the first I_a record it is partial: each slot of a piece the twist moved off the
+/// lattice answers "none: off the lattice", never the piece that sat there before. On a raw pose table in which a
+/// second piece shares piece 4's chamber, the record answers `unknown(reason)` instead, a different value. Every slot
+/// keeps its entry, and KN0.4's three forms are told apart. A record is shown only on a relation node of its own
+/// revision whose claims carry its statement key; a record that read another model, one that lifts labels into poses
+/// and one that answers "none" from labels are refused with `EV3:input.display_plan_invalid`, while a label-level
+/// record on the lattice is shown. Not run: EV3.8's other roles, a relation whose value is no canonical object, and a
+/// record that a program produces.
+#[test]
+fn ct_ev3_06_a_strip_record_keeps_none_off_the_lattice_apart_from_unknown() {
+    let ctx = engine();
+    let menu = i_a();
+    let key = Key("ct-ev3-06/current-occupant".to_owned());
+    let home = |operand: &ObjectId| match operand {
+        ObjectId::Slot(slot) => ObjectId::Piece(ctx.model.slot_piece[*slot as usize]),
+        other => panic!("an operand is a slot: {other:?}"),
+    };
+
+    let solved = strip_record(&key, &State::new(Some(menu.clone())), 1);
+    assert_eq!((solved.extent(), solved.result.len()), (Extent::Total, NS));
+    assert!(solved.covered().all(|(slot, piece)| *piece == home(slot)), "solved, each slot holds its home piece");
+
+    let off = strip_record(&key, &after(&menu, 1), 2);
+    assert_eq!((off.extent(), off.result.len()), (Extent::Partial, NS), "every slot keeps its entry");
+    assert!(off.missing().all(|(_, missing)| *missing == Missing::OffLattice), "nothing is unknown");
+    let none: Vec<ObjectId> = off.missing().map(|(slot, _)| slot.clone()).collect();
+    assert!(!none.is_empty());
+    for slot in &none {
+        assert_eq!(solved.result[slot], Ok(home(slot)), "{slot:?}: its occupant at solved");
+        assert_eq!(off.result[slot], Err(Missing::OffLattice), "{slot:?}: none, never its old occupant");
+    }
+
+    let crowded = strip_record(&key, &crowded_table(), 3);
+    let unknown = Missing::Unknown(PIECES_COLLIDE.to_owned());
+    assert_eq!(crowded.extent(), Extent::Partial);
+    assert!(crowded.missing().all(|(_, missing)| *missing == unknown), "two pieces in one chamber");
+    assert_ne!(Missing::OffLattice, unknown, "two different values");
+
+    let mut undefined = off.clone();
+    undefined.result.retain(|_, value| value.is_err());
+    assert_eq!(undefined.extent(), Extent::Undefined, "nothing covered");
+    let mut empty = off.clone();
+    empty.result.clear();
+    assert_eq!(empty.extent(), Extent::Total, "no operand is a total result with nothing in it");
+
+    // Which node shows which record.
+    let shown = node(&off.base, NodeKind::Relation, &[key.clone()]);
+    assert_eq!(strip::attach(&shown, &off), Ok(()));
+    let mut other_model = off.clone();
+    other_model.identity.model_id.push_str("-other");
+    other_model.result.clear();
+    let mut lifted = off.clone();
+    lifted.base.mode = Mode::JumbleOff;
+    lifted.result.clear();
+    let mut from_labels = off.clone();
+    from_labels.level = Level::Labels;
+    from_labels.result.retain(|_, value| value.is_err());
+    let refusals = [
+        ("not a relation node", node(&off.base, NodeKind::Object, &[key.clone()]), &off),
+        ("no claim", node(&off.base, NodeKind::Relation, &[]), &off),
+        ("another statement", node(&off.base, NodeKind::Relation, &[Key("ct-ev3-06/other".to_owned())]), &off),
+        ("the revision of the old occupants", shown.clone(), &solved),
+        ("another model", shown.clone(), &other_model),
+        ("labels lifted into poses", node(&lifted.base, NodeKind::Relation, &[key.clone()]), &lifted),
+        ("none read from labels", shown.clone(), &from_labels),
+    ];
+    for (what, node, record) in &refusals {
+        let error = strip::attach(node, record).expect_err(what);
+        assert_eq!(error.code, c600_display::codes::PLAN_INVALID, "{what}");
+    }
+    let mut labels = solved.clone();
+    labels.level = Level::Labels;
+    let on_the_lattice = node(&solved.base, NodeKind::Relation, &[key.clone()]);
+    assert_eq!(strip::attach(&on_the_lattice, &labels), Ok(()), "on the lattice, labels may be read");
+}
+
+/// One run of the strip's view: the strip record of `key` at the state revision the job read, from the state of that
+/// number, published as one relation node.
+fn strip_run(
+    key: &Key,
+    states: &BTreeMap<u64, State>,
+    computed: &mut Vec<StripRelation>,
+    job: &view::Job,
+) -> view::RunOutcome {
+    let number = job.base.revision.state;
+    computed.push(strip_record(key, &states[&number], number));
+    let nodes = vec![key.0.as_bytes().to_vec()];
+    view::RunOutcome::Published(view::Content { nodes, plans: Vec::new(), maps: Vec::new(), source_bytes: 0 })
+}
+
+/// CT-EV3-06, the strip's schedule (EV3.10; KN0.6, KN7.2): a strip relation is computed by its view's run in
+/// `c600-view`'s lane, for changed inputs at a named revision, never per frame. A visible strip view of class
+/// `view_aid` that depends on the state, on a Jumble-on model, computes C8's current occupant once at open. Sixty
+/// frames, each reading the frame input and offered the same bundle again, and a workspace-only revision compute
+/// nothing. A burst of two state revisions computes once, at the newer: the record names that revision and equals the
+/// record computed there directly, and the superseded revision is never computed. Each revision admits one
+/// recomputation, and the newer supersedes the older before a runner takes it, so the burst counts two recomputations
+/// and one program run. Sixty more frames compute nothing.
+#[test]
+fn ct_ev3_06_a_strip_record_is_computed_at_named_revisions_never_per_frame() {
+    let menu = i_a();
+    let key = Key("ct-ev3-06/current-occupant".to_owned());
+    let states = BTreeMap::from([(11, State::new(Some(menu.clone()))), (12, after(&menu, 1)), (13, after(&menu, 2))]);
+    let mut computed = Vec::new();
+    let r11 = rev(11, 1);
+    let (mut model, v) = model_in(view::Mode::JumbleOn, r11, "strip", "strip");
+    assert_eq!(model.pump(|job| strip_run(&key, &states, &mut computed, job)), 1);
+    assert_eq!(computed.iter().map(|record| record.base.state).collect::<Vec<_>>(), [11]);
+    let before = model.counters(&v).expect("open");
+
+    for _ in 0..FRAMES {
+        assert_eq!(model.frame_input().revision, r11);
+        assert_eq!(model.adopt(&bundle_in(view::Mode::JumbleOn, r11)), Ok(r11), "the same bundle again");
+        assert_eq!(model.pump(|_| panic!("an unchanged frame computed the strip relation")), 0);
+    }
+    let workspace_only = rev(11, 2);
+    assert_eq!(model.adopt(&bundle_in(view::Mode::JumbleOn, workspace_only)), Ok(workspace_only));
+    assert_eq!(model.pump(|_| panic!("a workspace revision computed the strip relation")), 0);
+    assert_eq!((model.counters(&v), computed.len()), (Some(before), 1));
+
+    for state in [12, 13] {
+        let revision = rev(state, 2);
+        assert_eq!(model.adopt(&bundle_in(view::Mode::JumbleOn, revision)), Ok(revision));
+    }
+    assert_eq!(model.pump(|job| strip_run(&key, &states, &mut computed, job)), 1, "one run for the burst");
+    assert_eq!(computed.iter().map(|record| record.base.state).collect::<Vec<_>>(), [11, 13], "12 is skipped");
+    assert_eq!(computed[1], strip_record(&key, &states[&13], 13), "the record of the revision it names");
+    let after_burst = model.counters(&v).expect("open");
+    assert_eq!(
+        (after_burst.recomputations, after_burst.program_runs),
+        (before.recomputations + 2, before.program_runs + 1),
+        "two admitted, one run"
+    );
+    for _ in 0..FRAMES {
+        model.frame_input();
+        assert_eq!(model.pump(|_| panic!("an unchanged frame computed the strip relation")), 0);
+    }
+    assert_eq!((model.counters(&v), computed.len()), (Some(after_burst), 2));
 }
 
 /// CT-EV3-07 (part, the view-cannot-write half; EV3.2, EV4.15). Three layers, each through its public API. The

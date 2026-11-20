@@ -1,5 +1,5 @@
 //! The host-side display-plan and publication contract of chapter 10 (RPI) and the renderer feature matrix (RM),
-//! for LP3. It has no renderer, no GPU code and no command layer. It has four parts:
+//! for LP3. It has no renderer, no GPU code and no command layer. It has five parts:
 //!
 //! - **Plans and publications** ([`plan`], [`array`], [`source`], [`canonical`], [`validate`]): the types of RPI.5 to
 //!   RPI.8 and RPI.20 to RPI.23 with RM.6/RM.7's payloads, and the host validator of RPI.10, RM.11, RM.12 and RM.20.
@@ -15,6 +15,9 @@
 //!   take-up of stages that LP2's stage checker admits, declared outputs, composition order and presented-preview
 //!   identity, and RPI.72's raster bound with the frame stop, the quarantine and the frame reports (RPI.68, RPI.69,
 //!   RPI.72, RPI.75 to RPI.77, RM.41).
+//! - **The relationship strip's data contract** ([`strip`]): the fields of one typed relation that EV3.8 lets EN3's
+//!   view model carry without deciding the strip's design, EV3.9's two missing values, and the check that a record can
+//!   be shown on a relation node whose claims carry its statement key (RPI.65).
 //!
 //! [`produce`] builds the 600-cell-Full producers and fixture contexts; [`jumble`] builds the jumbling producers
 //! (posed stickers, certified transforms, certified overlays, the seam table and the slot projection) from M5's kernel,
@@ -39,6 +42,9 @@
 //!   publication.
 //! - RPI.65, EVD.32: a `Word` content needs its key among the node's claims and a record for that key; otherwise the
 //!   publication is invalid. A relation node with no claim key is invalid.
+//! - EV3.8, EV3.9: a strip record ([`strip::StripRelation`]) states one relation over operands of one role, each
+//!   operand and value one canonical object ID, and is shown only on a relation node of its base revision whose claims
+//!   carry its statement key ([`strip::attach`]). The strip module's documentation lists its other drafts.
 //! - RM.8, RM.9: a program publication that carries a preview row is invalid; a preview reaches a view only from the
 //!   engine ([`host::Host::show_preview`]).
 //! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full. On the jumbling puzzle
@@ -232,7 +238,8 @@
 //! then CT-RPI-32 and CT-RM-09's rows 3 to 6, 8 and 10 run only their headless parts, under declared fixture weights in
 //! place of RM.38's measured table (RPI.79). For charts: any chart or property outside the drafted repertoire (RPI.34
 //! stays open), the GPU agreement check (RPI.35) and a production precision rule (RPI.36 stays open). CT-RPI-19's
-//! headless Linux leg is not run here.
+//! headless Linux leg is not run here. For the relationship strip: its design, words and encoding tokens (EV3.8,
+//! EV5.11), and a strip record for a relation whose value is no canonical object.
 
 #![forbid(unsafe_code)]
 
@@ -252,6 +259,7 @@ pub mod receipt;
 pub mod reference;
 pub mod source;
 pub mod stage;
+pub mod strip;
 pub mod validate;
 
 pub use error::{codes, Error, Form};
