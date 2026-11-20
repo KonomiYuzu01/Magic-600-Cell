@@ -369,6 +369,13 @@
 //!   is the manifest's, and the kernel certifies every setup's star before the row answers it. A setup the kernel does
 //!   not certify stops the read with `KN2:consistency.star_certificate`.
 //! - LB2: the catalogue row is Rust data in [`guarded_setups_and_buffers`], with the checker's `ReadSnapshot`.
+//! - LB2, seeds: as for the recipes, `seed_report` reads `effect` with `read_snapshot` and carries the effect
+//!   `snapshot`, where chapter 03 says "pure for named words"; the catalogue row records the checker's `ReadSnapshot`.
+//!   The caller names the target orbit, and a seed that moves nothing there answers 0 pieces and 0 stickers for it, so
+//!   a seed named with another orbit is reported, not refused.
+//! - LB2, stage order: Kahn's order over the caller's rows, taking at each step the first ready row in the caller's
+//!   list; chapter 03 fixes the edges, not the order among rows that no edge separates. A collateral orbit with no row
+//!   of its own holds nothing back, and a row a cycle holds stays in `cycle` with every row behind it.
 //! - LB1.8, Q(√5) signs: the sign is answered as an `Int`, -1, 0 or 1, because the IR draft has no ordering type; a
 //!   caller compares it with `exact_eq`. The entries take `Q5` only; an `Int` or a `Rat` widens to it with
 //!   `exact_add` or `exact_mul` before the call.
