@@ -97,6 +97,9 @@ const BUILTINS: [&str; 91] = [
     // Exact multiplication and the pointwise assertion (LP2 drafts; DET.57, DET.55).
     "exact_mul",
     "assert",
+    // A Q(√5) value's canonical triple and its construction (LP2 drafts; ADR-L03.6, PS1.4).
+    "q5_parts",
+    "q5_of",
     // Generators as values (LP2 drafts; DET.61).
     "rng_init",
     "rng_draw",
@@ -777,6 +780,8 @@ impl Body<'_> {
             "insert" => 2,
             // `expand(c, start, count)` (LP2 draft).
             "expand" => 3,
+            // `q5_of(a, b, d)` (LP2 draft).
+            "q5_of" => 3,
             // `child(caps, body, otherwise)` (LP2 draft; DET.60).
             "child" => 3,
             // `repeat(count, init, body)` (LP2 draft; DET.55).
@@ -848,6 +853,8 @@ impl Body<'_> {
             "expand" => Some(Prim::Expand),
             "exact_add" => Some(Prim::ExactAdd),
             "exact_mul" => Some(Prim::ExactMul),
+            "q5_parts" => Some(Prim::Q5Parts),
+            "q5_of" => Some(Prim::Q5Of),
             "assert" => Some(Prim::Assert),
             "rng_draw" => Some(Prim::RngDraw),
             "exact_less" => Some(Prim::ExactLess),
@@ -1280,7 +1287,7 @@ mod tests {
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
-                "expand" => format!("{op}(1, 2, 3)"),
+                "expand" | "q5_of" => format!("{op}(1, 2, 3)"),
                 "child" => format!(
                     "{op}(record {{ steps = 2 }}, fn() -> Nat {{ return 1; }}, fn(s: Status) -> Nat {{ return 2; }})"
                 ),

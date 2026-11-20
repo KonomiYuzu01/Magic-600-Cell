@@ -578,6 +578,15 @@ pub enum Prim {
     /// `exact_mul(a, b)`: the exact product of two numbers, widened along `Nat`, `Int`, `Rat` and `Q5` as a sum is
     /// (LP2 draft; DET.57 prices it). A budget is a cost, and a product of costs is none, so it takes no `Budget`.
     ExactMul,
+    /// `q5_parts(x)`: the canonical integer triple of `x` as the record `{ a, b, d }` of three `Int`s, with
+    /// x = (a + b√5)/d, gcd(a, b, d) = 1 and d > 0 (ADR-L03.6, PS1.4; LP2 draft). A `Nat`, `Int` or `Rat` operand is
+    /// widened to `Q5` as a sum is. With `q5_of` it lets a library take a value apart and build one, so an inverse,
+    /// a conjugate, a quotient or an integer half is a library body over exact arithmetic, not an operation of its own.
+    Q5Parts,
+    /// `q5_of(a, b, d)`: the `Q5` value (a + b√5)/d of three integers (`Nat` or `Int`), in the canonical form
+    /// `q5_parts` reads (LP2 draft). A zero `d` has no value: the operation is guarded by a pointwise assertion that `d`
+    /// is not zero (DET.55), as `field_inverse` is, and its failure is `LG4:input.pointwise_failed`.
+    Q5Of,
     /// `assert(p)`: a pointwise assertion (LP2 draft; DET.55, LG4.10), of value `Unit`. The predicate `p` is evaluated
     /// first with ordinary operations; the assertion is one step, and a false predicate ends the run with
     /// `LG4:input.pointwise_failed` before the guarded operation, which follows the assertion in the program.
@@ -927,6 +936,12 @@ pub mod build {
     }
     pub fn exact_mul(a: Expr, b: Expr) -> Expr {
         prim(Prim::ExactMul, vec![a, b])
+    }
+    pub fn q5_parts(x: Expr) -> Expr {
+        prim(Prim::Q5Parts, vec![x])
+    }
+    pub fn q5_of(a: Expr, b: Expr, d: Expr) -> Expr {
+        prim(Prim::Q5Of, vec![a, b, d])
     }
     /// A generator on the run's stream path followed by `path` (LP2 draft; DET.61).
     pub fn rng_init(path: &[&str]) -> Expr {
