@@ -112,16 +112,47 @@ class KeyToFrameTests(NoProcessCase):
         self.assertEqual([entry['frame_id'] for entry in run['per_key']], [1, 2])
         self.assertEqual([round(value, 6) for value in run['latencies_ms']], [20.0, 30.0])
 
-    def test_an_unconfirmed_key_gets_no_time_and_invalidates_its_run(self):
+    def test_an_unconfirmed_key_gets_no_time_and_counts_as_a_failed_key(self):
+        # Owner, 20 November 2026, item 2 (docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md): the run stays
+        # valid and the key counts above 100 ms.
         run = key_to_frame.analyze(e2_rows([20.0, 30.0, 40.0, 50.0], unconfirmed={1}, no_frame={3}))
-        self.assertEqual(run['status'], 'invalid')
-        self.assertIn('unconfirmed-keys', run['reasons'])
+        self.assertEqual(run['status'], 'valid', run['reasons'])
+        self.assertNotIn('unconfirmed-keys', run['reasons'])
         self.assertEqual([entry['status'] for entry in run['per_key']],
                          ['confirmed', 'unconfirmed', 'confirmed', 'no-frame'])
         self.assertIsNone(run['per_key'][1]['latency_ms'])
         self.assertEqual((run['confirmed'], run['unconfirmed'], run['no_frame']), (2, 2, 1))
         self.assertEqual(run['unconfirmed_keys'], [1, 3])
         self.assertEqual(len(run['latencies_ms']), 2)  # never filled in from a later frame
+        stats = run['stats']
+        self.assertEqual((stats['n'], stats['confirmed'], stats['failed_keys']), (4, 2, 2))
+        self.assertEqual(round(stats['p50'], 6), 40.0)
+        self.assertEqual((stats['p95'], stats['p99'], stats['mean'], stats['max'], stats['p95_met']),
+                         (None, None, None, None, False))
+        self.assertNotIn('unconfirmed key invalidates its run', key_to_frame.DRAFTS)
+
+    def test_a_failed_key_counts_above_the_bar_in_its_run_and_in_the_pool(self):
+        # 100 confirmed keys and 5 failed: nearest rank 100 of 105 is a confirmed time; 6 failed: rank 101 of 106 is
+        # above the bar, where a failed key stands.
+        five = key_to_frame.analyze(e2_rows([10.0] * 105, unconfirmed={0, 1, 2}, no_frame={3, 4}))
+        self.assertEqual(five['status'], 'valid', five['reasons'])
+        self.assertEqual(round(five['stats']['p95'], 6), 10.0)
+        self.assertEqual(key_to_frame.judge([five])[0], 'met')
+        six = key_to_frame.analyze(e2_rows([10.0] * 106, unconfirmed={0, 1, 2}, no_frame={3, 4, 5}))
+        self.assertEqual(six['status'], 'valid', six['reasons'])
+        self.assertIsNone(six['stats']['p95'])
+        verdict, reasons, pooled = key_to_frame.judge([six])
+        self.assertEqual((verdict, reasons), ('not-met', ['p95-over-bar']))
+        self.assertEqual((pooled['n'], pooled['confirmed'], pooled['failed_keys'], pooled['p95']), (106, 100, 6, None))
+        # Every run's p95 counts its own failed keys: 2 failed in 20 fail that run, though the pool meets the bar.
+        good = key_to_frame.analyze(e2_rows([10.0] * 100))
+        short = key_to_frame.analyze(e2_rows([10.0] * 20, no_frame={0, 1}))
+        verdict, reasons, pooled = key_to_frame.judge([good, short])
+        self.assertTrue(pooled['p95_met'])
+        self.assertEqual((verdict, reasons), ('not-met', ['p95-over-bar']))
+        # Fewer than 100 confirmed keys stay insufficient, failed keys or not.
+        self.assertEqual(key_to_frame.judge([key_to_frame.analyze(e2_rows([10.0] * 100, no_frame={0}))])[:2],
+                         ('insufficient', ['too-few-observations']))
 
     def test_unconfirmed_keys_are_reported_loudly(self):
         write_jsonl(self.temp / 'run' / 'events.jsonl', e2_rows([20.0, 30.0], unconfirmed={0}))
@@ -130,6 +161,8 @@ class KeyToFrameTests(NoProcessCase):
             code = key_to_frame.main([str(self.temp / 'run')])
         self.assertIn('UNCONFIRMED', err.getvalue())
         self.assertIn('seq 0', err.getvalue())
+        self.assertIn('count as failed keys', err.getvalue())
+        self.assertIn('p95 above 100 ms (failed keys)', out.getvalue())
         self.assertEqual(code, 5)  # a synthetic record
 
     def test_percentiles_are_nearest_rank_and_the_bar_is_p95_over_100_keys(self):
@@ -150,7 +183,8 @@ class KeyToFrameTests(NoProcessCase):
         bad = key_to_frame.analyze(e2_rows([10.0] * 18 + [200.0] * 2))
         self.assertLessEqual(nearest_rank(good['latencies_ms'] + bad['latencies_ms'], 95), 100)
         self.assertEqual(key_to_frame.judge([good, bad])[0], 'not-met')
-        invalid = key_to_frame.analyze(e2_rows([500.0] * 100, unconfirmed={0}))
+        invalid = key_to_frame.analyze(e2_rows([500.0] * 100, header={'foreground_throughout': False}))
+        self.assertEqual(invalid['status'], 'invalid')
         self.assertEqual(key_to_frame.judge([good, invalid])[0], 'met')
         self.assertEqual(key_to_frame.judge([invalid])[:2], ('invalid', ['no-valid-run']))
         other = key_to_frame.analyze(e2_rows([10.0] * 100, build='synthetic-build-0002'))
@@ -1361,6 +1395,27 @@ class Lx2Tests(NoProcessCase):
             self.assertEqual(run['faults']['alloc_metered']['windows'][kind]['ineffective'], {'not-recovered': 1})
             self.assertEqual(run['faults']['loop_metered']['windows'][kind]['ineffective'], {'job-not-refused': 1})
         self.assertEqual(run['faults']['forced_kill']['windows']['turn']['ineffective'], {'job-not-refused': 1})
+
+    def test_a_key_without_a_confirmed_frame_is_a_failed_key_of_condition_4_and_the_run_stays_valid(self):
+        # Condition 4 is charter E2 during fault windows, so it counts as E2 counts (owner, 20 November 2026, item 2).
+        directory = lx2_run(self.temp / 'run-failed', self.edits, self.digests, windows=5)
+        path = directory / key_to_frame.EVENTS
+        rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+        frame = next(row['frame_id'] for row in rows if row['t'] == 'key')
+        write_jsonl(path, [row for row in rows if not (row['t'] == 'presented' and row['frame_id'] == frame)])
+        faults = lx2_faults(self.temp / 'faults-failed.json')
+        run = lx2.build(self.temp / 'fixtures', directory, faults, ['analyze'])['result']['run']
+        self.assertEqual(run['status'], 'valid', run['reasons'])
+        self.assertEqual((run['e2_run']['unconfirmed'], run['e2_run']['status']), (1, 'valid'))
+        hit = [fault for fault in lx2.FAULTS if run['faults'][fault]['e2']['unconfirmed']]
+        self.assertEqual(len(hit), 1)
+        e2 = run['faults'][hit[0]]['e2']
+        # Five keys, one failed: nearest rank 5 of 5 lies above the bar.
+        self.assertEqual((e2['confirmed'], e2['stats']['failed_keys'], e2['stats']['p95'], e2['state']),
+                         (4, 1, None, 'not-met'))
+        for fault in lx2.FAULTS:
+            if fault not in hit:
+                self.assertEqual(run['faults'][fault]['e2']['state'], 'met', fault)
 
     def test_slow_commits_a_slow_echo_or_slow_presents_fail_their_condition(self):
         for kwargs, condition in (({'e2_ms': 150.0}, 'e2'), ({'echo_ms': 70.0}, 'echo'), ({'gate_ms': 40.0}, 'gate')):

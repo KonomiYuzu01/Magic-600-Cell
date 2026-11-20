@@ -51,7 +51,11 @@ QPC before process creation), `session_opened`, `runtime_loaded`, `first_correct
 
 - **E2** (charter E2, RTE.43, V11.1): "A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the
   target machine." Nearest-rank p95 at most 100 ms over at least 100 confirmed keys of valid runs of one build; the
-  pooled p95 and every run's p95 must meet it. A key without a confirmed frame gets no time and invalidates its run.
+  pooled p95 and every run's p95 must meet it. A key without a confirmed frame gets no time and counts as one failed
+  key, with a time above 100 ms, in its run's p95 and in the pooled p95, and its run stays valid (owner, 20 November
+  2026, item 2: `docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md`); a percentile that falls on a failed
+  key has no number. A run that breaks PHS.64's protocol is still invalid. LX-2's condition 4 (E2 during fault
+  windows) counts the same way.
 - **E3** (owner, 18 November 2026): 3 s, cold start, with an existing session and runtime loaded, to the first
   correct frame, in each of three cold runs. A run that never reaches a passing first correct frame fails the bar.
   Cold (DRAFT): new process, none running, fresh session copy, at least 20 s since the last exit, no reboot.

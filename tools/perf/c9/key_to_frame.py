@@ -31,8 +31,10 @@ object per line; every QPC value is an integer tick count of the machine's Query
   A frame without its own row is not confirmed (route B).
 
 Rules. A key is matched to its frame by frame id only. A key whose frame has no presented row, or that names no
-frame, is unconfirmed: it gets no time, is printed on stderr and is never filled in from another frame; any
-unconfirmed key makes its run invalid (DRAFT, the conservative reading). These contradictions also make a run invalid:
+frame, is unconfirmed: it gets no time, is printed on stderr and is never filled in from another frame. It counts as
+one failed key, with a time above 100 ms, in its run's p95 and in the pooled p95, and its run stays valid (owner,
+20 November 2026, item 2: docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md). A percentile that falls above
+100 ms where a failed key could stand has no number (None). These contradictions make a run invalid:
 a presented row for a frame the log never named, a frame presented or named twice, a presented row whose device
 epoch or surface differs from its frame, a display before submission, a key naming an unknown frame or a frame
 submitted before the key, keys out of order or naming frames out of order, and presents out of order on one swap
@@ -40,9 +42,9 @@ chain. A run is also invalid when the window lost the foreground, the correctnes
 its PresentMon capture shows no displayed present of the declared swap chain within 2 ms (DRAFT tolerance,
 --display-tolerance-ms) of a confirmed display time. Invalid runs are kept and reported, never pooled (PHS.64).
 
-Verdict: nearest-rank percentiles over the confirmed keys of the valid runs, which must share one build identity.
-Met only if at least 100 confirmed keys are pooled and the pooled p95 and every valid run's p95 are at most 100 ms
-(the B4-12 rule that the pooled value and every run meet a target). One run of 100 presses is enough (RTE.43); B4-12
+Verdict: nearest-rank percentiles over the confirmed and failed keys of the valid runs, which must share one build
+identity. Met only if at least 100 confirmed keys are pooled and the pooled p95 and every valid run's p95, failed keys
+counted, are at most 100 ms (the B4-12 rule that the pooled value and every run meet a target). One run of 100 presses is enough (RTE.43); B4-12
 D5's three series of 100 are not required (DRAFT).
 """
 from __future__ import annotations
@@ -50,13 +52,14 @@ from __future__ import annotations
 import argparse
 import bisect
 import csv
+import math
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import evidence  # noqa: E402
 from evidence import RunError, integer, require  # noqa: E402
-from b412_summary import csv_integer, nearest_rank, number, statistics  # noqa: E402
+from b412_summary import csv_integer, number  # noqa: E402
 from renderer_gate import CAPTURE_COLUMNS  # noqa: E402
 
 LOG_FORMAT = 'magic600-c9-shell-events-v1'
@@ -77,11 +80,41 @@ BAR = {'text': ('Charter E2: A turn at full detail responds within 100 ms (the B
                 'machine.'),
        'rule': ('key press to the core-confirmed present of the first frame carrying it; nearest-rank p95 <= 100 ms '
                 'over at least 100 confirmed keys of valid runs of one build; met only if the pooled p95 and every '
-                "valid run's p95 meet it; an unconfirmed key invalidates its run and is never filled in"),
+                "valid run's p95 meet it; a key without a confirmed frame counts as one failed key above 100 ms in its "
+                "run's and the pooled p95, its run stays valid, and it is never filled in"),
        'limit_ms': P95_MAX_MS, 'observations_min': OBSERVATIONS_MIN,
-       'source': ['charter E2', 'RTE.43', 'V11.1', 'B4-12 method', 'PHS.64', 'owner decision 2026-11-18 (route B)']}
+       'source': ['charter E2', 'RTE.43', 'V11.1', 'B4-12 method', 'PHS.64', 'owner decision 2026-11-18 (route B)',
+                  'owner decision 2026-11-20 (LP3 exit, item 2)']}
 DRAFTS = ['log schema magic600-c9-shell-events-v1', 'press time = shell key-down receipt',
-          'unconfirmed key invalidates its run', 'PresentMon display tolerance 2 ms', 'one run of 100 presses suffices']
+          'PresentMon display tolerance 2 ms', 'one run of 100 presses suffices']
+
+
+def e2_percentile(latencies, failed, percentile):
+    """Nearest-rank percentile over the confirmed times and `failed` keys, each above the bar (item 2); None when it
+    lies above the bar where a failed key could stand, since a failed key has no number."""
+    ordered = sorted(latencies)
+    count = len(ordered) + failed
+    if not count:
+        return None
+    rank = (percentile * count + 99) // 100
+    if not failed:
+        return ordered[rank - 1]
+    within = bisect.bisect_right(ordered, P95_MAX_MS)
+    return ordered[rank - 1] if rank <= within else None
+
+
+def e2_statistics(latencies, failed):
+    """A run's or the pool's statistics, failed keys counted (item 2): `n` all keys, `confirmed`, `failed_keys`;
+    `mean` and `max` only without failed keys; `p95_met` is the bar's test. None without keys."""
+    count = len(latencies) + failed
+    if not count:
+        return None
+    stats = {'n': count, 'confirmed': len(latencies), 'failed_keys': failed,
+             'mean': math.fsum(latencies) / len(latencies) if latencies and not failed else None,
+             'p50': e2_percentile(latencies, failed, 50), 'p95': e2_percentile(latencies, failed, 95),
+             'p99': e2_percentile(latencies, failed, 99), 'max': max(latencies) if latencies and not failed else None}
+    stats['p95_met'] = stats['p95'] is not None and stats['p95'] <= P95_MAX_MS
+    return stats
 
 
 def check_rows(rows):
@@ -186,15 +219,13 @@ def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
            'keys': len(entries), 'confirmed': len(latencies), 'unconfirmed': len(unconfirmed),
            'no_frame': sum(entry['status'] == 'no-frame' for entry in entries), 'unconfirmed_keys': unconfirmed,
            'contradictions': sorted(contradictions), 'per_key': entries,
-           'stats': statistics(latencies) if latencies else None}
+           'stats': e2_statistics(latencies, len(unconfirmed))}
     if display_ticks is not None:
         run['presentmon'] = cross_check(entries, presented, sorted(display_ticks), frequency, tolerance_ms)
         if run['presentmon']['disagreements']:
             reasons.add('presentmon-disagrees')
     if contradictions:
         reasons.add('contradiction')
-    if unconfirmed:
-        reasons.add('unconfirmed-keys')
     if not entries:
         reasons.add('no-keys')
     if not head['foreground_throughout']:
@@ -262,10 +293,10 @@ def judge(runs):
     if len({run['build_identity'] for run in valid}) > 1:
         return 'invalid', ['mixed-builds'], None
     pooled = [value for run in valid for value in run['latencies_ms']]
-    stats = statistics(pooled)
+    stats = e2_statistics(pooled, sum(run['unconfirmed'] for run in valid))
     if len(pooled) < OBSERVATIONS_MIN:
         return 'insufficient', ['too-few-observations'], stats
-    met = nearest_rank(pooled, 95) <= P95_MAX_MS and all(run['stats']['p95'] <= P95_MAX_MS for run in valid)
+    met = stats['p95_met'] and all(run['stats']['p95_met'] for run in valid)
     return ('met', [], stats) if met else ('not-met', ['p95-over-bar'], stats)
 
 
@@ -283,13 +314,18 @@ def build(directories, argv, synthetic_flag=False, tolerance_ms=TOLERANCE_MS):
     result = {'runs': runs, 'pooled': pooled, 'valid_runs': sum(run['status'] == 'valid' for run in runs),
               'invalid_runs': sum(run['status'] != 'valid' for run in runs),
               'unconfirmed_keys': sum(run.get('unconfirmed', 0) for run in runs),
-              'confirmed_keys': sum(run.get('confirmed', 0) for run in runs if run['status'] == 'valid')}
+              'confirmed_keys': sum(run.get('confirmed', 0) for run in runs if run['status'] == 'valid'),
+              'failed_keys': sum(run.get('unconfirmed', 0) for run in runs if run['status'] == 'valid')}
     return evidence.make_record(
         'charter-e2-key-to-frame', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
         tools=evidence.tool_versions(__file__, ('renderer_gate.py',)),
         command=evidence.portable_command(__file__, argv),
         bar=BAR, result=result, verdict=verdict, reasons=reasons, drafts=DRAFTS)
+
+
+def p95_text(stats):
+    return f"{stats['p95']:.1f} ms" if stats['p95'] is not None else f'above {P95_MAX_MS:.0f} ms (failed keys)'
 
 
 def main(argv=None):
@@ -308,11 +344,12 @@ def main(argv=None):
         print(f"{run['run_id']}: {run['status']}"
               f"{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}; keys {run.get('keys', 0)}, "
               f"confirmed {run.get('confirmed', 0)}, unconfirmed {run.get('unconfirmed', 0)}"
-              f"{'; p95 %.1f ms' % stats['p95'] if stats else ''}")
+              f"{'; p95 %s' % p95_text(stats) if stats else ''}")
         if run.get('unconfirmed'):
             print(f"UNCONFIRMED: run {run['run_id']} has {run['unconfirmed']} key(s) without a confirmed frame "
                   f"(seq {', '.join(map(str, run['unconfirmed_keys'][:20]))}"
-                  f"{', ...' if run['unconfirmed'] > 20 else ''}); they get no time", file=sys.stderr)
+                  f"{', ...' if run['unconfirmed'] > 20 else ''}); they get no time and count as failed keys",
+                  file=sys.stderr)
     evidence.report(record)
     if args.out:
         try:

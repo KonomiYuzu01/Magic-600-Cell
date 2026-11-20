@@ -59,7 +59,8 @@ kind), one `fault` row per phase with its counts, and a `close` row.
   `LOOP_LIFE_MIN_S` before it exited. A limit window holds no turn row, and its job ended with one of the fault's
   `LIMIT_ENDS`.
 - Condition 4, per fault: the key rows (charter E2, key_to_frame.py's rules and run checks) whose press lies inside an
-  effective turn window of the fault: at least 100 confirmed, none unconfirmed, nearest-rank p95 at most 100 ms.
+  effective turn window of the fault: at least 100 confirmed, nearest-rank p95 at most 100 ms, with each key without a
+  confirmed frame counted as one failed key above 100 ms (charter E2's counting, owner, 20 November 2026, item 2).
 - Condition 3, per fault, over its effective limit windows (a metered fault) or turn windows (the others): LX-4's echo
   samples whose timed post lies inside one, timed as lx4.py times them (to the core-confirmed present of the frame its
   echo row names): at least 100, none failed, p95 at most 50 ms and p99 at most 67 ms; and the renderer gate over the
@@ -142,12 +143,13 @@ LOOP_LIFE_MIN_S = 0.9 * VIEW_DEADLINE_S
 # DRAFT: a window's recovery, the probe's run (with a fresh child after a fault), for the time estimate only.
 RECOVERY_S = 0.3
 SOURCES = ['RTE.42', 'RTE.43', 'RTE.49', 'CT-RTE-10', 'charter E2', 'renderer gate', 'option (a), 18 November 2026',
-           'limit and turn windows, top integrator, 19 November 2026']
+           'limit and turn windows, top integrator, 19 November 2026', 'owner decision 2026-11-20 (LP3 exit, item 2)']
 BAR = {'text': ('RTE.42: every fault meets (1) journal and state hash equal to a control run, (2) a typed outcome '
                 'with the session open, (3) the renderer gate and the LX-4 echo bar during the fault window, (4) at '
                 'least 100 commits during fault windows under charter E2'),
        'rule': ('per fault, over its effective windows (start row to recovered row): E2 keys in turn windows '
-                'confirmed, at least 100, none unconfirmed, nearest-rank p95 <= 100 ms; in limit windows (a metered '
+                'confirmed, at least 100, nearest-rank p95 <= 100 ms with each unconfirmed key a failed key above '
+                '100 ms; in limit windows (a metered '
                 'fault, its job run to its limit with no commit) or turn windows (the others), LX-4 echo samples at '
                 'least 100, none failed, p95 <= 50 ms and p99 <= 67 ms, and the gate over at least 300 presents, fps '
                 '>= 30 and p99 <= 33.3 ms; conditions 1 and 2 from c600-lx2-faults with sessions'),
@@ -572,11 +574,10 @@ def analyze_run(rows, post_rows, edits, digests, *, launch=None, presents=None, 
         entries = [entry for key, entry in zip(keys, run['per_key']) if inside(turn_windows, key['qpc'])]
         latencies = [entry['latency_ms'] for entry in entries if entry['status'] == 'confirmed']
         unconfirmed = len(entries) - len(latencies)
+        stats = key_to_frame.e2_statistics(latencies, unconfirmed)
         e2 = {'over': 'turn', 'turns': sum(window['turns'] for window in turn_windows), 'confirmed': len(latencies),
-              'unconfirmed': unconfirmed,
-              'stats': statistics(latencies) if latencies else None,
-              'state': state_of(len(latencies) >= OBSERVATIONS_MIN,
-                                not unconfirmed and latencies and nearest_rank(latencies, 95) <= E2_P95_MS)}
+              'unconfirmed': unconfirmed, 'stats': stats,
+              'state': state_of(len(latencies) >= OBSERVATIONS_MIN, bool(stats and stats['p95_met']))}
         samples = [(latency, failure) for owner, anchor, latency, failure in echoes
                    if owner == (fault, over) and inside(echo_windows, anchor)]
         timed = [latency for latency, failure in samples if failure is None]
