@@ -4,7 +4,8 @@
 //! refused makes no end-state assertion. CT-KN2-04 (part: a word check with a blocked letter and refused named objects
 //! leave the state unchanged; not run here: the invalid and uncertain letters, which
 //! `tests/test_jumbling_rust_candidate.py` runs). `tests/test_jumbling_rust_attacks.py` runs these rules and the other
-//! leads through the adapter.
+//! leads through the adapter. Render feature J10's exposed faces are refused with
+//! `KN2:input.exposed_geometry_unavailable` while no certified geometry or admitted size profile exists (JI.41).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -13,7 +14,7 @@ use c600_jumble::model::NP;
 use c600_jumble::observe::{self, Batch, Fields, PrefixRequest, Rows, Scope};
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::{Menu, Twist};
-use c600_jumble::{codes, Context};
+use c600_jumble::{codes, faces, Context};
 use c600_kernel::json::{self, Value};
 
 fn repository() -> PathBuf {
@@ -136,4 +137,34 @@ fn a_refused_prefix_makes_no_end_state_assertion() {
         assert_eq!(check.get(field), Some(&Value::Null), "{field}");
     }
     assert_eq!(solved.record(&s.ctx), before);
+}
+
+/// JI.41 and JI.45 for render feature J10: with no certified exposed-face geometry and no admitted size profile, the
+/// producer refuses with `KN2:input.exposed_geometry_unavailable`, names the feature, the exact input and both missing
+/// prerequisites, retains no draft, invents no mesh, and changes nothing.
+#[test]
+fn exposed_faces_are_unavailable_and_change_nothing() {
+    let s = Setup::load();
+    let state = s.at(&[(0, 12)]);
+    let before = state.record(&s.ctx);
+    let answer = faces::exposed_faces(&s.ctx, &state);
+    assert_eq!(text(&answer, "status").as_deref(), Some("refused"));
+    assert_eq!(text(&answer, "code").as_deref(), Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE));
+    assert_eq!(text(&answer, "feature").as_deref(), Some("exposed_face_meshes"));
+    assert_eq!(text(&answer, "render_row").as_deref(), Some("J10"));
+    let missing = answer.get("missing").and_then(Value::as_array).expect("the missing prerequisites");
+    assert_eq!(missing, [Value::String("certified_geometry".into()), Value::String("size_profile".into())]);
+    assert_eq!(answer.get("draft"), Some(&Value::Null), "no draft is retained");
+    assert!(text(&answer, "continuation").is_some_and(|c| c.contains("unavailable")));
+    for key in ["mesh", "faces", "vertices", "size"] {
+        assert!(answer.get(key).is_none(), "no fabricated `{key}`");
+    }
+    let source = answer.get("source").expect("the exact input reference");
+    assert_eq!(text(source, "state_digest"), Some(state.digest(&s.ctx)));
+    assert_eq!(text(source, "model_id").as_deref(), Some(s.ctx.model.model_id.as_str()));
+    assert_eq!(text(source, "menu_id").as_deref(), Some(s.menu.identity.as_str()));
+    // Another configuration is another exact input.
+    let other = faces::exposed_faces(&s.ctx, &State::new(Some(s.menu.clone())));
+    assert_ne!(other.get("source"), answer.get("source"));
+    assert_eq!(state.record(&s.ctx), before);
 }

@@ -1,5 +1,5 @@
 //! The representations tool's rows through the command and source routes (LP3 plan, C6: its rows meet C5's item 1).
-//! A test host serves the five rows `rows::NEEDS` marks served with the entries it names (`CommandLayer::serve_row`),
+//! A test host serves the six rows `rows::NEEDS` marks served with the entries it names (`CommandLayer::serve_row`),
 //! installs C5's provenance reader, and runs the tool's own entry for each job the layer admits: on the job's
 //! arguments, at the job's revision, in process on `c600-run` through the run-time boundary, in the solving context
 //! that C5's `c600_tools::tool::Tool::context` gives the 600-cell-Full tool's runs. It reports what the run's sinks
@@ -11,25 +11,38 @@
 //!
 //! Drafts of this host, which settle nothing for the layer, the runtime or the chapters:
 //!
-//! - The engine side answers the entries' two snapshot reads, `filter.preview` and `structure.compare`, with the state
-//!   number of the revision the run reads, and grants nothing else. No kernel row counts the objects a predicate
-//!   selects or compares two cells yet, and both entries read a literal query that takes no argument.
+//! - The engine side answers the entries' two snapshot reads, `filter.preview` and `structure.compare`, with the kernel
+//!   rows that C5's host bridge serves them with (`c600_tools::kernel_rows::filter_preview` and `structure_compare`)
+//!   on the session's command layer, and grants nothing else. The rows are LP2's `CommandLayer::layer_counts` and
+//!   `compare_cells`, which read no state, so they answer the same at every revision.
 //! - A job's arguments map to the entry's parameters by name: a cell, a layer and each member to a natural, the
-//!   choice words and the name to text. `filter_counts` takes neither of `filter.preview`'s arguments. A member
-//!   outside 0 to 177,119 never reaches the host: the layer refuses it at admission with its argument-form code.
+//!   choice words and the name to text, a `FilterPreviewRef` to a record of its epoch and job, and the cells of a
+//!   `CellIdPair` to two naturals. `filter_counts` takes the layer predicate that `filter.preview`'s `FilterRef` names,
+//!   as a record of its cell and layer, which the host reads from the record `structure.layer` the layer holds: the
+//!   layer resolved the reference when it admitted the job, so the record is the one the predicate's job wrote, and no
+//!   write has replaced it since. The entry does not take `revision`, which only the layer checks. A member outside 0
+//!   to 177,119 and a malformed `FilterPreviewRef` never reach the host: the layer refuses them at admission with its
+//!   argument-form code.
 //! - What a run published and wrote is read back from its canonical bytes as the layer's JSON, where an integer is
 //!   `{"int": "n"}`, and a record's provenance is the text of its block.
-//! - A shell job's arguments are what the solver entered, so their block is a manual record under C5's draft contract
-//!   (`named_word_block`). A running program's job carries no block for its arguments, so the host fails it with
-//!   `LG3:capability.not_granted` and runs nothing.
+//! - A job's run takes the blocks the job holds (`ProgramJob::inputs`) as its inputs. A shell invocation carries none:
+//!   its arguments are what the solver entered, so the host gives the run a manual record under C5's draft contract
+//!   (`named_word_block`). A running program's invocation carries one block, which its host builds from the run's
+//!   context and passes with `invoke_with_inputs` (LP2's pull request 264): the block of what the run produces
+//!   (`Boundary::block`), which covers every argument the run passes. A run that read a record it stored before it
+//!   invoked would also have that record's block among its parts, which only the run's boundary knows, so these blocks
+//!   stand for a run that has read none. A running program's job without blocks fails with
+//!   `LG3:capability.not_granted`, and the host runs nothing.
 
 mod common;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 use c600_command::{
     code, ActionHint, Caller, CommandLayer, Completion, Direction, Error, Invocation, JobOutput, Kind, Overlay,
     ProgramJob, Receipt, RecordValue, RecordWrite, ResultRef, Revision, Status, Transaction, TransactionKind,
+    UndoClass,
 };
 use c600_digest::sha256;
 use c600_kernel::json::{self, Value as Json};
@@ -37,29 +50,31 @@ use c600_repr::rows::NEEDS;
 use c600_repr::tool::{self, MODULE, SOURCE};
 use c600_run::boundary::{Boundary, Context, Place, Store};
 use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Sink};
-use c600_run::provenance::{Author, Producer, Profile};
+use c600_run::provenance::{self, field, Author, Producer, Profile};
 use c600_run::value::Value;
 use c600_tools::bridge::base;
+use c600_tools::kernel_rows;
 use c600_tools::tool::{checker, contract, lower_source, named_word_block, pins, LIMITS};
 use c600_tools::workspace;
 
 use common::*;
 
-/// The queries the engine side answers.
-const READS: [&str; 2] = ["filter.preview", "structure.compare"];
-
-/// The engine side of one run: the entries' two snapshot reads, answered with the state number of the revision the run
-/// reads, and the views the run publishes, in order. It grants nothing else.
-struct Engine {
-    state: u64,
+/// The engine side of one run on a session's command layer: the entries' two snapshot reads, answered by the kernel
+/// rows C5's host bridge serves them with (`kernel_rows::filter_preview` and `kernel_rows::structure_compare`), and the
+/// views the run publishes, in order. It grants nothing else.
+struct Engine<'l> {
+    layer: &'l CommandLayer,
     views: Vec<Vec<u8>>,
 }
 
-impl Host for Engine {
+impl Host for Engine<'_> {
     fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
         match request {
-            Request::Snapshot { query, .. } if READS.contains(query) => {
-                Ok(RowTariff { kernel_cost: 1, result_bound: 64 })
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
+                kernel_rows::filter_preview_read_tariff(arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::STRUCTURE_COMPARE => {
+                kernel_rows::structure_compare_read_tariff(arg, ty)
             }
             _ => Err(code::NOT_GRANTED),
         }
@@ -67,7 +82,12 @@ impl Host for Engine {
 
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
         match request {
-            Request::Snapshot { query, .. } if READS.contains(query) => Ok(Value::int(self.state)),
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
+                kernel_rows::filter_preview(self.layer, arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::STRUCTURE_COMPARE => {
+                kernel_rows::structure_compare(self.layer, arg, ty)
+            }
             _ => Err(code::NOT_GRANTED),
         }
     }
@@ -88,6 +108,8 @@ struct ToolHost {
     loaded: Loaded,
     /// Whether each served row's entry holds a state read: its admission's capability separation (BND.22).
     reads_state: BTreeMap<&'static str, bool>,
+    /// The inputs of each run this host made, in order: the blocks the context its boundary took holds.
+    runs: RefCell<Vec<Vec<Vec<u8>>>>,
 }
 
 impl ToolHost {
@@ -100,12 +122,12 @@ impl ToolHost {
             assert!(admission.is_admitted(), "{entry}: {:?}", admission.codes());
             reads_state.insert(entry, admission.separation.reads_state);
         }
-        ToolHost { loaded: load(&program).expect("the shipped source loads"), reads_state }
+        ToolHost { loaded: load(&program).expect("the shipped source loads"), reads_state, runs: RefCell::default() }
     }
 
     /// The context of one run of `entry` at `revision` in the solving profile (BND.17, BND.22): the tool as a built-in
-    /// producer, with arguments the solver entered.
-    fn context(&self, entry: &str, run: &str, revision: &Revision) -> Context {
+    /// producer, with `inputs` as the blocks of its arguments.
+    fn context(&self, entry: &str, run: &str, revision: &Revision, inputs: Vec<Vec<u8>>) -> Context {
         let producer = Producer {
             contract: contract(),
             checker: Some(checker()),
@@ -119,18 +141,38 @@ impl ToolHost {
             base: base(revision),
             producer,
             reads_state: self.reads_state[entry],
-            inputs: vec![named_word_block()],
+            inputs,
             pins: pins(),
         }
     }
 
-    /// Runs `entry` on `args` at `revision` through the run-time boundary onto the engine side and gives what the run's
-    /// sinks gave, as the layer takes it. A refusal before the run and a stopped run are errors with their codes.
-    fn run(&self, entry: &str, args: Vec<Value>, revision: &Revision, run: &str) -> Result<JobOutput, Error> {
-        let mut engine = Engine { state: revision.state, views: Vec::new() };
+    /// The provenance blocks a host gives a running program's invocation (BND.22), built from the context of the run
+    /// `run` of `entry` at `revision` on `layer`, which took the solver's word as its input: one block, that of what
+    /// the run produces (`Boundary::block`, BND.24), for every argument the run passes.
+    fn blocks(&self, layer: &CommandLayer, entry: &str, run: &str, revision: &Revision) -> Vec<Vec<u8>> {
+        let (mut engine, mut store) = (Engine { layer, views: Vec::new() }, Store::default());
+        let context = self.context(entry, run, revision, vec![named_word_block()]);
+        vec![Boundary::new(&mut engine, &mut store, context).block()]
+    }
+
+    /// Runs `entry` on `args` at `revision`, with `inputs` as the blocks of its arguments, through the run-time
+    /// boundary onto the engine side on `layer` and gives what the run's sinks gave, as the layer takes it. A refusal
+    /// before the run and a stopped run are errors with their codes.
+    fn run(
+        &self,
+        layer: &CommandLayer,
+        entry: &str,
+        args: Vec<Value>,
+        revision: &Revision,
+        run: &str,
+        inputs: Vec<Vec<u8>>,
+    ) -> Result<JobOutput, Error> {
+        let mut engine = Engine { layer, views: Vec::new() };
         let mut store = Store::default();
+        let context = self.context(entry, run, revision, inputs);
+        self.runs.borrow_mut().push(context.inputs.clone());
         let ran = {
-            let mut boundary = Boundary::new(&mut engine, &mut store, self.context(entry, run, revision));
+            let mut boundary = Boundary::new(&mut engine, &mut store, context);
             self.loaded.run(MODULE, entry, args, &mut boundary, &Options::new(LIMITS))
         };
         let ran = ran.map_err(|refusal| Error::new(refusal.code, refusal.detail))?;
@@ -151,16 +193,22 @@ impl ToolHost {
     }
 
     /// The host's side of the command route: takes the layer's next program job, runs the job's entry on its
-    /// arguments at its revision and reports the output. A running program's job fails without a run.
+    /// arguments at its revision, with the job's blocks as the run's inputs, and reports the output. A shell job
+    /// without blocks runs on the manual record of a word the solver named; a running program's job without blocks
+    /// fails without a run.
     fn serve_next(&self, layer: &mut CommandLayer) -> Option<(ProgramJob, Result<JobOutput, Error>, Receipt)> {
         let job = layer.take_program_job()?;
-        let output = match &job.caller {
-            Caller::Shell => entry_args(&job.row, &job.args)
-                .and_then(|args| self.run(&job.overlay.entry, args, &job.revision, &format!("job/{}", job.job))),
-            Caller::Runtime { .. } => {
+        let inputs = match (&job.caller, job.inputs.is_empty()) {
+            (_, false) => Ok(job.inputs.clone()),
+            (Caller::Shell, true) => Ok(vec![named_word_block()]),
+            (Caller::Runtime { .. }, true) => {
                 Err(Error::new(code::NOT_GRANTED, "a running program's job carries no block for its arguments"))
             }
         };
+        let output = inputs.and_then(|inputs| {
+            let args = entry_args(layer, &job.row, &job.args)?;
+            self.run(layer, &job.overlay.entry, args, &job.revision, &format!("job/{}", job.job), inputs)
+        });
         let receipt = layer.finish_program_job_with(job.job, output.clone()).expect("the job was running");
         Some((job, output, receipt))
     }
@@ -198,13 +246,30 @@ fn form(name: &str) -> Error {
     Error::new(code::ARGUMENT_FORM, format!("`{name}` is no argument the entry takes"))
 }
 
-/// The entry's arguments for a job's arguments, by name (a draft of this host).
-fn entry_args(row: &str, args: &Json) -> Result<Vec<Value>, Error> {
+/// A natural as the canonical form writes it, `{"int": "n"}`, read back.
+fn read_nat(value: &Json) -> Option<u64> {
+    value.get("int")?.as_str()?.parse().ok()
+}
+
+/// The entry's arguments for a job's arguments on `layer`, by name (a draft of this host). `filter.preview`'s entry
+/// takes the layer predicate its `FilterRef` names: the record `structure.layer` that the predicate's job wrote, the
+/// one record the tool's `layer_predicate` entry writes. The layer resolved the reference when it admitted the job, so
+/// the record it holds is still that write.
+fn entry_args(layer: &CommandLayer, row: &str, args: &Json) -> Result<Vec<Value>, Error> {
     let arg = |name: &str| args.get(name).ok_or_else(|| form(name));
     let nat = |value: &Json, name: &str| value.as_i64().filter(|n| *n >= 0).map(Value::int).ok_or_else(|| form(name));
     let string = |name: &str| arg(name)?.as_str().map(Value::text).ok_or_else(|| form(name));
     Ok(match row {
-        "filter.preview" => Vec::new(),
+        "filter.preview" => {
+            let predicate = &layer.record("structure.layer").ok_or_else(|| form("predicate"))?.payload;
+            let field = |key: &str| predicate.get(key).and_then(read_nat).ok_or_else(|| form("predicate"));
+            vec![Value::record(vec![("cell", Value::int(field("cell")?)), ("layer", Value::int(field("layer")?))])]
+        }
+        "filter.apply" => {
+            let preview = arg("preview")?;
+            let field = |key: &str| preview.get(key).ok_or_else(|| form("preview")).and_then(|n| nat(n, "preview"));
+            vec![Value::record(vec![("epoch", field("epoch")?), ("job", field("job")?)])]
+        }
         "view.effect.scope" => vec![string("scope")?],
         "set.save" => {
             let members = arg("members")?.as_array().ok_or_else(|| form("members"))?;
@@ -220,11 +285,16 @@ fn entry_args(row: &str, args: &Json) -> Result<Vec<Value>, Error> {
     })
 }
 
-/// The arguments of each invocation in [`command_route`] as the entry takes them, for the source route.
-fn typed(row: &str) -> Vec<Value> {
+/// The arguments of each invocation in [`command_route`] as the entry takes them, for the source route. `preview` is
+/// the job and epoch of the `filter.preview` invocation ([`preview_parts`]), whose filter preview `filter.apply` names.
+fn typed(row: &str, preview: (u64, u64)) -> Vec<Value> {
     match row {
         "structure.layer" => vec![Value::int(7), Value::int(2)],
-        "filter.preview" => Vec::new(),
+        "filter.preview" => vec![Value::record(vec![("cell", Value::int(7)), ("layer", Value::int(2))])],
+        "filter.apply" => {
+            let (job, epoch) = preview;
+            vec![Value::record(vec![("epoch", Value::int(epoch)), ("job", Value::int(job))])]
+        }
         "view.effect.scope" => vec![Value::text("complete")],
         "set.save" => {
             vec![Value::text("identity"), Value::list(vec![Value::int(3), Value::int(5)]), Value::text("pair")]
@@ -234,10 +304,25 @@ fn typed(row: &str) -> Vec<Value> {
     }
 }
 
-/// What the entry of each invocation in [`command_route`] publishes and writes at the state number `state`.
-fn expected(row: &str, state: u64) -> (Vec<Json>, Option<Json>) {
+/// What the entry of each invocation in [`command_route`] publishes and writes, `preview` as in [`typed`]. The two
+/// queries publish the kernel's answers for the predicate's cell 7 and layer 2 and for cells 1 and 2, which read no
+/// state.
+fn expected(row: &str, preview: (u64, u64)) -> (Vec<Json>, Option<Json>) {
+    let size = |n: usize| int(n as u64);
     match row {
-        "filter.preview" | "structure.compare" => (vec![int(state)], None),
+        "filter.preview" => {
+            let counts = kernel().layer_counts(7, 2).expect("a layer of cell 7");
+            let fields = [("cell", 7), ("layer", 2), ("pieces", counts.pieces), ("slots", counts.slots)];
+            (vec![json::object(fields.map(|(name, n)| (name, size(n))))], None)
+        }
+        "structure.compare" => {
+            let compared = kernel().compare_cells(1, 2).expect("two cells");
+            (vec![json::object([("first", int(1)), ("second", int(2)), ("steps", size(compared.steps))])], None)
+        }
+        "filter.apply" => {
+            let (job, epoch) = preview;
+            (Vec::new(), Some(json::object([("epoch", int(epoch)), ("job", int(job))])))
+        }
         "view.effect.scope" => (vec![text("complete")], None),
         "set.save" => {
             let members = Json::Array(vec![int(3), int(5)]);
@@ -261,12 +346,23 @@ struct Served {
     receipt: Receipt,
 }
 
-/// Invokes the five served rows from the shell, the host running each job as the layer admits it. `filter.preview`
-/// takes the result reference of the `structure.layer` invocation before it as its predicate, which the layer passes
-/// unchecked, and the current revision, which that invocation moved.
+/// The job and epoch of the `filter.preview` invocation among `served`: the parts of the `FilterPreviewRef` that names
+/// the filter preview the layer keeps for it.
+fn preview_parts(served: &[Served]) -> (u64, u64) {
+    let one = served.iter().find(|one| one.row == "filter.preview").expect("invoked before `filter.apply`");
+    (one.job.job, one.job.revision.epoch)
+}
+
+/// Invokes the six served rows from the shell, the host running each job as the layer admits it. `filter.preview`
+/// takes the result reference of the `structure.layer` invocation before it as its predicate, which the layer resolves
+/// at admission to the record that invocation wrote, and the current revision, which that invocation moved.
+/// `filter.apply` names the filter preview the layer keeps for that `filter.preview` job, by the reference the layer
+/// gives for it; the preview is still fresh, since no state moved and no record its filter read was written since.
 fn command_route(host: &ToolHost, session: &mut Session) -> Vec<Served> {
     let mut served: Vec<Served> = Vec::new();
-    for row in ["structure.layer", "filter.preview", "view.effect.scope", "set.save", "structure.compare"] {
+    let rows =
+        ["structure.layer", "filter.preview", "filter.apply", "view.effect.scope", "set.save", "structure.compare"];
+    for row in rows {
         let args = match row {
             "structure.layer" => json::object([("cell", Json::Int(7)), ("layer", Json::Int(2))]),
             "filter.preview" => {
@@ -274,6 +370,11 @@ fn command_route(host: &ToolHost, session: &mut Session) -> Vec<Served> {
                 let job = i64::try_from(prepared.job.job).expect("a small job ID");
                 let predicate = json::object([("digest", text(&prepared.output.digest())), ("job", Json::Int(job))]);
                 json::object([("predicate", predicate), ("revision", session.layer.revision().to_json())])
+            }
+            "filter.apply" => {
+                let (job, _) = preview_parts(&served);
+                let kept = session.layer.filter_preview(job).expect("the layer keeps the filter preview");
+                json::object([("preview", kept.reference())])
             }
             "view.effect.scope" => json::object([("scope", text("complete"))]),
             "set.save" => {
@@ -293,16 +394,19 @@ fn command_route(host: &ToolHost, session: &mut Session) -> Vec<Served> {
     served
 }
 
-/// Each of the five served rows, invoked from the shell, runs the entry `rows::NEEDS` names on the job's arguments and
+/// Each of the six served rows, invoked from the shell, runs the entry `rows::NEEDS` names on the job's arguments and
 /// state and completes as its kind says. The two queries (`filter.preview`, `structure.compare`) and the view
 /// (`view.effect.scope`) complete transiently at the job's revision with the output's digest as the result reference:
 /// no revision moves, the durable log keeps its length and nothing is written; the two queries' views are the
-/// stand-in engine's state number, not a count or a comparison, and the view's is the scope. The two workspace rows
-/// (`set.save`, `structure.layer`) each complete as one durable workspace action that writes the entry's record
-/// through C5's reader, with the output's digest as the result reference, at a revision whose workspace number is one
-/// higher. H-08 gives them the undo class `none`, so the next undo still targets the commit before them, and undoing
-/// it leaves the saved set and the prepared predicate as they were: a saved set is removed by its own row, not by
-/// undo. Covers no conformance ID: it is C6's evidence for the command route.
+/// kernel's layer counts and cell comparison, and the view's is the scope. The three workspace rows
+/// (`filter.apply`, `set.save`, `structure.layer`) each complete as one durable workspace action that writes the
+/// entry's record through C5's reader, with the output's digest as the result reference, at a revision whose workspace
+/// number is one higher. `filter.apply`'s record is the `FilterPreviewRef` it applied, and H-08 gives the row the undo
+/// class `workspace`, so the next undo targets its action. H-08 gives the other two the undo class `none`, so the next
+/// undo still targets the action before them. The next undo inverts the applied filter: its record goes and no state
+/// moves. The one after it inverts the commit. Both leave the saved set and the prepared predicate as they were: a
+/// saved set is removed by its own row, not by undo. Covers no conformance ID: it is C6's evidence for the command
+/// route.
 #[test]
 fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
     let host = ToolHost::new();
@@ -312,15 +416,15 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
     let commit = session.layer.undo_hint(Direction::Undo).expect("the commit").target;
     let served = command_route(&host, &mut session);
     let rows: BTreeSet<&str> = served.iter().map(|one| one.row).collect();
-    let others = NEEDS.iter().filter(|need| need.served && need.row != "filter.apply");
-    assert_eq!(rows, others.map(|need| need.row).collect());
+    assert_eq!(rows, NEEDS.iter().filter(|need| need.served).map(|need| need.row).collect());
 
+    let (preview, mut target) = (preview_parts(&served), commit);
     for one in &served {
         let (row, job, output) = (one.row, &one.job, &one.output);
         let need = NEEDS.iter().find(|need| need.row == row).expect("a listed row");
         assert_eq!((job.kind, &job.caller, &job.revision), (need.kind, &Caller::Shell, &one.before.0), "{row}");
         assert_eq!((job.overlay.module.as_str(), Some(job.overlay.entry.as_str())), (MODULE, need.entry), "{row}");
-        let (views, record) = expected(row, job.revision.state);
+        let (views, record) = expected(row, preview);
         assert_eq!((&output.value, &output.views), (&Json::Null, &views), "{row}");
         let records: Vec<(&str, &Json)> =
             output.records.iter().map(|(name, value)| (name.as_str(), &value.payload)).collect();
@@ -343,7 +447,10 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
             assert_eq!((last.kind, last.job, &last.records), (TransactionKind::Workspace, Some(job.job), &writes));
             assert_eq!(last.result, Some(output.digest()), "{row}");
             assert_eq!((&one.after.0, one.after.1), (&revision, one.before.1 + 1), "{row}");
-            assert_eq!(one.after.2.map(|hint| hint.target), Some(commit), "{row}: no undo entry");
+            if need.undo == UndoClass::Workspace {
+                target = last.order;
+            }
+            assert_eq!(one.after.2.map(|hint| hint.target), Some(target), "{row}: the undo target");
         } else {
             assert_eq!(one.after, one.before, "{row}: nothing moves or is written");
         }
@@ -352,38 +459,54 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
         assert_eq!(session.layer.record(name), Some(value), "{name}");
     }
 
-    // The undo class `none`: the next undo inverts the commit, and the records the two rows wrote stay.
-    let hint = session.layer.undo_hint(Direction::Undo).expect("the commit");
-    let undo = session.shell.invoke(&mut session.layer, "session.undo", json::object([("hint", hint.to_json())]));
-    let undo = undo.expect("prepared");
-    assert!(matches!(undo.status, Status::Committed(_)), "{:?}", undo.status);
-    assert_eq!(session.layer.snapshot().digest(), kernel().solved().digest());
-    for (name, value) in served.iter().flat_map(|one| &one.output.records) {
-        assert_eq!(session.layer.record(name), Some(value), "{name} after the undo");
+    // The undo classes `workspace` and `none`: the next undo inverts the applied filter, the one after it the commit,
+    // and the records the other two workspace rows wrote stay.
+    let applied = served.iter().find(|one| one.row == "filter.apply").and_then(|one| one.last.as_ref());
+    assert_eq!(applied.map(|action| action.order), Some(target), "the applied filter is on top of the undo stack");
+    let kept: Vec<_> =
+        served.iter().filter(|one| one.row != "filter.apply").flat_map(|one| &one.output.records).collect();
+    let committed = session.layer.snapshot().digest().to_owned();
+    for (undone, digest) in [(target, committed), (commit, kernel().solved().digest().to_owned())] {
+        let hint = session.layer.undo_hint(Direction::Undo).expect("an undo target");
+        assert_eq!(hint.target, undone);
+        let undo = session.shell.invoke(&mut session.layer, "session.undo", json::object([("hint", hint.to_json())]));
+        let undo = undo.expect("prepared");
+        assert!(matches!(undo.status, Status::Committed(_)), "{:?}", undo.status);
+        assert_eq!(session.layer.snapshot().digest(), digest);
+        assert_eq!(session.layer.record("filter.apply"), None, "the applied filter is undone");
+        for &(name, value) in &kept {
+            assert_eq!(session.layer.record(name), Some(value), "{name} after the undo");
+        }
     }
 }
 
 /// The same entry on the source route, this host's own run of it in process through `c600-run`'s boundary (not C5's
 /// runner `c600-lp3-source` or the runtime's own process) on the same arguments at the job's revision with no command
-/// layer, gives what the command route gave. For `filter.preview` the predicate does not reach the run: the entry
-/// takes no argument, and only the layer checks it. The two routes give the same returned value, the same published
-/// views and the same records, payload and provenance block, so the saved set and the prepared predicate the layer
+/// layer, gives what the command route gave; the engine side answers both routes' reads from the session's layer. For
+/// `filter.preview` the run takes the layer predicate that the `FilterRef` names, as a record of its cell and layer;
+/// only the layer checks the reference and the revision. For `filter.apply` the run takes the `FilterPreviewRef` as a
+/// record of its epoch and job. The two routes give the same returned value, the same published views and the same
+/// records, payload and provenance block, so the applied filter, the saved set and the prepared predicate the layer
 /// holds are the ones the run stored, and the completion's result reference is the source run's digest. What differs
-/// is by design: only the command route has a receipt (command ID, request digest, caller and job), the layer's form
-/// and revision checks and, for a workspace row, the durable action and the workspace revision it moves; on the source
-/// route the records stay in the run's store, and the layer's revision, log and undo hint do not move. The run's name
-/// differs and appears in no output, since no entry proposes. Covers no conformance ID: it is C6's evidence for C5's
-/// item 1.
+/// is by
+/// design: only the command route has a receipt (command ID, request digest, caller and job), the layer's form and
+/// revision checks, `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the
+/// workspace revision it moves and, for `filter.apply`, its undo entry; on the source route the records stay in the
+/// run's store, and the layer's revision, log and undo hint do not move. The run's name differs and appears in no
+/// output, since no entry proposes. Covers no conformance ID: it is C6's evidence for C5's item 1.
 #[test]
 fn the_source_route_gives_the_command_routes_value_views_and_records() {
     let host = ToolHost::new();
     let mut session = session();
     session.commit(&[1]);
     serve(&mut session.layer);
-    for one in command_route(&host, &mut session) {
+    let served = command_route(&host, &mut session);
+    let preview = preview_parts(&served);
+    for one in &served {
         let (row, job) = (one.row, &one.job);
         let fixed = session.fixed();
-        let source = host.run(&job.overlay.entry, typed(row), &job.revision, &format!("source/{row}"));
+        let (name, inputs) = (format!("source/{row}"), vec![named_word_block()]);
+        let source = host.run(&session.layer, &job.overlay.entry, typed(row, preview), &job.revision, &name, inputs);
         let source = source.unwrap_or_else(|error| panic!("{row}: {error:?}"));
         assert_eq!(session.fixed(), fixed, "{row}: the source route moves nothing in the layer");
         assert_eq!(source, one.output, "{row}");
@@ -400,8 +523,9 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
 /// The layer checks the forms of the rows' arguments before it admits a job, so no malformed or stale argument reaches
 /// an entry: a scope other than `body` or `complete`, a pair of one cell, a cell outside 0 to 599, a negative layer, a
 /// kind other than `identity` or `position`, a member outside 0 to 177,119 (`CanonicalObjectRefs`, the kernel's
-/// `PIECES`) and a name that is no text are refused with `KN5:input.argument_form`, and a `revision` that is not the
-/// current one with `KN5:stale.revision_changed`; none takes a job or moves anything. Covers no conformance ID.
+/// `PIECES`), a name that is no text, and a `FilterPreviewRef` without its epoch, with a negative job or with a third
+/// field are refused with `KN5:input.argument_form`, and a `revision` that is not the current one with
+/// `KN5:stale.revision_changed`; none takes a job or moves anything. Covers no conformance ID.
 #[test]
 fn the_layer_checks_the_rows_argument_forms_before_any_job() {
     let mut session = session();
@@ -421,6 +545,20 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
         ("set.save", save("other", &[3], text("pair")), code::ARGUMENT_FORM),
         ("set.save", save("identity", &[3], Json::Int(5)), code::ARGUMENT_FORM),
         ("set.save", save("identity", &[3, -5], text("pair")), code::ARGUMENT_FORM),
+        ("filter.apply", json::object([("preview", json::object([("job", Json::Int(1))]))]), code::ARGUMENT_FORM),
+        (
+            "filter.apply",
+            json::object([("preview", json::object([("epoch", Json::Int(0)), ("job", Json::Int(-1))]))]),
+            code::ARGUMENT_FORM,
+        ),
+        (
+            "filter.apply",
+            json::object([(
+                "preview",
+                json::object([("epoch", Json::Int(0)), ("job", Json::Int(1)), ("x", Json::Int(1))]),
+            )]),
+            code::ARGUMENT_FORM,
+        ),
         (
             "filter.preview",
             json::object([("predicate", unresolved), ("revision", stale.to_json())]),
@@ -438,11 +576,12 @@ fn the_layer_checks_the_rows_argument_forms_before_any_job() {
 }
 
 /// `filter.apply` is served with the other five rows, and its gate `fresh_filter_preview` refuses a stale filter
-/// preview. The layer keeps a filter preview for a completed `filter.preview` job, and the availability hint for its
-/// `FilterPreviewRef` is clear while it is fresh. After a commit moves the state, the hint and the shell's invocation
-/// refuse it with `KN5:stale.filter_preview`, as they refuse a reference to a job that made none; a running program
-/// may not invoke the workspace row (`LG3:capability.not_granted`). No refusal takes a job or moves anything. Covers no
-/// conformance ID: `c600-command`'s `tests/filter_apply.rs` runs the row's gate and completion.
+/// preview; `each_served_row_runs_its_entry_and_completes_as_its_kind_says` runs its completion. The layer keeps a
+/// filter preview for a completed `filter.preview` job, and the availability hint for its `FilterPreviewRef` is clear
+/// while it is fresh. After a commit moves the state, the hint and the shell's invocation refuse it with
+/// `KN5:stale.filter_preview`, as they refuse a reference to a job that made none; a running program may not invoke
+/// the workspace row (`LG3:capability.not_granted`). No refusal takes a job or moves anything. Covers no conformance
+/// ID: `c600-command`'s `tests/filter_apply.rs` runs the row's gate and completion.
 #[test]
 fn filter_apply_is_served_and_refuses_a_stale_filter_preview() {
     let host = ToolHost::new();
@@ -511,4 +650,80 @@ fn a_running_program_cannot_invoke_a_served_workspace_row() {
     assert!(session.layer.take_program_job().is_none(), "the refused invocation admitted a job");
     assert_eq!(session.fixed(), before);
     assert!(session.layer.records().is_empty());
+}
+
+/// A running program's invocation of a served query or view row carries the provenance blocks of its arguments, which
+/// its host builds from the run's context (BND.22; LP2's `invoke_with_inputs`). Here the calling run stands in as the
+/// run `run-1` of the tool's `compare_cells` entry, and its one block reads as a program block of the tool, built-in,
+/// in the solving profile, that may read the state, with the solver's word as its one part. The layer checks the block
+/// with C5's reader and holds it on the job (`ProgramJob::inputs`), and the host runs the entry with it as the run's
+/// input: `filter.preview`, `structure.compare` and `view.effect.scope` complete transiently at the job's revision with
+/// the output the shell's invocation of the same row gives, and nothing moves. Without blocks the host fails such a job
+/// with `LG3:capability.not_granted` and runs nothing; a block the reader refuses refuses the invocation with
+/// `PS1:capability.provenance_incompatible` before any job. Covers no conformance ID.
+#[test]
+fn a_running_programs_query_and_view_jobs_run_on_blocks_built_from_its_context() {
+    let host = ToolHost::new();
+    let mut session = session();
+    session.commit(&[1]);
+    serve(&mut session.layer);
+    let layer_args = json::object([("cell", Json::Int(7)), ("layer", Json::Int(2))]);
+    session.shell.invoke(&mut session.layer, "structure.layer", layer_args).expect("prepared");
+    let (prepared, output, _) = host.serve_next(&mut session.layer).expect("the predicate's job");
+    let digest = output.expect("the predicate").digest();
+    let predicate = json::object([("digest", text(&digest)), ("job", Json::Int(prepared.job as i64))]);
+
+    let (caller, revision) = (program_channel(), session.layer.revision().clone());
+    let Caller::Runtime { run } = &caller else { unreachable!("the program's channel") };
+    let blocks = host.blocks(&session.layer, "compare_cells", run, &revision);
+    let block = provenance::read(&blocks[0]).expect("a canonical block");
+    assert_eq!((field::author(&block), field::producer(&block)), (Author::BuiltIn.name(), "program"));
+    assert_eq!(field::profile(&block), Profile::Solving.name());
+    assert!(field::may_read_state(&block));
+    assert_eq!(field::parts(&block), vec![sha256(&named_word_block())]);
+
+    let calls = [
+        ("filter.preview", json::object([("predicate", predicate), ("revision", revision.to_json())])),
+        ("structure.compare", json::object([("cells", ints(&[1, 2]))])),
+        ("view.effect.scope", json::object([("scope", text("complete"))])),
+    ];
+    for (n, (row, args)) in calls.into_iter().enumerate() {
+        let call = |i: usize| Invocation {
+            command: format!("{run}/{}", 3 * n + i),
+            row: row.to_owned(),
+            args: args.clone(),
+            token: None,
+            epoch: revision.epoch,
+        };
+        session.shell.invoke(&mut session.layer, row, args.clone()).expect("prepared");
+        let (_, shell, _) = host.serve_next(&mut session.layer).expect("the shell's job");
+        let shell = shell.unwrap_or_else(|error| panic!("{row} from the shell: {error:?}"));
+        assert_eq!(host.runs.borrow().last(), Some(&vec![named_word_block()]), "{row}: the shell's run's input");
+        let (before, runs) = (session.fixed(), host.runs.borrow().len());
+
+        let bare = session.layer.invoke(&caller, call(1));
+        assert!(matches!(bare.status, Status::Running(_)), "{row}: {:?}", bare.status);
+        let (job, output, receipt) = host.serve_next(&mut session.layer).expect("the job without blocks");
+        assert!(job.inputs.is_empty(), "{row}");
+        assert_eq!(output.map_err(|error| error.code), Err(code::NOT_GRANTED), "{row}");
+        assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "{row}");
+        assert_eq!(host.runs.borrow().len(), runs, "{row}: no run");
+
+        let refused = session.layer.invoke_with_inputs(&caller, call(2), vec![b"no block".to_vec()]);
+        assert_eq!(refused.status.code(), Some(code::PROVENANCE_INCOMPATIBLE), "{row}");
+        assert!(session.layer.take_program_job().is_none(), "{row}");
+
+        let started = session.layer.invoke_with_inputs(&caller, call(3), blocks.clone());
+        let Status::Running(id) = started.status else { panic!("{row}: {:?}", started.status) };
+        let (job, output, receipt) = host.serve_next(&mut session.layer).expect("the job with blocks");
+        assert_eq!((job.job, &job.caller, &job.inputs, &job.revision), (id, &caller, &blocks, &revision), "{row}");
+        let output = output.unwrap_or_else(|error| panic!("{row}: {error:?}"));
+        assert_eq!(&host.runs.borrow()[runs..], std::slice::from_ref(&blocks), "{row}: one run, on the job's blocks");
+        assert_eq!(output, shell, "{row}: the shell's output");
+        let need = NEEDS.iter().find(|need| need.row == row).expect("a listed row");
+        let result = Some(ResultRef { job: Some(id), digest: output.digest() });
+        let completion = Completion { kind: need.completion, revision: revision.clone(), result };
+        assert_eq!(receipt.status, Status::Completed(completion), "{row}");
+        assert_eq!(session.fixed(), before, "{row}: nothing moves");
+    }
 }

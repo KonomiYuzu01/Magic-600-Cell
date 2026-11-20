@@ -1,19 +1,24 @@
 //! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; LP2 draft until the
-//! command table freezes, PHS.52). Five rows so far: four of KN2.4, and the draft `setups` row of the setup-search
-//! exception. LB2's exact completion reads two of them
+//! command table freezes, PHS.52). Seven rows so far: four of KN2.4, the draft `setups` row of the setup-search
+//! exception, and the two draft structure rows of LP3's representations tool. LB2's exact completion reads two of them
 //! (`c600_library`'s `completion.exact_completion`; CT-LB2-04: exact completion reads identities, slots and
 //! orientations): `positions`, the position of named pieces, and `labels`, the label of named slots. LB2's recipes
 //! and reports read the third (`c600_library`'s `recipes`; CT-LB2-01): `effect`, a recipe's net map and what it
 //! touches. LB2's Net and Strict protection reads the fourth, with `positions` and `labels` for its captures
 //! (`c600_library`'s `protection`; CT-LB2-02): `protection`, a captured lock judged against a recipe at the head.
 //! LB2's guarded setups read the fifth (`c600_library`'s `guarded_setups`; CT-BND-18): `setups`, the certified setups
-//! for a target the solver names, which only the setup-search exception may read (BND.1).
+//! for a target the solver names, which only the setup-search exception may read (BND.1). The representations tool's
+//! entries read the last two (`c600_repr`'s `compare_cells` and `filter_counts`, the entries of the command rows of the
+//! same names; LP3's C6): `structure.compare`, two cells compared, and `filter.preview`, the counts of a layer
+//! predicate.
 //! [`crate::bridge::Bridge`] serves `positions` and `labels` from the command layer's head: `positions` through
 //! [`CommandLayer::positions`], and `labels` from the head's snapshot ([`CommandLayer::snapshot`]), because neither the
 //! command layer nor the kernel has a `labels` row function. It serves `effect` through the kernel's
 //! [`c600_kernel::Kernel::effect`], which reads no state, and `protection` from the head's snapshot and the kernel's
 //! effect and expansion, because the kernel's protection rows judge pieces, not a lock's slot and label pairs. It
-//! serves `setups` from the certified table a host gives it ([`SetupTable`]) and the kernel's star certificate.
+//! serves `setups` from the certified table a host gives it ([`SetupTable`]) and the kernel's star certificate, and
+//! `structure.compare` and `filter.preview` through LP2's structure rows [`CommandLayer::compare_cells`] and
+//! [`CommandLayer::layer_counts`], which read no state.
 //!
 //! # `positions`
 //!
@@ -153,6 +158,45 @@
 //! `KN1:input.identity_mismatch`; an orbit outside 0 to 34, a position outside 0 to 177,119 or a position outside the
 //! orbit, `KN2:input.named_object_invalid`; and a setup whose star the kernel does not certify,
 //! `KN2:consistency.star_certificate`. The charge stays, as for a refused proposal. The tariff is [`setups_tariff`].
+//!
+//! # `structure.compare`
+//!
+//! A program reads the row as `read_snapshot<T>("structure.compare", cells)`: LP3's representations tool reads it in
+//! `compare_cells`, the entry of the command row `structure.compare` (C6). KN2.4 has no structure row, so this row is a
+//! draft until the command table freezes at LP3. `cells` is `record { first: Nat, second: Nat }`, two cells, each 0 to
+//! 599. `T` is a record with these three fields, in any order:
+//!
+//! - `first: Nat` and `second: Nat`, the cells as named;
+//! - `steps: Nat`, the fewest face steps from `first` to `second`, as 0.4's structure explorer counts them: 0 for the
+//!   same cell and 1 for two cells that share a face ([`c600_kernel::CellComparison`]).
+//!
+//! A field may also be declared with `Int`; no field carries a display qualifier. The answer's fields are in `T`'s
+//! order. The comparison reads no state: the cells' face graph is the model's.
+//!
+//! The bridge refuses before the row runs, at the cost of the read's step: a declared type other than these,
+//! `LG2:type.mismatch`; an argument of another form, `KN5:input.argument_form`. Once the read is charged: with Jumble
+//! on, `KN5:input.retained_tool_needs_jumble_off` (LG2.8), as [`CommandLayer::compare_cells`] refuses it; and a cell
+//! outside 0 to 599, `KN2:input.named_object_invalid`. The charge stays, as for a refused proposal. The tariff is
+//! [`structure_compare_tariff`].
+//!
+//! # `filter.preview`
+//!
+//! A program reads the row as `read_snapshot<T>("filter.preview", predicate)`: LP3's representations tool reads it in
+//! `filter_counts`, the entry of the command row `filter.preview` (C6), and it is a draft as `structure.compare` is.
+//! `predicate` is a layer predicate, `record { cell: Nat, layer: Nat }`, the record the command row `structure.layer`
+//! prepares: a cell, 0 to 599, and a layer around it, from 0 to the cell's last. `T` is a record with these four
+//! fields, in any order:
+//!
+//! - `cell: Nat` and `layer: Nat`, the predicate as named;
+//! - `pieces: Nat`, the positions with a home slot in a cell `layer` face steps from `cell`, each counted whole, which
+//!   0.4's `layer(C, L)` filter selects, and `slots: Nat`, their home slots ([`c600_kernel::LayerCounts`]).
+//!
+//! A field may also be declared with `Int`; no field carries a display qualifier. The answer's fields are in `T`'s
+//! order. The counts read no state: a position keeps its slots whatever piece it holds.
+//!
+//! The bridge refuses as for `structure.compare`, and once the read is charged also a layer past the cell's last, with
+//! `KN2:input.named_object_invalid` and 0.4's text ([`CommandLayer::layer_counts`]). The tariff is
+//! [`filter_preview_tariff`].
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -1339,4 +1383,156 @@ pub fn setups<S: Store>(
     let name =
         |field: SetupsField| SETUPS_FIELDS.iter().find(|(_, f)| *f == field).map(|&(name, _)| name).expect("a field");
     Ok(Value::record(shape.fields.iter().map(|&field| (name(field), value(field))).collect()))
+}
+
+/// The `structure.compare` row's query: two cells compared, which LP3's representations tool reads (C6; a draft, since
+/// KN2.4 has no structure row).
+pub const STRUCTURE_COMPARE: &str = "structure.compare";
+
+/// The `filter.preview` row's query: the counts of a layer predicate, which LP3's representations tool reads (C6; a
+/// draft, since KN2.4 has no structure row).
+pub const FILTER_PREVIEW: &str = "filter.preview";
+
+/// The cells of 600-cell-Full, named 0 to 599. A layer and a step count count face steps between two of them, so no
+/// value a structure row answers for a cell, a layer or a step count reaches 600.
+pub const CELLS: usize = 600;
+
+/// The fields of the `structure.compare` row's answer, by name.
+const COMPARE_FIELDS: [&str; 3] = ["first", "second", "steps"];
+
+/// The fields of the `filter.preview` row's answer, by name.
+const COUNT_FIELDS: [&str; 4] = ["cell", "layer", "pieces", "slots"];
+
+/// A record of these fields, each `Nat`, in this order.
+fn nat_record(names: &[&str]) -> QTy {
+    exact(Ty::Record(names.iter().map(|&name| (name.to_owned(), exact(Ty::Nat))).collect()))
+}
+
+/// The type the `structure.compare` row answers: `record { first: Nat, second: Nat, steps: Nat }`.
+pub fn structure_compare_type() -> QTy {
+    nat_record(&COMPARE_FIELDS)
+}
+
+/// The type the `filter.preview` row answers: `record { cell: Nat, layer: Nat, pieces: Nat, slots: Nat }`.
+pub fn filter_preview_type() -> QTy {
+    nat_record(&COUNT_FIELDS)
+}
+
+/// The fields of a declared record type in its order when they are exactly `names`, each declared [`whole`], with no
+/// display qualifier; None for any other type.
+fn whole_fields(ty: &QTy, names: &[&'static str]) -> Option<Vec<&'static str>> {
+    let Ty::Record(fields) = &ty.ty else { return None };
+    if ty.display || fields.len() != names.len() {
+        return None;
+    }
+    let mut order: Vec<&'static str> = Vec::with_capacity(names.len());
+    for (name, declared) in fields {
+        let known = *names.iter().find(|&&known| known == name)?;
+        if order.contains(&known) || !whole(declared) {
+            return None;
+        }
+        order.push(known);
+    }
+    Some(order)
+}
+
+/// The two exact integers of a record argument whose fields are exactly `first` and `second`, from its canonical bytes
+/// (DET.59), each saturated to `i64`, so one of any size outside a row's range stays outside it. None for any other
+/// form.
+fn two_ints(arg: &[u8], first: &str, second: &str) -> Option<(i64, i64)> {
+    let Json::Object(fields) = provenance::parse(arg)? else { return None };
+    if fields.len() != 2 {
+        return None;
+    }
+    Some((exact_int(fields.get(first)?)?, exact_int(fields.get(second)?)?))
+}
+
+/// The cells of a `structure.compare` read, from its argument `record { first, second }`.
+fn compared_cells(arg: &[u8]) -> Option<(i64, i64)> {
+    two_ints(arg, "first", "second")
+}
+
+/// The layer predicate of a `filter.preview` read, from its argument `record { cell, layer }`.
+fn layer_predicate(arg: &[u8]) -> Option<(i64, i64)> {
+    two_ints(arg, "cell", "layer")
+}
+
+/// The logical size of a record of these fields, each the integer given.
+fn record_size(fields: &[(&'static str, u64)]) -> u128 {
+    Value::record(fields.iter().map(|&(name, n)| (name, Value::int(n))).collect()).size()
+}
+
+/// The `structure.compare` row's draft tariff (DET.55; the command table prices the row when it freezes). The kernel
+/// cost is one: the kernel reads the step count from its table of every pair of cells. The result bound is the logical
+/// size of the largest answer, three integers of 599, since no cell or step count reaches [`CELLS`].
+pub fn structure_compare_tariff() -> RowTariff {
+    static BOUND: OnceLock<u128> = OnceLock::new();
+    let last = (CELLS - 1) as u64;
+    let result_bound = *BOUND.get_or_init(|| record_size(&COMPARE_FIELDS.map(|name| (name, last))));
+    RowTariff { kernel_cost: 1, result_bound }
+}
+
+/// The `filter.preview` row's draft tariff (DET.55; the command table prices the row when it freezes). The kernel cost
+/// counts one pass over the home slots of every position, 259,800 in all, which the kernel sorts into the layers
+/// around the cell. The result bound is the logical size of the largest answer: a cell and a layer of 599, 177,120
+/// positions and 259,800 slots.
+pub fn filter_preview_tariff() -> RowTariff {
+    static BOUND: OnceLock<u128> = OnceLock::new();
+    let result_bound = *BOUND.get_or_init(|| {
+        let last = (CELLS - 1) as u64;
+        record_size(&[("cell", last), ("layer", last), ("pieces", PIECES as u64), ("slots", SLOTS as u64)])
+    });
+    RowTariff { kernel_cost: SLOTS as u128, result_bound }
+}
+
+/// The tariff of a `structure.compare` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for
+/// another declared type, `KN5:input.argument_form` for an argument of another form.
+pub fn structure_compare_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    whole_fields(ty, &COMPARE_FIELDS).ok_or(TYPE_MISMATCH)?;
+    compared_cells(arg).ok_or(code::ARGUMENT_FORM)?;
+    Ok(structure_compare_tariff())
+}
+
+/// The tariff of a `filter.preview` read, or the refusal that costs the read's step only: `LG2:type.mismatch` for
+/// another declared type, `KN5:input.argument_form` for an argument of another form.
+pub fn filter_preview_read_tariff(arg: &[u8], ty: &QTy) -> Result<RowTariff, &'static str> {
+    whole_fields(ty, &COUNT_FIELDS).ok_or(TYPE_MISMATCH)?;
+    layer_predicate(arg).ok_or(code::ARGUMENT_FORM)?;
+    Ok(filter_preview_tariff())
+}
+
+/// An answer record of a structure row: the fields in `order`, each the count `value` gives for its name.
+fn counts(order: &[&'static str], value: impl Fn(&str) -> usize) -> Value {
+    Value::record(order.iter().map(|&name| (name, Value::int(value(name) as u64))).collect())
+}
+
+/// The answer of a `structure.compare` read, with [`structure_compare_read_tariff`]'s refusals and, once the read is
+/// charged, those of [`CommandLayer::compare_cells`]: with Jumble on, `KN5:input.retained_tool_needs_jumble_off`
+/// (LG2.8), and a cell outside 0 to 599, `KN2:input.named_object_invalid`. The comparison reads no state, and a read
+/// changes nothing.
+pub fn structure_compare<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    let order = whole_fields(ty, &COMPARE_FIELDS).ok_or(TYPE_MISMATCH)?;
+    let (first, second) = compared_cells(arg).ok_or(code::ARGUMENT_FORM)?;
+    let compared = layer.compare_cells(first, second).map_err(|error| error.code)?;
+    Ok(counts(&order, |name| match name {
+        "first" => compared.first,
+        "second" => compared.second,
+        _ => compared.steps,
+    }))
+}
+
+/// The answer of a `filter.preview` read, with [`filter_preview_read_tariff`]'s refusals and, once the read is
+/// charged, those of [`CommandLayer::layer_counts`]: with Jumble on, `KN5:input.retained_tool_needs_jumble_off`
+/// (LG2.8), and a cell outside 0 to 599 or a layer past the cell's last, `KN2:input.named_object_invalid`. The counts
+/// read no state, and a read changes nothing.
+pub fn filter_preview<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result<Value, &'static str> {
+    let order = whole_fields(ty, &COUNT_FIELDS).ok_or(TYPE_MISMATCH)?;
+    let (cell, named) = layer_predicate(arg).ok_or(code::ARGUMENT_FORM)?;
+    let layer_counts = layer.layer_counts(cell, named).map_err(|error| error.code)?;
+    Ok(counts(&order, |name| match name {
+        "cell" => layer_counts.cell,
+        "layer" => layer_counts.layer,
+        "pieces" => layer_counts.pieces,
+        _ => layer_counts.slots,
+    }))
 }

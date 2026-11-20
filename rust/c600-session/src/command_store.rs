@@ -11,15 +11,19 @@
 //! The record shapes are drafts (format `c600-command-journal-draft-1`, apart from M6's `c600-session-draft-1`; each is
 //! one canonical JSON value):
 //!
-//! - first and once, `{"record": "command_session", "format", "session", "identity", "epoch", "start", "orbits"}`, where
-//!   `start` names the start state's object, which is the state's digest;
+//! - first and once, `{"record": "command_session", "format", "session", "identity", "epoch", "start", "orbits",
+//!   "profile"}`, where `start` names the start state's object, which is the state's digest, and `profile` is the
+//!   session's profile by BND.15's name (BND.17). A session record without `profile`, as journals written before it
+//!   have, reads as `solving`;
 //! - `{"record": "command_epoch", "epoch"}` for every epoch a layer opened after the first, so no open draws it again;
 //! - `{"record": "command_action", "transaction"}` for every durable action, in [`Transaction::to_json`]'s form. The
 //!   receipt is a function of the transaction, so the effect and its receipt are one write (KN5.23).
 
 use std::cell::RefCell;
 
-use c600_command::{identity_from_json, identity_json, Error, Fate, Genesis, History, Reopen, Store, Transaction};
+use c600_command::{
+    identity_from_json, identity_json, Error, Fate, Genesis, History, Profile, Reopen, Store, Transaction,
+};
 use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value};
 use c600_kernel::SLOTS;
@@ -57,7 +61,14 @@ struct Held {
 }
 
 enum Record {
-    Session { session: String, identity: c600_kernel::IdentityBlock, epoch: u64, start: String, orbits: Vec<usize> },
+    Session {
+        session: String,
+        identity: c600_kernel::IdentityBlock,
+        epoch: u64,
+        start: String,
+        orbits: Vec<usize>,
+        profile: Profile,
+    },
     Epoch(u64),
     Action(Box<Transaction>),
 }
@@ -118,6 +129,7 @@ fn session_record(genesis: &Genesis) -> Value {
         ("epoch", Value::Int(genesis.epoch as i64)),
         ("start", text(&genesis.digest)),
         ("orbits", Value::Array(genesis.orbits.iter().map(|&orbit| Value::Int(orbit as i64)).collect())),
+        ("profile", text(genesis.profile.name())),
     ])
 }
 
@@ -127,7 +139,12 @@ fn read_record(payload: &[u8]) -> Option<Record> {
     (value.canonical().as_bytes() == payload).then_some(())?;
     let fields = value.as_object()?.len();
     match value.get("record")?.as_str()? {
-        SESSION if fields == 7 && value.get("format")?.as_str()? == FORMAT => {
+        SESSION if value.get("format")?.as_str()? == FORMAT => {
+            let profile = match (fields, value.get("profile")) {
+                (7, None) => Profile::Solving,
+                (8, Some(name)) => Profile::from_name(name.as_str()?)?,
+                _ => return None,
+            };
             let orbits = value.get("orbits")?.as_array()?;
             let orbits = orbits.iter().map(|o| nat(o).and_then(|n| usize::try_from(n).ok())).collect::<Option<_>>()?;
             Some(Record::Session {
@@ -136,6 +153,7 @@ fn read_record(payload: &[u8]) -> Option<Record> {
                 epoch: nat(value.get("epoch")?)?,
                 start: value.get("start")?.as_str()?.to_owned(),
                 orbits,
+                profile,
             })
         }
         EPOCH if fields == 2 => Some(Record::Epoch(nat(value.get("epoch")?)?)),
@@ -156,7 +174,7 @@ fn load(store: &mut journal::Store, records: Vec<Vec<u8>>, damaged: Option<u64>)
             Some(at) => Err(Error::new(code::PERSISTENCE_FORMAT, format!("the journal is damaged at byte {at}"))),
         };
     };
-    let Some(Record::Session { session, identity, epoch, start, orbits }) = read_record(&first) else {
+    let Some(Record::Session { session, identity, epoch, start, orbits, profile }) = read_record(&first) else {
         return Err(Error::new(code::UNKNOWN_SESSION, "the disk holds no command-layer session"));
     };
     let bytes = store.get_object(&start).map_err(io)?;
@@ -164,7 +182,7 @@ fn load(store: &mut journal::Store, records: Vec<Vec<u8>>, damaged: Option<u64>)
     let Some(labels) = labels else {
         return Err(Error::new(code::PERSISTENCE_FORMAT, "the start state's object is missing or damaged"));
     };
-    held.genesis = Some(Genesis { session, identity, epoch, labels, digest: start, orbits });
+    held.genesis = Some(Genesis { session, identity, epoch, labels, digest: start, orbits, profile });
     for (index, payload) in records.enumerate() {
         match read_record(&payload) {
             Some(Record::Epoch(epoch)) => held.epochs.push(epoch),

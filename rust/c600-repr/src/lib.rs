@@ -8,8 +8,7 @@
 //! - [`tool`]: the tool's 600 Cell Script source, its manifest, the review of its class against the exact entry
 //!   definitions and the row set, and the form of a review record (BND.37).
 //! - [`rows`]: what each of the tool's six rows needs from the command layer, what the layer meets of it and what
-//!   remains. A host serves five of the rows with the tool's entries; the layer serves `filter.apply` too (LP2's pull
-//!   request 256), and no host runs its entry yet.
+//!   remains. A host serves all six rows with the tool's entries.
 //!
 //! The crate draws nothing and owns no device, renderer, clock or session. It builds on the public APIs of
 //! `c600-display`, `c600-tools`, `c600-check` and `c600-command` and repeats none of their logic: picks are resolved
@@ -26,12 +25,13 @@
 //! - LB6.5: one module, `representations`, with six entries, one for each row. `filter_counts` is a view; the other
 //!   five are commands, because the solver invokes their rows with arguments. `set.save`'s entry takes the members as
 //!   `List<Nat>`, the list type the IR draft gained in LP2 (pull request 176).
-//! - LG2.2, KN1.5: an entry takes a natural where its row takes a cell, a layer or a filter-preview reference, a list
-//!   of naturals where its row takes canonical object references, and text where its row takes one of two named
-//!   values, because the IR draft has no identity or reference type. The snapshot queries and workspace records the
+//! - LG2.2, KN1.5: an entry takes a natural where its row takes a cell or a layer, a record of two naturals, `epoch`
+//!   and `job`, where its row takes a filter-preview reference (the layer's `FilterPreviewRef` form), a list of
+//!   naturals where its row takes canonical object references, and text where its row takes one of two named values,
+//!   because the IR draft has no identity or reference type. The snapshot queries and workspace records the
 //!   entries name (`filter.preview`, `structure.compare`, `filter.apply`, `set.save`, `structure.layer`) are the rows'
-//!   own IDs. A served row's records reach the command layer as its job's output; no host row answers the two
-//!   snapshot queries from a kernel row yet (LP2's structure rows are in the layer since pull request 262).
+//!   own IDs. A served row's records reach the command layer as its job's output; C5's host bridge answers the two
+//!   snapshot queries from LP2's structure rows (pull request 262) with draft tariffs.
 //! - BND.37, BND.63: the class review in [`tool::review_class`] reads `view_aid` as: no entry prepares a preview or
 //!   calls what the checker cannot resolve; no entry requests a capability or has a file, randomness or budget effect;
 //!   a workspace change sits in a command that serves a workspace row and reads no state-derived data, so that what
@@ -50,13 +50,16 @@
 //!   the command layer meets of them and what remains. They are requirements read from H-08's row fields and EV4.15,
 //!   not a contract: the command layer decides them as it builds the rows. Its serving of the rows is LP2's draft
 //!   (pull requests 200, 202, 203 and 256).
-//! - LP3 plan, C6 and C5's item 1: the host that serves the five rows is a test host (`tests/served_rows.rs`), because
-//!   a host in this crate would make `c600-run` a dependency of the library; the tests take it as a dev-dependency.
-//!   It runs an entry in process through `c600-run`'s boundary, maps a job's arguments to the entry's parameters by
-//!   name, answers the two snapshot reads with the state number of the job's revision, and fails a running program's
-//!   job, whose arguments carry no provenance block (BND.22). The source route runs the same entry in process on the
-//!   same arguments at the same revision without the layer (not C5's runner `c600-lp3-source` or the runtime's own
-//!   process), and the two routes give the same value, views and records.
+//! - LP3 plan, C6 and C5's item 1: the host that serves the six rows is a test host (`tests/served_rows.rs`), because a
+//!   host in this crate would make `c600-run` a dependency of the library; the tests take it as a dev-dependency. It
+//!   runs an entry in process through `c600-run`'s boundary, maps a job's arguments to the entry's parameters by name
+//!   (a `FilterRef` to the predicate record its job wrote), answers the two snapshot reads on the session's command
+//!   layer with the kernel rows C5's host bridge serves them with (`c600_tools::kernel_rows`), and gives the run the
+//!   job's provenance blocks as its inputs (BND.22). A shell job carries none, so its run takes the manual record of a
+//!   word the solver named (`c600_tools::tool::named_word_block`); a running program's job without blocks fails. The
+//!   source route runs the same entry in process on the same arguments at the same revision without the layer (not
+//!   C5's runner `c600-lp3-source` or the runtime's own process), and the two routes give the same value, views and
+//!   records.
 //! - BND.37, CT-BND-15: an entry digest is the SHA-256 of a line naming this draft, the module, the entry and the
 //!   SHA-256 of the module's source bytes ([`tool::entry_digest`]). A review record ([`tool::ReviewRecord`]) names the
 //!   tool, the reviewer, the class, the source digest, every entry digest and the row set. BM5's review has not
@@ -91,24 +94,28 @@
 //! # Not built
 //!
 //! What the rows still need, with the API a host would use. C6 changed nothing in `c600-command` or the kernel. Of the
-//! items below, LP2 has built the command layer's part of `filter.apply`, of a running program's job and of the two
-//! snapshot reads; what is left of them is the host's, which is LP3's. LP2 has also built the `CanonicalObjectRefs`
-//! form (pull request 269), so the layer refuses a member that is no piece or position at admission. [`rows::NEEDS`]
-//! gives the same per row.
+//! items below, LP2 has built the command layer's part of a running program's job and of the two snapshot reads, and
+//! LP3 the host's part of the two reads. LP2 has also built the `CanonicalObjectRefs` form (pull request 269), so the
+//! layer refuses a member that is no piece or position at admission. [`rows::NEEDS`] gives the same per row.
 //!
-//! - `filter.apply`: the layer serves the row (LP2's pull request 256: the gate `fresh_filter_preview`, the `filter`
-//!   preview rule, the `FilterRef` and `FilterPreviewRef` forms and a workspace inverse). `tests/served_rows.rs` only
-//!   serves it and checks the refusal of a stale filter preview. Next: the entry `apply_filter` takes the layer's
-//!   `FilterPreviewRef` in place of a natural, and the row runs through both routes.
+//! - `filter.apply`: built through both routes. The layer serves the row (LP2's pull request 256: the gate
+//!   `fresh_filter_preview`, the `filter` preview rule, the `FilterRef` and `FilterPreviewRef` forms and a workspace
+//!   inverse), and the entry `apply_filter` takes the `FilterPreviewRef` as a record of its epoch and job. What is not
+//!   built: a display that applies the applied filter.
 //! - A running program's job: LP2's `CommandLayer::invoke_with_inputs` (pull request 264) takes the provenance blocks
-//!   of an invocation's arguments, and `ProgramJob::inputs` holds them. The host builds them from the run's context.
-//!   The test host builds none yet, so it still fails a running program's query or view job. Next: the host builds
-//!   them.
-//! - Kernel rows for the two snapshot reads: LP2's structure rows answer them (pull request 262:
-//!   `CommandLayer::compare_cells`, `cell_layers` and `layer_counts`, which read no state and refuse with Jumble on).
-//!   Next: entries that pass their arguments with `read_snapshot<T>(query, x)` (pull request 199), and a host row in
-//!   the tool's bridge. The entries read a literal query with no argument, and the test host answers it with the
-//!   state number.
+//!   of an invocation's arguments, and `ProgramJob::inputs` holds them. The test host builds a running program's block
+//!   from the run's context (`Boundary::block`), and the job's run takes it as its input. The test host stands in for
+//!   the runtime's adapter, which invokes the rows with `Caller::Runtime`: no program operation reaches a served row.
+//!   LG3.1's effects have none, the solver invokes a command, and a program reaches a row only by a proposal (KN5.9),
+//!   whose arguments the host builds from the word (`c600_tools::bridge`). An operation that did would change the
+//!   boundary between the runtime and the host (PHS.52), so none is planned.
+//! - The two snapshot reads: built through both routes. The entries pass their arguments with
+//!   `read_snapshot<T>(query, x)` (pull request 199): `compare_cells` the two cells, `filter_counts` the layer
+//!   predicate. C5's host bridge answers `structure.compare` and `filter.preview` from LP2's structure rows (pull
+//!   request 262: `CommandLayer::compare_cells` and `layer_counts`, which read no state and refuse with Jumble on)
+//!   with `c600_tools::kernel_rows`. What is not built: the reads' tariffs in the command table, which freezes at
+//!   LP3, and a reference type in the IR, so `filter_counts` takes the predicate as a record of its cell and layer,
+//!   which the host reads from the record the predicate's job wrote.
 //! - `set.save`: a record for each saved set, where the entry writes the one record `set.save`, and the saved set's
 //!   exact-set digest as the result reference, where the layer gives the output's digest.
 //! - `view.effect.scope`: a display that applies the published scope.

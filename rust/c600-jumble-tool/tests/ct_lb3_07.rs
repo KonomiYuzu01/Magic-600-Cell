@@ -20,6 +20,9 @@
 //!   drafted check reads exactly the sets the solver drafted.
 //! - The admissibility entries read the solver's one letter or named grip once and answer that twist or grip only;
 //!   the straddlers entry reads the named cap once and answers its straddlers with exact certificates, and u.
+//! - The survey row answers one named grip's status and no table of grips: an entry written to ask it for every grip,
+//!   or for a list of grips, is refused with `KN5:input.argument_form`, and the bridge classifies with no budget, so it
+//!   never serves an incomplete survey.
 //! - The units entries read every off unit, or the solver's named unit, once; the clean-step entry reads the solver's
 //!   word and unit once and answers the clean-step contract for that unit only.
 //! - The named-word checks read their row once, with the named word as its argument, and answer no word.
@@ -42,6 +45,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_check::{admit_built_in, check, separation, Grant, Policy, Row, Separation, StateRead, NOT_GRANTED};
+use c600_command::code::ARGUMENT_FORM;
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, Expr};
 use c600_jumble::corrections;
@@ -668,6 +672,93 @@ fn ct_lb3_07_the_rim_entry_holds_no_all_items_outcome_table() {
         assert_no_field(&facts, &SELECTIONS, label);
         assert_no_field(&facts, &OUTCOMES, label);
     }
+}
+
+/// CT-LB3-07 (part: "per-revision fact results contain no all-items outcome table", on the survey row, LB3.5). The
+/// survey reaches the language one named grip at a time, never as a table of grips. `grip_status` takes one grip and
+/// reads `survey` once with it; at the walk's first closed, first misaligned and first blocked cap, and at solved, it
+/// answers exactly `cap` and `status`, the kernel's status of that grip, and nothing of another grip. A blocked grip's
+/// certificates come back only from the named cap's own read (`straddlers_at`), each certificate of that grip. An entry
+/// written to ask the row for every grip, with the text `"all"`, or for a list of grips, as a table of statuses, checks
+/// with no diagnostic and stops with `KN5:input.argument_form` at the row's tariff, so the row never answers and the
+/// run has no value; the bridge's answer refuses the same arguments. The bridge classifies the named grip with no
+/// budget, so it never serves an incomplete survey: a budget of no exact evaluation would leave each of these grips
+/// uncertain, whose survey letter is `u`, never `a` or `b`, while the bridge answers their exact status.
+#[test]
+fn ct_lb3_07_the_survey_answers_a_named_grip_and_no_table() {
+    let (misaligned, blocked) = walk_caps();
+    let mut state = walk().state().clone();
+    let summary = rim_summary(ctx(), &mut state, None, None).expect("no engine error");
+    let rows = summary.get("rows").and_then(Value::as_array).expect("a row for each cap");
+    let closed = rows
+        .iter()
+        .find(|row| engine_flag(row, "blocked") == Some(false) && engine_int(row, "N_c") == Some(0))
+        .map(|row| engine_int(row, "cap").expect("a cap ID"))
+        .expect("a closed cap");
+    let solved = Snapshot::solved(ctx(), Some(fixture().menu.clone()));
+    let named = [
+        ("closed", walk(), closed, Status::Admissible),
+        ("misaligned", walk(), misaligned, Status::Admissible),
+        ("blocked", walk(), blocked, Status::Blocked),
+        ("solved", &solved, blocked, Status::Admissible),
+    ];
+    for (label, snapshot, grip, expected) in named {
+        let mut host = Recording::on(snapshot);
+        let answer = completed(run(ADMISSIBILITY.name, "grip_status", vec![RunValue::int(grip)], &mut host), label);
+        assert_eq!(host.queries(), ["survey"], "{label}: one read");
+        assert_eq!(read_int(&host.reads[0].1), Some(grip), "{label}: the named grip, as given");
+        let RunValue::Record(record) = &answer else { panic!("{label}: a record") };
+        let names: Vec<&str> = record.fields().iter().map(|(name, _)| name.as_str()).collect();
+        assert_eq!(names, ["cap", "status"], "{label}: the named grip's status and nothing else");
+        let engine = snapshot.state().clone().survey(ctx(), &[grip as usize], None).expect("no engine error");
+        assert_eq!(engine, [expected], "{label}: grip {grip}");
+        assert_eq!((number(get(&answer, "cap")), string(get(&answer, "status"))), (grip, expected.as_str()), "{label}");
+    }
+
+    let mut host = Recording::on(walk());
+    let set = completed(run(STRADDLERS.name, "straddlers_at", vec![RunValue::int(blocked)], &mut host), "straddlers");
+    assert_eq!(host.queries(), ["straddlers"], "the blocked grip's certificates: one read");
+    assert_eq!(read_int(&host.reads[0].1), Some(blocked), "the named grip, as given");
+    let certificates = items(get(&set, "certificates"));
+    assert!(!certificates.is_empty(), "a blocked grip has a certified straddler");
+    for certificate in certificates {
+        assert_eq!(number(get(certificate, "grip")), blocked, "a certificate of the named grip only");
+    }
+
+    const TABLE: &str = "List<record { cap: Nat, status: Text }>";
+    let source = format!(
+        "edition \"6cs-draft-1\";\nmodule survey_table requires [];\n\nexport fn every_grip(what: Text) -> {TABLE} \
+         effects [snapshot] {{\n    return read_snapshot<{TABLE}>(\"survey\", what);\n}}\n\nexport fn \
+         these_grips(grips: List<Nat>) -> {TABLE} effects [snapshot] {{\n    return \
+         read_snapshot<{TABLE}>(\"survey\", grips);\n}}\n"
+    );
+    let program = lower_source(&source).expect("the module lowers");
+    let report = check(&program).expect("well-formed IR");
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    let asking = load(&program).expect("the module loads");
+    let pinned = fixture().pinned();
+    let options = Options { menu: Some(&pinned), ..Options::new(WIDE) };
+    let grips = RunValue::list(vec![RunValue::int(misaligned), RunValue::int(blocked)]);
+    for (function, arg) in [("every_grip", RunValue::text("all")), ("these_grips", grips)] {
+        let mut host = Recording::on(walk());
+        let refused = asking
+            .run("survey_table", function, vec![arg], &mut host, &options)
+            .unwrap_or_else(|r| panic!("{function}: refused: {r:?}"));
+        let stopped = (refused.summary.outcome, refused.summary.code);
+        assert_eq!(stopped, (Outcome::Error, Some(ARGUMENT_FORM)), "{function}");
+        assert!(refused.value.is_none(), "{function}: no table");
+        assert!(host.queries().is_empty(), "{function}: refused at the tariff, so the row never answers");
+    }
+    let mut rows = Rows::on(ctx(), Base::Snapshot(walk()));
+    let list = format!(r#"[{{"int":"{misaligned}"}},{{"int":"{blocked}"}}]"#);
+    for arg in [Json::text("all"), provenance::parse(list.as_bytes()).expect("a list of grips")] {
+        assert_eq!(rows.answer("survey", Some(&arg)).err(), Some(ARGUMENT_FORM), "the bridge's answer: {arg:?}");
+    }
+
+    let grips = [closed, misaligned, blocked].map(|grip| grip as usize);
+    let bounded = walk().state().clone().survey(ctx(), &grips, Some(0)).expect("no engine error");
+    assert_eq!(bounded, [Status::Uncertain; 3], "a budget of no exact evaluation leaves each grip uncertain");
+    assert!(bounded.iter().all(|status| status.letter() == "u"), "an uncertain grip is never a or b");
 }
 
 /// The first misaligned admissible cap and the first blocked cap of the walk, in cap-ID order.

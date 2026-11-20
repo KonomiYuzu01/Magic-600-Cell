@@ -36,7 +36,7 @@ use c600_runtime::codec::encode_value;
 use c600_runtime::wire::Enc;
 use c600_runtime::{Config, Ended, Fault, Job, JobOptions, Refused, Runtime, Stage};
 
-use crate::tool::{Ran, Tool, LIMITS};
+use crate::tool::{class_rows, Ran, Tool, LIMITS};
 
 /// The name of the in-process host in records: the tool's program runs on `c600-run` inside the caller's process.
 pub const IN_PROCESS: &str = "in-process";
@@ -110,11 +110,15 @@ pub fn run_in_process(
 
 /// The job of one run of `tool` on a literal word: the source bytes, the manifest's module and entry, the word as the
 /// entry's one argument, [`LIMITS`], the test tariffs and no source ranges, as [`Tool::run_in`] runs it in process.
-/// The job's profile is the column `c600_check::admit` applies in the child, tool authoring: that function has no
-/// built-in column, and its solving column refuses every previewing program.
+/// The job runs in the solving profile and names the tool's class rows ([`class_rows`], `JobOptions::built_in`), so
+/// the child admits the entry in the built-in column with `c600_check::admit_built_in`, as [`Tool::new`] does in this
+/// process (chapter 07 section 8). Solving is the profile of the place where LP3's hosts start a run, a command in a
+/// solving session (BND.17). The tool editor and a research workspace, which would set the other two, do not exist
+/// yet, and in a session of another profile the layer refuses a run's `operation.preview` (BND.16, BND.60).
 pub fn job(tool: &Tool, source: &str, word: &[i32]) -> Job {
     let mut options = JobOptions::new(LIMITS);
-    options.profile = Profile::ToolAuthoring;
+    options.profile = Profile::Solving;
+    options.built_in = Some(class_rows(&tool.manifest));
     options.source_ranges = false;
     Job {
         sources: vec![source.as_bytes().to_vec()],

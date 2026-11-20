@@ -1184,6 +1184,47 @@ pub fn mul_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> Option<
     Some((cost, reservation))
 }
 
+/// `q5_parts(x)` (LP2 draft): the canonical triple of an exact number widened to Q(√5), as the record `{ a, b, d }`
+/// with x = (a + b√5)/d, gcd(a, b, d) = 1 and d > 0 (ADR-L03.6, PS1.4). Every exact number is held in lowest terms
+/// with a positive denominator, so widening it gives the triple at once. `None` if `x` is not an exact number.
+pub fn q5_parts(x: &Value) -> Option<Value> {
+    let (a, b, d) = num(x)?.quad();
+    let field = |name: &str, n: BigInt| (Text::new(name), Value::int(n));
+    Some(Value::Record(Arc::new(Record::new(vec![field("a", a), field("b", b), field("d", d)]))))
+}
+
+/// The kernel cost and the result reservation of `q5_parts` (LP2 draft): `field_per_unit_pair` per widened operand
+/// byte, as a product with one operand, and the record's exact size, a 4-byte tag and the three integers (DET.57).
+pub fn q5_parts_price(x: &Value, d: &DraftTariffs) -> Option<(u128, u128)> {
+    let size = num(x)?.widened_size(2);
+    Some((d.field_per_unit_pair.saturating_mul(size), 4 + size))
+}
+
+/// The three integers of `q5_of(a, b, d)`, or `None` if one is not an integer.
+fn q5_operands<'a>(a: &'a Value, b: &'a Value, d: &'a Value) -> Option<(&'a BigInt, &'a BigInt, &'a BigInt)> {
+    match (a, b, d) {
+        (Value::Int(a), Value::Int(b), Value::Int(d)) => Some((a, b, d)),
+        _ => None,
+    }
+}
+
+/// `q5_of(a, b, d)` (LP2 draft): (a + b√5)/d in canonical form. `None` unless all three are integers and `d` is not
+/// zero; the interpreter guards the zero with a pointwise assertion first.
+pub fn q5_of(a: &Value, b: &Value, d: &Value) -> Option<Value> {
+    let (a, b, d) = q5_operands(a, b, d)?;
+    (!d.is_zero()).then(|| Value::Q5(Arc::new(Quad::new(a.clone(), b.clone(), d.clone()))))
+}
+
+/// The kernel cost and the result reservation of `q5_of(a, b, d)` (LP2 draft): DET.57's price of the product of
+/// a + b√5 and 1/d, which is the normalisation it performs, as [`mul_price`] gives it. `None` unless all three are
+/// integers. The two factors exist only to be priced.
+pub fn q5_of_price(a: &Value, b: &Value, d: &Value, t: &Tariffs, dt: &DraftTariffs) -> Option<(u128, u128)> {
+    let (a, b, d) = q5_operands(a, b, d)?;
+    let x = Value::Q5(Arc::new(Quad { a: a.clone(), b: b.clone(), d: BigInt::one() }));
+    let y = Value::Rat(Arc::new(Ratio { num: BigInt::one(), den: d.clone() }));
+    mul_price(&x, &y, t, dt)
+}
+
 /// The exact order of two numbers; `None` if an operand is not an exact number.
 pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
     let (x, y, rank) = exact_pair(a, b)?;

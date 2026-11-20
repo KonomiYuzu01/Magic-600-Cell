@@ -81,11 +81,15 @@
 //!   with fields `c0..c2`, `i0..i2` and `s0..s3`, and the corpus's workspace rows to `read_snapshot` and
 //!   `write_workspace`, which the boundary serves from its store. The corpus's `emit` maps to `publish_view`, the one
 //!   output besides the result. A fixed-length list function (a sum, a first minimum, a table look-up) is unrolled
-//!   into nested `if` and `exact_*` calls over the record's fields, since the IR draft has no loop; a loop over the
-//!   corpus's fixed word list is unrolled over its literal words, and a row with a literal argument, such as `score`
-//!   of the word `a`, is the query `score/a`. The synthetic engine charges each row its `fixture.json` cost. The IR
-//!   draft has no network read or process call, so those two probes only declare the capability. The session
-//!   identity is Full's KN0.1 block; the fixture data stay synthetic and are not Full's mechanics.
+//!   into nested `if` and `exact_*` calls over the record's fields, and a loop over the corpus's fixed word list is
+//!   unrolled over its literal words. A row with a literal argument, such as `score` of the word `a`, is the query
+//!   `score/a`; a row whose argument is the run's input (`word_check` of a word, `setup` of a target) is read with
+//!   `read_snapshot<T>("row", x)`. `mod_dot` modulo 5 is F5's `field_mul` and `field_add`. The loop over ten items is
+//!   `repeat`, and its `tick` a read of the row `tick` (cost 1); the batch check is one `word_check` read per chunk in
+//!   a `repeat`. A cancel comes from the synthetic engine inside a row it serves and is observed before the next
+//!   operation. The synthetic engine charges each row its `fixture.json` cost. The IR draft has no network read or
+//!   process call, so those two probes only declare the capability. The session identity is Full's KN0.1 block; the
+//!   fixture data stay synthetic and are not Full's mechanics.
 
 #![forbid(unsafe_code)]
 

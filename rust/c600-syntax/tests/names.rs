@@ -11,11 +11,11 @@ const HEADER: &str = "edition \"6cs-draft-1\";\nmodule tool requires [];\n\n";
 fn the_reserved_name_lists_are_whole_and_distinct() {
     let (keywords, builtins) = (keywords(), builtins());
     assert_eq!(keywords.len(), 10);
-    assert_eq!(builtins.len(), 91);
+    assert_eq!(builtins.len(), 93);
     for name in ["fn", "let", "return", "match"] {
         assert!(keywords.contains(&name), "{name}");
     }
-    for name in ["if", "exact_add", "exact_less", "approx53", "exclude"] {
+    for name in ["if", "exact_add", "exact_less", "approx53", "exclude", "q5_parts", "q5_of"] {
         assert!(builtins.contains(&name), "{name}");
     }
     let (k, b): (BTreeSet<_>, BTreeSet<_>) = (keywords.iter().collect(), builtins.iter().collect());
