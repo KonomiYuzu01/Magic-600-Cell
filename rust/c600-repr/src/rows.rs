@@ -177,8 +177,9 @@ pub const NEEDS: [RowNeed; 6] = [
         completion: CompletionKind::Workspace,
         receipt: "completed(workspace) at a revision whose workspace number is one higher, with a result reference to \
                   the saved set's exact-set digest; refused as an argument form when a member is no canonical object \
-                  of the model or `kind` is neither value, and with the draft code `KN5:input.saved_set_exists` \
-                  when the name holds a saved set and the invocation does not carry `replace: true` (U1-057).",
+                  of the model or `kind` is neither value, and with the draft code \
+                  `c600_command::code::SAVED_SET_EXISTS` when the name holds a saved set and the invocation does not \
+                  carry `replace: true` (U1-057).",
         undo_entry: "none: H-08 gives the row the undo class `none`, so a saved set is removed by its own row, not by \
                      undo.",
         served: true,
@@ -189,8 +190,8 @@ pub const NEEDS: [RowNeed; 6] = [
               `set/<name>` through the host's provenance reader: its kind, its members ascending and distinct, the \
               model identity, the name and the capture revision (pull request 337, `c600_command::sets`). A taken \
               name is refused unless the invocation carries `replace: true`.",
-        remains: "Nothing in the layer. The argument `replace` and the code `KN5:input.saved_set_exists` are drafts \
-                  until the command table freezes at LP3.",
+        remains: "Nothing in the layer. The argument `replace` and the code `SAVED_SET_EXISTS` are drafts until the \
+                  command table freezes at LP3.",
     },
     RowNeed {
         row: "structure.compare",
