@@ -77,6 +77,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-lx4"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-platform"
 version = "0.0.0"
 
@@ -159,11 +167,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-shell-lx4"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-kernel",
+ "c600-lx4",
+ "c600-syntax",
+ "c600-view",
+]
+
+[[package]]
 name = "c600-syntax"
 version = "0.0.0"
 dependencies = [
  "c600-digest",
  "c600-ir",
+]
+
+[[package]]
+name = "c600-view"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
 ]
 
 [[package]]

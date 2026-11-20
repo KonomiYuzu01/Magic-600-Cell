@@ -9,6 +9,7 @@
 //! - [`format`] prints a parsed program in one canonical layout (LG1.4).
 //! - [`lower`] turns parsed files into an IR [`c600_ir::Program`] with a source map (LG4.12). Exact literals stay
 //!   exact decimal text and approximate literals keep their precision (LG1.6, LG1.7).
+//! - [`keywords`] and [`builtins`] give, read-only, the reserved names lowering checks, for a host's completion list.
 
 #![forbid(unsafe_code)]
 
@@ -21,7 +22,7 @@ mod parse;
 pub use ast::ParsedFile;
 pub use c600_digest::sha256_hex;
 pub use format::format;
-pub use lower::{lower, LowerError, Lowered, SourceMap};
+pub use lower::{builtins, keywords, lower, LowerError, Lowered, SourceMap};
 pub use parse::parse;
 
 /// The only edition this parser reads. Like the IR draft's name, it says that its rules may still change before the
