@@ -107,7 +107,8 @@ fn the_host_shows_frames_and_recovers_through_its_c_interface() {
     assert_eq!((second.display_qpc, third.display_qpc), (2 * DISPLAY_TICKS, 3 * DISPLAY_TICKS));
     assert!(read(host, 1).is_empty());
 
-    // The device is removed: frames are unavailable until a recovery, which publishes the view again.
+    // The device is removed: frames are unavailable until a recovery, in which the host prepares the installed
+    // publication again for the new device (RM.23), under its own command.
     fake().remove_device();
     let mut submitted = M6hFrame::default();
     // SAFETY: a live handle and a writable row.
