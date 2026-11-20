@@ -187,20 +187,19 @@
 //!   the runtime's binary, by default `c600-runtime` beside the runner (packaging decides later). The summary has
 //!   `host` and `runtime_spawns`, each case of the summary `start_refused`, each case of the receipts file `host`,
 //!   and each step record `host` (null when no word was given to a host) and `start_refusal`.
-//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never chooses where to cut a word. The command
-//!   route's chunking is the 0.4 recipe's word steps, and the source route carries the solver's own: for one run the
-//!   host gives the bridge the input recipe's literal word and the length of each of its word steps
-//!   ([`bridge::Steps`]), for a recipe of plain word steps only. A proposal longer than one chunk of 100,000 letters
-//!   ([`bridge::WORD_CHUNK`]) that is exactly that literal word, letter for letter, goes in the solver's word steps,
-//!   in order, in the one invocation ([`bridge::proposal_args`]). Every other proposal is one word step, as before:
-//!   a word of at most one chunk, whatever the solver's steps, so O01 to O07 send the invocations they sent before;
-//!   and a word that is not the input literal, which the layer refuses whole when it is longer than one chunk, as it
-//!   refuses the same draft on the command route. The tariff stays the literal word's length, so the total bound of
-//!   3,000,000 is unchanged, and one proposal stays one invocation, one preview job and one commit. Only a plain word
-//!   step, exactly `{"kind": "word", "moves": [...]}`, counts ([`expand::word_steps`]), so the steps the bridge sends
-//!   are the recipe's own, byte for byte. Not built: a recipe with a star step, or with a word step that has another
-//!   field, keeps the single-step transport, so its literal word longer than one chunk is refused whole on the
-//!   source route.
+//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never cuts, splits or rewrites a word or a recipe.
+//!   The command route's chunking is the 0.4 recipe's word steps, and the source route carries the solver's own
+//!   recipe: for one run the host gives the bridge the input recipe, exactly as written, with its literal word
+//!   ([`bridge::Steps`]), built only from a recipe the kernel expanded, whatever its steps. A proposal longer than one
+//!   chunk of 100,000 letters ([`bridge::WORD_CHUNK`]) that is exactly that literal word, letter for letter, goes in
+//!   the one invocation as `{"draft": {"recipe": <the solver's recipe>}}`, unchanged ([`bridge::proposal_args`]):
+//!   plain word steps, star steps, and word steps with other fields, which are kept. Every other proposal is one word
+//!   step, as before: a word of at most one chunk, whatever the recipe, so O01 to O07 send the invocations they sent
+//!   before; and a word that is not the input literal, which the layer refuses whole when it is longer than one
+//!   chunk, as it refuses the same draft on the command route. The tariff stays the literal word's length, so the
+//!   total bound of 3,000,000 is unchanged, and one proposal stays one invocation, one preview job and one commit.
+//!   The draft the bridge sends is the solver's recipe byte for byte, so the source route admits a recipe over one
+//!   chunk exactly when the command route admits the same draft.
 //! - **Net and Strict checks** (LB2.3, CT-LB2-02's Net and Strict halves). The tests take the Net check to be the
 //!   layer's preview verdict at label level over a session's protected set, here the orbits one generator moves, and
 //!   the commit's refusal when that verdict is not clear. The Strict check is the same after the shell sets the
