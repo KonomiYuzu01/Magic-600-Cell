@@ -283,8 +283,8 @@
 //!     and the flat replay, the undo by the exact inverse, the identity item's code in both modes, and the order of
 //!     the checks.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
-//!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
-//!   `KN2:consistency.star_certificate`.
+//!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists`,
+//!   `KN5:input.saved_set_exists` and `KN2:consistency.star_certificate`.
 //! - The token travels beside the arguments in the envelope, not inside them, so it can bind the absolute arguments
 //!   (LI.6). Its binding enters the request digest; its authenticator does not (LI.5).
 //! - Jobs run when the host calls [`CommandLayer::run_jobs`]; `invoke` answers `running(job)` at once (KN5.2). The
@@ -396,7 +396,8 @@
 //!     Nat}`, a job and the epoch it ran in (draft). After the forms and the revisions, a `FilterRef` must resolve
 //!     (filter previews, below).
 //!   - `CanonicalObjectRefs`, which `set.save` takes, is a list of pieces or positions, each 0 to 177,119 (the
-//!     kernel's `PIECES`); an empty list and repeated members pass (draft).
+//!     kernel's `PIECES`); an empty list and repeated members pass (draft). `set.save` also takes the draft boolean
+//!     `replace` beside its table arguments, and its completion writes the saved set's own record ([`sets`]).
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
 //! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
@@ -510,6 +511,7 @@ pub mod frame;
 pub mod jumble;
 pub mod layer;
 pub mod receipt;
+pub mod sets;
 pub mod shell;
 pub mod store;
 pub mod table;
@@ -527,6 +529,7 @@ pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
 };
+pub use sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
 pub use shell::{
     draft_args, refresh_display, report, word_draft, ArgSource, DisplayStatus, KeyBinding, Refresh, Report, Shell,
     DISPLAY_OUT_OF_DATE,

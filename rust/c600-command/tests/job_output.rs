@@ -17,10 +17,12 @@ use c600_kernel::Kernel;
 const SECRET: [u8; 32] = [7; 32];
 
 const COMPARE: &str = "structure.compare";
-const SAVE: &str = "set.save";
 const SCOPE: &str = "view.effect.scope";
 /// A language-defined file row the tests register.
 const EXPORT: &str = "tool.export";
+/// A language-defined workspace row the tests register: its completion writes the output's records as they are.
+/// (`set.save` writes the saved set its entry names instead: `tests/saved_sets.rs`.)
+const STORE: &str = "tool.store";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -54,14 +56,6 @@ fn overlay(entry: &str) -> Overlay {
 
 fn compare_args(a: i64, b: i64) -> Value {
     json::object([("cells", Value::Array(vec![Value::Int(a), Value::Int(b)]))])
-}
-
-fn save_args(name: &str) -> Value {
-    json::object([
-        ("kind", text("identity")),
-        ("members", Value::Array(vec![Value::Int(3), Value::Int(5)])),
-        ("name", text(name)),
-    ])
 }
 
 fn scope_args(scope: &str) -> Value {
@@ -121,8 +115,8 @@ struct Fixture {
 }
 
 /// A session at the solved state that protects nothing, on H-08's table with the layer's drafts (`workspace.set`), with
-/// the representations tool's query, view and workspace rows served, a file overlay registered, and the test reader
-/// when `reader`.
+/// the representations tool's query and view rows served, a workspace overlay and a file overlay registered, and the
+/// test reader when `reader`.
 fn fixture(reader: bool) -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
@@ -139,8 +133,8 @@ fn fixture(reader: bool) -> Fixture {
 fn serve(layer: &mut CommandLayer) {
     layer.serve_row(COMPARE, overlay("compare_cells")).unwrap();
     layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
-    layer.serve_row(SAVE, overlay("save_set")).unwrap();
     layer.register_overlay(EXPORT, Kind::File, &[], overlay("export")).unwrap();
+    layer.register_overlay(STORE, Kind::Workspace, &[], overlay("store")).unwrap();
 }
 
 /// A reopen of `layer`'s store, which replays its actions without a provenance reader.
@@ -236,7 +230,7 @@ fn a_value_alone_completes_as_before() {
     for with in [false, true] {
         let mut f = fixture(false);
         let mut receipts = Vec::new();
-        for (row, args) in [(COMPARE, compare_args(1, 2)), (SAVE, save_args("pair"))] {
+        for (row, args) in [(COMPARE, compare_args(1, 2)), (STORE, json::object([]))] {
             let (job, _) = f.start(row, args);
             let done = match with {
                 false => f.layer.finish_program_job(job, Ok(set.clone())),
@@ -264,7 +258,7 @@ fn a_workspace_rows_records_are_written_in_its_one_durable_action() {
     assert!(completed(&f.write("b", letters(&[1]))));
     assert_eq!(f.record("b"), (1, Some(letters(&[1]))));
     let before = f.layer.revision().clone();
-    let (job, started) = f.start(SAVE, save_args("pair"));
+    let (job, started) = f.start(STORE, json::object([]));
     let out = output(
         json::object([("members", letters(&[3, 5]))]),
         vec![text("shown")],
@@ -319,14 +313,14 @@ fn a_record_from_any_other_row_fails_its_job_and_writes_nothing() {
 fn a_workspace_rows_records_pass_the_hosts_reader_or_nothing_is_written() {
     let mut bare = fixture(false);
     let before = bare.fixed();
-    let (job, _) = bare.start(SAVE, save_args("pair"));
+    let (job, _) = bare.start(STORE, json::object([]));
     let out = output(Value::Null, Vec::new(), &[("a", letters(&[1]), "block")]);
     assert_eq!(code_of(&bare.layer.finish_program_job_with(job, Ok(out)).unwrap()), code::ROW_NOT_BUILT);
     assert_eq!(bare.fixed(), before);
 
     let mut f = fixture(true);
     let before = f.fixed();
-    let (job, _) = f.start(SAVE, save_args("pair"));
+    let (job, _) = f.start(STORE, json::object([]));
     let out = output(Value::Null, Vec::new(), &[("a", letters(&[1]), "block"), ("b", letters(&[2]), "refused")]);
     let done = f.layer.finish_program_job_with(job, Ok(out)).unwrap();
     let Status::Failed(error) = &done.status else { panic!("{:?}", done.status) };
@@ -336,13 +330,13 @@ fn a_workspace_rows_records_pass_the_hosts_reader_or_nothing_is_written() {
     );
     assert_eq!(f.fixed(), before);
 
-    let (job, _) = f.start(SAVE, save_args("pair"));
+    let (job, _) = f.start(STORE, json::object([]));
     let failed = Error::new(code::NOT_GRANTED, "the entry failed");
     let done = f.layer.finish_program_job_with(job, Err(failed.clone())).unwrap();
     assert_eq!(done.status, Status::Failed(failed));
     assert_eq!(f.fixed(), before);
 
-    let (job, _) = f.start(SAVE, save_args("pair"));
+    let (job, _) = f.start(STORE, json::object([]));
     assert!(committed(&f.commit(&word(&[1]))));
     let late = output(Value::Null, Vec::new(), &[("a", letters(&[1]), "block")]);
     assert!(f.layer.finish_program_job_with(job, Ok(late)).is_none());
@@ -365,7 +359,7 @@ fn no_undo_or_redo_writes_over_a_jobs_records() {
     let commit = f.layer.undo_hint(Direction::Undo).unwrap().target;
     assert!(f.layer.undo_hint(Direction::Redo).is_some());
 
-    let (job, _) = f.start(SAVE, save_args("pair"));
+    let (job, _) = f.start(STORE, json::object([]));
     let out = output(Value::Null, Vec::new(), &[("a", letters(&[5]), "block")]);
     assert!(completed(&f.layer.finish_program_job_with(job, Ok(out)).unwrap()));
     assert_eq!(f.record("a"), (4, Some(letters(&[5]))));
@@ -389,10 +383,10 @@ fn no_undo_or_redo_writes_over_a_jobs_records() {
 #[test]
 fn a_workspace_completion_journals_its_records() {
     let mut f = fixture(true);
-    let (job, _) = f.start(SAVE, save_args("one"));
+    let (job, _) = f.start(STORE, json::object([]));
     let out = output(Value::Null, Vec::new(), &[("b", letters(&[2]), "block"), ("a", letters(&[1]), "block")]);
     assert!(completed(&f.layer.finish_program_job_with(job, Ok(out)).unwrap()));
-    let (job, _) = f.start(SAVE, save_args("two"));
+    let (job, _) = f.start(STORE, json::object([]));
     assert!(completed(&f.layer.finish_program_job(job, Ok(Value::Null)).unwrap()));
     assert!(completed(&f.write("w", letters(&[3]))));
     let log = f.layer.store().log.clone();

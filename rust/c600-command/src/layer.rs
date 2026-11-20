@@ -112,6 +112,7 @@ use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
 };
+use crate::sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
 use crate::store::{
     identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Profile, Reopen, Store, Transaction,
     TransactionKind,
@@ -602,7 +603,7 @@ fn refused(code: &'static str, detail: impl Into<String>) -> Result<(Option<u64>
 }
 
 /// The argument checks an invocation makes before its row's own: the arguments are an object, a confirmable row's
-/// `confirm` is a boolean, and the names fit the row's arguments. Returns the arguments.
+/// `confirm` and `set.save`'s `replace` are booleans, and the names fit the row's arguments. Returns the arguments.
 fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String, Value>, Error> {
     let Some(args) = args.as_object() else {
         return Err(Error::new(code::ARGUMENT_FORM, "the arguments are not an object"));
@@ -612,7 +613,15 @@ fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String,
     if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
         return Err(Error::new(code::ARGUMENT_FORM, "`confirm` is a boolean"));
     }
-    let names = args.keys().map(String::as_str).filter(|name| !(confirmable && *name == "confirm"));
+    // `set.save` takes an optional boolean `replace` beside its table arguments (draft; U1-057, [`crate::sets`]).
+    let replaceable = row.id == SET_SAVE_ROW;
+    if replaceable && args.get(REPLACE).is_some_and(|replace| !matches!(replace, Value::Bool(_))) {
+        return Err(Error::new(code::ARGUMENT_FORM, "`replace` is a boolean"));
+    }
+    let names = args
+        .keys()
+        .map(String::as_str)
+        .filter(|name| !(confirmable && *name == "confirm") && !(replaceable && *name == REPLACE));
     if !forms::names_fit(row, names) {
         return Err(Error::new(code::ARGUMENT_FORM, format!("`{}` takes {:?}", row.id, row.arguments)));
     }
@@ -2061,6 +2070,10 @@ impl<S: Store> CommandLayer<S> {
                 self.check_filter_refs(&row, args)?;
                 self.fresh_filter_gate(&row, &invocation.args)?;
                 self.check_inputs(&row, inputs)?;
+                if row.id == SET_SAVE_ROW {
+                    let name = args.get("name").and_then(Value::as_str).unwrap_or_default();
+                    self.check_set_name(name, args.get(REPLACE) == Some(&Value::Bool(true)))?;
+                }
                 self.admit_program(caller, invocation, &row, inputs)
             }
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
@@ -3174,7 +3187,8 @@ impl<S: Store> CommandLayer<S> {
 
     /// `workspace.set` (M6's record write): writes `payload` with its provenance block under `record` as one durable
     /// action whose receipt is `completed(workspace)`. The host's provenance reader checks the block first (PS1.16); a
-    /// block it refuses, a missing reader or a bad argument writes nothing.
+    /// block it refuses, a missing reader or a bad argument writes nothing. A name under `set/` is a saved set's
+    /// ([`crate::sets`]) and is refused with `KN5:input.argument_form`.
     fn write_record(
         &mut self,
         caller: &Caller,
@@ -3187,6 +3201,7 @@ impl<S: Store> CommandLayer<S> {
         else {
             return refused(code::ARGUMENT_FORM, "`record` and `provenance` are text");
         };
+        saved_set_name(name)?;
         let Some(reader) = &self.provenance else {
             return refused(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader"));
         };
@@ -3241,8 +3256,9 @@ impl<S: Store> CommandLayer<S> {
     /// Its piece roles are placed at the head ([`CommandLayer::place`]), and it is written as one record write,
     /// undoable as a workspace inverse (LB7.2). Refused, writing nothing, in this order: no reader
     /// (`KN5:input.row_not_built`), Jumble on (`KN5:input.retained_tool_needs_jumble_off`), a draft of another form or
-    /// a name that is not text or is empty (`KN5:input.argument_form`), a draft record that is missing or holds neither
-    /// letters nor a work sheet (`KN2:input.named_object_invalid`), and a block the reader refuses (its error).
+    /// a name that is not text, is empty or is under `set/` (`KN5:input.argument_form`; [`crate::sets`]), a draft
+    /// record that is missing or holds neither letters nor a work sheet (`KN2:input.named_object_invalid`), and a block
+    /// the reader refuses (its error).
     fn save_worksheet(
         &mut self,
         caller: &Caller,
@@ -3260,6 +3276,7 @@ impl<S: Store> CommandLayer<S> {
         let (Some(source), Some(name)) = (source, name) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
         };
+        saved_set_name(name)?;
         let (sheet, value) = self.drafted(source)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
@@ -4136,24 +4153,24 @@ impl<S: Store> CommandLayer<S> {
             Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
                 Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
             }
-            Ok(output) if program.kind == Kind::Workspace => {
-                let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
-                let meta = Meta {
-                    caller: program.caller.clone(),
-                    command: program.command.clone(),
-                    row: program.row.clone(),
-                    request,
-                    confirm: false,
-                };
-                let result = output.digest();
-                let records =
-                    output.records.into_iter().map(|(name, value)| RecordWrite { name, value: Some(value) }).collect();
-                let adoption = self.workspace_adoption(meta, job, result, records);
-                match self.transact(adoption) {
-                    Ok((_, status)) => status,
-                    Err(error) => Status::Failed(error),
+            Ok(output) if program.kind == Kind::Workspace => match self.workspace_writes(&program, output) {
+                Err(error) => Status::Failed(error),
+                Ok((result, records)) => {
+                    let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
+                    let meta = Meta {
+                        caller: program.caller.clone(),
+                        command: program.command.clone(),
+                        row: program.row.clone(),
+                        request,
+                        confirm: false,
+                    };
+                    let adoption = self.workspace_adoption(meta, job, result, records);
+                    match self.transact(adoption) {
+                        Ok((_, status)) => status,
+                        Err(error) => Status::Failed(error),
+                    }
                 }
-            }
+            },
             Ok(output) => {
                 let kind = match program.kind {
                     Kind::Query => CompletionKind::Query,
@@ -4195,6 +4212,69 @@ impl<S: Store> CommandLayer<S> {
             reader.check(value.provenance.as_bytes())?;
         }
         Ok(output)
+    }
+
+    /// A workspace row's completion writes and the digest its result reference carries: the output's records and
+    /// [`JobOutput::digest`], except for `set.save` ([`crate::sets`]); another row's record under `set/` fails the job
+    /// with `KN2:input.named_object_invalid`. `set.save`'s entry writes the one record `set.save`,
+    /// which must name the set the invocation names: the same kind, name and members, these in canonical order.
+    /// Otherwise the job fails with `KN2:input.named_object_invalid`. The completion writes the saved set's own record
+    /// `set/<name>`, keeping the entry's provenance block, and its result reference carries the exact set's digest
+    /// under the model the job read. A name that holds a saved set fails it with `KN5:input.saved_set_exists` unless
+    /// the invocation carried `replace: true`. A failed job writes nothing.
+    fn workspace_writes(&self, program: &ProgramJob, output: JobOutput) -> Result<(String, Vec<RecordWrite>), Error> {
+        if program.row != SET_SAVE_ROW {
+            if let Some(name) = output.records.keys().find(|name| name.starts_with(SAVED_SET_PREFIX)) {
+                let detail = format!("the output's record `{name}` is a saved set's, which only `set.save` writes");
+                return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+            }
+            let result = output.digest();
+            let records =
+                output.records.into_iter().map(|(name, value)| RecordWrite { name, value: Some(value) }).collect();
+            return Ok((result, records));
+        }
+        let mut records = output.records;
+        let entry = records.remove(SET_SAVE_RECORD).filter(|_| records.is_empty()).ok_or_else(|| {
+            let detail = format!("`{SET_SAVE_ROW}`'s entry writes the one record `{SET_SAVE_RECORD}`");
+            Error::new(code::NAMED_OBJECT_INVALID, detail)
+        })?;
+        let set = SavedSet::from_entry(&entry.payload)?;
+        let args = &program.args;
+        let mut asked: Vec<u64> = match args.get("members").and_then(Value::as_array) {
+            Some(members) => members.iter().filter_map(|m| m.as_i64().and_then(|n| u64::try_from(n).ok())).collect(),
+            None => Vec::new(),
+        };
+        asked.sort_unstable();
+        asked.dedup();
+        let kind = args.get("kind").and_then(Value::as_str);
+        let name = args.get("name").and_then(Value::as_str);
+        if (kind, name, &asked) != (Some(set.kind), Some(set.name.as_str()), &set.members) {
+            let detail = format!("the entry's record `{SET_SAVE_RECORD}` is not the set the invocation names");
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        }
+        self.check_set_name(&set.name, args.get(REPLACE) == Some(&Value::Bool(true)))?;
+        let model = &program.revision.identity;
+        let value = RecordValue { payload: set.payload(model, &program.revision), provenance: entry.provenance };
+        Ok((set.digest(model), vec![RecordWrite { name: saved_set_record(&set.name), value: Some(value) }]))
+    }
+
+    /// A save under `name` when the name holds a saved set is refused with `KN5:input.saved_set_exists`, unless it
+    /// carries `replace: true` (U1-057; draft).
+    fn check_set_name(&self, name: &str, replace: bool) -> Result<(), Error> {
+        if replace || self.record(&saved_set_record(name)).is_none() {
+            return Ok(());
+        }
+        let detail = format!("a saved set is named `{name}`; a save with `replace: true` replaces it");
+        Err(Error::new(code::SAVED_SET_EXISTS, detail))
+    }
+}
+
+/// A record name `workspace.set` and `worksheet.save` refuse: a name under `set/`, which only a `set.save` completion
+/// writes ([`crate::sets`]; draft).
+fn saved_set_name(name: &str) -> Result<(), Error> {
+    match name.starts_with(SAVED_SET_PREFIX) {
+        true => Err(Error::new(code::ARGUMENT_FORM, "a name under `set/` is a saved set's; only `set.save` writes it")),
+        false => Ok(()),
     }
 }
 
