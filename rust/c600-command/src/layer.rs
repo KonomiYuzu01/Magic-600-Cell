@@ -1576,6 +1576,20 @@ impl<S: Store> CommandLayer<S> {
         Err(Error::new(code::NO_FRESH_PREVIEW, detail))
     }
 
+    /// RM.26's report that the adapter cannot confirm presentation (`read_presented` answers `unavailable(Error)`, for
+    /// example after a device loss): the host clears the presented-preview latch and never guesses the newest preview
+    /// it received. A presented pending preview is ready again, its presentation run ends and the generation advances
+    /// (LI.21), so `operation.execute` answers `KN5:stale.no_fresh_preview` until a newer frame presents the preview
+    /// again. The newest frame reported stays the newest, so neither a delayed older report nor the newest one repeated
+    /// restores the presentation. The adapter's error is the host's to show; the layer keeps nothing of it.
+    pub fn presentation_unavailable(&mut self) {
+        self.run = None;
+        if let Some(p) = self.slot.as_mut().filter(|p| p.state == PreviewState::Presented) {
+            p.state = PreviewState::Ready;
+            self.generation += 1;
+        }
+    }
+
     /// Applies a newer frame report to the pending preview and its presentation run.
     fn observe(&mut self, frame: &PresentedFrame) {
         let Some(p) = self.slot.as_mut() else {

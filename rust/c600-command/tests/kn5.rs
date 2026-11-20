@@ -664,10 +664,10 @@ fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
     assert_eq!(f.layer.invoke(&runtime, scramble), refused, "the refusal answers its own envelope again");
 }
 
-/// CT-KN5-10 (part: the layer's public functions that take `&mut self` are the allowlisted entry points, its test
-/// hooks exist only in builds with debug assertions or the `test-hooks` feature, and the shell reaches the layer
-/// through `invoke` and `present` alone besides reads; not run: calling each entry point against a journal), R-05,
-/// KN5.1, L15.
+/// CT-KN5-10 (part: the layer's public functions that take `&mut self` are the allowlisted entry points, its test hooks
+/// exist only in builds with debug assertions or the `test-hooks` feature, and the shell reaches the layer through
+/// `invoke`, `present` and `presentation_unavailable` alone besides reads; not run: calling each entry point against a
+/// journal), R-05, KN5.1, L15.
 #[test]
 fn the_layer_has_no_public_mutator_beside_its_entry_points() {
     const HOOK: &str = "#[cfg(any(debug_assertions, feature = \"test-hooks\"))]";
@@ -697,6 +697,8 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("set_program_capacity", false),
         ("set_budget_ceiling", false),
         ("present", false),
+        // RM.26's other adapter report: presentation cannot be confirmed.
+        ("presentation_unavailable", false),
         ("set_provenance", false),
         ("set_views", false),
         ("pin_menu", false),
@@ -725,7 +727,11 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         .collect();
     calls.sort_unstable();
     calls.dedup();
-    assert_eq!(calls, ["frame", "identity_binding", "invoke", "present", "revision", "table", "undo_hint"]);
+    let reads = ["frame", "identity_binding", "revision", "table", "undo_hint"];
+    let mut expected = vec!["invoke", "present", "presentation_unavailable"];
+    expected.extend(reads);
+    expected.sort_unstable();
+    assert_eq!(calls, expected);
 }
 
 /// CT-ONE-11 (part: when two commit steps fail together the earlier step's code answers and nothing changes, for each

@@ -170,6 +170,13 @@ impl Shell {
         }
     }
 
+    /// Reports to the layer that the adapter cannot confirm presentation ([`CommandLayer::presentation_unavailable`],
+    /// RM.26), and ends the shell's preview binding, so no token names a preview while presentation is unavailable.
+    pub fn presentation_unavailable<S: Store>(&mut self, layer: &mut CommandLayer<S>) {
+        layer.presentation_unavailable();
+        self.presented = None;
+    }
+
     /// Step 2: mints the token of one press, or none for a row that takes none.
     fn mint<S: Store>(&mut self, layer: &CommandLayer<S>, command: &str, row: &Row, args: &Value) -> Option<Token> {
         if !row.takes_token() {
