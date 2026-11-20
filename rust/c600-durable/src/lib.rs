@@ -4,9 +4,10 @@
 //!
 //! KN5 gets one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026): `c600-command`, whose `Store`
 //! trait `c600-session` implements. Its stages 1 to 5 are on main (LP2's pull requests 174 and 194). The tests here
-//! drive it with LP3's host pieces, C5's provenance reader among them (`c600_tools::workspace`), and change neither it
-//! nor `c600-session`. Where a conformance part needs KN5 logic that the layer does not have yet, the test file names
-//! the part as waiting for LP2's KN5 implementation instead of building it here.
+//! drive it with LP3's host pieces, C5's provenance reader (`c600_tools::workspace`) and view host
+//! (`c600_tools::views`, over `c600-view`'s view model) among them, and change neither it nor `c600-session`. Where a
+//! conformance part needs KN5 logic that the layer does not have yet, the test file names the part as waiting for
+//! LP2's KN5 implementation instead of building it here.
 //!
 //! # Tests
 //!
@@ -26,8 +27,10 @@
 //! - `tests/kn5_on_layer.rs`: CT-EV3-07 on the layer over the journal (EV3.2, EV4.15, KN5.20). A commit, the solver's
 //!   `workspace.set` and a commit take places 1 to 3 of one `session.undo` order; a hint taken before a later action
 //!   of either kind is superseded; and undo, then redo, walk the three actions in order across both kinds, each after a
-//!   power loss. A program's `workspace.set` and `session.undo` are refused, and a view, a language overlay row of kind
-//!   `view`, publishes from a program and from the shell without writing the journal or making the undo hint stale.
+//!   power loss. With the host's view model behind EV3.2's view rows, the solver opens and closes a view of a language
+//!   overlay row of kind `view`; the view's run is refused `workspace.set`, `session.undo`, `view.open` and
+//!   `view.close`, and the row publishes from the view's run and from the shell, none of it writing the journal or
+//!   making the undo hint stale.
 //! - `tests/kn5_on_session.rs`: the same CT-EV3-07 parts on M6's own `Session` API, and CT-LB2-03's work-sheet part
 //!   (LB7.2: reusing a named work sheet invalidates the old preview) with the sheet as a record that M6 sets again,
 //!   since M6 has no work-sheet rows.
@@ -82,8 +85,9 @@
 //!   preview of a persisted word use the same entry approved as a built-in tool in the tool-authoring profile. Its
 //!   block lists the run's input block as its part.
 //! - **Views on the layer** (EV3.2, KN5.3). The layer leaves `view.open` and `view.close` to the host's view model,
-//!   which these tests do not install yet, so a view is a language overlay row of kind `view`, `tool.c7.panel`, whose
-//!   program job the test finishes with a fixed value where the host would evaluate the view.
+//!   which `tests/kn5_on_layer.rs` installs through C5's `ModelViews`. A view's evaluation is not built: the view is a
+//!   language overlay row of kind `view`, `tool.c7.panel`, whose program job the test finishes with a fixed value
+//!   where the host would evaluate the view.
 //! - **Views on M6** (EV3.2). M6 has no view rows. `tests/kn5_on_session.rs` uses what a view stands on in M6 instead:
 //!   a query job, an opened snapshot and a preview, and a program's attempts to write the workspace, on the program's
 //!   channel and from a job.
@@ -100,10 +104,6 @@
 //!   `tests/ct_rte_08_persisted_word.rs` runs, and KN5.26's admission matrix (L1, L2), which `c600-command`'s
 //!   `tests/kn5_admission.rs` runs (LP2's pull requests 270 and 272). Not built: a session profile, which the layer
 //!   does not know, so the host's reader applies a solving session's admission in every session.
-//! - EV3.2's view rows. LP2's part is built (pull request 271): the layer admits `view.open` and `view.close` and
-//!   leaves them to the host's view model (`c600_command::Views`). No test here installs one yet, so both rows answer
-//!   `KN5:input.row_not_built` and CT-EV3-07's view part runs on a language overlay row of kind `view`; LP3's next
-//!   step serves `Views` with `c600-view`'s view model.
 //! - Reading a position role's occupant again at a reuse or a comparison, which the layer does not build. The rest of
 //!   the work-sheet structure, the named roles and their placement again, and LB7.2's fresh exact analysis are built,
 //!   and `tests/ct_lb2_03_work_sheet_reuse.rs` runs them.

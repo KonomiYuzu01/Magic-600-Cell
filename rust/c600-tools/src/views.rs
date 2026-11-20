@@ -11,14 +11,17 @@
 //! A view holds one word: the word of the proposal, which the built-in column admits only as the word the solver named
 //! (BND.4, chapter 07 section 8). No function here takes a word from anywhere else.
 //!
+//! The command layer's view rows, `view.open` and `view.close`, reach the same view model through [`ModelViews`], the
+//! host's `c600_command::Views` (EV3.2, RPI.81 to RPI.83; LP2's pull request 271).
+//!
 //! The draft choices of this module are listed under the crate documentation's drafts.
 
 use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use c600_command::{
-    CommandLayer, Error as CommandError, FrameChain, FrameStamp, PresentedFrame, Preview, PreviewState,
-    Revision as Head, Shell, ShownPreview, Store,
+    code as layer_code, CommandLayer, Error as CommandError, FrameChain, FrameStamp, PresentedFrame, Preview,
+    PreviewState, Revision as Head, Shell, ShownPreview, Store, ViewSourceRef, Views,
 };
 use c600_digest::sha256_hex;
 use c600_display::array::Array;
@@ -33,6 +36,7 @@ use c600_display::produce::{full_set, retained, GeometryInput};
 use c600_display::stage::{Composition, Layer};
 use c600_display::validate::{BoundArray, EngineBundle};
 use c600_ir::Expr;
+use c600_kernel::json::Value;
 use c600_kernel::{IdentityBlock, Snapshot};
 use c600_run::boundary::{Answer, Shown};
 use c600_syntax::{lower, parse, Span};
@@ -151,16 +155,22 @@ pub fn revision_ref(head: &Head, identity: &IdentityBlock) -> Result<RevisionRef
 
 /// The view model's revision of a command-layer revision: its counters and the label digest's 32 bytes.
 pub fn model_revision(head: &Head) -> Result<view::Revision, String> {
-    let hex = head.digest.as_bytes();
-    if hex.len() != 64 {
-        return Err("the label digest is not a SHA-256 in hex".into());
+    let digest = digest_bytes(&head.digest).ok_or("the label digest is not a SHA-256 in hex")?;
+    Ok(view::Revision::new(head.epoch, head.state, head.workspace, head.protection, digest))
+}
+
+/// The 32 bytes that 64 hex digits spell, or `None` for any other text (a sign, which `from_str_radix` would take,
+/// included).
+fn digest_bytes(hex: &str) -> Option<view::Digest> {
+    let hex = hex.as_bytes();
+    if hex.len() != 64 || !hex.iter().all(u8::is_ascii_hexdigit) {
+        return None;
     }
     let mut digest = [0u8; 32];
     for (byte, pair) in digest.iter_mut().zip(hex.chunks(2)) {
-        let pair = std::str::from_utf8(pair).ok().and_then(|pair| u8::from_str_radix(pair, 16).ok());
-        *byte = pair.ok_or("the label digest is not a SHA-256 in hex")?;
+        *byte = std::str::from_utf8(pair).ok().and_then(|pair| u8::from_str_radix(pair, 16).ok())?;
     }
-    Ok(view::Revision::new(head.epoch, head.state, head.workspace, head.protection, digest))
+    Some(digest)
 }
 
 /// The engine bundle of a Full state at `revision` for the display host: the labels and the full visibility and
@@ -532,4 +542,130 @@ pub fn report_presented<S: Store>(
         Some(id) => shell.present(layer, id, &frame).map(|()| Some(id)),
         None => Ok(None),
     }
+}
+
+// ----- the command layer's view rows on the view model
+
+/// What the host declares for a source when the layer admits `view.open` (RPI.83, BND.27): the view's dependencies,
+/// its workload, the output allowance of each revision-driven run and, for a built-in source, the class its tool's
+/// manifest declares. A source the host does not serve is refused here, and the receipt carries the refusal.
+pub type Declare = dyn Fn(&ViewSourceRef) -> Result<view::Declared, CommandError> + Send + Sync;
+
+/// The command layer's view rows, `view.open` and `view.close`, served by `c600-view`'s view model (EV3.2, RPI.81 to
+/// RPI.83; LP2's pull request 271).
+///
+/// The layer admits either row (the argument forms, a source's overlay row of kind `view`, RPI.83's solver command) and
+/// calls this host once per command ID. The view model then applies its own rules: the view namespace, RPI.82's budget
+/// and the view lane. The host's frame loop shares the model.
+///
+/// Each layer command ID becomes the model's [`view::CommandId::Caller`], numbered from 1 in the order this host first
+/// sees it, so the cancel reason of a run that a close supersedes names the command that closed its view
+/// ([`ModelViews::command`]). Every call states [`view::Origin::Solver`], since the layer calls the host only inside a
+/// command the solver invoked. A closed view's resources stay charged until the host, at its frame boundary, takes the
+/// retirement tokens ([`ModelViews::take_retiring`]) and completes each one once the backend proves the resources
+/// unused (RM.19).
+#[derive(Clone)]
+pub struct ModelViews {
+    model: Arc<Mutex<view::ViewModel>>,
+    declare: Arc<Declare>,
+    host: Arc<Mutex<Numbering>>,
+}
+
+/// The layer's command IDs this host numbered, and the retirement tokens of closed views not yet taken.
+#[derive(Default)]
+struct Numbering {
+    numbers: BTreeMap<String, u64>,
+    commands: Vec<String>,
+    retiring: Vec<view::RetireToken>,
+}
+
+impl ModelViews {
+    /// The layer's view rows on `model`, which declares each source it opens with `declare`.
+    pub fn new(
+        model: Arc<Mutex<view::ViewModel>>,
+        declare: impl Fn(&ViewSourceRef) -> Result<view::Declared, CommandError> + Send + Sync + 'static,
+    ) -> ModelViews {
+        ModelViews { model, declare: Arc::new(declare), host: Arc::default() }
+    }
+
+    /// The view model this host serves.
+    pub fn model(&self) -> &Arc<Mutex<view::ViewModel>> {
+        &self.model
+    }
+
+    /// The layer's command ID behind a [`view::CommandId::Caller`] this host numbered.
+    pub fn command(&self, id: view::CommandId) -> Option<String> {
+        let view::CommandId::Caller(number) = id else { return None };
+        let index = usize::try_from(number.checked_sub(1)?).ok()?;
+        self.numbering().commands.get(index).cloned()
+    }
+
+    /// The retirement tokens of the views closed since the last call, for `ViewModel::complete_retirement` (RM.19).
+    pub fn take_retiring(&self) -> Vec<view::RetireToken> {
+        std::mem::take(&mut self.numbering().retiring)
+    }
+
+    fn numbering(&self) -> MutexGuard<'_, Numbering> {
+        self.host.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn view_model(&self) -> MutexGuard<'_, view::ViewModel> {
+        self.model.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// The model's command ID of the layer's command `command`.
+    fn caller(&self, command: &str) -> view::CommandId {
+        let mut numbering = self.numbering();
+        if let Some(number) = numbering.numbers.get(command) {
+            return view::CommandId::Caller(*number);
+        }
+        numbering.commands.push(command.to_owned());
+        let number = numbering.commands.len() as u64;
+        numbering.numbers.insert(command.to_owned(), number);
+        view::CommandId::Caller(number)
+    }
+}
+
+impl Views for ModelViews {
+    fn open(&mut self, command: &str, name: &str, source: &ViewSourceRef) -> Result<(), CommandError> {
+        let declared = (self.declare)(source)?;
+        let source = model_source(source)?;
+        let caller = self.caller(command);
+        let opened =
+            self.view_model().open_view(caller, view::Origin::Solver, view::ViewId::new(name), source, declared);
+        opened.map(|_generation| ()).map_err(refusal)
+    }
+
+    fn close(&mut self, command: &str, name: &str) -> Result<(), CommandError> {
+        let caller = self.caller(command);
+        let closed = self.view_model().close_view(caller, view::Origin::Solver, &view::ViewId::new(name));
+        if let Some(token) = closed.map_err(refusal)? {
+            self.numbering().retiring.push(token);
+        }
+        Ok(())
+    }
+}
+
+/// The view model's form of a source: an overlay's module digest as its 32 bytes and its typed arguments as their
+/// canonical JSON bytes (JS.2). The layer admits only 64 lowercase hex digits as the digest.
+fn model_source(source: &ViewSourceRef) -> Result<view::ViewSource, CommandError> {
+    Ok(match source {
+        ViewSourceRef::BuiltIn { name } => view::ViewSource::BuiltIn { name: name.clone() },
+        ViewSourceRef::Overlay { row, module, arguments } => view::ViewSource::Overlay {
+            row: row.clone(),
+            module: digest_bytes(module).ok_or_else(|| CommandError::new(layer_code::ARGUMENT_FORM, "source"))?,
+            arguments: Value::Object(arguments.clone()).canonical().into_bytes(),
+        },
+    })
+}
+
+/// A refusal of the view model as the layer's receipt carries it: the same code, with the view or the ceiling's field
+/// as the detail, as LP2's stand-in host in `c600-command`'s `tests/view_rows.rs` gives them.
+fn refusal(error: view::Error) -> CommandError {
+    let detail = match error.context {
+        view::Context::View(name) => name,
+        view::Context::Ceiling { field, .. } => field.to_owned(),
+        other => format!("{other:?}"),
+    };
+    CommandError::new(error.code, detail)
 }
