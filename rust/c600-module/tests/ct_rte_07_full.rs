@@ -5,10 +5,12 @@
 //! `c600-check`, loaded and run through `c600-run`'s boundary. The ten runs give one SHA-256 over the canonical results
 //! and stop reasons, the engine side and the store. An allowed key completes with the corpus's value; a refused key
 //! gives the corpus's expected code at the refused operation, installs no preview, keeps the session fields and the
-//! existing workspace provenance, and reads no planted data. A realised budget key (B05, B06) gives the corpus's
-//! outcome, code and used amounts; its stop is the draft's operation path. An interruption key (B08, B09) is the
-//! solver's cancel, which the synthetic engine raises inside a host row of a `repeat` loop: it gives the corpus's
-//! outcome and code at the next operation, and the corpus's examined items are the rows the engine served.
+//! existing workspace provenance, and reads no planted data. A priced budget key (B01 to B07) runs under the price
+//! mapping that the crate documentation pins (CT-RTE-07's price mapping): it gives the corpus's outcome and code, in
+//! the corpus's phase, at the counterpart of the corpus's refused instruction, with the corpus's used amounts mapped
+//! through that table. An interruption key (B08, B09) is the solver's cancel, which the synthetic engine raises
+//! inside a host row of a `repeat` loop: it gives the corpus's outcome and code at the next operation, and the
+//! corpus's examined items are the rows the engine served.
 //! [`FALSE_REFUSALS`] and [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key
 //! gives the corpus's code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the
 //! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, and
@@ -28,7 +30,7 @@ use c600_module::code::{DIGEST_MISMATCH, NOT_GRANTED};
 use c600_module::{approve, load, verify, Closure, Identity, Outcome, Refusal, RunRequest};
 use c600_run::boundary::{Answer, Place, Store};
 use c600_run::interp::{CancelFlag, Options};
-use c600_run::meter::{Amounts, Outcome as Ended};
+use c600_run::meter::{frame_size, Amounts, Outcome as Ended};
 use c600_run::provenance::{self, field, hex, Author, Json, Profile, INCOMPATIBLE};
 use c600_run::value::Value;
 use support::*;
@@ -39,11 +41,11 @@ const CORPUS: &str =
 const FREEZE_SHA256: &str = "d7eff17503ee95d45ddca0efe38ec3bb09418b0248a6279afe2dce0a90ea6627";
 
 /// The keys realised here, one test each.
-const REALISED: [&str; 51] = [
+const REALISED: [&str; 56] = [
     "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10", "A11", "A12", "A13", "A14", "A15", "A16",
-    "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A33", "A34", "A35", "B05",
-    "B06", "B08", "B09", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11", "MR12", "MR15", "MR16", "P01", "P02",
-    "P03", "P04", "S01", "S02",
+    "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A33", "A34", "A35", "B01",
+    "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11",
+    "MR12", "MR15", "MR16", "P01", "P02", "P03", "P04", "S01", "S02",
 ];
 
 const M5: &str = "a jumbling key: realised on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`";
@@ -54,10 +56,8 @@ const ADMISSION: &str = "realised as the built-in column's refusal at admission 
 const COMMAND: &str = "not realised: the budget declaration and the host ceiling belong to the command layer, a \
                        non-goal; no crate defines `KN7:input.budget_not_declared` or `KN7:resource_limit.budget_ceiling`";
 
-/// The keys left, with the reason. The amounts of B01 to B04 and B07 follow LX-3's experiment-only counting fixture
-/// (`profile.json`); lp1-exec-draft-1 prices operations, encodings and memory with its own table, and the corpus asks
-/// for a candidate's mapping to be pinned before comparison (`kernel-stub.md`).
-const LEFT: [(&str, &str); 24] = [
+/// The keys left, with the reason.
+const LEFT: [(&str, &str); 19] = [
     ("MR01", M5),
     ("MR02", M5),
     ("MR05", M5),
@@ -72,15 +72,6 @@ const LEFT: [(&str, &str); 24] = [
     ("MR14", ADMISSION),
     ("MR19", ADMISSION),
     ("MR20", ADMISSION),
-    (
-        "B01",
-        "not realised: LX-3's `tick` costs one step and nothing else; a read of the host's row `tick` also costs its \
-         kernel cost, and the draft charges a step to every operation it runs",
-    ),
-    ("B02", "not realised: the draft also prices the encoding and a row's memory, so the used amounts differ"),
-    ("B03", "not realised: LX-3's `retain` of a logical byte array has no IR counterpart"),
-    ("B04", "not realised: LX-3 charges an emitted `\"abcd\"` as 6 bytes; the draft's encoding adds a line feed"),
-    ("B07", "not realised: LX-3's probe-only 16-byte frame per call; the draft prices a frame with its own table"),
     ("B10", RUNTIME),
     ("B11", RUNTIME),
     ("B12", "not realised: the host's row cache and its variants are not part of this crate"),
@@ -1172,43 +1163,147 @@ fn budget_case(id: &str) -> BudgetCase {
     }
 }
 
-/// B05 and B06: one read of the counts by an own tool in tool authoring, under the corpus's interacting limits. The
-/// read is the run's first operation and the row costs 3 (`fixture.json`). The outcome, code and used amounts are the
-/// corpus's: a failed step debits nothing, and a step that passes stays charged when the kernel cost fails (DET.56).
-/// The stop is the draft's path of that operation, `entry#read`, with the phase the corpus's `before_*` names; the
-/// corpus's coverage is not part of the draft's result.
-fn interacting(id: &str, phase: &str) {
-    let source = root(
-        "export fn go(t: Target, w: Word) -> $INTS effects [snapshot] {\n    \
-         return read_snapshot<$INTS>(\"counts\");\n}\n",
-    );
+/// Amounts in the meter's order: steps, kernel cost, memory, output.
+fn spent(steps: u128, kernel_cost: u128, memory: u128, output: u128) -> Amounts {
+    Amounts { steps, kernel_cost, memory, output }
+}
+
+/// A priced budget key (B01 to B07): `m.go`, an own tool in tool authoring with no argument, runs under the corpus's
+/// limits moved by the price mapping (`Drafts`, CT-RTE-07's price mapping). `prefix` is the draft's charge of the
+/// prefix the corpus admits, the entry's `call` included and memory at its peak. The corpus's charge of that prefix is
+/// its used amounts less the step of its refused instruction `stop`, which stays charged unless the step is what
+/// fails. The run gives the corpus's outcome and code, in the corpus's phase, stopped at `at`, the counterpart of
+/// `stop`, and has used `used`, the corpus's used amounts mapped through the table. It installs no preview, writes
+/// nothing and keeps the session fields.
+fn priced(id: &str, source: &str, stop: &str, prefix: Amounts, at: &str, used: Amounts) -> Trial {
     let case = budget_case(id);
-    let inputs = || vec![manual(), manual()];
-    let trial = ten(|| Trial::of(&source, &[]).exec("go", Author::Own, Profile::ToolAuthoring, inputs(), case.limits));
+    assert_eq!(case.stop, stop, "the corpus's refused instruction");
+    let phase = case.code.strip_prefix("KN7:budget.").expect("a budget code");
+    let mut admitted = case.used.expect("the corpus's used amounts");
+    if phase != "steps" {
+        admitted.steps -= 1;
+    }
+    let limit = |corpus: u128, draft: u128, admitted: u128| corpus + draft - admitted;
+    let l = case.limits;
+    let limits = Amounts {
+        steps: limit(l.steps, prefix.steps, admitted.steps),
+        kernel_cost: limit(l.kernel_cost, prefix.kernel_cost, admitted.kernel_cost),
+        memory: limit(l.memory, prefix.memory, admitted.memory),
+        output: limit(l.output, prefix.output, admitted.output),
+    };
+    let trial =
+        ten(|| Trial::of(source, &[]).call("go", Author::Own, Profile::ToolAuthoring, Vec::new(), Vec::new(), limits));
     let s = &trial.last().run.summary;
     assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), Some(case.code.as_str())));
-    assert_eq!(Some(s.used), case.used);
-    let stop = s.stop.as_ref().expect("a stop");
-    assert_eq!((stop.at.as_str(), stop.phase), ("entry#read", phase));
-    let before = match phase {
-        "steps" => "step",
-        "kernel_cost" => "kernel",
-        other => other,
-    };
-    assert_eq!(case.stop, format!("r1/body/0:before_{before}"));
-    assert!(trial.engine.views.is_empty() && trial.store.records.is_empty());
+    let refused = s.stop.as_ref().expect("a stop");
+    assert_eq!((refused.at.as_str(), refused.phase), (at, phase));
+    assert_eq!(s.used, used, "the corpus's {:?}, mapped", case.used);
+    assert!(trial.engine.previews.is_empty() && trial.store.records.is_empty());
     unchanged(&trial);
     clean(&trial);
+    trial
 }
 
+/// B01: three `tick`s, the literals `()` of a record, under two steps. The entry's frame has a slot per field.
+#[test]
+fn ct_rte_07_full_b01_steps() {
+    let source = root(
+        "export fn go() -> record { a: Unit, b: Unit, c: Unit } effects [] {\n    \
+         return record { a = (), b = (), c = () };\n}\n",
+    );
+    // The entry's `call` and the two literals the corpus admits as `tick`s; the third literal's step fails.
+    let admitted = spent(3, 0, frame_size(3), 0);
+    let trial = priced("B01", &source, "r1/body/2:before_step", admitted, "m.go:2#value", admitted);
+    assert!(trial.engine.views.is_empty());
+}
+
+/// B02: two reads of the counts, 3 each (`fixture.json`), under a kernel cost of 5. A read reserves the host's
+/// result bound, 4096 in the synthetic engine, so the memory peaks at the frame and that bound. The engine serves
+/// the corpus's examined row only.
+#[test]
+fn ct_rte_07_full_b02_kernel_cost() {
+    let source = root(
+        "export fn go() -> record { a: $INTS, b: $INTS } effects [snapshot] {\n    \
+         return record { a = read_snapshot<$INTS>(\"counts\"), b = read_snapshot<$INTS>(\"counts\") };\n}\n",
+    );
+    let peak = frame_size(2) + 4096;
+    let trial =
+        priced("B02", &source, "r1/body/1:before_kernel", spent(2, 3, peak, 0), "m.go:1#kernel", spent(3, 3, peak, 0));
+    assert_eq!(trial.engine.served, ["counts"]);
+    assert!(trial.engine.views.is_empty());
+}
+
+/// B03: two retained 16-byte texts, the literals `"abcd"` of four scalars (DET.57), under a memory of 31.
+#[test]
+fn ct_rte_07_full_b03_memory() {
+    let source = root(
+        "export fn go() -> record { a: Text, b: Text } effects [] {\n    \
+         return record { a = \"abcd\", b = \"abcd\" };\n}\n",
+    );
+    let peak = frame_size(2) + 16;
+    priced("B03", &source, "r1/body/1:before_memory", spent(2, 0, peak, 0), "m.go:1#value", spent(3, 0, peak, 0));
+}
+
+/// B04: two emissions of the text "abcd" under an output of 11. A publication's unit is the JSON and a line feed,
+/// 7 bytes (FP.5): output, encoding work and a buffer released after it, while the literal holds 16 bytes. The first
+/// view is published and the second refused. The draft's five steps are the corpus's two, one for the entry's `call`
+/// and one for each literal.
+#[test]
+fn ct_rte_07_full_b04_output() {
+    let source = root(
+        "export fn go() -> record { a: Unit, b: Unit } effects [view] {\n    \
+         return record { a = publish_view(\"abcd\"), b = publish_view(\"abcd\") };\n}\n",
+    );
+    let peak = frame_size(2) + 16 + 7;
+    let trial = priced(
+        "B04",
+        &source,
+        "r1/body/1:before_output",
+        spent(3, 7, peak, 7),
+        "m.go:1#publish_view",
+        spent(5, 7, peak, 7),
+    );
+    assert_eq!(trial.engine.views, [text("abcd")]);
+}
+
+/// B05 and B06: one read of the counts, the run's first operation after the entry's `call`.
+const COUNTS: &str = "export fn go() -> $INTS effects [snapshot] {\n    return read_snapshot<$INTS>(\"counts\");\n}\n";
+
+/// B05: the step passes and stays charged; the kernel cost of 3 fails under 2 (DET.56). No row is served.
 #[test]
 fn ct_rte_07_full_b05_kernel_cost_after_step() {
-    interacting("B05", "kernel_cost");
+    let entry = spent(1, 0, frame_size(0), 0);
+    let trial = priced(
+        "B05",
+        &root(COUNTS),
+        "r1/body/0:before_kernel",
+        entry,
+        "m.go:root#kernel",
+        spent(2, 0, frame_size(0), 0),
+    );
+    assert!(trial.engine.served.is_empty() && trial.engine.views.is_empty());
 }
 
+/// B06: no step for the read; a failed step debits nothing. No row is served.
 #[test]
 fn ct_rte_07_full_b06_no_step() {
-    interacting("B06", "steps");
+    let entry = spent(1, 0, frame_size(0), 0);
+    let trial = priced("B06", &root(COUNTS), "r1/body/0:before_step", entry, "m.go:root#kernel", entry);
+    assert!(trial.engine.served.is_empty() && trial.engine.views.is_empty());
+}
+
+/// B07: a recursion under a memory of 48; the corpus refuses its fourth 16-byte frame. A function with no slot has a
+/// 16-byte frame here too, the entry's included, so the draft refuses the same call.
+#[test]
+fn ct_rte_07_full_b07_recursion() {
+    let source = root(
+        "fn recurse() -> Int effects [] {\n    return recurse();\n}\n\n\
+         export fn go() -> Int effects [] {\n    return recurse();\n}\n",
+    );
+    let peak = 4 * frame_size(0);
+    let at = "m.go:root > m.recurse:root > m.recurse:root > m.recurse:root#call";
+    let trial = priced("B07", &source, "r1/recurse:before_frame_4", spent(4, 0, peak, 0), at, spent(5, 0, peak, 0));
+    assert!(trial.engine.views.is_empty());
 }
 
 /// B08 and B09: an own tool in tool authoring, under the corpus's limits, whose loop reads one host row per item; the
