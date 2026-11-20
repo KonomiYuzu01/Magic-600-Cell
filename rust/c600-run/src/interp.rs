@@ -621,6 +621,8 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::InsertEntry | Prim::Expand => Some(3),
         Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => Some(1),
         Prim::TextDecode | Prim::StreamDigest => Some(1),
+        Prim::Q5Parts => Some(1),
+        Prim::Q5Of => Some(3),
         Prim::WordStream => Some(2),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
         Prim::Stage(s) => Some(s.arity()),
@@ -1677,6 +1679,8 @@ impl<'a> Machine<'a> {
         let name = match op {
             Prim::ExactAdd => "exact_add",
             Prim::ExactMul => "exact_mul",
+            Prim::Q5Parts => "q5_parts",
+            Prim::Q5Of => return self.q5_of(n, args),
             Prim::Assert => "assert",
             Prim::RngDraw => "rng_draw",
             Prim::ExactLess => "exact_less",
@@ -1729,6 +1733,7 @@ impl<'a> Machine<'a> {
         let price = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add_price(a, b, &t, &d),
             (Prim::ExactMul, a, Some(b)) => value::mul_price(a, b, &t, &d),
+            (Prim::Q5Parts, a, None) => value::q5_parts_price(a, &d),
             // One step and no memory: the predicate was evaluated before, with ordinary operations (DET.55).
             (Prim::Assert, Value::Bool(_), None) => Some((0, 0)),
             // One block of the generator's stream and its 256-bit integer, as the run's own draw (DET.61).
@@ -1763,6 +1768,7 @@ impl<'a> Machine<'a> {
         let result = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add(a, b).expect("priced operands add"),
             (Prim::ExactMul, a, Some(b)) => value::mul(a, b).expect("priced operands multiply"),
+            (Prim::Q5Parts, a, None) => value::q5_parts(a).expect("a priced number"),
             // A false predicate ends the run before the guarded operation, and the assertion keeps its admitted step
             // (DET.55, DET.56).
             (Prim::Assert, Value::Bool(false), None) => {
@@ -1786,6 +1792,37 @@ impl<'a> Machine<'a> {
             (Prim::ApproxNot, a, None) => Value::ApproxBool(display(a) == Some(false)),
             _ => unreachable!("a priced operation"),
         };
+        self.settle(memory, result);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `q5_of(a, b, d)` (LP2 draft): the Q(√5) value (a + b√5)/d of three integers, in canonical form. The row is
+    /// priced as the product of a + b√5 and 1/d (DET.57, [`value::q5_of_price`]), and a mistyped operand is rejected
+    /// before any charge. A zero denominator has no value, so the operation is guarded by a pointwise assertion
+    /// (DET.55), as `field_inverse` is: its predicate `denominator_nonzero` reserves its `Bool`, the `assert` step
+    /// consumes it, and only then does the construction run. A zero `d` stops with `LG4:input.pointwise_failed` after
+    /// the `assert` step and keeps the admitted charges (chapter 13).
+    fn q5_of(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let (t, dt) = (self.tariffs, self.draft);
+        let (a, b, d) = (&args[0].value, &args[1].value, &args[2].value);
+        let Some((kernel, memory)) = value::q5_of_price(a, b, d, &t, &dt) else {
+            return Err(self.fail(Some(n), "q5_of", code::IR_REJECTED));
+        };
+        self.charge(Some(n), "denominator_nonzero", 0, 1, 0)?;
+        self.charge(Some(n), "assert", 0, 0, 0)?;
+        // The assertion consumes the predicate's Bool.
+        self.meter.release(1);
+        if matches!(d, Value::Int(z) if z.sign() == Sign::NoSign) {
+            return Err(self.fail(Some(n), "assert", meter::code::POINTWISE_FAILED));
+        }
+        // The normalisation runs only after its row is admitted (DET.55).
+        self.charge(Some(n), "q5_of", kernel, memory, 0)?;
+        let result = value::q5_of(a, b, d).expect("priced integers with a nonzero denominator");
         self.settle(memory, result);
         let result = self.values.pop().expect("the result");
         for held in args {
