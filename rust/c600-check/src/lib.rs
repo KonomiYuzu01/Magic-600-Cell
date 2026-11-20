@@ -3699,7 +3699,9 @@ impl<'p> Checker<'p> {
                 // Three integers: the two numerators and the common denominator (LP2 draft). A zero denominator is a
                 // pointwise failure when the program runs, as `field_inverse`'s zero is (DET.55).
                 for (i, v) in vals.iter().enumerate() {
-                    let what = ["the first numerator of q5_of", "the second numerator of q5_of", "the denominator of q5_of"][i];
+                    let what =
+                        ["the first numerator of q5_of", "the second numerator of q5_of", "the denominator of q5_of"]
+                            [i];
                     if fits(&Ty::Int, &v.ty) {
                         self.at(i, |c| c.exact_use(Site::Operand, v, what));
                     } else {

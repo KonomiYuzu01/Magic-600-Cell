@@ -22,7 +22,7 @@ const OPS: &str = "export fn parts(x: Q5) -> record { a: Int, b: Int, d: Int } e
     export fn parts_rat(x: Rat) -> record { a: Int, b: Int, d: Int } effects [] {\n    return q5_parts(x);\n}\n\n\
     export fn parts_int(x: Int) -> record { a: Int, b: Int, d: Int } effects [] {\n    return q5_parts(x);\n}\n\n\
     export fn of(a: Int, b: Int, d: Int) -> Q5 effects [] {\n    return q5_of(a, b, d);\n}\n\n\
-    export fn inverse(x: Q5) -> Q5 effects [] {\n    \
+    export fn reciprocal(x: Q5) -> Q5 effects [] {\n    \
     let p = q5_parts(x);\n    \
     let n = exact_add(exact_mul(p.a, p.a), exact_mul(-5, exact_mul(p.b, p.b)));\n    \
     return q5_of(exact_mul(p.a, p.d), exact_mul(exact_mul(-1, p.b), p.d), n);\n}\n\n\
@@ -126,7 +126,11 @@ fn a_triple_builds_its_canonical_value() {
                 let Value::Q5(q) = value(&r) else { panic!("a Q5 value") };
                 let g = gcd(gcd(a, b), d);
                 let s = d.signum();
-                assert_eq!((q.a.clone(), q.b.clone(), q.d.clone()), big(s * a / g, s * b / g, d.abs() / g), "{a} {b} {d}");
+                assert_eq!(
+                    (q.a.clone(), q.b.clone(), q.d.clone()),
+                    big(s * a / g, s * b / g, d.abs() / g),
+                    "{a} {b} {d}"
+                );
             }
         }
     }
@@ -159,10 +163,10 @@ fn a_zero_denominator_stops_at_its_assertion() {
 fn an_inverse_and_a_half_are_library_bodies() {
     let loaded = build(OPS);
     let phi = q5(1, 1, 2);
-    let inverse = run(&loaded, "inverse", vec![phi.clone()]);
+    let inverse = run(&loaded, "reciprocal", vec![phi.clone()]);
     assert!(equal(value(&inverse), &q5(-1, 1, 2)));
     for x in [phi, q5(-9, 2, 12), q5(3, -1, 1), q5(5, 0, 7), q5(-4, 6, 8), q5(0, -2, 3)] {
-        let inverse = run(&loaded, "inverse", vec![x.clone()]);
+        let inverse = run(&loaded, "reciprocal", vec![x.clone()]);
         let product = value::mul(&x, value(&inverse)).expect("two numbers");
         assert!(equal(&product, &int(1)), "{x:?}");
     }
