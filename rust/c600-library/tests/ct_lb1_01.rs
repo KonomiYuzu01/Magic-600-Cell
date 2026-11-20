@@ -102,11 +102,12 @@ fn oracle(p: i64, rows: &[Vec<i64>], target: &[i64]) -> (usize, Option<Vec<i64>>
         m.swap(rank, at);
         let factor = inverse(m[rank][column]);
         m[rank].iter_mut().for_each(|x| *x = (*x * factor) % p);
-        for i in 0..m.len() {
-            if i != rank && m[i][column] != 0 {
-                let f = m[i][column];
-                for j in 0..=unknowns {
-                    m[i][j] = (m[i][j] - f * m[rank][j]).rem_euclid(p);
+        let pivot = m[rank].clone();
+        for (i, row) in m.iter_mut().enumerate() {
+            if i != rank && row[column] != 0 {
+                let f = row[column];
+                for (x, y) in row.iter_mut().zip(&pivot) {
+                    *x = (*x - f * y).rem_euclid(p);
                 }
             }
         }
