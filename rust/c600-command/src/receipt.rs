@@ -25,6 +25,8 @@ pub mod code {
     pub const RESULT_GONE: &str = "KN5:stale.result_gone";
     pub const EPOCH_CHANGED: &str = "KN2:stale.epoch_changed";
     pub const LANE_FULL: &str = "KN7:busy.lane_full";
+    pub const BUDGET_NOT_DECLARED: &str = "KN7:input.budget_not_declared";
+    pub const BUDGET_CEILING: &str = "KN7:resource_limit.budget_ceiling";
     pub const REVISION_REPLACED: &str = "KN7:cancelled.revision_replaced";
     pub const BY_USER: &str = "KN7:cancelled.by_user";
     pub const NOT_GRANTED: &str = "LG3:capability.not_granted";
@@ -66,6 +68,9 @@ pub mod code {
     /// B2 of the KN5 boundary attack, ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must
     /// start its runs inside a solver command.
     pub const OUTSIDE_SOLVER_COMMAND: &str = "KN5:capability.outside_solver_command";
+    /// A `set.save` under a name that holds a saved set, without `replace: true` (U1-057: named-set replacement stays
+    /// explicit; [`crate::sets`]).
+    pub const SAVED_SET_EXISTS: &str = "KN5:input.saved_set_exists";
 }
 
 /// An error with its chapter 13 code.

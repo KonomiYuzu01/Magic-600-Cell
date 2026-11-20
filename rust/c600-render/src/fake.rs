@@ -11,8 +11,10 @@
 
 use std::collections::{BTreeMap, VecDeque};
 
+use c600_digest::sha256_hex;
+
 use crate::abi::*;
-use crate::api::{CoreAbi, EngineImage, PreparationInput};
+use crate::api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
 
 /// `DXGI_ERROR_DEVICE_REMOVED`, the reason a removed fake device reports.
 pub const DEVICE_REMOVED_REASON: i32 = 0x887A_0005_u32 as i32;
@@ -54,6 +56,28 @@ struct Pick {
     set: u64,
 }
 
+/// `sa2_engine_adopt`'s pose rules, as the S-A2 core checks them: one index below the pose count per piece, finite
+/// rows with the identity first, and lattice entries of -1 or below the group's order with entry 0 equal to 0.
+fn check_pose(pose: &PoseArrays<'_>) -> Result<(), &'static str> {
+    let count = pose.pose_lattice.len();
+    if count == 0 || count > MAX_POSES || pose.poses.len() != count * 16 || pose.pose_index.len() != PIECES {
+        return Err("a pose table is not PIECES indices and 1..SA2_MAX_POSES poses and lattice entries");
+    }
+    if pose.pose_index.iter().any(|&i| i < 0 || i as usize >= count) {
+        return Err("a pose index is not below pose_count");
+    }
+    if pose.poses.iter().any(|v| !v.is_finite()) {
+        return Err("a pose entry is not finite");
+    }
+    if (0..16).any(|i| pose.poses[i] != if i % 5 == 0 { 1.0 } else { 0.0 }) {
+        return Err("pose 0 is not the identity");
+    }
+    if pose.pose_lattice.iter().any(|&e| e < -1 || e >= POSE_GROUP_ORDER) || pose.pose_lattice[0] != 0 {
+        return Err("a pose_lattice entry is not -1 or below SA2_POSE_GROUP_ORDER, or entry 0 is not 0");
+    }
+    Ok(())
+}
+
 /// The fake core.
 #[derive(Debug)]
 pub struct FakeCore {
@@ -88,6 +112,9 @@ pub struct FakeCore {
     pub submitted: Vec<Sa2FrameInput>,
     /// Every adopted engine revision with its first label.
     pub adoptions: Vec<(u64, u32)>,
+    /// Every posed adoption: its revision, its pose count and the SHA-256 (hexadecimal) of the little-endian bytes
+    /// of its pose index, pose rows and lattice entries, as the bundle's array descriptors name them.
+    pub posed: Vec<(u64, u32, [String; 3])>,
 }
 
 impl FakeCore {
@@ -116,6 +143,7 @@ impl FakeCore {
             prepared: Vec::new(),
             submitted: Vec::new(),
             adoptions: Vec::new(),
+            posed: Vec::new(),
         }
     }
 
@@ -296,12 +324,31 @@ impl CoreAbi for FakeCore {
         if image.labels.len() != SLOTS || image.labels.iter().any(|&l| l as usize >= SLOTS) {
             return self.fail(Status::INVALID_ARGUMENT, "the labels are not SA2_SLOTS labels below SA2_SLOTS");
         }
+        if let Some(pose) = &image.pose {
+            if let Err(message) = check_pose(pose) {
+                return self.fail(Status::INVALID_ARGUMENT, message);
+            }
+        }
         if self.adopted.is_some_and(|a| image.revision <= a) {
             return self.fail(Status::WRONG_STATE, "the revision does not increase");
         }
         self.adopted = Some(image.revision);
         self.adoptions.push((image.revision, image.labels[0]));
         self.counters.bytes_uploaded += (SLOTS * 4) as u64;
+        if let Some(pose) = &image.pose {
+            let count = pose.pose_lattice.len();
+            let digest = |bytes: Vec<u8>| sha256_hex(&bytes);
+            self.posed.push((
+                image.revision,
+                count as u32,
+                [
+                    digest(pose.pose_index.iter().flat_map(|v| v.to_le_bytes()).collect()),
+                    digest(pose.poses.iter().flat_map(|v| v.to_le_bytes()).collect()),
+                    digest(pose.pose_lattice.iter().flat_map(|v| v.to_le_bytes()).collect()),
+                ],
+            ));
+            self.counters.bytes_uploaded += (PIECES * 4 + count * (64 + 4)) as u64;
+        }
         Ok(image.revision)
     }
 

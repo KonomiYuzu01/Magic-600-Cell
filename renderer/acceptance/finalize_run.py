@@ -1,7 +1,11 @@
 """Finalize framework/DLL/PresentMon evidence without changing its inputs.
 
 C9 acceptance copy of work/experiments/renderer-l2/finalize_run.py (see PROVENANCE.md): the Godot host (sa2)
-only, with run, geometry and lattice modes, and W-J's scenes (ABI 3) beside W1..W4.
+only, with run, geometry and lattice modes, and W-J's scenes (ABI 3) beside W1..W4. A route-B run (C9 U4, the
+harness's presentation record) is measured on the core's own swap chain, which the harness declares, at the
+core's sync interval; the window's own chain is listed as ignored, as renderer_gate lists other chains. A run with
+user stages (C9 U5c, the harness's stages record) also needs both compile records, a row for every measured frame
+and no stopped frame; run.json then carries a stages record beside the gate's fields.
 """
 from __future__ import annotations
 
@@ -49,14 +53,32 @@ CHECKS = {
     'debug-switch': 'A debug switch or the device debug layer is enabled for a gate run.',
     'vram-missing': 'Peak process-local VRAM is not a positive finite number.',
     'presentmon': 'The PresentMon CSV is incomplete, malformed or has no matching trace rows.',
-    'swap-chain': 'More than one swap chain presented during the trace.',
-    'sync-interval': 'A trace present has a nonzero sync interval.',
+    'swap-chain': 'More than one swap chain presented during the trace, or the declared route-B chain did not present.',
+    'sync-interval': 'A measured trace present has another sync interval than its route (0, or 1 on route B).',
     'blind-seconds': 'A checked second contains no displayed present.',
     'trace-steps': 'A checked present step does not contain exactly one trace entry.',
     'operator': 'The gate run has no operator confirmation or fault-injection declaration.',
     'gate-shape': 'The completed record does not satisfy the renderer gate input contract.',
     'output-exists': 'A finalizer output already exists; no file was written.',
+    'stage-compile': 'A user-stage compile failed, or its compile record is missing or does not match the build.',
+    'stage-rows': 'The user-stage rows are missing or malformed, or a measured frame has no row.',
+    'stage-stopped': 'A frame drawn with the user stages stopped: its raster bound exceeded the overdraw allowance.',
 }
+# C9 U5c: the user-stage checks, listed in run.json only for a run with user stages.
+STAGE_CHECKS = ('stage-compile', 'stage-rows', 'stage-stopped')
+STAGE_KINDS = ('vertex', 'fragment')
+STAGE_FILES = file_guard.STAGE_FILES
+STAGE_LIBRARIES = file_guard.STAGE_LIBRARIES
+STAGE_OUTPUTS = ('stage-compile-vertex.json', 'stage-compile-fragment.json', 'stage-frames.jsonl')
+STAGE_CONTRACT = 'm600-stage-hlsl/1'
+STAGE_COMPILE_FORMAT = 'magic600-stage-compile/1'
+STAGE_ROW_FIELDS = ('frame', 'stopped', 'bound', 'allowance', 'vertex_stage', 'fragment_stage',
+                    'user_pixel_invocations', 'builtin_pixel_invocations')
+# The built-in projection's distance 1.18f (renderer/core/src/scene.cpp constants()), the gate vertex stage's d4.
+BUILTIN_D4_BITS = '0x' + struct.pack('>f', 1.18).hex()
+SHA256_HEX = re.compile(r'[0-9a-f]{64}')
+# C9 U4: route B's presentation record (Level2.InitializeSurface) and the core's SA2_SURFACE_SYNC_INTERVAL.
+SURFACE_SYNC_INTERVAL = 1
 CSV_COLUMNS = ('ProcessID', 'SwapChainAddress', 'QPCTime', 'msBetweenPresents',
                'Dropped', 'SyncInterval', 'PresentMode', 'AllowsTearing')
 # The DLL checks its geometry against S-B's reference set and verifies the files' digests in this index.
@@ -148,6 +170,19 @@ def read_harness(directory, candidate, mode, pid):
                          'samples', 'samples_not_visible', 'samples_covered', 'samples_not_foreground',
                          'visible_throughout', 'foreground_throughout', 'presents'))
     fields(h['debug'], ('enabled', 'debug_layer', 'counts', 'messages'))
+    presentation = h.get('presentation')
+    if presentation is not None:
+        fields(presentation, ('route', 'swap_chain', 'sync_interval'))
+        require(presentation['route'] == 'surface' and isinstance(presentation['swap_chain'], str)
+                and re.fullmatch(r'0x[0-9A-F]{16}', presentation['swap_chain']) is not None
+                and int(presentation['swap_chain'], 16) != 0
+                and type(presentation['sync_interval']) is int
+                and presentation['sync_interval'] == SURFACE_SYNC_INTERVAL)
+    require((h['configuration'].get('route') == 'surface') == (presentation is not None))
+    stages = h.get('stages')
+    if stages is not None:
+        # C9 U5c: user stages attach to a W1..W4 run without fault injection only.
+        require(isinstance(stages, dict) and mode == 'run' and h['scene'] in SCENES[:4] and h['options']['inject'] is None)
     return h
 
 
@@ -586,9 +621,19 @@ def build_identity(h, n, mode, directory, launched_created):
         require(n['build_identity'] == hashlib.sha256(canonical(identity)).hexdigest())
     elif n is not None:
         require(canonical(n['identity']) == canonical(identity))
+    # C9 U5c: a run with user stages also names the build's stage files and the DXC libraries beside the core.
+    staged = h.get('stages') is not None
+    require({name for name in files if name.startswith('stage:')} == ({f'stage:{name}' for name in STAGE_FILES}
+                                                                       if staged else set()))
+    require({name for name in files if name.startswith('dxc:')} == ({f'dxc:{name}' for name in STAGE_LIBRARIES}
+                                                                     if staged else set()))
+    if staged:
+        stage_folders = {Path(files[f'stage:{name}']).parent for name in STAGE_FILES}
+        require(len(stage_folders) == 1 and stage_folders.pop().name.casefold() == 'stages')
+        require(all(path_key(files[f'dxc:{name}']) == path_key(str(dll.parent / name)) for name in STAGE_LIBRARIES))
     for name, path in files.items():
         if name != 'dll':
-            require(name.startswith('godot:'))
+            require(name.startswith(('godot:', 'stage:', 'dxc:')))
             is_assembly = name == 'godot:assembly'
             digest, data = guarded_digest(Path(path), guarded, assembly=is_assembly)
             if is_assembly:
@@ -676,6 +721,26 @@ def read_presentmon(directory, n, pid):
     return sorted(rows, key=lambda row: row['qpc'])
 
 
+def measured_rows(rows, presentation):
+    """The measured rows, their sync interval and the ignored chains.
+
+    The texture routes present on Godot's one chain at interval 0. Route B (C9 U4) measures the core's own
+    chain, which the harness declares, at SURFACE_SYNC_INTERVAL, and lists Godot's window chain as ignored."""
+    if presentation is None:
+        require(len({row['chain'] for row in rows}) == 1)
+        return rows, 0, None
+    declared = int(presentation['swap_chain'], 16)
+    measured, others = [], {}
+    for row in rows:
+        if int(row['chain'], 16) == declared:
+            measured.append(row)
+        else:
+            others[row['chain']] = others.get(row['chain'], 0) + 1
+    require(bool(measured) and len({row['chain'] for row in measured}) == 1)
+    return measured, SURFACE_SYNC_INTERVAL, [{'swap_chain': chain, 'rows': count}
+                                             for chain, count in sorted(others.items())]
+
+
 def check_blind_seconds(rows, n, mode):
     frequency, marks = n['qpc_frequency'], n['markers']
     start, stop = marks['trace_start_qpc'], marks['trace_stop_qpc']
@@ -699,6 +764,99 @@ def check_trace_steps(rows, n, entries):
     # Match renderer_gate.trace_step_reasons: (previous present, next present].
     require(all(bisect.bisect_right(times, after) - bisect.bisect_right(times, before) == 1
                 for before, after in zip(ticks, ticks[1:])))
+
+
+def sha256_hex(value):
+    return isinstance(value, str) and SHA256_HEX.fullmatch(value) is not None
+
+
+def compile_passes(passes):
+    """A compile record's passes, each compiled, with its arguments and its source and DXIL SHA-256s."""
+    require(isinstance(passes, list) and passes)
+    result = []
+    for entry in passes:
+        fields(entry, ('entry', 'profile', 'arguments', 'source_sha256', 'dxil_sha256', 'status'))
+        require(entry['status'] == 'compiled' and isinstance(entry['entry'], str) and isinstance(entry['profile'], str))
+        require(isinstance(entry['arguments'], list) and entry['arguments']
+                and all(isinstance(argument, str) for argument in entry['arguments']))
+        require(sha256_hex(entry['source_sha256']) and sha256_hex(entry['dxil_sha256']))
+        result.append({key: entry[key] for key in ('entry', 'profile', 'arguments', 'source_sha256', 'dxil_sha256')})
+    return result
+
+
+def read_stage_compiles(directory, h, parts):
+    """C9 U5c: both stages compiled, their compile records and their files in the measured build parts."""
+    stages = h['stages']
+    fields(stages, ('directory', 'contract', 'overdraw', 'd4', 'attached', 'rows', 'trace_frames', *STAGE_KINDS))
+    require(stages['contract'] == STAGE_CONTRACT and stages['attached'] is True)
+    d4 = stages['d4']
+    fields(d4, ('bits', 'builtin_bits', 'equal'))
+    require(d4['bits'] == d4['builtin_bits'] == BUILTIN_D4_BITS and d4['equal'] is True)
+    digests = {part['name']: part['sha256'] for part in parts}
+    record, compiler = {}, None
+    for kind in STAGE_KINDS:
+        given = stages[kind]
+        fields(given, ('digest', 'hlsl_sha256', 'overdraw', 'arrays', 'handle', 'compile'))
+        require(given['compile'] == 'compiled' and integer(given['handle']) and 0 < given['handle'] < 2**64)
+        require(integer(given['overdraw']) and 0 < given['overdraw'] < 2**32 and integer(given['arrays']))
+        require(isinstance(given['digest'], str) and given['hlsl_sha256'] == digests[f'stage:{kind}.hlsl'])
+        compiled = read_json(directory / f'stage-compile-{kind}.json')
+        fields(compiled, ('format', 'kind', 'status', 'code', 'handle', 'stage_sha256', 'compiler', 'passes',
+                          'core_passes', 'error', 'error_truncated'))
+        require(compiled['format'] == STAGE_COMPILE_FORMAT and compiled['kind'] == kind)
+        require(compiled['status'] == 'compiled' and compiled['code'] is None and compiled['error_truncated'] is False)
+        require(compiled['handle'] == given['handle'] and compiled['stage_sha256'] == given['hlsl_sha256'])
+        fields(compiled['compiler'], ('library', 'version', 'validator'))
+        require(compiler is None or compiled['compiler'] == compiler)
+        compiler = compiled['compiler']
+        record[kind] = {'digest': given['digest'], 'hlsl_sha256': given['hlsl_sha256'],
+                        'json_sha256': digests[f'stage:{kind}.json'], 'overdraw': given['overdraw'],
+                        'arrays': given['arrays'], 'handle': given['handle'],
+                        'compile': {'status': compiled['status'], 'stage_sha256': compiled['stage_sha256'],
+                                    'passes': compile_passes(compiled['passes']),
+                                    'core_passes': compile_passes(compiled['core_passes'])}}
+    # The harness attaches the smaller of the two declared allowances (Level2.AttachStages).
+    require(integer(stages['overdraw']) and stages['overdraw'] == min(record[kind]['overdraw'] for kind in STAGE_KINDS))
+    return {'contract': STAGE_CONTRACT, 'overdraw': stages['overdraw'], 'd4': d4,
+            'arrays_sha256': digests['stage:arrays.json'], 'compiler': compiler,
+            'dxc': {name: digests[f'dxc:{name}'] for name in STAGE_LIBRARIES}, **record}
+
+
+def read_stage_rows(directory, h, n):
+    """C9 U5c: stage-frames.jsonl, one row per frame drawn with the chain, and a row for every measured frame."""
+    stages = h['stages']
+    width, height = size(n['target'])
+    allowance = width * height * stages['overdraw']
+    handles = (stages['vertex']['handle'], stages['fragment']['handle'])
+    rows = []
+    with (directory / 'stage-frames.jsonl').open(encoding='utf-8') as stream:
+        for line in stream:
+            row = json.loads(line, parse_constant=reject_constant, object_pairs_hook=object_pairs)
+            canonical(row)
+            require(isinstance(row, dict) and tuple(row) == STAGE_ROW_FIELDS)
+            require(all(integer(row[key]) and 0 <= row[key] < 2**64 for key in STAGE_ROW_FIELDS))
+            require(row['frame'] > 0 and (not rows or row['frame'] > rows[-1]['frame']))
+            require(row['allowance'] == allowance and (row['vertex_stage'], row['fragment_stage']) == handles)
+            # The core stops a frame exactly when U > width * height * overdraw (sa2_interop.h, RPI.72).
+            require(row['stopped'] == (1 if row['bound'] > allowance else 0))
+            rows.append(row)
+    require(rows and len(rows) == stages['rows'])
+    trace = stages['trace_frames']
+    fields(trace, ('first', 'last'))
+    first, last = trace['first'], trace['last']
+    require(integer(first) and integer(last) and 0 < first <= last and last - first + 1 == n['frames'])
+    frames = {row['frame']: row for row in rows}
+    measured = [frames[frame] for frame in range(first, last + 1) if frame in frames]
+    require(len(measured) == n['frames'])
+    largest = max(rows, key=lambda row: row['bound'])
+    stopped = [row['frame'] for row in rows if row['stopped']]
+    return {'allowance': allowance, 'rows': len(rows), 'trace_frames': {'first': first, 'last': last},
+            'measured_frames': n['frames'], 'measured_frames_with_row': len(measured),
+            'stopped_frames': len(stopped), 'stopped': stopped,
+            'largest_bound': largest['bound'], 'largest_bound_frame': largest['frame'],
+            'largest_bound_per_pixel': round(largest['bound'] / (width * height), 4),
+            'measured_user_pixel_invocations': sum(row['user_pixel_invocations'] for row in measured),
+            'measured_builtin_pixel_invocations': sum(row['builtin_pixel_invocations'] for row in measured)}
 
 
 def presentmon_summary(rows):
@@ -738,7 +896,20 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
         n, entries, _ = native_result if native_result is not None else (None, None, None)
         identity_result = check('identity', lambda: build_identity(h, n, mode, directory, launched_created))
         build, binding = identity_result if identity_result is not None else (None, None)
-        checks = {code: 'pass' for code in sorted(CHECKS)}
+        staged = h.get('stages') is not None
+        checks = {code: 'pass' for code in sorted(CHECKS) if staged or code not in STAGE_CHECKS}
+        stage_record = None
+        if not staged:
+            check('stage-compile', lambda: require(not any(os.path.lexists(directory / name) for name in STAGE_OUTPUTS)))
+        elif build is not None:
+            # C9 U5c: both compile records, then a row for every measured frame, then no stopped frame.
+            compiles = check('stage-compile', lambda: read_stage_compiles(directory, h, build['parts']))
+            frame_rows = None
+            if compiles is not None and n is not None:
+                frame_rows = check('stage-rows', lambda: read_stage_rows(directory, h, n))
+            if frame_rows is not None:
+                check('stage-stopped', lambda: require(frame_rows['stopped_frames'] == 0))
+                stage_record = {**compiles, **frame_rows}
         if mode == 'run':
             check('size-mismatch', lambda: check_sizes(h, n))
             check('scaling', lambda: check_scaling(h))
@@ -748,10 +919,11 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                 check('vram-missing', lambda: require(finite(n['vram_peak_mb']) and n['vram_peak_mb'] > 0))
                 rows = check('presentmon', lambda: read_presentmon(directory, n, pid))
                 if rows is not None:
-                    chains = {row['chain'] for row in rows}
-                    check('swap-chain', lambda: require(len(chains) == 1))
-                    if len(chains) == 1:
-                        check('sync-interval', lambda: require(all(row['sync'] == 0 for row in rows)))
+                    split = check('swap-chain', lambda: measured_rows(rows, h.get('presentation')))
+                    rows = None
+                    if split is not None:
+                        rows, interval, ignored = split
+                        check('sync-interval', lambda: require(all(row['sync'] == interval for row in rows)))
                         check('blind-seconds', lambda: check_blind_seconds(rows, n, mode))
                         check('trace-steps', lambda: check_trace_steps(rows, n, entries))
             else:
@@ -802,6 +974,8 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                                             ('target', 'viewport', 'queue_mode', 'barrier_api', 'vram_samples')},
                                  'presentmon': summary, 'condition_reasons': gate.condition_reasons(environment),
                                  'checks': checks}}
+                if h.get('presentation') is not None:
+                    output['l2']['presentation'] = {**h['presentation'], 'swap_chains_ignored': ignored}
                 for key in ('qpc_frequency', 'markers', 'frames', 'injection_applied',
                             'vram_peak_mb', 'turn_ms', 'label_check',
                             'fixture', 'overlay', 'pose_check', 'pose_upload'):
@@ -809,6 +983,8 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                         output[key] = n[key]
                 if h['options']['inject'] is not None:
                     output['injected_fault'] = h['options']['inject']
+                if stage_record is not None:
+                    output['stages'] = stage_record
                 check('gate-shape', lambda: gate.validate_run(output))
                 if h['options']['inject'] is not None:
                     # Never gate evidence: another name and format, so the gate neither finds nor accepts it.

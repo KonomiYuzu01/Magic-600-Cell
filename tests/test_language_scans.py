@@ -77,6 +77,7 @@ UNREGISTERED_DRAFTS = frozenset({
     ("rust/c600-command/src/receipt.rs", "KN5:consistency.unadmitted_journal_action"),
     ("rust/c600-command/src/receipt.rs", "KN5:capability.preview_shown"),
     ("rust/c600-command/src/receipt.rs", "KN5:capability.outside_solver_command"),
+    ("rust/c600-command/src/receipt.rs", "KN5:input.saved_set_exists"),
     ("rust/c600-session/src/types.rs", "KN4:busy.session_locked"),
 })
 

@@ -74,8 +74,9 @@
 //!
 //! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.
 //!
-//! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry from solved, `jumble.off`
-//!   and `jumble.twist.menu` are built (below); the rest is refused with `KN5:input.row_not_built`.
+//! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry from solved, `jumble.off`,
+//!   `jumble.twist.menu` and `jumble.repair.list` are built (below); the rest is refused with
+//!   `KN5:input.row_not_built`.
 //! - `WordRef` is an inline literal recipe in 0.4's JSON form, `{"recipe": [...]}`, and `ResolvedDraftRef` is
 //!   `{"record": name}`, a workspace record that holds a word's letters (M6's form) or a work sheet (below); a draft
 //!   argument in any other form is refused with `KN5:input.argument_form`. A record draft's digest is M6's
@@ -83,9 +84,9 @@
 //! - The workspace store ([`workspace`]) holds M6's records: `workspace.set` ([`RECORD_ROW`]) takes `record`, `payload`
 //!   and `provenance`, the provenance block's canonical JSON as text. H-08 has no such row yet, so [`Table::with_drafts`]
 //!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
-//!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and admits a record's
-//!   word at `operation.preview` in this session (KN5.26), and without a reader both are refused. A record write and a
-//!   workspace row's completion keep the part blocks the reader holds for the blocks they write
+//!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and, in a solving
+//!   session, admits a record's word at `operation.preview` (KN5.26); without a reader both are refused. A record
+//!   write and a workspace row's completion keep the part blocks the reader holds for the blocks they write
 //!   ([`Provenance::parts`]) with the action, and admission gives them back ([`Provenance::admit_kept`]), so a restored
 //!   workspace keeps a word's recursive parts (BND.24, BND.85, CT-BND-27; draft).
 //! - LB7.2's work sheets ([`worksheet`]; CT-LB2-03's work-sheet part), three rows of H-08:
@@ -99,21 +100,24 @@
 //!     workspace change, where H-08 has `undo: none`.
 //!   - `worksheet.load` ([`WORKSHEET_LOAD_ROW`]) takes H-08's `WorksheetRevisionRef` as `{"record": name, "version":
 //!     n}` ([`WorksheetRef`]); a record at another version is `KN5:stale.revision_changed`. It places the piece roles
-//!     again, keeps where each was saved, and writes the sheet again with its phases unchanged, so a reuse makes every
-//!     preview that read the sheet stale, also at the same state, and the reuse needs a fresh preview.
+//!     again and reads each position role's occupant again at the head, keeps where each piece was and what each
+//!     position held at the save, and writes the sheet again with its phases unchanged, so a reuse makes every preview
+//!     that read the sheet stale, also at the same state, and the reuse needs a fresh preview. A changed occupant
+//!     ([`Occupancy::changed`]) is shown beside a moved piece ([`Placement::moved`]): neither silent nor a refusal,
+//!     and nothing is retargeted (U1-057, U4-037, LB7.2).
 //!   - A sheet saved from a record of letters keeps the record's name, version and content digest as its macro
 //!     version ([`MacroVersion`]); a sheet saved from a sheet keeps the sheet's.
 //!   - `worksheet.compare` ([`WORKSHEET_COMPARE_ROW`]) takes the `WorksheetRevisionRef` and a draft `{"record": r}`,
 //!     the current work. Its job runs in the layer on the exclusive lane ([`CommandLayer::run_jobs`]), since no entry
 //!     can serve that lane: at the head it compares the sheet's phases, roles, reference and macro version with the
-//!     draft's ([`compare_inputs`]), places the piece roles again, reports the macro version as current, changed or
+//!     draft's ([`compare_inputs`]), places the piece roles and reads the position roles' occupants again, names the
+//!     moved pieces and the changed occupants, reports the macro version as current, changed or
 //!     missing, and analyses the sheet's complete operation afresh under the protection and policy in force, with
 //!     LB2's gains and losses (the positions whose home piece becomes solved, and the reverse). The comparison is the
 //!     completion's result ([`CommandLayer::comparison`]); it grants nothing, and a reuse still needs `worksheet.load`
 //!     and a fresh engine preview (LB7.2).
 //!   - The three rows need the host's provenance reader (`KN5:input.row_not_built` without it) and Jumble off, and the
 //!     runtime may invoke none (`LG3:capability.not_granted`). No entry can serve them.
-//!   - Not built: reading a position role's occupant again.
 //! - `view.open` and `view.close` ([`view`]; EV3.2, RPI.81 to RPI.83; draft). The layer admits them and the host's
 //!   view model ([`Views`], given with [`CommandLayer::set_views`]) holds the views and RPI.82's budget. The argument
 //!   forms, an overlay source's row and the caller come first (`KN5:input.argument_form`,
@@ -121,6 +125,21 @@
 //!   `accepted` with no job. Without a view model both rows are `KN5:input.row_not_built`.
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
+//! - The session's profile ([`Profile`]: `solving`, `tool_authoring` or `research`; BND.14, BND.15, BND.17, KN5.26):
+//!   - The host sets it when it creates the session ([`CommandLayer::new_with_profile`]; [`CommandLayer::new`] is
+//!     `solving`). Every ordinary session is `solving`, and so is the practice copy until LQ2 answers BND.15. No
+//!     program or row sets or changes it, and a host sets a run's profile from [`CommandLayer::profile`].
+//!   - The session's start records it once ([`Genesis::profile`]), and a reopen reads it back. A journal's session
+//!     record without it reads as `solving`, so journals written before it stay valid.
+//!   - KN5.26 applies only in a solving session: there the host's reader admits a record's word at
+//!     `operation.preview`, and a saved sheet's word at `worksheet.compare`. Elsewhere no reader is asked, and
+//!     BND.61's check comes when such a record is previewed in a solving session. The reader's check at
+//!     `workspace.set` (PS1.16) runs in every profile.
+//!   - BND.16's table of the rows a run may invoke by profile follows chapter 07 section 8. In `tool_authoring` and
+//!     `research` a run may not invoke `operation.preview` (`LG3:capability.not_granted`; BND.60: a run's `propose`
+//!     there goes to a capture). The cells that grant a run more outside a solving session, records of the authoring
+//!     workspace and research records, are not built. The shell's rows are the same in every profile.
+//!   - M6's `Session` (`c600-session`) keeps no profile.
 //! - `twist.apply` ([`TWIST_ROW`]; A6, ONE.46, ONE.78), a live twist with no preview.
 //!   - The argument form. `cap` is KN3.7's cap, an integer from 0 to 599. `rotation` is KN3.7's binding without its
 //!     cap: exactly `request`, `operation` and `menu`. The row's `cap` completes it to the canonical binding, so the
@@ -267,9 +286,27 @@
 //!   - Drafts for LP3's amendment list (PHS.52): the `letter` form, the journal kind `jumble_move`, the chain bound
 //!     and the flat replay, the undo by the exact inverse, the identity item's code in both modes, and the order of
 //!     the checks.
+//! - `jumble.repair.list` ([`REPAIR_LIST_ROW`]; BND.2, the 17 October exception; JI.12, JI.33), the repair list at a
+//!   cap the solver names ([`repair`]; CT-LB3-05's and CT-BND-17's command-layer half).
+//!   - H-08's arguments: `cap` is a `CapId`, 0 to 599, and not optional, so an invocation without one is refused with
+//!     `KN5:input.argument_form` and no job starts for an unnamed cap (BND.64). `max_chunk` is a `PositiveNat`; the
+//!     headless layer has no stream, so it bounds nothing yet and the list is delivered whole. `snapshot` is KN0.2's
+//!     `RevisionRef` and must name the current revision; a derived state reference is not built.
+//!   - Admission, queuing nothing on a refusal: the pinned menu (`KN5:input.row_not_built`), Jumble on
+//!     (`KN5:input.menu_word_needs_jumble_on`: the registry has no code of its own for a jumbling query with Jumble
+//!     off), the forms, the snapshot's revision (`KN5:stale.revision_changed`), in a solving session a run that is not
+//!     inside a command the solver invoked (`LG3:capability.not_granted`; the checker's repair-list exception holds the
+//!     run's cap to the one the solver named), and the exclusive lane (`KN7:busy.lane_full`).
+//!   - The job runs in the layer on the exclusive lane ([`CommandLayer::run_jobs`]) and completes as a query. Its
+//!     result is the kernel's list (`c600_jumble::observe::cuts::repair_list`) whole, with one field added,
+//!     `statement`: a completed list with no rows says that no pair at its cap lowers N, as BND.2 words it, and a
+//!     cancelled or cut-off list says that it makes no claim. A blocked or closed cap is the kernel's `error` status
+//!     with no outcomes, passed on as data. The list is kept ([`CommandLayer::repair_list`]) until an action moves the
+//!     state, and a state change cancels a queued list (JI.33), which never blocks undo. Nothing chooses, ranks or
+//!     reorders a pair, and H-08's row has no key and does not repeat.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
-//!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
-//!   `KN2:consistency.star_certificate`.
+//!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists`,
+//!   `KN5:input.saved_set_exists` and `KN2:consistency.star_certificate`.
 //! - The token travels beside the arguments in the envelope, not inside them, so it can bind the absolute arguments
 //!   (LI.6). Its binding enters the request digest; its authenticator does not (LI.5).
 //! - Jobs run when the host calls [`CommandLayer::run_jobs`]; `invoke` answers `running(job)` at once (KN5.2). The
@@ -381,7 +418,8 @@
 //!     Nat}`, a job and the epoch it ran in (draft). After the forms and the revisions, a `FilterRef` must resolve
 //!     (filter previews, below).
 //!   - `CanonicalObjectRefs`, which `set.save` takes, is a list of pieces or positions, each 0 to 177,119 (the
-//!     kernel's `PIECES`); an empty list and repeated members pass (draft).
+//!     kernel's `PIECES`); an empty list and repeated members pass (draft). `set.save` also takes the draft boolean
+//!     `replace` beside its table arguments, and its completion writes the saved set's own record ([`sets`]).
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
 //! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
@@ -455,6 +493,20 @@
 //!     invocation without blocks keeps its digest, and a retry with other blocks is other content
 //!     (`KN5:input.command_id_reused`).
 //!   - A run still reaches no workspace or file row (ruling of 18 November 2026). Blocks change no admission.
+//! - Budgets (KN7.7, BM3, DET.27, ERR.27; [`budget`]; CT-RTE-07's B13 and B14; draft):
+//!   - An invocation of a row an entry serves declares its budget in the envelope ([`Invocation::budget`]), beside
+//!     the epoch and the token.
+//!   - The layer admits it after the row's arguments, `FilterRef`s, gate and blocks, and before the lane and before a
+//!     job ID exists, so a refusal uses nothing. A missing budget is `KN7:input.budget_not_declared`. A dimension over
+//!     the ceiling is `KN7:resource_limit.budget_ceiling`, naming the dimension, the request and the ceiling.
+//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::DRAFT_CEILING`] for every profile
+//!     until an owner reading sets the product's values). A host may set a lower one
+//!     ([`CommandLayer::set_budget_ceiling`]); the lower applies in each dimension. The safety stop is not checked.
+//!   - The job carries the admitted budget ([`ProgramJob::budget`]). The request digest covers a declared budget
+//!     under the key `budget`, so an invocation without one keeps its digest, and a retry with another budget is other
+//!     content (`KN5:input.command_id_reused`). A workspace row's completion keeps the budget in its journal entry.
+//!   - Another row runs no program and reads no budget. [`Shell::prepare`] declares the shell's budget on an
+//!     invocation of a row an entry serves ([`Shell::budget`], the draft ceiling by default) and none on another.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
 //!   - A `FilterRef` names a completed job of a row that prepares a predicate (`structure.layer`) by its result
 //!     reference. It resolves while every record that job wrote still holds the job's write, to those records, each
@@ -489,12 +541,15 @@
 
 #![forbid(unsafe_code)]
 
+pub mod budget;
 pub mod filter;
 mod forms;
 pub mod frame;
 pub mod jumble;
 pub mod layer;
 pub mod receipt;
+pub mod repair;
+pub mod sets;
 pub mod shell;
 pub mod store;
 pub mod table;
@@ -504,6 +559,7 @@ pub mod view;
 pub mod worksheet;
 pub mod workspace;
 
+pub use budget::Budget;
 pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIEW_ROW, FRESH_FILTER_PREVIEW};
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
@@ -512,29 +568,32 @@ pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
 };
+pub use repair::REPAIR_LIST_ROW;
+pub use sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
 pub use shell::{
     draft_args, refresh_display, report, word_draft, ArgSource, DisplayStatus, KeyBinding, Refresh, Report, Shell,
     DISPLAY_OUT_OF_DATE,
 };
 pub use store::{
-    identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Reopen,
-    Store, Transaction, TransactionKind,
+    identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Profile,
+    Reopen, Store, Transaction, TransactionKind,
 };
 pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 pub use worksheet::{
-    compare_inputs, MacroVersion, Placement, Resolution, Role, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
-    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    compare_inputs, MacroVersion, Occupancy, Placement, Resolution, Role, Worksheet, WorksheetRef,
+    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 19] = [
+pub const SOURCES: [(&str, &[u8]); 22] = [
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
+    ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
     ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
@@ -542,6 +601,8 @@ pub const SOURCES: [(&str, &[u8]); 19] = [
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
+    ("c600-command/src/repair.rs", include_bytes!("repair.rs")),
+    ("c600-command/src/sets.rs", include_bytes!("sets.rs")),
     ("c600-command/src/shell.rs", include_bytes!("shell.rs")),
     ("c600-command/src/store.rs", include_bytes!("store.rs")),
     ("c600-command/src/table.rs", include_bytes!("table.rs")),

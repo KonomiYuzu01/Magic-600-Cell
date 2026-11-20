@@ -44,10 +44,10 @@ const SOURCE: &str = "edition \"6cs-draft-1\";\nmodule reader requires [];\n\n\
     return read_snapshot<List<NAT_ORBIT>>(\"positions\", pieces);\n}\n\n\
     export fn one_piece(piece: Int) -> List<ROW> effects [snapshot] {\n    \
     return read_snapshot<List<ROW>>(\"positions\", piece);\n}\n\n\
-    export fn protection(pieces: List<Int>) -> List<ROW> effects [snapshot] {\n    \
-    return read_snapshot<List<ROW>>(\"protection\", pieces);\n}\n\n\
-    export fn protection_of(piece: Int) -> List<ROW> effects [snapshot] {\n    \
-    return read_snapshot<List<ROW>>(\"protection\", piece);\n}\n";
+    export fn rim_summary(pieces: List<Int>) -> List<ROW> effects [snapshot] {\n    \
+    return read_snapshot<List<ROW>>(\"rim_summary\", pieces);\n}\n\n\
+    export fn rim_summary_of(piece: Int) -> List<ROW> effects [snapshot] {\n    \
+    return read_snapshot<List<ROW>>(\"rim_summary\", piece);\n}\n";
 
 /// The fields in another order, the whole numbers declared `Int`.
 const WIDE: &str = "record { slots: List<Int>, position: Int, piece: Int, home: List<Int>, orbit: Int }";
@@ -215,9 +215,9 @@ fn the_row_refuses_what_it_does_not_answer() {
     let mut layer = layer_at(scrambled());
     let before = (layer.revision().clone(), layer.store().log.len());
     for (entry, arg, code, other) in [
-        ("too_few", pieces(&[0]), TYPE_MISMATCH, "protection"),
-        ("orbit_as_nat", pieces(&[0]), TYPE_MISMATCH, "protection"),
-        ("one_piece", Value::int(0), code::ARGUMENT_FORM, "protection_of"),
+        ("too_few", pieces(&[0]), TYPE_MISMATCH, "rim_summary"),
+        ("orbit_as_nat", pieces(&[0]), TYPE_MISMATCH, "rim_summary"),
+        ("one_piece", Value::int(0), code::ARGUMENT_FORM, "rim_summary_of"),
     ] {
         let cost = refused(&mut layer, entry, &arg, code);
         assert_eq!(cost, refused(&mut layer, other, &arg, NOT_GRANTED), "{entry}: refused before the kernel runs");
@@ -226,7 +226,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     for bad in [-1, PIECES as i64, 1 << 62] {
         let arg = pieces(&[0, bad]);
         let cost = refused(&mut layer, "any", &arg, code::NAMED_OBJECT_INVALID);
-        assert_eq!(cost, refused(&mut layer, "protection", &arg, NOT_GRANTED) + tariff, "{bad}: the read is charged");
+        assert_eq!(cost, refused(&mut layer, "rim_summary", &arg, NOT_GRANTED) + tariff, "{bad}: the read is charged");
     }
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }

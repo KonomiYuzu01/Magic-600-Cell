@@ -1,0 +1,7 @@
+edition "6cs-draft-1";
+module jumble_straddlers requires [];
+
+export fn straddlers_at(cap: Nat) -> record { cap: Nat, certificates: List<record { grip: Nat, h_above: Q5, h_below: Q5, orbit: Nat, piece: Nat, point_above: List<Q5>, point_below: List<Q5>, points_checked_against_all_constraints: Bool, transport: Nat, vertex_above: Nat, vertex_below: Nat }>, complete: Bool, pieces: List<Nat>, status: Text, u: Nat } effects [snapshot] {
+    let found = read_snapshot<record { cap: Nat, certificates: List<record { grip: Nat, h_above: Q5, h_below: Q5, orbit: Nat, piece: Nat, point_above: List<Q5>, point_below: List<Q5>, points_checked_against_all_constraints: Bool, transport: Nat, vertex_above: Nat, vertex_below: Nat }>, pieces: List<Nat>, status: Text, uncertain: Nat }>("straddlers", cap);
+    return record { cap = found.cap, certificates = found.certificates, complete = exact_eq(found.uncertain, 0), pieces = found.pieces, status = found.status, u = length(found.pieces) };
+}

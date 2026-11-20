@@ -10,7 +10,7 @@ use c600_command::{CommandLayer, Receipt, Secret, Shell, Status, Table};
 use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Kernel, ProtectedSet};
 use c600_run::boundary::Store;
-use c600_tools::bridge::{base, Bridge, Sent, Steps};
+use c600_tools::bridge::{Bridge, Sent, Steps};
 use c600_tools::process::{
     invoke_tool, run_in_process, ProcessHost, Stopped, ToolCommand, IN_PROCESS, PROCESS, RUNTIME_BINARY,
 };
@@ -135,12 +135,12 @@ pub fn run_with(
     steps: Option<Steps>,
 ) -> (Result<Ran, Stopped>, Vec<Sent>, ToolCommand) {
     let command = invoke_tool(shell, layer, tool, word).unwrap_or_else(|error| panic!("the tool's row: {error}"));
-    let (run, read) = (command.run(), base(&command.job.revision));
-    let mut bridge = Bridge::new(layer, &run).with_steps(steps);
+    let run = command.run();
+    let mut bridge = Bridge::new(layer, &run).with_steps(steps).with_budget(command.job.budget);
     let mut store = Store::default();
     let ran = match host {
-        None => run_in_process(tool, word, &run, &read, &mut bridge, &mut store),
-        Some(host) => host.run(tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
+        None => run_in_process(tool, &command, &mut bridge, &mut store),
+        Some(host) => host.run(tool, SOURCE, &command, &mut bridge, &mut store),
     };
     (ran, bridge.sent, command)
 }

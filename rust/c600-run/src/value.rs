@@ -14,6 +14,7 @@ use num_traits::{One, Signed, Zero};
 
 use crate::approx::{self, Approx};
 use crate::menu::{MenuIdentity, MENU_INDEX_LIMIT};
+use crate::menu_key::MenuWordKey;
 use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs, GENERATOR_SIZE};
 use crate::rng::Cursor;
 use crate::trace::{tokens_order, TraceKey};
@@ -74,6 +75,10 @@ pub enum Value {
     /// A compressed word streamed through its semantic chunks (DET.63; LP2 draft): the stream's owner, with the
     /// length it covered and its literal digest.
     WordStream(Arc<WordStream>),
+    /// LG2.18's word key of a jumbling menu word (LP2 draft): its tokens, one per maximal run of adjacent letters at
+    /// one grip, under its alphabet's header ([`crate::menu_key`]). It is never a menu word, and the checker gives it
+    /// the type of a Full word's key, `WordEqualityKey`.
+    MenuWordKey(Arc<MenuWordKey>),
 }
 
 /// A completed word stream (DET.63, KN2.10, LG4.6; LP2 draft): the exact length its chunks covered and the literal
@@ -161,6 +166,15 @@ impl List {
 
     pub fn items(&self) -> &[Value] {
         &self.items
+    }
+
+    /// Appends one element in place. The logical size and the bound grow as [`List::new`] would compute them over the
+    /// longer list: both are saturating sums of terms that are never negative, so the order of the terms does not
+    /// change them.
+    pub fn push(&mut self, value: Value) {
+        self.size = self.size.saturating_add(value.size()).saturating_add(if value.is_sequence() { 8 } else { 0 });
+        self.bound = self.bound.saturating_add(value.bound()).saturating_add(1);
+        self.items.push(value);
     }
 
     /// The logical size of a list header over these elements: the variant tag and the sequence lengths.
@@ -547,6 +561,7 @@ fn kind(v: &Value) -> u8 {
         Value::Field(..) => 23,
         Value::Bytes(_) => 24,
         Value::WordStream(_) => 25,
+        Value::MenuWordKey(_) => 26,
     }
 }
 
@@ -573,6 +588,8 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => tokens_order(x, y),
                 // Headers first, then LG2.23's token order. A run pins one relation, so its trace keys share a header.
                 (Value::TraceEqualityKey(x), Value::TraceEqualityKey(y)) => x.cmp(y),
+                // Headers first, then LG2.23's token order. A run keys the words of one menu, so its keys share one.
+                (Value::MenuWordKey(x), Value::MenuWordKey(y)) => x.cmp(y),
                 (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
                     parts(&mut stack, &x.items, &y.items);
                     Ordering::Equal
@@ -944,6 +961,8 @@ impl Value {
             Value::Word(w) | Value::WordEqualityKey(w) => 2 * w.len() as u128,
             // Its letters, as a word's or a menu word's; the header is shared with the run's relation.
             Value::TraceEqualityKey(k) => k.size(),
+            // Its tokens; the header is shared with the run's alphabet.
+            Value::MenuWordKey(k) => k.size(),
             Value::Record(r) | Value::Receipt(r) => r.size,
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,
@@ -984,6 +1003,7 @@ impl Value {
                 | Value::Compressed(_)
                 | Value::MenuWord(_)
                 | Value::TraceEqualityKey(_)
+                | Value::MenuWordKey(_)
         )
     }
 
@@ -1025,6 +1045,7 @@ impl Value {
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
             | Value::TraceEqualityKey(_)
+            | Value::MenuWordKey(_)
             | Value::Compressed(_)
             | Value::Generator(_)
             | Value::Field(..)
@@ -1172,6 +1193,47 @@ pub fn mul_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> Option<
     Some((cost, reservation))
 }
 
+/// `q5_parts(x)` (LP2 draft): the canonical triple of an exact number widened to Q(√5), as the record `{ a, b, d }`
+/// with x = (a + b√5)/d, gcd(a, b, d) = 1 and d > 0 (ADR-L03.6, PS1.4). Every exact number is held in lowest terms
+/// with a positive denominator, so widening it gives the triple at once. `None` if `x` is not an exact number.
+pub fn q5_parts(x: &Value) -> Option<Value> {
+    let (a, b, d) = num(x)?.quad();
+    let field = |name: &str, n: BigInt| (Text::new(name), Value::int(n));
+    Some(Value::Record(Arc::new(Record::new(vec![field("a", a), field("b", b), field("d", d)]))))
+}
+
+/// The kernel cost and the result reservation of `q5_parts` (LP2 draft): `field_per_unit_pair` per widened operand
+/// byte, as a product with one operand, and the record's exact size, a 4-byte tag and the three integers (DET.57).
+pub fn q5_parts_price(x: &Value, d: &DraftTariffs) -> Option<(u128, u128)> {
+    let size = num(x)?.widened_size(2);
+    Some((d.field_per_unit_pair.saturating_mul(size), 4 + size))
+}
+
+/// The three integers of `q5_of(a, b, d)`, or `None` if one is not an integer.
+fn q5_operands<'a>(a: &'a Value, b: &'a Value, d: &'a Value) -> Option<(&'a BigInt, &'a BigInt, &'a BigInt)> {
+    match (a, b, d) {
+        (Value::Int(a), Value::Int(b), Value::Int(d)) => Some((a, b, d)),
+        _ => None,
+    }
+}
+
+/// `q5_of(a, b, d)` (LP2 draft): (a + b√5)/d in canonical form. `None` unless all three are integers and `d` is not
+/// zero; the interpreter guards the zero with a pointwise assertion first.
+pub fn q5_of(a: &Value, b: &Value, d: &Value) -> Option<Value> {
+    let (a, b, d) = q5_operands(a, b, d)?;
+    (!d.is_zero()).then(|| Value::Q5(Arc::new(Quad::new(a.clone(), b.clone(), d.clone()))))
+}
+
+/// The kernel cost and the result reservation of `q5_of(a, b, d)` (LP2 draft): DET.57's price of the product of
+/// a + b√5 and 1/d, which is the normalisation it performs, as [`mul_price`] gives it. `None` unless all three are
+/// integers. The two factors exist only to be priced.
+pub fn q5_of_price(a: &Value, b: &Value, d: &Value, t: &Tariffs, dt: &DraftTariffs) -> Option<(u128, u128)> {
+    let (a, b, d) = q5_operands(a, b, d)?;
+    let x = Value::Q5(Arc::new(Quad { a: a.clone(), b: b.clone(), d: BigInt::one() }));
+    let y = Value::Rat(Arc::new(Ratio { num: BigInt::one(), den: d.clone() }));
+    mul_price(&x, &y, t, dt)
+}
+
 /// The exact order of two numbers; `None` if an operand is not an exact number.
 pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
     let (x, y, rank) = exact_pair(a, b)?;
@@ -1221,6 +1283,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x == y,
             // Matching headers and token sequences, not only matching hashes (LG2.23).
             (Value::TraceEqualityKey(x), Value::TraceEqualityKey(y)) => x == y,
+            (Value::MenuWordKey(x), Value::MenuWordKey(y)) => x == y,
             (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
                 stack.extend(x.items.iter().zip(&y.items));
                 x.items.len() == y.items.len()

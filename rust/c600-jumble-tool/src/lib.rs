@@ -19,21 +19,44 @@
 //!   slot, on and off the lattice (EV3.8, EV3.9).
 //! - [`protection`] holds protection verdicts that carry their level and answer only at it (LB3.4, KN1.11): M8's
 //!   protection of a whole word at pose level, and the kernel's protection of named pieces at label level.
+//! - [`rows`] is the jumbling rows' host bridge: KN2.4's jumbling rows that [`library`]'s entries read, answered by
+//!   `c600_jumble` and served to a run as snapshot reads at the command layer's head with Jumble on
+//!   ([`rows::Rows::at_head`]), on a witnessed base or at a state. It grants those rows only, refuses another argument
+//!   form with `KN5:input.argument_form` and prices each pass over the state in a draft tariff.
 //! - `tests/tool.rs` runs the jumbling tool's parts of CT-LB6-03 and CT-BND-15.
 //! - `tests/lb3.rs` runs the kernel halves of CT-LB1-02, CT-LB3-01, CT-LB3-03, CT-LB3-05 with CT-BND-17, CT-LB3-06 and
 //!   CT-LB3-07 on `c600_jumble`'s public API, with milestone M8's end tests (`levels`) and repair list
 //!   (`observe::cuts::repair_list`), and with LP2's ν row (`c600_jumble::nu`) and correction catalogue
 //!   (`c600_jumble::corrections`) for CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07. Each
-//!   test checks the facts the library entry would return.
+//!   test checks the facts the library entry would return. CT-LB1-02's key half runs there too: LG2.18's word key
+//!   under I_a's item matrices, which [`word::Alphabet::pinned`] pins, at a blocked cap and on random words from three
+//!   states.
 //! - `tests/library.rs` checks [`library`]'s modules with LP2's checker and runs them with LP2's interpreter:
 //!   CT-LB1-03's jumbling half in the language, and the library entries of CT-LB3-03 and CT-LB3-06, the latter with a
-//!   whole word's Net and Strict protection at pose level from M8's `levels::derive` (pull request 182). A test host
-//!   serves the KN2.4 rows from `c600_jumble`, and each result is compared with the kernel halves' answers.
+//!   whole word's Net and Strict protection at pose level from M8's `levels::derive` (pull request 182). The bridge
+//!   [`rows`] serves the KN2.4 rows on witnessed snapshots and states, and each result is compared with the kernel
+//!   halves' answers.
 //! - `tests/ct_lb3_04.rs` runs CT-LB3-04 whole at this crate's level, on LP2's `nu` and `correction_set_check` rows:
 //!   off-lattice ν is undefined, the pinned C5 convention round-trips, a planted nonzero fixed I_a coordinate is a
 //!   consistency error, and a drafted correction set is checked as drafted. Three of its tests run LB3's entry
-//!   [`library::NU`] in the language on the IR draft's F2 and F5 (LP2's pull request 222), through a test host that
-//!   serves the two rows from `c600_jumble`.
+//!   [`library::NU`] in the language on the IR draft's F2 and F5 (LP2's pull request 222), through [`rows`] on
+//!   witnessed bases.
+//! - `tests/ct_lb3_07.rs` runs CT-LB3-07 on the inspector library entries in the language: LB3.1's "Rim and seam
+//!   facts; N" ([`library::RIM`]), "Covers at a named cap" ([`library::COVERS`]) and "Correction catalogue"
+//!   ([`library::CORRECTIONS`]), with the named-word checks and the drafted check, through [`rows`] on witnessed
+//!   bases. Each answer is compared with `c600_jumble`'s and each entry's reads are recorded with their arguments: the
+//!   rim entry answers every cap in cap-ID order and nothing of a twist, the covers and catalogue entries read the
+//!   solver's named cap or id only, and no answer names a recommendation, a next cap, a ranking or a selection.
+//! - `tests/rows.rs` runs the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through [`rows`] at the
+//!   command layer's head with Jumble on, in I_a, S4 and I_b sessions: each run equals, byte for byte, the same run on
+//!   the same state witnessed apart from the layer, which the two tests above compare with the kernel. With Jumble off
+//!   every read stops with `KN5:input.menu_word_needs_jumble_on`. It also checks what the bridge grants and its
+//!   tariff, and that the `seam_facts` row answers the engine's seam facts for the named cap.
+//! - `tests/ct_rte_07_jumble.rs` runs CT-RTE-07's six jumbling keys of LX-3's frozen corpus (MR01, MR02, MR05, MR06,
+//!   A31 and A32) with literal words and again with menu words of the I_a alphabet, pinned with its item matrices,
+//!   through `c600-module`'s pipeline under the jumbling model identity, with [`rows`] as the engine host: ten runs
+//!   and one SHA-256 for each key, the solving keys refused at the preview point by capability separation, a manual
+//!   proposal as the control, and the accounting against the 600-cell-Full leg.
 //! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02 whole (LB3.4),
 //!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
 //!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's
@@ -46,11 +69,12 @@
 //!   `tests/common/mod.rs` holds the session both use.
 //! - `tests/ct_lb1_06.rs` runs CT-LB1-06's jumbling half on the model in `assets/`: the relation [`locality`] pins,
 //!   the keys of bca, cab and abc, identity letters and an item beside its inverse kept, equal keys with equal
-//!   admissibility and end digests on M5's states, the library entry `menu_traces` in the language, and refusals of a
-//!   key under another menu or version.
+//!   admissibility and end digests on M5's states, the library entry `menu_traces` in the language, refusals of a
+//!   key under another menu or version, and word keys separate from trace keys: in one run that pins I_a's alphabet
+//!   with its item matrices and the relation, `word_key` and `trace_key` key the same menu words each by its own rule.
 //!
-//! The tool runs in-process, as `c600-tools` runs its tool. The tool itself is not a command-layer row; the tests
-//! above drive `c600-command` only as a dev-dependency.
+//! The tool runs in-process, as `c600-tools` runs its tool. The tool itself is not a command-layer row; [`rows`]
+//! reads the command layer's head, and the tests above drive the layer.
 //!
 //! # Drafts
 //!
@@ -147,34 +171,51 @@
 //!   fixed in the test (`MIRROR`) whose lattice configuration has b5 = 1. The ν row and the drafted check refuse it
 //!   with `KN2:consistency.fixed_nu_nonzero`; under the true I_b menu the ν row gives the same configuration's value,
 //!   with no consistency error. This settles nothing in the chapters.
-//! - **CT-LB3-07's correction part.** The inspector library entries are not written, so the test reads as their
-//!   output what the tool's word entry and LP2's rows answer on the kernel: the whole-word check of a correction's
+//! - **CT-LB3-07's correction part.** The kernel half in `tests/lb3.rs` reads as the inspector entries' output what
+//!   the tool's word entry and LP2's rows answer on the kernel: the whole-word check of a correction's
 //!   literal word named by its id, the ν row, the drafted check and the label checkpoint's evidence. A leak is a field
 //!   whose name names a recommendation, a next cap, a ranking or a correction, or a field holding a list of lists; the
-//!   test reads names and shapes, not values. This settles nothing in the chapters.
+//!   test reads names and shapes, not values. `tests/ct_lb3_07.rs` runs the entries themselves with the same names
+//!   and, for the rim and covers entries, the further names of LB3.5's selections and of a twist's outcome. This
+//!   settles nothing in the chapters.
+//! - **Jumble on through the command layer (LP2's pull requests 212, 217, 218, 220 and 254).**
+//!   `tests/jumble_on_layer.rs` compares the layer's jumbling journal with the fixtures' references, and
+//!   `tests/jumble_layer_verdicts.rs` runs `jumble.off`, the refusals with Jumble on, redo, protected pieces and free
+//!   mode beside the tool's own entries at the layer's head (`rows::Rows::at_head`): the label checkpoint predicts
+//!   each exit, and the twist check and a word's protection predict each press. The tests read the layer's decisions
+//!   and add no rule of their own. This settles nothing in the chapters.
+//! - **The repair list through the command layer (LP2's pull request 326; CT-LB3-05, CT-BND-17).** LP2's
+//!   `jumble.repair.list` is a job that names its cap (KN5): the layer passes M8's list on whole and adds its
+//!   `statement`, BND.2's wording of an empty list, and no key skips caps with an empty list (`c600-command`'s
+//!   `tests/repair_list.rs`). `tests/jumble_layer_repair.rs` runs the job beside the language entry
+//!   ([`library::REPAIR`]) at the layer's head on the I_a walk: at a named misaligned cap, at closed caps and at a cap
+//!   whose completed list is empty, after a press that drops the kept list and after its undo, the two agree on
+//!   status, input digest, parameters, message and rows, the job alone words the list, and each run reads the
+//!   `repair_list` row once with the named cap. The tests read the layer's and the tool's answers and add no rule of
+//!   their own. This settles nothing in the chapters.
 //!
 //! # What waits
 //!
-//! - Through the command layer, not taken up yet: `jumble.off`, refusals, redo, protected pieces and free mode (LP2's
-//!   route test and `c600-command`'s own tests run them).
-//! - ν through a host: LB3's entry "ν and drafted correction-set check" is language code ([`library::NU`]), but no
-//!   host bridge or command-layer route serves KN2.4's `nu` and `correction_set_check` rows, so only the tests' host
-//!   runs it. The correction catalogue's own entry is not written. The label checkpoint computes no ν itself; the
-//!   tests supply the `nu` row's value. CT-LB3-01's checker half, the end tests' typed verdicts, is LP2's (pull request
-//!   213).
-//! - The repair list through the command layer: a job that names its cap (KN5), the built-in column's repair-list
-//!   exception in `c600-check`, an empty list worded as BND.2 states, and no key that skips caps with an empty list
-//!   (CT-LB3-05, CT-BND-17): LP2.
-//! - Not taken up yet on M8: the rim and survey rows of CT-LB3-07.
+//! - ν: LB3's entry "ν and drafted correction-set check" is language code ([`library::NU`]) and reads its rows through
+//!   [`rows`], and so does the correction catalogue's entry ([`library::CORRECTIONS`]). M8's label checkpoint computes
+//!   no ν itself; the `label_checkpoint` row takes the `nu` row's value when the identity labels and a retained witness
+//!   leave ν unknown, as the command layer's exit reads it ([`library::END_TESTS`]). CT-LB3-01's checker half, the end
+//!   tests' typed verdicts, is LP2's (pull request 213).
+//! - The survey's all-items loop: not served. LB3.5 keeps it out of the inspector entries, so the `survey` row answers
+//!   the solver's named grip only ([`library::ADMISSIBILITY`]), and [`library::RIM`] reads the rim summary and one
+//!   whole seam scan only.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
-//! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
-//! - The jumbling library entries through a host: no host bridge or command-layer route serves KN2.4's jumbling rows
-//!   to a program yet, so `tests/library.rs` serves them from `c600_jumble` in [`library`]'s draft answer types.
-//!   CT-LB3-03's agreement with `trees.py` stays M5's Python test on the same kernel API.
+//! - CT-LB1-02's library entry "Word equality keys", the jumbling half (domain-preserving merging of menu words as
+//!   library code): not written yet. Its key half runs in `tests/lb3.rs`; the 600-cell-Full half is `c600-library`'s
+//!   `word_keys` (pull request 350).
+//! - The jumbling rows in the command table: [`rows`] serves them read-only beside the layer, in [`library`]'s draft
+//!   answer types and a draft tariff; the command table names and prices them when it freezes (KN5, PHS.52), and no
+//!   program runs here as a job of the layer. CT-LB3-03's agreement with `trees.py` stays M5's Python test on the
+//!   same kernel API.
 //! - LB3's other entries as language code, not written yet; also the named cap of "Release and whole-word checks",
 //!   with ΔN, Δn_h, Δu, the moved sets and the prefix digests (LB3.8), and the label half of "Protection" after
-//!   crossing. LB3's ν entry also needs F2 and F5.
+//!   crossing.
 //! - The review of the class against the entries and its record (CT-LB6-03, CT-BND-15): BM5.
 
 #![forbid(unsafe_code)]
@@ -184,5 +225,6 @@ pub mod library;
 pub mod locality;
 pub mod protection;
 pub mod relation;
+pub mod rows;
 pub mod tool;
 pub mod word;

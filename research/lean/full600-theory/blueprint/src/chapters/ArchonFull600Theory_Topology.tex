@@ -1,0 +1,283 @@
+\chapter{Topology, poles and the Coxeter presentation}
+\label{ch:ArchonFull600Theory_Topology}
+
+This chapter is Milestone 4 of the handoff: Lemma 5 (the inradius and the
+cell-pole normalization), Lemma 2 (the radial topology of the boundary,
+with the standard topology E3 as a hypothesis) and the Coxeter
+presentation of Lemma 4 (with E5 as a hypothesis, in the form of the
+order of \(W(H_4)\)). Lemma 5 comes first because Lemma 2 uses its inscribed
+ball. Source line numbers refer to
+\texttt{research/Full\_600cell\_Puzzle\_Theory.tex}.
+
+\section{Facet poles and the inradius}
+
+\begin{lemma}[Facet poles]
+  \label{lem:facet-pole}
+  \lean{ArchonFull600Theory.facetPole, ArchonFull600Theory.inradius,
+    ArchonFull600Theory.norm_sq_facetPole, ArchonFull600Theory.norm_facetPole,
+    ArchonFull600Theory.facetPlane_iff}
+  \leanok
+  \uses{lem:supporting-facet}
+  % SOURCE: Lemma 5, lines 708--718
+  % SOURCE QUOTE: \|N\|^2=4(4+6\phi), \end{equation} the perpendicular foot of the origin on
+  % its plane is \begin{equation} n=\frac{N}{4}. [...] \|n\|^2=\frac{4+6\phi}{4}
+  % =\frac{\phi^4}{2}.
+  \textit{Source: Lemma 5.}
+  For a four-clique with vertex sum \(N\), the pole \(n=N/4\) has
+  \(\|n\|^2=(4+6\phi)/4=\phi^4/2\), so \(\|n\|=\phi^2/\sqrt2\), and the
+  facet plane \(N\cdot x=4+6\phi\) is the plane \(n\cdot x=\|n\|^2\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  \(\|N\|^2=16+24\phi\) is the supporting-facet computation, and
+  \(\phi^4=3\phi+2\).
+\end{proof}
+
+\begin{theorem}[\(P\) is cut out by its facets]
+  \label{thm:half-spaces}
+  \lean{ArchonFull600Theory.exists_flip, ArchonFull600Theory.exists_facetCone,
+    ArchonFull600Theory.polytope_eq_halfSpaces, ArchonFull600Theory.polytope_eq_poleHalfSpaces}
+  \leanok
+  \uses{lem:supporting-facet, thm:face-counts}
+  \textit{Not in the source as a separate statement; it supports the
+  inradius.}
+  \(P\) is the intersection of the half-spaces \(N\cdot x\le4+6\phi\) of
+  the \(600\) four-cliques, equivalently of the half-spaces
+  \(n\cdot x\le\|n\|^2\) of their poles.
+\end{theorem}
+\begin{proof}
+  \leanok
+  \(P\) lies in each half-space by the supporting-facet test. Conversely,
+  let \(x\) satisfy every inequality and take a four-clique whose normal
+  maximizes \(N\cdot x\). Its four vertices are a basis of \(\mathbb H\).
+  If the coefficient of a vertex \(v_j\) were negative, the triangle
+  opposite \(v_j\) has a second common neighbour \(v_{j'}\), and the
+  four-clique across that triangle has \(N'-N=v_{j'}-v_j\), which is
+  orthogonal to the three shared vertices. Then
+  \(N'\cdot x-N\cdot x=c_j(v_{j'}\cdot v_j-4)>0\), against maximality. So
+  \(x\) is a nonnegative combination of the four vertices, and
+  \(N\cdot x\le4+6\phi\) bounds the sum of the coefficients by \(1\). Hence
+  \(x\) lies in the convex hull of the four vertices and \(0\).
+\end{proof}
+
+\begin{theorem}[Inradius]
+  \label{thm:inradius}
+  \lean{ArchonFull600Theory.closedBall_inradius_subset, ArchonFull600Theory.isGreatest_inradius}
+  \leanok
+  \uses{lem:facet-pole, thm:half-spaces}
+  % SOURCE: Lemma 5, lines 695--697 and 719
+  % SOURCE QUOTE: The radius-two model has inradius \begin{equation}
+  % r_{\mathrm{in}}=\frac{\phi^2}{\sqrt2}. [...] Regularity gives the same inradius at every
+  % facet.
+  \textit{Source: Lemma 5.}
+  \(\phi^2/\sqrt2\) is the largest radius of a closed ball about \(0\)
+  inside \(P\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  Every pole has norm \(\phi^2/\sqrt2\), so the Cauchy--Schwarz inequality
+  puts the ball in every pole half-space, hence in \(P\). A larger ball
+  contains a point beyond a pole on its ray, which violates that pole's
+  inequality. The source appeals to regularity; here every pole norm is
+  computed.
+\end{proof}
+
+\begin{theorem}[Lemma 5: cell-pole normalization]
+  \label{thm:cell-pole}
+  \lean{ArchonFull600Theory.cellPole, ArchonFull600Theory.cellPoleMap,
+    ArchonFull600Theory.exists_rotation_eq, ArchonFull600Theory.cellPoleNormalization}
+  \leanok
+  \uses{lem:facet-pole, thm:half-spaces, thm:inradius, def:lpq, lem:lpq-det}
+  % SOURCE: Lemma 5, lines 693--735
+  % SOURCE QUOTE: A similarity with scale factor \(4/\phi\) and a suitable rotation places a
+  % chosen facet pole at \begin{equation} n_0=(\phi^3,1,1,1), \end{equation} with every
+  % facet plane written as \begin{equation} n_c\cdot x=\|n_c\|^2.
+  \textit{Source: Lemma 5.}
+  The cell pole \(n_0=(\phi^3,1,1,1)\) has
+  \(\|n_0\|^2=\phi^6+3=8\phi^2\) and \(\|n_0\|/r_{\mathrm{in}}=4/\phi\). For
+  each chosen four-clique there is \(Q\in SO(4)\) such that
+  \(\sigma x=(4/\phi)Qx\) sends its pole to \(n_0\), every pole \(n\) to a
+  pole \(\tilde n=\sigma n\) of norm \(\|n_0\|\), every facet plane
+  \(n\cdot x=\|n\|^2\) to the plane \(\tilde n\cdot y=\|\tilde n\|^2\) and
+  every facet to the face of \(\sigma P\) on that plane; and \(\sigma P\)
+  is the intersection of the half-spaces
+  \(\tilde n\cdot y\le\|\tilde n\|^2\). The remark that the symmetry group
+  of \(\sigma P\) is the conjugate of \(K\) is not stated.
+\end{theorem}
+\begin{proof}
+  \leanok
+  \(\phi^6=8\phi+5\) gives \(\phi^6+3=8\phi^2\), and the ratio follows.
+  For nonzero \(x,y\), the map \(L_{b,a}\) with \(a=x/\|x\|\) and
+  \(b=y/\|y\|\) lies in \(SO(4)\) and sends \(x\) to \((\|x\|/\|y\|)y\);
+  with \(x\) the chosen pole and \(y=n_0\), the scale \(4/\phi\) sends the
+  pole to \(n_0\). A similarity multiplies inner products by
+  \((4/\phi)^2\), so it preserves the plane and half-space equations.
+\end{proof}
+
+\section{The radial topology of the boundary}
+
+\begin{theorem}[Radial homeomorphism]
+  \label{thm:radial-homeomorph}
+  \lean{ArchonFull600Theory.polytopeRescale, ArchonFull600Theory.boundaryHomeomorph,
+    ArchonFull600Theory.boundaryHomeomorph_apply}
+  \leanok
+  \uses{thm:inradius}
+  % SOURCE: Lemma 2, lines 402--423
+  % SOURCE QUOTE: The map \begin{equation} \partial P\longrightarrow S^3,\qquad
+  % x\longmapsto\frac{x}{\|x\|} \end{equation} is therefore a continuous bijection.
+  \textit{Source: Lemma 2.}
+  \(0\) is an interior point of \(P\), \(P\) is compact and lies in the
+  ball of radius \(2\), and \(x\mapsto x/\|x\|\) is a homeomorphism from
+  \(\partial P\) onto the unit sphere \(S^3\subseteq\mathbb H\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  The inscribed ball of Lemma 5 makes \(0\) interior; the source uses the
+  cross-polytope \(\operatorname{conv}\{\pm2e_i\}\). Mathlib's gauge
+  rescaling homeomorphism of the convex body \(P\) to the closed unit ball
+  maps the frontier onto the unit sphere and, since the gauge of \(P\) is
+  \(1\) on its frontier, agrees there with \(x\mapsto x/\|x\|\). The
+  homeomorphism is constructed, so the compact-to-Hausdorff step is not
+  needed.
+\end{proof}
+
+\begin{definition}[E3 as a hypothesis]
+  \label{def:sphere-topology}
+  \lean{ArchonFull600Theory.intHomology, ArchonFull600Theory.SphereTopology}
+  \leanok
+  % SOURCE: Lemma 2, lines 425--430
+  % SOURCE QUOTE: The sphere \(S^3\) has a CW decomposition with one zero-cell and one
+  % three-cell, giving the stated integral homology. [...] The van Kampen theorem gives
+  % trivial fundamental group.
+  \textit{Source: E3 in the handoff's table of external results.}
+  \(S^3\) is simply connected, and its integral singular homology is
+  \(\mathbb Z\) in degrees \(0\) and \(3\) and zero in every other degree.
+\end{definition}
+
+\begin{theorem}[Lemma 2]
+  \label{thm:radial-topology}
+  \lean{ArchonFull600Theory.intHomology_iso, ArchonFull600Theory.radialTopology}
+  \leanok
+  \uses{thm:radial-homeomorph, def:sphere-topology}
+  % SOURCE: Lemma 2, lines 388--398
+  % SOURCE QUOTE: The boundary \(\partial P\) is homeomorphic to \(S^3\).
+  \textit{Source: Lemma 2.}
+  Under E3, \(H_j(\partial P;\mathbb Z)\) is \(\mathbb Z\) for \(j=0,3\)
+  and zero otherwise, and \(\pi_1(\partial P)=1\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  Singular homology and simple connectivity are invariant under the
+  homeomorphism of Theorem~\ref{thm:radial-homeomorph}.
+\end{proof}
+
+\section{The Coxeter presentation}
+
+\begin{definition}[Base flag and wall reflections]
+  \label{def:walls}
+  \lean{ArchonFull600Theory.flagFace, ArchonFull600Theory.flagBarycenter,
+    ArchonFull600Theory.wallVec, ArchonFull600Theory.wallRefl, ArchonFull600Theory.wallPerm}
+  \leanok
+  % SOURCE: Lemma 4, lines 586--596
+  % SOURCE QUOTE: A flag gives a spherical tetrahedral chamber. [...] For each of the four
+  % chamber walls, the symmetry taking the chosen chamber to its adjacent chamber fixes the
+  % other three barycenter rays. It is the reflection in their span.
+  \textit{Source: Lemma 4, proof of the presentation.}
+  The base flag is
+  \(\{v_0\}\subset\{v_0,v_{30}\}\subset\{v_0,v_{30},v_{31}\}\subset
+  \{v_0,v_{30},v_{31},v_{32}\}\). For rank \(i\), \(s_i\) is the
+  reflection in the hyperplane orthogonal to \(v_a-v_b\), with
+  \((a,b)=(0,30),(30,31),(31,32),(32,42)\); vertex \(42\) is the second
+  common neighbour of the triangle \(\{0,30,31\}\).
+\end{definition}
+
+\begin{theorem}[Chambers and walls]
+  \label{thm:chamber-walls}
+  \lean{ArchonFull600Theory.wallRefl_vertexR, ArchonFull600Theory.wallRefl_mem,
+    ArchonFull600Theory.span_flagBarycenter, ArchonFull600Theory.eq_one_of_fix_flagBarycenter,
+    ArchonFull600Theory.span_flagBarycenter_compl, ArchonFull600Theory.chamberWalls}
+  \leanok
+  \uses{def:walls, def:symmetry-group, thm:face-counts}
+  % SOURCE: Lemma 4, lines 586--596
+  % SOURCE QUOTE: A symmetry fixing a flag fixes the barycenters of its four faces; these
+  % four vectors are linearly independent, so the symmetry is the identity.
+  \textit{Source: Lemma 4, proof of the presentation.}
+  The flag is a chain of cliques, its four barycenters span \(\mathbb H\),
+  and a linear isometry fixing them is the identity. Each \(s_i\) lies in
+  \(K\), fixes the faces of the other ranks and moves the face of rank
+  \(i\), and is the reflection in the span of the other three
+  barycenters.
+\end{theorem}
+\begin{proof}
+  \leanok
+  For \(u=v_a-v_b\), the vector \((u\cdot u)v-2(v\cdot u)u\) is computed
+  exactly in \(\mathbb Z[\phi]\) for each vertex \(v\) and found to be
+  \((u\cdot u)\) times a vertex; four kernel-checked tables record the
+  resulting permutations. The face images and the fixed barycenters follow
+  from the tables, and a dimension count identifies the mirror with the
+  span of the other three barycenters.
+\end{proof}
+
+\begin{theorem}[Relations and generation]
+  \label{thm:coxeter-relations}
+  \lean{ArchonFull600Theory.H₄_chain, ArchonFull600Theory.wallRefl_mul_pow,
+    ArchonFull600Theory.orderOf_wallRefl_mul, ArchonFull600Theory.closure_wallRefl}
+  \leanok
+  \uses{thm:chamber-walls, thm:finite-symmetry-group, thm:binary-icosahedral}
+  % SOURCE: Lemma 4, lines 598--601
+  % SOURCE QUOTE: Chamber adjacency is connected, so these reflections generate \(K\).
+  % Consecutive rank changes give rank-two sections of sizes \(3,3,5\), producing the
+  % displayed relations. Nonconsecutive changes commute and give square galleries.
+  \textit{Source: Lemma 4, proof of the presentation.}
+  Mathlib's \(H_4\) Coxeter matrix is the chain \((3,3,5)\);
+  \((s_is_j)^{m_{ij}}=1\) and \(s_is_j\) has order exactly \(m_{ij}\); and
+  \(s_0,\ldots,s_3\) generate \(K\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  An element of \(K\) is determined by the images of the four vertices of
+  the base facet, so the relations and the minimality of each order are
+  kernel checks on four vertices. For generation, explicit words in the
+  \(s_i\), found by a breadth-first search outside Lean and checked by the
+  kernel, equal \(L_{v_8/2,1}\), \(L_{v_{30}/2,1}\), \(L_{1,v_8/2}\),
+  \(L_{1,v_{30}/2}\) and \(J\). The word tree of Milestone 3 writes every
+  element of \(I^*\) in \(v_8/2\) and \(v_{30}/2\), and every element of
+  \(K\) is \(L_{p,q}\) or \(L_{p,q}J\). The source argues through the
+  connectivity of chamber adjacency instead.
+\end{proof}
+
+\begin{definition}[E5 as a hypothesis]
+  \label{def:coxeter-sources}
+  \lean{ArchonFull600Theory.CoxeterSources}
+  \leanok
+  % SOURCE: Lemma 4, lines 603--612
+  % SOURCE QUOTE: Hence the displayed presentation presents \(K\), rather than merely mapping
+  % onto it. The Coxeter group with this chain presentation is \(W(H_4)\).
+  \textit{Source: E5 in the handoff's table of external results, in another
+  form.}
+  The Coxeter group presented by the chain \((3,3,5)\) has order
+  \(14400\). The source instead proves completeness of the presentation by
+  closed galleries in the dual cell complex of \(S^3\) (E5's second part,
+  with Lemma 2); that argument is not formalized.
+\end{definition}
+
+\begin{theorem}[Lemma 4: the Coxeter presentation]
+  \label{thm:coxeter-presentation}
+  \lean{ArchonFull600Theory.coxeterHom, ArchonFull600Theory.coxeterHom_surjective,
+    ArchonFull600Theory.coxeterHom_bijective, ArchonFull600Theory.coxeterPresentation}
+  \leanok
+  \uses{thm:coxeter-relations, def:coxeter-sources, thm:finite-symmetry-group}
+  % SOURCE: Lemma 4, lines 533--543
+  % SOURCE QUOTE: Moreover, \begin{equation} K\cong W(H_4) \end{equation} with presentation
+  \textit{Source: Lemma 4.}
+  The Coxeter group of type \(H_4\) maps onto \(K\) with \(s_i\) going to
+  the wall reflections. Under E5, in the form of
+  Definition~\ref{def:coxeter-sources}, this map is an isomorphism
+  \(W(H_4)\cong K\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  The relations give the homomorphism through the universal property of
+  the Coxeter group, and generation makes it onto. Both groups have
+  \(14400\) elements, so the surjection is a bijection.
+\end{proof}

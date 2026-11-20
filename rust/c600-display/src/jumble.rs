@@ -1,5 +1,5 @@
-//! Producers for the jumbling puzzle (RPI.15, RM.34 rows J02 to J05 and J13), built from M5's kernel
-//! (`c600_jumble`). They copy what the engine certified and convert exact values to binary32 for display; they
+//! Producers for the jumbling puzzle (RPI.15, RM.34 rows J02 to J05 and J13, and the payloads of J01 and J06 to J12
+//! apart from J10), built from M5's kernel (`c600_jumble`). They copy what the engine certified and convert exact values to binary32 for display; they
 //! classify nothing, infer no inside set, plane or slot, and truncate no set. What the engine does not supply is an
 //! explicit [`Missing`] value or an `undefined` projection, never a guessed payload.
 //!
@@ -8,11 +8,16 @@
 //! - [`transform`] builds the certified transform row (J03) from an applied twist's certified inside set and its
 //!   engine-named plane ([`swept_plane`], render/1 section 4).
 //! - [`named_cap_set`], [`witness`] and [`named_cut`] build the certified overlay row (J04).
-//! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer.
+//! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer, and [`observations`] reads the
+//!   payloads of J07, J09, J11 and J12. Like J08 they are payloads, not supported rows.
+//! - [`exposed_faces`] passes J10's refusal through: M5's exact geometry producer supplies no geometry (JI.45).
+//! - [`shrink_anchors`] computes J01's shrink anchors from the unchanged mesh, and [`readback_check`] is J06's
+//!   first-frame readback check of a revision's bound arrays.
 //! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13), with M8's slot
 //!   action of K⁺ for a piece at a lattice pose.
 //! - [`support_report`] and [`fixture_context`] are declared fixture values, as in [`crate::produce`] (RPI.50).
 
+use c600_digest::sha256_hex;
 use c600_jumble::levels;
 use c600_jumble::model::NP;
 use c600_jumble::q5::{identity4, Vec4, Q5};
@@ -22,8 +27,8 @@ use c600_jumble::Context as Engine;
 use c600_kernel::json::Value;
 use c600_kernel::{IdentityBlock, Puzzle};
 
-use crate::array::Array;
-use crate::crosswalk::{Seam, SeamTable};
+use crate::array::{Array, Elem};
+use crate::crosswalk::{self, Seam, SeamTable};
 use crate::error::{codes, Error};
 use crate::pick::{Partial, Projection};
 use crate::plan::{
@@ -54,7 +59,17 @@ pub enum Missing {
     /// The twist given for an outcome turns another grip, so it is not the letter the outcome certified, and no plane
     /// is taken from it (J03).
     OtherGrip { outcome: u32, twist: u32 },
+    /// The engine's answer for this payload row did not complete: a job cut off by its budget, a cancelled job, a
+    /// refusal or an error status, with the answer's status. No partial table stands for it (JI.14).
+    Incomplete { row: &'static str, status: String },
+    /// The engine's answer for this payload row lacks a field the payload copies, or the field has another form.
+    /// Nothing is filled in.
+    Malformed { row: &'static str, field: &'static str },
+    /// The engine's value is undefined for a reason this payload has no form for (ν's `pieces_collide`).
+    Undefined { row: &'static str, reason: String },
 }
+
+pub mod observations;
 
 /// The binary64 value of an exact number: (a + b√5)/d, each operation rounded. `None` when a coefficient does not
 /// fit binary64 or the value is not finite.
@@ -328,6 +343,25 @@ pub fn seam_table(facts: &Value) -> Option<SeamTable> {
     Some(SeamTable { seams, complete })
 }
 
+/// J10's exposed faces at `state` (JI.41, JI.45): [`crosswalk::exposed_geometry`] over what the exact geometry
+/// producer, `c600_jumble::faces::exposed_faces` (LP2's pull request 336), supplied. This edition has no form for
+/// certified exposed-face geometry or a size profile, and the producer refuses every request with
+/// `KN2:input.exposed_geometry_unavailable`, so nothing is supplied and the answer is that refusal. When the producer's
+/// answer is that refusal, the error also names the exact input the producer was asked about (`source`, the state
+/// digest it names). Nothing is drawn, and no mesh, face or size is invented.
+pub fn exposed_faces(engine: &Engine, state: &State) -> Result<String, Error> {
+    let answer = c600_jumble::faces::exposed_faces(engine, state);
+    let status = answer.get("status").and_then(Value::as_str);
+    let code = answer.get("code").and_then(Value::as_str);
+    let source = answer.get("source").and_then(|source| source.get("state_digest")).and_then(Value::as_str);
+    crosswalk::exposed_geometry(None, None).map_err(|error| match source {
+        Some(digest) if status == Some("refused") && code == Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE) => {
+            error.with("source", digest)
+        }
+        _ => error,
+    })
+}
+
 /// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the lattice pose k is
 /// in the slot k·s of its home slot s: M8's slot action of K⁺ with A3's frame check (`levels::Tables::piece_slots`),
 /// which at the identity is the home slot. A piece off the lattice has no slot, and none is invented: the answer is
@@ -396,6 +430,101 @@ impl Projection for PoseProjection {
             _ => Partial::Undefined("the object has no slot".to_owned()),
         }
     }
+}
+
+/// The shrink anchors of J01 (render/1 section 2; `work/experiments/renderer-sb/SPEC.md` section 3; owner decision of
+/// 10 October 2026): for each base sticker, the area-weighted centroid of its triangles, as f32 [433, 4]. The
+/// triangles of sticker s are the consecutive vertex triples of the mesh vertices in `[offsets[s], offsets[s + 1])`.
+/// Every f32 component is widened to binary64 and all arithmetic is binary64 in SPEC's order (each dot product sums
+/// components 0 to 3, each sum runs in triangle order), with one rounding to binary32 at the end. The anchors move with
+/// the sticker, so a piece's shrunk stickers land on the shrunk stickers of the slots it reaches; the numbering centres
+/// (`mesh_centers.f32`) are not anchors. A mesh of the wrong shape, offsets that do not cut it into triangles, or a
+/// sticker with no finite positive area or no finite anchor refuse the assets with `EV3:input.display_bundle_mismatch`;
+/// nothing is regenerated.
+pub fn shrink_anchors(geometry: &GeometryInput) -> Result<Array, Error> {
+    let mismatch = |summary: String| Error::new(codes::BUNDLE_MISMATCH, summary).with("feature", "J01");
+    geometry.vertices.expect("mesh vertices", Elem::F32, &[None, Some(4)]).map_err(|e| mismatch(e.summary))?;
+    geometry.offsets.expect("mesh offsets", Elem::U32, &[None]).map_err(|e| mismatch(e.summary))?;
+    let (vertices, offsets) = (geometry.vertices.as_f32(), geometry.offsets.as_u32());
+    let count = vertices.len() / 4;
+    let vertex = |k: usize| -> [f64; 4] { std::array::from_fn(|i| f64::from(vertices[k * 4 + i])) };
+    let dot = |x: &[f64; 4], y: &[f64; 4]| x[0] * y[0] + x[1] * y[1] + x[2] * y[2] + x[3] * y[3];
+    let mut anchors = Vec::with_capacity(offsets.len().saturating_sub(1) * 4);
+    for (local, range) in offsets.windows(2).enumerate() {
+        let (begin, end) = (range[0] as usize, range[1] as usize);
+        if begin > end || end > count || (end - begin) % 3 != 0 {
+            return Err(mismatch(format!("sticker {local}: offsets {begin}..{end} are not triangles of the mesh")));
+        }
+        let (mut total, mut weighted) = (0f64, [0f64; 4]);
+        for t in (begin..end).step_by(3) {
+            let (a, b, c) = (vertex(t), vertex(t + 1), vertex(t + 2));
+            let e1: [f64; 4] = std::array::from_fn(|i| b[i] - a[i]);
+            let e2: [f64; 4] = std::array::from_fn(|i| c[i] - a[i]);
+            let gram = dot(&e1, &e1) * dot(&e2, &e2) - dot(&e1, &e2) * dot(&e1, &e2);
+            let area = 0.5 * gram.max(0.0).sqrt();
+            total += area;
+            for (i, w) in weighted.iter_mut().enumerate() {
+                *w += area * ((a[i] + b[i] + c[i]) / 3.0);
+            }
+        }
+        let anchor = weighted.map(|w| w / total);
+        if !(total.is_finite() && total > 0.0) || !anchor.iter().all(|x| x.is_finite()) {
+            return Err(mismatch(format!("sticker {local}: no finite positive triangle area")));
+        }
+        anchors.extend(anchor.map(|x| x as f32));
+    }
+    let stickers = (anchors.len() / 4) as u64;
+    Ok(Array::f32s(vec![stickers, 4], &anchors))
+}
+
+/// The first-frame readback check of one revision (J06, render/1 section 7, JI.41 "Revision adoption and
+/// readback"): the bound arrays a backend read back, compared with the engine bundle's by SHA-256 and element by
+/// element. It carries its revision, device and frame stamps. It is the adapter's check record, not RM.26's
+/// presentation confirmation: a failed check leaves the display out of date and changes no committed receipt.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Readback {
+    pub revision: u64,
+    pub device: u64,
+    pub frame: u64,
+    /// The bundle's arrays whose readback is absent, repeated, of another revision, shape or element type, or differs
+    /// by digest or by element, in the bundle's order.
+    pub failed: Vec<String>,
+}
+
+impl Readback {
+    /// Whether all three arrays matched, so the frame shows the revision it claims.
+    pub fn passed(&self) -> bool {
+        self.failed.is_empty()
+    }
+
+    /// Whether this check speaks of the current revision on the current device; a stale check is discarded.
+    pub fn current(&self, revision: u64, device: u64) -> bool {
+        self.revision == revision && self.device == device
+    }
+}
+
+/// J06's check of `readback` against `bundle` in frame `frame` on device `device`. Every array the bundle's puzzle
+/// binds is compared: exactly one readback of that name at the bundle's revision, with the engine array's element type
+/// and shape, the engine array's digest and the same elements. Nothing is adopted, retried or repaired here.
+pub fn readback_check(bundle: &EngineBundle, readback: &[BoundArray], device: u64, frame: u64) -> Readback {
+    let revision = bundle.revision.state;
+    let matches = |name: &str| {
+        let engine: Vec<&BoundArray> = bundle.arrays.iter().filter(|a| a.name == name).collect();
+        let read: Vec<&BoundArray> = readback.iter().filter(|a| a.name == name).collect();
+        let ([engine], [read]) = (engine.as_slice(), read.as_slice()) else {
+            return false;
+        };
+        let (want, have) = (&engine.array, &read.array);
+        engine.revision == revision
+            && read.revision == revision
+            && have.desc.elem == want.desc.elem
+            && have.desc.shape == want.desc.shape
+            && sha256_hex(&have.bytes) == want.desc.digest
+            && have.bytes == want.bytes
+    };
+    let failed =
+        bundle_names(bundle.revision.identity.puzzle).into_iter().filter(|name| !matches(name)).map(str::to_owned);
+    Readback { revision, device, frame, failed: failed.collect() }
 }
 
 /// The jumbling rows the fixture report supports: posed stickers, certified transforms, certified overlays and the

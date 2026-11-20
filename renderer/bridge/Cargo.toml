@@ -9,10 +9,11 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
-# A workspace of its own, so that it is no member of rust/Cargo.toml's. Its other member is the shell's native host
-# library (host/, c600-shell-host), which shares the lockfile and the vendored crates.
+# A workspace of its own, so that it is no member of rust/Cargo.toml's. Its other members are the shell's native host
+# library (host/, c600-shell-host) and LX-4's editor library (lx4/, c600-shell-lx4), which share the lockfile and the
+# vendored crates.
 [workspace]
-members = [".", "host"]
+members = [".", "host", "lx4"]
 
 [dependencies]
 c600-render = { path = "../../rust/c600-render" }
@@ -23,6 +24,11 @@ c600-display = { path = "../../rust/c600-display" }
 c600-kernel = { path = "../../rust/c600-kernel" }
 
 # As in rust/Cargo.toml: the shared host scenario loads the shipped model, which is slow unoptimized. Here every
-# crate but this one is outside the workspace, so "*" covers the kernel and the jumbling crate too.
+# crate but this one is outside the workspace, so "*" covers the kernel and the jumbling crate too. Debug info is kept
+# small as in rust/Cargo.toml (owner, 20 November 2026): line tables only for this workspace's crates, none for the rest.
+[profile.dev]
+debug = "line-tables-only"
+
 [profile.dev.package."*"]
 opt-level = 2
+debug = false

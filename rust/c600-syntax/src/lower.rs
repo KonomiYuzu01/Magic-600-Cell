@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 91] = [
+const BUILTINS: [&str; 93] = [
     "if",
     "display_if",
     "exact_add",
@@ -98,6 +98,9 @@ const BUILTINS: [&str; 91] = [
     // Exact multiplication and the pointwise assertion (LP2 drafts; DET.57, DET.55).
     "exact_mul",
     "assert",
+    // A Q(√5) value's canonical triple and its construction (LP2 drafts; ADR-L03.6, PS1.4).
+    "q5_parts",
+    "q5_of",
     // Generators as values (LP2 drafts; DET.61).
     "rng_init",
     "rng_draw",
@@ -169,6 +172,19 @@ const BASE_TYPES: [&str; 26] = [
 
 fn reserved(name: &str) -> bool {
     KEYWORDS.contains(&name) || BUILTINS.contains(&name) || ORDERS.contains(&name)
+}
+
+/// The words a program cannot bind, read-only: the list lowering itself checks (LP2 draft; the keywords freeze with
+/// the syntax, PHS.49). A host's completion list (LX-4) reads it here instead of keeping a copy.
+pub fn keywords() -> &'static [&'static str] {
+    &KEYWORDS
+}
+
+/// The IR's operations that a program calls like functions, read-only: the list lowering itself checks, stage-module
+/// operations included (RPI.70). A program cannot bind these names. Like [`keywords`], it is a draft that freezes
+/// with the syntax and the IR (PHS.49).
+pub fn builtins() -> &'static [&'static str] {
+    &BUILTINS
 }
 
 /// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one.
@@ -778,6 +794,8 @@ impl Body<'_> {
             "insert" => 2,
             // `expand(c, start, count)` (LP2 draft).
             "expand" => 3,
+            // `q5_of(a, b, d)` (LP2 draft).
+            "q5_of" => 3,
             // `child(caps, body, otherwise)` (LP2 draft; DET.60).
             "child" => 3,
             // `repeat(count, init, body)` (LP2 draft; DET.55).
@@ -849,6 +867,8 @@ impl Body<'_> {
             "expand" => Some(Prim::Expand),
             "exact_add" => Some(Prim::ExactAdd),
             "exact_mul" => Some(Prim::ExactMul),
+            "q5_parts" => Some(Prim::Q5Parts),
+            "q5_of" => Some(Prim::Q5Of),
             "assert" => Some(Prim::Assert),
             "rng_draw" => Some(Prim::RngDraw),
             "exact_less" => Some(Prim::ExactLess),
@@ -1282,7 +1302,7 @@ mod tests {
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
-                "expand" => format!("{op}(1, 2, 3)"),
+                "expand" | "q5_of" => format!("{op}(1, 2, 3)"),
                 "child" => format!(
                     "{op}(record {{ steps = 2 }}, fn() -> Nat {{ return 1; }}, fn(s: Status) -> Nat {{ return 2; }})"
                 ),

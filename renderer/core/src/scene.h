@@ -1,6 +1,7 @@
 #pragma once
 #include "scene_record.h"
 #include "product.h"
+#include "stages.h"
 #include <d3d12.h>
 #include <memory>
 #include <functional>
@@ -15,8 +16,13 @@ public:
     Scene(ID3D12Device* device, const sa2_scene_config& config, uint32_t width, uint32_t height);
     Scene(ID3D12Device* device, const sa2_wj_config& config, uint32_t width, uint32_t height);
     ~Scene();
-    // The caller has waited for this slot's prior submission before record_draw.
-    void record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t qpc);
+    // The caller has waited for this slot's prior submission before record_draw. format is the target's:
+    // R8G8B8A8_UNORM (ring slot) or, after surface_ready, B8G8R8A8_UNORM (C9 U4: the route-B surface; slot is then
+    // its back buffer's index, below three, so the per-slot buffers keep their one-frame-in-flight rule).
+    void record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t qpc,
+                     DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+    // C9 U4: builds the draw pipeline for the route-B surface once; a failure leaves the scene usable.
+    void surface_ready();
     void sample_vram();
     Json labels(Json& poses); // caller confirmed all scene submissions complete; poses stays null outside W-J
     Json geometry_check(ID3D12CommandQueue* queue, uint32_t timeout, const std::function<void()>& submitting);
@@ -56,5 +62,16 @@ public:
     // Recreates the size-bound resources (depth and the ID target) at the new
     // size after a confirmed drain.
     void resize(uint32_t width, uint32_t height);
+
+    // C9 U5: a user chain on W1..W4's record_draw (sa2_scene_stages). Attaching creates the stage resources on the
+    // first attach (the eval buffer, the frame row, its readback and the statistics queries) and the chain's arrays;
+    // a failure leaves the chain as it was. A null chain detaches. qpc is the attach time, t = 0.
+    void stages_attach(std::shared_ptr<const stages::Chain> chain, int64_t qpc);
+    bool stages_use(uint64_t handle) const; // the attached chain names the handle
+    // After record_draw drew ring's frame with the chain: the frame's number, for its report row.
+    void stage_frame(uint32_t ring, uint64_t frame);
+    // The newest completed frame drawn with a chain, from every row whose frame is at most completed; zeros (frame 0)
+    // before the first.
+    void stage_report(uint64_t completed, sa2_stage_frame& out);
 };
 }

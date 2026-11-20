@@ -1,11 +1,15 @@
-//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`], and the ABI 5 product calls the trait has no
-//! method for (engine adoption, frame reports, picks, counters) as methods of their own.
+//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`]. The ABI 5 product calls for engine adoption,
+//! frame reports and picks are also methods of their own, in the core's terms (its frame IDs and per-frame rows), and
+//! the trait's adapter operations (RM.14) map onto them; `counters` has no trait operation.
 //!
 //! What the bridge decides, because the core's interface and the host's types differ:
 //! - A publication becomes per-slot rows: the one retained primitive's visibility and interaction sets, and each
-//!   instance on the slot its sticker occupies under the primitive's labels (or the slot it names). Posed plans,
-//!   other primitives, a second retained primitive, two instances on one slot and instance IDs that do not fit the
-//!   ID pass's u32 (or are 0) are refused; J01 and J02 are reported unsupported until posed plans are mapped.
+//!   instance on the slot its sticker occupies under the primitive's labels (or the slot it names); or the one posed
+//!   primitive (J02), every slot drawn and none pickable. Other primitives, a second sticker primitive, an instance
+//!   of a posed primitive, two instances on one slot and instance IDs that do not fit the ID pass's u32 (or are 0)
+//!   are refused.
+//! - A jumbling engine bundle (render/1 section 7) is adopted as the core's pose path over the home labels: every
+//!   sticker keeps its own colour and moves with its piece's pose, as W-J draws it.
 //! - The core reports no limit profile and no stages: every supported row carries the profile the bridge was given.
 //! - F20 (atomic publication and latest-wins replacement), which the host requires of every publication, is not a
 //!   drawing row and the core does not name it. Its backend operations are ABI 4's prepare, poll, activate, cancel
@@ -23,21 +27,37 @@
 //!   retiring one is a no-op.
 //! - Every core failure is `EV3:busy.renderer_unavailable` except `SA2_E_UNSUPPORTED`, which is
 //!   `EV3:input.display_unsupported`; the context names the status and the core's last error.
+//! - The trait's adoption answers a bundle at the revision the core already holds (the whole revision reference, not
+//!   only its state counter) as adopted, without a second copy: the shell adopts into the core before the host does,
+//!   and the core refuses a revision that does not increase. Any other bundle goes to [`RenderBackend::adopt_engine`],
+//!   so one at the same state counter with another digest reaches the core, which refuses it.
+//! - The trait's frame reports are empty: RM.41's reports name frames that stopped a user stage, and the product path
+//!   runs none (`sa2_frame_report.fallback` is always 0). The core's row of every frame stays with
+//!   [`RenderBackend::read_frame_reports`].
+//! - A pick through the trait asks the ID pass on the frame with the given stamp; the requested kind and level are the
+//!   host's to resolve (RPI.25). A frame older than every frame the bridge keeps is refused as stale
+//!   (`EV3:stale.display_pick` at `sequence`), so the host drops a passive pick on it; a stamp the bridge never
+//!   submitted is invalid, and so is a point outside the frame's viewport, before the core is asked. The core's
+//!   refusal, for a frame it no longer retains among others, is a core failure: its status does not tell that case from
+//!   its pick bound. A pick the core finds stale is refused as `EV3:stale.display_pick`, naming the field that moved.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use c600_digest::sha256;
+use c600_display::array::Elem;
+use c600_display::codes;
 use c600_display::error::Error;
-use c600_display::host::{Backend, FrameInput, Poll, Preparation, PublicationStamp, ResourceSet, Ticket};
-use c600_display::pick::{FrameStamp, PickBinding, PickReply, Presented, PresentedFrame};
-use c600_display::plan::{CommandId, InstanceId, ObjectId, Primitive, Publication, ViewId};
+use c600_display::host::{self, Backend, FrameInput, Poll, Preparation, PublicationStamp, ResourceSet, Ticket};
+use c600_display::pick::{FrameStamp, PickBinding, PickReply, Presented, PresentedFrame, Requested};
+use c600_display::plan::{CommandId, InstanceId, ObjectId, Primitive, Publication, RevisionRef, ViewId};
 use c600_display::receipt::CancelReason;
+use c600_display::stage;
 use c600_display::validate::{validate_engine_bundle, EngineBundle, LimitProfile, PlanSubject, Support, SupportReport};
 use c600_kernel::json::{self, Value};
 use c600_kernel::Puzzle;
 
 use crate::abi::*;
-use crate::api::{CoreAbi, EngineImage, PreparationInput};
+use crate::api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
 
 /// Frame records kept for reports, presentations and picks: more than the core retains (every unreported frame up
 /// to its bound of 1024, and the last 64 reported).
@@ -114,6 +134,9 @@ pub struct RenderBackend<C: CoreAbi> {
     displays: VecDeque<DisplayTime>,
     /// The newest failure of `cancel` or `retire`, which the trait cannot return.
     pub fault: Option<Error>,
+    /// The revision of the engine image the core holds: the last bundle it accepted, which it keeps across recovery
+    /// (RM.16).
+    held: Option<RevisionRef>,
 }
 
 impl<C: CoreAbi> RenderBackend<C> {
@@ -129,6 +152,7 @@ impl<C: CoreAbi> RenderBackend<C> {
             frames: VecDeque::new(),
             displays: VecDeque::new(),
             fault: None,
+            held: None,
         }
     }
 
@@ -149,18 +173,38 @@ impl<C: CoreAbi> RenderBackend<C> {
         }
     }
 
-    /// RM.16's adoption into the core: a validated Full bundle's labels at its revision. Jumbling bundles wait for
-    /// the posed mapping.
+    /// RM.16's adoption into the core: a validated bundle at its revision. A Full bundle gives its labels. A jumbling
+    /// bundle gives its pose index, pose rows and lattice entries over the home labels (each slot shows its own
+    /// sticker, which its piece's pose moves); a pose table that is not i32 [PIECES], f32 [P, 4, 4] and i32 [P] with
+    /// P from 1 to `MAX_POSES` is refused before the core sees it, and the core checks the values.
     pub fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<u64, Error> {
         validate_engine_bundle(bundle)?;
-        if bundle.revision.identity.puzzle != Puzzle::Full {
-            return Err(Error::unsupported("J02", "the bridge adopts 600-cell-Full labels only; posed states wait"));
-        }
-        let labels = bundle.arrays.iter().find(|a| a.name == "labels").expect("validated").array.as_u32();
+        let array = |name: &str| &bundle.arrays.iter().find(|a| a.name == name).expect("validated").array;
         let digest = hex32(&bundle.revision.digest)
             .ok_or_else(|| Error::invalid("the revision digest is not a SHA-256 in hexadecimal"))?;
-        let image = EngineImage { revision: bundle.revision.state, labels: &labels, pose: None, digest };
-        self.core.engine_adopt(&image).map_err(|status| self.error(status))
+        let revision = bundle.revision.state;
+        let adopted = match bundle.revision.identity.puzzle {
+            Puzzle::Full => {
+                let labels = array("labels").as_u32();
+                self.core.engine_adopt(&EngineImage { revision, labels: &labels, pose: None, digest })
+            }
+            Puzzle::Jumbling => {
+                let count = array("pose_lattice").expect("pose_lattice", Elem::I32, &[None])?;
+                array("pose_index").expect("pose_index", Elem::I32, &[Some(PIECES as u64)])?;
+                array("poses").expect("poses", Elem::F32, &[Some(count), Some(4), Some(4)])?;
+                if count == 0 || count > MAX_POSES as u64 {
+                    return Err(Error::invalid("a posed bundle holds 1 to SA2_MAX_POSES poses"));
+                }
+                let (pose_index, poses, pose_lattice) =
+                    (array("pose_index").as_i32(), array("poses").as_f32(), array("pose_lattice").as_i32());
+                let labels: Vec<u32> = (0..SLOTS as u32).collect();
+                let pose = Some(PoseArrays { pose_index: &pose_index, poses: &poses, pose_lattice: &pose_lattice });
+                self.core.engine_adopt(&EngineImage { revision, labels: &labels, pose, digest })
+            }
+        };
+        let adopted = adopted.map_err(|status| self.error(status))?;
+        self.held = Some(bundle.revision.clone());
+        Ok(adopted)
     }
 
     /// The display times of the frames [`Backend::read_presented`] confirmed since the last call, in frame order;
@@ -283,6 +327,18 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     fn describe_backend(&self) -> Result<SupportReport, Error> {
         let text = self.core.describe().map_err(|status| self.error(status))?;
         support_report(&text, &self.limits)
+    }
+
+    /// A bundle at the revision the core already holds is adopted without a second copy; any other goes to
+    /// [`RenderBackend::adopt_engine`].
+    fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error> {
+        if self.held.as_ref() == Some(&bundle.revision) {
+            validate_engine_bundle(bundle)?;
+        } else {
+            // The inherent method: a path names it before this trait method of the same name, so this is no recursion.
+            RenderBackend::adopt_engine(self, bundle)?;
+        }
+        Ok(bundle.revision.clone())
     }
 
     fn prepare(&mut self, request: Preparation<'_>) -> Result<Ticket, Error> {
@@ -447,6 +503,51 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
         Ok(presented)
     }
 
+    /// None: the product path runs no user stage, so no frame stopped one. The core's row of every frame is
+    /// [`RenderBackend::read_frame_reports`]'s.
+    fn read_frame_reports(&mut self) -> Result<Vec<stage::FrameReport>, Error> {
+        Ok(Vec::new())
+    }
+
+    /// The ID pass on the frame that `frame` stamps. The ID pass stamps instances only; the host resolves the
+    /// requested kind and level. A frame older than every frame the bridge keeps is stale at its sequence; a stamp
+    /// the bridge never submitted is invalid, and so is a point outside the viewport the frame was submitted with.
+    fn request_pick(
+        &mut self,
+        frame: &FrameStamp,
+        point: (u32, u32),
+        _requested: Requested,
+    ) -> Result<host::PickTicket, Error> {
+        let Some(record) = self.frames.iter().rev().find(|record| &record.input.stamp == frame) else {
+            let gone = self.frames.front().is_some_and(|oldest| frame.sequence < oldest.input.stamp.sequence);
+            return Err(if gone {
+                Error::new(codes::STALE_PICK, "the pick is stale: the bridge no longer keeps its frame")
+                    .with("field", "sequence")
+            } else {
+                Error::invalid("the bridge submitted no frame with this stamp")
+            });
+        };
+        // The viewport `submit_frame` gave the core for this frame: a point outside it is the caller's error, which
+        // the core would answer only as a failure.
+        let (width, height) = record.input.stamp.viewport;
+        if point.0 >= width || point.1 >= height {
+            return Err(Error::invalid("the point lies outside the frame's viewport"));
+        }
+        let id = record.id;
+        RenderBackend::request_pick(self, id, point.0, point.1).map(|ticket| host::PickTicket(ticket.0))
+    }
+
+    fn poll_pick(&mut self, ticket: host::PickTicket) -> host::PickPoll {
+        match RenderBackend::poll_pick(self, PickTicket(ticket.0)) {
+            Ok(PickPoll::Pending) => host::PickPoll::Pending,
+            Ok(PickPoll::Ready(reply)) => host::PickPoll::Stamped(reply),
+            Ok(PickPoll::Stale(field)) => host::PickPoll::Refused(
+                Error::new(codes::STALE_PICK, format!("the pick is stale: {field} changed")).with("field", field),
+            ),
+            Err(error) => host::PickPoll::Refused(error),
+        }
+    }
+
     fn recover(&mut self) -> Result<SupportReport, Error> {
         let (status, text) = self.core.recover();
         if status != Status::OK {
@@ -482,28 +583,38 @@ struct SlotRows {
 
 fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
     let mut rows = SlotRows { visibility: vec![0; SLOTS], interaction: vec![0; SLOTS], instances: vec![0; SLOTS] };
-    let mut retained = None;
+    let mut stickers = None;
     for plan in &publication.plans {
         for (index, primitive) in plan.primitives.iter().enumerate() {
             match primitive {
-                Primitive::Retained(input) if retained.is_none() => retained = Some((plan, index as u32, input)),
-                Primitive::Retained(_) => {
-                    return Err(Error::unsupported("F01", "the core draws one retained sticker set per view"));
+                Primitive::Retained(_) | Primitive::Posed(_) if stickers.is_none() => {
+                    stickers = Some((plan, index as u32, primitive))
                 }
-                Primitive::Posed(_) => {
-                    return Err(Error::unsupported("J02", "the bridge does not map posed plans yet"));
+                Primitive::Retained(_) | Primitive::Posed(_) => {
+                    return Err(Error::unsupported("F01", "the core draws one sticker set per view"));
                 }
                 other => {
-                    return Err(Error::unsupported(other.feature(), "the S-A2 core draws retained stickers only"));
+                    return Err(Error::unsupported(
+                        other.feature(),
+                        "the S-A2 core draws retained or posed stickers only",
+                    ));
                 }
             }
         }
     }
-    let drawn = |p| retained.is_some_and(|(plan, _, _)| std::ptr::eq(plan, p));
+    let drawn = |p| stickers.is_some_and(|(plan, _, _)| std::ptr::eq(plan, p));
     if publication.plans.iter().any(|p| !p.instances.is_empty() && !drawn(p)) {
         return Err(Error::invalid("an instance names a primitive the plan does not draw"));
     }
-    let Some((plan, index, input)) = retained else { return Ok(rows) };
+    let Some((plan, index, primitive)) = stickers else { return Ok(rows) };
+    let Primitive::Retained(input) = primitive else {
+        // J02's posed row: every sticker is drawn where its piece's pose puts it, and none is pickable.
+        if !plan.instances.is_empty() {
+            return Err(Error::unsupported("J13", "the core's ID pass stamps no instance of a posed primitive"));
+        }
+        rows.visibility.fill(1);
+        return Ok(rows);
+    };
     let labels = input.labels.as_u32();
     if labels.len() != SLOTS || input.visibility.bytes.len() != SLOTS || input.interaction.bytes.len() != SLOTS {
         return Err(Error::invalid("a retained primitive carries one label, visibility and interaction per slot"));
@@ -556,9 +667,6 @@ fn support_report(text: &str, limits: &LimitProfile) -> Result<SupportReport, Er
     let mut features = BTreeMap::new();
     for (row, entry) in value.get("features").and_then(Value::as_object).ok_or_else(malformed)? {
         let support = match entry.get("status").and_then(Value::as_str) {
-            Some("supported") if matches!(row.as_str(), "J01" | "J02") => {
-                Support::Unsupported(Error::unsupported(row, "the bridge does not map posed plans yet"))
-            }
             Some("supported") => {
                 let layout = entry.get("layout_version").and_then(Value::as_i64).ok_or_else(malformed)?;
                 Support::Supported {

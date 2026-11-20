@@ -94,6 +94,7 @@ use std::sync::Arc;
 use c600_digest::sha256_hex;
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
 use c600_jumble::levels::{self, Base, Derived};
+use c600_jumble::observe::cuts;
 use c600_jumble::q5::{identity4, transpose};
 use c600_jumble::rotation;
 use c600_jumble::twist::{Menu, Twist};
@@ -104,6 +105,7 @@ use c600_kernel::{
     ProtectionMode, Recipe, Snapshot, Step, SupportRow, Verdict,
 };
 
+use crate::budget::Budget;
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
@@ -112,8 +114,10 @@ use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
 };
+use crate::repair::{self, REPAIR_LIST_ROW};
+use crate::sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
 use crate::store::{
-    identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Reopen, Store, Transaction,
+    identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Profile, Reopen, Store, Transaction,
     TransactionKind,
 };
 use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
@@ -121,7 +125,7 @@ use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
 use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 use crate::worksheet::{
-    compare_inputs, MacroVersion, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
+    compare_inputs, MacroVersion, Occupancy, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
     WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
@@ -195,6 +199,11 @@ pub struct Invocation {
     /// The originating engine epoch. The request digest covers it, and a transport retry keeps the whole envelope, so
     /// a retry finds its receipt after a restart.
     pub epoch: u64,
+    /// The budget the invocation declares for a program row's job ([`crate::budget`]; KN7.7; draft): explicit, beside
+    /// the epoch and the token, never in the arguments. A row an entry serves refuses an invocation without one
+    /// (`KN7:input.budget_not_declared`) or over the ceiling (`KN7:resource_limit.budget_ceiling`); another row runs
+    /// no program and reads none. The request digest covers a declared budget.
+    pub budget: Option<Budget>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -294,6 +303,9 @@ pub struct ProgramJob {
     /// [`CommandLayer::invoke_with_inputs`], in their order; empty after [`CommandLayer::invoke`]. The layer checked
     /// each block with the host's reader and holds it as given. The host runs the entry with them as its run's inputs.
     pub inputs: Vec<Vec<u8>>,
+    /// The budget the invocation declared, admitted under the ceiling ([`CommandLayer::budget_ceiling`]): the host runs
+    /// the entry under it (KN7.7; draft).
+    pub budget: Budget,
 }
 
 impl ProgramJob {
@@ -360,6 +372,10 @@ enum JobKind {
     Compare {
         sheet: WorksheetRef,
         draft: String,
+    },
+    /// `jumble.repair.list`'s job: the cap the invocation named.
+    Repair {
+        cap: i64,
     },
 }
 
@@ -594,6 +610,7 @@ fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
         && planned.policy == stored.policy
         && planned.records == stored.records
         && planned.crossing == stored.crossing
+        && planned.budget == stored.budget
         && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
@@ -602,7 +619,7 @@ fn refused(code: &'static str, detail: impl Into<String>) -> Result<(Option<u64>
 }
 
 /// The argument checks an invocation makes before its row's own: the arguments are an object, a confirmable row's
-/// `confirm` is a boolean, and the names fit the row's arguments. Returns the arguments.
+/// `confirm` and `set.save`'s `replace` are booleans, and the names fit the row's arguments. Returns the arguments.
 fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String, Value>, Error> {
     let Some(args) = args.as_object() else {
         return Err(Error::new(code::ARGUMENT_FORM, "the arguments are not an object"));
@@ -612,7 +629,15 @@ fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String,
     if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
         return Err(Error::new(code::ARGUMENT_FORM, "`confirm` is a boolean"));
     }
-    let names = args.keys().map(String::as_str).filter(|name| !(confirmable && *name == "confirm"));
+    // `set.save` takes an optional boolean `replace` beside its table arguments (draft; U1-057, [`crate::sets`]).
+    let replaceable = row.id == SET_SAVE_ROW;
+    if replaceable && args.get(REPLACE).is_some_and(|replace| !matches!(replace, Value::Bool(_))) {
+        return Err(Error::new(code::ARGUMENT_FORM, "`replace` is a boolean"));
+    }
+    let names = args
+        .keys()
+        .map(String::as_str)
+        .filter(|name| !(confirmable && *name == "confirm") && !(replaceable && *name == REPLACE));
     if !forms::names_fit(row, names) {
         return Err(Error::new(code::ARGUMENT_FORM, format!("`{}` takes {:?}", row.id, row.arguments)));
     }
@@ -664,6 +689,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     table: Table,
     secret: Secret,
     store: S,
+    /// The session's profile (BND.15, BND.17; draft): the host sets it when it creates the session, the journal keeps
+    /// it, and no program or command changes it.
+    profile: Profile,
     protected: ProtectedSet,
     /// The protection policy in force: Net from a session's start, then what the last policy action left.
     policy: ProtectionMode,
@@ -685,6 +713,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     jobs: VecDeque<Job>,
     running: BTreeMap<u64, ProgramJob>,
     program_capacity: usize,
+    /// The host's budget ceiling, if it set one ([`CommandLayer::set_budget_ceiling`]).
+    host_ceiling: Option<Budget>,
     slot: Option<Preview>,
     /// The newest frame the adapter reported (RM.26).
     frame: Option<PresentedFrame>,
@@ -703,7 +733,10 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     filters: BTreeMap<u64, FilterPreview>,
     /// The newest completed `worksheet.compare` job and its comparison (draft). It is transient: a reopen keeps none.
     comparison: Option<(u64, Value)>,
-    /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes and record previews are refused.
+    /// The newest completed `jumble.repair.list` job and its list (draft). It is transient: a reopen keeps none.
+    repairs: Option<(u64, Value)>,
+    /// The host's provenance reader (PS1.16, KN5.26). Without one, record writes are refused, and so are record
+    /// previews and comparisons in a solving session.
     provenance: Option<Box<dyn Provenance>>,
     /// The host's view model (EV3.2, RPI.83). Without one, `view.open` and `view.close` are refused.
     views: Option<Box<dyn Views>>,
@@ -742,6 +775,7 @@ impl<S: Store> CommandLayer<S> {
             table: table.with_drafts(),
             secret,
             store,
+            profile: Profile::Solving,
             protected,
             policy: ProtectionMode::Net,
             epochs: BTreeSet::from([revision.epoch]),
@@ -758,6 +792,7 @@ impl<S: Store> CommandLayer<S> {
             jobs: VecDeque::new(),
             running: BTreeMap::new(),
             program_capacity: 1,
+            host_ceiling: None,
             slot: None,
             frame: None,
             run: None,
@@ -765,6 +800,7 @@ impl<S: Store> CommandLayer<S> {
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
+            repairs: None,
             blocks: BTreeMap::new(),
             provenance: None,
             views: None,
@@ -782,8 +818,9 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// A new session `session` at `initial` with the protected set `protected`, in epoch 1. The store records the
-    /// session's start ([`Store::begin`]); a store that does not answer durably leaves the layer in read-only recovery.
+    /// A new session `session` at `initial` with the protected set `protected`, in epoch 1, in the solving profile
+    /// ([`CommandLayer::new_with_profile`]). The store records the session's start ([`Store::begin`]); a store that
+    /// does not answer durably leaves the layer in read-only recovery.
     pub fn new(
         kernel: Arc<Kernel>,
         table: Table,
@@ -792,6 +829,23 @@ impl<S: Store> CommandLayer<S> {
         session: &str,
         initial: Snapshot,
         protected: ProtectedSet,
+    ) -> CommandLayer<S> {
+        Self::new_with_profile(kernel, table, secret, store, session, initial, protected, Profile::Solving)
+    }
+
+    /// [`CommandLayer::new`] in the profile `profile` (BND.17; draft). The host sets it from the place the session
+    /// starts: an ordinary session, the practice copy included until LQ2 answers BND.15, is `solving`. The session's
+    /// start records it ([`Genesis::profile`]), a reopen reads it back ([`CommandLayer::open`]), and no row changes it.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_profile(
+        kernel: Arc<Kernel>,
+        table: Table,
+        secret: Secret,
+        store: S,
+        session: &str,
+        initial: Snapshot,
+        protected: ProtectedSet,
+        profile: Profile,
     ) -> CommandLayer<S> {
         let revision = Revision {
             session: session.to_owned(),
@@ -811,8 +865,10 @@ impl<S: Store> CommandLayer<S> {
             labels: initial.labels().to_vec(),
             digest: initial.digest().to_owned(),
             orbits: protected.orbits().to_vec(),
+            profile,
         };
         let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        layer.profile = profile;
         let fate = layer.store.begin(&genesis);
         layer.settle_fate(fate, "the session's start");
         layer
@@ -893,7 +949,9 @@ impl<S: Store> CommandLayer<S> {
             protection: 0,
             digest: initial.digest().to_owned(),
         };
+        let profile = genesis.profile;
         let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        layer.profile = profile;
         if let Some((context, menu)) = pin {
             layer.pin_menu(context, menu)?;
         }
@@ -970,7 +1028,7 @@ impl<S: Store> CommandLayer<S> {
                 };
                 self.jobs_issued = self.jobs_issued.max(job);
                 // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
-                self.workspace_adoption(meta, job, result, stored.records.clone())
+                self.workspace_adoption(meta, job, result, stored.records.clone(), stored.budget)
             }
             // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
             TransactionKind::Record => match stored.record.clone() {
@@ -1130,6 +1188,26 @@ impl<S: Store> CommandLayer<S> {
         Ok(self.kernel.positions(&self.current, pieces)?)
     }
 
+    /// KN2.4's `labels` row at the head, read for whole positions (draft; a work sheet's position roles, U1-057): the
+    /// piece whose stickers fill each named position, or `None` while no one piece fills it. A position's occupant in
+    /// a state is where the position's own piece is in the inverse state, so this is [`Kernel::positions`] on the
+    /// inverse of the head's labels, with its refusal of a position outside 0 to 177,119. Jumble on refuses it, as it
+    /// refuses [`CommandLayer::positions`], even when no position is named. A read changes nothing.
+    fn occupants(&self, positions: &[i64]) -> Result<Vec<Option<i64>>, Error> {
+        self.retained_mode()?;
+        if positions.is_empty() {
+            return Ok(Vec::new());
+        }
+        let labels = self.current.labels();
+        let mut inverse = vec![0i32; labels.len()];
+        for (slot, &label) in labels.iter().enumerate() {
+            inverse[label as usize] = slot as i32;
+        }
+        let inverse = self.kernel.state_from_labels(inverse).expect("the inverse of a permutation of the slots");
+        let found = self.kernel.positions(&inverse, positions)?;
+        Ok(found.into_iter().map(|row| row.position.map(|piece| piece as i64)).collect())
+    }
+
     /// The structure row that `structure.compare` reads (draft; LP3's C6, step 1 item 3): two cells compared, as
     /// [`Kernel::compare_cells`] counts their face steps, with its refusal of a cell outside 0 to 599. Jumble on
     /// refuses it, as it refuses [`CommandLayer::positions`] (LG2.8). A read changes nothing.
@@ -1171,6 +1249,19 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
+    /// Whether `row`, a query of the jumbling engine's poses, can read them: the host pinned a twist menu
+    /// (`KN5:input.row_not_built` otherwise) and Jumble is on (`KN5:input.menu_word_needs_jumble_on` otherwise; draft:
+    /// the registry has no code of its own for a jumbling query with Jumble off).
+    fn jumble_mode(&self, row: &str) -> Result<(), Error> {
+        match (&self.twists, &self.jumbled) {
+            (None, _) => Err(Error::new(code::ROW_NOT_BUILT, format!("`{row}` needs the host's pinned twist menu"))),
+            (Some(_), None) => {
+                Err(Error::new(MENU_WORD_NEEDS_JUMBLE_ON, format!("`{row}` reads the poses: Jumble is off")))
+            }
+            (Some(_), Some(_)) => Ok(()),
+        }
+    }
+
     pub fn protected(&self) -> &ProtectedSet {
         &self.protected
     }
@@ -1179,6 +1270,12 @@ impl<S: Store> CommandLayer<S> {
     /// `protection.policy.set`, or the undo or redo of one, left.
     pub fn policy(&self) -> ProtectionMode {
         self.policy
+    }
+
+    /// The session's profile (BND.15, BND.17; draft), set when the host created the session and read back by a reopen.
+    /// A host sets a run's profile from it (BND.17).
+    pub fn profile(&self) -> Profile {
+        self.profile
     }
 
     /// Derives `recipe` from `base` under `protected` in the policy in force: Net judges the end of the complete
@@ -1266,6 +1363,19 @@ impl<S: Store> CommandLayer<S> {
     /// Sets how many program jobs the program lane holds (LI.22's host setting).
     pub fn set_program_capacity(&mut self, capacity: usize) {
         self.program_capacity = capacity.max(1);
+    }
+
+    /// Sets the host's budget ceiling (BM3; draft). A program row's budget must fit the lower of this and the session
+    /// profile's ceiling ([`Profile::budget_ceiling`]) in each dimension, so a host ceiling above the profile's
+    /// raises nothing.
+    pub fn set_budget_ceiling(&mut self, ceiling: Budget) {
+        self.host_ceiling = Some(ceiling);
+    }
+
+    /// The ceiling a program row's budget must fit: the session profile's, lowered by the host's in each dimension.
+    pub fn budget_ceiling(&self) -> Budget {
+        let profile = self.profile.budget_ceiling();
+        self.host_ceiling.map_or(profile, |host| profile.min(host))
     }
 
     /// The current preview dependencies for a draft digest (KN0.8).
@@ -1599,6 +1709,7 @@ impl<S: Store> CommandLayer<S> {
         self.jobs.clear();
         self.running.clear();
         self.comparison = None;
+        self.repairs = None;
         self.commit_held = false;
         if let Some(adoption) = self.limbo.take() {
             match self.store.durable(&adoption.transaction.event) {
@@ -1675,7 +1786,7 @@ impl<S: Store> CommandLayer<S> {
         let mut required: Vec<_> = metadata.requires.iter().filter(|dependency| !dependency.optional).collect();
         required.sort_by(|a, b| a.row.cmp(&b.row));
         let kernel_row = |id: &str| self.table.row(id).filter(|_| !self.table.language_defined(id));
-        let ungranted = |row: &Row| !Self::runtime_may(row) || row.takes_token();
+        let ungranted = |row: &Row| !Self::runtime_may(row) || !self.profile_grants(row) || row.takes_token();
         if let Some(denied) =
             required.iter().find_map(|dependency| kernel_row(&dependency.row).filter(|r| ungranted(r)))
         {
@@ -1788,6 +1899,10 @@ impl<S: Store> CommandLayer<S> {
                 (Some(_), true) => Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight")),
                 (Some(_), false) => Ok(()),
             },
+            REPAIR_LIST_ROW => {
+                self.jumble_mode(REPAIR_LIST_ROW)?;
+                self.exclusive_free()
+            }
             "protection.orbit.set" | POLICY_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
@@ -1852,6 +1967,11 @@ impl<S: Store> CommandLayer<S> {
             let blocks = inputs.iter().map(|block| Value::String(c600_digest::sha256_hex(block))).collect();
             fields.insert("inputs".to_owned(), Value::Array(blocks));
         }
+        // The declared budget, only when there is one: an invocation without one keeps the digest it had before
+        // budgets were declared.
+        if let (Some(budget), Value::Object(fields)) = (&invocation.budget, &mut request) {
+            fields.insert("budget".to_owned(), budget.to_json());
+        }
         digest(&request)
     }
 
@@ -1891,10 +2011,27 @@ impl<S: Store> CommandLayer<S> {
         };
         match (caller, &invocation.token) {
             (Caller::Runtime { .. }, Some(_)) => false,
-            (Caller::Runtime { .. }, None) => Self::runtime_may(row) && !row.takes_token(),
+            (Caller::Runtime { .. }, None) => Self::runtime_may(row) && self.profile_grants(row) && !row.takes_token(),
             (Caller::Shell, None) => !row.takes_token(),
             (Caller::Shell, Some(token)) => row.takes_token() && token.verify(&self.secret),
         }
+    }
+
+    /// Whether this session's profile lets a run invoke `row`, which [`CommandLayer::runtime_may`] allows: BND.16's
+    /// table of rows by profile, from chapter 07 section 8 (draft). The kernel knows no profile, so the table sits here
+    /// (KN2.6, BND.17).
+    /// - `solving`: every row `runtime_may` allows. At `operation.preview` the host's reader admits a record's word
+    ///   (KN5.26), and a run's preview is admitted as the run's command allows.
+    /// - `tool_authoring` and `research`: the same rows except `operation.preview`, refused with
+    ///   `LG3:capability.not_granted`. A run's `propose` there goes to a capture in the runtime, and no engine preview
+    ///   exists, so no token and no commit can follow (BND.60). An entry that requires the row is unavailable.
+    ///
+    /// The cells of section 8 that grant a run more outside a solving session are not built: a run writes no record
+    /// of the authoring workspace or the research records in any profile, since the label such a record carries
+    /// (BND.61) is the host's to set. The shell's rows are the same in every profile: a profile belongs to a run
+    /// (BND.17), and the solver's own commands are no run's.
+    fn profile_grants(&self, row: &Row) -> bool {
+        self.profile == Profile::Solving || row.id != "operation.preview"
     }
 
     /// `invoke(command, row, args) -> Receipt` (KN5.1) for an envelope that came on `caller`'s channel. The host stamps
@@ -1968,6 +2105,10 @@ impl<S: Store> CommandLayer<S> {
             if !Self::runtime_may(&row) {
                 return refused(code::NOT_GRANTED, format!("the runtime may not invoke `{}`", row.id));
             }
+            if !self.profile_grants(&row) {
+                let detail = format!("a run in a {} session prepares no engine preview (BND.60)", self.profile.name());
+                return refused(code::NOT_GRANTED, detail);
+            }
             if invocation.token.is_some() {
                 return refused(code::TOKEN_INVALID, "the runtime never holds a token (KN5.15)");
             }
@@ -2001,12 +2142,17 @@ impl<S: Store> CommandLayer<S> {
             JUMBLE_ON_ROW => self.jumble_on(caller, invocation, request, &row),
             JUMBLE_OFF_ROW => self.jumble_off(caller, invocation, request, &row),
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
+            REPAIR_LIST_ROW => self.admit_repair(caller, invocation),
             VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             _ if row.overlay.is_some() => {
                 forms::check(&row, args, &self.revision)?;
                 self.check_filter_refs(&row, args)?;
                 self.fresh_filter_gate(&row, &invocation.args)?;
                 self.check_inputs(&row, inputs)?;
+                if row.id == SET_SAVE_ROW {
+                    let name = args.get("name").and_then(Value::as_str).unwrap_or_default();
+                    self.check_set_name(name, args.get(REPLACE) == Some(&Value::Bool(true)))?;
+                }
                 self.admit_program(caller, invocation, &row, inputs)
             }
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
@@ -2098,10 +2244,12 @@ impl<S: Store> CommandLayer<S> {
 
     /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6, or a work
     /// sheet, whose complete operation it previews ([`RecordValue::operation`]; `KN2:input.named_object_invalid`
-    /// otherwise), and the host's provenance reader must admit the record's block in this session, or the draft is
+    /// otherwise). In a solving session the host's provenance reader must admit the record's block, or the draft is
     /// refused with the reader's error (`LG3:capability.not_granted` without a reader). The record is checked before
-    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. The
-    /// read set holds the record's content digest and version.
+    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. In
+    /// a `tool_authoring` or `research` session KN5.26 does not apply and no reader is asked, so the solver's own
+    /// preview there, and a commit of it, needs no admission; a record previewed later in a solving session meets its
+    /// check there (BND.61; draft). The read set holds the record's content digest and version.
     fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
         let record = self.records.get(name);
         let Some(value) = record.and_then(|record| record.value.as_ref()) else {
@@ -2111,10 +2259,11 @@ impl<S: Store> CommandLayer<S> {
             let detail = "the record holds neither a list of letters nor a work sheet";
             return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
         };
-        let Some(reader) = &self.provenance else {
-            return Err(Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)"));
-        };
-        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        if self.profile == Profile::Solving {
+            let unread =
+                || Error::new(code::NOT_GRANTED, "a record's word needs the host's provenance reader (KN5.26)");
+            self.provenance.as_ref().ok_or_else(unread)?.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        }
         Ok(ResolvedDraft { source: draft.clone(), letters, reads: vec![RecordRead::of(name, record)] })
     }
 
@@ -2144,6 +2293,10 @@ impl<S: Store> CommandLayer<S> {
                 }
                 JobKind::Compare { sheet, draft } => {
                     self.build_comparison(job.id, &(job.scope, job.command), &sheet, &draft);
+                    ran += 1;
+                }
+                JobKind::Repair { cap } => {
+                    self.build_repair(job.id, &(job.scope, job.command), cap);
                     ran += 1;
                 }
             }
@@ -2400,6 +2553,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let change = Change::Head { before: self.head, after: order };
         Adoption {
@@ -2564,8 +2718,10 @@ impl<S: Store> CommandLayer<S> {
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ReplacedRevision));
         }
         self.jobs = keep;
-        // A comparison analysed the state this action replaced (LB7.2: a stored result never stands in for a fresh one).
+        // A comparison analysed the state this action replaced (LB7.2: a stored result never stands in for a fresh
+        // one), and a repair list speaks only of the input it read (JI.12).
         self.comparison = None;
+        self.repairs = None;
         let running = std::mem::take(&mut self.running);
         for (id, program) in running {
             if program.kind == Kind::File {
@@ -2732,6 +2888,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let side = Side::Stay;
         match change {
@@ -2971,6 +3128,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
         let tree = Tree::Push { node: None, change };
@@ -3032,6 +3190,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let tree = Tree::Push { node: None, change: Change::Policy { before: self.policy, after: policy } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3063,7 +3222,14 @@ impl<S: Store> CommandLayer<S> {
     /// `workspace` makes an undoable action, which `session.undo` and `session.redo` invert and repeat as a workspace
     /// inverse ([`Change::Records`]), when it writes a record: one that writes none changes nothing an undo could
     /// restore, so it takes no undo entry. No undo reaches any other row's completion (draft).
-    fn workspace_adoption(&self, meta: Meta, job: u64, result: String, records: Vec<RecordWrite>) -> Adoption {
+    fn workspace_adoption(
+        &self,
+        meta: Meta,
+        job: u64,
+        result: String,
+        records: Vec<RecordWrite>,
+        budget: Option<Budget>,
+    ) -> Adoption {
         let tree = match self.workspace_undoable(&meta.row) && !records.is_empty() {
             true => {
                 let value = |name: &str| self.records.get(name).and_then(|record| record.value.clone());
@@ -3101,6 +3267,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget,
         };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
@@ -3117,7 +3284,8 @@ impl<S: Store> CommandLayer<S> {
 
     /// `workspace.set` (M6's record write): writes `payload` with its provenance block under `record` as one durable
     /// action whose receipt is `completed(workspace)`. The host's provenance reader checks the block first (PS1.16); a
-    /// block it refuses, a missing reader or a bad argument writes nothing.
+    /// block it refuses, a missing reader or a bad argument writes nothing. A name under `set/` is a saved set's
+    /// ([`crate::sets`]) and is refused with `KN5:input.argument_form`.
     fn write_record(
         &mut self,
         caller: &Caller,
@@ -3130,6 +3298,7 @@ impl<S: Store> CommandLayer<S> {
         else {
             return refused(code::ARGUMENT_FORM, "`record` and `provenance` are text");
         };
+        saved_set_name(name)?;
         let Some(reader) = &self.provenance else {
             return refused(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader"));
         };
@@ -3171,6 +3340,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
@@ -3184,8 +3354,9 @@ impl<S: Store> CommandLayer<S> {
     /// Its piece roles are placed at the head ([`CommandLayer::place`]), and it is written as one record write,
     /// undoable as a workspace inverse (LB7.2). Refused, writing nothing, in this order: no reader
     /// (`KN5:input.row_not_built`), Jumble on (`KN5:input.retained_tool_needs_jumble_off`), a draft of another form or
-    /// a name that is not text or is empty (`KN5:input.argument_form`), a draft record that is missing or holds neither
-    /// letters nor a work sheet (`KN2:input.named_object_invalid`), and a block the reader refuses (its error).
+    /// a name that is not text, is empty or is under `set/` (`KN5:input.argument_form`; [`crate::sets`]), a draft
+    /// record that is missing or holds neither letters nor a work sheet (`KN2:input.named_object_invalid`), and a block
+    /// the reader refuses (its error).
     fn save_worksheet(
         &mut self,
         caller: &Caller,
@@ -3203,6 +3374,7 @@ impl<S: Store> CommandLayer<S> {
         let (Some(source), Some(name)) = (source, name) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
         };
+        saved_set_name(name)?;
         let (sheet, value) = self.drafted(source)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
@@ -3214,8 +3386,10 @@ impl<S: Store> CommandLayer<S> {
 
     /// `worksheet.load` (LB7.2, solving workflow section 4; draft): reuses the saved work sheet that `worksheet` names,
     /// `{"record": name, "version": n}` ([`WorksheetRef`], H-08's `WorksheetRevisionRef` in its draft form). Its piece
-    /// roles are placed again at the head, each keeping where it was saved, so a piece that moved is shown
-    /// ([`Placement::moved`]) and the phases are never retargeted (section 4.1). The sheet is written again as one
+    /// roles are placed again and its position roles' occupants read again at the head, each keeping what it was at
+    /// the save, so a piece that moved ([`Placement::moved`]) and a position whose occupant changed
+    /// ([`Occupancy::changed`]) are shown, and the phases and roles are never retargeted (section 4.1; U1-057,
+    /// U4-037). The sheet is written again as one
     /// record write, undoable as a workspace inverse. The write advances the record's version, so a preview that read
     /// the sheet goes stale (KN0.8; CT-LB2-03) and the reuse needs a fresh engine preview, with its fresh exact
     /// analysis (LB7.2). Refused, writing nothing, in this order: no reader (`KN5:input.row_not_built`), Jumble on
@@ -3245,9 +3419,10 @@ impl<S: Store> CommandLayer<S> {
         self.transact(adoption)
     }
 
-    /// `sheet` with its piece roles placed at the head, where KN2.4's `positions` row finds each piece now. A save
-    /// (`saved` is `None`) places them for the first time; a reuse keeps where they were and the digest of the state
-    /// they were saved at. Position roles stay where they are.
+    /// `sheet` with its piece roles placed at the head, where KN2.4's `positions` row finds each piece now, and its
+    /// position roles' occupants read there ([`CommandLayer::occupants`]). A save (`saved` is `None`) places and reads
+    /// them for the first time; a reuse keeps where each piece was, what each position held and the digest of the
+    /// state they were saved at. Position roles stay on their positions.
     fn place(&self, sheet: Worksheet, saved: Option<&Resolution>) -> Result<Worksheet, Error> {
         let roles = sheet.pieces();
         let pieces: Vec<i64> = roles.iter().map(|(_, piece)| *piece).collect();
@@ -3258,8 +3433,19 @@ impl<S: Store> CommandLayer<S> {
             let saved = saved.map_or(now, |resolution| resolution.pieces[i].saved);
             Placement { name, piece, saved, now }
         });
-        let saved = saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone());
-        let resolution = Resolution { saved, now: digest, pieces: placements.collect() };
+        let held = sheet.positions();
+        let at: Vec<i64> = held.iter().map(|(_, position)| *position).collect();
+        let occupants = self.occupants(&at)?;
+        let occupancies = held.into_iter().zip(occupants).enumerate().map(|(i, ((name, position), now))| {
+            let saved = saved.map_or(now, |resolution| resolution.positions[i].saved);
+            Occupancy { name, position, saved, now }
+        });
+        let resolution = Resolution {
+            saved: saved.map_or_else(|| digest.clone(), |resolution| resolution.saved.clone()),
+            now: digest,
+            pieces: placements.collect(),
+            positions: occupancies.collect(),
+        };
         Ok(Worksheet { resolution: Some(resolution), ..sheet })
     }
 
@@ -3315,8 +3501,9 @@ impl<S: Store> CommandLayer<S> {
     /// ([`CommandLayer::compare_now`]). Refused, queuing nothing, in this order: no reader (`KN5:input.row_not_built`),
     /// Jumble on (`KN5:input.retained_tool_needs_jumble_off`), arguments of another form (`KN5:input.argument_form`),
     /// the sheet's refusals ([`CommandLayer::saved_sheet`]), the draft's (`KN2:input.named_object_invalid`), the
-    /// reader's refusal of the sheet's block in this session (KN5.26: the analysis shows what a preview of its word
-    /// would) and a held exclusive lane (`KN7:busy.lane_full`). The runtime may not invoke it.
+    /// reader's refusal of the sheet's block in this session (KN5.26, in a solving session only, as at
+    /// `operation.preview`: the analysis shows what a preview of its word would) and a held exclusive lane
+    /// (`KN7:busy.lane_full`). The runtime may not invoke it.
     fn admit_compare(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
         let Some(reader) = &self.provenance else {
             return refused(
@@ -3336,7 +3523,9 @@ impl<S: Store> CommandLayer<S> {
         };
         let (_, _, value) = self.saved_sheet(&named)?;
         self.drafted(draft)?;
-        reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        if self.profile == Profile::Solving {
+            reader.admit_kept(value.provenance.as_bytes(), &self.blocks)?;
+        }
         self.exclusive_free()?;
         let id = self.next_job();
         let kind = JobKind::Compare { sheet: named, draft: draft.to_owned() };
@@ -3364,11 +3553,13 @@ impl<S: Store> CommandLayer<S> {
 
     /// The comparison at the head (draft). The sheet and the draft are read again, so a write of the sheet since
     /// admission fails the job with `KN5:stale.revision_changed`, and Jumble on with its refusal. The value is
-    /// `{"worksheet", "draft", "inputs", "resolution", "moved", "macro_version", "analysis"}`:
+    /// `{"worksheet", "draft", "inputs", "resolution", "moved", "occupant_changed", "macro_version", "analysis"}`:
     /// - `worksheet` names the sheet as the job read it, `draft` the draft record with its version and content digest;
     /// - `inputs` compares the sheet's phases, roles, reference and macro version with the draft's ([`compare_inputs`]);
-    /// - `resolution` places the sheet's piece roles again at the head, as `worksheet.load` would, and `moved` names
-    ///   the piece roles whose piece is not where it was saved: shown, never retargeted (section 4.1);
+    /// - `resolution` places the sheet's piece roles and reads its position roles' occupants again at the head, as
+    ///   `worksheet.load` would; `moved` names the piece roles whose piece is not where it was saved, and
+    ///   `occupant_changed` the position roles whose position holds another occupant than at the save: shown, never
+    ///   retargeted (section 4.1);
     /// - `macro_version` is the sheet's macro version (`saved`, `null` when it names none) and its `status`: `none`,
     ///   `current` (the record is at that version and holds that content), `changed` (otherwise) or `missing` (it
     ///   holds no value);
@@ -3388,6 +3579,7 @@ impl<S: Store> CommandLayer<S> {
         let inputs = compare_inputs(&sheet, &work);
         let placed = self.place(sheet.clone(), Some(&saved))?.resolution.expect("place resolves the sheet");
         let moved = placed.pieces.iter().filter(|p| p.moved()).map(|p| Value::String(p.name.clone())).collect();
+        let changed = placed.positions.iter().filter(|o| o.changed()).map(|o| Value::String(o.name.clone())).collect();
         let status = match &sheet.macro_version {
             None => "none",
             Some(saved) => match self.records.get(&saved.record) {
@@ -3411,9 +3603,93 @@ impl<S: Store> CommandLayer<S> {
             ("inputs", inputs),
             ("resolution", placed.to_json()),
             ("moved", Value::Array(moved)),
+            ("occupant_changed", Value::Array(changed)),
             ("macro_version", macro_version),
             ("analysis", self.analyse(&sheet.letters())?),
         ]))
+    }
+
+    // ----- jumble.repair.list -----
+
+    /// The list that completed `jumble.repair.list` job `job` made, while it is the newest one and no action has moved
+    /// the state since (draft): the value its completion's result reference digests. A reopen keeps none.
+    pub fn repair_list(&self, job: u64) -> Option<&Value> {
+        self.repairs.as_ref().filter(|(id, _)| *id == job).map(|(_, value)| value)
+    }
+
+    /// `jumble.repair.list {snapshot, cap, max_chunk}` (BND.2, the 17 October exception; JI.12, JI.33; draft): the
+    /// repair list at the cap the invocation names, on the head's poses. Admission queues a job on the exclusive lane;
+    /// [`CommandLayer::run_jobs`] runs it ([`CommandLayer::build_repair`]). The row names its cap: an invocation
+    /// without one is refused with `KN5:input.argument_form` before this admission, so no job starts for an unnamed
+    /// cap (BND.64), and nothing here picks a cap. Refused, queuing nothing, in this order:
+    /// - no pinned twist menu (`KN5:input.row_not_built`) or Jumble off (`KN5:input.menu_word_needs_jumble_on`);
+    /// - `cap` not a `CapId` or `max_chunk` not a `PositiveNat` (`KN5:input.argument_form`; [`repair::named_cap`]);
+    /// - `snapshot` not KN0.2's `RevisionRef` (`KN5:input.argument_form`; a derived state reference is not built in the
+    ///   headless layer) or not the current revision (`KN5:stale.revision_changed`);
+    /// - in a solving session, a run that is not inside a command the solver invoked (`LG3:capability.not_granted`):
+    ///   the cap then comes from the solver's command, which the checker's repair-list exception holds to the cap the
+    ///   solver named (BND.2, BND.64; c600-check's `Row::RepairList`). Outside a solving session BND.64 does not apply;
+    /// - a held exclusive lane (`KN7:busy.lane_full`).
+    fn admit_repair(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        self.jumble_mode(REPAIR_LIST_ROW)?;
+        let args = invocation.args.as_object().expect("the dispatch checked that the arguments are an object");
+        let cap = repair::named_cap(args)?;
+        let snapshot = args.get("snapshot").expect("the dispatch checked that the row's arguments are named");
+        let row = self.known(REPAIR_LIST_ROW)?;
+        let as_revision = Row { arguments: [("snapshot".to_owned(), "RevisionRef".to_owned())].into(), ..row.clone() };
+        if let Err(error) = forms::check_forms(&as_revision, args) {
+            let detail = "`snapshot` names a revision, KN0.2's RevisionRef; a derived state is not built here";
+            return Err(Error::new(error.code, detail));
+        }
+        if *snapshot != self.revision.to_json() {
+            return refused(code::REVISION_CHANGED, "`snapshot` names a revision that is not current");
+        }
+        if let Caller::Runtime { run } = caller {
+            if self.profile == Profile::Solving && !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (BND.64)");
+                return refused(code::NOT_GRANTED, detail);
+            }
+        }
+        self.exclusive_free()?;
+        let id = self.next_job();
+        let (command, scope) = (invocation.command.clone(), caller.scope());
+        self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind: JobKind::Repair { cap } });
+        self.generation += 1;
+        Ok((Some(id), Status::Running(id)))
+    }
+
+    /// Runs `jumble.repair.list` job `id` and settles its receipt: `completed(query)` with the list's digest, kept as
+    /// the newest list ([`CommandLayer::repair_list`]), or failed with [`CommandLayer::repair_now`]'s error. Unlike a
+    /// run's preview, a run's list is not checked again here: admission held it to a command the solver invoked, and
+    /// the list is a query of the revision it was admitted at that changes nothing and picks no pair.
+    fn build_repair(&mut self, id: u64, key: &Key, cap: i64) {
+        let status = match self.repair_now(cap) {
+            Ok(value) => {
+                let result = ResultRef { job: Some(id), digest: digest(&value) };
+                self.repairs = Some((id, value));
+                let revision = self.revision.clone();
+                Status::Completed(Completion { kind: CompletionKind::Query, revision, result: Some(result) })
+            }
+            Err(error) => Status::Failed(error),
+        };
+        self.settle(key, status);
+        self.generation += 1;
+    }
+
+    /// The repair list at `cap` on the head's poses (draft): the kernel's answer whole
+    /// (`c600_jumble::observe::cuts::repair_list`, with no pair budget and no cancellation), worded by
+    /// [`repair::worded`]. Its `status` is the kernel's: `completed` with its rows, or `error` with no outcomes for a
+    /// blocked or closed cap, a fact about the configuration (BND.4). A state change cancels a queued job
+    /// ([`CommandLayer::end_revision`]), so the job reads the input it was admitted at. An engine fault is
+    /// `KN5:consistency.state_hash_mismatch`, as for the other jumbling rows.
+    fn repair_now(&self, cap: i64) -> Result<Value, Error> {
+        let (Some(twists), Some(jumbled)) = (&self.twists, &self.jumbled) else {
+            let detail = format!("`{REPAIR_LIST_ROW}` reads the poses: Jumble is off");
+            return Err(Error::new(MENU_WORD_NEEDS_JUMBLE_ON, detail));
+        };
+        let list = cuts::repair_list(&twists.context, jumbled.derived.state(), cap, None, None, None);
+        let engine = |error: String| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
+        Ok(repair::worded(list.map_err(engine)?, cap))
     }
 
     /// The exact analysis of `letters` as one complete operation from the head under the protection and policy in
@@ -3566,6 +3842,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: Some(entry.record.clone()),
             blocks: Vec::new(),
+            budget: None,
         };
         let (identity, record) = (entry.identity, entry.record);
         let change = Change::Crossing { before: self.head, after: order, identity, record };
@@ -3733,6 +4010,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: None,
             crossing: Some(exit.record.clone()),
             blocks: Vec::new(),
+            budget: None,
         };
         let point = ExitPoint { poses: head.clone(), retained: self.current.clone(), record: exit.record };
         let change = Change::Exit { before: self.head, after: order, point: Box::new(point) };
@@ -3878,6 +4156,7 @@ impl<S: Store> CommandLayer<S> {
             rotation: Some(rotation),
             crossing: None,
             blocks: Vec::new(),
+            budget: None,
         };
         let change = Change::Pose { before: self.head, after: order };
         let tree = Tree::Push { node: Some((order, node)), change };
@@ -3994,6 +4273,8 @@ impl<S: Store> CommandLayer<S> {
         inputs: &[Vec<u8>],
     ) -> Result<(Option<u64>, Status), Error> {
         let overlay = row.overlay.clone().expect("an overlay row");
+        // The budget is admitted before a job ID exists, so a refusal uses nothing (KN7.7, BM3).
+        let budget = Budget::admit(invocation.budget, self.budget_ceiling())?;
         if row.lane == Lane::Program {
             self.program_free()?;
         }
@@ -4023,6 +4304,7 @@ impl<S: Store> CommandLayer<S> {
             revision: self.revision.clone(),
             overlay,
             inputs: inputs.to_vec(),
+            budget,
         };
         self.jobs.push_back(Job {
             id,
@@ -4076,24 +4358,24 @@ impl<S: Store> CommandLayer<S> {
             Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
                 Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
             }
-            Ok(output) if program.kind == Kind::Workspace => {
-                let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
-                let meta = Meta {
-                    caller: program.caller.clone(),
-                    command: program.command.clone(),
-                    row: program.row.clone(),
-                    request,
-                    confirm: false,
-                };
-                let result = output.digest();
-                let records =
-                    output.records.into_iter().map(|(name, value)| RecordWrite { name, value: Some(value) }).collect();
-                let adoption = self.workspace_adoption(meta, job, result, records);
-                match self.transact(adoption) {
-                    Ok((_, status)) => status,
-                    Err(error) => Status::Failed(error),
+            Ok(output) if program.kind == Kind::Workspace => match self.workspace_writes(&program, output) {
+                Err(error) => Status::Failed(error),
+                Ok((result, records)) => {
+                    let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
+                    let meta = Meta {
+                        caller: program.caller.clone(),
+                        command: program.command.clone(),
+                        row: program.row.clone(),
+                        request,
+                        confirm: false,
+                    };
+                    let adoption = self.workspace_adoption(meta, job, result, records, Some(program.budget));
+                    match self.transact(adoption) {
+                        Ok((_, status)) => status,
+                        Err(error) => Status::Failed(error),
+                    }
                 }
-            }
+            },
             Ok(output) => {
                 let kind = match program.kind {
                     Kind::Query => CompletionKind::Query,
@@ -4136,6 +4418,69 @@ impl<S: Store> CommandLayer<S> {
         }
         Ok(output)
     }
+
+    /// A workspace row's completion writes and the digest its result reference carries: the output's records and
+    /// [`JobOutput::digest`], except for `set.save` ([`crate::sets`]); another row's record under `set/` fails the job
+    /// with `KN2:input.named_object_invalid`. `set.save`'s entry writes the one record `set.save`,
+    /// which must name the set the invocation names: the same kind, name and members, these in canonical order.
+    /// Otherwise the job fails with `KN2:input.named_object_invalid`. The completion writes the saved set's own record
+    /// `set/<name>`, keeping the entry's provenance block, and its result reference carries the exact set's digest
+    /// under the model the job read. A name that holds a saved set fails it with `KN5:input.saved_set_exists` unless
+    /// the invocation carried `replace: true`. A failed job writes nothing.
+    fn workspace_writes(&self, program: &ProgramJob, output: JobOutput) -> Result<(String, Vec<RecordWrite>), Error> {
+        if program.row != SET_SAVE_ROW {
+            if let Some(name) = output.records.keys().find(|name| name.starts_with(SAVED_SET_PREFIX)) {
+                let detail = format!("the output's record `{name}` is a saved set's, which only `set.save` writes");
+                return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+            }
+            let result = output.digest();
+            let records =
+                output.records.into_iter().map(|(name, value)| RecordWrite { name, value: Some(value) }).collect();
+            return Ok((result, records));
+        }
+        let mut records = output.records;
+        let entry = records.remove(SET_SAVE_RECORD).filter(|_| records.is_empty()).ok_or_else(|| {
+            let detail = format!("`{SET_SAVE_ROW}`'s entry writes the one record `{SET_SAVE_RECORD}`");
+            Error::new(code::NAMED_OBJECT_INVALID, detail)
+        })?;
+        let set = SavedSet::from_entry(&entry.payload)?;
+        let args = &program.args;
+        let mut asked: Vec<u64> = match args.get("members").and_then(Value::as_array) {
+            Some(members) => members.iter().filter_map(|m| m.as_i64().and_then(|n| u64::try_from(n).ok())).collect(),
+            None => Vec::new(),
+        };
+        asked.sort_unstable();
+        asked.dedup();
+        let kind = args.get("kind").and_then(Value::as_str);
+        let name = args.get("name").and_then(Value::as_str);
+        if (kind, name, &asked) != (Some(set.kind), Some(set.name.as_str()), &set.members) {
+            let detail = format!("the entry's record `{SET_SAVE_RECORD}` is not the set the invocation names");
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        }
+        self.check_set_name(&set.name, args.get(REPLACE) == Some(&Value::Bool(true)))?;
+        let model = &program.revision.identity;
+        let value = RecordValue { payload: set.payload(model, &program.revision), provenance: entry.provenance };
+        Ok((set.digest(model), vec![RecordWrite { name: saved_set_record(&set.name), value: Some(value) }]))
+    }
+
+    /// A save under `name` when the name holds a saved set is refused with `KN5:input.saved_set_exists`, unless it
+    /// carries `replace: true` (U1-057; draft).
+    fn check_set_name(&self, name: &str, replace: bool) -> Result<(), Error> {
+        if replace || self.record(&saved_set_record(name)).is_none() {
+            return Ok(());
+        }
+        let detail = format!("a saved set is named `{name}`; a save with `replace: true` replaces it");
+        Err(Error::new(code::SAVED_SET_EXISTS, detail))
+    }
+}
+
+/// A record name `workspace.set` and `worksheet.save` refuse: a name under `set/`, which only a `set.save` completion
+/// writes ([`crate::sets`]; draft).
+fn saved_set_name(name: &str) -> Result<(), Error> {
+    match name.starts_with(SAVED_SET_PREFIX) {
+        true => Err(Error::new(code::ARGUMENT_FORM, "a name under `set/` is a saved set's; only `set.save` writes it")),
+        false => Ok(()),
+    }
 }
 
 #[cfg(test)]
@@ -4169,6 +4514,7 @@ mod tests {
             args: json::object([]),
             token: None,
             epoch: layer.revision().epoch,
+            budget: Some(Budget::DRAFT_CEILING),
         };
         let receipt = layer.invoke(caller, invocation);
         assert!(matches!(receipt.status, Status::Running(_)), "{caller:?}: {:?}", receipt.status);

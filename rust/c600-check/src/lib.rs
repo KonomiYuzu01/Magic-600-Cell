@@ -2351,8 +2351,9 @@ impl<'p> Checker<'p> {
     /// `LG2:type.mismatch` at the current position (LG2.1).
     fn mismatch(&mut self, expected: String, supplied: String, what: &str) {
         // A word equality key where literal letters are required has a code of its own (LG2.13, CT-LG2-11), and so
-        // has a trace equality key (LB1.10; LP2 draft).
-        if (supplied == "WordEqualityKey" || supplied == "TraceEqualityKey") && expected == "Word" {
+        // has a trace equality key (LB1.10; LP2 draft), for a Full word or a menu word (LG2.18; LP2 draft).
+        let letters = matches!(expected.as_str(), "Word" | "MenuWord");
+        if (supplied == "WordEqualityKey" || supplied == "TraceEqualityKey") && letters {
             let note = format!("{what}: a {supplied} is never literal letters (LG2.13, LG2.17, LB1.10)");
             return self.record(WORD_KEY_NOT_EXECUTABLE, None, Some(Mismatch { expected, supplied }), note);
         }
@@ -3675,8 +3676,8 @@ impl<'p> Checker<'p> {
             Prim::Length | Prim::Inverse | Prim::WordKey | Prim::TraceKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
             Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse | Prim::TextDecode => 1,
-            Prim::StreamDigest => 1,
-            Prim::InsertEntry | Prim::Expand => 3,
+            Prim::StreamDigest | Prim::Q5Parts => 1,
+            Prim::InsertEntry | Prim::Expand | Prim::Q5Of => 3,
             _ => 2,
         };
         if vals.len() != arity {
@@ -3684,6 +3685,35 @@ impl<'p> Checker<'p> {
         }
         let what = format!("an operand of {op:?}");
         match op {
+            Prim::Q5Parts => {
+                // A number up to Q(√5), widened as a sum is; its canonical triple is three integers (ADR-L03.6, PS1.4;
+                // LP2 draft). A budget is a cost, not a number (LG2.6); an approximation fits here and is refused by
+                // the exactness rules (LG2.22).
+                let v = &vals[0];
+                let what = "the number of q5_parts";
+                if fits(&Ty::Q5, &v.ty) {
+                    self.at(0, |c| c.exact_use(Site::Operand, v, what));
+                } else {
+                    self.at(0, |c| c.misfit("Nat | Int | Rat | Q5", v, what));
+                }
+                let fields = ["a", "b", "d"].map(|n| (n.to_string(), QTy { ty: Ty::Int, display: false }));
+                Ok(Val::exact(Ty::Record(fields.to_vec())))
+            }
+            Prim::Q5Of => {
+                // Three integers: the two numerators and the common denominator (LP2 draft). A zero denominator is a
+                // pointwise failure when the program runs, as `field_inverse`'s zero is (DET.55).
+                for (i, v) in vals.iter().enumerate() {
+                    let what =
+                        ["the first numerator of q5_of", "the second numerator of q5_of", "the denominator of q5_of"]
+                            [i];
+                    if fits(&Ty::Int, &v.ty) {
+                        self.at(i, |c| c.exact_use(Site::Operand, v, what));
+                    } else {
+                        self.at(i, |c| c.misfit("Nat | Int", v, what));
+                    }
+                }
+                Ok(Val::exact(Ty::Q5))
+            }
             Prim::ExactAdd | Prim::ExactLess | Prim::ExactMul => {
                 // The result widens along Nat, Int, Rat and Q5; a budget is a cost and mixes with integers only, so an
                 // operand that mixes it with a rational or a Q(√5) value does not fit (LG2.6). A product of costs is no
@@ -3931,9 +3961,9 @@ impl<'p> Checker<'p> {
             Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey | Prim::TraceKey => {
                 // One well-formed word domain for every word operation (LG2.15): Full words, or menu words of the
                 // run's pinned alphabet (LB1.8; LP2 draft), never a mix. The first operand of a known type sets the
-                // domain; a word key takes Full words only, and a trace key either (LB1.10: a menu word's key is under
-                // the run's `jumble-locality/1`).
-                let mut domain = matches!(op, Prim::WordKey).then_some(Ty::Word);
+                // domain. A word key takes either (LG2.18: a menu word's key is under the run's menu matrices), and so
+                // does a trace key (LB1.10: a menu word's key is under the run's `jumble-locality/1`).
+                let mut domain = None;
                 let mut q = Qual::Exact;
                 let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {

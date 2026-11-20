@@ -5,11 +5,17 @@
 //! `c600-check`, loaded and run through `c600-run`'s boundary. The ten runs give one SHA-256 over the canonical results
 //! and stop reasons, the engine side and the store. An allowed key completes with the corpus's value; a refused key
 //! gives the corpus's expected code at the refused operation, installs no preview, keeps the session fields and the
-//! existing workspace provenance, and reads no planted data. A realised budget key (B05, B06) gives the corpus's
-//! outcome, code and used amounts; its stop is the draft's operation path. [`FALSE_REFUSALS`] and
-//! [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key gives the corpus's
-//! code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the keys not realised,
-//! with the reason.
+//! existing workspace provenance, and reads no planted data. A priced budget key (B01 to B07) runs under the price
+//! mapping that the crate documentation pins (CT-RTE-07's price mapping): it gives the corpus's outcome and code, in
+//! the corpus's phase, at the counterpart of the corpus's refused instruction, with the corpus's used amounts mapped
+//! through that table. An interruption key (B08, B09) is the solver's cancel, which the synthetic engine raises
+//! inside a host row of a `repeat` loop: it gives the corpus's outcome and code at the next operation, and the
+//! corpus's examined items are the rows the engine served.
+//! [`FALSE_REFUSALS`] and [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key
+//! gives the corpus's code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the
+//! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, as
+//! are B13 and B14, whose budget the command layer admits on the tool's row; MR13, MR14, MR19 and MR20, which the
+//! built-in column's admission refuses, are realised in `c600-runtime`.
 //!
 //! Evidence kind: source and synthetic. The fixture is LX-3's fake data, not Full's mechanics; nothing here measures
 //! time or performance.
@@ -17,14 +23,15 @@
 mod support;
 
 use std::collections::BTreeSet;
+use std::sync::Arc;
 
 use c600_digest::sha256;
 use c600_ir::{Callee, Expr, Lit, QTy, Ty};
 use c600_module::code::{DIGEST_MISMATCH, NOT_GRANTED};
 use c600_module::{approve, load, verify, Closure, Identity, Outcome, Refusal, RunRequest};
 use c600_run::boundary::{Answer, Place, Store};
-use c600_run::interp::Options;
-use c600_run::meter::{Amounts, Outcome as Ended};
+use c600_run::interp::{CancelFlag, Options};
+use c600_run::meter::{frame_size, Amounts, Outcome as Ended};
 use c600_run::provenance::{self, field, hex, Author, Json, Profile, INCOMPATIBLE};
 use c600_run::value::Value;
 use support::*;
@@ -35,57 +42,39 @@ const CORPUS: &str =
 const FREEZE_SHA256: &str = "d7eff17503ee95d45ddca0efe38ec3bb09418b0248a6279afe2dce0a90ea6627";
 
 /// The keys realised here, one test each.
-const REALISED: [&str; 39] = [
-    "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A11", "A12", "A13", "A15", "A17", "A18", "A20",
-    "A24", "A25", "A33", "A34", "A35", "B05", "B06", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11", "MR12",
-    "MR15", "MR16", "P01", "P02", "P03", "P04", "S01", "S02",
+const REALISED: [&str; 56] = [
+    "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10", "A11", "A12", "A13", "A14", "A15", "A16",
+    "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A33", "A34", "A35", "B01",
+    "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11",
+    "MR12", "MR15", "MR16", "P01", "P02", "P03", "P04", "S01", "S02",
 ];
 
-const M5: &str = "waits for M5: a jumbling key";
-const M6: &str = "waits for M6: a recorded pick or accumulation across runs needs the session store";
-const ROW_ARGUMENT: &str = "not expressible: a row whose argument is the run's input; a snapshot query is a literal";
-const HOST_EVENT: &str = "not realised: a host event (a cancel, a deadline or a lost runtime) inside a loop or a \
-                          batch; the IR draft has no loop, and this leg runs no timing and no runtime process";
-const COMMAND: &str =
-    "not realised: the budget declaration and the host ceiling belong to the command layer, a non-goal";
+const M5: &str = "a jumbling key: realised on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`";
+const PICK: &str = "waits for a recorded pick: nothing writes or resolves a `c600-pick` record yet (FP.38, BND.54)";
+const RUNTIME: &str = "realised with a runtime process in `c600-tools/tests/ct_rte_07_c5.rs`";
+const ADMISSION: &str = "realised as the built-in column's refusal at admission in \
+                         `c600-runtime/tests/ct_rte_07_admission.rs`";
+const COMMAND: &str = "realised at the command layer on the 600-cell-Full tool's row in \
+                       `c600-tools/tests/ct_rte_07_budget.rs`";
 
-/// The keys left, with the reason. The amounts of B01 to B04 and B07 follow LX-3's experiment-only counting fixture
-/// (`profile.json`); lp1-exec-draft-1 prices operations, encodings and memory with its own table, and the corpus asks
-/// for a candidate's mapping to be pinned before comparison (`kernel-stub.md`).
-const LEFT: [(&str, &str); 36] = [
+/// The keys left, with the reason.
+const LEFT: [(&str, &str); 19] = [
     ("MR01", M5),
     ("MR02", M5),
     ("MR05", M5),
     ("MR06", M5),
     ("A31", M5),
     ("A32", M5),
-    ("MR17", M6),
-    ("MR18", M6),
-    ("MR19", M6),
-    ("MR20", M6),
-    ("A29", M6),
-    ("A30", M6),
-    ("MR13", "not expressible: the IR draft has no early stop (LX-3 code gap `stop_emission`)"),
-    ("MR14", "not expressible: the IR draft has no early stop (LX-3 code gap `stop_emission`)"),
-    ("A10", "not expressible: the IR draft has no exact multiplication or remainder"),
-    ("A14", ROW_ARGUMENT),
-    ("A16", ROW_ARGUMENT),
-    ("A19", ROW_ARGUMENT),
-    ("A21", ROW_ARGUMENT),
-    ("A22", ROW_ARGUMENT),
-    ("A23", ROW_ARGUMENT),
-    ("A26", ROW_ARGUMENT),
-    ("A27", ROW_ARGUMENT),
-    ("A28", ROW_ARGUMENT),
-    ("B01", "not realised: LX-3's `tick` has no IR counterpart; the draft charges a step to every operation it runs"),
-    ("B02", "not realised: the draft also prices the encoding and a row's memory, so the used amounts differ"),
-    ("B03", "not realised: LX-3's `retain` of a logical byte array has no IR counterpart"),
-    ("B04", "not realised: LX-3 charges an emitted `\"abcd\"` as 6 bytes; the draft's encoding adds a line feed"),
-    ("B07", "not realised: LX-3's probe-only 16-byte frame per call; the draft prices a frame with its own table"),
-    ("B08", HOST_EVENT),
-    ("B09", HOST_EVENT),
-    ("B10", HOST_EVENT),
-    ("B11", HOST_EVENT),
+    ("MR17", PICK),
+    ("MR18", PICK),
+    ("A29", PICK),
+    ("A30", PICK),
+    ("MR13", ADMISSION),
+    ("MR14", ADMISSION),
+    ("MR19", ADMISSION),
+    ("MR20", ADMISSION),
+    ("B10", RUNTIME),
+    ("B11", RUNTIME),
     ("B12", "not realised: the host's row cache and its variants are not part of this crate"),
     ("B13", COMMAND),
     ("B14", COMMAND),
@@ -107,6 +96,9 @@ const STATE: &str = "record { s0: Int, s1: Int, s2: Int, s3: Int }";
 const NU: &str = "record { i0: Int, i1: Int }";
 const BITS: &str = "record { i0: Int, i1: Int, i2: Int }";
 const PAIR: &str = "record { count: Int, target: Target }";
+/// The row `word_check` of a word (`kernel-stub.md`).
+const CHECK: &str = "record { coverage: record { complete: Bool, letters: Int }, end_labels: $STATE, \
+                     moved_slots: List<Int>, protected: Bool, word: Word }";
 
 /// The search of MR03, MR04 and A33, unrolled over the corpus's words `a`, `b`, `c`: their scores and the index of
 /// the first minimum.
@@ -122,6 +114,7 @@ const REBUILD: &str = "if(exact_eq(i, 0), word[1], if(exact_eq(i, 1), word[2], w
 /// A module source with the type and code placeholders filled in.
 fn src(name: &str, requires: &[&str], deps: &[(&str, &str)], body: &str) -> String {
     let body = body
+        .replace("$CHECK", CHECK)
         .replace("$INTS", INTS)
         .replace("$BOOLS", BOOLS)
         .replace("$STATE", STATE)
@@ -166,7 +159,7 @@ impl Trial {
 
     /// Runs `m.<function>` with `args`, whose blocks are `inputs`, under the given limits.
     fn call(
-        mut self,
+        self,
         function: &str,
         author: Author,
         profile: Profile,
@@ -174,14 +167,39 @@ impl Trial {
         inputs: Vec<Vec<u8>>,
         limits: Amounts,
     ) -> Trial {
+        self.call_with(function, author, profile, args, inputs, Options::new(limits))
+    }
+
+    /// Runs `m.<function>` with `args`, whose blocks are `inputs`, under the given options.
+    fn call_with(
+        mut self,
+        function: &str,
+        author: Author,
+        profile: Profile,
+        args: Vec<Value>,
+        inputs: Vec<Vec<u8>>,
+        options: Options<'_>,
+    ) -> Trial {
         let id = format!("r{}", self.results.len() + 1);
         let result = ready(&self.package, entry(function, author, profile)).and_then(|r| {
-            let request =
-                RunRequest { run: &id, base: "rev-7", args, inputs, pins: pins(), options: Options::new(limits) };
+            let request = RunRequest { run: &id, base: "rev-7", args, inputs, pins: pins(), options };
             r.run(request, &mut self.engine, &mut self.store)
         });
         self.results.push(result);
         self
+    }
+
+    /// Runs `m.<function>`, an own tool in tool authoring with no arguments, under `limits`. The engine cancels the
+    /// run by the solver's request inside the first row `row` it serves; the run observes the cancel before its next
+    /// operation.
+    fn cancelled_after(mut self, function: &str, row: &str, limits: Amounts) -> Trial {
+        let flag = Arc::new(CancelFlag::default());
+        self.engine.cancel_after = Some((row.to_string(), flag.clone()));
+        let mut options = Options::new(limits);
+        options.cancel = Some(&*flag);
+        let mut trial = self.call_with(function, Author::Own, Profile::ToolAuthoring, Vec::new(), Vec::new(), options);
+        trial.engine.cancel_after = None;
+        trial
     }
 
     /// RTE.46's digest: the canonical results and stop reasons (a refusal by its code), the engine side and the store.
@@ -438,6 +456,17 @@ fn ct_rte_07_full_a09_beyond_binary64() {
     quiet(&ten(|| solving(&source)), &out);
 }
 
+/// A10: LX-3's `mod_dot` of `[1, 2]` and `[3, 1]` modulo 5, in F5's exact field arithmetic: `1*3 + 2*1 = 5`, whose
+/// residue is 0.
+#[test]
+fn ct_rte_07_full_a10_dot_modulo_five() {
+    let source = root(
+        "export fn go(t: Target, w: Word) -> Nat effects [] {\n    \
+         return residue(field_add(field_mul(to_f5(1), to_f5(3)), field_mul(to_f5(2), to_f5(1))));\n}\n",
+    );
+    quiet(&ten(|| solving(&source)), &encoded(&Value::int(0)));
+}
+
 /// The chart of A11 and A12: the row's values as indexed points, with their exact values.
 fn points(row: &str) -> String {
     root(&format!(
@@ -521,6 +550,33 @@ fn ct_rte_07_full_a13_one_point() {
     assert_eq!(trial.engine.views, [chart(&[("c1", 6)], vec![("p0", point(1, 6))], &["c1"])]);
 }
 
+/// A14: a view aid over the solver's word `a`. It reads the row `word_check` with the word as its argument, then
+/// publishes the corpus's word path from literal values.
+#[test]
+fn ct_rte_07_full_a14_word_path() {
+    let source = root(
+        "export fn go(w: Word) -> Text effects [snapshot, view] {\n    \
+         let check = read_snapshot<$CHECK>(\"word_check\", w);\n    \
+         let shown = publish_view(record { coordinates = record { p0 = record { x = 0, y = 1 }, \
+         p1 = record { x = 1, y = 0 } }, exact = record { exact_properties = record { word = word[1] }, \
+         kind = \"word_path\", object_ids = record { i0 = \"slot0\", i1 = \"slot1\" }, \
+         order = record { i0 = 0, i1 = 1 } } });\n    \
+         return \"published\";\n}\n",
+    );
+    let trial = ten(|| solving_on(&source, &[&[A]]));
+    completed(&trial, &text("published"));
+    let exact = Value::record(vec![
+        ("exact_properties", Value::record(vec![("word", Value::word(&[A]))])),
+        ("kind", Value::text("word_path")),
+        ("object_ids", Value::record(vec![("i0", Value::text("slot0")), ("i1", Value::text("slot1"))])),
+        ("order", Value::record(vec![("i0", Value::int(0)), ("i1", Value::int(1))])),
+    ]);
+    let coordinates = Value::record(vec![("p0", point(0, 1)), ("p1", point(1, 0))]);
+    assert_eq!(trial.engine.views, [encoded(&Value::record(vec![("coordinates", coordinates), ("exact", exact)]))]);
+    assert_eq!(trial.engine.served, ["word_check/[1]"]);
+    assert_eq!(named(&[A]), ["a"], "the corpus's input");
+}
+
 /// A15: a fixed rational reference chart. The exact fraction stays exact; the coordinates are shown at 53 bits, and
 /// each lies within that precision of its exact value (RTE.46's display precision).
 #[test]
@@ -544,6 +600,106 @@ fn ct_rte_07_full_a15_display_precision() {
     let bits = u64::from_str_radix("3fd5555555555555", 16).unwrap();
     let (m, k) = (i128::from((bits & ((1 << 52) - 1)) | (1 << 52)), ((bits >> 52) & 0x7ff) as i32 - 1075);
     assert!((3 * m - (1i128 << -k)).abs() <= 1i128 << (-k - 53));
+}
+
+/// The corpus's `word_check` keys: the row read with the solver's word as its argument, returned as it is.
+const WORD_CHECK: &str = "export fn go(w: Word) -> $CHECK effects [snapshot] {\n    \
+                          return read_snapshot<$CHECK>(\"word_check\", w);\n}\n";
+
+/// The row `word_check` the corpus expects for a word: its end labels, the slots it moves, and whether the
+/// protected slot stays.
+fn word_check(word: &[i32], end: [i64; 4], moved: &[i64], protected: bool) -> Vec<u8> {
+    let labels = ["s0", "s1", "s2", "s3"].into_iter().zip(end).map(|(s, l)| (s, Value::int(l))).collect();
+    let coverage = vec![("complete", Value::Bool(true)), ("letters", Value::int(word.len() as i64))];
+    encoded(&Value::record(vec![
+        ("coverage", Value::record(coverage)),
+        ("end_labels", Value::record(labels)),
+        ("moved_slots", Value::list(moved.iter().map(|&i| Value::int(i)).collect())),
+        ("protected", Value::Bool(protected)),
+        ("word", Value::word(word)),
+    ]))
+}
+
+/// A `word_check` key on the solver's word: the corpus's value, and one row served with the word as its argument.
+fn checked(word: &[i32], names: &[&str], expected: Vec<u8>) {
+    let source = root(WORD_CHECK);
+    let trial = ten(|| solving_on(&source, &[word]));
+    quiet(&trial, &expected);
+    let letters: Vec<String> = word.iter().map(i32::to_string).collect();
+    assert_eq!(trial.engine.served, [format!("word_check/[{}]", letters.join(","))]);
+    assert_eq!(named(word), names, "the corpus's input");
+}
+
+/// A16: the check of the solver's word `a`, in a run that also has the corpus's target.
+#[test]
+fn ct_rte_07_full_a16_word_check() {
+    let source = root(
+        "export fn go(t: Target, w: Word) -> $CHECK effects [snapshot] {\n    \
+         return read_snapshot<$CHECK>(\"word_check\", w);\n}\n",
+    );
+    let trial = ten(|| solving(&source));
+    quiet(&trial, &word_check(&[A], [0, 1, 2, 3], &[0, 1], true));
+    assert_eq!(trial.engine.served, ["word_check/[1]"]);
+}
+
+/// A19: `a a` moves no slot; the letters are counted with no simplification.
+#[test]
+fn ct_rte_07_full_a19_word_check_no_simplification() {
+    checked(&[A, A], &["a", "a"], word_check(&[A, A], [1, 0, 2, 3], &[], true));
+}
+
+/// A21: `a` swaps slots 0 and 1.
+#[test]
+fn ct_rte_07_full_a21_word_check_a() {
+    checked(&[A], &["a"], word_check(&[A], [0, 1, 2, 3], &[0, 1], true));
+}
+
+/// A22: `b` moves slots 1 and 2 and keeps the protected slot.
+#[test]
+fn ct_rte_07_full_a22_word_check_b() {
+    checked(&[B], &["b"], word_check(&[B], [1, 2, 0, 3], &[1, 2], true));
+}
+
+/// A23: `c` moves the protected slot 3; a false check is a value, not a refusal.
+#[test]
+fn ct_rte_07_full_a23_word_check_c() {
+    checked(&[C], &["c"], word_check(&[C], [1, 0, 3, 2], &[2, 3], false));
+}
+
+/// The engine's rows match `fixture.json`: its permutations, the IR letters' fixture names and the setups.
+#[test]
+fn ct_rte_07_full_engine_rows_are_the_fixture() {
+    let fixture = provenance::parse(&std::fs::read(format!("{CORPUS}fixture.json")).unwrap()).expect("it reads");
+    let ints = |j: &Json| match j {
+        Json::List(xs) => {
+            xs.iter().map(|x| if let Json::Int(n) = x { *n } else { panic!("{x:?}") }).collect::<Vec<_>>()
+        }
+        other => panic!("{other:?}"),
+    };
+    let Some(Json::Object(permutations)) = fixture.get("permutations") else { panic!("the permutations") };
+    assert_eq!(permutations.len(), PERMUTATIONS.len());
+    for (name, p) in PERMUTATIONS {
+        assert_eq!(ints(&permutations[name]), p.map(|i| i as i64), "{name}");
+    }
+    for (letter, name) in LETTERS {
+        assert_eq!(named(&[letter]), [name], "{letter}");
+    }
+    let Some(Json::Object(setups)) = fixture.get("setups") else { panic!("the setups") };
+    assert_eq!(setups.len(), SETUPS.len());
+    for (target, words) in SETUPS {
+        let Json::List(listed) = &setups[target] else { panic!("{target}") };
+        let named: Vec<Vec<String>> = words.iter().map(|w| named(w)).collect();
+        let listed: Vec<Vec<String>> = listed
+            .iter()
+            .map(|w| match w {
+                Json::List(ls) => ls.iter().map(|l| l.as_text().expect("a letter").to_string()).collect(),
+                other => panic!("{other:?}"),
+            })
+            .collect();
+        assert_eq!(named, listed, "{target}");
+    }
+    let Some(Json::Object(session)) = fixture.get("session") else { panic!("the session") };
+    assert_eq!(ints(&session["protected_slots"]), [PROTECTED_SLOT as i64]);
 }
 
 /// A17: the inverse of the solver's word `D a`: its letters reversed, each replaced by its inverse. The IR writes the
@@ -607,6 +763,40 @@ fn ct_rte_07_full_a25_false_refusal_is_listed() {
     assert_eq!(trial.engine.views, [encoded(&ints(&[("c0", 2), ("c1", 6), ("c2", 6)]))]);
     refused_preview(&trial, NOT_GRANTED, true);
     assert!(FALSE_REFUSALS.contains(&"A25"));
+}
+
+/// A26 to A28: the setup search for the target the solver names, entered by hand. The row `setup` is read with the
+/// target as its argument and returns the fixture's ordered setups for it.
+fn setups(target: &str, names: &[&[&str]]) {
+    let source = root(
+        "export fn go(t: Target) -> List<Word> effects [snapshot] {\n    \
+         return read_snapshot<List<Word>>(\"setup\", t);\n}\n",
+    );
+    let words = SETUPS.iter().find(|(t, _)| *t == target).expect("the fixture's setups").1;
+    let named: Vec<Vec<String>> = words.iter().map(|w| named(w)).collect();
+    assert_eq!(named, names, "the corpus's value");
+    let solve = || {
+        let args = vec![Value::target(target)];
+        Trial::of(&source, &[]).call("go", Author::BuiltIn, Profile::Solving, args, vec![manual()], WIDE)
+    };
+    let trial = ten(solve);
+    quiet(&trial, &encoded(&Value::list(words.iter().map(|w| Value::word(w)).collect())));
+    assert_eq!(trial.engine.served, [format!("setup/\"{target}\"")]);
+}
+
+#[test]
+fn ct_rte_07_full_a26_setups_c0() {
+    setups("c0", &[&[], &["a"]]);
+}
+
+#[test]
+fn ct_rte_07_full_a27_setups_c1() {
+    setups("c1", &[&["b"], &["a", "b"]]);
+}
+
+#[test]
+fn ct_rte_07_full_a28_setups_c2() {
+    setups("c2", &[&["a", "b"], &["b", "a"]]);
 }
 
 /// A33: a research search over the fixed words returns the first word of least score.
@@ -929,13 +1119,16 @@ fn ct_rte_07_full_s02_dependency_substitution() {
     clean(&trial);
 }
 
-/// A budget key's case in `budgets.json`: its limits, and its expected outcome, code, used amounts and stop.
+/// A budget key's case in `budgets.json`: its limits, its host event if any, and its expected outcome, code, used
+/// amounts (none for an interruption), stop and examined items.
 struct BudgetCase {
     limits: Amounts,
+    event: Option<String>,
     outcome: String,
     code: String,
-    used: Amounts,
+    used: Option<Amounts>,
     stop: String,
+    examined: Option<Vec<usize>>,
 }
 
 fn budget_case(id: &str) -> BudgetCase {
@@ -951,50 +1144,210 @@ fn budget_case(id: &str) -> BudgetCase {
     };
     let expected = case.get("expected").expect("its expectation");
     let text = |k: &str| expected.get(k).and_then(Json::as_text).expect(k).to_string();
+    let examined = match expected.get("coverage").and_then(|c| c.get("examined")) {
+        Some(Json::List(items)) => {
+            Some(items.iter().map(|i| if let Json::Int(n) = i { *n as usize } else { panic!("{i:?}") }).collect())
+        }
+        _ => None,
+    };
     BudgetCase {
         limits: amounts(case.get("limits").unwrap()),
+        event: case.get("host").and_then(|h| h.get("event")).and_then(Json::as_text).map(str::to_string),
         outcome: text("outcome"),
         code: text("code"),
-        used: amounts(expected.get("used").unwrap()),
+        used: match expected.get("used") {
+            None | Some(Json::Null) => None,
+            Some(used) => Some(amounts(used)),
+        },
         stop: text("stop"),
+        examined,
     }
 }
 
-/// B05 and B06: one read of the counts by an own tool in tool authoring, under the corpus's interacting limits. The
-/// read is the run's first operation and the row costs 3 (`fixture.json`). The outcome, code and used amounts are the
-/// corpus's: a failed step debits nothing, and a step that passes stays charged when the kernel cost fails (DET.56).
-/// The stop is the draft's path of that operation, `entry#read`, with the phase the corpus's `before_*` names; the
-/// corpus's coverage is not part of the draft's result.
-fn interacting(id: &str, phase: &str) {
-    let source = root(
-        "export fn go(t: Target, w: Word) -> $INTS effects [snapshot] {\n    \
-         return read_snapshot<$INTS>(\"counts\");\n}\n",
-    );
+/// Amounts in the meter's order: steps, kernel cost, memory, output.
+fn spent(steps: u128, kernel_cost: u128, memory: u128, output: u128) -> Amounts {
+    Amounts { steps, kernel_cost, memory, output }
+}
+
+/// A priced budget key (B01 to B07): `m.go`, an own tool in tool authoring with no argument, runs under the corpus's
+/// limits moved by the price mapping (`Drafts`, CT-RTE-07's price mapping). `prefix` is the draft's charge of the
+/// prefix the corpus admits, the entry's `call` included and memory at its peak. The corpus's charge of that prefix is
+/// its used amounts less the step of its refused instruction `stop`, which stays charged unless the step is what
+/// fails. The run gives the corpus's outcome and code, in the corpus's phase, stopped at `at`, the counterpart of
+/// `stop`, and has used `used`, the corpus's used amounts mapped through the table. It installs no preview, writes
+/// nothing and keeps the session fields.
+fn priced(id: &str, source: &str, stop: &str, prefix: Amounts, at: &str, used: Amounts) -> Trial {
     let case = budget_case(id);
-    let inputs = || vec![manual(), manual()];
-    let trial = ten(|| Trial::of(&source, &[]).exec("go", Author::Own, Profile::ToolAuthoring, inputs(), case.limits));
+    assert_eq!(case.stop, stop, "the corpus's refused instruction");
+    let phase = case.code.strip_prefix("KN7:budget.").expect("a budget code");
+    let mut admitted = case.used.expect("the corpus's used amounts");
+    if phase != "steps" {
+        admitted.steps -= 1;
+    }
+    let limit = |corpus: u128, draft: u128, admitted: u128| corpus + draft - admitted;
+    let l = case.limits;
+    let limits = Amounts {
+        steps: limit(l.steps, prefix.steps, admitted.steps),
+        kernel_cost: limit(l.kernel_cost, prefix.kernel_cost, admitted.kernel_cost),
+        memory: limit(l.memory, prefix.memory, admitted.memory),
+        output: limit(l.output, prefix.output, admitted.output),
+    };
+    let trial =
+        ten(|| Trial::of(source, &[]).call("go", Author::Own, Profile::ToolAuthoring, Vec::new(), Vec::new(), limits));
     let s = &trial.last().run.summary;
     assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), Some(case.code.as_str())));
-    assert_eq!(s.used, case.used);
+    let refused = s.stop.as_ref().expect("a stop");
+    assert_eq!((refused.at.as_str(), refused.phase), (at, phase));
+    assert_eq!(s.used, used, "the corpus's {:?}, mapped", case.used);
+    assert!(trial.engine.previews.is_empty() && trial.store.records.is_empty());
+    unchanged(&trial);
+    clean(&trial);
+    trial
+}
+
+/// B01: three `tick`s, the literals `()` of a record, under two steps. The entry's frame has a slot per field.
+#[test]
+fn ct_rte_07_full_b01_steps() {
+    let source = root(
+        "export fn go() -> record { a: Unit, b: Unit, c: Unit } effects [] {\n    \
+         return record { a = (), b = (), c = () };\n}\n",
+    );
+    // The entry's `call` and the two literals the corpus admits as `tick`s; the third literal's step fails.
+    let admitted = spent(3, 0, frame_size(3), 0);
+    let trial = priced("B01", &source, "r1/body/2:before_step", admitted, "m.go:2#value", admitted);
+    assert!(trial.engine.views.is_empty());
+}
+
+/// B02: two reads of the counts, 3 each (`fixture.json`), under a kernel cost of 5. A read reserves the host's
+/// result bound, 4096 in the synthetic engine, so the memory peaks at the frame and that bound. The engine serves
+/// the corpus's examined row only.
+#[test]
+fn ct_rte_07_full_b02_kernel_cost() {
+    let source = root(
+        "export fn go() -> record { a: $INTS, b: $INTS } effects [snapshot] {\n    \
+         return record { a = read_snapshot<$INTS>(\"counts\"), b = read_snapshot<$INTS>(\"counts\") };\n}\n",
+    );
+    let peak = frame_size(2) + 4096;
+    let trial =
+        priced("B02", &source, "r1/body/1:before_kernel", spent(2, 3, peak, 0), "m.go:1#kernel", spent(3, 3, peak, 0));
+    assert_eq!(trial.engine.served, ["counts"]);
+    assert!(trial.engine.views.is_empty());
+}
+
+/// B03: two retained 16-byte texts, the literals `"abcd"` of four scalars (DET.57), under a memory of 31.
+#[test]
+fn ct_rte_07_full_b03_memory() {
+    let source = root(
+        "export fn go() -> record { a: Text, b: Text } effects [] {\n    \
+         return record { a = \"abcd\", b = \"abcd\" };\n}\n",
+    );
+    let peak = frame_size(2) + 16;
+    priced("B03", &source, "r1/body/1:before_memory", spent(2, 0, peak, 0), "m.go:1#value", spent(3, 0, peak, 0));
+}
+
+/// B04: two emissions of the text "abcd" under an output of 11. A publication's unit is the JSON and a line feed,
+/// 7 bytes (FP.5): output, encoding work and a buffer released after it, while the literal holds 16 bytes. The first
+/// view is published and the second refused. The draft's five steps are the corpus's two, one for the entry's `call`
+/// and one for each literal.
+#[test]
+fn ct_rte_07_full_b04_output() {
+    let source = root(
+        "export fn go() -> record { a: Unit, b: Unit } effects [view] {\n    \
+         return record { a = publish_view(\"abcd\"), b = publish_view(\"abcd\") };\n}\n",
+    );
+    let peak = frame_size(2) + 16 + 7;
+    let trial = priced(
+        "B04",
+        &source,
+        "r1/body/1:before_output",
+        spent(3, 7, peak, 7),
+        "m.go:1#publish_view",
+        spent(5, 7, peak, 7),
+    );
+    assert_eq!(trial.engine.views, [text("abcd")]);
+}
+
+/// B05 and B06: one read of the counts, the run's first operation after the entry's `call`.
+const COUNTS: &str = "export fn go() -> $INTS effects [snapshot] {\n    return read_snapshot<$INTS>(\"counts\");\n}\n";
+
+/// B05: the step passes and stays charged; the kernel cost of 3 fails under 2 (DET.56). No row is served.
+#[test]
+fn ct_rte_07_full_b05_kernel_cost_after_step() {
+    let entry = spent(1, 0, frame_size(0), 0);
+    let trial = priced(
+        "B05",
+        &root(COUNTS),
+        "r1/body/0:before_kernel",
+        entry,
+        "m.go:root#kernel",
+        spent(2, 0, frame_size(0), 0),
+    );
+    assert!(trial.engine.served.is_empty() && trial.engine.views.is_empty());
+}
+
+/// B06: no step for the read; a failed step debits nothing. No row is served.
+#[test]
+fn ct_rte_07_full_b06_no_step() {
+    let entry = spent(1, 0, frame_size(0), 0);
+    let trial = priced("B06", &root(COUNTS), "r1/body/0:before_step", entry, "m.go:root#kernel", entry);
+    assert!(trial.engine.served.is_empty() && trial.engine.views.is_empty());
+}
+
+/// B07: a recursion under a memory of 48; the corpus refuses its fourth 16-byte frame. A function with no slot has a
+/// 16-byte frame here too, the entry's included, so the draft refuses the same call.
+#[test]
+fn ct_rte_07_full_b07_recursion() {
+    let source = root(
+        "fn recurse() -> Int effects [] {\n    return recurse();\n}\n\n\
+         export fn go() -> Int effects [] {\n    return recurse();\n}\n",
+    );
+    let peak = 4 * frame_size(0);
+    let at = "m.go:root > m.recurse:root > m.recurse:root > m.recurse:root#call";
+    let trial = priced("B07", &source, "r1/recurse:before_frame_4", spent(4, 0, peak, 0), at, spent(5, 0, peak, 0));
+    assert!(trial.engine.views.is_empty());
+}
+
+/// B08 and B09: an own tool in tool authoring, under the corpus's limits, whose loop reads one host row per item; the
+/// solver cancels inside the first row. The run gives the corpus's outcome and code, stopped in the `interruption`
+/// phase at the operation after that row, `at`. The corpus's examined items are the rows the engine served, and none
+/// after the cancel. The run installs no preview, publishes and writes nothing, and keeps the session fields. As the
+/// corpus's repetition rule asks of a cancel, this checks the typed reason and the truthful partial coverage.
+fn interrupted(id: &str, source: &str, row: &str, served: &[&str], at: &str) {
+    let case = budget_case(id);
+    assert_eq!((case.event.as_deref(), case.used), (Some("cancel"), None));
+    let trial = ten(|| Trial::of(source, &[]).cancelled_after("go", row, case.limits));
+    let s = &trial.last().run.summary;
+    assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), Some(case.code.as_str())));
     let stop = s.stop.as_ref().expect("a stop");
-    assert_eq!((stop.at.as_str(), stop.phase), ("entry#read", phase));
-    let before = match phase {
-        "steps" => "step",
-        "kernel_cost" => "kernel",
-        other => other,
-    };
-    assert_eq!(case.stop, format!("r1/body/0:before_{before}"));
+    assert_eq!((stop.at.as_str(), stop.phase), (at, "interruption"), "{:?}", case.stop);
+    assert_eq!(trial.engine.served, served);
+    assert_eq!(case.examined, Some((0..served.len()).collect()));
     assert!(trial.engine.views.is_empty() && trial.store.records.is_empty());
     unchanged(&trial);
     clean(&trial);
 }
 
+/// B08: the loop over ten items, one `tick` each; the cancel comes inside the first tick. The run stops at the loop's
+/// next visit after that body, the corpus's "first loop continuation after body tick".
 #[test]
-fn ct_rte_07_full_b05_kernel_cost_after_step() {
-    interacting("B05", "kernel_cost");
+fn ct_rte_07_full_b08_cancel_in_a_loop() {
+    let source = root(
+        "export fn go() -> Nat effects [snapshot] {\n    \
+         return repeat(10, 0, fn(done: Nat) -> Nat {\n        return read_snapshot<Nat>(\"tick\");\n    });\n}\n",
+    );
+    interrupted("B08", &source, "tick", &["tick"], "m.go:root#body:0 > m.go:root#visit");
 }
 
+/// B09: the batch check of the words `a`, `b` and `c`, one word per chunk; the cancel comes inside the first chunk's
+/// read. The run stops at the `push` that would keep that chunk's check, the corpus's "after first kernel word chunk".
 #[test]
-fn ct_rte_07_full_b06_no_step() {
-    interacting("B06", "steps");
+fn ct_rte_07_full_b09_cancel_in_a_batch() {
+    let source = root(
+        "export fn go() -> List<$CHECK> effects [snapshot] {\n    \
+         let words = push(push(push(list<Word>(), word[1]), word[2]), word[3]);\n    \
+         return repeat(3, list<$CHECK>(), fn(done: List<$CHECK>) -> List<$CHECK> {\n        \
+         return push(done, read_snapshot<$CHECK>(\"word_check\", index(words, length(done))));\n    });\n}\n",
+    );
+    assert_eq!(named(&[A, B, C]), ["a", "b", "c"], "the corpus's words");
+    interrupted("B09", &source, "word_check", &["word_check/[1]"], "m.go:1#body:0 > m.go:1.2#push");
 }

@@ -1,12 +1,12 @@
 edition "6cs-draft-1";
 module representations requires [];
 
-export view filter_counts() -> Unit effects [snapshot, view] {
-    return publish_view(read_snapshot<Nat>("filter.preview"));
+export view filter_counts(predicate: record { cell: Nat, layer: Nat }) -> Unit effects [snapshot, view] {
+    return publish_view(read_snapshot<record { cell: Nat, layer: Nat, pieces: Nat, slots: Nat }>("filter.preview", predicate));
 }
 
-export command apply_filter(preview: Nat) -> Unit effects [workspace] {
-    return write_workspace<Nat>("filter.apply", preview);
+export command apply_filter(preview: record { epoch: Nat, job: Nat }) -> Unit effects [workspace] {
+    return write_workspace<record { epoch: Nat, job: Nat }>("filter.apply", preview);
 }
 
 export command effect_scope(scope: Text) -> Unit effects [view] {
@@ -19,7 +19,7 @@ export command save_set(kind: Text, members: List<Nat>, name: Text) -> Unit effe
 }
 
 export command compare_cells(first: Nat, second: Nat) -> Unit effects [snapshot, view] {
-    return publish_view(read_snapshot<Nat>("structure.compare"));
+    return publish_view(read_snapshot<record { first: Nat, second: Nat, steps: Nat }>("structure.compare", record { first = first, second = second }));
 }
 
 export command layer_predicate(cell: Nat, layer: Nat) -> Unit effects [workspace] {

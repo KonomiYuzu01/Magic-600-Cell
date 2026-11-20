@@ -81,11 +81,35 @@
 //!   with fields `c0..c2`, `i0..i2` and `s0..s3`, and the corpus's workspace rows to `read_snapshot` and
 //!   `write_workspace`, which the boundary serves from its store. The corpus's `emit` maps to `publish_view`, the one
 //!   output besides the result. A fixed-length list function (a sum, a first minimum, a table look-up) is unrolled
-//!   into nested `if` and `exact_*` calls over the record's fields, since the IR draft has no loop; a loop over the
-//!   corpus's fixed word list is unrolled over its literal words, and a row with a literal argument, such as `score`
-//!   of the word `a`, is the query `score/a`. The synthetic engine charges each row its `fixture.json` cost. The IR
-//!   draft has no network read or process call, so those two probes only declare the capability. The session
-//!   identity is Full's KN0.1 block; the fixture data stay synthetic and are not Full's mechanics.
+//!   into nested `if` and `exact_*` calls over the record's fields, and a loop over the corpus's fixed word list is
+//!   unrolled over its literal words. A row with a literal argument, such as `score` of the word `a`, is the query
+//!   `score/a`; a row whose argument is the run's input (`word_check` of a word, `setup` of a target) is read with
+//!   `read_snapshot<T>("row", x)`. `mod_dot` modulo 5 is F5's `field_mul` and `field_add`. The loop over ten items is
+//!   `repeat`, and its `tick` a read of the row `tick` (cost 1); the batch check is one `word_check` read per chunk in
+//!   a `repeat`. A cancel comes from the synthetic engine inside a row it serves and is observed before the next
+//!   operation. The synthetic engine charges each row its `fixture.json` cost. The IR draft has no network read or
+//!   process call, so those two probes only declare the capability. The session identity is Full's KN0.1 block; the
+//!   fixture data stay synthetic and are not Full's mechanics.
+//! - **CT-RTE-07's price mapping** (RTE.46, LX-3's `kernel-stub.md`; LP2, pinned on 20 November 2026 before any
+//!   comparison). The priced budget keys B01 to B07 count in LX-3's experiment-only units (`profile.json`'s `meter`);
+//!   `lp1-exec-draft-1` prices each operation by DET.55 to DET.59 with `c600_run::meter::Tariffs::TEST`. Each key runs
+//!   as an own tool `go` with no argument, in tool authoring, and maps instruction by instruction:
+//!
+//!   | LX-3 | LX-3's charge | Counterpart | The draft's charge |
+//!   | --- | --- | --- | --- |
+//!   | the run's start | nothing | the entry's `call` | 1 step; the frame, 16 bytes plus 8 per slot (DET.57), where a record literal's fields are temporary slots |
+//!   | `tick` | 1 step | `()` | `value`: 1 step, 0 bytes |
+//!   | `kernel` of a row | 1 step; the row's `fixture.json` cost; the result's JSON length as memory | `read_snapshot` of the row | `kernel`: 1 step; the same cost; the host's result bound (4096 in the synthetic engine) reserved, then settled to DET.57's size |
+//!   | `retain` of n bytes | 1 step; n bytes | a text literal of n / 4 scalars | `value`: 1 step; n bytes (4 per scalar) |
+//!   | `emit` of a text | 1 step; its JSON length as output | the literal, then `publish_view` | `value`: 1 step and its size; `publish_view`: 1 step and FP.5's unit (the JSON and a line feed) as output, as encoding work and as a buffer released after the publication |
+//!   | a module `call` | 1 step; a 16-byte frame | `call` | 1 step; the frame: 16 bytes for a function with no slot |
+//!
+//!   A limit keeps the corpus's slack: in each dimension the draft's limit is the corpus's, plus the draft's charge
+//!   of the prefix the corpus admits (the entry's `call` included; memory at its peak), less the corpus's charge of
+//!   that prefix. The counterpart of the corpus's refused instruction is then refused first, in the same phase.
+//!   Outcome, code and phase compare literally, and the stop is that counterpart's operation path. A used amount is
+//!   the corpus's mapped through the table: plus the entry's `call`, and with the draft's own price where a row
+//!   differs. The table maps the counting fixture only; it is no production tariff (LG4.8).
 
 #![forbid(unsafe_code)]
 

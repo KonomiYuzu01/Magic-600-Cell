@@ -14,7 +14,7 @@ use c600_kernel::json::{self, Value as Json};
 use c600_kernel::{Level, ProtectedSet, ProtectionMode, Verdict};
 use c600_run::meter::Outcome;
 use c600_tools::bridge::{proposal_args, word_args, Steps};
-use c600_tools::expand::{expand, literal_digest, word_steps, Expansion};
+use c600_tools::expand::{expand, literal_digest, Expansion};
 use c600_tools::process::{ProcessHost, ToolCommand};
 use c600_tools::tool::{Tool, ROW};
 use process_support::{
@@ -334,9 +334,10 @@ fn ct_lb2_03_an_oversized_word_is_refused_whole_on_the_command_and_source_routes
 ///
 /// Chunked transport on the source route: a recipe of two full chunks (200,000 letters) previews on the command route
 /// and commits as one transaction. On either host the tool runs on the recipe's literal word through a bridge given
-/// the recipe's word steps, as the runner gives them; the one invocation carries the solver's two word steps
+/// the solver's recipe, as the runner gives it; the one invocation carries the solver's recipe, its two word steps,
 /// unchanged, the preview has the command route's literal, expansion and net digests, count and end state, and the
-/// shell's chord commits it as one transaction.
+/// shell's chord commits it as one transaction. A recipe with a star step or a word step with another field goes the
+/// same way: the next test.
 ///
 /// Not built: "Named work-sheet reuse invalidates the old preview": this route has no named work sheet.
 #[test]
@@ -385,9 +386,10 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
     assert!(seen.iter().all(|operation| operation == &seen[0]), "the chunking changes the operation: {seen:?}");
     assert_eq!(seen[0].0, literal_digest(&narrow(&word)));
     let flat = narrow(&word);
-    let solver = Steps::new(&flat, vec![4; 3]);
-    let cut = solver.as_ref().and_then(|steps| steps.cut(&flat)).map(|cut| cut.len());
-    assert_eq!(cut, Some(3), "the solver's three steps fit the literal word");
+    let pieces: Vec<&[i64]> = word.chunks(4).collect();
+    let solver = Steps::of(&kernel, &chunked(&pieces));
+    let literal = solver.as_ref().map(|steps| steps.literal().to_vec());
+    assert_eq!(literal, Some(flat.clone()), "the solver's three steps expand to the literal word");
     assert_eq!(proposal_args(&flat, solver.as_ref()), word_args(&flat), "one chunk: one word step");
     for host in HOSTS {
         let (mut layer, mut shell) = session("chunks");
@@ -418,7 +420,8 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
     let Expansion::Literal(literal) = expand(&kernel, &two) else { panic!("two full chunks expand") };
     assert_eq!(literal.len(), 2 * WORD_LIMIT);
     assert_eq!(operation.0, literal_digest(&literal));
-    let steps = word_steps(&two).and_then(|lengths| Steps::new(&literal, lengths)).expect("the solver's word steps");
+    let steps = Steps::of(&kernel, &two).expect("the solver's recipe");
+    assert_eq!(steps.literal(), &literal[..]);
     assert!(proposal_args(&literal, Some(&steps)) == draft_args(&two), "the solver's two word steps, unchanged");
     for host in HOSTS {
         let (mut layer, mut shell) = session("chunks");
@@ -439,35 +442,38 @@ fn ct_lb2_03_chunking_keeps_the_total_admission_bound_and_the_whole_operation() 
 
 /// CT-LB2-03, no silent split on the source route (LB2.3: a program is never split silently; LB2.4: `core.py`'s
 /// historical suggestion to split a batch is no automatic split; LB1.11: chunking transports one operation). The
-/// bridge sends the solver's word steps only for a proposal of exactly the literal word of the input recipe the host
-/// gave it, letter for letter. A built-in tool proposes only the word the solver named (`tool.rs`,
+/// bridge sends the solver's recipe only for a proposal of exactly the literal word of the input recipe the host gave
+/// it, letter for letter. A built-in tool proposes only the word the solver named (`tool.rs`,
 /// `a_built_in_previews_only_the_word_the_solver_named`), so on this route a word of the program's own is a run word
 /// that is not the input recipe's literal, as `--tamper` makes one.
 ///
-/// The bridge is given the word steps of a recipe of two full chunks, and the tool runs on its literal word with the
-/// first letter negated: the same length, so the solver's step lengths would fit it. On either host the one
-/// invocation carries one unsplit word step of 200,000 letters and is refused whole with the kernel's recipe-shape
-/// code and detail, the command route's answer to the same draft: no job, no preview, no change. Without the
-/// solver's word steps, as for a recipe with a star step or a word step with another field (`word_steps` gives none
-/// for either), the bridge does not cut even the literal word itself, which two full chunks would carry: it is
-/// refused whole the same way.
+/// The bridge is given the solver's recipe of two full chunks, and the tool runs on its literal word with the first
+/// letter negated: the same length, so the solver's step lengths would fit it. On either host the one invocation
+/// carries one unsplit word step of 200,000 letters and is refused whole with the kernel's recipe-shape code and
+/// detail, the command route's answer to the same draft: no job, no preview, no change. Without the solver's recipe
+/// (a host gives one for every recipe the kernel expanded, star steps and word steps with other fields included, and
+/// none for a recipe the kernel refuses), the bridge does not cut even the literal word itself, which two full chunks
+/// would carry: it is refused whole the same way. The next tests show the same for a recipe with a star step.
 #[test]
 fn ct_lb2_03_a_programs_own_word_over_one_chunk_is_refused_whole_on_the_source_route() {
+    let kernel = kernel();
     let tool = Tool::full_600_cell().unwrap();
     let mut process = process_host();
-    let chunk = narrow(&letters(WORD_LIMIT));
-    let literal = [&chunk[..], &chunk[..]].concat();
-    let steps = Steps::new(&literal, vec![WORD_LIMIT; 2]).expect("two full chunks");
+    let chunk = letters(WORD_LIMIT);
+    let steps = Steps::of(&kernel, &chunked(&[&chunk, &chunk])).expect("two full chunks");
+    let literal = steps.literal().to_vec();
+    assert_eq!(literal.len(), 2 * WORD_LIMIT);
     let mut own = literal.clone();
     own[0] = -own[0];
-    assert!(steps.cut(&own).is_none(), "a word of the same length that is not the literal is not cut");
-    // The host gives word steps only for a recipe of plain word steps: a star step or a word step with another field
-    // leaves the bridge none.
-    assert_eq!(word_steps(&chunked(&[&[1], &[2, 3]])), Some(vec![1, 2]));
+    assert_eq!(proposal_args(&own, Some(&steps)), word_args(&own), "a word of the same length that is not the literal");
+    // The host gives the bridge the recipe of any recipe the kernel expanded: a star step or a word step with another
+    // field included. A recipe the kernel refuses gives none.
+    assert!(Steps::of(&kernel, &chunked(&[&[1], &[2, 3]])).is_some());
     let star = json::parse(br#"[{"kind": "word", "moves": [1]}, {"kind": "star", "orbit": 0, "node": 0}]"#);
-    assert_eq!(word_steps(&star.expect("a recipe")), None, "a recipe with a star step");
+    assert!(Steps::of(&kernel, &star.expect("a recipe")).is_some(), "a recipe with a star step");
     let noted = json::parse(br#"[{"kind": "word", "moves": [1], "note": "n"}]"#);
-    assert_eq!(word_steps(&noted.expect("a recipe")), None, "a word step with another field");
+    assert!(Steps::of(&kernel, &noted.expect("a recipe")).is_some(), "a word step with another field");
+    assert!(Steps::of(&kernel, &chunked(&[&letters(WORD_LIMIT + 1)])).is_none(), "a recipe the kernel refuses");
     for (word, given) in [(&own, Some(steps)), (&literal, None)] {
         let single = chunked(&[&word.iter().map(|&letter| i64::from(letter)).collect::<Vec<_>>()]);
         assert!(proposal_args(word, given.as_ref()) == draft_args(&single), "one word step");
@@ -487,6 +493,140 @@ fn ct_lb2_03_a_programs_own_word_over_one_chunk_is_refused_whole_on_the_source_r
             assert!(layer.preview().is_none() && layer.run_jobs() == 0, "{host}");
             assert_eq!(fingerprint(&layer), before, "{host}");
         }
+    }
+}
+
+/// A word step of `moves` with a `"note"` field, which the kernel ignores.
+fn noted(moves: &[i64]) -> Json {
+    let moves = Json::Array(moves.iter().map(|&letter| Json::Int(letter)).collect());
+    json::object([("kind", text("word")), ("moves", moves), ("note", text("n"))])
+}
+
+/// The star step `{"kind": "star", "orbit": 0, "node": 0}`, whose sign defaults to 1.
+fn star() -> Json {
+    json::object([("kind", text("star")), ("orbit", Json::Int(0)), ("node", Json::Int(0))])
+}
+
+/// The plain word step `{"kind": "word", "moves": [...]}`.
+fn word_step(moves: &[i64]) -> Json {
+    chunked(&[moves]).as_array().expect("a recipe")[0].clone()
+}
+
+/// A recipe of the two steps `first` and `next`; the tests make `first` 100,000 letters long or one.
+fn over_one_chunk(first: Json, next: Json) -> Json {
+    Json::Array(vec![first, next])
+}
+
+/// CT-LB2-03, chunked transport of any recipe on the source route (LB2.3, LB2.4, LB1.11): a recipe with a star step,
+/// `[a word step of 100,000 letters, {"kind": "star", "orbit": 0, "node": 0}]`, and a recipe with a word step that
+/// has another field, `[{"kind": "word", "moves": <100,000 letters>, "note": "n"}, {"kind": "word", "moves": [1]}]`.
+/// Each previews on the command route and commits as one transaction. On either host the tool runs on its literal
+/// word, longer than one chunk, through a bridge given the solver's recipe, as the runner gives it; the run completes
+/// with exactly one invocation, whose arguments are `{"draft": {"recipe": <the solver's recipe>}}`, unchanged (the
+/// `"note"` field kept); the preview has the command route's literal, expansion and net digests, count and end state,
+/// and the shell's chord commits it as one transaction with the command route's post state.
+#[test]
+fn ct_lb2_03_a_recipe_with_a_star_step_or_a_noted_word_step_over_one_chunk_goes_as_the_solvers_recipe() {
+    let kernel = kernel();
+    let tool = Tool::full_600_cell().unwrap();
+    let mut process = process_host();
+    let chunk = letters(WORD_LIMIT);
+    let star = over_one_chunk(word_step(&chunk), star());
+    let noted = over_one_chunk(noted(&chunk), word_step(&[1]));
+    for (name, recipe) in [("star", &star), ("noted", &noted)] {
+        let (mut layer, mut shell) = session("recipe");
+        let before = fingerprint(&layer);
+        let admitted = command_preview(&mut layer, &mut shell, recipe);
+        let preview = present(&mut layer, &mut shell, &admitted, None);
+        assert_eq!(preview.recipe.steps().len(), 2, "{name}");
+        let operation = whole(&preview);
+        let committed = commit(&mut layer, &mut shell);
+        let Status::Committed(record) = &committed.status else { panic!("{name}: {committed:?}") };
+        assert_eq!(Some(&record.post), operation.4.as_ref(), "{name}");
+        assert_eq!(layer.store().log.len(), before.3 + 1, "{name}: one transaction on the command route");
+        let post = record.post.clone();
+
+        let Expansion::Literal(literal) = expand(&kernel, recipe) else { panic!("{name}: the recipe expands") };
+        assert!(literal.len() > WORD_LIMIT, "{name}: the literal word is longer than one chunk");
+        assert_eq!(operation.0, literal_digest(&literal), "{name}");
+        let steps = Steps::of(&kernel, recipe).expect("the solver's recipe");
+        assert_eq!((steps.literal(), steps.recipe()), (&literal[..], recipe), "{name}");
+        assert!(proposal_args(&literal, Some(&steps)) == draft_args(recipe), "{name}: the solver's recipe, unchanged");
+        for host in HOSTS {
+            let (mut layer, mut shell) = session("recipe");
+            let on = on(host, &mut process);
+            let (ran, sent, command) = run_with(on, &tool, &mut layer, &mut shell, &literal, Some(steps.clone()));
+            assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host} {name}");
+            let [one] = &sent[..] else { panic!("{host} {name}: one invocation, not {}", sent.len()) };
+            assert!(one.invocation.args == draft_args(recipe), "{host} {name}: the solver's recipe");
+            let draft = one.invocation.args.get("draft").and_then(|draft| draft.get("recipe"));
+            let first = draft.and_then(Json::as_array).map(|steps| steps[0].get("note").cloned());
+            let note = (name == "noted").then(|| text("n"));
+            assert_eq!(first, Some(note), "{host} {name}: the first step keeps its fields");
+            let preview = present(&mut layer, &mut shell, &one.receipt, Some(command));
+            assert_eq!(preview.recipe.steps().len(), 2, "{host} {name}");
+            assert_eq!(whole(&preview), operation, "{host} {name}: the command route's operation");
+            let committed = commit(&mut layer, &mut shell);
+            let Status::Committed(record) = &committed.status else { panic!("{host} {name}: {committed:?}") };
+            assert_eq!(record.post, post, "{host} {name}: the command route's post state");
+            assert_eq!(layer.store().log.len(), before.3 + 1, "{host} {name}: one transaction");
+        }
+    }
+}
+
+/// CT-LB2-03, no silent split for a recipe with a star step (LB2.3, LB2.4, LB1.11). The literal word of
+/// `[a word step of 100,000 letters, {"kind": "star", "orbit": 0, "node": 0}]` with its first letter negated, given
+/// that recipe, is not the recipe's literal word: on either host it goes in one word step and is refused whole with
+/// the kernel's recipe-shape code, the command route's answer to that draft: no job, no preview, no change. The same
+/// literal word with no recipe given is refused whole the same way. A recipe with a star step whose literal word has
+/// at most one chunk goes in one word step, as before chunked transport.
+#[test]
+fn ct_lb2_03_a_star_recipes_word_is_not_split_and_one_chunk_stays_one_word_step() {
+    let kernel = kernel();
+    let tool = Tool::full_600_cell().unwrap();
+    let mut process = process_host();
+    let chunk = letters(WORD_LIMIT);
+    let recipe = over_one_chunk(word_step(&chunk), star());
+    let steps = Steps::of(&kernel, &recipe).expect("the solver's recipe");
+    let literal = steps.literal().to_vec();
+    assert!(literal.len() > WORD_LIMIT);
+    let mut own = literal.clone();
+    own[0] = -own[0];
+    for (word, given) in [(&own, Some(steps)), (&literal, None)] {
+        let single = chunked(&[&word.iter().map(|&letter| i64::from(letter)).collect::<Vec<_>>()]);
+        assert!(proposal_args(word, given.as_ref()) == draft_args(&single), "one word step");
+        assert!(word_args(word) == draft_args(&single));
+        let (mut layer, mut shell) = session("star");
+        let before = fingerprint(&layer);
+        let command = command_preview(&mut layer, &mut shell, &single);
+        assert_eq!(command.status.code(), Some(RECIPE_SHAPE), "{command:?}");
+        for host in HOSTS {
+            let (mut layer, mut shell) = session("star");
+            let on = on(host, &mut process);
+            let (ran, sent, _command) = run_with(on, &tool, &mut layer, &mut shell, word, given.clone());
+            assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
+            let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
+            assert!(one.invocation.args == draft_args(&single), "{host}: one word step");
+            assert_eq!(one.receipt.status, command.status, "{host}: refused whole, as on the command route");
+            assert_eq!(one.receipt.job, None, "{host}");
+            assert!(layer.preview().is_none() && layer.run_jobs() == 0, "{host}");
+            assert_eq!(fingerprint(&layer), before, "{host}");
+        }
+    }
+
+    let small = over_one_chunk(word_step(&[1]), star());
+    let steps = Steps::of(&kernel, &small).expect("the solver's recipe");
+    let literal = steps.literal().to_vec();
+    assert!(literal.len() <= WORD_LIMIT, "the star recipe's literal word fits one chunk");
+    assert_eq!(proposal_args(&literal, Some(&steps)), word_args(&literal), "one chunk: one word step");
+    for host in HOSTS {
+        let (mut layer, mut shell) = session("star");
+        let on = on(host, &mut process);
+        let (ran, sent, _command) = run_with(on, &tool, &mut layer, &mut shell, &literal, Some(steps.clone()));
+        assert_eq!(ran.unwrap().run.summary.outcome, Outcome::Completed, "{host}");
+        let [one] = &sent[..] else { panic!("{host}: one invocation, not {}", sent.len()) };
+        assert!(one.invocation.args == word_args(&literal), "{host}: one word step");
+        assert!(matches!(one.receipt.status, Status::Running(_)), "{host}: {:?}", one.receipt.status);
     }
 }
 

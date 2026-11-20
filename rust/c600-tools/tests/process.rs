@@ -4,21 +4,23 @@
 
 mod process_support;
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::process::Command;
 
-use c600_check::Profile;
-use c600_command::{Caller, HeadlessFrames, Status};
+use c600_check::{Profile, NOT_GRANTED};
+use c600_command::{Budget, Caller, Error as LayerError, HeadlessFrames, Status};
 use c600_kernel::codes::RECIPE_SHAPE;
 use c600_kernel::json::{self, Value as Json};
 use c600_run::boundary::{Answer, Boundary, Store};
 use c600_run::interp::code::NONCANONICAL_VALUE;
+use c600_run::meter::code::STEPS;
 use c600_run::meter::Outcome;
 use c600_run::value::{equal, Value};
 use c600_runtime::{Config, Ended, FaultKind, Runtime, Stage};
 use c600_tools::bridge::{base, word_args, Bridge};
-use c600_tools::process::{job, runtime_beside, start_error, Cause, ProcessHost, IN_PROCESS, PROCESS};
-use c600_tools::tool::{Tool, LIMITS, MODULE, ROW, SOURCE};
+use c600_tools::process::{invoke_tool, job, runtime_beside, start_error, Cause, ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::tool::{class_rows, limits, Tool, LIMITS, MODULE, ROW, SOURCE};
 use process_support::{acknowledgement, fingerprint, process_host, report, repository, run_on, runtime, session};
 
 /// Acceptance item 2, the process host. The tool's program runs in another operating-system process than the
@@ -110,43 +112,62 @@ fn process_host_runs_the_tool_in_the_runtimes_child_with_the_same_bridge_and_rec
 
 /// Acceptance item 2, what crosses to the child (KN5.15, RTE.21): the job is the admitted source's bytes, the
 /// manifest's module and entry, the literal word as the one argument, the tool's limits, no grant and no
-/// declassifier. The job's profile is tool authoring, because the child applies `c600_check::admit`, which has no
-/// built-in column: the same job in the solving profile is refused at the child's admit stage and never runs, so no
-/// proposal is made. A source other than the one the tool was admitted from is not sent at all.
+/// declassifier. The job runs in the solving profile and names the tool's class rows (`JobOptions::built_in`), so the
+/// child admits the entry in the built-in column itself, with `c600_check::admit_built_in`, as `Tool::new` does in the
+/// caller. The child's admission decides: the same job is refused at the child's admit stage, and never runs, without
+/// the class rows (the solving column refuses every previewing program), with class rows that leave out
+/// `operation.preview` (the class lists every row the entry uses), and with the class rows in the tool-authoring
+/// profile (the built-in column is the solving profile's, so that refusal has no code). A source other than the one
+/// the tool was admitted from is not sent at all.
 ///
-/// ADR-L02 and LI.30 (part: the built-in column's admission is the parent's, at `Tool::new`; the child's own
-/// admission of the built-in tool is not built, see the crate's drafts).
+/// ADR-L02 and LI.30 (part: the built-in column's admission, in the caller at `Tool::new` and in the child).
 #[test]
-fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_as_tool_authoring() {
+fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_in_the_built_in_column() {
     let tool = Tool::full_600_cell().unwrap();
     let built = job(&tool, SOURCE, &[1, -2]);
     assert_eq!(built.sources, vec![SOURCE.as_bytes().to_vec()]);
     assert_eq!((built.module.as_str(), built.entry.as_str()), (MODULE, tool.manifest.entry));
     assert!(matches!(&built.args[..], [word] if equal(word, &Value::word(&[1, -2]))));
-    assert_eq!(built.options.profile, Profile::ToolAuthoring);
+    assert_eq!(built.options.profile, Profile::Solving);
+    assert_eq!(built.options.built_in, Some(class_rows(&tool.manifest)));
     assert_eq!(built.options.limits, LIMITS);
     assert!(built.options.grant.is_empty() && built.options.declassifiers.is_empty() && built.options.seed.is_none());
 
-    let (mut layer, _) = session("process");
+    let (mut layer, mut shell) = session("process");
     let before = fingerprint(&layer);
     let mut runtime = Runtime::new(Config::new(process_support::runtime()));
-    for (profile, runs) in [(Profile::Solving, false), (Profile::ToolAuthoring, true)] {
+    let rows = built.options.built_in.clone();
+    let variants = [
+        ("the job", Profile::Solving, rows.clone(), None),
+        ("no class rows", Profile::Solving, None, Some("prepares no preview in a solving session")),
+        ("no preview row", Profile::Solving, Some(BTreeSet::new()), Some("the class lists no row")),
+        ("tool authoring", Profile::ToolAuthoring, rows, Some("the built-in column is the solving profile's")),
+    ];
+    for (case, profile, class, refusal) in variants {
         let mut asked = job(&tool, SOURCE, &[1, -2]);
         asked.options.profile = profile;
+        asked.options.built_in = class;
         let context = tool.context("profiles", &base(layer.revision()));
         let mut bridge = Bridge::new(&mut layer, "profiles");
         let mut store = Store::default();
         let mut boundary = Boundary::new(&mut bridge, &mut store, context);
         let ended = runtime.run(&asked, &mut boundary, None).expect("the child answers");
         let proposals = boundary.shell.len();
-        match ended {
-            Ended::Ran(run) if runs => assert_eq!((run.summary.outcome, proposals), (Outcome::Completed, 1)),
-            Ended::Refused(refused) if !runs => {
-                assert_eq!((refused.stage, proposals), (Stage::Admit, 0), "{refused:?}");
-                assert!(!refused.codes.is_empty());
-                assert!(bridge.sent.is_empty());
+        match (ended, refusal) {
+            (Ended::Ran(run), None) => assert_eq!((run.summary.outcome, proposals), (Outcome::Completed, 1)),
+            (Ended::Refused(refused), Some(why)) => {
+                assert_eq!((refused.stage, proposals), (Stage::Admit, 0), "{case}: {refused:?}");
+                assert!(refused.detail.contains(why), "{case}: {}", refused.detail);
+                let codes = &refused.codes;
+                match profile {
+                    Profile::Solving => {
+                        assert!(!codes.is_empty() && codes.iter().all(|c| c == NOT_GRANTED), "{case}: {codes:?}")
+                    }
+                    _ => assert!(codes.is_empty(), "{case}: {codes:?}"),
+                }
+                assert!(bridge.sent.is_empty(), "{case}");
             }
-            other => panic!("{profile:?}: {other:?}"),
+            (other, _) => panic!("{case}: {other:?}"),
         }
     }
     assert_eq!(fingerprint(&layer), before);
@@ -154,9 +175,9 @@ fn process_host_job_carries_the_admitted_source_and_the_child_admits_it_as_tool_
     let mut host = process_host();
     let other = SOURCE.replacen("preview_word", "preview_other", 1);
     assert_ne!(other, SOURCE);
-    let read = base(layer.revision());
-    let mut bridge = Bridge::new(&mut layer, "other");
-    let stopped = host.run(&tool, &other, &[1, -2], "other", &read, &mut bridge, &mut Store::default()).unwrap_err();
+    let command = invoke_tool(&mut shell, &mut layer, &tool, &[1, -2]).expect("the tool's row");
+    let mut bridge = Bridge::new(&mut layer, &command.run());
+    let stopped = host.run(&tool, &other, &command, &mut bridge, &mut Store::default()).unwrap_err();
     assert!(matches!(stopped.cause, Cause::OtherSource) && stopped.shell.is_empty() && bridge.sent.is_empty());
     assert_eq!((host.spawns(), host.child_id()), (0, None), "no child was started for another source");
 }
@@ -189,6 +210,41 @@ fn both_hosts_refuse_a_word_with_no_transfer_encoding_at_the_start_stage() {
         }
     }
     assert_eq!(host.spawns(), 0, "a job with no transfer encoding starts no child");
+}
+
+/// The run's budget (KN7.7; LP2's pull request 348). The solver's command declares the budget its job runs under, and
+/// on both hosts the tool's entry runs under the run limits of the job's budget, not under the draft ceiling: with a
+/// budget of one step the run is cut off with the meter's steps code before it proposes anything, alike on the two
+/// hosts. The host reports the job as failed with that code, and the session is unchanged. The shell's default
+/// budget, the draft ceiling, gives the tool's limits.
+#[test]
+fn both_hosts_run_the_tool_under_the_budget_its_command_declared() {
+    assert_eq!(limits(Budget::DRAFT_CEILING), LIMITS, "the shell's default budget gives the tool's limits");
+    let tool = Tool::full_600_cell().unwrap();
+    let mut host = process_host();
+    let one = Budget { steps: 1, ..Budget::DRAFT_CEILING };
+    let mut summaries = Vec::new();
+    for on_process in [false, true] {
+        let (mut layer, mut shell) = session("budget");
+        shell.budget = Some(one);
+        let before = fingerprint(&layer);
+        let (ran, sent, command) = run_on(on_process.then_some(&mut host), &tool, &mut layer, &mut shell, &[1, -2]);
+        assert_eq!((command.job.budget, command.limits()), (one, limits(one)), "the job runs under its budget");
+        let ran =
+            ran.unwrap_or_else(|stopped| panic!("the run ends (process host: {on_process}): {:?}", stopped.cause));
+        let summary = ran.run.summary;
+        assert_eq!((summary.outcome, summary.code), (Outcome::CutOff, Some(STEPS)), "{summary:?}");
+        assert_eq!(summary.used.steps, 1, "the run used its one step");
+        assert!(ran.shell.is_empty() && sent.is_empty(), "the run proposed nothing (process host: {on_process})");
+        let error = LayerError::new(STEPS, "the run was cut off at its budget's steps");
+        let reported = command.finish(&mut layer, Err(error)).expect("the layer holds the tool's job");
+        assert!(matches!(reported.status, Status::Failed(_)), "the job failed: {reported:?}");
+        assert_eq!(reported.status.code(), Some(STEPS), "{reported:?}");
+        assert!(layer.take_program_job().is_none(), "no job is left queued (process host: {on_process})");
+        assert_eq!(fingerprint(&layer), before, "a cut-off run changes nothing");
+        summaries.push(summary);
+    }
+    assert_eq!(summaries[0], summaries[1], "the meter summaries differ between the hosts");
 }
 
 /// KN7.13 (part, the tool's host): a runtime that cannot be started leaves no run, no invocation and no change, and

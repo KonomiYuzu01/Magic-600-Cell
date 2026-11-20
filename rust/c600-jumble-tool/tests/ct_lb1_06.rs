@@ -8,20 +8,23 @@
 //! M5's states (solved and two heads of the I_a journal), words with one key are admitted alike and end at one digest
 //! (LB1.9), while an identity letter at a straddled grip is refused where the empty word is admitted, so a key that
 //! dropped it would change admissibility; `menu_traces.same_trace` and `menu_traces.trace_commute` check as pure code
-//! and answer as the keys do; and a key under another menu, contract revision, key version or relation version
-//! refuses comparison with `LB1:input.key_contract_mismatch`.
+//! and answer as the keys do; a key under another menu, contract revision, key version or relation version
+//! refuses comparison with `LB1:input.key_contract_mismatch`; and word keys remain separate: in one run that pins
+//! I_a's alphabet with its item matrices (`Alphabet::pinned`) and the relation beside it, `word_key` (LG2.18's
+//! `word-key/1`, LP2's pull request 338) and `trace_key` key the same menu words each by its own rule, and a source
+//! that compares a word key with a trace key is a type mismatch.
 //!
-//! Not run: "Word keys remain separate" on the jumbling side, since LG2.18's jumbling word key is not built (LP2);
-//! the 600-cell-Full half, which LP2's pull request 214 runs. A pass is source and fixture evidence.
+//! The 600-cell-Full half is LP2's (pull request 214), so with it CT-LB1-06 runs whole. A pass is source and fixture
+//! evidence.
 
 mod common;
 
 use std::collections::BTreeSet;
 use std::sync::{Arc, OnceLock};
 
-use c600_check::{check, separation, Policy, Separation};
+use c600_check::{check, separation, Policy, Separation, TYPE_MISMATCH};
 use c600_jumble::locality::Locality;
-use c600_jumble::q5::identity4;
+use c600_jumble::q5::{identity4, matmul};
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::Menu;
 use c600_jumble_tool::library::{self, MENU_TRACES};
@@ -31,6 +34,7 @@ use c600_library::lower_source;
 use c600_run::interp::code::INCOMPATIBLE_ALPHABET;
 use c600_run::interp::{load, Loaded, NoHost, Options, Refusal, Run};
 use c600_run::menu::MenuAlphabet;
+use c600_run::menu_key;
 use c600_run::meter::{Amounts, Outcome};
 use c600_run::trace::{check_keys, Relation, TraceHeader, TraceKey, JUMBLE_LOCALITY, KEY_CONTRACT_MISMATCH, TRACE_KEY};
 use c600_run::value::Value as RunValue;
@@ -364,4 +368,78 @@ fn ct_lb1_06_keys_of_another_menu_or_version_refuse_comparison() {
     let foreign = vec![menu_word(&other, &w), menu_word(p, &w)];
     let refused = run("same_trace", foreign, &p.pinned, &p.relation).expect_err("another alphabet");
     assert_eq!(refused.code, INCOMPATIBLE_ALPHABET);
+}
+
+/// Both keys of two menu words, in one module: `traces` compares their trace keys and `words` their word keys.
+const BOTH: &str = "edition \"6cs-draft-1\";\nmodule both requires [];\n\n\
+    export fn traces(x: MenuWord, y: MenuWord) -> Bool effects [] {\n    \
+    return exact_eq(trace_key(x), trace_key(y));\n}\n\n\
+    export fn words(x: MenuWord, y: MenuWord) -> Bool effects [] {\n    \
+    return exact_eq(word_key(x), word_key(y));\n}\n";
+
+/// A source that compares a menu word's word key with its trace key.
+const MIXED: &str = "edition \"6cs-draft-1\";\nmodule mixed requires [];\n\n\
+    export fn mixed(x: MenuWord) -> Bool effects [] {\n    return exact_eq(word_key(x), trace_key(x));\n}\n";
+
+fn both() -> &'static Loaded {
+    static LOADED: OnceLock<Loaded> = OnceLock::new();
+    LOADED.get_or_init(|| load(&lower_source(BOTH).expect("the module lowers")).expect("it loads"))
+}
+
+/// `both.<entry>(x, y)` in a run that pins the alphabet with its item matrices and the relation beside it.
+fn compared(entry: &str, p: &Pinned, x: &[[u32; 2]], y: &[[u32; 2]]) -> bool {
+    let options = Options { menu: Some(&p.pinned), relation: Some(&p.relation), ..Options::new(WIDE) };
+    let args = vec![menu_word(p, x), menu_word(p, y)];
+    let ran = both().run("both", entry, args, &mut NoHost, &options).expect("the run starts");
+    assert_eq!((ran.summary.outcome, ran.summary.code), (Outcome::Completed, None), "{entry}({x:?}, {y:?})");
+    match ran.value {
+        Some(RunValue::Bool(answer)) => answer,
+        other => panic!("{entry}: {other:?}"),
+    }
+}
+
+/// CT-LB1-06 (part: "Word keys remain separate" on the jumbling side, against LG2.18's word key `word-key/1` under
+/// I_a's item matrices, which `Alphabet::pinned` pins beside the relation). In one run, `trace_key` and `word_key` key
+/// the same menu words each by its own rule, neither composed with the other (LG2.18, LB1.10). bca and cab have one
+/// trace key and two word keys, since a word key swaps no letters, and so do identity letters at two independent
+/// grips. An item and its inverse at one grip, or an item twice, have the word key of the one letter at that grip whose
+/// item is their product, and trace keys of their own, since a trace key keeps every letter. x·x⁻¹ keeps its grip's
+/// token, so neither of its keys is the empty word's. Each answer is the comparison of the keys that `c600_run` builds,
+/// a word key of I_b's alphabet is refused under I_a's header with `LB1:input.key_contract_mismatch`'s reason, and a
+/// source that compares a word key with a trace key is a type mismatch.
+#[test]
+fn ct_lb1_06_word_keys_remain_separate_from_trace_keys() {
+    let p = i_a();
+    let r = &p.relation;
+    assert!(p.pinned.item_matrices().is_some(), "the alphabet carries its item matrices");
+    let (id, x, xi) = items(p);
+    let [ga, gb, gc] = grips();
+    let (a, b, c) = ([ga, x], [gb, x], [gc, x]);
+    let mx = &p.menu.items[x as usize].1;
+    let square = matmul(mx, mx);
+    let square = p.menu.items.iter().position(|(_, m)| *m == square).expect("x² is an item of the menu") as u32;
+    let word_key = |w: &[[u32; 2]]| menu_key::key(&p.pinned, w).expect("letters of the alphabet");
+
+    for (u, v, traces, words) in [
+        (&[b, c, a][..], &[c, a, b][..], true, false),
+        (&[[gb, id], [ga, id]], &[[ga, id], [gb, id]], true, false),
+        (&[[ga, x], [ga, xi]], &[[ga, id]], false, true),
+        (&[[ga, x], [ga, x]], &[[ga, square]], false, true),
+        (&[[ga, x], [ga, xi]], &[], false, false),
+        (&[b, c, a], &[b, c, a], true, true),
+    ] {
+        assert_eq!(compared("traces", p, u, v), traces, "trace keys of {u:?} and {v:?}");
+        assert_eq!(compared("words", p, u, v), words, "word keys of {u:?} and {v:?}");
+        assert_eq!(key(r, u) == key(r, v), traces);
+        assert_eq!(word_key(u) == word_key(v), words);
+    }
+
+    let other = pinned("I_b");
+    let foreign = menu_key::key(&other.pinned, &[[ga, 0]]).expect("a letter of I_b's alphabet");
+    let why = menu_key::check_keys(&RunValue::MenuWordKey(Arc::new(foreign)), Some(&p.pinned)).expect_err("I_b's key");
+    assert!(why.contains("menu_id"), "{why}");
+
+    let program = lower_source(MIXED).expect("the module lowers");
+    let report = check(&program).expect("well-formed IR");
+    assert!(report.diagnostics.iter().any(|d| d.code == TYPE_MISMATCH), "{:#?}", report.diagnostics);
 }

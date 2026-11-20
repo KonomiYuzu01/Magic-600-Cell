@@ -23,6 +23,7 @@ use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value};
 use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle};
 
+use crate::budget::Budget;
 use crate::jumble::{crossing_reads, exit_reads, JUMBLE_TWIST_ROW};
 use crate::layer::Caller;
 use crate::receipt::{CommitRecord, Completion, CompletionKind, Error, Receipt, ResultRef, Revision, Status};
@@ -157,6 +158,9 @@ pub struct Transaction {
     /// yet, in the order of the SHA-256 of their bytes (BND.24, BND.85, CT-BND-27; draft). Empty for every other
     /// action.
     pub blocks: Vec<String>,
+    /// A workspace row's completion: the budget its job was admitted under ([`crate::budget`]; draft). `None` for
+    /// every other action.
+    pub budget: Option<Budget>,
 }
 
 impl Transaction {
@@ -190,8 +194,8 @@ impl Transaction {
 
     /// The journal form (draft). `record` appears only when the action carries a record write, `policy` only when it
     /// carries a policy, `records` only when a workspace row's job wrote records or an undo or redo inverts or repeats
-    /// such a completion, `rotation` only on a twist, `crossing` only on a crossing or an exit, and `blocks` only when
-    /// the action keeps part blocks.
+    /// such a completion, `rotation` only on a twist, `crossing` only on a crossing or an exit, `blocks` only when
+    /// the action keeps part blocks, and `budget` only on a workspace row's completion.
     pub fn to_json(&self) -> Value {
         let nat = |n: u64| Value::Int(n as i64);
         let text = |s: &str| Value::String(s.to_owned());
@@ -234,6 +238,9 @@ impl Transaction {
             let blocks = self.blocks.iter().map(|block| Value::String(block.clone())).collect();
             fields.insert("blocks".to_owned(), Value::Array(blocks));
         }
+        if let (Value::Object(fields), Some(budget)) = (&mut value, &self.budget) {
+            fields.insert("budget".to_owned(), budget.to_json());
+        }
         value
     }
 
@@ -246,11 +253,12 @@ impl Transaction {
     /// `jumble.twist.menu` and to a jumble move, which always carry one in the form [`crate::twist`] reads. `crossing`
     /// belongs to a crossing and to an exit, which always carry one in the form [`crate::jumble`] reads for their kind.
     /// `blocks` belongs to a record write and to a workspace row's completion that writes records, a non-empty list of
-    /// texts whose SHA-256 strictly increases. A crossing, a jumble move and an exit derive no retained recipe and
-    /// confirm nothing, so their `recipe` is `null` and their `confirm` false. A transaction that carries one where it
-    /// does not belong, or both `record` and `policy`, or a twist without its rotation, or a crossing or an exit
-    /// without its record, or a crossing, a jumble move or an exit with a recipe or a confirmation, does not read, so
-    /// the history stops there (KN5.23).
+    /// texts whose SHA-256 strictly increases. `budget` belongs to a workspace row's completion, in
+    /// [`Budget::from_json`]'s form; a completion journaled before budgets were declared has none. A crossing, a jumble
+    /// move and an exit derive no retained recipe and confirm nothing, so their `recipe` is `null` and their `confirm`
+    /// false. A transaction that carries one where it does not belong, or both `record` and `policy`, or a twist
+    /// without its rotation, or a crossing or an exit without its record, or a crossing, a jumble move or an exit with
+    /// a recipe or a confirmation, does not read, so the history stops there (KN5.23).
     pub fn from_json(value: &Value) -> Option<Transaction> {
         let object = value.as_object()?;
         let kind = TransactionKind::from_name(value.get("kind")?.as_str()?)?;
@@ -297,6 +305,11 @@ impl Transaction {
                 (!blocks.is_empty() && ordered && writes).then_some(blocks)?
             }
         };
+        let budget = match value.get("budget") {
+            None => None,
+            Some(budget) if kind == TransactionKind::Workspace => Some(Budget::from_json(budget)?),
+            Some(_) => return None,
+        };
         let row = value.get("row")?.as_str()?;
         let twist = match kind {
             TransactionKind::Commit => row == TWIST_ROW || row == JUMBLE_TWIST_ROW,
@@ -323,7 +336,8 @@ impl Transaction {
             + usize::from(!records.is_empty())
             + usize::from(rotation.is_some())
             + usize::from(crossing.is_some())
-            + usize::from(!blocks.is_empty());
+            + usize::from(!blocks.is_empty())
+            + usize::from(budget.is_some());
         (carries && object.len() == keys).then_some(())?;
         let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
         let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
@@ -364,6 +378,7 @@ impl Transaction {
             rotation,
             crossing,
             blocks,
+            budget,
         })
     }
 }
@@ -406,6 +421,35 @@ pub fn identity_from_json(value: &Value) -> Option<IdentityBlock> {
     })
 }
 
+/// A session's profile (BND.15, BND.17; draft): `solving` for every ordinary session, `tool_authoring` for the tool
+/// editor and `research` for a research workspace. The checker and the runtime have their own enum of the same names;
+/// the layer keeps its own, since it depends on no language crate (KN2.6, LI.20), and a host maps them by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Profile {
+    Solving,
+    ToolAuthoring,
+    Research,
+}
+
+impl Profile {
+    /// Every profile, in BND.15's order.
+    pub const ALL: [Profile; 3] = [Profile::Solving, Profile::ToolAuthoring, Profile::Research];
+
+    /// BND.15's name of the profile.
+    pub fn name(self) -> &'static str {
+        match self {
+            Profile::Solving => "solving",
+            Profile::ToolAuthoring => "tool_authoring",
+            Profile::Research => "research",
+        }
+    }
+
+    /// The profile BND.15 names `name`, if any.
+    pub fn from_name(name: &str) -> Option<Profile> {
+        Profile::ALL.into_iter().find(|profile| profile.name() == name)
+    }
+}
+
 /// A session's start, written once when the layer creates it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Genesis {
@@ -419,6 +463,8 @@ pub struct Genesis {
     pub digest: String,
     /// The protected orbits at the start.
     pub orbits: Vec<usize>,
+    /// The session's profile (BND.17; draft): the host sets it at creation, and nothing changes it.
+    pub profile: Profile,
 }
 
 /// What a reopen reads: the genesis, every epoch a layer opened, and the durable transactions in order.

@@ -1,0 +1,101 @@
+edition "6cs-draft-1";
+module seeds requires [];
+
+export fn seed_report(orbit: Int, seed: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>) -> record { collateral: List<Int>, expansion_sha256: Text, moved_pieces: Nat, moved_stickers: Nat, net_sha256: Text, orbit: Int, orbit_pieces: Nat, orbit_stickers: Nat, primitive_count: Nat, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> } effects [snapshot] {
+    let net = read_snapshot<record { expansion_sha256: Text, moved_pieces: Nat, moved_stickers: Nat, net_sha256: Text, primitive_count: Nat, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> }>("effect", seed);
+    let own = row_of(net.support, orbit);
+    return record { collateral = other_orbits(net.support, orbit), expansion_sha256 = net.expansion_sha256, moved_pieces = net.moved_pieces, moved_stickers = net.moved_stickers, net_sha256 = net.net_sha256, orbit = orbit, orbit_pieces = own.pieces, orbit_stickers = own.stickers, primitive_count = net.primitive_count, support = net.support };
+}
+
+export fn stage_order(seeds: List<record { collateral: List<Int>, orbit: Int }>) -> record { cycle: List<Int>, order: List<Int> } effects [] {
+    let placed = repeat(length(seeds), record { degrees = in_degrees(seeds), order = list<Int>() }, fn(s: record { degrees: List<Int>, order: List<Int> }) -> record { degrees: List<Int>, order: List<Int> } {
+        let ready = first_ready(s.degrees);
+        return match ready.found {
+            true => record { degrees = released(seeds, s.degrees, ready.at), order = push(s.order, index(seeds, ready.at).orbit) };
+            _ => s;
+        };
+    });
+    return record { cycle = unplaced(seeds, placed.degrees), order = placed.order };
+}
+
+fn row_of(rows: List<record { orbit: Int, pieces: Nat, stickers: Nat }>, orbit: Int) -> record { pieces: Nat, stickers: Nat } effects [] {
+    let found = repeat(length(rows), record { next = 0, pieces = 0, stickers = 0 }, fn(s: record { next: Nat, pieces: Nat, stickers: Nat }) -> record { next: Nat, pieces: Nat, stickers: Nat } {
+        let at = index(rows, s.next);
+        return match exact_eq(at.orbit, orbit) {
+            true => record { next = exact_add(s.next, 1), pieces = at.pieces, stickers = at.stickers };
+            _ => record { next = exact_add(s.next, 1), pieces = s.pieces, stickers = s.stickers };
+        };
+    });
+    return record { pieces = found.pieces, stickers = found.stickers };
+}
+
+fn other_orbits(rows: List<record { orbit: Int, pieces: Nat, stickers: Nat }>, orbit: Int) -> List<Int> effects [] {
+    return repeat(length(rows), record { done = list<Int>(), next = 0 }, fn(s: record { done: List<Int>, next: Nat }) -> record { done: List<Int>, next: Nat } {
+        let other = index(rows, s.next).orbit;
+        let done = match exact_eq(other, orbit) {
+            true => s.done;
+            _ => push(s.done, other);
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+}
+
+fn in_degrees(seeds: List<record { collateral: List<Int>, orbit: Int }>) -> List<Int> effects [] {
+    return repeat(length(seeds), list<Int>(), fn(done: List<Int>) -> List<Int> {
+        return push(done, predecessors(seeds, index(seeds, length(done)).orbit));
+    });
+}
+
+fn predecessors(seeds: List<record { collateral: List<Int>, orbit: Int }>, orbit: Int) -> Int effects [] {
+    return repeat(length(seeds), record { count = 0, next = 0 }, fn(s: record { count: Int, next: Nat }) -> record { count: Int, next: Nat } {
+        let count = match listed(index(seeds, s.next).collateral, orbit) {
+            true => exact_add(s.count, 1);
+            _ => s.count;
+        };
+        return record { count = count, next = exact_add(s.next, 1) };
+    }).count;
+}
+
+fn first_ready(degrees: List<Int>) -> record { at: Nat, found: Bool } effects [] {
+    let s = repeat(length(degrees), record { at = 0, found = false, next = 0 }, fn(s: record { at: Nat, found: Bool, next: Nat }) -> record { at: Nat, found: Bool, next: Nat } {
+        let hit = and(not(s.found), exact_eq(index(degrees, s.next), 0));
+        let at = match hit {
+            true => s.next;
+            _ => s.at;
+        };
+        return record { at = at, found = or(s.found, hit), next = exact_add(s.next, 1) };
+    });
+    return record { at = s.at, found = s.found };
+}
+
+fn released(seeds: List<record { collateral: List<Int>, orbit: Int }>, degrees: List<Int>, at: Nat) -> List<Int> effects [] {
+    let moved = index(seeds, at).collateral;
+    return repeat(length(degrees), list<Int>(), fn(done: List<Int>) -> List<Int> {
+        let degree = index(degrees, length(done));
+        let lowered = match listed(moved, index(seeds, length(done)).orbit) {
+            true => exact_add(degree, -1);
+            _ => degree;
+        };
+        let next = match or(exact_eq(length(done), at), exact_less(degree, 0)) {
+            true => -1;
+            _ => lowered;
+        };
+        return push(done, next);
+    });
+}
+
+fn unplaced(seeds: List<record { collateral: List<Int>, orbit: Int }>, degrees: List<Int>) -> List<Int> effects [] {
+    return repeat(length(seeds), record { done = list<Int>(), next = 0 }, fn(s: record { done: List<Int>, next: Nat }) -> record { done: List<Int>, next: Nat } {
+        let done = match exact_eq(index(degrees, s.next), -1) {
+            true => s.done;
+            _ => push(s.done, index(seeds, s.next).orbit);
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+}
+
+fn listed(orbits: List<Int>, orbit: Int) -> Bool effects [] {
+    return repeat(length(orbits), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(orbits, s.next), orbit)), next = exact_add(s.next, 1) };
+    }).found;
+}

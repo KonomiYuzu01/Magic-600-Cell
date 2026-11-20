@@ -58,13 +58,20 @@ public sealed class CoreLibrary : IDisposable
         "sa2_detach",
     };
 
+    /// <summary>
+    /// C9's diagnostic call, added to ABI 5 without a version change: the surface's swap-chain address, which the event
+    /// log records for the PresentMon cross-check. It is optional, since an ABI 5 core built before it lacks it.
+    /// </summary>
+    public const string SwapChainCall = "sa2_surface_swap_chain";
+
     private IntPtr _handle;
 
-    private CoreLibrary(IntPtr handle, IntPtr[] functions, IntPtr[] shellFunctions)
+    private CoreLibrary(IntPtr handle, IntPtr[] functions, IntPtr[] shellFunctions, IntPtr swapChain)
     {
         _handle = handle;
         Functions = functions;
         ShellFunctions = shellFunctions;
+        SwapChainFunction = swapChain;
     }
 
     /// <summary>The export addresses in <see cref="Symbols"/> order.</summary>
@@ -72,6 +79,9 @@ public sealed class CoreLibrary : IDisposable
 
     /// <summary>The export addresses in <see cref="ShellCalls"/> order.</summary>
     public IReadOnlyList<IntPtr> ShellFunctions { get; }
+
+    /// <summary>The address of <see cref="SwapChainCall"/>, or zero when the core lacks it.</summary>
+    public IntPtr SwapChainFunction { get; }
 
     /// <summary>
     /// Loads the core from an absolute path, resolves every export and checks the ABI version. A missing export or
@@ -92,7 +102,8 @@ public sealed class CoreLibrary : IDisposable
             {
                 throw new NotSupportedException($"the core speaks ABI {version}, the shell ABI {AbiVersion}");
             }
-            return new CoreLibrary(handle, functions, Resolve(handle, ShellCalls));
+            NativeLibrary.TryGetExport(handle, SwapChainCall, out var swapChain);
+            return new CoreLibrary(handle, functions, Resolve(handle, ShellCalls), swapChain);
         }
         catch
         {

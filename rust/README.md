@@ -24,17 +24,17 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, RM.37's jumbling crosswalk as fixtures (LP3, C2), and the jumbling producers from M5's kernel (LP3, C8) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
-| `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
-| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, with KN2.4's `positions` and `labels` rows as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
-| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and five of them served there by a test host through the command and source routes, with a stand-in engine that answers the two snapshot reads with the state number (LP3, C6) |
-| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list (LP3, C8) |
+| `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, CT-LB2-03's work-sheet part, and the durable leg of LP2's saved sets (LP3, C7) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, each run under its job's budget, with KN2.4's `positions`, `labels`, `effect`, `protection` and `replay` rows, the draft `setups` and `orbits` rows and the representations tool's draft `structure.compare` and `filter.preview` rows (C6) as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
+| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and all six served there by a test host through the command and source routes, whose two snapshot reads `c600-tools`' bridge answers from LP2's structure rows (LP3, C6) |
+| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), the repair list at a named cap under the built-in column's repair-list exception (`jumble_repair`), the three end tests read as their own verdict types (`jumble_end_tests`), the jumbling rows' host bridge (`rows`: KN2.4's jumbling rows and `seam_facts` as snapshot reads, also at the command layer's head with Jumble on), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
-| `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) and LB2's exact completion (`completion.exact_completion` in `completion.6cs`, run whole through the tool's host bridge in `c600-tools`' tests) with their catalogue rows, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
+| `c600-library` | The base library's first entries as 600 Cell Script, with their catalogue rows: LB1's literal words (`words.power` in `words.6cs`); LB1.8's F2 and F5 ranks and solutions (the module `linalg` in `linalg.6cs`), exact Q(√5) signs (`quadratic`) and quaternion factors and tree outputs (`trees`), CT-LB1-01's parts, and its word equality keys (`word_keys`), CT-LB1-02's 600-cell-Full half on the model's relation in `c600-tools`' tests; LB2's exact completion (`completion.exact_completion` in `completion.6cs`), recipes and reports (`recipes`), Net and Strict protection (`protection`), guarded setups and buffers (`guarded_setups` in `setups.6cs`), named macro analysis and comparison (`macros`) and seeds with their collateral stage order (`seeds`), whose entries that read state run whole through the tool's host bridge in `c600-tools`' tests (CT-LB2-04, CT-LB2-01, CT-LB2-02 and CT-BND-18 among them); and CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
-| `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
+| `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests, and user stages as HLSL under `m600-stage-hlsl/1` with their binary32 CPU reference; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
-| `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling trial on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
+| `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -222,7 +222,8 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   the residue. It holds no word, so the built-in column's rules treat it as plain data. It has no canonical form (FP.6
   wraps only int, rat and q5), so a goal, an evidence sink or a snapshot read's argument refuses it, also inside a
   record or a collection, and takes its residue.
-  CT-LB1-01's F2 and F5 ranks and solutions stay LP3's library code (LB1.8) (`c600-check/tests/fields.rs`).
+  The tests are in `c600-check/tests/fields.rs`. CT-LB1-01's F2 and F5 ranks and solutions are LP3's library code
+  (LB1.8): `c600-library`'s `linalg`, since pull request 274.
 - Snapshot reads with an argument (LP2 draft until the IR freeze; LP3's plan, section 2). `ReadSnapshotWith` reads
   the engine's row `query` for an argument, such as a word's protection, for LB2's star and recipe construction and
   Net and Strict protection. The argument is portable exact data, as a goal or evidence is (owner decision of 16
@@ -235,12 +236,13 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
 - Menu words (LP2 draft until the IR freeze; LB1.8, LP3's plan, section 2). `MenuWord` is the type of a word of the
   run's pinned jumbling menu, and `Lit::MenuWord` a literal of letters `[cap, item]`, each index below
   `MENU_INDEX_LIMIT` (600). `concat`, `inverse`, `conjugate`, `commutator` and `compose` take menu words as they
-  take Full words and give a menu word, and `length` counts its letters; the first operand of a known type sets an
-  operation's alphabet. A Full word and a menu word never meet: an operation, collection, call, return, equality or
-  match that mixes them, also inside a list, record, map or callable type, and a menu word given to `word_key` or
-  `compress`, is `LB1:input.incompatible_alphabet` with the expected and the supplied type, not a mismatch; types
-  that differ in more than the alphabet stay a mismatch. A menu word is proposed as a word is, with the `preview`
-  effect, and the built-in column takes a `MenuWord` parameter as a word the solver named
+  take Full words and give a menu word, `length` counts its letters, and `word_key` gives a menu word's
+  `WordEqualityKey` under the run's pinned menu matrices (LG2.18; `c600_run::menu_key`, LP2's pull request 338); the
+  first operand of a known type sets an operation's alphabet. A Full word and a menu word never meet: an operation,
+  collection, call, return, equality or match that mixes them, also inside a list, record, map or callable type, and
+  a menu word given to `compress`, is `LB1:input.incompatible_alphabet` with the expected and the supplied type, not a
+  mismatch; types that differ in more than the alphabet stay a mismatch. A menu word is proposed as a word is, with
+  the `preview` effect, and the built-in column takes a `MenuWord` parameter as a word the solver named
   (`c600-check/tests/built_in.rs`, `c600-syntax/tests/menu_words.rs`).
 - End tests' verdicts (LP2 draft until the IR freeze; LB3.2, LG2.9; LP3's plan, section 2). `Ty::EndTest` is the
   type of the verdict of one of LB3.2's three end tests, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict` or
@@ -284,8 +286,10 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   an entry that reads the list or the setups prepares no preview. A class that lists one query as both exceptions is
   refused. `c600-runtime`'s codec carries the two rows as class-row tags 7 and 8.
   Outside the checker: the engine rows' neutral order and buffer-fixing setups, the empty list's wording (BND.2), the
-  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5)
-  (`c600-check/tests/exceptions.rs`: CT-BND-17's and CT-BND-18's checker halves).
+  shell's keys and the solver's edit of a setup, and a job that names its cap through the command layer (KN5; LP2's
+  pull request 326, `c600-command/tests/repair_list.rs`) (`c600-check/tests/exceptions.rs`: CT-BND-17's and
+  CT-BND-18's checker halves). CT-BND-17 runs whole with LP3's C8 halves (the LP3 plan, section 9) and CT-BND-18
+  in `c600-tools/tests/ct_bnd_18.rs`; `exceptions.rs` keeps their checker halves.
 - Trace keys (LP2 draft until the IR freeze; LB1.10, LG2.23; LP3's plan, section 2). `trace_key` (`Prim::TraceKey`)
   gives a `TraceEqualityKey` (`Ty::TraceEqualityKey`), the key `trace-key/1` of a Full word or a menu word under the
   independence relation the run pins (`full-disjoint-support/1` or `jumble-locality/1`). Like a word equality key, a
@@ -437,7 +441,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Exact products and assertions (LP2 drafts). `exact_mul(a, b)` multiplies two exact numbers, widened as
   `exact_add`'s operands are; a `Budget` operand is `LG2:type.mismatch`, since the draft multiplies numbers, not
   costs. `assert(p)` is `Unit`, and its predicate is an exact `Bool`, as an `if` condition is (LG2.20)
-  (`c600-check/tests/mismatch.rs`, `c600-check/tests/exactness.rs`).
+  (`c600-check/tests/mismatch.rs`, `c600-check/tests/exactness.rs`). `q5_parts(x)` takes a number up to `Q5` and
+  gives `record { a: Int, b: Int, d: Int }`, the canonical triple of x = (a + b√5)/d in lowest terms with d > 0
+  (ADR-L03.6, PS1.4); `q5_of(a, b, d)` takes three integers and gives a `Q5`. A `Budget` operand is
+  `LG2:type.mismatch`, and a stage module refuses both (RPI.70; LP2's pull request 340).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -478,7 +485,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   what the unreduced product could need; the reduced product settles the reservation. `assert` is one step with no
   memory after its predicate (DET.55): a false predicate ends the run with `LG4:input.pointwise_failed` in the effect
   phase, and the cleanup releases what the run held (`c600-run/tests/interp.rs`, `conformance_det.rs`,
-  `det65_programs.rs`).
+  `det65_programs.rs`). `q5_parts` charges one unit per widened operand byte and reserves its record exactly;
+  `q5_of` is priced as the product of a + b√5 and 1/d and settles on the canonical value, and a zero denominator
+  stops at its `assert` with `LG4:input.pointwise_failed` before the construction (DET.57; LP2's pull request
+  340, `c600-run/tests/q5.rs`).
 - Whole-state contracts (LP2 draft until the IR freeze; LG4.10, LB1.7). A function of kind `FnKind::Contract`, in
   source `contract settled() -> Bool effects [snapshot] { ... }`, takes no parameter, returns an exact `Bool` and
   needs nothing beyond reading the snapshot and child budgets, so its result is a function of its revision; the checker
@@ -566,8 +576,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout (parameters,
   captures, `let` and loop slots and operand temporaries; a body's own result has no slot), a value's canonical byte
   length as retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a
-  word (LG2.18's word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the frozen vectors do not
-  price. The IR draft has one read construct for snapshots and workspace records; the IR freeze should split it.
+  word (a word key has none, LG2.13; LG2.18's key contract stays an open choice, PHS.55) and `DraftTariffs`, test-only
+  tariffs for the rows the frozen vectors do not price. The IR draft has one read construct for snapshots and
+  workspace records; the IR freeze should split it.
 - Lists and words (LP2 drafts): `Value::List` (`Value::list`) and `Value::WordEqualityKey`. A list's logical size is
   a record's, after DET.57's sequence row: a 4-byte tag, 8 bytes per variable-sequence element, and the elements. Its
   JSON form is an array in written order. Each operation is one step: `length` reserves its integer; `index` lends or
@@ -691,11 +702,30 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   count after the grip count; the Full forms are unchanged. A jumbling host pins the relation (LP3: `c600-jumble-tool`).
   Tests: `c600-jumble/tests/locality.rs` (the table, and CT-LB1-06's jumbling half on the model, part),
   `c600-run/tests/menu_trace_keys.rs` (on synthetic bits) and `c600-runtime/src/codec.rs`'s tests.
-- Open for menu words: the jumbling library entries that use them (LP3: the jumbling halves of CT-LB1-03 and
-  CT-LB1-06), and the alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock` and
-  the inverse items of its menu (`menu::MenuAlphabet::new`), the relation from `c600_jumble::locality::Locality::bits`
-  and `trace::Relation::jumble_locality`. Not built for trace keys: the operations on compressed words, which LP3
-  does not need, and EV4.9's report of a key's contract.
+- The jumbling word key (LP2 draft; LG2.18, LG2.23; LP2's pull request 338). `word_key` on a menu word gives
+  `word-key/1` under the item matrices of the run's pinned menu (`c600_run::menu_key`): each maximal run of adjacent
+  letters at one grip becomes one token, the grip and the exact product of the run's items in chronological action
+  order, in the menu's base frame, so two tokens at one grip are equal exactly when their twists are. A token stays
+  when its product is the identity, and a product outside the menu stays an exact group element; no commuting swap,
+  identity deletion, minimality or dynamic-target reduction is part of the key. A key carries LG2.23's header (the
+  alphabet's identity block, the grip count and the item count) and orders by header, then token by token. A run
+  keys menu words only when its pinned alphabet carries the item matrices (`MenuAlphabet::with_matrices`, which
+  refuses matrices that do not give the block's `menu_id` or `menu_order`), and such a run keys no Full word, so the
+  keys a run compares share one header: a menu word's key without the matrices, a Full word's key in such a run and a
+  host answer that holds a key under another header or out of its canonical form stop the run with
+  `LB1:input.key_contract_mismatch`. A key has no output form, so no argument or result holds one (LG2.13), and a key
+  where a menu word's letters are required is `LG2:type.word_key_not_executable`. The key reserves its products' size
+  bound and charges each product by its operands' sizes (a draft DET.57 price). `c600-runtime`'s codec carries a menu
+  word key as value tag 27 and a pinned menu alphabet with a matrices flag (the runtime's protocol, below). Tests:
+  `c600-run/tests/menu_word_keys.rs` (CT-LB1-02's jumbling half on a synthetic menu of seven items, part),
+  `c600-check/tests/mismatch.rs`, `c600-runtime/tests/protocol.rs` and the codec's own tests.
+- The alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock` and the inverse items
+  of its menu (`menu::MenuAlphabet::new`), with the menu's item matrices for word keys
+  (`menu::MenuAlphabet::with_matrices`), and the relation from `c600_jumble::locality::Locality::bits` and
+  `trace::Relation::jumble_locality`. LP3's C8 pins the alphabet with the matrices (`word::Alphabet::pinned`) and the
+  relation (`locality`) in `c600-jumble-tool`, where CT-LB1-02's key half and "Word keys remain separate", CT-LB1-06's
+  last part, run on M5's states (`tests/lb3.rs`, `tests/ct_lb1_06.rs`). Not built for trace keys: the operations on
+  compressed words, which LP3 does not need, and EV4.9's report of a key's contract.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -1197,6 +1227,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - Not built: the language entries over these checks and their results. CT-LB4-01 is built on these checks in LP3's C6
     (`c600-display`'s chart checks). The checks take projective maps; another class of map needs its own exact check.
   - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg runs in CI.
+- J10's exposed faces (LP2's pull request 336; JI.41, JI.45): `c600_jumble::faces::exposed_faces` answers every
+  request with the registered refusal `KN2:input.exposed_geometry_unavailable` and JI.45's context (the feature and
+  the render row J10, the source, `missing`: certified geometry and a size profile, and no draft). It only reads
+  the state and invents no mesh, face, count or size; the geometry waits for certified data and a size profile
+  (`c600-jumble/tests/refusals.rs`).
 
 ## Status of M6: the session store
 
@@ -1530,10 +1565,12 @@ run or not applicable is no pass (PHS.63).
   host (RPI.54, RPI.1); a value with no canonical form stops the run with `PS1:input.noncanonical_value` before the
   host is called. Receipt-as-evidence is a question for the next milestone card.
 - Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changes once, in the amendment LP3 makes at its
-  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the six draft codes `c600-command`
+  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the ten draft codes `c600-command`
   emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`, `KN5:input.argument_form`,
-  `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, and KN5's `KN4:input.session_exists` for a store that
-  already holds a session), M5's section's four drafts, DET.36 in the rule source of `LG3:capability.not_granted`, and
+  `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN5:consistency.unadmitted_journal_action`,
+  `KN5:capability.preview_shown`, `KN5:capability.outside_solver_command`, `KN5:input.saved_set_exists`, and KN5's
+  `KN4:input.session_exists` for a store that already holds a session; `tests/test_language_scans.py` keeps the exact
+  list), M5's section's four drafts, DET.36 in the rule source of `LG3:capability.not_granted`, and
   these errata: in `13-errors.md`, the LB6 closure row `evidence.decomposition_mismatch` (line 661) sits between
   ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes before ERR.29 and ERR.30; the
   rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
@@ -1755,6 +1792,17 @@ run or not applicable is no pass (PHS.63).
   beneath an action that leaves, do the actions that wrote one of its other records. A replay
   decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
   `c600-command/tests/filter_apply.rs`.
+- Saved sets (LP3's C6, `set.save`; U1-057, U4-037; LP2's pull request 337; the drafts are in the crate
+  documentation). `set.save`'s entry writes the one record `set.save`, `{kind, members, name}`, and in the
+  completion's one durable action the layer writes the saved set's own record `set/<name>` in its place
+  (`c600_command::sets`): the kind, the members ascending and distinct, the identity of the model the job read, the
+  name and the capture revision. The result reference carries the exact set's digest, the SHA-256 of the FP.5 bytes of
+  `{kind, members, model}`, so saves of the same members of one kind under one model share a digest whatever their
+  names. Names under `set/` are reserved: only a `set.save` completion writes them, and `workspace.set` and
+  `worksheet.save` refuse them with `KN5:input.argument_form`. A save under a name that holds a saved set is refused
+  with the draft code `KN5:input.saved_set_exists`, at admission with no job and at completion, writing nothing, when
+  another save took the name meanwhile, unless the invocation carries the draft boolean `replace: true`. Tests:
+  `c600-command/tests/saved_sets.rs`.
 - Argument blocks (BND.22; LP3's C6, step 1 item 4; the drafts are in the crate documentation).
   `CommandLayer::invoke_with_inputs(caller, invocation, inputs)` takes the provenance blocks of an invocation's
   arguments beside the envelope. The host builds them; for a running program's invocation it builds them from the run's
@@ -1785,8 +1833,9 @@ run or not applicable is no pass (PHS.63).
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
   and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
   is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions, each 0
-  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`). Other types pass
-  unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and beside its
+  table arguments `set.save` takes the draft boolean `replace` (saved sets, above). Other types pass unchecked until
+  their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
@@ -1808,21 +1857,28 @@ run or not applicable is no pass (PHS.63).
   continuation, `refresh_display`, sends no command. The host's `Refresh` over LP3's view model and the message on
   screen are LP3's (CT-KN5-05 in part). Tests: `c600-command/tests/refresh.rs`, a port of 0.4's
   `tests/test_native_reply_after_commit.py`.
-- LB7.2's work sheets (H-08's `worksheet.save` and `worksheet.load`; solving workflow section 4; the drafts are in the
-  crate documentation). A work sheet is a workspace record whose payload is `{"worksheet": {...}}` (`Worksheet`): the
-  phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a position), the reference as
-  given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a sheet previews its complete
-  operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}` whose record holds letters or a
-  sheet, and a `name`; the sheet keeps that record's provenance block, which the reader checks again, and its piece
-  roles are placed at the head through KN2.4's `positions` row. `worksheet.load` takes H-08's `WorksheetRevisionRef`
-  as `{"record": name, "version": n}` (`WorksheetRef`); another version is `KN5:stale.revision_changed`. It places the
-  piece roles again, keeps where each was saved (`Placement::moved` shows a mismatch, and nothing is retargeted) and
-  writes the sheet again, so every preview that read the sheet goes stale, also at the same state, and the reuse needs
-  a fresh engine preview. Each row is one record write, undoable as a workspace inverse (LB7.2; H-08 gives
-  `worksheet.save` `undo: none`). Both rows need the host's provenance reader and Jumble off; the runtime may invoke
-  neither, and no entry can serve them. Not built: `worksheet.compare`, gains and losses, macro versions, and reading
-  a position role's occupant again. Tests: `c600-command/tests/worksheet.rs` (CT-LB2-03's work-sheet part) and the
-  rows with Jumble on in `jumble_on.rs`.
+- LB7.2's work sheets (H-08's `worksheet.save`, `worksheet.load` and `worksheet.compare`; solving workflow section 4;
+  the drafts are in the crate documentation). A work sheet is a workspace record whose payload is `{"worksheet":
+  {...}}` (`Worksheet`): the phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a
+  position), the reference as given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a
+  sheet previews its complete operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}`
+  whose record holds letters or a sheet, and a `name`; the sheet keeps that record's provenance block, which the
+  reader checks again, and its piece roles are placed at the head through KN2.4's `positions` row. A sheet saved from
+  a record of letters keeps the record's name, version and content digest as its macro version (`MacroVersion`).
+  `worksheet.load` takes H-08's `WorksheetRevisionRef` as `{"record": name, "version": n}` (`WorksheetRef`); another
+  version is `KN5:stale.revision_changed`. It places the piece roles again, keeps where each was saved
+  (`Placement::moved` shows a mismatch, and nothing is retargeted) and writes the sheet again, so every preview that
+  read the sheet goes stale, also at the same state, and the reuse needs a fresh engine preview. Each of the two rows
+  is one record write, undoable as a workspace inverse (LB7.2; H-08 gives `worksheet.save` `undo: none`).
+  `worksheet.compare` takes the `WorksheetRevisionRef` and a draft `{"record": r}`, the current work, and runs as a
+  job on the exclusive lane in the layer (`CommandLayer::run_jobs`), since no entry can serve that lane: at the head
+  it compares the sheet's inputs with the draft's (`compare_inputs`), places the piece roles again, reports the macro
+  version as current, changed or missing, and analyses the sheet's complete operation afresh with LB2's gains and
+  losses. The comparison is the completion's result (`CommandLayer::comparison`); it grants nothing and writes no
+  record. The three rows need the host's provenance reader and Jumble off; the runtime may invoke none, and no entry
+  can serve them. Not built: reading a position role's occupant again. Tests: `c600-command/tests/worksheet.rs`
+  (CT-LB2-03's work-sheet part), the save and load rows with Jumble on in `jumble_on.rs`, and the three rows on M6's
+  journal in `c600-durable` (C7's section below).
 - `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
   committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
   without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and
@@ -1914,7 +1970,9 @@ run or not applicable is no pass (PHS.63).
   chained pose moves, so the moves, the undos and the redos each cross a replay from solved. A blocked item, a record
   off the menu and a malformed record change nothing. Not compared: the identity item, which the command layer refuses
   with `KN2:input.recipe_shape` where J1 moves its inside pieces onto their own poses (a lead for LP3), and free mode, a
-  budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it.
+  budget and protected pieces, which the route answers with input errors. `tools/ci/run_headless.py` lists it. C8's
+  `c600-jumble-tool/tests/jumble_on_layer.rs` presses the same layer in process beside M5's engine, every record of the
+  whole journals on request (C8's section below).
 - EV3.2's view rows `view.open` and `view.close` (RPI.81 to RPI.83; the drafts are in `c600-command/src/view.rs`). The
   layer admits them, and the host's view model holds the views, Global and Local and RPI.82's budget: the `Views`
   trait, given with `CommandLayer::set_views`, which LP3's host implements with `c600-view`'s `ViewModel`. Without one
@@ -1926,7 +1984,9 @@ run or not applicable is no pass (PHS.63).
   host's refusals (`EV3:input.view_id_in_use`, `EV3:input.view_not_closable`, `EV3:resource_limit.display_plan_ceiling`)
   reach the receipt. An admitted open or close is `accepted` with no job, since KN5.21 has no completion kind for either
   row; a retry gets the stored receipt and the host sees one call. Tests: `c600-command/tests/view_rows.rs` (CT-RPI-36's
-  layer half and CT-EV3-07's view half on the layer).
+  layer half and CT-EV3-07's view half on the layer). LP3's host, `c600_tools::views::ModelViews`, serves the rows with
+  the view model in `c600-tools`' `tests/view_host.rs` and `c600-durable`'s `tests/kn5_on_layer.rs` (C5's and C7's
+  sections below).
 - The session's durable home for a word's part blocks (BND.24, BND.85, CT-BND-27; draft). The host's reader has two
   more methods, with defaults that keep a reader without them working as before: `Provenance::parts(block)`, the
   blocks of the block's recursive parts that the host holds, and `Provenance::admit_kept(block, kept)`, admission with
@@ -1938,12 +1998,28 @@ run or not applicable is no pass (PHS.63).
   so a restored word's recursive parts are read after a restart with a reader that holds nothing. Tests:
   `c600-command/tests/part_blocks.rs` and `c600-session/tests/part_blocks.rs` (CT-BND-27 on the journal after a power
   loss, with `c600-run`'s FP.17 blocks and the boundary's preview admission as the reader).
-- KN5 not built yet: a session profile (every session the layer serves is a solving session, BND.14 and BND.15),
-  ruling 6's `file` overlay without a granted file capability, L12 to L14, L16
-  and L17; the typed workspace rows and limits on a record's payload; a display adapter's own frame reports, for
-  which `HeadlessFrames` stands in. No host caller is built: callers are stamped on two channels, the shell's and
-  LP3's runtime bridge (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session
-  is refused with `KN4:busy.session_locked`.
+- The session's profile (BND.14 to BND.17, KN5.26; LP2's pull request 287; draft): `solving`, `tool_authoring` or
+  `research`. The host sets it when it creates the session (`CommandLayer::new_with_profile`; `CommandLayer::new` is
+  `solving`), the session's start records it once (`Genesis::profile`) and a reopen reads it back; no program or row
+  changes it. KN5.26's admission of a record's word runs only in a solving session, and in `tool_authoring` and
+  `research` a run may not invoke `operation.preview` (`LG3:capability.not_granted`). Tests:
+  `c600-command/tests/profile.rs`. LP3's hosts start runs in solving sessions only; CT-RTE-07's B13 and B14 refuse a
+  command in a tool-authoring session before any run (C5's section below).
+- Budgets (KN7.7, BM3, DET.27, ERR.27; LP2's pull request 348; draft). An invocation of a row an entry serves declares
+  its budget in the envelope (`Invocation::budget`), and the shell declares its own (`Shell::budget`, by default the
+  draft ceiling) on those rows only. The layer admits it before a job ID exists, so a refusal uses nothing: a missing
+  budget is `KN7:input.budget_not_declared`, and a dimension over the ceiling `KN7:resource_limit.budget_ceiling`. The
+  ceiling is the profile's (`Budget::DRAFT_CEILING` for every profile until an owner reading sets the product's values),
+  or the host's where the host sets a lower one (`CommandLayer::set_budget_ceiling`), dimension by dimension. The job
+  carries the admitted budget (`ProgramJob::budget`), and the request digest covers it. Tests:
+  `c600-command/tests/budget.rs`. LP3's hosts run a job's entry under the run limits of its budget, and B13 and B14 also
+  run on the 600-cell-Full tool's row (C5's section below).
+- KN5 not built yet: BND.16's cells that grant a run more outside a solving session (the authoring workspace's records
+  and research records); ruling 6's `file` overlay without a granted file capability, L12 to L14, L16 and L17; the typed
+  workspace rows and limits on a record's payload; a display adapter's own frame reports, for which `HeadlessFrames`
+  stands in. No host caller is built: callers are stamped on two channels, the shell's and LP3's runtime bridge
+  (`c600-tools`). `JournalStore` takes M6's session lock, so a second opener of a held session is refused with
+  `KN4:busy.session_locked`.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
@@ -1990,15 +2066,35 @@ run or not applicable is no pass (PHS.63).
   rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
   bundle from an older epoch is refused with `refresh_required`, and output attaches only within its own epoch
   (KN0.2, ONE.60, ONE.63).
+- Source edits (for C9's LX-4): `ViewModel::edit_source(version, draft)` takes the editor's draft of a module version,
+  both source digests. Installed output whose producer block names that version is `stale` from that call on, with a
+  `SourceLag` (the producing version and the draft) in `ViewStatus::Stale` and in its `FrameView`; returning the draft
+  to the version's bytes clears it. It is a host comparison of digests (RPI.13), not a revision part (ONE.8) or a
+  workspace change (KN0.2): nothing runs and nothing is fenced, since an unchecked draft never runs, even through a
+  view (EV1.7), and the output is still drawn while its base matches, its picks opening the producing version (EV3.5,
+  EV3.6). ONE.12's table names the view-stale condition for a lagging revision only; a lagging source is the
+  integrator's reading of EV3.6 and RTE.49's stale-state interval, and the two show together. A view shows a checked
+  draft's output once it is reopened on it after activation (EV1.11 is LP4's). Drafts: one draft per version, kept
+  until the editor returns it. Tests: `ev1_07_` and the `ev3_06_` tests in `view_rows.rs`. Nothing is timed; LX-4
+  times the state on the owner's machine (C9).
 - Not built in the views: CT-RPI-26's gate half (charter E2 and the R-19 captures) and CT-EV3-08's measured half
   (RM.39's measured ceilings) wait for C9; LQ2's policy table and display refusal wait for the joint setting.
 - `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
   validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
-  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
-  a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
-  map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
-  Each slot projection holds one level: a subject at the other level gets no slot, with reason
-  `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
+  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25).
+  After a device recovery the host prepares a retained publication again under its own command and generations, and the
+  view draws it only once the new resources are active (RM.23). A mock backend stands in for an adapter (RPI.55, RM.33).
+  Picks resolve by instance ID through the installed source map, never through a chart inverse, and stale picks name the
+  field that changed (RM.10, RM.24, RPI.24, RPI.25). Each slot projection holds one level: a subject at the other level
+  gets no slot, with reason `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
+- The `Backend` trait carries RM.14's other adapter operations (C9's trait gap, option (a)): the host validates an
+  engine bundle and adopts it through the backend, also while the device is lost, and a bundle either side refuses
+  changes nothing (RM.16); a frame report marks the fallback of the installed publication it names, changes no receipt,
+  and is dropped when it is of an earlier device epoch (RM.41); a pick is requested for a frame the backend was given,
+  polled, and its stamped instance resolved as above. A pick is stale when its frame is of an earlier device epoch or
+  the device was lost after it was asked (both at `device_epoch`), and when the backend refuses or answers it as stale,
+  a frame it no longer keeps included: an explicit pick then returns `EV3:stale.display_pick`, and a passive one is
+  dropped, with no ticket when the request itself is refused (RPI.25). Tests: `adapter_ops.rs`, over the mock backend.
 - Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and its
   exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test, and injectivity, embedding,
   isometry and homomorphism each decided by its own check on `c600_jumble::polytope` (C6), and `admit_chart`, which
@@ -2019,7 +2115,10 @@ run or not applicable is no pass (PHS.63).
   runs CT-RPI-32's headless part on stages that LP2's checker admits, each refusal with the checker's code, and the
   headless parts of CT-RM-09's rows 3 to 6, 8 and 10 (`ct_rm_09.rs`): spread and overlapping plans, samples and the
   ID pass, a near-plane crossing, a line-only layout, a later-frame stop that keeps its receipt, and a chain's stages
-  quarantined together.
+  quarantined together. RM.23's recovery runs in `publication.rs`: a retained publication is prepared again on the new
+  device before it draws, waits while its view has pending work, gives way to a newer publication, and is not prepared
+  again when it is stale or its view was closed; a preparation that is refused, cancelled or lost with the device leaves
+  it unavailable until a new publication or the next recovery.
 - Display drafts: the list in the crate documentation, among them the validation order, string dependency keys, set
   digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error after
   acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the drafted chart
@@ -2034,15 +2133,20 @@ run or not applicable is no pass (PHS.63).
   (RPI.78), the checker's codes in their registered forms, the raster bound's pixel conventions (rounded outward,
   clipped, then widened to quads; a line's quad has no caps), one comma-separated `digests` entry in
   `stage_work_exceeded`'s context, and no frame report for a device fault or a later frame of a quarantined chain.
-- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs a backend for
-  HLSL compilation and composition on a device (RPI.78; C9); an exact checker of isometry and homomorphism for the
-  stereographic chart, which is not a projective map (both stay `not_established`); charts and properties outside the
-  drafted repertoire, the GPU agreement check (RPI.35) and a production precision rule (RPI.36). CT-RPI-08's jumbling
-  rows and the posed producer wait for M5; a decoder from the interpreter's values (the IR draft has list types since
-  pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired into the host, until a backend
-  compiles and bounds user stages; CT-RM-09's rows 3 to 6, 8 and 10 wait for C9 for their device parts: the vertex
-  evaluation and projection, U on a device and the skipped work (CT-RM-10, CT-RPI-31), and fault injection
-  (CT-RPI-34); RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its backend.
+- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the host to attach
+  user stages (the core compiles and bounds them since C9 U5, WARP only, but the host attaches none yet; RPI.78); an
+  exact checker of isometry and homomorphism for the stereographic chart, which is not a projective map (both stay
+  `not_established`); charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
+  production precision rule (RPI.36). CT-RPI-08's rows J01 and J06 to J12 stay unsupported until a backend's own rows
+  (C9), and J10's producer waits for certified exposed-face geometry and a size profile (LP2's
+  `faces::exposed_faces` refuses with JI.45's code, pull request 336, and `jumble::exposed_faces` passes the refusal
+  on); a decoder from the interpreter's values (the
+  IR draft has list types since pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired
+  into the host,
+  until the host attaches user stages (the core compiles and bounds them, WARP only, C9 U5); CT-RM-09's rows 3 to 6, 8
+  and 10 wait for C9 for their device parts: the vertex evaluation and projection, U on a device and the skipped work
+  (CT-RM-10, CT-RPI-31), and fault injection (CT-RPI-34); RM.38's weight table, device loss and `display_unsupported`
+  belong to the renderer and its backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 
@@ -2060,8 +2164,10 @@ run or not applicable is no pass (PHS.63).
   file keeps its closure and its approval; dynamic code is refused; a program for another IR version or execution
   contract is refused with the checker's code in every author column; capability separation holds at the preview point,
   for a menu word's proposal as for a literal word's (LB1.8; LP2's pull request 210). CT-RTE-07 on 600-cell-Full
-  (`ct_rte_07_full.rs`): 39 of LX-3's 75 frozen keys, each run ten times with one SHA-256 over its canonical result,
-  engine side and store, and a check that every key is either realised or listed as left, exactly once.
+  (`ct_rte_07_full.rs`): 56 of LX-3's 75 frozen keys, each run ten times with one SHA-256 over its canonical result,
+  engine side and store, and a check that every key is either realised or listed as left, exactly once. Among them are
+  the priced budget keys B01 to B07, of which B01 to B04 and B07 run since pull request 354 under the price mapping that
+  the crate documentation pins.
 - Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation
   refuses the preview of an allowed combination). P01 to P03 give the corpus's `LG3:capability.ambient_read` since
   the owner's decision of 16 November 2026 (PHS.52). A17's inverse of `D a` is `-1, +4`: the IR writes a letter's
@@ -2073,14 +2179,16 @@ run or not applicable is no pass (PHS.63).
   only, the closure digest, the in-memory approval record `c600-approval-draft`, and the separation refusal at the
   preview point, which stays in this crate until C5's host bridge. Dynamic code is `LG3:capability.not_granted` by the
   owner's decision of 16 November 2026 (PHS.52).
-- CT-RTE-08's persisted words run in `c600-durable` (C7), on M6's store and through the command layer. Not built:
-  CT-RTE-07's other 36 keys: 6 jumbling keys (M5); 6 keys that need the session store (C7); 12 keys the IR draft could
-  not express when C4 was built (early stop, exact multiplication and remainder; not checked again yet against LP2's
-  exact multiplication and loops, pull requests 216 and 234) or that pass a run's input as a query argument, which LP2's
-  `read_snapshot<T>("q", x)` now expresses and only the tool's bridge answers, for `positions` (LP2's pull request 226)
-  and `labels` (C5's exact completion) only; and 12 budget keys, whose amounts follow LX-3's experiment-only counting
-  fixture rather than `lp1-exec-draft-1`'s prices, or which need host events inside a loop, the host's row cache or the
-  command layer's rows. The Linux leg did not run.
+- CT-RTE-08's persisted words run in `c600-durable` (C7), on M6's store and through the command layer. CT-RTE-07's six
+  jumbling keys run on M5's rows with literal words in `c600-jumble-tool` (C8, `tests/ct_rte_07_jumble.rs`); B10 and
+  B11, a safety stop and a lost runtime, with a runtime process in `c600-tools` (C5, `tests/ct_rte_07_c5.rs`); B13 and
+  B14, a missing budget and one over the host's ceiling, at the command layer on the 600-cell-Full tool's row in
+  `c600-tools` (C5, `tests/ct_rte_07_budget.rs`); and MR13, MR14, MR19 and MR20, in which a state-derived read decides
+  whether a later preview is emitted at all, are refused at the built-in column's admission on both executors in
+  `c600-runtime` (`tests/ct_rte_07_admission.rs`): 70 of the 75 keys in all. Not built: CT-RTE-07's other 5 keys: 4 that
+  need a recorded pick (MR17, MR18, A29 and A30; nothing writes or resolves a `c600-pick` record yet, FP.38 and BND.54),
+  and B12, the host's row cache. The six jumbling keys also run with menu words of the I_a alphabet, which
+  `c600-jumble-tool` pins with its item matrices (C8, `tests/ct_rte_07_jumble.rs`). The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2102,9 +2210,11 @@ run or not applicable is no pass (PHS.63).
   `c600_check::admit_built_in`, and both executors refuse class rows outside the solving profile at the admission
   stage. A menu word (LP2's draft, LB1.8) crosses with its identity block (value tag 21, type tag 23), a menu-word
   preview as `request.propose_menu` (request tag 6), and a job may pin a menu alphabet (`JobOptions::menu`), a
-  trailing field after the class rows: the identity block, the cap count and the inverse items, which the decoder
-  checks as `MenuAlphabet::new` does. `LB1:input.incompatible_alphabet` is one of the interpreter's own stop codes
-  (`codec::STATIC_CODES`). An end test's verdict (LP2's draft, LB3.2) crosses as value tag 22 with its test's and
+  trailing field after the class rows: the identity block, the cap count, the inverse items and a matrices flag (0
+  without the menu's item matrices, 1 with their count and each item's matrix; LG2.18, LP2's pull request 338), which
+  the decoder checks as `MenuAlphabet::new` and `MenuAlphabet::with_matrices` do. `LB1:input.incompatible_alphabet`
+  is one of the interpreter's own stop codes (`codec::STATIC_CODES`). An end test's verdict (LP2's draft, LB3.2)
+  crosses as value tag 22 with its test's and
   its outcome's indices, and its type as type tag 24 with the test's index. A trace key (LP2's draft, LB1.10)
   crosses as value tag 23 with its header in LG2.23's order and its letters, and its type as type tag 25; a job may
   pin a trace relation (`JobOptions::relation`), the run's last field, after the pinned menu: the contract, the
@@ -2114,10 +2224,13 @@ run or not applicable is no pass (PHS.63).
   interpreter's own stop codes. A menu word's trace key (LP2's draft, LB1.10, `jumble-locality/1`) crosses as value tag
   26 with its header (the jumbling identity block, the grip and item counts, the key, the contract and the digest) and
   its `[grip, item]` letters, and a pinned jumbling relation carries the menu's three identity fields after the model ID
-  and the item count after the grip count. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a
-  value that holds one is refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The
-  lengths that a frame's compressed words derive are bounded together by one frame's bits, so one word of up to 16,382
-  doublings of a letter crosses.
+  and the item count after the grip count. A menu word key (LP2's draft, LG2.18, `word-key/1`) crosses as value tag 27
+  with its header (the identity block, the key kind, the grip count and the item count) and its tokens in their
+  canonical form (each token's grip and the sixteen entries of its product row-major, each as its three integers), and
+  the run checks its header against its pinned menu. A generator (LP2's draft, DET.61) stays in its run: it has no
+  value tag, a value that holds one is refused whole, and its type crosses as type tag 27 (value and type tags are
+  separate spaces; type tag 26 is F2 and F5's type, below). The lengths that a frame's compressed words derive are
+  bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - LP2's draft F2 and F5: an element crosses as value tag 24, its field's byte (0 for F2, 1 for F5) and its residue's
@@ -2142,15 +2255,16 @@ run or not applicable is no pass (PHS.63).
   `rng_draw`, the five child traces, child records included, since LP2's child scopes, `final-loop-test` since LP2's
   loops, the two decoding traces since LP2's byte decoding, on bytes the host delivers as a snapshot, and the three
   streaming traces since LP2's streamed words, the split and the coalesced trace as one job, since no host call or
-  answer falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's
-  field list, each host request's round trip and its refusal when cut or unknown, the class rows, the pinned menu and
-  the pinned trace relation as strict trailing fields, and a menu word's, a menu-word preview's and a trace key's
-  encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in entry admitted,
-  refused for a row its class does not list and refused outside the solving profile, and a pinned menu's words, refusals
-  and preview, alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words, their canonical
-  forms and refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-10's headless fault
-  half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session
-  keeps its journal, state hash and pending preview (`faults.rs`).
+  answer falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's field list,
+  each host request's round trip and its refusal when cut or unknown, the class rows, the pinned menu and the pinned
+  trace relation as strict trailing fields, and a menu word's, a menu-word preview's and a trace key's encodings and
+  refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in entry admitted, refused for a
+  row its class does not list and refused outside the solving profile, and a pinned menu's words, refusals and preview,
+  alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words, their canonical forms and
+  refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-07's MR13, MR14, MR19 and MR20,
+  refused at the built-in column's admission alike on both executors, ten runs each under one SHA-256
+  (`ct_rte_07_admission.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate,
+  garble, oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
@@ -2165,11 +2279,11 @@ run or not applicable is no pass (PHS.63).
 ## Status of LP3, C5: the source route
 
 - `c600-tools` holds the built-in 600-cell-Full tool as 600 Cell Script source,
-  [`full_600_cell.6cs`](c600-tools/src/full_600_cell.6cs), in edition `6cs-draft-1` (syntax candidate A). Its one
-  entry, the exported command `preview_word(w: Word)`, proposes the word the solver named to `operation.preview` and
-  returns the acknowledgement's two fields as a record `{base, id}`. The base library's first entries, LB1's literal
-  words and LB2's exact completion, are language code in `c600-library` (section "Status of LP3, C5 library: LB1's
-  literal words and LB2's exact completion").
+  [`full_600_cell.6cs`](c600-tools/src/full_600_cell.6cs), in edition `6cs-draft-1` (syntax candidate A). Its one entry,
+  the exported command `preview_word(w: Word)`, proposes the word the solver named to `operation.preview` and returns
+  the acknowledgement's two fields as a record `{base, id}`. The base library's first entries, among them LB1's literal
+  words, LB2's exact completion and LB2's recipes and reports, are language code in `c600-library` (section "Status of
+  LP3, C5 library: LB1's and LB2's first entries").
 - Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
   capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
   column of a solver's own tool, which prepares no preview until the joint setting. `Tool::new` admits the entry with
@@ -2190,17 +2304,30 @@ run or not applicable is no pass (PHS.63).
 - The host bridge, `c600_tools::bridge::Bridge`, is the runtime's host on `c600-command`. Each proposal the boundary
   admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
   `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
-  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. For one run the host may give the bridge
-  the solver's word steps of a recipe of plain word steps only: a proposal of exactly that recipe's literal word longer
-  than 100,000 letters then goes in those word steps, in order, in the one invocation, and every other proposal in one
-  word step; the bridge never chooses where to cut (LB2.3, LB2.4). The program still receives only the fixed
-  acknowledgement; the layer's receipt goes to the shell. Besides proposals, the bridge serves two state reads, each to
-  a snapshot read with an argument (`c600_tools::kernel_rows`): KN2.4's `positions` row since LP2's pull request 226,
-  and its `labels` row, the home slot of the sticker in each named slot, which LB2's exact completion reads. Admission
-  refuses an entry that both reads one and proposes (LQ21). It grants no other state read, declassified value,
-  file or workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a
-  commit or app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints
-  commits the pending preview the runtime proposed.
+  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. For one run the host may give the bridge the
+  solver's recipe, exactly as written, for any recipe the kernel expanded, star steps and word steps with other fields
+  included: a proposal of exactly that recipe's literal word longer than 100,000 letters then goes as that recipe,
+  unchanged, in the one invocation, and every other proposal in one word step; the bridge never cuts, splits or rewrites
+  a word or a recipe (LB2.3, LB2.4). The program still receives only the fixed acknowledgement;
+  the layer's receipt goes to the shell. Besides proposals, the bridge serves five reads, each to a snapshot read with
+  an argument (`c600_tools::kernel_rows`): KN2.4's `positions` row since LP2's pull request 226; its `labels` row, the
+  home slot of the sticker in each named slot, which LB2's exact completion reads; its `effect` row, a recipe's net map,
+  which the kernel computes without reading the head and which LB2's recipes and reports read (pull request 294), and so
+  do LB2's named macro analysis and seeds (pull requests 353 and 357); its `protection` row, a captured lock of exact
+  slot and label pairs judged against a recipe at the head, Net at the end state and Strict at each prefix, which LB2's
+  Net and Strict protection reads (pull request 300); and its `replay` row, a recipe replayed from the head prefix by
+  prefix under the session's protected orbits, with Strict's first refused prefix and the orbits in conflict there,
+  which LB2's named macro analysis reads (pull request 353). When the host gives it the certified setup table, it serves
+  a sixth read, the draft `setups` row: the certified setups for a target the solver names, which only the setup-search
+  exception may read (pull request 309). It serves the draft `orbits` row too, the pieces of named orbits, which LB2's
+  orbit catalogue reads: model data, the orbit the kernel's `positions` gives each piece at the solved state, so it
+  reads no state of the session (pull request 358). It also serves the two draft structure reads of LP3's
+  representations tool (C6): `structure.compare`, two cells compared, and `filter.preview`, the counts of a layer
+  predicate, from LP2's structure rows (pull request 262), which read no state. Admission refuses an entry that both
+  reads one and proposes (LQ21). It grants no other state read, declassified value, file or workspace access, view,
+  exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or app row and any runtime
+  invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the pending preview the
+  runtime proposed.
 - The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
   its literal word, the tool's program runs on that word and proposes it through the bridge, and the shell presents
   the preview, commits it with the commit chord `Ctrl+Shift+Enter`, and undoes and redoes on the command route's
@@ -2217,7 +2344,8 @@ run or not applicable is no pass (PHS.63).
 
   CI runs this check through `tools/ci/run_headless.py`.
 - Tests (`c600-tools/tests/`), each naming the conformance parts it covers; no conformance ID runs whole here except
-  CT-LB2-04, in `exact_completion.rs`:
+  CT-LB2-04, in `exact_completion.rs`, CT-LB2-01, in `ct_lb2_01.rs`, CT-LB2-02, in `ct_lb2_02.rs`, and CT-BND-18, in
+  `ct_bnd_18.rs`:
   - `tool.rs`: the source parses and lowers; the checker admits it and it only prepares previews (CT-LB6-03, part); a
     variant that also reads state is refused (LQ21; CT-LB6-03, part); a built-in previews only the word the solver
     named; a refused built-in, or a module with one checker diagnostic, never runs and never calls the engine, and a
@@ -2229,7 +2357,7 @@ run or not applicable is no pass (PHS.63).
     refused (KN5.15); the runtime cannot set the protection policy (`protection.policy.set` sent by the bridge, or a
     tool variant's proposal to it, is refused with `LG3:capability.not_granted`, and the policy stays); only a token
     the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge grants nothing but a proposal
-    and the reads of the `positions` and `labels` rows.
+    and the reads of the `positions`, `labels`, `effect`, `protection` and `replay` rows.
   - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
   - `positions_row.rs` and `labels_row.rs`: a library entry reads KN2.4's `positions` and `labels` rows through the
     bridge at the layer's head, in the asked order, and changes nothing (CT-LB2-04, part); each row refuses a declared
@@ -2237,10 +2365,79 @@ run or not applicable is no pass (PHS.63).
     outside the model with `KN2:input.named_object_invalid` once charged; its draft tariff covers its largest answer;
     the built-in column admits a reading entry only with the read row in its class.
   - `exact_completion.rs`: LB2's exact-completion entry from `c600-library`, CT-LB2-04 whole (section "Status of LP3,
-    C5 library: LB1's literal words and LB2's exact completion").
-- Open: the class rows are an LP3 draft until BND.57's rows by class exist as data, and the built-in column's two
-  exceptions (setup search for a named target, the repair list) are not built in `c600-check`. The command layer's
-  receipts carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
+    C5 library: LB1's and LB2's first entries").
+  - `effect_row.rs`: a library entry reads KN2.4's `effect` row through the bridge, which answers a recipe's net map and
+    what it touches without reading the head; the row refuses a declared type it does not answer and an argument in
+    neither recipe form before its charge and keeps the kernel's refusal of a recipe once charged; its draft tariff
+    covers its largest answer; the built-in column admits a reading entry only with the read row in its class
+    (CT-LB2-01, part; the refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`).
+  - `ct_lb2_01.rs`: LB2's recipes and reports from `c600-library`, CT-LB2-01 whole on 600-cell-Full against the
+    differential oracle: every step of O01 to O06 reports the oracle's full-label effect, O07's invalid recipes answer
+    no effect, with the kernel's code, the library's star words are the kernel's stars, a star's frames are exact
+    ordered slot tuples, and an orbit selection reduces no support (pull request 294).
+  - `protection_row.rs`: a library entry reads the draft `protection` row through the bridge at the layer's head: a
+    captured lock of exact (slot, label) pairs at the level `labels`, judged against a recipe in Net or Strict mode (Net
+    judges the end state at the head, Strict the base and each prefix of the literal expansion, up to an optional
+    limit). The answer comes in its declared order; the row refuses a declared type it does not answer and another
+    argument form before its charge, and, once charged, Jumble on, a recipe the kernel refuses and a slot or label
+    outside the model; its draft tariff covers its largest answer; an entry that captures and judges in one run is
+    refused by the built-in column (LB3.5) (CT-LB2-02, part).
+  - `ct_lb2_02.rs`: LB2's Net and Strict protection from `c600-library`, CT-LB2-02 whole on 600-cell-Full through
+    `Boundary`, the tool's bridge and a command layer. The captured locks (position, identity and block) hold the head,
+    from solved and from a scrambled head. For each lock, two identity words (`[5, -5]` and a word of eight letters)
+    pass Net (`clear`, one state checked) and fail Strict at prefix 1, with the conflicts in the lock's order, as the
+    kernel's `piece_protection` and `strict_piece_protection` judge them; a check that stops short of the word's length
+    answers `unknown` with `LB2:protection.incomplete_coverage` and never `clear` (pull request 300).
+  - `replay_row.rs`: a library entry reads KN2.4's `replay` row through the bridge at the layer's head: a word, a list
+    of integers or a list of step records replayed under the session's protected orbits as the kernel's Strict
+    derivation judges it, at solved and at a scrambled head, with the first refused prefix (-1 with none protected) and
+    the orbits in conflict there, and the whole word's net map digest as `effect` gives it; a read changes nothing. The
+    answer comes in its declared order; the row refuses a declared type it does not answer and another argument form
+    before its charge, and keeps the kernel's refusal of a recipe once charged; its draft tariff covers its largest
+    answer; the built-in column admits a reading entry only with the read row in its class. The refusal with Jumble on
+    is not run, because a jumbled layer needs `c600-jumble`.
+  - `macros.rs`: LB2's named macro analysis and comparison from `c600-library` on the same host, each entry admitted
+    only with the rows it reads in its class. A report answers the named macro's whole effect, the session's protected
+    orbits, Net's conflicts and Strict's first refused prefix (an inverse pair passes Net and fails Strict at its first
+    letter), the same at solved and at a scrambled head; a comparison answers the support both macros move and each
+    moves alone and whether the net maps and the expansions are equal, from the kernel's effects (pull request 353).
+  - `seeds.rs`: LB2's seeds from `c600-library` on the model's 35 seeds in `assets/seed_atlas.json`. `seed_report`, on
+    the same host, answers each seed's whole effect: its target's pieces are the atlas's three-piece cycle, its support
+    is the atlas signature and its collateral the atlas collateral, empty for 12 seeds. `stage_order`, with no host,
+    puts every orbit before each orbit its seed moves, and returns the atlas's certified stage order unchanged (pull
+    request 357).
+  - `ct_lb1_02.rs`: CT-LB1-02's 600-cell-Full half, the library's word equality keys on the pinned model's relation
+    `full-disjoint-support/1`: words with equal keys derive the same state from solved and from a scrambled state; at a
+    blocked generator the literal `a, a⁻¹` and its key's spelling are both refused at their first letter under Strict
+    protection, and the empty word is admitted; two words with one key are refused at different prefixes (pull request
+    350).
+  - `setups_row.rs`: the draft `setups` row through the bridge: its answer in the declared order (buffers, family,
+    orbit, position, setups, table digest), its refusals and their costs, its tariff, which covers its largest answer,
+    and the table's load through the kernel's asset check (CT-BND-18, part).
+  - `ct_bnd_18.rs`: LB2's guarded setups and buffers from `c600-library`, CT-BND-18 whole on 600-cell-Full. The entry is
+    admitted only under the setup-search exception and is refused under `[Read]` alone. Setup search runs only for a
+    named target: a stand-in with a literal or computed target, a setup picked from the answer, an emptiness test or a
+    proposal is refused with `LG3:capability.not_granted`. The setups keep both buffers fixed in every prefix, for every
+    orbit and at least 70 targets, against an independent read of the tree asset, and a search changes nothing. A buffer
+    position has no setup and still names the family. The solver's edit of a setup is a word it builds itself, and
+    nothing previews until its own command (pull request 309).
+  - `structure_rows.rs`: the draft `structure.compare` and `filter.preview` rows through the bridge (LP3's C6): an
+    entry reads two cells compared and the counts of a layer predicate as LP2's structure rows give them, in the
+    declared order and with `Nat` or `Int`, the same in a solved and a scrambled session; each row refuses a declared
+    type it does not answer and another argument form before its charge, and a cell outside 0 to 599 or a layer past
+    the cell's last with `KN2:input.named_object_invalid` once charged; the draft tariffs cover the largest answers.
+    The refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`. Covers no conformance ID.
+  - `orbits_row.rs`: the draft `orbits` row through the bridge (pull request 358). Each named orbit's pieces agree
+    with the kernel's orbit table: the `positions` row, read at a scrambled head, gives each of them that orbit, and a
+    moving orbit's count is the kernel's progress row's and the seed atlas's. The answer comes in the argument's order,
+    repeats included, and in the declared order; the row refuses a declared type it does not answer and another
+    argument form before its charge, and an orbit outside -1 to 34 with `KN2:input.named_object_invalid` once charged;
+    its draft tariff covers its largest answer; the built-in column admits a reading entry only with the read row in
+    its class. A read changes nothing. The refusal with Jumble on is not run. Covers no conformance ID.
+- Open: the class rows are an LP3 draft until BND.57's rows by class exist as data. The built-in column's two exceptions
+  (setup search for a named target, the repair list) are built in `c600-check` (LP2's pull request 229); the bridge
+  serves the `setups` row only when the host gives it the setup table. The command layer's receipts carry no program
+  digest; the proposal's provenance block names the digest of the source bytes that ran.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
   source-route check prints are informational, not performance evidence.
@@ -2308,64 +2505,85 @@ run or not applicable is no pass (PHS.63).
     engine. The same word stored by the entry approved as a built-in tool fails closed on its missing part (BND.85)
     until the host keeps the run's blocks again; then its record draft is previewed and presented, a write of another
     record keeps the preview fresh, and a later write of that record makes it stale (`KN5:stale.revision_changed`), so
-    the press prepared before commits nothing.
+    the press prepared before commits nothing. That write keeps the word's part with the record (CT-BND-27; LP2's pull
+    request 272), so after another power loss a host that keeps no block admits the record's preview.
   - `kn5_on_layer.rs`: CT-EV3-07 on the layer over the journal (EV3.2, EV4.15, KN5.20). A commit, the solver's
     `workspace.set` and a commit take places 1 to 3 of one `session.undo` order; a hint taken before a later action of
     either kind is superseded; undo, then redo, walk the three actions in order across both kinds, each after a power
-    loss; a program's `workspace.set` and `session.undo` are refused; and a view, a language overlay row of kind `view`,
-    publishes from a program and from the shell without writing the journal or making the undo hint stale.
+    loss. With the host's view model behind EV3.2's view rows (C5's `ModelViews`), the solver opens and closes a view of
+    a language overlay row of kind `view`; the view's run is refused `workspace.set`, `session.undo`, `view.open` and
+    `view.close`; and the row publishes from the view's run and from the shell, none of it writing the journal or making
+    the undo hint stale.
   - `kn5_on_session.rs`, on M6's own `Session` API: CT-EV3-07's durable action order (a commit, a `workspace.set` and a
     commit take orders 1 to 3, an undo hint taken before the set is refused, the order and all three receipts survive a
     crash, and undo runs 3, 2, 1) and its view part on M6's stand-ins (a query job, an opened snapshot and a preview
     leave the order, the undo hints, the revision and the journal bytes unchanged, and a program's or a job's workspace
     write is refused); CT-LB2-03's work-sheet part (setting a named sheet again makes the old preview stale, and a new
     proposal reads the new content, also after a reopen).
-  - `ct_lb2_03_work_sheet_reuse.rs`: CT-LB2-03's work-sheet sentence through the layer's `worksheet.save` and
-    `worksheet.load` rows on the journal, with C5's reader installed (LB7.2, LB7.3, KN0.8, KN5.23). A sheet saved from
-    a draft record comes back equal at a reuse in the same session, after a power loss on a memory disk and in a new
-    session on a file-system disk; each reuse makes a presented preview of the sheet stale, so the press prepared
-    before it commits nothing, and a fresh engine preview commits the sheet's complete operation; a reuse after that
-    commit places the piece roles again and shows the moved piece without retargeting the sheet, and its undo restores
-    the sheet. Each refusal of the two rows that LP2's draft names comes back with the layer's code and changes
+  - `ct_lb2_03_work_sheet_reuse.rs`: CT-LB2-03's work-sheet sentence through the layer's `worksheet.save`,
+    `worksheet.load` and `worksheet.compare` rows on the journal, with C5's reader installed (LB7.2, LB7.3, LB2, KN0.8,
+    KN5.23). A sheet saved from a draft record comes back equal at a reuse in the same session, after a power loss on a
+    memory disk and in a new session on a file-system disk; each reuse makes a presented preview of the sheet stale, so
+    the press prepared before it commits nothing, and a fresh engine preview commits the sheet's complete operation; a
+    reuse after that commit places the piece roles again and shows the moved piece without retargeting the sheet, and
+    its undo restores the sheet. A comparison of a sheet with the current work completes as a query whose result
+    digests it, writes nothing, the journal's bytes included, and keeps a presented preview fresh; its fresh analysis
+    of the sheet's complete operation gains nothing, loses the positions the operation unfinishes, as LB2 counts them,
+    and ends where the operation committed inline ends; a sheet saved from a record of letters reports that record as
+    its current macro version. After a power loss on a memory disk the comparisons come back equal, and a later write
+    of the record of letters makes the macro version changed while the sheet's own word is still the one analysed.
+    Each refusal of the three rows that LP2's draft names comes back with the layer's code, queues no job and changes
     nothing, the journal's bytes included: no reader, in a session reopened without one; the runtime; a malformed
-    argument; an unknown or removed record and a record with no operation to save or no saved sheet to reuse, a
-    malformed sheet among them; another version; and a block that C5's reader refuses. The refusal of both rows with
-    Jumble on runs in `c600-command`'s `tests/jumble_on.rs`, not here: entering Jumble on needs `c600-jumble`, which is
-    no dependency of this crate.
-- CT-LB2-03 does not run whole. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs in
-  `c600-kernel` and `c600-tools` ("C5 next" below, which records chunked transport on the source route for a recipe
-  with a star step, or a word step with another field, as not built); its second sentence, named work-sheet reuse
-  invalidates the old preview, runs on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's
-  journal (above). Still missing: LB7.2's fresh exact analysis of a reused sheet, H-08's `worksheet.compare`, with
-  LB2's gains and losses, and macro versions, which LP2's layer does not build (it refuses `worksheet.compare` with
-  `KN5:input.row_not_built`).
+    argument; an unknown or removed record, a record with no operation to save, no saved sheet to reuse or compare, or
+    no work to compare with, a malformed sheet among them; another version; and a block that C5's reader refuses. The
+    refusals of the save and the reuse with Jumble on run in `c600-command`'s `tests/jumble_on.rs`, not here: entering
+    Jumble on needs `c600-jumble`, which is no dependency of this crate. A comparison while the exclusive lane is held
+    runs in `c600-command`'s `tests/worksheet.rs`.
+  - `saved_sets_on_journal.rs`: the durable leg of LP2's saved-set drafts (`set.save`; U1-057, U4-037, PS1.28,
+    KN5.23; LP2's pull request 337) on the layer over the journal with C5's reader, the row served as the host serves
+    it at every open and the save's job finished with the entry's record, where the host runs the representations
+    tool's `save_set` (`c600-repr`'s `tests/served_rows.rs` runs the entry). A save's receipt and the saved set's
+    record `set/<name>` come back equal after a power loss on a memory disk and in a new session on a file-system
+    disk, and the exact-set digest follows from the record read back. The save takes an action order but no undo entry
+    (H-08's undo class `none`), after a reopen too, so an undo still removes the record write before it. An identical
+    retry answers the stored receipt; a save under a taken name without `replace: true`, a `replace` that is no
+    boolean and a `workspace.set` under `set/` are refused; a save whose name another save took meanwhile fails at its
+    completion; none of these writes the journal. A save with `replace: true` replaces the set, also after a power
+    loss.
+- CT-LB2-03 runs whole, across crates. Its first sentence, recipe chunking and the refusal of an oversized recipe, runs
+  in `c600-kernel` and `c600-tools` ("C5 next" below, which records chunked transport on the source route for any recipe
+  the kernel expanded); its second sentence, named work-sheet reuse
+  invalidates the old preview, with LB7.2's fresh exact analysis of a reused sheet (LP2's `worksheet.compare`, pull
+  request 277), runs on the layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's journal (above).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (the word's
   letters as a JSON list, the boundary's block as text; C5's runner writes no record); C5's reader installed under the
-  fixture's pins, the host keeping a run's blocks again after a reopen; a built-in tool's stored word for the fresh and
-  stale preview, since preview admission refuses a solver tool's word (BND.84); a language overlay row of kind `view`
-  standing in for a view on the layer; M6's stand-ins for views on M6; and a test reader that reads every block,
-  standing in for a host's reader that accepted a block C5's reader refuses, so that the journal replays such a record
-  and a sheet saved from it.
-- Built by LP2 since, and LP3's next steps: KN5.26's admission matrix L1 and L2 runs through the layer in
-  `c600-command`'s `tests/kn5_admission.rs` (pull request 270); a durable home for a word's part blocks (pull request
-  272), which LP3's reader takes up by implementing `Provenance::parts` and `admit_kept`, so that CT-BND-27's recursive
-  parts run; and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s view model serves through
-  the layer's `Views` trait for CT-EV3-07. Waiting for LP2: a session profile (BND.14, BND.15), so the reader still
-  applies a solving session's admission in every session; and LB7.2's fresh exact analysis of a reused work sheet
-  (`worksheet.compare`, with LB2's gains and losses) and macro versions. M6's session lock covers `JournalStore` too
-  (LP2's pull request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer
-  supersedes and LP2 removes once their tests run against it.
+  fixture's pins, the host keeping a run's blocks again after a reopen, where the layer gives back only the part blocks
+  it kept with the writes; a built-in tool's stored word for the fresh and stale preview, since preview admission
+  refuses a solver tool's word (BND.84); a language overlay row of kind `view` standing in for a view's evaluation on
+  the layer; M6's stand-ins for views on M6; and a test reader that reads every block, standing in for a host's reader
+  that accepted a block C5's reader refuses, so that the journal replays such a record and a sheet saved from it.
+- Built by LP2 since: KN5.26's admission matrix L1 and L2 runs through the layer in `c600-command`'s
+  `tests/kn5_admission.rs` (pull request 270); a durable home for a word's part blocks (pull request 272), which C5's
+  reader serves with `Provenance::parts` and `admit_kept` (the persisted-word test above, and `c600-tools`'
+  `tests/workspace.rs`); and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s view model
+  serves through C5's `ModelViews` (the CT-EV3-07 view test above). LB7.2's fresh exact analysis of a reused work sheet
+  (`worksheet.compare`, with LB2's gains and losses) and macro versions (pull request 277) run on the journal above. The
+  session's profile (BND.14 to BND.17, pull request 287): the layer asks the reader to admit a record's word only in a
+  solving session, as KN5.26 asks. M6's session lock covers `JournalStore` too (LP2's pull request 195).
+  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes
+  once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C5 next: the process host and the tool's views
 
 - The process host, `c600_tools::process::ProcessHost`, runs the 600-cell-Full tool in `c600-runtime`'s child (C3; route
-  RT1, RTE.21). The child gets the source bytes, the manifest's module and entry, the literal word and the limits, and
-  no token, secret, grant or command layer; the boundary and the bridge stay in the caller's process as the runtime's
-  host, so the program still receives only the fixed acknowledgement. One child serves every run, and after a fault the
-  next run starts a fresh one (KN7.13). The child admits the job as tool authoring and the built-in column stays the
-  caller's, because `c600_check::admit` has no author or column parameter.
+  RT1, RTE.21). The child gets the source bytes, the manifest's module and entry, the job's word, the run limits of the
+  job's budget and the tool's class rows, and no token, secret, grant or command layer; the boundary and the bridge stay
+  in the caller's process as the runtime's host, so the program still receives only the fixed acknowledgement. One child
+  serves every run, and after a fault the next run starts a fresh one (KN7.13). The job runs in the solving profile with
+  those class rows (`JobOptions::built_in`, LP2's draft), so the child admits the entry in the built-in column itself,
+  as `Tool::new` does in the caller; LP3's hosts start a run only from a command in a solving session (BND.17).
 - Each run starts inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34, the owner's
   reading of 18 November 2026; draft), on both hosts. The tool's row `tool.full_600_cell.preview_word`
   (`c600_tools::process::TOOL_ROW`) is a query overlay row whose one argument, `w`, is the word, served by the tool's
@@ -2375,6 +2593,15 @@ run or not applicable is no pass (PHS.63).
   (`ToolCommand::acknowledge`), so the solver's command completes as a query; a run refused at its start stage is
   reported as the job's failure with the refusal's code (`start_error`). The layer's check, `c600-command`'s
   `SOLVER_COMMAND_CHECK`, is on (the KN5 readings above), and every LP3 route and test runs this way.
+- Each run is under its job's budget (KN7.7; LP2's pull request 348; draft), on both hosts. The solver's command
+  declares the budget, by default the shell's, the draft ceiling, and the layer admits it under its ceiling before the
+  job exists; a command with no budget, or with one over the ceiling, is refused there, so the tool does not run. The
+  host runs the entry under the run limits of the job's budget (`ToolCommand::limits`, through
+  `c600_tools::tool::limits`, which maps the layer's four dimensions onto the meter's by name); the draft ceiling gives
+  the limits the tool had before, `tool::LIMITS`, and the process host sends them in the child's job
+  (`process::job_under`). The host runs the job's word (`ToolCommand::word`) at the job's revision
+  (`ToolCommand::base`). The bridge declares the run's budget on the run's invocations of a row an entry serves
+  (`Bridge::with_budget`; without it, the draft ceiling).
 - `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
   compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
   records, receipts and callers equal across the hosts. On the source route each step that gives the tool a word adds
@@ -2389,13 +2616,32 @@ run or not applicable is no pass (PHS.63).
   view model installs on `c600-view`, and the presentation report: each composed frame goes to the command layer
   through the shell as a `PresentedFrame` with the display's stamp and the chain that drew the preview, and the
   layer presents the pending preview only for a frame the built-in chain drew (KN5's stage 5).
+- The host's view rows, `c600_tools::views::ModelViews` (EV3.2, RPI.81 to RPI.83; LP2's pull request 271), is the
+  host's `c600_command::Views` on `c600-view`'s view model. The layer admits `view.open` and `view.close` and calls the
+  host once per command ID; the model applies its view namespace, RPI.82's budget and the view lane. Each layer command
+  ID becomes the model's caller command, numbered in the order the host first sees it, so a superseded run's cancel
+  reason names the command that closed its view. The host's declare function gives each source's dependencies,
+  workload, output allowance and class, and refuses a source the host does not serve before the model is called (the
+  tests' hosts with `KN5:input.argument_form`, as `ModelViews` refuses an overlay digest that is not 64 hex digits). A
+  closed view's resources stay charged until the host takes its retirement token at the frame boundary and completes
+  it (RM.19).
 - The host's provenance reader, `c600_tools::workspace::Reader` (KN5's stage 3; PS1.16, KN5.26, BND.84, BND.85), is the
   host's `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so
   `workspace.set` refuses a block that is not a canonical FP.17 block; its admission of a `{"record": name}` draft is
-  `c600_run::boundary::admit_preview` over the block and the blocks the host keeps. It takes every session as a solving
-  session, the only profile LP3's host runs, finds a part only among the blocks the host keeps, fails closed on a part
-  it does not find, and drops no kept block. `c600-lp3-source` serves H-08 with the layer's draft rows and installs the
+  `c600_run::boundary::admit_preview` over the block, the blocks the host keeps and the part blocks the session keeps.
+  At a record's write it lists the parts of the record's block that the host keeps, recursively (`Provenance::parts`),
+  which the layer keeps with the action and gives back at admission (`Provenance::admit_kept`; CT-BND-27, LP2's pull
+  request 272), so a reopened session admits a record written while the host kept its parts. It takes every session as
+  a solving session, the only profile LP3's host runs, fails closed on a part that neither the host nor the session
+  keeps, and drops no kept block. `c600-lp3-source` serves H-08 with the layer's draft rows and installs the
   reader, which keeps each run's blocks; the runner writes no record, so its traces and receipts are as before.
+- Chunked transport on the source route (CT-LB2-03's chunking part; LB2.3, LB2.4, LB1.11) carries the solver's recipe
+  exactly as written for any recipe the kernel expanded, star steps and word steps with other fields included. The host
+  gives the bridge the input recipe with its literal word (`c600_tools::bridge::Steps`, made only from the kernel's
+  expansion), and a proposal of exactly that literal word over 100,000 letters goes as
+  `{"draft": {"recipe": <the solver's recipe>}}` in its one invocation, so the source route admits it exactly when the
+  command route admits the same draft. Every other proposal goes in one word step, and the bridge never cuts, splits or
+  rewrites a word or a recipe.
 - Tests (`c600-tools/tests/`), each naming its part:
   - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
     fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
@@ -2404,16 +2650,38 @@ run or not applicable is no pass (PHS.63).
     refuses a user-stage frame, a frame with no preview and a frame with another preview, so no token is minted and
     the commit chord finds no fresh preview; a built-in-chain frame's token binds its stamp and commits; a later
     user-stage frame ends the presentation and a delayed older report changes nothing).
+  - `view_host.rs`: the command layer's view rows on the view model through `ModelViews`. CT-EV3-08's admission part
+    through the layer: the solver opens a view from the tool's built-in source and one from an overlay row of kind
+    `view`, each `accepted` with no job, and the model holds both with their sources and schedules each first run; a
+    close supersedes the closed view's first run, whose cancel reason names the closing command; an open past RPI.82's
+    budget is refused with the field and fits once the closed view's retirement completes; nothing is written.
+    CT-RPI-36's model half through the layer: the model's refusals reach the receipt with the view as detail, a source
+    the host does not serve is refused before the model, and only a run inside a command the solver invoked reaches
+    the model. A retried delivery reaches the model once, and the host takes only 64 hex digits as a digest, a sign
+    excluded, even from a caller that bypasses the layer.
   - `workspace.rs`: a record write whose block the reader refuses is refused with the reader's error and writes nothing,
     and a block that reads is written whatever its admission would say (PS1.16, BND.21); a record draft is admitted or
     refused by the reader's admission: a hand-entered word passes, a solver tool's word is refused, and a built-in
     tool's word fails closed on its missing part until the host keeps its run's blocks, each refusal installing no
-    preview (KN5.26 and CT-KN5-13, part; CT-BND-29, part).
+    preview (KN5.26 and CT-KN5-13, part; CT-BND-29, part); and a record's write keeps the parts of its block that the
+    host keeps, recursively, so a reader that keeps nothing admits the word with the parts the layer keeps, while on
+    its own it fails closed (CT-BND-27, part).
   - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts, each run
-    inside the solver's command and reported after its preview is built (B2); the job carries only the admitted
-    source; both hosts refuse a word with no transfer encoding at the start stage and fail the solver's command; a runtime
-    that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
-    CT-BND-07, parts).
+    inside the solver's command and reported after its preview is built (B2); the job carries only the admitted source,
+    in the solving profile with the tool's class rows, and the child refuses it at admission without the class rows,
+    with a class that leaves out `operation.preview` or in the tool-authoring profile; both hosts refuse a word with no
+    transfer encoding at the start stage and fail the solver's command; both run the tool under the budget its command
+    declared, so a budget of one step cuts the run off with the meter's steps code before it proposes anything, with the
+    same summary on the two hosts, and the job reported as failed with that code changes nothing; a runtime that does
+    not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and CT-BND-07,
+    parts).
+  - `ct_rte_07_budget.rs`: CT-RTE-07's B13 and B14 on the tool's row, in the corpus's tool-authoring profile: a command
+    that declares no budget, or that declares the corpus's two steps under a host ceiling of one, is refused before
+    admission with the corpus's code; the receipt names no job, the layer queues none and the tool does not run; the
+    labels, the revision, the journal, the protected slots and the pending preview stay as they were, and the session
+    stays out of read-only recovery; a command that then declares a budget at the ceiling is admitted as job 1. The
+    preferences and the recovery checkpoint, which the corpus lists too, belong to M6's session store; the command layer
+    holds neither.
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
     previews clear in Net mode and commits as one transaction, and the prefix alone is refused) and its Strict half
     (after the shell's `protection.policy.set` to Strict, the same word previews with the kernel's Strict row, verdict
@@ -2422,8 +2690,10 @@ run or not applicable is no pass (PHS.63).
     transaction); CT-LB2-03's oversize refusal (100,001 letters refused whole on both routes with the same code,
     100,000 admitted) and its chunking part: on the command route, and on the source route a recipe of two full chunks
     previews in the solver's two word steps with the command route's digests and end state and commits as one
-    transaction, while a word of 200,000 letters that is not the input recipe's literal word, or comes without the
-    solver's word steps, is refused whole with the recipe-shape code.
+    transaction, and so does a recipe over one chunk with a star step or a word step with another field, sent as the
+    solver's recipe, unchanged; a word over one chunk that is not the input recipe's literal word, or comes without the
+    solver's recipe, is refused whole with the recipe-shape code, and a star recipe's literal word of at most one chunk
+    goes in one word step.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
   - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (ruling 4, owner decision of
@@ -2432,14 +2702,10 @@ run or not applicable is no pass (PHS.63).
     that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
     and neither retry commits anything more.
 - Not built: an import row; grip, cell or piece objects for a word's letters (the kernel has no letter-to-grip map); a
-  view declaring both of the manifest's classes (`c600-view`'s `Declared` holds one class); CT-LB2-02's captured lock
-  and "an incomplete prefix check never returns safe" through the tool's route (the captured lock, LB2.3's coverage
-  report and `LB2:protection.incomplete_coverage` are LP3's library rows over kernel rows, which need host rows for the
-  kernel rows they read; the tool's bridge answers a snapshot read with an argument for `positions`, LP2's pull request
-  226, and `labels` only); named work-sheet reuse, which C7 runs on the layer; chunked transport on the source route for
-  a recipe with a star step or a word step with another field (its literal word over 100,000 letters goes in one word
-  step and is refused whole); the child's own built-in admission. CT-LB3-01's checker half and CT-LB3-07's
-  recommendation rule are `c600-check`'s (LP2, pull request 213).
+  view declaring both of the manifest's classes (`c600-view`'s `Declared` holds one class); a view's evaluation for the
+  view model's scheduled runs (the host running the view's program and installing its content); named work-sheet reuse,
+  which C7 runs on the layer. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
+  request 213).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -2464,9 +2730,9 @@ run or not applicable is no pass (PHS.63).
   - `rows`: what each of the six rows needs from the command layer, what the layer meets of it and what remains. LP2
     built the four common needs in the layer: a dispatch from a stored row to a built-in tool's entry
     (`CommandLayer::serve_row`, pull request 200), argument forms (pull request 202), the runtime's view and workspace
-    sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves five
-    rows with their entries. The layer serves `filter.apply` too since pull request 256, and no host runs its entry
-    yet. C6 changed no file in `c600-command`.
+    sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves all six
+    rows with their entries; the layer serves `filter.apply` since pull request 256. C6 changed no file in
+    `c600-command`.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -2488,29 +2754,44 @@ run or not applicable is no pass (PHS.63).
     overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
   - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, the layer
     refuses all six rows until a host serves them, an overlay cannot replace one, and `serve_row` accepts exactly the
-    five rows the list marks served.
-  - `served_rows.rs`: a test host serves the five rows with the tool's entries and C5's provenance reader, and runs each
+    rows the list marks served, all six since pull request 256.
+  - `served_rows.rs`: a test host serves the six rows with the tool's entries and C5's provenance reader, and runs each
     job's entry in process through `c600-run`'s boundary. Invoked from the shell, `filter.preview` and
     `structure.compare` complete as `completed(query)` and `view.effect.scope` as `completed(view_published)`, at the
-    job's revision and with nothing written; `set.save` and `structure.layer` each complete as one durable workspace
-    action that writes the entry's record through the reader, at a workspace revision one higher and with no undo entry.
-    The source route (the same entry run in process on the same arguments and state, without the layer; not C5's runner)
-    gives the same value, views and records; on both routes a stand-in engine answers the two snapshot reads with the
-    state number. The layer refuses malformed and stale arguments before any job. The layer serves `filter.apply`, and
-    a test checks its refusal of a stale filter preview; the entry does not run here. A running program's query or view
-    job fails at the host, which builds no provenance block for its arguments (LP2's `invoke_with_inputs`, pull request
-    264, takes them). Since LP2's pull request 237 the layer refuses a workspace row such as `set.save` on a running
-    program's channel with `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18
+    job's revision and with nothing written; `filter.apply`, `set.save` and `structure.layer` each complete as one
+    durable workspace action at a workspace revision one higher. `filter.apply`'s and `structure.layer`'s write the
+    entry's record through the reader; `set.save`'s writes the saved set's own record `set/<name>` with the exact-set
+    digest as the result reference (LP2's pull request 337, `c600_command::sets`).
+    `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job; its action is the next
+    undo target, and that undo removes its record and moves no state. The other two leave no undo entry. The source
+    route (the same entry run in process on the same arguments and state, without the layer; not C5's runner) gives the
+    same value, views and records (for `set.save`, the saved set its record names, with the exact-set digest). On both
+    routes the entries pass their arguments to the two snapshot reads
+    (`compare_cells` the two cells, `filter_counts` the layer predicate the `FilterRef` names, as the record its job
+    wrote), and the engine side answers them on the session's layer with the kernel rows of `c600-tools`' bridge, so the
+    views are the kernel's step count and layer counts. The layer refuses malformed and stale arguments before any job.
+    A test checks `filter.apply`'s refusal of a stale filter preview. An invocation of the two queries and the view with
+    `Caller::Runtime`, as a running program's, carries the provenance block the host builds from the run's context
+    (`Boundary::block`), through LP2's `invoke_with_inputs` (pull request 264): C5's reader checks it, the job's run
+    takes it, and the row completes as from the shell. Without blocks the host fails such a job with
+    `LG3:capability.not_granted` and runs nothing, and a block the reader refuses is refused before any job. No program
+    operation reaches a served row (LG3.1; a program reaches a row only by a proposal, KN5.9), so the test host stands
+    in for the runtime's adapter. Since LP2's pull request 237 the layer refuses a workspace row such as `set.save` on a
+    running program's channel with `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18
     November 2026: a run never writes the workspace).
-- Not built, LP3's next steps: `filter.apply`'s entry run through both routes, with the entry taking the layer's
-  `FilterPreviewRef` (the layer serves the row since LP2's pull request 256); the host's provenance blocks for a running
-  program's job arguments of the query and view rows, through LP2's `invoke_with_inputs` (pull request 264); host rows
-  for the `filter.preview` and `structure.compare` snapshot reads, on LP2's structure rows (pull request 262). LP2 built
-  the `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal
-  since. Also not built: a record and an exact-set digest for each saved set; a display that applies the published scope
-  (the APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage
-  checker is LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's
-  current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
+- Built since: the host rows for the `structure.compare` and `filter.preview` snapshot reads, on LP2's structure rows
+  (pull request 262), in `c600-tools`' bridge (`c600-tools/tests/structure_rows.rs`). LP2 built the
+  `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal since.
+  LP2 built a record and an exact-set digest for each saved set (pull request 337): `set.save` writes `set/<name>`
+  (its kind, its members ascending and distinct, the model identity, the name and the capture revision) and gives the
+  exact-set digest as the result reference (`c600_command::sets`). `replace: true` and `KN5:input.saved_set_exists`
+  are drafts, and names under `set/` are reserved.
+- Not built, LP3's next steps: the two reads' tariffs in the command table, which freezes at LP3; a reference type in
+  the IR, so `filter_counts` takes the predicate as a record of its cell and layer; a display that applies the
+  published scope, and one that applies the applied filter (the
+  APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage checker is
+  LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's current
+  occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
@@ -2530,36 +2811,76 @@ run or not applicable is no pass (PHS.63).
   `KN1:input.level_not_held`) and one typed relation of the relationship strip at pose level, a slot's current occupant
   on and off the lattice, each lattice piece placed by M8's slot action of K⁺ (`relation`; EV3.8, EV3.9).
 - The crate's `library` holds the jumbling library entries as 600 Cell Script on the IR draft's menu words (LP2's pull
-  request 210), each module in the formatter's canonical layout with its catalogue row: LB1.8's literal words of one
-  pinned menu ([`menu_words.6cs`](c600-jumble-tool/src/menu_words.6cs): `power`, beside the IR draft's own `concat`,
-  `inverse`, `conjugate` and `commutator`; pure), and LB3.1's "Heights, branches, domains and Φ"
-  ([`jumble_heights.6cs`](c600-jumble-tool/src/jumble_heights.6cs)), "Release and whole-word checks"
-  ([`jumble_word_checks.6cs`](c600-jumble-tool/src/jumble_word_checks.6cs): the chronological observations and the step
-  flag, recomputed from KN2.4's `replay` and `word_check`) and "Protection" at pose level
-  ([`jumble_protection.6cs`](c600-jumble-tool/src/jumble_protection.6cs): a whole word's Net and Strict verdicts from
-  KN2.4's `protection`, M8's `levels::derive`). `menu_words` reads no state; each other entry reads only its KN2.4 rows
-  with `read_snapshot`, so it reads state and prepares no preview. None names a proposal target. No host bridge serves
-  the jumbling rows to a program yet, so the rows' answer types are the crate's drafts.
+  request 210) and its F2 and F5 (LP2's pull request 222): fourteen modules, each in the formatter's canonical layout
+  with its catalogue row. `menu_words` and `menu_traces` read no state; each other entry reads only its rows with
+  `read_snapshot`, so it reads state and prepares no preview. None names a proposal target, and none chooses or outputs
+  a word, except at the one point the owner allowed (17 October 2026): at a cap the solver names, `jumble_repair` lists
+  the pairs whose three-twist repair lowers N, in a neutral order, and the solver picks one.
+  - LB1.8's literal words of one pinned menu ([`menu_words.6cs`](c600-jumble-tool/src/menu_words.6cs): `power`, beside
+    the IR draft's own `concat`, `inverse`, `conjugate` and `commutator`; pure).
+  - LB1.10's trace keys of menu words ([`menu_traces.6cs`](c600-jumble-tool/src/menu_traces.6cs): `same_trace` and
+    `trace_commute` under the relation `jumble-locality/1` that the crate's `locality` pins beside the menu alphabet,
+    from the table M5 regenerates from the loaded model; pure).
+  - LB3.1's "Heights, branches, domains and Φ" ([`jumble_heights.6cs`](c600-jumble-tool/src/jumble_heights.6cs): Φ, the
+    largest left height and the pieces at heights (0,0) and on the lattice's domain, by exact sums over KN2.4's
+    `heights` and `height_counts`).
+  - LB3.1's "Release and whole-word checks" ([`jumble_word_checks.6cs`](c600-jumble-tool/src/jumble_word_checks.6cs):
+    the chronological observations and the step flag, recomputed from KN2.4's `replay` and `word_check`).
+  - LB3.1's "Protection" at pose level ([`jumble_protection.6cs`](c600-jumble-tool/src/jumble_protection.6cs): a whole
+    word's Net and Strict verdicts from KN2.4's `protection`, M8's `levels::derive`).
+  - LB3.1's "ν and drafted correction-set check" ([`jumble_nu.6cs`](c600-jumble-tool/src/jumble_nu.6cs): ν's 45 values
+    in F2 and F5 from KN2.4's `nu`, and the change the solver's drafted set makes, with `correction_set_check`).
+  - LB3.1's "Rim and seam facts; N" ([`jumble_rim.6cs`](c600-jumble-tool/src/jumble_rim.6cs): every cap's row in cap-ID
+    order from KN2.4's `rim_summary` and one whole `seam_facts` scan, with exact counts; total N is the scan's).
+  - LB3.1's "Covers at a named cap" ([`jumble_covers.6cs`](c600-jumble-tool/src/jumble_covers.6cs): both directions for
+    every cap that meets the solver's cap, with no top-cap verdict).
+  - LB3.1's "Correction catalogue" ([`jumble_corrections.6cs`](c600-jumble-tool/src/jumble_corrections.6cs): the
+    correction the solver names by its id; it chooses no combination).
+  - LB3.1's "Admissibility and blocked-twist check"
+    ([`jumble_admissibility.6cs`](c600-jumble-tool/src/jumble_admissibility.6cs): the solver's named twist, a menu word
+    of one letter, from KN2.4's `classify`, and the solver's named grip from `survey`).
+  - LB3.1's "Straddlers and u at a named cap" ([`jumble_straddlers.6cs`](c600-jumble-tool/src/jumble_straddlers.6cs):
+    each straddler with its exact certificate pair, and u).
+  - LB3.1's "Units and clean-step contract" ([`jumble_units.6cs`](c600-jumble-tool/src/jumble_units.6cs): every off unit
+    or the solver's named unit, and the contract's parts for the solver's word and unit).
+  - LB3.1's "Repair list at a named cap" ([`jumble_repair.6cs`](c600-jumble-tool/src/jumble_repair.6cs): LB3.6's list as
+    read, under the built-in column's repair-list exception).
+  - LB3.1's "Retained checkpoint, label checkpoint, sticker test"
+    ([`jumble_end_tests.6cs`](c600-jumble-tool/src/jumble_end_tests.6cs): each verdict as its own type, LG2.9; the
+    retained checkpoint takes the solver's witness word and builds none).
+- The crate's `rows` is the jumbling rows' host bridge (pull request 299): it serves KN2.4's jumbling rows to a run as
+  snapshot reads, at the command layer's head with Jumble on (`Rows::at_head`), on a witnessed base (`Rows::on`) or at a
+  state (`Rows::at_state`). It uses the crate's draft answer types and a draft tariff (one pass of the model's pieces
+  for the state and one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts),
+  and it grants those rows only. Since pull request 306 it also serves J08's `seam_facts` for a named cap, which
+  CT-RTE-07's jumbling keys read.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03 with the plane the engine names for the twist (`twist::Twist::plane`; a jumbling twist has
   a swept preview, a half-turn at θ = π in the engine's direction), the certified overlays J04 (the full named-cap set,
   the cap-map witness and the named cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13,
   which places a sticker at any lattice pose by M8's slot action of K⁺ with A3's frame check
-  (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05. Under a jumbling identity the validator
-  now checks a posed row instead of refusing it; 600-cell-Full is unchanged.
+  (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05, and, since pull request 301, the
+  producers of J01, J06, J07, J09, J11 and J12; J10 passes LP2's refusal through (`jumble::exposed_faces`, after pull
+  request 336). Under a jumbling identity the validator now checks a posed row instead of refusing it; 600-cell-Full
+  is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
     LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
     never run) and CT-BND-15's jumbling part (the class, the row set `operation.preview` and a manifest that names the
     source digest).
   - `c600-jumble-tool/tests/lb3.rs`: the kernel halves of CT-LB1-02 (at a blocked cap literal a,a⁻¹ is refused at its
-    first letter and the empty word is admitted; prefix protection reads literal letters), CT-LB3-01 (ten fixtures on
+    first letter and the empty word is admitted; prefix protection reads literal letters; and its key half, LG2.18's
+    word key under I_a's item matrices: the key of a,a⁻¹ at a blocked cap is the identity letter's token there, not
+    the empty key, both words are refused there and the empty word admitted, in Rust and in the language, and on random
+    words from three states each word and its run-merged form have one key, one admissibility and one end digest),
+    CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
     word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
     is nonzero fails the label checkpoint, and one whose ν is 0 passes it), CT-LB3-03 (heights (0,0) off the lattice in
     free mode; domain IDs by exact coset tests; Φ = 0 with height-2 pieces fails M8's sticker test), CT-LB3-05 with
-    CT-BND-17 (M8's repair list at a named cap: its pairs in pinned order, then by cap; rows of five integers with no
+    CT-BND-17 (whole with the checker half, the entry `jumble_repair` and LP2's job, below; M8's repair list at a named
+    cap: its pairs in pinned order, then by cap; rows of five integers with no
     mark and no ranking field; every pair's delta read again from its own word, and y and z recomputed for one pair; a
     stopped list has no rows, and an empty list speaks only of its cap), CT-LB3-06 (prefix peak, excursion, tameness and
     the step flag recomputed apart from the kernel's batch; a false flag refuses nothing) and CT-LB3-07 (a named-word
@@ -2567,18 +2888,31 @@ run or not applicable is no pass (PHS.63).
     correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
     rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
     or a recommendation, ranking or correction field).
+  - `c600-jumble-tool/tests/ct_lb3_07.rs`: CT-LB3-07 on the inspector entries `jumble_rim`, `jumble_covers`,
+    `jumble_corrections`, `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair` and
+    `jumble_end_tests` in the language, with the named-word checks and the drafted check, through the bridge on
+    witnessed snapshots of the I_a walk (pull requests 308, 314 and 321). Each read is recorded with its argument. The
+    rim entry answers every cap in cap-ID order and nothing of a twist. The covers and catalogue entries read the
+    solver's named cap or id only, and the catalogue refuses another menu. No answer names a recommendation, a next cap,
+    a ranking or a selection. The admissibility entries answer the solver's one letter or named grip only, the blocked
+    twist with the engine's exact certificate; the straddlers entry answers the named cap's straddlers with exact
+    certificates, and u; the units entries answer every off unit or the named unit, and the clean-step entry the named
+    word and unit only, its flag LB3.8's. The repair entry (CT-LB3-05's and CT-BND-17's entry part) is admitted only
+    under the built-in column's repair-list exception as written: refused for a literal cap, a helper's read, a field of
+    the read and a condition on it. The survey row answers the named grip only: asked for every grip or for a list of
+    grips, the run stops with `KN5:input.argument_form`, and the bridge refuses the same arguments (pull request 332).
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
     admissibility guarantee and is refused at the prefix that straddles, at the first or a later one).
   - `c600-jumble-tool/tests/library.rs`: the library's modules checked by LP2's checker and run by LP2's interpreter,
-    each result compared with the kernel halves; a test host serves the KN2.4 rows from `c600_jumble`. CT-LB1-03's
-    jumbling half in the language (`menu_words` pure and in canonical layout; `power` and the IR draft's constructors
-    build the kernel half's words in a run with no host; a menu word of the S4 menu, of I_a in another pinned order or
-    in a run with no alphabet pinned refused before the run with `LB1:input.incompatible_alphabet`, as the checker
-    refuses a `Word` where `power` takes a `MenuWord`, and the rows refuse a word at a state of another alphabet; a
-    built word and its inverse retrace an admitted path prefix by prefix; a built conjugate refused at its first
-    prefix), CT-LB3-03's library entry (per-pose heights, branches, domain IDs and counts, Φ and the largest left
+    each result compared with the kernel halves; the host bridge `rows` serves the KN2.4 rows (pull request 299).
+    CT-LB1-03's jumbling half in the language (`menu_words` pure and in canonical layout; `power` and the IR draft's
+    constructors build the kernel half's words in a run with no host; a menu word of the S4 menu, of I_a in another
+    pinned order or in a run with no alphabet pinned refused before the run with `LB1:input.incompatible_alphabet`, as
+    the checker refuses a `Word` where `power` takes a `MenuWord`, and the rows refuse a word at a state of another
+    alphabet; a built word and its inverse retrace an admitted path prefix by prefix; a built conjugate refused at its
+    first prefix), CT-LB3-03's library entry (per-pose heights, branches, domain IDs and counts, Φ and the largest left
     height equal to the kernel's on six menu-reached states; Φ = 0 with height-2 pieces fails the sticker test; in free
     mode every piece reads heights (0,0) while the moved pieces form one pose class off the lattice, with the exact
     coset's domain ID) and CT-LB3-06's library entry (peak, excursion, tameness and the step flag recomputed from the
@@ -2600,8 +2934,24 @@ run or not applicable is no pass (PHS.63).
     planted nonzero fixed I_a coordinate (b5, on the I_b menu with I_a's identity written over its own) refused by the
     row and the check with `KN2:consistency.fixed_nu_nonzero`, while an open claim and the true I_b menu bind nothing;
     drafted sets checked as drafted, each answer the catalogue's prediction as ν's 45 values, and a set with an
-    unshipped id refused whole. No 600 Cell Script program calls the rows yet, though the IR draft has F2 and F5 since
-    LP2's pull request 222.
+    unshipped id refused whole. Three tests run LB3's entry `jumble_nu` (`library::NU`, `src/jumble_nu.6cs`) in the
+    language on the IR draft's F2 and F5 (LP2's pull request 222), through the host bridge `rows` on a witnessed base
+    (pull request 299): off-lattice ν undefined, the planted refusal, and drafted sets checked to the prediction with
+    the change Σ m·row.
+  - `c600-jumble-tool/tests/rows.rs`: the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through
+    `rows` at the head of jumbled sessions (I_a, S4, I_b), each run equal to the same run on a witnessed snapshot, byte
+    for byte; with Jumble off, every read stops with `KN5:input.menu_word_needs_jumble_on`; the bridge's grants and
+    draft tariff; the `seam_facts` row at a named cap, whose N_c equals the engine's rim summary (pull requests 299 and
+    306); the rows `classify`, `survey`, `straddlers` and `units`, each for the solver's named letter, grip, cap or
+    pieces only (pull request 314); the `repair_list` row, which serves the named cap's completed list in neutral order
+    with no outcome table, rank or mark; and the three end-test rows, each with M8's verdict, level, reason and
+    evidence, read by a program as that test's own verdict type, the outcome alone (`LG2:type.mismatch` for another
+    test's row; pull request 321).
+  - `c600-jumble-tool/tests/ct_rte_07_jumble.rs`: CT-RTE-07's six jumbling keys (MR01, MR02, MR05, MR06, A31 and A32) on
+    M5's rows with literal words, each re-expressed in `.6cs` and run ten times through `c600-module`'s boundary as the
+    Full leg runs its keys, with one SHA-256 over the canonical results, the rows read, the proposals and the store; a
+    manual-proposal control and the accounting against the Full leg (pull request 306). Each key and the control run
+    again with menu words of the I_a alphabet, pinned with its item matrices, and give the same answers.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2611,42 +2961,95 @@ run or not applicable is no pass (PHS.63).
     `KN1:input.level_not_held` for it, also under that subject's own digest; a planted chart inverse is never called;
     four layout filters, one by pose, keep the analysed set, the posed row and the subject; at lattice poses other than
     the identity, a sticker's slot through `c600-display`'s pose projection on M8's slot action of K⁺, checked against
-    the current-occupant relation, also for two pieces that share one pose index).
+    the current-occupant relation, also for two pieces that share one pose index; and at a later revision of a jumbled
+    session, with Jumble on in the command layer: a layout evaluated at a head the layer reaches by presses of a W-J
+    journal's records, evaluated again at the revision the next press makes, where a piece comes onto the lattice, and
+    at the one its undo makes, while the installed earlier evaluation goes stale and a pick under its binding is
+    refused with `EV3:stale.display_pick`).
+  - `c600-jumble-tool/tests/jumble_on_layer.rs`: oracle equality with Jumble on in the command layer (PHS.23's jumbling
+    half; LP2's pull requests 212, 217, 218 and 220). For each W-J fixture (I_a, I_b and S4) one session enters Jumble
+    on at solved and presses J1's journal records through `jumble.twist.menu` beside M5's engine: at every step the
+    press commits, the revision advances by one, its digest is M5's digest of the prefix and the pieces whose pose
+    changed are M5's inside set; at J1's stages the head has J1's digest, counts and posed-row hashes (J02); at the end
+    the posed row and the current-occupant relation (CT-EV3-06) answer as on M5's state. The default run takes the
+    first 130 records of each journal, across two of the layer's flat replays, and reaches J1's start stage; the whole
+    journals, with the mid and end stages, run on request (`--ignored`). Not compared there: `jumble.off`, the refusals,
+    undo and redo, protected pieces and free mode, which `jumble_layer_verdicts.rs` runs beside the tool's own entries
+    (below).
+  - `c600-jumble-tool/tests/jumble_layer_verdicts.rs` (pull request 323): Jumble on through the command layer beside the
+    tool's own entries at the layer's head (`Rows::at_head`), in five tests on the W-J fixtures. `jumble.off` commits
+    exactly when `jumble_end_tests`'s label checkpoint holds; it is refused with its fact's code when the checkpoint
+    fails, and as not shown reachable when it is unestablished. After an exit every tool read stops with
+    `KN5:input.menu_word_needs_jumble_on`, and undo, redo and undo again bring the jumbled head back with equal reads.
+    Each admissible press moves as many pieces as `jumble_admissibility`'s twist check names, and a blocked one is
+    refused with the code `word_protection` stops with for the letter; every refusal changes nothing. With an orbit
+    protected, under Net and Strict, a press commits or is refused as `word_protection` answers. Redo brings back each
+    head with its digest and the tool's reads, and a free binding at the next record's grip is refused with
+    `MENU_BINDING_MISMATCH`. The tests read the layer's decisions and add no rule of their own.
+  - `c600-jumble-tool/tests/jumble_layer_repair.rs` (pull request 339): the repair list through the command layer,
+    LP2's job that names its cap (pull request 326), beside the tool's entry `jumble_repair` at the layer's head on
+    the I_a walk, in four tests. At a named misaligned cap, at closed caps, at a cap whose completed list is empty,
+    after a press that drops the kept list and after its undo, the job's list and the entry's read agree on status,
+    input digest, parameters, message and rows; the job alone words an empty list (BND.2), each run of the entry
+    reads the `repair_list` row once with the named cap, and neither side picks a cap. The tests read the layer's
+    and the tool's answers and add no rule of their own.
+  - `c600-jumble-tool/tests/ct_lb1_06.rs`: CT-LB1-06's jumbling half (LB1.10) on the model in `assets/`: the relation
+    `jumble-locality/1` that `locality` pins agrees with M5's table on every pair of grips; bca and cab key to bca and
+    abc to itself; identity letters and an item beside its inverse stay in the key; words with one key are admitted
+    alike and end at one digest on M5's states, while an identity letter at a straddled grip is refused where the
+    empty word is admitted; `menu_traces` checks as pure code and answers as the keys do; and a key under another
+    menu, contract revision, key version or relation version refuses comparison with
+    `LB1:input.key_contract_mismatch`; and "Word keys remain separate" on the jumbling side: in one run under I_a's
+    item matrices and the relation, `word_key` (LG2.18, LP2's pull request 338) and `trace_key` key the same menu
+    words each by its own rule, and a source that compares the two keys is a type mismatch. With LP2's 600-cell-Full
+    half, CT-LB1-06 runs whole.
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
-    plane among them), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs
-    whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
-    sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
-    projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
-- Not taken up yet from LP2: Jumble on in the command layer, with `jumble.twist.menu`, `jumble.off` and the oracle route
-  through the command layer (pull requests 212, 217, 218 and 220); the F2 and F5 number kinds in the IR draft (pull
-  request 222), for LB3's ν and correction-set entry as language code; and `jumble-locality/1` with `trace_key` on menu
-  words (pull request 251), for CT-LB1-06's jumbling half.
-- Not built: the producers of the rows J01 and J06 to J12 (J10 also needs exposed-face geometry, LP2); a host bridge or
-  command-layer route that serves KN2.4's jumbling rows to a program (the library's tests serve them from
-  `c600_jumble`); LB3's other entries as language code, LB3's ν and correction-set entry among them, and LB3.8's named
-  cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2);
-  CT-LB1-06's jumbling half, its library entries on `jumble-locality/1`; BM5's review records; a comparison of the posed
-  arrays with the J1 fixture's later stages; the relationship strip's data contract (chapter 06, RPI.65). Not taken up
-  yet from M8 (pull requests 176 and 182): the rim and survey rows of CT-LB3-07. F03 on 600-cell-Full has no swept
-  preview: the retained kernel names no plane for its twists, and which engine names one is not settled. Also waiting:
-  the repair list through the command layer, with a job that names its cap (KN5), the BND.2 wording of an empty list and
-  no key that skips caps with an empty list (LP2); the built-in column's repair-list exception is in `c600-check` since
-  LP2's pull request 229.
+    plane and J10's refusal from M5's producer among them), CT-RPI-12's off-lattice part on a real jumbling state
+    (with C2's stale half, CT-RPI-12 runs whole), RPI.23 and J13 at lattice poses other than the identity (every
+    sticker in the slot of M8's labels, a turned sticker resolved through the host to the slot k·s of the slot action,
+    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and
+    15; row 2's half-turn sweeps at π).
+  - `c600-display/tests/jumbling_payloads.rs`: CT-RPI-08's producers of J01 (render/1's pinned shrink anchors), J06 (the
+    readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
+    (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
+    engine's `correction_set_check`), pull request 301.
+- Taken up from LP2 since pull request 323: through the command layer, `jumble.off`, the refusals with Jumble on, redo,
+  protected pieces and free mode, each beside the tool's own entries at the layer's head
+  (`tests/jumble_layer_verdicts.rs`, above); since pull request 339, the repair list as LP2's job that names its cap
+  (KN5, pull request 326), with BND.2's wording of an empty list and no key that skips caps with an empty list,
+  beside the entry `jumble_repair` (`tests/jumble_layer_repair.rs`, above). C8 uses the IR draft's F2 and F5 (pull
+  request 222) for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
+- Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
+  refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
+  the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
+  the jumbling half of CT-LB1-02's library entry "Word equality keys" (its 600-cell-Full half is `c600-library`'s
+  `word_keys`, pull request 350); LB3.1's other rows as language code ("Menus and pinned letters",
+  "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under `library` above,
+  and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
+  records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end
+  stages are compared only in the whole-journal runs, on request. The survey's all-items loop is not served (LB3.5):
+  `survey` answers the solver's named grip only. F03 on 600-cell-Full has no swept preview: the retained kernel names no
+  plane for its twists, and which engine names one is not settled. The language entry `jumble_repair` reads the
+  named cap's list under the built-in column's repair-list exception (LP2's pull request 229) and runs as no job of
+  the layer (the program-job route, above); LP2's job serves the same list (pull request 326, taken up above).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
 
-## Status of LP3, C5 library: LB1's literal words and LB2's exact completion
+## Status of LP3, C5 library: LB1's and LB2's first entries
 
 - `c600-library` holds the base library's first entries as 600 Cell Script (LB1.1): chapter 03's row "Literal words"
-  (LB1.8) and the exact-completion half of LB2's row "Residuals and exact completion". Its source
+  (LB1.8), the F2, F5 and Q(√5) sign parts of LB1.8's row "Exact linear algebra", the quaternion factor and tree part of
+  its row "Quaternion and icosian algebra", its row "Word equality keys" for 600-cell-Full words, the exact-completion
+  half of LB2's row "Residuals and exact completion", LB2's rows "Star and recipe construction", "Collateral and
+  support", "Net and Strict protection", "Guarded setups and buffers" and "Named macro analysis and comparison", and
+  parts of its rows "Seeds and full seed analysis" and "Orbit catalogue and collateral stage order". Its source
   [`words.6cs`](c600-library/src/words.6cs) (edition `6cs-draft-1`, syntax candidate A, in the canonical layout) is the
   module `words` with one exported pure function, `power(w: Word, n: Int) -> Word`: `w` written out `n` times,
-  `inverse(w)` written out `-n` times for a negative `n`, and `word[]` for `n = 0`. A power is literal: nothing
-  cancels. Concatenation, inverse, conjugate and commutator are the IR draft's own operations (LG2.15), so the library
-  adds powers and wraps none of them. A client imports the library by the SHA-256 of its source and is lowered with
-  it.
+  `inverse(w)` written out `-n` times for a negative `n`, and `word[]` for `n = 0`. A power is literal: nothing cancels.
+  Concatenation, inverse, conjugate and commutator are the IR draft's own operations (LG2.15), so the library adds
+  powers and wraps none of them. A client imports the library by the SHA-256 of its source and is lowered with it.
 - The catalogue row with LB1.2's five fields is Rust data, `literal_words`: Entry "Literal words"; Level 600-cell-Full
   signed generators; Effect pure; Backing library code, `words.power` over `concat` and `inverse`; Notes: construction
   alone checks no state, and a menu word where `power` takes a `Word` is the checker's
@@ -2664,7 +3067,78 @@ run or not applicable is no pass (PHS.63).
   `residuals_and_exact_completion`, has Level "Full labels and positions" and Effect `snapshot`, and its Notes say
   that empty candidate lists, matching colours or a buffer whose occupant is not its home piece never establish
   completion.
-- Tests (`c600-library/tests/`), each naming its part; no conformance ID runs whole here:
+- Exact linear algebra over F2 and F5 (pull request 274): the source [`linalg.6cs`](c600-library/src/linalg.6cs) is the
+  module `linalg` with four pure functions over the IR draft's F2 and F5 (LP2's pull request 222):
+  `rank_f2(rows: List<List<Int>>) -> Nat` and `rank_f5`, the rank of the rows in the field, and `solve_f2(rows, rhs)`
+  and `solve_f5`, which answer the rank, whether the system with the coefficient rows `rows` and the right-hand side
+  `rhs` is consistent and, when it is, one solution as residues (Gauss-Jordan elimination with every free unknown 0).
+  Each entry is reduced into the field, so negative entries and entries of any size are allowed. The checker infers no
+  effect, capability or state read, so a rank or a solution says something about the supplied equations only, never
+  about a puzzle state or its reachability. Its catalogue row is `exact_linear_algebra`.
+- Recipes and reports (pull request 294): the source [`recipes.6cs`](c600-library/src/recipes.6cs) is the module
+  `recipes`. A recipe crosses the entries as a list of step records in 0.4's order: a word step carries its letters, a
+  star step its orbit, node and sign. Seven entries: `word_step` and `star_step` build one step record each;
+  `star_word(setup, relocation, seed)` writes out the inverse setup, the inverse relocation, the seed, the relocation
+  and the setup, the star of sign 1 as a literal word; `effect_report(recipe)` answers KN2.4's `effect` of the whole
+  recipe (the full source-to-destination map, the moved stickers and pieces, the support per orbit, the digests of the
+  net map and of the literal expansion, and the expansion's length); `orbit_report(recipe, orbits)` answers the full
+  support split into the selected orbits' rows and the others (LB2.2); `frame_image` and `frame_maps` image an ordered
+  slot tuple through the recipe's map. The three constructors are pure; the four others have the effect `snapshot` and
+  read the `effect` row and no other, so they read state and prepare no preview. Its catalogue rows are
+  `star_and_recipe_construction` and `collateral_and_support`.
+- Net and Strict protection (pull request 300): the source [`protection.6cs`](c600-library/src/protection.6cs) is the
+  module `protection`. Three captures read the head at what the solver names: `position_lock(slots)` reads `labels`, and
+  `identity_lock(pieces)` and `block_lock(pieces)` read `positions`. A lock is a list of exact (slot, label) pairs at
+  the level `labels`. Three checks read the `protection` row at a named lock and recipe: `net_check`, `strict_check` and
+  `strict_check_within(limit)`. LB2.3's report carries its input (the lock, and the expansion's digest and length), its
+  level, its mode and its coverage (`checked` against `required`: 1 for Net, primitives plus 1 for Strict), the
+  conflicts in the lock's order, Strict's first refused prefix and a verdict of `fails`, `clear` or `unknown`. `unknown`
+  carries `LB2:protection.incomplete_coverage` and is never safe. Its catalogue row is `net_and_strict_protection`.
+- Guarded setups and buffers (pull request 309): the source [`setups.6cs`](c600-library/src/setups.6cs) is the module
+  `guarded_setups` with one entry, `setups_for(goal: record { orbit: Nat, position: Nat })`, effect `snapshot`. It reads
+  the draft `setups` row at the goal as given and returns the answer as read, so it reads state, prepares no preview and
+  runs only under the built-in column's setup-search exception. The row answers only for the target the solver names,
+  lists its certified setups in a stable order with no rank, keeps the orbit's buffers fixed in every setup and executes
+  nothing; applying a setup stays the solver's action. Its catalogue row is `guarded_setups_and_buffers`.
+- Exact Q(√5) signs (pull request 325): the source [`quadratic.6cs`](c600-library/src/quadratic.6cs) is the module
+  `quadratic` with two pure functions over the IR draft's `Q5`, the numbers (a + b√5) / d: `sign_q5(x)`, the exact sign
+  of `x` as -1, 0 or 1, and `compare_q5(x, y)`, the sign of `x - y`. Both decide with the IR draft's exact comparison
+  (`exact_less`, KN3.1), never with an approximation, and say something about the supplied numbers only. Its catalogue
+  row is `exact_q5_signs`, a second part of the row "Exact linear algebra".
+- Quaternion factors and tree outputs (pull request 347): the source [`trees.6cs`](c600-library/src/trees.6cs) is the
+  module `trees` with seven pure functions over `Q5`, with the meaning of `research/jumbling/theory/trees.py`:
+  `factors(m)`, a pose matrix's left and right quaternion factors exactly as trees.py extracts them (not up to scale)
+  and whether they reconstruct it; `reconstructs(m, l, r)`; the 2-adic valuation `v2`; `kval`, `dist` and `branch` on
+  the 5-regular tree of the icosian order at 2; and `pose_tree(m)`, the branches and distances of `m`'s factors. Its
+  catalogue row is `quaternion_and_icosian_algebra`.
+- Word equality keys (pull request 350): the source [`word_keys.6cs`](c600-library/src/word_keys.6cs) is the module
+  `word_keys` with two pure functions on 600-cell-Full words: `key(w)`, LB1.10's draft `trace-key/1` under the relation
+  the run pins, `full-disjoint-support/1` (two letters are independent when their generators move disjoint sets of
+  slots), and `same_word(x, y)`, true exactly when the two keys are equal. The owner's answer of 17 November 2026 gives
+  C5's word keys `trace-key/1`, so the entry keys with the IR draft's `trace_key`, not with its free reduction
+  `word_key`, which merges an inverse pair with the empty word. A key has its own type and is never letters; it keeps
+  every letter and is sound, not complete: equal keys give the same end digest at every state. Its catalogue row is
+  `word_equality_keys`.
+- Named macro analysis and comparison (pull request 353): the source [`macros.6cs`](c600-library/src/macros.6cs) is the
+  module `macros` with two entries, effect `snapshot`, over a name the caller gives and a recipe in the step records of
+  `recipes`. `macro_report(name, recipe)` reads KN2.4's `effect` and `replay` rows at the recipe and answers the macro's
+  whole effect, the session's protected orbits at the head, Net's conflicts (the protected orbits the net map moves) and
+  Strict's first refused prefix with the orbits in conflict there. `macro_comparison(first, first_recipe, second,
+  second_recipe)` reads `effect` at both recipes and answers the support orbits both net maps move and those only one
+  moves, and whether the net maps and the literal expansions are equal. The entries report the caller's macros and
+  choose none: no answer ranks, selects, previews or applies a macro. Each recipe is a parameter of its own, because the
+  built-in column admits a read only at a parameter as given (LB3.5). Its catalogue row is
+  `named_macro_analysis_and_comparison`.
+- Seeds and their stage order (pull request 357): the source [`seeds.6cs`](c600-library/src/seeds.6cs) is the module
+  `seeds` with two entries. `seed_report(orbit, seed)`, effect `snapshot`, reads `effect` at the seed the caller names
+  and answers its whole net effect, what it moves in the target orbit the caller names, and its collateral, every other
+  orbit its net map moves, from the kernel's full map, so an empty collateral is established by the map, never by
+  omission. `stage_order(seeds)`, pure, orders the caller's rows of collateral and orbit so that every orbit comes
+  before each orbit its seed moves: at each step the first ready row in the caller's order, so no orbit's ID or rank
+  decides, and rows the edges hold in a cycle come back in `cycle`, none dropped. The entries choose no seed, orbit or
+  target. Its catalogue rows are `seeds_and_full_seed_analysis` and `collateral_stage_order`.
+- Tests (`c600-library/tests/`), each naming its part; CT-LB1-01 runs whole in two of them, `ct_lb1_01.rs` and
+  `ct_lb1_01_trees.rs`, and no other conformance ID runs whole here:
   - `ct_lb1_03.rs`: CT-LB1-03's 600-cell-Full half. The language part: the source parses, keeps its canonical layout,
     lowers to one module that requests no capability and checks with no diagnostic, and `power` has no effect, reads no
     state, prepares no preview and names no proposal target; `power` and a client that imports it by digest build the
@@ -2679,39 +3153,77 @@ run or not applicable is no pass (PHS.63).
     intermediate prefixes move a protected orbit: Net derives them and ends at the base; Strict refuses them at the
     first moving prefix with one certificate per protected orbit that prefix moves; a replay gives no verdict before
     `finish()`, and a replay finished early judges only the letters pushed. The Net and Strict halves run through the
-    tool's route on the command layer in `c600-tools/tests/net_oversize.rs`.
+    tool's route on the command layer in `c600-tools/tests/net_oversize.rs`, and the whole run, with the captured lock,
+    is in `c600-tools/tests/ct_lb2_02.rs`.
   - `completion.rs`: CT-LB2-04's language part. The exact-completion source parses, keeps its canonical layout, lowers
     to one module that requests no capability and checks with no diagnostic; the entry has the effect `snapshot` and
     reads state through snapshot reads of `positions` and `labels` and no other row, so it prepares no preview; the
     catalogue row's Effect field is the checker's.
-- The whole run is in `c600-tools/tests/exact_completion.rs`, since the library crate is a dev-dependency of the tools
-  crate: CT-LB2-04, whole, on 600-cell-Full, through `Boundary` and the tool's host bridge onto a command layer in the
+  - `ct_lb1_01.rs`: CT-LB1-01's F2, F5 and Q(√5) sign parts. Against the pinned research references: the 36-macro
+    correction library's ν rows have rank 34 over F2 and 2 over F5, and every row is 0 on the nine coordinates no
+    correction changes; the senior review's F5 cycle criterion holds for every nonzero ratio on cycles of 2 and 3 edge
+    cells. Fixed F2 and F5 systems with negative entries agree with a test-local elimination, and a solve reads no
+    state, so it asserts no puzzle reachability. The research pins no Q(√5) sign fixture (LX-5's planned ones were not
+    written), so `sign_q5` and `compare_q5` are checked against the kernel's exact sign of a + b√5
+    (`c600_kernel::exact::sign5`, KN3.1) on the convergents of √5, where a² - 5b² = ±1 and the sign is hardest to
+    decide, up to 128-bit coefficients.
+  - `ct_lb1_01_trees.rs`: CT-LB1-01's quaternion factor and tree parts: every answer of `trees` equals trees.py's exact
+    answer in `tests/fixtures/trees-reference.json`, factors coefficient for coefficient, and trees.py and its
+    `exact.py` are still the pinned bytes.
+  - `recipes.rs`: CT-LB2-01's source part. The recipes source checks with no diagnostic and keeps its canonical layout;
+    the three constructors are pure and build step records and literal star words with no host; the four other entries
+    read the `effect` row and no other; the two catalogue rows split the exports between them, with the checker's
+    effects.
+  - `protection.rs`: CT-LB2-02's source part. The protection source checks with no diagnostic and keeps its canonical
+    layout; each capture and each check reads its own rows (`labels`, `positions` or `protection`) and no other; the
+    catalogue row's effect is the checker's.
+  - `setups.rs`: CT-BND-18's source part. The setups source checks with no diagnostic and keeps its canonical layout;
+    the entry reads `setups` and no other row; the catalogue row's effect is the checker's.
+  - `macros.rs` and `seeds.rs`: the source parts of the named macro analysis and of the seeds. Each source checks with
+    no diagnostic and keeps its canonical layout, each entry reads its rows and no other (`stage_order` none), and the
+    catalogue rows' effects are the checker's; `seeds.rs` also runs the pure stage order with no host, a cycle included.
+- CT-LB2-04's whole run is in `c600-tools/tests/exact_completion.rs`, since the library crate is a dev-dependency of the
+  tools crate: whole, on 600-cell-Full, through `Boundary` and the tool's host bridge onto a command layer in the
   solving profile, author `built_in`. The solved state passes, for one piece of each of the 35 orbits and of the fixed
   cell centres, together and each alone. These do not pass: an empty list; a piece in its home position but turned,
   after a fixed scramble; two pieces of one orbit whose home slots lie in the same cells, exchanged, so that every slot
-  keeps its colour; and a buffer holding another piece of its orbit, a residual that a residual check would permit.
-  The exchanged and residual states are label arrays built from solved with `Kernel::state_from_labels`. Each case
-  checks the identity facts the kernel gives (positions, slots against home slots, home labels), not colours. The
-  built-in column refuses a variant that reads `labels` at home slots taken from the `positions` answer (LB3.5), and
-  the entry answers `false` when the named home slots are not the candidates' own, in order.
+  keeps its colour; and a buffer holding another piece of its orbit, a residual that a residual check would permit. The
+  exchanged and residual states are label arrays built from solved with `Kernel::state_from_labels`. Each case checks
+  the identity facts the kernel gives (positions, slots against home slots, home labels), not colours. The built-in
+  column refuses a variant that reads `labels` at home slots taken from the `positions` answer (LB3.5), and the entry
+  answers `false` when the named home slots are not the candidates' own, in order.
+- CT-LB2-01's whole run is in `c600-tools/tests/ct_lb2_01.rs` (pull request 294), on the same host, against the
+  differential oracle's cases O01 to O07.
+- CT-LB2-02's whole run is in `c600-tools/tests/ct_lb2_02.rs` (pull request 300), on the same host.
+- CT-BND-18's whole run is in `c600-tools/tests/ct_bnd_18.rs` (pull request 309), on the same host.
+- The named macro analysis runs whole in `c600-tools/tests/macros.rs` (pull request 353) and the seeds in
+  `c600-tools/tests/seeds.rs` (pull request 357), on the same host; the word keys run on the pinned model's relation in
+  `c600-tools/tests/ct_lb1_02.rs`, CT-LB1-02's 600-cell-Full half (pull request 350).
 - Drafts, in the crate documentation under "Drafts": the exponent is an `Int`, and a negative power is the inverse
-  written out; `power` recurses through `exact_add`, because the IR draft has no subtraction or negation and had no
-  loop when `power` was written (loops came with LP2's pull request 234); a power is a flat word, not a compressed one;
-  the catalogue rows are Rust data, because the IR draft and the syntax carry no module manifest; the library builds no
+  written out; `power` recurses through `exact_add`, because the IR draft has no subtraction or negation and had no loop
+  when `power` was written (loops came with LP2's pull request 234); a power is a flat word, not a compressed one; the
+  catalogue rows are Rust data, because the IR draft and the syntax carry no module manifest; the library builds no
   incompatible-alphabet refusal of its own. Exact completion answers a `Bool`, `false` for an empty list, for which
   chapter 13 registers no code; completion is identity from both rows, with no buffer and no residual; the entry takes
   the candidates' home slots as named, because the built-in column reads only at what the solver named (LB3.5), and
   checks them against the `positions` answer; `repeat` and a recursive `flatten` stand in for a list map, and
   `flatten`'s cost grows with the square of the number of candidates (deferred). The `labels` row's argument, answer,
-  codes and tariff are `c600-tools`' drafts.
+  codes and tariff are `c600-tools`' drafts, and so are those of the `effect`, `protection`, `replay`, `setups`,
+  `orbits`, `structure.compare` and `filter.preview` rows. The drafts of exact linear algebra (two copies of one
+  elimination, matrices as `List<List<Int>>` and solutions as residues), of recipes and reports, and of the later
+  entries (Q(√5) signs, quaternions, word keys, macros and seeds) are in the crate documentation too.
 - The jumbling library entries, on the IR draft's menu words, are C8's (`c600_jumble_tool::library`). Not built: library
-  entries over kernel rows other than exact completion, such as LB2's star and recipe construction and its Net and
-  Strict protection with captured locks: the IR draft passes a run's input as a query's argument since LP2's
-  `read_snapshot<T>("q", x)`, and the tool's bridge answers such a read for `positions` (LP2's pull request 226) and
-  `labels` only; the residual half of LB2's row (non-buffer positions, buffer occupants and frames); the `labels` row's
-  refusal with Jumble on, which is built and not run, because a jumbled layer needs `c600-jumble`; the other entries of
-  LB1.8's table. The IR draft has `word_key`, Full's free reduction (LP2's pull request 176), and LB1.10's `trace_key`
-  (`trace-key/1`, pull request 214).
+  entries over kernel rows other than exact completion, recipes and reports, Net and Strict protection, guarded setups,
+  named macros and seeds: the IR draft passes a run's input as a query's argument since LP2's `read_snapshot<T>("q",
+  x)`, and the tool's bridge answers such a read for `positions` (LP2's pull request 226), `labels`, `effect`,
+  `protection`, `replay`, `orbits` (pull request 358), with the setup table `setups`, and the representations tool's
+  `structure.compare` and `filter.preview` (C6) only; the residual half of LB2's row (non-buffer positions, buffer
+  occupants and frames); the rest of LB2's catalogue over `effect` (blocks and work sheets); in the seed rows, the
+  target action as cycles with its exact frames, KN6's certificates, the orbit catalogue and the progress read per
+  orbit; a captured lock in a macro report; the cosets γK⁺, and the rest of "Exact linear algebra" (null spaces, and
+  ranks and solving over Z, Q and Q(√5)); keys of jumbling menu words in this crate (LG2.18's key on the pinned menu
+  matrices is C8's); the `labels` row's refusal with Jumble on, which is built and not run, because a jumbled layer
+  needs `c600-jumble`; the other entries of LB1.8's table.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C9 bridge: the display host over the S-A2 core
@@ -2724,35 +3236,54 @@ run or not applicable is no pass (PHS.63).
   array length and sets every row's size before it calls one, and refuses a null context or another ABI version. The
   bridge loads no library: the shell links `renderer/bridge`, loads `sa2_interop.dll` and hands over the context and
   the table, because only `c600-platform` calls an operating system's own API (CT-RPI-20) and it has no loader.
-- The shell's native host library, `c600-shell-host` in `renderer/bridge/host`, is the other member of that workspace.
-  It is step S2 of `renderer/shell/README.md`, a draft on route B, accepted for now by the owner on 18 Nov 2026,
-  pending three owner-machine checks. It runs `c600-display`'s host over `RenderBackend<DllCore>` behind a C interface
-  (`m6h_*`) that the shell's C# side calls, and it loads no library either.
+- The shell's native host library, `c600-shell-host` in `renderer/bridge/host`, is a member of that workspace, and so is
+  LX-4's editor library, `c600-shell-lx4` in `renderer/bridge/lx4` (C9 U8, measurement tooling, loaded only with
+  `--lx4`). It is step S2 of `renderer/shell/README.md`, a draft on route B, accepted for now by the owner on 18 Nov
+  2026, pending three owner-machine checks. It runs `c600-display`'s host over `RenderBackend<DllCore>` behind a C
+  interface (`m6h_*`) that the shell's C# side calls, and it loads no library either.
 - The mapping: the core's describe report becomes the support report, with the limits the caller declares. J01 and J02
-  are reported unsupported, because the bridge maps Full labels only. F20 (atomic publication and latest-wins
-  replacement) is not a drawing row and the core does not name it; its backend operations are ABI 4's prepare, poll,
-  activate, cancel and retire, and its replacement rules are the host's (RM.17 to RM.22), so the bridge reports it
-  supported unless the core names it. A preparation carries at most one retained primitive, its labels a permutation
-  and its instances on stickers or slots; anything else is refused by the feature it needs. Activation sends the
-  publication stamp's digest. A frame needs a camera matrix for its view and an active set. On a `sa2_attach`
-  context (the Godot-texture route) `read_presented` and `recover` answer renderer unavailable (F23; F22 and RPI.46),
-  so the host's presented latch stays clear. On a `sa2_create` context with a surface (ABI 5, route B, accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) frames
-  name `SA2_TARGET_SURFACE`, `read_presented` returns the frames the core confirmed under the exact rule (the bridge
-  keeps each one's display time, the SyncQPCTime of the confirming statistics row, for `take_display_times`), and
-  `recover` rebuilds a removed device: the bridge then forgets every resource set of the old epoch, so an installed
-  publication draws again only after it is prepared and activated on the new device (RM.23). What the `Backend` trait has no operation for yet is inherent: engine adoption, frame reports in batches of
-  64, pick requests and polls (a pick names the binding field that went stale), and the core's counters.
+  are passed through as the core describes them: the bridge adopts a jumbling bundle's pose arrays over the home labels,
+  and a posed plan draws every slot with no slot pickable; an instance of a posed primitive (J13) stays unsupported. F20
+  (atomic publication and latest-wins replacement) is not a drawing row and the core does not name it; its backend
+  operations are ABI 4's prepare, poll, activate, cancel and retire, and its replacement rules are the host's (RM.17 to
+  RM.22), so the bridge reports it supported unless the core names it. A preparation carries at most one retained
+  primitive, its labels a permutation and its instances on stickers or slots; anything else is refused by the feature it
+  needs. Activation sends the publication stamp's digest. A frame needs a camera matrix for its view and an active set.
+  On a `sa2_attach` context (the Godot-texture route) `read_presented` and `recover` answer renderer unavailable (F23;
+  F22 and RPI.46), so the host's presented latch stays clear. On a `sa2_create` context with a surface (ABI 5, route B,
+  accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks) frames name `SA2_TARGET_SURFACE`,
+  `read_presented` returns the frames the core confirmed under the exact rule (the bridge keeps each one's display time,
+  the SyncQPCTime of the confirming statistics row, for `take_display_times`), and `recover` rebuilds a removed device:
+  the bridge then forgets every resource set of the old epoch, so an installed publication draws again only after it is
+  prepared and activated on the new device (RM.23). The `Backend` trait's adoption, frame reports and picks map onto
+  the bridge's own calls of the same names, which stay public: engine adoption; frame reports in batches of 64, each
+  with its frame's stamp; pick requests and polls by the core's frame ID (a pick names the binding field that went
+  stale); and the core's counters, which have no trait operation. Through the trait, a bundle at the revision the core
+  already holds (the whole revision reference) is adopted without a second copy, since the shell adopts into the core
+  first, and any other reaches the core, which refuses a revision that does not increase; frame reports are empty,
+  since RM.41's reports name frames that stopped a user stage and the product path runs none; and a pick on a frame
+  older than every frame the bridge keeps is stale at `sequence`, one on a stamp it never submitted is invalid, and the
+  core's refusal (for a frame it no longer retains, among others) is a core failure.
+- User stages (C9 U5a; drafts until the IR freeze): the module `stage` takes a stage that `c600-check` admitted
+  (`CheckedStage`) and gives its parameter binding (binding/1), deterministic HLSL under `m600-stage-hlsl/1`, the
+  binary32 CPU reference evaluator (RPI.74) and a strict reader of a limits file. The bin `c600-stage-hlsl` writes
+  `<name>.hlsl` and `<name>.json` for one `.6cs` stage. `renderer/core` compiles the text with DXC and runs RPI.72's
+  chain (ABI 5, additive); the host attaches no user stage yet. Tests: `stage_hlsl.rs` (golden text, the reference
+  against hand evaluation, the binding's refusals, the gate pair in `renderer/acceptance/stages` with its overdraw 108,
+  the limits file).
 - Tests (`c600-render/tests/`): `abi_layout.rs` reads the header and checks every row's offsets and size and every
   constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
   install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
-  replacement, and device loss; on route B also confirmed presentations and their display times, the presented-preview latch, a contradicting
-  presented row, recovery and a publication drawn again on the new device. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
-  run again through the C function table over a C shim; there `abi_functions.rs` checks every function's signature
-  against the header and `ffi.rs` what `DllCore` refuses before a call and what it reads back.
+  replacement, and device loss; on route B also confirmed presentations and their display times, the
+  presented-preview latch, a contradicting presented row, recovery and a publication drawn again on the new device.
+  The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and run again through the C function
+  table over a C shim; there `abi_functions.rs` checks every function's signature against the header and `ffi.rs`
+  what `DllCore` refuses before a call and what it reads back. `trait_ops.rs` drives the trait's adoption, frame
+  reports and picks through the host: adoption in the shell's order and alone, another image at the same state
+  counter, a pick requested, polled and resolved, and frames the core or the bridge no longer keeps.
   `tests/test_render_ffi.py` runs that crate's tests, since `tests/test_language_rust.py` runs this workspace only.
 - Not run: no run against the built core library and no GPU run, so nothing here is Windows/DirectX, input or
-  performance evidence. Not built: posed and jumbling engine images (J01, J02), a check of the preparation's base
-  revision by the core, and the trait operations above, which wait for `c600-display`.
+  performance evidence. Not built: a check of the preparation's base revision by the core.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C9 measurement: LX-4's module set and edit script
@@ -2780,43 +3311,61 @@ run or not applicable is no pass (PHS.63).
 
 - `c600-lx2-faults --runtime <c600-runtime binary> [--injection <c600-lx2-child binary>] [--sessions <new folder>]
   [--assets <folder>] [--out <record.json>]` runs five trials on `c600-runtime`'s parent API against the child binary
-  it is given, so the decisive runs use the product build's runtime unchanged, and with `--injection` a sixth, native
-  trial on the injection device. Every job
-  first proposes SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
+  it is given, so the decisive runs use the product build's runtime unchanged, and with `--injection` three native
+  trials on the injection device. Build and run both bins with the feature `device`. Every job first proposes
+  SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
 - `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
   `recursion_metered` (endless recursion, 1 MiB) ends `KN7:budget.memory`, since the meter charges a frame as memory
   and has no recursion dimension; `alloc_metered` (a list grown with `push`, 64 KiB, kept small because each `push`
-  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform (the barrier)
-  and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is
-  still the runtime word and the same runtime completes the control again, in a fresh child only after the kill. The
-  metered trials and the control also run in process, and the two executors agree.
+  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform
+  (the barrier) and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the
+  pending preview is still the runtime word and the same runtime completes the control again, in a fresh child after a
+  fault and in the same child otherwise. The metered trials and the control also run in process, and the two
+  executors agree.
 - With `--sessions`, each trial also runs with a session open (RTE.42 conditions 1 and 2; RTE.43): KN5's command
   layer over M6's journal on a file-system disk in its own fresh subfolder, with the shell and the headless display.
-  The solver commits `[1, -2]`; the trial's job runs in the child through the product's bridge and boundary, so its
-  proposal is the layer's pending preview before the fault; the solver then commits that preview and `[3]`. A trial
-  agrees when it ends with its typed outcome, every solver command after it is accepted, its journal records and state
-  hash equal the control's, and a reopen replays the same state hash. The journal is read before the reopen, which
-  journals a fresh random epoch of its own.
+  The solver commits `[1, -2]` and invokes the trial's tool row from the shell; the trial's job runs as that command's
+  program job in the child, through the product's bridge and boundary, so its proposal is the layer's pending preview
+  before the fault; the solver then commits that preview and `[3]`. The job is the process host's job for the tool
+  (`c600_tools::process::job`: the solving profile and the tool's class rows, so that the child admits the entry in
+  the built-in column) with the trial's limits and no summary rows; `tests/session.rs` checks it against the host's. A
+  trial agrees when it ends with its typed outcome, the solver's command that ran it ends as that outcome says, every
+  solver command after it is accepted, its journal records and state hash equal the control's, and a reopen replays
+  the same state hash. The journal is read before the reopen, which journals a fresh random epoch of its own.
 - The injection device of option (a) (top integrator, 18 November 2026) is the bin `c600-lx2-child`: product source
-  (`c600_runtime::child::main`, unchanged) under a `#[global_allocator]` that wraps the system allocator and refuses
-  an allocation once the live heap would pass the byte count in `C600_LX2_CEILING`. Its unsafe code is in that bin
-  only; c600-runtime is not edited and keeps no allocator of its own. Build it for the decisive run with the product's
-  profile: `cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 --bin c600-lx2-child`.
-  It is never shipped: `tests/device.rs` checks, through `cargo metadata`, that no package of this workspace or of
-  `renderer/bridge` other than c600-lx2 depends on c600-lx2, and that nothing under `c600-runtime/src` names a
-  global allocator.
-- `alloc_ceiling`, the native trial, runs only on the device, with the ceiling at 32 MiB set in `Config.env` for the
+  (`c600_runtime::child::main`, or with this package's feature `device` `c600_runtime::child::main_with` on
+  c600-runtime's fault hook, LP3's feature `lx2-faults`) under a `#[global_allocator]` that wraps the system allocator
+  and refuses an allocation once the live heap would pass the byte count in `C600_LX2_CEILING`. Its unsafe code is in
+  that bin only; c600-runtime keeps no allocator of its own. Build it for the decisive run with the product's profile
+  and the feature `device`: `cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2
+  --features device --bin c600-lx2-child`. It is never shipped: `tests/device.rs` checks, through `cargo metadata`,
+  that no package of this workspace or of `renderer/bridge` other than c600-lx2 depends on c600-lx2, that only
+  c600-lx2's feature `device`, which no default turns on, turns the fault hook on, that the runtime child built as the
+  product builds it has no hook, and that nothing under `c600-runtime/src` names a global allocator.
+- `alloc_ceiling`, a native trial, runs only on the device, with the ceiling at 32 MiB set in `Config.env` for the
   trial's child and its recovery child, and the meter at 1 GiB as a safety net: a list doubled with `concat` passes the
   ceiling, the standard library reports the failed allocation and aborts the child, and the parent must report a typed
   `Lost` fault (`KN7:resource_limit.runtime_lost`) whose standard error shows "memory allocation of"; a loss without it
   does not count. Then a fresh child completes the control, as after the forced kill. With `--sessions` it also runs
   with a session open and must agree with the control.
+- `recursion_native` and `loop_native`, the other native trials, need the device built with the feature `device`,
+  which refuses them otherwise. Their job is the control's. The device arms its native fault (`C600_LX2_FAULT`) for
+  the trial's child, and the hook fires after two answers, the proposal's tariff and perform, so after the pending
+  preview exists and before the job's result. The device writes its line to standard error and then either recurses
+  in native code until the stack overflows, where the parent must report a typed `Lost` fault
+  (`KN7:resource_limit.runtime_lost`) whose standard error shows the overflow, or spins in native code without a
+  kernel call until the parent's watchdog, the run's wall-clock safety stop at 3 s (KN7.10), ends the child with a
+  typed `Deadline` fault (`KN7:resource_limit.safety_stop`). The fresh child that recovers runs unarmed. With
+  `--sessions` both also run with a session open and must agree with the control.
 - The record (`magic600-c9-lx2-faults-v1`) names each child by file name and SHA-256 only, never by path. Each row
   names its child (`product` or `injection device`); `injection_device` is null without `--injection`, and otherwise
-  carries the device's file name and SHA-256, "product source + injection device", the variable, the ceiling and the
-  meter limit. Each session row names the journal by row count and digest, never the folder.
-- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need the device on
-  `c600-runtime`'s fault hook (the feature `lx2-faults`, LP3's), which c600-lx2 does not use yet. Also not here: the
-  barrier's release acknowledgement and conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2 commits during
-  fault windows), which need the shell's frame loop on the owner's machine. Evidence kind: source and synthetic;
-  nothing is timing.
+  carries the device's file name and SHA-256, "product source + injection device", the ceiling's variable, the
+  ceiling, the meter limit, the fault variable and the answers after which a native fault fires. The limits name the
+  deadline and the watchdog. Each session row names the journal by row count and digest, never the folder.
+- Not here: the barrier's release acknowledgement, which needs the shell's frame loop on the owner's machine.
+  Conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2 commits during fault windows) are built in the shell,
+  not in this crate: `renderer/shell/project/Lx2/Lx2Module.cs` and `tools/perf/c9/lx2.py` run and judge turn windows
+  and, for the metered faults, limit windows (C9 U7), and a decisive run needs the owner's machine. A limit window ends
+  at the meter's budget code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes
+  first. `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view
+  limits. Evidence kind: source and synthetic; nothing is timing.

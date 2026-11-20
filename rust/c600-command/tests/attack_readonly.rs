@@ -79,12 +79,14 @@ impl Fixture {
     /// One envelope on the run's channel, with no token.
     fn runtime(&mut self, row: &str, args: Value) -> Receipt {
         self.sent += 1;
+        let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
         let invocation = Invocation {
             command: format!("{}/{}", self.run, self.sent),
             row: row.to_owned(),
             args,
             token: None,
             epoch: self.layer.revision().epoch,
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
         };
         self.layer.invoke(&Caller::Runtime { run: self.run.clone() }, invocation)
     }

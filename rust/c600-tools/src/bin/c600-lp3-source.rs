@@ -18,17 +18,17 @@
 //! `--runtime` or from the `c600-runtime` binary beside this one. On either host the same boundary and bridge answer
 //! the program in this process: its one proposal reaches the command layer through the host bridge
 //! ([`c600_tools::bridge`]) as the run's `operation.preview` invocation, and the program receives only the fixed
-//! acknowledgement. The runner gives the bridge the solver's word steps of a recipe of plain word steps only, so a
-//! proposal of exactly that recipe's literal word, when it is longer than one chunk of 100,000 letters, goes in the
-//! recipe's own word steps; every other proposal goes in one word step (LB2.3, LB2.4). The layer runs the preview
-//! job, and the runner then reports the solver's command with the program's acknowledgement: the layer builds a run's
-//! preview only while the host holds the run's job. The shell presents the built preview and commits it by the key
-//! route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo follow
-//! `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the expansion with
-//! the kernel's refusal, before any command: it and a literal word the layer refuses at admission are `invalid-input`
-//! steps. On either host a word the kernel refused that has no transfer encoding (a letter outside 1 to 1200 in
-//! magnitude) is refused at the run's start stage: it is an `invalid-input` step whose solver's command fails with
-//! that refusal's code, with no invocation.
+//! acknowledgement. The runner gives the bridge the solver's recipe of every step the kernel expanded, so a proposal
+//! of exactly that recipe's literal word, when it is longer than one chunk of 100,000 letters, goes as the recipe
+//! itself, unchanged, whatever its steps; every other proposal goes in one word step (LB2.3, LB2.4). The layer runs
+//! the preview job, and the runner then reports the solver's command with the program's acknowledgement: the layer
+//! builds a run's preview only while the host holds the run's job. The shell presents the built preview and commits
+//! it by the key route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo
+//! follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the
+//! expansion with the kernel's refusal, before any command: it and a literal word the layer refuses at admission are
+//! `invalid-input` steps. On either host a word the kernel refused that has no transfer encoding (a letter outside 1
+//! to 1200 in magnitude) is refused at the run's start stage: it is an `invalid-input` step whose solver's command
+//! fails with that refusal's code, with no invocation.
 //!
 //! Each session's layer serves H-08 with the command layer's draft rows and holds the host's provenance reader
 //! ([`c600_tools::workspace`]), which keeps every run's blocks, so a host can write and preview workspace records. The
@@ -60,9 +60,9 @@ use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refus
 use c600_run::boundary::Store as RunStore;
 use c600_run::meter::Outcome as RunOutcome;
 use c600_runtime::Refused;
-use c600_tools::bridge::{base, proposal_args, Bridge, Steps, WORD_CHUNK};
+use c600_tools::bridge::{proposal_args, Bridge, Steps, WORD_CHUNK};
 use c600_tools::case::{read_document, CASE_FORMAT};
-use c600_tools::expand::{expand, literal_digest, word_steps, Expansion};
+use c600_tools::expand::{expand, literal_digest, Expansion};
 use c600_tools::process::{
     invoke_tool, run_in_process, runtime_beside, stage_name, start_error, Cause, ProcessHost, ToolCommand, IN_PROCESS,
     PROCESS,
@@ -384,24 +384,25 @@ impl Session<'_> {
 
     /// Runs the tool on `word` on the session's host, inside the command the solver invokes to run it: the shell
     /// invokes the tool's row with the word and the host takes the job ([`invoke_tool`]). The entry runs as the job's
-    /// run through a bridge given `steps`, the solver's word steps of the step's recipe. Returns the run's one
-    /// invocation's receipt with the command, which the step reports once the preview is built. Or returns the
-    /// start-stage refusal of a word with no transfer encoding, which both hosts give before the run reaches the layer;
-    /// the host then reports the command as its job's failure.
+    /// run under the job's budget, through a bridge given `steps`, the solver's recipe of the step with its literal
+    /// word, and the job's budget, which the run's invocations declare. Returns the run's one invocation's receipt
+    /// with the command, which the step reports once the preview is built. Or returns the start-stage refusal of a
+    /// word with no transfer encoding, which both hosts give before the run reaches the layer; the host then reports
+    /// the command as its job's failure.
     fn propose(&mut self, word: &[i32], steps: Option<Steps>) -> Result<Proposed, Failure> {
         let command = invoke_tool(&mut self.shell, &mut self.layer, self.tool, word)
             .map_err(|detail| disagree(format!("the solver's command to run the tool: {detail}")))?;
         self.commands += 1;
         self.keep(&command.receipt, &Caller::Shell);
         let run = command.run();
-        let read = base(&command.job.revision);
+        let read = command.base();
         let mut store = RunStore::default();
-        // The one invocation's arguments: the word in one word step, or in the solver's word steps (LB2.4).
+        // The one invocation's arguments: the word in one word step, or the solver's recipe, unchanged (LB2.4).
         let args = proposal_args(word, steps.as_ref());
-        let mut bridge = Bridge::new(&mut self.layer, &run).with_steps(steps);
+        let mut bridge = Bridge::new(&mut self.layer, &run).with_steps(steps).with_budget(command.job.budget);
         let result = match self.process.as_deref_mut() {
-            None => run_in_process(self.tool, word, &run, &read, &mut bridge, &mut store),
-            Some(host) => host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
+            None => run_in_process(self.tool, &command, &mut bridge, &mut store),
+            Some(host) => host.run(self.tool, SOURCE, &command, &mut bridge, &mut store),
         };
         self.reader.keep_run(&store);
         let ran = match result {
@@ -477,9 +478,9 @@ impl Session<'_> {
                 return Ok(Outcome::Invalid);
             }
         };
-        // The solver's word steps, for a recipe of plain word steps only, are taken before any tampering: a tampered
-        // word is not the recipe's literal word, so it goes in one word step.
-        let steps = word_steps(recipe).and_then(|lengths| Steps::new(&word, lengths));
+        // The solver's recipe, for every recipe the kernel expanded, is taken with its literal word before any
+        // tampering: a tampered word is not the recipe's literal word, so it goes in one word step.
+        let steps = unchecked.is_none().then(|| Steps::of(self.kernel, recipe)).flatten();
         if self.tamper == Some(index) {
             match word.first_mut() {
                 Some(letter) => *letter = -*letter,
@@ -557,9 +558,9 @@ impl Session<'_> {
     }
 
     /// The solver dismisses the preview a refused commit left shown, with the key route's Escape: only the solver's
-    /// action ends a shown preview, so the next run's preview is not admitted while it stays (findings B1 and L17 of the
-    /// KN5 boundary attack, the owner's reading of 18 November 2026). The cancel changes no revision and takes no job,
-    /// so it is not kept with the step's receipts; it shifts only the shell's later command IDs.
+    /// action ends a shown preview, so the next run's preview is not admitted while it stays (findings B1 and L17 of
+    /// the KN5 boundary attack, the owner's reading of 18 November 2026). The cancel changes no revision and takes no
+    /// job, so it is not kept with the step's receipts; it shifts only the shell's later command IDs.
     fn dismiss(&mut self) -> Result<(), Failure> {
         match self.shell.press(&mut self.layer, "Escape", false) {
             Ok(Some(receipt)) if matches!(receipt.status, Status::Completed(_)) => Ok(()),

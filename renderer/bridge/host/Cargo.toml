@@ -16,13 +16,16 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # The turns (charter E2): KN5's command layer over M6's journal, LP3's input router and KN3's twist menu.
 c600-command = { path = "../../../rust/c600-command" }
+# C9 U8's view jobs: the source digest, the run's outcome and the module name of a program text.
+c600-digest = { path = "../../../rust/c600-digest" }
 c600-display = { path = "../../../rust/c600-display" }
 c600-input = { path = "../../../rust/c600-input" }
 c600-jumble = { path = "../../../rust/c600-jumble" }
 c600-kernel = { path = "../../../rust/c600-kernel" }
 c600-render = { path = "../../../rust/c600-render" }
 c600-render-ffi = { path = ".." }
+c600-run = { path = "../../../rust/c600-run" }
+# Charter E3 (C9 U6): the language runtime's parent side, which starts its process (route RT1).
+c600-runtime = { path = "../../../rust/c600-runtime" }
 c600-session = { path = "../../../rust/c600-session" }
-
-[dev-dependencies]
-c600-digest = { path = "../../../rust/c600-digest" }
+c600-syntax = { path = "../../../rust/c600-syntax" }

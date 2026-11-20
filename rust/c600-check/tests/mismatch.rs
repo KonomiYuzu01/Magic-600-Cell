@@ -5,7 +5,7 @@
 
 mod support;
 
-use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, INCOMPATIBLE_ALPHABET, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
+use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
 use c600_ir::build::*;
 use c600_ir::{ExactRole, Expr, Lit, Prim, Program, ReceiptField, Ty};
 use support::{less, mismatch, only, report, tint, tool, xy};
@@ -157,6 +157,38 @@ fn a_product_and_an_assertion_take_their_operands() {
     assert_only(&assertion(boolean(true), Ty::Bool), "f", "root", "Bool", "Unit");
 }
 
+/// The LP2 drafts `q5_parts` and `q5_of` (ADR-L03.6, PS1.4): `q5_parts` takes a number up to `Q5`, widened as a sum
+/// is, and gives the record `{ a: Int, b: Int, d: Int }`; `q5_of` takes three integers and gives a `Q5`. Neither takes
+/// a budget. A literal zero denominator is admitted: its failure belongs to the run (DET.55).
+#[test]
+fn a_q5_triple_and_its_value_take_their_operands() {
+    let triple = || Ty::Record(["a", "b", "d"].map(|n| (n.to_string(), exact(Ty::Int))).to_vec());
+    let parts = |x: Ty| tool(vec![helper("f", vec![param("x", exact(x))], exact(triple()), q5_parts(var("x")))]);
+    for x in [Ty::Nat, Ty::Int, Ty::Rat, Ty::Q5] {
+        let p = parts(x);
+        assert!(report(&p).is_admitted(), "{:#?}", report(&p).diagnostics);
+    }
+    let numbers = "Nat | Int | Rat | Q5";
+    assert_only(&parts(Ty::Budget), "f", "0", numbers, "Budget");
+    assert_only(&f(triple(), q5_parts(text("a"))), "f", "0", numbers, "Text");
+    // Each field is an integer, so a field read is an `Int`, not a `Nat`.
+    assert!(report(&f(Ty::Int, field(q5_parts(nat(2)), "d"))).is_admitted());
+    assert_only(&f(Ty::Nat, field(q5_parts(nat(2)), "d")), "f", "root", "Nat", "Int");
+
+    let of = |a: Ty, b: Ty, d: Ty, result: Ty| {
+        let abd = vec![param("a", exact(a)), param("b", exact(b)), param("d", exact(d))];
+        tool(vec![helper("f", abd, exact(result), q5_of(var("a"), var("b"), var("d")))])
+    };
+    let p = of(Ty::Nat, Ty::Int, Ty::Int, Ty::Q5);
+    assert!(report(&p).is_admitted(), "{:#?}", report(&p).diagnostics);
+    assert_only(&of(Ty::Q5, Ty::Int, Ty::Int, Ty::Q5), "f", "0", "Nat | Int", "Q5");
+    assert_only(&of(Ty::Int, Ty::Rat, Ty::Int, Ty::Q5), "f", "1", "Nat | Int", "Rat");
+    assert_only(&of(Ty::Int, Ty::Int, Ty::Budget, Ty::Q5), "f", "2", "Nat | Int", "Budget");
+    // The value is a `Q5` even when its √5 coefficient is zero: it does not fit a rational.
+    assert_only(&of(Ty::Int, Ty::Int, Ty::Int, Ty::Rat), "f", "root", "Rat", "Q5");
+    assert!(report(&f(Ty::Q5, q5_of(nat(1), nat(2), nat(0)))).is_admitted());
+}
+
 #[test]
 fn a_field_read_needs_a_record_with_that_field() {
     assert_only(&f(Ty::Nat, field(nat(1), "a")), "f", "0", "record { a: _, .. }", "Nat");
@@ -185,14 +217,17 @@ fn state_and_preview_operations_take_their_types() {
             assert_eq!((code, function, at, expected, supplied), (WORD_KEY_NOT_EXECUTABLE, "f", *path, "Word", name));
         }
     }
-    // A trace key takes a Full word or a menu word (LB1.10: a menu word's key is under the run's `jumble-locality/1`),
-    // and a word key a Full word only, so a menu word is of another alphabet there.
+    // A trace key and a word key each take a Full word or a menu word (LB1.10: a menu word's trace key is under the
+    // run's `jumble-locality/1`; LG2.18: its word key under the run's menu matrices). A word key of a menu word has the
+    // one type `WordEqualityKey`, and it is still no word.
     let menu = || Expr::Lit(Lit::MenuWord(vec![[0, 1]]));
     let keyed = report(&f(Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![menu()])));
     assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
-    let d = only(&f(Ty::WordEqualityKey, prim(Prim::WordKey, vec![menu()])));
+    let keyed = report(&f(Ty::WordEqualityKey, prim(Prim::WordKey, vec![menu()])));
+    assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
+    let d = only(&f(Ty::MenuWord, prim(Prim::WordKey, vec![menu()])));
     let (code, _, at, expected, supplied) = mismatch(&d);
-    assert_eq!((code, at, expected, supplied), (INCOMPATIBLE_ALPHABET, "0", "Word", "MenuWord"));
+    assert_eq!((code, at, expected, supplied), (WORD_KEY_NOT_EXECUTABLE, "root", "MenuWord", "WordEqualityKey"));
     assert_only(&cmd(Ty::Receipt, propose(word(&[1]), nat(2))), "f", "1", "Target", "Nat");
     assert_only(&cmd(Ty::Text, read_receipt(nat(1), ReceiptField::Id)), "f", "0", "Receipt", "Nat");
     assert_only(&cmd(Ty::Unit, use_exact(ExactRole::Budget, word(&[1]))), "f", "0", "Nat | Int | Budget", "Word");

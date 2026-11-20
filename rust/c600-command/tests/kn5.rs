@@ -197,7 +197,7 @@ impl Fixture {
         };
         change(&mut binding);
         let token = Some(Token::mint(&Secret::fixed(SECRET), binding));
-        Invocation { command, row: "operation.execute".into(), args, token, epoch: revision.epoch }
+        Invocation { command, row: "operation.execute".into(), args, token, epoch: revision.epoch, budget: None }
     }
 
     /// What no refusal may change: the state digest, the revision, the protected set and the durable log.
@@ -620,6 +620,7 @@ fn the_runtime_and_the_shell_keep_separate_command_ids() {
         args: draft_args(&word(&[1])),
         token: None,
         epoch: 1,
+        budget: None,
     };
     let proposed = f.layer.invoke(&runtime, theirs.clone());
     assert!(running(&proposed), "{:?}", proposed.status);
@@ -653,6 +654,7 @@ fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
         args: json::object([("policy", Value::String("uniform".into()))]),
         token: None,
         epoch: f.layer.revision().epoch,
+        budget: None,
     };
     let refused = f.layer.invoke(&runtime, scramble.clone());
     assert_eq!(code_of(&refused), code::TOKEN_INVALID);
@@ -693,6 +695,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("declare_overlay", false),
         ("store_mut", true),
         ("set_program_capacity", false),
+        ("set_budget_ceiling", false),
         ("present", false),
         ("set_provenance", false),
         ("set_views", false),

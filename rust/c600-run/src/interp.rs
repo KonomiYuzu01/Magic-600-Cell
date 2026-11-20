@@ -29,6 +29,7 @@
 //! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
 //! | `trace_key` (LB1.10; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per read of the least topological scan ([`crate::trace::Relation::reads`], [`crate::trace::Relation::menu_reads`] for a menu word) and 2 bytes reserved per letter, 4 per menu letter; a run that pins no trace relation of the word's alphabet (`full-disjoint-support/1` for a Full word, a `jumble-locality/1` relation that keys the pinned menu alphabet for a menu word) stops with `LB1:input.key_contract_mismatch`, and a letter outside the relation's alphabet with `LB1:input.incompatible_alphabet`, before its step |
+//! | `word_key` of a menu word (LG2.18; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per letter scanned plus the draft work of its exact products at `field_per_unit_pair` ([`crate::menu_key::price`]), with that price's bound of its tokens reserved; a run whose pinned menu carries no item matrices stops with `LB1:input.key_contract_mismatch`, and a word of another alphabet with `LB1:input.incompatible_alphabet`, before its step. A run whose pinned menu carries item matrices keys no Full word |
 //! | `length`, `concat`, `inverse`, `conjugate`, `commutator`, `compose` of menu words (LB1.8; LP2 drafts) | as on words: `expand_per_letter` per letter built and 4 bytes reserved per letter; an inverse reads the pinned menu's inverse items, and a word of another alphabet stops with `LB1:input.incompatible_alphabet` before its step |
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
@@ -107,6 +108,7 @@ use num_bigint::{BigInt, Sign};
 use crate::approx;
 use crate::encode;
 use crate::menu::{self, MenuAlphabet, MenuIdentity};
+use crate::menu_key;
 use crate::meter::{
     self, frame_size, integer_size, Amounts, DraftTariffs, Interruption, Meter, OwnerId, SourceRange, Stop, Summary,
     Tariffs, GENERATOR_SIZE,
@@ -294,6 +296,7 @@ pub struct Options<'a> {
     pub cancel: Option<&'a dyn Cancel>,
     pub sources: Option<&'a dyn SourceRanges>,
     /// The menu alphabet the run pins for its menu words (LB1.8; LP2 draft). Without one the run holds no menu word.
+    /// With its item matrices ([`MenuAlphabet::with_matrices`]) the run keys menu words and no Full word (LG2.18).
     pub menu: Option<&'a MenuAlphabet>,
     /// The independence relation the run pins for its trace keys (LB1.10; LP2 draft). Without one the run holds no
     /// trace key.
@@ -443,6 +446,8 @@ pub struct Loaded {
     functions: Vec<FunctionInfo>,
     codes: Vec<Code>,
     nodes: Vec<Node>,
+    /// For each node, the `let` slot whose list a `push` there may take to extend in place ([`Compiler::appends`]).
+    appends: Vec<Option<usize>>,
 }
 
 impl Loaded {
@@ -578,7 +583,7 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
     }
     let exported: Vec<bool> = runnable().flat_map(|(_, m)| m.functions.iter().map(|f| f.exported)).collect();
     let mut compiler = Compiler {
-        loaded: Loaded { modules, functions, codes: Vec::new(), nodes: Vec::new() },
+        loaded: Loaded { modules, functions, codes: Vec::new(), nodes: Vec::new(), appends: Vec::new() },
         names,
         contexts: Vec::new(),
         next_id: 0,
@@ -591,6 +596,7 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
         }
     }
     compiler.frames();
+    compiler.appends();
     Ok(compiler.loaded)
 }
 
@@ -623,6 +629,8 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::InsertEntry | Prim::Expand => Some(3),
         Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse => Some(1),
         Prim::TextDecode | Prim::StreamDigest => Some(1),
+        Prim::Q5Parts => Some(1),
+        Prim::Q5Of => Some(3),
         Prim::WordStream => Some(2),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
         Prim::Stage(s) => Some(s.arity()),
@@ -1011,6 +1019,72 @@ impl Compiler {
         for code in &mut self.loaded.codes {
             code.slots = (code.params + code.captures + code.lets) as u128 + temps[code.body];
         }
+    }
+
+    /// Marks each `push` whose list operand reads a `let` slot that is dead from the push on: the slot belongs to the
+    /// push's own code unit, no loop lies between the push and the slot's binding, and no operation of the unit after
+    /// the push reads the slot, as a variable or as a closure's or a child scope's capture. A unit runs its operands
+    /// in post-order, and only a loop runs one again, so no read of the slot follows the push until the slot is bound
+    /// again: its loop's next iteration refills it, or its scope ends. Such a push may take the slot's handle on the
+    /// list ([`Machine::push_element`]). Branches count as if both ran, which only marks fewer pushes.
+    fn appends(&mut self) {
+        let nodes = &self.loaded.nodes;
+        let mut appends = vec![None; nodes.len()];
+        for code in &self.loaded.codes {
+            // The unit's operands in post-order, with each one's parent in the unit.
+            let mut order = Vec::new();
+            let mut up = HashMap::new();
+            let mut stack = vec![(code.body, false)];
+            while let Some((id, done)) = stack.pop() {
+                if done {
+                    order.push(id);
+                    continue;
+                }
+                stack.push((id, true));
+                for &kid in nodes[id].kids.iter().rev() {
+                    up.insert(kid, id);
+                    stack.push((kid, false));
+                }
+            }
+            let mut last = HashMap::new();
+            for (at, &id) in order.iter().enumerate() {
+                let mut read = |slot: &SlotRef| {
+                    if let SlotRef::Let(i) = *slot {
+                        last.insert(i, at);
+                    }
+                };
+                match &nodes[id].kind {
+                    Kind::Var(slot) => read(slot),
+                    Kind::Closure { captures, .. } => captures.iter().for_each(read),
+                    Kind::Child { body_captures, otherwise_captures, .. } => {
+                        body_captures.iter().chain(otherwise_captures).for_each(read)
+                    }
+                    _ => {}
+                }
+            }
+            for (at, &id) in order.iter().enumerate() {
+                let (Kind::Prim(Prim::Push), Some(&list)) = (&nodes[id].kind, nodes[id].kids.first()) else {
+                    continue;
+                };
+                let Kind::Var(SlotRef::Let(slot)) = nodes[list].kind else { continue };
+                if last.get(&slot).is_some_and(|&read| read > at) {
+                    continue;
+                }
+                let mut below = id;
+                let bound = loop {
+                    let Some(&parent) = up.get(&below) else { break false };
+                    match nodes[parent].kind {
+                        Kind::Let(s) | Kind::Repeat(s) if s == slot => break true,
+                        Kind::Repeat(_) => break false,
+                        _ => below = parent,
+                    }
+                };
+                if bound {
+                    appends[id] = Some(slot);
+                }
+            }
+        }
+        self.loaded.appends = appends;
     }
 }
 
@@ -1681,6 +1755,8 @@ impl<'a> Machine<'a> {
         let name = match op {
             Prim::ExactAdd => "exact_add",
             Prim::ExactMul => "exact_mul",
+            Prim::Q5Parts => "q5_parts",
+            Prim::Q5Of => return self.q5_of(n, args),
             Prim::Assert => "assert",
             Prim::RngDraw => "rng_draw",
             Prim::ExactLess => "exact_less",
@@ -1733,6 +1809,7 @@ impl<'a> Machine<'a> {
         let price = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add_price(a, b, &t, &d),
             (Prim::ExactMul, a, Some(b)) => value::mul_price(a, b, &t, &d),
+            (Prim::Q5Parts, a, None) => value::q5_parts_price(a, &d),
             // One step and no memory: the predicate was evaluated before, with ordinary operations (DET.55).
             (Prim::Assert, Value::Bool(_), None) => Some((0, 0)),
             // One block of the generator's stream and its 256-bit integer, as the run's own draw (DET.61).
@@ -1767,6 +1844,7 @@ impl<'a> Machine<'a> {
         let result = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add(a, b).expect("priced operands add"),
             (Prim::ExactMul, a, Some(b)) => value::mul(a, b).expect("priced operands multiply"),
+            (Prim::Q5Parts, a, None) => value::q5_parts(a).expect("a priced number"),
             // A false predicate ends the run before the guarded operation, and the assertion keeps its admitted step
             // (DET.55, DET.56).
             (Prim::Assert, Value::Bool(false), None) => {
@@ -1790,6 +1868,37 @@ impl<'a> Machine<'a> {
             (Prim::ApproxNot, a, None) => Value::ApproxBool(display(a) == Some(false)),
             _ => unreachable!("a priced operation"),
         };
+        self.settle(memory, result);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `q5_of(a, b, d)` (LP2 draft): the Q(√5) value (a + b√5)/d of three integers, in canonical form. The row is
+    /// priced as the product of a + b√5 and 1/d (DET.57, [`value::q5_of_price`]), and a mistyped operand is rejected
+    /// before any charge. A zero denominator has no value, so the operation is guarded by a pointwise assertion
+    /// (DET.55), as `field_inverse` is: its predicate `denominator_nonzero` reserves its `Bool`, the `assert` step
+    /// consumes it, and only then does the construction run. A zero `d` stops with `LG4:input.pointwise_failed` after
+    /// the `assert` step and keeps the admitted charges (chapter 13).
+    fn q5_of(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let (t, dt) = (self.tariffs, self.draft);
+        let (a, b, d) = (&args[0].value, &args[1].value, &args[2].value);
+        let Some((kernel, memory)) = value::q5_of_price(a, b, d, &t, &dt) else {
+            return Err(self.fail(Some(n), "q5_of", code::IR_REJECTED));
+        };
+        self.charge(Some(n), "denominator_nonzero", 0, 1, 0)?;
+        self.charge(Some(n), "assert", 0, 0, 0)?;
+        // The assertion consumes the predicate's Bool.
+        self.meter.release(1);
+        if matches!(d, Value::Int(z) if z.sign() == Sign::NoSign) {
+            return Err(self.fail(Some(n), "assert", meter::code::POINTWISE_FAILED));
+        }
+        // The normalisation runs only after its row is admitted (DET.55).
+        self.charge(Some(n), "q5_of", kernel, memory, 0)?;
+        let result = value::q5_of(a, b, d).expect("priced integers with a nonzero denominator");
         self.settle(memory, result);
         let result = self.values.pop().expect("the result");
         for held in args {
@@ -1965,6 +2074,9 @@ impl<'a> Machine<'a> {
         if op == Prim::Expand {
             return self.expand(n, name, args);
         }
+        if op == Prim::Push {
+            return self.push_element(n, name, args);
+        }
         if op == Prim::Index {
             let index = args.pop().expect("an index");
             let list = args.pop().expect("a list");
@@ -2007,7 +2119,11 @@ impl<'a> Machine<'a> {
                 let result = Value::Compressed(Arc::new(Compressed::leaf(w)));
                 (per_letter.saturating_mul(letters), result.size(), Box::new(move || result))
             }
+            // A run that keys menu words keys no Full word, so the keys it compares share one header (LG2.23).
             (Prim::WordKey, Some(ws), _) => {
+                if self.menu.is_some_and(|m| m.item_matrices().is_some()) {
+                    return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
+                }
                 let w = ws[0].clone();
                 let read = w.len() as u128;
                 (
@@ -2054,6 +2170,26 @@ impl<'a> Machine<'a> {
                 };
                 (per_letter.saturating_mul(reads), size, Box::new(build))
             }
+            // A menu word's key needs the item matrices of the run's pinned menu (LG2.18); a word of another
+            // alphabet is refused. The key is priced by its scan and by the draft price of its exact products.
+            (Prim::WordKey, None, [h]) if matches!(h.value, Value::MenuWord(_)) => {
+                let Value::MenuWord(w) = &h.value else { unreachable!("a menu word") };
+                let Some(menu) = self.menu.filter(|m| m.item_matrices().is_some()).cloned() else {
+                    return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
+                };
+                if w.identity() != menu.identity() || !w.letters().iter().all(|&l| menu.holds(l)) {
+                    return Err(self.fail(Some(n), name, code::INCOMPATIBLE_ALPHABET));
+                }
+                let w = w.clone();
+                let price = menu_key::price(&menu, w.letters(), self.draft.field_per_unit_pair);
+                let (work, size) = price.expect("letters of the alphabet");
+                let scan = per_letter.saturating_mul(w.letters().len() as u128);
+                let build = move || {
+                    let key = menu_key::key(&menu, w.letters()).expect("letters of the alphabet");
+                    Value::MenuWordKey(Arc::new(key))
+                };
+                (scan.saturating_add(work), size, Box::new(build))
+            }
             (Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::Concat, Some(ws), _) => {
                 let (x, y) = (ws[0].clone(), ws.get(1).cloned().unwrap_or_else(|| Arc::from(Vec::new())));
                 let (lx, ly) = (x.len() as u128, y.len() as u128);
@@ -2096,20 +2232,53 @@ impl<'a> Machine<'a> {
                 }
                 _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
             },
-            (Prim::Push, _, [a, b]) => {
-                let Value::List(x) = &a.value else {
-                    return Err(self.fail(Some(n), name, code::IR_REJECTED));
-                };
-                let (x, e) = (x.clone(), b.value.clone());
-                let count = x.items().len() as u128 + 1;
-                let memory = a.value.size() + e.size() + if e.is_sequence() { 8 } else { 0 };
-                let build = move || Value::List(Arc::new(List::new([x.items(), &[e]].concat())));
-                (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
-            }
             _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
         };
         self.charge(Some(n), name, kernel, memory, 0)?;
         self.settle(memory, result());
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `push`, one step that builds the list with one more element at the end, priced as a new list of that length:
+    /// [`LIST_PER_ELEMENT`] per element and the new list's size reserved (LP2 draft). The price does not depend on how
+    /// the list is built. When the push holds the only handle on the list, it extends the list in place instead of
+    /// copying its elements, so a list grown one push at a time is built in linear time. A list read from a `let` slot
+    /// that is dead from this push on ([`Compiler::appends`]) gives up the slot's handle first, if the slot and the
+    /// operand are the list's only handles; the slot keeps its owners, which its refill or its scope's end releases.
+    fn push_element(&mut self, n: NodeId, name: &str, mut args: Vec<Held>) -> Result<(), Stop> {
+        let [a, b] = &args[..] else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        let Value::List(list) = &a.value else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        let count = list.items().len() as u128 + 1;
+        let memory = a.value.size() + b.value.size() + if b.value.is_sequence() { 8 } else { 0 };
+        self.charge(Some(n), name, LIST_PER_ELEMENT.saturating_mul(count), memory, 0)?;
+        let element = std::mem::replace(&mut args[1].value, Value::Unit);
+        let Value::List(mut list) = std::mem::replace(&mut args[0].value, Value::Unit) else { unreachable!("a list") };
+        let taken = self.loaded.appends[n].filter(|&slot| args[0].origin == Origin::Let { slot, whole: true });
+        if let Some(slot) = taken {
+            let frame = self.frames.last_mut().expect("a frame");
+            if let Some((held, _)) = frame.lets[slot].as_mut() {
+                let same = matches!(&*held, Value::List(h) if Arc::ptr_eq(h, &list));
+                if same && Arc::strong_count(&list) == 2 {
+                    *held = Value::Unit;
+                }
+            }
+        }
+        if Arc::get_mut(&mut list).is_none() {
+            let mut items = Vec::with_capacity(list.items().len() + 1);
+            items.extend_from_slice(list.items());
+            list = Arc::new(List::new(items));
+        }
+        Arc::get_mut(&mut list).expect("the push's own list").push(element);
+        self.settle(memory, Value::List(list));
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);
@@ -2495,6 +2664,9 @@ impl<'a> Machine<'a> {
             return Err(self.fail(Some(n), op, code::INCOMPATIBLE_ALPHABET));
         }
         if trace::check_keys(&value, self.relation).is_err() {
+            return Err(self.fail(Some(n), op, code::KEY_CONTRACT_MISMATCH));
+        }
+        if menu_key::check_keys(&value, self.menu).is_err() {
             return Err(self.fail(Some(n), op, code::KEY_CONTRACT_MISMATCH));
         }
         self.settle(tariff.result_bound, value);

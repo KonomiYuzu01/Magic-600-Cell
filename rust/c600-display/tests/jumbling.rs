@@ -12,7 +12,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_display::array::Array;
 use c600_display::codes;
-use c600_display::crosswalk::{exposed_geometry, survey_state, SurveyState};
+use c600_display::crosswalk::{survey_state, SurveyState};
 use c600_display::jumble::{self, Missing, PoseProjection};
 use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested};
 use c600_display::plan::*;
@@ -155,8 +155,8 @@ fn home_of(piece: u32) -> u32 {
 /// pass the host validator and installation. The posed arrays of the solved state equal the three array hashes the
 /// J1 fixture records for its start stage; after a twist the lattice entries agree with M5's exact K⁺ test. The
 /// transform row carries the plane the engine names for the twist, so it has a swept preview whose R(θ) is the twist.
-/// Not run: J01's shrink anchors, J06's backend readback, the J07 to J12 payloads and any array hash of a later J1
-/// stage.
+/// J01's shrink anchors, J06's readback check and the J07, J09, J11 and J12 payloads are checked in
+/// `tests/jumbling_payloads.rs`. Not run: a backend's readback and any array hash of a later J1 stage.
 #[test]
 fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
     let world = world();
@@ -224,9 +224,9 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
 /// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no J02,
 /// a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a twist that is not the
 /// outcome's letter, a transform without the engine's plane, the identity, which turns no plane, a twist other than the
-/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (the refusal
-/// path; M5 supplies none) each give their explicit outcome, and nothing is guessed, truncated or installed. Not run: a
-/// backend's own refusals.
+/// identity with no plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (J10's
+/// refusal, passed through from M5's producer) each give their explicit outcome, and nothing is guessed, truncated or
+/// installed. Not run: a backend's own refusals.
 #[test]
 fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let world = world();
@@ -328,10 +328,15 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     }
     assert_eq!(jumble::named_cap_set(engine, &mut blocked, 600, None), Err(Missing::NoSuchCap { cap: 600 }));
 
-    // J10's refusal path: with no certified exposed-face geometry or size profile supplied (M5 supplies none),
-    // nothing is drawn.
-    let error = exposed_geometry(None, None).expect_err("no exposed-face geometry is supplied");
+    // J10's refusal path: M5's exact geometry producer supplies no certified exposed-face geometry or size profile and
+    // refuses with JI.45's code, so the display refuses with that code, both prerequisites missing and the state the
+    // producer was asked about, and nothing is drawn.
+    let answer = c600_jumble::faces::exposed_faces(engine, state);
+    assert_eq!(answer.get("code").and_then(Value::as_str), Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE));
+    let error = jumble::exposed_faces(engine, state).expect_err("no exposed-face geometry is supplied");
     assert_eq!(error.code, codes::EXPOSED_GEOMETRY_UNAVAILABLE);
+    assert_eq!(error.context["missing"], "geometry and size profile");
+    assert_eq!(error.context["source"], state.digest(engine));
 }
 
 fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, instance: u64) -> PickReply {
@@ -518,7 +523,7 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
     assert_ne!(broken.kplus.frame_idx[cell], 0, "the frame of a cell other than cell 0 is not the identity");
     broken.kplus.frame_idx[cell] = 0;
 
-    let error = levels::labels(&broken, &state).err().expect("A3's frame check refuses the planted frame");
+    let error = levels::labels(&broken, &state).expect_err("A3's frame check refuses the planted frame");
     let projection = PoseProjection::new(&broken, &state);
     assert!(matches!(&projection, Err(Missing::Engine(reason)) if *reason == error.0), "{:?}", projection.err());
 }
@@ -528,8 +533,9 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
 /// same row without that plane has none), 3 (full named-cap set against its cap-map witness), 4 and 5 (the full set
 /// over a count ceiling, standalone and scheduled), 6 (an incomplete survey and the named cut's alpha), 7 (an
 /// unsupported projection stage), 8 (complete and interrupted seam totals) and 15 (a certificate-point hit on an
-/// off-lattice piece). Not run on the real model: rows 9 and 11 to 14 (covers and repair, release order, nu and the
-/// correction catalogue), which stay C2's fixture vectors in `crosswalk.rs`; row 10 has no real geometry to check.
+/// off-lattice piece). Rows 9 and 11 to 14 (covers and repair, release order, nu and the correction catalogue) stay
+/// C2's fixture vectors in `crosswalk.rs`, and `tests/jumbling_payloads.rs` checks their producers on the real model;
+/// row 10 has no real geometry to check.
 #[test]
 fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let world = world();

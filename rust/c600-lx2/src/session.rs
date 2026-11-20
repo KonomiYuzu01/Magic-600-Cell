@@ -1,17 +1,19 @@
-//! LX-2's session-level conditions for the metered and forced-kill trials (RTE.42 conditions 1 and 2, RTE.43): each
-//! trial runs the same command sequence with a session open, and the fault trials are compared with the control.
+//! LX-2's session-level conditions for the fault trials (RTE.42 conditions 1 and 2, RTE.43): each trial runs the
+//! same command sequence with a session open, and the fault trials are compared with the control.
 //!
 //! The session is KN5's command layer over M6's journal (`JournalStore`) on a file-system disk in a fresh folder the
 //! caller names (`FsDisk`: the product's disk, with the session lock), with the shell and the headless display. The
 //! sequence:
 //!
 //! 1. the solver previews, presents and commits the word [`BEFORE`] from the shell;
-//! 2. the solver invokes the tool's row from the shell (`c600_tools::process::invoke_tool`), and the trial's job runs
-//!    as that command's program job, `job-<id>`, in the runtime child given by the caller, through the product's own
-//!    bridge (`c600_tools::bridge::Bridge`, caller `Runtime`) and boundary onto the layer: a run prepares a preview only
+//! 2. the solver invokes the tool's row from the shell (`c600_tools::process::invoke_tool`), and the trial's job, the
+//!    process host's job for the tool in the solving profile with the tool's class rows ([`job`]), runs as that
+//!    command's program job, `job-<id>`, in the runtime child given by the caller, through the product's own bridge
+//!    (`c600_tools::bridge::Bridge`, caller `Runtime`) and boundary onto the layer: a run prepares a preview only
 //!    inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34). Its proposal of
 //!    SCENARIO.json's runtime word becomes the layer's pending preview before the fault. For `forced_kill` the child's
-//!    process is killed inside that perform, the barrier;
+//!    process is killed inside that perform, the barrier; a native fault fires from the device's hook after the
+//!    proposal's answers, and the native loop meets the run's watchdog ([`Trial::deadline`]);
 //! 3. the layer builds the run's preview while the host still holds the job; the host then reports the job: the
 //!    program's fixed acknowledgement when the run completed, the cut-off's or the fault's code otherwise. The solver
 //!    presents and commits the preview from the shell;
@@ -19,21 +21,20 @@
 //!
 //! A trial agrees when the job ends with its expected typed outcome, the solver's command that ran it ends as that
 //! outcome says ([`expected_command`]), every solver command of steps 3 and 4 is accepted (the session stays open), the
-//! journal's records and the state hash equal the control's, and a reopen of the disk replays the same state hash. RTE.43: "unchanged" concerns the fault's effect, so the control runs the same commands
-//! without the fault.
+//! journal's records and the state hash equal the control's, and a reopen of the disk replays the same state hash.
+//! RTE.43: "unchanged" concerns the fault's effect, so the control runs the same commands without the fault.
 //!
 //! A native trial ([`Trial::native`]) runs on the injection device of option (a), `c600-lx2-child`, which the caller
-//! passes as the child binary; every other trial runs on the product's child, and each row names its child.
+//! passes as the child binary (built with the feature `device` for the native recursion and loop); every other trial
+//! runs on the product's child, and each row names its child.
 //!
 //! Not here: conditions 3 and 4 (the renderer gate, LX-4's echo bar and charter E2 during fault windows), which need
-//! the shell's frame loop on the owner's machine, and the native recursion and native loop faults, which wait on a
-//! hook in c600-runtime.
+//! the shell's frame loop on the owner's machine.
 
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use c600_check::Profile;
 use c600_command::{CommandLayer, Error as LayerError, HeadlessFrames, Receipt, Secret, Shell, Status, Table};
 use c600_digest::sha256_hex;
 use c600_kernel::json;
@@ -41,14 +42,14 @@ use c600_kernel::{Kernel, ProtectedSet};
 use c600_run::boundary::{Boundary, Store as Shown};
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::value::Value;
-use c600_runtime::{Job, JobOptions, Killer, Runtime};
+use c600_runtime::{Job, Killer};
 use c600_session::disk::FsDisk;
 use c600_session::{journal, JournalStore};
 use c600_tools::bridge::{base, word_args, Bridge};
-use c600_tools::process::{invoke_tool, ToolCommand};
+use c600_tools::process::{self, invoke_tool, ToolCommand};
 use c600_tools::tool::{BoundaryClass, Manifest, Tool};
 
-use crate::{observe_trial, Observed, Trial, DEADLINE};
+use crate::{observe_trial, Observed, Trial};
 
 /// The word the solver commits before the job.
 pub const BEFORE: [i32; 2] = [1, -2];
@@ -143,19 +144,15 @@ pub fn tool(trial: Trial) -> Result<(Tool, String), String> {
     Ok((Tool::new(&source, manifest)?, source))
 }
 
-/// The trial's job as the process host sends a tool's run (`c600_tools::process::job`), with the trial's limits.
-pub fn job(trial: Trial, source: &str) -> Job {
-    let mut options = JobOptions::new(trial.limits());
-    options.profile = Profile::ToolAuthoring;
-    options.source_ranges = false;
-    options.record = false;
-    Job {
-        sources: vec![source.as_bytes().to_vec()],
-        module: "lx2".into(),
-        entry: "work".into(),
-        args: vec![Value::word(&crate::RUNTIME_WORD)],
-        options,
-    }
+/// The trial's job as the process host sends a run of `tool` on SCENARIO.json's runtime word
+/// (`c600_tools::process::job`): the solving profile and the tool's class rows, so that the child admits the entry in
+/// the built-in column as [`tool`] did in this process, with the trial's limits in place of the host's and no summary
+/// rows, as in [`Trial::job`]. `source` is the source `tool` was admitted from.
+pub fn job(trial: Trial, tool: &Tool, source: &str) -> Job {
+    let mut job = process::job(tool, source, &crate::RUNTIME_WORD);
+    job.options.limits = trial.limits();
+    job.options.record = false;
+    job
 }
 
 /// The boundary as the run's host, with the forced kill at the barrier: the child is killed right after the first
@@ -247,8 +244,8 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
     let (secret, none) = (Secret::fixed(SECRET), ProtectedSet::none());
     let mut layer = CommandLayer::new(kernel.clone(), Table::h08(), secret, store, "lx2", kernel.solved(), none);
     let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
-    let mut rt = Runtime::new(crate::config(runtime, trial));
-    if let Err(fault) = rt.start() {
+    let (mut rt, started) = crate::start(runtime, trial);
+    if let Err(fault) = started {
         return failed(Observed::Fault(fault.kind, fault.code()), rt.spawns());
     }
     let mut open = commit_word(&mut layer, &mut shell, &BEFORE);
@@ -262,14 +259,14 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
     };
     let (run, read) = (command.run(), base(&command.job.revision));
     let killer = if trial == Trial::ForcedKill { rt.killer() } else { None };
-    let job = job(trial, &source);
+    let job = job(trial, &tool, &source);
     let (result, preview) = {
         let mut bridge = Bridge::new(&mut layer, &run);
         let mut shown = Shown::default();
         let result = {
             let mut boundary = Boundary::new(&mut bridge, &mut shown, tool.context(&run, &read));
             let mut host = KillAtBarrier { inner: &mut boundary, killer };
-            rt.run(&job, &mut host, Some(DEADLINE))
+            rt.run(&job, &mut host, Some(trial.deadline()))
         };
         let preview = bridge.sent.iter().find_map(|sent| match sent.receipt.status {
             Status::Running(id) => Some(id),

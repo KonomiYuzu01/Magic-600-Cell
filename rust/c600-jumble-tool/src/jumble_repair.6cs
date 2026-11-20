@@ -1,0 +1,6 @@
+edition "6cs-draft-1";
+module jumble_repair requires [];
+
+export fn repair_list_at(cap: Nat) -> record { input_digest: Text, message: List<Text>, parameters: record { cap: Nat, contract_revision: Text, menu_identity: List<Text>, order_digest: List<Text>, tie_rule: Text }, rows: List<record { d: Nat, delta: Int, x: Nat, y: Nat, z: Nat }>, status: Text } effects [snapshot] {
+    return read_snapshot<record { input_digest: Text, message: List<Text>, parameters: record { cap: Nat, contract_revision: Text, menu_identity: List<Text>, order_digest: List<Text>, tie_rule: Text }, rows: List<record { d: Nat, delta: Int, x: Nat, y: Nat, z: Nat }>, status: Text }>("repair_list", cap);
+}

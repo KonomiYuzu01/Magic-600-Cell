@@ -9,6 +9,9 @@
 //! cancels it as `superseded`, and installation happens only while the command is the newest accepted one and its
 //! dependencies and device epoch still match. The first serialized terminal wins; later notifications only release
 //! resources (RM.22).
+//!
+//! The host also drives RM.14's other adapter operations: engine adoption through the backend (RM.16), frame reports
+//! that show a fallback on the view (RM.41), and picks, which go request, poll, then RPI.25's resolution.
 
 use std::collections::BTreeMap;
 
@@ -23,6 +26,7 @@ use crate::plan::{
 };
 use crate::receipt::{receipt_status, CancelReason, Completion, Covered, JobOutcome, Receipt, ResultRef, Status};
 use crate::source::{self, Followed, HostRange};
+use crate::stage::{Fallback, FrameReport};
 use crate::validate::{self, validate, Context, EngineBundle, LimitProfile, SubjectKind, SupportReport, Validated};
 
 /// A backend ticket for one preparation.
@@ -69,9 +73,28 @@ pub struct FrameInput {
     pub preview: Option<PreviewShown>,
 }
 
+/// RM.14's pick ticket: the backend's handle on one pick request.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PickTicket(pub u64);
+
+/// RM.14's `poll_pick` result.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PickPoll {
+    Pending,
+    /// RM.14's `stamped_instances`: what RPI.22's ID pass found at the point, an instance stamped with its frame's
+    /// binding (RPI.24), or `None` where no interactive instance was drawn there.
+    Stamped(Option<PickReply>),
+    Refused(Error),
+}
+
 /// The adapter operations of RM.14 that the host drives. The route-specific ABI stays with the binding annex.
 pub trait Backend {
     fn describe_backend(&self) -> Result<SupportReport, Error>;
+    /// RM.16: installs the bundle's complete CPU-side revision image, independently of any program lane, preparation
+    /// or recovery and also while the device is lost, and answers the revision it adopted. It never waits for program
+    /// work or a GPU fence. Missing or mismatched engine inputs are refused (`refresh_required`) with
+    /// `EV3:input.display_bundle_mismatch`, and nothing is adopted.
+    fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error>;
     fn prepare(&mut self, request: Preparation<'_>) -> Result<Ticket, Error>;
     fn poll(&mut self, ticket: Ticket) -> Poll;
     fn activate(&mut self, resources: ResourceSet, stamp: &PublicationStamp) -> Result<(), Error>;
@@ -79,6 +102,18 @@ pub trait Backend {
     fn retire(&mut self, resources: ResourceSet);
     fn submit_frame(&mut self, input: FrameInput) -> Result<u64, Error>;
     fn read_presented(&mut self) -> Result<Vec<PresentedFrame>, Error>;
+    /// RM.41: each frame that stopped a user stage since the last read, once.
+    fn read_frame_reports(&mut self) -> Result<Vec<FrameReport>, Error>;
+    /// RPI.22's ID pass at `point` of the frame that `frame` stamps, for the requested kind and level (RM.14). A frame
+    /// the backend never submitted is refused as invalid; one it submitted but no longer keeps is refused as stale
+    /// (`EV3:stale.display_pick`), so that the host drops a passive pick on it (RPI.25).
+    fn request_pick(
+        &mut self,
+        frame: &FrameStamp,
+        point: (u32, u32),
+        requested: Requested,
+    ) -> Result<PickTicket, Error>;
+    fn poll_pick(&mut self, ticket: PickTicket) -> PickPoll;
     fn recover(&mut self) -> Result<SupportReport, Error>;
 }
 
@@ -90,8 +125,18 @@ enum MockTicket {
     Failed(Error),
 }
 
-/// A mock backend: tickets stay pending until [`MockBackend::finish`], frames are confirmed unless held, and the
-/// device can be lost at any point.
+/// A pick the mock backend was asked for, and its answer so far.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MockPick {
+    pub frame: FrameStamp,
+    pub point: (u32, u32),
+    pub requested: Requested,
+    pub answer: PickPoll,
+}
+
+/// A mock backend: tickets stay pending until [`MockBackend::finish`], picks until [`MockBackend::answer_pick`] or
+/// [`MockBackend::refuse_pick`], frames are confirmed unless held, and the device can be lost at any point. Adoption
+/// works while the device is lost (RM.16).
 #[derive(Debug)]
 pub struct MockBackend {
     report: SupportReport,
@@ -100,11 +145,25 @@ pub struct MockBackend {
     tickets: BTreeMap<Ticket, MockTicket>,
     frames: Vec<FrameInput>,
     held: Vec<u64>,
+    /// The stamps of the frames submitted on the current device, which a pick names.
+    stamps: Vec<FrameStamp>,
+    /// The dependencies each publication generation of a view was activated with, for pick bindings.
+    activated: BTreeMap<(ViewId, u64), BTreeMap<String, String>>,
     /// The next `prepare` or `activate` fails with this error (an allocation failure, for example).
     pub fail_prepare: Option<Error>,
     pub fail_activate: Option<Error>,
+    /// The next `adopt_engine` fails with this error (`refresh_required`, for example).
+    pub fail_adopt: Option<Error>,
+    /// The next `request_pick` is refused with this error (a frame the backend no longer keeps, for example).
+    pub fail_pick: Option<Error>,
     /// Retired resource sets, in order.
     pub retired: Vec<ResourceSet>,
+    /// Adopted revisions, in order.
+    pub adoptions: Vec<RevisionRef>,
+    /// RM.41's reports that the next `read_frame_reports` returns: a test queues the frames that stopped a user stage.
+    pub frame_reports: Vec<FrameReport>,
+    /// The picks asked for, by ticket.
+    pub picks: BTreeMap<PickTicket, MockPick>,
 }
 
 impl MockBackend {
@@ -116,9 +175,16 @@ impl MockBackend {
             tickets: BTreeMap::new(),
             frames: Vec::new(),
             held: Vec::new(),
+            stamps: Vec::new(),
+            activated: BTreeMap::new(),
             fail_prepare: None,
             fail_activate: None,
+            fail_adopt: None,
+            fail_pick: None,
             retired: Vec::new(),
+            adoptions: Vec::new(),
+            frame_reports: Vec::new(),
+            picks: BTreeMap::new(),
         }
     }
 
@@ -130,7 +196,8 @@ impl MockBackend {
         }
     }
 
-    /// The device is lost: pending tickets fail and the backend is unavailable until `recover`.
+    /// The device is lost: pending tickets and picks fail, frames and frame reports clear, and the backend is
+    /// unavailable until `recover`.
     pub fn lose_device(&mut self) {
         self.lost = true;
         for state in self.tickets.values_mut() {
@@ -138,7 +205,44 @@ impl MockBackend {
                 *state = MockTicket::Failed(Error::unavailable("the device was lost"));
             }
         }
+        for pick in self.picks.values_mut() {
+            if pick.answer == PickPoll::Pending {
+                pick.answer = PickPoll::Refused(Error::unavailable("the device was lost"));
+            }
+        }
         self.frames.clear();
+        self.stamps.clear();
+        self.frame_reports.clear();
+    }
+
+    /// The ID pass of the pick `ticket` found `instance`, or no interactive instance (`None`): the pick answers it
+    /// stamped with its frame's binding and the dependencies its publication was activated with. A pick that has an
+    /// answer keeps it.
+    pub fn answer_pick(&mut self, ticket: PickTicket, instance: Option<InstanceId>) {
+        let Some(pick) = self.picks.get_mut(&ticket).filter(|p| p.answer == PickPoll::Pending) else { return };
+        let frame = &pick.frame;
+        let binding = PickBinding {
+            device_epoch: frame.device_epoch,
+            surface: frame.surface,
+            surface_generation: frame.surface_generation,
+            view: frame.view,
+            view_generation: frame.view_generation,
+            publication_generation: frame.publication_generation,
+            camera: frame.camera,
+            viewport: frame.viewport,
+            visibility: frame.visibility,
+            interaction: frame.interaction,
+            dependencies: self.activated.get(&(frame.view, frame.publication_generation)).cloned().unwrap_or_default(),
+        };
+        pick.answer = PickPoll::Stamped(instance.map(|instance| PickReply { binding, instance }));
+    }
+
+    /// The pick `ticket` is refused with `error` (a binding the backend found stale, for example). A pick that has an
+    /// answer keeps it.
+    pub fn refuse_pick(&mut self, ticket: PickTicket, error: Error) {
+        if let Some(pick) = self.picks.get_mut(&ticket).filter(|p| p.answer == PickPoll::Pending) {
+            pick.answer = PickPoll::Refused(error);
+        }
     }
 
     /// The frame with that sequence stays unconfirmed until [`MockBackend::release`].
@@ -164,6 +268,14 @@ impl Backend for MockBackend {
         }
     }
 
+    fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error> {
+        if let Some(error) = self.fail_adopt.take() {
+            return Err(error);
+        }
+        self.adoptions.push(bundle.revision.clone());
+        Ok(bundle.revision.clone())
+    }
+
     fn prepare(&mut self, _request: Preparation<'_>) -> Result<Ticket, Error> {
         if self.lost {
             return Err(Error::unavailable("the device is lost"));
@@ -186,11 +298,15 @@ impl Backend for MockBackend {
         }
     }
 
-    fn activate(&mut self, _resources: ResourceSet, _stamp: &PublicationStamp) -> Result<(), Error> {
+    fn activate(&mut self, _resources: ResourceSet, stamp: &PublicationStamp) -> Result<(), Error> {
         if self.lost {
             return Err(Error::unavailable("the device is lost"));
         }
-        self.fail_activate.take().map_or(Ok(()), Err)
+        if let Some(error) = self.fail_activate.take() {
+            return Err(error);
+        }
+        self.activated.insert((stamp.view, stamp.publication_generation), stamp.dependencies.clone());
+        Ok(())
     }
 
     fn cancel(&mut self, ticket: Ticket, reason: &CancelReason) {
@@ -210,6 +326,7 @@ impl Backend for MockBackend {
             return Err(Error::unavailable("the device is lost"));
         }
         let sequence = input.stamp.sequence;
+        self.stamps.push(input.stamp.clone());
         self.frames.push(input);
         Ok(sequence)
     }
@@ -230,6 +347,41 @@ impl Backend for MockBackend {
             .collect())
     }
 
+    fn read_frame_reports(&mut self) -> Result<Vec<FrameReport>, Error> {
+        if self.lost {
+            return Err(Error::unavailable("the device is lost"));
+        }
+        Ok(std::mem::take(&mut self.frame_reports))
+    }
+
+    fn request_pick(
+        &mut self,
+        frame: &FrameStamp,
+        point: (u32, u32),
+        requested: Requested,
+    ) -> Result<PickTicket, Error> {
+        if self.lost {
+            return Err(Error::unavailable("the device is lost"));
+        }
+        if let Some(error) = self.fail_pick.take() {
+            return Err(error);
+        }
+        if !self.stamps.contains(frame) {
+            return Err(Error::invalid("no frame with that stamp was submitted on this device"));
+        }
+        let ticket = PickTicket(self.next);
+        self.next += 1;
+        self.picks.insert(ticket, MockPick { frame: frame.clone(), point, requested, answer: PickPoll::Pending });
+        Ok(ticket)
+    }
+
+    fn poll_pick(&mut self, ticket: PickTicket) -> PickPoll {
+        match self.picks.get(&ticket) {
+            Some(pick) => pick.answer.clone(),
+            None => PickPoll::Refused(Error::invalid("no such pick")),
+        }
+    }
+
     fn recover(&mut self) -> Result<SupportReport, Error> {
         self.lost = false;
         self.report.device_epoch += 1;
@@ -247,8 +399,21 @@ pub struct Installed {
     pub validated: Validated,
     pub resources: ResourceSet,
     pub device_epoch: u64,
-    /// False while the device is lost; installed CPU data is retained (RM.23).
+    /// False while the device is lost, and after a recovery until the publication has resources on the new device;
+    /// installed CPU data is retained (RM.23).
     pub available: bool,
+    /// RM.41: what the view shows since a frame of this publication stopped a user stage, for its visible status;
+    /// `None` while no frame report has named it.
+    pub fallback: Option<Fallback>,
+}
+
+/// RM.23: a retained publication on its way to resources on the device of a recovery.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Rebind {
+    /// The host asks the backend at the next [`Host::pump`] in which the view has no pending work.
+    Due,
+    /// The backend prepares it under this ticket.
+    Preparing(Ticket),
 }
 
 /// A view and its surface.
@@ -267,6 +432,25 @@ pub struct View {
     pending: Option<CommandId>,
     installed: Option<Installed>,
     preview: Option<PreviewDisplay>,
+    rebind: Option<Rebind>,
+}
+
+/// A pick the host asked the backend for: how to resolve its answer, and the device epoch it was asked on.
+#[derive(Clone, Copy, Debug)]
+struct PickRequest {
+    mode: PickMode,
+    requested: Requested,
+    epoch: u64,
+}
+
+/// A pick as [`Host::poll_pick`] sees it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Picked {
+    /// The backend has not answered yet.
+    Pending,
+    /// The pick is over: RPI.25's resolution of the stamped instance, or `None` where no interactive instance was
+    /// drawn at the point or a passive pick went stale.
+    Done(Option<Partial<Resolution>>),
 }
 
 #[derive(Clone, Debug)]
@@ -298,6 +482,7 @@ pub struct Host<B: Backend> {
     next_surface: u64,
     sequence: u64,
     latch: Option<(u64, u64, Presented)>,
+    picks: BTreeMap<PickTicket, PickRequest>,
 }
 
 impl<B: Backend> Host<B> {
@@ -319,6 +504,7 @@ impl<B: Backend> Host<B> {
             next_surface: 1,
             sequence: 0,
             latch: None,
+            picks: BTreeMap::new(),
         }
     }
 
@@ -341,6 +527,7 @@ impl<B: Backend> Host<B> {
             pending: None,
             installed: None,
             preview: None,
+            rebind: None,
         });
         if view.open {
             return Err(Error::new(codes::VIEW_ID_IN_USE, format!("view {} is open", id.0)));
@@ -354,7 +541,8 @@ impl<B: Backend> Host<B> {
         Ok(view.generation)
     }
 
-    /// Closes a view: its pending publication ends `cancelled(by_user)`; identified old data is retained (RM.25).
+    /// Closes a view: its pending publication ends `cancelled(by_user)`, and a retained publication waiting for
+    /// resources on a recovered device (RM.23) waits no longer; identified old data is retained (RM.25).
     pub fn close_view(&mut self, id: ViewId) {
         let pending = self.views.get(&id).and_then(|v| v.pending);
         if let Some(command) = pending {
@@ -363,6 +551,9 @@ impl<B: Backend> Host<B> {
         if let Some(view) = self.views.get_mut(&id) {
             view.open = false;
             view.preview = None;
+            if let Some(Rebind::Preparing(ticket)) = view.rebind.take() {
+                self.backend.cancel(ticket, &CancelReason::ByUser);
+            }
         }
     }
 
@@ -398,11 +589,14 @@ impl<B: Backend> Host<B> {
 
     // Engine adoption and dependencies.
 
-    /// RM.16: adopts a complete engine bundle independently of any program lane, even while the device is lost.
+    /// RM.16: adopts a complete engine bundle independently of any program lane, even while the device is lost. The
+    /// host validates the bundle and hands it to the backend, which installs its CPU-side image; the host's revision
+    /// moves to the revision the backend adopted. A bundle the host or the backend refuses changes nothing.
     pub fn adopt(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error> {
         validate::validate_engine_bundle(bundle)?;
-        self.adopted = bundle.revision.clone();
-        self.set_dependency("state", &bundle.revision.state.to_string());
+        let adopted = self.backend.adopt_engine(bundle)?;
+        self.set_dependency("state", &adopted.state.to_string());
+        self.adopted = adopted;
         Ok(self.adopted.clone())
     }
 
@@ -411,7 +605,8 @@ impl<B: Backend> Host<B> {
     }
 
     /// A dependency changes: accepted work that read the old value ends `cancelled(replaced_revision)` (RM.22);
-    /// installed output that read it becomes stale (RPI.13) and keeps its receipt.
+    /// installed output that read it becomes stale (RPI.13) and keeps its receipt, and is no longer prepared again
+    /// for a recovered device (RM.23).
     pub fn set_dependency(&mut self, key: &str, value: &str) {
         self.current.insert(key.to_owned(), value.to_owned());
         let moved: Vec<CommandId> = self
@@ -423,6 +618,13 @@ impl<B: Backend> Host<B> {
             .collect();
         for command in moved {
             self.cancel_with(command, CancelReason::ReplacedRevision);
+        }
+        for view in self.views.values_mut() {
+            let read =
+                view.installed.as_ref().is_some_and(|i| i.validated.dependencies.get(key).is_some_and(|v| v != value));
+            if let Some(Rebind::Preparing(ticket)) = view.rebind.take_if(|_| read) {
+                self.backend.cancel(ticket, &CancelReason::ReplacedRevision);
+            }
         }
     }
 
@@ -458,6 +660,14 @@ impl<B: Backend> Host<B> {
 
     pub fn ticket(&self, command: CommandId) -> Option<Ticket> {
         self.commands.get(&command).and_then(|c| c.ticket)
+    }
+
+    /// The ticket under which the backend prepares the view's retained publication again after a recovery (RM.23).
+    pub fn rebinding(&self, id: ViewId) -> Option<Ticket> {
+        match self.views.get(&id)?.rebind? {
+            Rebind::Preparing(ticket) => Some(ticket),
+            Rebind::Due => None,
+        }
     }
 
     /// Every terminal transition, in serialized order.
@@ -684,7 +894,8 @@ impl<B: Backend> Host<B> {
         }
     }
 
-    /// Polls the backend: notices device loss, installs ready preparations and ends failed or cancelled ones.
+    /// Polls the backend: notices device loss, installs ready preparations and ends failed or cancelled ones; then
+    /// moves retained publications on to resources on a recovered device (RM.23).
     pub fn pump(&mut self) {
         if self.backend.describe_backend().is_err() && !self.lost {
             self.device_lost();
@@ -703,6 +914,7 @@ impl<B: Backend> Host<B> {
                 Poll::Failed(error) => self.fail(command, error),
             }
         }
+        self.rebind();
     }
 
     /// RM.20's atomic installation: a bounded compare-and-swap while the command is the newest accepted one and its
@@ -762,12 +974,17 @@ impl<B: Backend> Host<B> {
             resources,
             device_epoch: self.epoch,
             available: true,
+            fallback: None,
         };
         let v = self.views.get_mut(&entry.view).expect("view");
         v.publication_generation = generation;
+        let rebind = v.rebind.take();
         let old = v.installed.replace(installed);
         if let Some(old) = old {
             self.backend.retire(old.resources);
+        }
+        if let Some(Rebind::Preparing(ticket)) = rebind {
+            self.backend.cancel(ticket, &CancelReason::Superseded { by: command });
         }
         self.end(command, JobOutcome::Completed(Box::new(completion)));
     }
@@ -775,7 +992,8 @@ impl<B: Backend> Host<B> {
     // Device loss and recovery.
 
     /// RM.23: the device epoch is invalid; pending work fails with `EV3:busy.renderer_unavailable` unless already
-    /// terminal; installed data is retained but unavailable; picks, reports and the presented-preview latch clear.
+    /// terminal; installed data is retained but unavailable; picks, reports and the presented-preview latch clear,
+    /// and a preparation of retained data for an earlier recovery ends with its epoch.
     pub fn device_lost(&mut self) {
         self.lost = true;
         self.latch = None;
@@ -785,14 +1003,18 @@ impl<B: Backend> Host<B> {
             self.fail(command, Error::unavailable("the device was lost before installation"));
         }
         for view in self.views.values_mut() {
+            view.rebind = None;
             if let Some(installed) = view.installed.as_mut() {
                 installed.available = false;
             }
         }
     }
 
-    /// Recovery: a fresh epoch and fresh surfaces; retained publications are revalidated, and valid ones that are
-    /// not stale become available again. No receipt changes.
+    /// RM.23's recovery: a fresh epoch and fresh surfaces. Old resource tokens cannot draw on the new device, so every
+    /// retained publication stays unavailable until it has new resources. One that is shown in its open view,
+    /// revalidates and is not stale is due to be prepared again under its own command and generations; [`Host::pump`]
+    /// asks the backend and activates the result. A stale or invalid one waits for a new publication. No receipt
+    /// changes and nothing is retried.
     pub fn recover(&mut self) -> Result<(), Error> {
         let report = self.backend.recover()?;
         self.epoch = report.device_epoch;
@@ -802,16 +1024,74 @@ impl<B: Backend> Host<B> {
         let current = self.current.clone();
         for view in self.views.values_mut() {
             view.surface_generation += 1;
+            view.rebind = None;
             if let Some(installed) = view.installed.as_mut() {
+                installed.available = false;
+                let shown = view.open && installed.view_generation == view.generation;
                 let valid = validate(&installed.publication, &ctx).is_ok();
                 let fresh = installed.validated.dependencies.iter().all(|(k, v)| current.get(k).is_none_or(|c| c == v));
-                if valid && fresh {
-                    installed.available = true;
-                    installed.device_epoch = report_epoch(&ctx);
+                if shown && valid && fresh {
+                    view.rebind = Some(Rebind::Due);
                 }
             }
         }
         Ok(())
+    }
+
+    /// RM.23: prepares each due retained publication on the new device once its view has no pending work (a newer
+    /// publication on its way replaces it when it installs), and activates a finished preparation under the
+    /// publication's own command and generations on the current epoch; the old resources are retired once the new
+    /// ones are active. A refused, failed or cancelled preparation, or one whose dependencies moved, leaves the
+    /// publication unavailable until a new one replaces it. No receipt changes.
+    fn rebind(&mut self) {
+        if self.lost {
+            return;
+        }
+        let views: Vec<ViewId> = self.views.iter().filter(|(_, v)| v.rebind.is_some()).map(|(id, _)| *id).collect();
+        for id in views {
+            let view = &self.views[&id];
+            let (Some(rebind), Some(installed)) = (view.rebind, view.installed.as_ref()) else { continue };
+            let stamp = PublicationStamp {
+                command: installed.command,
+                view: id,
+                view_generation: installed.view_generation,
+                publication_generation: installed.generation,
+                device_epoch: self.epoch,
+                base: installed.publication.base.clone(),
+                dependencies: installed.validated.dependencies.clone(),
+                input_digest: installed.validated.digest.clone(),
+            };
+            let (next, active) = match rebind {
+                Rebind::Due if view.pending.is_some() => continue,
+                Rebind::Due => {
+                    let limits = self.ctx.limits.clone();
+                    let preparation = Preparation { stamp: &stamp, payload: &installed.publication, limits: &limits };
+                    (self.backend.prepare(preparation).ok().map(Rebind::Preparing), None)
+                }
+                Rebind::Preparing(ticket) => match self.backend.poll(ticket) {
+                    Poll::Pending => continue,
+                    Poll::Ready(resources) => {
+                        if self.moved(&stamp.dependencies).is_none() && self.backend.activate(resources, &stamp).is_ok()
+                        {
+                            (None, Some(resources))
+                        } else {
+                            self.backend.retire(resources);
+                            (None, None)
+                        }
+                    }
+                    Poll::Cancelled(_) | Poll::Failed(_) => (None, None),
+                },
+            };
+            let epoch = self.epoch;
+            let view = self.views.get_mut(&id).expect("listed");
+            view.rebind = next;
+            if let (Some(resources), Some(installed)) = (active, view.installed.as_mut()) {
+                let old = std::mem::replace(&mut installed.resources, resources);
+                installed.available = true;
+                installed.device_epoch = epoch;
+                self.backend.retire(old);
+            }
+        }
     }
 
     // Frames and presentation.
@@ -825,14 +1105,18 @@ impl<B: Backend> Host<B> {
         Ok(())
     }
 
-    /// Builds the view's frame stamp and submits the frame; returns the stamp (RM.24).
+    /// Builds the view's frame stamp and submits the frame; returns the stamp (RM.24). While the view's publication
+    /// has no resources on the current device (RM.23), the frame is refused and takes no sequence number.
     pub fn frame(&mut self, id: ViewId) -> Result<FrameStamp, Error> {
         if self.lost {
             return Err(Error::unavailable("the device is lost"));
         }
         let view = self.views.get(&id).ok_or_else(|| Error::invalid("no such view"))?;
-        self.sequence += 1;
         let installed = view.installed.as_ref().filter(|i| i.view_generation == view.generation);
+        if installed.is_some_and(|i| !i.available) {
+            return Err(Error::unavailable("the view's publication has no resources on this device yet"));
+        }
+        self.sequence += 1;
         let stamp = FrameStamp {
             device_epoch: self.epoch,
             surface: view.surface,
@@ -889,6 +1173,25 @@ impl<B: Backend> Host<B> {
         }
     }
 
+    /// RM.41's frame reports, read from the backend: each frame that stopped a user stage, once. A report of the
+    /// current device epoch whose publication is still installed in its view marks that publication's fallback,
+    /// which the view's visible status shows. No receipt or job outcome changes (RM.22). Reports of an earlier device
+    /// epoch are dropped (RM.23).
+    pub fn read_frame_reports(&mut self) -> Result<Vec<FrameReport>, Error> {
+        let mut reports = self.backend.read_frame_reports()?;
+        let epoch = self.epoch;
+        reports.retain(|report| report.stamp.device_epoch == epoch);
+        for report in &reports {
+            let installed = self.views.get_mut(&report.view).and_then(|v| v.installed.as_mut());
+            if let Some(installed) = installed.filter(|i| {
+                i.generation == report.publication_generation && i.view_generation == report.stamp.view_generation
+            }) {
+                installed.fallback = Some(report.fallback);
+            }
+        }
+        Ok(reports)
+    }
+
     // Picking (RPI.22 to RPI.25, RM.10, RM.24).
 
     /// The view's current pick binding, or why there is none.
@@ -938,13 +1241,7 @@ impl<B: Backend> Host<B> {
                 .or_else(|| self.moved(&reply.binding.dependencies).map(|k| format!("dependency {k}"))),
         };
         if let Some(field) = stale {
-            return match mode {
-                PickMode::Passive => Ok(None),
-                PickMode::Explicit => {
-                    Err(Error::new(codes::STALE_PICK, format!("the pick is stale: {field} changed"))
-                        .with("field", field))
-                }
-            };
+            return stale_pick(mode, field);
         }
         let installed = self.installed(reply.binding.view).expect("binding checked");
         let found = installed.publication.plans.iter().find_map(|plan| {
@@ -1019,6 +1316,63 @@ impl<B: Backend> Host<B> {
         }))
     }
 
+    /// RM.14's `request_pick`: asks the backend for RPI.22's ID pass at `point` of the frame that `frame` stamps, for
+    /// the requested kind and level. `mode` says how a stale pick is treated (RPI.25), here and in
+    /// [`Host::poll_pick`]: a frame of an earlier device epoch, or one the backend refuses as stale, makes an explicit
+    /// pick return `EV3:stale.display_pick` and drops a passive one, which gets no ticket. While the device is lost
+    /// there is no pick.
+    pub fn request_pick(
+        &mut self,
+        frame: &FrameStamp,
+        point: (u32, u32),
+        mode: PickMode,
+        requested: Requested,
+    ) -> Result<Option<PickTicket>, Error> {
+        if self.lost {
+            return Err(Error::unavailable("the device is lost"));
+        }
+        if frame.device_epoch != self.epoch {
+            stale_pick(mode, "device_epoch".to_owned())?;
+            return Ok(None);
+        }
+        match self.backend.request_pick(frame, point, requested) {
+            Ok(ticket) => {
+                self.picks.insert(ticket, PickRequest { mode, requested, epoch: self.epoch });
+                Ok(Some(ticket))
+            }
+            Err(error) if error.code == codes::STALE_PICK && mode == PickMode::Passive => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    /// RM.14's `poll_pick`, then [`Host::resolve_pick`] of a stamped instance: [`Picked::Pending`] until the backend
+    /// answers. A pick asked before a device loss is stale at `device_epoch`: an explicit pick returns
+    /// `EV3:stale.display_pick` naming it and a passive one is dropped. A refusal is returned, except that a passive
+    /// pick the backend found stale (`EV3:stale.display_pick`) is dropped. The host forgets a pick once it is over, so
+    /// polling it again is an error.
+    pub fn poll_pick(&mut self, ticket: PickTicket, projection: &dyn Projection) -> Result<Picked, Error> {
+        let request = *self.picks.get(&ticket).ok_or_else(|| Error::invalid("no such pick"))?;
+        if self.lost || request.epoch != self.epoch {
+            self.picks.remove(&ticket);
+            return stale_pick(request.mode, "device_epoch".to_owned()).map(Picked::Done);
+        }
+        let answer = self.backend.poll_pick(ticket);
+        if answer != PickPoll::Pending {
+            self.picks.remove(&ticket);
+        }
+        match answer {
+            PickPoll::Pending => Ok(Picked::Pending),
+            PickPoll::Stamped(None) => Ok(Picked::Done(None)),
+            PickPoll::Stamped(Some(reply)) => {
+                self.resolve_pick(&reply, request.mode, request.requested, projection).map(Picked::Done)
+            }
+            PickPoll::Refused(error) if error.code == codes::STALE_PICK && request.mode == PickMode::Passive => {
+                Ok(Picked::Done(None))
+            }
+            PickPoll::Refused(error) => Err(error),
+        }
+    }
+
     /// Navigation from an installed occurrence: opens the producing version pinned with the publication (RM.10).
     pub fn follow(&self, id: ViewId, link: &SourceLink) -> Result<Followed, Error> {
         let installed = self.installed(id).ok_or_else(|| Error::invalid("nothing is installed"))?;
@@ -1052,6 +1406,13 @@ impl<B: Backend> Host<B> {
     }
 }
 
-fn report_epoch(ctx: &Context) -> u64 {
-    ctx.support.device_epoch
+/// RPI.25 for a pick that is stale at `field`: an explicit pick returns `EV3:stale.display_pick` naming the field, and
+/// a passive one is dropped quietly.
+fn stale_pick(mode: PickMode, field: String) -> Result<Option<Partial<Resolution>>, Error> {
+    match mode {
+        PickMode::Passive => Ok(None),
+        PickMode::Explicit => {
+            Err(Error::new(codes::STALE_PICK, format!("the pick is stale: {field} changed")).with("field", field))
+        }
+    }
 }

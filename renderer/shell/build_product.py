@@ -1,12 +1,21 @@
 """Build C9's product on route B offline into work/build/c9-product/<stamp>/; never launch Godot, a window or a GPU.
 
-A product build holds five parts, each built from this checkout:
+A product build holds nine parts, each built from this checkout:
 
 - `native/`: the S-A2 core (`renderer/core/build.cmd`), `sa2_interop.dll` with the shaders it loads beside it;
 - `host/c600_shell_host.dll`: the shell's native host (`renderer/bridge/host`), a release build;
+- `lx4/c600_shell_lx4.dll`: LX-4's editor library (`renderer/bridge/lx4`, C9 U8), a release build, which the shell
+  loads only with `launch.py --lx4`;
+- `runtime/c600-runtime.exe`: the language runtime's process (`rust/c600-runtime`, route RT1), a release build, which
+  the host starts (charter E3, a draft);
 - `shell/`: the Godot .NET shell (`build_shell.py`);
 - `assets/`: a copy of the shipped model's tracked files, which the host loads;
-- `menu/`: a copy of the twist menu that the turns' session pins (charter E2, a draft).
+- `menu/`: a copy of the twist menu that the turns' session pins (charter E2, a draft);
+- `session-fixture/`: charter E3's existing session (a draft): the host's `c600-shell-session-fixture` writes a
+  session of a few committed presses through the same turns, with `fixture.json`, and starts the build's runtime once to
+  show that it starts. A launch reopens a fresh copy of that session.
+- `session-fixture-jumble-on/`: the same with Jumble on (`--puzzle jumble-on`): the session commits `jumble.on` at its
+  start and the presses commit `jumble.twist.menu`. A launch with `--puzzle jumble-on` reopens a fresh copy of it.
 
 `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a digest
 of those parts, which the shell's logs carry (`M600_BUILD_IDENTITY`). `launch.py` starts a product build after
@@ -36,13 +45,33 @@ FORMAT = "magic600-c9-product-build-v1"
 RECORD = "product.json"
 CORE_DLL = "native/sa2_interop.dll"
 HOST_DLL = "host/c600_shell_host.dll"
+LX4_DLL = "lx4/c600_shell_lx4.dll"
 PROJECT = "shell/project"
 ASSETS = "assets"
 # The twist menu that the turns' session pins (charter E2; draft: the I_a menu that KN3's and c600-input's tests pin;
 # G6 owns the menu).
 MENU_SOURCE = "research/jumbling/fixtures/wj-I_a.json"
 MENU = "menu/wj-I_a.json"
+RUNTIME = "runtime/c600-runtime.exe"
+# Each puzzle's session fixture folder and the prefix of its part names (the shell's puzzle names, EventLog.Puzzles).
+FIXTURES = {"jumble-off": "session-fixture", "jumble-on": "session-fixture-jumble-on"}
+FIXTURE_PARTS = {"jumble-off": "fixture:", "jumble-on": "fixture-jumble-on:"}
+FIXTURE = FIXTURES["jumble-off"]
+FIXTURE_RECORD = FIXTURE + "/fixture.json"
+FIXTURE_SESSION = FIXTURE + "/session"
+
+
+def fixture_record(puzzle: str) -> str:
+    """The build-relative path of `puzzle`'s fixture record."""
+    return FIXTURES[puzzle] + "/fixture.json"
+
+
+def fixture_session(puzzle: str) -> str:
+    """The build-relative path of `puzzle`'s fixture session."""
+    return FIXTURES[puzzle] + "/session"
+
 BRIDGE = ROOT / "renderer" / "bridge"
+RUST = ROOT / "rust"
 sys.path.insert(0, str(SHELL))
 sys.path.insert(0, str(ROOT / "renderer" / "acceptance"))
 import build_shell  # noqa: E402
@@ -62,12 +91,34 @@ def host_command() -> list[str]:
             "-p", "c600-shell-host"]
 
 
+def lx4_command() -> list[str]:
+    return ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(BRIDGE / "Cargo.toml"),
+            "-p", "c600-shell-lx4"]
+
+
+def runtime_command() -> list[str]:
+    return ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(RUST / "Cargo.toml"),
+            "-p", "c600-runtime"]
+
+
+def fixture_command(build: Path, puzzle: str = "jumble-off") -> list[str]:
+    """The host's fixture writer of `puzzle` over the build's own model, menu and runtime."""
+    return [str(BRIDGE / "target" / "release" / "c600-shell-session-fixture.exe"), "--assets", str(build / ASSETS),
+            "--menu", str(build / MENU), "--out", str(build / FIXTURES[puzzle]), "--puzzle", puzzle,
+            "--runtime", str(build / RUNTIME)]
+
+
 def part_paths(build: Path) -> dict[str, Path]:
-    """Every file the product loads, by part name: the core with its shaders, the host, the shell's assembly and
-    project files (not Godot's or dotnet's generated folders), the model's files and the twist menu."""
+    """Every file the product loads, by part name: the core with its shaders, the host, LX-4's library, the runtime,
+    the shell's assembly and project files (not Godot's or dotnet's generated folders), the model's files, the twist
+    menu and each puzzle's session fixture."""
     native, project, assets = build / "native", build / PROJECT, build / ASSETS
     paths = {"core:sa2_interop.dll": build / CORE_DLL, "host:c600_shell_host.dll": build / HOST_DLL,
-             "shell:assembly": project / build_shell.ASSEMBLY, "menu:" + Path(MENU).name: build / MENU}
+             "lx4:" + Path(LX4_DLL).name: build / LX4_DLL,
+             "runtime:" + Path(RUNTIME).name: build / RUNTIME, "shell:assembly": project / build_shell.ASSEMBLY,
+             "menu:" + Path(MENU).name: build / MENU}
+    for puzzle, prefix in FIXTURE_PARTS.items():
+        paths[prefix + "fixture.json"] = build / fixture_record(puzzle)
     if native.is_dir():
         paths.update({"core:" + p.name: p for p in native.iterdir() if p.is_file() and p.suffix.lower() == ".dxil"})
     if project.is_dir():
@@ -76,6 +127,10 @@ def part_paths(build: Path) -> dict[str, Path]:
                                                  for part in p.relative_to(project).parts[:-1])})
     if assets.is_dir():
         paths.update({"assets:" + p.relative_to(assets).as_posix(): p for p in assets.rglob("*") if p.is_file()})
+    for puzzle, prefix in FIXTURE_PARTS.items():
+        fixture = build / FIXTURES[puzzle]
+        if fixture.is_dir():
+            paths.update({prefix + p.relative_to(fixture).as_posix(): p for p in fixture.rglob("*") if p.is_file()})
     return paths
 
 
@@ -111,6 +166,9 @@ def record(build: Path, executable: Path, head: str, dirty: bool) -> dict:
     shaders = [name for name in parts if name.startswith("core:") and name.endswith(".dxil")]
     if not shaders:
         raise ProductError("the core build has no shaders beside its DLL")
+    for puzzle, prefix in FIXTURE_PARTS.items():
+        if not any(name.startswith(prefix + "session/") for name in parts):
+            raise ProductError(f"the {puzzle} session fixture holds no session")
     return {
         "format": FORMAT,
         "evidence": "source build only: never launched",
@@ -123,7 +181,14 @@ def record(build: Path, executable: Path, head: str, dirty: bool) -> dict:
         "commands": {"core": "renderer/core/build.cmd <build>/native",
                      "host": ("cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml "
                               "-p c600-shell-host"),
-                     "shell": " ".join(build_shell.build_command())},
+                     "lx4": ("cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml "
+                             "-p c600-shell-lx4"),
+                     "runtime": "cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-runtime",
+                     "shell": " ".join(build_shell.build_command()),
+                     **{"fixture " + puzzle: ("c600-shell-session-fixture --assets <build>/assets --menu "
+                                              f"<build>/menu/wj-I_a.json --out <build>/{folder} --puzzle {puzzle} "
+                                              "--runtime <build>/runtime/c600-runtime.exe")
+                        for puzzle, folder in FIXTURES.items()}},
     }
 
 
@@ -162,14 +227,14 @@ def build(godot: str | None) -> Path:
     head = prepare_host.git("rev-parse", "HEAD").strip()
     dirty = prepare_host.git("status", "--porcelain", "--", "renderer", "rust", "assets").strip() != ""
     out = BUILD_ROOT / dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    native, host, logs = out / "native", out / "host", out / "logs"
+    native, host, lx4, runtime, logs = out / "native", out / "host", out / "lx4", out / "runtime", out / "logs"
     if len(str(native)) > prepare_host.BUILD_PATH_LIMIT:
         raise ProductError("checkout path too long for the native build; use a shorter checkout path")
     if any(c in str(native) for c in ('"', "\r", "\n")):
         raise ProductError("unsupported build path")
     # Plain mkdir under the ignored work tree, never %TEMP% (Application Control).
     out.mkdir(parents=True)
-    for folder in (native, host, logs):
+    for folder in (native, host, lx4, runtime, logs):
         folder.mkdir()
     env = os.environ.copy()
     for name in ("M600_SA2_CPU_CHECK", prepare_host.INJECT):
@@ -180,9 +245,20 @@ def build(godot: str | None) -> Path:
     # From renderer/bridge, so that cargo reads its .cargo/config.toml: the vendored crates, with no network.
     prepare_host.run_logged(host_command(), BRIDGE, env, 1800, logs / "host")
     shutil.copy2(BRIDGE / "target" / "release" / "c600_shell_host.dll", host / "c600_shell_host.dll")
+    print("lx4: cargo build --release -p c600-shell-lx4", flush=True)
+    prepare_host.run_logged(lx4_command(), BRIDGE, env, 1800, logs / "lx4")
+    shutil.copy2(BRIDGE / "target" / "release" / "c600_shell_lx4.dll", out / LX4_DLL)
+    print("runtime: cargo build --release -p c600-runtime", flush=True)
+    # From rust/, so that cargo reads its .cargo/config.toml.
+    prepare_host.run_logged(runtime_command(), RUST, env, 1800, logs / "runtime")
+    shutil.copy2(RUST / "target" / "release" / "c600-runtime.exe", out / RUNTIME)
     build_shell.build(str(executable), out / "shell")
     print(f"assets: {copy_assets(out / ASSETS)} files", flush=True)
     copy_menu(out / MENU)
+    for puzzle in FIXTURES:
+        print(f"fixture: c600-shell-session-fixture --puzzle {puzzle} (starts the runtime once)", flush=True)
+        prepare_host.run_logged(fixture_command(out, puzzle), ROOT, env, 600,
+                                logs / ("fixture" if puzzle == "jumble-off" else "fixture-" + puzzle))
     prepare_host.write_new(out / RECORD, record(out, Path(executable).resolve(), head, dirty))
     verify(out)
     return out

@@ -16,6 +16,14 @@ publish = false
 # Debug and test builds optimize the jumbling and kernel crates and the external crates; overflow checks and debug
 # assertions stay on. Unoptimized, M8's observation tests alone ran for minutes, and the Windows CI shard that runs
 # `tests/test_language_rust.py` went over its time limit.
+#
+# Debug info is kept small (owner, 20 November 2026): the workspace's crates keep line tables only, so backtraces and
+# panics still name files and lines, and the external crates carry none. With full debug info one worktree's target
+# directory reached about 28 GB on Windows, half of it program databases (.pdb), and the worktrees together filled the
+# disk. Release builds are unchanged.
+[profile.dev]
+debug = "line-tables-only"
+
 [profile.dev.package.c600-kernel]
 opt-level = 2
 
@@ -24,3 +32,4 @@ opt-level = 2
 
 [profile.dev.package."*"]
 opt-level = 2
+debug = false

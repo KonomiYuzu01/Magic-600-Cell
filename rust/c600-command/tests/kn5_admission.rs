@@ -242,7 +242,7 @@ impl Fixture {
                 let epoch = self.layer.revision().epoch;
                 let command = format!("{run}/{}", self.sent);
                 let row = "operation.preview".to_owned();
-                self.layer.invoke(caller, Invocation { command, row, args, token: None, epoch })
+                self.layer.invoke(caller, Invocation { command, row, args, token: None, epoch, budget: None })
             }
         };
         match &receipt.status {
@@ -510,6 +510,7 @@ fn a_draft_carries_no_block_of_the_callers() {
         args: record_draft("mine"),
         token: None,
         epoch,
+        budget: None,
     };
     let receipt = f.layer.invoke(&run, invocation);
     assert!(matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);

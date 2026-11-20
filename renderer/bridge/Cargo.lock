@@ -77,6 +77,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-lx4"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-platform"
 version = "0.0.0"
 
@@ -84,9 +92,12 @@ version = "0.0.0"
 name = "c600-render"
 version = "0.0.0"
 dependencies = [
+ "c600-check",
  "c600-digest",
  "c600-display",
+ "c600-ir",
  "c600-kernel",
+ "c600-syntax",
 ]
 
 [[package]]
@@ -105,6 +116,20 @@ version = "0.0.0"
 dependencies = [
  "c600-digest",
  "c600-ir",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "c600-runtime"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -135,7 +160,37 @@ dependencies = [
  "c600-kernel",
  "c600-render",
  "c600-render-ffi",
+ "c600-run",
+ "c600-runtime",
  "c600-session",
+ "c600-syntax",
+]
+
+[[package]]
+name = "c600-shell-lx4"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-kernel",
+ "c600-lx4",
+ "c600-syntax",
+ "c600-view",
+]
+
+[[package]]
+name = "c600-syntax"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-ir",
+]
+
+[[package]]
+name = "c600-view"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
 ]
 
 [[package]]

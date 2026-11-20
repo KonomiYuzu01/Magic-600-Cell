@@ -280,7 +280,14 @@ fn a_static_binding_answers_as_its_arguments_do() {
     assert_eq!(f.layer.availability(READ), Ok(()));
     let runtime = Caller::Runtime { run: "run-1".into() };
     let epoch = f.layer.revision().epoch;
-    let invocation = Invocation { command: "run-1/1".into(), row: COMPARE.into(), args: b, token: None, epoch };
+    let invocation = Invocation {
+        command: "run-1/1".into(),
+        row: COMPARE.into(),
+        args: b,
+        token: None,
+        epoch,
+        budget: Some(c600_command::Budget::DRAFT_CEILING),
+    };
     assert_eq!(f.layer.invoke(&runtime, invocation).status.code(), Some(code::ARGUMENT_FORM));
     f.declare(READ, requiring(vec![required(COMPARE, Binding::Static(Value::Int(3)))]));
     assert_eq!(code_of(f.layer.availability(READ)), code::ARGUMENT_FORM);

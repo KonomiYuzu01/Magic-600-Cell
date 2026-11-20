@@ -9,12 +9,16 @@
 //!   invocation of `operation.preview` with the literal word as its absolute argument and no token, in one word step
 //!   or, for the input recipe's literal word longer than one chunk, in the solver's word steps.
 //! - [`kernel_rows`] holds the kernel rows that [`bridge`] serves to a program's snapshot read with an argument (KN5,
-//!   LP2 draft): KN2.4's `positions` and `labels`, which LB2's exact completion in `c600-library` reads (CT-LB2-04).
+//!   LP2 draft): KN2.4's `positions` and `labels`, which LB2's exact completion in `c600-library` reads (CT-LB2-04),
+//!   KN2.4's `effect`, which LB2's recipes and reports read (CT-LB2-01), and the `protection` row, which LB2's Net and
+//!   Strict protection reads (CT-LB2-02), and the draft `setups` row of the setup-search exception, which LB2's guarded
+//!   setups read (CT-BND-18).
 //! - [`expand`] is the source route's recipe expansion: a case step's recipe to its literal word, through the kernel,
 //!   outside the program and without a state read.
 //! - [`case`] reads the frozen oracle cases O01 to O07.
 //! - [`views`] builds the tool's views: the display contract's publication of a proposal and its preview, the content
-//!   the headless view model installs for it, and the adapter's presentation report to the shell.
+//!   the headless view model installs for it, and the adapter's presentation report to the shell. Its
+//!   [`views::ModelViews`] serves the command layer's view rows, `view.open` and `view.close`, with the view model.
 //! - [`workspace`] is the host's provenance reader on the command layer (KN5's stage 3): it reads a workspace record's
 //!   block before `workspace.set` writes the record (PS1.16), and admits or refuses a draft that names a record
 //!   (KN5.26, BND.84, BND.85).
@@ -33,8 +37,10 @@
 //!
 //! - **Entry.** `full_600_cell.preview_word(w: Word)` is an exported command (LG3.6) that proposes `w` as given. The
 //!   library entries of chapter 03 are language code in `c600-library`, not in this tool: LB1's literal words
-//!   (`words.power`) and LB2's exact completion (`completion.exact_completion`), which this crate's tests run through
-//!   [`bridge`] over [`kernel_rows`] (CT-LB2-04).
+//!   (`words.power`), LB2's exact completion (`completion.exact_completion`), LB2's recipes and reports (the module
+//!   `recipes`), LB2's Net and Strict protection (the module `protection`) and LB2's guarded setups and buffers (the
+//!   module `guarded_setups`); this crate's tests run these four through [`bridge`] over [`kernel_rows`] (CT-LB2-04,
+//!   CT-LB2-01, CT-LB2-02, CT-BND-18).
 //! - **Target.** The proposal's target text names the command-layer row the proposal reaches, `operation.preview`.
 //! - **Result.** The entry returns `record { base, id }`, read with `receipt_base` and `receipt_id`: the two receipt
 //!   fields a previewing program may read (BND.42). A receipt itself has no canonical output form.
@@ -44,17 +50,22 @@
 //!   the review of the class against the entry (CT-BND-15, CT-LB6-03) is not done.
 //! - **Built-in admission.** `c600_check::admit` with `Profile::Solving` is the column of a solver's own, forked or
 //!   imported tool, which prepares no preview until the joint setting, so it refuses this tool. [`tool::Tool::new`]
-//!   admits the entry with `c600_check::admit_built_in`, the built-in column of chapter 07 section 8 that LP2 added
-//!   to the checker (pull request 170) when this crate asked for it; this crate keeps no admission rule of its own.
-//!   Draft: BND.57's rows by class do not exist as data, so [`tool::class_rows`] lists the prepare-a-preview row of
-//!   each of the manifest's rows, `operation.preview`, and nothing else. An entry that also reads state, publishes a
-//!   view or writes the workspace therefore uses a row its class does not list and is refused, and a store of a word
-//!   the solver did not name is refused at the write as well as its relay at the proposal. The built-in column's two
-//!   exceptions are not built.
+//!   admits the entry with `c600_check::admit_built_in`, the built-in column of chapter 07 section 8 that LP2 added to
+//!   the checker (pull request 170) when this crate asked for it, and the process host's child admits it the same way
+//!   (**Child admission** below); this crate keeps no admission rule of its own. Draft: BND.57's rows by class do not
+//!   exist as data, so [`tool::class_rows`] lists the prepare-a-preview row of each of the manifest's rows,
+//!   `operation.preview`, and nothing else. An entry that also reads state, publishes a view or writes the workspace
+//!   therefore uses a row its class does not list and is refused, and a store of a word the solver did not name is
+//!   refused at the write as well as its relay at the proposal. The built-in column's two exceptions are not built.
 //! - **Provenance.** The blocks name a draft capability contract, pinned as `c600-tools-draft-1`, and the checker
 //!   pin `c600-check-lp2-draft` over `c600-check`'s source. The word argument enters with a manual block: the solver
 //!   named it. The producer is the tool's module digest and entry, author `built_in`, profile `solving`.
-//! - **Limits.** One run gets [`tool::LIMITS`]; the run's charges are information only.
+//! - **Limits** (KN7.7; LP2's pull request 348). A run gets the run limits of its job's budget
+//!   ([`process::ToolCommand::limits`], [`tool::limits`]): the budget the solver's command declared, by default the
+//!   shell's, the layer's draft ceiling ([`tool::LIMITS`]), and the layer admitted under its ceiling. A command that
+//!   declares no budget, or one over the ceiling, is refused before a job exists, so the tool does not run. The
+//!   bridge declares the run's budget on the runtime invocations of a row an entry serves
+//!   ([`bridge::Bridge::with_budget`]). The run's charges are information only.
 //! - **Expansion.** A recipe the kernel accepts expands to its letters. A recipe the kernel refuses that is exactly one
 //!   word step of integer moves fitting `i32` passes unchanged as the tool's argument: a word with a letter outside 1
 //!   to 1200 in magnitude is refused at the run's start (see "Words with no transfer encoding"), and the command layer
@@ -69,17 +80,25 @@
 //!   length (LG2.17) with a result bound of [`bridge::RESULT_BOUND`] bytes until the command table prices the row. The
 //!   answer the shell sees is a receipt `{base, id, status, job}`; the layer's refusal or failure is its error code.
 //!   The acknowledgement's `base` is `<session>@<epoch>/<head>`.
-//! - **Kernel rows** (KN2.4, KN5; [`kernel_rows`]). The bridge serves two state reads, each to a snapshot read with an
-//!   argument at the layer's head, and no other: `positions` and `labels`. Each takes a list of integers (a `List<Nat>`
-//!   or a `Set<Nat>`, repeats allowed) and answers a list in the argument's order. `positions` answers one record per
-//!   named piece, 0 to 177,119, through `CommandLayer::positions`; `labels` answers one label per named slot, 0 to
-//!   259,799, as `List<Nat>` or `List<Int>`, read from the head's snapshot because no layer or kernel function serves
-//!   the row. A label is the home slot of the sticker the slot holds: a sticker's identity, never its colour. Both
-//!   rows refuse in one order: a declared type the row does not answer, `LG2:type.mismatch`, and an argument that is
-//!   not a list of integers, `KN5:input.argument_form`, cost the read's step only; then, charged, Jumble on is
-//!   `KN5:input.retained_tool_needs_jumble_off` and a piece or slot out of range `KN2:input.named_object_invalid`.
-//!   Tariffs: `positions` costs one pass over the 259,800 labels plus 20 slots per named piece, and `labels` one unit
-//!   per named slot; each result bound is the size of an answer of that many of the largest items.
+//! - **Kernel rows** (KN2.4, KN5; [`kernel_rows`]). The bridge serves four reads, each to a snapshot read with an
+//!   argument, and a fifth when the host gives it the setup table, and no other: `positions` and `labels` at the
+//!   layer's head, `effect`, a recipe's net map, which reads no state, and `protection`, a captured lock judged against
+//!   a recipe at the head (the argument is `{lock: {kind, labels, slots}, mode, recipe, limit?}`). `positions` and
+//!   `labels` each take a list of integers (a `List<Nat>` or a `Set<Nat>`, repeats allowed) and answer a list in the
+//!   argument's order. `positions` answers one record per named piece, 0 to 177,119, through `CommandLayer::positions`;
+//!   `labels` answers one label per named slot, 0 to 259,799, as `List<Nat>` or `List<Int>`, read from the head's
+//!   snapshot because no layer or kernel function serves the row. A label is the home slot of the sticker the slot
+//!   holds: a sticker's identity, never its colour. Both rows refuse in one order: a declared type the row does not
+//!   answer, `LG2:type.mismatch`, and an argument that is not a list of integers, `KN5:input.argument_form`, cost the
+//!   read's step only; then, charged, Jumble on is `KN5:input.retained_tool_needs_jumble_off` and a piece or slot out
+//!   of range `KN2:input.named_object_invalid`. Tariffs: `positions` costs one pass over the 259,800 labels plus 20
+//!   slots per named piece, and `labels` one unit per named slot; each result bound is the size of an answer of that
+//!   many of the largest items. `effect` takes a recipe, a word or a list of word and star steps, and answers the
+//!   fields its declared record names (the map, its digests, the counts and the support per orbit); it refuses in the
+//!   same order, with the kernel's refusal of a recipe in place of a range error. The draft `setups` row, read only
+//!   under the built-in column's setup-search exception, answers the certified setups for the target the solver names,
+//!   and the bridge serves it only with the `SetupTable` the host gives it. Each row's argument, answer, codes and
+//!   tariff are in [`kernel_rows`].
 //! - **Source route.** `c600-lp3-source` keeps `c600-lp3-oracle`'s session names, shell prefixes, trace form and
 //!   candidate block (`c600-command-lp3-loop` with the command layer's build), so the two routes' traces compare byte
 //!   for byte; its summary adds the route `source`, this crate's [`build`] and the host. Each step's run is
@@ -141,18 +160,28 @@
 //!   (RM.26, ONE.41, RPI.76). The layer refuses a frame that shows no preview, another preview or a preview drawn
 //!   through a user stage, and a word commit's token binds the stamp of the frame that presented its preview. It adds
 //!   no token logic. With no preview shown, pending or bound it reports nothing.
+//! - **View rows** (EV3.2, RPI.81 to RPI.83; LP2's pull request 271). [`views::ModelViews`] numbers each layer command
+//!   ID it is called with as the view model's caller command, from 1 in the order it first sees it, and states the
+//!   solver as the origin, since the layer calls it only inside a command the solver invoked. The host's declare
+//!   function gives each source's dependencies, workload, output allowance and class, and refuses a source the host
+//!   does not serve before the model is called (the tests' hosts with `KN5:input.argument_form`, naming `source`, as
+//!   `ModelViews` refuses an overlay's module digest that is not 64 hex digits). An overlay's module digest reaches the
+//!   model as its 32 bytes and its arguments as canonical JSON bytes. A model refusal keeps its code and names the view
+//!   or the ceiling's field. A closed view's retirement token waits until the host takes it at its frame boundary.
 //! - **Process host** (RTE.21, ONE.69, LQ9; KN5.15; BND.42). [`process::ProcessHost`] sends one job per run to
-//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`],
-//!   the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's. The boundary and
-//!   the bridge stay in the caller's process as the `Host` of `c600_runtime::Runtime::run`: the child holds the
-//!   program and its word, and no token, secret or command layer. One child serves every run of a host; after a
-//!   fault the next run starts a fresh one (KN7.13). A run has no wall-clock deadline unless the caller sets one
+//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the job's word, the run limits of the
+//!   job's budget, the tool's class rows, the test tariffs, no grant and no source ranges, so the run's summary is the
+//!   in-process host's.
+//!   The boundary and the bridge stay in the caller's process as the `Host` of `c600_runtime::Runtime::run`: the child
+//!   holds the program and its word, and no token, secret or command layer. One child serves every run of a host; after
+//!   a fault the next run starts a fresh one (KN7.13). A run has no wall-clock deadline unless the caller sets one
 //!   (KN7.10, DET.17).
-//! - **Child admission** (ADR-L02, LG3.13, chapter 07 section 8). The child admits a job with `c600_check::admit`,
-//!   which has no built-in column, and its solving column refuses every previewing program. So the job's profile is
-//!   tool authoring, the built-in column stays the caller's ([`tool::Tool::new`]), and the process host sends only
-//!   the source whose digest is the manifest's. The child's own admission of a built-in tool waits for the API named
-//!   under "Built-in admission", and for a field in `c600-runtime`'s job options to carry it.
+//! - **Child admission** (ADR-L02, LG3.13, chapter 07 section 8). The job runs in the solving profile and names the
+//!   tool's class rows (`c600_runtime::JobOptions::built_in`, LP2's draft), so the child admits the entry in the
+//!   built-in column itself, with `c600_check::admit_built_in`, as [`tool::Tool::new`] does in the caller
+//!   ([`process::job_under`]). The process host still sends only the source whose digest is the manifest's. Solving is
+//!   the profile of the place where LP3's hosts start a run, a command in a solving session (BND.17); the tool editor
+//!   and a research workspace, which would set the tool-authoring and research profiles, do not exist yet.
 //! - **Words with no transfer encoding** (`PS1:input.noncanonical_value`; `c600-runtime`'s draft 7). A word with a
 //!   letter outside 1 to 1200 in magnitude cannot cross to the child, so on the process host the parent refuses the
 //!   job at the start stage, and in process [`process::run_in_process`] refuses the run there the same way, before
@@ -165,29 +194,29 @@
 //!   the runtime's binary, by default `c600-runtime` beside the runner (packaging decides later). The summary has
 //!   `host` and `runtime_spawns`, each case of the summary `start_refused`, each case of the receipts file `host`,
 //!   and each step record `host` (null when no word was given to a host) and `start_refusal`.
-//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never chooses where to cut a word. The command
-//!   route's chunking is the 0.4 recipe's word steps, and the source route carries the solver's own: for one run the
-//!   host gives the bridge the input recipe's literal word and the length of each of its word steps
-//!   ([`bridge::Steps`]), for a recipe of plain word steps only. A proposal longer than one chunk of 100,000 letters
-//!   ([`bridge::WORD_CHUNK`]) that is exactly that literal word, letter for letter, goes in the solver's word steps,
-//!   in order, in the one invocation ([`bridge::proposal_args`]). Every other proposal is one word step, as before:
-//!   a word of at most one chunk, whatever the solver's steps, so O01 to O07 send the invocations they sent before;
-//!   and a word that is not the input literal, which the layer refuses whole when it is longer than one chunk, as it
-//!   refuses the same draft on the command route. The tariff stays the literal word's length, so the total bound of
-//!   3,000,000 is unchanged, and one proposal stays one invocation, one preview job and one commit. Only a plain word
-//!   step, exactly `{"kind": "word", "moves": [...]}`, counts ([`expand::word_steps`]), so the steps the bridge sends
-//!   are the recipe's own, byte for byte. Not built: a recipe with a star step, or with a word step that has another
-//!   field, keeps the single-step transport, so its literal word longer than one chunk is refused whole on the
-//!   source route.
+//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never cuts, splits or rewrites a word or a recipe.
+//!   The command route's chunking is the 0.4 recipe's word steps, and the source route carries the solver's own
+//!   recipe: for one run the host gives the bridge the input recipe, exactly as written, with its literal word
+//!   ([`bridge::Steps`]), built only from a recipe the kernel expanded, whatever its steps. A proposal longer than one
+//!   chunk of 100,000 letters ([`bridge::WORD_CHUNK`]) that is exactly that literal word, letter for letter, goes in
+//!   the one invocation as `{"draft": {"recipe": <the solver's recipe>}}`, unchanged ([`bridge::proposal_args`]):
+//!   plain word steps, star steps, and word steps with other fields, which are kept. Every other proposal is one word
+//!   step, as before: a word of at most one chunk, whatever the recipe, so O01 to O07 send the invocations they sent
+//!   before; and a word that is not the input literal, which the layer refuses whole when it is longer than one
+//!   chunk, as it refuses the same draft on the command route. The tariff stays the literal word's length, so the
+//!   total bound of 3,000,000 is unchanged, and one proposal stays one invocation, one preview job and one commit.
+//!   The draft the bridge sends is the solver's recipe byte for byte, so the source route admits a recipe over one
+//!   chunk exactly when the command route admits the same draft.
 //! - **Net and Strict checks** (LB2.3, CT-LB2-02's Net and Strict halves). The tests take the Net check to be the
 //!   layer's preview verdict at label level over a session's protected set, here the orbits one generator moves, and
 //!   the commit's refusal when that verdict is not clear. The Strict check is the same after the shell sets the
 //!   session's policy to Strict with `protection.policy.set` (LP2's pull request 198; the runtime may not invoke the
-//!   row): the layer judges every executed literal prefix with the kernel's `strict_protection`, the preview's
-//!   summary names the mode and the first refused prefix, and the commit is refused while a prefix moves a protected
-//!   orbit. Not built: the captured lock and "an incomplete prefix check never returns safe" (LB2.3's coverage report
-//!   and `LB2:protection.incomplete_coverage`), which are LP3's library rows over kernel rows the bridge does not
-//!   serve; it serves `positions` and `labels` only.
+//!   row): the layer judges every executed literal prefix with the kernel's `strict_protection`, the preview's summary
+//!   names the mode and the first refused prefix, and the commit is refused while a prefix moves a protected orbit. The
+//!   captured lock and "an incomplete prefix check never returns safe" (LB2.3's coverage report and
+//!   `LB2:protection.incomplete_coverage`) are built in `c600-library`'s `protection` module over the bridge's
+//!   `protection` row, and run whole in `tests/ct_lb2_02.rs` (pull request 300); the bridge serves `positions`,
+//!   `labels`, `effect` and `protection`, and `setups` with the setup table.
 //! - **Inspector fixtures** (LB3.5, CT-LB3-07's checker half). No LB3 entry exists as library code, so the test's
 //!   fixtures stand for them: a fixed record of two preview outcomes for an outcome table, and a previewing entry
 //!   that answers the acknowledgement's two fields for a named-word check. The checker decides them by capability
@@ -195,17 +224,19 @@
 //! - **Provenance reader** (PS1.16, KN5.26; KN5's stage 3). [`workspace::Reader`] is the host's
 //!   `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so `workspace.set`
 //!   refuses a block that is not a canonical FP.17 block with `PS1:capability.provenance_incompatible`. The check reads
-//!   the block alone, so a record may hold a word that no preview admits, such as a solver tool's output (BND.84).
-//!   Its admission is `c600_run::boundary::admit_preview` under [`tool::pins`], so a draft `{"record": name}` is
-//!   refused with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
-//!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader knows no session
-//!   profile: it takes every session to be a solving session, the only profile LP3's host runs, so it applies BND.84
-//!   and BND.85 at every record draft (KN5.26 asks for them in a solving session). It finds a part only among the
-//!   blocks its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]), and a part it does not
-//!   find reads `unknown` and fails closed. No session table of blocks exists (M6's journal holds a record's block
-//!   only as the record's provenance text), so a record write keeps nothing, and after a reopen the host keeps its
-//!   blocks again. The reader drops no block it keeps, so its blocks grow with the runs of the host's session, a
-//!   run's input and output blocks for each run of `c600-lp3-source`.
+//!   the block alone, so a record may hold a word that no preview admits, such as a solver tool's output (BND.84). Its
+//!   admission is `c600_run::boundary::admit_preview` under [`tool::pins`], so a draft `{"record": name}` is refused
+//!   with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
+//!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader needs no session profile:
+//!   the layer asks it to admit a record's word only in a solving session, where KN5.26 asks for BND.84 and BND.85, and
+//!   asks for its check at `workspace.set` in every profile (LP2's pull request 287). It finds a part among the blocks
+//!   its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]) and the part blocks the session
+//!   keeps, and a part that neither holds reads `unknown` and fails closed. The session's part blocks are the layer's
+//!   (CT-BND-27; LP2's pull request 272): at a record's write the reader lists the parts of the record's block that its
+//!   host keeps, recursively, the layer keeps those it does not have with the action, and it gives them back at
+//!   admission, so after a reopen a record written while the host kept its parts is admitted without the host keeping
+//!   them again. The reader drops no block it keeps, so its blocks grow with the runs of the host's session, a run's
+//!   input and output blocks for each run of `c600-lp3-source`.
 //! - **The host's table.** `c600-lp3-source` serves H-08 with the command layer's draft rows ([`workspace::table`])
 //!   and installs a reader ([`workspace::install`]) that keeps each run's blocks, so a host can write and preview
 //!   workspace records. The runner writes none, so its traces and receipts are as before.

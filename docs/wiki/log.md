@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-20] decision | Smaller Rust build caches and cleanup at session end
+The owner decided that debug and test builds keep line tables only for the workspace crates and no debug info for the external crates (`rust/Cargo.toml`, `renderer/bridge/Cargo.toml`), and that a session cleans its own worktree's build caches when its work there is finished (`CLAUDE.md` step 7), after full debug info had let the worktrees' caches fill the disk ([record](decisions/owner-decisions-2026-11-20-build-caches.md)).
+
 ## [2026-11-18] decision | Route B for the confirmed present, accepted for now
 The owner accepted route B for now: the renderer core presents the gated workload in its own composition swap chain and DirectComposition layer beneath Godot's per-pixel transparent window, so it can confirm presented frames (RM.26, ONE.41). C9 may build on it now. It becomes final, with ADR-R01.2's revision under PHS.52, when three owner-machine checks pass (input through the transparent window, the UI-to-3D skew, three cold probe runs), and a failing check returns it to the owner ([record](decisions/owner-decisions-2026-11-18-route-b.md)).
 
