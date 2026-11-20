@@ -1,0 +1,290 @@
+\chapter{Normalization and the theory package}
+\label{ch:ArchonFull600Theory_Package}
+
+This chapter is Milestone 6 of the handoff: Lemmas 12, 13 and 15, and the
+Theorem as the conjunction of its seven parts, each stated under its own
+hypotheses. Lemma 14 is Lemma~\ref{lem:endpoint-transport}. Source line
+numbers refer to \texttt{research/Full\_600cell\_Puzzle\_Theory.tex}.
+
+\section{Lemma 12: geometric normalization}
+
+\begin{lemma}[A symmetry fixing every facet]
+  \label{lem:fix-every-cap}
+  \lean{ArchonFull600Theory.eq_one_of_forall_smul_cap}
+  \leanok
+  \uses{def:symmetry-group, thm:face-counts}
+  \textit{Source: Lemma 12, the trivial intersection.}
+  A symmetry of \(P\) that maps every facet to itself is the identity.
+\end{lemma}
+\begin{proof}
+  \leanok
+  Four facets meet the facet \(\{0,30,31,32\}\) in one vertex each, so the
+  symmetry fixes those four vertices, which form a basis of \(\mathbb H\).
+  The source argues through the poles spanning \(\mathbb R^4\).
+\end{proof}
+
+\begin{theorem}[Lemma 12]
+  \label{thm:lemma-twelve}
+  \lean{ArchonFull600Theory.HypothesisE.conj_legalGroup,
+    ArchonFull600Theory.HypothesisE.range_le_normalizer,
+    ArchonFull600Theory.HypothesisE.legalGroup_inf_range,
+    ArchonFull600Theory.HypothesisE.semidirectEquiv,
+    ArchonFull600Theory.HypothesisE.existsUnique_mul,
+    ArchonFull600Theory.HypothesisE.normalization}
+  \leanok
+  \uses{def:hypotheses-fce, thm:lemma-six, lem:fix-every-cap}
+  % SOURCE: Lemma 12, lines 1267--1316
+  % SOURCE QUOTE: Under R, F, and E, the geometric action of \(K\) normalizes \(G\), its
+  % intersection with \(G\) is trivial, and \begin{equation} \langle G,K\rangle\cong G\rtimes K.
+  % \end{equation}
+  \textit{Source: Lemma 12.}
+  Under R, F and E, with \(\kappa\colon K\to S_{\mathcal S}\) the geometric
+  action: \(\kappa(k)G\kappa(k)^{-1}=G\) for every \(k\in K\),
+  \(G\cap\kappa(K)=1\), and \(\langle G,\kappa(K)\rangle\cong G\rtimes K\)
+  through \((g,k)\mapsto g\kappa(k)\), each element having a unique form
+  \(g\kappa(k)\).
+\end{theorem}
+\begin{proof}
+  \leanok
+  E's field \texttt{geom\_capAction} conjugates each rotation of cap \(c\)
+  into a rotation of cap \(k\cdot c\), and by F and Lemma 6 every cap
+  rotation is legal. A legal element fixes every centre, and a
+  \(\kappa(k)\) fixing every centre fixes every cap, so \(k=1\) by
+  Lemma~\ref{lem:fix-every-cap}. The semidirect product maps injectively
+  onto the join.
+\end{proof}
+
+\begin{lemma}[The legal group is larger than \(K\)]
+  \label{lem:distinct-legal}
+  \lean{ArchonFull600Theory.HypothesisC.card_symmetryGroup_lt}
+  \leanok
+  \uses{thm:selected-lemmas, thm:finite-symmetry-group}
+  % SOURCE: Distinct symmetry and motion groups, lines 1357--1360
+  % SOURCE QUOTE: Under C, the lower bound \(B>10^{151851}\) alone already separates the scale of
+  % the legal action from the finite geometric group.
+  \textit{Source: the remark on distinct groups.}
+  Under R and C, \(|K|<|G|\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  \(|K|=14400<10^{151851}<B\le|\Omega|\le|G|\).
+\end{proof}
+
+\section{Lemma 13: sound symmetry reduction}
+
+\begin{lemma}[Lemma 13, the tetrahedral example]
+  \label{lem:tetrahedral-conjugation}
+  \lean{ArchonFull600Theory.tetraHalfTurn, ArchonFull600Theory.tetraThirdTurn,
+    ArchonFull600Theory.tetraSymbols, ArchonFull600Theory.tetrahedralConjugation}
+  \leanok
+  \uses{def:word-distance}
+  % SOURCE: Lemma 13, lines 1362--1427
+  % SOURCE QUOTE: Normalization of \(G\) by \(K\) does not imply preservation of the chosen
+  % \(1800\)-symbol word metric.
+  % SOURCE QUOTE: Conjugating \(H\) by \(T\) gives a different half-turn.
+  \textit{Source: Lemma 13, first statement.}
+  In \(A_4\) with \(H=(1\,2)(3\,4)\) and \(T=(1\,2\,3)\), the conjugate
+  \(THT^{-1}\) is a half-turn other than \(H\) and none of \(H\), \(T\),
+  \(T^{-1}\). It is the word \(T^{-1},H,T\), and no shorter word gives it,
+  while \(H\) is a word of one letter.
+\end{lemma}
+\begin{proof}
+  \leanok
+  Decision over \(A_4\), including every word of at most two letters.
+\end{proof}
+
+\begin{theorem}[Lemma 13, the quotient]
+  \label{thm:symmetry-quotient}
+  \lean{ArchonFull600Theory.PathCost, ArchonFull600Theory.quotientEdge,
+    ArchonFull600Theory.quotientGoal, ArchonFull600Theory.PathCost.project,
+    ArchonFull600Theory.PathCost.lift, ArchonFull600Theory.exists_goal_pathCost_iff,
+    ArchonFull600Theory.goalCosts_eq, ArchonFull600Theory.isLeast_goalCosts_iff}
+  \leanok
+  % SOURCE: Lemma 13, lines 1371--1375
+  % SOURCE QUOTE: A symmetry quotient preserves shortest-path distance to a goal set if the
+  % symmetries act by cost-preserving automorphisms of the actual allowed state graph, preserve
+  % the goal set
+  \textit{Source: Lemma 13, second statement.}
+  If a group \(L\) acts by cost-preserving automorphisms of a state graph
+  and preserves the goal set, a state has a path of cost \(c\) to a goal
+  exactly when its orbit has a path of cost \(c\) to a goal orbit, so the
+  minimum costs agree.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Paths project with their cost. An orbit edge represented by
+  \(u\to v\) lifts at the state \(\ell u\) to the edge \(\ell u\to\ell v\),
+  and the goal set is invariant.
+\end{proof}
+
+\section{Lemma 15: guarded setups}
+
+\begin{theorem}[Lemma 15]
+  \label{thm:guarded-setup}
+  \lean{ArchonFull600Theory.frameEdge, ArchonFull600Theory.pathDistance,
+    ArchonFull600Theory.setupLength, ArchonFull600Theory.withInverses,
+    ArchonFull600Theory.pathDistance_le_of_embedding,
+    ArchonFull600Theory.setupLength_withInverses_le,
+    ArchonFull600Theory.pathDistance_withInverses_le, ArchonFull600Theory.withInverses_fixes,
+    ArchonFull600Theory.reachable_withInverses_iff}
+  \leanok
+  \uses{thm:symmetry-quotient}
+  % SOURCE: Lemma 15, lines 1470--1521
+  % SOURCE QUOTE: enlarging the positive guarded alphabet by legal inverses cannot increase any
+  % minimum unit-cost setup length.
+  \textit{Source: Lemma 15.}
+  On ordered target frames, adding the inverse letters cannot increase a
+  minimum unit-cost setup length, nor a minimum weighted cost when the old
+  letters keep their costs. Inverse letters fix the buffers when the
+  letters do, and when every inverse transition has a path of positive
+  letters, they do not enlarge the reachable set.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Every old path is a new path of the same cost, and the least cost is an
+  infimum in a complete lattice, with \(\top\) for unreachable frames.
+\end{proof}
+
+\begin{lemma}[Lemma 15 on the retained model]
+  \label{lem:cap-guard}
+  \lean{ArchonFull600Theory.HypothesisF.H_inv, ArchonFull600Theory.HypothesisF.T_inv,
+    ArchonFull600Theory.capLetters, ArchonFull600Theory.capSetup_reachable_iff,
+    ArchonFull600Theory.HypothesisR.CapSupport, ArchonFull600Theory.capGuard_fixes,
+    ArchonFull600Theory.capGuardedSetup}
+  \leanok
+  \uses{thm:guarded-setup, def:hypotheses-fce, def:retained-model}
+  % SOURCE: Lemma 15, lines 1494--1505
+  % SOURCE QUOTE: In the retained cap guard, forbidding every cap in \begin{equation}
+  % M(A)\cup M(B) \end{equation} is a sufficient condition for this fixed-buffer property.
+  % SOURCE QUOTE: Moreover, \(H_c^{-1}=H_c\) and \(T_c^{-1}=T_c^2\), so inverse transitions
+  % already have positive legal witnesses.
+  \textit{Source: Lemma 15, the cap guard.}
+  The inverse letters of a cap alphabet are legal and do not increase a
+  setup length. Under F, \(H_c^{-1}=H_c\) and \(T_c^{-1}=T_c^2\), so they do
+  not enlarge the reachable frames. Under the support property that a cap
+  outside a piece's complete signature fixes its stickers, the source's
+  ``rotates the cap and fixes its complement'', which R and F do not
+  state, forbidding every cap of \(M(A)\cup M(B)\) makes every letter fix
+  the buffer pieces \(A\) and \(B\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  \(H_c\) and \(T_c\) are images of elements of order \(2\) and \(3\) of
+  \(A_4\).
+\end{proof}
+
+\section{The theory package}
+
+\begin{lemma}[Antipodal axes]
+  \label{lem:antipodal-axes}
+  \lean{ArchonFull600Theory.centralSymmetry, ArchonFull600Theory.antipode,
+    ArchonFull600Theory.antipode_ne, ArchonFull600Theory.antipode_disjoint,
+    ArchonFull600Theory.card_antipodalAxes, ArchonFull600Theory.antipodalAxes}
+  \leanok
+  \uses{def:cut-chambers, lem:metric-data, thm:binary-icosahedral}
+  % SOURCE: Theorem, part 3, lines 1587--1590
+  % SOURCE QUOTE: The 600 oriented poles describe 300 antipodal axes with two outer layers at
+  % normalized distance \(121/125\)
+  \textit{Source: the Theorem, part 3.}
+  The central symmetry \(x\mapsto-x\) lies in \(K\). It maps each cap to a
+  different cap with \(n_{-c}=-n_c\), so the caps form \(300\) antipodal
+  pairs, and the two cap regions of a pair are disjoint.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \(x\mapsto-x\) is \(L_{-1,1}\) with \(-1\in I^*\). A cap equal to its
+  antipode would contain adjacent vertices \(v\) and \(-v\), at distance
+  \(4\ne2/\phi\). The two cut functions of a pair cannot both be positive.
+\end{proof}
+
+\begin{lemma}[The groups are distinct]
+  \label{lem:distinct-groups}
+  \lean{ArchonFull600Theory.infinite_unitary, ArchonFull600Theory.infinite_specialOrthogonal,
+    ArchonFull600Theory.card_capRotations}
+  \leanok
+  \uses{thm:double-cover, def:cut-chambers}
+  % SOURCE: Theorem, part 2, lines 1580--1586
+  % SOURCE QUOTE: These finite groups are distinct from \(SO(4)\), the rotation group of a cap and
+  % the legal twist group.
+  \textit{Source: the Theorem, part 2.}
+  \(SO(4)\) is infinite, and the rotation group of a cap, the even
+  permutations of its four vertices, has order \(12\).
+\end{lemma}
+\begin{proof}
+  \leanok
+  The unit quaternions \(t+\sqrt{1-t^2}\,i\) are infinitely many, and
+  \(p\mapsto L_{p,1}\) is injective. \(4!/2=12\).
+\end{proof}
+
+\begin{lemma}[Inverse words]
+  \label{lem:inverse-words}
+  \lean{ArchonFull600Theory.exists_inverse_word, ArchonFull600Theory.inverseCapLetter,
+    ArchonFull600Theory.HypothesisF.exists_inverse_word}
+  \leanok
+  \uses{lem:cap-words, lem:cap-guard}
+  % SOURCE: Theorem, part 5, lines 1612--1622
+  % SOURCE QUOTE: This is not a lower bound for each scramble; a recorded 1,000-letter word has
+  % an inverse of at most 1,000 letters.
+  \textit{Source: the Theorem, part 5.}
+  Under F, every word in the \(1800\) letters \(H_c,T_c,T_c^{-1}\) has an
+  inverse word of the same length.
+\end{lemma}
+\begin{proof}
+  \leanok
+  The reversed word of inverse letters, with \(H_c^{-1}=H_c\).
+\end{proof}
+
+\begin{theorem}[The Full 600-cell theory package]
+  \label{thm:package}
+  \lean{ArchonFull600Theory.TheoryPart1, ArchonFull600Theory.TheoryPart2,
+    ArchonFull600Theory.TheoryPart3, ArchonFull600Theory.TheoryPart4,
+    ArchonFull600Theory.TheoryPart5, ArchonFull600Theory.TheoryPart6,
+    ArchonFull600Theory.TheoryPart7, ArchonFull600Theory.theoryPart1,
+    ArchonFull600Theory.theoryPart2, ArchonFull600Theory.theoryPart3,
+    ArchonFull600Theory.theoryPart4, ArchonFull600Theory.theoryPart5,
+    ArchonFull600Theory.theoryPart6, ArchonFull600Theory.theoryPart7,
+    ArchonFull600Theory.fullTheoryPackage}
+  \leanok
+  \uses{lem:coordinate-identification, lem:metric-data, thm:face-counts, lem:clique-face,
+    thm:facet-completeness, thm:radial-homeomorph, thm:radial-topology,
+    thm:binary-icosahedral, thm:finite-symmetry-group, thm:coxeter-presentation,
+    thm:double-cover, lem:distinct-groups, lem:distinct-legal, lem:antipodal-axes,
+    thm:signatures, lem:census-sums, lem:model-totals, thm:lemma-six, def:frame-wreath,
+    thm:lemma-seven, lem:invariants, thm:invariant-bound, thm:selected-lemmas,
+    lem:inverse-words, thm:lemma-twelve, lem:tetrahedral-conjugation,
+    thm:symmetry-quotient, lem:endpoint-transport, thm:guarded-setup, lem:cap-guard,
+    lem:scope-same-restriction, lem:scope-visible-disjoint, lem:disjoint-full-supports}
+  % SOURCE: Theorem, lines 1557--1692
+  % SOURCE QUOTE: The radius-two polytope \(P\) is the regular \(\{3,3,5\}\) 600-cell with edge
+  % length \(2/\phi\), face vector \((120,720,1200,600)\), tetrahedral facets and icosahedral
+  % vertex links.
+  % SOURCE QUOTE: Under R and F, the legal group embeds in the stated product of
+  % transported-frame wreath products
+  % SOURCE QUOTE: The faithful geometric action on the complete retained subdivision normalizes
+  % \(G\).
+  % SOURCE QUOTE: Equality on a target orbit does not establish equality of full-state macros;
+  % disjoint full supports suffice for commutation, while disjoint visible supports do not.
+  \textit{Source: the Theorem.}
+  The conjunction of seven parts, each under its own hypotheses. (1)
+  Geometry and topology: unconditional for the coordinates, edge length,
+  clique counts and faces, vertex link counts, five facets per edge and
+  the radial homeomorphism; under E4 the facets are the \(600\)
+  tetrahedra, under E3 the homology and simple connectivity, under E1 and
+  E2 the identifications. (2) Symmetry: \(I^*\), \(K^+\) of order
+  \(7200\), \(K\) of order \(14400\), the Coxeter relations and the
+  presentation under E5, the double cover, and the distinct groups, the
+  legal group under R and C. (3) The axes and cuts, the census, and under
+  R the model counts, equivariance, signatures, addresses and ranks; under
+  F local \(A_4\) generation. (4) The frame law; under R the embedding,
+  the index \(2^{43}5^2\) and the sizes \(3600\), \(2400\), \(7200\) of the
+  selected orbits; under I the upper bound; under C the alternating
+  subgroup and the colour bound. (5) Under R and C the word metric, and
+  under F inverse words. (6) Under R, F and E Lemma 12; the tetrahedral
+  example and the quotient. (7) Lemma 14, Lemma 15 and the scope tests.
+  Not formalized: the polar \(120\)-cell, flag regularity, the Schl\"afli
+  symbol, and that an outer-layer turn fixes the middle layer.
+\end{theorem}
+\begin{proof}
+  \leanok
+  Each part assembles the lemmas of the earlier chapters and of this one.
+\end{proof}

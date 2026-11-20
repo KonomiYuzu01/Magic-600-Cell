@@ -1,6 +1,6 @@
 # Full 600-cell base theory in Lean
 
-A Lean 4 and Mathlib project for the base theory in [`research/ARCHON-HANDOFF-THEORY.md`](../../ARCHON-HANDOFF-THEORY.md). It holds Milestone 1, the permutation core, Milestone 2, the ring `ℤ[φ]` and the 120 vertices, Milestone 3, the finite symmetry group, Milestone 4, topology and the Coxeter presentation, and Milestone 5, the retained model, with every proof complete. Milestone 6 is not started.
+A Lean 4 and Mathlib project for the base theory in [`research/ARCHON-HANDOFF-THEORY.md`](../../ARCHON-HANDOFF-THEORY.md). It holds Milestone 1, the permutation core, Milestone 2, the ring `ℤ[φ]` and the 120 vertices, Milestone 3, the finite symmetry group, Milestone 4, topology and the Coxeter presentation, Milestone 5, the retained model, and Milestone 6, normalization and the theory package, with every proof complete. All six milestones of the handoff are done.
 
 No file has a `sorry`, an `admit`, a `native_decide` or a new axiom. `#print axioms` on every theorem named below lists only `propext`, `Classical.choice` and `Quot.sound`.
 
@@ -216,6 +216,57 @@ The hypotheses are inputs, not theorems. Their truth for the real puzzle is evid
 - The census check runs when `Census.lean` is compiled. Lake does not track `assets/census.json` as an input, so after the file changes, `Census.lean` must be rebuilt (for example from a clean build) for the check to run again.
 - The selected orbits are numbered by Milestone 1's `selectedOrbitIds`. The alphabet of Lemma 11 is indexed through any enumeration `Fin 600 ≃ Cap` of the caps, and the theorems hold for every enumeration.
 
+## Milestone 6: normalization and the package
+
+The handoff's scope is Lemmas 12, 13 and 15, then Theorem T as the conjunction of its seven parts, each stated under its own hypotheses. Lemma 14 is Milestone 1's `transportNonfixedMap`. The statements and proofs were written in this session from `research/Full_600cell_Puzzle_Theory.tex` and the handoff. The blueprint chapter `blueprint/src/chapters/ArchonFull600Theory_Package.tex` quotes the source lines for each.
+
+| Handoff | Lean name | Module | Content |
+| --- | --- | --- | --- |
+| L12 | `HypothesisE.conj_legalGroup`, `HypothesisE.range_le_normalizer`, `HypothesisE.normalization` | `Normalization` | Under R, F and E, `κ(k) G κ(k)⁻¹ = G` for every `k ∈ K`, so the geometric action normalizes `G`. |
+| L12 | `HypothesisE.legalGroup_inf_range`, `eq_one_of_forall_smul_cap` | `Normalization` | `G ∩ κ(K) = 1`. A symmetry of `P` that fixes every facet is the identity. |
+| L12 | `HypothesisE.semidirectEquiv`, `HypothesisE.existsUnique_mul`, `HypothesisE.normalization` | `Normalization` | `⟨G, κ(K)⟩ ≅ G ⋊ K` through `(g, k) ↦ g κ(k)`, and each element has a unique form `g κ(k)`. `normalization` states the three parts of Lemma 12 together. |
+| L12 remark | `HypothesisC.card_symmetryGroup_lt` | `Normalization` | Under R and C, `|K| < |G|`, so the legal group is not the geometric group. |
+| L13 | `tetrahedralConjugation` | `SymmetryReduction` | In `A₄` with `H = (1 2)(3 4)` and `T = (1 2 3)`, the conjugate `T H T⁻¹` is none of `H`, `T`, `T⁻¹` and needs three letters, while `H` needs one. |
+| L13 | `PathCost`, `exists_goal_pathCost_iff`, `goalCosts_eq`, `isLeast_goalCosts_iff` | `SymmetryReduction` | If a group acts by cost-preserving automorphisms of the state graph and preserves the goal set, the costs of paths to the goal and to the goal orbits in the orbit graph are the same set, so the minimum costs agree. |
+| L15 | `setupLength_withInverses_le`, `pathDistance_withInverses_le`, `pathDistance_le_of_embedding` | `GuardedSetup` | Adding the inverse letters cannot increase a minimum unit-cost setup length on ordered target frames, nor a minimum weighted cost when the old letters keep their costs. |
+| L15 | `withInverses_fixes`, `capGuard_fixes`, `capGuardedSetup`, `reachable_withInverses_iff`, `capSetup_reachable_iff` | `GuardedSetup` | Inverse letters fix the buffers when the letters do. For the cap alphabet, the inverse letters are legal and do not increase a setup length, and under the support property `HypothesisR.CapSupport`, forbidding the caps of `M(A) ∪ M(B)` makes every letter fix the buffer pieces. Under F, `H_c⁻¹ = H_c` and `T_c⁻¹ = T_c²`, so the inverse letters do not enlarge the reachable frames. |
+| T | `TheoryPart1` to `TheoryPart7`, `theoryPart1` to `theoryPart7`, `fullTheoryPackage` | `Package` | The seven parts as propositions, each under its own hypotheses, their proofs, and their conjunction. |
+| T | `antipodalAxes`, `card_antipodalAxes`, `antipode_disjoint`, `infinite_specialOrthogonal`, `card_capRotations`, `HypothesisF.exists_inverse_word` | `Package` | The assertions of T that no earlier lemma covers: the 300 antipodal axes with disjoint outer layers, `SO(4)` infinite, the cap rotation group of order 12, and inverse words of the same length. |
+
+### How the Milestone 6 proofs work
+
+- Lemma 12:
+  - Normalization: E's field `geom_capAction` says that `κ(k)` conjugates each rotation of cap `c` into a rotation of cap `k • c`. By F and Lemma 6 every cap rotation is legal, so conjugation maps the generators `H_c`, `T_c` into `G`. Applied to `k` and `k⁻¹`, it maps `G` onto `G`.
+  - Trivial intersection: a legal element fixes every centre, and a geometric `κ(k)` that fixes every centre fixes every cap. The source argues that the poles span `ℝ⁴`. Here a symmetry that fixes every facet fixes the facet `{0, 30, 31, 32}` and four facets that meet it in one vertex each, so it fixes those four vertices, which form a basis of `ℍ` (Milestone 3).
+  - The semidirect product is Mathlib's `SemidirectProduct` for conjugation, mapped by `(g, k) ↦ g κ(k)`. It is injective by the trivial intersection and onto the join because `κ(K)` normalizes `G`.
+- Lemma 13:
+  - The `A₄` example is decided by `decide` over the permutations of four labels, including every word of at most two letters.
+  - Paths project to the orbit graph with the same cost. A path of the orbit graph lifts, from any state of its start orbit, to a labelled path of the same cost: the lift of an orbit edge represented by `u → v`, at the state `ℓ • u`, is the edge `ℓ • u → ℓ • v`. The goal set is invariant, so the lifted endpoint is a goal.
+- Lemma 15: the enlarged alphabet contains the old letters with their moves and costs, so every old path is a new path of the same cost, and the least cost (`sInf` in a complete lattice, with `⊤` for unreachable) can only fall. The inverse transitions of the cap alphabet have positive witnesses because `H_c⁻¹ = H_c` and `T_c⁻¹ = T_c²` under F (F's cap actions are homomorphisms from `A₄`, and `H_c`, `T_c` are the images of an element of order 2 and one of order 3).
+- Theorem T: each part is a `def` of a proposition, and its proof assembles the lemmas of Milestones 1 to 6. New in this module:
+  - The central symmetry `x ↦ -x` is `L_{-1,1}`, and `-1 ∈ I*`, so it lies in `K`. It moves each cap to its antipode, with `n_{-c} = -n_c`. No cap is its own antipode: a vertex and its negative would be adjacent, but they are at distance 4, not `2/φ`. So the pairs `{c, -c}` have two elements each and there are 300. The two cap regions of an axis are disjoint because their cut functions cannot both be positive.
+  - `SO(4)` is infinite: the unit quaternions `t + √(1 - t²) i` are infinitely many, and `p ↦ L_{p,1}` is injective into `SO(4)`.
+  - The rotation group of a cap is the even permutations of its four vertices, of order `4!/2 = 12`.
+  - Inverse words: a word's inverse is the reversed word of inverse letters, with `H_c ↦ H_c`, `T_c ↦ T_c⁻¹` and `T_c⁻¹ ↦ T_c`, and under F `H_c⁻¹ = H_c`.
+
+### Statements and hypotheses in Milestone 6 and Theorem T
+
+- Theorem T states its parts under the hypotheses the source names, with these readings:
+  - Part 1 is unconditional for the coordinates, the edge length, the clique counts, the faces spanned by the cliques, the vertex link counts, the five facets at each edge and the radial homeomorphism `∂P ≅ S³`. That the facets are exactly the 600 tetrahedra uses E4 (`FacetFacts`), the homology and simple connectivity use E3 (`SphereTopology`), and the identification of `V/2` as binary icosahedral and of `P` as a regular 600-cell uses E1 and E2 (`CoordinateSources`), as in Milestones 2 and 4.
+  - Part 2 is unconditional except for its last clause: the legal group is distinguished from `K` by `|K| < |G|`, which uses R and C. The source lists this clause among the unconditional facts; without a model there is no legal group to compare.
+  - Part 3 takes the axis and cut facts unconditionally and the model counts under R. The 600 centres and the orbit sizes are fields of R; the source states them as properties of the retained model. Local `A₄` generation uses F.
+  - Parts 4 to 7 use the hypotheses the source names: R for the embedding and the sizes 3600, 2400 and 7200 of the selected orbits, R and I for the upper bound, R and C for the lower bounds and the word metric, R, F and E for Lemma 12. Lemma 13's quotient statement and the scope tests are unconditional.
+  - The clauses under R, F, I, C and E are implications. The package does not construct a model that satisfies them.
+  - `capDepth = 121 / 125` in Part 3 records the depth that `capRegion` uses; it holds by definition.
+- Lemma 12 needs the field `geom_capAction` of E described under Milestone 5. E's geometric action is faithful by hypothesis.
+- Lemma 13's first statement is the source's own `A₄` example, which illustrates that normalization need not preserve a word metric. A statement that `κ(k)` itself fails to preserve the alphabet's word length for the retained model is not provable from F, which does not make the cap actions faithful. The source's remarks on colouring, protection and buffer conditions for a reduction are not formalized.
+- Lemma 15's cap guard uses `HypothesisR.CapSupport`: a cap outside a piece's complete signature fixes the piece's stickers. This is the reading of the source's "it rotates the cap and fixes its complement" in the proof of Lemma 12. R and F do not state it, and the source's "is a sufficient condition" reads it as a property of the retained cut. It is an explicit hypothesis of `capGuard_fixes` and `capGuardedSetup` only.
+- `setupLength_withInverses_le` and `pathDistance_withInverses_le` hold for every alphabet. `capGuardedSetup` applies the first to the cap alphabet of the allowed caps, together with the legality of the inverse letters and the buffer property.
+- Not formalized:
+  - Part 1: the polar 120-cell, flag regularity and the Schläfli symbol `{3,3,5}`, and the icosahedral vertex links beyond their counts (Milestones 2 and 4).
+  - Part 3: that the middle layer of an axis is fixed during an outer-layer turn, and the 433 sticker regions per facet, which the source calls a retained-model input. `|M| - 1` being a membership rank is a remark on names.
+  - Part 7 and Lemma 15: that breadth-first search and Dijkstra's algorithm compute these distances, and the absence of numerical speedups, which is not a mathematical statement.
+
 ## Build
 
 The toolchain is pinned in `lean-toolchain` (Lean v4.36.0), and `lakefile.toml` requires Mathlib at `v4.36.0`.
@@ -225,9 +276,9 @@ lake exe cache get
 lake build
 ```
 
-With Mathlib's build cache in place, `lake build` rebuilds only this library. `Basic.lean` takes under a minute; `EdgeGraph.lean`, the slowest module, takes about 50 seconds, most of it in the kernel checks of the pair and count certificates. The three Milestone 3 modules, the three Milestone 4 modules and the six Milestone 5 modules take 10 to 25 seconds each on an otherwise idle machine. The build passes with no errors and no linter warnings. Lake still notes, once for each import, that the imported Mathlib modules are designed for the module system; these files are not modules.
+With Mathlib's build cache in place, `lake build` rebuilds only this library. `Basic.lean` takes under a minute; `EdgeGraph.lean`, the slowest module, takes about 50 seconds, most of it in the kernel checks of the pair and count certificates. The three Milestone 3 modules, the three Milestone 4 modules, the six Milestone 5 modules and the four Milestone 6 modules take 10 to 25 seconds each on an otherwise idle machine; `Package.lean` takes about 11 seconds. The build passes with no errors and no linter warnings. Lake still notes, once for each import, that the imported Mathlib modules are designed for the module system; these files are not modules.
 
 ## How it was produced
 
 - Milestone 1 statements: Archon 0.3.3, an automated Lean formalization loop run outside this repository, in iteration 19 of its `autoformalize` stage, with OpenAI GPT-6.2 Sol at effort `max` through the Codex CLI. The agent logs and Archon's state directory are not included.
-- Milestone 1 proofs and all of Milestones 2 to 5: a Claude Code session (Claude Opus 5.5), without Codex calls.
+- Milestone 1 proofs and all of Milestones 2 to 6: a Claude Code session (Claude Opus 5.5), without Codex calls.
