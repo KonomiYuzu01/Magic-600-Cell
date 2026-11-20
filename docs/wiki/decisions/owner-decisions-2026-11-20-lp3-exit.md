@@ -70,6 +70,25 @@ which cites this page.
    swap chain after a frame's submission comes no later than its confirmed display) instead of a 2 ms window. No bar
    moves, and the renderer gate's frame times still come from PresentMon's time between the core chain's presents.
 
+## Format packet pin refresh (FP.1)
+
+The layer interfaces are an input of the frozen migration format packet. LP3's freeze pull request amends LI.5 and
+LI.33 in them under PHS.52, as items 5 and 6 of the [16 November](owner-decisions-2026-11-16-phs52.md) amendment
+list decided, so their pin is refreshed under FP.1.
+
+| Pin in `candidate.json` | Old | New |
+| --- | --- | --- |
+| Layer interfaces SHA-256 | `9007f33cece174e434d43ab0367edd1cba6cf02068403e41e2aaa1da11982a7e` | `d0b3a7f7c2fe838d69251d1db770ae588de54df46185af8704ef660c32df49a6` |
+| `input_commit` | `21ebadc42450f3588b58bbe218bec6193f2658f9` | `b7cb2bd625ec93fddf3ee1acc9376d407e59d777`, the commit of the freeze pull request that edits the draft |
+
+- The change is confined to the draft's status line, LI.5, LI.33 and a new section 10 that records the amendment.
+- The packet cites LI.9 and LI.30, which are unchanged, and LI.5 in FP.36. It does not cite LI.33.
+- LI.5's change reaches a dependency meaning: the request digest now covers the caller that the host stamps from the
+  channel. FP.36 encodes LI.5's resolved request in a durable admission, says that the request hashes those bytes and
+  lists no caller. FP.36 is not edited here, and how a durable admission records the caller stays open.
+- The candidate files and `candidate_sha256` are unchanged, and `check_vectors.py` verifies every other candidate and
+  input pin against the same bytes as before.
+
 ## What follows
 
 - LP3's freeze pull request carries items 3, 4, 6 and 7, with H-08's content, the FP.1 pin refresh and a C10 section
