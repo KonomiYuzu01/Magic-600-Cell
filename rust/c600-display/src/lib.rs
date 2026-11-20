@@ -50,7 +50,8 @@
 //! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full. On the jumbling puzzle
 //!   the posed row, the certified transform, the certified overlay and the projection chain are produced from M5's
 //!   states ([`jumble`]); the J07 to J09, J11 and J12 payloads are read from the engine ([`jumble::seam_table`],
-//!   [`jumble::observations`]) and J10 is checked only as a fixture. User stages (F05, F26) stay unsupported: no user
+//!   [`jumble::observations`]), and J10's payload is built from M5's certified exposed-face geometry and checked
+//!   ([`jumble::exposed_faces`], [`jumble::check_exposed_faces`]). User stages (F05, F26) stay unsupported: no user
 //!   stage reaches the host's publications or frames, and [`stage`] takes up the stages that LP2's checker admits
 //!   beside the host.
 //! - RPI.15, J02 (render/1 section 3): a posed row is validated only for a jumbling identity and a pose-level subject
@@ -227,8 +228,8 @@
 //!
 //! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change) and the
 //! ceilings named above that need a weight table or a backend. For the jumbling puzzle: support and plans for the rows
-//! J01 and J06 to J12 (a backend's own rows), J06's readback on a device, J10's exposed-face geometry, and a comparison
-//! of the posed arrays with a J1 stage after the start.
+//! J01 and J06 to J12 (a backend's own rows), J06's readback on a device, and a comparison of the posed arrays with a
+//! J1 stage after the start.
 //! For user stages, waiting for C9's backend: HLSL compilation and its compile record (RPI.78); the vertex evaluation
 //! into a charged buffer, the projection and clip classification that place [`raster`]'s triangles, the expansion of
 //! points and of lines of zero length, U on a device and the skipping of a stopped frame's work (RPI.72; CT-RM-10,

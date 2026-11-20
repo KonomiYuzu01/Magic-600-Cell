@@ -1,5 +1,5 @@
-//! Producers for the jumbling puzzle (RPI.15, RM.34 rows J02 to J05 and J13, and the payloads of J01 and J06 to J12
-//! apart from J10), built from M5's kernel (`c600_jumble`). They copy what the engine certified and convert exact values to binary32 for display; they
+//! Producers for the jumbling puzzle (RPI.15, RM.34 rows J02 to J05 and J13, and the payloads of J01 and J06 to J12),
+//! built from M5's kernel (`c600_jumble`). They copy what the engine certified and convert exact values to binary32 for display; they
 //! classify nothing, infer no inside set, plane or slot, and truncate no set. What the engine does not supply is an
 //! explicit [`Missing`] value or an `undefined` projection, never a guessed payload.
 //!
@@ -10,7 +10,8 @@
 //! - [`named_cap_set`], [`witness`] and [`named_cut`] build the certified overlay row (J04).
 //! - [`seam_table`] reads the seam table of J08 from the engine's `seam_facts` answer, and [`observations`] reads the
 //!   payloads of J07, J09, J11 and J12. Like J08 they are payloads, not supported rows.
-//! - [`exposed_faces`] passes J10's refusal through: M5's exact geometry producer supplies no geometry (JI.45).
+//! - [`exposed_faces`] builds J10's exposed-face payload from M5's certified exact geometry and its admitted size
+//!   profile, and [`check_exposed_faces`] is its host-side check; a refusal of the producer passes through (JI.45).
 //! - [`shrink_anchors`] computes J01's shrink anchors from the unchanged mesh, and [`readback_check`] is J06's
 //!   first-frame readback check of a revision's bound arrays.
 //! - [`PoseProjection`] is the kernel's exact projection to slots for a jumbling subject (RPI.23, J13), with M8's slot
@@ -18,8 +19,9 @@
 //! - [`support_report`] and [`fixture_context`] are declared fixture values, as in [`crate::produce`] (RPI.50).
 
 use c600_digest::sha256_hex;
+use c600_jumble::kplus::ORDER;
 use c600_jumble::levels;
-use c600_jumble::model::NP;
+use c600_jumble::model::{NP, POLES};
 use c600_jumble::q5::{identity4, Vec4, Q5};
 use c600_jumble::state::{Certificate, Classification, Outcome, State, Status};
 use c600_jumble::twist::Twist;
@@ -343,23 +345,280 @@ pub fn seam_table(facts: &Value) -> Option<SeamTable> {
     Some(SeamTable { seams, complete })
 }
 
-/// J10's exposed faces at `state` (JI.41, JI.45): [`crosswalk::exposed_geometry`] over what the exact geometry
-/// producer, `c600_jumble::faces::exposed_faces` (LP2's pull request 336), supplied. This edition has no form for
-/// certified exposed-face geometry or a size profile, and the producer refuses every request with
-/// `KN2:input.exposed_geometry_unavailable`, so nothing is supplied and the answer is that refusal. When the producer's
-/// answer is that refusal, the error also names the exact input the producer was asked about (`source`, the state
-/// digest it names). Nothing is drawn, and no mesh, face or size is invented.
-pub fn exposed_faces(engine: &Engine, state: &State) -> Result<String, Error> {
-    let answer = c600_jumble::faces::exposed_faces(engine, state);
-    let status = answer.get("status").and_then(Value::as_str);
-    let code = answer.get("code").and_then(Value::as_str);
-    let source = answer.get("source").and_then(|source| source.get("state_digest")).and_then(Value::as_str);
-    crosswalk::exposed_geometry(None, None).map_err(|error| match source {
-        Some(digest) if status == Some("refused") && code == Some(codes::EXPOSED_GEOMETRY_UNAVAILABLE) => {
-            error.with("source", digest)
+/// J10's exposed-face geometry (JI.41 "Exposed-face meshes", JI.45) in the instanced layout
+/// `magic600-jumbling-exposed-faces/1`, a payload and not a supported row (RM.15). Every array is a copy of what M5's
+/// certified producer (`c600_jumble::faces`) derived from `assets/`, with exact values converted to binary32 as
+/// [`approximate`] does; nothing is generated from a mesh, a float test or another frame.
+///
+/// - `base_vertices` f32 [V, 4]: the vertices of each certified base cut face, face after face, in the face's
+///   ascending region order, in the representative's home frame and asset units; `base_vertex_offsets` u32 [B + 1]
+///   cuts them into the B base faces.
+/// - `base_triangles` u32 [T, 3]: each base face's fan triangles over its 2-faces, indices into `base_vertices` inside
+///   the face's range, wound by the exact orientation of `c600_jumble::faces`; `base_triangle_offsets` u32 [B + 1]
+///   cuts them into the base faces.
+/// - `transports` f32 [7200, 4, 4]: the K⁺ matrices, row-major acting on column vectors as J02's poses are;
+///   `piece_transport` u32 [177120]: the element carrying each piece's orbit representative to the piece. A face's
+///   home-frame vertices are its piece's transport applied to its base face's, and J02's pose moves them as it moves
+///   the piece's stickers.
+/// - The face table, one row per cut face of every piece (F rows): `face_piece`, `face_base` (index of the base face),
+///   `face_pole` (the home pole of its cut hyperplane), each u32 [F]; `face_side` u8 [F], 1 for `in` (the pole is in
+///   the piece's signature, so the piece is the cell's upper chamber) and 0 for `out`; `face_cell` u32 [F, 2], the
+///   cell's chambers [lower, upper] by piece ID, 177120 for the core. J08's seam rows name cells by the same chamber
+///   pair.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ExposedFaces {
+    /// The exact-source digest: SHA-256 of the certified canonical exact encoding of the base table.
+    pub geometry_digest: String,
+    /// The ID of the admitted size profile (`c600_jumble::faces::PROFILE`).
+    pub profile_id: String,
+    /// The exact input: the digest of the state the producer was asked about.
+    pub state_digest: String,
+    pub base_vertices: Array,
+    pub base_vertex_offsets: Array,
+    pub base_triangles: Array,
+    pub base_triangle_offsets: Array,
+    pub transports: Array,
+    pub piece_transport: Array,
+    pub face_piece: Array,
+    pub face_base: Array,
+    pub face_pole: Array,
+    pub face_side: Array,
+    pub face_cell: Array,
+}
+
+impl ExposedFaces {
+    /// The arrays and their names, in layout order.
+    pub fn arrays(&self) -> [(&'static str, &Array); 11] {
+        [
+            ("base_vertices", &self.base_vertices),
+            ("base_vertex_offsets", &self.base_vertex_offsets),
+            ("base_triangles", &self.base_triangles),
+            ("base_triangle_offsets", &self.base_triangle_offsets),
+            ("transports", &self.transports),
+            ("piece_transport", &self.piece_transport),
+            ("face_piece", &self.face_piece),
+            ("face_base", &self.face_base),
+            ("face_pole", &self.face_pole),
+            ("face_side", &self.face_side),
+            ("face_cell", &self.face_cell),
+        ]
+    }
+}
+
+fn faces_mismatch(summary: String) -> Error {
+    Error::new(codes::BUNDLE_MISMATCH, summary).with("feature", "J10")
+}
+
+/// J10's exposed faces at `state`: [`exposed_faces_from`] over the answer of M5's producer,
+/// `c600_jumble::faces::exposed_faces`.
+pub fn exposed_faces(engine: &Engine, state: &State) -> Result<ExposedFaces, Error> {
+    exposed_faces_from(engine, state, &c600_jumble::faces::exposed_faces(engine, state))
+}
+
+/// J10's exposed faces at `state` from the producer's `answer` (JI.45). An available answer is bound to the certified
+/// geometry through [`crosswalk::exposed_geometry`]: its source must name `state`, its geometry digest the SHA-256 of
+/// the certified bytes, and its profile the admitted one; the arrays are then built from the certified table and must
+/// pass [`check_exposed_faces`]. Any other binding is `EV3:input.display_bundle_mismatch` and nothing is built. A
+/// refused answer, or any other status, is `KN2:input.exposed_geometry_unavailable` from
+/// [`crosswalk::exposed_geometry`] with what the producer named as missing (both when it named nothing), the state
+/// digest the producer was asked about (`source`) and its failed fact (`failed`); a refusal that names an input J10
+/// does not have is a binding failure. Nothing is drawn, and no mesh, face or size is invented.
+pub fn exposed_faces_from(engine: &Engine, state: &State, answer: &Value) -> Result<ExposedFaces, Error> {
+    use c600_jumble::faces;
+    let field = |value: &Value, key: &str| value.get(key).and_then(Value::as_str).map(str::to_owned);
+    let source = answer.get("source").and_then(|source| field(source, "state_digest"));
+    if field(answer, "status").as_deref() != Some("available") {
+        let listed = answer.get("missing").and_then(Value::as_array);
+        let named: Vec<&str> = listed.map_or(Vec::new(), |m| m.iter().filter_map(Value::as_str).collect());
+        if named.iter().any(|what| !faces::MISSING.contains(what)) {
+            return Err(faces_mismatch("the producer's refusal names an input J10 does not have".to_owned()));
         }
-        _ => error,
-    })
+        let missing = |what: &str| named.is_empty() || named.contains(&what);
+        let certified = if missing(faces::MISSING_GEOMETRY) { None } else { faces::geometry(engine).ok() };
+        let profile = (!missing(faces::MISSING_PROFILE)).then(|| faces::PROFILE.id());
+        let bytes = certified.map(|geometry| geometry.canonical.as_slice());
+        let mut error = match crosswalk::exposed_geometry(bytes, profile.as_deref()) {
+            Err(error) => error,
+            Ok(_) => crosswalk::exposed_geometry(None, None).expect_err("nothing is supplied"),
+        };
+        if let Some(digest) = source {
+            error = error.with("source", digest);
+        }
+        if let Some(failed) = field(answer, "failed") {
+            error = error.with("failed", failed);
+        }
+        return Err(error);
+    }
+    let state_digest = state.digest(engine);
+    if source.as_deref() != Some(state_digest.as_str()) {
+        return Err(faces_mismatch("the producer's answer names another state".to_owned()));
+    }
+    let geometry =
+        faces::geometry(engine).map_err(|reason| faces_mismatch(format!("no certified geometry: {reason}")))?;
+    let profile_id = faces::PROFILE.id();
+    if field(answer, "profile_id").as_deref() != Some(profile_id.as_str())
+        || answer.get("profile") != Some(&faces::PROFILE.to_json())
+        || geometry.profile != faces::PROFILE
+    {
+        return Err(faces_mismatch("the answer's size profile is not the admitted one".to_owned()));
+    }
+    let geometry_digest = crosswalk::exposed_geometry(Some(&geometry.canonical), Some(&profile_id))?;
+    if answer.get("geometry").and_then(|g| field(g, "digest")).as_deref() != Some(geometry_digest.as_str()) {
+        return Err(faces_mismatch("the answer's geometry digest is not the certified bytes'".to_owned()));
+    }
+
+    let table = &geometry.table.faces;
+    let (mut vertices, mut vertex_offsets) = (Vec::new(), vec![0u32]);
+    let (mut triangles, mut triangle_offsets) = (Vec::new(), vec![0u32]);
+    for (b, face) in table.iter().enumerate() {
+        let start = (vertices.len() / 4) as u32;
+        let region = &engine.regions.rep_vertices[face.orbit as usize];
+        for &v in &face.vertices {
+            let x = approximate4(&region[v as usize]);
+            vertices.extend(x.ok_or_else(|| faces_mismatch(format!("base face {b}: a vertex has no finite value")))?);
+        }
+        for corner in face.fan().into_iter().flatten() {
+            let at = face.vertices.binary_search(&corner);
+            let at = at.map_err(|_| faces_mismatch(format!("base face {b}: a triangle corner off the face")))?;
+            triangles.push(start + at as u32);
+        }
+        vertex_offsets.push((vertices.len() / 4) as u32);
+        triangle_offsets.push((triangles.len() / 3) as u32);
+    }
+    let mut transports = Vec::with_capacity(ORDER * 16);
+    for k in 0..ORDER {
+        for entry in engine.kplus.matrix(k as u16, &engine.model).iter().flatten() {
+            let x = approximate(entry);
+            transports.push(x.ok_or_else(|| faces_mismatch(format!("K+ element {k} has no finite value")))?);
+        }
+    }
+    let piece_transport: Vec<u32> = engine.regions.transport.iter().map(|&k| u32::from(k)).collect();
+    let rows = geometry.profile.full_cut().faces3 as usize;
+    let (mut piece, mut base, mut pole) =
+        (Vec::with_capacity(rows), Vec::with_capacity(rows), Vec::with_capacity(rows));
+    let (mut side, mut cell) = (Vec::with_capacity(rows), Vec::with_capacity(2 * rows));
+    for p in 0..NP {
+        for face in geometry.piece_faces(engine, p).map_err(faces_mismatch)? {
+            piece.push(face.piece);
+            base.push(face.base_index);
+            pole.push(u32::from(face.pole));
+            side.push(u8::from(face.side == faces::Side::In));
+            cell.extend(face.cell);
+        }
+    }
+    let (b, f) = (table.len() as u64, piece.len() as u64);
+    let exposed = ExposedFaces {
+        geometry_digest,
+        profile_id,
+        state_digest,
+        base_vertices: Array::f32s(vec![vertices.len() as u64 / 4, 4], &vertices),
+        base_vertex_offsets: Array::u32s(vec![b + 1], &vertex_offsets),
+        base_triangles: Array::u32s(vec![triangles.len() as u64 / 3, 3], &triangles),
+        base_triangle_offsets: Array::u32s(vec![b + 1], &triangle_offsets),
+        transports: Array::f32s(vec![ORDER as u64, 4, 4], &transports),
+        piece_transport: Array::u32s(vec![NP as u64], &piece_transport),
+        face_piece: Array::u32s(vec![f], &piece),
+        face_base: Array::u32s(vec![f], &base),
+        face_pole: Array::u32s(vec![f], &pole),
+        face_side: Array::u8s(vec![f], &side),
+        face_cell: Array::u32s(vec![f, 2], &cell),
+    };
+    check_exposed_faces(&exposed)?;
+    Ok(exposed)
+}
+
+/// The host-side check of a J10 payload against the admitted size profile (`c600_jumble::faces::PROFILE`), which it
+/// trusts for the counts: the payload names that profile's ID; every array's descriptor, element type and shape (the
+/// base cut faces' vertices, triangles and faces, the 7,200 K⁺ elements, the 177,120 pieces and the full table's
+/// faces) and their byte total; offsets that start at 0, never decrease and end at their array's rows, base faces of
+/// at least four vertices whose triangle corners lie in their own range, finite binary32 values, transports in K⁺,
+/// and face rows in piece order that name a piece, base face and pole of the model with side 0 or 1 and a cell whose
+/// chamber on the face's side is its piece. The check is structural: it does not recompute a row's pole, base face or
+/// other chamber, which the payload carries from the certified table that [`exposed_faces_from`] binds to the answer.
+/// Returns the byte total; any failure is `EV3:input.display_bundle_mismatch` naming J10, and nothing is repaired.
+pub fn check_exposed_faces(exposed: &ExposedFaces) -> Result<u64, Error> {
+    let profile = &c600_jumble::faces::PROFILE;
+    if exposed.profile_id != profile.id() {
+        return Err(faces_mismatch("the payload names another size profile".to_owned()));
+    }
+    let (base, full) = (profile.base_cut(), profile.full_cut());
+    let (b, v, t, f) = (base.faces3, base.vertices, base.triangles, full.faces3);
+    let shapes: [(Elem, Vec<u64>); 11] = [
+        (Elem::F32, vec![v, 4]),
+        (Elem::U32, vec![b + 1]),
+        (Elem::U32, vec![t, 3]),
+        (Elem::U32, vec![b + 1]),
+        (Elem::F32, vec![ORDER as u64, 4, 4]),
+        (Elem::U32, vec![NP as u64]),
+        (Elem::U32, vec![f]),
+        (Elem::U32, vec![f]),
+        (Elem::U32, vec![f]),
+        (Elem::U8, vec![f]),
+        (Elem::U32, vec![f, 2]),
+    ];
+    let mut total = 0;
+    for ((name, array), (elem, shape)) in exposed.arrays().into_iter().zip(shapes) {
+        let want: Vec<Option<u64>> = shape.into_iter().map(Some).collect();
+        array.expect(name, elem, &want).map_err(|e| faces_mismatch(e.summary))?;
+        total += array.desc.byte_len;
+    }
+    if total != profile.instanced_bytes() {
+        return Err(faces_mismatch(format!("{total} bytes, not the profile's {}", profile.instanced_bytes())));
+    }
+    for (name, array) in [("base_vertices", &exposed.base_vertices), ("transports", &exposed.transports)] {
+        if !array.as_f32().iter().all(|x| x.is_finite()) {
+            return Err(faces_mismatch(format!("{name}: a value is not finite")));
+        }
+    }
+    let offsets = |name: &str, array: &Array, end: u64| -> Result<Vec<u32>, Error> {
+        let o = array.as_u32();
+        let ordered = o.first() == Some(&0) && o.windows(2).all(|w| w[0] <= w[1]) && o.last() == Some(&(end as u32));
+        ordered.then_some(o).ok_or_else(|| faces_mismatch(format!("{name}: not offsets from 0 to {end}")))
+    };
+    let vo = offsets("base_vertex_offsets", &exposed.base_vertex_offsets, v)?;
+    let to = offsets("base_triangle_offsets", &exposed.base_triangle_offsets, t)?;
+    let corners = exposed.base_triangles.as_u32();
+    for face in 0..b as usize {
+        let range = vo[face]..vo[face + 1];
+        let own = &corners[3 * to[face] as usize..3 * to[face + 1] as usize];
+        if range.len() < 4 || !own.iter().all(|c| range.contains(c)) {
+            return Err(faces_mismatch(format!("base face {face}: a triangle corner outside its face")));
+        }
+    }
+    if exposed.piece_transport.as_u32().iter().any(|&k| k as usize >= ORDER) {
+        return Err(faces_mismatch("piece_transport: an element outside K+".to_owned()));
+    }
+    let (piece, base_of, pole) = (exposed.face_piece.as_u32(), exposed.face_base.as_u32(), exposed.face_pole.as_u32());
+    let (side, cell) = (&exposed.face_side.bytes, exposed.face_cell.as_u32());
+    for row in 0..f as usize {
+        let p = piece[row];
+        let (lower, upper) = (cell[2 * row], cell[2 * row + 1]);
+        let held = match side[row] {
+            1 => upper == p && lower <= NP as u32,
+            0 => lower == p && upper < NP as u32,
+            _ => false,
+        };
+        let ordered = row == 0 || piece[row - 1] <= p;
+        if p as usize >= NP || base_of[row] as u64 >= b || pole[row] as usize >= POLES || !held || !ordered {
+            return Err(faces_mismatch(format!("face row {row}: not a face of a piece of the model")));
+        }
+    }
+    Ok(total)
+}
+
+/// RM.12's fixed admission check of J10's payload against `ceiling`, the componentwise minimum of the host's and the
+/// backend's profiles: after [`check_exposed_faces`], the payload's `input_bytes`, the sum of its arrays' descriptor
+/// byte lengths (RM.11). At the ceiling it passes and returns the bytes; above it is
+/// `EV3:resource_limit.display_plan_ceiling` with the field, the requested count and the ceiling, and nothing is
+/// truncated. No numeric ceiling is fixed yet: RM.11 asks for a `LimitProfile` only before a feature is advertised as
+/// supported, J10 is not (RM.15), and RM.13 leaves production ceilings to be pinned before enablement, so only declared
+/// fixture profiles reach this check.
+pub fn admit_exposed_faces(exposed: &ExposedFaces, ceiling: &LimitProfile) -> Result<u64, Error> {
+    let bytes = check_exposed_faces(exposed)?;
+    if bytes > ceiling.input_bytes {
+        return Err(Error::ceiling("input_bytes", bytes, ceiling.input_bytes));
+    }
+    Ok(bytes)
 }
 
 /// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the lattice pose k is
