@@ -1392,9 +1392,14 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the undo chain), and L10's rows 1 to 7 are covered. L9 is fixed by the session lock (above); L8 is deferred.
 - KN5 (LP2): `JournalStore` (`src/command_store.rs`) implements c600-command's `Store` and `Reopen` over the journal,
   in a draft frame format of its own (`c600-command-journal-draft-1`, not the frozen migration format), so the command
-  layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Tests:
-  `tests/kn5_command.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and are
-  removed once their tests run against it.
+  layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Each record
+  value an action writes is a content-addressed record object, `objects/<sha256>` of its canonical bytes, written and
+  synced before the frame that cites it, so FP.9's 64 MiB record bound holds through the journal: a larger value is
+  refused with `PS1:resource_limit.persistence_size` before anything is written, the frame's other fields stay under
+  its 16 MiB draft bound, a missing or altered object ends the history in read-only recovery (KN5.23), and a journal
+  written before record objects still reads its inline values (pull request 388). Tests: `tests/kn5_command.rs` and
+  `tests/record_objects.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and
+  are removed once their tests run against it.
 - M6's own `invoke` keeps the layer's ruling 4: the program gates and the authenticator run before an envelope takes
   its command ID, and their refusal is kept for the epoch under the command ID and the request digest without taking
   the ID, so an envelope with a bad authenticator, or a program's commit or non-job row, sent first under the shell's
