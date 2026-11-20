@@ -703,7 +703,13 @@ fn realisations() -> Vec<Realisation> {
             ..base
         },
         Realisation { trace: "nested-child-ledger", entry: "nest", args: Vec::new, map: NEST, ..base },
-        Realisation { trace: "child-decode-error-releases-reservation", entry: "spill", args: Vec::new, map: SPILL, ..base },
+        Realisation {
+            trace: "child-decode-error-releases-reservation",
+            entry: "spill",
+            args: Vec::new,
+            map: SPILL,
+            ..base
+        },
         Realisation {
             trace: "final-loop-test",
             entry: "spin",

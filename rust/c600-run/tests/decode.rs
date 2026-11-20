@@ -142,8 +142,8 @@ fn a_child_decoding_error_stops_the_child_alone() {
     assert_eq!(r.summary.live_after_cleanup, 0);
 }
 
-/// `text_decode_hex` decodes bytes the code holds (LP2 draft; DET.57): they are part of the operation, so its one row is
-/// all it charges, with no literal row and no slot for an operand, and it is priced and refused as `text_decode` is.
+/// `text_decode_hex` decodes bytes the code holds (LP2 draft; DET.57): they are part of the operation, so its one row
+/// is all it charges, with no literal row and no slot for an operand, and it is priced and refused as `text_decode` is.
 /// In a child its body's rows are its call, whose frame has no slot, and its decoding: the two rows of the child in
 /// `child-decode-error-releases-reservation`, whose stop leaves nothing live in the parent.
 #[test]
@@ -172,7 +172,8 @@ fn bytes_the_code_holds_decode_in_one_row() {
     assert_eq!((child.used.steps, child.used.kernel_cost, child.used.memory), (2, per_byte, 16 + 4));
     assert_eq!((child.returned_memory, child.live_after_return), (0, 0));
     for odd in ["0", "zz"] {
-        let source = format!("{HEADER}export fn b() -> Text effects [] {{\n    return text_decode_hex(\"{odd}\");\n}}\n");
+        let source =
+            format!("{HEADER}export fn b() -> Text effects [] {{\n    return text_decode_hex(\"{odd}\");\n}}\n");
         assert!(lower(&[parse(source.as_bytes())]).is_err(), "{odd}");
     }
 }

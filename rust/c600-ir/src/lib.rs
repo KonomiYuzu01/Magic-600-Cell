@@ -794,9 +794,9 @@ pub enum Expr {
     RngInit {
         path: Vec<String>,
     },
-    /// `text_decode_hex("<hex>")` (LP2 draft; DET.57, DET.62): `text_decode` of bytes the code holds. The bytes are part
-    /// of the operation, as a snapshot read's query is: source text is admission metadata (DET.57), so they take no row,
-    /// slot or owner of their own. The decoding's one row is all the operation charges, priced and refused as
+    /// `text_decode_hex("<hex>")` (LP2 draft; DET.57, DET.62): `text_decode` of bytes the code holds. The bytes are
+    /// part of the operation, as a snapshot read's query is: source text is admission metadata (DET.57), so they take
+    /// no row, slot or owner of their own. The decoding's one row is all the operation charges, priced and refused as
     /// `text_decode` of an operand is.
     TextDecodeHex {
         bytes: Vec<u8>,
