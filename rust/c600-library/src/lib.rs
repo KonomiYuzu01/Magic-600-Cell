@@ -1,9 +1,10 @@
 //! The base library's first entries as 600 Cell Script (LP3, C5), written as language code over the IR draft (LB1.1):
 //! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
-//! "Exact linear algebra"; the exact-completion half of LB2's row "Residuals and exact completion", over KN2.4's
-//! `positions` and `labels` rows; LB2's rows "Star and recipe construction" and "Collateral and support", over
-//! KN2.4's `effect` row; LB2's row "Net and Strict protection", over KN2.4's `protection` row; and LB2's row "Guarded
-//! setups and buffers", over the draft `setups` row of the setup-search exception.
+//! "Exact linear algebra" and the exact sign and order of its Q(√5) values; the exact-completion half of LB2's row
+//! "Residuals and exact completion", over KN2.4's `positions` and `labels` rows; LB2's rows "Star and recipe
+//! construction" and "Collateral and support", over KN2.4's `effect` row; LB2's row "Net and Strict protection", over
+//! KN2.4's `protection` row; and LB2's row "Guarded setups and buffers", over the draft `setups` row of the
+//! setup-search exception.
 //!
 //! # Literal words
 //!
@@ -56,6 +57,21 @@
 //! only, never about a puzzle state or its reachability (CT-LB1-01). `tests/ct_lb1_01.rs` checks them against the
 //! pinned research references: the 36-macro correction library's ν rows have rank 34 over F2 and 2 over F5, and the
 //! F5 cycle criterion of the general method's senior review.
+//!
+//! # Exact Q(√5) signs
+//!
+//! The source [`QUADRATIC_SOURCE`], `src/quadratic.6cs`, is the module `quadratic` in edition `6cs-draft-1`, in the
+//! formatter's canonical layout. It exports two pure functions over the IR draft's `Q5`, the numbers (a + b√5) / d:
+//! `sign_q5(x: Q5) -> Int`, the exact sign of `x` as -1, 0 or 1, and `compare_q5(x: Q5, y: Q5) -> Int`, the sign of
+//! `x - y`, so -1 when `x < y`, 0 when they are equal and 1 when `x > y`. Both decide with the IR draft's exact
+//! comparison (`exact_less`, KN3.1), never with an approximation; `compare_q5` forms the difference with `exact_add`
+//! and `exact_mul` by -1, because the IR draft has no subtraction.
+//!
+//! [`exact_q5_signs`] is the Q(√5) part of LB1.8's row "Exact linear algebra" as far as this crate builds it: the
+//! domain's exact sign and order. The checker infers no effect, capability or state read for either function, so a
+//! sign says something about the supplied number only (CT-LB1-01). `tests/ct_lb1_01.rs` checks both against the
+//! kernel's exact sign of a + b√5 (`c600_kernel::exact::sign5`, KN3.1), on the convergents of √5, where a² - 5b² = ±1
+//! and the sign is hardest to decide, up to 128-bit coefficients.
 //!
 //! # Recipes, frames and support
 //!
@@ -250,11 +266,19 @@
 //!   is the manifest's, and the kernel certifies every setup's star before the row answers it. A setup the kernel does
 //!   not certify stops the read with `KN2:consistency.star_certificate`.
 //! - LB2: the catalogue row is Rust data in [`guarded_setups_and_buffers`], with the checker's `ReadSnapshot`.
+//! - LB1.8, Q(√5) signs: the sign is answered as an `Int`, -1, 0 or 1, because the IR draft has no ordering type; a
+//!   caller compares it with `exact_eq`. The entries take `Q5` only; an `Int` or a `Rat` widens to it with
+//!   `exact_add` or `exact_mul` before the call.
+//! - LB1.8, Q(√5) signs: the catalogue row is Rust data in [`exact_q5_signs`], a second part of the row "Exact linear
+//!   algebra" beside [`exact_linear_algebra`], because the two parts are separate modules.
 //!
 //! # Not built
 //!
-//! - The rest of CT-LB1-01: exact Q(√5) signs, quaternion factor reconstruction and tree outputs; and the rest of
-//!   "Exact linear algebra": kernels (null spaces) and the Z, Q and Q(√5) domains.
+//! - The rest of CT-LB1-01: quaternion factor reconstruction over Q(√5) and the tree outputs (the 2-adic valuation,
+//!   heights and branches) against `research/jumbling/theory/trees.py`. They wait for LP2's draft exact-arithmetic
+//!   operations, because the IR draft's `Q5` and `Rat` have only exact addition, multiplication, comparison and
+//!   equality: no inverse or division, no coefficients and no integer division or remainder. The rest of "Exact linear
+//!   algebra": kernels (null spaces), and rows, ranks and solving over Z, Q and Q(√5).
 //! - Jumbling words in this crate: the jumbling library entries, on the IR draft's menu words (LP2's pull request
 //!   210), are C8's, in `c600_jumble_tool::library`; `c600_jumble_tool::word` builds the kernel half's words in Rust.
 //! - LB2's "Net and Strict protection" for a captured protected state of the session (the command layer's protected
@@ -335,6 +359,13 @@ pub const SETUPS_EXPORTS: [&str; 1] = ["setups_for"];
 /// The row the guarded setups module reads with `read_snapshot`: the draft row of the setup-search exception.
 pub const SETUPS_ROWS: [&str; 1] = ["setups"];
 
+/// The exact Q(√5) signs source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const QUADRATIC_SOURCE: &str = include_str!("quadratic.6cs");
+/// The exact Q(√5) signs module.
+pub const QUADRATIC_MODULE: &str = "quadratic";
+/// The exact Q(√5) signs module's exported functions, in source order.
+pub const QUADRATIC_EXPORTS: [&str; 2] = ["sign_q5", "compare_q5"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -363,6 +394,11 @@ pub fn protection_sha256() -> String {
 /// The SHA-256 of [`SETUPS_SOURCE`], in hex.
 pub fn setups_sha256() -> String {
     sha256_hex(SETUPS_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`QUADRATIC_SOURCE`], in hex.
+pub fn quadratic_sha256() -> String {
+    sha256_hex(QUADRATIC_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -425,7 +461,8 @@ pub fn residuals_and_exact_completion() -> CatalogueRow {
 pub fn exact_linear_algebra() -> CatalogueRow {
     CatalogueRow {
         entry: "Exact linear algebra",
-        level: "F2 or F5 values. Z, Q and Q(√5) are not built.",
+        level: "F2 or F5 values. Rows over Z, Q and Q(√5) are not built; Q(√5)'s sign and order are the \
+                `quadratic` module's.",
         effects: &[],
         backing: "Library code over KN3's F2 and F5: `linalg.rank_f2`, `linalg.solve_f2`, `linalg.rank_f5` and \
                   `linalg.solve_f5`, Gauss-Jordan elimination with the IR draft's field operations and loops.",
@@ -436,6 +473,23 @@ pub fn exact_linear_algebra() -> CatalogueRow {
         module: LINALG_MODULE,
         functions: &LINALG_EXPORTS,
         source_sha256: linalg_sha256(),
+    }
+}
+
+/// The Q(√5) part of LB1.8's row "Exact linear algebra", as far as this crate builds it: the domain's exact sign and
+/// order.
+pub fn exact_q5_signs() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Exact linear algebra",
+        level: "Q(√5) values: their exact sign and order. Rows, rank and solving over Q(√5) are not built.",
+        effects: &[],
+        backing: "Library code over KN3's Q(√5): `quadratic.sign_q5` and `quadratic.compare_q5`, with the IR draft's \
+                  `exact_less`, `exact_add` and `exact_mul`.",
+        notes: "The sign of a value of Q(√5), and the order of two, decided exactly, with no approximation: -1, 0 or \
+                1. A sign says something about the supplied number only and asserts no puzzle reachability.",
+        module: QUADRATIC_MODULE,
+        functions: &QUADRATIC_EXPORTS,
+        source_sha256: quadratic_sha256(),
     }
 }
 

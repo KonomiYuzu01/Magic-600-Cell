@@ -1,0 +1,17 @@
+edition "6cs-draft-1";
+module quadratic requires [];
+
+export fn sign_q5(x: Q5) -> Int effects [] {
+    let zero = q5(0/1, 0/1);
+    return match exact_less(x, zero) {
+        true => -1;
+        _ => match exact_less(zero, x) {
+            true => 1;
+            _ => 0;
+        };
+    };
+}
+
+export fn compare_q5(x: Q5, y: Q5) -> Int effects [] {
+    return sign_q5(exact_add(x, exact_mul(q5(-1/1, 0/1), y)));
+}

@@ -1,5 +1,6 @@
-//! CT-LB1-01, the F2 and F5 part (LB1.8's row "Exact linear algebra"; chapter 03's test table): F2 and F5 equation
-//! ranks and solutions agree with the pinned research references, and a scalar solve asserts no puzzle reachability.
+//! CT-LB1-01, the F2, F5 and Q(√5) sign parts (LB1.8's row "Exact linear algebra"; chapter 03's test table): F2
+//! and F5 equation ranks and solutions and exact Q(√5) signs agree with their references, and a scalar solve asserts
+//! no puzzle reachability.
 //! The ranks and solutions are language code, the library's module `linalg` on the IR draft's F2 and F5 (LP2's pull
 //! request 222) and loops (LP2's pull request 234), run on `c600-run` with no host.
 //!
@@ -15,8 +16,17 @@
 //!   t_i = (-1)^i (r_0 ··· r_(i-1)) t_0 with [1 - (-1)^k R] t_0 = τ.
 //!
 //! A test-local Gauss-Jordan elimination in Rust also checks ranks and solutions of small fixed systems with negative
-//! entries. Not run here, and not built: CT-LB1-01's exact Q(√5) signs, quaternion factor reconstruction and tree
-//! outputs, and kernels (null spaces) and the Z, Q and Q(√5) domains of the row. A pass is source and fixture evidence.
+//! entries.
+//!
+//! The exact Q(√5) signs are language code too, the library's module `quadratic` on the IR draft's `Q5`, run on
+//! `c600-run` with no host. Their reference is the kernel's exact sign of a + b√5 (`c600_kernel::exact::sign5`, KN3.1):
+//! the research pins no sign fixture (LX-5's planned Q(√5) fixtures were not written), so the entries are checked
+//! against the kernel's own decision on the convergents of √5, where a² - 5b² = ±1 and the sign is hardest to decide,
+//! up to 128-bit coefficients.
+//!
+//! Not run here, and not built: CT-LB1-01's quaternion factor reconstruction and tree outputs, which wait for LP2's
+//! draft exact-arithmetic operations (an inverse, coefficients, integer division), and kernels (null spaces) and rows
+//! over Z, Q and Q(√5). A pass is source and fixture evidence.
 
 mod common;
 
@@ -24,8 +34,12 @@ use std::collections::BTreeSet;
 
 use c600_check::{check, separation, Policy, Separation};
 use c600_digest::sha256_hex;
+use c600_kernel::exact::sign5;
 use c600_kernel::json::{self, Value as Json};
-use c600_library::{exact_linear_algebra, linalg_sha256, lower_source, LINALG_EXPORTS, LINALG_MODULE, LINALG_SOURCE};
+use c600_library::{
+    exact_linear_algebra, exact_q5_signs, linalg_sha256, lower_source, lower_sources, quadratic_sha256, LINALG_EXPORTS,
+    LINALG_MODULE, LINALG_SOURCE, QUADRATIC_EXPORTS, QUADRATIC_MODULE, QUADRATIC_SOURCE,
+};
 use c600_run::interp::{load, Loaded, NoHost, Options};
 use c600_run::meter::Outcome;
 use c600_run::value::{equal, Value};
@@ -271,6 +285,149 @@ fn ct_lb1_01_ranks_and_solutions_agree_with_elimination() {
                     assert_eq!(sum.rem_euclid(p), t.rem_euclid(p), "the solution satisfies {row:?}");
                 }
             }
+        }
+    }
+}
+
+/// The library's Q(√5) source parses with no diagnostic, is in the formatter's canonical layout with LF line endings,
+/// and lowers to one module, `quadratic`, that requests no capability and exports `sign_q5` and `compare_q5`. The
+/// checker reports no diagnostic, and both exports are pure: no effect, capability, state read or row, so a sign says
+/// something about the supplied number only. The catalogue row is the Q(√5) part of "Exact linear algebra", its
+/// Effect field is the checker's effects and its digest is the source's.
+#[test]
+fn ct_lb1_01_the_q5_sign_source_checks_and_is_pure() {
+    let file = parse(QUADRATIC_SOURCE.as_bytes());
+    assert!(file.diagnostics.is_empty() && file.holes.is_empty(), "{:#?}", file.diagnostics);
+    assert_eq!(format(&file).as_deref(), Some(QUADRATIC_SOURCE), "the source is in the canonical layout");
+    assert!(!QUADRATIC_SOURCE.contains('\r') && QUADRATIC_SOURCE.ends_with('\n'), "LF line endings");
+
+    let program = lower_source(QUADRATIC_SOURCE).expect("the source lowers");
+    let [module] = &program.modules[..] else { panic!("one module, not {}", program.modules.len()) };
+    assert_eq!(module.name, QUADRATIC_MODULE);
+    assert!(module.capabilities.is_empty(), "the module requests no capability");
+    let exports: Vec<&str> = module.functions.iter().filter(|f| f.exported).map(|f| f.name.as_str()).collect();
+    assert_eq!(exports, QUADRATIC_EXPORTS);
+
+    let report = check(&program).expect("well-formed IR");
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    let row = exact_q5_signs();
+    for function in QUADRATIC_EXPORTS {
+        let summary = report.summary(QUADRATIC_MODULE, function).expect("a summary");
+        assert!(summary.effects.is_empty(), "{function}: {:?}", summary.effects);
+        assert!(summary.capabilities.is_empty() && summary.vars.is_empty() && summary.unresolved.is_empty());
+        assert!(summary.state_reads.is_empty() && summary.rows.is_empty(), "{function} reads no state");
+        assert_eq!(
+            separation(summary, &Policy::interim()),
+            Separation { reads_state: false, prepares_previews: false }
+        );
+        assert_eq!(row.effects.iter().copied().collect::<BTreeSet<_>>(), summary.effects, "Effect: pure");
+    }
+    assert_eq!(row.entry, "Exact linear algebra");
+    assert!(row.level.starts_with("Q(√5) values"));
+    assert!(row.notes.contains("asserts no puzzle reachability") && row.notes.contains("no approximation"));
+    assert_eq!((row.module, row.functions), (QUADRATIC_MODULE, &QUADRATIC_EXPORTS[..]));
+    assert_eq!(row.source_sha256, sha256_hex(QUADRATIC_SOURCE.as_bytes()));
+    assert_eq!(row.source_sha256, quadratic_sha256());
+}
+
+/// A client of `quadratic` in the canonical layout: it imports the module by the SHA-256 of its source (the
+/// placeholder `QUADRATIC`) and widens whole numbers to `Q5` with the IR draft's `exact_add` and `exact_mul`.
+const Q5_CLIENT: &str = r#"edition "6cs-draft-1";
+module q5_client requires [];
+import quadratic "QUADRATIC";
+
+fn quad(a: Int, b: Int) -> Q5 effects [] {
+    return exact_add(exact_mul(a, q5(1/1, 0/1)), exact_mul(b, q5(0/1, 1/1)));
+}
+
+export fn sign_of(a: Int, b: Int) -> Int effects [] {
+    return quadratic.sign_q5(quad(a, b));
+}
+
+export fn sign_of_thirds_and_sevenths(a: Int, b: Int) -> Int effects [] {
+    return quadratic.sign_q5(exact_add(exact_mul(a, q5(1/3, 0/1)), exact_mul(b, q5(0/1, 2/7))));
+}
+
+export fn compare_of(a: Int, b: Int, c: Int, d: Int) -> Int effects [] {
+    return quadratic.compare_q5(quad(a, b), quad(c, d));
+}
+"#;
+
+fn q5_client() -> Loaded {
+    let client = Q5_CLIENT.replace("QUADRATIC", &quadratic_sha256());
+    let file = parse(client.as_bytes());
+    assert!(file.diagnostics.is_empty(), "{:#?}", file.diagnostics);
+    assert_eq!(format(&file).as_deref(), Some(client.as_str()), "the client is in the canonical layout");
+    let program = lower_sources(&[QUADRATIC_SOURCE, &client]).expect("the module and the client lower together");
+    let report = check(&program).expect("well-formed IR");
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    load(&program).expect("the program loads")
+}
+
+/// The answer of one client function, -1, 0 or 1.
+fn q5_sign(loaded: &Loaded, function: &str, args: &[i128]) -> i8 {
+    let args = args.iter().map(|&n| Value::int(n)).collect();
+    let run = loaded.run("q5_client", function, args, &mut NoHost, &Options::new(WIDE)).expect("the run starts");
+    assert_eq!(run.summary.outcome, Outcome::Completed, "{function}: {:?}", run.summary.code);
+    let value = run.value.expect("a value");
+    [-1i8, 0, 1].into_iter().find(|&s| equal(&value, &Value::int(s))).unwrap_or_else(|| panic!("a sign, not {value:?}"))
+}
+
+/// The convergents p/q of √5 (continued fraction [2; 4, 4, 4, ...]) while p fits in 128 bits: p² - 5q² = ±1, so
+/// p - q√5 is the nonzero number of least size for its coefficients, and its sign alternates.
+fn convergents() -> Vec<(i128, i128)> {
+    let (mut previous, mut current) = ((1i128, 0i128), (2i128, 1i128));
+    let mut all = vec![current];
+    while let (Some(p), Some(q)) = (
+        current.0.checked_mul(4).and_then(|p| p.checked_add(previous.0)),
+        current.1.checked_mul(4).and_then(|q| q.checked_add(previous.1)),
+    ) {
+        (previous, current) = (current, (p, q));
+        all.push(current);
+    }
+    all
+}
+
+/// Exact Q(√5) signs: `sign_q5` and `compare_q5`, run on `c600-run` with no host, agree with the kernel's exact sign of
+/// a + b√5 (`c600_kernel::exact::sign5`) on every case below. The cases are zero and the units of each coefficient,
+/// the 128-bit extremes, and for every convergent p/q of √5 up to 128 bits, p ± q√5 with both signs, its neighbours
+/// (p ± 1) - q√5, the order of p and q√5, and the number p/3 + (2q/7)√5 with rational coefficients while 7p and 6q fit.
+/// The convergents alternate in sign (p² - 5q² = ±1), so a decision that rounds would fail on them. A run completes with
+/// no host, so the entries read no state.
+#[test]
+fn ct_lb1_01_q5_signs_agree_with_the_kernel() {
+    let loaded = q5_client();
+    let mut cases: Vec<(i128, i128)> = vec![
+        (0, 0),
+        (1, 0),
+        (-1, 0),
+        (0, 1),
+        (0, -1),
+        (i128::MAX, 0),
+        (0, i128::MIN),
+        (i128::MAX, i128::MIN),
+        (i128::MIN, i128::MAX),
+        (i128::MAX, -(i128::MAX / 3)),
+    ];
+    let convergents = convergents();
+    assert!(convergents.len() >= 55, "{} convergents up to 128 bits", convergents.len());
+    let signs: Vec<i8> = convergents.iter().map(|&(p, q)| sign5(p, -q)).collect();
+    assert!(signs.windows(2).all(|pair| pair[0] == -pair[1]), "p - q√5 alternates in sign");
+    for &(p, q) in &convergents {
+        cases.extend([(p, -q), (-p, q), (p, q), (-p, -q)]);
+        cases.extend([p.checked_add(1).map(|p| (p, -q)), p.checked_sub(1).map(|p| (p, -q))].into_iter().flatten());
+    }
+    for &(a, b) in &cases {
+        assert_eq!(q5_sign(&loaded, "sign_of", &[a, b]), sign5(a, b), "sign of {a} + {b}√5");
+    }
+    for &(p, q) in &convergents {
+        assert_eq!(q5_sign(&loaded, "compare_of", &[p, 0, 0, q]), sign5(p, -q), "compare {p} with {q}√5");
+        assert_eq!(q5_sign(&loaded, "compare_of", &[0, q, p, 0]), sign5(-p, q), "compare {q}√5 with {p}");
+        assert_eq!(q5_sign(&loaded, "compare_of", &[p, q, p, q]), 0, "{p} + {q}√5 equals itself");
+        if let (Some(a), Some(b)) = (p.checked_mul(7), q.checked_mul(6)) {
+            // p/3 - (2q/7)√5 = (7p - 6q√5) / 21.
+            let rational = q5_sign(&loaded, "sign_of_thirds_and_sevenths", &[p, -q]);
+            assert_eq!(rational, sign5(a, -b), "sign of {p}/3 - (2·{q}/7)√5");
         }
     }
 }
