@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-11-16",
+  "updated": "2026-11-20",
   "current": "1.0-lp3",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}],
@@ -71,7 +71,7 @@
      ]},
     {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "in_progress", "acceptance": "Stage 2 closes with the 2.5 freeze gates; target: working day 20, counting only the owner's working days; exit days are targets and no gate is relaxed.", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-02.md", "blocker": null,
      "items": [
-      {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null},
+      {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-11-15-freeze.md"},
       {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": true, "evidence": "5ad74a96"},
       {"id": "design-system-adr", "title": "Design-system ADR accepted", "weight": 1, "done": false, "evidence": null}
      ]},
@@ -91,7 +91,7 @@
       {"id": "witness", "title": "Exact witness E0-E4 reviewed", "weight": 2, "done": true, "evidence": "research/jumbling/witness-results.json"},
       {"id": "impact", "title": "Impact assessment", "weight": 1, "done": true, "evidence": "research/jumbling/impact-assessment.md"}
      ]},
-    {"id": "jumbling-mid", "track": "jumbling", "title": "Jumbling workstreams to mid-stage", "status": "in_progress", "acceptance": "Mid-stage criteria of jumbling-plan section 2 met and renderer packet delivered", "acceptance_source": "docs/progress/1.0/jumbling-plan.md", "blocker": null,
+    {"id": "jumbling-mid", "track": "jumbling", "title": "Jumbling workstreams to mid-stage", "status": "done", "acceptance": "Mid-stage criteria of jumbling-plan section 2 met and renderer packet delivered", "acceptance_source": "docs/progress/1.0/jumbling-plan.md", "blocker": null,
      "items": [
       {"id": "plan-check", "title": "Program plan and amendments A1-A4 plan-checked", "weight": 1, "done": true, "evidence": "2f23e22"},
       {"id": "j1", "title": "J1 simulator passes acceptance", "weight": 3, "done": true, "evidence": "research/jumbling/sim/acceptance.json"},
