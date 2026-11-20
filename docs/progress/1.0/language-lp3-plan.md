@@ -232,10 +232,14 @@ acceptance check and stop condition.
   crosses as its parts, within one frame's bound on the lengths they derive (crate draft 15, on LP2's pull request 185).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound to
   the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full; three more
-  (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176), 39 in all.
-  CT-RTE-08's persisted words come with C7; CT-RTE-07's six jumbling keys run on M5's rows with literal words (C8, pull
-  request 306); its other 30 keys wait for C7, the IR draft and C5. A built-in approval of a program for another IR
-  version now gives the checker's code, as the other author columns do (a gap LP2's conformance tests for LG5 found).
+  (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176), 39 in all; 12
+  more with LP2's row arguments, F5's arithmetic and the solver's cancel inside a loop (pull request 329), 51 in C4's
+  file. CT-RTE-08's persisted words come with C7. CT-RTE-07's six jumbling keys run on M5's rows with literal words (C8,
+  pull request 306), B10 and B11 with a runtime process (C5, pull request 329), and MR13, MR14, MR19 and MR20 are
+  refused at the built-in column's admission (`c600-runtime`): 63 of 75. Its other 12 keys wait for a recorded pick
+  (MR17, MR18, A29 and A30), a price mapping (B01 to B04 and B07), the host's row cache (B12) and the command layer (B13
+  and B14). A built-in approval of a program for another IR version now gives the checker's code, as the other author
+  columns do (a gap LP2's conformance tests for LG5 found).
 - C2, display next (`rust/c600-display`, branch `claude/lp3-c2-display-next`), built: CT-RPI-14 over the drafted chart
   repertoire (RPI.34 is open), CT-RPI-18 on the CPU reference, CT-RPI-19's Windows leg, CT-RPI-22's chart half (so
   CT-RPI-22 runs whole) and the headless part of CT-RPI-32. The rest of CT-RPI-32 waits until the host attaches user
@@ -494,14 +498,16 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   tests, not here. On M6's public API: the same CT-EV3-07 parts and CT-LB2-03's work-sheet part. LP2 has since run
   KN5.26's admission matrix L1 and L2 through the layer (pull request 270) and built EV3.2's view rows (pull request
   271, landed through 272: `view.open`, `view.close` and the `Views` trait), which `c600-view`'s view model serves
-  through C5's `ModelViews` (`c600-tools`' `tests/view_host.rs` and the CT-EV3-07 view test above). Waits for LP2: a
-  session profile (BND.14, BND.15), and reading a position role's
-  occupant again at a work-sheet reuse. M6's session lock (LP2, pull request 195) covers `JournalStore` too. Since LP2's
+  through C5's `ModelViews` (`c600-tools`' `tests/view_host.rs` and the CT-EV3-07 view test above). The session's
+  profile (BND.14 to BND.17, LP2's pull request 287): the layer asks the reader to admit a record's word only in a
+  solving session, as KN5.26 asks. Waits for LP2: reading a position role's occupant again at a work-sheet reuse. M6's
+  session lock (LP2, pull request 195) covers `JournalStore` too. Since LP2's
   pull request 242 every disk takes it, a memory disk included (`MemDisk` is behind the crate feature `mem-disk`, which
   `c600-durable` enables), and a reopen checks each stored commit and release again (finding B7, the owner's reading of
   18 November 2026): a commit not made by the shell, a commit that moves a protected orbit or a release without its
   stored confirmation leaves the session in read-only recovery with `KN5:consistency.unadmitted_journal_action` (a draft
-  code). Next: CT-RTE-07's six store keys, checked again against M6's run record (LP2's pull request 235).
+  code). Next: CT-RTE-07's four pick keys (MR17, MR18, A29 and A30), once a `c600-pick` record is written and resolved
+  (FP.38, BND.54); MR19 and MR20 are refused at the built-in column's admission (`c600-runtime`).
 - **C8, the jumbling tool.** M5 is on main (pull request 167). Built (`rust/c600-jumble-tool`, and `jumble` in
   `c600-display`): the tool's `.6cs` source with two entries admitted under the built-in column and a Rust manifest of
   the class `checking`; the jumbling parts of CT-LB6-03 and CT-BND-15; the kernel halves of CT-LB1-02, CT-LB3-03,
@@ -680,7 +686,7 @@ is not built yet.
 | CT-BND-19 | source | Now (C5: the tool's views, and the live twist through the input router on the tool's view model) | - |
 | CT-BND-20 | windows | The on-screen half (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | A child's bytes without a row of their own in the IR draft (`child-decode-error-releases-reservation`, LP2); `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five traces, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | 31 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, one after its loops, pull request 234, two after its byte decoding, pull request 249, and three after its streamed words, pull request 250) |
-| CT-RTE-07 | source | The six jumbling keys on menu words (C8, LG2.18's jumbling word key, LP2); the six store keys, on M6's store and run record (C7, LP2's pull request 235); the keys the IR draft could not express when C4 was built, checked again against LP2's exact multiplication and loops (C4); the budget keys that need a price mapping; host events in a loop or the command layer (C5); and a Linux run | 39 of LX-3's 75 frozen keys on 600-cell-Full (C4); the six jumbling keys on M5's rows with literal words (C8, pull request 306) |
+| CT-RTE-07 | source | The six jumbling keys on menu words (C8, LG2.18's jumbling word key, LP2); the four pick keys, once a `c600-pick` record is written and resolved (C7; FP.38, BND.54); the budget keys that need a price mapping (B01 to B04, B07), the host's row cache (B12) or the command layer (B13, B14); and a Linux run | 63 of LX-3's 75 frozen keys on 600-cell-Full: 51 in C4's file, and B10 and B11 with a runtime process (C4, C5, pull request 329); the six jumbling keys on M5's rows with literal words (C8, pull request 306); MR13, MR14, MR19 and MR20 refused at the built-in column's admission (`c600-runtime`) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9); the shell half of conditions 3 and 4 is built (`Lx2Module.cs`, `tools/perf/c9/lx2.py`), and its limit windows end at the host's 60 s safety stop | The headless fault half (C3) |
 | CT-RTE-11 | performance | Owner runs: LX-2 (C9); the shell half of conditions 3 and 4 is built (`Lx2Module.cs`, `tools/perf/c9/lx2.py`), and its limit windows end at the host's 60 s safety stop | - |

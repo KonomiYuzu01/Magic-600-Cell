@@ -2086,7 +2086,7 @@ run or not applicable is no pass (PHS.63).
   file keeps its closure and its approval; dynamic code is refused; a program for another IR version or execution
   contract is refused with the checker's code in every author column; capability separation holds at the preview point,
   for a menu word's proposal as for a literal word's (LB1.8; LP2's pull request 210). CT-RTE-07 on 600-cell-Full
-  (`ct_rte_07_full.rs`): 39 of LX-3's 75 frozen keys, each run ten times with one SHA-256 over its canonical result,
+  (`ct_rte_07_full.rs`): 51 of LX-3's 75 frozen keys, each run ten times with one SHA-256 over its canonical result,
   engine side and store, and a check that every key is either realised or listed as left, exactly once.
 - Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation
   refuses the preview of an allowed combination). P01 to P03 give the corpus's `LG3:capability.ambient_read` since
@@ -2099,16 +2099,16 @@ run or not applicable is no pass (PHS.63).
   only, the closure digest, the in-memory approval record `c600-approval-draft`, and the separation refusal at the
   preview point, which stays in this crate until C5's host bridge. Dynamic code is `LG3:capability.not_granted` by the
   owner's decision of 16 November 2026 (PHS.52).
-- CT-RTE-08's persisted words run in `c600-durable` (C7), on M6's store and through the command layer, and CT-RTE-07's
-  six jumbling keys on M5's rows with literal words in `c600-jumble-tool` (C8, `tests/ct_rte_07_jumble.rs`). Not built:
-  CT-RTE-07's other 30 keys: 6 keys that need the session store (C7); 12 keys the IR draft could not express when C4 was
-  built (early stop, exact multiplication and remainder; not checked again yet against LP2's exact multiplication and
-  loops, pull requests 216 and 234) or that pass a run's input as a query argument, which LP2's
-  `read_snapshot<T>("q", x)` now expresses and only the tool's bridge answers, for `positions` (LP2's pull request 226),
-  `labels` (C5's exact completion) and `effect` (C5's recipes and reports, pull request 294) only; and 12 budget keys,
-  whose amounts follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need
-  host events inside a loop, the host's row cache or the command layer's rows. The jumbling keys' menu-word half waits
-  for LG2.18's jumbling word key (LP2). The Linux leg did not run.
+- CT-RTE-08's persisted words run in `c600-durable` (C7), on M6's store and through the command layer. CT-RTE-07's six
+  jumbling keys run on M5's rows with literal words in `c600-jumble-tool` (C8, `tests/ct_rte_07_jumble.rs`); B10 and
+  B11, a safety stop and a lost runtime, with a runtime process in `c600-tools` (C5, `tests/ct_rte_07_c5.rs`); and MR13,
+  MR14, MR19 and MR20, in which a state-derived read decides whether a later preview is emitted at all, are refused at
+  the built-in column's admission on both executors in `c600-runtime` (`tests/ct_rte_07_admission.rs`): 63 of the 75
+  keys in all. Not built: CT-RTE-07's other 12 keys: 4 that need a recorded pick (MR17, MR18, A29 and A30; nothing
+  writes or resolves a `c600-pick` record yet, FP.38 and BND.54); and 8 budget keys: B01 to B04 and B07, whose amounts
+  follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices; B12, the host's row cache; and
+  B13 and B14, the command layer's budget declaration and ceiling. The jumbling keys' menu-word half waits for LG2.18's
+  jumbling word key (LP2). The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2170,15 +2170,16 @@ run or not applicable is no pass (PHS.63).
   `rng_draw`, the five child traces, child records included, since LP2's child scopes, `final-loop-test` since LP2's
   loops, the two decoding traces since LP2's byte decoding, on bytes the host delivers as a snapshot, and the three
   streaming traces since LP2's streamed words, the split and the coalesced trace as one job, since no host call or
-  answer falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's
-  field list, each host request's round trip and its refusal when cut or unknown, the class rows, the pinned menu and
-  the pinned trace relation as strict trailing fields, and a menu word's, a menu-word preview's and a trace key's
-  encodings and refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in entry admitted,
-  refused for a row its class does not list and refused outside the solving profile, and a pinned menu's words, refusals
-  and preview, alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words, their canonical
-  forms and refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-10's headless fault
-  half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session
-  keeps its journal, state hash and pending preview (`faults.rs`).
+  answer falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's field list,
+  each host request's round trip and its refusal when cut or unknown, the class rows, the pinned menu and the pinned
+  trace relation as strict trailing fields, and a menu word's, a menu-word preview's and a trace key's encodings and
+  refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in entry admitted, refused for a
+  row its class does not list and refused outside the solving profile, and a pinned menu's words, refusals and preview,
+  alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words, their canonical forms and
+  refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-07's MR13, MR14, MR19 and MR20,
+  refused at the built-in column's admission alike on both executors, ten runs each under one SHA-256
+  (`ct_rte_07_admission.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate,
+  garble, oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
@@ -2434,21 +2435,23 @@ run or not applicable is no pass (PHS.63).
   reader serves with `Provenance::parts` and `admit_kept` (the persisted-word test above, and `c600-tools`'
   `tests/workspace.rs`); and EV3.2's view rows (pull request 271, landed through 272), which `c600-view`'s view model
   serves through C5's `ModelViews` (the CT-EV3-07 view test above). LB7.2's fresh exact analysis of a reused work sheet
-  (`worksheet.compare`, with LB2's gains and losses) and macro versions (pull request 277) run on the journal above.
-  Waiting for LP2: a session profile (BND.14, BND.15), so the reader still applies a solving session's admission in
-  every session. M6's session lock covers `JournalStore` too (LP2's pull request 195). `kn5_on_session.rs` still drives
-  M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once their tests run against it.
+  (`worksheet.compare`, with LB2's gains and losses) and macro versions (pull request 277) run on the journal above. The
+  session's profile (BND.14 to BND.17, pull request 287): the layer asks the reader to admit a record's word only in a
+  solving session, as KN5.26 asks. M6's session lock covers `JournalStore` too (LP2's pull request 195).
+  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes
+  once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C5 next: the process host and the tool's views
 
 - The process host, `c600_tools::process::ProcessHost`, runs the 600-cell-Full tool in `c600-runtime`'s child (C3; route
-  RT1, RTE.21). The child gets the source bytes, the manifest's module and entry, the literal word and the limits, and
-  no token, secret, grant or command layer; the boundary and the bridge stay in the caller's process as the runtime's
-  host, so the program still receives only the fixed acknowledgement. One child serves every run, and after a fault the
-  next run starts a fresh one (KN7.13). The child admits the job as tool authoring and the built-in column stays the
-  caller's, because `c600_check::admit` has no author or column parameter.
+  RT1, RTE.21). The child gets the source bytes, the manifest's module and entry, the literal word, the limits and the
+  tool's class rows, and no token, secret, grant or command layer; the boundary and the bridge stay in the caller's
+  process as the runtime's host, so the program still receives only the fixed acknowledgement. One child serves every
+  run, and after a fault the next run starts a fresh one (KN7.13). The job runs in the solving profile with those class
+  rows (`JobOptions::built_in`, LP2's draft), so the child admits the entry in the built-in column itself, as
+  `Tool::new` does in the caller; LP3's hosts start a run only from a command in a solving session (BND.17).
 - Each run starts inside a command the solver invoked (finding B2 of the KN5 boundary attack, ONE.34, the owner's
   reading of 18 November 2026; draft), on both hosts. The tool's row `tool.full_600_cell.preview_word`
   (`c600_tools::process::TOOL_ROW`) is a query overlay row whose one argument, `w`, is the word, served by the tool's
@@ -2516,10 +2519,11 @@ run or not applicable is no pass (PHS.63).
     host keeps, recursively, so a reader that keeps nothing admits the word with the parts the layer keeps, while on
     its own it fails closed (CT-BND-27, part).
   - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts, each run
-    inside the solver's command and reported after its preview is built (B2); the job carries only the admitted
-    source; both hosts refuse a word with no transfer encoding at the start stage and fail the solver's command; a runtime
-    that does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and
-    CT-BND-07, parts).
+    inside the solver's command and reported after its preview is built (B2); the job carries only the admitted source,
+    in the solving profile with the tool's class rows, and the child refuses it at admission without the class rows,
+    with a class that leaves out `operation.preview` or in the tool-authoring profile; both hosts refuse a word with no
+    transfer encoding at the start stage and fail the solver's command; a runtime that does not start is reported and
+    changes nothing; the binary names the host in every record (CT-BND-11 and CT-BND-07, parts).
   - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
     previews clear in Net mode and commits as one transaction, and the prefix alone is refused) and its Strict half
     (after the shell's `protection.policy.set` to Strict, the same word previews with the kernel's Strict row, verdict
