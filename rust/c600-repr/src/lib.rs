@@ -86,10 +86,10 @@
 //!   its definition ([`chart::admit_user_chart`]), and the stage must be a vertex stage, since a chart maps positions.
 //!   The description stands for what the stage checker would read from a checked stage module; that checker, HLSL
 //!   compilation and every device step are not built in `c600-display`.
-//! - EV3.10, CT-EV3-06: the relation counted in this crate's tests is the linked selection above and, in
-//!   `c600-view`, a view's recomputation counters. Of the relationship strip's typed relations, only a slot's current
-//!   occupant at pose level is built, in `c600_jumble_tool::relation` (C8); the strip's data contract (chapter 06,
-//!   RPI.65) is built nowhere yet.
+//! - EV3.10, CT-EV3-06: the relations counted in this crate's tests are the linked selection above and the
+//!   relationship strip's record, each with, in `c600-view`, a view's recomputation counters. Of the strip's typed
+//!   relations, only a slot's current occupant at pose level is built, in `c600_jumble_tool::relation` (C8); the tests
+//!   carry it in the strip's data contract, `c600_display::strip`, and compute it in a view's run at named revisions.
 //!
 //! # Not built
 //!

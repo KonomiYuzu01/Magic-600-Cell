@@ -454,22 +454,22 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `c600-run/tests/det65_programs.rs` runs 31 of the 40 traces as programs through `Loaded::run`: nested-calls,
+- `c600-run/tests/det65_programs.rs` runs 32 of the 40 traces as programs through `Loaded::run`: nested-calls,
   equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, the four generator traces
   generator, generator-alias-cursor, generator-returned-owner and generator-child-paths, the three display traces,
   output-equality, output-retained-at-cutoff, the three exact-multiplication traces, alias-release, alias-still-live,
-  pointwise-failure, final-loop-test, and the five child traces child-allowances, child-return-owner,
-  root-before-child, dimension-before-scope and nested-child-ledger, the two decoding traces decode-scalar and
-  decode-surrogate, on bytes the host delivers as a snapshot, and the three streaming traces streaming,
+  pointwise-failure, final-loop-test, the five child traces child-allowances, child-return-owner,
+  root-before-child, dimension-before-scope and nested-child-ledger, child-decode-error-releases-reservation, whose
+  child decodes bytes the code holds (`text_decode_hex`, pull request 367), the two decoding traces decode-scalar
+  and decode-surrogate, on bytes the host delivers as a snapshot, and the three streaming traces streaming,
   streaming-complete-split and streaming-complete-coalesced, one program for both transport partitions. Each frozen
   row, each cutoff or stop (dimension or phase, scope, denied row, source range) and each child record equals the
   vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28 (synthetic), 29, 30, 31 and
   32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest. A child trace that completes
   takes its limits at its first `child` row, so that each requested cap is cut as the trace's is.
-- The other 9 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds two
-  bindings (1, generator-nested-same-name), text order (1), a child's bytes without a row of their own (1,
-  child-decode-error-releases-reservation), a flow check (1, abstract-trace-charges) and display form 2 (5). They
-  still replay through the meter.
+- The other 8 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds two
+  bindings (1, generator-nested-same-name), text order (1), a flow check (1, abstract-trace-charges) and display form 2
+  (5). They still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
   `c600-json-1` unit is shorter than three bytes.
@@ -1481,8 +1481,8 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 31 of DET.65's 40
-    traces as programs and lists why the other 9 do not run; `decode.rs` runs DET.62's byte decoding; `streams.rs`
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 32 of DET.65's 40
+    traces as programs and lists why the other 8 do not run; `decode.rs` runs DET.62's byte decoding; `streams.rs`
     DET.63's streamed words; `generators.rs` runs DET.61's generators,
     `child_scopes.rs` DET.60's child scopes and `loops.rs` DET.55's loops.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
@@ -2104,6 +2104,14 @@ run or not applicable is no pass (PHS.63).
   stage that LP2's checker admits (`c600_check::admit_stage`, pull request 241) and returns each refusal with the
   checker's code (`stage::take_up`); it adds RPI.72's raster bound on the CPU over placed triangles (`raster.rs`) and
   the frame stop, the session's quarantine and RM.41's frame reports beside the host (`stage::Quarantine`).
+- The relationship strip's data contract (`strip.rs`, C6): EV3.8's fields of one typed relation, which EN3's view model
+  carries without deciding the strip's design: its statement key, the relation, the roles of its operands and values
+  (with "frame" qualified by its use), its identity block, level and base revision, a result per operand, evidence
+  references and a source location. "None: off the lattice" and `unknown(reason)` are two values (EV3.9), and a
+  result is total, partial or undefined (KN0.4). `strip::attach` shows a record only on a relation node of its base
+  revision whose claims carry its statement key (RPI.65), and refuses with `EV3:input.display_plan_invalid` a record
+  that read another model, one that lifts labels into poses (KN1.10) and one that answers "none" from labels. Nothing
+  here computes a relation: a view's run does (EV3.10). Its tests are C6's, in `c600-repr/tests/ct_ev3.rs`.
 - Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
   CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
   Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
@@ -2133,6 +2141,8 @@ run or not applicable is no pass (PHS.63).
   (RPI.78), the checker's codes in their registered forms, the raster bound's pixel conventions (rounded outward,
   clipped, then widened to quads; a line's quad has no caps), one comma-separated `digests` entry in
   `stage_work_exceeded`'s context, and no frame report for a device fault or a later frame of a quarantined chain.
+  C6's strip contract adds: a record states one relation over operands of one role with values of one role, each one
+  canonical object ID; its level is the stored level it read, labels or poses; evidence references are opaque.
 - Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the host to attach
   user stages (the core compiles and bounds them since C9 U5, WARP only, but the host attaches none yet; RPI.78); an
   exact checker of isometry and homomorphism for the stereographic chart, which is not a projective map (both stay
@@ -2146,7 +2156,8 @@ run or not applicable is no pass (PHS.63).
   until the host attaches user stages (the core compiles and bounds them, WARP only, C9 U5); CT-RM-09's rows 3 to 6, 8
   and 10 wait for C9 for their device parts: the vertex evaluation and projection, U on a device and the skipped work
   (CT-RM-10, CT-RPI-31), and fault injection (CT-RPI-34); RM.38's weight table, device loss and `display_unsupported`
-  belong to the renderer and its backend.
+  belong to the renderer and its backend. The relationship strip's design, words and encoding tokens (EV3.8, EV5.11)
+  and a strip record for a relation whose value is no canonical object are not built.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 
@@ -2249,31 +2260,33 @@ run or not applicable is no pass (PHS.63).
   device); this crate has none. The test child `c600-runtime-hooked`, built only with the feature, records the hook's
   calls (`fault_hook.rs`, run with `--features lx2-faults`; without the feature it checks that `FAULT_HOOK` is false).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 31 of DET.65's 40 traces as `.6cs` programs on both executors
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 32 of DET.65's 40 traces as `.6cs` programs on both executors
   (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter, the exact-multiplication, alias and
   pointwise-failure traces since LP2's `exact_mul` and `assert`, three generator traces since LP2's `rng_init` and
   `rng_draw`, the five child traces, child records included, since LP2's child scopes, `final-loop-test` since LP2's
-  loops, the two decoding traces since LP2's byte decoding, on bytes the host delivers as a snapshot, and the three
+  loops, the two decoding traces since LP2's byte decoding, on bytes the host delivers as a snapshot, the three
   streaming traces since LP2's streamed words, the split and the coalesced trace as one job, since no host call or
-  answer falls among a stream's rows); the protocol's bounds, canonical encodings, KI.5's record, KN5.15's field list,
-  each host request's round trip and its refusal when cut or unknown, the class rows, the pinned menu and the pinned
-  trace relation as strict trailing fields, and a menu word's, a menu-word preview's and a trace key's encodings and
-  refusals (`protocol.rs`); a snapshot read with an argument through the child, a built-in entry admitted, refused for a
-  row its class does not list and refused outside the solving profile, and a pinned menu's words, refusals and preview,
-  alike on both executors (`equivalence.rs`); LP2's draft collections and compressed words, their canonical forms and
-  refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-07's MR13, MR14, MR19 and MR20,
-  refused at the built-in column's admission alike on both executors, ten runs each under one SHA-256
-  (`ct_rte_07_admission.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate,
-  garble, oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
+  answer falls among a stream's rows, and `child-decode-error-releases-reservation` since LP2's bytes the code holds,
+  `text_decode_hex`, so that the child's rows are its call and its decoding); the protocol's bounds, canonical
+  encodings, KI.5's record, KN5.15's field list, each host request's round trip and its refusal when cut or unknown,
+  the class rows, the pinned menu and the pinned trace relation as strict trailing fields, and a menu word's, a
+  menu-word preview's and a trace key's encodings and refusals (`protocol.rs`); a snapshot read with an argument
+  through the child, a built-in entry admitted, refused for a row its class does not list and refused outside the
+  solving profile, and a pinned menu's words, refusals and preview, alike on both executors (`equivalence.rs`); LP2's
+  draft collections and compressed words, their canonical forms and refusals on both sides, and their runs through the
+  child (`collections.rs`); CT-RTE-07's MR13, MR14, MR19 and MR20, refused at the built-in column's admission alike on
+  both executors, ten runs each under one SHA-256 (`ct_rte_07_admission.rs`); CT-RTE-10's headless fault half,
+  rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session keeps its
+  journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 9 traces need
-  what the IR draft lacks: a call frame without a slot that holds bindings, text order, a child's bytes without a row
-  of their own, a flow check and an executor for `lp1-exec-region-draft-1` (LP2).
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 8 traces need
+  what the IR draft lacks: a call frame without a slot that holds bindings, text order, a flow check and an executor
+  for `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
@@ -2756,10 +2769,16 @@ run or not applicable is no pass (PHS.63).
     representations part (a stash-and-relay, a state-chosen target, a writing view and an exported function the manifest
     does not list are each found). The record is checked with a fixture reviewer: BM5's review of the tool happens when
     it ships.
-  - `ct_ev3.rs`: CT-EV3-06's counter half (unchanged frame draws and a workspace-only revision compute no relation;
-    counted, never timed); CT-EV3-07's view half at the command layer (the checker refuses a view that writes the
-    workspace or proposes; after a commit, program calls to the six rows and to `session.undo` are refused, a view
-    overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
+  - `ct_ev3.rs`: CT-EV3-06 whole, in three parts: the counter half (unchanged frame draws and a workspace-only
+    revision compute no relation; counted, never timed); the strip record, C8's current occupant of every slot on the
+    I_a menu carried as `c600_display::strip` records (total when solved; after a twist off the lattice, "none: off
+    the lattice" and never the old occupant; `unknown(reason)` where two pieces share a chamber; KN0.4's three forms;
+    `strip::attach` shows a record only on a relation node of its own revision whose claims carry its statement key);
+    and the strip's schedule (the record is computed once at open and once for a burst of two state revisions, at the
+    newer, and never per frame or for a workspace-only revision). CT-EV3-07's view half at the command layer (the
+    checker refuses a view that writes the workspace or proposes; after a commit, program calls to the six rows and to
+    `session.undo` are refused, a view overlay row completes as `view_published`, and the revision, the log and the
+    undo hint stay as they were).
   - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, the layer
     refuses all six rows until a host serves them, an overlay cannot replace one, and `serve_row` accepts exactly the
     rows the list marks served, all six since pull request 256.
@@ -2798,8 +2817,9 @@ run or not applicable is no pass (PHS.63).
   the IR, so `filter_counts` takes the predicate as a record of its cell and layer; a display that applies the
   published scope, and one that applies the applied filter (the
   APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage checker is
-  LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's current
-  occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
+  LP2's since pull request 241); the relationship strip's design and its other typed relations (C8 computes one, a
+  slot's current occupant, at pose level, and `c600_display::strip` carries it); filters of trees, complexes and
+  graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
@@ -3035,7 +3055,8 @@ run or not applicable is no pass (PHS.63).
   `word_keys`, pull request 350); LB3.1's other rows as language code ("Menus and pinned letters",
   "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under `library` above,
   and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
-  records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end
+  records; the relationship strip's design (its data contract is C6's `c600_display::strip`, which carries the
+  current-occupant relation in `c600-repr`'s CT-EV3-06 tests). The posed arrays at the J1 fixture's mid and end
   stages are compared only in the whole-journal runs, on request. The survey's all-items loop is not served (LB3.5):
   `survey` answers the solver's named grip only. F03 on 600-cell-Full has no swept preview: the retained kernel names no
   plane for its twists, and which engine names one is not settled. The language entry `jumble_repair` reads the

@@ -84,7 +84,7 @@ runnable") cover the kernel rows. LP3 builds nothing in LP2's crates. Each row s
 | The F2 and F5 number kinds. Built in the kernel (pull request 201: `c600_kernel::exact`), with ν (`c600_jumble::nu`, pull request 201) and the correction catalogue with `correction_set_check` (`c600_jumble::corrections`, pull request 206), and as number kinds of the IR draft (pull request 222: `F2`, `F5`, `to_f2`, `to_f5`, `residue` and the `field_*` operations) | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | None: CT-LB1-01's entries are LP3's library code |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator. Built (pull request 176), with `compose`, `length` and `word_key`, Full's free reduction; menu words (pull request 210), LB1.10's `trace-key/1` for 600-cell-Full words (pull request 214) and its jumbling half, `jumble-locality/1` with `trace_key` on menu words (pull request 251), and LG2.18's jumbling word key `word-key/1` on menu words under the run's pinned menu matrices (pull request 338). Not built: these operations on compressed words | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | None for the operations: CT-LB1-02's key half runs on M5's states (C8); the library entry of CT-BND-18 is not written yet (CT-LB2-01's recipes and reports are, C5 library's `recipes.6cs` of pull request 294; CT-LB1-06's jumbling half runs `menu_traces`, C8) |
 | Collection types in the IR draft: lists, maps, sets. Built (pull request 176); they cross the runtime's wire (C3, pull request 180) | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | None |
-| The IR features CT-RTE-04's other 9 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216, generator draws with pull request 219, child scopes with pull request 225, loops with pull request 234, byte decoding with pull request 249 and streamed words with pull request 250). One waits, `child-decode-error-releases-reservation`, for a child's bytes without a row of their own; three are amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five need `lp1-exec-region-draft-1`'s executor, which LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
+| The IR features CT-RTE-04's other 8 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216, generator draws with pull request 219, child scopes with pull request 225, loops with pull request 234, byte decoding with pull request 249, streamed words with pull request 250, and bytes the code holds, `text_decode_hex`, with pull request 367, for `child-decode-error-releases-reservation`). Three are amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five need `lp1-exec-region-draft-1`'s executor, which LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in `c600-command`, takes two LP3
 requirements the LP2 integrator accepted: LP3's KN5.21 lead, closed in its stages 1 and 2 (pull request 174), and the
@@ -226,9 +226,10 @@ acceptance check and stop condition.
   `final-loop-test` runs: 26 of 40. With its byte decoding (pull request 249) `decode-scalar` and `decode-surrogate` run
   too, on bytes the host delivers as a snapshot: 28 of 40. With its streamed words (pull request 250) the three
   streaming traces run, the split and the coalesced trace as one job, since no host call or answer falls among a
-  stream's rows: 31 of 40. Of the other 9, one waits for the IR draft (LP2: a child's bytes without a row
-  of their own, for `child-decode-error-releases-reservation`), three are amendment candidates for C10, and form 2's
-  five are not applicable, which is no pass, since LP2 builds only form 1 of LG2.5 (section 9). A compressed word
+  stream's rows: 31 of 40. With its bytes the code holds (`text_decode_hex`, pull request 367),
+  `child-decode-error-releases-reservation` runs, the child's rows its call and its decoding: 32 of 40. Of the other 8,
+  three are amendment candidates for C10, and form 2's five are not applicable, which is no pass, since LP2 builds only
+  form 1 of LG2.5 (section 9). A compressed word
   crosses as its parts, within one frame's bound on the lengths they derive (crate draft 15, on LP2's pull request 185).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound to
   the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full; three more
@@ -480,7 +481,7 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   (RPI.34 [O]: a declared domain decided by an exact region test and section membership on the posed vertices,
   boundary cases included, a chart whose vertices all pass and whose region check fails inside refused, and
   injectivity, embedding, isometry and homomorphism each decided by its own check on `c600_jumble::polytope`, with the
-  stereographic chart's isometry and homomorphism left `not_established`); the counter half of CT-EV3-06; the
+  stereographic chart's isometry and homomorphism left `not_established`); CT-EV3-06, whole (below); the
   view-cannot-write half of CT-EV3-07 at the command layer; and the representations parts of CT-LB6-03 and CT-BND-15.
   The tool is a `.6cs` module with six entries admitted under the built-in column, with a Rust manifest of the class
   `view_aid`; the class review covers every exported function and only the source bytes the manifest names. C6 changed
@@ -506,6 +507,17 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   it, the job's run takes it, and the row completes as from the shell. Without blocks such a job fails with
   `LG3:capability.not_granted`, and nothing runs. `c600_repr::rows` records what the layer meets and what remains for
   each row. C6 changed no file in `c600-command`; its tests take `c600-run` as a dev-dependency.
+- C6's strip contract (`c600_display::strip`; `rust/c600-repr`, `tests/ct_ev3.rs`), built: CT-EV3-06, whole. EV3.8
+  lets EN3's view model carry the relationship strip's fields now, without deciding its design: a record states one
+  typed relation with its statement key, the roles of its operands and values, the model, the level it read, its base
+  revision, its result and evidence references and its source location. It is shown only on a relation node of its
+  base revision whose claims carry its statement key (RPI.65); one that read another model, lifts labels into poses
+  (KN1.10) or answers "none: off the lattice" from labels is refused. The tests carry C8's current occupant of every
+  slot on the I_a menu as such records: total when solved; after a twist, "none: off the lattice" and never the old
+  occupant; `unknown(reason)` where two pieces share a chamber; KN0.4's three forms. A view's run computes the record
+  in `c600-view`'s lane, once at open and once for a burst of state revisions, at the newer, and never per frame or for
+  a workspace-only revision (EV3.10). Not built: the strip's design, words and encoding tokens, which the design line
+  holds, and a record whose value is no canonical object, such as a frame group.
 - C6, next. LP2 has built what each item needs, and the crate documentation names the APIs. Argument blocks: the test
   host builds them (above) and stands in for the runtime's adapter, which invokes the rows with `Caller::Runtime`. No
   program operation reaches a served row: LG3.1's effects have none, the solver invokes a command, and a program reaches
@@ -525,9 +537,9 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   the name and the revision of capture; U1-057, U4-037) and gives the exact-set digest as the result reference
   (`c600_command::sets`); `replace: true` and `KN5:input.saved_set_exists` are drafts, and names under `set/` are
   reserved. Still not built: a display that applies the published scope, and one that applies the applied filter. Also
-  not built: every device step (C9; the stage checker is LP2's since pull request 241), the relationship strip (C8
-  computes one of its typed relations, a slot's current occupant, at pose level), and a BM5 review record, which the
-  tool gets when it ships.
+  not built: every device step (C9; the stage checker is LP2's since pull request 241), the relationship strip's design
+  and its other typed relations (its data contract is built, above), and a BM5 review record, which the tool gets when
+  it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.
@@ -684,7 +696,7 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test runs now, with no need of the owner's machine, the on-screen half (C9) or an item LP2 has not
-built. 50 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 17 have a part that runs now, and 15
+built. 51 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 16 have a part that runs now, and 15
 have no part that runs yet. The milestone is in parentheses; "next" marks LP3 work that needs nothing more from LP2 and
 is not built yet.
 
@@ -717,7 +729,7 @@ is not built yet.
 | CT-EV3-02 | synthetic | Now (C5) | - |
 | CT-EV3-03 | source | Now (C5) | - |
 | CT-EV3-04 | synthetic | Now (C5) | - |
-| CT-EV3-06 | source | The strip's data contract (chapter 06, RPI.65) | Unchanged frames compute no relation (C6); "none: off the lattice" distinct from `unknown`, over all 259,800 slots, with the occupant at every lattice pose on M8's slot action (C8) |
+| CT-EV3-06 | source | Now (C6 with C8: "none: off the lattice" distinct from `unknown`, over all 259,800 slots, with the occupant at every lattice pose on M8's slot action (C8); the occupants carried as records of the strip's data contract, `c600_display::strip`, shown only on a relation node whose claims carry the record's statement key (RPI.65) and computed by a view's run at named revisions; unchanged frames compute no relation (C6)) | - |
 | CT-EV3-07 | source | Now (C6: a view cannot write, at the command layer; C7: a view opened through LP2's view rows, pull request 271, on `c600-view`'s view model through C5's `ModelViews`, cannot write or make undo stale, and the durable action order, in the shared `session.undo` order through the command layer over `JournalStore` and on M6's store) | - |
 | CT-EV3-08 | source | RM.39's measured ceilings on the selected renderer (C9) | The admission semantics (C2), also through LP2's view rows on the view model (C5's `ModelViews`) |
 | CT-EV4-02 | synthetic | Now, on the draft keymap (C5) | - |
@@ -758,7 +770,7 @@ is not built yet.
 | CT-BND-18 | source | Now (C5 library: the setup-search entry `setups_for` in `c600-library`'s `setups.6cs` over the draft `setups` host row, pull request 309, run whole in `c600-tools/tests/ct_bnd_18.rs`; the checker half is the built-in column's setup-search exception, LP2's pull request 229, `c600-check/tests/exceptions.rs`) | - |
 | CT-BND-19 | source | Now (C5: the tool's views, and the live twist through the input router on the tool's view model) | - |
 | CT-BND-20 | windows | The on-screen half (C9) | A held chord commits once; the runtime gets no token (C1) |
-| CT-RTE-04 | source | A child's bytes without a row of their own in the IR draft (`child-decode-error-releases-reservation`, LP2); `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five traces, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | 31 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, one after its loops, pull request 234, two after its byte decoding, pull request 249, and three after its streamed words, pull request 250) |
+| CT-RTE-04 | source | `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five traces, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | 32 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, one after its loops, pull request 234, two after its byte decoding, pull request 249, three after its streamed words, pull request 250, and one after its bytes the code holds, `text_decode_hex`, pull request 367) |
 | CT-RTE-07 | source | The four pick keys, once a `c600-pick` record is written and resolved (C7; FP.38, BND.54); the host's row cache (B12); and a Linux run | 70 of LX-3's 75 frozen keys on 600-cell-Full: 56 in C4's file, B01 to B04 and B07 among them under the price mapping that `c600-module`'s documentation pins (pull request 354); B10 and B11 with a runtime process (C4, C5, pull request 329); B13 and B14, a missing budget and one over the host's ceiling, refused before admission at the command layer on the 600-cell-Full tool's row (C5: `c600-tools/tests/ct_rte_07_budget.rs`); the six jumbling keys on M5's rows with literal words (C8, pull request 306) and with menu words of the I_a alphabet, pinned with its item matrices (C8: `c600-jumble-tool/tests/ct_rte_07_jumble.rs`); MR13, MR14, MR19 and MR20 refused at the built-in column's admission (`c600-runtime`) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9); the shell half of conditions 3 and 4 is built (`Lx2Module.cs`, `tools/perf/c9/lx2.py`), and its limit windows end at the host's 60 s safety stop | The headless fault half (C3) |
