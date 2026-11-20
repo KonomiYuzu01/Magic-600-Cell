@@ -13,7 +13,9 @@
 //! corpus's examined items are the rows the engine served. A pick key (MR17, MR18, A29, A30) is two runs, because the
 //! draft language has no pick inside a run: the first builds the list, the host writes the solver's `c600-pick` record
 //! of option 0 (FP.38, BND.54), and the second previews the picked value, whose block records the pick and keeps the
-//! list's block in `parts` (BND.23, BND.85).
+//! list's block in `parts` (BND.23, BND.85). The cache key (B12) runs under the corpus's six host variants, with a
+//! row cache in front of the engine's `counts` row ([`c600_module::cache`]): each variant's runs give the cold
+//! variant's digest, and only the poisoned variant puts the corpus's code in the host envelope.
 //! [`FALSE_REFUSALS`] and [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key
 //! gives the corpus's code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the
 //! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, as
@@ -30,10 +32,11 @@ use std::sync::Arc;
 
 use c600_digest::sha256;
 use c600_ir::{Callee, Expr, Lit, QTy, Ty};
-use c600_module::code::{DIGEST_MISMATCH, NOT_GRANTED};
+use c600_module::cache::{Cached, RowCache};
+use c600_module::code::{CACHE_ENTRY_MISMATCH, DIGEST_MISMATCH, NOT_GRANTED};
 use c600_module::{approve, load, verify, Closure, Identity, Outcome, Refusal, RunRequest};
 use c600_run::boundary::{Answer, Boundary, Context, Place, Store};
-use c600_run::interp::{CancelFlag, Options};
+use c600_run::interp::{CancelFlag, Host, Options, Request, RowTariff, Sink};
 use c600_run::meter::{frame_size, Amounts, Outcome as Ended};
 use c600_run::provenance::{self, field, hex, Author, Json, Producer, Profile, INCOMPATIBLE};
 use c600_run::value::Value;
@@ -45,11 +48,11 @@ const CORPUS: &str =
 const FREEZE_SHA256: &str = "d7eff17503ee95d45ddca0efe38ec3bb09418b0248a6279afe2dce0a90ea6627";
 
 /// The keys realised here, one test each.
-const REALISED: [&str; 60] = [
+const REALISED: [&str; 61] = [
     "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10", "A11", "A12", "A13", "A14", "A15", "A16",
     "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A29", "A30", "A33", "A34",
-    "A35", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "MR03", "MR04", "MR07", "MR08", "MR09",
-    "MR10", "MR11", "MR12", "MR15", "MR16", "MR17", "MR18", "P01", "P02", "P03", "P04", "S01", "S02",
+    "A35", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "B12", "MR03", "MR04", "MR07", "MR08",
+    "MR09", "MR10", "MR11", "MR12", "MR15", "MR16", "MR17", "MR18", "P01", "P02", "P03", "P04", "S01", "S02",
 ];
 
 const M5: &str = "a jumbling key: realised on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`";
@@ -60,7 +63,7 @@ const COMMAND: &str = "realised at the command layer on the 600-cell-Full tool's
                        `c600-tools/tests/ct_rte_07_budget.rs`";
 
 /// The keys left, with the reason.
-const LEFT: [(&str, &str); 15] = [
+const LEFT: [(&str, &str); 14] = [
     ("MR01", M5),
     ("MR02", M5),
     ("MR05", M5),
@@ -73,7 +76,6 @@ const LEFT: [(&str, &str); 15] = [
     ("MR20", ADMISSION),
     ("B10", RUNTIME),
     ("B11", RUNTIME),
-    ("B12", "not realised: the host's row cache and its variants are not part of this crate"),
     ("B13", COMMAND),
     ("B14", COMMAND),
 ];
@@ -1292,15 +1294,17 @@ fn ct_rte_07_full_s02_dependency_substitution() {
     clean(&trial);
 }
 
-/// A budget key's case in `budgets.json`: its limits, its host event if any, and its expected outcome, code, used
-/// amounts (none for an interruption), stop and examined items.
+/// A budget key's case in `budgets.json`: its limits, its host event or host variants if any (each variant's ID and
+/// expected host code), and its expected outcome, code (none for a completed run), used amounts (none for an
+/// interruption), stop (none for a completed run) and examined items.
 struct BudgetCase {
     limits: Amounts,
     event: Option<String>,
+    variants: Vec<(String, Option<String>)>,
     outcome: String,
-    code: String,
+    code: Option<String>,
     used: Option<Amounts>,
-    stop: String,
+    stop: Option<String>,
     examined: Option<Vec<usize>>,
 }
 
@@ -1316,23 +1320,31 @@ fn budget_case(id: &str) -> BudgetCase {
         Amounts { steps: n("steps"), kernel_cost: n("kernel_cost"), memory: n("memory"), output: n("output") }
     };
     let expected = case.get("expected").expect("its expectation");
-    let text = |k: &str| expected.get(k).and_then(Json::as_text).expect(k).to_string();
+    let text = |o: &Json, k: &str| o.get(k).and_then(Json::as_text).map(str::to_string);
     let examined = match expected.get("coverage").and_then(|c| c.get("examined")) {
         Some(Json::List(items)) => {
             Some(items.iter().map(|i| if let Json::Int(n) = i { *n as usize } else { panic!("{i:?}") }).collect())
         }
         _ => None,
     };
+    let host = case.get("host");
+    let variants = match host.and_then(|h| h.get("variants")) {
+        Some(Json::List(variants)) => {
+            variants.iter().map(|v| (text(v, "id").expect("a variant's ID"), text(v, "expected_host_code"))).collect()
+        }
+        _ => Vec::new(),
+    };
     BudgetCase {
         limits: amounts(case.get("limits").unwrap()),
-        event: case.get("host").and_then(|h| h.get("event")).and_then(Json::as_text).map(str::to_string),
-        outcome: text("outcome"),
-        code: text("code"),
+        event: host.and_then(|h| text(h, "event")),
+        variants,
+        outcome: text(expected, "outcome").expect("its outcome"),
+        code: text(expected, "code"),
         used: match expected.get("used") {
             None | Some(Json::Null) => None,
             Some(used) => Some(amounts(used)),
         },
-        stop: text("stop"),
+        stop: text(expected, "stop"),
         examined,
     }
 }
@@ -1351,8 +1363,9 @@ fn spent(steps: u128, kernel_cost: u128, memory: u128, output: u128) -> Amounts 
 /// nothing and keeps the session fields.
 fn priced(id: &str, source: &str, stop: &str, prefix: Amounts, at: &str, used: Amounts) -> Trial {
     let case = budget_case(id);
-    assert_eq!(case.stop, stop, "the corpus's refused instruction");
-    let phase = case.code.strip_prefix("KN7:budget.").expect("a budget code");
+    assert_eq!(case.stop.as_deref(), Some(stop), "the corpus's refused instruction");
+    let code = case.code.as_deref().expect("a budget code");
+    let phase = code.strip_prefix("KN7:budget.").expect("a budget code");
     let mut admitted = case.used.expect("the corpus's used amounts");
     if phase != "steps" {
         admitted.steps -= 1;
@@ -1368,7 +1381,7 @@ fn priced(id: &str, source: &str, stop: &str, prefix: Amounts, at: &str, used: A
     let trial =
         ten(|| Trial::of(source, &[]).call("go", Author::Own, Profile::ToolAuthoring, Vec::new(), Vec::new(), limits));
     let s = &trial.last().run.summary;
-    assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), Some(case.code.as_str())));
+    assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), Some(code)));
     let refused = s.stop.as_ref().expect("a stop");
     assert_eq!((refused.at.as_str(), refused.phase), (at, phase));
     assert_eq!(s.used, used, "the corpus's {:?}, mapped", case.used);
@@ -1490,7 +1503,7 @@ fn interrupted(id: &str, source: &str, row: &str, served: &[&str], at: &str) {
     assert_eq!((case.event.as_deref(), case.used), (Some("cancel"), None));
     let trial = ten(|| Trial::of(source, &[]).cancelled_after("go", row, case.limits));
     let s = &trial.last().run.summary;
-    assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), Some(case.code.as_str())));
+    assert_eq!((s.outcome.name(), s.code), (case.outcome.as_str(), case.code.as_deref()));
     let stop = s.stop.as_ref().expect("a stop");
     assert_eq!((stop.at.as_str(), stop.phase), (at, "interruption"), "{:?}", case.stop);
     assert_eq!(trial.engine.served, served);
@@ -1523,4 +1536,146 @@ fn ct_rte_07_full_b09_cancel_in_a_batch() {
     );
     assert_eq!(named(&[A, B, C]), ["a", "b", "c"], "the corpus's words");
     interrupted("B09", &source, "word_check", &["word_check/[1]"], "m.go:1#body:0 > m.go:1.2#push");
+}
+
+/// B12's program: two reads of the counts, the second returned.
+const TWO_READS: &str = "export fn go() -> $INTS effects [snapshot] {\n    \
+                         let a = read_snapshot<$INTS>(\"counts\");\n    \
+                         let b = read_snapshot<$INTS>(\"counts\");\n    \
+                         return b;\n}\n";
+
+/// The rows a B12 host answers through its cache: the counts, a read of the fixture's revision (KN2.4, ONE.10).
+const CACHED: [&str; 1] = ["counts"];
+
+/// Between a B12 run and its host's cache: the rows the run reads, in order, and with `evict` the eviction of the
+/// whole cache after each read.
+struct Reads<'a> {
+    host: &'a mut dyn Host,
+    evict: Option<&'a RowCache>,
+    rows: Vec<String>,
+}
+
+impl Host for Reads<'_> {
+    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
+        self.host.tariff(request)
+    }
+
+    fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
+        if let Request::Snapshot { query, .. } = request {
+            self.rows.push(query.to_string());
+        }
+        let answer = self.host.perform(request);
+        if let Some(cache) = self.evict {
+            cache.clear();
+        }
+        answer
+    }
+
+    fn sink(&mut self, sink: &Sink, value: &Value, bytes: &[u8]) -> Result<(), &'static str> {
+        self.host.sink(sink, value, bytes)
+    }
+}
+
+/// A B12 run as the variants compare it: RTE.46's digest, which covers the value, the used amounts and the stop; the
+/// used amounts; the rows the run read, its coverage; and what only the host sees, the rows the engine served below
+/// the cache and the host envelope.
+#[derive(Debug)]
+struct Seen {
+    digest: String,
+    used: Amounts,
+    read: Vec<String>,
+    served: Vec<String>,
+    envelope: Vec<&'static str>,
+}
+
+/// One B12 run from a fresh fixture: `m.go`, an own tool in tool authoring with no argument, under `limits`, with the
+/// counts answered through `cache` at the fixture's revision and, when `evict` holds, the cache evicted after each
+/// read. The run completes with the counts, prepares, publishes and writes nothing, and keeps the session fields.
+fn through(cache: &RowCache, evict: bool, limits: Amounts) -> Seen {
+    let mut trial = Trial::of(&root(TWO_READS), &[]);
+    let mut cached = Cached::new(&mut trial.engine, cache, b"rev-7", &CACHED);
+    let mut reads = Reads { host: &mut cached, evict: evict.then_some(cache), rows: Vec::new() };
+    let options = Options::new(limits);
+    let request = RunRequest { run: "r1", base: "rev-7", args: Vec::new(), inputs: Vec::new(), pins: pins(), options };
+    let result = ready(&trial.package, entry("go", Author::Own, Profile::ToolAuthoring))
+        .and_then(|r| r.run(request, &mut reads, &mut trial.store));
+    let read = reads.rows;
+    let envelope = cached.envelope().to_vec();
+    trial.results.push(result);
+    quiet(&trial, &encoded(&ints(&[("c0", 2), ("c1", 6), ("c2", 6)])));
+    unchanged(&trial);
+    let used = trial.last().run.summary.used;
+    Seen { digest: hex(&trial.digest()), used, read, served: trial.engine.served, envelope }
+}
+
+/// The runs of one B12 host variant, each from a fresh fixture, and the caches fresh too (DET.49): cold from an empty
+/// cache; warm from the entry a cold run kept; evicted with the cache evicted after each read; poisoned from that
+/// entry with its inputs and digest kept and its answer replaced by `[99, 99, 99]`; shared, that entry read by two
+/// concurrent runs; and relocated, that entry moved to another cache.
+fn variant(id: &str, limits: Amounts) -> Vec<Seen> {
+    let cache = RowCache::default();
+    if matches!(id, "cold" | "evicted") {
+        return vec![through(&cache, id == "evicted", limits)];
+    }
+    through(&cache, false, limits);
+    match id {
+        "warm" => vec![through(&cache, false, limits)],
+        "poisoned" => {
+            for (key, mut entry) in cache.entries() {
+                entry.answer = ints(&[("c0", 99), ("c1", 99), ("c2", 99)]);
+                cache.keep(key, entry);
+            }
+            vec![through(&cache, false, limits)]
+        }
+        "shared" => std::thread::scope(|s| {
+            let runs = [s.spawn(|| through(&cache, false, limits)), s.spawn(|| through(&cache, false, limits))];
+            runs.into_iter().map(|run| run.join().expect("a concurrent run")).collect::<Vec<_>>()
+        }),
+        "relocated" => {
+            let moved = RowCache::default();
+            for (key, entry) in cache.entries() {
+                moved.keep(key, entry);
+            }
+            cache.clear();
+            vec![through(&moved, false, limits)]
+        }
+        _ => panic!("an unknown host variant {id}"),
+    }
+}
+
+/// B12: the corpus's six host variants of two reads of the counts (DET.16, DET.23, DET.46, DET.49). Each variant runs
+/// ten times and gives the cold variant's digest, so the same value, used amounts and stop, and the same coverage: the
+/// run read the counts twice, the corpus's examined items, and was charged 6 for them, whatever the engine served below
+/// the cache. The engine serves the counts once cold and poisoned, twice evicted, and never from a kept entry. Only the
+/// poisoned variant's host envelope holds the corpus's code, and no run does.
+#[test]
+fn ct_rte_07_full_b12_cache_changes() {
+    let case = budget_case("B12");
+    assert_eq!((case.outcome.as_str(), case.code.as_deref(), case.stop.as_deref()), ("completed", None, None));
+    let ids: Vec<&str> = case.variants.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(ids, ["cold", "warm", "evicted", "poisoned", "shared", "relocated"]);
+    assert_eq!(case.variants[3].1.as_deref(), Some(CACHE_ENTRY_MISMATCH));
+    let cold = variant("cold", case.limits).remove(0);
+    assert_eq!(cold.read, ["counts", "counts"]);
+    assert_eq!(case.examined, Some((0..cold.read.len()).collect()));
+    assert_eq!(cold.used.kernel_cost, case.used.expect("the corpus's used amounts").kernel_cost);
+    for (id, code) in &case.variants {
+        let served: &[&str] = match id.as_str() {
+            "cold" | "poisoned" => &["counts"],
+            "evicted" => &["counts", "counts"],
+            _ => &[],
+        };
+        let envelope: Vec<&str> = code.iter().map(String::as_str).collect();
+        for i in 1..=10 {
+            for seen in variant(id, case.limits) {
+                assert_eq!(
+                    (&seen.digest, seen.used, &seen.read),
+                    (&cold.digest, cold.used, &cold.read),
+                    "{id}, run {i}"
+                );
+                assert_eq!(seen.served, served, "{id}, run {i}: the rows the engine served");
+                assert_eq!(seen.envelope, envelope, "{id}, run {i}: the host envelope");
+            }
+        }
+    }
 }

@@ -12,6 +12,10 @@
 //! - [`load`] refuses a closure whose digest differs from the approval's, so substituted dependency bytes never run
 //!   (LG5.1, LG5.3, CT-RTE-08). [`Ready::run`] runs the approved entry through `c600-run`'s boundary
 //!   ([`c600_run::boundary::Boundary`]) and keeps capability separation at the preview point (LG3.13, BND.39).
+//! - [`cache::Cached`] answers the rows a host names through a [`cache::RowCache`] that concurrent runs may share.
+//!   A hit is charged as a miss, and a hit, an eviction or a rejected entry changes no value or charge. An entry that
+//!   fails its recorded input or digest check is dropped with `LG4:input.cache_entry_mismatch` in the host envelope,
+//!   and the host answers (DET.16, DET.23, DET.46, KN7.8).
 //!
 //! Every refusal carries a stable code of chapter 13 ([`code`]). The crate reads and writes local bytes only: it opens
 //! no file, network or process itself (LG5.9).
@@ -114,6 +118,7 @@
 #![forbid(unsafe_code)]
 
 mod approval;
+pub mod cache;
 mod closure;
 mod form;
 mod run;
@@ -137,7 +142,7 @@ pub const RESOLVER: &str = "c600-resolver-draft-1";
 /// 600-cell-Full's model identity, as `assets/manifest.json` and the format packet's examples give it (KN0.1).
 pub const FULL_MODEL_ID: &str = "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9";
 
-/// The stable codes this crate refuses with (chapter 13).
+/// The stable codes this crate refuses with, and the one its row cache puts in a host envelope (chapter 13).
 pub mod code {
     /// Module bytes differ from the expected content or lockfile digest (LG5.1, LG5.3).
     pub const DIGEST_MISMATCH: &str = "LG5:input.module_digest_mismatch";
@@ -160,6 +165,9 @@ pub mod code {
     pub const NONCANONICAL_VALUE: &str = c600_run::interp::code::NONCANONICAL_VALUE;
     /// A capability the profile, class or policy does not grant (LG3, BND.84).
     pub const NOT_GRANTED: &str = c600_check::NOT_GRANTED;
+    /// A kept row answer fails its recorded input or digest check: the read is a miss with unchanged charges, and the
+    /// code goes to the host envelope only (DET.46, [`crate::cache`]).
+    pub const CACHE_ENTRY_MISMATCH: &str = "LG4:input.cache_entry_mismatch";
 }
 
 fn refuse(code: &'static str, detail: impl Into<String>) -> Refusal {
