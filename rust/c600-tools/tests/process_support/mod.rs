@@ -84,14 +84,14 @@ pub fn runtime() -> PathBuf {
         }
         let out = command.output().expect("cargo starts");
         assert!(out.status.success(), "cargo builds the runtime's binary: {}", String::from_utf8_lossy(&out.stderr));
-        let executable = out.stdout.split(|&byte| byte == b'\n').filter_map(|line| {
+        let mut executable = out.stdout.split(|&byte| byte == b'\n').filter_map(|line| {
             let message = json::parse(line).ok()?;
             let name = message.get("target")?.get("name")?.as_str()?;
             let reason = message.get("reason")?.as_str()?;
             let executable = message.get("executable")?.as_str()?;
             (reason == "compiler-artifact" && name == RUNTIME_BINARY).then(|| PathBuf::from(executable))
         });
-        executable.last().expect("cargo reports the runtime's executable")
+        executable.next_back().expect("cargo reports the runtime's executable")
     });
     assert!(built.is_file(), "the runtime's binary exists");
     built.clone()

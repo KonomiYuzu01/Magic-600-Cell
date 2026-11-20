@@ -872,6 +872,20 @@ int32_t recover(sa2_context* ctx, char* buffer, uint32_t buffer_size, uint32_t* 
     write_json(success, buffer, buffer_size, out_size);
     return SA2_OK;
 }
+// C9, owner item 9 (20 Nov 2026, no ABI change): one sample of the surface's
+// frame statistics for the traced scene frames, read as sa2_presented reads
+// them, while the trace runs or a traced frame still awaits its row. A failed
+// or disjoint call adds no row; it never fails the frame.
+void surface_statistics(sa2_context* ctx, sa2::Scene& scene) {
+    if (!ctx->surface || !ctx->surface->chain || (!scene.record.tracing() && !scene.surface_trace.awaiting())) return;
+    const auto& surface = *ctx->surface;
+    DXGI_FRAME_STATISTICS statistics{};
+    const HRESULT hr = surface.chain->swapchain->GetFrameStatistics(&statistics);
+    UINT last = 0;
+    const HRESULT last_hr = surface.chain->swapchain->GetLastPresentCount(&last);
+    if (FAILED(hr) || FAILED(last_hr)) return;
+    scene.surface_trace.sample({static_cast<int32_t>(hr), surface.generation, statistics.PresentCount, last, statistics.SyncQPCTime.QuadPart});
+}
 // C9 U4 (no ABI change): sa2_scene_produce with SA2_TARGET_SURFACE on a
 // sa2_create context draws the loaded W1..W4 or W-J scene into the attached
 // surface's current back buffer and presents it (SurfaceTarget), so the
@@ -890,6 +904,7 @@ void scene_surface(sa2_context* ctx, uint64_t frame) {
     scene.surface_ready();
     SurfaceTarget target(ctx);
     auto* list = target.open();
+    const size_t traced = scene.record.trace.size();
     try {
         const auto now = sa2::scene_qpc();
         scene.record_draw(list, target.ring(), target.view(), now, target.format());
@@ -897,6 +912,11 @@ void scene_surface(sa2_context* ctx, uint64_t frame) {
         scene.sample_vram();
         target.close(frame);
     } catch (...) { scene.poison(); throw; }
+    // C9, owner item 9: a traced frame whose own present count was read awaits
+    // the core's frame statistics; a frame without a count is never confirmed.
+    if (scene.record.trace.size() > traced && target.present_count())
+        scene.surface_trace.presented(traced, target.generation(), *target.present_count());
+    surface_statistics(ctx, scene);
 }
 }
 
@@ -1448,6 +1468,8 @@ int32_t sa2_scene_trace_end(sa2_context* ctx) {
         context(ctx);
         require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
         ctx->scene->record.end(sa2::scene_qpc());
+        // C9, owner item 9: one more sample for the last traced frames on the surface.
+        if (ctx->created) surface_statistics(ctx, *ctx->scene);
         return SA2_OK;
     });
 }
@@ -1461,6 +1483,9 @@ int32_t sa2_scene_write_run(sa2_context* ctx, const char* directory_utf8) {
         scene.record.require_write(ctx->drained);
         live(ctx); scene.require_healthy();
         sa2::require_new_file(directory / "trace.jsonl"); sa2::require_new_file(directory / "native.json");
+        // C9, owner item 9: a route-B run (a sa2_create context, whose scene draws on its surface) also writes the
+        // traced frames its own frame statistics confirmed, which the acceptance finalizer's blind-seconds rule reads.
+        if (ctx->created) sa2::require_new_file(directory / "presented.jsonl");
         const bool jumbling = scene.record.jumbling();
         if (jumbling) sa2::require_new_file(directory / "pose_check.json");
         Json poses;
@@ -1468,6 +1493,7 @@ int32_t sa2_scene_write_run(sa2_context* ctx, const char* directory_utf8) {
         const auto native = scene.record.native(labels, sa2::scene_identity(), ctx->config.queue_mode, ctx->config.barrier_api, poses);
         sa2::write_new_file(directory / "trace.jsonl", scene.record.trace_text());
         sa2::write_new_file(directory / "native.json", native.dump() + '\n');
+        if (ctx->created) sa2::write_new_file(directory / "presented.jsonl", scene.surface_trace.text());
         if (jumbling) {
             sa2::write_new_file(directory / "pose_check.json", poses.dump() + '\n');
             require(labels.at("status").string() == "pass" && poses.at("status").string() == "pass",

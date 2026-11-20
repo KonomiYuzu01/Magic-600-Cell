@@ -408,6 +408,85 @@ fn the_generation_advances_when_the_overlay_table_changes() {
     assert_eq!(f.layer.generation(), start + 3);
 }
 
+/// KN5.6's table (L13 (d) of the KN5 attack leads): one entry per binding the shell passes, keyed by row and the digest
+/// of its absolute arguments, each answer the one LI.18's hint gives, stamped with the current revision and generation
+/// and with a context that names the session's profile. Two static bindings of one row keep their own answers, and a
+/// computed binding answers on the row's argument-independent gates. Reading the table changes nothing, and a later
+/// generation's table answers anew.
+#[test]
+fn the_table_answers_each_binding_as_its_hint_does() {
+    use c600_command::token::args_digest;
+    use c600_command::{Availability, Profile};
+
+    let mut f = fixture();
+    let (a, b) = (Binding::Static(cells(1, 2)), Binding::Static(cells(1, 600)));
+    let computed = Binding::Computed;
+    let bindings = [(COMPARE, &a), (COMPARE, &b), (COMPARE, &computed), (PREVIEW, &computed), (READ, &computed)];
+    let unknown = [(MISSING, &computed)];
+    let all = || bindings.iter().chain(unknown.iter()).copied();
+    let hint = |layer: &CommandLayer, row: &str, binding: &Binding| match binding {
+        Binding::Static(args) => layer.availability_for(row, args).map_err(|error| error.code),
+        Binding::Computed => layer.availability(row).map_err(|error| error.code),
+    };
+
+    let before = f.quiet();
+    let table = f.layer.availability_table(all());
+    assert_eq!(f.quiet(), before);
+    assert_eq!(f.layer.run_jobs(), 0);
+    assert!(f.layer.take_program_job().is_none());
+    assert_eq!((&table.revision, table.generation), (f.layer.revision(), f.layer.generation()));
+    assert_eq!(table.rows.len(), 6);
+    for (row, binding) in all() {
+        assert_eq!(table.answer(row, binding), Some(hint(&f.layer, row, binding)), "{row} {binding:?}");
+    }
+    assert_eq!(table.answer(COMPARE, &a), Some(Ok(())));
+    assert_eq!(table.answer(COMPARE, &b), Some(Err(code::ARGUMENT_FORM)));
+    assert_eq!(table.answer(COMPARE, &computed), Some(Ok(())));
+    assert_eq!(table.answer(MISSING, &computed), Some(Err(code::UNKNOWN_ROW)));
+    assert_eq!(Availability::key(COMPARE, &a), (COMPARE.to_owned(), Some(args_digest(&cells(1, 2)))));
+    assert_eq!(Availability::key(COMPARE, &computed), (COMPARE.to_owned(), None));
+    assert_eq!(table.answer(COMPARE, &Binding::Static(cells(2, 3))), None);
+    assert_eq!(table.answer(FILTER, &computed), None);
+
+    // The same bindings in another order, or twice, give the same table.
+    let again = f.layer.availability_table(all().rev().chain(all()));
+    assert_eq!(again, table);
+
+    // A preview that is building fills the exclusive lane: a new generation, whose table answers anew.
+    f.building();
+    let busy = f.layer.availability_table(all());
+    assert!(busy.generation > table.generation);
+    assert_eq!(busy.revision, table.revision);
+    assert_eq!(busy.context, table.context);
+    assert_eq!(busy.answer(PREVIEW, &computed), Some(Err(code::LANE_FULL)));
+    for (row, binding) in all() {
+        assert_eq!(busy.answer(row, binding), Some(hint(&f.layer, row, binding)), "{row} {binding:?}");
+    }
+
+    // The context names the session's profile: another profile's session has another context.
+    let k = kernel();
+    let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
+    let contexts: BTreeSet<String> = Profile::ALL
+        .into_iter()
+        .map(|profile| {
+            let table = Table::h08();
+            let layer = CommandLayer::new_with_profile(
+                k.clone(),
+                table,
+                Secret::fixed(SECRET),
+                MemoryStore::default(),
+                "s1",
+                start.clone(),
+                protected.clone(),
+                profile,
+            );
+            layer.availability_table([(PREVIEW, &computed)]).context
+        })
+        .collect();
+    assert_eq!(contexts.len(), Profile::ALL.len());
+    assert!(contexts.contains(&table.context));
+}
+
 /// The entries of a manifest's dependency and build-dependency tables, its target tables among them: each name, and
 /// the directory of a crate of this workspace that it names by its relative path, or `None` for a crate from the
 /// registry, which must pin a version. A dependency's own table section, such as `[dependencies.name]`, fails the

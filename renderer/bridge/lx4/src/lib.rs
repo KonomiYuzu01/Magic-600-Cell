@@ -12,7 +12,7 @@
 //!   three texts: the echo (the lines around the caret), the status and the completion list.
 //! - **Ready:** the first frame after a good Reset that draws the baseline, before any input of the sample, queues
 //!   `ready` with the baseline's digest; lx4.py posts the sample's inputs only after it sees that row, so no timed
-//!   input waits behind the Reset's work.
+//!   input waits behind the Reset's work. While a re-run is running (below), `ready` waits for it to end.
 //! - **Endpoints:** once a sample's last input has arrived, [`lx4_update`] queues an [`Lx4Shown`] for each endpoint
 //!   the frame shows for the final buffer, each once per sample, and the shell writes them as `lx4` rows with this
 //!   frame's 3D frame id: `echo` names the frame that first showed the sample's first typed key; `stale` the frame
@@ -20,11 +20,17 @@
 //!   module checked, only when its syntax is clean) and, for W00, `dependents` the frame that first shows the final
 //!   revision's answer. A failed sample (an input past the edit's end, a selection off a character boundary) queues
 //!   nothing, so the harness times it out and the run is invalid.
+//! - **Re-run** (`rerun`, RTE.50; C9, 20 Nov 2026): a Reset whose `edit` carries [`LX4_RESET_RERUN`] starts a sample
+//!   that times the re-run. In the first [`lx4_update`] after its last input, [`Lx4Update::rerun`] asks the shell to
+//!   run the reference view on the final buffer ([`LX4_TEXT_BUFFER`]): the edited module's [`REFERENCE_ENTRY`] as the
+//!   host's view job (`m6h_run_view`), in the language runtime with no host rows. When the job ends, the shell calls
+//!   [`lx4_rerun_ended`] with the first confirmed frame that drew the run's publication and the run's source digest;
+//!   when that digest is the final buffer's, the module queues `rerun` for that frame. The host does not draw the
+//!   run's value yet (its draft), so that frame shows the reference publication the run delivered.
 //!
 //! The stale state is c600-view's (the `view` module): each sample's view model has a view of the baseline, the
 //! editor's draft reaches it by source digest, and the view model says when the view lags (EV1.7, EV3.6, RTE.49).
-//! Draft: `rerun` is not built; it needs the reference view in the fixtures and a host call that runs a view on the
-//! session's state (C9 product). Nothing here is timing, Windows/DirectX or input evidence.
+//! Nothing here is timing, Windows/DirectX or input evidence.
 //!
 //! Calls: a handle is used by one thread at a time (the shell's main thread). Every function checks its pointers,
 //! catches a panic and answers a status code. A panic poisons the handle: it then answers only [`LX4_E_POISONED`]
@@ -50,8 +56,9 @@ use editor::{Editor, Typed};
 use fixtures::Loaded;
 use view::StaleView;
 
-/// The version of this C interface. The shell refuses a library that answers another.
-pub const LX4_ABI_VERSION: u32 = 1;
+/// The version of this C interface. The shell refuses a library that answers another. Version 2 adds the re-run:
+/// [`LX4_RESET_RERUN`], [`Lx4Update::rerun`], [`LX4_TEXT_BUFFER`] and [`lx4_rerun_ended`].
+pub const LX4_ABI_VERSION: u32 = 2;
 
 pub const LX4_OK: i32 = 0;
 /// A null or malformed argument, or a buffer too small for a text.
@@ -68,23 +75,38 @@ pub const LX4_E_POISONED: i32 = 6;
 pub const LX4_TEXT_ECHO: u32 = 0;
 pub const LX4_TEXT_STATUS: u32 = 1;
 pub const LX4_TEXT_COMPLETION: u32 = 2;
+/// [`lx4_text`]'s whole buffer, which the shell runs as the reference view; no [`Lx4Update::changed`] bit.
+pub const LX4_TEXT_BUFFER: u32 = 3;
+
+/// [`lx4_reset`]'s flag in `edit` (bits 0 to 15 are the edit's index): the sample times `rerun`.
+pub const LX4_RESET_RERUN: u32 = 1 << 16;
+
+/// The reference view's entry, the exported function every edited module has once (RTE.50: S, M and L import
+/// nothing and read no host row).
+pub const REFERENCE_ENTRY: &str = "exported";
 
 /// The endpoints by [`Lx4Shown::endpoint`], with lx4.py's names. `ready` is the handshake, no metric.
 pub const ENDPOINTS: [&str; 8] =
     ["echo", "syntax", "completion", "diagnostics", "stale", "rerun", "dependents", "ready"];
 pub const ECHO: usize = 0;
 pub const STALE: usize = 4;
+pub const RERUN: usize = 5;
 pub const READY: usize = 7;
 
 /// How many lines the echo shows on each side of the caret's.
 pub const CONTEXT: usize = 12;
 
-/// What [`lx4_update`] changed: which texts to draw again, and how many endpoints are queued for [`lx4_next_shown`].
+/// What [`lx4_update`] changed: which texts to draw again, how many endpoints are queued for [`lx4_next_shown`], and
+/// whether the shell is to run the reference view on the buffer now.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Lx4Update {
     pub changed: u32,
     pub shown: u32,
+    /// 1 once per re-run sample, in the first update after its last input: the shell runs [`REFERENCE_ENTRY`] of
+    /// the buffer ([`LX4_TEXT_BUFFER`]) as the host's view job and reports its end with [`lx4_rerun_ended`].
+    pub rerun: u32,
+    pub reserved: u32,
 }
 
 /// An endpoint a frame shows first, for an `lx4` row: `{"t": "lx4", "sample", "endpoint", "frame_id",
@@ -107,6 +129,13 @@ struct Answers {
     by_stage: [Option<Answer>; ENDPOINTS.len()],
 }
 
+/// The re-run the shell was asked for and has not reported ended: its sample and the buffer's digest it runs.
+#[derive(Clone, Copy, Debug)]
+struct Running {
+    sample: u64,
+    digest: [u8; 32],
+}
+
 /// One editor module.
 pub struct Lx4Module {
     loaded: Arc<Loaded>,
@@ -121,6 +150,12 @@ pub struct Lx4Module {
     /// The frame that first showed the sample's first typed key, and the endpoints queued for this sample.
     echo_frame: Option<u64>,
     queued: [bool; ENDPOINTS.len()],
+    /// Whether the sample times the re-run, whether the shell was asked for it, the re-run not yet ended (it may be
+    /// an earlier sample's), and the status line about the sample's re-run.
+    rerun: bool,
+    rerun_asked: bool,
+    running: Option<Running>,
+    rerun_line: String,
     texts: [String; 3],
     shown: VecDeque<Lx4Shown>,
     poisoned: bool,
@@ -148,6 +183,10 @@ impl Lx4Module {
             view: None,
             echo_frame: None,
             queued: [false; ENDPOINTS.len()],
+            rerun: false,
+            rerun_asked: false,
+            running: None,
+            rerun_line: String::new(),
             texts: Default::default(),
             shown: VecDeque::new(),
             poisoned: false,
@@ -157,9 +196,14 @@ impl Lx4Module {
         Ok(module)
     }
 
-    pub fn reset(&mut self, edit: usize, sample: u64) -> Result<(), String> {
+    /// Starts sample `sample` of edit `edit`; `rerun` when the sample times the re-run. A re-run still running for an
+    /// earlier sample goes on; `ready` waits for it.
+    pub fn reset(&mut self, edit: usize, sample: u64, rerun: bool) -> Result<(), String> {
         self.echo_frame = None;
         self.queued = [false; ENDPOINTS.len()];
+        self.rerun = rerun;
+        self.rerun_asked = false;
+        self.rerun_line = if rerun { "rerun: waiting for the last input".to_owned() } else { String::new() };
         self.view = None;
         self.editor.reset(&self.loaded, edit, sample)?;
         match StaleView::open(sha256(self.editor.text.as_bytes())) {
@@ -188,7 +232,45 @@ impl Lx4Module {
     }
 
     pub fn text(&self, which: u32) -> Option<&str> {
+        if which == LX4_TEXT_BUFFER {
+            return Some(&self.editor.text);
+        }
         self.texts.get(which as usize).map(String::as_str)
+    }
+
+    /// The shell's report that the re-run it was asked for has ended: `frame` the first confirmed frame that drew the
+    /// run's publication and `digest` the run's source digest, or `frame` 0 and `reason` when the run was refused or
+    /// never started. A published run of the asked buffer queues `rerun` for its sample, even when a later Reset has
+    /// started another sample since. Errors when no re-run is running.
+    pub fn rerun_ended(&mut self, frame: u64, digest: Option<[u8; 32]>, reason: &str) -> Result<(), String> {
+        let Some(run) = self.running.take() else {
+            return Err("no re-run is running".to_owned());
+        };
+        let line = match digest {
+            Some(digest) if frame != 0 && digest == run.digest => {
+                let mut buffer_sha256 = [0u8; 64];
+                buffer_sha256.copy_from_slice(hex(&run.digest).as_bytes());
+                self.shown.push_back(Lx4Shown {
+                    sample: run.sample,
+                    frame_id: frame,
+                    endpoint: RERUN as u32,
+                    reserved: 0,
+                    buffer_sha256,
+                });
+                format!("rerun: shown in frame {frame}")
+            }
+            Some(digest) if frame != 0 => format!(
+                "rerun: REFUSED: the run's text {} is not the buffer {}",
+                &hex(&digest)[..12],
+                &hex(&run.digest)[..12]
+            ),
+            _ if reason.is_empty() => "rerun: REFUSED".to_owned(),
+            _ => format!("rerun: REFUSED: {reason}"),
+        };
+        if self.editor.sample.as_ref().is_some_and(|s| s.id == run.sample) {
+            self.rerun_line = line;
+        }
+        Ok(())
     }
 
     pub fn next_shown(&mut self) -> Option<Lx4Shown> {
@@ -234,6 +316,16 @@ impl Lx4Module {
             let stage = answer.stage;
             self.answers.by_stage[stage] = Some(answer);
         }
+        let complete = self.editor.sample.as_ref().is_some_and(|s| s.complete());
+        let mut rerun = 0;
+        if complete && self.rerun && !self.rerun_asked {
+            // The host runs one view job at a time, so this run supersedes a run an earlier sample left running.
+            self.rerun_asked = true;
+            let sample = self.editor.sample.as_ref().map_or(0, |s| s.id);
+            self.running = Some(Running { sample, digest: sha256(self.editor.text.as_bytes()) });
+            self.rerun_line = "rerun: running the reference view".to_owned();
+            rerun = 1;
+        }
         // The status also counts the inputs and shows a failure, which change no revision.
         let status = self.status();
         if status != self.texts[LX4_TEXT_STATUS as usize] {
@@ -241,13 +333,13 @@ impl Lx4Module {
             changed |= 1 << LX4_TEXT_STATUS;
         }
         let baseline = self.editor.sample.as_ref().is_some_and(|s| s.failure.is_none() && s.received == 0);
-        if baseline && self.view.is_some() {
+        if baseline && self.view.is_some() && self.running.is_none() {
             self.push(READY, frame);
         }
-        if self.editor.sample.as_ref().is_some_and(|s| s.complete()) {
+        if complete {
             self.queue(frame);
         }
-        Lx4Update { changed, shown: self.shown.len() as u32 }
+        Lx4Update { changed, shown: self.shown.len() as u32, rerun, reserved: 0 }
     }
 
     /// Queues the endpoints the frame shows for the complete sample's final buffer, each once.
@@ -332,6 +424,9 @@ impl Lx4Module {
         if w00 {
             let answer = self.answers.by_stage[DEPENDENTS].as_ref();
             let _ = writeln!(out, "{}", answer.map_or(pending[DEPENDENTS], |a| a.text.as_str()));
+        }
+        if !self.rerun_line.is_empty() {
+            let _ = writeln!(out, "{}", self.rerun_line);
         }
         out
     }
@@ -425,15 +520,17 @@ pub unsafe extern "C" fn lx4_destroy(handle: *mut Lx4Module) {
     }
 }
 
-/// `Magic600.LX4.Reset`: starts sample `sample` of edit `edit` from the edit's baseline.
+/// `Magic600.LX4.Reset`: starts sample `sample` of the edit whose index is `edit` without [`LX4_RESET_RERUN`], from
+/// the edit's baseline; with the flag, the sample times the re-run.
 ///
 /// # Safety
 ///
 /// As [`with_module`].
 #[no_mangle]
 pub unsafe extern "C" fn lx4_reset(handle: *mut Lx4Module, edit: u32, sample: u64) -> i32 {
+    let rerun = edit & LX4_RESET_RERUN != 0;
     // SAFETY: the contract.
-    unsafe { with_module(handle, |m| state(m.reset(edit as usize, sample))) }
+    unsafe { with_module(handle, |m| state(m.reset((edit & !LX4_RESET_RERUN) as usize, sample, rerun))) }
 }
 
 /// `Magic600.LX4.Select`: the selection `[start, end)` in UTF-8 bytes of the buffer.
@@ -508,6 +605,42 @@ pub unsafe extern "C" fn lx4_update(handle: *mut Lx4Module, frame_id: u64, out: 
     }
 }
 
+/// The end of the re-run [`Lx4Update::rerun`] asked for; see [`Lx4Module::rerun_ended`]. A published run passes the
+/// first confirmed frame that drew its publication as `frame_id` and its 32-byte source digest; a refused run, or one
+/// the shell could not start, passes `frame_id` 0, a null `digest` and `reason_len` bytes of UTF-8 `reason`. Answers
+/// [`LX4_E_STATE`] when no re-run is running.
+///
+/// # Safety
+///
+/// As [`with_module`]; `digest` is null or points to 32 readable bytes; `reason` is null with `reason_len` 0 or
+/// points to `reason_len` readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn lx4_rerun_ended(
+    handle: *mut Lx4Module,
+    frame_id: u64,
+    digest: *const u8,
+    reason: *const u8,
+    reason_len: usize,
+) -> i32 {
+    if reason.is_null() && reason_len != 0 {
+        return LX4_E_INVALID_ARGUMENT;
+    }
+    let digest = (!digest.is_null()).then(|| {
+        let mut out = [0u8; 32];
+        // SAFETY: the contract.
+        unsafe { ptr::copy_nonoverlapping(digest, out.as_mut_ptr(), out.len()) };
+        out
+    });
+    let reason = if reason.is_null() {
+        String::new()
+    } else {
+        // SAFETY: the contract.
+        String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(reason, reason_len) }).into_owned()
+    };
+    // SAFETY: the contract.
+    unsafe { with_module(handle, |m| state(m.rerun_ended(frame_id, digest, &reason))) }
+}
+
 /// Copies `text` and a NUL into `buffer`; `*out_size` is the bytes needed, NUL included.
 ///
 /// # Safety
@@ -527,7 +660,8 @@ unsafe fn copy_text(text: &str, buffer: *mut u8, capacity: u32, out_size: *mut u
     Ok(())
 }
 
-/// One of the three texts ([`LX4_TEXT_ECHO`], [`LX4_TEXT_STATUS`], [`LX4_TEXT_COMPLETION`]) as NUL-terminated UTF-8.
+/// One of the three texts ([`LX4_TEXT_ECHO`], [`LX4_TEXT_STATUS`], [`LX4_TEXT_COMPLETION`]) or the buffer
+/// ([`LX4_TEXT_BUFFER`]) as NUL-terminated UTF-8.
 /// `*out_size` is the bytes needed, NUL included; a null or short buffer answers [`LX4_E_INVALID_ARGUMENT`] with the
 /// size set.
 ///
