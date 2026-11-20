@@ -391,6 +391,8 @@ enum Kind {
     ReadClock,
     /// `rng_init`'s path segments after the run's stream path (DET.61; LP2 draft).
     RngInit(Vec<String>),
+    /// `text_decode_hex`'s bytes, which the code holds (DET.62; LP2 draft).
+    TextDecodeHex(Arc<[u8]>),
     /// A child scope (DET.60; LP2 draft): its caps in [`meter::Dim::ALL`]'s order, then its body's and its stop
     /// branch's code units, each with the enclosing frame's slots it borrows.
     Child {
@@ -937,6 +939,7 @@ impl Compiler {
             Expr::RandomDraw => Kind::RandomDraw,
             Expr::ReadClock => Kind::ReadClock,
             Expr::RngInit { path } => Kind::RngInit(path.clone()),
+            Expr::TextDecodeHex { bytes } => Kind::TextDecodeHex(bytes.as_slice().into()),
         };
         self.loaded.nodes[id].kind = kind;
         Ok(())
@@ -1444,6 +1447,7 @@ impl<'a> Machine<'a> {
             Kind::Accounting(a) => self.accounting(n, *a)?,
             Kind::RandomDraw => self.draw(n)?,
             Kind::RngInit(segments) => self.rng_init(n, segments)?,
+            Kind::TextDecodeHex(data) => self.decode(n, data)?,
             Kind::Child { caps, body, body_captures, .. } => self.child(n, *caps, *body, body_captures)?,
             _ => {
                 self.tasks.push(Task::Apply(n));
@@ -1985,18 +1989,25 @@ impl<'a> Machine<'a> {
             return Err(self.fail(Some(n), "text_decode", code::IR_REJECTED));
         };
         let data = Arc::clone(data);
-        let reserved = (data.len() as u128).saturating_mul(4);
-        let kernel = self.tariffs.decode_per_byte.saturating_mul(data.len() as u128);
-        self.charge(Some(n), "text_decode", kernel, reserved, 0)?;
-        let Ok(text) = std::str::from_utf8(&data) else {
-            return Err(self.fail(Some(n), "text_decode", meter::code::TEXT_SCALAR_INVALID));
-        };
-        self.settle(reserved, Value::text(text));
+        self.decode(n, &data)?;
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);
         }
         self.values.push(result);
+        Ok(())
+    }
+
+    /// The decoding's one row, shared by `text_decode` of an operand and `text_decode_hex` of bytes the code holds,
+    /// which takes no row, slot or owner of its own (DET.57): the decoded text is pushed with its owner.
+    fn decode(&mut self, n: NodeId, data: &[u8]) -> Result<(), Stop> {
+        let reserved = (data.len() as u128).saturating_mul(4);
+        let kernel = self.tariffs.decode_per_byte.saturating_mul(data.len() as u128);
+        self.charge(Some(n), "text_decode", kernel, reserved, 0)?;
+        let Ok(text) = std::str::from_utf8(data) else {
+            return Err(self.fail(Some(n), "text_decode", meter::code::TEXT_SCALAR_INVALID));
+        };
+        self.settle(reserved, Value::text(text));
         Ok(())
     }
 

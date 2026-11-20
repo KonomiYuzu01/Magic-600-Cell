@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 93] = [
+const BUILTINS: [&str; 94] = [
     "if",
     "display_if",
     "exact_add",
@@ -41,9 +41,10 @@ const BUILTINS: [&str; 93] = [
     "tag",
     "colour",
     "target",
-    // Captured bytes and their decoding (LP2 drafts; DET.62).
+    // Captured bytes and their decoding, and the decoding of bytes the code holds (LP2 drafts; DET.62).
     "bytes",
     "text_decode",
+    "text_decode_hex",
     // A compressed word streamed in semantic chunks, and its literal digest (LP2 drafts; DET.63).
     "word_stream",
     "stream_digest",
@@ -937,6 +938,7 @@ impl Body<'_> {
             "colour" => Ir::Lit(Lit::Colour(self.text(op, &args[0])?)),
             "target" => Ir::Lit(Lit::Target(self.text(op, &args[0])?)),
             "bytes" => Ir::Lit(Lit::Bytes(self.hex(op, &args[0])?)),
+            "text_decode_hex" => Ir::TextDecodeHex { bytes: self.hex(op, &args[0])? },
             "read_snapshot" if args.len() == 2 => {
                 let (query, ty) = (self.text(op, &args[0])?, self.ty(&type_args[0])?);
                 let arg = self.at(path, 0, |b, p| b.expr(&args[1], p))?;
@@ -1289,7 +1291,7 @@ mod tests {
                 "write_workspace" => format!("{op}<Nat>(\"r\", 1)"),
                 "file_write" => format!("{op}(\"p\", 1)"),
                 "tag" | "colour" | "target" => format!("{op}(\"x\")"),
-                "bytes" => format!("{op}(\"00\")"),
+                "bytes" | "text_decode_hex" => format!("{op}(\"00\")"),
                 "rng_init" => format!("{op}(\"root\", \"0\")"),
                 "if" | "display_if" => format!("{op}(true, 1, 2)"),
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),

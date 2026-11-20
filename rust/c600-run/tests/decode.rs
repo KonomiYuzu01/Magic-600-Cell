@@ -142,6 +142,42 @@ fn a_child_decoding_error_stops_the_child_alone() {
     assert_eq!(r.summary.live_after_cleanup, 0);
 }
 
+/// `text_decode_hex` decodes bytes the code holds (LP2 draft; DET.57): they are part of the operation, so its one row
+/// is all it charges, with no literal row and no slot for an operand, and it is priced and refused as `text_decode` is.
+/// In a child its body's rows are its call, whose frame has no slot, and its decoding: the two rows of the child in
+/// `child-decode-error-releases-reservation`, whose stop leaves nothing live in the parent.
+#[test]
+fn bytes_the_code_holds_decode_in_one_row() {
+    let per_byte = Tariffs::TEST.decode_per_byte;
+    let loaded = build(
+        "export fn held() -> Text effects [] {\n    return text_decode_hex(\"f0908080\");\n}\n\n\
+         export fn bad() -> Text effects [] {\n    return text_decode_hex(\"eda080\");\n}\n\n\
+         export fn c() -> Text effects [budget] {\n    \
+         return child(record { steps = 20, kernel_cost = 20, memory = 20, output = 0 }, \
+         fn() -> Text { return text_decode_hex(\"ff\"); }, fn() -> Text { return \"none\"; });\n}\n",
+    );
+    let r = run(&loaded, "held");
+    decoded(&r, "\u{10000}");
+    assert_eq!(rows(&r.summary, "text_decode"), [(1, 4 * per_byte, 16, 12)]);
+    assert!(rows(&r.summary, "value").is_empty(), "no literal row");
+    assert_eq!(loaded.frame_size(loaded.function("m", "held").expect("held")), 16, "no slot");
+    let r = run(&loaded, "bad");
+    assert_eq!((r.summary.outcome, r.summary.code), (Outcome::Error, Some(meter::code::TEXT_SCALAR_INVALID)));
+    assert_eq!(rows(&r.summary, "text_decode"), [(1, 3 * per_byte, 12, 0)]);
+    assert_eq!(r.summary.live_after_cleanup, 0);
+    let r = run(&loaded, "c");
+    decoded(&r, "none");
+    let [child] = r.summary.children.as_slice() else { panic!("one child: {:?}", r.summary.children) };
+    assert_eq!((child.outcome, child.code), (Outcome::Error, Some(meter::code::TEXT_SCALAR_INVALID)));
+    assert_eq!((child.used.steps, child.used.kernel_cost, child.used.memory), (2, per_byte, 16 + 4));
+    assert_eq!((child.returned_memory, child.live_after_return), (0, 0));
+    for odd in ["0", "zz"] {
+        let source =
+            format!("{HEADER}export fn b() -> Text effects [] {{\n    return text_decode_hex(\"{odd}\");\n}}\n");
+        assert!(lower(&[parse(source.as_bytes())]).is_err(), "{odd}");
+    }
+}
+
 /// Bytes have an exact equality but no canonical form, so no output, goal or evidence holds them, and no key order,
 /// so no set element or map key does; `text_decode` takes bytes only, and a `bytes` literal is hex digit pairs.
 #[test]

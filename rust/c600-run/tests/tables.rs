@@ -91,6 +91,7 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::FileWrite { path: _, value: _ } => ("file_write", Kind::FileWrite, &["value"]),
         Expr::RandomDraw => ("random_draw", Kind::Draw, &[]),
         Expr::RngInit { path: _ } => ("rng_init", Kind::Draw, &[]),
+        Expr::TextDecodeHex { bytes: _ } => ("text_decode_hex", Kind::Pure, &[]),
         Expr::ReadClock => ("read_clock", Kind::ClockRead, &[]),
         Expr::Child { caps: _, result: _, body: _, status: _, otherwise: _ } => {
             ("child", Kind::Pure, &["body", "otherwise"])

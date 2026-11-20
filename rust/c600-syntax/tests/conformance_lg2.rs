@@ -155,6 +155,8 @@ fn family(e: &Ir) -> &'static str {
         Ir::PublishView { .. } | Ir::WriteWorkspace { .. } => "view or workspace",
         Ir::FileRead { .. } | Ir::FileWrite { .. } | Ir::RandomDraw | Ir::ReadClock => "granted input or output",
         Ir::RngInit { .. } => "granted input or output",
+        // Bytes the code holds, decoded into text (DET.62, DET.65; LP2 draft).
+        Ir::TextDecodeHex { .. } => "decoding",
         Ir::Propose { .. } | Ir::ReadReceipt { .. } => "preview",
         Ir::UseExact { .. } | Ir::Accounting(_) => "exact sink or accounting",
     }

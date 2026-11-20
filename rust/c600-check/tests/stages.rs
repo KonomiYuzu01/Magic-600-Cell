@@ -240,6 +240,8 @@ fn a_stage_body_is_binary32_with_static_bounds_and_no_recursion() {
     assert_eq!(in_x(let_("f", fn_ref("main"), zero())), vec![violation("main", "0.0")]);
     let list = let_("l", c600_ir::build::list(f32(), vec![zero()]), zero());
     assert_eq!(in_x(list), vec![violation("main", "0.0")]);
+    // A decoding of bytes the code holds allocates a text (LP2 draft).
+    assert_eq!(in_x(let_("t", text_decode_hex(b"x"), zero())), vec![violation("main", "0.0")]);
     // A display branch types both branches alike.
     let mixed = display_if(approx_less(var("x"), zero()), zero(), approx_less(var("x"), zero()));
     assert_eq!(in_x(mixed), vec![at(TYPE_MISMATCH, "main", "0.2")]);

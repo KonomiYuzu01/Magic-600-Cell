@@ -11,7 +11,7 @@ const HEADER: &str = "edition \"6cs-draft-1\";\nmodule tool requires [];\n\n";
 fn the_reserved_name_lists_are_whole_and_distinct() {
     let (keywords, builtins) = (keywords(), builtins());
     assert_eq!(keywords.len(), 10);
-    assert_eq!(builtins.len(), 93);
+    assert_eq!(builtins.len(), 94);
     for name in ["fn", "let", "return", "match"] {
         assert!(keywords.contains(&name), "{name}");
     }
