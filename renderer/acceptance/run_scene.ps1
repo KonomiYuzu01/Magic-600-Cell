@@ -1,6 +1,7 @@
 # C9 acceptance copy of work/experiments/renderer-l2/run_scene.ps1 (see PROVENANCE.md). One invocation makes one
 # cold run, or one untimed geometry or lattice check, of W3 or one W-J fixture (S4, I_a, I_b) on the S-A2 host
-# (Godot 4.7.2 .NET, net8.0) with the product core renderer/core (ABI 3). -DryRun validates every input and prints
+# (Godot 4.7.2 .NET, net8.0) with the product core renderer/core (ABI 5; a build from prepare_host.py --route surface
+# runs route B, C9 U4). -DryRun validates every input and prints
 # the planned commands; it starts no Godot, PresentMon, logman, file guard or D3D12 device and creates nothing.
 param(
     [Parameter(Mandatory=$true)][ValidateSet('w3','S4','I_a','I_b')][string]$Scene,
@@ -53,6 +54,10 @@ $buildDirectory = (Resolve-Path -LiteralPath $Build).Path
 $launchPath = Join-Path $buildDirectory 'launch.json'
 $launch = Get-Content -LiteralPath $launchPath -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($launch.format -ne 'magic600-l2-launch-v1' -or $launch.candidate -ne 'sa2') { throw 'launch.json is not an S-A2 level 2 launch file.' }
+# C9 U4: the build's route. A build from before U4 has none and is a texture build; the build check verifies it.
+$buildIdentity = Get-Content -LiteralPath (Join-Path $buildDirectory 'c9-build-identity.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$route = if ($null -eq $buildIdentity.PSObject.Properties['route']) { 'texture' } else { $buildIdentity.route }
+if ($route -isnot [string] -or @('texture','surface') -cnotcontains $route) { throw 'c9-build-identity.json names an unknown route.' }
 foreach ($key in 'executable','dll','working_directory','arguments','run_arguments','validation_arguments','separator','environment','validation_environment') {
     if ($null -eq $launch.PSObject.Properties[$key]) { throw "launch.json lacks $key." }
 }
@@ -225,6 +230,7 @@ $arguments = @($launch.arguments)
 foreach ($argument in $launch.run_arguments) { $arguments += $argument.Replace('{out}', $directory) }
 $arguments += @($launch.separator)
 $arguments += @('--l2-mode',$Mode,'--l2-out',$directory,'--l2-run-id',$runId,'--l2-dll',$launch.dll,'--l2-scene',$appScene)
+if ($route -eq 'surface') { $arguments += @('--sa2-route','surface') }
 if ($wj) { $arguments += @('--l2-menu',$Scene,'--l2-data',$dataDirectory) }
 # The untimed checks run outside any trace; a 1 s trace keeps the W-J load's preserved readback small.
 if ($Mode -eq 'run') { $arguments += @('--l2-trace-ms',"$TraceMs",'--l2-preroll-ms',"$PrerollMs") } else { $arguments += @('--l2-trace-ms','1000') }
@@ -248,6 +254,7 @@ if ($DryRun) {
     Write-Host 'dry run: no process was started and no file or directory was created'
     Write-Host "  scene: $sceneText; mode: $Mode; run ID: $runId"
     Write-Host "  build: $buildDirectory"
+    Write-Host "  route: $(if ($route -eq 'surface') { 'surface (route B: the core presents on its own swap chain, which the finalizer measures)' } else { 'texture' })"
     if ($wj) { Write-Host "  W-J data: $dataDirectory" }
     Write-Host "  run directory (created at the run): $directory"
     Write-Host "  administrator: $(if ($administrator) { 'yes' } else { 'no' })$(if ($captureMode) { ' (a run needs yes)' } else { ' (not needed)' })"

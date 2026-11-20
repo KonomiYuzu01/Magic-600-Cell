@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace Magic600.Shell;
@@ -19,7 +20,17 @@ namespace Magic600.Shell;
 /// M600_SESSION_DIR (a new folder) and M600_TWIST_MENU (the twist menu's record file) are set as well, the host opens
 /// a session there, every key with a W3C code goes through its input router (<see cref="KeyChord"/>), a committed
 /// twist is adopted and shown, <see cref="EventLog"/> writes a key row per measured press, and the close runs the
-/// session's correctness control.
+/// session's correctness control. C9 U3 (a draft): with the event log, the run row names the core's swap chain, and
+/// every Godot frame that follows a submitted 3D frame gets a ui_frame row (<see cref="EventLog"/> says when its times
+/// are read). C9 U8 (a draft): the run row names the window and the puzzle (M600_PUZZLE; Jumble on runs only with a
+/// session, which the host opens in the jumbled puzzle), and when M600_LX4 is 1 the shell creates LX-4's module
+/// (<see cref="IShellModule"/>), which receives
+/// the window's messages through <see cref="WindowHook"/> before Godot does, and every submitted and presented frame.
+/// Charter E3 (C9 U6, a draft): when M600_SESSION_FIXTURE names a session fixture's record, M600_SESSION_DIR is a
+/// fresh copy of its session, which the host reopens at the revision that counts the fixture's presses; when
+/// M600_RUNTIME names the c600-runtime binary, the host starts the language runtime's process; with the event log,
+/// <see cref="StartupLog"/> records both and the first correct frame, and when M600_EXIT_AT_FIRST_FRAME is 1 the shell
+/// quits once that frame is shown.
 /// </remarks>
 public partial class Shell : Control
 {
@@ -40,6 +51,19 @@ public partial class Shell : Control
     /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
     private ulong _shownRevision;
     private Vector2I _size;
+    /// <summary>The 3D frame submitted in this process frame, for the next ui_frame row.</summary>
+    private ulong? _submittedThisFrame;
+    private long _preDrawQpc;
+    private bool _uiFrames;
+    private readonly List<IShellModule> _modules = new();
+    private StartupLog? _startup;
+    /// <summary>The engine revision the session opened at (charter E3's R0).</summary>
+    private ulong _openRevision;
+    /// <summary>The first submitted frame that draws R0 over a publication of R0 or later.</summary>
+    private ulong? _firstSubmitted;
+    /// <summary>The first confirmed presentation of that frame or a later one: its sequence and display time.</summary>
+    private (ulong FrameId, ulong DisplayQpc)? _firstShown;
+    private bool _exitAtFirstFrame;
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
 
     public override void _Ready()
@@ -79,9 +103,24 @@ public partial class Shell : Control
     {
         var coreLibrary = _core = CoreLibrary.Load(core);
         var hostLibrary = _hostLibrary = HostLibrary.Load(host);
+        var puzzle = EventLog.PuzzleFromEnvironment();
+        var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
+        var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
+        var withSession = !string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu);
+        if (puzzle != EventLog.Puzzles[0] && !withSession)
+        {
+            // The jumbled puzzle exists only in a session: the host enters it with jumble.on at the session's start.
+            throw new NotSupportedException(
+                $"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");
+        }
         var hwnd = DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
+        var window = (IntPtr)hwnd;
         _size = DisplayServer.WindowGetSize();
-        var surface = _surface = CoreSurface.Open(coreLibrary, (ulong)hwnd, 0, 0, (uint)_size.X, (uint)_size.Y);
+        // The core opens Godot's own adapter, not DXGI's first hardware adapter (C9 U4).
+        var device = RenderingServer.GetRenderingDevice()
+            ?? throw new InvalidOperationException("the shell needs Godot's rendering device");
+        var adapter = CoreSurface.AdapterLuid(device.GetDriverResource(RenderingDevice.DriverResource.PhysicalDevice, default, 0));
+        var surface = _surface = CoreSurface.Open(coreLibrary, adapter, (ulong)hwnd, 0, 0, (uint)_size.X, (uint)_size.Y);
         var code = hostLibrary.Create(coreLibrary, surface.Context, assets, out _host);
         if (code != HostLibrary.Ok)
         {
@@ -89,12 +128,59 @@ public partial class Shell : Control
         }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         _log = EventLog.FromEnvironment();
-        var session = System.Environment.GetEnvironmentVariable("M600_SESSION_DIR");
-        var menu = System.Environment.GetEnvironmentVariable("M600_TWIST_MENU");
-        if (!string.IsNullOrEmpty(session) && !string.IsNullOrEmpty(menu))
+        if (_log is { } log)
         {
-            Require(hostLibrary, "m6h_open_session", hostLibrary.OpenSession(_host, session, menu));
+            log.Describe(window, puzzle);
+            log.SwapChain(surface.SwapChain());
+            RenderingServer.FramePreDraw += OnFramePreDraw;
+            RenderingServer.FramePostDraw += OnFramePostDraw;
+            _uiFrames = true;
+            _startup = StartupLog.FromEnvironment();
+        }
+        if (withSession)
+        {
+            var fixture = System.Environment.GetEnvironmentVariable("M600_SESSION_FIXTURE");
+            var code = (uint)Array.IndexOf(EventLog.Puzzles, puzzle);
+            var opened = hostLibrary.OpenSession(_host, code, session!, menu!,
+                string.IsNullOrEmpty(fixture) ? null : fixture, out _openRevision);
+            Require(hostLibrary, "m6h_open_session", opened);
+            _startup?.SessionOpened(EventLog.Now());
             _session = true;
+        }
+        var runtime = System.Environment.GetEnvironmentVariable("M600_RUNTIME");
+        if (!string.IsNullOrEmpty(runtime))
+        {
+            Require(hostLibrary, "m6h_load_runtime", hostLibrary.LoadRuntime(_host, runtime));
+            _startup?.RuntimeLoaded(EventLog.Now());
+        }
+        _exitAtFirstFrame = System.Environment.GetEnvironmentVariable("M600_EXIT_AT_FIRST_FRAME") == "1";
+        if (System.Environment.GetEnvironmentVariable("M600_LX4") == "1")
+        {
+            _modules.Add(new Lx4.Lx4Module(new ShellContext(window, this, _log, hostLibrary, _host)));
+        }
+        if (System.Environment.GetEnvironmentVariable("M600_LX2") == "1")
+        {
+            _modules.Add(new Lx2.Lx2Module(new ShellContext(window, this, _log, hostLibrary, _host)));
+        }
+        if (_modules.Count > 0)
+        {
+            WindowHook.Install(window, _modules);
+        }
+    }
+
+    /// <summary>Calls every module; a module's exception is reported and never stops the shell's own work.</summary>
+    private void EachModule(Action<IShellModule> call)
+    {
+        foreach (var module in _modules)
+        {
+            try
+            {
+                call(module);
+            }
+            catch (Exception error)
+            {
+                GD.PushError($"a shell module failed: {error.Message}");
+            }
         }
     }
 
@@ -221,18 +307,34 @@ public partial class Shell : Control
         if (size != _size && size.X > 0 && size.Y > 0)
         {
             surface.Resize((uint)size.X, (uint)size.Y);
+            _log?.SwapChain(surface.SwapChain());
             Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
             _size = size;
         }
+        _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);
         if (code == HostLibrary.Ok)
         {
             _log?.Frame(frame, submitted);
+            _submittedThisFrame = frame.Sequence;
+            if (_session && _firstSubmitted is null && frame.EngineRevision >= _openRevision
+                && frame.PublicationRevision >= _openRevision)
+            {
+                _firstSubmitted = frame.Sequence;
+            }
+            if (_modules.Count > 0)
+            {
+                EachModule(module => module.OnFrame(frame, submitted));
+            }
         }
         else if (code == HostLibrary.Unavailable)
         {
             code = library.Recover(_host);
+            if (code == HostLibrary.Ok)
+            {
+                _log?.SwapChain(surface.SwapChain());
+            }
         }
         if (code != HostLibrary.Ok)
         {
@@ -248,9 +350,40 @@ public partial class Shell : Control
             for (var i = 0; i < count; i++)
             {
                 _log?.Presented(_presented[i]);
+                if (_modules.Count > 0)
+                {
+                    var row = _presented[i];
+                    EachModule(module => module.OnPresented(row));
+                }
                 _shownRevision = Math.Max(_shownRevision, _presented[i].EngineRevision);
+                if (_firstShown is null && _firstSubmitted is { } first && _presented[i].Sequence >= first)
+                {
+                    _firstShown = (_presented[i].Sequence, _presented[i].DisplayQpc);
+                    if (_exitAtFirstFrame)
+                    {
+                        GetTree().Quit();
+                    }
+                }
             }
         } while (count == _presented.Length);
+    }
+
+    /// <summary>Before Godot draws and presents its frame (RenderingServer's frame_pre_draw).</summary>
+    private void OnFramePreDraw() => _preDrawQpc = EventLog.Now();
+
+    /// <summary>
+    /// After Godot drew its frame (frame_post_draw): one ui_frame row naming the 3D frame submitted in the same process
+    /// frame. A Godot frame without one gets no row.
+    /// </summary>
+    private void OnFramePostDraw()
+    {
+        var drawn = EventLog.Now();
+        if (_submittedThisFrame is { } frameId && _preDrawQpc != 0)
+        {
+            _log?.UiFrame(_preDrawQpc, frameId, drawn);
+        }
+        _submittedThisFrame = null;
+        _preDrawQpc = 0;
     }
 
     public override void _ExitTree()
@@ -271,7 +404,10 @@ public partial class Shell : Control
         CloseCore();
     }
 
-    /// <summary>Closes the session: its correctness control runs once, and the run row carries its outcome.</summary>
+    /// <summary>
+    /// Closes the session: its correctness control runs once, and the run row carries its outcome; the startup log's
+    /// first correct frame carries it too (a control that did not run counts as a failure).
+    /// </summary>
     private void CloseSession()
     {
         if (!_session || _hostLibrary is not { } library)
@@ -283,14 +419,33 @@ public partial class Shell : Control
         if (code != HostLibrary.Ok)
         {
             GD.PushError($"m6h_close_session: {code}: {library.LastError(_host)}");
-            return;
+            pass = false;
         }
-        _log?.Correctness(pass, HostLibrary.CorrectnessControl, library.Check(_host));
+        else
+        {
+            _log?.Correctness(pass, HostLibrary.CorrectnessControl, library.Check(_host));
+        }
+        if (_firstShown is { } shown)
+        {
+            _startup?.FirstCorrectFrame(shown.FrameId, shown.DisplayQpc, pass);
+        }
     }
 
     /// <summary>Closes the event log, the host, the surface and the libraries; the input echo stays.</summary>
     private void CloseCore()
     {
+        if (_uiFrames)
+        {
+            RenderingServer.FramePreDraw -= OnFramePreDraw;
+            RenderingServer.FramePostDraw -= OnFramePostDraw;
+            _uiFrames = false;
+        }
+        // The modules go before the log closes, so that their last rows reach it.
+        WindowHook.Remove();
+        EachModule(module => module.Dispose());
+        _modules.Clear();
+        _startup?.Dispose();
+        _startup = null;
         _log?.Dispose();
         _log = null;
         if (_host != IntPtr.Zero && _hostLibrary is { } library)

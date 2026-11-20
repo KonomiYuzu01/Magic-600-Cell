@@ -12,6 +12,7 @@ The host is S-A2 as tested: the official Godot 4.7.2 .NET editor binary running 
 | `run_scene.ps1` | one cold run, or one geometry or lattice check, per invocation; `-DryRun` validates and prints the planned commands |
 | `file_guard.py` | holds every loaded build file from before the launch until the finalizer has accepted the run |
 | `finalize_run.py` | checks the app's, the DLL's and PresentMon's outputs and writes `run.json`, `fault-run.json` for an injected run, a check record or `refusal.json` |
+| `route-b/override.cfg` | route B's window settings (the product shell's), copied into a `--route surface` build |
 
 ## What a run needs
 
@@ -32,6 +33,18 @@ python -B renderer/acceptance/prepare_data.py      # W-J exports in work/loop-me
 $build = 'work/build/c9-acceptance/<UTC>'          # the directory prepare_host.py printed
 $runner = 'renderer/acceptance/run_scene.ps1'
 ```
+
+## Route B (C9 U4)
+
+The same scenes and bars on route B, the product's presentation. `prepare_host.py --route surface` builds a host whose Godot window is transparent with vsync on (`route-b/override.cfg`, the product shell's settings). Its harness creates the core's own device on Godot's adapter (`sa2_create`), attaches the core's surface beneath the window (`sa2_surface_attach`), and draws and presents each frame on that surface (`sa2_scene_produce` with `SA2_TARGET_SURFACE`, sync interval 1). `run_scene.ps1` reads the route from the build and passes `--sa2-route surface`. The finalizer measures the core's swap chain, which the harness names in `harness.json`, and lists Godot's own chain as ignored.
+
+```powershell
+python -B renderer/acceptance/prepare_host.py --route surface   # prints work/build/c9-acceptance/<UTC>
+$surface = 'work/build/c9-acceptance/<UTC>'
+& $runner -DryRun -Scene w3 -Build $surface -Overlays 'none running' -Declare @('frame_generation=false','upscaling=false') -Unattended
+```
+
+The other commands below take `-Build $surface` unchanged. The app exits with `surface-transparency` when Godot does not give a transparent window. Whether the core's layer is what the screen shows in exclusive fullscreen is for the owner to see in the first route-B run.
 
 ## Dry run (no Godot, PresentMon or GPU device; creates nothing)
 

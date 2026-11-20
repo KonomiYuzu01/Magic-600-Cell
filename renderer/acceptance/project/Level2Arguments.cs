@@ -74,7 +74,7 @@ public sealed class Level2Arguments
                     break;
                 case "--l2-gpu-validation": a.gpu_validation = Choice(value, "0", "1") == "1"; break;
                 case "--l2-conditions": a.conditions = Choice(value, "enforce", "record"); break;
-                case "--sa2-route": a.route = Choice(value, "export", "import-copy", "import-texture2drd"); break;
+                case "--sa2-route": a.route = Choice(value, "export", "import-copy", "import-texture2drd", "surface"); break;
                 case "--sa2-queue": a.queue = Choice(value, "same", "own"); break;
                 case "--sa2-handover": a.handover = Choice(value, "tracked", "render-target"); break;
                 case "--sa2-barriers": a.barriers = Choice(value, "match", "legacy", "enhanced"); break;
@@ -114,10 +114,13 @@ public sealed class Level2Arguments
             int index = Array.IndexOf(values, "--sa2-gpu-validation");
             if ((values[index + 1] == "1") != a.gpu_validation) throw new ArgumentException("validation options disagree");
         }
-        bool noWarmup = a.handover == "render-target";
+        // Route B (C9 U4, --sa2-route surface) draws on the core's own surface and has no ring to warm up.
+        if (a.route == "surface" && (a.queue != "same" || a.handover != "tracked"))
+            throw new ArgumentException("surface runs take the default queue and handover; route B has neither");
+        bool noWarmup = a.handover == "render-target" || a.route == "surface";
         if (noWarmup && !seen.Contains("--sa2-warmup")) a.warmup = 0;
         if ((noWarmup && a.warmup != 0) || (!noWarmup && a.warmup < 3))
-            throw new ArgumentException("warmup must be zero for render-target and at least three for tracked routes");
+            throw new ArgumentException("warmup must be zero for render-target and surface and at least three for tracked routes");
         return a;
     }
 

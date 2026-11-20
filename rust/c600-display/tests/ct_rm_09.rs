@@ -151,7 +151,7 @@ fn ct_rm_09_row_5_a_near_plane_crossing_counts_the_whole_surface() {
 fn ct_rm_09_row_6_a_line_only_layout_is_never_zero() {
     let edge = raster::line([[0.0, 0.0], [16.0, 16.0]], 1.0).expect("a line of positive length and width");
     assert!(edge.iter().all(|t| raster::count(SURFACE, t) == 256), "{edge:?}");
-    let expanded: Vec<Triangle> = std::iter::repeat(edge).take(1000).flatten().collect();
+    let expanded: Vec<Triangle> = std::iter::repeat_n(edge, 1000).flatten().collect();
     let u = one_pass(&expanded);
     assert_eq!(u, 2000 * P);
 

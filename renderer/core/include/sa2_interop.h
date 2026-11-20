@@ -315,6 +315,15 @@ SA2_API int32_t sa2_scene_load(sa2_context* ctx, const sa2_scene_config* config)
  * Returns SA2_E_TIMEOUT, SA2_E_D3D12 / SA2_E_DEVICE_REMOVED on GPU failure.
  * A trace that needs more label copies than load reserved fails closed
  * (SA2_E_WRONG_STATE, the scene is poisoned): end the trace within trace_ms.
+ *
+ * C9 U4 (no ABI change): slot SA2_TARGET_SURFACE on a sa2_create context
+ * draws into the attached surface's current back buffer instead and presents
+ * it, as sa2_frame_submit does: it needs the surface at the scene's load-time
+ * size, waits up to wait_timeout_ms for that buffer's previous frame and for
+ * the frame-latency waitable (SA2_E_TIMEOUT), reads the record's QPC after
+ * those waits, and presents with SA2_SURFACE_SYNC_INTERVAL. On a sa2_attach
+ * context it answers SA2_E_WRONG_STATE. A core built before this extension
+ * answers SA2_E_INVALID_ARGUMENT.
  */
 SA2_API int32_t sa2_scene_produce(sa2_context* ctx, uint32_t slot, uint64_t frame);
 
@@ -810,8 +819,10 @@ SA2_API int32_t sa2_device_status(sa2_context* ctx, int32_t* out_removed_reason)
  * SA2_TARGET_SURFACE. The ring-slot calls (sa2_create_texture,
  * sa2_release_texture, sa2_register_slot, sa2_unregister_slot,
  * sa2_signal_godot_free, sa2_produce, sa2_godot_wait_ready, sa2_mark_shown,
- * sa2_verify_slot and sa2_scene_produce) answer SA2_E_WRONG_STATE after their
- * argument checks. sa2_scene_load and sa2_scene_load_wj need an attached
+ * sa2_verify_slot and sa2_scene_produce with a ring slot) answer
+ * SA2_E_WRONG_STATE after their argument checks; sa2_scene_produce with
+ * SA2_TARGET_SURFACE draws the scene on the surface (C9 U4, no ABI change).
+ * sa2_scene_load and sa2_scene_load_wj need an attached
  * surface instead of the three slots and use its size; the context keeps a
  * copy of the scene config for sa2_recover. The surface calls on a sa2_attach
  * context answer SA2_E_WRONG_STATE. Invalid arguments return
@@ -855,6 +866,17 @@ SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, i
  * during device loss. No surface: SA2_E_WRONG_STATE.
  */
 SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);
+
+/* Diagnostics for C9's measurements, no ABI change: writes the address of the
+ * surface's current swap chain (its IDXGISwapChain interface pointer) to *out,
+ * so that the shell can name the core's swap chain among the presents of a
+ * PresentMon capture (DRAFT: the owner-machine run confirms that PresentMon
+ * prints this address). A resize or a recovery makes a new swap chain with a
+ * new address. No GPU work; it works during device loss. A NULL out:
+ * SA2_E_INVALID_ARGUMENT; no surface: SA2_E_WRONG_STATE. A shell may treat the
+ * export as optional, since an ABI 5 core built before it lacks it.
+ */
+SA2_API int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out);
 
 /* Detaches the surface: clears the visual's content and the target's root,
  * commits, and releases the swap chain and the DirectComposition objects.

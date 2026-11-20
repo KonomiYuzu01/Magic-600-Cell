@@ -1,5 +1,5 @@
-//! LX-2's metered and forced-kill half for C9 (RTE.42; CT-RTE-10 and CT-LG4-09 in part): trials against a runtime
-//! child binary the caller names, so that the decisive runs use the product build's own `c600-runtime` unchanged.
+//! LX-2's fault trials for C9 (RTE.42; CT-RTE-10 and CT-LG4-09 in part): trials against a runtime child binary the
+//! caller names, so that the decisive runs use the product build's own `c600-runtime` unchanged.
 //!
 //! Each trial runs one job on [`c600_runtime::Runtime`]. Every job first proposes SCENARIO.json's runtime word, so
 //! the engine-owned pending preview exists before the fault; then:
@@ -13,13 +13,25 @@
 //!   because each `push` copies the list) cuts it off with `KN7:budget.memory`;
 //! - `forced_kill` has the caller kill the child's actual process (`Killer`, `Child::kill`) inside the proposal's
 //!   perform, the barrier; the parent must report a typed `Lost` fault;
-//! - `alloc_ceiling`, the one native trial ([`Trial::NATIVE`]), doubles a list with `concat` under a meter far above
-//!   the ceiling ([`CEILING_METER`]) on the injection device of option (a) (top integrator, 18 November 2026): the
-//!   bin `c600-lx2-child`, product source (`c600_runtime::child::main`) under a global allocator that refuses past
-//!   [`CEILING`] live heap bytes. The standard library reports the failed allocation and aborts the child; the parent
-//!   must report a typed `Lost` fault, and the child's standard error must show the allocation failure. The device is
-//!   never shipped: `tests/device.rs` checks that no other package depends on this one and that c600-runtime has no
-//!   global allocator.
+//! - the native trials ([`Trial::NATIVE`]) run on the injection device of option (a) (top integrator, 18 November
+//!   2026): the bin `c600-lx2-child`, product source (`c600_runtime::child::main`, or with this package's feature
+//!   `device` `c600_runtime::child::main_with`, LP3's fault hook) under a global allocator that refuses past
+//!   [`CEILING`] live heap bytes:
+//!   - `alloc_ceiling` doubles a list with `concat` under a meter far above the ceiling ([`CEILING_METER`]). The
+//!     standard library reports the failed allocation and aborts the child; the parent must report a typed `Lost`
+//!     fault, and the child's standard error must show the allocation failure;
+//!   - `recursion_native` and `loop_native` (the feature `device`) arm the device's native fault ([`FAULT_VARIABLE`])
+//!     for the trial's child. Their job is the control's. The hook fires after [`FAULT_AFTER`] answers, the proposal's
+//!     tariff and perform, so after the pending preview exists and before the job's result. The device writes its
+//!     line ([`FAULT_LINE`]) to standard error, then either recurses in native code without end until the stack
+//!     overflows (the parent must report a typed `Lost` fault, and standard error must show the overflow), or spins in
+//!     native code without a kernel call until the parent's watchdog ends the child: its wall-clock safety stop at
+//!     [`WATCHDOG`] (KN7.10), a typed `Deadline` fault with `KN7:resource_limit.safety_stop`. The fresh child that
+//!     recovers runs unarmed ([`start`]).
+//!
+//!   The device is never shipped: `tests/device.rs` checks that no other package depends on this one, that
+//!   c600-runtime has no global allocator, and that the hook reaches c600-runtime only through this package's feature
+//!   `device`, which is off by default, so that the product's runtime child is built without it.
 //!
 //! After each trial the same runtime runs the control job again: it must complete, in a fresh child after a fault and
 //! in the same child otherwise. The pending preview must still be the runtime word. A metered trial and the control
@@ -28,13 +40,13 @@
 //! [`session`] runs the same trials with a session open (RTE.42 conditions 1 and 2): the journal's records and the
 //! state hash after the same commands must equal the control's, and the session must stay open.
 //!
-//! Not here: LX-2's other native faults (unmetered recursion, native loop with its watchdog), which need a hook in
-//! c600-runtime that LP3 owns; the barrier's release acknowledgement; and conditions 3 and 4 (the renderer gate,
-//! LX-4's echo bar and E2 commits during fault windows). Evidence kind: source and synthetic until the owner's machine
-//! runs it on the product build; nothing here is timing.
+//! Not here: the barrier's release acknowledgement, and conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2
+//! commits during fault windows). Evidence kind: source and synthetic until the owner's machine runs it on the product
+//! build; nothing here is timing.
 
 #![forbid(unsafe_code)]
 
+use std::ffi::OsStr;
 use std::path::Path;
 use std::time::Duration;
 
@@ -43,6 +55,7 @@ pub mod session;
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::meter::{code, Amounts, Outcome};
 use c600_run::value::Value;
+use c600_runtime::parent::{RUNTIME_LOST, SAFETY_STOP};
 use c600_runtime::{run_in_process, Config, Ended, Fault, FaultKind, Job, JobOptions, Runtime};
 
 pub const FORMAT: &str = "magic600-c9-lx2-faults-v1";
@@ -52,8 +65,11 @@ pub const STEP_LIMIT: u128 = 100_000;
 pub const MEMORY_LIMIT: u128 = 1 << 20;
 /// The allocation trial's memory limit.
 pub const ALLOC_LIMIT: u128 = 1 << 16;
-/// The wall-clock safety stop of one run; a trial that reaches it has failed.
+/// The wall-clock safety stop of one run; a trial that reaches it has failed, except the native loop's.
 pub const DEADLINE: Duration = Duration::from_secs(60);
+/// The native loop's watchdog: the parent's wall-clock safety stop for that run (KN7.10). The product's runtime has no
+/// deadline unless its caller sets one (DET.17), so the record names this value.
+pub const WATCHDOG: Duration = Duration::from_secs(3);
 /// The injection device's ceiling variable: live heap bytes, decimal (`c600-lx2-child`).
 pub const CEILING_VARIABLE: &str = "C600_LX2_CEILING";
 /// The native allocation trial's ceiling on the injection child's live heap bytes.
@@ -61,11 +77,60 @@ pub const CEILING: usize = 32 << 20;
 /// The native allocation trial's meter limit: far above [`CEILING`], a safety net only, so that the allocator and not
 /// the meter stops the program.
 pub const CEILING_METER: u128 = 1 << 30;
+/// The injection device's native fault variable, `<fault>@<answers>` with the fault `recursion` or `loop`; read by
+/// `c600-lx2-child` built with the feature `device`, which refuses it otherwise.
+pub const FAULT_VARIABLE: &str = "C600_LX2_FAULT";
+/// The answers after which the device fires a native fault: the proposal's tariff and perform, so that the pending
+/// preview exists and the fault comes before the job's result.
+pub const FAULT_AFTER: u64 = 2;
+/// The start of the line the device writes to standard error before it fires a native fault; the fault's name follows.
+pub const FAULT_LINE: &str = "c600-lx2-child: native fault";
 /// What the standard library writes to standard error when an allocation fails, before it aborts.
 const ALLOCATION_FAILED: &str = "memory allocation of";
+/// What the standard library writes to standard error when a thread overflows its stack, before the process ends.
+const STACK_OVERFLOWED: &str = "has overflowed its stack";
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 const HEADER: &str = "edition \"6cs-draft-1\";\nmodule lx2 requires [];\n\n";
 const PROPOSE: &str = "    let p = propose(w, target(\"operation.preview\"));\n";
+
+/// A native fault of the injection device, fired from c600-runtime's fault hook.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeFault {
+    /// Recursion in native code without end, until the stack overflows.
+    Recursion,
+    /// A loop in native code without a kernel call, until the parent's watchdog ends the child.
+    Loop,
+}
+
+impl NativeFault {
+    pub fn name(self) -> &'static str {
+        match self {
+            NativeFault::Recursion => "recursion",
+            NativeFault::Loop => "loop",
+        }
+    }
+
+    /// The device's line on standard error before it fires, up to the answers it fires at.
+    pub fn line(self) -> String {
+        format!("{FAULT_LINE} {}", self.name())
+    }
+
+    /// The value of [`FAULT_VARIABLE`] that arms the fault after [`FAULT_AFTER`] answers.
+    pub fn armed(self) -> String {
+        format!("{}@{FAULT_AFTER}", self.name())
+    }
+
+    /// Reads a value of [`FAULT_VARIABLE`], `<fault>@<answers>`.
+    pub fn parse(text: &str) -> Option<(NativeFault, u64)> {
+        let (name, after) = text.split_once('@')?;
+        let fault = match name {
+            "recursion" => NativeFault::Recursion,
+            "loop" => NativeFault::Loop,
+            _ => return None,
+        };
+        Some((fault, after.parse().ok()?))
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Trial {
@@ -76,6 +141,10 @@ pub enum Trial {
     ForcedKill,
     /// Native: the injection child's allocator refuses past [`CEILING`].
     AllocCeiling,
+    /// Native: the injection child recurses without end from the fault hook (feature `device`).
+    RecursionNative,
+    /// Native: the injection child spins without a kernel call from the fault hook (feature `device`).
+    LoopNative,
 }
 
 /// What a run ended with.
@@ -103,7 +172,7 @@ impl Trial {
     pub const ALL: [Trial; 5] =
         [Trial::Control, Trial::LoopMetered, Trial::RecursionMetered, Trial::AllocMetered, Trial::ForcedKill];
     /// The native trials, which run only on the injection child.
-    pub const NATIVE: [Trial; 1] = [Trial::AllocCeiling];
+    pub const NATIVE: [Trial; 3] = [Trial::AllocCeiling, Trial::RecursionNative, Trial::LoopNative];
 
     pub fn name(self) -> &'static str {
         match self {
@@ -113,6 +182,8 @@ impl Trial {
             Trial::AllocMetered => "alloc_metered",
             Trial::ForcedKill => "forced_kill",
             Trial::AllocCeiling => "alloc_ceiling",
+            Trial::RecursionNative => "recursion_native",
+            Trial::LoopNative => "loop_native",
         }
     }
 
@@ -121,11 +192,20 @@ impl Trial {
         Trial::NATIVE.contains(&self)
     }
 
+    /// The native fault the trial arms on the injection child's fault hook, if any.
+    pub fn fault(self) -> Option<NativeFault> {
+        match self {
+            Trial::RecursionNative => Some(NativeFault::Recursion),
+            Trial::LoopNative => Some(NativeFault::Loop),
+            _ => None,
+        }
+    }
+
     /// The job's source: module `lx2`, entry `command work(w: Word) -> Nat`. The entry is a command, as a tool's
     /// previewing entry must be (LG3.6).
     pub fn source(self) -> String {
         let body = match self {
-            Trial::Control | Trial::ForcedKill => "    return 1;\n",
+            Trial::Control | Trial::ForcedKill | Trial::RecursionNative | Trial::LoopNative => "    return 1;\n",
             Trial::LoopMetered => {
                 "    return repeat(1000000000000, 0, fn(acc: Nat) -> Nat {\n        return exact_add(acc, 1);\n    });\n"
             }
@@ -155,6 +235,14 @@ impl Trial {
         }
     }
 
+    /// The run's wall-clock safety stop: [`WATCHDOG`] for the native loop, [`DEADLINE`] otherwise.
+    pub fn deadline(self) -> Duration {
+        match self {
+            Trial::LoopNative => WATCHDOG,
+            _ => DEADLINE,
+        }
+    }
+
     pub fn job(self) -> Job {
         Job {
             sources: vec![self.source().into_bytes()],
@@ -171,9 +259,10 @@ impl Trial {
             Trial::Control => Observed::Completed,
             Trial::LoopMetered => Observed::CutOff(code::STEPS),
             Trial::RecursionMetered | Trial::AllocMetered => Observed::CutOff(code::MEMORY),
-            Trial::ForcedKill | Trial::AllocCeiling => {
-                Observed::Fault(FaultKind::Lost, c600_runtime::parent::RUNTIME_LOST)
+            Trial::ForcedKill | Trial::AllocCeiling | Trial::RecursionNative => {
+                Observed::Fault(FaultKind::Lost, RUNTIME_LOST)
             }
+            Trial::LoopNative => Observed::Fault(FaultKind::Deadline, SAFETY_STOP),
         }
     }
 
@@ -183,23 +272,52 @@ impl Trial {
     }
 }
 
-/// The runtime's configuration for `trial` on the child binary `runtime`: a native trial arms the injection child's
-/// ceiling, for the trial's child and for the fresh child that recovers after it.
+/// The runtime's configuration for `trial` on the child binary `runtime`. `alloc_ceiling` arms the injection child's
+/// ceiling, for the trial's child and for the fresh child that recovers after it; a native fault is armed too, and
+/// [`start`] removes it once the trial's child has started.
 pub fn config(runtime: &Path, trial: Trial) -> Config {
     let mut config = Config::new(runtime);
-    if trial.native() {
+    if trial == Trial::AllocCeiling {
         config.env.push((CEILING_VARIABLE.into(), CEILING.to_string().into()));
+    }
+    if let Some(fault) = trial.fault() {
+        config.env.push((FAULT_VARIABLE.into(), fault.armed().into()));
     }
     config
 }
 
-/// What `trial` ended with. A native allocation trial counts as lost only when the child's standard error shows the
-/// standard library's allocation failure, so that a child lost for another reason does not pass for the ceiling.
+/// A runtime for `trial` on the child binary `runtime`, with its first child started. A native fault is armed for
+/// that child only: it leaves the configuration once the child has started, so the fresh child that recovers after
+/// the fault runs unarmed.
+pub fn start(runtime: &Path, trial: Trial) -> (Runtime, Result<(), Fault>) {
+    let mut rt = Runtime::new(config(runtime, trial));
+    let started = rt.start();
+    rt.config_mut().env.retain(|(name, _)| name.as_os_str() != OsStr::new(FAULT_VARIABLE));
+    (rt, started)
+}
+
+/// What a native trial's fault must show on the child's standard error and does not, if anything: the allocation
+/// failure for `alloc_ceiling`, the device's line for a native fault, and the stack overflow for `recursion_native`.
+fn missing_cause(trial: Trial, stderr: &str) -> Option<&'static str> {
+    let shows = |text: &str| stderr.contains(text);
+    match trial {
+        Trial::AllocCeiling if !shows(ALLOCATION_FAILED) => Some("the ceiling's allocation failure"),
+        Trial::RecursionNative | Trial::LoopNative if !trial.fault().is_some_and(|fault| shows(&fault.line())) => {
+            Some("the device's line for its fault")
+        }
+        Trial::RecursionNative if !shows(STACK_OVERFLOWED) => Some("the stack overflow"),
+        _ => None,
+    }
+}
+
+/// What `trial` ended with. A native trial's fault counts only when the child's standard error shows its cause, so
+/// that a child lost or stopped for another reason does not pass for the trial's fault.
 pub fn observe_trial(trial: Trial, result: Result<Ended, Fault>) -> Observed {
     match result {
-        Err(fault) if trial == Trial::AllocCeiling && !fault.stderr.contains(ALLOCATION_FAILED) => {
-            Observed::Other(format!("lost without the ceiling's allocation failure: {}", fault.detail))
-        }
+        Err(fault) => match missing_cause(trial, &fault.stderr) {
+            Some(cause) => Observed::Other(format!("a fault without {cause}: {}", fault.detail)),
+            None => observe(Err(fault)),
+        },
         result => observe(result),
     }
 }
@@ -290,9 +408,9 @@ pub struct Device {
 /// Runs one trial against the child binary `runtime`: the product's own child, or the injection child for a native
 /// trial.
 pub fn run_trial(runtime: &Path, trial: Trial) -> Record {
-    let mut rt = Runtime::new(config(runtime, trial));
+    let (mut rt, started) = start(runtime, trial);
     let mut session = Session::default();
-    if let Err(fault) = rt.start() {
+    if let Err(fault) = started {
         let observed = Observed::Fault(fault.kind, fault.code());
         return Record {
             trial,
@@ -308,7 +426,7 @@ pub fn run_trial(runtime: &Path, trial: Trial) -> Record {
             session.on_perform = Some(Box::new(move || killer.kill()));
         }
     }
-    let observed = observe_trial(trial, rt.run(&trial.job(), &mut session, Some(DEADLINE)));
+    let observed = observe_trial(trial, rt.run(&trial.job(), &mut session, Some(trial.deadline())));
     session.on_perform = None;
     let preview_kept = session.preview.as_deref() == Some(&RUNTIME_WORD[..]);
     let recovered =
@@ -351,16 +469,17 @@ pub fn record_json(
         .collect();
     let device = device.map_or("null".to_string(), |d| {
         format!(
-            "{{\"file\": \"{}\", \"sha256\": \"{}\", \"source\": \"product source + injection device\", \"ceiling_variable\": \"{CEILING_VARIABLE}\", \"ceiling_bytes\": {CEILING}, \"meter_memory_bytes\": {CEILING_METER}}}",
+            "{{\"file\": \"{}\", \"sha256\": \"{}\", \"source\": \"product source + injection device\", \"ceiling_variable\": \"{CEILING_VARIABLE}\", \"ceiling_bytes\": {CEILING}, \"meter_memory_bytes\": {CEILING_METER}, \"fault_variable\": \"{FAULT_VARIABLE}\", \"fault_after_answers\": {FAULT_AFTER}}}",
             clean(&d.file),
             clean(&d.sha256)
         )
     });
     let agrees = records.iter().all(Record::agrees) && session::all_agree(sessions);
     format!(
-        "{{\n  \"format\": \"{FORMAT}\",\n  \"runtime\": {{\"file\": \"{}\", \"sha256\": \"{runtime_sha256}\", \"injection_device\": {device}}},\n  \"limits\": {{\"steps\": {STEP_LIMIT}, \"memory_bytes\": {MEMORY_LIMIT}, \"alloc_memory_bytes\": {ALLOC_LIMIT},\"deadline_ms\": {}}},\n  \"evidence\": \"source and synthetic unless run on the owner's machine with the product build's runtime\",\n  \"agrees\": {agrees},\n  \"trials\": [\n{}\n  ],\n  \"sessions\": {}\n}}\n",
+        "{{\n  \"format\": \"{FORMAT}\",\n  \"runtime\": {{\"file\": \"{}\", \"sha256\": \"{runtime_sha256}\", \"injection_device\": {device}}},\n  \"limits\": {{\"steps\": {STEP_LIMIT}, \"memory_bytes\": {MEMORY_LIMIT}, \"alloc_memory_bytes\": {ALLOC_LIMIT}, \"deadline_ms\": {}, \"watchdog_ms\": {}}},\n  \"evidence\": \"source and synthetic unless run on the owner's machine with the product build's runtime\",\n  \"agrees\": {agrees},\n  \"trials\": [\n{}\n  ],\n  \"sessions\": {}\n}}\n",
         clean(runtime_name),
         DEADLINE.as_millis(),
+        WATCHDOG.as_millis(),
         rows.join(",\n"),
         session::sessions_json(sessions)
     )

@@ -416,13 +416,75 @@ class RunbookTests(NoProcessCase):
         self.assertEqual(attended.count(True), 3)
         lx2 = next(step for step in runbook.STEPS if step.id == 'lx2')
         self.assertTrue(any('--injection' in command for command in lx2.commands))
+        self.assertTrue(all('--features device --bin c600-lx2-' in command for command in lx2.commands))
+        self.assertNotIn('native', lx2.missing)
+        for token in ('pub fn main_with', 'main_with(native::point)'):
+            argument = next(argument for kind, argument in lx2.prerequisites
+                            if kind == 'mentions' and argument[1] == token)
+            self.assertTrue(runbook.evaluate('mentions', argument)[0], argument)
         gpu = next(step for step in runbook.STEPS if step.id == 'core-gpu')
         self.assertTrue(gpu.built and gpu.commands[0].startswith('python -B renderer/core/check_core.py --gpu'))
         self.assertEqual(next(step for step in runbook.STEPS if step.id == 'lx4').minutes, 240)
+
+    def test_u4_prepares_route_b_and_u6_rebuilds_and_checks_before_the_cold_runs(self):
+        wj = next(step for step in runbook.STEPS if step.id == 'wj-w3')
+        self.assertTrue(wj.built)
+        self.assertTrue(wj.commands[0].startswith('python -B renderer/acceptance/prepare_host.py --route surface'))
+        self.assertTrue(wj.commands[1].startswith('python -B renderer/acceptance/prepare_data.py'))
+        self.assertIn(f'{runbook.DECLARE} -DryRun', wj.commands[2])
+        self.assertTrue(all('-Build <route-B build>' in command and runbook.DECLARE in command
+                            for command in wj.commands[2:-1]))
+        self.assertIn(('dir', runbook.WJ_DATA), wj.prerequisites)
+        self.assertIn(('compiles', runbook.PREPARE_DATA), wj.prerequisites)
+        self.assertIn(('build', 'surface'), wj.prerequisites)
+        e3 = next(step for step in runbook.STEPS if step.id == 'e3-cold-start')
+        self.assertTrue(e3.commands[0].startswith('python -B renderer/shell/build_product.py'))
+        self.assertIn('--cold-start --dry-run', e3.commands[1])
+        self.assertIn('three times', e3.commands[2])
+        self.assertTrue(e3.commands[3].startswith('python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3>'))
+        self.assertIn(('compiles', runbook.BUILD_PRODUCT), e3.prerequisites)
+        for kind, argument in e3.prerequisites:
+            with self.subTest(prerequisite=(kind, argument)):
+                self.assertTrue(runbook.evaluate(kind, argument)[0])
+
+    def test_the_build_check_names_the_route_and_the_default_build_is_route_b(self):
+        root = self.temp / 'root'
+        builds = root / runbook.BUILDS
+        identity = {'format': runbook.IDENTITY_FORMAT, 'source': {'head': 'b' * 40}, 'abi_version': 5}
+        for name, route in (('20261119T100000Z', 'surface'), ('20261119T110000Z', None)):
+            (builds / name).mkdir(parents=True)
+            value = dict(identity, **({} if route is None else {'route': route}))
+            (builds / name / runbook.IDENTITY).write_bytes(json.dumps(value).encode())
+        self.assertEqual(runbook.build_route(builds / '20261119T110000Z'), 'texture')
+        self.assertIsNone(runbook.build_route(builds / 'absent'))
+        self.assertEqual(runbook.newest_build(root).name, '20261119T110000Z')
+        self.assertEqual(runbook.newest_build(root, 'surface').name, '20261119T100000Z')
+        self.assertIsNone(runbook.newest_build(self.temp / 'empty', 'surface'))
+        ok, detail = runbook.evaluate('build', 'surface', build=builds / '20261119T110000Z')
+        self.assertFalse(ok)
+        self.assertIn('route texture, not surface: python -B renderer/acceptance/prepare_host.py --route surface',
+                      detail)
+        ok, detail = runbook.evaluate('build', 'surface', build=builds / '20261119T100000Z')
+        self.assertTrue(ok)
+        self.assertIn('route surface', detail)
+        self.assertTrue(runbook.evaluate('build', None, build=builds / '20261119T110000Z')[0])
+
+    def test_every_step_has_a_time_and_sources(self):
         for step in runbook.STEPS:
             with self.subTest(step=step.id):
                 self.assertTrue(step.minutes > 0 and step.sources)
                 self.assertTrue(step.built or step.missing)
+
+    def test_u8_needs_the_launcher_to_hand_the_module_its_library_and_fixtures(self):
+        step = next(step for step in runbook.STEPS if step.id == 'lx4')
+        mentions = {argument for kind, argument in step.prerequisites if kind == 'mentions'}
+        self.assertLessEqual({(runbook.LAUNCH, '"--lx4-fixtures"'), (runbook.LAUNCH, 'M600_LX4_DLL'),
+                              (runbook.LAUNCH, 'M600_LX4_FIXTURES'), (runbook.BUILD_PRODUCT, 'c600-shell-lx4')},
+                             mentions)
+        self.assertTrue(any('--lx4 --lx4-fixtures <fixtures>' in command for command in step.commands))
+        # A mention is searched in one file as well as in a folder.
+        self.assertTrue(runbook.evaluate('mentions', (runbook.LAUNCH, '"--lx4"'))[0])
+        self.assertFalse(runbook.evaluate('mentions', (runbook.LAUNCH, 'a token no launcher writes'))[0])
 
     def test_a_dry_run_prints_one_line_per_step_and_never_runs_the_quiet_gate(self):
         lines = []
@@ -680,6 +742,40 @@ class Lx4Tests(NoProcessCase):
         with self.assertRaises(lx4.FixtureError):
             lx4.messages(self.edits, turn, 'KeyT')
 
+    def test_the_shell_module_matches_its_library_and_the_harness(self):
+        """LX-4's C# module, its Rust library and lx4.py name the same endpoints, exports, codes and row layout."""
+        module = (ROOT / 'renderer/shell/project/Lx4/Lx4Module.cs').read_text(encoding='utf-8')
+        library = (ROOT / 'renderer/bridge/lx4/src/lib.rs').read_text(encoding='utf-8')
+        # The module row that lx4.py's live poster reads, and the live log's name as the shell's EventLog spells it.
+        for needle in ('json.WriteString("t", "module");', 'json.WriteString("module", "lx4");',
+                       'json.WriteNumber("window", window);'):
+            self.assertIn(needle, module)
+        self.assertIn(f'public const string BodyName = "{lx4.LIVE}";',
+                      (ROOT / 'renderer/shell/project/EventLog.cs').read_text(encoding='utf-8'))
+
+        def csharp_list(name):
+            return re.findall(r'"(\w+)"', re.search(name + r' = new\[\]\s*\{(.*?)\};', module, re.S).group(1))
+
+        endpoints = re.findall(r'"(\w+)"', re.search(r'pub const ENDPOINTS: \[&str; \d+\] =\s*\[(.*?)\];', library,
+                                                     re.S).group(1))
+        self.assertEqual(csharp_list('Endpoints'), endpoints)
+        self.assertEqual(set(endpoints), {*lx4.METRICS, lx4.W_METRIC[0], lx4.READY})
+        self.assertEqual(csharp_list('Exports'), re.findall(r'pub (?:unsafe )?extern "C" fn (lx4_\w+)', library))
+        for csharp, rust in (('AbiVersion', 'LX4_ABI_VERSION'), ('Ok', 'LX4_OK'),
+                             ('InvalidArgument', 'LX4_E_INVALID_ARGUMENT'), ('FixturesRefused', 'LX4_E_FIXTURES'),
+                             ('StateRefused', 'LX4_E_STATE'), ('Poisoned', 'LX4_E_POISONED'),
+                             ('TextEcho', 'LX4_TEXT_ECHO'), ('TextStatus', 'LX4_TEXT_STATUS'),
+                             ('TextCompletion', 'LX4_TEXT_COMPLETION')):
+            self.assertEqual(re.search(rf'const \w+ {csharp} = (\d+);', module).group(1),
+                             re.search(rf'pub const {rust}: \w+ = (\d+);', library).group(1), csharp)
+        types = {'u64': 'ulong', 'u32': 'uint', '[u8; 64]': 'fixed byte[64]'}
+        for csharp, rust in (('Update', 'Lx4Update'), ('Shown', 'Lx4Shown')):
+            fields = re.search(rf'private struct {csharp}\s*\{{(.*?)\}}', module, re.S).group(1)
+            fields = [kind + size for kind, size in re.findall(r'public (ulong|uint|fixed byte) \w+(\[64\])?;', fields)]
+            native = re.search(rf'pub struct {rust} \{{(.*?)\}}', library, re.S).group(1)
+            self.assertEqual(fields, [types[kind] for kind in re.findall(r'pub \w+: (u64|u32|\[u8; 64\])', native)],
+                             csharp)
+
     def test_changed_fixtures_are_refused(self):
         (self.temp / 'fixtures' / 'M.6cs').write_bytes(b'changed\n')
         with self.assertRaises(lx4.FixtureError):
@@ -731,6 +827,8 @@ class Lx4Tests(NoProcessCase):
         record = lx4.build(self.temp / 'fixtures', directories, ['analyze'])
         self.assertEqual((record['verdict'], record['passes_bar']), ('synthetic', False))
         self.assertEqual(record['result']['timed_sml_samples'], 10_800)
+        self.assertEqual(record['result']['limitations'], lx4.LIMITATIONS)
+        self.assertIn('NoHost', lx4.LIMITATIONS[0])
 
     def test_a_dry_run_posts_nothing(self):
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -740,15 +838,24 @@ class Lx4Tests(NoProcessCase):
         self.assertIn('turn key KeyJ: virtual key 0x4A, scan code 0x24', out.getvalue())
         self.assertIn('nothing was posted', out.getvalue())
 
-    def test_the_poster_waits_for_each_endpoint_and_logs_every_post(self):
+    def test_the_poster_waits_for_ready_and_each_endpoint_and_logs_every_post(self):
         run = self.temp / 'run'
-        write_jsonl(run / 'events.jsonl', [{'t': 'run', 'format': key_to_frame.LOG_FORMAT, 'run_id': 'live',
-                                            'build_identity': BUILD, 'puzzle': 'jumble-off', 'window': 66}])
-        events = run / 'events.jsonl'
+        # The live log: frame rows, then the module row with the window (no run row before the shell's close).
+        write_jsonl(run / lx4.LIVE, [{'t': 'frame', 'frame_id': 1, 'qpc': 1, 'device_epoch': 1, 'surface': 1},
+                                     {'t': 'module', 'module': 'lx4', 'window': 66, 'run_id': 'live',
+                                      'build_identity': BUILD, 'puzzle': 'jumble-off', 'qpc_frequency': F}])
+        events = run / lx4.LIVE
+
+        def lx4_row(sample, endpoint):
+            with events.open('a') as stream:
+                stream.write(json.dumps({'t': 'lx4', 'sample': sample, 'endpoint': endpoint}) + '\n')
 
         class Fake:
+            """The shell: a Reset's ready row comes only at the harness's next wait, so an input posted before the
+            harness reads it counts as early."""
+
             def __init__(self, answer=True):
-                self.answer, self.ticks = answer, 0
+                self.answer, self.ticks, self.pending, self.reset, self.early = answer, 0, None, None, 0
 
             def register(self, name):
                 return {lx4.RESET: 0xC001, lx4.SELECT: 0xC002}[name]
@@ -761,14 +868,23 @@ class Lx4Tests(NoProcessCase):
                 return F
 
             def post(self, hwnd, message, wparam, lparam):
-                if self.answer and message == 0xC001:
-                    with events.open('a') as stream:
+                if message == 0xC001:
+                    self.pending = lparam if self.answer else None
+                elif message == 0xC002:
+                    self.early += self.pending is not None
+                    if self.reset is not None:
                         for metric in (*lx4.METRICS, 'dependents'):
-                            stream.write(json.dumps({'t': 'lx4', 'sample': lparam, 'endpoint': metric}) + '\n')
+                            lx4_row(self.reset, metric)
+                        self.reset = None
                 if self.answer and message == lx4.WM_KEYDOWN and wparam == 0x4A and lparam >> 16 & 0xFF == 0x24:
                     with events.open('a') as stream:
                         stream.write(json.dumps({'t': 'key', 'seq': 0, 'qpc': 1, 'frame_id': None}) + '\n')
                 return hwnd == 66
+
+            def sleep(self, seconds):
+                if self.pending is not None:
+                    lx4_row(self.pending, lx4.READY)
+                    self.reset, self.pending = self.pending, None
 
             def foreground(self, hwnd):
                 return True
@@ -779,18 +895,37 @@ class Lx4Tests(NoProcessCase):
         clock = iter(range(10**9))
         with mock.patch.object(lx4, 'PER_SERIES', 2), mock.patch.object(lx4, 'SERIES', 1):
             samples = lx4.schedule(self.edits, 'jumble-off')
-            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', Fake(),
-                                clock=lambda: next(clock) / 100, sleep=lambda seconds: None, out=lambda line: None)
-            self.assertEqual(code, 0)
+            fake = Fake()
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', fake,
+                                clock=lambda: next(clock) / 100, sleep=fake.sleep, out=lambda line: None)
+            self.assertEqual((code, fake.early), (0, 0))
             rows = evidence.read_jsonl(run / lx4.POSTS)
             self.assertEqual(rows[0]['turn_key'], 'KeyJ')
             self.assertEqual(sum(row['t'] == 'sample' and row['status'] == 'done' for row in rows), len(samples))
             self.assertEqual(sum(row['t'] == 'post' and row['timed'] for row in rows), len(samples))
             (run / lx4.POSTS).unlink()
-            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', Fake(answer=False),
-                                clock=lambda: next(clock) / 2, sleep=lambda seconds: None, out=lambda line: None)
+            fake = Fake(answer=False)
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', fake,
+                                clock=lambda: next(clock) / 2, sleep=fake.sleep, out=lambda line: None)
             self.assertEqual(code, 3)
+            rows = evidence.read_jsonl(run / lx4.POSTS)
+            status = {row['sample']: row['status'] for row in rows if row['t'] == 'sample'}
+            self.assertEqual(status, {sample['id']: 'timeout' if sample['metric'] == 'turn' else 'not-ready'
+                                      for sample in samples})
+            # Without a ready row, nothing after the Reset is posted.
+            posts = [row for row in rows if row['t'] == 'post' and status[row['sample']] == 'not-ready']
+            self.assertEqual(sorted(row['sample'] for row in posts),
+                             sorted(sample for sample, state in status.items() if state == 'not-ready'))
+            self.assertTrue(all(row['message'] == 0xC001 for row in posts))
 
+    def test_a_sample_without_its_ready_row_invalidates_its_run(self):
+        events, posts = lx4_logs(self.edits, self.digests, 'jumble-off', lambda sample: 10.0)
+        first = next(row['sample'] for row in posts if row['t'] == 'sample')
+        posts = [row for row in posts if not (row['t'] == 'post' and row['sample'] == first and row['index'] > 0)]
+        posts = [{**row, 'status': 'not-ready'} if row['t'] == 'sample' and row['sample'] == first else row
+                 for row in posts]
+        run = lx4.analyze_run(events, posts, self.edits, self.digests)
+        self.assertEqual((run['status'], run['failures']), ('invalid', {'not-ready': 1}))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
