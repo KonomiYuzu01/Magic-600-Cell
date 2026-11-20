@@ -102,6 +102,29 @@ fn every_listed_digest_is_checked() {
     assert_eq!(refusal("missing", &text, &[]), "Cannot read assets/puzzle_definition.txt");
 }
 
+/// R2 with the files checked side by side (charter E3's startup, a draft): of two failing files, the first in the
+/// list's order is the answer, whichever check ends first.
+#[test]
+fn the_first_failing_file_in_list_order_is_the_answer() {
+    let names = ["cell_normals.f32", "puzzle_definition.txt"];
+    let originals = names.map(|name| fs::read(assets().join(name)).unwrap());
+    let files: BTreeMap<String, String> =
+        names.iter().zip(&originals).map(|(name, bytes)| (format!("assets/{name}"), sha256_hex(bytes))).collect();
+    let text = manifest(&files, &model_id(&files));
+    let changed = originals.clone().map(|mut bytes| {
+        bytes.push(0);
+        bytes
+    });
+    let first_changed = refusal("first-changed", &text, &[(names[0], &changed[0])]);
+    assert_eq!(first_changed, "Asset hash mismatch: assets/cell_normals.f32");
+    let first_missing = refusal("first-missing", &text, &[(names[1], &changed[1])]);
+    assert_eq!(first_missing, "Cannot read assets/cell_normals.f32");
+    let both_changed = refusal("both-changed", &text, &[(names[0], &changed[0]), (names[1], &changed[1])]);
+    assert_eq!(both_changed, "Asset hash mismatch: assets/cell_normals.f32");
+    let second = refusal("second-changed", &text, &[(names[0], &originals[0]), (names[1], &changed[1])]);
+    assert_eq!(second, "Asset hash mismatch: assets/puzzle_definition.txt");
+}
+
 /// R2: a file the kernel reads must be listed, so that its digest is checked.
 #[test]
 fn every_file_the_kernel_reads_is_listed() {

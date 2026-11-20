@@ -16,7 +16,7 @@ namespace Magic600.Shell;
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 5;
+    public const uint AbiVersion = 6;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -68,6 +68,9 @@ public sealed unsafe class HostLibrary : IDisposable
     {
         "m6h_abi_version",
         "m6h_create",
+        "m6h_preload",
+        "m6h_create_preloaded",
+        "m6h_preload_free",
         "m6h_set_camera",
         "m6h_set_viewport",
         "m6h_pump",
@@ -222,6 +225,54 @@ public sealed unsafe class HostLibrary : IDisposable
         host = created;
         return code;
     }
+
+    /// <summary>
+    /// Charter E3's startup (a draft): starts the loads that <see cref="Create"/> makes from
+    /// <paramref name="assets"/>, and with <paramref name="session"/> the exact model's that
+    /// <see cref="OpenSession"/> reads, each on a thread of its own, and returns at once. <see cref="CreatePreloaded"/>
+    /// takes <paramref name="preload"/>; <see cref="FreePreload"/> frees one that no call took. On failure
+    /// <paramref name="preload"/> is zero and <see cref="LastError"/> with a zero handle gives the reason.
+    /// </summary>
+    public int Preload(string assets, bool session, out IntPtr preload)
+    {
+        var path = Encoding.UTF8.GetBytes(assets);
+        var started = IntPtr.Zero;
+        int code;
+        fixed (byte* bytes = path)
+        {
+            code = ((delegate* unmanaged[Cdecl]<byte*, nuint, uint, IntPtr*, int>)_exports["m6h_preload"])(
+                bytes, (nuint)path.Length, session ? 1u : 0u, &started);
+        }
+        preload = started;
+        return code;
+    }
+
+    /// <summary>
+    /// <see cref="Create"/> with the loads that <see cref="Preload"/> started, from its assets folder. The call takes
+    /// <paramref name="preload"/> whatever it answers. On failure <paramref name="host"/> is zero and
+    /// <see cref="LastError"/> with a zero handle gives the reason.
+    /// </summary>
+    public int CreatePreloaded(CoreLibrary core, IntPtr context, IntPtr preload, out IntPtr host)
+    {
+        var table = new IntPtr[core.Functions.Count];
+        for (var i = 0; i < table.Length; i++)
+        {
+            table[i] = core.Functions[i];
+        }
+        var created = IntPtr.Zero;
+        int code;
+        fixed (IntPtr* functions = table)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr*, IntPtr, IntPtr, IntPtr*, int>)_exports["m6h_create_preloaded"])(
+                functions, context, preload, &created);
+        }
+        host = created;
+        return code;
+    }
+
+    /// <summary>Frees a preload that no call took; it waits for the loads still running.</summary>
+    public void FreePreload(IntPtr preload) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, void>)_exports["m6h_preload_free"])(preload);
 
     /// <summary>Sets the view's 4D rotation: 16 floats, column-major.</summary>
     public int SetCamera(IntPtr host, ReadOnlySpan<float> matrix)
