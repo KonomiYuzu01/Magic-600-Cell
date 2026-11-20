@@ -295,7 +295,7 @@ pub(crate) fn check_value(value: &Json, depth: u128) -> Result<(), Refusal> {
 
 /// Chapter 05's `write_record`: only a dispatched version-1 record with a well-formed header and provenance block is
 /// written, as FP.5 bytes within `record_decoded`. An evidence envelope's scopes must be immutable
-/// (`PS1:evidence.scope_not_immutable`, PS1.35).
+/// (`PS1:evidence.scope_not_immutable`, PS1.35), and a pick record's payload must be FP.38's ([`super::pick`]).
 pub fn write_record(record: &Json) -> Result<Vec<u8>, Refusal> {
     record_header(record)?;
     let format = record.get("format").and_then(Json::as_text).unwrap_or("");
@@ -304,6 +304,9 @@ pub fn write_record(record: &Json) -> Result<Vec<u8>, Refusal> {
     check_value(record, 0)?;
     if kind == "evidence" {
         super::facts::check_scopes(record.get("payload").unwrap_or(&Json::Null))?;
+    }
+    if kind == "pick" {
+        super::pick::check_payload(record)?;
     }
     let bytes = canonical(record);
     super::codec::charge("record_decoded", bytes.len() as u128)?;
