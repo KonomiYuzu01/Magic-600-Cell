@@ -7,12 +7,12 @@ export fn macro_report(name: Text, recipe: List<record { kind: Text, moves: Word
     return record { conflicts = judged.conflicts, expansion_sha256 = judged.expansion_sha256, level = judged.level, moved_pieces = net.moved_pieces, moved_stickers = net.moved_stickers, name = name, net_conflicts = orbits_in(judged.protected, support_orbits(net.support), true), net_sha256 = net.net_sha256, primitive_count = judged.primitive_count, protected = judged.protected, refused_prefix = judged.refused_prefix, support = net.support };
 }
 
-export fn macro_comparison(first: record { name: Text, recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }> }, second: record { name: Text, recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }> }) -> record { both: List<Int>, first: Text, only_first: List<Int>, only_second: List<Int>, same_expansion: Bool, same_net: Bool, second: Text } effects [snapshot] {
-    let left = read_snapshot<record { expansion_sha256: Text, net_sha256: Text, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> }>("effect", first.recipe);
-    let right = read_snapshot<record { expansion_sha256: Text, net_sha256: Text, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> }>("effect", second.recipe);
+export fn macro_comparison(first: Text, first_recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>, second: Text, second_recipe: List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>) -> record { both: List<Int>, first: Text, only_first: List<Int>, only_second: List<Int>, same_expansion: Bool, same_net: Bool, second: Text } effects [snapshot] {
+    let left = read_snapshot<record { expansion_sha256: Text, net_sha256: Text, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> }>("effect", first_recipe);
+    let right = read_snapshot<record { expansion_sha256: Text, net_sha256: Text, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> }>("effect", second_recipe);
     let moved_first = support_orbits(left.support);
     let moved_second = support_orbits(right.support);
-    return record { both = orbits_in(moved_first, moved_second, true), first = first.name, only_first = orbits_in(moved_first, moved_second, false), only_second = orbits_in(moved_second, moved_first, false), same_expansion = exact_eq(left.expansion_sha256, right.expansion_sha256), same_net = exact_eq(left.net_sha256, right.net_sha256), second = second.name };
+    return record { both = orbits_in(moved_first, moved_second, true), first = first, only_first = orbits_in(moved_first, moved_second, false), only_second = orbits_in(moved_second, moved_first, false), same_expansion = exact_eq(left.expansion_sha256, right.expansion_sha256), same_net = exact_eq(left.net_sha256, right.net_sha256), second = second };
 }
 
 fn support_orbits(rows: List<record { orbit: Int, pieces: Nat, stickers: Nat }>) -> List<Int> effects [] {

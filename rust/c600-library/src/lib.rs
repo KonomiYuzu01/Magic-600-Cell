@@ -219,7 +219,7 @@
 //!   and length; the session's protected orbits at the head; `net_conflicts`, the protected orbits the net map moves,
 //!   which a commit under Net refuses; and Strict's first refused prefix, -1 when none is refused, with the protected
 //!   orbits in conflict there, from `replay`.
-//! - `macro_comparison(first, second)`, each a `record { name: Text, recipe }`, reads `effect` at both recipes and
+//! - `macro_comparison(first: Text, first_recipe, second: Text, second_recipe)` reads `effect` at both recipes and
 //!   answers the two names, the support orbits both net maps move (`both`) and those only one moves (`only_first`,
 //!   `only_second`), each in increasing order, and whether the net maps (`same_net`) and the literal expansions
 //!   (`same_expansion`) are equal.
@@ -228,7 +228,8 @@
 //! a comparison is symmetric up to the names' order. Equal net maps say nothing about the intermediate states; Strict's
 //! prefix is the report's. [`named_macro_analysis_and_comparison`] is the row's catalogue entry. The two entries have
 //! the checker's effect `snapshot` and read the rows [`MACROS_ROWS`] names, each at a recipe the caller names, so under
-//! capability separation they read state and prepare no preview. `c600-tools`' host bridge serves both rows
+//! capability separation they read state and prepare no preview. Each recipe is a parameter of its own, because the
+//! built-in column admits a read only at a parameter as given (LB3.5), not at a field of one. `c600-tools`' host bridge serves both rows
 //! (`c600_tools::kernel_rows`), and `c600-tools/tests/macros.rs` runs the entries there.
 //!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run

@@ -151,9 +151,9 @@ fn steps(word: &[i32]) -> Value {
     ])])
 }
 
-/// A named macro as `macro_comparison` takes it.
-fn named(name: &str, word: &[i32]) -> Value {
-    Value::record(vec![("name", Value::text(name)), ("recipe", steps(word))])
+/// The arguments of `macro_comparison`: each macro's name and its recipe, in that order.
+fn compared(first_name: &str, first: &[i32], second_name: &str, second: &[i32]) -> Vec<Value> {
+    vec![Value::text(first_name), steps(first), Value::text(second_name), steps(second)]
 }
 
 /// `Digest<literal word>`: the SHA-256 of the letters as little-endian 32-bit integers.
@@ -284,8 +284,7 @@ fn a_comparison_answers_the_shared_and_one_sided_support() {
         ("scramble", &SCRAMBLE, "there and back", &[1, -1]),
     ];
     for (first_name, first, second_name, second) in pairs {
-        let comparison =
-            answer(&mut layer, "macro_comparison", vec![named(first_name, first), named(second_name, second)]);
+        let comparison = answer(&mut layer, "macro_comparison", compared(first_name, first, second_name, second));
         let order = ["both", "first", "only_first", "only_second", "same_expansion", "same_net", "second"];
         assert_eq!(names(&comparison), order);
         let (left, right) = (support_orbits(first), support_orbits(second));
@@ -300,8 +299,7 @@ fn a_comparison_answers_the_shared_and_one_sided_support() {
         assert_eq!(boolean(field(&comparison, "same_net")), same_net);
         assert_eq!(boolean(field(&comparison, "same_expansion")), literal_digest(first) == literal_digest(second));
 
-        let swapped =
-            answer(&mut layer, "macro_comparison", vec![named(second_name, second), named(first_name, first)]);
+        let swapped = answer(&mut layer, "macro_comparison", compared(second_name, second, first_name, first));
         assert!(equal(field(&swapped, "both"), field(&comparison, "both")));
         assert!(equal(field(&swapped, "only_first"), field(&comparison, "only_second")));
         assert!(equal(field(&swapped, "only_second"), field(&comparison, "only_first")));
@@ -311,11 +309,11 @@ fn a_comparison_answers_the_shared_and_one_sided_support() {
         }
     }
 
-    let same = answer(&mut layer, "macro_comparison", vec![named("a", &[5, 7, -5, -7]), named("b", &[5, 7, -5, -7])]);
+    let same = answer(&mut layer, "macro_comparison", compared("a", &[5, 7, -5, -7], "b", &[5, 7, -5, -7]));
     assert_eq!(ints(field(&same, "both")), support_orbits(&[5, 7, -5, -7]));
     assert!(ints(field(&same, "only_first")).is_empty() && ints(field(&same, "only_second")).is_empty());
     assert!(boolean(field(&same, "same_net")) && boolean(field(&same, "same_expansion")));
-    let inverse = answer(&mut layer, "macro_comparison", vec![named("a", &[1, -1]), named("b", &[2, -2])]);
+    let inverse = answer(&mut layer, "macro_comparison", compared("a", &[1, -1], "b", &[2, -2]));
     assert!(boolean(field(&inverse, "same_net")) && !boolean(field(&inverse, "same_expansion")));
     assert!(ints(field(&inverse, "both")).is_empty(), "an identity net map moves no orbit");
 }
