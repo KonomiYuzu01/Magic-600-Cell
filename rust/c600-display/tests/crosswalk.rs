@@ -344,6 +344,39 @@ fn ct_rm_07_row_13_zero_multiplicities_keep_nu_zero() {
     assert!(catalogue.rows().windows(2).all(|w| w[0].id < w[1].id), "the rows keep their fixed order");
 }
 
+/// Row 13 over coordinates with their own moduli, as ν has (F2 bits, F5 values): each coordinate sums modulo its own
+/// modulus, the derived exponent is their least common multiple, and a catalogue that is not 36 rows in ID order with
+/// one residue per coordinate is refused, never repaired.
+#[test]
+fn ct_rm_07_row_13_mixed_moduli_sum_each_coordinate_in_its_own_group() {
+    let effect = |id: u32| vec![i64::from(id % 2), i64::from(id % 5), i64::from((id + 1) % 5)];
+    let rows = || (0..CORRECTIONS as u32).map(|id| Correction { id, effect: effect(id) }).collect::<Vec<_>>();
+    let catalogue = Catalogue::new(rows(), vec![2, 5, 5]).expect("36 rows over moduli 2, 5 and 5");
+    assert_eq!((catalogue.moduli(), catalogue.modulus), (&[2, 5, 5][..], 10), "the exponent is derived");
+    assert_eq!(catalogue.predict(&[0; CORRECTIONS]), vec![0, 0, 0]);
+    let mut multiplicities = [0i64; CORRECTIONS];
+    multiplicities[1] = 3; // effect [1, 1, 2]
+    multiplicities[3] = -1; // effect [1, 3, 4]
+    assert_eq!(catalogue.predict(&multiplicities), vec![0, 0, 2], "3·[1,1,2] − [1,3,4] in F2 × F5 × F5");
+
+    let mut reordered = rows();
+    reordered.swap(0, 1);
+    let mut wide = rows();
+    wide[7].effect.push(0);
+    let mut outside = rows();
+    outside[4].effect[0] = 2;
+    let refused = [
+        Catalogue::new(rows()[..35].to_vec(), vec![2, 5, 5]),
+        Catalogue::new(reordered, vec![2, 5, 5]),
+        Catalogue::new(wide, vec![2, 5, 5]),
+        Catalogue::new(outside, vec![2, 5, 5]),
+        Catalogue::new(rows(), vec![2, 5, 1]),
+    ];
+    for (case, result) in refused.into_iter().enumerate() {
+        assert_eq!(result.expect_err("refused").code, codes::PLAN_INVALID, "case {case}");
+    }
+}
+
 #[test]
 fn ct_rm_07_row_14_a_nonzero_fixed_nu_coordinate_freezes() {
     let error = nu(&NuObservation::Lattice { nu: vec![0, 2, 0, 0], fixed: vec![1] }).expect_err("a fixed coordinate");

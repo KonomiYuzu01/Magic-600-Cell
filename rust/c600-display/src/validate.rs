@@ -784,7 +784,8 @@ impl Check<'_> {
             return Err(invalid("a lattice entry is not -1 or a rotation-group index, or pose 0 is not index 0"));
         }
         let first = &posed.poses.as_f32()[..(d * d) as usize];
-        let identity = first.iter().enumerate().all(|(i, &x)| x == if i as u64 % (d + 1) == 0 { 1.0 } else { 0.0 });
+        let identity =
+            first.iter().enumerate().all(|(i, &x)| x == if (i as u64).is_multiple_of(d + 1) { 1.0 } else { 0.0 });
         if !identity {
             return Err(invalid("pose 0 is not the identity"));
         }

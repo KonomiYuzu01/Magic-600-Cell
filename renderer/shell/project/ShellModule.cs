@@ -8,7 +8,12 @@ namespace Magic600.Shell;
 /// <param name="Root">The shell's root control; a module may add its own nodes under it.</param>
 /// <param name="Log">The event log, or null when M600_EVENTS_DIR is not set; <see cref="EventLog.Append"/> writes a
 /// module's own rows.</param>
-public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log);
+/// <param name="Host">The shell's native host library, through which a module makes the host's calls, such as
+/// <see cref="HostLibrary.RunView"/>, <see cref="HostLibrary.GetViewResult"/> and <see cref="HostLibrary.ViewDraft"/>.</param>
+/// <param name="HostHandle">The shell's host handle (m6h_create's). A module calls the host only from its own calls,
+/// on Godot's main thread, which is the handle's thread, and never after its Dispose: the shell disposes its modules
+/// before it destroys the host.</param>
+public sealed record ShellContext(IntPtr Window, Control Root, EventLog? Log, HostLibrary Host, IntPtr HostHandle);
 
 /// <summary>
 /// A module the shell drives, such as LX-4's (<see cref="Lx4.Lx4Module"/>). The shell creates its modules when the core

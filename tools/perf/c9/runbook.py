@@ -52,6 +52,11 @@ IDENTITY_FORMAT = 'magic600-c9-acceptance-build-v1'
 GODOT_GLOB = ('GodotEngine.GodotEngine.Mono_*/Godot_v4.7.2-stable_mono_win64/'
               'Godot_v4.7.2-stable_mono_win64_console.exe')
 RUNNER = 'renderer/acceptance/run_scene.ps1'
+PREPARE_HOST = 'renderer/acceptance/prepare_host.py'
+PREPARE_DATA = 'renderer/acceptance/prepare_data.py'
+WJ_DATA = 'work/loop-memory/c9-acceptance/wj-data'
+# The acceptance host's route (prepare_host.py --route): U4 needs route B's; a build without one is a texture build.
+SURFACE = 'surface'
 SHELL = 'renderer/shell'
 LAUNCH = 'renderer/shell/launch.py'
 BUILD_PRODUCT = 'renderer/shell/build_product.py'
@@ -80,11 +85,16 @@ class Step:
 
 
 def wj_w3_commands():
-    runs = [f"& {RUNNER} -Scene {scene} -Build <product build> {DECLARE}   # three times"
+    prepare = (f'python -B {PREPARE_HOST} --route surface   # route B\'s host into {BUILDS}/<build>, offline; '
+               'no Godot window or GPU device')
+    data = (f'python -B {PREPARE_DATA}   # W-J\'s exports for S4, I_a and I_b into {WJ_DATA}, checked; no GPU')
+    check = (f'& {RUNNER} -Scene <scene> -Build <route-B build> {DECLARE} -DryRun   # per scene (S4, I_a, I_b, w3): '
+             'verifies the build (route: surface) and the W-J data, starts nothing')
+    runs = [f"& {RUNNER} -Scene {scene} -Build <route-B build> {DECLARE}   # three times"
             for scene in ('S4', 'I_a', 'I_b', 'w3')]
     gate = ('python -B tools/perf/renderer_gate.py <run 1> <run 2> <run 3> '
             '--out work/loop-memory/c9-acceptance/<scene>-summary.json   # per scene')
-    return (*runs, gate)
+    return (prepare, data, check, *runs, gate)
 
 
 STEPS = (
@@ -145,15 +155,16 @@ STEPS = (
          run_time=('an unlocked desktop', 'administrator PowerShell for PresentMon'),
          sources=('owner decision 2026-11-18 route B, check 2',)),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
-         False, 50, 'the route-B product build (the W-J and W3 evidence must come from it, not the texture path)',
+         False, 50, None,
          commands=wj_w3_commands(),
          prerequisites=(('file', RUNNER), ('compiles', 'renderer/acceptance/finalize_run.py'),
-                        ('compiles', 'renderer/acceptance/prepare_host.py'),
+                        ('compiles', PREPARE_HOST), ('compiles', PREPARE_DATA),
                         ('compiles', 'renderer/acceptance/file_guard.py'), ('imports', 'renderer_gate'),
-                        ('command', 'powershell'), ('presentmon', None), ('build', None), ('godot-launch', None),
-                        ('dir', 'work/loop-memory/c9-acceptance/wj-data')),
+                        ('command', 'powershell'), ('presentmon', None), ('build', SURFACE), ('godot-launch', None),
+                        ('dir', WJ_DATA)),
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power',
-                   'native resolution, no frame generation or upscaling'),
+                   'native resolution, no frame generation or upscaling',
+                   'the W-J and W3 evidence comes from the route-B build, not a texture build'),
          sources=('ADR-R01.3', 'owner decision 2026-11-18 route B')),
     Step('rpi79-gate', 'RPI.79: the renderer gate on the advertised combination with user stages, in one run', False,
          25, 'user shader stages compiled by DXC in the product build (RPI.80)',
@@ -162,10 +173,15 @@ STEPS = (
          sources=('RPI.79', 'RPI.80', 'owner decision 2026-11-18 (DXC ships)')),
     Step('e3-cold-start', 'Charter E3: three cold runs, process start to the first correct frame, each at most 3 s',
          False, 10, None,
-         commands=(f'python -B {LAUNCH} --out <new folder> --cold-start   # three times; the launcher waits out '
-                   'the 20 s pause and the shell exits at the first correct frame',
+         commands=(f'python -B {BUILD_PRODUCT}   # E3\'s build carries the session fixture and c600-runtime',
+                   f'python -B {LAUNCH} --out <new folder> --cold-start --dry-run   # checks the build, starts '
+                   'nothing',
+                   f'python -B {LAUNCH} --out <run n> --cold-start   # three times, each into a new folder; the '
+                   'launcher waits until 20 s after the previous product exit and copies the fixture fresh; the '
+                   'shell quits at the first correct frame and writes startup.jsonl',
                    'python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3> --out <record>.json'),
-         prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('mentions', (SHELL, '"--cold-start"'))),
+         prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('compiles', BUILD_PRODUCT),
+                        ('mentions', (SHELL, '"--cold-start"'))),
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
@@ -206,14 +222,26 @@ STEPS = (
 )
 
 
-def newest_build(root=ROOT):
-    """The newest prepared acceptance build directory that holds an identity file, or None."""
+def build_route(directory):
+    """The route in a build's identity file ('texture' when it names none), or None when it is unreadable."""
+    try:
+        identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeError):
+        return None
+    return identity.get('route', 'texture') if isinstance(identity, dict) else None
+
+
+def newest_build(root=ROOT, route=None):
+    """The newest prepared acceptance build directory that holds an identity file (of that route, when given), or
+    None."""
     candidates = sorted((path.parent for path in (root / BUILDS).glob(f'*/{IDENTITY}')), key=lambda path: path.name)
+    if route is not None:
+        candidates = [path for path in candidates if build_route(path) == route]
     return candidates[-1] if candidates else None
 
 
-def read_identity(directory):
-    """(ok, detail) for a build directory's identity file."""
+def read_identity(directory, route=None):
+    """(ok, detail) for a build directory's identity file; with a route, the build must be that route's."""
     try:
         identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
     except (OSError, ValueError, UnicodeError):
@@ -223,7 +251,12 @@ def read_identity(directory):
     source = identity.get('source')
     if identity.get('format') != IDENTITY_FORMAT or not isinstance(source, dict) or not source.get('head'):
         return False, f'{IDENTITY} is not {IDENTITY_FORMAT}'
-    return True, f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}"
+    built = identity.get('route', 'texture')
+    detail = (f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}, "
+              f'route {built}')
+    if route is not None and built != route:
+        return False, f'{detail}, not {route}: python -B {PREPARE_HOST} --route {route}'
+    return True, detail
 
 
 def godot(environ=None):
@@ -273,7 +306,7 @@ def evaluate(kind, argument, build=None, environ=None):
     if kind == 'build':
         if build is None:
             return False, f'no prepared build under {BUILDS}'
-        return read_identity(build)
+        return read_identity(build, argument)
     if kind == 'godot-launch':
         if build is None:
             return False, 'no launch.json without a build'
@@ -355,14 +388,14 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--list', action='store_true', help='print every step with its commands and prerequisites')
     mode.add_argument('--dry-run', action='store_true', help='check the prerequisites, one line per step')
-    parser.add_argument('--build', type=Path, help='prepared build directory (default: the newest under '
-                        f'{BUILDS})')
+    parser.add_argument('--build', type=Path, help='prepared build directory (default: the newest route-B build '
+                        f'under {BUILDS}, else the newest)')
     parser.add_argument('--check-quiet', action='store_true', help='also run the quiet-machine gate once (info only)')
     args = parser.parse_args(argv)
     if args.list:
         listing()
         return 0
-    build = args.build or newest_build()
+    build = args.build or newest_build(route=SURFACE) or newest_build()
     code = dry_run(check=lambda kind, argument: evaluate(kind, argument, build))
     if args.check_quiet:
         quiet, gate = quiet_machine()

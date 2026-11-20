@@ -5,9 +5,12 @@
 //! and a new one opens the same disk, and the word read back keeps the block, names the module the approval binds, and
 //! is refused at the layer's own preview admission of the record (KN5.26), as is a solving run that proposes it. The
 //! same entry approved as a built-in tool stores the same word: its record's preview is admitted once the host finds
-//! the block's part, and a later write of that record makes the preview stale (KN0.8).
+//! the block's part, and a later write of that record makes the preview stale (KN0.8). That write keeps the part with
+//! the record, so after another power loss a host that keeps no block admits the preview (CT-BND-27; LP2 draft).
 
 mod common;
+
+use std::collections::BTreeMap;
 
 use c600_check::{Grant, Policy};
 use c600_command::{code as layer_code, PreviewState, Provenance, RecordValue, Status, RECORD_ROW};
@@ -125,11 +128,13 @@ fn fixed(f: &Fixture, disk: &dyn Fn() -> Box<dyn Disk>) -> String {
 ///
 /// CT-RTE-08 (the persisted-word case, its durable leg); CT-BND-27 (part: a restored workspace keeps a tool word's
 /// block, byte for byte, and the layer's preview admission in this session refuses the restored word with
-/// `LG3:capability.not_granted` and installs no preview; not run: the recursive parts, which M6's journal does not
-/// keep, so a restored word's part is found only among the blocks the host keeps); CT-KN5-13 (part: the host's
-/// BND.84/BND.85 adapter refuses a solver tool's word from restored workspace provenance, and fails closed on a
-/// restored built-in word's missing part; not run: picks, draft insertion, composition, file round trips, imported 0.4
-/// macros and KN5.9's preview with a protection conflict); KN0.8 and KN5.26.
+/// `LG3:capability.not_granted` and installs no preview; a built-in tool's word whose one part the layer kept with
+/// its write (LP2 draft) is admitted after a power loss by a host that keeps no block; not run: parts of parts, which
+/// `c600-session`'s `tests/part_blocks.rs` runs on the journal, and C5's reader lists in `c600-tools`'
+/// `tests/workspace.rs`); CT-KN5-13 (part: the host's BND.84/BND.85 adapter refuses a solver tool's word from restored
+/// workspace provenance, and fails closed on a restored built-in word's missing part; not run: picks, draft insertion,
+/// composition, file round trips, imported 0.4 macros and KN5.9's preview with a protection conflict); KN0.8 and
+/// KN5.26.
 fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     // An approved own tool stores the word, and so does the same entry approved as a built-in tool (BND.22).
     let (saver, block, _) = saved(Author::Own);
@@ -201,8 +206,10 @@ fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     assert_eq!(store.records[&Place::Workspace("saved".into())].block, restored, "the block is unchanged");
     assert_eq!(fixed(&f, disk), unchanged, "the run changed nothing in the session");
 
-    // The built-in tool's word lists the run's input block as its part, which the journal does not keep: admission
-    // fails closed (BND.21, BND.85) until the host keeps the run's blocks again (crate documentation, Drafts).
+    // The built-in tool's word lists the run's input block as its part. The first session's host kept no run block,
+    // so its write kept no part with the record (CT-BND-27): admission fails closed (BND.21, BND.85) until the host
+    // keeps the run's blocks again (crate documentation, Drafts).
+    assert!(f.layer.blocks().is_empty(), "the first session kept no part block");
     let part = f.reader.admit(built.as_slice()).expect_err("a part with no stored content");
     assert_eq!(part.code, layer_code::NOT_GRANTED);
     assert!(part.detail.ends_with("(BND.21, BND.85)"), "{}", part.detail);
@@ -224,6 +231,20 @@ fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     let revision = f.layer.revision().clone();
     assert_eq!(refused(&f.shell.send(&mut f.layer, press)), Some(layer_code::REVISION_CHANGED));
     assert_eq!(f.layer.revision(), &revision, "nothing was committed");
+
+    // That write came after the host kept the run's blocks, so the layer kept the word's part with it (CT-BND-27; LP2
+    // draft). After another power loss, the part comes back with the journal, and a new session whose host keeps no
+    // block admits the record's preview with it, while the host's reader alone still fails closed.
+    let parts = BTreeMap::from([(sha256_hex(&manual()), text(&manual()))]);
+    assert_eq!(f.layer.blocks(), &parts, "the run's input block is the word's one part");
+    drop(f);
+    power_loss();
+    let mut f = Fixture::open(disk());
+    assert_eq!(f.layer.blocks(), &parts);
+    let alone = f.reader.admit(built.as_slice()).map_err(|error| error.code);
+    assert_eq!(alone, Err(layer_code::NOT_GRANTED));
+    let id = f.preview(record_draft("built"));
+    assert_eq!(f.layer.preview_state(id), Some(PreviewState::Presented));
 }
 
 /// CT-RTE-08's persisted-word case, durable leg, on a memory disk with a power loss between the sessions: only what
