@@ -171,6 +171,10 @@ fn the_device_alone_holds_the_allocator_the_hook_and_the_unsafe_code_of_this_pac
         if path == device {
             assert!(text.contains("#[global_allocator]") && text.contains("c600_runtime::child::main()"));
             assert!(text.contains("c600_runtime::child::main_with(native::point)"));
+            // C9 U7: the device keeps Windows Error Reporting out of its own crashes, first thing, per process only.
+            assert!(text.contains("fn main() {\n    quiet_error_reporting();\n"));
+            assert!(text.contains("SetErrorMode(GetErrorMode() | SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX)"));
+            assert!(!text.contains("WerAddExcludedApplication") && !text.contains("RegSetValue"));
         } else {
             assert!(!text.contains("global_allocator"), "{} names a global allocator", path.display());
             assert!(!text.contains("main_with("), "{} calls the fault hook", path.display());
