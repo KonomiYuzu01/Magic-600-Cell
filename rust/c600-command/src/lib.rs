@@ -436,8 +436,12 @@
 //!   - A static binding keeps the captured arguments themselves, where LI.20 keeps their digest, so that the layer can
 //!     check them. It answers as [`CommandLayer::availability_for`] does, LI.18's argument-aware hint without its
 //!     revision: the row's argument-independent gates first, then an invocation's argument checks (an object,
-//!     `confirm`, the names, the forms and a named revision's currency). It is computed when asked, not cached:
-//!     LI.19's table, keyed by row and argument digest, is not built.
+//!     `confirm`, the names, the forms and a named revision's currency). It is computed when asked, not cached.
+//!   - KN5.6's table (L13 (d) of the KN5 attack leads): [`CommandLayer::availability_table`] answers the shell's
+//!     bindings in one [`Availability`], keyed by row and argument digest (LI.19) and stamped with the revision, the
+//!     generation and the digest of the caller and its profile. The shell passes its bindings with each read and the
+//!     layer keeps no registration, so a new set of bindings needs no new generation. A table is computed when read,
+//!     never cached, and grants nothing.
 //!   - Only a language-defined row takes metadata; a stored row an entry serves answers by its own gates. Metadata is
 //!     not journaled: after a reopen the host declares it again, as it registers its overlays again.
 //!   - The generation advances when an overlay row is registered, a stored row served or metadata declared (LI.21).
@@ -541,6 +545,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod availability;
 pub mod budget;
 pub mod filter;
 mod forms;
@@ -559,6 +564,7 @@ pub mod view;
 pub mod worksheet;
 pub mod workspace;
 
+pub use availability::{Availability, AvailabilityKey};
 pub use budget::Budget;
 pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIEW_ROW, FRESH_FILTER_PREVIEW};
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
@@ -589,8 +595,9 @@ pub use worksheet::{
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
 /// The sources of the command layer and its loop runner, with the stored command table, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 22] = [
+pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/Cargo.toml", include_bytes!("../Cargo.toml")),
+    ("c600-command/src/availability.rs", include_bytes!("availability.rs")),
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
     ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
