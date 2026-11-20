@@ -62,7 +62,7 @@ November 2026 as a line of its own.
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves are C8's (section 8) |
 | Representations tool, headless half | Built in part (C6, section 7): its six rows served through the command and source routes, on a test host whose two snapshot reads C5's host bridge answers from LP2's structure rows (pull request 262), with draft tariffs | The two reads' tariffs in the command table, which freezes at LP3 (section 7). LP2 built the `CanonicalObjectRefs` form (pull request 269) and a record and an exact-set digest for each saved set (pull request 337). The applied filter's display is built on LP2's members of a layer (pull request 375). Not built: a display of an applied filter whose filter preview the layer no longer keeps |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8): the part blocks the layer keeps for C5's reader (LP2's pull request 272), and LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's gains and losses) and macro versions (LP2's pull request 277); CT-EV3-07's view part with `c600-view`'s view model behind EV3.2's view rows (LP2's pull request 271), through C5's `ModelViews`. KN5.26's admission matrix L1 and L2 runs through the layer in LP2's tests (pull request 270). M6's session lock covers `JournalStore` (pull request 195). The session's profile (pull request 287) and a position role's occupant read again at a work-sheet reuse (pull request 361) are built | Nothing from LP2 |
-| The jumbling tool and every jumbling half | Built in part (C8, section 8) | J10's certified exposed-face geometry and its size profile, which no line has supplied yet (LP2's `faces::exposed_faces` refuses with JI.45's code, pull request 336; section 8). C8 uses LG2.18's jumbling word key `word-key/1` (LP2's pull request 338) under the item matrices that the tool's menu alphabet pins, for CT-LB1-02's key half and its library entry `menu_word_keys`, CT-LB1-06's word keys and CT-RTE-07's six jumbling keys on menu words; the IR draft's F2 and F5 (pull request 222) for LB3's ν and drafted correction-set entry as language code (`jumble_nu`, pull request 295), `jumble-locality/1` with `trace_key` on menu words (pull request 251) for CT-LB1-06's jumbling half, and Jumble on in the command layer for oracle equality, CT-LB4-03 at a later revision, and `jumble.off`, the refusals, redo, protected pieces and free mode beside the tool's own entries (LP2's pull requests 212, 217, 218, 220 and 254, taken up in pull request 323), and the repair list as LP2's job that names its cap through the command layer, beside the tool's entry `jumble_repair` (LP2's pull request 326, taken up in pull request 339). M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
+| The jumbling tool and every jumbling half | Built in part (C8, section 8) | J01 and J06 to J12 as supported rows, a backend's own rows (C9), and BM5's review records (section 8). C8 uses LG2.18's jumbling word key `word-key/1` (LP2's pull request 338) under the item matrices that the tool's menu alphabet pins, for CT-LB1-02's key half and its library entry `menu_word_keys`, CT-LB1-06's word keys and CT-RTE-07's six jumbling keys on menu words; the IR draft's F2 and F5 (pull request 222) for LB3's ν and drafted correction-set entry as language code (`jumble_nu`, pull request 295), `jumble-locality/1` with `trace_key` on menu words (pull request 251) for CT-LB1-06's jumbling half, and Jumble on in the command layer for oracle equality, CT-LB4-03 at a later revision, and `jumble.off`, the refusals, redo, protected pieces and free mode beside the tool's own entries (LP2's pull requests 212, 217, 218, 220 and 254, taken up in pull request 323), and the repair list as LP2's job that names its cap through the command layer, beside the tool's entry `jumble_repair` (LP2's pull request 326, taken up in pull request 339). M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel, CT-LB2-04 whole over `positions` and a `labels` host row, CT-LB2-01 whole over an `effect` host row (pull request 294), CT-LB2-02 whole over a `protection` host row (pull request 300) and CT-BND-18 whole over a `setups` host row (pull request 309); C5: its Strict half through the tool's route, on the command layer's Strict mode of LP2's pull request 198, and the twist keys' exact requests through `twist.apply`; C6: CT-LB4-01's checks on the polytope operations); the others can start | What the kernel alone does not give: host rows beyond `positions`, `labels`, `effect`, `protection`, `replay` (pull request 353), `orbits` (pull request 358), `setups` (served only when the host gives the bridge the setup table) and C6's `structure.compare` and `filter.preview` (on LP2's structure rows, pull request 262) in the tool's bridge, LP3's to add; LB7.2's work sheets are in the command layer (pull request 232) |
 | The on-screen half | Started as a line of its own (owner, 18 November 2026; C9, section 8) | Its components, which that line builds; the owner's runs |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, RPI.79's gate run and the W-J runs on the selected renderer | Waits | The owner's machine, all run together (owner, 16 November 2026; ADR-R01.3); LX-4's time box is 4 hours (owner, 18 November 2026); route B's three checks join them ([route B](../../wiki/decisions/owner-decisions-2026-11-18-route-b.md)) |
@@ -623,11 +623,11 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   pieces off the lattice and ν), which agree with `jumble.off` at the layer's head, a nonzero ν's refusal included
   (`tests/ct_lb3_07.rs`, `tests/jumble_layer_verdicts.rs`). And its Jumble-on half, on LP2's `journal` row (pull
   request 383): the entrance the head's line reaches through retained commits only, which agrees with `jumble.on`
-  (`tests/jumble_on_derivation.rs`), so CT-LB3-07 runs whole.
-  Waits: J10's certified exposed-face geometry and its size profile, which no line has supplied yet (LP2's
-  `faces::exposed_faces` refuses with JI.45's code, pull request 336, and `c600-display`'s `jumble::exposed_faces`
-  passes the refusal on with the state digest it names); J01 and J06 to J12 as supported rows, a backend's own rows
-  (C9);
+  (`tests/jumble_on_derivation.rs`), so CT-LB3-07 runs whole. With J10 (pull request 384): J10's payload from M5's
+  certified geometry and its admitted size profile, produced and checked headless, and CT-RM-07's rows 9 to 13 on M5's
+  model; and row 14 through CT-LB3-04's planted menu, I_b's with I_a's identity (`c600-display/tests/jumbling.rs`), so
+  CT-RM-07 runs whole.
+  Waits: J01 and J06 to J12 as supported rows, a backend's own rows (C9);
   BM5's review records. Built next, as one piece: CT-LB1-03's jumbling kernel half (LB1.8's literal words of one pinned
   menu and their constructors, with no state access); CT-LB3-02's LP3 side (protection verdicts that carry their level
   and are refused at the other, beside the kernel facts M5's `crossing.rs` runs as CT-KN2-03); CT-EV3-06's off-lattice
@@ -716,7 +716,7 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test runs now, with no need of the owner's machine, the on-screen half (C9) or an item LP2 has not
-built. 53 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 14 have a part that runs now, and 15
+built. 54 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 13 have a part that runs now, and 15
 have no part that runs yet. The milestone is in parentheses; "next" marks LP3 work that needs nothing more from LP2 and
 is not built yet.
 
@@ -764,7 +764,7 @@ is not built yet.
 | CT-RPI-05 | source | Now (C2) | - |
 | CT-RPI-06 | source | Now (C2) | - |
 | CT-RPI-07 | synthetic | Now (C2) | - |
-| CT-RPI-08 | source | The rows J01 and J06 to J12 as supported rows: a backend's own rows and refusals (C9); J10's certified exposed-face geometry and its size profile, which no line has supplied yet (LP2's `faces::exposed_faces` refuses with JI.45's code, pull request 336) | The 600-cell-Full rows (C2); the jumbling rows J02 to J05 on M5's states (C8); the producers of J01, J06, J07, J09, J11 and J12 on M5's and M8's engine (C8, pull request 301) |
+| CT-RPI-08 | source | The rows J01 and J06 to J12 as supported rows: a backend's own rows and refusals (C9) | The 600-cell-Full rows (C2); the jumbling rows J02 to J05 on M5's states (C8); the producers of J01, J06, J07, J09, J11 and J12 on M5's and M8's engine (C8, pull request 301); J10's payload from M5's certified geometry and its admitted size profile, produced and checked headless (pull request 384) |
 | CT-RPI-09 | source | Now (C2) | - |
 | CT-RPI-10 | synthetic | Now (C2) | - |
 | CT-RPI-11 | synthetic | Now (C2) | - |
@@ -801,14 +801,14 @@ is not built yet.
 | CT-RM-04 | source | Now (C2) | - |
 | CT-RM-05 | windows | The on-screen half (C9) | - |
 | CT-RM-06 | windows | The on-screen half (C9) | - |
-| CT-RM-07 | source | Rows 9 to 14 of RM.37's jumbling vectors on M5's model: J10's certified exposed-face geometry and its size profile, which no line has supplied yet (LP2's `faces::exposed_faces` refuses with JI.45's code, pull request 336); ν and the correction catalogue (pull requests 201 and 206) and covers, repair and release order (pull request 176) are built, and C8 does not use them for these rows yet | The 600-cell-Full half (C2); rows 1 to 8 and 15 of the jumbling half on M5's model (C8) |
+| CT-RM-07 | source | Now (the 600-cell-Full half (C2); the jumbling half on M5's model: rows 1 to 8 and 15 (C8), rows 9 to 13 with J10's geometry (pull request 384), and row 14 through CT-LB3-04's planted menu (C8, `c600-display/tests/jumbling.rs`)) | - |
 | CT-RM-09 | source | A device for the device parts of rows 3 to 6, 8 and 10 (C9) | Rows 1, 2, 7 and 9, and the headless parts of rows 3 to 6, 8 and 10 (C2) |
 | CT-RM-10 | windows | The on-screen half (C9) | - |
 
 ## 10. Stop condition for LP3, and questions to the owner
 
 LP3's offline work stops and reports when every remaining milestone waits for a command-layer row (KN5), an LP2 item not
-built yet, data no line has supplied yet (such as J10's certified exposed-face geometry), an IR feature (the features
+built yet, data no line has supplied yet, an IR feature (the features
 CT-RTE-04's traces need), the on-screen half (C9), an owner run or an owner
 answer, or when an implementation would change a frozen file (PHS.52).
 A failing acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar moves.

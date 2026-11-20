@@ -3121,9 +3121,9 @@ run or not applicable is no pass (PHS.63).
     payloads and forged answers refused), CT-RPI-12's off-lattice part on a real jumbling state
     (with C2's stale half, CT-RPI-12 runs whole), RPI.23 and J13 at lattice poses other than the identity (every
     sticker in the slot of M8's labels, a turned sticker resolved through the host to the slot k·s of the slot action,
-    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 13
-    and 15; row 2's half-turn sweeps at π; row 14 stays a fixture vector, since A5 keeps the fixed I_a coordinates
-    at 0 at every witnessed I_a state).
+    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (all 15 rows;
+    row 2's half-turn sweeps at π; row 14, which A5 keeps from every witnessed I_a state, runs on CT-LB3-04's planted
+    menu, I_b's with I_a's identity), so CT-RM-07 runs whole with C2's half.
   - `c600-display/tests/jumbling_payloads.rs`: CT-RPI-08's producers of J01 (render/1's pinned shrink anchors), J06 (the
     readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
     (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
