@@ -25,7 +25,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, CT-LB2-03's work-sheet part, and the durable leg of LP2's saved sets (LP3, C7) |
-| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, each run under its job's budget, with KN2.4's `positions`, `labels`, `effect`, `protection` and `replay` rows, the draft `setups` and `orbits` rows and the representations tool's draft `structure.compare` and `filter.preview` rows (C6) as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, each run under its job's budget, with KN2.4's `positions`, `labels`, `effect`, `protection` and `replay` rows, the draft `setups` and `orbits` rows and the representations tool's draft `structure.compare`, `filter.preview` and `structure.layer` rows (C6) as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and all six served there by a test host through the command and source routes, whose two snapshot reads `c600-tools`' bridge answers from LP2's structure rows, and the applied filter's display (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), the repair list at a named cap under the built-in column's repair-list exception (`jumble_repair`), the three end tests read as their own verdict types (`jumble_end_tests`), the jumbling rows' host bridge (`rows`: KN2.4's jumbling rows and `seam_facts` as snapshot reads, also at the command layer's head with Jumble on), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
@@ -854,12 +854,14 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     between two cells (`structure.compare`), and `cell_layers(cell)` and `layer_counts(cell, layer)` the positions and
     slots of each breadth-first layer around a cell (`filter.preview`'s counts for a layer predicate), as 0.4's
     `cell_distances` and `layer_mask` give them: a position with a home slot in a cell of the layer counts whole, so
-    layers overlap. Two cells share a face when they share three vertices, read from the 120 vertex pieces; the load
-    checks the graph. The rows read no state. A bad cell or layer is `KN2:input.named_object_invalid` with the text of
-    0.4's `cell_mask` or `layer_mask`.
-    `CommandLayer::compare_cells`, `cell_layers` and `layer_counts` read them at the head and, like
+    layers overlap. `layer_members(cell, layer)` names what those counts count: the layer's positions and their home
+    slots, each list strictly increasing (`structure.layer`'s draft read, pull request 375). Two cells share a face
+    when they share three vertices, read from the 120 vertex pieces; the load checks the graph. The rows read no state.
+    A bad cell or layer is `KN2:input.named_object_invalid` with the text of 0.4's `cell_mask` or `layer_mask`.
+    `CommandLayer::compare_cells`, `cell_layers`, `layer_counts` and `layer_members` read them at the head and, like
     `CommandLayer::positions`, refuse with Jumble on (LG2.8). `c600-kernel/tests/structure.rs` checks every step count
-    and every layer's counts against digests taken from 0.4's `core.py` on the same assets.
+    and every layer's counts against digests taken from 0.4's `core.py` on the same assets, and that a layer's members
+    are as many as its counts, its slots their home slots, and a cell's layers together every position.
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
@@ -2365,9 +2367,10 @@ run or not applicable is no pass (PHS.63).
   a sixth read, the draft `setups` row: the certified setups for a target the solver names, which only the setup-search
   exception may read (pull request 309). It serves the draft `orbits` row too, the pieces of named orbits, which LB2's
   orbit catalogue reads: model data, the orbit the kernel's `positions` gives each piece at the solved state, so it
-  reads no state of the session (pull request 358). It also serves the two draft structure reads of LP3's
-  representations tool (C6): `structure.compare`, two cells compared, and `filter.preview`, the counts of a layer
-  predicate, from LP2's structure rows (pull request 262), which read no state. Admission refuses an entry that both
+  reads no state of the session (pull request 358). It also serves the three draft structure reads of LP3's
+  representations tool (C6): `structure.compare`, two cells compared, `filter.preview`, the counts of a layer
+  predicate, and `structure.layer`, its members, from LP2's structure rows (pull requests 262 and 375), which read no
+  state. Admission refuses an entry that both
   reads one and proposes (LQ21). It grants no other state read, declassified value, file or workspace access, view,
   exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or app row and any runtime
   invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the pending preview the
@@ -2465,9 +2468,10 @@ run or not applicable is no pass (PHS.63).
     orbit and at least 70 targets, against an independent read of the tree asset, and a search changes nothing. A buffer
     position has no setup and still names the family. The solver's edit of a setup is a word it builds itself, and
     nothing previews until its own command (pull request 309).
-  - `structure_rows.rs`: the draft `structure.compare` and `filter.preview` rows through the bridge (LP3's C6): an
-    entry reads two cells compared and the counts of a layer predicate as LP2's structure rows give them, in the
-    declared order and with `Nat` or `Int`, the same in a solved and a scrambled session; each row refuses a declared
+  - `structure_rows.rs`: the draft `structure.compare`, `filter.preview` and `structure.layer` rows through the bridge
+    (LP3's C6): an entry reads two cells compared, the counts of a layer predicate and its members (the positions it
+    counts and their home slots, pull request 375) as LP2's structure rows give them, in the declared order and with
+    `Nat` or `Int`, the same in a solved and a scrambled session; each row refuses a declared
     type it does not answer and another argument form before its charge, and a cell outside 0 to 599 or a layer past
     the cell's last with `KN2:input.named_object_invalid` once charged; the draft tariffs cover the largest answers.
     The refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`. Covers no conformance ID.
