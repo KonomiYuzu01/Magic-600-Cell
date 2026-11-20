@@ -19,7 +19,8 @@
 //! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the two draft
 //! structure reads of LP3's representations tool (C6): `structure.compare`, two cells compared, and `filter.preview`,
 //! the counts of a layer predicate, through LP2's [`CommandLayer::compare_cells`] and [`CommandLayer::layer_counts`],
-//! which read no state.
+//! which read no state. And it serves the draft `orbits` read, the pieces of named orbits, which LB2's orbit catalogue
+//! reads: model data, the orbit the kernel's `positions` gives each piece, which reads no state of the session.
 //! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
 //! (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no
 //! workspace or file write and no clock.
@@ -219,6 +220,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
                 kernel_rows::filter_preview_read_tariff(arg, ty)
             }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::ORBITS_ROW => {
+                kernel_rows::orbits_read_tariff(arg, ty)
+            }
             _ => Err(NOT_GRANTED),
         }
     }
@@ -251,6 +255,9 @@ impl<S: Store> Host for Bridge<'_, S> {
             }
             if *query == kernel_rows::FILTER_PREVIEW {
                 return kernel_rows::filter_preview(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::ORBITS_ROW {
+                return kernel_rows::orbits(self.layer, arg, ty);
             }
         }
         let Request::Propose { word, target, .. } = request else {
