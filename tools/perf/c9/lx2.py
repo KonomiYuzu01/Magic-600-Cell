@@ -529,11 +529,11 @@ def echo_times(rows, posts, done, edits, edit, frames, presented, frequency, con
     return samples
 
 
-def analyze_run(rows, post_rows, edits, digests, *, launch=None, presents=None, display_ticks=None,
+def analyze_run(rows, post_rows, edits, digests, *, launch=None, presents=None, present_ticks=None,
                 faults_record=None):
-    """The run's per-fault conditions and its reasons; `presents` from read_presents and `display_ticks` from
-    key_to_frame.read_display_ticks, or None without a capture."""
-    run = key_to_frame.analyze(rows, display_ticks)
+    """The run's per-fault conditions and its reasons; `presents` from read_presents and `present_ticks` from
+    key_to_frame.read_present_ticks, or None without a capture."""
+    run = key_to_frame.analyze(rows, present_ticks)
     head = key_to_frame.check_rows(rows)
     frequency, reasons = head['qpc_frequency'], set(run['reasons'])
     posts_head, posts, done = read_posts(post_rows)
@@ -677,16 +677,15 @@ def build(fixtures, directory, faults_path, argv, synthetic_flag=False):
     try:
         rows = evidence.read_jsonl(events)
         head = key_to_frame.check_rows(rows)
-        presents = display = None
+        presents = ticks = None
         if (directory / key_to_frame.CAPTURE).is_file():
             require(integer(head.get('process_id')) and isinstance(head.get('swap_chain'), str)
                     and bool(head['swap_chain'].strip()), 'presentmon-undeclared')
             capture = directory / key_to_frame.CAPTURE
             presents = read_presents(capture, head['process_id'], head['swap_chain'])
-            display = key_to_frame.read_display_ticks(capture, head['process_id'], head['swap_chain'],
-                                                      head['qpc_frequency'])
+            ticks = key_to_frame.read_present_ticks(capture, head['process_id'], head['swap_chain'])
         run = analyze_run(rows, evidence.read_jsonl(directory / POSTS), edits, digests, launch=launch,
-                          presents=presents, display_ticks=display, faults_record=faults_record)
+                          presents=presents, present_ticks=ticks, faults_record=faults_record)
     except RunError as error:
         run = {'run_id': directory.name, 'build_identity': None, 'synthetic': None, 'status': 'unreadable',
                'reasons': [str(error)]}

@@ -39,8 +39,11 @@ a presented row for a frame the log never named, a frame presented or named twic
 epoch or surface differs from its frame, a display before submission, a key naming an unknown frame or a frame
 submitted before the key, keys out of order or naming frames out of order, and presents out of order on one swap
 chain. A run is also invalid when the window lost the foreground, the correctness control failed, it has no keys, or
-its PresentMon capture shows no displayed present of the declared swap chain within 2 ms (DRAFT tolerance,
---display-tolerance-ms) of a confirmed display time. Invalid runs are kept and reported, never pooled (PHS.64).
+its PresentMon capture disagrees: the first present of the declared swap chain at or after a confirmed frame's
+submission is missing or later than the frame's confirmed display time. PresentMon marks every present of the core's
+composition chain Dropped (20 Nov 2026 rehearsal), so the display time comes from the core's frame statistics alone
+and PresentMon checks only that the frame was presented in between, whatever its Dropped column says (owner, 20
+November 2026, item 9). Invalid runs are kept and reported, never pooled (PHS.64).
 
 Verdict: nearest-rank percentiles over the confirmed and failed keys of the valid runs, which must share one build
 identity. Met only if at least 100 confirmed keys are pooled and the pooled p95 and every valid run's p95, failed keys
@@ -59,7 +62,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import evidence  # noqa: E402
 from evidence import RunError, integer, require  # noqa: E402
-from b412_summary import csv_integer, number  # noqa: E402
+from b412_summary import csv_integer  # noqa: E402
 from renderer_gate import CAPTURE_COLUMNS  # noqa: E402
 
 LOG_FORMAT = 'magic600-c9-shell-events-v1'
@@ -67,7 +70,6 @@ EVENTS = 'events.jsonl'
 CAPTURE = 'presentmon.csv'
 P95_MAX_MS = 100.0
 OBSERVATIONS_MIN = 100
-TOLERANCE_MS = 2.0
 DISPLAYED = 'msUntilDisplayed'
 DROPPED = 'Dropped'
 FIELDS = {'key': ('seq', 'qpc'), 'frame': ('frame_id', 'qpc', 'device_epoch', 'surface'),
@@ -86,7 +88,7 @@ BAR = {'text': ('Charter E2: A turn at full detail responds within 100 ms (the B
        'source': ['charter E2', 'RTE.43', 'V11.1', 'B4-12 method', 'PHS.64', 'owner decision 2026-11-18 (route B)',
                   'owner decision 2026-11-20 (LP3 exit, item 2)']}
 DRAFTS = ['log schema magic600-c9-shell-events-v1', 'press time = shell key-down receipt',
-          'PresentMon display tolerance 2 ms', 'one run of 100 presses suffices']
+          'PresentMon cross-check by present order (route B chain reported Dropped)', 'one run of 100 presses suffices']
 
 
 def e2_percentile(latencies, failed, percentile):
@@ -190,23 +192,20 @@ def match_keys(keys, frames, presented, frequency, contradictions):
     return entries
 
 
-def cross_check(entries, presented, display_ticks, frequency, tolerance_ms):
-    """Confirmed display times without a PresentMon display within the tolerance."""
-    tolerance = tolerance_ms * frequency / 1000
-    frames = sorted({entry['frame_id'] for entry in entries if entry['status'] == 'confirmed'})
+def cross_check(entries, frames, presented, present_ticks):
+    """Confirmed frames whose first present of the declared chain at or after their submission is missing or later
+    than their confirmed display time (owner, 20 November 2026, item 9)."""
+    confirmed = sorted({entry['frame_id'] for entry in entries if entry['status'] == 'confirmed'})
     misses = 0
-    for frame_id in frames:
-        ticks = presented[frame_id]['display_qpc']
-        index = bisect.bisect_left(display_ticks, ticks)
-        near = [display_ticks[i] for i in (index - 1, index) if 0 <= i < len(display_ticks)]
-        if not near or min(abs(value - ticks) for value in near) > tolerance:
+    for frame_id in confirmed:
+        index = bisect.bisect_left(present_ticks, frames[frame_id]['qpc'])
+        if index == len(present_ticks) or present_ticks[index] > presented[frame_id]['display_qpc']:
             misses += 1
-    return {'frames_checked': len(frames), 'disagreements': misses, 'tolerance_ms': tolerance_ms,
-            'presentmon_displays': len(display_ticks)}
+    return {'frames_checked': len(confirmed), 'disagreements': misses, 'presentmon_presents': len(present_ticks)}
 
 
-def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
-    """One run from its log rows and, optionally, PresentMon display ticks of the declared swap chain."""
+def analyze(rows, present_ticks=None):
+    """One run from its log rows and, optionally, the PresentMon present times of the declared swap chain."""
     head = check_rows(rows)
     frequency = head['qpc_frequency']
     contradictions, reasons = set(), set()
@@ -220,8 +219,8 @@ def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
            'no_frame': sum(entry['status'] == 'no-frame' for entry in entries), 'unconfirmed_keys': unconfirmed,
            'contradictions': sorted(contradictions), 'per_key': entries,
            'stats': e2_statistics(latencies, len(unconfirmed))}
-    if display_ticks is not None:
-        run['presentmon'] = cross_check(entries, presented, sorted(display_ticks), frequency, tolerance_ms)
+    if present_ticks is not None:
+        run['presentmon'] = cross_check(entries, frames, presented, sorted(present_ticks))
         if run['presentmon']['disagreements']:
             reasons.add('presentmon-disagrees')
     if contradictions:
@@ -237,29 +236,23 @@ def analyze(rows, display_ticks=None, tolerance_ms=TOLERANCE_MS):
     return run
 
 
-def read_display_ticks(path, process_id, swap_chain, frequency):
-    """Display times (QPC ticks) of the declared swap chain's displayed presents in a PresentMon v1 CSV."""
+def read_present_ticks(path, process_id, swap_chain):
+    """Present call times (QPC ticks) of the declared swap chain in a PresentMon v1 CSV, dropped or not: PresentMon
+    marks every present of the core's composition chain Dropped (owner, 20 November 2026, item 9)."""
     columns, ticks = CAPTURE_COLUMNS, []
     chain = swap_chain.strip().casefold()
     try:
         with Path(path).open(encoding='utf-8-sig', newline='') as stream:
             reader = csv.DictReader(stream, strict=True)
             header = reader.fieldnames or []
-            require(all(name in header for name in (columns['process'], columns['swap_chain'], columns['time'],
-                                                    DISPLAYED)), 'presentmon-missing-column')
+            require(all(name in header for name in (columns['process'], columns['swap_chain'], columns['time'])),
+                    'presentmon-missing-column')
             for row in reader:
                 if csv_integer(row.get(columns['process'])) != process_id:
                     continue
                 if (row.get(columns['swap_chain']) or '').strip().casefold() != chain:
                     continue
-                if (row.get(DROPPED) or '0').strip() not in ('0', ''):
-                    continue
-                try:
-                    until = float(row.get(DISPLAYED))
-                except (TypeError, ValueError):
-                    continue
-                if number(until) and until >= 0:
-                    ticks.append(csv_integer(row.get(columns['time'])) + round(until * frequency / 1000))
+                ticks.append(csv_integer(row.get(columns['time'])))
     except OSError:
         raise RunError('missing-file') from None
     except (csv.Error, UnicodeError):
@@ -267,7 +260,7 @@ def read_display_ticks(path, process_id, swap_chain, frequency):
     return ticks
 
 
-def read_run(directory, tolerance_ms=TOLERANCE_MS):
+def read_run(directory):
     """One run directory; an unreadable run is kept as invalid with its reason code."""
     directory = Path(directory)
     try:
@@ -277,9 +270,8 @@ def read_run(directory, tolerance_ms=TOLERANCE_MS):
         if (directory / CAPTURE).is_file():
             require(integer(head.get('process_id')) and isinstance(head.get('swap_chain'), str)
                     and bool(head['swap_chain'].strip()), 'presentmon-undeclared')
-            display = read_display_ticks(directory / CAPTURE, head['process_id'], head['swap_chain'],
-                                         head['qpc_frequency'])
-        return analyze(rows, display, tolerance_ms)
+            display = read_present_ticks(directory / CAPTURE, head['process_id'], head['swap_chain'])
+        return analyze(rows, display)
     except RunError as error:
         return {'run_id': directory.name, 'build_identity': None, 'synthetic': None, 'status': 'unreadable',
                 'reasons': [str(error)], 'latencies_ms': [], 'stats': None}
@@ -300,8 +292,8 @@ def judge(runs):
     return ('met', [], stats) if met else ('not-met', ['p95-over-bar'], stats)
 
 
-def build(directories, argv, synthetic_flag=False, tolerance_ms=TOLERANCE_MS):
-    runs = [read_run(directory, tolerance_ms) for directory in directories]
+def build(directories, argv, synthetic_flag=False):
+    runs = [read_run(directory) for directory in directories]
     verdict, reasons, pooled = judge(runs)
     identities = sorted({run['build_identity'] for run in runs if run['status'] == 'valid'})
     inputs = [evidence.file_entry(f'{run["run_id"]}:{name}', Path(directory) / name)
@@ -334,11 +326,8 @@ def main(argv=None):
     parser.add_argument('runs', nargs='+', type=Path, help='run directories holding events.jsonl')
     parser.add_argument('--out', type=Path, help='write the evidence record here (never replaces a file)')
     parser.add_argument('--synthetic', action='store_true', help='mark the inputs as synthetic fixtures')
-    parser.add_argument('--display-tolerance-ms', type=float, default=TOLERANCE_MS)
     args = parser.parse_args(argv)
-    if not (args.display_tolerance_ms > 0):
-        parser.error('--display-tolerance-ms must be positive')
-    record = build(args.runs, argv, args.synthetic, args.display_tolerance_ms)
+    record = build(args.runs, argv, args.synthetic)
     for run in record['result']['runs']:
         stats = run.get('stats')
         print(f"{run['run_id']}: {run['status']}"

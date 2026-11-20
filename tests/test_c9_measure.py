@@ -98,8 +98,7 @@ class KeyToFrameTests(NoProcessCase):
         self.assertEqual([(entry['frame_id'], entry['status']) for entry in run['per_key']],
                          [(1, 'confirmed'), (3, 'confirmed'), (5, 'confirmed')])
         self.assertEqual([round(entry['latency_ms'], 6) for entry in run['per_key']], [45.0, 52.0, 60.0])
-        self.assertEqual(run['presentmon'], {'frames_checked': 3, 'disagreements': 0, 'tolerance_ms': 2.0,
-                                             'presentmon_displays': 4})
+        self.assertEqual(run['presentmon'], {'frames_checked': 3, 'disagreements': 0, 'presentmon_presents': 5})
 
     def test_a_key_is_matched_by_its_frame_id_not_by_time(self):
         rows = e2_rows([20.0, 30.0])
@@ -220,11 +219,17 @@ class KeyToFrameTests(NoProcessCase):
                 self.assertIn(contradiction, run['contradictions'])
 
     def test_presentmon_disagreement_and_run_conditions_invalidate_a_run(self):
-        run = key_to_frame.analyze(e2_rows([20.0]), display_ticks=[F + 25 * F // 1000])
-        self.assertEqual(run['presentmon']['disagreements'], 1)
-        self.assertIn('presentmon-disagrees', run['reasons'])
-        agree = key_to_frame.analyze(e2_rows([20.0]), display_ticks=[F + 21 * F // 1000])
-        self.assertEqual(agree['status'], 'valid', agree['reasons'])
+        # The press is at F, its frame submitted at F + 1 ms and confirmed displayed at F + 20 ms.
+        ms = F // 1000
+        for name, ticks in (('none', []), ('before-submit', [F]), ('after-display', [F + 21 * ms]),
+                            ('only-before-and-after', [F, F + 25 * ms])):
+            with self.subTest(presents=name):
+                run = key_to_frame.analyze(e2_rows([20.0]), present_ticks=ticks)
+                self.assertEqual(run['presentmon']['disagreements'], 1)
+                self.assertIn('presentmon-disagrees', run['reasons'])
+        for ticks in ([F + ms], [F + 20 * ms], [F, F + 2 * ms, F + 25 * ms]):
+            agree = key_to_frame.analyze(e2_rows([20.0]), present_ticks=ticks)
+            self.assertEqual(agree['status'], 'valid', agree['reasons'])
         for header, reason in (({'foreground_throughout': False}, 'not-foreground'),
                                ({'correctness': 'fail'}, 'correctness-failed')):
             with self.subTest(reason=reason):
