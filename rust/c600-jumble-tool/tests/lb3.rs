@@ -1,8 +1,9 @@
 //! The kernel halves of the LB1 and LB3 jumbling tests that `c600_jumble`'s public API reaches (LP3, C8, item 2;
 //! definitions in chapter 03's test table), with CT-BND-17 beside CT-LB3-05. Each test checks, on the kernel API, the
 //! facts the library entry would return: the kernel half. The library entries of CT-LB3-03 and CT-LB3-06 run as
-//! language code in `tests/library.rs`, against the same API; the other LB3 entries are not written as language code
-//! yet. None of these IDs runs whole here; each test's comment names the part that runs. Milestone M8's
+//! language code in `tests/library.rs`, against the same API, and the entry `jumble_repair` of CT-LB3-05 and CT-BND-17
+//! in `tests/ct_lb3_07.rs`, `tests/rows.rs` and `tests/jumble_layer_repair.rs`. Each test's comment names the part
+//! that runs here and says whether its ID runs whole with the halves it points to. Milestone M8's
 //! `levels` end tests and `observe::cuts::repair_list` carry CT-LB3-01, the sticker-test sentence of CT-LB3-03, and
 //! CT-LB3-05 with CT-BND-17. LP2's ν row and correction catalogue (`c600_jumble::nu`, `c600_jumble::corrections`)
 //! carry CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07; `tests/ct_lb3_04.rs` runs
@@ -32,10 +33,14 @@ use c600_jumble::state::{Pose, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_jumble_tool::tool::{tool, CHECK_TWIST, CHECK_WORD};
-use c600_jumble_tool::word::{self, Letter, WordError};
+use c600_jumble_tool::word::{self, Alphabet, Letter, WordError};
 use c600_kernel::json::{self, Value};
+use c600_library::lower_source;
 use c600_run::boundary::Store;
-use c600_run::interp::{Host, Request, RowTariff, Sink};
+use c600_run::interp::{load, Host, NoHost, Options, Request, RowTariff, Sink};
+use c600_run::menu_key;
+use c600_run::meter::{Amounts, Outcome as Ended};
+use c600_run::value::Value as RunValue;
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -154,8 +159,9 @@ fn play(state: &mut State, letter: &Letter) -> Status {
 }
 
 /// CT-LB1-02 (part: the kernel half of "at a blocked cap, literal a,a⁻¹ is refused; empty is admitted" and of "prefix
-/// protection still reads literal letters"; the library entry is not written as language code yet. Not run: the
-/// domain-preserving key and "keys preserve the end digest", which wait for an owner answer on LG2.18's word keys).
+/// protection still reads literal letters"; the library entry is not written as language code yet. The key half, "the
+/// domain-preserving key is refused" and "keys preserve the end digest", is
+/// `ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest` below).
 ///
 /// At the state after 12 records of the I_a journal, cap `blocked` is blocked. The literal word a,a⁻¹ at that cap
 /// composes to the identity rotation, and the kernel still refuses it at its first letter, with a straddling
@@ -232,6 +238,139 @@ fn ct_lb1_02_a_blocked_cap_refuses_literal_a_a_inverse_and_admits_the_empty_word
     assert_eq!(outcome.refusal.as_ref().map(|refusal| refusal.0), Some(codes::PIECE_WOULD_MOVE));
     assert_eq!(outcome.protection.expect("a protection report").pieces, [piece]);
     assert_eq!(protected.digest(ctx), start, "a refusal changes nothing");
+}
+
+/// Run limits wide enough for the language run of the key half.
+const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
+
+/// LG2.18's word key in the language: `same(x, y)` compares the word keys of two menu words of the run's alphabet.
+const WORD_KEYS: &str = "edition \"6cs-draft-1\";\nmodule word_keys requires [];\n\n\
+    export fn same(x: MenuWord, y: MenuWord) -> Bool effects [] {\n    \
+    return exact_eq(word_key(x), word_key(y));\n}\n";
+
+/// The end digest of the literal word `pairs` played letter by letter from `start` with no protection, or `None` when
+/// a prefix is refused.
+fn ended(fixture: &Fixture, start: &State, pairs: &[[u32; 2]]) -> Option<String> {
+    let pairs: Vec<[i32; 2]> = pairs.iter().map(|&[cap, item]| [cap as i32, item as i32]).collect();
+    let mut state = start.clone();
+    for letter in fixture.letters(&pairs) {
+        if play(&mut state, &letter) != Status::Admissible {
+            return None;
+        }
+    }
+    Some(state.digest(ctx()))
+}
+
+/// CT-LB1-02 (part: the key half, on M5's states, with LG2.18's word key `word-key/1` under I_a's item matrices, which
+/// `word::Alphabet::pinned` pins for a run; the library entry is not written yet).
+///
+/// At the state after 12 records of the I_a journal, with a blocked cap and an open one, the word key of the literal
+/// word a,a⁻¹ at the blocked cap is one token at that cap whose product is the identity: the key of the identity letter
+/// there, and neither the empty word's key nor the key of a,a⁻¹ at the open cap. A run that pins the alphabet answers
+/// the same in the language. The key keeps the cap's domain test: a,a⁻¹ and the identity letter at the blocked cap,
+/// two words of that key, are both refused, and the empty word is admitted and ends at the start; at the open cap both
+/// words end at the start. Then random words over the blocked cap, the open cap and a third cap, with every item of the
+/// menu: each word and the word that replaces each maximal run at one cap by the letter of the run's product, with the
+/// identity letter after it in every other run, have one key, and from solved and from the states after 4 and 12
+/// records both are refused or both are admitted and end at one digest.
+#[test]
+fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest() {
+    let ctx = ctx();
+    let fixture = fixture("I_a");
+    let state = fixture.after(12);
+    let start = state.digest(ctx);
+    let grips: Vec<usize> = (0..12).collect();
+    let statuses = state.clone().survey(ctx, &grips, None).expect("a survey");
+    let cap = |status: Status| grips.iter().copied().find(|&g| statuses[g] == status).map(|g| g as u32);
+    let blocked = cap(Status::Blocked).expect("a blocked cap");
+    let open = cap(Status::Admissible).expect("an open cap");
+    let third = grips.iter().map(|&g| g as u32).find(|&g| g != blocked && g != open).expect("a third cap");
+    let matrices: Vec<&Mat4> = fixture.menu.items.iter().map(|(_, m)| m).collect();
+    let id = matrices.iter().position(|m| **m == identity4()).expect("the identity item") as u32;
+    let a = matrices.iter().position(|m| **m != identity4()).expect("a rotation") as u32;
+    let inverse = fixture.inverse(a as i32) as u32;
+
+    let alphabet = Alphabet::of(ctx, &fixture.menu).expect("an inverse-closed menu");
+    let pinned = alphabet.pinned().expect("I_a's alphabet pins with its item matrices");
+    assert_eq!(pinned.item_matrices().map(<[_]>::len), Some(matrices.len()));
+    let key = |w: &[[u32; 2]]| menu_key::key(&pinned, w).expect("letters of the alphabet");
+
+    // The domain-preserving key of a,a⁻¹ at the blocked cap: one token there, the identity letter's, never the empty
+    // key.
+    let undone = [[blocked, a], [blocked, inverse]];
+    let k = key(&undone);
+    assert_eq!(k.tokens().iter().map(|t| t.grip).collect::<Vec<_>>(), [blocked]);
+    assert_eq!(k, key(&[[blocked, id]]));
+    assert_ne!(k, key(&[]), "the identity token is kept");
+    assert_ne!(k, key(&[[open, a], [open, inverse]]), "and keeps its cap");
+
+    // The same answers in the language, in a run that pins the alphabet.
+    let loaded = load(&lower_source(WORD_KEYS).expect("the module lowers")).expect("it loads");
+    let options = Options { menu: Some(&pinned), ..Options::new(WIDE) };
+    let same = |x: &[[u32; 2]], y: &[[u32; 2]]| {
+        let word = |w: &[[u32; 2]]| RunValue::menu_word(pinned.shared_identity(), w).expect("letters below 600");
+        let ran = loaded.run("word_keys", "same", vec![word(x), word(y)], &mut NoHost, &options).expect("a run");
+        assert_eq!((ran.summary.outcome, ran.summary.code), (Ended::Completed, None), "{x:?} and {y:?}");
+        match ran.value {
+            Some(RunValue::Bool(answer)) => answer,
+            other => panic!("{x:?} and {y:?}: {other:?}"),
+        }
+    };
+    assert!(same(&undone, &[[blocked, id]]));
+    assert!(!same(&undone, &[]) && !same(&undone, &[[open, a], [open, inverse]]));
+
+    // The key's words are refused at the blocked cap, where the empty word is admitted; at the open cap both end at
+    // the start.
+    assert_eq!(ended(&fixture, &state, &undone), None);
+    assert_eq!(ended(&fixture, &state, &[[blocked, id]]), None);
+    assert_eq!(ended(&fixture, &state, &[]), Some(start.clone()));
+    assert_eq!(ended(&fixture, &state, &[[open, a], [open, inverse]]), Some(start.clone()));
+    assert_eq!(ended(&fixture, &state, &[[open, id]]), Some(start));
+
+    // Keys preserve admissibility and the end digest: each word and its merged form, from three states.
+    let product = |run: &[[u32; 2]]| {
+        let first = matrices[run[0][1] as usize].clone();
+        let m = run[1..].iter().fold(first, |m, &[_, item]| matmul(matrices[item as usize], &m));
+        matrices.iter().position(|x| **x == m).map(|x| x as u32)
+    };
+    let states = [fixture.solved(), fixture.after(4), state];
+    let caps = [blocked, open, third];
+    let mut seed = 0x9e37_79b9_7f4a_7c15u64;
+    let mut next = |bound: usize| {
+        seed ^= seed << 13;
+        seed ^= seed >> 7;
+        seed ^= seed << 17;
+        (seed % bound as u64) as usize
+    };
+    let (mut merged, mut admitted, mut refused) = (0, 0, 0);
+    for _ in 0..40 {
+        let length = 1 + next(6);
+        let w: Vec<[u32; 2]> = (0..length).map(|_| [caps[next(3)], next(matrices.len()) as u32]).collect();
+        let mut v = Vec::new();
+        for (i, run) in w.chunk_by(|x, y| x[0] == y[0]).enumerate() {
+            match product(run) {
+                Some(item) => {
+                    v.push([run[0][0], item]);
+                    if i % 2 == 1 {
+                        v.push([run[0][0], id]);
+                    }
+                    merged += usize::from(run.len() > 1);
+                }
+                None => v.extend_from_slice(run),
+            }
+        }
+        assert_eq!(key(&w), key(&v), "{w:?} and {v:?}");
+        for (s, from) in states.iter().enumerate() {
+            let end = ended(&fixture, from, &w);
+            assert_eq!(end, ended(&fixture, from, &v), "state {s}: {w:?} and {v:?}");
+            match end {
+                Some(_) => admitted += 1,
+                None => refused += 1,
+            }
+        }
+    }
+    assert!(merged > 0, "some runs were merged");
+    assert!(admitted > 0 && refused > 0, "the states admit some words and refuse others: {admitted}, {refused}");
 }
 
 /// A5's three end tests on one state: the sticker test, the retained checkpoint with `word` as its witness, and the
@@ -668,10 +807,14 @@ fn lowest(values: &[i64]) -> (i64, usize) {
     (first as i64, values.iter().filter(|&&value| value == low).count())
 }
 
-/// CT-LB3-05 and CT-BND-17 (part: the kernel half, on M8's `observe::cuts::repair_list`, JI.12; the library entry is
-/// not written as language code yet. Not run: a job that names its cap through the command layer (KN5), the built-in
-/// column's repair-list exception in `c600-check`, an empty list worded as BND.2 states, and "no key skips caps with an
-/// empty list", which need LP2's command layer and checker).
+/// CT-LB3-05 and CT-BND-17 (whole with the other parts: this is the kernel half, on M8's `observe::cuts::repair_list`,
+/// JI.12, pull request 176. The checker half, the built-in column's repair-list exception, is `c600-check`'s
+/// `Row::RepairList` (LP2's pull request 229, `c600-check/tests/exceptions.rs`). The library entry `jumble_repair`
+/// (pull request 321, on the inspector entries' host bridge and tests of pull requests 308 and 314) reads the named
+/// cap's list in neutral order (`tests/ct_lb3_07.rs`, `tests/rows.rs`). LP2's job that names its cap through the
+/// command layer (KN5), with BND.2's wording of an empty list and no key that skips caps with an empty list, is pull
+/// request 326 (`c600-command/tests/repair_list.rs`), and pull request 339 runs it beside the entry at the layer's head
+/// (`tests/jumble_layer_repair.rs`)).
 ///
 /// After the first two records of the I_a journal, caps 57 and 86 are the misaligned caps. The list at the named cap 57
 /// names that cap, the pinned menu and its order, the tie rule and the input digest. It completes with one outcome per

@@ -28,7 +28,9 @@
 //!   CT-LB3-07 on `c600_jumble`'s public API, with milestone M8's end tests (`levels`) and repair list
 //!   (`observe::cuts::repair_list`), and with LP2's ν row (`c600_jumble::nu`) and correction catalogue
 //!   (`c600_jumble::corrections`) for CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07. Each
-//!   test checks the facts the library entry would return.
+//!   test checks the facts the library entry would return. CT-LB1-02's key half runs there too: LG2.18's word key
+//!   under I_a's item matrices, which [`word::Alphabet::pinned`] pins, at a blocked cap and on random words from three
+//!   states.
 //! - `tests/library.rs` checks [`library`]'s modules with LP2's checker and runs them with LP2's interpreter:
 //!   CT-LB1-03's jumbling half in the language, and the library entries of CT-LB3-03 and CT-LB3-06, the latter with a
 //!   whole word's Net and Strict protection at pose level from M8's `levels::derive` (pull request 182). The bridge
@@ -51,10 +53,10 @@
 //!   every read stops with `KN5:input.menu_word_needs_jumble_on`. It also checks what the bridge grants and its
 //!   tariff, and that the `seam_facts` row answers the engine's seam facts for the named cap.
 //! - `tests/ct_rte_07_jumble.rs` runs CT-RTE-07's six jumbling keys of LX-3's frozen corpus (MR01, MR02, MR05, MR06,
-//!   A31 and A32) with literal words, through `c600-module`'s pipeline under the jumbling model identity, with
-//!   [`rows`] as the engine host: ten runs and one SHA-256 for each key, the solving keys refused at the preview point
-//!   by capability separation, a manual proposal as the control, and the accounting against the 600-cell-Full leg.
-//!   The same keys on menu words wait for LP2's word key (LG2.18).
+//!   A31 and A32) with literal words and again with menu words of the I_a alphabet, pinned with its item matrices,
+//!   through `c600-module`'s pipeline under the jumbling model identity, with [`rows`] as the engine host: ten runs
+//!   and one SHA-256 for each key, the solving keys refused at the preview point by capability separation, a manual
+//!   proposal as the control, and the accounting against the 600-cell-Full leg.
 //! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02 whole (LB3.4),
 //!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
 //!   over `c600-display`'s posed row (J02) and pose projection (J13), which places a sticker at a lattice pose by M8's
@@ -67,8 +69,9 @@
 //!   `tests/common/mod.rs` holds the session both use.
 //! - `tests/ct_lb1_06.rs` runs CT-LB1-06's jumbling half on the model in `assets/`: the relation [`locality`] pins,
 //!   the keys of bca, cab and abc, identity letters and an item beside its inverse kept, equal keys with equal
-//!   admissibility and end digests on M5's states, the library entry `menu_traces` in the language, and refusals of a
-//!   key under another menu or version.
+//!   admissibility and end digests on M5's states, the library entry `menu_traces` in the language, refusals of a
+//!   key under another menu or version, and word keys separate from trace keys: in one run that pins I_a's alphabet
+//!   with its item matrices and the relation, `word_key` and `trace_key` key the same menu words each by its own rule.
 //!
 //! The tool runs in-process, as `c600-tools` runs its tool. The tool itself is not a command-layer row; [`rows`]
 //! reads the command layer's head, and the tests above drive the layer.
@@ -203,7 +206,7 @@
 //!   whole seam scan only.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
-//! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
+//! - CT-LB1-02's library entry "Word equality keys": not written yet. Its key half runs in `tests/lb3.rs`.
 //! - The jumbling rows in the command table: [`rows`] serves them read-only beside the layer, in [`library`]'s draft
 //!   answer types and a draft tariff; the command table names and prices them when it freezes (KN5, PHS.52), and no
 //!   program runs here as a job of the layer. CT-LB3-03's agreement with `trees.py` stays M5's Python test on the

@@ -719,13 +719,13 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   word key as value tag 27 and a pinned menu alphabet with a matrices flag (the runtime's protocol, below). Tests:
   `c600-run/tests/menu_word_keys.rs` (CT-LB1-02's jumbling half on a synthetic menu of seven items, part),
   `c600-check/tests/mismatch.rs`, `c600-runtime/tests/protocol.rs` and the codec's own tests.
-- Open for menu words: the alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock`
-  and the inverse items of its menu (`menu::MenuAlphabet::new`), with the menu's item matrices for word keys
+- The alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock` and the inverse items
+  of its menu (`menu::MenuAlphabet::new`), with the menu's item matrices for word keys
   (`menu::MenuAlphabet::with_matrices`), and the relation from `c600_jumble::locality::Locality::bits` and
-  `trace::Relation::jumble_locality`. LP3's C8 pins the alphabet without the matrices (`word::Alphabet::pinned`) and
-  the relation (`locality`) in `c600-jumble-tool`; with the matrices, CT-LB1-02's key half and "Word keys remain
-  separate", CT-LB1-06's last part, can run there. Not built for trace keys: the operations on compressed words, which
-  LP3 does not need, and EV4.9's report of a key's contract.
+  `trace::Relation::jumble_locality`. LP3's C8 pins the alphabet with the matrices (`word::Alphabet::pinned`) and the
+  relation (`locality`) in `c600-jumble-tool`, where CT-LB1-02's key half and "Word keys remain separate", CT-LB1-06's
+  last part, run on M5's states (`tests/lb3.rs`, `tests/ct_lb1_06.rs`). Not built for trace keys: the operations on
+  compressed words, which LP3 does not need, and EV4.9's report of a key's contract.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -2160,9 +2160,9 @@ run or not applicable is no pass (PHS.63).
   keys in all. Not built: CT-RTE-07's other 12 keys: 4 that need a recorded pick (MR17, MR18, A29 and A30; nothing
   writes or resolves a `c600-pick` record yet, FP.38 and BND.54); and 8 budget keys: B01 to B04 and B07, whose amounts
   follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices; B12, the host's row cache; and
-  B13 and B14, the command layer's budget declaration and ceiling. The jumbling keys' menu-word half waits for a
-  jumbling host that pins the menu with its item matrices (C8), for LG2.18's jumbling word key, which LP2 built at the
-  run level (`c600_run::menu_key`, pull request 338). The Linux leg did not run.
+  B13 and B14, the command layer's budget declaration and ceiling. The six jumbling keys also run with menu words of
+  the I_a alphabet, which `c600-jumble-tool` pins with its item matrices (C8, `tests/ct_rte_07_jumble.rs`). The Linux
+  leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2777,13 +2777,18 @@ run or not applicable is no pass (PHS.63).
     never run) and CT-BND-15's jumbling part (the class, the row set `operation.preview` and a manifest that names the
     source digest).
   - `c600-jumble-tool/tests/lb3.rs`: the kernel halves of CT-LB1-02 (at a blocked cap literal a,a⁻¹ is refused at its
-    first letter and the empty word is admitted; prefix protection reads literal letters), CT-LB3-01 (ten fixtures on
+    first letter and the empty word is admitted; prefix protection reads literal letters; and its key half, LG2.18's
+    word key under I_a's item matrices: the key of a,a⁻¹ at a blocked cap is the identity letter's token there, not
+    the empty key, both words are refused there and the empty word admitted, in Rust and in the language, and on random
+    words from three states each word and its run-merged form have one key, one admissibility and one end digest),
+    CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
     word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
     is nonzero fails the label checkpoint, and one whose ν is 0 passes it), CT-LB3-03 (heights (0,0) off the lattice in
     free mode; domain IDs by exact coset tests; Φ = 0 with height-2 pieces fails M8's sticker test), CT-LB3-05 with
-    CT-BND-17 (M8's repair list at a named cap: its pairs in pinned order, then by cap; rows of five integers with no
+    CT-BND-17 (whole with the checker half, the entry `jumble_repair` and LP2's job, below; M8's repair list at a named
+    cap: its pairs in pinned order, then by cap; rows of five integers with no
     mark and no ranking field; every pair's delta read again from its own word, and y and z recomputed for one pair; a
     stopped list has no rows, and an empty list speaks only of its cap), CT-LB3-06 (prefix peak, excursion, tameness and
     the step flag recomputed apart from the kernel's batch; a false flag refuses nothing) and CT-LB3-07 (a named-word
@@ -2853,8 +2858,8 @@ run or not applicable is no pass (PHS.63).
   - `c600-jumble-tool/tests/ct_rte_07_jumble.rs`: CT-RTE-07's six jumbling keys (MR01, MR02, MR05, MR06, A31 and A32) on
     M5's rows with literal words, each re-expressed in `.6cs` and run ten times through `c600-module`'s boundary as the
     Full leg runs its keys, with one SHA-256 over the canonical results, the rows read, the proposals and the store; a
-    manual-proposal control and the accounting against the Full leg. The menu-word half waits for LG2.18's key (LP2;
-    pull request 306).
+    manual-proposal control and the accounting against the Full leg (pull request 306). Each key and the control run
+    again with menu words of the I_a alphabet, pinned with its item matrices, and give the same answers.
   - `c600-jumble-tool/tests/ct_ev3_06.rs`: CT-EV3-06's off-lattice half (all 259,800 slots on states of the I_a menu and
     on raw pose tables, against M8's labels: the occupant at the identity and at other lattice poses; "none: off the
     lattice" and `unknown` as two values in one result, `unknown` only where lattice pieces collide; never the old
@@ -2902,8 +2907,10 @@ run or not applicable is no pass (PHS.63).
     alike and end at one digest on M5's states, while an identity letter at a straddled grip is refused where the
     empty word is admitted; `menu_traces` checks as pure code and answers as the keys do; and a key under another
     menu, contract revision, key version or relation version refuses comparison with
-    `LB1:input.key_contract_mismatch`. Not run: "Word keys remain separate" on the jumbling side, on LG2.18's jumbling
-    word key, which LP2 built at the run level (pull request 338), until a host pins the menu with its item matrices.
+    `LB1:input.key_contract_mismatch`; and "Word keys remain separate" on the jumbling side: in one run under I_a's
+    item matrices and the relation, `word_key` (LG2.18, LP2's pull request 338) and `trace_key` key the same menu
+    words each by its own rule, and a source that compares the two keys is a type mismatch. With LP2's 600-cell-Full
+    half, CT-LB1-06 runs whole.
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
     plane among them), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs
@@ -2923,11 +2930,9 @@ run or not applicable is no pass (PHS.63).
 - Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
   refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
   the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
-  CT-RTE-07's jumbling keys on menu words and CT-LB1-02's key half, on LG2.18's jumbling word key, which LP2 built at
-  the run level (`c600_run::menu_key`, pull request 338), once a host pins the menu with its item matrices; LB3.1's
-  other rows as language code ("Menus and pinned letters", "D and release accounting" and "Mode crossing
-  prerequisites"; twelve LB3.1 rows are built, under `library` above, and "Correction-combination solve" is a research
-  tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
+  CT-LB1-02's library entry "Word equality keys"; LB3.1's other rows as language code ("Menus and pinned letters",
+  "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under `library` above,
+  and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
   records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end
   stages are compared only in the whole-journal runs, on request. The survey's all-items loop is not served (LB3.5):
   `survey` answers the solver's named grip only. F03 on 600-cell-Full has no swept preview: the retained kernel names no
