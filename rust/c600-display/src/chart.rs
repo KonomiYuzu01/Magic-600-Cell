@@ -87,6 +87,7 @@ impl Pose {
 /// A camera pose as the host holds it: an exact pose, or a float matrix between exact poses with the declared text of
 /// how it was made.
 #[derive(Clone, Debug, PartialEq)]
+#[allow(clippy::large_enum_variant, reason = "a host holds one camera pose; none is stored in bulk")]
 pub enum CameraPose {
     Exact(Pose),
     Approximate { label: String, matrix: [[f64; 4]; 4] },
@@ -171,6 +172,7 @@ impl Projective {
 
 /// A declared chart property, in camera coordinates after the pose.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant, reason = "built once per declared property at admission; none is stored in bulk")]
 pub enum Property {
     /// The posed region lies in the chart's domain.
     Domain,
@@ -260,6 +262,7 @@ pub struct Scope {
 
 /// The verdict of one check.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant, reason = "built once per check at admission; none is stored in bulk")]
 pub enum Verdict {
     Established { method: Method, scope: Scope },
     Refuted { method: Method, witness: Witness, scope: Scope },

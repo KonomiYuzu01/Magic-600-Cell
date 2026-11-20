@@ -1,6 +1,6 @@
 """Build C9's product on route B offline into work/build/c9-product/<stamp>/; never launch Godot, a window or a GPU.
 
-A product build holds seven parts, each built from this checkout:
+A product build holds eight parts, each built from this checkout:
 
 - `native/`: the S-A2 core (`renderer/core/build.cmd`), `sa2_interop.dll` with the shaders it loads beside it;
 - `host/c600_shell_host.dll`: the shell's native host (`renderer/bridge/host`), a release build;
@@ -12,6 +12,8 @@ A product build holds seven parts, each built from this checkout:
 - `session-fixture/`: charter E3's existing session (a draft): the host's `c600-shell-session-fixture` writes a
   session of a few committed presses through the same turns, with `fixture.json`, and starts the build's runtime once to
   show that it starts. A launch reopens a fresh copy of that session.
+- `session-fixture-jumble-on/`: the same with Jumble on (`--puzzle jumble-on`): the session commits `jumble.on` at its
+  start and the presses commit `jumble.twist.menu`. A launch with `--puzzle jumble-on` reopens a fresh copy of it.
 
 `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a digest
 of those parts, which the shell's logs carry (`M600_BUILD_IDENTITY`). `launch.py` starts a product build after
@@ -48,9 +50,23 @@ ASSETS = "assets"
 MENU_SOURCE = "research/jumbling/fixtures/wj-I_a.json"
 MENU = "menu/wj-I_a.json"
 RUNTIME = "runtime/c600-runtime.exe"
-FIXTURE = "session-fixture"
+# Each puzzle's session fixture folder and the prefix of its part names (the shell's puzzle names, EventLog.Puzzles).
+FIXTURES = {"jumble-off": "session-fixture", "jumble-on": "session-fixture-jumble-on"}
+FIXTURE_PARTS = {"jumble-off": "fixture:", "jumble-on": "fixture-jumble-on:"}
+FIXTURE = FIXTURES["jumble-off"]
 FIXTURE_RECORD = FIXTURE + "/fixture.json"
 FIXTURE_SESSION = FIXTURE + "/session"
+
+
+def fixture_record(puzzle: str) -> str:
+    """The build-relative path of `puzzle`'s fixture record."""
+    return FIXTURES[puzzle] + "/fixture.json"
+
+
+def fixture_session(puzzle: str) -> str:
+    """The build-relative path of `puzzle`'s fixture session."""
+    return FIXTURES[puzzle] + "/session"
+
 BRIDGE = ROOT / "renderer" / "bridge"
 RUST = ROOT / "rust"
 sys.path.insert(0, str(SHELL))
@@ -77,20 +93,23 @@ def runtime_command() -> list[str]:
             "-p", "c600-runtime"]
 
 
-def fixture_command(build: Path) -> list[str]:
-    """The host's fixture writer over the build's own model, menu and runtime."""
+def fixture_command(build: Path, puzzle: str = "jumble-off") -> list[str]:
+    """The host's fixture writer of `puzzle` over the build's own model, menu and runtime."""
     return [str(BRIDGE / "target" / "release" / "c600-shell-session-fixture.exe"), "--assets", str(build / ASSETS),
-            "--menu", str(build / MENU), "--out", str(build / FIXTURE), "--runtime", str(build / RUNTIME)]
+            "--menu", str(build / MENU), "--out", str(build / FIXTURES[puzzle]), "--puzzle", puzzle,
+            "--runtime", str(build / RUNTIME)]
 
 
 def part_paths(build: Path) -> dict[str, Path]:
     """Every file the product loads, by part name: the core with its shaders, the host, the runtime, the shell's
-    assembly and project files (not Godot's or dotnet's generated folders), the model's files, the twist menu and the
-    session fixture."""
-    native, project, assets, fixture = build / "native", build / PROJECT, build / ASSETS, build / FIXTURE
+    assembly and project files (not Godot's or dotnet's generated folders), the model's files, the twist menu and each
+    puzzle's session fixture."""
+    native, project, assets = build / "native", build / PROJECT, build / ASSETS
     paths = {"core:sa2_interop.dll": build / CORE_DLL, "host:c600_shell_host.dll": build / HOST_DLL,
              "runtime:" + Path(RUNTIME).name: build / RUNTIME, "shell:assembly": project / build_shell.ASSEMBLY,
-             "menu:" + Path(MENU).name: build / MENU, "fixture:" + Path(FIXTURE_RECORD).name: build / FIXTURE_RECORD}
+             "menu:" + Path(MENU).name: build / MENU}
+    for puzzle, prefix in FIXTURE_PARTS.items():
+        paths[prefix + "fixture.json"] = build / fixture_record(puzzle)
     if native.is_dir():
         paths.update({"core:" + p.name: p for p in native.iterdir() if p.is_file() and p.suffix.lower() == ".dxil"})
     if project.is_dir():
@@ -99,8 +118,10 @@ def part_paths(build: Path) -> dict[str, Path]:
                                                  for part in p.relative_to(project).parts[:-1])})
     if assets.is_dir():
         paths.update({"assets:" + p.relative_to(assets).as_posix(): p for p in assets.rglob("*") if p.is_file()})
-    if fixture.is_dir():
-        paths.update({"fixture:" + p.relative_to(fixture).as_posix(): p for p in fixture.rglob("*") if p.is_file()})
+    for puzzle, prefix in FIXTURE_PARTS.items():
+        fixture = build / FIXTURES[puzzle]
+        if fixture.is_dir():
+            paths.update({prefix + p.relative_to(fixture).as_posix(): p for p in fixture.rglob("*") if p.is_file()})
     return paths
 
 
@@ -136,8 +157,9 @@ def record(build: Path, executable: Path, head: str, dirty: bool) -> dict:
     shaders = [name for name in parts if name.startswith("core:") and name.endswith(".dxil")]
     if not shaders:
         raise ProductError("the core build has no shaders beside its DLL")
-    if not any(name.startswith("fixture:session/") for name in parts):
-        raise ProductError("the session fixture holds no session")
+    for puzzle, prefix in FIXTURE_PARTS.items():
+        if not any(name.startswith(prefix + "session/") for name in parts):
+            raise ProductError(f"the {puzzle} session fixture holds no session")
     return {
         "format": FORMAT,
         "evidence": "source build only: never launched",
@@ -152,8 +174,10 @@ def record(build: Path, executable: Path, head: str, dirty: bool) -> dict:
                               "-p c600-shell-host"),
                      "runtime": "cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-runtime",
                      "shell": " ".join(build_shell.build_command()),
-                     "fixture": ("c600-shell-session-fixture --assets <build>/assets --menu <build>/menu/wj-I_a.json "
-                                 "--out <build>/session-fixture --runtime <build>/runtime/c600-runtime.exe")},
+                     **{"fixture " + puzzle: ("c600-shell-session-fixture --assets <build>/assets --menu "
+                                              f"<build>/menu/wj-I_a.json --out <build>/{folder} --puzzle {puzzle} "
+                                              "--runtime <build>/runtime/c600-runtime.exe")
+                        for puzzle, folder in FIXTURES.items()}},
     }
 
 
@@ -217,8 +241,10 @@ def build(godot: str | None) -> Path:
     build_shell.build(str(executable), out / "shell")
     print(f"assets: {copy_assets(out / ASSETS)} files", flush=True)
     copy_menu(out / MENU)
-    print("fixture: c600-shell-session-fixture (starts the runtime once)", flush=True)
-    prepare_host.run_logged(fixture_command(out), ROOT, env, 600, logs / "fixture")
+    for puzzle in FIXTURES:
+        print(f"fixture: c600-shell-session-fixture --puzzle {puzzle} (starts the runtime once)", flush=True)
+        prepare_host.run_logged(fixture_command(out, puzzle), ROOT, env, 600,
+                                logs / ("fixture" if puzzle == "jumble-off" else "fixture-" + puzzle))
     prepare_host.write_new(out / RECORD, record(out, Path(executable).resolve(), head, dirty))
     verify(out)
     return out
