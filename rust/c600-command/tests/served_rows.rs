@@ -6,9 +6,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, digest, draft_args, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction,
-    HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, Receipt, ResultRef, Row, Secret, Shell, Status, Table,
-    TransactionKind, POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    code, digest, draft_args, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction, Error,
+    HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore, Overlay, Provenance, Receipt, RecordValue, ResultRef,
+    Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW,
+    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -104,6 +105,27 @@ fn save_args(name: &str) -> Value {
         ("members", Value::Array(vec![Value::Int(3), Value::Int(5)])),
         ("name", text(name)),
     ])
+}
+
+/// The record `set.save`'s entry writes for `save_args(name)`, in the runtime's value form.
+fn entry_record(name: &str) -> RecordValue {
+    let int = |n: &str| json::object([("int", text(n))]);
+    let members = Value::Array(vec![int("3"), int("5")]);
+    let payload = json::object([("kind", text("identity")), ("members", members), ("name", text(name))]);
+    RecordValue { payload, provenance: "block".into() }
+}
+
+/// The host's provenance reader as the tests stand it in: it accepts every block.
+struct Reader;
+
+impl Provenance for Reader {
+    fn check(&self, _block: &[u8]) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn admit(&self, _block: &[u8]) -> Result<(), Error> {
+        Ok(())
+    }
 }
 
 fn scope_args(scope: &str) -> Value {
@@ -215,8 +237,9 @@ fn a_served_query_row_runs_its_entry_as_a_program_job() {
     assert_eq!((taken.job, &taken.caller), (job, &runtime));
 }
 
-/// A served workspace row: the entry's result completes it as one durable workspace action, with a result reference,
-/// at a revision whose workspace number is one higher and whose other fields are unchanged. H-08 gives `set.save` the
+/// A served workspace row: the entry's output completes it as one durable workspace action, with a result reference,
+/// at a revision whose workspace number is one higher and whose other fields are unchanged. For `set.save` the action
+/// writes the saved set's record `set/pair` and the reference carries the exact set's digest. H-08 gives `set.save` the
 /// undo class `none`, so the action takes no undo entry and the next undo still targets the commit before it. Serving
 /// is not journaled: a reopen keeps the receipt and the workspace revision, and the reopened layer refuses the row as
 /// not built until the host serves it again (draft).
@@ -232,15 +255,20 @@ fn a_served_workspace_row_completes_as_one_durable_action() {
     assert_eq!(f.layer.take_program_job().unwrap().job, job);
 
     let before = f.layer.revision().clone();
-    let set = json::object([("members", Value::Array(vec![Value::Int(3), Value::Int(5)]))]);
-    let done = f.layer.finish_program_job(job, Ok(set.clone())).unwrap();
+    f.layer.set_provenance(Box::new(Reader));
+    let records = [(SAVE.to_owned(), entry_record("pair"))].into_iter().collect();
+    let output = JobOutput { value: Value::Null, views: Vec::new(), records };
+    let done = f.layer.finish_program_job_with(job, Ok(output)).unwrap();
     let Status::Completed(Completion { kind: CompletionKind::Workspace, revision, result }) = &done.status else {
         panic!("{:?}", done.status)
     };
     let mut moved = before.clone();
     moved.workspace += 1;
     assert_eq!((revision, f.layer.revision()), (&moved, &moved));
-    assert_eq!(result, &Some(ResultRef { job: Some(job), digest: digest(&set) }));
+    let set = SavedSet { name: "pair".into(), kind: "identity", members: vec![3, 5] };
+    assert_eq!(result, &Some(ResultRef { job: Some(job), digest: set.digest(&before.identity) }));
+    let saved = set.payload(&before.identity, &before);
+    assert_eq!(f.layer.record("set/pair").map(|value| &value.payload), Some(&saved));
     let kinds: Vec<TransactionKind> = f.layer.store().log.iter().map(|t| t.kind).collect();
     assert_eq!(kinds, [TransactionKind::Commit, TransactionKind::Workspace]);
     assert_eq!(f.layer.undo_hint(Direction::Undo).map(|h| h.target), Some(hint.target));
@@ -251,6 +279,7 @@ fn a_served_workspace_row_completes_as_one_durable_action() {
     assert_eq!(g.outcome(&asked.command, &done.request), Some(done.clone()));
     assert_eq!(g.invoke(&Caller::Shell, asked), done);
     assert_eq!((g.revision().workspace, g.store().log.len()), (moved.workspace, 2));
+    assert_eq!(g.record("set/pair").map(|value| &value.payload), Some(&saved));
     let mut shell = Shell::new(Secret::fixed(SECRET), "shell-2");
     let again = shell.invoke(&mut g, SAVE, save_args("again")).unwrap();
     assert_eq!(code_of(&again), code::ROW_NOT_BUILT);

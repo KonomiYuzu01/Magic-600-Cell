@@ -66,6 +66,9 @@ pub mod code {
     /// B2 of the KN5 boundary attack, ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must
     /// start its runs inside a solver command.
     pub const OUTSIDE_SOLVER_COMMAND: &str = "KN5:capability.outside_solver_command";
+    /// A `set.save` under a name that holds a saved set, without `replace: true` (U1-057: named-set replacement stays
+    /// explicit; [`crate::sets`]).
+    pub const SAVED_SET_EXISTS: &str = "KN5:input.saved_set_exists";
 }
 
 /// An error with its chapter 13 code.

@@ -40,9 +40,9 @@ use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 use c600_command::{
-    code, ActionHint, Caller, CommandLayer, Completion, Direction, Error, Invocation, JobOutput, Kind, Overlay,
-    ProgramJob, Receipt, RecordValue, RecordWrite, ResultRef, Revision, Status, Transaction, TransactionKind,
-    UndoClass,
+    code, saved_set_record, ActionHint, Caller, CommandLayer, Completion, Direction, Error, Invocation, JobOutput,
+    Kind, Overlay, ProgramJob, Receipt, RecordValue, RecordWrite, ResultRef, Revision, SavedSet, Status, Transaction,
+    TransactionKind, UndoClass,
 };
 use c600_digest::sha256;
 use c600_kernel::json::{self, Value as Json};
@@ -333,6 +333,22 @@ fn expected(row: &str, preview: (u64, u64)) -> (Vec<Json>, Option<Json>) {
     }
 }
 
+/// What the layer writes for a row's output at the job's revision and the digest its result reference carries: the
+/// output's records and digest, except that `set.save` writes the saved set's own record `set/<name>` and carries the
+/// exact set's digest (`c600_command::sets`).
+fn written(row: &str, output: &JobOutput, revision: &Revision) -> (String, Vec<RecordWrite>) {
+    if row != "set.save" {
+        let write =
+            |(name, value): (&String, &RecordValue)| RecordWrite { name: name.clone(), value: Some(value.clone()) };
+        return (output.digest(), output.records.iter().map(write).collect());
+    }
+    let entry = &output.records["set.save"];
+    let set = SavedSet::from_entry(&entry.payload).expect("the entry's record");
+    let model = &revision.identity;
+    let value = RecordValue { payload: set.payload(model, revision), provenance: entry.provenance.clone() };
+    (set.digest(model), vec![RecordWrite { name: saved_set_record(&set.name), value: Some(value) }])
+}
+
 /// One served row's invocation from the shell, and what the host and the layer made of it.
 struct Served {
     row: &'static str,
@@ -399,13 +415,14 @@ fn command_route(host: &ToolHost, session: &mut Session) -> Vec<Served> {
 /// (`view.effect.scope`) complete transiently at the job's revision with the output's digest as the result reference:
 /// no revision moves, the durable log keeps its length and nothing is written; the two queries' views are the
 /// kernel's layer counts and cell comparison, and the view's is the scope. The three workspace rows
-/// (`filter.apply`, `set.save`, `structure.layer`) each complete as one durable workspace action that writes the
-/// entry's record through C5's reader, with the output's digest as the result reference, at a revision whose workspace
-/// number is one higher. `filter.apply`'s record is the `FilterPreviewRef` it applied, and H-08 gives the row the undo
-/// class `workspace`, so the next undo targets its action. H-08 gives the other two the undo class `none`, so the next
-/// undo still targets the action before them. The next undo inverts the applied filter: its record goes and no state
-/// moves. The one after it inverts the commit. Both leave the saved set and the prepared predicate as they were: a
-/// saved set is removed by its own row, not by undo. Covers no conformance ID: it is C6's evidence for the command
+/// (`filter.apply`, `set.save`, `structure.layer`) each complete as one durable workspace action at a revision whose
+/// workspace number is one higher. `filter.apply`'s and `structure.layer`'s write the entry's record through C5's
+/// reader, with the output's digest as the result reference; `set.save`'s writes the saved set's own record `set/pair`
+/// with the exact set's digest. `filter.apply`'s record is the `FilterPreviewRef` it applied, and H-08 gives the row
+/// the undo class `workspace`, so the next undo targets its action. H-08 gives the other two the undo class `none`, so
+/// the next undo still targets the action before them. The next undo inverts the applied filter: its record goes and no
+/// state moves. The one after it inverts the commit. Both leave the saved set and the prepared predicate as they were:
+/// a saved set is removed by its own row, not by undo. Covers no conformance ID: it is C6's evidence for the command
 /// route.
 #[test]
 fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
@@ -434,18 +451,14 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
         if need.kind == Kind::Workspace {
             revision.workspace += 1;
         }
-        let result = Some(ResultRef { job: Some(job.job), digest: output.digest() });
+        let (digest, writes) = written(row, output, &job.revision);
+        let result = Some(ResultRef { job: Some(job.job), digest: digest.clone() });
         let completion = Completion { kind: need.completion, revision: revision.clone(), result };
         assert_eq!(one.receipt.status, Status::Completed(completion), "{row}");
         if need.kind == Kind::Workspace {
-            let writes: Vec<RecordWrite> = output
-                .records
-                .iter()
-                .map(|(name, value)| RecordWrite { name: name.clone(), value: Some(value.clone()) })
-                .collect();
             let last = one.last.as_ref().expect("a durable action");
             assert_eq!((last.kind, last.job, &last.records), (TransactionKind::Workspace, Some(job.job), &writes));
-            assert_eq!(last.result, Some(output.digest()), "{row}");
+            assert_eq!(last.result, Some(digest), "{row}");
             assert_eq!((&one.after.0, one.after.1), (&revision, one.before.1 + 1), "{row}");
             if need.undo == UndoClass::Workspace {
                 target = last.order;
@@ -455,16 +468,21 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
             assert_eq!(one.after, one.before, "{row}: nothing moves or is written");
         }
     }
-    for (name, value) in served.iter().flat_map(|one| &one.output.records) {
-        assert_eq!(session.layer.record(name), Some(value), "{name}");
+    let writes: Vec<RecordWrite> =
+        served.iter().flat_map(|one| written(one.row, &one.output, &one.job.revision).1).collect();
+    for write in &writes {
+        assert_eq!(session.layer.record(&write.name), write.value.as_ref(), "{}", write.name);
     }
 
     // The undo classes `workspace` and `none`: the next undo inverts the applied filter, the one after it the commit,
     // and the records the other two workspace rows wrote stay.
     let applied = served.iter().find(|one| one.row == "filter.apply").and_then(|one| one.last.as_ref());
     assert_eq!(applied.map(|action| action.order), Some(target), "the applied filter is on top of the undo stack");
-    let kept: Vec<_> =
-        served.iter().filter(|one| one.row != "filter.apply").flat_map(|one| &one.output.records).collect();
+    let kept: Vec<RecordWrite> = served
+        .iter()
+        .filter(|one| one.row != "filter.apply")
+        .flat_map(|one| written(one.row, &one.output, &one.job.revision).1)
+        .collect();
     let committed = session.layer.snapshot().digest().to_owned();
     for (undone, digest) in [(target, committed), (commit, kernel().solved().digest().to_owned())] {
         let hint = session.layer.undo_hint(Direction::Undo).expect("an undo target");
@@ -474,8 +492,8 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
         assert!(matches!(undo.status, Status::Committed(_)), "{:?}", undo.status);
         assert_eq!(session.layer.snapshot().digest(), digest);
         assert_eq!(session.layer.record("filter.apply"), None, "the applied filter is undone");
-        for &(name, value) in &kept {
-            assert_eq!(session.layer.record(name), Some(value), "{name} after the undo");
+        for write in &kept {
+            assert_eq!(session.layer.record(&write.name), write.value.as_ref(), "{} after the undo", write.name);
         }
     }
 }
@@ -487,13 +505,13 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
 /// only the layer checks the reference and the revision. For `filter.apply` the run takes the `FilterPreviewRef` as a
 /// record of its epoch and job. The two routes give the same returned value, the same published views and the same
 /// records, payload and provenance block, so the applied filter, the saved set and the prepared predicate the layer
-/// holds are the ones the run stored, and the completion's result reference is the source run's digest. What differs
-/// is by
-/// design: only the command route has a receipt (command ID, request digest, caller and job), the layer's form and
-/// revision checks, `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the
-/// workspace revision it moves and, for `filter.apply`, its undo entry; on the source route the records stay in the
-/// run's store, and the layer's revision, log and undo hint do not move. The run's name differs and appears in no
-/// output, since no entry proposes. Covers no conformance ID: it is C6's evidence for C5's item 1.
+/// holds are the ones the run stored (for `set.save`, the saved set its record names), and the completion's result
+/// reference is the source run's digest (for `set.save`, the exact set's). What differs is by design: only the command
+/// route has a receipt (command ID, request digest, caller and job), the layer's form and revision checks,
+/// `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the workspace revision it
+/// moves and, for `filter.apply`, its undo entry; on the source route the records stay in the run's store, and the
+/// layer's revision, log and undo hint do not move. The run's name differs and appears in no output, since no entry
+/// proposes. Covers no conformance ID: it is C6's evidence for C5's item 1.
 #[test]
 fn the_source_route_gives_the_command_routes_value_views_and_records() {
     let host = ToolHost::new();
@@ -513,9 +531,11 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
         let Status::Completed(Completion { result: Some(reference), .. }) = &one.receipt.status else {
             panic!("{row}: {:?}", one.receipt.status)
         };
-        assert_eq!(reference.digest, source.digest(), "{row}");
-        for (name, record) in &source.records {
-            assert_eq!(session.layer.record(name), Some(record), "{row}: the layer holds what the run stored");
+        let (digest, writes) = written(row, &source, &job.revision);
+        assert_eq!(reference.digest, digest, "{row}");
+        for write in &writes {
+            let held = session.layer.record(&write.name);
+            assert_eq!(held, write.value.as_ref(), "{row}: the layer holds what the run stored");
         }
     }
 }

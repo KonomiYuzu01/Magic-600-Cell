@@ -109,7 +109,8 @@ pub(crate) fn check(row: &Row, args: &BTreeMap<String, Value>, current: &Revisio
 ///   Nat}`, a job and the epoch it ran in ([`crate::filter`]; draft). What they name is checked after the forms.
 /// - `CanonicalObjectRefs` is a list of pieces or positions, as `set.save`'s `kind` names them, each an integer from 0
 ///   to 177,119 ([`c600_kernel::PIECES`]). An empty list and a repeated member pass, as they do in
-///   [`c600_kernel::Kernel::protected_pieces`] (draft, after LP3's `save_set`, whose `members` is `List<Nat>`).
+///   [`c600_kernel::Kernel::protected_pieces`] (draft, after LP3's `save_set`, whose `members` is `List<Nat>`). Beside
+///   its table arguments `set.save` takes the draft boolean `replace`, which the names check reads ([`crate::sets`]).
 /// - A type whose form the layer does not know yet passes unchecked.
 /// - A malformed argument is refused with `KN5:input.argument_form`.
 pub(crate) fn check_forms(row: &Row, args: &BTreeMap<String, Value>) -> Result<(), Error> {
