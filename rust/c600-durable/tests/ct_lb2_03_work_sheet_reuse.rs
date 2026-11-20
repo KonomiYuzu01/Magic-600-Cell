@@ -1,20 +1,23 @@
 //! CT-LB2-03's work-sheet sentence, named work-sheet reuse invalidates the old preview, through KN5's command layer
 //! over M6's journal (`JournalStore`) with C5's provenance reader installed. The solver saves a work sheet with the
-//! layer's `worksheet.save` row and reuses it with `worksheet.load` (LB7.2 and LB2's work sheets; LP2's draft rows in
-//! `c600-command`'s `src/worksheet.rs`). `c600-command`'s `tests/worksheet.rs` runs the rows on the layer's memory
-//! store; here they run on the journal, across power losses on a memory disk and in new sessions on a file-system
-//! disk, and each refusal of the two rows comes back with the layer's code and changes nothing on the journal. Each
-//! test names the conformance part it covers with a PHS.62 marker.
+//! layer's `worksheet.save` row, reuses it with `worksheet.load` and compares it with the current work with
+//! `worksheet.compare`, LB7.2's fresh exact analysis of the sheet with LB2's gains and losses (LB7.2 and LB2's work
+//! sheets; LP2's draft rows in `c600-command`'s `src/worksheet.rs` and `src/layer.rs`). `c600-command`'s
+//! `tests/worksheet.rs` runs the rows on the layer's memory store; here they run on the journal, across power losses
+//! on a memory disk and in new sessions on a file-system disk, and each refusal of the three rows comes back with the
+//! layer's code and changes nothing on the journal. Each test names the conformance part it covers with a PHS.62
+//! marker.
 //!
-//! CT-LB2-03 does not run whole (crate documentation): LP2's layer does not build `worksheet.compare`, LB7.2's fresh
-//! exact analysis of a reused sheet with LB2's gains and losses, or macro versions. The ID's first sentence, recipe
-//! chunking and the refusal of an oversized recipe, runs in `c600-kernel` and `c600-tools`.
+//! CT-LB2-03 does not run whole (crate documentation): its first sentence, recipe chunking and the refusal of an
+//! oversized recipe, runs in `c600-kernel` and `c600-tools`, and C5 records part of the source route's chunked
+//! transport as not built.
 
 mod common;
 
 use c600_command::{
-    code, CommandLayer, Direction, Error, Placement, PreviewState, Provenance, Receipt, RecordValue, Resolution, Role,
-    Secret, Shell, Status, Worksheet, WorksheetRef, RECORD_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    code, digest, CommandLayer, Completion, CompletionKind, Direction, Error, MacroVersion, Placement, PreviewState,
+    Provenance, Receipt, RecordValue, Resolution, Role, Secret, Shell, Status, Worksheet, WorksheetRef, RECORD_ROW,
+    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value};
@@ -73,6 +76,46 @@ fn load(f: &mut Fixture, name: &str, version: u64) -> Receipt {
     f.shell.invoke(&mut f.layer, WORKSHEET_LOAD_ROW, load_args(name, version)).expect("the shell prepares the reuse")
 }
 
+/// `worksheet.compare`'s arguments: the sheet in record `name` at record version `version` and the draft record
+/// `draft`, the current work.
+fn compare_args(name: &str, version: u64, draft: &str) -> Value {
+    json::object([("worksheet", WorksheetRef { record: name.into(), version }.to_json()), ("draft", record(draft))])
+}
+
+/// `worksheet.compare` of the sheet in record `name` at its version with the draft record `draft`, from the shell. It
+/// must be admitted as a job on the exclusive lane, which runs and completes as a query whose result digests the
+/// comparison the layer keeps; returns that comparison.
+fn compare(f: &mut Fixture, name: &str, draft: &str) -> Value {
+    let args = compare_args(name, version(f, name), draft);
+    let receipt = f.shell.invoke(&mut f.layer, WORKSHEET_COMPARE_ROW, args).expect("the shell prepares the comparison");
+    let Status::Running(job) = receipt.status else { panic!("the comparison was not admitted: {:?}", receipt.status) };
+    assert_eq!(f.layer.run_jobs(), 1);
+    let settled = f.layer.outcome(&receipt.command, &receipt.request).expect("the comparison's outcome");
+    let value = f.layer.comparison(job).cloned().expect("the comparison the layer keeps");
+    match &settled.status {
+        Status::Completed(Completion { kind: CompletionKind::Query, result: Some(result), .. }) => {
+            assert_eq!(result.digest, digest(&value));
+        }
+        status => panic!("the comparison did not complete as a query: {status:?}"),
+    }
+    value
+}
+
+/// `value`'s field `key`, which must be there.
+fn field<'a>(value: &'a Value, key: &str) -> &'a Value {
+    value.get(key).unwrap_or_else(|| panic!("no `{key}` in {value:?}"))
+}
+
+/// A list of positions as a comparison reports them.
+fn ids(list: &[i64]) -> Value {
+    Value::Array(list.iter().map(|&id| Value::Int(id)).collect())
+}
+
+/// A comparison's macro version: the one the sheet keeps, if any, and its status.
+fn macro_status(saved: Option<&MacroVersion>, status: &str) -> Value {
+    json::object([("saved", saved.map_or(Value::Null, MacroVersion::to_json)), ("status", string(status))])
+}
+
 /// Record `name`'s value and version.
 fn held(f: &Fixture, name: &str) -> (Option<RecordValue>, u64) {
     (f.layer.record(name).cloned(), f.layer.records().get(name).map_or(0, |record| record.version))
@@ -95,6 +138,9 @@ struct Inline {
     stayed: i64,
     /// The end state's digest.
     end: String,
+    /// The positions whose home piece is not solved at the end, in increasing order: the operation's losses from the
+    /// solved state, where it can gain none (LB2).
+    losses: Vec<i64>,
 }
 
 fn inline() -> Inline {
@@ -110,6 +156,7 @@ fn inline() -> Inline {
         to: to as i64,
         stayed: stayed.piece as i64,
         end: scratch.layer.revision().digest.clone(),
+        losses: found.iter().filter(|p| !p.solved()).map(|p| p.piece as i64).collect(),
     }
 }
 
@@ -232,10 +279,11 @@ fn reuse_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
 /// on the layer over M6's journal on a memory disk, with a power loss between the sessions: a saved sheet comes back
 /// equal at a reuse in the same session and after the power loss, each reuse makes the presented preview of the sheet
 /// stale so that its press commits nothing, a fresh engine preview commits the sheet's complete operation, and a reuse
-/// after that commit places the piece roles again without retargeting the sheet; not run: `worksheet.compare`, LB7.2's
-/// fresh exact analysis of a reused sheet, with LB2's gains and losses, and macro versions, which LP2's layer does not
-/// build; the first sentence, recipe chunking and the refusal of an oversized recipe, which `c600-kernel` and
-/// `c600-tools` run), LB7.2, KN0.8, KN5.23. The steps are at [`reuse_leg`].
+/// after that commit places the piece roles again without retargeting the sheet; not run here: LB7.2's fresh exact
+/// analysis of a reused sheet through `worksheet.compare`, which
+/// [`ct_lb2_03_a_comparison_writes_nothing_and_comes_back_equal_after_a_power_loss`] runs; the first sentence, recipe
+/// chunking and the refusal of an oversized recipe, which `c600-kernel` and `c600-tools` run), LB7.2, KN0.8, KN5.23.
+/// The steps are at [`reuse_leg`].
 #[test]
 fn ct_lb2_03_a_reused_work_sheet_comes_back_equal_after_a_power_loss() {
     let disk = MemDisk::new();
@@ -246,15 +294,81 @@ fn ct_lb2_03_a_reused_work_sheet_comes_back_equal_after_a_power_loss() {
 /// on the layer over M6's journal in a fresh directory of the file system, which each new session opens again: a
 /// saved sheet comes back equal at a reuse in the same session and in a new session, each reuse makes the presented
 /// preview of the sheet stale so that its press commits nothing, a fresh engine preview commits the sheet's complete
-/// operation, and a reuse after that commit places the piece roles again without retargeting the sheet; not run:
-/// `worksheet.compare`, LB7.2's fresh exact analysis of a reused sheet, with LB2's gains and losses, and macro
-/// versions, which LP2's layer does not build; the first sentence, recipe chunking and the refusal of an oversized
-/// recipe, which `c600-kernel` and `c600-tools` run), LB7.2, KN0.8, KN5.23. The steps are at [`reuse_leg`].
+/// operation, and a reuse after that commit places the piece roles again without retargeting the sheet; not run here:
+/// LB7.2's fresh exact analysis of a reused sheet through `worksheet.compare`, which
+/// [`ct_lb2_03_a_comparison_writes_nothing_and_comes_back_equal_after_a_power_loss`] runs on a memory disk; the first
+/// sentence, recipe chunking and the refusal of an oversized recipe, which `c600-kernel` and `c600-tools` run), LB7.2,
+/// KN0.8, KN5.23. The steps are at [`reuse_leg`].
 #[test]
 fn ct_lb2_03_a_reused_work_sheet_comes_back_equal_in_a_new_session_on_disk() {
     let dir = TempDir::new("ct-lb2-03");
     let path = dir.path().to_path_buf();
     reuse_leg(&|| Box::new(FsDisk::new(&path).expect("a store directory")) as Box<dyn Disk>, &|| {});
+}
+
+/// CT-LB2-03 (part: named work-sheet reuse with LB7.2's fresh exact analysis of the sheet, through `worksheet.compare`
+/// on the layer over M6's journal on a memory disk, with a power loss between the sessions: a comparison completes as
+/// a query whose result digests it, writes nothing to the journal and keeps a presented preview fresh; its analysis of
+/// the sheet's complete operation from the head gains nothing, loses the positions the operation unfinishes, as LB2
+/// counts them, and ends where the operation committed inline ends; a sheet saved from a record of letters reports that
+/// record as its current macro version, and a sheet saved from a sheet without one reports none; after the power loss
+/// both comparisons come back equal, and a write of the record of letters makes the macro version changed while the
+/// sheet's own word is still the one analysed; not run: the first sentence, recipe chunking and the refusal of an
+/// oversized recipe, which `c600-kernel` and `c600-tools` run), LB7.2, LB2, KN5.23.
+#[test]
+fn ct_lb2_03_a_comparison_writes_nothing_and_comes_back_equal_after_a_power_loss() {
+    let disk = MemDisk::new();
+    let inline = inline();
+    let drafted = drafted(&inline);
+    let block = manual();
+
+    // Session 1: the draft sheet saved under `sheet`, and the operation's letters in record `w` saved under `macro`,
+    // which keeps `w`'s name, version and content digest as its macro version (LB7.2).
+    let mut f = Fixture::create(Box::new(disk.clone()));
+    let solved = f.layer.revision().digest.clone();
+    assert!(completed(&put(&mut f, "draft", drafted.to_payload(), &block)));
+    assert!(completed(&save(&mut f, "draft", "sheet")));
+    assert!(completed(&f.write("w", &OPERATION, &block)));
+    assert!(completed(&save(&mut f, "w", "macro")));
+    let source = f.layer.record("w").expect("the letters").digest();
+    let saved = MacroVersion { record: "w".into(), version: version(&f, "w"), digest: source };
+    let id = f.preview(record_draft("sheet"));
+
+    // A comparison is a query: it writes nothing to the journal and keeps the presented preview fresh.
+    let before = fixed(&f.layer, &disk);
+    let sheet = compare(&mut f, "sheet", "draft");
+    let letters = compare(&mut f, "macro", "w");
+    assert_eq!(fixed(&f.layer, &disk), before);
+    assert_eq!(f.layer.preview_state(id), Some(PreviewState::Presented));
+    assert_eq!(f.layer.availability("operation.execute"), Ok(()));
+
+    // Both sheets hold the same complete operation, analysed afresh from the solved head: it gains nothing, loses the
+    // positions it unfinishes and ends where the operation committed inline ends (LB2). No piece role has moved.
+    for value in [&sheet, &letters] {
+        let analysis = field(value, "analysis");
+        assert_eq!((field(analysis, "base"), field(analysis, "end")), (&string(&solved), &string(&inline.end)));
+        assert_eq!((field(analysis, "gains"), field(analysis, "losses")), (&ids(&[]), &ids(&inline.losses)));
+        assert_eq!(field(value, "moved"), &Value::Array(Vec::new()));
+    }
+    assert!(!inline.losses.is_empty());
+    assert_eq!(field(&sheet, "macro_version"), &macro_status(None, "none"));
+    assert_eq!(field(&letters, "macro_version"), &macro_status(Some(&saved), "current"));
+    drop(f);
+    disk.crash();
+
+    // Session 2: the sheets, the records they name and the state are durable (KN5.23), so both comparisons come back
+    // equal, and they still write nothing.
+    let mut f = Fixture::open(Box::new(disk.clone()));
+    let before = fixed(&f.layer, &disk);
+    assert_eq!(compare(&mut f, "sheet", "draft"), sheet);
+    assert_eq!(compare(&mut f, "macro", "w"), letters);
+    assert_eq!(fixed(&f.layer, &disk), before);
+
+    // A write of the record of letters makes the macro version changed; the sheet's own word is still the one analysed.
+    assert!(completed(&f.write("w", &[2, 1], &block)));
+    let changed = compare(&mut f, "macro", "w");
+    assert_eq!(field(&changed, "macro_version"), &macro_status(Some(&saved), "changed"));
+    assert_eq!(field(&changed, "analysis"), field(&letters, "analysis"));
 }
 
 /// A test reader that reads every block. It stands in for a host's reader that accepted a block C5's reader does not
@@ -312,14 +426,16 @@ fn refuse(f: &mut Fixture, disk: &MemDisk, row: &str, args: Value, expected: &st
     assert_eq!(fixed(&f.layer, disk), before, "{what}");
 }
 
-/// CT-LB2-03 (part: the refusals that LP2's draft rows give for a work sheet, on the layer over M6's journal after a
-/// power loss, each with the layer's code and with no change to the revision, the records, the pending preview or the
-/// journal's bytes: without the host's reader neither row is built; the runtime may invoke neither; a malformed
-/// argument; an unknown or removed record, a record that holds no operation to save or no saved sheet to reuse, and a
+/// CT-LB2-03 (part: the refusals that LP2's draft rows give for a work sheet, `worksheet.save`, `worksheet.load` and
+/// `worksheet.compare`, on the layer over M6's journal after a power loss, each with the layer's code, with no job
+/// queued and with no change to the revision, the records, the pending preview or the journal's bytes: without the
+/// host's reader no row is built; the runtime may invoke none; a malformed argument; an unknown or removed record, a
+/// record that holds no operation to save, no saved sheet to reuse or compare, or no work to compare with, and a
 /// malformed sheet; a sheet named at another version; and a block that C5's reader refuses, which a test reader
 /// accepted before the power loss and the journal replays without a check; not run: Jumble on, which needs a twist
 /// menu pinned from `c600-jumble`, not a dependency of this crate, and which `c600-command`'s `tests/jumble_on.rs`
-/// runs; `worksheet.compare`, which the layer does not build), LB7.2, LB7.3, PS1.16.
+/// runs for the save and the reuse; a comparison while the exclusive lane is held (`KN7:busy.lane_full`), which
+/// `c600-command`'s `tests/worksheet.rs` runs), LB7.2, LB7.3, PS1.16.
 #[test]
 fn ct_lb2_03_the_work_sheet_rows_refuse_on_the_journal_and_change_nothing() {
     let disk = MemDisk::new();
@@ -361,38 +477,46 @@ fn ct_lb2_03_the_work_sheet_rows_refuse_on_the_journal_and_change_nothing() {
     };
     let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
     let unchanged = fixed(&bare, &disk);
-    for (row, args) in [(WORKSHEET_SAVE_ROW, save_args("w", "s")), (WORKSHEET_LOAD_ROW, load_args("sheet", 1))] {
+    let rows = [
+        (WORKSHEET_SAVE_ROW, save_args("w", "s")),
+        (WORKSHEET_LOAD_ROW, load_args("sheet", 1)),
+        (WORKSHEET_COMPARE_ROW, compare_args("sheet", 1, "w")),
+    ];
+    for (row, args) in rows {
         assert_eq!(bare.availability(row).map_err(|error| error.code), Err(code::ROW_NOT_BUILT), "{row}");
         let receipt = shell.invoke(&mut bare, row, args).expect("the shell prepares the row");
         assert_eq!(refused(&receipt), Some(code::ROW_NOT_BUILT), "{row}");
     }
     assert_eq!(fixed(&bare, &disk), unchanged, "a session without the reader");
+    assert_eq!(bare.run_jobs(), 0, "a session without the reader");
     drop(bare);
 
-    // With C5's reader installed, both rows are available, and so is `worksheet.compare`, which LP2's layer now builds
-    // (its tests are in `c600-command`'s `tests/worksheet.rs`). A preview of the sheet is presented; no refusal below
+    // With C5's reader installed, the three rows are available. A preview of the sheet is presented; no refusal below
     // makes it stale.
     let mut f = Fixture::open(Box::new(disk.clone()));
-    for row in [WORKSHEET_SAVE_ROW, WORKSHEET_LOAD_ROW, "worksheet.compare"] {
+    for row in [WORKSHEET_SAVE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_COMPARE_ROW] {
         assert_eq!(f.layer.availability(row), Ok(()), "{row}");
     }
     assert_eq!(f.layer.record("kept").map(|value| value.provenance.clone()), Some(text(FOREIGN)));
     f.preview(record_draft("sheet"));
 
-    // The runtime may invoke neither row: a work sheet changes only in a command the solver invokes (LB7.2).
+    // The runtime may invoke none of the rows: a work sheet changes only in a command the solver invokes (LB7.2), and
+    // LP2's draft gives the comparison the same callers.
     let before = fixed(&f.layer, &disk);
     {
         let mut bridge = Bridge::new(&mut f.layer, "run-1");
         let saved = bridge.invoke(WORKSHEET_SAVE_ROW, save_args("w", "s"), None);
         let loaded = bridge.invoke(WORKSHEET_LOAD_ROW, load_args("sheet", 1), None);
-        assert_eq!((refused(&saved), refused(&loaded)), (Some(code::NOT_GRANTED), Some(code::NOT_GRANTED)));
+        let compared = bridge.invoke(WORKSHEET_COMPARE_ROW, compare_args("sheet", 1, "w"), None);
+        let codes = [refused(&saved), refused(&loaded), refused(&compared)];
+        assert_eq!(codes, [Some(code::NOT_GRANTED); 3]);
     }
     assert_eq!(fixed(&f.layer, &disk), before, "the runtime's invocations");
 
     // A malformed argument, among them a recipe draft, a third argument and a missing reference.
     let recipe = json::parse(br#"[{"kind": "word", "moves": [1]}]"#).expect("JSON");
     let bad_saves = [
-        ("a recipe draft", save_with(json::object([("recipe", recipe)]), string("s"))),
+        ("a recipe draft", save_with(json::object([("recipe", recipe.clone())]), string("s"))),
         ("an empty name", save_with(record("w"), string(""))),
         ("a third argument", json::object([("draft", record("w")), ("name", string("s")), ("x", Value::Null)])),
     ];
@@ -408,6 +532,21 @@ fn ct_lb2_03_the_work_sheet_rows_refuse_on_the_journal_and_change_nothing() {
     for (what, args) in bad_loads {
         refuse(&mut f, &disk, WORKSHEET_LOAD_ROW, args, code::ARGUMENT_FORM, what);
     }
+    let at = || WorksheetRef { record: "sheet".into(), version: 1 }.to_json();
+    let with = |draft: Value| json::object([("draft", draft), ("worksheet", at())]);
+    let bad_compares = [
+        ("a recipe draft to compare with", with(json::object([("recipe", recipe)]))),
+        ("a draft with a second key", with(json::object([("record", string("w")), ("x", Value::Null)]))),
+        ("a missing draft", json::object([("worksheet", at())])),
+        ("a missing sheet reference", json::object([("draft", record("w"))])),
+        (
+            "a third comparison argument",
+            json::object([("draft", record("w")), ("worksheet", at()), ("x", Value::Null)]),
+        ),
+    ];
+    for (what, args) in bad_compares {
+        refuse(&mut f, &disk, WORKSHEET_COMPARE_ROW, args, code::ARGUMENT_FORM, what);
+    }
 
     // An unknown or removed record, a record that holds no operation to save or no saved sheet to reuse, and a
     // malformed sheet are no work sheet (`KN2:input.named_object_invalid`).
@@ -421,18 +560,33 @@ fn ct_lb2_03_the_work_sheet_rows_refuse_on_the_journal_and_change_nothing() {
         let at = version(&f, name);
         refuse(&mut f, &disk, WORKSHEET_LOAD_ROW, load_args(name, at), invalid, name);
     }
+    // The same records are no saved sheet to compare, and a missing or removed record, or one that holds neither
+    // letters nor a sheet, is no work to compare with.
+    refuse(&mut f, &disk, WORKSHEET_COMPARE_ROW, compare_args("missing", 0, "w"), invalid, "a missing sheet");
+    for name in ["gone", "w", "draft"].into_iter().chain(shapes.iter().copied()) {
+        let at = version(&f, name);
+        refuse(&mut f, &disk, WORKSHEET_COMPARE_ROW, compare_args(name, at, "w"), invalid, name);
+    }
+    for draft in ["missing", "gone", "text"] {
+        refuse(&mut f, &disk, WORKSHEET_COMPARE_ROW, compare_args("sheet", 1, draft), invalid, draft);
+    }
 
     // A sheet named at another version than its record's (`KN5:stale.revision_changed`).
     for stale in [0, 2] {
         refuse(&mut f, &disk, WORKSHEET_LOAD_ROW, load_args("sheet", stale), code::REVISION_CHANGED, "another version");
+        let args = compare_args("sheet", stale, "w");
+        refuse(&mut f, &disk, WORKSHEET_COMPARE_ROW, args, code::REVISION_CHANGED, "a comparison at another version");
     }
 
-    // C5's reader reads the block again at a save and at a reuse (PS1.16): a block it does not read, replayed from the
-    // journal, is refused with its error.
+    // C5's reader reads the block again at a save, at a reuse and at a comparison (PS1.16, KN5.26): a block it does not
+    // read, replayed from the journal, is refused with its error.
     let incompatible = code::PROVENANCE_INCOMPATIBLE;
     refuse(&mut f, &disk, WORKSHEET_SAVE_ROW, save_args("foreign", "s"), incompatible, "a save of the block");
     let at = version(&f, "kept");
     refuse(&mut f, &disk, WORKSHEET_LOAD_ROW, load_args("kept", at), incompatible, "a reuse of the block");
+    let args = compare_args("kept", at, "w");
+    refuse(&mut f, &disk, WORKSHEET_COMPARE_ROW, args, incompatible, "a comparison of the block");
+    assert_eq!(f.layer.run_jobs(), 0, "no refusal queues a job");
 
     // The preview is still fresh and no record `s` was written. The sheet is still reused at its version, and that
     // reuse writes the journal and makes the preview stale, as each refusal above would have if it had written.

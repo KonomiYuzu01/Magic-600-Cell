@@ -170,6 +170,19 @@ fn reserved(name: &str) -> bool {
     KEYWORDS.contains(&name) || BUILTINS.contains(&name) || ORDERS.contains(&name)
 }
 
+/// The words a program cannot bind, read-only: the list lowering itself checks (LP2 draft; the keywords freeze with
+/// the syntax, PHS.49). A host's completion list (LX-4) reads it here instead of keeping a copy.
+pub fn keywords() -> &'static [&'static str] {
+    &KEYWORDS
+}
+
+/// The IR's operations that a program calls like functions, read-only: the list lowering itself checks, stage-module
+/// operations included (RPI.70). A program cannot bind these names. Like [`keywords`], it is a draft that freezes
+/// with the syntax and the IR (PHS.49).
+pub fn builtins() -> &'static [&'static str] {
+    &BUILTINS
+}
+
 /// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one.
 fn holds_callable(ty: &Ty) -> bool {
     match ty {

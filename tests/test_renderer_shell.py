@@ -306,14 +306,14 @@ class ShellProject(unittest.TestCase):
         self.assertIn("puzzle", run)
         self.assertIn("public void Append(Action<Utf8JsonWriter> fields) => Write(fields);", log)
         self.assertIn("log.Describe(window, puzzle);", shell)
-        # The stub has the hook points only: LX-4's messages and rows are its owner's, so the runbook does not call
-        # U8 ready before they exist.
-        stub = text(PROJECT / "Lx4" / "Lx4Module.cs")
-        self.assertIn("public sealed class Lx4Module : IShellModule", stub)
-        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
-        for needle in ("Magic600.LX4", '"lx4"', "RegisterWindowMessage"):
-            self.assertNotIn(needle, stub)
-        # LX-2's stub likewise: its fault schedule, rows and fault variables are its owner's.
+        # LX-4's module is the C9 measurement line's (tests/test_c9_measure.py checks it against its library): here
+        # only that it is a module that takes LX-4's messages and writes its rows through the log.
+        lx4 = text(PROJECT / "Lx4" / "Lx4Module.cs")
+        self.assertIn("public sealed unsafe class Lx4Module : IShellModule", lx4)
+        for needle in ('Register("Magic600.LX4.Reset")', 'Register("Magic600.LX4.Select")',
+                       'json.WriteString("t", "lx4");', "Context.Log?.Append("):
+            self.assertIn(needle, lx4)
+        # LX-2's stub has the hook points only: its fault schedule, rows and fault variables are its owner's.
         stub = text(PROJECT / "Lx2" / "Lx2Module.cs")
         self.assertIn("public sealed class Lx2Module : IShellModule", stub)
         self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
@@ -431,7 +431,9 @@ class ProductBuild(unittest.TestCase):
                  "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
                  "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}", "runtime/c600-runtime.exe": b"runtime",
                  "session-fixture/fixture.json": b"{}", "session-fixture/session/lock": b"",
-                 "session-fixture/session/journal": b"journal"}
+                 "session-fixture/session/journal": b"journal",
+                 "session-fixture-jumble-on/fixture.json": b"{}", "session-fixture-jumble-on/session/lock": b"",
+                 "session-fixture-jumble-on/session/journal": b"jumbled journal"}
         for name, data in files.items():
             (self.build / name).parent.mkdir(parents=True, exist_ok=True)
             (self.build / name).write_bytes(data)
@@ -446,7 +448,9 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
                                                  "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
                                                  "menu:wj-I_a.json", "runtime:c600-runtime.exe", "fixture:fixture.json",
-                                                 "fixture:session/lock", "fixture:session/journal"})
+                                                 "fixture:session/lock", "fixture:session/journal",
+                                                 "fixture-jumble-on:fixture.json", "fixture-jumble-on:session/lock",
+                                                 "fixture-jumble-on:session/journal"})
         self.assertTrue(product["identity"].startswith("c9-product-"))
         self.assertTrue(all(not Path(part["path"]).is_absolute() for part in product["parts"].values()))
 
@@ -462,19 +466,33 @@ class ProductBuild(unittest.TestCase):
             self.build_product.verify(self.build)
 
     def test_a_build_without_a_fixture_session_is_refused(self):
-        shutil.rmtree(self.build / "session-fixture" / "session")
-        with self.assertRaises(self.build_product.ProductError):
-            self.build_product.record(self.build, self.godot, "0" * 40, False)
-        with self.assertRaises(self.build_product.ProductError):
-            self.build_product.verify(self.build)
+        for folder in ("session-fixture", "session-fixture-jumble-on"):
+            with self.subTest(folder=folder):
+                session = self.build / folder / "session"
+                moved = self.temp / "moved"
+                shutil.move(session, moved)
+                with self.assertRaises(self.build_product.ProductError):
+                    self.build_product.record(self.build, self.godot, "0" * 40, False)
+                with self.assertRaises(self.build_product.ProductError):
+                    self.build_product.verify(self.build)
+                shutil.move(moved, session)
+                self.build_product.verify(self.build)
 
     def test_the_build_writes_its_fixture_with_its_own_model_menu_and_runtime(self):
-        command = self.build_product.fixture_command(self.build)
-        self.assertEqual(Path(command[0]).name, "c600-shell-session-fixture.exe")
-        flags = dict(zip(command[1::2], command[2::2]))
-        self.assertEqual(flags, {"--assets": str(self.build / "assets"), "--menu": str(self.build / "menu" / "wj-I_a.json"),
-                                 "--out": str(self.build / "session-fixture"),
-                                 "--runtime": str(self.build / "runtime" / "c600-runtime.exe")})
+        # One fixture per puzzle the shell names, each in its own folder.
+        self.assertEqual(tuple(self.build_product.FIXTURES), self.launch.PUZZLES)
+        for puzzle, folder in (("jumble-off", "session-fixture"), ("jumble-on", "session-fixture-jumble-on")):
+            command = self.build_product.fixture_command(self.build, puzzle)
+            self.assertEqual(Path(command[0]).name, "c600-shell-session-fixture.exe")
+            flags = dict(zip(command[1::2], command[2::2]))
+            self.assertEqual(flags, {"--assets": str(self.build / "assets"),
+                                     "--menu": str(self.build / "menu" / "wj-I_a.json"),
+                                     "--out": str(self.build / folder), "--puzzle": puzzle,
+                                     "--runtime": str(self.build / "runtime" / "c600-runtime.exe")})
+            self.assertEqual(self.build_product.fixture_record(puzzle), folder + "/fixture.json")
+            self.assertEqual(self.build_product.fixture_session(puzzle), folder + "/session")
+        self.assertEqual(self.build_product.fixture_command(self.build),
+                         self.build_product.fixture_command(self.build, "jumble-off"))
         self.assertEqual(self.build_product.runtime_command()[:6],
                          ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
         self.assertEqual(self.build_product.runtime_command()[-2:], ["-p", "c600-runtime"])
@@ -596,7 +614,7 @@ class ProductBuild(unittest.TestCase):
                                 popen=refuse, out_stream=lines.append)
         self.assertEqual(code, 2)
         self.assertFalse(out.exists())
-        self.assertIn("does not run jumble-on yet", lines[-1])
+        self.assertIn("does not draw jumble-on yet", lines[-1])
         # The launcher and the shell name the same puzzles, and both refuse every other one.
         log = text(PROJECT / "EventLog.cs")
         puzzles = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};", log)
@@ -679,6 +697,13 @@ class ProductBuild(unittest.TestCase):
         self.assertNotIn("M600_LX4", env)
         self.assertNotIn("m600_puzzle", env)
         self.assertEqual(env["M600_PUZZLE"], "jumble-off")
+        self.assertEqual(env["M600_SESSION_FIXTURE"], str(self.build / "session-fixture" / "fixture.json"))
+        # With Jumble on the host reopens the jumbled fixture: a fixture opens only as its own puzzle.
+        jumbled = self.launch.environment(product, self.build, self.temp / "run", "r1", False, base={},
+                                          puzzle="jumble-on")
+        self.assertEqual(jumbled["M600_PUZZLE"], "jumble-on")
+        self.assertEqual(jumbled["M600_SESSION_FIXTURE"],
+                         str(self.build / "session-fixture-jumble-on" / "fixture.json"))
         self.assertNotIn("m600_core_dll", env)
         self.assertEqual(env["PATH"], "p")
         self.assertEqual(env["M600_CORE_DLL"], str(self.build / "native" / "sa2_interop.dll"))

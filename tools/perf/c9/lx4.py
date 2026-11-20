@@ -32,30 +32,36 @@ Metrics and the script's edit that drives each (DRAFT mapping of RTE.49's interv
 | rerun | inside-body | the last key | the reference view re-run and its updated view presented |
 | dependents (W) | exported-signature at W00 | the burst's last key | W00's dependents re-checked and shown |
 
-Messages (DRAFT protocol; the product shell implements it): registered `Magic600.LX4.Reset` (wParam the edit's index
-in EDITS.json, lParam the sample id): the editor loads the edit's target baseline and checks its digest. Then for
-each replacement, in descending offset order: registered `Magic600.LX4.Select` (wParam start, lParam end, UTF-8 byte
-offsets in the current buffer), then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or
-WM_KEYDOWN and WM_KEYUP of VK_BACK with its scan code 0x0E when the insert is empty. Automatic insertions (indent,
-closing brackets) are off, so the buffer equals the script's result. A turn is WM_KEYDOWN and WM_KEYUP of one of the
-shell's turn keys (`--turn-key`, default KeyJ: physical J, K and L are twists 1, 2 and 3), with the key's scan code in
-lParam bits 16 to 23: the shell routes by Godot's physical keycode, which Godot takes from the scan code, so a bare
-virtual-key code with scan code 0 does not turn. Godot's loop translates a turn's key-down into a WM_CHAR with the same
-scan code; the shell's LX-4 module keeps such characters out of the buffer, and the harness's own WM_CHARs carry scan
-code 0, so the two never mix.
+Messages (DRAFT protocol; the product shell implements it): registered `Magic600.LX4.Reset` (wParam the edit's index in
+EDITS.json, lParam the sample id): the editor loads the edit's target baseline and checks its digest, and the first
+frame that draws the baseline writes the sample's `ready` row (a handshake, no metric). The harness posts the rest only
+after it reads that row, so no timed message waits behind the Reset's work. Then for each replacement, in descending
+offset order: registered `Magic600.LX4.Select` (wParam start, lParam end, UTF-8 byte offsets in the current buffer),
+then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or WM_KEYDOWN and WM_KEYUP of VK_BACK
+with its scan code 0x0E when the insert is empty. Automatic insertions (indent, closing brackets) are off, so the buffer
+equals the script's result. A turn is WM_KEYDOWN and WM_KEYUP of one of the shell's turn keys (`--turn-key`, default
+KeyJ: physical J, K and L are twists 1, 2 and 3), with the key's scan code in lParam bits 16 to 23: the shell routes by
+Godot's physical keycode, which Godot takes from the scan code, so a bare virtual-key code with scan code 0 does not
+turn. Godot's loop translates a turn's key-down into a WM_CHAR with the same scan code; the shell's LX-4 module keeps
+such characters out of the buffer, and the harness's own WM_CHARs carry scan code 0, so the two never mix.
 
-Logs. The harness writes `lx4-posts.jsonl` in the run directory (format `magic600-c9-lx4-posts-v1`): a `run` row,
-one `post` row per message (`sample`, `index`, `message`, `qpc` read just before PostMessageW, `ok`) and one `sample`
-row per sample (`status` done or timeout, `foreground`). The shell writes `events.jsonl`
-(`magic600-c9-shell-events-v1`, key_to_frame.py) whose `run` row also carries `puzzle` and `window` (the HWND, an
-integer), with frame, presented and key rows as for E2, and `{"t": "lx4", "sample": int, "endpoint": str,
-"frame_id": int, "buffer_sha256": str}` when a frame first shows an endpoint.
+Logs. The harness writes `lx4-posts.jsonl` in the run directory (format `magic600-c9-lx4-posts-v1`): a `run` row, one
+`post` row per message (`sample`, `index`, `message`, `qpc` read just before PostMessageW, `ok`) and one `sample` row
+per sample (`status` done, timeout, or not-ready when no `ready` row came within the timeout and nothing after the Reset
+was posted; `foreground`). The shell writes `events.jsonl` (`magic600-c9-shell-events-v1`, key_to_frame.py) whose `run`
+row also carries `puzzle` and `window` (the HWND, an integer), with frame, presented and key rows as for E2, and
+`{"t": "lx4", "sample": int, "endpoint": str, "frame_id": int, "buffer_sha256": str}` when a frame first shows an
+endpoint. The shell seals `events.jsonl` only when it closes, because the run row is known only then; while it runs,
+its rows go to `events.body.jsonl` in buffered blocks. So `post` reads that live body, and the window, run id, build and
+puzzle from the module's own row, `{"t": "module", "module": "lx4", "window": int, "run_id": str, "build_identity":
+str, "puzzle": str, "qpc_frequency": int}`, which the module writes when it starts (`post` waits up to
+`START_TIMEOUT_S` for it).
 
 Rules (DRAFT, as key_to_frame.py). A sample's time runs from its timed post's QPC to the core-confirmed display QPC of
 the frame its endpoint row names. A sample without a confirmed frame gets no time and makes its run invalid; so do a
-buffer that differs from the edit's result (the correctness control, step 7), a failed post, a timeout, a lost
-foreground, a frame submitted before its post and the contradictions key_to_frame.py refuses. An invalid run is kept
-and repeated whole; it is never pooled. Each puzzle needs exactly one valid run, both of one build.
+buffer that differs from the edit's result (the correctness control, step 7), a failed post, a timeout, a missing
+`ready` row, a lost foreground, a frame submitted before its post and the contradictions key_to_frame.py refuses. An
+invalid run is kept and repeated whole; it is never pooled. Each puzzle needs exactly one valid run, both of one build.
 
 Verdict (RTE.53). Per puzzle, series, size and metric: nearest-rank p95 and p99 against RTE.49's bars. `met` only when
 every bar holds in each of the three series at S, M and L on both puzzles, W's bar holds, all 10,800 S/M/L samples
@@ -64,6 +70,10 @@ renderer gate summary of the same build are met. The decision names RTE.53's cas
 `fail-gate-or-e2`, `owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or
 `all-bars`. The gate summary is checked for its build and verdicts only; that it comes from these runs' captures is
 the integrator's check (`gate_same_run_checked` false).
+
+Limitation (stated in every record, `limitations`; top integrator, 19 November 2026): the module set's views read no
+host rows on either puzzle (the host runs them with `NoHost`), so jumble-off and jumble-on time the same rerun path.
+RTE.51 does not require jumbling rows, and the bars are unchanged.
 """
 from __future__ import annotations
 
@@ -81,6 +91,10 @@ from evidence import RunError, integer, require  # noqa: E402
 from b412_summary import nearest_rank, statistics  # noqa: E402
 
 POSTS = 'lx4-posts.jsonl'
+# The shell's live log: its rows while it runs, before it seals events.jsonl at close (EventLog.BodyName).
+LIVE = 'events.body.jsonl'
+MODULE_ROW = 'module'
+START_TIMEOUT_S = 60.0
 POSTS_FORMAT = 'magic600-c9-lx4-posts-v1'
 FIXTURES_FORMAT = 'magic600-c9-lx4-fixtures-v1'
 EDITS_FORMAT = 'magic600-c9-lx4-edits-v1'
@@ -106,6 +120,7 @@ BARS = {'echo': {'S': (50, 67), 'M': (50, 67), 'L': (50, 67)},
         'rerun': {'S': (250, 400), 'M': (250, 400), 'L': (500, 750)},
         'dependents': {'W': (1000, 1500)}}
 RESET, SELECT = 'Magic600.LX4.Reset', 'Magic600.LX4.Select'
+READY = 'ready'
 WM_KEYDOWN, WM_KEYUP, WM_CHAR, VK_BACK = 0x0100, 0x0101, 0x0102, 0x08
 KEYUP_LPARAM = 0xC0000001
 SCAN_BACK = 0x0E
@@ -120,6 +135,8 @@ BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1
                 'id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 timed S/M/L samples'),
        'bars_ms': BARS, 'samples': TOTAL_SML,
        'source': ['RTE.47', 'RTE.48', 'RTE.49', 'RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06']}
+LIMITATIONS = ['the module set\'s views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time '
+               'the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged']
 DRAFTS = ['metric to edit-kind mapping', 'schedule order and smoke series', 'message protocol Magic600.LX4.*',
           'lx4 rows in magic600-c9-shell-events-v1', 'unconfirmed sample invalidates its run',
           f'post timeout {TIMEOUT_S:g} s, pace {PACE_S:g} s', 'gate summary checked for build and verdict only',
@@ -319,14 +336,28 @@ class Tail:
         return out
 
 
+def module_row(tail, name, clock=time.monotonic, sleep=time.sleep, timeout=START_TIMEOUT_S):
+    """The module row of `name` in the shell's live log (its window, run, build and puzzle), or None after `timeout`."""
+    started = clock()
+    while True:
+        for row in tail.rows():
+            if row.get('t') == MODULE_ROW and row.get('module') == name and integer(row.get('window')):
+                return row
+        if clock() - started >= timeout:
+            return None
+        sleep(0.05)
+
+
 def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, sleep=time.sleep, out=print):
-    """Posts one puzzle's schedule to the shell named in run_dir/events.jsonl; 0 when every sample completed."""
+    """Posts one puzzle's schedule to the shell whose LX-4 module row is in run_dir's live log; 0 when every sample
+    completed."""
     manifest, edits, digests = load_fixtures(fixtures)
     run_dir = Path(run_dir)
-    tail = Tail(run_dir / key_to_frame.EVENTS)
-    head = next((row for row in tail.rows() if row.get('t') == 'run'), None)
-    if head is None or head.get('format') != key_to_frame.LOG_FORMAT or not integer(head.get('window')):
-        out('the shell has written no run row with its window to events.jsonl; start the shell first')
+    tail = Tail(run_dir / LIVE)
+    head = module_row(tail, 'lx4', clock, sleep)
+    if head is None:
+        out(f'the shell has written no lx4 module row to {LIVE} within {START_TIMEOUT_S:g} s; start it with --lx4 '
+            '--lx4-fixtures <fixtures> first')
         return 2
     if head.get('puzzle') != puzzle:
         out(f"the shell runs {head.get('puzzle')!r}, not {puzzle!r}")
@@ -353,12 +384,21 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
                 elif row.get('t') == 'key':
                     keys += 1
 
+        def wait_for(key):
+            """Whether the shell writes the lx4 row `key` (or, for a turn, a key row) before the sample's timeout."""
+            while clock() - started < TIMEOUT_S:
+                drain()
+                if key in endpoints or (key[1] == 'turn' and keys > 0):
+                    return True
+                sleep(0.005)
+            return False
+
         for sample in samples:
             drain()
             keys = 0
             started = clock()
             sent, timed = messages(edits, sample, turn_key)
-            ok_all = system.alive(hwnd)
+            ok_all, status = system.alive(hwnd), None
             for index, (message, wparam, lparam) in enumerate(sent):
                 number = names.get(message, message)
                 qpc = system.qpc()
@@ -366,16 +406,14 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
                 ok_all = ok_all and ok
                 write({'t': 'post', 'sample': sample['id'], 'index': index, 'message': number, 'wparam': wparam,
                        'lparam': lparam, 'qpc': qpc, 'ok': ok, 'timed': index == timed})
-            done = False
-            while ok_all and clock() - started < TIMEOUT_S:
-                drain()
-                if (sample['id'], sample['metric']) in endpoints or (sample['metric'] == 'turn' and keys > 0):
-                    done = True
+                if message == RESET and not (ok_all and wait_for((sample['id'], READY))):
+                    status = 'not-ready'
                     break
-                sleep(0.005)
+            if status is None:
+                status = 'done' if ok_all and wait_for((sample['id'], sample['metric'])) else 'timeout'
             foreground = system.foreground(hwnd)
-            write({'t': 'sample', 'sample': sample['id'], 'status': 'done' if done else 'timeout',
-                   'foreground': foreground})
+            write({'t': 'sample', 'sample': sample['id'], 'status': status, 'foreground': foreground})
+            done = status == 'done'
             failures += not (done and foreground)
             sleep(max(0.0, PACE_S - (clock() - started)))
     out(f'{puzzle}: {len(samples)} samples posted, {failures} timed out or lost the foreground')
@@ -426,7 +464,9 @@ def analyze_run(events, post_rows, edits, digests):
         timed = [row for row in posts.get(sample['id'], []) if row.get('timed')]
         state = done.get(sample['id'], {})
         row = endpoints.get((sample['id'], sample['metric']))
-        if len(timed) != 1 or not all(post.get('ok') for post in posts.get(sample['id'], [])):
+        if state.get('status') == 'not-ready':
+            failure = 'not-ready'
+        elif len(timed) != 1 or not all(post.get('ok') for post in posts.get(sample['id'], [])):
             failure = 'post-failed'
         elif state.get('status') != 'done':
             failure = 'timeout'
@@ -558,7 +598,7 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
     result = {'fixtures': digests, 'runs': runs, 'decision': decision, 'series': table,
               'accounting': accounting([schedule(edits, puzzle) for puzzle in PUZZLES]),
               'timed_sml_samples': sum(row['stats']['n'] for row in table if row['series'] > 0 and row['size'] in SIZES),
-              'gate_same_run_checked': False}
+              'gate_same_run_checked': False, 'limitations': LIMITATIONS}
     return evidence.make_record(
         'lx4-editor-latency', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
