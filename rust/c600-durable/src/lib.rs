@@ -40,7 +40,8 @@
 //!   loss on a memory disk and in a new session on a file-system disk. Each reuse makes a presented preview of the
 //!   sheet stale (`KN5:stale.revision_changed`), so the press prepared before it commits nothing, and a fresh engine
 //!   preview of the reused sheet commits its complete operation. A reuse after that commit places the piece roles again
-//!   and shows the moved piece without retargeting the sheet, and its undo restores the sheet as saved. A comparison of
+//!   and shows the moved piece without retargeting the sheet, the position role on the moved piece's home reads the
+//!   piece that fills it now, and the reuse's undo restores the sheet as saved. A comparison of
 //!   a sheet with the current work, LB7.2's fresh exact analysis of the sheet, completes as a query whose result
 //!   digests it, writes nothing to the journal and keeps a presented preview fresh: its analysis of the sheet's
 //!   complete operation from the head gains nothing, loses the positions the operation unfinishes, as LB2 counts them,
@@ -78,8 +79,8 @@
 //! preview, with LB7.2's fresh exact analysis of a reused sheet (H-08's `worksheet.compare`, a query row with a job,
 //! with LB2's gains and losses, and macro versions; LP2's pull request 277), runs through the layer's rows on the
 //! layer's memory store (`c600-command`'s `tests/worksheet.rs`) and on M6's journal
-//! (`tests/ct_lb2_03_work_sheet_reuse.rs`). The layer does not build reading a position role's occupant again, which
-//! neither sentence names; this crate builds no KN5 logic, so that waits for LP2.
+//! (`tests/ct_lb2_03_work_sheet_reuse.rs`), where a reuse also reads each position role's occupant again (LP2's pull
+//! request 361).
 //!
 //! # Drafts
 //!
@@ -108,15 +109,15 @@
 //!   that accepted the block. After a power loss the journal replays both without a reader check, the sheet keeps the
 //!   block, and C5's reader refuses the save, the reuse and the comparison with its error.
 //!
-//! # Waiting for LP2's KN5 implementation
+//! # Built by LP2's KN5 implementation
 //!
-//! - KN5.26's session profile. Built: the layer reads a record draft's block through the host's reader and admits or
-//!   refuses the record's word with the reader's answer and the part blocks the layer keeps, which
+//! - KN5.26's admission: the layer reads a record draft's block through the host's reader and admits or refuses the
+//!   record's word with the reader's answer and the part blocks the layer keeps, which
 //!   `tests/ct_rte_08_persisted_word.rs` runs, and KN5.26's admission matrix (L1, L2), which `c600-command`'s
-//!   `tests/kn5_admission.rs` runs (LP2's pull requests 270 and 272). Not built: a session profile, which the layer
-//!   does not know, so the host's reader applies a solving session's admission in every session.
-//! - Reading a position role's occupant again at a reuse or a comparison, which the layer does not build. The rest of
-//!   the work-sheet structure, the named roles and their placement again, and LB7.2's fresh exact analysis are built,
-//!   and `tests/ct_lb2_03_work_sheet_reuse.rs` runs them.
+//!   `tests/kn5_admission.rs` runs (LP2's pull requests 270 and 272). Since LP2's pull request 287 the layer knows the
+//!   session's profile (BND.14 to BND.17) and asks the reader only in a solving session; every session here is a
+//!   solving one.
+//! - The work-sheet structure: the named roles, the piece roles placed again, each position role's occupant read again
+//!   (LP2's pull request 361) and LB7.2's fresh exact analysis, which `tests/ct_lb2_03_work_sheet_reuse.rs` runs.
 
 #![forbid(unsafe_code)]

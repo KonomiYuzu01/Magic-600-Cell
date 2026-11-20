@@ -8,9 +8,9 @@
 //! layer's code and changes nothing on the journal. Each test names the conformance part it covers with a PHS.62
 //! marker.
 //!
-//! CT-LB2-03 does not run whole (crate documentation): its first sentence, recipe chunking and the refusal of an
-//! oversized recipe, runs in `c600-kernel` and `c600-tools`, and C5 records part of the source route's chunked
-//! transport as not built.
+//! CT-LB2-03 runs whole across crates (crate documentation): its first sentence, recipe chunking and the refusal of an
+//! oversized recipe, runs in `c600-kernel` and `c600-tools`, and its second sentence runs here and on the layer's
+//! memory store.
 
 mod common;
 
