@@ -11,7 +11,8 @@
 //! outcome and code at the next operation, and the corpus's examined items are the rows the engine served.
 //! [`FALSE_REFUSALS`] and [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key
 //! gives the corpus's code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the
-//! keys not realised here, with the reason; B10 and B11 need a runtime process and are realised in `c600-tools`.
+//! keys not realised here, with the reason: B10 and B11 need a runtime process and are realised in `c600-tools`, and
+//! MR13, MR14, MR19 and MR20, which the built-in column's admission refuses, are realised in `c600-runtime`.
 //!
 //! Evidence kind: source and synthetic. The fixture is LX-3's fake data, not Full's mechanics; nothing here measures
 //! time or performance.
@@ -46,8 +47,10 @@ const REALISED: [&str; 51] = [
 ];
 
 const M5: &str = "a jumbling key: realised on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`";
-const M6: &str = "waits for M6: a recorded pick or accumulation across runs needs the session store";
+const PICK: &str = "waits for a recorded pick: nothing writes or resolves a `c600-pick` record yet (FP.38, BND.54)";
 const RUNTIME: &str = "realised with a runtime process in `c600-tools/tests/ct_rte_07_c5.rs`";
+const ADMISSION: &str = "realised as the built-in column's refusal at admission in \
+                         `c600-runtime/tests/ct_rte_07_admission.rs`";
 const COMMAND: &str = "not realised: the budget declaration and the host ceiling belong to the command layer, a \
                        non-goal; no crate defines `KN7:input.budget_not_declared` or `KN7:resource_limit.budget_ceiling`";
 
@@ -61,14 +64,14 @@ const LEFT: [(&str, &str); 24] = [
     ("MR06", M5),
     ("A31", M5),
     ("A32", M5),
-    ("MR17", M6),
-    ("MR18", M6),
-    ("MR19", M6),
-    ("MR20", M6),
-    ("A29", M6),
-    ("A30", M6),
-    ("MR13", "not expressible: the IR draft has no early stop (LX-3 code gap `stop_emission`)"),
-    ("MR14", "not expressible: the IR draft has no early stop (LX-3 code gap `stop_emission`)"),
+    ("MR17", PICK),
+    ("MR18", PICK),
+    ("A29", PICK),
+    ("A30", PICK),
+    ("MR13", ADMISSION),
+    ("MR14", ADMISSION),
+    ("MR19", ADMISSION),
+    ("MR20", ADMISSION),
     (
         "B01",
         "not realised: LX-3's `tick` costs one step and nothing else; a read of the host's row `tick` also costs its \

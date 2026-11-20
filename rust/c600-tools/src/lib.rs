@@ -50,13 +50,13 @@
 //!   the review of the class against the entry (CT-BND-15, CT-LB6-03) is not done.
 //! - **Built-in admission.** `c600_check::admit` with `Profile::Solving` is the column of a solver's own, forked or
 //!   imported tool, which prepares no preview until the joint setting, so it refuses this tool. [`tool::Tool::new`]
-//!   admits the entry with `c600_check::admit_built_in`, the built-in column of chapter 07 section 8 that LP2 added
-//!   to the checker (pull request 170) when this crate asked for it; this crate keeps no admission rule of its own.
-//!   Draft: BND.57's rows by class do not exist as data, so [`tool::class_rows`] lists the prepare-a-preview row of
-//!   each of the manifest's rows, `operation.preview`, and nothing else. An entry that also reads state, publishes a
-//!   view or writes the workspace therefore uses a row its class does not list and is refused, and a store of a word
-//!   the solver did not name is refused at the write as well as its relay at the proposal. The built-in column's two
-//!   exceptions are not built.
+//!   admits the entry with `c600_check::admit_built_in`, the built-in column of chapter 07 section 8 that LP2 added to
+//!   the checker (pull request 170) when this crate asked for it, and the process host's child admits it the same way
+//!   (**Child admission** below); this crate keeps no admission rule of its own. Draft: BND.57's rows by class do not
+//!   exist as data, so [`tool::class_rows`] lists the prepare-a-preview row of each of the manifest's rows,
+//!   `operation.preview`, and nothing else. An entry that also reads state, publishes a view or writes the workspace
+//!   therefore uses a row its class does not list and is refused, and a store of a word the solver did not name is
+//!   refused at the write as well as its relay at the proposal. The built-in column's two exceptions are not built.
 //! - **Provenance.** The blocks name a draft capability contract, pinned as `c600-tools-draft-1`, and the checker
 //!   pin `c600-check-lp2-draft` over `c600-check`'s source. The word argument enters with a manual block: the solver
 //!   named it. The producer is the tool's module digest and entry, author `built_in`, profile `solving`.
@@ -164,17 +164,18 @@
 //!   model as its 32 bytes and its arguments as canonical JSON bytes. A model refusal keeps its code and names the view
 //!   or the ceiling's field. A closed view's retirement token waits until the host takes it at its frame boundary.
 //! - **Process host** (RTE.21, ONE.69, LQ9; KN5.15; BND.42). [`process::ProcessHost`] sends one job per run to
-//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`],
-//!   the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's. The boundary and
-//!   the bridge stay in the caller's process as the `Host` of `c600_runtime::Runtime::run`: the child holds the
-//!   program and its word, and no token, secret or command layer. One child serves every run of a host; after a
-//!   fault the next run starts a fresh one (KN7.13). A run has no wall-clock deadline unless the caller sets one
+//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`], the
+//!   tool's class rows, the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's.
+//!   The boundary and the bridge stay in the caller's process as the `Host` of `c600_runtime::Runtime::run`: the child
+//!   holds the program and its word, and no token, secret or command layer. One child serves every run of a host; after
+//!   a fault the next run starts a fresh one (KN7.13). A run has no wall-clock deadline unless the caller sets one
 //!   (KN7.10, DET.17).
-//! - **Child admission** (ADR-L02, LG3.13, chapter 07 section 8). The child admits a job with `c600_check::admit`,
-//!   which has no built-in column, and its solving column refuses every previewing program. So the job's profile is
-//!   tool authoring, the built-in column stays the caller's ([`tool::Tool::new`]), and the process host sends only
-//!   the source whose digest is the manifest's. The child's own admission of a built-in tool waits for the API named
-//!   under "Built-in admission", and for a field in `c600-runtime`'s job options to carry it.
+//! - **Child admission** (ADR-L02, LG3.13, chapter 07 section 8). The job runs in the solving profile and names the
+//!   tool's class rows (`c600_runtime::JobOptions::built_in`, LP2's draft), so the child admits the entry in the
+//!   built-in column itself, with `c600_check::admit_built_in`, as [`tool::Tool::new`] does in the caller
+//!   ([`process::job`]). The process host still sends only the source whose digest is the manifest's. Solving is the
+//!   profile of the place where LP3's hosts start a run, a command in a solving session (BND.17); the tool editor and a
+//!   research workspace, which would set the tool-authoring and research profiles, do not exist yet.
 //! - **Words with no transfer encoding** (`PS1:input.noncanonical_value`; `c600-runtime`'s draft 7). A word with a
 //!   letter outside 1 to 1200 in magnitude cannot cross to the child, so on the process host the parent refuses the
 //!   job at the start stage, and in process [`process::run_in_process`] refuses the run there the same way, before
@@ -217,16 +218,16 @@
 //! - **Provenance reader** (PS1.16, KN5.26; KN5's stage 3). [`workspace::Reader`] is the host's
 //!   `c600_command::Provenance`. Its check reads a record's block with `c600_run::provenance::read`, so `workspace.set`
 //!   refuses a block that is not a canonical FP.17 block with `PS1:capability.provenance_incompatible`. The check reads
-//!   the block alone, so a record may hold a word that no preview admits, such as a solver tool's output (BND.84).
-//!   Its admission is `c600_run::boundary::admit_preview` under [`tool::pins`], so a draft `{"record": name}` is
-//!   refused with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
-//!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader knows no session
-//!   profile: it takes every session to be a solving session, the only profile LP3's host runs, so it applies BND.84
-//!   and BND.85 at every record draft (KN5.26 asks for them in a solving session). It finds a part among the blocks
+//!   the block alone, so a record may hold a word that no preview admits, such as a solver tool's output (BND.84). Its
+//!   admission is `c600_run::boundary::admit_preview` under [`tool::pins`], so a draft `{"record": name}` is refused
+//!   with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
+//!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader needs no session profile:
+//!   the layer asks it to admit a record's word only in a solving session, where KN5.26 asks for BND.84 and BND.85, and
+//!   asks for its check at `workspace.set` in every profile (LP2's pull request 287). It finds a part among the blocks
 //!   its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]) and the part blocks the session
 //!   keeps, and a part that neither holds reads `unknown` and fails closed. The session's part blocks are the layer's
-//!   (CT-BND-27; LP2's pull request 272): at a record's write the reader lists the parts of the record's block that
-//!   its host keeps, recursively, the layer keeps those it does not have with the action, and it gives them back at
+//!   (CT-BND-27; LP2's pull request 272): at a record's write the reader lists the parts of the record's block that its
+//!   host keeps, recursively, the layer keeps those it does not have with the action, and it gives them back at
 //!   admission, so after a reopen a record written while the host kept its parts is admitted without the host keeping
 //!   them again. The reader drops no block it keeps, so its blocks grow with the runs of the host's session, a run's
 //!   input and output blocks for each run of `c600-lp3-source`.

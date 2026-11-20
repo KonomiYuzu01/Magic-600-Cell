@@ -15,7 +15,10 @@
 //! protection reads (CT-LB2-02). When the host gives it the certified guarded setup tables ([`Bridge::with_setups`]),
 //! it serves a fifth read: the draft `setups` row, the certified setups for a target the solver names, which only the
 //! setup-search exception may read and which LB2's guarded setups read (CT-BND-18; BND.1). It answers setups in the
-//! table's order, ranks none and runs none: applying one stays the solver's action.
+//! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the two draft
+//! structure reads of LP3's representations tool (C6): `structure.compare`, two cells compared, and `filter.preview`,
+//! the counts of a layer predicate, through LP2's [`CommandLayer::compare_cells`] and [`CommandLayer::layer_counts`],
+//! which read no state.
 //! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
 //! (LQ21, LG3.13, BND.39). The bridge grants no other request: no other state read, no read without an argument, no
 //! workspace or file write and no clock.
@@ -202,6 +205,12 @@ impl<S: Store> Host for Bridge<'_, S> {
                 Some(table) => kernel_rows::setups_read_tariff(table, arg, ty),
                 None => Err(NOT_GRANTED),
             },
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::STRUCTURE_COMPARE => {
+                kernel_rows::structure_compare_read_tariff(arg, ty)
+            }
+            Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::FILTER_PREVIEW => {
+                kernel_rows::filter_preview_read_tariff(arg, ty)
+            }
             _ => Err(NOT_GRANTED),
         }
     }
@@ -225,6 +234,12 @@ impl<S: Store> Host for Bridge<'_, S> {
                     Some(table) => kernel_rows::setups(self.layer, table, arg, ty),
                     None => Err(NOT_GRANTED),
                 };
+            }
+            if *query == kernel_rows::STRUCTURE_COMPARE {
+                return kernel_rows::structure_compare(self.layer, arg, ty);
+            }
+            if *query == kernel_rows::FILTER_PREVIEW {
+                return kernel_rows::filter_preview(self.layer, arg, ty);
             }
         }
         let Request::Propose { word, target, .. } = request else {
