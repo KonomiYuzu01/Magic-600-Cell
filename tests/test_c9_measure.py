@@ -477,6 +477,56 @@ class RunbookTests(NoProcessCase):
         self.assertIn('route surface', detail)
         self.assertTrue(runbook.evaluate('build', None, build=builds / '20261119T110000Z')[0])
 
+    def test_u5_runs_w3_three_times_on_its_own_stage_build(self):
+        step = next(step for step in runbook.STEPS if step.id == 'rpi79-gate')
+        self.assertTrue(step.built)
+        self.assertTrue(step.commands[0].startswith(
+            'python -B renderer/acceptance/prepare_host.py --route surface --stages renderer/acceptance/stages'))
+        self.assertIn(f'-Scene w3 -Build <stage build> {runbook.DECLARE} -DryRun', step.commands[1])
+        self.assertIn('three times', step.commands[2])
+        # A stage build runs W3 only: no W-J scene and no other build in U5's commands.
+        for command in step.commands[1:3]:
+            self.assertIn('-Scene w3 -Build <stage build>', command)
+        self.assertTrue(step.commands[3].startswith('python -B tools/perf/renderer_gate.py <run 1> <run 2> <run 3>'))
+        self.assertIn(('stage-build', 'surface'), step.prerequisites)
+        self.assertIn(('dir', runbook.STAGES), step.prerequisites)
+        for kind, argument in step.prerequisites:
+            if kind in ('file', 'dir', 'compiles', 'mentions'):
+                with self.subTest(prerequisite=(kind, argument)):
+                    self.assertTrue(runbook.evaluate(kind, argument)[0])
+
+    def test_a_stage_build_is_u5s_and_never_u4s_default(self):
+        root = self.temp / 'root'
+        builds = root / runbook.BUILDS
+        identity = {'format': runbook.IDENTITY_FORMAT, 'source': {'head': 'c' * 40}, 'abi_version': 5,
+                    'route': 'surface'}
+        stages = {'overdraw': 108, 'dxc': {'version': '1.9.2609'}}
+        for name, value in (('20261120T100000Z', identity), ('20261120T110000Z', dict(identity, stages=stages)),
+                            ('20261120T120000Z', dict(identity, route='texture'))):
+            (builds / name).mkdir(parents=True)
+            (builds / name / runbook.IDENTITY).write_bytes(json.dumps(value).encode())
+        self.assertEqual(runbook.build_stages(builds / '20261120T110000Z'), stages)
+        self.assertIsNone(runbook.build_stages(builds / '20261120T100000Z'))
+        self.assertEqual(runbook.newest_build(root, 'surface').name, '20261120T110000Z')
+        self.assertEqual(runbook.newest_build(root, 'surface', stages=False).name, '20261120T100000Z')
+        self.assertEqual(runbook.newest_build(root, 'surface', stages=True).name, '20261120T110000Z')
+        # U4's build check refuses a stage build (W3 only) and accepts the plain route-B build.
+        ok, detail = runbook.evaluate('build', 'surface', build=builds / '20261120T110000Z')
+        self.assertFalse(ok)
+        self.assertIn('with user stages (W3 only): python -B renderer/acceptance/prepare_host.py --route surface',
+                      detail)
+        self.assertTrue(runbook.evaluate('build', 'surface', build=builds / '20261120T100000Z')[0])
+        # U5's check finds the stage build itself, whatever --build names.
+        with mock.patch.object(runbook, 'ROOT', root):
+            ok, detail = runbook.evaluate('stage-build', 'surface', build=builds / '20261120T100000Z')
+        self.assertTrue(ok)
+        self.assertIn('build 20261120T110000Z', detail)
+        self.assertIn('overdraw 108, DXC 1.9.2609', detail)
+        with mock.patch.object(runbook, 'ROOT', self.temp / 'empty'):
+            ok, detail = runbook.evaluate('stage-build', 'surface')
+        self.assertFalse(ok)
+        self.assertIn('--route surface --stages renderer/acceptance/stages', detail)
+
     def test_every_step_has_a_time_and_sources(self):
         for step in runbook.STEPS:
             with self.subTest(step=step.id):
@@ -493,6 +543,21 @@ class RunbookTests(NoProcessCase):
         # A mention is searched in one file as well as in a folder.
         self.assertTrue(runbook.evaluate('mentions', (runbook.LAUNCH, '"--lx4"'))[0])
         self.assertFalse(runbook.evaluate('mentions', (runbook.LAUNCH, 'a token no launcher writes'))[0])
+
+    def test_u8_runs_both_puzzles_once_the_build_holds_the_jumble_on_fixture_and_c600_render_poses(self):
+        step = next(step for step in runbook.STEPS if step.id == 'lx4')
+        mentions = {argument for kind, argument in step.prerequisites if kind == 'mentions'}
+        self.assertLessEqual({(runbook.BUILD_PRODUCT, '"session-fixture-jumble-on"'),
+                              (runbook.RENDER_BACKEND, 'Puzzle::Jumbling =>')}, mentions)
+        for puzzle in ('jumble-off', 'jumble-on'):
+            launches = [command for command in step.commands
+                        if command.startswith(f'python -B {runbook.LAUNCH} ') and f'--puzzle {puzzle},' in command]
+            self.assertEqual(len(launches), 1, puzzle)
+            self.assertIn(f'tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle {puzzle} --run', launches[0])
+        self.assertFalse(any('refused until' in command for command in step.commands))
+        # Both prerequisites hold on this source: the launcher's build writes the fixture and c600-render poses.
+        self.assertTrue(runbook.evaluate('mentions', (runbook.BUILD_PRODUCT, '"session-fixture-jumble-on"'))[0])
+        self.assertTrue(runbook.evaluate('mentions', (runbook.RENDER_BACKEND, 'Puzzle::Jumbling =>'))[0])
 
     def test_a_dry_run_prints_one_line_per_step_and_never_runs_the_quiet_gate(self):
         lines = []
@@ -530,8 +595,13 @@ class RunbookTests(NoProcessCase):
         self.assertFalse(runbook.evaluate('build', None, build=build)[0])
         with contextlib.redirect_stdout(io.StringIO()) as out:
             self.assertEqual(runbook.main(['--list']), 0)
-        self.assertIn('not built yet', out.getvalue())
+        self.assertNotIn('not built yet', out.getvalue())
         self.assertIn('(U8)', out.getvalue())
+        later = runbook.Step('later', 'B', False, 1, 'component', commands=('run b',), sources=('s',))
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            runbook.listing((later,))
+        self.assertIn('not built yet: component', out.getvalue())
+        self.assertIn('planned: run b', out.getvalue())
         self.assertTrue(runbook.evaluate('mentions', ('tools/perf/c9', 'OTHER_ROWS'))[0])
         self.assertFalse(runbook.evaluate('mentions', ('tools/perf/c9', 'no' + ' such token'))[0])
 
