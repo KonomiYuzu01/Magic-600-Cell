@@ -4,7 +4,7 @@
     python -B tools/perf/c9/lx4.py post --fixtures DIR --puzzle jumble-off|jumble-on --run DIR
         [--turn-key KeyJ|KeyK|KeyL] [--dry-run]
     python -B tools/perf/c9/lx4.py analyze --fixtures DIR RUN_DIR [RUN_DIR ...] [--e2 RECORD] [--gate SUMMARY]
-        [--out RECORD.json] [--synthetic]
+        [--gate-reference SUMMARY] [--out RECORD.json] [--synthetic]
 
 The fixtures are the folder `c600-lx4-fixtures --out` writes (MANIFEST.json, EDITS.json and the modules); every
 module's and edit's digest is checked before anything else happens. `schedule` prints the sample accounting and runs
@@ -37,7 +37,9 @@ EDITS.json, lParam the sample id): the editor loads the edit's target baseline a
 frame that draws the baseline writes the sample's `ready` row (a handshake, no metric). The harness posts the rest only
 after it reads that row, so no timed message waits behind the Reset's work. Then for each replacement, in descending
 offset order: registered `Magic600.LX4.Select` (wParam start, lParam end, UTF-8 byte offsets in the current buffer),
-then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or WM_KEYDOWN and WM_KEYUP of VK_BACK
+which the module acknowledges with an `lx4-select` row ({"t": "lx4-select", "sample", "select"}, the Select's ordinal
+in the sample from 1) once the editor has applied it; the harness posts the replacement's keys only after it reads that
+row, because on 20 Nov 2026 (U8) the shell applied Selects after keys posted later. Then WM_CHAR per UTF-16 unit of the insert (a newline as 13, Enter; scan code 0), or WM_KEYDOWN and WM_KEYUP of VK_BACK
 with its scan code 0x0E when the insert is empty. Automatic insertions (indent, closing brackets) are off, so the buffer
 equals the script's result. A turn is WM_KEYDOWN and WM_KEYUP of one of the shell's turn keys (`--turn-key`, default
 KeyJ: physical J, K and L are twists 1, 2 and 3), with the key's scan code in lParam bits 16 to 23: the shell routes by
@@ -47,7 +49,8 @@ such characters out of the buffer, and the harness's own WM_CHARs carry scan cod
 
 Logs. The harness writes `lx4-posts.jsonl` in the run directory (format `magic600-c9-lx4-posts-v1`): a `run` row, one
 `post` row per message (`sample`, `index`, `message`, `qpc` read just before PostMessageW, `ok`) and one `sample` row
-per sample (`status` done, timeout, or not-ready when no `ready` row came within the timeout and nothing after the Reset
+per sample (`status` done, timeout, not-selected when a Select's `lx4-select` row did not come within the timeout and
+nothing after it was posted, or not-ready when no `ready` row came within the timeout and nothing after the Reset
 was posted; `foreground`). The shell writes `events.jsonl` (`magic600-c9-shell-events-v1`, key_to_frame.py) whose `run`
 row also carries `puzzle` and `window` (the HWND, an integer), with frame, presented and key rows as for E2, and
 `{"t": "lx4", "sample": int, "endpoint": str, "frame_id": int, "buffer_sha256": str}` when a frame first shows an
@@ -69,7 +72,11 @@ are timed, and the E2 record (key_to_frame.py over these same run directories, m
 renderer gate summary of the same build are met. The decision names RTE.53's case: `fail-s-m` (a miss at S or M),
 `fail-gate-or-e2`, `owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or
 `all-bars`. The gate summary is checked for its build and verdicts only; that it comes from these runs' captures is
-the integrator's check (`gate_same_run_checked` false).
+the integrator's check (`gate_same_run_checked` false). renderer_gate.py reads acceptance builds only, never the
+product build these runs use, so today no summary passes the build check (C9, 20 Nov 2026). `--gate-reference` records
+such a summary (U4's W3 summary) in `gate_reference` with its builds and verdicts, and among the inputs, without
+counting it as the gate: the reason then reads `gate-summary-other-build` instead of `gate-summary-missing`. Whether an
+acceptance build of the same commit may stand in for the product build is the owner's question.
 
 Limitation (stated in every record, `limitations`; top integrator, 19 November 2026): the module set's views read no
 host rows on either puzzle (the host runs them with `NoHost`), so jumble-off and jumble-on time the same rerun path.
@@ -121,6 +128,8 @@ BARS = {'echo': {'S': (50, 67), 'M': (50, 67), 'L': (50, 67)},
         'dependents': {'W': (1000, 1500)}}
 RESET, SELECT = 'Magic600.LX4.Reset', 'Magic600.LX4.Select'
 READY = 'ready'
+# The module's acknowledgment of an applied Select: {"t": SELECTED, "sample", "select"} (C9 fix, 20 Nov 2026).
+SELECTED = 'lx4-select'
 WM_KEYDOWN, WM_KEYUP, WM_CHAR, VK_BACK = 0x0100, 0x0101, 0x0102, 0x08
 KEYUP_LPARAM = 0xC0000001
 SCAN_BACK = 0x0E
@@ -381,6 +390,8 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
             for row in tail.rows():
                 if row.get('t') == 'lx4':
                     endpoints.add((row.get('sample'), row.get('endpoint')))
+                elif row.get('t') == SELECTED:
+                    endpoints.add((row.get('sample'), (SELECTED, row.get('select'))))
                 elif row.get('t') == 'key':
                     keys += 1
 
@@ -398,7 +409,7 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
             keys = 0
             started = clock()
             sent, timed = messages(edits, sample, turn_key)
-            ok_all, status = system.alive(hwnd), None
+            ok_all, status, selects = system.alive(hwnd), None, 0
             for index, (message, wparam, lparam) in enumerate(sent):
                 number = names.get(message, message)
                 qpc = system.qpc()
@@ -408,6 +419,10 @@ def post_run(fixtures, puzzle, run_dir, turn_key, system, clock=time.monotonic, 
                        'lparam': lparam, 'qpc': qpc, 'ok': ok, 'timed': index == timed})
                 if message == RESET and not (ok_all and wait_for((sample['id'], READY))):
                     status = 'not-ready'
+                    break
+                selects += message == SELECT
+                if message == SELECT and not (ok_all and wait_for((sample['id'], (SELECTED, selects)))):
+                    status = 'not-selected'
                     break
             if status is None:
                 status = 'done' if ok_all and wait_for((sample['id'], sample['metric'])) else 'timeout'
@@ -464,8 +479,8 @@ def analyze_run(events, post_rows, edits, digests):
         timed = [row for row in posts.get(sample['id'], []) if row.get('timed')]
         state = done.get(sample['id'], {})
         row = endpoints.get((sample['id'], sample['metric']))
-        if state.get('status') == 'not-ready':
-            failure = 'not-ready'
+        if state.get('status') in ('not-ready', 'not-selected'):
+            failure = state['status']
         elif len(timed) != 1 or not all(post.get('ok') for post in posts.get(sample['id'], [])):
             failure = 'post-failed'
         elif state.get('status') != 'done':
@@ -578,19 +593,34 @@ def judge(runs, e2, gate, valid_events):
     return 'insufficient', reasons, decision, table
 
 
-def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_flag=False):
+def gate_reference(summary):
+    """A renderer gate summary of another build as recorded beside the verdict: its builds and verdicts, not a gate."""
+    if not (isinstance(summary, dict) and summary.get('format') == 'magic600-renderer-gate-v1'
+            and isinstance(summary.get('scenes'), list)):
+        raise FixtureError('--gate-reference: not a renderer gate summary')
+    return {'counted_as_gate': False,
+            'build_identities': sorted({str(run.get('build_identity')) for scene in summary['scenes']
+                                        for run in scene.get('runs', [])}),
+            'verdicts': {str(scene.get('scene')): scene.get('verdict') for scene in summary['scenes']}}
+
+
+def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_flag=False, reference_path=None):
     _, edits, digests = load_fixtures(fixtures)
     runs = [read_run(directory, edits, digests) for directory in directories]
     events = {Path(directory).name: evidence.sha256(Path(directory) / key_to_frame.EVENTS)
               for directory, run in zip(directories, runs) if run['status'] == 'valid'}
     e2 = other_record(e2_path) if e2_path else None
     gate = other_record(gate_path) if gate_path else None
+    reference = gate_reference(other_record(reference_path)) if reference_path else None
     verdict, reasons, decision, table = judge(runs, e2, gate, set(events.values()))
+    if reference is not None:
+        reasons = ['gate-summary-other-build' if reason == 'gate-summary-missing' else reason for reason in reasons]
     identities = sorted({run['build_identity'] for run in runs if run['status'] == 'valid'})
     inputs = [evidence.file_entry(f'{run["run_id"]}:{name}', Path(directory) / name)
               for directory, run in zip(directories, runs) for name in (key_to_frame.EVENTS, POSTS)
               if (Path(directory) / name).is_file()]
-    inputs += [evidence.file_entry(role, path) for role, path in (('e2', e2_path), ('gate', gate_path)) if path]
+    inputs += [evidence.file_entry(role, path) for role, path in
+               (('e2', e2_path), ('gate', gate_path), ('gate-reference', reference_path)) if path]
     synthetic = evidence.is_synthetic([Path(directory) / key_to_frame.EVENTS for directory in directories],
                                       [run.get('synthetic') for run in runs], synthetic_flag)
     for run in runs:
@@ -598,7 +628,7 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
     result = {'fixtures': digests, 'runs': runs, 'decision': decision, 'series': table,
               'accounting': accounting([schedule(edits, puzzle) for puzzle in PUZZLES]),
               'timed_sml_samples': sum(row['stats']['n'] for row in table if row['series'] > 0 and row['size'] in SIZES),
-              'gate_same_run_checked': False, 'limitations': LIMITATIONS}
+              'gate_same_run_checked': False, 'gate_reference': reference, 'limitations': LIMITATIONS}
     return evidence.make_record(
         'lx4-editor-latency', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
@@ -625,6 +655,8 @@ def main(argv=None, system_factory=Windows):
     analysis.add_argument('runs', nargs='+', type=Path)
     analysis.add_argument('--e2', type=Path, help='key_to_frame.py record over these same run directories')
     analysis.add_argument('--gate', type=Path, help='renderer_gate.py summary of the same build')
+    analysis.add_argument('--gate-reference', type=Path,
+                          help='a renderer_gate.py summary of another build (U4), recorded but never counted as the gate')
     analysis.add_argument('--out', type=Path, help='write the evidence record here (never replaces a file)')
     analysis.add_argument('--synthetic', action='store_true')
     args = parser.parse_args(argv)
@@ -649,7 +681,7 @@ def main(argv=None, system_factory=Windows):
             if args.run is None:
                 parser.error('post needs --run unless --dry-run')
             return post_run(args.fixtures, args.puzzle, args.run, args.turn_key, system_factory())
-        record = build(args.fixtures, args.runs, argv, args.e2, args.gate, args.synthetic)
+        record = build(args.fixtures, args.runs, argv, args.e2, args.gate, args.synthetic, args.gate_reference)
     except FixtureError as error:
         print(f'lx4: {error}', file=sys.stderr)
         return 2

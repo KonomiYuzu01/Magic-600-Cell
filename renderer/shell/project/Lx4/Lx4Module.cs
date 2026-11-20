@@ -14,7 +14,8 @@ namespace Magic600.Shell.Lx4;
 /// core: a measurement run never goes on without its module.
 ///
 /// Messages, before Godot sees them: the registered Magic600.LX4.Reset (wParam the edit's index, lParam the sample id)
-/// and Magic600.LX4.Select (wParam start, lParam end, UTF-8 byte offsets); WM_CHAR, except Godot's own character for a
+/// and Magic600.LX4.Select (wParam start, lParam end, UTF-8 byte offsets), which, once the editor applied it, the module
+/// acknowledges with {"t": "lx4-select", "sample", "select"} (the Select's ordinal since the Reset); WM_CHAR, except Godot's own character for a
 /// turn key (scan code 0x24 to 0x26), which the shell keeps; and VK_BACK's key-down and key-up. The module consumes
 /// them all; turn keys and every other message go on to Godot.
 ///
@@ -102,6 +103,9 @@ public sealed unsafe class Lx4Module : IShellModule
     private readonly Label _status;
     private readonly Label _completion;
     private bool _poisonReported;
+    // The last Reset's sample id and the Selects the editor has applied since (the lx4-select rows' ordinals).
+    private ulong _sample;
+    private long _selects;
 
     public Lx4Module(ShellContext context)
     {
@@ -211,14 +215,28 @@ public sealed unsafe class Lx4Module : IShellModule
         }
         if (message == _reset)
         {
+            _sample = (ulong)lParam;
+            _selects = 0;
             Report(((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, int>)_exports["lx4_reset"])(
                 _handle, (uint)wParam, (ulong)lParam));
             return true;
         }
         if (message == _select)
         {
-            Report(((delegate* unmanaged[Cdecl]<IntPtr, ulong, ulong, int>)_exports["lx4_select"])(
-                _handle, (ulong)wParam, (ulong)lParam));
+            // An applied Select is acknowledged, so that the harness posts the replacement's keys only after it
+            // (C9 U8, 20 Nov 2026: Selects were applied after keys posted later).
+            if (Report(((delegate* unmanaged[Cdecl]<IntPtr, ulong, ulong, int>)_exports["lx4_select"])(
+                    _handle, (ulong)wParam, (ulong)lParam)) == Ok)
+            {
+                var sample = _sample;
+                var ordinal = ++_selects;
+                Context.Log?.Append(json =>
+                {
+                    json.WriteString("t", "lx4-select");
+                    json.WriteNumber("sample", sample);
+                    json.WriteNumber("select", ordinal);
+                });
+            }
             return true;
         }
         if (message == WmChar)
