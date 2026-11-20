@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use c600_kernel::parallel;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, ToPrimitive};
@@ -98,6 +99,42 @@ fn as_vec4(v: &[Q5]) -> Vec4 {
     [v[0].clone(), v[1].clone(), v[2].clone(), v[3].clone()]
 }
 
+/// The region of representative piece `p`: its exact vertices, their integer form and their count, checked to be
+/// full-dimensional with facet patches on exactly its stickers' facets.
+fn rep_region(model: &Model, p: u32, candp: &[usize], near: &[usize]) -> Result<(Vec<Vec4>, VForm, usize), ModelError> {
+    let sig = model.signature(p as usize);
+    let mut sorted_sig = sig.to_vec();
+    sorted_sig.sort_unstable();
+    let mut cons: Vec<Constraint> = sorted_sig
+        .iter()
+        .map(|&e| Constraint { a: model.poles[e as usize].iter().map(Q5::neg).collect(), b: model.kappa.neg() })
+        .collect();
+    cons.extend(
+        candp
+            .iter()
+            .filter(|&&e| !sig.contains(&(e as u16)))
+            .map(|&e| Constraint { a: model.poles[e].to_vec(), b: model.kappa.clone() }),
+    );
+    cons.extend(near.iter().map(|&e| Constraint { a: model.poles[e].to_vec(), b: model.nn.clone() }));
+    let verts = double_description(&cons, 4).map_err(|e| fail(format!("piece {p}: {}", e.0)))?;
+    if affine_rank(&verts) != 4 {
+        return Err(fail(format!("the region of piece {p} is not full-dimensional")));
+    }
+    let mut three = Vec::new();
+    for &e in near {
+        let on: Vec<Vec<Q5>> =
+            verts.iter().filter(|v| dot(&model.poles[e], v).sub(&model.nn).is_zero()).cloned().collect();
+        if !on.is_empty() && affine_rank(&on) == 3 {
+            three.push(e as u16);
+        }
+    }
+    if three != model.hosts(p as usize) {
+        return Err(fail(format!("the facet patches of piece {p} differ from its stickers")));
+    }
+    let vform = rows_form(&verts).ok_or_else(|| fail("piece vertices leave i64"))?;
+    Ok((verts.iter().map(|v| as_vec4(v)).collect(), vform, verts.len()))
+}
+
 impl Regions {
     pub fn build(model: &Model, kp: &KPlus) -> Result<Regions, ModelError> {
         // Orbits: representatives are the first unassigned pieces of cap 0, transports the smallest K⁺ index.
@@ -144,65 +181,44 @@ impl Regions {
         let mut cons = vec![Constraint { a: model.poles[0].iter().map(Q5::neg).collect(), b: model.kappa.neg() }];
         cons.extend(near.iter().map(|&e| Constraint { a: model.poles[e].to_vec(), b: model.nn.clone() }));
         let cap = double_description(&cons, 4).map_err(|e| fail(format!("cap region: {}", e.0)))?;
-        for v in &cap {
-            if (0..POLES).any(|e| dot(&model.poles[e], v).sub(&model.nn).sign() > 0) {
-                return Err(fail("the cap region leaves the polytope"));
-            }
+        // Charter E3's startup (a draft): the checks below and the representatives' regions run side by side
+        // ([`c600_kernel::parallel`]), each taken in its order, so the build gives the same regions and the same
+        // first error.
+        let inside =
+            parallel::map(cap.len(), |i| (0..POLES).all(|e| dot(&model.poles[e], &cap[i]).sub(&model.nn).sign() <= 0));
+        if inside.into_iter().map(parallel::taken).any(|inside| !inside) {
+            return Err(fail("the cap region leaves the polytope"));
         }
-        let implied: Vec<bool> =
-            (0..POLES).map(|e| cap.iter().all(|v| dot(&model.poles[e], v).sub(&model.kappa).sign() <= 0)).collect();
+        let implied =
+            parallel::map(POLES, |e| cap.iter().all(|v| dot(&model.poles[e], v).sub(&model.kappa).sign() <= 0));
+        let implied: Vec<bool> = implied.into_iter().map(parallel::taken).collect();
         let candp: Vec<usize> = (0..POLES).filter(|&e| !implied[e] && e != 0).collect();
         let cap_vform0 = rows_form(&cap).ok_or_else(|| fail("cap vertices leave i64"))?;
 
+        let built = parallel::map(reps.len(), |i| rep_region(model, reps[i], &candp, &near));
         let mut rep_vertices = Vec::with_capacity(reps.len());
         let mut rep_vform = Vec::with_capacity(reps.len());
         let mut vertex_counts = Vec::with_capacity(reps.len());
-        for &p in &reps {
-            let sig = model.signature(p as usize);
-            let mut sorted_sig = sig.to_vec();
-            sorted_sig.sort_unstable();
-            let mut cons: Vec<Constraint> = sorted_sig
-                .iter()
-                .map(|&e| Constraint { a: model.poles[e as usize].iter().map(Q5::neg).collect(), b: model.kappa.neg() })
-                .collect();
-            cons.extend(
-                candp
-                    .iter()
-                    .filter(|&&e| !sig.contains(&(e as u16)))
-                    .map(|&e| Constraint { a: model.poles[e].to_vec(), b: model.kappa.clone() }),
-            );
-            cons.extend(near.iter().map(|&e| Constraint { a: model.poles[e].to_vec(), b: model.nn.clone() }));
-            let verts = double_description(&cons, 4).map_err(|e| fail(format!("piece {p}: {}", e.0)))?;
-            if affine_rank(&verts) != 4 {
-                return Err(fail(format!("the region of piece {p} is not full-dimensional")));
-            }
-            let mut three = Vec::new();
-            for &e in &near {
-                let on: Vec<Vec<Q5>> =
-                    verts.iter().filter(|v| dot(&model.poles[e], v).sub(&model.nn).is_zero()).cloned().collect();
-                if !on.is_empty() && affine_rank(&on) == 3 {
-                    three.push(e as u16);
-                }
-            }
-            if three != model.hosts(p as usize) {
-                return Err(fail(format!("the facet patches of piece {p} differ from its stickers")));
-            }
-            rep_vform.push(rows_form(&verts).ok_or_else(|| fail("piece vertices leave i64"))?);
-            vertex_counts.push(verts.len());
-            rep_vertices.push(verts.iter().map(|v| as_vec4(v)).collect());
+        for region in built {
+            let (vertices, vform, count) = parallel::taken(region)?;
+            rep_vform.push(vform);
+            vertex_counts.push(count);
+            rep_vertices.push(vertices);
         }
         // A far facet cannot carry a 3-dimensional patch of any piece region inside cap 0.
-        let mut far_rank = 0;
-        for e in 0..POLES {
+        let ranks = parallel::map(POLES, |e| {
             if near.contains(&e) {
-                continue;
+                return 0;
             }
             let on: Vec<Vec<Q5>> =
                 cap.iter().filter(|v| dot(&model.poles[e], v).sub(&model.nn).is_zero()).cloned().collect();
-            if !on.is_empty() {
-                far_rank = far_rank.max(affine_rank(&on));
+            if on.is_empty() {
+                0
+            } else {
+                affine_rank(&on)
             }
-        }
+        });
+        let far_rank = ranks.into_iter().map(parallel::taken).max().unwrap_or(0);
         if far_rank >= 3 {
             return Err(fail("a far facet carries a 3-dimensional patch inside cap 0"));
         }

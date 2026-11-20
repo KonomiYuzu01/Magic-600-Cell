@@ -6,7 +6,8 @@
 //! window, and hands this library the core's function table ([`CoreFunctions`]) and the context. Frames go to the
 //! surface (`SA2_TARGET_SURFACE`). This library loads no library and calls no Windows function (CT-RPI-20). It starts
 //! one process, the language runtime ([`m6h_load_runtime`]), through c600-runtime's parent side, which uses std's
-//! portable process API, and one thread, which runs the view jobs in that process ([`view`]).
+//! portable process API, and one thread, which runs the view jobs in that process ([`view`]). With a preload
+//! ([`m6h_preload`]) it also starts one thread for each model load, which ends with its load ([`preload`]).
 //!
 //! Drafts that the sources leave open, each to be replaced by LP3's parts:
 //! - One view, which shows the adopted state as one retained publication of every slot, visible and interactive.
@@ -25,7 +26,8 @@
 //!   sticker keeps its colour and moves with its piece's pose, and draws every slot of the posed plan, none pickable.
 //! - Charter E3 (a draft): the session may instead be an existing one, a copy of a session fixture ([`fixture`]),
 //!   which the host adopts at the engine revision that counts the fixture's presses. [`m6h_load_runtime`] starts the
-//!   language runtime's process and keeps it until the handle is destroyed.
+//!   language runtime's process and keeps it until the handle is destroyed. [`m6h_preload`] starts the model's loads
+//!   before the shell has a core context, and [`m6h_create_preloaded`] and [`m6h_open_session`] join them.
 //! - View jobs (C9 U8; the [`view`] module): [`m6h_run_view`] schedules a program text as the view's job and runs it
 //!   in the runtime on a worker thread. A run that completes delivers the reference publication of the revision it
 //!   was scheduled at, with the plan dependency `program` set to the hex SHA-256 of its text; its value is not drawn
@@ -75,16 +77,18 @@ pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
 pub mod fixture;
+pub mod preload;
 pub mod turns;
 pub mod view;
 use c600_run::meter::Amounts;
 use c600_runtime::parent::{Config as RuntimeConfig, Runtime};
+use preload::{ExactLoad, Preload};
 use turns::{Head, Press, Puzzle, Turns};
 
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
 /// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
-/// the session's puzzle.
-pub const M6H_ABI_VERSION: u32 = 5;
+/// the session's puzzle; version 6 the preload.
+pub const M6H_ABI_VERSION: u32 = 6;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -240,6 +244,8 @@ pub struct ShellHost {
     kernel: Arc<Kernel>,
     geometry: GeometryInput,
     assets: PathBuf,
+    /// The exact model's load that [`m6h_preload`] started for the session, until [`m6h_open_session`] takes it.
+    exact: Option<ExactLoad>,
     publication: Publication,
     next_command: u64,
     /// The adopted engine revision, and each adopted revision's state digest.
@@ -342,9 +348,10 @@ pub fn publication(geometry: &GeometryInput, primitive: Primitive, base: &Revisi
 }
 
 impl ShellHost {
-    fn create(core: DllCore, assets: &Path) -> Result<ShellHost, Failure> {
-        let kernel = Arc::new(Kernel::load(assets).map_err(model_error)?);
-        let geometry = GeometryInput::load(assets).map_err(model_error)?;
+    fn create(core: DllCore, loads: Preload) -> Result<ShellHost, Failure> {
+        let Preload { assets, kernel, geometry, exact } = loads;
+        let kernel = Arc::new(kernel.join().map_err(model_error)?);
+        let geometry = geometry.join().map_err(model_error)?;
         let head = Head::Retained(kernel.solved());
         let (base, bundle, primitive) = adoption(&geometry, &head, ENGINE_REVISION)?;
         let limits = LimitProfile::uniform(LIMITS, 1 << 40);
@@ -362,7 +369,8 @@ impl ShellHost {
             publication: publication(&geometry, primitive, &base),
             kernel,
             geometry,
-            assets: assets.to_path_buf(),
+            assets,
+            exact,
             next_command: 1,
             revision: ENGINE_REVISION,
             digests: BTreeMap::from([(ENGINE_REVISION, head.digest())]),
@@ -515,11 +523,21 @@ pub unsafe extern "C" fn m6h_create(
         // SAFETY: the table and the context come from one loaded core and stay valid (the contract).
         let core = unsafe { DllCore::new(*functions, context) }
             .map_err(|status| (M6H_E_CORE, format!("the core context was not bound: {}", status.name())))?;
-        ShellHost::create(core, Path::new(path))
+        ShellHost::create(core, Preload::deferred(Path::new(path)))
     }));
+    // SAFETY: as above.
+    unsafe { created(attempt, out) }
+}
+
+/// Writes a created handle to `*out`, or records why the creation failed.
+///
+/// # Safety
+///
+/// `out` points to a writable handle.
+unsafe fn created(attempt: std::thread::Result<Result<ShellHost, Failure>>, out: *mut *mut ShellHost) -> i32 {
     let failure = match attempt {
         Ok(Ok(shell)) => {
-            // SAFETY: as above.
+            // SAFETY: the contract.
             unsafe { *out = Box::into_raw(Box::new(shell)) };
             return M6H_OK;
         }
@@ -528,6 +546,106 @@ pub unsafe extern "C" fn m6h_create(
     };
     CREATE_ERROR.with(|e| *e.borrow_mut() = failure.1);
     failure.0
+}
+
+/// Charter E3's startup (a draft): starts the loads that [`m6h_create`] makes from the assets folder `assets` (UTF-8,
+/// `assets_len` bytes), the shipped model's kernel and its verified geometry, each on a thread of its own, and with
+/// `session` 1 also the exact model's, which [`m6h_open_session`] pins the twist menu with; `session` 0 starts no
+/// exact load. The call returns at once with the preload in `*out`, which [`m6h_create_preloaded`] takes and
+/// [`m6h_preload_free`] frees. A load's failure is answered where the load is joined, as without a preload, and a load
+/// whose thread does not start runs there.
+///
+/// A null or non-UTF-8 path or a `session` other than 0 or 1 answers [`M6H_E_INVALID_ARGUMENT`] and starts nothing;
+/// [`m6h_last_error`] with a null handle gives the reason.
+///
+/// # Safety
+///
+/// `assets` points to `assets_len` readable bytes; `out` points to a writable preload.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_preload(
+    assets: *const u8,
+    assets_len: usize,
+    session: u32,
+    out: *mut *mut Preload,
+) -> i32 {
+    if out.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: `out` is writable (the contract).
+    unsafe { *out = ptr::null_mut() };
+    let attempt = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: the contract.
+        let path = unsafe { utf8(assets, assets_len, "assets path") }?;
+        let session = match session {
+            0 => false,
+            1 => true,
+            other => return Err((M6H_E_INVALID_ARGUMENT, format!("{other} is not a session flag of this interface"))),
+        };
+        Ok(Preload::start(Path::new(path), session))
+    }));
+    let failure = match attempt {
+        Ok(Ok(preload)) => {
+            // SAFETY: as above.
+            unsafe { *out = Box::into_raw(Box::new(preload)) };
+            return M6H_OK;
+        }
+        Ok(Err(failure)) => failure,
+        Err(_) => (M6H_E_POISONED, "the preload panicked".to_owned()),
+    };
+    CREATE_ERROR.with(|e| *e.borrow_mut() = failure.1);
+    failure.0
+}
+
+/// [`m6h_create`] from the assets folder of `preload`, with the loads that [`m6h_preload`] started: the call joins
+/// the kernel's and then the geometry's load where [`m6h_create`] makes them, and a load that failed answers as it
+/// does there. An exact model's load stays with the handle until [`m6h_open_session`] takes it. The call takes
+/// `preload` whatever it answers; a null `preload` answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// As [`m6h_create`] for `functions`, `context` and `out`; `preload` is null or a preload from [`m6h_preload`] that
+/// no call has taken or freed, and it is not used again.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_create_preloaded(
+    functions: *const CoreFunctions,
+    context: *mut c_void,
+    preload: *mut Preload,
+    out: *mut *mut ShellHost,
+) -> i32 {
+    // SAFETY: the contract; the preload is this call's from here on.
+    let preload = (!preload.is_null()).then(|| unsafe { Box::from_raw(preload) });
+    if out.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: `out` is writable (the contract).
+    unsafe { *out = ptr::null_mut() };
+    let attempt = catch_unwind(AssertUnwindSafe(|| {
+        let Some(preload) = preload else {
+            return Err((M6H_E_INVALID_ARGUMENT, "a null preload".to_owned()));
+        };
+        if functions.is_null() || context.is_null() {
+            return Err((M6H_E_INVALID_ARGUMENT, "a null function table or context".to_owned()));
+        }
+        // SAFETY: the table and the context come from one loaded core and stay valid (the contract).
+        let core = unsafe { DllCore::new(*functions, context) }
+            .map_err(|status| (M6H_E_CORE, format!("the core context was not bound: {}", status.name())))?;
+        ShellHost::create(core, *preload)
+    }));
+    // SAFETY: as above.
+    unsafe { created(attempt, out) }
+}
+
+/// Frees a preload that no call took. The call waits for the loads still running and drops their results.
+///
+/// # Safety
+///
+/// `preload` is null or a preload from [`m6h_preload`] that no call has taken or freed; it is not used again.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_preload_free(preload: *mut Preload) {
+    if !preload.is_null() {
+        // SAFETY: the contract; a panic in a destructor is not carried across the C boundary.
+        let _ = catch_unwind(AssertUnwindSafe(|| drop(unsafe { Box::from_raw(preload) })));
+    }
 }
 
 /// Sets the view's 4D rotation (16 floats, column-major, as the core's frame input takes it) as a new camera version.
@@ -756,14 +874,21 @@ pub unsafe extern "C" fn m6h_open_session(
             if shell.turns.is_some() || !shell.check.is_empty() || shell.revision != ENGINE_REVISION {
                 return Err((M6H_E_SESSION, "this handle has opened its session already".to_owned()));
             }
+            // The preload's exact model, joined where the open would load it; without one (or on a second attempt
+            // after a failed open) the open loads it.
+            let (pending, assets) = (shell.exact.take(), shell.assets.clone());
+            let exact = move || match pending {
+                Some(load) => preload::exact_result(load.join()),
+                None => preload::load_exact(&assets),
+            };
             let mut turns = match fixture {
-                None => Turns::open(shell.kernel.clone(), &shell.assets, folder, menu, puzzle),
+                None => Turns::open_with(shell.kernel.clone(), exact, folder, menu, puzzle),
                 Some(path) => crate::fixture::read(path).and_then(|fixture| {
                     if fixture.puzzle != puzzle {
                         let names = (fixture.puzzle.name(), puzzle.name());
                         return Err(format!("the session fixture's puzzle is {}, not {}", names.0, names.1));
                     }
-                    Turns::reopen(shell.kernel.clone(), &shell.assets, folder, menu, &fixture)
+                    Turns::reopen_with(shell.kernel.clone(), exact, folder, menu, &fixture)
                 }),
             }
             .map_err(|reason| (M6H_E_SESSION, reason))?;

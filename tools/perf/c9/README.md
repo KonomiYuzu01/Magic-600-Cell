@@ -2,7 +2,8 @@
 
 Headless, standard-library tools for LP3's on-screen line (C9) on route B (owner, 18 November 2026). They read logs
 and captures, write evidence records and print a runbook; none of them starts a GPU device, a window or a capture,
-except `presentmon_capture.py` without `--dry-run`, which needs an administrator shell. Every log schema, rule and
+except `presentmon_capture.py` without `--dry-run`, which needs an administrator shell, and `unattended.ps1`, the
+owner's runner for U1 to U8, which starts all of them (its `-DryRun` starts nothing). Every log schema, rule and
 choice marked DRAFT here is the integrator's draft (PHS.65) until the owner or a frozen text says otherwise.
 
 | Tool | What it does |
@@ -14,6 +15,8 @@ choice marked DRAFT here is the integrator's draft (PHS.65) until the owner or a
 | `lx4.py` | LX-4: the schedule (10,800 S/M/L samples), posted window messages (`post`, Windows only; `--dry-run` posts nothing) and the RTE.49/RTE.53 analysis |
 | `lx2.py` | LX-2 in the shell (RTE.42 conditions 3 and 4): each metered fault's limit windows (its job runs to its end with no commit) and every fault's turn windows, with LX-4 echo samples (`post`, Windows only; `--dry-run` posts nothing), and the per-fault analysis (E2 over turn windows; echo and gate over a metered fault's limit windows, the others' turn windows) with conditions 1 and 2 from c600-lx2-faults' record |
 | `runbook.py` | The owner-machine batch in order (labels A1 to A3, U1 to U8); `--dry-run` checks prerequisites without a GPU |
+| `unattended.ps1` | Runs U1 to U8 with one command from an administrator PowerShell (`-SceneBuild`, `-StageBuild`, `-ProductBuild`, `-Steps`, `-Suffix`, `-Retries`, `-DryRun`); in a shell run the watcher, capture and poster start before the shell, and a run with owner input or a lost foreground is set aside and run again, at most twice; for U7 alone the script's own error mode (inherited by the processes it starts) keeps the injected crashes out of Windows Error Reporting |
+| `foreground.py` | The shell-run watcher `unattended.ps1` starts: owner input (GetLastInputInfo), the shell's window, and with `--hold` topmost plus one SetForegroundWindow (no foreground-lock workaround) and a lost foreground |
 | `evidence.py` | The shared record format `magic600-c9-measure-record-v1` and log reading |
 
 ## Logs (DRAFT)
@@ -48,7 +51,11 @@ QPC before process creation), `session_opened`, `runtime_loaded`, `first_correct
 
 - **E2** (charter E2, RTE.43, V11.1): "A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the
   target machine." Nearest-rank p95 at most 100 ms over at least 100 confirmed keys of valid runs of one build; the
-  pooled p95 and every run's p95 must meet it. A key without a confirmed frame gets no time and invalidates its run.
+  pooled p95 and every run's p95 must meet it. A key without a confirmed frame gets no time and counts as one failed
+  key, with a time above 100 ms, in its run's p95 and in the pooled p95, and its run stays valid (owner, 20 November
+  2026, item 2: `docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md`); a percentile that falls on a failed
+  key has no number. A run that breaks PHS.64's protocol is still invalid. LX-2's condition 4 (E2 during fault
+  windows) counts the same way.
 - **E3** (owner, 18 November 2026): 3 s, cold start, with an existing session and runtime loaded, to the first
   correct frame, in each of three cold runs. A run that never reaches a passing first correct frame fails the bar.
   Cold (DRAFT): new process, none running, fresh session copy, at least 20 s since the last exit, no reboot.

@@ -714,24 +714,42 @@ CORE_CHAIN_CSV = "0x000001f2a3b4e000"   # PresentMon's own spelling, which the r
 WINDOW_CHAIN = "0x000001F2A3B4C5D0"     # Godot's window chain, also presenting
 
 
-def surface_csv(sync=1) -> str:
-    """The core's chain 5 ticks after each trace entry and Godot's window chain at about 60 Hz."""
+PRESENT, DISPLAY, COUNT = 5, 21, 100   # the core presents 5 ticks after a trace entry; shown 16 ticks later
+
+
+def surface_csv(sync=1, core_dropped=1, window_dropped=range(0), missing=()) -> str:
+    """The core's chain PRESENT ticks after each trace entry, all Dropped as PresentMon saw it on 20 Nov 2026, and
+    Godot's window chain at about 60 Hz; window_dropped is a tick range of dropped window presents."""
     lines = ["Application,ProcessID,SwapChainAddress,PresentRuntime,SyncInterval,PresentFlags,AllowsTearing,"
              "PresentMode,Dropped,QPCTime,msBetweenPresents,msBetweenDisplayChange"]
-    rows = [(T0 + frame * STEP + 5, f"godot.exe,{PID},{CORE_CHAIN_CSV},DXGI,{sync},0,0,Composed: Flip,0,"
-             f"{T0 + frame * STEP + 5},20.000,20.000") for frame in range(FRAMES)]
-    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,0,{tick},16.000,16.000")
-             for tick in range(T0 + 3, STOP, 16)]
+    rows = [(T0 + frame * STEP + PRESENT, f"godot.exe,{PID},{CORE_CHAIN_CSV},DXGI,{sync},0,0,Composed: Flip,"
+             f"{core_dropped},{T0 + frame * STEP + PRESENT},20.000,20.000") for frame in range(FRAMES) if frame not in missing]
+    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,{int(tick in window_dropped)},{tick},"
+              f"16.000,16.000") for tick in range(T0 + 3, STOP, 16)]
     return "\n".join(lines + [line for _, line in sorted(rows)]) + "\n"
 
 
-def surface_run(directory: Path, run_id: str, declared=CORE_CHAIN, sync=1, route="surface") -> Path:
+def presented_rows() -> list[dict]:
+    """presented.jsonl as the core writes it when every traced frame was confirmed displayed."""
+    return [{"frame": frame, "present_count": COUNT + frame, "display_qpc": T0 + frame * STEP + DISPLAY}
+            for frame in range(FRAMES)]
+
+
+def write_presented(directory: Path, rows) -> None:
+    (directory / "presented.jsonl").write_bytes("".join(
+        json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rows).encode("utf-8"))
+
+
+def surface_run(directory: Path, run_id: str, declared=CORE_CHAIN, sync=1, route="surface", presented=None,
+                **csv) -> Path:
     write_run(directory, "w3", run_id=run_id)
     record = read(directory / "harness.json")
     record["configuration"]["route"] = route
     record["presentation"] = {"route": "surface", "swap_chain": declared, "sync_interval": 1}
     write_json(directory / "harness.json", record)
-    (directory / "presentmon.csv").write_bytes(surface_csv(sync).encode("utf-8"))
+    (directory / "presentmon.csv").write_bytes(surface_csv(sync, **csv).encode("utf-8"))
+    if presented is not False:
+        write_presented(directory, presented_rows() if presented is None else presented)
     return directory
 
 
@@ -755,7 +773,9 @@ class RouteBFinalizerTests(unittest.TestCase):
             self.assertEqual(record["presentmon"]["swap_chain"], CORE_CHAIN_CSV)
             self.assertEqual(record["l2"]["presentation"],
                              {"route": "surface", "swap_chain": CORE_CHAIN, "sync_interval": 1,
-                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}]})
+                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}],
+                              "display": "core-frame-statistics", "confirmed_frames": FRAMES})
+            self.assertEqual(record["l2"]["checks"]["presented"], "pass")
             self.assertEqual(record["l2"]["presentmon"]["rows"], FRAMES)
             self.assertEqual(record["l2"]["presentmon"]["sync_intervals"], {"1": FRAMES})
             self.assertIs(record["environment"]["tearing"], False)
@@ -763,7 +783,81 @@ class RouteBFinalizerTests(unittest.TestCase):
         self.assertEqual((result["verdict"], len(result["runs"])), ("met", 3))
         self.assertAlmostEqual(result["pooled"]["fps"], 50.0)
 
+    def test_route_b_blind_seconds_come_from_the_cores_frame_statistics(self):
+        """C9, owner item 9 (20 Nov 2026): PresentMon marks every present of the core's composition chain Dropped,
+        so route B's displayed seconds come from the frames the core confirmed with its own frame statistics,
+        cross-checked against PresentMon; PresentMon's Dropped column of the core's chain no longer decides."""
+        self.assertEqual(fr.SURFACE_DISPLAY, "core-frame-statistics")
+        for dropped in (0, 1):
+            with self.subTest(core_dropped=dropped):
+                run = surface_run(self.base / f"dropped-{dropped}", f"c9-dropped-{dropped}", core_dropped=dropped)
+                self.assertEqual(finalize(run), 0)
+        # A second without a confirmed display: frames 999 to 1048 are shown in [T0 + 20 s, T0 + 21 s).
+        unseen = [row for row in presented_rows() if not T0 + 20 * FREQ <= row["display_qpc"] < T0 + 21 * FREQ]
+        self.assertEqual(len(unseen), FRAMES - 50)
+        # A second whose window presents were all dropped.
+        cases = {"confirmed": {"presented": unseen},
+                 "window": {"window_dropped": range(T0 + 30 * FREQ, T0 + 31 * FREQ)}}
+        for name, options in cases.items():
+            with self.subTest(blind=name):
+                run = surface_run(self.base / f"blind-{name}", f"c9-blind-{name}", **options)
+                self.assertEqual(finalize(run), 5)
+                self.assertEqual(read(run / "refusal.json")["reasons"], ["blind-seconds"])
+        # Seconds outside the checked window need no confirmation.
+        early = [row for row in presented_rows() if row["display_qpc"] >= T0 + 10 * FREQ]
+        self.assertEqual(finalize(surface_run(self.base / "early", "c9-early", presented=early)), 0)
+
+    def test_route_b_presented_refusals(self):
+        def changed(frame, **values):
+            return [{**row, **values} if row["frame"] == frame else row for row in presented_rows()]
+
+        gap = [{**row, "present_count": row["present_count"] + 1} if row["frame"] >= 500 else row
+               for row in presented_rows()]
+        cases = {
+            "missing": {"presented": False},
+            "empty-line": {"presented": presented_rows()[:3] + [None]},
+            "count-gap": {"presented": gap},                                       # a frame presented twice
+            "extra-field": {"presented": changed(7, hr=0)},
+            "frame-range": {"presented": presented_rows() + [{"frame": FRAMES, "present_count": COUNT + FRAMES,
+                                                              "display_qpc": STOP + DISPLAY}]},
+            "float": {"presented": changed(9, display_qpc=T0 + 9 * STEP + DISPLAY + 0.5)},
+            "display-order": {"presented": changed(301, display_qpc=T0 + 300 * STEP + DISPLAY)},
+            "before-present": {"presented": changed(300, display_qpc=T0 + 300 * STEP + PRESENT - 2)},
+            "no-present": {"missing": (400,)},                                    # its own present is not captured
+        }
+        for name, options in cases.items():
+            with self.subTest(case=name):
+                rows = options.get("presented")
+                if rows is not None and rows is not False and None in rows:
+                    run = surface_run(self.base / name, f"c9-{name}", presented=False)
+                    (run / "presented.jsonl").write_bytes(b"".join(
+                        b"\n" if row is None else json.dumps(row, sort_keys=True, separators=(",", ":")).encode()
+                        + b"\n" for row in rows))
+                else:
+                    run = surface_run(self.base / name, f"c9-{name}", **options)
+                self.assertEqual(finalize(run), 5)
+                reasons = read(run / "refusal.json")["reasons"]
+                self.assertIn("presented", reasons)
+                if name != "no-present":
+                    self.assertEqual(reasons, ["presented"])
+        stray = write_run(self.base / "stray", "w3", run_id="c9-stray")   # a texture run never writes one
+        write_presented(stray, presented_rows())
+        self.assertEqual(finalize(stray), 5)
+        self.assertEqual(read(stray / "refusal.json")["reasons"], ["presented"])
+
+    def test_stage_rows_end_with_one_newline(self):
+        """C9 U5: the harness wrote a newline per row and WriteNew one more, a blank line the finalizer refuses."""
+        source = text(ACCEPTANCE / "project" / "Level2.cs")
+        self.assertIn("Encoding.UTF8.GetBytes(string.Join('\\n', _stageRows))", source)
+        self.assertNotIn("rows.Append(row).Append('\\n')", source)
+        writer = source[source.index("private static void WriteNew("):]
+        self.assertIn("stream.WriteByte((byte)'\\n');", writer[:writer.index("\n    }")])
+
     def test_texture_runs_keep_their_rules(self):
+        plain = write_run(self.base / "plain", "w3", run_id="c9-plain")
+        self.assertEqual(finalize(plain), 0)
+        self.assertNotIn("presented", read(plain / "run.json")["l2"]["checks"])
+        self.assertNotIn("display", read(plain / "run.json")["l2"].get("presentation") or {})
         run = write_run(self.base / "texture", "w3", run_id="c9-texture")
         csv_text = (run / "presentmon.csv").read_text(encoding="utf-8")
         (run / "presentmon.csv").write_bytes((csv_text + f"godot.exe,{PID},{WINDOW_CHAIN[:-1]}1,DXGI,0,0,1,"

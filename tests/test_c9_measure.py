@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools/perf/c9'))
 import cold_start  # noqa: E402
 import evidence  # noqa: E402
+import foreground  # noqa: E402
 import key_to_frame  # noqa: E402
 import lx2  # noqa: E402
 import lx4  # noqa: E402
@@ -97,8 +98,7 @@ class KeyToFrameTests(NoProcessCase):
         self.assertEqual([(entry['frame_id'], entry['status']) for entry in run['per_key']],
                          [(1, 'confirmed'), (3, 'confirmed'), (5, 'confirmed')])
         self.assertEqual([round(entry['latency_ms'], 6) for entry in run['per_key']], [45.0, 52.0, 60.0])
-        self.assertEqual(run['presentmon'], {'frames_checked': 3, 'disagreements': 0, 'tolerance_ms': 2.0,
-                                             'presentmon_displays': 4})
+        self.assertEqual(run['presentmon'], {'frames_checked': 3, 'disagreements': 0, 'presentmon_presents': 5})
 
     def test_a_key_is_matched_by_its_frame_id_not_by_time(self):
         rows = e2_rows([20.0, 30.0])
@@ -111,16 +111,47 @@ class KeyToFrameTests(NoProcessCase):
         self.assertEqual([entry['frame_id'] for entry in run['per_key']], [1, 2])
         self.assertEqual([round(value, 6) for value in run['latencies_ms']], [20.0, 30.0])
 
-    def test_an_unconfirmed_key_gets_no_time_and_invalidates_its_run(self):
+    def test_an_unconfirmed_key_gets_no_time_and_counts_as_a_failed_key(self):
+        # Owner, 20 November 2026, item 2 (docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md): the run stays
+        # valid and the key counts above 100 ms.
         run = key_to_frame.analyze(e2_rows([20.0, 30.0, 40.0, 50.0], unconfirmed={1}, no_frame={3}))
-        self.assertEqual(run['status'], 'invalid')
-        self.assertIn('unconfirmed-keys', run['reasons'])
+        self.assertEqual(run['status'], 'valid', run['reasons'])
+        self.assertNotIn('unconfirmed-keys', run['reasons'])
         self.assertEqual([entry['status'] for entry in run['per_key']],
                          ['confirmed', 'unconfirmed', 'confirmed', 'no-frame'])
         self.assertIsNone(run['per_key'][1]['latency_ms'])
         self.assertEqual((run['confirmed'], run['unconfirmed'], run['no_frame']), (2, 2, 1))
         self.assertEqual(run['unconfirmed_keys'], [1, 3])
         self.assertEqual(len(run['latencies_ms']), 2)  # never filled in from a later frame
+        stats = run['stats']
+        self.assertEqual((stats['n'], stats['confirmed'], stats['failed_keys']), (4, 2, 2))
+        self.assertEqual(round(stats['p50'], 6), 40.0)
+        self.assertEqual((stats['p95'], stats['p99'], stats['mean'], stats['max'], stats['p95_met']),
+                         (None, None, None, None, False))
+        self.assertNotIn('unconfirmed key invalidates its run', key_to_frame.DRAFTS)
+
+    def test_a_failed_key_counts_above_the_bar_in_its_run_and_in_the_pool(self):
+        # 100 confirmed keys and 5 failed: nearest rank 100 of 105 is a confirmed time; 6 failed: rank 101 of 106 is
+        # above the bar, where a failed key stands.
+        five = key_to_frame.analyze(e2_rows([10.0] * 105, unconfirmed={0, 1, 2}, no_frame={3, 4}))
+        self.assertEqual(five['status'], 'valid', five['reasons'])
+        self.assertEqual(round(five['stats']['p95'], 6), 10.0)
+        self.assertEqual(key_to_frame.judge([five])[0], 'met')
+        six = key_to_frame.analyze(e2_rows([10.0] * 106, unconfirmed={0, 1, 2}, no_frame={3, 4, 5}))
+        self.assertEqual(six['status'], 'valid', six['reasons'])
+        self.assertIsNone(six['stats']['p95'])
+        verdict, reasons, pooled = key_to_frame.judge([six])
+        self.assertEqual((verdict, reasons), ('not-met', ['p95-over-bar']))
+        self.assertEqual((pooled['n'], pooled['confirmed'], pooled['failed_keys'], pooled['p95']), (106, 100, 6, None))
+        # Every run's p95 counts its own failed keys: 2 failed in 20 fail that run, though the pool meets the bar.
+        good = key_to_frame.analyze(e2_rows([10.0] * 100))
+        short = key_to_frame.analyze(e2_rows([10.0] * 20, no_frame={0, 1}))
+        verdict, reasons, pooled = key_to_frame.judge([good, short])
+        self.assertTrue(pooled['p95_met'])
+        self.assertEqual((verdict, reasons), ('not-met', ['p95-over-bar']))
+        # Fewer than 100 confirmed keys stay insufficient, failed keys or not.
+        self.assertEqual(key_to_frame.judge([key_to_frame.analyze(e2_rows([10.0] * 100, no_frame={0}))])[:2],
+                         ('insufficient', ['too-few-observations']))
 
     def test_unconfirmed_keys_are_reported_loudly(self):
         write_jsonl(self.temp / 'run' / 'events.jsonl', e2_rows([20.0, 30.0], unconfirmed={0}))
@@ -129,6 +160,8 @@ class KeyToFrameTests(NoProcessCase):
             code = key_to_frame.main([str(self.temp / 'run')])
         self.assertIn('UNCONFIRMED', err.getvalue())
         self.assertIn('seq 0', err.getvalue())
+        self.assertIn('count as failed keys', err.getvalue())
+        self.assertIn('p95 above 100 ms (failed keys)', out.getvalue())
         self.assertEqual(code, 5)  # a synthetic record
 
     def test_percentiles_are_nearest_rank_and_the_bar_is_p95_over_100_keys(self):
@@ -149,7 +182,8 @@ class KeyToFrameTests(NoProcessCase):
         bad = key_to_frame.analyze(e2_rows([10.0] * 18 + [200.0] * 2))
         self.assertLessEqual(nearest_rank(good['latencies_ms'] + bad['latencies_ms'], 95), 100)
         self.assertEqual(key_to_frame.judge([good, bad])[0], 'not-met')
-        invalid = key_to_frame.analyze(e2_rows([500.0] * 100, unconfirmed={0}))
+        invalid = key_to_frame.analyze(e2_rows([500.0] * 100, header={'foreground_throughout': False}))
+        self.assertEqual(invalid['status'], 'invalid')
         self.assertEqual(key_to_frame.judge([good, invalid])[0], 'met')
         self.assertEqual(key_to_frame.judge([invalid])[:2], ('invalid', ['no-valid-run']))
         other = key_to_frame.analyze(e2_rows([10.0] * 100, build='synthetic-build-0002'))
@@ -185,11 +219,17 @@ class KeyToFrameTests(NoProcessCase):
                 self.assertIn(contradiction, run['contradictions'])
 
     def test_presentmon_disagreement_and_run_conditions_invalidate_a_run(self):
-        run = key_to_frame.analyze(e2_rows([20.0]), display_ticks=[F + 25 * F // 1000])
-        self.assertEqual(run['presentmon']['disagreements'], 1)
-        self.assertIn('presentmon-disagrees', run['reasons'])
-        agree = key_to_frame.analyze(e2_rows([20.0]), display_ticks=[F + 21 * F // 1000])
-        self.assertEqual(agree['status'], 'valid', agree['reasons'])
+        # The press is at F, its frame submitted at F + 1 ms and confirmed displayed at F + 20 ms.
+        ms = F // 1000
+        for name, ticks in (('none', []), ('before-submit', [F]), ('after-display', [F + 21 * ms]),
+                            ('only-before-and-after', [F, F + 25 * ms])):
+            with self.subTest(presents=name):
+                run = key_to_frame.analyze(e2_rows([20.0]), present_ticks=ticks)
+                self.assertEqual(run['presentmon']['disagreements'], 1)
+                self.assertIn('presentmon-disagrees', run['reasons'])
+        for ticks in ([F + ms], [F + 20 * ms], [F, F + 2 * ms, F + 25 * ms]):
+            agree = key_to_frame.analyze(e2_rows([20.0]), present_ticks=ticks)
+            self.assertEqual(agree['status'], 'valid', agree['reasons'])
         for header, reason in (({'foreground_throughout': False}, 'not-foreground'),
                                ({'correctness': 'fail'}, 'correctness-failed')):
             with self.subTest(reason=reason):
@@ -343,7 +383,8 @@ class PresentMonTests(NoProcessCase):
         good = presentmon_capture.build_command(Path('PresentMon.exe'), Path('out.csv'), 10, process_name='a.exe')
         cases = {
             'exactly one process filter is needed': [a for a in good if a not in ('--process_name', 'a.exe')],
-            'a timed capture of 1 to 3600 s is needed': [a for a in good if a not in ('--timed', '10')],
+            f'a timed capture of 1 to {presentmon_capture.SECONDS_MAX} s is needed':
+                [a for a in good if a not in ('--timed', '10')],
             '--terminate_after_timed is missing': good[:-1],
             'the output file must be a .csv file': [('out.txt' if a == 'out.csv' else a) for a in good],
             'unexpected argument --start_etl_logging': good + ['--start_etl_logging'],
@@ -354,6 +395,15 @@ class PresentMonTests(NoProcessCase):
                 self.assertIn(problem, presentmon_capture.check_command(command))
         both = good + ['--process_id', '7']
         self.assertIn('exactly one process filter is needed', presentmon_capture.check_command(both))
+
+    def test_a_capture_covers_u8s_shell_run(self):
+        """U8's shell runs up to 10,500 s per puzzle; the 3600 s cap cut its capture short (C9, 20 Nov 2026)."""
+        command = presentmon_capture.build_command(Path('PresentMon.exe'), Path('out.csv'), 10_800,
+                                                   process_name='a.exe')
+        self.assertEqual(presentmon_capture.check_command(command), [])
+        with self.assertRaises(ValueError):
+            presentmon_capture.build_command(Path('PresentMon.exe'), Path('out.csv'),
+                                             presentmon_capture.SECONDS_MAX + 1, process_name='a.exe')
 
     def test_a_dry_run_without_presentmon_exits_nonzero(self):
         environ = {'ProgramFiles': str(self.temp / 'none'), 'LOCALAPPDATA': str(self.temp / 'none')}
@@ -527,6 +577,25 @@ class RunbookTests(NoProcessCase):
         self.assertFalse(ok)
         self.assertIn('--route surface --stages renderer/acceptance/stages', detail)
 
+    def test_shell_runs_start_the_capture_and_the_poster_before_the_shell(self):
+        """The shell starts last, so it gets the focus (C9, 20 Nov 2026: a capture started after it took it away)."""
+        steps = {step.id: step for step in runbook.STEPS}
+        for step_id in ('b2-skew', 'lx2', 'lx4'):
+            with self.subTest(step=step_id):
+                commands = ' '.join(steps[step_id].commands)
+                self.assertNotIn('alongside', commands)
+                shell = [command for command in steps[step_id].commands if runbook.LAUNCH in command]
+                self.assertTrue(shell)
+                for command in shell:
+                    self.assertLess(command.index('presentmon_capture.py --process-name'),
+                                    command.index(runbook.LAUNCH))
+                    self.assertIn('--build <product build>', command)
+                    self.assertIn(f'unattended.ps1 -Steps {runbook.LABELS[step_id]}', command)
+        analyze = steps['lx4'].commands[-1]
+        self.assertIn('--gate-reference <U4 W3 gate summary>.json', analyze)
+        self.assertNotIn('--gate <', analyze)
+        self.assertIn('tools/perf/c9/unattended.ps1', runbook.__doc__)
+
     def test_every_step_has_a_time_and_sources(self):
         for step in runbook.STEPS:
             with self.subTest(step=step.id):
@@ -551,7 +620,7 @@ class RunbookTests(NoProcessCase):
                               (runbook.RENDER_BACKEND, 'Puzzle::Jumbling =>')}, mentions)
         for puzzle in ('jumble-off', 'jumble-on'):
             launches = [command for command in step.commands
-                        if command.startswith(f'python -B {runbook.LAUNCH} ') and f'--puzzle {puzzle},' in command]
+                        if f'python -B {runbook.LAUNCH} ' in command and f'--puzzle {puzzle},' in command]
             self.assertEqual(len(launches), 1, puzzle)
             self.assertIn(f'tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle {puzzle} --run', launches[0])
         self.assertFalse(any('refused until' in command for command in step.commands))
@@ -800,9 +869,17 @@ class Lx4Tests(NoProcessCase):
     def test_messages_reset_select_and_type_and_time_the_metric_key(self):
         samples = {(sample['size'], sample['metric']): sample for sample in lx4.schedule(self.edits, 'jumble-off')}
         sent, timed = lx4.messages(self.edits, samples[('S', 'echo')])
-        self.assertEqual(sent[0][0], lx4.RESET)
+        self.assertEqual(sent[0], (lx4.RESET, samples[('S', 'echo')]['edit'], samples[('S', 'echo')]['id']))
         self.assertEqual(sent[1][0], lx4.SELECT)
         self.assertEqual((sent[timed][0], timed), (lx4.WM_CHAR, 2))
+        # Only a rerun sample's Reset carries the flag; it re-runs the same inside-body edit, timed at the last key.
+        rerun = samples[('S', 'rerun')]
+        sent, timed = lx4.messages(self.edits, rerun)
+        self.assertEqual(rerun['edit'], samples[('S', 'echo')]['edit'])
+        self.assertEqual(sent[0], (lx4.RESET, rerun['edit'] | lx4.RERUN_FLAG, rerun['id']))
+        self.assertEqual(timed, len(sent) - 1)
+        for metric in ('echo', 'syntax', 'completion', 'diagnostics', 'stale'):
+            self.assertLess(lx4.messages(self.edits, samples[('M', metric)])[0][0][1], lx4.RERUN_FLAG, metric)
         sent, timed = lx4.messages(self.edits, samples[('S', 'syntax')])
         self.assertEqual(sent[timed:timed + 2], [(lx4.WM_KEYDOWN, lx4.VK_BACK, 0x000E0001),
                                                  (lx4.WM_KEYUP, lx4.VK_BACK, 0xC00E0001)])
@@ -843,9 +920,14 @@ class Lx4Tests(NoProcessCase):
                              ('InvalidArgument', 'LX4_E_INVALID_ARGUMENT'), ('FixturesRefused', 'LX4_E_FIXTURES'),
                              ('StateRefused', 'LX4_E_STATE'), ('Poisoned', 'LX4_E_POISONED'),
                              ('TextEcho', 'LX4_TEXT_ECHO'), ('TextStatus', 'LX4_TEXT_STATUS'),
-                             ('TextCompletion', 'LX4_TEXT_COMPLETION')):
+                             ('TextCompletion', 'LX4_TEXT_COMPLETION'), ('TextBuffer', 'LX4_TEXT_BUFFER')):
             self.assertEqual(re.search(rf'const \w+ {csharp} = (\d+);', module).group(1),
                              re.search(rf'pub const {rust}: \w+ = (\d+);', library).group(1), csharp)
+        # The re-run: the Reset flag lx4.py posts and the entry the module runs are the library's.
+        self.assertEqual(1 << int(re.search(r'pub const LX4_RESET_RERUN: u32 = 1 << (\d+);', library).group(1)),
+                         lx4.RERUN_FLAG)
+        self.assertEqual(re.search(r'public const string ReferenceEntry = "(\w+)";', module).group(1),
+                         re.search(r'pub const REFERENCE_ENTRY: &str = "(\w+)";', library).group(1))
         types = {'u64': 'ulong', 'u32': 'uint', '[u8; 64]': 'fixed byte[64]'}
         for csharp, rust in (('Update', 'Lx4Update'), ('Shown', 'Lx4Shown')):
             fields = re.search(rf'private struct {csharp}\s*\{{(.*?)\}}', module, re.S).group(1)
@@ -885,6 +967,35 @@ class Lx4Tests(NoProcessCase):
         failed = {**self.gate, 'scenes': [{'verdict': 'not-met', 'runs': [{'build_identity': BUILD}]}]}
         self.assertEqual(lx4.judge(runs, self.e2, failed, {'events'})[2], 'fail-gate-or-e2')
 
+    def test_a_gate_reference_is_recorded_but_never_counted_as_the_gate(self):
+        """renderer_gate.py reads acceptance builds only; another build's summary is a reference (C9, 20 Nov 2026)."""
+        directories = []
+        for puzzle in lx4.PUZZLES:
+            events, posts = lx4_logs(self.edits, self.digests, puzzle, lambda sample: 10.0)
+            write_jsonl(self.temp / puzzle / 'events.jsonl', events)
+            write_jsonl(self.temp / puzzle / lx4.POSTS, posts)
+            directories.append(self.temp / puzzle)
+        reference = self.temp / 'w3-summary.json'
+        reference.write_bytes(json.dumps({'format': 'magic600-renderer-gate-v1', 'scenes': [
+            {'scene': 'w3', 'verdict': 'met', 'runs': [{'build_identity': 'acceptance-build'}]}]}).encode())
+        record = lx4.build(self.temp / 'fixtures', directories, ['analyze'], reference_path=reference)
+        self.assertEqual(record['result']['gate_reference'],
+                         {'counted_as_gate': False, 'build_identities': ['acceptance-build'], 'verdicts': {'w3': 'met'}})
+        self.assertIn('gate-reference', [entry['role'] for entry in record['inputs']])
+        self.assertIn('gate-summary-other-build', record['reasons'])
+        self.assertNotIn('gate-summary-missing', record['reasons'])
+        plain = lx4.build(self.temp / 'fixtures', directories, ['analyze'])
+        self.assertIsNone(plain['result']['gate_reference'])
+        self.assertIn('gate-summary-missing', plain['reasons'])
+        reference.write_bytes(b'{"format": "something else"}')
+        with self.assertRaises(lx4.FixtureError):
+            lx4.build(self.temp / 'fixtures', directories, ['analyze'], reference_path=reference)
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            code = lx4.main(['analyze', '--fixtures', str(self.temp / 'fixtures'), *map(str, directories),
+                             '--gate-reference', str(reference)])
+        self.assertEqual(code, 2)
+        self.assertIn('not a renderer gate summary', err.getvalue())
+
     def test_a_wrong_buffer_or_an_unconfirmed_sample_invalidates_its_run(self):
         runs = self.runs(lambda sample: 10.0, wrong={5})
         self.assertEqual(runs[0]['failures'], {'wrong-buffer': 1})
@@ -907,6 +1018,7 @@ class Lx4Tests(NoProcessCase):
         self.assertEqual(record['result']['timed_sml_samples'], 10_800)
         self.assertEqual(record['result']['limitations'], lx4.LIMITATIONS)
         self.assertIn('NoHost', lx4.LIMITATIONS[0])
+        self.assertIn("does not draw the run's value", lx4.LIMITATIONS[1])
 
     def test_a_dry_run_posts_nothing(self):
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -932,8 +1044,9 @@ class Lx4Tests(NoProcessCase):
             """The shell: a Reset's ready row comes only at the harness's next wait, so an input posted before the
             harness reads it counts as early."""
 
-            def __init__(self, answer=True):
+            def __init__(self, answer=True, acknowledge=True):
                 self.answer, self.ticks, self.pending, self.reset, self.early = answer, 0, None, None, 0
+                self.acknowledge, self.sample, self.selects, self.keys = acknowledge, None, 0, []
 
             def register(self, name):
                 return {lx4.RESET: 0xC001, lx4.SELECT: 0xC002}[name]
@@ -948,8 +1061,16 @@ class Lx4Tests(NoProcessCase):
             def post(self, hwnd, message, wparam, lparam):
                 if message == 0xC001:
                     self.pending = lparam if self.answer else None
+                    self.sample, self.selects = lparam, 0
                 elif message == 0xC002:
                     self.early += self.pending is not None
+                    if self.answer and self.acknowledge:
+                        self.selects += 1
+                        with events.open('a') as stream:
+                            stream.write(json.dumps({'t': lx4.SELECTED, 'sample': self.sample,
+                                                     'select': self.selects}) + '\n')
+                elif message in (lx4.WM_CHAR, lx4.WM_KEYDOWN) and wparam != 0x4A:
+                    self.keys.append(self.sample)
                     if self.reset is not None:
                         for metric in (*lx4.METRICS, 'dependents'):
                             lx4_row(self.reset, metric)
@@ -995,6 +1116,18 @@ class Lx4Tests(NoProcessCase):
             self.assertEqual(sorted(row['sample'] for row in posts),
                              sorted(sample for sample, state in status.items() if state == 'not-ready'))
             self.assertTrue(all(row['message'] == 0xC001 for row in posts))
+            # C9 fix, 20 Nov 2026: without a Select's lx4-select row, no key of its replacement is posted.
+            (run / lx4.POSTS).unlink()
+            fake = Fake(acknowledge=False)
+            code = lx4.post_run(self.temp / 'fixtures', 'jumble-off', run, 'KeyJ', fake,
+                                clock=lambda: next(clock) / 2, sleep=fake.sleep, out=lambda line: None)
+            self.assertEqual((code, fake.keys), (3, []))
+            rows = evidence.read_jsonl(run / lx4.POSTS)
+            status = {row['sample']: row['status'] for row in rows if row['t'] == 'sample'}
+            self.assertEqual(status, {sample['id']: 'done' if sample['metric'] == 'turn' else 'not-selected'
+                                      for sample in samples})
+            last = {row['sample']: row['message'] for row in rows if row['t'] == 'post'}
+            self.assertTrue(all(last[sample] == 0xC002 for sample, state in status.items() if state == 'not-selected'))
 
     def test_a_sample_without_its_ready_row_invalidates_its_run(self):
         events, posts = lx4_logs(self.edits, self.digests, 'jumble-off', lambda sample: 10.0)
@@ -1282,6 +1415,27 @@ class Lx2Tests(NoProcessCase):
             self.assertEqual(run['faults']['loop_metered']['windows'][kind]['ineffective'], {'job-not-refused': 1})
         self.assertEqual(run['faults']['forced_kill']['windows']['turn']['ineffective'], {'job-not-refused': 1})
 
+    def test_a_key_without_a_confirmed_frame_is_a_failed_key_of_condition_4_and_the_run_stays_valid(self):
+        # Condition 4 is charter E2 during fault windows, so it counts as E2 counts (owner, 20 November 2026, item 2).
+        directory = lx2_run(self.temp / 'run-failed', self.edits, self.digests, windows=5)
+        path = directory / key_to_frame.EVENTS
+        rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+        frame = next(row['frame_id'] for row in rows if row['t'] == 'key')
+        write_jsonl(path, [row for row in rows if not (row['t'] == 'presented' and row['frame_id'] == frame)])
+        faults = lx2_faults(self.temp / 'faults-failed.json')
+        run = lx2.build(self.temp / 'fixtures', directory, faults, ['analyze'])['result']['run']
+        self.assertEqual(run['status'], 'valid', run['reasons'])
+        self.assertEqual((run['e2_run']['unconfirmed'], run['e2_run']['status']), (1, 'valid'))
+        hit = [fault for fault in lx2.FAULTS if run['faults'][fault]['e2']['unconfirmed']]
+        self.assertEqual(len(hit), 1)
+        e2 = run['faults'][hit[0]]['e2']
+        # Five keys, one failed: nearest rank 5 of 5 lies above the bar.
+        self.assertEqual((e2['confirmed'], e2['stats']['failed_keys'], e2['stats']['p95'], e2['state']),
+                         (4, 1, None, 'not-met'))
+        for fault in lx2.FAULTS:
+            if fault not in hit:
+                self.assertEqual(run['faults'][fault]['e2']['state'], 'met', fault)
+
     def test_slow_commits_a_slow_echo_or_slow_presents_fail_their_condition(self):
         for kwargs, condition in (({'e2_ms': 150.0}, 'e2'), ({'echo_ms': 70.0}, 'echo'), ({'gate_ms': 40.0}, 'gate')):
             run = self.record(**kwargs)['result']['run']
@@ -1383,6 +1537,7 @@ class Lx2Tests(NoProcessCase):
                     self.fault = self.kind = None
                 elif message == 0xC001:
                     self.append({'t': 'lx4', 'sample': lparam, 'endpoint': lx4.READY})
+                    self.selects = 0
                     if self.fault is not None:
                         self.resets += 1
                         if self.turned or (self.kind == 'limit' and self.resets > 2):
@@ -1397,6 +1552,8 @@ class Lx2Tests(NoProcessCase):
                             self.row('error', reason='probe-attempts')
                     self.sample = lparam
                 elif message == 0xC002:
+                    self.selects = getattr(self, 'selects', 0) + 1
+                    self.append({'t': lx4.SELECTED, 'sample': self.sample, 'select': self.selects})
                     self.append({'t': 'lx4', 'sample': self.sample, 'endpoint': 'echo'})
                 return hwnd == 66
 
@@ -1429,6 +1586,9 @@ class Lx2Tests(NoProcessCase):
             phases = [wparam for message, wparam in fake.posted if message == 0xC003]
             self.assertEqual(phases, [wparam for number, _, _ in lx2.PHASES for wparam in (number, 0)])
             self.assertEqual(phases[:4], [8, 0, 1, 0])
+            # LX-2's echo samples never ask for LX-4's re-run, whose view job would supersede LX-2's.
+            resets = [wparam for message, wparam in fake.posted if message == 0xC001]
+            self.assertTrue(resets and all(wparam < lx4.RERUN_FLAG for wparam in resets))
             self.assertEqual(fake.posted[-1], (lx2.WM_CLOSE, 0))
             self.assertEqual(rows[-1]['t'], 'close')
             # The module stops with an error: phase 0, and no close.
@@ -1452,6 +1612,171 @@ def forbidden_system():
         def __getattr__(self, name):
             raise AssertionError(f'the poster called {name} without a module row')
     return System()
+
+
+class FakeDesktop:
+    """foreground.py's system: scripted per check (index = how often last_input was read)."""
+
+    def __init__(self, *, inputs=(), window_at=1, foreground=None, taken=True, closed_at=None, pid=77, tick=1000):
+        self.inputs, self.window_at, self.closed_at, self.pid, self.tick = dict(inputs), window_at, closed_at, pid, tick
+        self.foreground, self.taken, self.check, self.requests, self.raised = foreground or {}, taken, -1, [], []
+
+    def last_input(self):
+        self.check += 1
+        return self.inputs.get(self.check, self.tick)
+
+    def find_window(self, exe):
+        return (0x5150, self.pid) if exe == 'Godot.exe' and self.check >= self.window_at else None
+
+    def topmost(self, window):
+        self.raised.append(window)
+
+    def is_topmost(self, window):
+        return window in self.raised
+
+    def set_foreground(self, window):
+        self.requests.append(window)
+        return self.taken
+
+    def foreground_pid(self):
+        if self.check in self.foreground:
+            return self.foreground[self.check]
+        return self.pid if self.taken else 4
+
+    def visible(self, window):
+        return self.closed_at is None or self.check < self.closed_at
+
+
+class ForegroundTests(NoProcessCase):
+    def watch(self, desktop, hold=True, wait_s=30):
+        lines, clock = [], iter(range(10_000))
+        code = foreground.watch(desktop, 'Godot.exe', hold, wait_s, clock=lambda: next(clock), sleep=lambda s: None,
+                                out=lines.append)
+        return code, [json.loads(line) for line in lines]
+
+    def test_it_asks_once_for_the_foreground_and_ends_when_the_window_closes(self):
+        desktop = FakeDesktop(window_at=3, closed_at=40)
+        code, rows = self.watch(desktop)
+        self.assertEqual(code, 0)
+        self.assertEqual((desktop.requests, desktop.raised), ([0x5150], [0x5150]))
+        self.assertEqual([row['t'] for row in rows], ['start', 'take', 'end'])
+        self.assertEqual((rows[1]['foreground'], rows[1]['topmost'], rows[-1]['reason']), (True, True, 'window-closed'))
+
+    def test_owner_input_ends_the_watch_and_posted_messages_do_not_count(self):
+        code, rows = self.watch(FakeDesktop(inputs={20: 1001}, closed_at=40))
+        self.assertEqual((code, rows[-1]['reason']), (foreground.OWNER_INPUT, 'owner-input'))
+        # Without --hold only input counts: another process in the foreground is no abort.
+        code, rows = self.watch(FakeDesktop(foreground={n: 4 for n in range(100)}, closed_at=40), hold=False)
+        self.assertEqual((code, [row['t'] for row in rows]), (0, ['start', 'window', 'end']))
+
+    def test_the_foreground_counts_as_lost_at_two_checks_in_a_row(self):
+        code, _ = self.watch(FakeDesktop(foreground={10: 4, 12: None}, closed_at=40))
+        self.assertEqual(code, 0)
+        code, rows = self.watch(FakeDesktop(foreground={10: 4, 11: 4}, closed_at=40))
+        self.assertEqual((code, rows[-1]['reason'], rows[-1]['holder']), (foreground.FOREGROUND, 'foreground-lost', 4))
+
+    def test_a_refused_request_and_a_missing_window(self):
+        desktop = FakeDesktop(taken=False)
+        code, rows = self.watch(desktop)
+        self.assertEqual((code, rows[-1]['reason'], desktop.requests), (foreground.FOREGROUND, 'not-taken', [0x5150]))
+        code, rows = self.watch(FakeDesktop(window_at=10_000), wait_s=30)
+        self.assertEqual((code, rows[-1]['reason']), (foreground.NO_WINDOW, 'no-window'))
+
+    def test_the_input_tick_wraps(self):
+        self.assertTrue(foreground.newer(5, 2**32 - 5))
+        self.assertFalse(foreground.newer(2**32 - 5, 5))
+        self.assertFalse(foreground.newer(1000, 1000))
+
+    def test_one_request_and_no_foreground_lock_workaround(self):
+        source = (ROOT / 'tools/perf/c9/foreground.py').read_text(encoding='utf-8')
+        # The code without the module docstring (which names what is avoided) and comments.
+        code = '\n'.join(line for line in source.split('\"\"\"', 2)[2].splitlines() if not line.lstrip().startswith('#'))
+        body = code.split('def watch(', 1)[1].split('\nclass Windows', 1)[0]
+        self.assertEqual(body.count('set_foreground('), 1)
+        self.assertEqual(code.count('.SetForegroundWindow('), 1)
+        for word in ('AttachThreadInput', 'SystemParametersInfo', 'keybd_event', 'SendInput', 'mouse_event',
+                     'AllowSetForegroundWindow', 'LockSetForegroundWindow', 'BringWindowToTop'):
+            self.assertNotIn(word, code)
+
+
+class RunnerTests(unittest.TestCase):
+    """tools/perf/c9/unattended.ps1, read as text (the tests start no PowerShell)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.data = (ROOT / 'tools/perf/c9/unattended.ps1').read_bytes()
+        cls.text = cls.data.decode('ascii')
+
+    def function(self, name):
+        return self.text.split(f'function {name} ', 1)[1].split('\nfunction ', 1)[0]
+
+    def test_it_is_ascii_with_lf_endings_and_names_no_build_stamp(self):
+        self.assertNotIn(b'\r', self.data)
+        self.assertIsNone(re.search(r'\d{8}T\d{6}Z', self.text))
+        for name in ('SceneBuild', 'StageBuild', 'ProductBuild'):
+            self.assertIn(f"[string]${name} = ''", self.text)
+            self.assertIn(f'-{name} is needed for', self.function('Test-Inputs').replace('-$key', f'-{name}'))
+        self.assertIn("'--build', $ProductBuild", self.function('Invoke-ShellRun'))
+
+    def test_the_suffix_and_the_retries(self):
+        self.assertIn("[ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]*$')]\n    [string]$Suffix", self.text)
+        self.assertIn('[ValidateRange(0, 2)]\n    [int]$Retries = 2', self.text)
+        self.assertIn('for ($attempt = 0; $attempt -le $Retries; $attempt++)', self.function('Invoke-ShellStep'))
+        for output in ('"$Runs\\u3$Tag"', '"$Acceptance\\w3-summary$Tag.json"', '"$Runs\\u8-off$Tag"',
+                       '"$Runs\\e3$Tag-$i"', '"$Runs\\u7$Tag-faults.json"'):
+            self.assertIn(output, self.text)
+
+    def test_the_watcher_capture_and_poster_start_before_the_shell(self):
+        run = self.function('Invoke-ShellRun').split('Wait-Gate $Step\n    Write-Host', 1)[1]
+        order = [run.index(label) for label in ('"$label-watch"', '"$label-presentmon"', '"$label-poster"',
+                                                '"$label-launch"')]
+        self.assertEqual(order, sorted(order))
+        for step in ('U3', 'U7', 'U8'):
+            self.assertIn('-Hold', self.function(f'Invoke-{step}'))
+        self.assertNotIn('-Hold', self.function('Invoke-U6'))
+
+    def test_an_abort_sets_the_run_aside_and_stops_its_poster(self):
+        run = self.function('Invoke-ShellRun')
+        self.assertIn("$WatchAbort = @{ 10 = 'owner-input'; 11 = 'foreground-lost' }", self.text)
+        self.assertEqual((foreground.OWNER_INPUT, foreground.FOREGROUND), (10, 11))
+        for needle in ('$measuring = -not ($posterProcess -and $posterProcess.HasExited)',
+                       'Write-Log $Step \'aborted\' $run', '"$run.aborted-$n"',
+                       '"$Runs\\$Name.aborted-$n.presentmon.csv"', 'if (-not $watch.HasExited) { Stop-Tree $watch.Id }'):
+            self.assertIn(needle, run)
+
+    def test_it_changes_no_system_setting_and_takes_no_foreground_itself(self):
+        # The code without the header (which says what the watcher does) and comments.
+        code = '\n'.join(line for line in self.text.split('#>', 1)[1].splitlines()
+                         if not line.lstrip().startswith('#'))
+        for word in ('SetForegroundWindow', 'AttachThreadInput', 'Set-ExecutionPolicy', 'ExecutionPolicy',
+                     'HKLM:', 'HKCU:', 'Set-ItemProperty', 'WerAddExcludedApplication', 'ForegroundLockTimeout'):
+            self.assertNotIn(word, code)
+
+    def test_u7_alone_keeps_error_reporting_out_and_restores_the_mode(self):
+        # The error mode is this process's own, inherited by the processes it starts; no WER or registry setting, and
+        # no Windows call in the device child (CT-RPI-20 keeps those in c600-platform).
+        code = '\n'.join(line for line in self.text.split('#>', 1)[1].splitlines()
+                         if not line.lstrip().startswith('#'))
+        u7 = self.function('Invoke-U7')
+        self.assertEqual(code.count('::SetErrorMode('), 2)
+        self.assertEqual(u7.count('::SetErrorMode('), 2)
+        quiet, restore = 'SetErrorMode([uint32]($previous -bor 3))', 'SetErrorMode([uint32]$previous)'
+        before, after = u7.split('} finally {', 1)
+        self.assertLess(before.index(quiet), before.index('try {'))
+        self.assertLess(before.index('try {'), before.index("Invoke-Step 'U7/faults'"))
+        self.assertLess(before.index("Invoke-Step 'U7/faults'"), before.index("Invoke-ShellStep -Step 'U7'"))
+        self.assertIn(restore, after.split("'U7/analyze'", 1)[0])
+        self.assertIn('if ($DryRun) {', before.split(quiet, 1)[0])
+        for word in ('WerSetFlags', 'WerAddExcludedApplication', 'LocalDumps', 'DontShowUI', 'reg.exe', 'reg add',
+                     'New-ItemProperty'):
+            self.assertNotIn(word, code)
+        child = (ROOT / 'rust/c600-lx2/src/bin/c600-lx2-child.rs').read_text(encoding='utf-8')
+        self.assertNotIn('SetErrorMode', child)
+
+    def test_u8_records_the_gate_summary_as_a_reference(self):
+        u8 = self.function('Invoke-U8')
+        self.assertIn("'--gate-reference'", u8)
+        self.assertNotIn("'--gate'", u8)
 
 
 if __name__ == '__main__':

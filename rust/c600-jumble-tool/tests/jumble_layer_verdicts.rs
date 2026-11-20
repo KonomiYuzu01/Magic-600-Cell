@@ -12,6 +12,12 @@
 //!   witness after retained items pressed as pose moves, and the ν row after a jumble item and its exact inverse. An
 //!   exit's undo returns to poses where the tool reads the same, its redo reaches the same labels, and a second exit is
 //!   refused with the code that every read of the tool then stops with, `KN5:input.menu_word_needs_jumble_on`.
+//! - `jumble.off` and A5's crossing prerequisites (`jumble_crossing::jumble_off_facts`, LB3.1's "Mode crossing
+//!   prerequisites", the Jumble-off half). At each exit the entry's label checkpoint is the row's verdict, its count of
+//!   pieces off the lattice is the head's, and its ν facts are the `nu` row's; a committed exit has every piece on the
+//!   lattice and ν = 0, an exit refused for pieces off the lattice has some off, and one refused for a nonzero ν has
+//!   every piece on the lattice and a nonzero ν. A walk of I_a reaches the nonzero ν: the retained word [1, 3, −5] and
+//!   correction 2 of LP2's catalogue pressed as pose moves.
 //! - A press and the twist check (`jumble_admissibility::twist_check`). An admissible twist commits and moves exactly
 //!   the count of pieces the check names; a blocked twist is refused with the code that `word_protection` stops with
 //!   for the same letter.
@@ -38,7 +44,8 @@ use c600_command::{code, Direction, TWIST_ROW};
 use c600_jumble::codes::{MENU_WORD_NEEDS_JUMBLE_ON, PIECE_WOULD_MOVE};
 use c600_jumble::q5::transpose;
 use c600_jumble::twist::Twist;
-use c600_jumble_tool::library::{self, ADMISSIBILITY, END_TESTS, PROTECTION};
+use c600_jumble::{corrections, levels};
+use c600_jumble_tool::library::{self, ADMISSIBILITY, CROSSING, END_TESTS, PROTECTION};
 use c600_jumble_tool::rows::Rows;
 use c600_jumble_tool::word::Alphabet;
 use c600_kernel::json::{self, Value};
@@ -127,8 +134,32 @@ fn exit_code(fact: &str) -> &'static str {
     }
 }
 
-/// `jumble.off` at the head beside the label checkpoint the tool reads there. Returns the case met: the outcome and,
-/// for a checkpoint that holds, how ν = 0 was shown, for one that fails, its fact.
+/// A5's crossing prerequisites as `jumble_crossing::jumble_off_facts` answers them at the head, each checked against
+/// what the layer and the bridge hold there: the label checkpoint's outcome, the count of pieces off the lattice, and
+/// whether ν is defined with the count of its nonzero values.
+fn crossing_facts(session: &Session, pinned: &MenuAlphabet, outcome: &str, what: &str) -> (i64, bool, i64) {
+    let ran = run(session, pinned, CROSSING.name, "jumble_off_facts", vec![]);
+    assert_eq!((ran.outcome, ran.code), (Outcome::Completed, None), "{what}: the crossing entry completes");
+    let facts = ran.value.expect("a record");
+    let checkpoint = facts.get("label_checkpoint").expect("the label checkpoint");
+    assert_eq!(text(checkpoint, "outcome"), outcome, "{what}: the crossing entry's checkpoint is the row's verdict");
+    let off = nat(&facts, "off_lattice");
+    assert_eq!(off, session.state().off_lattice_count() as i64, "{what}: the pieces off the lattice");
+    let nu = Rows::at_head(engine(), &session.layer).answer("nu", None).expect("the ν row answers");
+    let values: Option<Vec<i64>> = nu
+        .get("values")
+        .and_then(Value::as_array)
+        .map(|values| values.iter().map(|v| v.as_i64().expect("a ν value")).collect());
+    let defined = facts.get("nu_defined") == Some(&Value::Bool(true));
+    assert_eq!(defined, values.is_some(), "{what}: ν is defined as the row says");
+    let nonzero = nat(&facts, "nu_nonzero");
+    let counted = values.map_or(0, |values| values.iter().filter(|&&v| v != 0).count());
+    assert_eq!(nonzero, counted as i64, "{what}: the nonzero values of the row's ν");
+    (off, defined, nonzero)
+}
+
+/// `jumble.off` at the head beside the label checkpoint and the crossing prerequisites the tool reads there. Returns
+/// the case met: the outcome and, for a checkpoint that holds, how ν = 0 was shown, for one that fails, its fact.
 fn exit_at_head(session: &mut Session, pinned: &MenuAlphabet, what: &str) -> String {
     let at = reads(session);
     let row = at.1.clone().expect("the label checkpoint's row answers with Jumble on");
@@ -141,8 +172,15 @@ fn exit_at_head(session: &mut Session, pinned: &MenuAlphabet, what: &str) -> Str
     assert_eq!((ran.outcome, ran.code), (Outcome::Completed, None), "{what}: the entry completes");
     let value = ran.value.expect("a verdict");
     assert_eq!(text(&value, "outcome"), outcome, "{what}: the entry's outcome is the row's verdict");
+    let (off, nu_defined, nu_nonzero) = crossing_facts(session, pinned, outcome, what);
     let before = session.fixed();
     let receipt = session.off();
+    match receipt.status.code() {
+        None => assert!(off == 0 && nu_defined && nu_nonzero == 0, "{what}: an exit with every prerequisite"),
+        Some(code::JUMBLE_OFF_PIECES_OFF_LATTICE) => assert!(off > 0, "{what}: pieces off the lattice"),
+        Some(code::JUMBLE_OFF_NU_NONZERO) => assert!(off == 0 && nu_nonzero > 0, "{what}: a nonzero ν on the lattice"),
+        Some(_) => assert_eq!(off, 0, "{what}: refused with every piece on the lattice"),
+    }
     match outcome {
         "holds" => {
             assert!(committed(&receipt), "{what}: the checkpoint holds, so the exit commits: {:?}", receipt.status);
@@ -230,7 +268,19 @@ fn the_label_checkpoint_the_tool_reads_decides_the_exit() {
     assert!(committed(&session.press(&inverse(&fixture, jumble))), "its exact inverse");
     met.insert(exit_at_head(&mut session, &pinned, "after retained item 1, jumble item 12 and its inverse"));
 
-    for case in ["holds: identity_labels", "holds: retained_witness", "holds: supplied", "fails: off_lattice"] {
+    // The retained word [1, 3, −5] and correction 2 of LP2's catalogue, pressed as pose moves: a lattice
+    // configuration whose ν, which the ν row computes, is correction 2's row (b34 = 1).
+    let retained = [1, 3, -5].map(|id| levels::primitive(engine(), id).expect("a retained generator"));
+    let catalogue = corrections::catalogue().expect("the catalogue reads");
+    let correction = catalogue.twists(engine(), &fixture.menu(), 2).expect("no engine error").expect("the word reads");
+    let mut session = Session::entered(&fixture);
+    for (index, twist) in retained.iter().chain(&correction).enumerate() {
+        assert!(committed(&session.press(twist)), "letter {index} of the retained word and correction 2");
+    }
+    met.insert(exit_at_head(&mut session, &pinned, "after the retained word and correction 2"));
+
+    let cases = ["holds: identity_labels", "holds: retained_witness", "holds: supplied", "fails: off_lattice"];
+    for case in cases.into_iter().chain(["fails: nu_nonzero"]) {
         assert!(met.contains(case), "{case} is met: {met:?}");
     }
 }

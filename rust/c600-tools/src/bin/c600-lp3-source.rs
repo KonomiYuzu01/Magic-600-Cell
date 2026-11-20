@@ -142,7 +142,7 @@ fn options(rest: &[String]) -> Result<Options, Failure> {
     let files = rest[index..].to_vec();
     let process = host.unwrap_or(false);
     match assets {
-        Some(assets) if !files.is_empty() && files.len() % 2 == 0 && (process || runtime.is_none()) => {
+        Some(assets) if !files.is_empty() && files.len().is_multiple_of(2) && (process || runtime.is_none()) => {
             Ok(Options { assets, process, runtime, receipts, tamper: tampered, files })
         }
         _ => Err(malformed(USAGE)),
@@ -327,8 +327,8 @@ struct Record {
 /// What became of one literal word given to the host.
 enum Proposed {
     /// The tool ran inside the solver's command and its one proposal was sent: the layer's receipt and the command,
-    /// which the step reports once the preview is built.
-    Sent { receipt: Receipt, command: ToolCommand },
+    /// which the step reports once the preview is built. Both are boxed, which keeps the enum small.
+    Sent { receipt: Box<Receipt>, command: Box<ToolCommand> },
     /// The host refused the run at its start stage because the word has no transfer encoding. The tool did not run,
     /// no proposal reached the command layer, and the host reported the solver's command as its job's failure.
     NoTransfer(Refused),
@@ -452,7 +452,7 @@ impl Session<'_> {
             return Err(disagree("the bridge's invocation is not the runtime's preview of the literal word"));
         }
         self.keep(&sent.receipt, &sent.caller);
-        Ok(Proposed::Sent { receipt: sent.receipt.clone(), command })
+        Ok(Proposed::Sent { receipt: Box::new(sent.receipt.clone()), command: Box::new(command) })
     }
 
     /// Reports the job of the solver's command that ran the tool and keeps the command's receipt. A run that ran
@@ -489,7 +489,7 @@ impl Session<'_> {
         }
         record.literal = Some((literal_digest(&word), word.len()));
         let (admitted, command) = match (self.propose(&word, steps)?, unchecked) {
-            (Proposed::Sent { receipt, command }, _) => (receipt, command),
+            (Proposed::Sent { receipt, command }, _) => (*receipt, *command),
             // Only a word the kernel already refused may stop here: every letter of a literal word is a generator.
             // The record keeps the kernel's refusal of the recipe beside the start-stage refusal.
             (Proposed::NoTransfer(refused), Some(kernel)) => {

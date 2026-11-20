@@ -11,11 +11,16 @@
 //! ν's labelling ([`crate::nu`]) is read from `execution_trees.json.gz`, `seed_atlas.json` and `census.json`. The model
 //! keeps their bytes from the same asset check, so the labelling, built on first use, comes from the files that the
 //! model ID names.
+//!
+//! Charter E3's startup (a draft): the pole rows and the integer arrays are read side by side
+//! ([`c600_kernel::parallel`]), each taken where it was read one after another, so a load gives the same model and the
+//! same first error.
 
 use std::collections::HashMap;
 use std::path::Path;
 
 use c600_kernel::archive::{self, Zip};
+use c600_kernel::parallel;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, Signed, ToPrimitive, Zero};
@@ -195,6 +200,24 @@ fn offsets(values: &[i32], total: usize, what: &str) -> Result<Vec<u32>, ModelEr
     Ok(out)
 }
 
+/// One pole's row of four binary64 coordinates: its exact coordinates and its two integer forms, twice the rational
+/// and twice the √5 part of each coordinate.
+fn pole_row(row: &[u64]) -> Result<(Vec4, [i64; 4], [i64; 4]), ModelError> {
+    let mut pole: Vec<Q5> = Vec::with_capacity(4);
+    let (mut a1, mut a2) = ([0i64; 4], [0i64; 4]);
+    for (j, &bits) in row.iter().enumerate() {
+        let x = pole_coordinate(bits)?;
+        let scale = BigInt::from(2) / x.d();
+        a1[j] = (x.a() * &scale).to_i64().ok_or_else(|| fail("pole form overflows"))?;
+        a2[j] = (x.b() * &scale).to_i64().ok_or_else(|| fail("pole form overflows"))?;
+        if !(BigInt::from(2) % x.d()).is_zero() {
+            return Err(fail("a pole coordinate has a denominator other than 1 or 2"));
+        }
+        pole.push(x);
+    }
+    Ok(([pole[0].clone(), pole[1].clone(), pole[2].clone(), pole[3].clone()], a1, a2))
+}
+
 impl Model {
     pub fn load(assets: &Path) -> Result<Model, ModelError> {
         // The kernel's asset checks: a manifest naming 600-cell-Full whose model ID is the SHA-256 of its file list,
@@ -218,27 +241,19 @@ impl Model {
         let arrays = Arrays { zip };
 
         let normals = arrays.bits("normals", &[POLES, 4])?;
+        // The rows are read side by side and taken in order, so the first failing row is the answer.
+        let rows = parallel::map(normals.len() / 4, |i| pole_row(&normals[4 * i..4 * i + 4]));
         let mut poles = Vec::with_capacity(POLES);
         let (mut n1, mut n2) = (Vec::with_capacity(POLES), Vec::with_capacity(POLES));
-        for row in normals.chunks_exact(4) {
-            let mut pole: Vec<Q5> = Vec::with_capacity(4);
-            let (mut a1, mut a2) = ([0i64; 4], [0i64; 4]);
-            for (j, &bits) in row.iter().enumerate() {
-                let x = pole_coordinate(bits)?;
-                let scale = BigInt::from(2) / x.d();
-                a1[j] = (x.a() * &scale).to_i64().ok_or_else(|| fail("pole form overflows"))?;
-                a2[j] = (x.b() * &scale).to_i64().ok_or_else(|| fail("pole form overflows"))?;
-                if !(BigInt::from(2) % x.d()).is_zero() {
-                    return Err(fail("a pole coordinate has a denominator other than 1 or 2"));
-                }
-                pole.push(x);
-            }
-            poles.push([pole[0].clone(), pole[1].clone(), pole[2].clone(), pole[3].clone()]);
+        for row in rows {
+            let (pole, a1, a2) = parallel::taken(row)?;
+            poles.push(pole);
             n1.push(a1);
             n2.push(a2);
         }
         let nn = Q5::of(12, 4, 1);
-        if poles.iter().any(|n| dot(n, n) != nn) {
+        let shared = parallel::map(poles.len(), |i| dot(&poles[i], &poles[i]) == nn);
+        if shared.into_iter().map(parallel::taken).any(|shared| !shared) {
             return Err(fail("the poles do not share |n|^2 = 12 + 4 sqrt5"));
         }
         let mut pole_index = HashMap::with_capacity(POLES);
@@ -254,33 +269,49 @@ impl Model {
             return Err(fail("kappa is not (1452 + 484 sqrt5)/125"));
         }
 
-        let raw = arrays.ints("mask_offsets", &[NP + 1])?;
+        // The integer arrays are unpacked side by side, and each is taken where it was read before, in this order.
+        const INTS: [(&str, &[usize]); 8] = [
+            ("mask_offsets", &[NP + 1]),
+            ("mask_values", &[]),
+            ("face_offsets", &[NP + 1]),
+            ("face_values", &[]),
+            ("slot_piece", &[NS]),
+            ("orbit_id", &[NP]),
+            ("rotperms", &[1200, POLES]),
+            ("frameperms", &[POLES, POLES]),
+        ];
+        let unpacked = parallel::map(INTS.len(), |i| arrays.ints(INTS[i].0, INTS[i].1));
+        let mut unpacked = INTS.iter().zip(unpacked);
+        let mut ints = |name: &str| {
+            let ((listed, _), result) = unpacked.next().expect("an array for each name");
+            debug_assert_eq!(*listed, name);
+            parallel::taken(result)
+        };
+        let raw = ints("mask_offsets")?;
         let mask_offsets = offsets(&raw, *raw.last().unwrap_or(&0) as usize, "mask offsets")?;
-        let mask_values = to_u16(&arrays.ints("mask_values", &[])?, POLES as i32, "a mask value")?;
+        let mask_values = to_u16(&ints("mask_values")?, POLES as i32, "a mask value")?;
         if mask_values.len() != *mask_offsets.last().unwrap() as usize {
             return Err(fail("mask values disagree with their offsets"));
         }
-        let raw = arrays.ints("face_offsets", &[NP + 1])?;
+        let raw = ints("face_offsets")?;
         let face_offsets = offsets(&raw, *raw.last().unwrap_or(&0) as usize, "face offsets")?;
-        let face_values = to_u16(&arrays.ints("face_values", &[])?, POLES as i32, "a face value")?;
+        let face_values = to_u16(&ints("face_values")?, POLES as i32, "a face value")?;
         if face_values.len() != *face_offsets.last().unwrap() as usize {
             return Err(fail("face values disagree with their offsets"));
         }
-        let slot_piece: Vec<u32> = arrays
-            .ints("slot_piece", &[NS])?
+        let slot_piece: Vec<u32> = ints("slot_piece")?
             .iter()
             .map(|&v| if (0..NP as i32).contains(&v) { Ok(v as u32) } else { Err(fail("slot piece out of range")) })
             .collect::<Result<_, _>>()?;
-        let orbit_id: Vec<i16> = arrays
-            .ints("orbit_id", &[NP])?
+        let orbit_id: Vec<i16> = ints("orbit_id")?
             .iter()
             .map(|&v| i16::try_from(v).map_err(|_| fail("orbit id out of range")))
             .collect::<Result<_, _>>()?;
-        let rotperms = to_u16(&arrays.ints("rotperms", &[1200, POLES])?, POLES as i32, "a rotation permutation")?
+        let rotperms = to_u16(&ints("rotperms")?, POLES as i32, "a rotation permutation")?
             .chunks_exact(POLES)
             .map(<[u16]>::to_vec)
             .collect();
-        let frameperms = to_u16(&arrays.ints("frameperms", &[POLES, POLES])?, POLES as i32, "a frame permutation")?
+        let frameperms = to_u16(&ints("frameperms")?, POLES as i32, "a frame permutation")?
             .chunks_exact(POLES)
             .map(<[u16]>::to_vec)
             .collect();

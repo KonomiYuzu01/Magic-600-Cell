@@ -586,6 +586,28 @@ uint32_t PresentLedger::rows(sa2_presented_row* rows, uint32_t capacity) {
     return count;
 }
 
+// C9, owner item 9: the ledger's frame is the trace index, and the input's
+// sequence carries the frame's own present count into its confirmed row.
+void TracePresents::presented(uint64_t index, uint64_t generation, uint32_t present_count) {
+    sa2_frame_input input{};
+    input.sequence = present_count;
+    ledger_.presented(input, index, generation, present_count);
+}
+
+void TracePresents::sample(const PresentSample& sample) {
+    ledger_.sample(sample);
+    std::array<sa2_presented_row, 16> rows{};
+    for (uint32_t count; (count = ledger_.rows(rows.data(), uint32_t(rows.size()))) != 0;)
+        confirmed_.insert(confirmed_.end(), rows.begin(), rows.begin() + count);
+}
+
+std::string TracePresents::text() const {
+    std::string text;
+    for (const auto& row : confirmed_)
+        text += Json(Json::Object{{"frame", row.frame_id}, {"present_count", row.sequence}, {"display_qpc", row.display_qpc}}).dump() + '\n';
+    return text;
+}
+
 namespace {
 Json removal(int32_t removed_reason) { return removed_reason < 0 ? Json(removed_text(removed_reason)) : Json(); }
 }

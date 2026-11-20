@@ -49,6 +49,7 @@ use c600_session::disk::FsDisk;
 use c600_session::JournalStore;
 
 use crate::fixture::Fixture;
+use crate::preload::load_exact;
 use crate::ENGINE_REVISION;
 
 /// The layer's and the shell's token secret: a fixed draft value, as LX-2's sessions use.
@@ -194,11 +195,16 @@ struct Pinned {
 }
 
 impl Pinned {
-    fn read(assets: &Path, menu_file: &Path, puzzle: Puzzle) -> Result<Pinned, String> {
+    /// `exact` gives the exact model, [`load_exact`] or a load the host started earlier (the `preload` module).
+    fn read(
+        exact: impl FnOnce() -> Result<Arc<Exact>, String>,
+        menu_file: &Path,
+        puzzle: Puzzle,
+    ) -> Result<Pinned, String> {
         let text = std::fs::read(menu_file).map_err(|error| format!("the twist menu file: {error}"))?;
         let file = json::parse(&text).map_err(|error| format!("the twist menu file is not JSON: {error:?}"))?;
         let record = file.get("menu").cloned().ok_or("the twist menu file has no `menu` record")?;
-        let exact = Arc::new(Exact::load(assets).map_err(|error| format!("the exact model: {error:?}"))?);
+        let exact = exact()?;
         let menu = menu(&exact, &record)?;
         let pin = MenuPin { set: menu.identity.clone(), order: menu.order.clone() };
         let mut keys = Keys::new(vec![Slot { cap: Value::Int(CAP), frame: Value::Null }]);
@@ -236,10 +242,21 @@ impl Turns {
         menu_file: &Path,
         puzzle: Puzzle,
     ) -> Result<Turns, String> {
+        Turns::open_with(kernel, || load_exact(assets), folder, menu_file, puzzle)
+    }
+
+    /// [`Turns::open`] with the exact model that `exact` gives, called where [`Turns::open`] loads it.
+    pub fn open_with(
+        kernel: Arc<Kernel>,
+        exact: impl FnOnce() -> Result<Arc<Exact>, String>,
+        folder: &Path,
+        menu_file: &Path,
+        puzzle: Puzzle,
+    ) -> Result<Turns, String> {
         if std::fs::read_dir(folder).is_ok_and(|mut entries| entries.next().is_some()) {
             return Err("the session folder is not empty; a run never reuses a session".to_owned());
         }
-        let Pinned { exact, record, menu, router } = Pinned::read(assets, menu_file, puzzle)?;
+        let Pinned { exact, record, menu, router } = Pinned::read(exact, menu_file, puzzle)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::create(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let mut layer = CommandLayer::new(
@@ -270,11 +287,22 @@ impl Turns {
         menu_file: &Path,
         fixture: &Fixture,
     ) -> Result<Turns, String> {
+        Turns::reopen_with(kernel, || load_exact(assets), folder, menu_file, fixture)
+    }
+
+    /// [`Turns::reopen`] with the exact model that `exact` gives, called where [`Turns::reopen`] loads it.
+    pub fn reopen_with(
+        kernel: Arc<Kernel>,
+        exact: impl FnOnce() -> Result<Arc<Exact>, String>,
+        folder: &Path,
+        menu_file: &Path,
+        fixture: &Fixture,
+    ) -> Result<Turns, String> {
         if !folder.is_dir() {
             return Err("the session folder does not exist; a reopen needs a copy of the fixture's session".to_owned());
         }
         let puzzle = fixture.puzzle;
-        let Pinned { exact, record, menu, router } = Pinned::read(assets, menu_file, puzzle)?;
+        let Pinned { exact, record, menu, router } = Pinned::read(exact, menu_file, puzzle)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::open(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let layer = CommandLayer::open_with_menu(
