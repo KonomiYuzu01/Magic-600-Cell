@@ -301,7 +301,7 @@ fn ct_lb1_01_quaternion_factors_and_trees_agree_with_trees_py() {
         let code = case.get("code").and_then(Json::as_str).expect("a code");
         let run = loaded.run("trees_client", "v2_of", vec![q5(x)], &mut NoHost, &Options::new(WIDE)).expect("starts");
         assert_ne!(run.summary.outcome, Outcome::Completed, "v2 of {:?} is refused", triple(x));
-        assert_eq!(run.summary.code.as_deref(), Some(code), "v2 of {:?}", triple(x));
+        assert_eq!(run.summary.code, Some(code), "v2 of {:?}", triple(x));
     }
 
     let quaternions = entries(&fixture, "quaternions");
