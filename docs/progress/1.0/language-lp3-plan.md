@@ -35,7 +35,7 @@ PHS.23's six acceptance items:
 
 | Acceptance item | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Same result through all routes | Command and key routes (C1); source route (C5); five of the representations tool's six rows through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number (C6, section 7); the jumbling library entries on the jumbling rows at the head of a jumbled session, through C8's host bridge (`c600_jumble_tool::rows`), each run equal to the same run on a snapshot witnessed apart (C8, pull request 299, section 8) | `filter.apply` through the same two routes: the layer serves it since LP2's pull request 256 and no LP3 test runs its entry yet (C6, section 7); the actual key route (C9); the jumbling tool's entries through the command and source routes, whose rows the command table names and prices, with their program-job route, when it freezes (C8, section 8) |
+| Same result through all routes | Command and key routes (C1); source route (C5); the representations tool's six rows through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number (C6, section 7); the jumbling library entries on the jumbling rows at the head of a jumbled session, through C8's host bridge (`c600_jumble_tool::rows`), each run equal to the same run on a snapshot witnessed apart (C8, pull request 299, section 8) | The actual key route (C9); the jumbling tool's entries through the command and source routes, whose rows the command table names and prices, with their program-job route, when it freezes (C8, section 8) |
 | Oracle equality at every committed step | 600-cell-Full: O01 to O07, 3,201 steps per route, with undo and redo (C1). Jumbling: M5's W-J fixtures through `jumble.on` and `jumble.twist.menu`, every press beside M5's engine, the first 130 records of each journal by default and the whole journals on request (C8); LP2's `c600-jumble-route` compares the same layer with J1, with undo and redo, on the first 70 records (pull requests 212, 217, 218, 220 and 254) | Jumbling: protected pieces and free mode through the command layer (section 8) |
 | Presented-preview binding in the selected renderer | The token binds the presented preview, headless (C1) | The on-screen half on the selected renderer, on Windows (C9) |
 | Charter E2 with the tools' views active | Nothing: a timing here would be no evidence | The owner-machine runs (C9) |
@@ -60,7 +60,7 @@ November 2026 as a line of its own.
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves are C8's (section 8) |
-| Representations tool, headless half | Built in part (C6, section 7): five of its six rows served through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number | LP3's next steps (section 7): `filter.apply` through the test host, with an entry that takes the layer's `FilterPreviewRef` (LP2's pull request 256); argument blocks for a running program's query and view jobs (pull request 264); host rows for the two snapshot reads, on LP2's structure rows (pull request 262). LP2 built the `CanonicalObjectRefs` form (pull request 269). Not built: a record and an exact-set digest for each saved set |
+| Representations tool, headless half | Built in part (C6, section 7): its six rows served through the command and source routes, on a test host whose stand-in engine answers the two snapshot reads with the state number | LP3's next steps (section 7): host rows for the two snapshot reads, on LP2's structure rows (pull request 262). LP2 built the `CanonicalObjectRefs` form (pull request 269). Not built: a record and an exact-set digest for each saved set, and a display that applies the applied filter |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8): the part blocks the layer keeps for C5's reader (LP2's pull request 272), and LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's gains and losses) and macro versions (LP2's pull request 277); CT-EV3-07's view part with `c600-view`'s view model behind EV3.2's view rows (LP2's pull request 271), through C5's `ModelViews`. KN5.26's admission matrix L1 and L2 runs through the layer in LP2's tests (pull request 270). M6's session lock covers `JournalStore` (pull request 195) | From LP2: a session profile (BND.14, BND.15), and reading a position role's occupant again at a work-sheet reuse |
 | The jumbling tool and every jumbling half | Built in part (C8, section 8) | LP2's exposed-face geometry for J10, a jumbling word key, and a job that names its cap through the command layer (section 8). Built and not used by C8 yet: with Jumble on in the command layer, `jumble.off`, the refusals, redo, protected pieces and free mode (pull requests 212, 217, 218, 220 and 254). C8 uses the IR draft's F2 and F5 (pull request 222) for LB3's ν and drafted correction-set entry as language code (`jumble_nu`, pull request 295), `jumble-locality/1` with `trace_key` on menu words (pull request 251) for CT-LB1-06's jumbling half, and Jumble on in the command layer for oracle equality and CT-LB4-03 at a later revision. M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel, CT-LB2-04 whole over `positions` and a `labels` host row, and CT-LB2-01 whole over an `effect` host row, pull request 294; C5: its Strict half through the tool's route, on the command layer's Strict mode of LP2's pull request 198, and the twist keys' exact requests through `twist.apply`; C6: CT-LB4-01's checks on the polytope operations); the others can start | What the kernel alone does not give: host rows beyond `positions`, `labels` and `effect` in the tool's bridge, LP3's to add, among them the two snapshot reads of `structure.compare` and `filter.preview`, on LP2's structure rows (pull request 262; the table below); LB7.2's work sheets are in the command layer (pull request 232) |
@@ -384,9 +384,9 @@ host ran it. Acceptance:
   `tool.full_600_cell.preview_word`, a query overlay row the shell invokes with the word: the host takes the program
   job, runs the tool as the job's run `job-<id>`, and reports the job with the program's acknowledgement once the run's
   preview is built (a run refused at its start stage fails the job with the refusal's code). The source route, both
-  hosts and every `c600-tools` test run this way, and the source-route check counts the solver's command and its
-  report in each step's receipts. Next: the KN5 session's small pull request switches the check on and runs the B2
-  attack test that is ignored until then.
+  hosts and every `c600-tools` test run this way, and the source-route check counts the solver's command and its report
+  in each step's receipts. The KN5 session's pull request 260 switched the check on, and the B2 attack tests run with
+  it.
 
 CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-LB2-04 and CT-BND-18 test library entries, which are language code
 (LB1.1). The IR draft `c600-ir-draft-1` has the word operations (LG2.15), compressed words (LG2.16) and collection types
@@ -413,35 +413,41 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   The tool is a `.6cs` module with six entries admitted under the built-in column, with a Rust manifest of the class
   `view_aid`; the class review covers every exported function and only the source bytes the manifest names. C6 changed
   no file in `c600-command` (C1's item 5).
-- C6's rows (`rust/c600-repr`, `tests/served_rows.rs`), built: five of the six rows meet C5's item 1 through the
-  source and command routes, on LP2's served rows (pull requests 200, 202 and 203). A test host serves
-  `filter.preview`, `view.effect.scope`, `set.save`, `structure.compare` and `structure.layer` with the entries
+- C6's rows (`rust/c600-repr`, `tests/served_rows.rs`), built: the six rows meet C5's item 1 through the source and
+  command routes, on LP2's served rows (pull requests 200, 202, 203 and 256). A test host serves `filter.preview`,
+  `filter.apply`, `view.effect.scope`, `set.save`, `structure.compare` and `structure.layer` with the entries
   `c600_repr::rows` names and runs each job's entry in process through `c600-run`'s boundary. Invoked from the shell,
-  the two queries and the view complete transiently at the job's revision; `set.save` and `structure.layer` each
-  complete as one durable workspace action with the output's digest as the result reference and no undo entry. The
-  source route, the entry's own run in process through `c600-run`'s boundary with no layer (not C5's runner or the
-  runtime's own process), gives the same value, views and records for the same arguments and state; a stand-in engine
-  answers the two snapshot reads with the state number on both routes. Only the command route has the receipt, the
-  layer's form and revision checks and, for a workspace row, the durable action.
-  `c600_repr::rows` records what the layer meets and what remains for each row. C6 changed no file in
-  `c600-command`; its tests take `c600-run` as a dev-dependency.
-- C6, next. LP2 has built what each item needs, and the crate documentation names the APIs. `filter.apply`: the layer
-  serves the row since LP2's pull request 256, with the gate `fresh_filter_preview`, the `filter` preview rule, the
-  `FilterRef` and `FilterPreviewRef` forms and a workspace inverse. LP3's test only serves it and checks the refusal of
-  a stale filter preview, so the row does not meet C5's item 1 yet. Next: the entry's parameter, a natural now, becomes
-  the layer's `FilterPreviewRef`, and the row runs through both routes. Argument blocks: LP2's `invoke_with_inputs`
-  (pull request 264) lets a host give a running program's job the provenance blocks of its arguments. The test host
-  builds none, so it still fails such a query or view job (since LP2's pull request 237 the layer refuses a workspace
-  row such as `set.save` from a running program with `LG3:capability.not_granted`, the owner's narrow reading of ONE.52
-  of 18 November 2026). Next: the host builds the blocks from the run's context. Kernel rows: LP2's structure rows (pull
-  request 262: `compare_cells`, `cell_layers` and `layer_counts` on the layer, which read no state and refuse with
-  Jumble on) answer the `structure.compare` and `filter.preview` snapshot reads. Next: the entries pass their arguments
-  to a snapshot read, and the tool's bridge serves the rows, in place of the test host's state number. LP2's pull
-  request 269 checks the `CanonicalObjectRefs` form: a member that is no piece or position (0 to 177,119) is refused at
-  admission, and an empty list and repeats pass; LP3 keeps that form. Still not built: a record and an exact-set digest
-  for each saved set, and a display that applies the published scope. Also not built: every device step (C9; the stage
-  checker is LP2's since pull request 241), the relationship strip (C8 computes one of its typed relations, a slot's
-  current occupant, at pose level), and a BM5 review record, which the tool gets when it ships.
+  the two queries and the view complete transiently at the job's revision; `filter.apply`, `set.save` and
+  `structure.layer` each complete as one durable workspace action with the output's digest as the result reference.
+  `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job (a draft: the IR has no
+  reference type); its action is the next undo target, and that undo removes its record and moves no state. The other
+  two leave no undo entry. The source route, the entry's own run in process through `c600-run`'s boundary with no layer
+  (not C5's runner or the runtime's own process), gives the same value, views and records for the same arguments and
+  state; a stand-in engine answers the two snapshot reads with the state number on both routes. Only the command route
+  has the receipt, the layer's form and revision checks, `filter.apply`'s gate `fresh_filter_preview` and, for a
+  workspace row, the durable action. An invocation of the two queries and the view with `Caller::Runtime`, as a running
+  program's, carries the provenance block the test host builds from the run's context (`Boundary::block`), through LP2's
+  `invoke_with_inputs` (pull request 264); C5's reader checks it, the job's run takes it, and the row completes as from
+  the shell. Without blocks such a job fails with `LG3:capability.not_granted`, and nothing runs. `c600_repr::rows`
+  records what the layer meets and what remains for each row. C6 changed no file in `c600-command`; its tests take
+  `c600-run` as a dev-dependency.
+- C6, next. LP2 has built what each item needs, and the crate documentation names the APIs. Argument blocks: the test
+  host builds them (above) and stands in for the runtime's adapter, which invokes the rows with `Caller::Runtime`. No
+  program operation reaches a served row: LG3.1's effects have none, the solver invokes a command, and a program reaches
+  a row only by a proposal (KN5.9), whose arguments the host builds from the word (`c600_tools::bridge`). An operation
+  that did would change the boundary between the runtime and the host, which PHS.52 sends to the owner's acceptance, so
+  LP3 plans none. Since LP2's pull request 237 the layer also refuses a workspace row such as `set.save` from a running
+  program with `LG3:capability.not_granted` (the owner's narrow reading of ONE.52 of 18 November 2026). Kernel rows:
+  LP2's structure rows (pull request 262: `compare_cells`, `cell_layers` and `layer_counts` on the layer, which read no
+  state and refuse with Jumble on) answer the `structure.compare` and `filter.preview` snapshot reads. Next: the entries
+  pass their arguments to a snapshot read, and the tool's bridge serves the rows, in place of the test host's state
+  number. LP2's pull request 269 checks the `CanonicalObjectRefs` form: a member that is no piece or position (0 to
+  177,119) is refused at admission, and an empty list and repeats pass; LP3 keeps that form. Still not built: a record
+  and an exact-set digest for each saved set, which LP2's layer is to keep (the members ascending and distinct, with
+  their kind, the model identity and the revision of capture; U1-057, U4-037), a display that applies the published
+  scope, and one that applies the applied filter. Also not built: every device step (C9; the stage checker is LP2's
+  since pull request 241), the relationship strip (C8 computes one of its typed relations, a slot's current occupant, at
+  pose level), and a BM5 review record, which the tool gets when it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.

@@ -2532,9 +2532,9 @@ run or not applicable is no pass (PHS.63).
   - `rows`: what each of the six rows needs from the command layer, what the layer meets of it and what remains. LP2
     built the four common needs in the layer: a dispatch from a stored row to a built-in tool's entry
     (`CommandLayer::serve_row`, pull request 200), argument forms (pull request 202), the runtime's view and workspace
-    sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves five
-    rows with their entries. The layer serves `filter.apply` too since pull request 256, and no host runs its entry
-    yet. C6 changed no file in `c600-command`.
+    sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves all six
+    rows with their entries; the layer serves `filter.apply` since pull request 256. C6 changed no file in
+    `c600-command`.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -2556,29 +2556,33 @@ run or not applicable is no pass (PHS.63).
     overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
   - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, the layer
     refuses all six rows until a host serves them, an overlay cannot replace one, and `serve_row` accepts exactly the
-    five rows the list marks served.
-  - `served_rows.rs`: a test host serves the five rows with the tool's entries and C5's provenance reader, and runs each
+    rows the list marks served, all six since pull request 256.
+  - `served_rows.rs`: a test host serves the six rows with the tool's entries and C5's provenance reader, and runs each
     job's entry in process through `c600-run`'s boundary. Invoked from the shell, `filter.preview` and
     `structure.compare` complete as `completed(query)` and `view.effect.scope` as `completed(view_published)`, at the
-    job's revision and with nothing written; `set.save` and `structure.layer` each complete as one durable workspace
-    action that writes the entry's record through the reader, at a workspace revision one higher and with no undo entry.
-    The source route (the same entry run in process on the same arguments and state, without the layer; not C5's runner)
-    gives the same value, views and records; on both routes a stand-in engine answers the two snapshot reads with the
-    state number. The layer refuses malformed and stale arguments before any job. The layer serves `filter.apply`, and
-    a test checks its refusal of a stale filter preview; the entry does not run here. A running program's query or view
-    job fails at the host, which builds no provenance block for its arguments (LP2's `invoke_with_inputs`, pull request
-    264, takes them). Since LP2's pull request 237 the layer refuses a workspace row such as `set.save` on a running
-    program's channel with `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18
-    November 2026: a run never writes the workspace).
-- Not built, LP3's next steps: `filter.apply`'s entry run through both routes, with the entry taking the layer's
-  `FilterPreviewRef` (the layer serves the row since LP2's pull request 256); the host's provenance blocks for a running
-  program's job arguments of the query and view rows, through LP2's `invoke_with_inputs` (pull request 264); host rows
-  for the `filter.preview` and `structure.compare` snapshot reads, on LP2's structure rows (pull request 262). LP2 built
-  the `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal
-  since. Also not built: a record and an exact-set digest for each saved set; a display that applies the published scope
-  (the APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage
-  checker is LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's
-  current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
+    job's revision and with nothing written; `filter.apply`, `set.save` and `structure.layer` each complete as one
+    durable workspace action that writes the entry's record through the reader, at a workspace revision one higher.
+    `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job; its action is the next
+    undo target, and that undo removes its record and moves no state. The other two leave no undo entry. The source
+    route (the same entry run in process on the same arguments and state, without the layer; not C5's runner) gives the
+    same value, views and records; on both routes a stand-in engine answers the two snapshot reads with the state
+    number. The layer refuses malformed and stale arguments before any job. A test checks `filter.apply`'s refusal of a
+    stale filter preview. An invocation of the two queries and the view with `Caller::Runtime`, as a running program's,
+    carries the provenance block the host builds from the run's context (`Boundary::block`), through LP2's
+    `invoke_with_inputs` (pull request 264): C5's reader checks it, the job's run takes it, and the row completes as
+    from the shell. Without blocks the host fails such a job with `LG3:capability.not_granted` and runs nothing, and a
+    block the reader refuses is refused before any job. No program operation reaches a served row (LG3.1; a program
+    reaches a row only by a proposal, KN5.9), so the test host stands in for the runtime's adapter. Since LP2's pull
+    request 237 the layer refuses a workspace row such as `set.save` on a running program's channel with
+    `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18 November 2026: a run never
+    writes the workspace).
+- Not built, LP3's next steps: host rows for the `filter.preview` and `structure.compare` snapshot reads, on LP2's
+  structure rows (pull request 262). LP2 built the `CanonicalObjectRefs` form (pull request 269);
+  `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal since. Also not built: a record and an exact-set
+  digest for each saved set; a display that applies the published scope, and one that applies the applied filter (the
+  APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage checker is
+  LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's current
+  occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
