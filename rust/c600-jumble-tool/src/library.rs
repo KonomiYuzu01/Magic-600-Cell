@@ -1,5 +1,5 @@
 //! The jumbling library entries as 600 Cell Script (LP3, C8; chapter 03's LB1.8, LB1.10 and LB3.1 catalogues), on
-//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Fourteen modules,
+//! the IR draft's menu words (LP2's pull request 210) and its F2 and F5 (LP2's pull request 222). Sixteen modules,
 //! each in edition `6cs-draft-1` (syntax candidate A) and in the formatter's canonical layout, checked and run by
 //! LP2's checker and interpreter:
 //!
@@ -9,6 +9,9 @@
 //! - `menu_traces` ([`MENU_TRACES`]): LB1.10's trace equality keys, the jumbling half. `same_trace` compares the keys
 //!   of two menu words under the relation `jumble-locality/1` the run pins ([`crate::locality::relation`]), and
 //!   `trace_commute` asks whether xy and yx have one key. It is pure, like `menu_words`.
+//! - `menu_word_keys` ([`MENU_WORD_KEYS`]): LB1.8's word equality keys, the jumbling half: LG2.18's domain-preserving
+//!   key `word-key/1`. `key` answers a menu word's key and `same_word` compares two words' keys, under the item
+//!   matrices the run pins with its menu alphabet ([`crate::word::Alphabet::pinned`]). It is pure, like `menu_words`.
 //! - `jumble_heights` ([`HEIGHTS`]): LB3.1's "Heights, branches, domains and Φ". `height_facts` reads KN2.4's `heights`
 //!   and `height_counts` and adds, by exact sums, Φ = Σ max(0, h − 2) over the left heights, the largest left height,
 //!   and the pieces at heights (0,0) and on the lattice's domain.
@@ -47,6 +50,12 @@
 //!   verdict type (`StickerTestVerdict`, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict`; LG2.9), which a
 //!   program matches on `holds`, `fails` and `unestablished` only; the retained checkpoint takes the solver's witness
 //!   word and builds none.
+//! - `jumble_crossing` ([`CROSSING`]): LB3.1's "Mode crossing prerequisites", the Jumble-off half (A5).
+//!   `jumble_off_facts` reads the label checkpoint as its verdict type, JI.9's `units` of every unit off the lattice
+//!   and KN2.4's `nu`, and answers the prerequisites of Jumble off: the label checkpoint's outcome, the count of pieces
+//!   off the lattice, and whether ν is defined with the count of its nonzero values. It reports them and decides
+//!   nothing: the crossing and its refusals are the command layer's (KN5). The Jumble-on half waits for a KN4 journal
+//!   query served to programs (KN4.3).
 //!
 //! Every entry tracks, analyses or checks the solver's named word or state, and none previews or executes anything
 //! (no `propose`). None chooses or outputs a word, except at the one point the owner allowed (17 October 2026): at a
@@ -163,6 +172,14 @@ pub const MENU_TRACES: Module = Module {
     rows: &[],
 };
 
+/// LB1.8's word equality keys of menu words, the jumbling half (LG2.18's `word-key/1`).
+pub const MENU_WORD_KEYS: Module = Module {
+    name: "menu_word_keys",
+    source: include_str!("menu_word_keys.6cs"),
+    exports: &["key", "same_word"],
+    rows: &[],
+};
+
 /// LB3.1's ν and drafted correction-set check, on F2 and F5.
 pub const NU: Module = Module {
     name: "jumble_nu",
@@ -235,10 +252,19 @@ pub const END_TESTS: Module = Module {
     rows: &["label_checkpoint", "retained_checkpoint", "sticker_test"],
 };
 
+/// LB3.1's mode crossing prerequisites, the Jumble-off half (A5).
+pub const CROSSING: Module = Module {
+    name: "jumble_crossing",
+    source: include_str!("jumble_crossing.6cs"),
+    exports: &["jumble_off_facts"],
+    rows: &["label_checkpoint", "nu", "units"],
+};
+
 /// The library's modules.
-pub const MODULES: [Module; 14] = [
+pub const MODULES: [Module; 16] = [
     MENU_WORDS,
     MENU_TRACES,
+    MENU_WORD_KEYS,
     HEIGHTS,
     WORD_CHECKS,
     PROTECTION,
@@ -251,6 +277,7 @@ pub const MODULES: [Module; 14] = [
     UNITS,
     REPAIR,
     END_TESTS,
+    CROSSING,
 ];
 
 /// Parses and lowers the library's modules and `clients`, one module each, into one program
@@ -301,8 +328,34 @@ pub fn trace_equality_keys() -> CatalogueRow {
                 The key recognizes commuting swaps only and searches for no word. A key under another menu, model, \
                 key or relation version is `LB1:input.key_contract_mismatch`, and a word of another alphabet is \
                 `LB1:input.incompatible_alphabet`. Word keys are separate: LG2.18's `word_key` keys menu words by \
-                exact products when the run pins the menu's item matrices (`word::Alphabet::pinned`).",
+                exact products when the run pins the menu's item matrices (`word::Alphabet::pinned`), in the \
+                row \"Word equality keys\" (`menu_word_keys`).",
         ..row("Trace equality keys", "Jumbling menu words under `jumble-locality/1`.", &[], MENU_TRACES)
+    }
+}
+
+/// LB1.8's row "Word equality keys", the jumbling half: LG2.18's domain-preserving key of menu words. The
+/// 600-cell-Full half is `c600_library::word_equality_keys`.
+pub fn word_equality_keys() -> CatalogueRow {
+    CatalogueRow {
+        backing: "Library code: `menu_word_keys.key` and `menu_word_keys.same_word` over the IR draft's `word_key` \
+                  on menu words and `exact_eq` (LP2's pull request 338), under the item matrices that the run pins \
+                  with its menu alphabet (`word::Alphabet::pinned`).",
+        notes: "LG2.18's `word-key/1`: one token per maximal run of letters at one grip, holding the grip and the \
+                exact product of the run's item matrices. A run whose product is the identity keeps its token, so a \
+                key keeps each grip's domain test: at a blocked grip, a, a⁻¹ and the identity letter have one key and \
+                are both refused, while the empty word has another key and is admitted. Words with equal keys are \
+                refused alike or end at one digest; unequal keys say nothing. Keys do not replace executed letters \
+                (LB1.9): preview, protection and commit read the literal word, and the checker refuses a key where \
+                letters are required. A run whose alphabet carries no item matrices stops at a key with \
+                `LB1:input.key_contract_mismatch`, and a word of another alphabet is \
+                `LB1:input.incompatible_alphabet`. The 600-cell-Full half is `c600_library::word_equality_keys`.",
+        ..row(
+            "Word equality keys",
+            "Jumbling menu words of one pinned menu, with its item matrices.",
+            &[],
+            MENU_WORD_KEYS,
+        )
     }
 }
 
@@ -512,6 +565,30 @@ pub fn retained_checkpoint_label_checkpoint_sticker_test() -> CatalogueRow {
             "Jumbling poses and explicit label projection; Full labels as applicable.",
             &[Effect::ReadSnapshot],
             END_TESTS,
+        )
+    }
+}
+
+/// LB3.1's row "Mode crossing prerequisites", the Jumble-off half (A5). The Jumble-on half waits for a KN4 journal
+/// query served to programs (KN4.3).
+pub fn mode_crossing_prerequisites() -> CatalogueRow {
+    CatalogueRow {
+        backing:
+            "Library code over the end tests: `jumble_crossing.jumble_off_facts` reads KN2.4's `label_checkpoint` \
+                  as its verdict type, JI.9's `units` of every unit off the lattice and KN2.4's `nu`, each with \
+                  `read_snapshot`.",
+        notes: "A5's prerequisites of Jumble off at this revision: every piece on the lattice, ν = 0, and the state \
+                shown reachable, which the label checkpoint tests (LB3.3) and answers as its outcome alone. The entry \
+                also answers the count of pieces off the lattice, whether ν is defined and how many of its 45 values \
+                are nonzero. It selects no correction and decides no crossing: Jumble off, its refusals and the \
+                stored exit poses are the command layer's (KN5; chapters 01 and 08). Not built: the Jumble-on half, \
+                Full labels with journal derivation, which needs a KN4 journal query served to programs (KN4.3, EN4) \
+                for the moves Full's journal holds since the last crossing.",
+        ..row(
+            "Mode crossing prerequisites",
+            "Jumbling poses; Full labels with journal derivation for the Jumble-on half, not built.",
+            &[Effect::ReadSnapshot],
+            CROSSING,
         )
     }
 }

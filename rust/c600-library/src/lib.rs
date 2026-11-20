@@ -478,9 +478,9 @@
 //!   jumbled puzzle, which are C8's. The buffers' current occupants are `orbits.orbit_residuals`'.
 //! - In "Residuals and exact completion": frames relative to a reference the solver names, and the residuals of blocks
 //!   and work sheets, which wait for them.
-//! - In "Word equality keys" and "Trace equality keys": keys of jumbling menu words. LG2.18's domain-preserving key
-//!   on the pinned menu matrices is C8's (CT-LB1-02's key half), and LB1.10's `jumble-locality/1` waits for an exact
-//!   Δ(c,d) entry in `c600-jumble`.
+//! - In "Word equality keys" and "Trace equality keys": keys of jumbling menu words, which are C8's library entries in
+//!   `c600_jumble_tool::library`: `menu_word_keys`, LG2.18's domain-preserving key on the pinned menu matrices
+//!   (CT-LB1-02's jumbling half), and `menu_traces`, LB1.10's `jumble-locality/1`.
 //! - The other entries of LB1.8's table.
 
 #![forbid(unsafe_code)]
