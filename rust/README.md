@@ -34,7 +34,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests, and user stages as HLSL under `m600-stage-hlsl/1` with their binary32 CPU reference; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
-| `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling trial on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
+| `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -3185,47 +3185,61 @@ run or not applicable is no pass (PHS.63).
 
 - `c600-lx2-faults --runtime <c600-runtime binary> [--injection <c600-lx2-child binary>] [--sessions <new folder>]
   [--assets <folder>] [--out <record.json>]` runs five trials on `c600-runtime`'s parent API against the child binary
-  it is given, so the decisive runs use the product build's runtime unchanged, and with `--injection` a sixth, native
-  trial on the injection device. Every job
-  first proposes SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
+  it is given, so the decisive runs use the product build's runtime unchanged, and with `--injection` three native
+  trials on the injection device. Build and run both bins with the feature `device`. Every job first proposes
+  SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
 - `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
   `recursion_metered` (endless recursion, 1 MiB) ends `KN7:budget.memory`, since the meter charges a frame as memory
   and has no recursion dimension; `alloc_metered` (a list grown with `push`, 64 KiB, kept small because each `push`
-  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform (the barrier)
-  and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is
-  still the runtime word and the same runtime completes the control again, in a fresh child only after the kill. The
-  metered trials and the control also run in process, and the two executors agree.
+  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform
+  (the barrier) and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the
+  pending preview is still the runtime word and the same runtime completes the control again, in a fresh child after a
+  fault and in the same child otherwise. The metered trials and the control also run in process, and the two
+  executors agree.
 - With `--sessions`, each trial also runs with a session open (RTE.42 conditions 1 and 2; RTE.43): KN5's command
   layer over M6's journal on a file-system disk in its own fresh subfolder, with the shell and the headless display.
-  The solver commits `[1, -2]`; the trial's job runs in the child through the product's bridge and boundary, so its
-  proposal is the layer's pending preview before the fault; the solver then commits that preview and `[3]`. A trial
-  agrees when it ends with its typed outcome, every solver command after it is accepted, its journal records and state
-  hash equal the control's, and a reopen replays the same state hash. The journal is read before the reopen, which
-  journals a fresh random epoch of its own.
+  The solver commits `[1, -2]` and invokes the trial's tool row from the shell; the trial's job runs as that command's
+  program job in the child, through the product's bridge and boundary, so its proposal is the layer's pending preview
+  before the fault; the solver then commits that preview and `[3]`. The job is the process host's job for the tool
+  (`c600_tools::process::job`: the solving profile and the tool's class rows, so that the child admits the entry in
+  the built-in column) with the trial's limits and no summary rows; `tests/session.rs` checks it against the host's. A
+  trial agrees when it ends with its typed outcome, the solver's command that ran it ends as that outcome says, every
+  solver command after it is accepted, its journal records and state hash equal the control's, and a reopen replays
+  the same state hash. The journal is read before the reopen, which journals a fresh random epoch of its own.
 - The injection device of option (a) (top integrator, 18 November 2026) is the bin `c600-lx2-child`: product source
-  (`c600_runtime::child::main`, unchanged) under a `#[global_allocator]` that wraps the system allocator and refuses
-  an allocation once the live heap would pass the byte count in `C600_LX2_CEILING`. Its unsafe code is in that bin
-  only; c600-runtime is not edited and keeps no allocator of its own. Build it for the decisive run with the product's
-  profile: `cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 --bin c600-lx2-child`.
-  It is never shipped: `tests/device.rs` checks, through `cargo metadata`, that no package of this workspace or of
-  `renderer/bridge` other than c600-lx2 depends on c600-lx2, and that nothing under `c600-runtime/src` names a
-  global allocator.
-- `alloc_ceiling`, the native trial, runs only on the device, with the ceiling at 32 MiB set in `Config.env` for the
+  (`c600_runtime::child::main`, or with this package's feature `device` `c600_runtime::child::main_with` on
+  c600-runtime's fault hook, LP3's feature `lx2-faults`) under a `#[global_allocator]` that wraps the system allocator
+  and refuses an allocation once the live heap would pass the byte count in `C600_LX2_CEILING`. Its unsafe code is in
+  that bin only; c600-runtime keeps no allocator of its own. Build it for the decisive run with the product's profile
+  and the feature `device`: `cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2
+  --features device --bin c600-lx2-child`. It is never shipped: `tests/device.rs` checks, through `cargo metadata`,
+  that no package of this workspace or of `renderer/bridge` other than c600-lx2 depends on c600-lx2, that only
+  c600-lx2's feature `device`, which no default turns on, turns the fault hook on, that the runtime child built as the
+  product builds it has no hook, and that nothing under `c600-runtime/src` names a global allocator.
+- `alloc_ceiling`, a native trial, runs only on the device, with the ceiling at 32 MiB set in `Config.env` for the
   trial's child and its recovery child, and the meter at 1 GiB as a safety net: a list doubled with `concat` passes the
   ceiling, the standard library reports the failed allocation and aborts the child, and the parent must report a typed
   `Lost` fault (`KN7:resource_limit.runtime_lost`) whose standard error shows "memory allocation of"; a loss without it
   does not count. Then a fresh child completes the control, as after the forced kill. With `--sessions` it also runs
   with a session open and must agree with the control.
+- `recursion_native` and `loop_native`, the other native trials, need the device built with the feature `device`,
+  which refuses them otherwise. Their job is the control's. The device arms its native fault (`C600_LX2_FAULT`) for
+  the trial's child, and the hook fires after two answers, the proposal's tariff and perform, so after the pending
+  preview exists and before the job's result. The device writes its line to standard error and then either recurses
+  in native code until the stack overflows, where the parent must report a typed `Lost` fault
+  (`KN7:resource_limit.runtime_lost`) whose standard error shows the overflow, or spins in native code without a
+  kernel call until the parent's watchdog, the run's wall-clock safety stop at 3 s (KN7.10), ends the child with a
+  typed `Deadline` fault (`KN7:resource_limit.safety_stop`). The fresh child that recovers runs unarmed. With
+  `--sessions` both also run with a session open and must agree with the control.
 - The record (`magic600-c9-lx2-faults-v1`) names each child by file name and SHA-256 only, never by path. Each row
   names its child (`product` or `injection device`); `injection_device` is null without `--injection`, and otherwise
-  carries the device's file name and SHA-256, "product source + injection device", the variable, the ceiling and the
-  meter limit. Each session row names the journal by row count and digest, never the folder.
-- Not here: LX-2's other native faults (unmetered recursion, the native loop with its watchdog) need the device on
-  `c600-runtime`'s fault hook (the feature `lx2-faults`, LP3's), which c600-lx2 does not use yet. Also not here: the
-  barrier's release acknowledgement, which needs the shell's frame loop on the owner's machine. Conditions 3 and 4 (the
-  renderer gate, LX-4's echo bar and E2 commits during fault windows) are built in the shell, not in this crate:
-  `renderer/shell/project/Lx2/Lx2Module.cs` and `tools/perf/c9/lx2.py` run and judge turn windows and, for the metered
-  faults, limit windows (C9 U7), and a decisive run needs the owner's machine. A limit window ends at the meter's budget
-  code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes first.
-  `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view limits.
-  Evidence kind: source and synthetic; nothing is timing.
+  carries the device's file name and SHA-256, "product source + injection device", the ceiling's variable, the
+  ceiling, the meter limit, the fault variable and the answers after which a native fault fires. The limits name the
+  deadline and the watchdog. Each session row names the journal by row count and digest, never the folder.
+- Not here: the barrier's release acknowledgement, which needs the shell's frame loop on the owner's machine.
+  Conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2 commits during fault windows) are built in the shell,
+  not in this crate: `renderer/shell/project/Lx2/Lx2Module.cs` and `tools/perf/c9/lx2.py` run and judge turn windows
+  and, for the metered faults, limit windows (C9 U7), and a decisive run needs the owner's machine. A limit window ends
+  at the meter's budget code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes
+  first. `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view
+  limits. Evidence kind: source and synthetic; nothing is timing.
