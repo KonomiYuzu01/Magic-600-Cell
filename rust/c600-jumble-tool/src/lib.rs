@@ -30,7 +30,7 @@
 //!   (`c600_jumble::corrections`) for CT-LB3-01's reachable nonzero-ν state and the correction part of CT-LB3-07. Each
 //!   test checks the facts the library entry would return. CT-LB1-02's key half runs there too: LG2.18's word key
 //!   under I_a's item matrices, which [`word::Alphabet::pinned`] pins, at a blocked cap and on random words from three
-//!   states.
+//!   states, through the library entry `menu_word_keys`, whose source, purity and misuse refusal are checked there.
 //! - `tests/library.rs` checks [`library`]'s modules with LP2's checker and runs them with LP2's interpreter:
 //!   CT-LB1-03's jumbling half in the language, and the library entries of CT-LB3-03 and CT-LB3-06, the latter with a
 //!   whole word's Net and Strict protection at pose level from M8's `levels::derive` (pull request 182). The bridge
@@ -46,7 +46,10 @@
 //!   ([`library::CORRECTIONS`]), with the named-word checks and the drafted check, through [`rows`] on witnessed
 //!   bases. Each answer is compared with `c600_jumble`'s and each entry's reads are recorded with their arguments: the
 //!   rim entry answers every cap in cap-ID order and nothing of a twist, the covers and catalogue entries read the
-//!   solver's named cap or id only, and no answer names a recommendation, a next cap, a ranking or a selection.
+//!   solver's named cap or id only, and no answer names a recommendation, a next cap, a ranking or a selection. The
+//!   crossing entry ([`library::CROSSING`]), the Jumble-off half of "Mode crossing prerequisites", answers A5's
+//!   prerequisites of Jumble off; its Jumble-on half waits for a KN4 journal query served to programs (KN4.3), so
+//!   CT-LB3-07 stays part.
 //! - `tests/rows.rs` runs the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through [`rows`] at the
 //!   command layer's head with Jumble on, in I_a, S4 and I_b sessions: each run equals, byte for byte, the same run on
 //!   the same state witnessed apart from the layer, which the two tests above compare with the kernel. With Jumble off
@@ -181,9 +184,9 @@
 //! - **Jumble on through the command layer (LP2's pull requests 212, 217, 218, 220 and 254).**
 //!   `tests/jumble_on_layer.rs` compares the layer's jumbling journal with the fixtures' references, and
 //!   `tests/jumble_layer_verdicts.rs` runs `jumble.off`, the refusals with Jumble on, redo, protected pieces and free
-//!   mode beside the tool's own entries at the layer's head (`rows::Rows::at_head`): the label checkpoint predicts
-//!   each exit, and the twist check and a word's protection predict each press. The tests read the layer's decisions
-//!   and add no rule of their own. This settles nothing in the chapters.
+//!   mode beside the tool's own entries at the layer's head (`rows::Rows::at_head`): the label checkpoint predicts each
+//!   exit, with the crossing entry's prerequisites agreeing, and the twist check and a word's protection predict each
+//!   press. The tests read the layer's decisions and add no rule of their own. This settles nothing in the chapters.
 //! - **The repair list through the command layer (LP2's pull request 326; CT-LB3-05, CT-BND-17).** LP2's
 //!   `jumble.repair.list` is a job that names its cap (KN5): the layer passes M8's list on whole and adds its
 //!   `statement`, BND.2's wording of an empty list, and no key skips caps with an empty list (`c600-command`'s
@@ -206,9 +209,6 @@
 //!   whole seam scan only.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
-//! - CT-LB1-02's library entry "Word equality keys", the jumbling half (domain-preserving merging of menu words as
-//!   library code): not written yet. Its key half runs in `tests/lb3.rs`; the 600-cell-Full half is `c600-library`'s
-//!   `word_keys` (pull request 350).
 //! - The jumbling rows in the command table: [`rows`] serves them read-only beside the layer, in [`library`]'s draft
 //!   answer types and a draft tariff; the command table names and prices them when it freezes (KN5, PHS.52), and no
 //!   program runs here as a job of the layer. CT-LB3-03's agreement with `trees.py` stays M5's Python test on the
