@@ -2929,10 +2929,11 @@ run or not applicable is no pass (PHS.63).
   - LB3.1's "Retained checkpoint, label checkpoint, sticker test"
     ([`jumble_end_tests.6cs`](c600-jumble-tool/src/jumble_end_tests.6cs): each verdict as its own type, LG2.9; the
     retained checkpoint takes the solver's witness word and builds none).
-  - LB3.1's "Mode crossing prerequisites", the Jumble-off half
+  - LB3.1's "Mode crossing prerequisites"
     ([`jumble_crossing.6cs`](c600-jumble-tool/src/jumble_crossing.6cs): `jumble_off_facts`, A5's prerequisites of
-    Jumble off, the label checkpoint's outcome, the pieces off the lattice and ν; it decides no crossing. The Jumble-on
-    half waits for a KN4 journal query served to programs, KN4.3).
+    Jumble off, the label checkpoint's outcome, the pieces off the lattice and ν; `jumble_on_facts`, Jumble on's
+    journal derivation, the entrance the head's line reaches in KN4.3's `journal` through retained commits only; it
+    decides no crossing).
 - The crate's `rows` is the jumbling rows' host bridge (pull request 299): it serves KN2.4's jumbling rows to a run as
   snapshot reads, at the command layer's head with Jumble on (`Rows::at_head`), on a witnessed base (`Rows::on`) or at a
   state (`Rows::at_state`). It uses the crate's draft answer types and a draft tariff (one pass of the model's pieces
@@ -2975,7 +2976,7 @@ run or not applicable is no pass (PHS.63).
     correction the solver names by its id is checked as its literal word only, LP2's `nu` and `correction_set_check`
     rows answer with ν's 45 values and the label checkpoint with ν and its source, and no answer holds a list of lists
     or a recommendation, ranking or correction field).
-  - `c600-jumble-tool/tests/ct_lb3_07.rs`: CT-LB3-07 (part) on the inspector entries `jumble_rim`, `jumble_covers`,
+  - `c600-jumble-tool/tests/ct_lb3_07.rs`: CT-LB3-07 on the inspector entries `jumble_rim`, `jumble_covers`,
     `jumble_corrections`, `jumble_admissibility`, `jumble_straddlers`, `jumble_units`, `jumble_repair`,
     `jumble_end_tests` and `jumble_crossing` in the language, with the named-word checks and the drafted check, through
     the bridge on witnessed snapshots of the I_a walk (pull requests 308, 314 and 321). Each read is recorded with its
@@ -2990,8 +2991,7 @@ run or not applicable is no pass (PHS.63).
     list of grips, the run stops with `KN5:input.argument_form`, and the bridge refuses the same arguments (pull request
     332). The crossing entry, the Jumble-off half of "Mode crossing prerequisites", reads the label checkpoint, every
     off unit and ν once each and answers A5's prerequisites of Jumble off, the checkpoint's outcome alone, with no
-    correction and no word. CT-LB3-07 stays part: the Jumble-on half, Full labels with journal derivation, waits for a
-    KN4 journal query served to programs (KN4.3, EN4).
+    correction and no word. Its Jumble-on half reads only the `journal` row; `tests/jumble_on_derivation.rs` runs it.
   - `c600-jumble-tool/tests/ct_lb1_03.rs`: CT-LB1-03's jumbling kernel half (the constructors build words from letters
     alone, with no state in existence; the alphabet refusal for another menu, another pinned order and free mode; a
     word and its inverse retrace an admitted path to its start, prefix by prefix; a constructed conjugate gets no
@@ -3080,6 +3080,15 @@ run or not applicable is no pass (PHS.63).
     outcome, the head's pieces off the lattice and the `nu` row's ν; a committed exit has them all, and a walk of I_a
     (the retained word [1, 3, −5] and correction 2) reaches the refusal for a nonzero ν. The tests read the layer's
     decisions and add no rule of their own.
+  - `c600-jumble-tool/tests/jumble_on_derivation.rs`: CT-LB3-07's Jumble-on half, Full labels with journal derivation.
+    `jumble_crossing.jumble_on_facts` runs through `c600-tools`' bridge on a layer with Jumble off and on, and reads
+    LP2's `journal` row (pull request 383) from the head. At each head its answer agrees with `jumble.on` pressed there:
+    the solved witness after commits from solved, the exit root after `jumble.off` with and without commits (the exit's
+    event and mark, and the letters replayed), Jumble on after the entry and a pose move
+    (`KN5:input.retained_tool_needs_jumble_off`), and no entrance in a session that started away from solved
+    (`KN5:input.jumble_on_labels_only`); undo and redo move the head and the answer with it. Each read sends no
+    invocation and changes nothing; read one event a page, the entry pages on through the cursor to the same answer, and
+    stopped after two pages it reaches no entrance.
   - `c600-jumble-tool/tests/jumble_layer_repair.rs` (pull request 339): the repair list through the command layer,
     LP2's job that names its cap (pull request 326), beside the tool's entry `jumble_repair` at the layer's head on
     the I_a walk, in four tests. At a named misaligned cap, at closed caps, at a cap whose completed list is empty,
@@ -3117,9 +3126,8 @@ run or not applicable is no pass (PHS.63).
 - Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
   refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
   the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
-  LB3.1's other rows as language code ("Menus and pinned letters", "D and release accounting", and the Jumble-on half
-  of "Mode crossing prerequisites", which waits for a KN4 journal query served to programs, KN4.3 and EN4; thirteen
-  LB3.1 rows are built, one of them in part, under `library` above,
+  LB3.1's other rows as language code ("Menus and pinned letters" and "D and release accounting"; thirteen LB3.1 rows
+  are built, under `library` above,
   and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
   records; the relationship strip's design (its data contract is C6's `c600_display::strip`, which carries the
   current-occupant relation in `c600-repr`'s CT-EV3-06 tests). The posed arrays at the J1 fixture's mid and end
