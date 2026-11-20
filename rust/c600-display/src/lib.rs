@@ -4,8 +4,9 @@
 //! - **Plans and publications** ([`plan`], [`array`], [`source`], [`canonical`], [`validate`]): the types of RPI.5 to
 //!   RPI.8 and RPI.20 to RPI.23 with RM.6/RM.7's payloads, and the host validator of RPI.10, RM.11, RM.12 and RM.20.
 //! - **The publication state machine** ([`host`], [`receipt`]): RM.17 to RM.26, RM.32, RM.35 and RM.36, with LI.25's
-//!   standalone and scheduled publication, over RM.14's adapter operations. A mock backend drives it. Receipts mirror
-//!   KN5.21 locally; nothing depends on `c600-command`.
+//!   standalone and scheduled publication, over RM.14's adapter operations, among them engine adoption (RM.16), frame
+//!   reports (RM.41) and picks. A mock backend drives it. Receipts mirror KN5.21 locally; nothing depends on
+//!   `c600-command`.
 //! - **Picks and stamps** ([`pick`], [`host`]): RM.10, RM.24, RPI.24 and RPI.25. A pick resolves by instance ID through
 //!   the installed source map, never through a chart inverse.
 //! - **Charts and stages** ([`exact`], [`chart`], [`reference`], [`stage`], [`raster`]): exact chart-property checks at
@@ -126,6 +127,15 @@
 //! - RPI.10: a publication to a view that is not open is invalid.
 //! - RM.24: one surface per view; the frame stamp lists the host's subject label of every installed plan.
 //! - RPI.55, RM.33: [`host::MockBackend`] stands for an adapter; it says nothing about any candidate backend.
+//! - RM.14, RM.16: the host validates an engine bundle and adopts it through the backend's `adopt_engine`; the host's
+//!   revision and its `state` dependency move to the revision the backend answers, and a bundle that either of them
+//!   refuses changes nothing.
+//! - RM.41: a frame report of the current device epoch whose publication generation and view generation are still
+//!   installed marks that publication's fallback ([`host::Installed::fallback`]), which stays for the session as the
+//!   quarantine does. Any other report is returned and marks nothing, and a report of an earlier epoch is dropped.
+//! - RM.14, RPI.25: a pick names a frame the backend was given; [`host::Host::poll_pick`] resolves a stamped instance
+//!   with [`host::Host::resolve_pick`]. A pick asked before a device loss is stale at `device_epoch`, a passive pick
+//!   that the backend refuses as stale is dropped quietly, and the host forgets a pick once it is over.
 //! - RPI.34 [O]: the repertoire is the first option, a restricted family with known checkers, as a draft that settles
 //!   nothing in the chapters: the stereographic chart declared exactly by its pole ([`chart::Stereographic`]) and the
 //!   projective charts x ↦ (M·x + t)/(c·x + d), affine maps and central projections among them
@@ -218,7 +228,7 @@
 //! points and of lines of zero length, U on a device and the skipping of a stopped frame's work (RPI.72; CT-RM-10,
 //! CT-RPI-31); injecting and detecting a device fault and, with CT-RPI-34, whether a frame with a device fault is
 //! reported (RPI.77, RM.41); composition on a device; and the host's support for F05 and F26, with
-//! [`stage::Quarantine`] wired into its publications and frames and RM.14's `read_frame_reports` on the backend. Until
+//! [`stage::Quarantine`] wired into its publications and frames behind the backend's `read_frame_reports`. Until
 //! then CT-RPI-32 and CT-RM-09's rows 3 to 6, 8 and 10 run only their headless parts, under declared fixture weights in
 //! place of RM.38's measured table (RPI.79). For charts: any chart or property outside the drafted repertoire (RPI.34
 //! stays open), the GPU agreement check (RPI.35) and a production precision rule (RPI.36 stays open). CT-RPI-19's

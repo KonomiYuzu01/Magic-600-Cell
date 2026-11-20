@@ -2071,6 +2071,14 @@ run or not applicable is no pass (PHS.63).
   Picks resolve by instance ID through the installed source map, never through a chart inverse, and stale picks name the
   field that changed (RM.10, RM.24, RPI.24, RPI.25). Each slot projection holds one level: a subject at the other level
   gets no slot, with reason `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
+- The `Backend` trait carries RM.14's other adapter operations (C9's trait gap, option (a)): the host validates an
+  engine bundle and adopts it through the backend, also while the device is lost, and a bundle either side refuses
+  changes nothing (RM.16); a frame report marks the fallback of the installed publication it names, changes no receipt,
+  and is dropped when it is of an earlier device epoch (RM.41); a pick is requested for a frame the backend was given,
+  polled, and its stamped instance resolved as above. A pick is stale when its frame is of an earlier device epoch or
+  the device was lost after it was asked (both at `device_epoch`), and when the backend refuses or answers it as stale,
+  a frame it no longer keeps included: an explicit pick then returns `EV3:stale.display_pick`, and a passive one is
+  dropped, with no ticket when the request itself is refused (RPI.25). Tests: `adapter_ops.rs`, over the mock backend.
 - Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and its
   exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test, and injectivity, embedding,
   isometry and homomorphism each decided by its own check on `c600_jumble::polytope` (C6), and `admit_chart`, which
@@ -3101,9 +3109,15 @@ run or not applicable is no pass (PHS.63).
   `read_presented` returns the frames the core confirmed under the exact rule (the bridge keeps each one's display time,
   the SyncQPCTime of the confirming statistics row, for `take_display_times`), and `recover` rebuilds a removed device:
   the bridge then forgets every resource set of the old epoch, so an installed publication draws again only after it is
-  prepared and activated on the new device (RM.23). What the `Backend` trait has no operation for yet is inherent:
-  engine adoption, frame reports in batches of 64, pick requests and polls (a pick names the binding field that went
-  stale), and the core's counters.
+  prepared and activated on the new device (RM.23). The `Backend` trait's adoption, frame reports and picks map onto
+  the bridge's own calls of the same names, which stay public: engine adoption; frame reports in batches of 64, each
+  with its frame's stamp; pick requests and polls by the core's frame ID (a pick names the binding field that went
+  stale); and the core's counters, which have no trait operation. Through the trait, a bundle at the revision the core
+  already holds (the whole revision reference) is adopted without a second copy, since the shell adopts into the core
+  first, and any other reaches the core, which refuses a revision that does not increase; frame reports are empty,
+  since RM.41's reports name frames that stopped a user stage and the product path runs none; and a pick on a frame
+  older than every frame the bridge keeps is stale at `sequence`, one on a stamp it never submitted is invalid, and the
+  core's refusal (for a frame it no longer retains, among others) is a core failure.
 - User stages (C9 U5a; drafts until the IR freeze): the module `stage` takes a stage that `c600-check` admitted
   (`CheckedStage`) and gives its parameter binding (binding/1), deterministic HLSL under `m600-stage-hlsl/1`, the
   binary32 CPU reference evaluator (RPI.74) and a strict reader of a limits file. The bin `c600-stage-hlsl` writes
@@ -3114,14 +3128,16 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-render/tests/`): `abi_layout.rs` reads the header and checks every row's offsets and size and every
   constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
   install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
-  replacement, and device loss; on route B also confirmed presentations and their display times, the presented-preview latch, a contradicting
-  presented row, recovery and a publication drawn again on the new device. The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and
-  run again through the C function table over a C shim; there `abi_functions.rs` checks every function's signature
-  against the header and `ffi.rs` what `DllCore` refuses before a call and what it reads back.
+  replacement, and device loss; on route B also confirmed presentations and their display times, the
+  presented-preview latch, a contradicting presented row, recovery and a publication drawn again on the new device.
+  The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and run again through the C function
+  table over a C shim; there `abi_functions.rs` checks every function's signature against the header and `ffi.rs`
+  what `DllCore` refuses before a call and what it reads back. `trait_ops.rs` drives the trait's adoption, frame
+  reports and picks through the host: adoption in the shell's order and alone, another image at the same state
+  counter, a pick requested, polled and resolved, and frames the core or the bridge no longer keeps.
   `tests/test_render_ffi.py` runs that crate's tests, since `tests/test_language_rust.py` runs this workspace only.
 - Not run: no run against the built core library and no GPU run, so nothing here is Windows/DirectX, input or
-  performance evidence. Not built: a check of the preparation's base revision by the core, and the trait operations
-  above, which wait for `c600-display`.
+  performance evidence. Not built: a check of the preparation's base revision by the core.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C9 measurement: LX-4's module set and edit script

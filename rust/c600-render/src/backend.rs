@@ -1,5 +1,6 @@
-//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`], and the ABI 5 product calls the trait has no
-//! method for (engine adoption, frame reports, picks, counters) as methods of their own.
+//! [`RenderBackend`]: c600-display's [`Backend`] over a [`CoreAbi`]. The ABI 5 product calls for engine adoption,
+//! frame reports and picks are also methods of their own, in the core's terms (its frame IDs and per-frame rows), and
+//! the trait's adapter operations (RM.14) map onto them; `counters` has no trait operation.
 //!
 //! What the bridge decides, because the core's interface and the host's types differ:
 //! - A publication becomes per-slot rows: the one retained primitive's visibility and interaction sets, and each
@@ -26,16 +27,31 @@
 //!   retiring one is a no-op.
 //! - Every core failure is `EV3:busy.renderer_unavailable` except `SA2_E_UNSUPPORTED`, which is
 //!   `EV3:input.display_unsupported`; the context names the status and the core's last error.
+//! - The trait's adoption answers a bundle at the revision the core already holds (the whole revision reference, not
+//!   only its state counter) as adopted, without a second copy: the shell adopts into the core before the host does,
+//!   and the core refuses a revision that does not increase. Any other bundle goes to [`RenderBackend::adopt_engine`],
+//!   so one at the same state counter with another digest reaches the core, which refuses it.
+//! - The trait's frame reports are empty: RM.41's reports name frames that stopped a user stage, and the product path
+//!   runs none (`sa2_frame_report.fallback` is always 0). The core's row of every frame stays with
+//!   [`RenderBackend::read_frame_reports`].
+//! - A pick through the trait asks the ID pass on the frame with the given stamp; the requested kind and level are
+//!   the host's to resolve (RPI.25). A frame older than every frame the bridge keeps is refused as stale
+//!   (`EV3:stale.display_pick` at `sequence`), so the host drops a passive pick on it; a stamp the bridge never
+//!   submitted is invalid. The core's refusal, for a frame it no longer retains among others, is a core failure:
+//!   its status does not tell that case from its pick bound. A pick the core finds stale is refused as
+//!   `EV3:stale.display_pick`, naming the field that moved.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use c600_digest::sha256;
 use c600_display::array::Elem;
+use c600_display::codes;
 use c600_display::error::Error;
-use c600_display::host::{Backend, FrameInput, Poll, Preparation, PublicationStamp, ResourceSet, Ticket};
-use c600_display::pick::{FrameStamp, PickBinding, PickReply, Presented, PresentedFrame};
-use c600_display::plan::{CommandId, InstanceId, ObjectId, Primitive, Publication, ViewId};
+use c600_display::host::{self, Backend, FrameInput, Poll, Preparation, PublicationStamp, ResourceSet, Ticket};
+use c600_display::pick::{FrameStamp, PickBinding, PickReply, Presented, PresentedFrame, Requested};
+use c600_display::plan::{CommandId, InstanceId, ObjectId, Primitive, Publication, RevisionRef, ViewId};
 use c600_display::receipt::CancelReason;
+use c600_display::stage;
 use c600_display::validate::{validate_engine_bundle, EngineBundle, LimitProfile, PlanSubject, Support, SupportReport};
 use c600_kernel::json::{self, Value};
 use c600_kernel::Puzzle;
@@ -118,6 +134,9 @@ pub struct RenderBackend<C: CoreAbi> {
     displays: VecDeque<DisplayTime>,
     /// The newest failure of `cancel` or `retire`, which the trait cannot return.
     pub fault: Option<Error>,
+    /// The revision of the engine image the core holds: the last bundle it accepted, which it keeps across recovery
+    /// (RM.16).
+    held: Option<RevisionRef>,
 }
 
 impl<C: CoreAbi> RenderBackend<C> {
@@ -133,6 +152,7 @@ impl<C: CoreAbi> RenderBackend<C> {
             frames: VecDeque::new(),
             displays: VecDeque::new(),
             fault: None,
+            held: None,
         }
     }
 
@@ -182,7 +202,9 @@ impl<C: CoreAbi> RenderBackend<C> {
                 self.core.engine_adopt(&EngineImage { revision, labels: &labels, pose, digest })
             }
         };
-        adopted.map_err(|status| self.error(status))
+        let adopted = adopted.map_err(|status| self.error(status))?;
+        self.held = Some(bundle.revision.clone());
+        Ok(adopted)
     }
 
     /// The display times of the frames [`Backend::read_presented`] confirmed since the last call, in frame order;
@@ -305,6 +327,18 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     fn describe_backend(&self) -> Result<SupportReport, Error> {
         let text = self.core.describe().map_err(|status| self.error(status))?;
         support_report(&text, &self.limits)
+    }
+
+    /// A bundle at the revision the core already holds is adopted without a second copy; any other goes to
+    /// [`RenderBackend::adopt_engine`].
+    fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error> {
+        if self.held.as_ref() == Some(&bundle.revision) {
+            validate_engine_bundle(bundle)?;
+        } else {
+            // The inherent method: a path names it before this trait method of the same name, so this is no recursion.
+            RenderBackend::adopt_engine(self, bundle)?;
+        }
+        Ok(bundle.revision.clone())
     }
 
     fn prepare(&mut self, request: Preparation<'_>) -> Result<Ticket, Error> {
@@ -467,6 +501,45 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
             self.displays.pop_front();
         }
         Ok(presented)
+    }
+
+    /// None: the product path runs no user stage, so no frame stopped one. The core's row of every frame is
+    /// [`RenderBackend::read_frame_reports`]'s.
+    fn read_frame_reports(&mut self) -> Result<Vec<stage::FrameReport>, Error> {
+        Ok(Vec::new())
+    }
+
+    /// The ID pass on the frame that `frame` stamps. The ID pass stamps instances only; the host resolves the
+    /// requested kind and level. A frame older than every frame the bridge keeps is stale at its sequence; a stamp
+    /// the bridge never submitted is invalid.
+    fn request_pick(
+        &mut self,
+        frame: &FrameStamp,
+        point: (u32, u32),
+        _requested: Requested,
+    ) -> Result<host::PickTicket, Error> {
+        let Some(record) = self.frames.iter().rev().find(|record| &record.input.stamp == frame) else {
+            let gone = self.frames.front().is_some_and(|oldest| frame.sequence < oldest.input.stamp.sequence);
+            return Err(if gone {
+                Error::new(codes::STALE_PICK, "the pick is stale: the bridge no longer keeps its frame")
+                    .with("field", "sequence")
+            } else {
+                Error::invalid("the bridge submitted no frame with this stamp")
+            });
+        };
+        let id = record.id;
+        RenderBackend::request_pick(self, id, point.0, point.1).map(|ticket| host::PickTicket(ticket.0))
+    }
+
+    fn poll_pick(&mut self, ticket: host::PickTicket) -> host::PickPoll {
+        match RenderBackend::poll_pick(self, PickTicket(ticket.0)) {
+            Ok(PickPoll::Pending) => host::PickPoll::Pending,
+            Ok(PickPoll::Ready(reply)) => host::PickPoll::Stamped(reply),
+            Ok(PickPoll::Stale(field)) => host::PickPoll::Refused(
+                Error::new(codes::STALE_PICK, format!("the pick is stale: {field} changed")).with("field", field),
+            ),
+            Err(error) => host::PickPoll::Refused(error),
+        }
     }
 
     fn recover(&mut self) -> Result<SupportReport, Error> {

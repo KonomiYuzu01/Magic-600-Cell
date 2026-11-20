@@ -611,6 +611,9 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   and came after it). Since pull request 324, `c600-render` adopts a jumbling bundle's pose arrays on the core's pose
   path (W-J's) and passes J01 and J02 through as the core describes them (J13 stays unsupported), so the launcher
   accepts `--puzzle jumble-on`; the pose check runs on WARP only, and nothing has run on a hardware adapter.
+  The `Backend` trait now carries RM.14's engine adoption, frame reports and picks (C9's trait gap, option (a)): the
+  host adopts, reads frame reports and picks through it, and `c600-render` maps them onto the core's own calls, which
+  stay public (`c600-display`'s `tests/adapter_ops.rs`, `c600-render`'s `tests/trait_ops.rs`); nothing has run on a GPU.
   The tests: the windows tests CT-ONE-26, CT-RPI-13, CT-RPI-21, CT-RPI-24, CT-RPI-31, CT-RPI-33, CT-RPI-34, CT-RM-05,
   CT-RM-06, CT-RM-10, CT-BND-20 and CT-RTE-10; the performance tests CT-KN7-06, CT-LG4-09, CT-EV1-06, CT-ONE-25,
   CT-RPI-26, CT-RTE-11 and CT-RTE-12; the renderer halves of CT-LB4-04 and CT-EV3-08. The runs follow PHS.64 on one
