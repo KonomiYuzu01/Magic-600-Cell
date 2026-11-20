@@ -20,8 +20,10 @@
 //!   summary so that N_c has the corpus's shape [x, y, y] with 0 < x < y, a tied maximum; the corpus names the caps
 //!   `c0`, `c1` and `c2`, and so do the program's targets.
 //!
-//! The corpus's words are literal letters, as in the Full leg: `a, b, c, d` are `+1, +2, +3, +4`. The corrections as
-//! menu words of the I_a alphabet are the menu-word half of this test, which waits for LP2's LG2.18 key.
+//! The corpus's words are literal letters, as in the Full leg: `a, b, c, d` are `+1, +2, +3, +4`. Each key also runs
+//! with menu words of the I_a alphabet (LB1.8), the menu-word half: the same program builds and proposes menu words,
+//! `a, b, c, d` are I_a's letters `0:1`, `0:2`, `0:3` and `0:4`, and the run pins the alphabet with its item matrices,
+//! as `word::Alphabet::pinned` pins it for LG2.18's word keys. Both halves give the corpus's answers.
 //!
 //! A31 and A32, in research, complete with the corpus's value. MR01, MR02, MR05 and MR06, in solving, propose the word
 //! they computed and are refused with the corpus's code by the split at the preview point (LG3.13, BND.39): the
@@ -45,11 +47,13 @@ use c600_jumble::observe::cuts::rim_summary;
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble_tool::rows::Rows;
+use c600_jumble_tool::word::Alphabet;
 use c600_kernel::json::Value as JsonValue;
 use c600_module::code::NOT_GRANTED;
 use c600_module::{approve, load, resolve, verify, Entry, Files, Identity, Manifest, Outcome, Refusal, RunRequest};
-use c600_run::boundary::{Answer, Pins, Place, Store};
+use c600_run::boundary::{Answer, Pins, Place, Shown, Store};
 use c600_run::interp::{Host, Options, Request, RowTariff, Sink};
+use c600_run::menu::MenuAlphabet;
 use c600_run::meter::{Amounts, Outcome as Ended};
 use c600_run::provenance::{self, hex, Author, Json, Pin, Profile};
 use c600_run::value::Value;
@@ -67,6 +71,9 @@ const REALISED: [&str; 6] = ["MR01", "MR02", "MR05", "MR06", "A31", "A32"];
 const A: i32 = 1;
 const D: i32 = 4;
 
+/// The fixture letters `a, b, c, d` as letters `[grip, item]` of the I_a alphabet, in the menu-word half.
+const MENU: [[u32; 2]; 4] = [[0, 1], [0, 2], [0, 3], [0, 4]];
+
 /// ν's coordinates that the corpus's `nu2` and `nu5` name here: (b8, b34) and (C5_28, C5_17).
 const NU2: [usize; 2] = [8, 34];
 const NU5: [usize; 2] = [44, 43];
@@ -83,6 +90,15 @@ const WALK_RECORDS: usize = 4;
 fn i_a() -> Arc<Menu> {
     static I_A: OnceLock<Arc<Menu>> = OnceLock::new();
     I_A.get_or_init(|| Arc::new(Fixture::load("I_a").menu())).clone()
+}
+
+/// The I_a alphabet with its item matrices, as `word::Alphabet::pinned` pins it for a run (LG2.18).
+fn alphabet() -> &'static MenuAlphabet {
+    static PINNED: OnceLock<MenuAlphabet> = OnceLock::new();
+    PINNED.get_or_init(|| {
+        let alphabet = Alphabet::of(engine(), &i_a()).expect("an inverse-closed menu");
+        alphabet.pinned().expect("I_a's alphabet pins with its item matrices")
+    })
 }
 
 /// `journal` played from solved under `menu`, every letter admissible, with the claim its replay witnesses.
@@ -158,6 +174,72 @@ fn root(body: &str) -> String {
     format!("edition \"{EDITION}\";\nmodule m requires [];\n\n{body}")
 }
 
+/// The words a key's program builds and proposes: literal letters, as the corpus writes them, or menu words of the
+/// I_a alphabet, the menu-word half, whose run pins that alphabet.
+#[derive(Clone, Copy)]
+enum Words {
+    Literal,
+    Menu,
+}
+
+impl Words {
+    /// The type of the words.
+    fn ty(self) -> &'static str {
+        match self {
+            Words::Literal => "Word",
+            Words::Menu => "MenuWord",
+        }
+    }
+
+    /// The source literal of the word of fixture letters `letters` (1 to 4).
+    fn literal(self, letters: &[i32]) -> String {
+        let written: Vec<String> = match self {
+            Words::Literal => letters.iter().map(i32::to_string).collect(),
+            Words::Menu => letters.iter().map(|&l| MENU[l as usize - 1]).map(|[g, i]| format!("{g}:{i}")).collect(),
+        };
+        let kind = match self {
+            Words::Literal => "word",
+            Words::Menu => "menu",
+        };
+        format!("{kind}[{}]", written.join(", "))
+    }
+
+    /// The value of the word of fixture letters `letters`.
+    fn value(self, letters: &[i32]) -> Value {
+        match self {
+            Words::Literal => Value::word(letters),
+            Words::Menu => {
+                let letters: Vec<[u32; 2]> = letters.iter().map(|&l| MENU[l as usize - 1]).collect();
+                Value::menu_word(alphabet().shared_identity(), &letters).expect("letters below 600")
+            }
+        }
+    }
+
+    /// The alphabet the run pins.
+    fn pinned(self) -> Option<&'static MenuAlphabet> {
+        match self {
+            Words::Literal => None,
+            Words::Menu => Some(alphabet()),
+        }
+    }
+
+    /// A shell row's proposed word in fixture letters: a literal word, or a menu word of the I_a alphabet.
+    fn shown(self, shown: &Shown) -> Vec<i32> {
+        match self {
+            Words::Literal => {
+                assert!(shown.menu.is_none(), "a literal proposal");
+                shown.word.clone()
+            }
+            Words::Menu => {
+                let menu = shown.menu.as_ref().expect("a menu-word proposal");
+                assert!(shown.word.is_empty() && menu.identity() == alphabet().identity(), "of I_a's alphabet");
+                let letter = |l: &[u32; 2]| MENU.iter().position(|m| m == l).expect("a fixture letter") as i32 + 1;
+                menu.letters().iter().map(letter).collect()
+            }
+        }
+    }
+}
+
 /// The leg's engine side: the rows' bridge, which grants no preview, and a preview point that prices a proposal as
 /// the Full leg's fixture engine prices a request it prices nowhere (9, bounded by 4096) and records each proposal
 /// that reaches it. The split refuses a proposal whose block may read state between the boundary and this host, so a
@@ -188,7 +270,8 @@ impl Host for Watched<'_> {
     }
 }
 
-/// One run of a key: `m.go(c0, a)`, both arguments entered by hand, on `base` under the jumbled identity.
+/// One run of a key: `m.go(c0, a)`, both arguments entered by hand, `a` a word of `words`, on `base` under the jumbled
+/// identity.
 struct Trial {
     result: Result<Outcome, Refusal>,
     asked: Vec<String>,
@@ -197,7 +280,7 @@ struct Trial {
 }
 
 impl Trial {
-    fn run(source: &str, profile: Profile, base: &Snapshot) -> Trial {
+    fn run(source: &str, words: Words, profile: Profile, base: &Snapshot) -> Trial {
         let identity = jumbling();
         let files = Files::new().with("src/root.6cs", source.as_bytes());
         let manifest = Manifest {
@@ -228,10 +311,10 @@ impl Trial {
             let request = RunRequest {
                 run: "r1",
                 base: "rev-7",
-                args: vec![Value::target("c0"), Value::word(&[A])],
+                args: vec![Value::target("c0"), words.value(&[A])],
                 inputs: vec![manual(), manual()],
                 pins: Pins { contracts: vec![contract()], checkers: vec![checker()] },
-                options: Options::new(WIDE),
+                options: Options { menu: words.pinned(), ..Options::new(WIDE) },
             };
             ready.run(request, &mut host, &mut store)
         });
@@ -286,8 +369,9 @@ fn quiet(trial: &Trial, output: &[u8]) {
 }
 
 /// A refused key, refused at its first proposal by the split: the shell answer has `code`, the proposal's id is
-/// separated, no proposal reached the host, and nothing was written. Returns the refused proposal's word and target.
-fn refused_by_split(trial: &Trial, code: &str) -> (Vec<i32>, String) {
+/// separated, no proposal reached the host, and nothing was written. Returns the refused proposal's word, a word of
+/// `words` in fixture letters, and its target.
+fn refused_by_split(trial: &Trial, words: Words, code: &str) -> (Vec<i32>, String) {
     let out = trial.outcome();
     assert!(!out.shell.is_empty(), "{:?}", out.run.summary);
     let shown = &out.shell[0];
@@ -295,7 +379,7 @@ fn refused_by_split(trial: &Trial, code: &str) -> (Vec<i32>, String) {
     assert!(out.separated.contains(&shown.id), "{:?}", out.separated);
     assert_eq!(trial.proposals, 0, "no proposal reaches the engine");
     assert!(trial.store.records.is_empty());
-    (shown.word.clone(), shown.target.clone())
+    (words.shown(shown), shown.target.clone())
 }
 
 /// The corpus's expected code for a refused case: the first `expected_code` after the case's `id`.
@@ -312,10 +396,12 @@ fn corpus_code(file: &str, id: &str) -> String {
 /// MR05's, MR06's, A31's and A32's program body: read ν, take two coordinates in field `F` (`f2` or `f5`), solve the
 /// corpus's literal identity matrix against them by Cramer's rule, and combine the corpus's two literal words
 /// chronologically, the first `x0` times, then the second `x1` times. The solve and the combination are generic in
-/// the matrix and the words, as the corpus's `linear_solve_mod` and `combine_corrections` are.
-fn nu_program(field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
+/// the matrix and the words, as the corpus's `linear_solve_mod` and `combine_corrections` are, and builds words of
+/// `kind`.
+fn nu_program(kind: Words, field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
     let [i, j] = coordinates;
-    let [p, q] = words;
+    let (ty, empty) = (kind.ty(), kind.literal(&[]));
+    let [p, q] = words.map(|w| kind.literal(&[w]));
     format!(
         "    let nu = read_snapshot<record {{ reason: List<Text>, values: List<Int> }}>(\"nu\");
     let v0 = to_{field}(index(nu.values, {i}));
@@ -327,11 +413,11 @@ fn nu_program(field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
     let inv = field_inverse(field_sub(field_mul(m00, m11), field_mul(m01, m10)));
     let x0 = field_mul(inv, field_sub(field_mul(v0, m11), field_mul(m01, v1)));
     let x1 = field_mul(inv, field_sub(field_mul(m00, v1), field_mul(v0, m10)));
-    let first = repeat(residue(x0), word[], fn(done: Word) -> Word {{
-        return concat(done, word[{p}]);
+    let first = repeat(residue(x0), {empty}, fn(done: {ty}) -> {ty} {{
+        return concat(done, {p});
     }});
-    let second = repeat(residue(x1), word[], fn(done: Word) -> Word {{
-        return concat(done, word[{q}]);
+    let second = repeat(residue(x1), {empty}, fn(done: {ty}) -> {ty} {{
+        return concat(done, {q});
     }});
     let correction = concat(first, second);
 "
@@ -339,16 +425,16 @@ fn nu_program(field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
 }
 
 /// A research run that returns the computed word (A31, A32).
-fn research(field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
-    let body = nu_program(field, coordinates, words);
-    root(&format!("export fn go(t: Target, w: Word) -> Word effects [snapshot] {{\n{body}    return correction;\n}}\n"))
+fn research(kind: Words, field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
+    let (ty, body) = (kind.ty(), nu_program(kind, field, coordinates, words));
+    root(&format!("export fn go(t: Target, w: {ty}) -> {ty} effects [snapshot] {{\n{body}    return correction;\n}}\n"))
 }
 
 /// A solving run that proposes the computed word at the input target (MR05, MR06).
-fn solving(field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
-    let body = nu_program(field, coordinates, words);
+fn solving(kind: Words, field: &str, coordinates: [usize; 2], words: [i32; 2]) -> String {
+    let (ty, body) = (kind.ty(), nu_program(kind, field, coordinates, words));
     root(&format!(
-        "export fn go(t: Target, w: Word) -> Text effects [snapshot, preview] {{\n{body}    \
+        "export fn go(t: Target, w: {ty}) -> Text effects [snapshot, preview] {{\n{body}    \
          let r = propose(correction, t);\n    return \"requested\";\n}}\n"
     ))
 }
@@ -374,48 +460,94 @@ fn base_holds_the_corpus_values() {
     assert_eq!(NU5.map(|i| values[i]).to_vec(), corpus("nu5"));
 }
 
-/// A31: research may solve F2 against the read ν and returns the correction `a`.
+/// A31: research may solve F2 against the read ν and returns the correction `a`, a word of `kind`.
+fn a31(kind: Words) {
+    base_holds_the_corpus_values();
+    let source = research(kind, "f2", NU2, [1, 2]);
+    let trial = ten(|| Trial::run(&source, kind, Profile::Research, nu_base()));
+    quiet(&trial, &encoded(&kind.value(&[A])));
+    assert_eq!(trial.asked, ["nu"]);
+}
+
+/// A31 with literal words.
 #[test]
 fn ct_rte_07_jumble_a31_research_f2_correction() {
+    a31(Words::Literal);
+}
+
+/// A31 with menu words of the I_a alphabet.
+#[test]
+fn ct_rte_07_jumble_a31_research_f2_correction_in_menu_words() {
+    a31(Words::Menu);
+}
+
+/// A32: research may solve F5 against the read ν and returns the correction `d d d`, a word of `kind`.
+fn a32(kind: Words) {
     base_holds_the_corpus_values();
-    let source = research("f2", NU2, [1, 2]);
-    let trial = ten(|| Trial::run(&source, Profile::Research, nu_base()));
-    quiet(&trial, &encoded(&Value::word(&[A])));
+    let source = research(kind, "f5", NU5, [3, 4]);
+    let trial = ten(|| Trial::run(&source, kind, Profile::Research, nu_base()));
+    quiet(&trial, &encoded(&kind.value(&[D, D, D])));
     assert_eq!(trial.asked, ["nu"]);
 }
 
-/// A32: research may solve F5 against the read ν and returns the correction `d d d`.
+/// A32 with literal words.
 #[test]
 fn ct_rte_07_jumble_a32_research_f5_correction() {
-    base_holds_the_corpus_values();
-    let source = research("f5", NU5, [3, 4]);
-    let trial = ten(|| Trial::run(&source, Profile::Research, nu_base()));
-    quiet(&trial, &encoded(&Value::word(&[D, D, D])));
-    assert_eq!(trial.asked, ["nu"]);
+    a32(Words::Literal);
 }
 
-/// MR05: a solving run solves F2 against the read ν and proposes the correction `a`; the split refuses it.
+/// A32 with menu words of the I_a alphabet.
 #[test]
-fn ct_rte_07_jumble_mr05_f2_solve_is_refused() {
+fn ct_rte_07_jumble_a32_research_f5_correction_in_menu_words() {
+    a32(Words::Menu);
+}
+
+/// MR05: a solving run solves F2 against the read ν and proposes the correction `a`, a word of `kind`; the split
+/// refuses it.
+fn mr05(kind: Words) {
     base_holds_the_corpus_values();
-    let source = solving("f2", NU2, [1, 2]);
-    let trial = ten(|| Trial::run(&source, Profile::Solving, nu_base()));
+    let source = solving(kind, "f2", NU2, [1, 2]);
+    let trial = ten(|| Trial::run(&source, kind, Profile::Solving, nu_base()));
     let code = corpus_code("must-refuse.json", "MR05");
     assert_eq!(code, NOT_GRANTED);
-    assert_eq!(refused_by_split(&trial, &code), (vec![A], "c0".to_string()));
+    assert_eq!(refused_by_split(&trial, kind, &code), (vec![A], "c0".to_string()));
     assert_eq!(trial.asked, ["nu"]);
 }
 
-/// MR06: a solving run solves F5 against the read ν and proposes the correction `d d d`; the split refuses it.
+/// MR05 with literal words.
 #[test]
-fn ct_rte_07_jumble_mr06_f5_solve_is_refused() {
+fn ct_rte_07_jumble_mr05_f2_solve_is_refused() {
+    mr05(Words::Literal);
+}
+
+/// MR05 with menu words of the I_a alphabet.
+#[test]
+fn ct_rte_07_jumble_mr05_f2_solve_is_refused_in_menu_words() {
+    mr05(Words::Menu);
+}
+
+/// MR06: a solving run solves F5 against the read ν and proposes the correction `d d d`, a word of `kind`; the split
+/// refuses it.
+fn mr06(kind: Words) {
     base_holds_the_corpus_values();
-    let source = solving("f5", NU5, [3, 4]);
-    let trial = ten(|| Trial::run(&source, Profile::Solving, nu_base()));
+    let source = solving(kind, "f5", NU5, [3, 4]);
+    let trial = ten(|| Trial::run(&source, kind, Profile::Solving, nu_base()));
     let code = corpus_code("must-refuse.json", "MR06");
     assert_eq!(code, NOT_GRANTED);
-    assert_eq!(refused_by_split(&trial, &code), (vec![D, D, D], "c0".to_string()));
+    assert_eq!(refused_by_split(&trial, kind, &code), (vec![D, D, D], "c0".to_string()));
     assert_eq!(trial.asked, ["nu"]);
+}
+
+/// MR06 with literal words.
+#[test]
+fn ct_rte_07_jumble_mr06_f5_solve_is_refused() {
+    mr06(Words::Literal);
+}
+
+/// MR06 with menu words of the I_a alphabet.
+#[test]
+fn ct_rte_07_jumble_mr06_f5_solve_is_refused_in_menu_words() {
+    mr06(Words::Menu);
 }
 
 // ---------------------------------------------------------------------------------------------------- the N_c keys
@@ -461,8 +593,9 @@ const PROPOSE: &str = "    let caps = push(push(push(list<Target>(), target(\"c0
 ";
 
 /// The checks of MR01 and MR02: the engine's N_c at the literal caps is [x, y, y] with x < y, the bridge serves it,
-/// and the refused proposal is the input word at `c1`, the first of the tie.
-fn n_c_key(id: &str, source: impl Fn([i64; 3]) -> String) {
+/// and the refused proposal is the input word, a word of `kind`, at `c1`, the first of the tie. `body` is the body of
+/// `go` for the literal caps.
+fn n_c_key(id: &str, kind: Words, body: impl Fn([i64; 3]) -> String) {
     let (caps, n) = literal_caps();
     assert!(n[0] < n[1] && n[1] == n[2], "{n:?}");
     let mut rows = Rows::on(engine(), Base::Snapshot(walk()));
@@ -471,59 +604,88 @@ fn n_c_key(id: &str, source: impl Fn([i64; 3]) -> String) {
         let served = rows.answer("seam_facts", Some(&arg)).expect("served");
         assert_eq!(served.get("totals").and_then(|t| t.get("N_c")).and_then(JsonValue::as_i64), Some(n), "cap {cap}");
     }
-    let source = source(caps);
-    let trial = ten(|| Trial::run(&source, Profile::Solving, walk()));
+    let (ty, body) = (kind.ty(), body(caps));
+    let source = root(&format!("export fn go(t: Target, w: {ty}) -> Text effects [snapshot, preview] {{\n{body}}}\n"));
+    let trial = ten(|| Trial::run(&source, kind, Profile::Solving, walk()));
     let code = corpus_code("must-refuse.json", id);
     assert_eq!(code, NOT_GRANTED);
-    assert_eq!(refused_by_split(&trial, &code), (vec![A], "c1".to_string()));
+    assert_eq!(refused_by_split(&trial, kind, &code), (vec![A], "c1".to_string()));
     assert_eq!(trial.asked, ["seam_facts"; 3]);
 }
 
-/// MR01: N_c, the first maximum, and a proposal at its cap; the split refuses it.
+/// MR01: N_c, the first maximum, and a proposal at its cap of the input word, a word of `kind`; the split refuses it.
+fn mr01(kind: Words) {
+    n_c_key("MR01", kind, |caps| format!("{}    let i = {ARGMAX};\n{PROPOSE}", counts(caps)));
+}
+
+/// MR01 with literal words.
 #[test]
 fn ct_rte_07_jumble_mr01_largest_n_c_is_refused() {
-    n_c_key("MR01", |caps| {
-        let counts = counts(caps);
-        root(&format!(
-            "export fn go(t: Target, w: Word) -> Text effects [snapshot, preview] {{\n{counts}    \
-             let i = {ARGMAX};\n{PROPOSE}}}\n"
-        ))
-    });
+    mr01(Words::Literal);
+}
+
+/// MR01 with menu words of the I_a alphabet.
+#[test]
+fn ct_rte_07_jumble_mr01_largest_n_c_is_refused_in_menu_words() {
+    mr01(Words::Menu);
 }
 
 /// MR02: N_c ranked in descending order, stable in the fixed cap order, unrolled over the three caps; the first of
-/// the rank, and a proposal at its cap; the split refuses it.
-#[test]
-fn ct_rte_07_jumble_mr02_descending_rank_is_refused() {
-    n_c_key("MR02", |caps| {
+/// the rank, and a proposal at its cap of the input word, a word of `kind`; the split refuses it.
+fn mr02(kind: Words) {
+    n_c_key("MR02", kind, |caps| {
         let counts = counts(caps);
-        root(&format!(
-            "export fn go(t: Target, w: Word) -> Text effects [snapshot, preview] {{\n{counts}    \
+        format!(
+            "{counts}    \
              let first = {ARGMAX};\n    \
              let second = if(exact_eq(first, 0), if(exact_less(n1, n2), 2, 1), \
              if(exact_eq(first, 1), if(exact_less(n0, n2), 2, 0), if(exact_less(n0, n1), 1, 0)));\n    \
              let pair = exact_add(first, second);\n    \
              let third = if(exact_eq(pair, 1), 2, if(exact_eq(pair, 2), 1, 0));\n    \
              let rank = push(push(push(list<Nat>(), first), second), third);\n    \
-             let i = index(rank, 0);\n{PROPOSE}}}\n"
-        ))
+             let i = index(rank, 0);\n{PROPOSE}"
+        )
     });
 }
 
-/// The control of the refusals above: a solving run that reads no state and proposes the input word passes the split
-/// and reaches the leg's preview point, as A24's manual preview reaches the Full leg's engine.
+/// MR02 with literal words.
 #[test]
-fn ct_rte_07_jumble_a_manual_proposal_reaches_the_preview_point() {
-    let source = root(
-        "export fn go(t: Target, w: Word) -> Text effects [preview] {\n    let r = propose(w, t);\n    \
-         return \"requested\";\n}\n",
-    );
-    let trial = ten(|| Trial::run(&source, Profile::Solving, walk()));
+fn ct_rte_07_jumble_mr02_descending_rank_is_refused() {
+    mr02(Words::Literal);
+}
+
+/// MR02 with menu words of the I_a alphabet.
+#[test]
+fn ct_rte_07_jumble_mr02_descending_rank_is_refused_in_menu_words() {
+    mr02(Words::Menu);
+}
+
+/// The control of the refusals above: a solving run that reads no state and proposes the input word, a word of `kind`,
+/// passes the split and reaches the leg's preview point, as A24's manual preview reaches the Full leg's engine.
+fn manual_proposal(kind: Words) {
+    let source = root(&format!(
+        "export fn go(t: Target, w: {}) -> Text effects [preview] {{\n    let r = propose(w, t);\n    \
+         return \"requested\";\n}}\n",
+        kind.ty()
+    ));
+    let trial = ten(|| Trial::run(&source, kind, Profile::Solving, walk()));
     let out = trial.outcome();
     assert_eq!((out.run.summary.outcome, out.run.summary.code), (Ended::Completed, None), "{:?}", out.run.summary);
     assert_eq!((out.shell.len(), out.separated.len(), trial.proposals), (1, 0, 1));
-    assert_eq!((out.shell[0].word.as_slice(), out.shell[0].target.as_str()), (&[A][..], "c0"));
+    assert_eq!((kind.shown(&out.shell[0]), out.shell[0].target.as_str()), (vec![A], "c0"));
     assert!(trial.asked.is_empty());
+}
+
+/// The control with literal words.
+#[test]
+fn ct_rte_07_jumble_a_manual_proposal_reaches_the_preview_point() {
+    manual_proposal(Words::Literal);
+}
+
+/// The control with menu words of the I_a alphabet.
+#[test]
+fn ct_rte_07_jumble_a_manual_menu_word_proposal_reaches_the_preview_point() {
+    manual_proposal(Words::Menu);
 }
 
 /// Every key this leg realises is a key of the frozen corpus that the Full leg leaves for M5.

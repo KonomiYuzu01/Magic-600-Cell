@@ -14,18 +14,20 @@
 //!
 //! [`Alphabet::pinned`] gives the same alphabet as the interpreter's menu alphabet (`c600_run::menu`, LP2's pull
 //! request 210), which a run pins for the IR draft's menu words, so the library entries written as language code
-//! (`crate::library`) build the words that [`LiteralWord`] builds here.
+//! (`crate::library`) build the words that [`LiteralWord`] builds here. It pins the menu's item matrices with it, so a
+//! run's menu words also have LG2.18's word keys (`c600_run::menu_key`, `word-key/1`).
 
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use c600_jumble::model::POLES;
-use c600_jumble::q5::transpose;
+use c600_jumble::q5::{transpose, Mat4, Q5};
 use c600_jumble::state::State;
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context;
 use c600_kernel::{IdentityBlock, Puzzle};
-use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
+use c600_run::menu::{ItemMatrix, MenuAlphabet, MenuError, MenuIdentity};
+use c600_run::value::Quad;
 
 /// The chapter 13 code of a word composition or application that mixes puzzle alphabets or pinned letter meanings
 /// (LB1.3, LB1.9).
@@ -168,6 +170,8 @@ struct Pinned {
     identity: IdentityBlock,
     /// `inverse[x]` is the item whose rotation is the inverse of item x's.
     inverse: Vec<i32>,
+    /// `matrices[x]` is item x's exact rotation in the menu's base frame, in the menu's order.
+    matrices: Vec<Mat4>,
 }
 
 /// The alphabet of a literal jumbling word (LB1.9, LB1.10): the letters `[cap, item]` of one pinned menu, named by the
@@ -188,7 +192,8 @@ impl Alphabet {
                 found.map(|x| x as i32).ok_or(WordError::NoInverse { item })
             })
             .collect::<Result<Vec<i32>, WordError>>()?;
-        Ok(Alphabet(Arc::new(Pinned { identity: ctx.identity(Some(menu)), inverse })))
+        let matrices = menu.items.iter().map(|(_, m)| m.clone()).collect();
+        Ok(Alphabet(Arc::new(Pinned { identity: ctx.identity(Some(menu)), inverse, matrices })))
     }
 
     /// The identity block that names the alphabet.
@@ -207,13 +212,22 @@ impl Alphabet {
     }
 
     /// This alphabet as the interpreter's menu alphabet, which a run pins for the IR draft's menu words (LB1.8; LP2
-    /// draft): the identity block as text ([`menu_identity`]), every pole of the model as a cap, and the item of each
-    /// item's inverse rotation. A menu-word literal of the run then takes this alphabet, its `inverse` reads these
-    /// inverse items, and an argument or a host's answer of another alphabet is refused with
-    /// `LB1:input.incompatible_alphabet` (`c600_run::menu`).
+    /// draft): the identity block as text ([`menu_identity`]), every pole of the model as a cap, the item of each
+    /// item's inverse rotation, and the item matrices ([`MenuAlphabet::with_matrices`], which checks that they give
+    /// the block's `menu_id` and `menu_order`). A menu-word literal of the run then takes this alphabet, its `inverse`
+    /// reads these inverse items, an argument or a host's answer of another alphabet is refused with
+    /// `LB1:input.incompatible_alphabet` (`c600_run::menu`), and `word_key` keys the run's menu words by the exact
+    /// products of their runs at one grip (LG2.18, `c600_run::menu_key`).
     pub fn pinned(&self) -> Result<MenuAlphabet, MenuError> {
         let inverse = self.0.inverse.iter().map(|&item| item as u32).collect();
-        MenuAlphabet::new(menu_identity(self.identity()), POLES as u32, inverse)
+        let quad = |q: &Q5| Quad::new(q.a().clone(), q.b().clone(), q.d().clone());
+        let items: Vec<ItemMatrix> = self
+            .0
+            .matrices
+            .iter()
+            .map(|m| std::array::from_fn(|i| std::array::from_fn(|j| quad(&m[i][j]))))
+            .collect();
+        MenuAlphabet::new(menu_identity(self.identity()), POLES as u32, inverse)?.with_matrices(items)
     }
 
     /// Refuses another alphabet with [`INCOMPATIBLE_ALPHABET`].

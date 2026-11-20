@@ -300,7 +300,8 @@ pub fn trace_equality_keys() -> CatalogueRow {
                 identity letters and an item beside its inverse among them, so a key keeps each grip's domain test. \
                 The key recognizes commuting swaps only and searches for no word. A key under another menu, model, \
                 key or relation version is `LB1:input.key_contract_mismatch`, and a word of another alphabet is \
-                `LB1:input.incompatible_alphabet`. Word keys are separate (LG2.18's jumbling word key is not built).",
+                `LB1:input.incompatible_alphabet`. Word keys are separate: LG2.18's `word_key` keys menu words by \
+                exact products when the run pins the menu's item matrices (`word::Alphabet::pinned`).",
         ..row("Trace equality keys", "Jumbling menu words under `jumble-locality/1`.", &[], MENU_TRACES)
     }
 }
