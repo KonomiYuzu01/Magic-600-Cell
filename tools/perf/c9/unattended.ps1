@@ -475,13 +475,35 @@ function Invoke-U6 {
     $null = Invoke-Step 'U6/cold_start' $Python (@('-B', '-u', 'tools/perf/c9/cold_start.py') + $made + @('--out', "$Runs\e3$Tag.json")) 600 "$Runs\e3$Tag.json"
 }
 
+# U7's injected stack overflows must not reach Windows Error Reporting (the 20 Nov 2026 run left 452 WER events). For
+# U7 only, this script's own error mode gains SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX; the processes it starts
+# inherit it (cargo, c600-lx2-faults, launch.py, Godot, the runtime, the device child), so an unhandled exception ends
+# them without a WER report. No system or user setting changes, and the old mode returns after U7. So a crash of any of
+# those processes during U7 is not reported to WER either; its exit code stays in the log. (The device child cannot set
+# the mode itself: Windows calls belong to c600-platform alone, CT-RPI-20.)
 function Invoke-U7 {
-    Wait-Gate 'U7/faults'
-    $null = Invoke-Step 'U7/faults' $Cargo @('run', '--locked', '--offline', '--release', '--manifest-path', 'rust/Cargo.toml',
-        '-p', 'c600-lx2', '--features', 'device', '--bin', 'c600-lx2-faults', '--', '--runtime', "$ProductBuild\runtime\c600-runtime.exe",
-        '--injection', $Child, '--sessions', "$Runs\u7$Tag-sessions", '--out', "$Runs\u7$Tag-faults.json") 2700 "$Runs\u7$Tag-faults.json"
-    Invoke-ShellStep -Step 'U7' -Name "u7$Tag" -LaunchArgs @('--lx4', '--lx4-fixtures', $Fixtures, '--lx2-injection', $Child) `
-        -CaptureSeconds 4800 -Poster @('tools/perf/c9/lx2.py', 'post', '--fixtures', $Fixtures, '--run', '{run}') -PosterGrace 60 -Cap 4500 -Hold
+    $previous = $null
+    if ($DryRun) {
+        Write-Host '  [U7/error-mode] add SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX to this process for U7, then restore'
+    } else {
+        if (-not ('C9Unattended.ErrorMode' -as [type])) {
+            Add-Type -Namespace C9Unattended -Name ErrorMode -MemberDefinition ('[System.Runtime.InteropServices.DllImport("kernel32.dll")] public static extern uint GetErrorMode();' +
+                ' [System.Runtime.InteropServices.DllImport("kernel32.dll")] public static extern uint SetErrorMode(uint mode);')
+        }
+        $previous = [C9Unattended.ErrorMode]::GetErrorMode()
+        $null = [C9Unattended.ErrorMode]::SetErrorMode([uint32]($previous -bor 3))
+        Write-Log 'U7/error-mode' 0 $null ('this process {0} -> {1} for U7 (SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX)' -f $previous, [C9Unattended.ErrorMode]::GetErrorMode())
+    }
+    try {
+        Wait-Gate 'U7/faults'
+        $null = Invoke-Step 'U7/faults' $Cargo @('run', '--locked', '--offline', '--release', '--manifest-path', 'rust/Cargo.toml',
+            '-p', 'c600-lx2', '--features', 'device', '--bin', 'c600-lx2-faults', '--', '--runtime', "$ProductBuild\runtime\c600-runtime.exe",
+            '--injection', $Child, '--sessions', "$Runs\u7$Tag-sessions", '--out', "$Runs\u7$Tag-faults.json") 2700 "$Runs\u7$Tag-faults.json"
+        Invoke-ShellStep -Step 'U7' -Name "u7$Tag" -LaunchArgs @('--lx4', '--lx4-fixtures', $Fixtures, '--lx2-injection', $Child) `
+            -CaptureSeconds 4800 -Poster @('tools/perf/c9/lx2.py', 'post', '--fixtures', $Fixtures, '--run', '{run}') -PosterGrace 60 -Cap 4500 -Hold
+    } finally {
+        if ($null -ne $previous) { $null = [C9Unattended.ErrorMode]::SetErrorMode([uint32]$previous) }
+    }
     $null = Invoke-Step 'U7/analyze' $Python @('-B', '-u', 'tools/perf/c9/lx2.py', 'analyze', '--fixtures', $Fixtures, "$Runs\u7$Tag",
         '--faults', "$Runs\u7$Tag-faults.json", '--out', "$Runs\u7$Tag-lx2.json") 900 "$Runs\u7$Tag-lx2.json"
 }

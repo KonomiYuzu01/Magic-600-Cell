@@ -99,30 +99,6 @@ unsafe impl GlobalAlloc for Ceiling {
 #[global_allocator]
 static ALLOCATOR: Ceiling = Ceiling;
 
-/// Keeps Windows Error Reporting out of this process's crashes (C9 U7, 20 Nov 2026: the unattended run's injected stack
-/// overflows left hundreds of WER events). The overflow ends the process through the unhandled-exception filter, which
-/// with `SEM_NOGPFAULTERRORBOX` does not start Windows Error Reporting; the exit status (0xC00000FD) and the standard
-/// library's line on standard error are unchanged. The error mode is this process's own, inherited only by processes
-/// it starts; no system or user setting changes. A fail-fast abort, such as the allocator ceiling's, still reaches
-/// Windows Error Reporting.
-#[cfg(windows)]
-fn quiet_error_reporting() {
-    const SEM_FAILCRITICALERRORS: u32 = 0x0001;
-    const SEM_NOGPFAULTERRORBOX: u32 = 0x0002;
-    #[link(name = "kernel32")]
-    extern "system" {
-        fn GetErrorMode() -> u32;
-        fn SetErrorMode(mode: u32) -> u32;
-    }
-    // SAFETY: both calls take and return a flag word and touch only this process's error mode.
-    unsafe {
-        SetErrorMode(GetErrorMode() | SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-    }
-}
-
-#[cfg(not(windows))]
-fn quiet_error_reporting() {}
-
 /// Ends the process before the child announces itself.
 fn refuse(reason: &str) -> ! {
     eprintln!("c600-lx2-child: {reason}");
@@ -177,7 +153,6 @@ mod native {
 }
 
 fn main() {
-    quiet_error_reporting();
     if let Some(value) = std::env::var_os(c600_lx2::CEILING_VARIABLE) {
         match value.to_str().and_then(|text| text.parse::<usize>().ok()) {
             Some(limit) => LIMIT.store(limit, Relaxed),

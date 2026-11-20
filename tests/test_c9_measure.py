@@ -1675,6 +1675,27 @@ class RunnerTests(unittest.TestCase):
                      'HKLM:', 'HKCU:', 'Set-ItemProperty', 'WerAddExcludedApplication', 'ForegroundLockTimeout'):
             self.assertNotIn(word, code)
 
+    def test_u7_alone_keeps_error_reporting_out_and_restores_the_mode(self):
+        # The error mode is this process's own, inherited by the processes it starts; no WER or registry setting, and
+        # no Windows call in the device child (CT-RPI-20 keeps those in c600-platform).
+        code = '\n'.join(line for line in self.text.split('#>', 1)[1].splitlines()
+                         if not line.lstrip().startswith('#'))
+        u7 = self.function('Invoke-U7')
+        self.assertEqual(code.count('::SetErrorMode('), 2)
+        self.assertEqual(u7.count('::SetErrorMode('), 2)
+        quiet, restore = 'SetErrorMode([uint32]($previous -bor 3))', 'SetErrorMode([uint32]$previous)'
+        before, after = u7.split('} finally {', 1)
+        self.assertLess(before.index(quiet), before.index('try {'))
+        self.assertLess(before.index('try {'), before.index("Invoke-Step 'U7/faults'"))
+        self.assertLess(before.index("Invoke-Step 'U7/faults'"), before.index("Invoke-ShellStep -Step 'U7'"))
+        self.assertIn(restore, after.split("'U7/analyze'", 1)[0])
+        self.assertIn('if ($DryRun) {', before.split(quiet, 1)[0])
+        for word in ('WerSetFlags', 'WerAddExcludedApplication', 'LocalDumps', 'DontShowUI', 'reg.exe', 'reg add',
+                     'New-ItemProperty'):
+            self.assertNotIn(word, code)
+        child = (ROOT / 'rust/c600-lx2/src/bin/c600-lx2-child.rs').read_text(encoding='utf-8')
+        self.assertNotIn('SetErrorMode', child)
+
     def test_u8_records_the_gate_summary_as_a_reference(self):
         u8 = self.function('Invoke-U8')
         self.assertIn("'--gate-reference'", u8)
