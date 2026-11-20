@@ -140,8 +140,10 @@ pub const NEEDS: [RowNeed; 6] = [
               `apply_filter`, which takes the `FilterPreviewRef` as a record of its epoch and job and writes it as the \
               record `filter.apply`; in the tests the row runs through the command and source routes, and the next \
               undo removes the record.",
-        remains: "Nothing in the layer for the row's admission, gate, completion or undo. No display applies the \
-                  applied filter yet.",
+        remains: "Nothing in the layer for the row's admission, gate, completion or undo. The display \
+                  (`c600_repr::applied`) shows the applied filter while the layer keeps its filter preview. After a \
+                  reopen, or once a newer filter preview replaced a stale one, it shows the layout unfiltered and says \
+                  why, because the record holds only the reference.",
     },
     RowNeed {
         row: "view.effect.scope",

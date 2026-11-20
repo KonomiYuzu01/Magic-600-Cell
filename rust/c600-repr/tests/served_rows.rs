@@ -42,11 +42,14 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use c600_command::{
     code, saved_set_record, ActionHint, Caller, CommandLayer, Completion, Direction, Error, Invocation, JobOutput,
-    Kind, Overlay, ProgramJob, Receipt, RecordValue, RecordWrite, ResultRef, Revision, SavedSet, Status, Transaction,
-    TransactionKind, UndoClass,
+    Kind, Overlay, ProgramJob, Receipt, RecordValue, RecordWrite, ResultRef, Revision, SavedSet, Secret, Status, Table,
+    Transaction, TransactionKind, UndoClass,
 };
 use c600_digest::sha256;
+use c600_display::plan::ObjectId;
 use c600_kernel::json::{self, Value as Json};
+use c600_repr::applied::{Applied, Members, Unavailable};
+use c600_repr::layout::Representation;
 use c600_repr::rows::NEEDS;
 use c600_repr::tool::{self, MODULE, SOURCE};
 use c600_run::boundary::{Boundary, Context, Place, Store};
@@ -750,4 +753,133 @@ fn a_running_programs_query_and_view_jobs_run_on_blocks_built_from_its_context()
         assert_eq!(receipt.status, Status::Completed(completion), "{row}");
         assert_eq!(session.fixed(), before, "{row}: nothing moves");
     }
+}
+
+/// One shell invocation of `row` with `args`, its job served by `host`: the job and the output it completed with.
+fn shell_job(host: &ToolHost, session: &mut Session, row: &str, args: Json) -> (ProgramJob, JobOutput) {
+    let started = session.shell.invoke(&mut session.layer, row, args).expect("prepared");
+    assert!(matches!(started.status, Status::Running(_)), "{row}: {:?}", started.status);
+    let (job, output, _) = host.serve_next(&mut session.layer).expect("the row's job");
+    (job, output.unwrap_or_else(|error| panic!("{row}: {error:?}")))
+}
+
+/// Prepares the layer predicate of `cell` and `layer` from the shell and makes its filter preview, as `command_route`
+/// does: the job of that filter preview and the `FilterPreviewRef` the layer gives for it.
+fn previewed(host: &ToolHost, session: &mut Session, cell: i64, layer: i64) -> (u64, Json) {
+    let args = json::object([("cell", Json::Int(cell)), ("layer", Json::Int(layer))]);
+    let (prepared, output) = shell_job(host, session, "structure.layer", args);
+    let predicate = json::object([("digest", text(&output.digest())), ("job", Json::Int(prepared.job as i64))]);
+    let args = json::object([("predicate", predicate), ("revision", session.layer.revision().to_json())]);
+    let (counted, _) = shell_job(host, session, "filter.preview", args);
+    let kept = session.layer.filter_preview(counted.job).expect("the layer keeps the filter preview");
+    (counted.job, kept.reference())
+}
+
+/// The members of a layer predicate as LP2's kernel row gives them.
+fn members_of(cell: i64, layer: i64) -> Members {
+    let listed = kernel().layer_members(cell, layer).expect("a layer");
+    let narrow = |items: &[usize]| items.iter().map(|&n| n as u32).collect();
+    Members {
+        cell: listed.cell as u32,
+        layer: listed.layer as u32,
+        pieces: narrow(&listed.pieces),
+        slots: narrow(&listed.slots),
+    }
+}
+
+/// A sheet with one occurrence each of a member and a non-member slot, sticker, piece and certificate point, and of a
+/// cell, a grip, a cap and an orbit, analysed for the two non-members: the objects in sheet order, the ones an applied
+/// filter of `members` keeps, and the sheet.
+fn sheet_of(members: &Members) -> (Vec<ObjectId>, Vec<ObjectId>, Representation) {
+    let slot_in = *members.slots.first().expect("a member slot");
+    let slot_out = (0..).find(|slot| !members.slots.contains(slot)).expect("a slot outside");
+    let piece_in = *members.pieces.first().expect("a member position");
+    let piece_out = (0..).find(|piece| !members.pieces.contains(piece)).expect("a position outside");
+    let point = |witness: u32| ObjectId::Point { witness, grip: 0, role: "witness".to_owned() };
+    let objects = vec![
+        ObjectId::Slot(slot_in),
+        ObjectId::Slot(slot_out),
+        ObjectId::Sticker(slot_in),
+        ObjectId::Sticker(slot_out),
+        ObjectId::Piece(piece_in),
+        ObjectId::Piece(piece_out),
+        point(piece_in),
+        point(piece_out),
+        ObjectId::Cell(members.cell),
+        ObjectId::Grip(0),
+        ObjectId::Cap(0),
+        ObjectId::Orbit(0),
+    ];
+    let kept = vec![ObjectId::Slot(slot_in), ObjectId::Sticker(slot_in), ObjectId::Piece(piece_in), point(piece_in)];
+    let occurrences: Vec<_> =
+        objects.iter().enumerate().map(|(i, object)| occurrence(i as u64 + 1, object.clone(), None)).collect();
+    let analysed = [ObjectId::Slot(slot_out), ObjectId::Piece(piece_out)];
+    let sheet = Representation::layout(&header(1, &revision(1)), &analysed, Vec::new(), &occurrences).expect("a sheet");
+    (objects, kept, sheet)
+}
+
+/// The objects a representation shows, in order.
+fn shown(representation: &Representation) -> Vec<ObjectId> {
+    representation.occurrences().expect("a sheet").into_iter().map(|occurrence| occurrence.object).collect()
+}
+
+/// The applied filter's display (`c600_repr::applied`) on the records the tool's own entries write through the command
+/// route. With no record `filter.apply` no filter applies. Once `apply_filter` applied the filter preview of the layer
+/// predicate (7, 2), the display reads LP2's members of that layer, and a sheet shows its member slot, sticker, piece
+/// and certificate point and nothing else, beside the analysed set it was given (LB4.4). A commit leaves the preview
+/// stale but kept, and the display as it was: the members read no state. A new write of the predicate's record makes
+/// the filter unavailable, and the display shows the sheet unfiltered. A filter preview of another predicate then
+/// replaces the stale one, so the applied filter is not kept, until the new preview is applied. A reopen keeps the
+/// record and no filter preview, and an undo of the second apply brings back the reference to the dropped preview.
+/// A read changes nothing. The members' refusal with Jumble on (`Unavailable::Refused`) is not run here: these tests
+/// set up no session with Jumble on. Covers no conformance ID.
+#[test]
+fn the_display_applies_the_applied_filter_while_the_layer_keeps_its_preview() {
+    let host = ToolHost::new();
+    let mut session = session();
+    serve(&mut session.layer);
+    assert_eq!(Applied::read(&session.layer), Applied::None, "nothing applied");
+
+    let (first, reference) = previewed(&host, &mut session, 7, 2);
+    shell_job(&host, &mut session, "filter.apply", json::object([("preview", reference)]));
+    let members = members_of(7, 2);
+    let before = session.fixed();
+    let applied = Applied::read(&session.layer);
+    assert_eq!(applied, Applied::Members(members.clone()));
+    assert_eq!(session.fixed(), before, "a read changes nothing");
+    let (objects, kept, sheet) = sheet_of(&members);
+    let filtered = applied.show(&sheet).expect("a sheet filters");
+    assert_eq!(shown(&filtered), kept);
+    assert_eq!(filtered.analysed(), sheet.analysed(), "the analysed set stays");
+    assert!(objects.iter().all(|object| applied.keeps(object) == kept.contains(object)));
+
+    session.commit(&[1]);
+    let stale = session.layer.filter_preview(first).expect("kept while stale");
+    assert!(!session.layer.filter_fresh(stale), "the commit made it stale");
+    assert_eq!(Applied::read(&session.layer), applied, "the members read no state");
+
+    let args = json::object([("cell", Json::Int(7)), ("layer", Json::Int(3))]);
+    shell_job(&host, &mut session, "structure.layer", args);
+    let written = Applied::read(&session.layer);
+    assert_eq!(written, Applied::Unavailable(Unavailable::PredicateWritten));
+    let unfiltered = written.show(&sheet).expect("unfiltered");
+    assert!(objects.iter().all(|object| written.keeps(object)), "an unavailable filter keeps every occurrence");
+    assert_eq!((&unfiltered, shown(&unfiltered)), (&sheet, objects));
+
+    let (_, reference) = previewed(&host, &mut session, 7, 3);
+    assert!(session.layer.filter_preview(first).is_none(), "the stale preview is dropped");
+    assert_eq!(Applied::read(&session.layer), Applied::Unavailable(Unavailable::NotKept));
+    shell_job(&host, &mut session, "filter.apply", json::object([("preview", reference)]));
+    assert_eq!(Applied::read(&session.layer), Applied::Members(members_of(7, 3)));
+
+    let store = session.layer.store().clone();
+    let mut reopened = CommandLayer::open(kernel_arc(), Table::h08(), Secret::fixed(SECRET), store).expect("reopens");
+    serve(&mut reopened);
+    assert_eq!(reopened.record("filter.apply"), session.layer.record("filter.apply"), "the record is durable");
+    assert_eq!(Applied::read(&reopened), Applied::Unavailable(Unavailable::OtherEpoch));
+
+    let hint = session.layer.undo_hint(Direction::Undo).expect("the second apply");
+    let undo = session.shell.invoke(&mut session.layer, "session.undo", json::object([("hint", hint.to_json())]));
+    assert!(matches!(undo.expect("prepared").status, Status::Committed(_)));
+    assert_eq!(Applied::read(&session.layer), Applied::Unavailable(Unavailable::NotKept));
 }

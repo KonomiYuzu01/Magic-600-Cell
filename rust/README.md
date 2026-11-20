@@ -26,7 +26,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, CT-LB2-03's work-sheet part, and the durable leg of LP2's saved sets (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, each run under its job's budget, with KN2.4's `positions`, `labels`, `effect`, `protection` and `replay` rows, the draft `setups` and `orbits` rows and the representations tool's draft `structure.compare` and `filter.preview` rows (C6) as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
-| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and all six served there by a test host through the command and source routes, whose two snapshot reads `c600-tools`' bridge answers from LP2's structure rows (LP3, C6) |
+| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and all six served there by a test host through the command and source routes, whose two snapshot reads `c600-tools`' bridge answers from LP2's structure rows, and the applied filter's display (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), the repair list at a named cap under the built-in column's repair-list exception (`jumble_repair`), the three end tests read as their own verdict types (`jumble_end_tests`), the jumbling rows' host bridge (`rows`: KN2.4's jumbling rows and `seam_facts` as snapshot reads, also at the command layer's head with Jumble on), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script, with their catalogue rows: LB1's literal words (`words.power` in `words.6cs`); LB1.8's F2 and F5 ranks and solutions (the module `linalg` in `linalg.6cs`), exact Q(√5) signs (`quadratic`) and quaternion factors and tree outputs (`trees`), CT-LB1-01's parts, and its word equality keys (`word_keys`), CT-LB1-02's 600-cell-Full half on the model's relation in `c600-tools`' tests; LB2's exact completion (`completion.exact_completion` in `completion.6cs`), recipes and reports (`recipes`), Net and Strict protection (`protection`), guarded setups and buffers (`guarded_setups` in `setups.6cs`), named macro analysis and comparison (`macros`), seeds with their collateral stage order (`seeds`) and the orbit catalogue, progress per orbit and residuals (`orbits`), whose entries that read state run whole through the tool's host bridge in `c600-tools`' tests (CT-LB2-04, CT-LB2-01, CT-LB2-02 and CT-BND-18 among them); and CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
@@ -2775,6 +2775,12 @@ run or not applicable is no pass (PHS.63).
     sinks as the job's result (`JobOutput`, pull request 203) and a workspace revision that moves. A host serves all six
     rows with their entries; the layer serves `filter.apply` since pull request 256. C6 changed no file in
     `c600-command`.
+  - `applied`: the applied filter's display. It reads the record `filter.apply`, the filter preview the layer keeps
+    for it and the records that preview read, and resolves the layer predicate to its members with LP2's
+    `CommandLayer::layer_members` (pull request 375). A representation's layout then keeps the members' slots,
+    stickers, pieces and certificate points and nothing else, and its analysed set stays (LB4.4). A write of a record
+    the preview read, a newer filter preview that replaced the applied one, and a reopen each leave the layout
+    unfiltered, with the reason.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -2826,18 +2832,24 @@ run or not applicable is no pass (PHS.63).
     operation reaches a served row (LG3.1; a program reaches a row only by a proposal, KN5.9), so the test host stands
     in for the runtime's adapter. Since LP2's pull request 237 the layer refuses a workspace row such as `set.save` on a
     running program's channel with `LG3:capability.not_granted` before any job (the owner's narrow reading of ONE.52, 18
-    November 2026: a run never writes the workspace).
+    November 2026: a run never writes the workspace). A test applies the filter of a layer predicate through the
+    command route, and the display shows a sheet's member slot, sticker, piece and certificate point and nothing else,
+    beside the analysed set it was given; after a commit it still shows them, since the members read no state. A new
+    write of the predicate, a newer filter preview, a reopen and an undo of the apply each leave the sheet unfiltered
+    with the reason. The members' refusal with Jumble on is not run.
 - Built since: the host rows for the `structure.compare` and `filter.preview` snapshot reads, on LP2's structure rows
   (pull request 262), in `c600-tools`' bridge (`c600-tools/tests/structure_rows.rs`). LP2 built the
   `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal since.
   LP2 built a record and an exact-set digest for each saved set (pull request 337): `set.save` writes `set/<name>`
   (its kind, its members ascending and distinct, the model identity, the name and the capture revision) and gives the
   exact-set digest as the result reference (`c600_command::sets`). `replace: true` and `KN5:input.saved_set_exists`
-  are drafts, and names under `set/` are reserved.
+  are drafts, and names under `set/` are reserved. LP2 built the members of a layer (pull request 375), and the
+  applied filter's display reads them (`applied`, above).
 - Not built, LP3's next steps: the two reads' tariffs in the command table, which freezes at LP3; a reference type in
   the IR, so `filter_counts` takes the predicate as a record of its cell and layer; a display that applies the
-  published scope, and one that applies the applied filter (the
-  APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage checker is
+  published scope (its API is in the crate documentation under "Not built"); a display of an applied filter whose
+  filter preview the layer no longer keeps, after a reopen or once a newer one replaced it, which needs the applied
+  predicate kept with the record or by the layer; every device step (CT-LB4-04's rest, C9; the stage checker is
   LP2's since pull request 241); the relationship strip's design and its other typed relations (C8 computes one, a
   slot's current occupant, at pose level, and `c600_display::strip` carries it); filters of trees, complexes and
   graphs; a BM5 review record.
