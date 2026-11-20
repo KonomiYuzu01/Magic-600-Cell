@@ -225,9 +225,9 @@ impl Profile {
     }
 
     /// The bytes of the instanced display payload (`c600-display`'s `jumble::exposed_faces`): the base cut faces'
-    /// binary32 vertices (4 × f32 each), their u32 triangles (3 each) and two u32 offset arrays (one more than the
-    /// base faces each); the binary32 K⁺ matrices (16 × f32 each); each piece's K⁺ transport (u32); and per face of
-    /// the full table its piece, base face and home pole (u32 each), side (u8) and cell (2 × u32).
+    /// vertices (4 binary32 coordinates each), their u32 triangles (3 each) and two u32 offset arrays (one more than
+    /// the base faces each); the K⁺ matrices (16 binary32 entries each); each piece's K⁺ transport (u32); and per
+    /// face of the full table its piece, base face and home pole (u32 each), side (u8) and cell (2 × u32).
     pub fn instanced_bytes(&self) -> u64 {
         let (base, full) = (self.base_cut(), self.full_cut());
         16 * base.vertices
