@@ -168,6 +168,15 @@ impl List {
         &self.items
     }
 
+    /// Appends one element in place. The logical size and the bound grow as [`List::new`] would compute them over the
+    /// longer list: both are saturating sums of terms that are never negative, so the order of the terms does not
+    /// change them.
+    pub fn push(&mut self, value: Value) {
+        self.size = self.size.saturating_add(value.size()).saturating_add(if value.is_sequence() { 8 } else { 0 });
+        self.bound = self.bound.saturating_add(value.bound()).saturating_add(1);
+        self.items.push(value);
+    }
+
     /// The logical size of a list header over these elements: the variant tag and the sequence lengths.
     pub fn header(items: &[Value]) -> u128 {
         Record::header(items)

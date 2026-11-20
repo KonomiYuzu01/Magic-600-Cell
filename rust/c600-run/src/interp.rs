@@ -444,6 +444,8 @@ pub struct Loaded {
     functions: Vec<FunctionInfo>,
     codes: Vec<Code>,
     nodes: Vec<Node>,
+    /// For each node, the `let` slot whose list a `push` there may take to extend in place ([`Compiler::appends`]).
+    appends: Vec<Option<usize>>,
 }
 
 impl Loaded {
@@ -579,7 +581,7 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
     }
     let exported: Vec<bool> = runnable().flat_map(|(_, m)| m.functions.iter().map(|f| f.exported)).collect();
     let mut compiler = Compiler {
-        loaded: Loaded { modules, functions, codes: Vec::new(), nodes: Vec::new() },
+        loaded: Loaded { modules, functions, codes: Vec::new(), nodes: Vec::new(), appends: Vec::new() },
         names,
         contexts: Vec::new(),
         next_id: 0,
@@ -592,6 +594,7 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
         }
     }
     compiler.frames();
+    compiler.appends();
     Ok(compiler.loaded)
 }
 
@@ -1013,6 +1016,72 @@ impl Compiler {
         for code in &mut self.loaded.codes {
             code.slots = (code.params + code.captures + code.lets) as u128 + temps[code.body];
         }
+    }
+
+    /// Marks each `push` whose list operand reads a `let` slot that is dead from the push on: the slot belongs to the
+    /// push's own code unit, no loop lies between the push and the slot's binding, and no operation of the unit after
+    /// the push reads the slot, as a variable or as a closure's or a child scope's capture. A unit runs its operands
+    /// in post-order, and only a loop runs one again, so no read of the slot follows the push until the slot is bound
+    /// again: its loop's next iteration refills it, or its scope ends. Such a push may take the slot's handle on the
+    /// list ([`Machine::push_element`]). Branches count as if both ran, which only marks fewer pushes.
+    fn appends(&mut self) {
+        let nodes = &self.loaded.nodes;
+        let mut appends = vec![None; nodes.len()];
+        for code in &self.loaded.codes {
+            // The unit's operands in post-order, with each one's parent in the unit.
+            let mut order = Vec::new();
+            let mut up = HashMap::new();
+            let mut stack = vec![(code.body, false)];
+            while let Some((id, done)) = stack.pop() {
+                if done {
+                    order.push(id);
+                    continue;
+                }
+                stack.push((id, true));
+                for &kid in nodes[id].kids.iter().rev() {
+                    up.insert(kid, id);
+                    stack.push((kid, false));
+                }
+            }
+            let mut last = HashMap::new();
+            for (at, &id) in order.iter().enumerate() {
+                let mut read = |slot: &SlotRef| {
+                    if let SlotRef::Let(i) = *slot {
+                        last.insert(i, at);
+                    }
+                };
+                match &nodes[id].kind {
+                    Kind::Var(slot) => read(slot),
+                    Kind::Closure { captures, .. } => captures.iter().for_each(read),
+                    Kind::Child { body_captures, otherwise_captures, .. } => {
+                        body_captures.iter().chain(otherwise_captures).for_each(read)
+                    }
+                    _ => {}
+                }
+            }
+            for (at, &id) in order.iter().enumerate() {
+                let (Kind::Prim(Prim::Push), Some(&list)) = (&nodes[id].kind, nodes[id].kids.first()) else {
+                    continue;
+                };
+                let Kind::Var(SlotRef::Let(slot)) = nodes[list].kind else { continue };
+                if last.get(&slot).is_some_and(|&read| read > at) {
+                    continue;
+                }
+                let mut below = id;
+                let bound = loop {
+                    let Some(&parent) = up.get(&below) else { break false };
+                    match nodes[parent].kind {
+                        Kind::Let(s) | Kind::Repeat(s) if s == slot => break true,
+                        Kind::Repeat(_) => break false,
+                        _ => below = parent,
+                    }
+                };
+                if bound {
+                    appends[id] = Some(slot);
+                }
+            }
+        }
+        self.loaded.appends = appends;
     }
 }
 
@@ -1994,6 +2063,9 @@ impl<'a> Machine<'a> {
         if op == Prim::Expand {
             return self.expand(n, name, args);
         }
+        if op == Prim::Push {
+            return self.push_element(n, name, args);
+        }
         if op == Prim::Index {
             let index = args.pop().expect("an index");
             let list = args.pop().expect("a list");
@@ -2149,20 +2221,53 @@ impl<'a> Machine<'a> {
                 }
                 _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
             },
-            (Prim::Push, _, [a, b]) => {
-                let Value::List(x) = &a.value else {
-                    return Err(self.fail(Some(n), name, code::IR_REJECTED));
-                };
-                let (x, e) = (x.clone(), b.value.clone());
-                let count = x.items().len() as u128 + 1;
-                let memory = a.value.size() + e.size() + if e.is_sequence() { 8 } else { 0 };
-                let build = move || Value::List(Arc::new(List::new([x.items(), &[e]].concat())));
-                (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
-            }
             _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
         };
         self.charge(Some(n), name, kernel, memory, 0)?;
         self.settle(memory, result());
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `push`, one step that builds the list with one more element at the end, priced as a new list of that length:
+    /// [`LIST_PER_ELEMENT`] per element and the new list's size reserved (LP2 draft). The price does not depend on how
+    /// the list is built. When the push holds the only handle on the list, it extends the list in place instead of
+    /// copying its elements, so a list grown one push at a time is built in linear time. A list read from a `let` slot
+    /// that is dead from this push on ([`Compiler::appends`]) gives up the slot's handle first, if the slot and the
+    /// operand are the list's only handles; the slot keeps its owners, which its refill or its scope's end releases.
+    fn push_element(&mut self, n: NodeId, name: &str, mut args: Vec<Held>) -> Result<(), Stop> {
+        let [a, b] = &args[..] else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        let Value::List(list) = &a.value else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        let count = list.items().len() as u128 + 1;
+        let memory = a.value.size() + b.value.size() + if b.value.is_sequence() { 8 } else { 0 };
+        self.charge(Some(n), name, LIST_PER_ELEMENT.saturating_mul(count), memory, 0)?;
+        let element = std::mem::replace(&mut args[1].value, Value::Unit);
+        let Value::List(mut list) = std::mem::replace(&mut args[0].value, Value::Unit) else { unreachable!("a list") };
+        let taken = self.loaded.appends[n].filter(|&slot| args[0].origin == Origin::Let { slot, whole: true });
+        if let Some(slot) = taken {
+            let frame = self.frames.last_mut().expect("a frame");
+            if let Some((held, _)) = frame.lets[slot].as_mut() {
+                let same = matches!(&*held, Value::List(h) if Arc::ptr_eq(h, &list));
+                if same && Arc::strong_count(&list) == 2 {
+                    *held = Value::Unit;
+                }
+            }
+        }
+        if Arc::get_mut(&mut list).is_none() {
+            let mut items = Vec::with_capacity(list.items().len() + 1);
+            items.extend_from_slice(list.items());
+            list = Arc::new(List::new(items));
+        }
+        Arc::get_mut(&mut list).expect("the push's own list").push(element);
+        self.settle(memory, Value::List(list));
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);
