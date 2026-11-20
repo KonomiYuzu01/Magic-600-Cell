@@ -2785,8 +2785,19 @@ run or not applicable is no pass (PHS.63).
     changed are M5's inside set; at J1's stages the head has J1's digest, counts and posed-row hashes (J02); at the end
     the posed row and the current-occupant relation (CT-EV3-06) answer as on M5's state. The default run takes the
     first 130 records of each journal, across two of the layer's flat replays, and reaches J1's start stage; the whole
-    journals, with the mid and end stages, run on request (`--ignored`). Not compared there: refusals, undo and redo,
-    protected pieces and free mode, which LP2's route test and `c600-command`'s own tests run.
+    journals, with the mid and end stages, run on request (`--ignored`). Not compared there: `jumble.off`, the refusals,
+    undo and redo, protected pieces and free mode, which `jumble_layer_verdicts.rs` runs beside the tool's own entries
+    (below).
+  - `c600-jumble-tool/tests/jumble_layer_verdicts.rs` (pull request 323): Jumble on through the command layer beside the
+    tool's own entries at the layer's head (`Rows::at_head`), in five tests on the W-J fixtures. `jumble.off` commits
+    exactly when `jumble_end_tests`'s label checkpoint holds; it is refused with its fact's code when the checkpoint
+    fails, and as not shown reachable when it is unestablished. After an exit every tool read stops with
+    `KN5:input.menu_word_needs_jumble_on`, and undo, redo and undo again bring the jumbled head back with equal reads.
+    Each admissible press moves as many pieces as `jumble_admissibility`'s twist check names, and a blocked one is
+    refused with the code `word_protection` stops with for the letter; every refusal changes nothing. With an orbit
+    protected, under Net and Strict, a press commits or is refused as `word_protection` answers. Redo brings back each
+    head with its digest and the tool's reads, and a free binding at the next record's grip is refused with
+    `MENU_BINDING_MISMATCH`. The tests read the layer's decisions and add no rule of their own.
   - `c600-jumble-tool/tests/ct_lb1_06.rs`: CT-LB1-06's jumbling half (LB1.10) on the model in `assets/`: the relation
     `jumble-locality/1` that `locality` pins agrees with M5's table on every pair of grips; bca and cab key to bca and
     abc to itself; identity letters and an item beside its inverse stay in the key; words with one key are admitted
@@ -2805,9 +2816,10 @@ run or not applicable is no pass (PHS.63).
     readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
     (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
     engine's `correction_set_check`), pull request 301.
-- Not taken up yet from LP2: through the command layer, `jumble.off`, the refusals, redo, protected pieces and free
-  mode (LP2's route test and `c600-command`'s own tests run them). C8 uses the IR draft's F2 and F5 (pull request 222)
-  for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
+- Taken up from LP2 since pull request 323: through the command layer, `jumble.off`, the refusals with Jumble on, redo,
+  protected pieces and free mode, each beside the tool's own entries at the layer's head
+  (`tests/jumble_layer_verdicts.rs`, above). C8 uses the IR draft's F2 and F5 (pull request 222) for LB3's ν entry
+  (`src/jumble_nu.6cs`, `library::NU`).
 - Not built: J10's producer (exposed-face geometry, LP2); J01 and J06 to J12 as supported rows (a backend's own rows,
   C9); the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
   CT-RTE-07's jumbling keys on menu words (LG2.18's jumbling word key, LP2); LB3.1's other rows as language code ("Menus
