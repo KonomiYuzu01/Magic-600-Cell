@@ -348,10 +348,13 @@ fn ct_ev3_06_a_strip_record_keeps_none_off_the_lattice_apart_from_unknown() {
     assert_eq!(strip::attach(&shown, &off), Ok(()));
     let mut other_model = off.clone();
     other_model.identity.model_id.push_str("-other");
+    other_model.result.clear();
     let mut lifted = off.clone();
     lifted.base.mode = Mode::JumbleOff;
+    lifted.result.clear();
     let mut from_labels = off.clone();
     from_labels.level = Level::Labels;
+    from_labels.result.retain(|_, value| value.is_err());
     let refusals = [
         ("not a relation node", node(&off.base, NodeKind::Object, &[key.clone()]), &off),
         ("no claim", node(&off.base, NodeKind::Relation, &[]), &off),
@@ -390,7 +393,9 @@ fn strip_run(
 /// `view_aid` that depends on the state, on a Jumble-on model, computes C8's current occupant once at open. Sixty
 /// frames, each reading the frame input and offered the same bundle again, and a workspace-only revision compute
 /// nothing. A burst of two state revisions computes once, at the newer: the record names that revision and equals the
-/// record computed there directly, and the superseded revision is never computed. Sixty more frames compute nothing.
+/// record computed there directly, and the superseded revision is never computed. Each revision admits one
+/// recomputation, and the newer supersedes the older before a runner takes it, so the burst counts two recomputations
+/// and one program run. Sixty more frames compute nothing.
 #[test]
 fn ct_ev3_06_a_strip_record_is_computed_at_named_revisions_never_per_frame() {
     let menu = i_a();
@@ -421,7 +426,11 @@ fn ct_ev3_06_a_strip_record_is_computed_at_named_revisions_never_per_frame() {
     assert_eq!(computed.iter().map(|record| record.base.state).collect::<Vec<_>>(), [11, 13], "12 is skipped");
     assert_eq!(computed[1], strip_record(&key, &states[&13], 13), "the record of the revision it names");
     let after_burst = model.counters(&v).expect("open");
-    assert_eq!(after_burst.recomputations, before.recomputations + 1);
+    assert_eq!(
+        (after_burst.recomputations, after_burst.program_runs),
+        (before.recomputations + 2, before.program_runs + 1),
+        "two admitted, one run"
+    );
     for _ in 0..FRAMES {
         model.frame_input();
         assert_eq!(model.pump(|_| panic!("an unchanged frame computed the strip relation")), 0);

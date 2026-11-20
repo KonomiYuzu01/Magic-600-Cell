@@ -19,7 +19,8 @@
 //!
 //! - A record states one relation over operands of one role, with values of one role. Each operand and each value is
 //!   one canonical object of KN1 ([`ObjectId`]). A relation whose value is no canonical object, such as an element of
-//!   the frame group, or whose value names several objects, is not drafted.
+//!   the frame group, or whose value names several objects, is not drafted. A role says what its objects stand for in
+//!   the relation, not their kind: [`attach`] does not check an operand's or a value's kind against its role.
 //! - A record's level is the stored level it read (KN1.8): labels or poses. Off the lattice, pose is the only stored
 //!   level, so a record that answers there from classes or regions (EV3.9) names poses.
 //! - Evidence references are opaque strings that chapter 06 records resolve; [`attach`] reads none of them.
