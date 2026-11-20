@@ -535,8 +535,9 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   (`tests/jumble_layer_repair.rs`): the two agree on status, input digest, parameters, message and rows, the job alone
   words an empty list (BND.2), and neither side picks a cap.
   Waits: J10's certified exposed-face geometry and its size profile, which no line has supplied yet (LP2's
-  `faces::exposed_faces` refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows, a
-  backend's own rows (C9);
+  `faces::exposed_faces` refuses with JI.45's code, pull request 336, and `c600-display`'s `jumble::exposed_faces`
+  passes the refusal on with the state digest it names); J01 and J06 to J12 as supported rows, a backend's own rows
+  (C9);
   CT-RTE-07's jumbling keys on menu words and CT-LB1-02's key half, on LG2.18's jumbling word key, which LP2 built at
   the run level (pull request 338), once a host pins the menu with its item matrices;
   BM5's review records. Built next, as one piece: CT-LB1-03's jumbling kernel half (LB1.8's literal words of one pinned
