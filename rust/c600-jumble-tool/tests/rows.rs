@@ -19,31 +19,41 @@
 //! `KN5:input.argument_form` at its tariff, and its draft tariff counts one pass of the model's pieces for the state and
 //! one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts or the whole scan,
 //! one more for each cap for the rim summary, one more for a named cap and each of its 80 meeting caps for covers, one
-//! for a named correction id, and one more for a named twist, grip, cap or unit, or every unit off the lattice. Covers,
-//! the survey and the straddlers take one cap, the catalogue lookup one id and the twist check one letter, never `all`
-//! or a list: the research survey's all-items loop is not served.
+//! for a named correction id, and one more for a named twist, grip, cap or unit, or every unit off the lattice; one for
+//! the sticker test, two for the label checkpoint, one more for each letter of a retained witness, and the repair
+//! list's worst case under the state's menu. Covers, the survey, the straddlers and the repair list take one cap, the
+//! catalogue lookup one id and the twist check one letter, never `all` or a list: the research survey's all-items loop
+//! is not served.
 //!
 //! The `seam_facts` row, which CT-RTE-07's jumbling keys read (`tests/ct_rte_07_jumble.rs`), answers for the cap it is
 //! named: at an admissible cap its N_c equals the engine's rim summary for that cap, a blocked cap has no totals, and a
-//! cap outside the model is `KN2:input.named_object_invalid`. A pass is source and fixture evidence.
+//! cap outside the model is `KN2:input.named_object_invalid`. The `repair_list` row serves the engine's completed list
+//! at the cap it is named, each row a record of its five integers, without the outcome of every pair tried (CT-LB3-07),
+//! and the end tests' rows serve M8's verdicts with every evidence key they write. A pass is source and fixture
+//! evidence.
 
 mod common;
 
 use std::sync::OnceLock;
 
+use c600_check::TYPE_MISMATCH;
 use c600_command::code::ARGUMENT_FORM;
-use c600_ir::{QTy, Ty};
+use c600_ir::{EndTest, QTy, Ty};
 use c600_jumble::codes::{MENU_BINDING_MISMATCH, MENU_WORD_NEEDS_JUMBLE_ON, NAMED_OBJECT_INVALID};
-use c600_jumble::levels::{Base, Snapshot};
+use c600_jumble::levels::{self, Base, Partial, Snapshot, Verdict, Witness};
 use c600_jumble::model::{NP, POLES};
-use c600_jumble::observe::cuts::rim_summary;
+use c600_jumble::nu;
+use c600_jumble::observe::cuts::{repair_list, rim_summary};
 use c600_jumble::observe::{seam_facts, Batch, Rows as Cells, Scope};
 use c600_jumble::state::{State, Status};
 use c600_jumble::twist::Twist;
 use c600_jumble_tool::library::{
-    self, ADMISSIBILITY, CORRECTIONS, COVERS, HEIGHTS, NU, PROTECTION, RIM, STRADDLERS, UNITS, WORD_CHECKS,
+    self, ADMISSIBILITY, CORRECTIONS, COVERS, END_TESTS, HEIGHTS, NU, PROTECTION, REPAIR, RIM, STRADDLERS, UNITS,
+    WORD_CHECKS,
 };
-use c600_jumble_tool::rows::{Rows, MEETING_CAPS, RESULT_BOUND};
+use c600_jumble_tool::rows::{
+    repair_passes, Rows, LABEL_FIELDS, MEETING_CAPS, RESULT_BOUND, RETAINED_FIELDS, STICKER_FIELDS,
+};
 use c600_jumble_tool::word::{Alphabet, LiteralWord};
 use c600_kernel::json::Value as JsonValue;
 use c600_run::encode::encode;
@@ -141,7 +151,8 @@ fn unit(state: &State) -> Vec<u32> {
 /// step flag with `unit` and protection on `word`, CT-LB3-04's ν entries with drafted sets, an unshipped id among
 /// them, and CT-LB3-07's inspector entries: the rim facts, the covers at cap 57, the catalogue's correction 27, which
 /// only a head under I_a answers, the twist check of `word`'s first letter, the status and the straddlers of grip 57,
-/// the units off the lattice, `unit` named, and the clean-step contract of `word` with `unit`.
+/// the units off the lattice, `unit` named, and the clean-step contract of `word` with `unit`; and the end tests: the
+/// sticker test, the label checkpoint and the retained checkpoint of the witness 1, -1.
 fn calls(pinned: &MenuAlphabet, word: &LiteralWord, unit: &[u32]) -> Vec<(&'static str, Call)> {
     let w = menu_word(pinned, word);
     let first = word.alphabet().word(&word.pairs()[..1]).expect("the word's first letter");
@@ -165,6 +176,9 @@ fn calls(pinned: &MenuAlphabet, word: &LiteralWord, unit: &[u32]) -> Vec<(&'stat
         ("rim", call(RIM.name, "rim_facts", vec![])),
         ("covers", call(COVERS.name, "covers_at", vec![RunValue::int(57u32)])),
         ("correction", call(CORRECTIONS.name, "correction", vec![RunValue::int(27u32)])),
+        ("sticker test", call(END_TESTS.name, "sticker_test", vec![])),
+        ("label checkpoint", call(END_TESTS.name, "label_checkpoint", vec![])),
+        ("retained checkpoint", call(END_TESTS.name, "retained_checkpoint", vec![RunValue::word(&[1, -1])])),
     ]
 }
 
@@ -262,10 +276,10 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     assert_eq!(rows.tariff(&Request::Clock).map(|t| t.kernel_cost), Err(NOT_GRANTED));
     let propose = Request::Propose { word: &[1, 2], target: "operation.preview", request: b"{}" };
     assert_eq!(rows.tariff(&propose).map(|t| t.kernel_cost), Err(NOT_GRANTED));
-    for query in ["positions", "labels", "state", "nu_check", "classify_all", "repair_list"] {
+    for query in ["positions", "labels", "state", "nu_check", "classify_all", "setup_search"] {
         assert_eq!(rows.tariff(&Request::Snapshot { query, ty: &nat }).map(|t| t.kernel_cost), Err(NOT_GRANTED));
     }
-    for query in ["heights", "height_counts", "nu"] {
+    for query in ["heights", "height_counts", "nu", "sticker_test"] {
         let tariff = rows.tariff(&Request::Snapshot { query, ty: &nat }).expect("granted");
         assert_eq!((tariff.kernel_cost, tariff.result_bound), (pass, RESULT_BOUND), "{query}");
         let with = Request::SnapshotWith { query, arg: &no_word, ty: &nat };
@@ -275,6 +289,10 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     assert_eq!(rim, Ok((1 + POLES as u128) * pass), "one pass and one for each cap's classification");
     let rim_with = Request::SnapshotWith { query: "rim_summary", arg: &no_word, ty: &nat };
     assert_eq!(rows.tariff(&rim_with).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "rim_summary takes no argument");
+    let label = rows.tariff(&Request::Snapshot { query: "label_checkpoint", ty: &nat }).map(|t| t.kernel_cost);
+    assert_eq!(label, Ok(2 * pass), "the labels' pass and ν's");
+    let label_with = Request::SnapshotWith { query: "label_checkpoint", arg: &no_word, ty: &nat };
+    assert_eq!(rows.tariff(&label_with).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "label_checkpoint takes none");
     let taking = [
         "replay",
         "word_check",
@@ -287,6 +305,8 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
         "survey",
         "straddlers",
         "units",
+        "repair_list",
+        "retained_checkpoint",
     ];
     for query in taking {
         let without = Request::Snapshot { query, ty: &nat };
@@ -335,6 +355,26 @@ fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     assert_eq!(rows.tariff(&every).map(|t| t.kernel_cost), Ok(2 * pass), "every unit off the lattice");
     let one = Request::SnapshotWith { query: "units", arg: br#"{"int":"3"}"#, ty: &nat };
     assert_eq!(rows.tariff(&one).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "a unit is a list of pieces");
+    // The repair list at its worst case under the state's menu: the named cap's score and its meeting caps', then for
+    // each item other than the identity its play and, at each meeting cap, that cap's score, y's play and the named
+    // cap's score again.
+    let items = solved.state().menu().map_or(0, |menu| menu.items.len()) as u128;
+    assert!(items > 1, "the I_a menu has items other than the identity");
+    let meeting = MEETING_CAPS as u128;
+    let worst = 1 + (1 + meeting) + (items - 1) * (1 + 3 * meeting);
+    assert_eq!(1 + repair_passes(items as usize) as u128, worst);
+    let repair = Request::SnapshotWith { query: "repair_list", arg: br#"{"int":"57"}"#, ty: &nat };
+    assert_eq!(rows.tariff(&repair).map(|t| t.kernel_cost), Ok(worst * pass), "the named cap's list, at its worst");
+    for arg in [&br#""all""#[..], br#"[{"int":"57"},{"int":"58"}]"#] {
+        let unnamed = Request::SnapshotWith { query: "repair_list", arg, ty: &nat };
+        assert_eq!(rows.tariff(&unnamed).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "repair_list: one named cap");
+    }
+    let witness = Request::SnapshotWith { query: "retained_checkpoint", arg: b"[1,-2,1200]", ty: &nat };
+    assert_eq!(rows.tariff(&witness).map(|t| t.kernel_cost), Ok(4 * pass), "one pass and one for each letter");
+    for arg in [&b"[0]"[..], b"[1201]", br#"[{"int":"1"}]"#, br#"{"letters":[[0,1]],"menu":{}}"#] {
+        let other = Request::SnapshotWith { query: "retained_checkpoint", arg, ty: &nat };
+        assert_eq!(rows.tariff(&other).map(|t| t.kernel_cost), Err(ARGUMENT_FORM), "a word of primitive ids only");
+    }
     assert!(rows.asked().is_empty(), "a tariff reads no row");
 }
 
@@ -381,4 +421,163 @@ fn the_seam_facts_row_answers_for_the_named_cap() {
     }
     assert_eq!(rows.answer("seam_facts", Some(&arg(r#"{"nat":"7"}"#))), Err(ARGUMENT_FORM));
     assert_eq!(rows.answer("seam_facts", None), Err(ARGUMENT_FORM));
+}
+
+/// The `repair_list` row at the head of the I_a session after two records, where caps 57 and 86 are the admissible
+/// misaligned caps (as `tests/lb3.rs` CT-LB3-05 reads them): at the named cap 57 the row serves the engine's completed
+/// list on the head's state, its status, input digest, message and parameters as the engine wrote them and each row as
+/// a record of its five integers x, d, y and z and delta, in the engine's x-then-d order. It serves neither the outcome
+/// of every pair tried, nor the coverage, nor what stopped a list, and no field's name ranks, marks or recommends.
+/// `jumble_repair.repair_list_at` runs through the bridge at the head and reads the row once, for the cap it is given.
+/// At solved the closed cap 57 is an error with no rows, and so is free mode; a cap outside the model is
+/// `KN2:input.named_object_invalid`, and an argument that is not one integer is `KN5:input.argument_form`.
+#[test]
+fn the_repair_list_row_serves_the_named_caps_list_only() {
+    let fixture = Fixture::load("I_a");
+    let pinned = Alphabet::of(engine(), &fixture.menu()).expect("an inverse-closed menu").pinned().expect("pinned");
+    let mut session = Session::entered(&fixture);
+    for twist in &fixture.twists[..2] {
+        assert!(committed(&session.press(twist)), "a record of the walk");
+    }
+    let state = session.state().clone();
+    let arg = |text: &str| c600_run::provenance::parse(text.as_bytes()).expect("canonical bytes");
+    let at_57 = arg(r#"{"int":"57"}"#);
+
+    let served = Rows::at_head(engine(), &session.layer).answer("repair_list", Some(&at_57)).expect("served");
+    let list = repair_list(engine(), &state, 57, None, None, None).expect("no engine error");
+    let fields = served.as_object().expect("a record");
+    let names: Vec<&str> = fields.keys().map(String::as_str).collect();
+    assert_eq!(names, ["input_digest", "message", "parameters", "rows", "status"], "no outcomes, coverage or stop");
+    for name in ["input_digest", "message", "parameters", "status"] {
+        assert_eq!(served.get(name), list.get(name), "{name}, as the engine wrote it");
+    }
+    assert_eq!(served.get("status").and_then(JsonValue::as_str), Some("completed"));
+    let engine_rows = list.get("rows").and_then(JsonValue::as_array).expect("a completed list has rows");
+    let rows = served.get("rows").and_then(JsonValue::as_array).expect("the rows");
+    assert!(!rows.is_empty() && rows.len() == engine_rows.len(), "{} rows", rows.len());
+    let mut pairs = Vec::new();
+    for (row, engine_row) in rows.iter().zip(engine_rows) {
+        let named = ["x", "d", "y", "z", "delta"].map(|name| row.get(name).cloned().expect("written"));
+        assert_eq!(&named[..], engine_row.as_array().expect("five integers"), "the engine's row");
+        assert_eq!(row.as_object().map(|row| row.len()), Some(5), "five integers and no mark");
+        pairs.push([named[0].as_i64().expect("x"), named[1].as_i64().expect("d")]);
+    }
+    assert!(pairs.windows(2).all(|w| w[0] < w[1]), "x in pinned order, then d: {pairs:?}");
+    let parameters = served.get("parameters").and_then(JsonValue::as_object).expect("the parameters");
+    for name in fields.keys().chain(parameters.keys()) {
+        for leak in ["recommend", "suggest", "next", "skip", "best", "rank", "score", "target", "outcome", "coverage"] {
+            assert!(!name.contains(leak), "field `{name}`");
+        }
+    }
+
+    // The entry through the bridge at the head: one read of the row, for the named cap.
+    let call = Call { module: REPAIR.name, entry: "repair_list_at", args: vec![RunValue::int(57u32)] };
+    let run = seen(&call, Rows::at_head(engine(), &session.layer), &pinned);
+    assert_eq!((run.outcome, run.code), (Outcome::Completed, None));
+    assert_eq!(run.asked, ["repair_list"]);
+    assert!(run.value.is_some(), "the list as read");
+
+    // A closed cap and free mode are errors with no rows; a cap outside the model and another argument are refused.
+    let solved = witnessed(&fixture, 0);
+    let free = State::new(None);
+    let errors = [("closed", Rows::on(engine(), Base::Snapshot(&solved))), ("free", Rows::at_state(engine(), &free))];
+    for (label, mut rows) in errors {
+        let answer = rows.answer("repair_list", Some(&at_57)).expect("served");
+        assert_eq!(answer.get("status").and_then(JsonValue::as_str), Some("error"), "{label}");
+        assert_eq!(answer.get("rows"), Some(&JsonValue::Null), "{label}: no rows");
+        assert!(answer.get("message").and_then(JsonValue::as_str).is_some(), "{label}: says why");
+    }
+    let mut rows = Rows::on(engine(), Base::Snapshot(&solved));
+    for outside in ["600", "-1"] {
+        let refused = rows.answer("repair_list", Some(&arg(&format!(r#"{{"int":"{outside}"}}"#))));
+        assert_eq!(refused, Err(NAMED_OBJECT_INVALID), "cap {outside}");
+    }
+    assert_eq!(rows.answer("repair_list", Some(&arg(r#""all""#))), Err(ARGUMENT_FORM));
+    assert_eq!(rows.answer("repair_list", None), Err(ARGUMENT_FORM));
+}
+
+/// The end tests' rows at the I_a walk after 0 and 12 records, on the witnessed snapshot: each serves M8's verdict on
+/// the state with the level it was reached at, an unknown's reason, and every evidence key the verdict writes under its
+/// name in the row's field list, the reachability claim as its kind; a field the verdict does not write is null. The
+/// label checkpoint takes ν from the ν row when the identity labels and a retained witness leave it unknown, as the
+/// command layer's exit reads it. At solved the sticker test says yes; after twelve records it says no. Each entry of
+/// `jumble_end_tests` reads its own row once through the bridge and answers its test's verdict type with the outcome
+/// alone: yes `holds`, no `fails`, unknown `unestablished`.
+#[test]
+fn the_end_test_rows_serve_each_verdict_with_its_evidence() {
+    let fixture = Fixture::load("I_a");
+    let pinned = Alphabet::of(engine(), &fixture.menu()).expect("an inverse-closed menu").pinned().expect("pinned");
+    let witness = c600_run::provenance::parse(b"[1,-1]").expect("canonical bytes");
+    let tag = |verdict: &str| match verdict {
+        "yes" => "holds",
+        "no" => "fails",
+        _ => "unestablished",
+    };
+    for (count, sticker) in [(0, "yes"), (12, "no")] {
+        let snapshot = witnessed(&fixture, count);
+        let (state, reach) = (snapshot.state(), snapshot.reachability());
+        let mut label = levels::label_checkpoint(engine(), state, reach, None).expect("no engine error");
+        if matches!(label, Verdict::Unknown(_)) {
+            if let Ok(Partial::Total(nu)) = nu::nu(engine(), Base::Snapshot(&snapshot)).expect("no engine error") {
+                label = levels::label_checkpoint(engine(), state, reach, Some(&nu.values()[..])).expect("no error");
+            }
+        }
+        let retained = levels::retained_checkpoint(engine(), state, Witness::Word(&[1, -1])).expect("no engine error");
+        let tests = [
+            (
+                "sticker_test",
+                None,
+                levels::sticker_test(engine(), state).expect("no engine error"),
+                levels::STICKER_TEST_LEVEL,
+                &STICKER_FIELDS[..],
+            ),
+            ("retained_checkpoint", Some(&witness), retained, levels::RETAINED_CHECKPOINT_LEVEL, &RETAINED_FIELDS[..]),
+            ("label_checkpoint", None, label, levels::LABEL_CHECKPOINT_LEVEL, &LABEL_FIELDS[..]),
+        ];
+        let mut rows = Rows::on(engine(), Base::Snapshot(&snapshot));
+        let mut outcomes = Vec::new();
+        for (query, arg, verdict, level, fields) in tests {
+            let what = format!("after {count}: {query}");
+            outcomes.push((query, verdict.name()));
+            let served = rows.answer(query, arg).expect("served");
+            let read = verdict.to_json_at(level);
+            for name in ["level", "verdict", "reason"] {
+                assert_eq!(served.get(name), Some(read.get(name).unwrap_or(&JsonValue::Null)), "{what}: {name}");
+            }
+            let evidence = read.get("evidence").and_then(JsonValue::as_object);
+            for (name, value) in evidence.into_iter().flatten() {
+                assert!(fields.contains(&name.as_str()), "{what}: the evidence key {name} is served");
+                let value = if name == "reachability" { value.get("kind").expect("a kind") } else { value };
+                assert_eq!(served.get(name), Some(value), "{what}: {name}");
+            }
+            assert_eq!(served.as_object().map(|row| row.len()), Some(3 + fields.len()), "{what}: every field written");
+            for name in fields {
+                if !evidence.is_some_and(|evidence| evidence.contains_key(*name)) {
+                    assert_eq!(served.get(name), Some(&JsonValue::Null), "{what}: {name}, not written");
+                }
+            }
+        }
+        let served = rows.answer("sticker_test", None).expect("served");
+        assert_eq!(served.get("verdict").and_then(JsonValue::as_str), Some(sticker), "after {count}");
+
+        // Each entry through the bridge: one read of its own row, and the verdict's outcome in its test's type.
+        for (query, verdict) in outcomes {
+            let args = if query == "retained_checkpoint" { vec![RunValue::word(&[1, -1])] } else { vec![] };
+            let call = Call { module: END_TESTS.name, entry: query, args };
+            let run = seen(&call, Rows::on(engine(), Base::Snapshot(&snapshot)), &pinned);
+            assert_eq!((run.outcome, run.code), (Outcome::Completed, None), "after {count}: {query}");
+            assert_eq!(run.asked, [query], "after {count}: {query} reads its own row once");
+            let value = format!("{{\"outcome\":\"{}\",\"test\":\"{query}\"}}\n", tag(verdict));
+            assert_eq!(run.value.as_deref(), Some(value.as_bytes()), "after {count}: {query}, the outcome alone");
+        }
+    }
+
+    // Another test's verdict type: only a test's own row answers its verdict, at the bridge as in the checker.
+    let snapshot = witnessed(&fixture, 0);
+    let mut rows = Rows::on(engine(), Base::Snapshot(&snapshot));
+    let label = QTy { ty: Ty::EndTest(EndTest::LabelCheckpoint), display: false };
+    let other = Request::Snapshot { query: "sticker_test", ty: &label };
+    assert_eq!(rows.perform(&other).map(|_| ()), Err(TYPE_MISMATCH), "a sticker test is no label checkpoint");
+    let own = Request::Snapshot { query: "label_checkpoint", ty: &label };
+    assert!(matches!(rows.perform(&own), Ok(RunValue::EndTest(EndTest::LabelCheckpoint, _))), "its own row");
 }
