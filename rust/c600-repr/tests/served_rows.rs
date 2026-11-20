@@ -20,12 +20,18 @@
 //!   never reach the host: the layer refuses them at admission with its argument-form code.
 //! - What a run published and wrote is read back from its canonical bytes as the layer's JSON, where an integer is
 //!   `{"int": "n"}`, and a record's provenance is the text of its block.
-//! - A shell job's arguments are what the solver entered, so their block is a manual record under C5's draft contract
-//!   (`named_word_block`). A running program's job carries no block for its arguments, so the host fails it with
-//!   `LG3:capability.not_granted` and runs nothing.
+//! - A job's run takes the blocks the job holds (`ProgramJob::inputs`) as its inputs. A shell invocation carries none:
+//!   its arguments are what the solver entered, so the host gives the run a manual record under C5's draft contract
+//!   (`named_word_block`). A running program's invocation carries one block, which its host builds from the run's
+//!   context and passes with `invoke_with_inputs` (LP2's pull request 264): the block of what the run produces
+//!   (`Boundary::block`), which covers every argument the run passes. A run that read a record it stored before it
+//!   invoked would also have that record's block among its parts, which only the run's boundary knows, so these blocks
+//!   stand for a run that has read none. A running program's job without blocks fails with
+//!   `LG3:capability.not_granted`, and the host runs nothing.
 
 mod common;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 use c600_command::{
@@ -39,7 +45,7 @@ use c600_repr::rows::NEEDS;
 use c600_repr::tool::{self, MODULE, SOURCE};
 use c600_run::boundary::{Boundary, Context, Place, Store};
 use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Sink};
-use c600_run::provenance::{Author, Producer, Profile};
+use c600_run::provenance::{self, field, Author, Producer, Profile};
 use c600_run::value::Value;
 use c600_tools::bridge::base;
 use c600_tools::tool::{checker, contract, lower_source, named_word_block, pins, LIMITS};
@@ -90,6 +96,8 @@ struct ToolHost {
     loaded: Loaded,
     /// Whether each served row's entry holds a state read: its admission's capability separation (BND.22).
     reads_state: BTreeMap<&'static str, bool>,
+    /// The inputs of each run this host made, in order: the blocks the context its boundary took holds.
+    runs: RefCell<Vec<Vec<Vec<u8>>>>,
 }
 
 impl ToolHost {
@@ -102,12 +110,12 @@ impl ToolHost {
             assert!(admission.is_admitted(), "{entry}: {:?}", admission.codes());
             reads_state.insert(entry, admission.separation.reads_state);
         }
-        ToolHost { loaded: load(&program).expect("the shipped source loads"), reads_state }
+        ToolHost { loaded: load(&program).expect("the shipped source loads"), reads_state, runs: RefCell::default() }
     }
 
     /// The context of one run of `entry` at `revision` in the solving profile (BND.17, BND.22): the tool as a built-in
-    /// producer, with arguments the solver entered.
-    fn context(&self, entry: &str, run: &str, revision: &Revision) -> Context {
+    /// producer, with `inputs` as the blocks of its arguments.
+    fn context(&self, entry: &str, run: &str, revision: &Revision, inputs: Vec<Vec<u8>>) -> Context {
         let producer = Producer {
             contract: contract(),
             checker: Some(checker()),
@@ -121,18 +129,37 @@ impl ToolHost {
             base: base(revision),
             producer,
             reads_state: self.reads_state[entry],
-            inputs: vec![named_word_block()],
+            inputs,
             pins: pins(),
         }
     }
 
-    /// Runs `entry` on `args` at `revision` through the run-time boundary onto the engine side and gives what the run's
-    /// sinks gave, as the layer takes it. A refusal before the run and a stopped run are errors with their codes.
-    fn run(&self, entry: &str, args: Vec<Value>, revision: &Revision, run: &str) -> Result<JobOutput, Error> {
+    /// The provenance blocks a host gives a running program's invocation (BND.22), built from the context of the run
+    /// `run` of `entry` at `revision`, which took the solver's word as its input: one block, that of what the run
+    /// produces (`Boundary::block`, BND.24), for every argument the run passes.
+    fn blocks(&self, entry: &str, run: &str, revision: &Revision) -> Vec<Vec<u8>> {
+        let (mut engine, mut store) = (Engine { state: revision.state, views: Vec::new() }, Store::default());
+        let context = self.context(entry, run, revision, vec![named_word_block()]);
+        vec![Boundary::new(&mut engine, &mut store, context).block()]
+    }
+
+    /// Runs `entry` on `args` at `revision`, with `inputs` as the blocks of its arguments, through the run-time
+    /// boundary onto the engine side and gives what the run's sinks gave, as the layer takes it. A refusal before the
+    /// run and a stopped run are errors with their codes.
+    fn run(
+        &self,
+        entry: &str,
+        args: Vec<Value>,
+        revision: &Revision,
+        run: &str,
+        inputs: Vec<Vec<u8>>,
+    ) -> Result<JobOutput, Error> {
         let mut engine = Engine { state: revision.state, views: Vec::new() };
         let mut store = Store::default();
+        let context = self.context(entry, run, revision, inputs);
+        self.runs.borrow_mut().push(context.inputs.clone());
         let ran = {
-            let mut boundary = Boundary::new(&mut engine, &mut store, self.context(entry, run, revision));
+            let mut boundary = Boundary::new(&mut engine, &mut store, context);
             self.loaded.run(MODULE, entry, args, &mut boundary, &Options::new(LIMITS))
         };
         let ran = ran.map_err(|refusal| Error::new(refusal.code, refusal.detail))?;
@@ -153,16 +180,22 @@ impl ToolHost {
     }
 
     /// The host's side of the command route: takes the layer's next program job, runs the job's entry on its
-    /// arguments at its revision and reports the output. A running program's job fails without a run.
+    /// arguments at its revision, with the job's blocks as the run's inputs, and reports the output. A shell job
+    /// without blocks runs on the manual record of a word the solver named; a running program's job without blocks
+    /// fails without a run.
     fn serve_next(&self, layer: &mut CommandLayer) -> Option<(ProgramJob, Result<JobOutput, Error>, Receipt)> {
         let job = layer.take_program_job()?;
-        let output = match &job.caller {
-            Caller::Shell => entry_args(&job.row, &job.args)
-                .and_then(|args| self.run(&job.overlay.entry, args, &job.revision, &format!("job/{}", job.job))),
-            Caller::Runtime { .. } => {
+        let inputs = match (&job.caller, job.inputs.is_empty()) {
+            (_, false) => Ok(job.inputs.clone()),
+            (Caller::Shell, true) => Ok(vec![named_word_block()]),
+            (Caller::Runtime { .. }, true) => {
                 Err(Error::new(code::NOT_GRANTED, "a running program's job carries no block for its arguments"))
             }
         };
+        let output = inputs.and_then(|inputs| {
+            let args = entry_args(&job.row, &job.args)?;
+            self.run(&job.overlay.entry, args, &job.revision, &format!("job/{}", job.job), inputs)
+        });
         let receipt = layer.finish_program_job_with(job.job, output.clone()).expect("the job was running");
         Some((job, output, receipt))
     }
@@ -435,7 +468,8 @@ fn the_source_route_gives_the_command_routes_value_views_and_records() {
     for one in &served {
         let (row, job) = (one.row, &one.job);
         let fixed = session.fixed();
-        let source = host.run(&job.overlay.entry, typed(row, preview), &job.revision, &format!("source/{row}"));
+        let (name, inputs) = (format!("source/{row}"), vec![named_word_block()]);
+        let source = host.run(&job.overlay.entry, typed(row, preview), &job.revision, &name, inputs);
         let source = source.unwrap_or_else(|error| panic!("{row}: {error:?}"));
         assert_eq!(session.fixed(), fixed, "{row}: the source route moves nothing in the layer");
         assert_eq!(source, one.output, "{row}");
@@ -579,4 +613,80 @@ fn a_running_program_cannot_invoke_a_served_workspace_row() {
     assert!(session.layer.take_program_job().is_none(), "the refused invocation admitted a job");
     assert_eq!(session.fixed(), before);
     assert!(session.layer.records().is_empty());
+}
+
+/// A running program's invocation of a served query or view row carries the provenance blocks of its arguments, which
+/// its host builds from the run's context (BND.22; LP2's `invoke_with_inputs`). Here the calling run stands in as the
+/// run `run-1` of the tool's `compare_cells` entry, and its one block reads as a program block of the tool, built-in,
+/// in the solving profile, that may read the state, with the solver's word as its one part. The layer checks the block
+/// with C5's reader and holds it on the job (`ProgramJob::inputs`), and the host runs the entry with it as the run's
+/// input: `filter.preview`, `structure.compare` and `view.effect.scope` complete transiently at the job's revision with
+/// the output the shell's invocation of the same row gives, and nothing moves. Without blocks the host fails such a job
+/// with `LG3:capability.not_granted` and runs nothing; a block the reader refuses refuses the invocation with
+/// `PS1:capability.provenance_incompatible` before any job. Covers no conformance ID.
+#[test]
+fn a_running_programs_query_and_view_jobs_run_on_blocks_built_from_its_context() {
+    let host = ToolHost::new();
+    let mut session = session();
+    session.commit(&[1]);
+    serve(&mut session.layer);
+    let layer_args = json::object([("cell", Json::Int(7)), ("layer", Json::Int(2))]);
+    session.shell.invoke(&mut session.layer, "structure.layer", layer_args).expect("prepared");
+    let (prepared, output, _) = host.serve_next(&mut session.layer).expect("the predicate's job");
+    let digest = output.expect("the predicate").digest();
+    let predicate = json::object([("digest", text(&digest)), ("job", Json::Int(prepared.job as i64))]);
+
+    let (caller, revision) = (program_channel(), session.layer.revision().clone());
+    let Caller::Runtime { run } = &caller else { unreachable!("the program's channel") };
+    let blocks = host.blocks("compare_cells", run, &revision);
+    let block = provenance::read(&blocks[0]).expect("a canonical block");
+    assert_eq!((field::author(&block), field::producer(&block)), (Author::BuiltIn.name(), "program"));
+    assert_eq!(field::profile(&block), Profile::Solving.name());
+    assert!(field::may_read_state(&block));
+    assert_eq!(field::parts(&block), vec![sha256(&named_word_block())]);
+
+    let calls = [
+        ("filter.preview", json::object([("predicate", predicate), ("revision", revision.to_json())])),
+        ("structure.compare", json::object([("cells", ints(&[1, 2]))])),
+        ("view.effect.scope", json::object([("scope", text("complete"))])),
+    ];
+    for (n, (row, args)) in calls.into_iter().enumerate() {
+        let call = |i: usize| Invocation {
+            command: format!("{run}/{}", 3 * n + i),
+            row: row.to_owned(),
+            args: args.clone(),
+            token: None,
+            epoch: revision.epoch,
+        };
+        session.shell.invoke(&mut session.layer, row, args.clone()).expect("prepared");
+        let (_, shell, _) = host.serve_next(&mut session.layer).expect("the shell's job");
+        let shell = shell.unwrap_or_else(|error| panic!("{row} from the shell: {error:?}"));
+        assert_eq!(host.runs.borrow().last(), Some(&vec![named_word_block()]), "{row}: the shell's run's input");
+        let (before, runs) = (session.fixed(), host.runs.borrow().len());
+
+        let bare = session.layer.invoke(&caller, call(1));
+        assert!(matches!(bare.status, Status::Running(_)), "{row}: {:?}", bare.status);
+        let (job, output, receipt) = host.serve_next(&mut session.layer).expect("the job without blocks");
+        assert!(job.inputs.is_empty(), "{row}");
+        assert_eq!(output.map_err(|error| error.code), Err(code::NOT_GRANTED), "{row}");
+        assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "{row}");
+        assert_eq!(host.runs.borrow().len(), runs, "{row}: no run");
+
+        let refused = session.layer.invoke_with_inputs(&caller, call(2), vec![b"no block".to_vec()]);
+        assert_eq!(refused.status.code(), Some(code::PROVENANCE_INCOMPATIBLE), "{row}");
+        assert!(session.layer.take_program_job().is_none(), "{row}");
+
+        let started = session.layer.invoke_with_inputs(&caller, call(3), blocks.clone());
+        let Status::Running(id) = started.status else { panic!("{row}: {:?}", started.status) };
+        let (job, output, receipt) = host.serve_next(&mut session.layer).expect("the job with blocks");
+        assert_eq!((job.job, &job.caller, &job.inputs, &job.revision), (id, &caller, &blocks, &revision), "{row}");
+        let output = output.unwrap_or_else(|error| panic!("{row}: {error:?}"));
+        assert_eq!(&host.runs.borrow()[runs..], std::slice::from_ref(&blocks), "{row}: one run, on the job's blocks");
+        assert_eq!(output, shell, "{row}: the shell's output");
+        let need = NEEDS.iter().find(|need| need.row == row).expect("a listed row");
+        let result = Some(ResultRef { job: Some(id), digest: output.digest() });
+        let completion = Completion { kind: need.completion, revision: revision.clone(), result };
+        assert_eq!(receipt.status, Status::Completed(completion), "{row}");
+        assert_eq!(session.fixed(), before, "{row}: nothing moves");
+    }
 }
