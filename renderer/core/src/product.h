@@ -133,6 +133,23 @@ private:
     struct Entry { sa2_frame_input input{}; uint64_t frame = 0, generation = 0, display_qpc = 0; uint32_t count = 0; };
     std::deque<Entry> awaiting_, confirmed_;
 };
+// C9, owner item 9 (20 Nov 2026: docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md): route B's blind
+// seconds come from the core's own frame statistics, cross-checked against PresentMon, which marks every present
+// of the core's composition chain Dropped. The traced frames of a scene drawn on the surface
+// (sa2_scene_produce with SA2_TARGET_SURFACE) enter a ledger of their own, by trace index and own present count,
+// and are confirmed by the product's exact rule; presented.jsonl lists the confirmed frames in trace order.
+class TracePresents {
+public:
+    void presented(uint64_t index, uint64_t generation, uint32_t present_count);
+    void sample(const PresentSample& sample);
+    size_t awaiting() const { return ledger_.awaiting(); }
+    size_t confirmed() const { return confirmed_.size(); }
+    // One {"display_qpc", "frame", "present_count"} row per confirmed frame: frame is the trace index.
+    std::string text() const;
+private:
+    PresentLedger ledger_;
+    std::vector<sa2_presented_row> confirmed_;
+};
 
 class Product {
 public:
