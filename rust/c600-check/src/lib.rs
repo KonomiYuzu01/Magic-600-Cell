@@ -3576,6 +3576,9 @@ impl<'p> Checker<'p> {
                 self.operation(&mut s, own, "a generator's start");
                 Ok((Val::exact(Ty::Generator), s))
             }
+            // Bytes the code holds decode into exact text (DET.62; LP2 draft). The decoding is pure, and its bytes are
+            // source text, so the text carries no qualifier.
+            Expr::TextDecodeHex { .. } => Ok((Val::exact(Ty::Text), Summary::default())),
             Expr::ReadClock => {
                 // The clock is a declared requirement without an effect family (LG3.8). Seconds are a display unit
                 // only (LG2.6, DET.18), so a reading is display-qualified: a clock grant cannot make it a deterministic

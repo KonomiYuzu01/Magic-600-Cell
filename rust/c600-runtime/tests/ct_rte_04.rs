@@ -24,7 +24,7 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 31 of 40
+//! # Realised: 32 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
@@ -53,6 +53,7 @@
 //! | `root-before-child` | DET.60 | `early()`: the root and the child run out of steps at the body's `return` |
 //! | `dimension-before-scope` | DET.60 | `dim()`: a child's `k`, over its kernel cap while the root lacks memory |
 //! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
+//! | `child-decode-error-releases-reservation` | DET.60 | `spill()`: a child decodes `FF`; the parent's literal fits |
 //! | `final-loop-test` | DET.55 | `spin()`: `repeat(1, 0, …)` visits `acc` once; the final test is refused on steps |
 //! | `decode-scalar` | DET.62 | `decode()`: the snapshot `b` holds four bytes of one scalar; 16 reserved, 12 released |
 //! | `decode-surrogate` | DET.62 | `decode()`: an encoded surrogate stops the run at its decoding (effect phase) |
@@ -94,7 +95,11 @@
 //! the probe's use. Each child record is compared field by field, the trace's scope names mapped to the program's
 //! locators through the `child` rows. In `dimension-before-scope`, `k`'s ten bytes do not fit in the root either,
 //! as in the trace, so the child's kernel-cost stop shows DET.56's dimension order before the scope order; its
-//! result is never delivered.
+//! result is never delivered. In `child-decode-error-releases-reservation` the body decodes bytes the code holds with
+//! `text_decode_hex` (LP2 draft), which take no row and no slot, so the child's rows are its call and its decoding,
+//! as the trace's are. The decoding stops the child in the effect phase, the unwind releases its reservation in the
+//! child and the root, and the parent's five-scalar literal of 20 bytes, the trace's `parent`, fits only because the
+//! child left nothing live.
 //!
 //! The exact-arithmetic traces price `exact_mul` with the test tariffs: eight-bit limbs, one kernel unit per pair of
 //! limbs, and a reservation of one byte plus the operands' bits in bytes; the product is the published view.
@@ -140,13 +145,11 @@
 //! only that the run repeats. It holds the cut-off run's live memory at the stop, beyond the program's own before the
 //! open, to the trace's live cursor. The child path gives the coalesced trace nothing more to check.
 //!
-//! # Not realised: 9 of 40
+//! # Not realised: 8 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no flow check or text order; no call frame without a slot holds a binding (`generator-nested-same-name`); a
-//! child body takes no argument, so a child's bytes cannot arrive without a row of their own
-//! (`child-decode-error-releases-reservation`); and the region contract `lp1-exec-region-draft-1` has no executor
-//! yet.
+//! has no flow check or text order; no call frame without a slot holds a binding (`generator-nested-same-name`); and
+//! the region contract `lp1-exec-region-draft-1` has no executor yet.
 
 mod support;
 
@@ -220,16 +223,14 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     export fn decode() -> Text effects [snapshot] {\n    let b = read_snapshot<Bytes>(\"b\");\n    \
     return text_decode(b);\n}\n\n\
     fn s(c: CompressedWord, k: Nat) -> Unit effects [] {\n    let cursor = word_stream(c, k);\n    return ();\n}\n\n\
-    export fn go() -> Unit effects [] {\n    let c = compress(word[+1, -2, +3, -4, +5]);\n    return s(c, 2);\n}\n";
+    export fn go() -> Unit effects [] {\n    let c = compress(word[+1, -2, +3, -4, +5]);\n    return s(c, 2);\n}\n\n\
+    export fn spill() -> Unit effects [budget] {\n    \
+    let t = child(record { steps = 20, kernel_cost = 20, memory = 20, output = 0 }, \
+    fn() -> Text { return text_decode_hex(\"ff\"); }, fn() -> Text { return \"\"; });\n    \
+    let p = \"abcde\";\n    return ();\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 9] = [
-    (
-        "child-decode-error-releases-reservation",
-        "its child decodes given bytes in two steps, its call and its decoding; a child body takes no argument, so \
-         its bytes come from a literal, a capture or a host read, each a row of its own inside the child, whose \
-         caps and use the trace fixes",
-    ),
+const UNREALISED: [(&str, &str); 8] = [
     (
         "generator-nested-same-name",
         "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
@@ -482,6 +483,12 @@ const NEST: &[(&str, &str)] = &[
     ("outer/run/return", "m.nest:0 > m.nest:0.0#return"),
     ("parent", "m.nest:root#visit"),
 ];
+const SPILL: &[(&str, &str)] = &[
+    ("c/child", "m.spill:0#child"),
+    ("c/run/call", "m.spill:0#call"),
+    ("c/run/decode", "m.spill:0 > m.spill:0.0#text_decode"),
+    ("parent", "m.spill:1.0#value"),
+];
 const STILL_LIVE: &[(&str, &str)] = &[
     ("a", "m.live:0 > m.late:0 > m.mk:0#value"),
     ("b", "m.live:0 > m.late:0 > m.mk:1#alias"),
@@ -696,6 +703,7 @@ fn realisations() -> Vec<Realisation> {
             ..base
         },
         Realisation { trace: "nested-child-ledger", entry: "nest", args: Vec::new, map: NEST, ..base },
+        Realisation { trace: "child-decode-error-releases-reservation", entry: "spill", args: Vec::new, map: SPILL, ..base },
         Realisation {
             trace: "final-loop-test",
             entry: "spin",
@@ -1049,8 +1057,8 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) -> En
     end
 }
 
-/// CT-RTE-04 in part: 31 DET.65 traces realised as programs keep their exact results, charges, stopping points,
-/// child records and source associations on both executors; the other 9 are listed with the reason they are not
+/// CT-RTE-04 in part: 32 DET.65 traces realised as programs keep their exact results, charges, stopping points,
+/// child records and source associations on both executors; the other 8 are listed with the reason they are not
 /// realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {

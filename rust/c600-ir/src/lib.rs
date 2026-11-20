@@ -785,6 +785,13 @@ pub enum Expr {
     RngInit {
         path: Vec<String>,
     },
+    /// `text_decode_hex("<hex>")` (LP2 draft; DET.57, DET.62): `text_decode` of bytes the code holds. The bytes are part
+    /// of the operation, as a snapshot read's query is: source text is admission metadata (DET.57), so they take no row,
+    /// slot or owner of their own. The decoding's one row is all the operation charges, priced and refused as
+    /// `text_decode` of an operand is.
+    TextDecodeHex {
+        bytes: Vec<u8>,
+    },
     /// `child` (LP2 draft; DET.60): `body` runs as a serial subrun under `caps`, in a call frame of its own, and
     /// borrows the names in scope. When it completes, its value is the expression's. When it stops on a cap or an
     /// error of its own, it is unwound and `otherwise` runs in the parent, in a call frame of its own, with `status`,
@@ -824,7 +831,8 @@ impl Expr {
             | Expr::FileRead { .. }
             | Expr::RandomDraw
             | Expr::ReadClock
-            | Expr::RngInit { .. } => Vec::new(),
+            | Expr::RngInit { .. }
+            | Expr::TextDecodeHex { .. } => Vec::new(),
             Expr::Let { value, body, .. } => vec![&**value, &**body],
             Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => vec![&**cond, &**then, &**els],
             Expr::Match { scrutinee, arms, default } => {
@@ -942,6 +950,10 @@ pub mod build {
     /// `text_decode(b)` (LP2 draft; DET.62).
     pub fn text_decode(b: Expr) -> Expr {
         prim(Prim::TextDecode, vec![b])
+    }
+    /// `text_decode_hex("<hex>")`: the decoding of bytes the code holds (LP2 draft; DET.57, DET.62).
+    pub fn text_decode_hex(data: &[u8]) -> Expr {
+        Expr::TextDecodeHex { bytes: data.to_vec() }
     }
     /// `word_stream(c, chunk)` (LP2 draft; DET.63).
     pub fn word_stream(c: Expr, chunk: Expr) -> Expr {

@@ -168,6 +168,7 @@ fn outside(e: &Expr) -> Option<&'static str> {
         Expr::Declassified { .. } => "a declassified read is state-derived data",
         Expr::FileRead { .. } | Expr::FileWrite { .. } => "a file is no stage input",
         Expr::RandomDraw | Expr::RngInit { .. } => "randomness is an effect",
+        Expr::TextDecodeHex { .. } => "a decoding allocates a text",
         Expr::ReadClock => "frame time is a declared host input, an entry parameter, never an ambient clock read",
         Expr::Child { .. } => "a child scope is a budget scope of a run",
         _ => return None,

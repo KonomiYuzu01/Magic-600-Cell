@@ -25,7 +25,7 @@
 //! product unit is shorter than three. Its kernel-cost headroom gets the two bytes of difference, so its stop stays on
 //! output with the frozen denied row.
 //!
-//! # Realised: 31 of 40
+//! # Realised: 32 of 40
 //!
 //! | Trace | Clause | Program |
 //! | --- | --- | --- |
@@ -57,6 +57,7 @@
 //! | `nested-child-ledger` | DET.60 | `nest()`: a child in a child; both complete, each charged in its ancestors |
 //! | `decode-scalar` | DET.62 | `d()`: the snapshot `b`'s four bytes decode into one scalar; 16 reserved, 12 released |
 //! | `decode-surrogate` | DET.62 | `d()`: an encoded surrogate stops the run at its decoding, in the effect phase |
+//! | `child-decode-error-releases-reservation` | DET.60 | `spill()`: a child decodes `FF`; the parent's literal fits |
 //! | `streaming` | DET.63 | `go()`: `s` streams five letters in chunks of two; the last chunk is refused on kernel cost |
 //! | `streaming-complete-split` | DET.63 | `go()`: the same stream completes; `s`'s scope exit drops the cursor |
 //! | `streaming-complete-coalesced` | DET.63 | the same program and run: a transport partition is not accounted |
@@ -110,13 +111,19 @@
 //! result, so the decoding borrows the bytes and its row releases only the reservation's excess, as the trace's does.
 //! `decode-surrogate` stops on its value: its probe's host delivers three ASCII bytes, which read alike.
 //!
+//! `child-decode-error-releases-reservation`'s child decodes bytes the code holds with `text_decode_hex` (LP2 draft):
+//! they take no row and no slot, so the body's frame has none and its rows are its call and its decoding, as the
+//! trace's child's are. The decoding stops the child in the effect phase with its reservation admitted, the unwind
+//! releases it in the child and the root, and the stop branch's frame and empty text are overhead. The trace's
+//! `parent` allocation is a five-scalar text literal of 20 bytes, which fits only because the child left nothing live.
+//!
 //! The streaming traces stream a compressed word with `word_stream` (DET.63; LP2 draft), whose rows are the frozen
 //! `open` and `chunk:<position>` rows. The literal word and its compression are the program's own, and `go` passes the
 //! word and the chunk size to `s`: parameters are borrowed, so the stream releases no operand, and `s`'s scope exit,
 //! which releases the cursor alone, is the frozen `close`. The run has no transport between the interpreter and a
 //! kernel, so the split and the coalesced trace are one program and one run.
 //!
-//! # Not realised: 9 of 40
+//! # Not realised: 8 of 40
 //!
 //! [`NOT_EXPRESSIBLE`] lists each with its reason, and `every_frozen_trace_is_realised_or_listed_once` holds the two
 //! lists to the 40 frozen vectors.
@@ -139,13 +146,7 @@ const VECTORS: &str =
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 
 /// The frozen traces no program of the IR draft can express, and why.
-const NOT_EXPRESSIBLE: [(&str, &str); 9] = [
-    (
-        "child-decode-error-releases-reservation",
-        "its child decodes given bytes in two steps, its call and its decoding; a child body takes no argument, so \
-         its bytes come from a literal, a capture or a host read, each a row of its own inside the child, whose \
-         caps and use the trace fixes",
-    ),
+const NOT_EXPRESSIBLE: [(&str, &str); 8] = [
     (
         "generator-nested-same-name",
         "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
@@ -1605,6 +1606,59 @@ fn ct_det_28_byte_decoding_runs_as_programs() {
     assert!(done.run.value.is_none(), "no value is bound");
 }
 
+/// `child-decode-error-releases-reservation`'s program (DET.60, DET.62; LP2 draft; module docs): the child's body
+/// decodes bytes the code holds, and the parent then allocates a 20-byte text.
+const SPILL: &str = "export fn spill() -> Unit effects [budget] {\n    \
+                     let t = child(record { steps = 20, kernel_cost = 20, memory = 20, output = 0 }, \
+                     fn() -> Text { return text_decode_hex(\"ff\"); }, fn() -> Text { return \"\"; });\n    \
+                     let p = \"abcde\";\n    return ();\n}\n";
+
+const RESERVATION: Realisation = Realisation {
+    trace: "child-decode-error-releases-reservation",
+    requires: "",
+    declarations: SPILL,
+    entry: "spill",
+    args: NO_ARGS,
+    probe_args: None,
+    rows: &[
+        ("entry#call", None),
+        ("m.spill:0#child", Some("c/child")),
+        ("m.spill:0#call", Some("c/run/call")),
+        ("m.spill:0 > m.spill:0.0#text_decode", Some("c/run/decode")),
+        ("m.spill:0#call", None),
+        ("m.spill:0 > m.spill:0.1#value", None),
+        ("m.spill:0 > m.spill:0.1#return", None),
+        ("m.spill:root#visit", None),
+        ("m.spill:1.0#value", Some("parent")),
+        ("m.spill:1#visit", None),
+        ("m.spill:1.1#value", None),
+        ("m.spill:1#scope_exit", None),
+        ("m.spill:root#scope_exit", None),
+        ("m.spill:root#return", None),
+        ("entry#emit", None),
+    ],
+    stop_would: None,
+    kernel_extra: 0,
+    source_node: None,
+};
+
+/// CT-DET-28 (part: a decoding error in a child on RT1; not run: RT2 and RT3 (no owner yet)): the frozen trace
+/// `child-decode-error-releases-reservation` runs as a program (DET.58, DET.60; LP2 draft; module docs). The child's
+/// decoding of `FF` is admitted with its four-byte reservation and stops the child alone; the unwind releases the
+/// reservation in the child and in the root, so the child returns nothing and keeps nothing live, and the root's
+/// 20-byte literal fits in the memory the trace's root has there.
+#[test]
+fn ct_det_28_a_child_decoding_error_releases_its_reservation() {
+    let root = fixtures();
+    let done = realise(&root, &RESERVATION);
+    let trace = Trace::read(vector(&root, RESERVATION.trace));
+    let rows = &done.run.summary.rows;
+    let at = rows.iter().position(|r| r.at == "m.spill:1.0#value").expect("the row parent");
+    let left = done.limits.memory - Before::of(rows[..at].iter().map(charges)).live;
+    let frozen = trace.limits.memory - Before::of(trace.rows[..trace.row("parent")].iter().map(|(_, c)| *c)).live;
+    assert_eq!(left, frozen, "the root's free memory at parent is the trace's");
+}
+
 /// The streaming traces' program (DET.63; LP2 draft). `go` compresses the trace's five letters and passes the word
 /// and the chunk size to `s`, which streams the word into `cursor` and returns: parameters are borrowed, so the
 /// stream releases no operand, and `s`'s scope exit releases the cursor alone, the frozen `close`.
@@ -1735,6 +1789,7 @@ fn every_frozen_trace_is_realised_or_listed_once() {
         "nested-child-ledger",
         "decode-scalar",
         "decode-surrogate",
+        "child-decode-error-releases-reservation",
         "streaming",
         "streaming-complete-split",
         "streaming-complete-coalesced",
