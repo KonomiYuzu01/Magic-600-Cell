@@ -344,7 +344,7 @@ fn ct_ev3_06_a_strip_record_keeps_none_off_the_lattice_apart_from_unknown() {
     assert_eq!(empty.extent(), Extent::Total, "no operand is a total result with nothing in it");
 
     // Which node shows which record.
-    let shown = node(&off.base, NodeKind::Relation, &[key.clone()]);
+    let shown = node(&off.base, NodeKind::Relation, std::slice::from_ref(&key));
     assert_eq!(strip::attach(&shown, &off), Ok(()));
     let mut other_model = off.clone();
     other_model.identity.model_id.push_str("-other");
@@ -356,12 +356,12 @@ fn ct_ev3_06_a_strip_record_keeps_none_off_the_lattice_apart_from_unknown() {
     from_labels.level = Level::Labels;
     from_labels.result.retain(|_, value| value.is_err());
     let refusals = [
-        ("not a relation node", node(&off.base, NodeKind::Object, &[key.clone()]), &off),
+        ("not a relation node", node(&off.base, NodeKind::Object, std::slice::from_ref(&key)), &off),
         ("no claim", node(&off.base, NodeKind::Relation, &[]), &off),
         ("another statement", node(&off.base, NodeKind::Relation, &[Key("ct-ev3-06/other".to_owned())]), &off),
         ("the revision of the old occupants", shown.clone(), &solved),
         ("another model", shown.clone(), &other_model),
-        ("labels lifted into poses", node(&lifted.base, NodeKind::Relation, &[key.clone()]), &lifted),
+        ("labels lifted into poses", node(&lifted.base, NodeKind::Relation, std::slice::from_ref(&key)), &lifted),
         ("none read from labels", shown.clone(), &from_labels),
     ];
     for (what, node, record) in &refusals {
@@ -370,7 +370,7 @@ fn ct_ev3_06_a_strip_record_keeps_none_off_the_lattice_apart_from_unknown() {
     }
     let mut labels = solved.clone();
     labels.level = Level::Labels;
-    let on_the_lattice = node(&solved.base, NodeKind::Relation, &[key.clone()]);
+    let on_the_lattice = node(&solved.base, NodeKind::Relation, std::slice::from_ref(&key));
     assert_eq!(strip::attach(&on_the_lattice, &labels), Ok(()), "on the lattice, labels may be read");
 }
 
@@ -524,7 +524,7 @@ fn ct_ev3_07_view_half_a_representation_view_cannot_write_workspace_or_stale_und
     assert!(model.installed(&v).is_some());
 
     // Undo is not stale: the hint taken before the views ran still names the action, and undoing it commits.
-    assert_eq!(session.layer.undo_hint(Direction::Undo), Some(hint.clone()));
+    assert_eq!(session.layer.undo_hint(Direction::Undo), Some(hint));
     let receipt = session
         .shell
         .invoke(&mut session.layer, "session.undo", json::object([("hint", hint.to_json())]))

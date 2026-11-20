@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-20] update | The PHS.52 page points to the receipt decision
+[owner-decisions-2026-11-16-phs52](decisions/owner-decisions-2026-11-16-phs52.md) still listed whether a receipt may count as evidence under "What stays open"; that item now points to the owner's answer of 17 November 2026 in [owner-decisions-2026-11-17-c5-evidence](decisions/owner-decisions-2026-11-17-c5-evidence.md) (a receipt is not evidence).
+
 ## [2026-11-20] decision | Smaller Rust build caches and cleanup at session end
 The owner decided that debug and test builds keep line tables only for the workspace crates and no debug info for the external crates (`rust/Cargo.toml`, `renderer/bridge/Cargo.toml`), and that a session cleans its own worktree's build caches when its work there is finished (`CLAUDE.md` step 7), after full debug info had let the worktrees' caches fill the disk ([record](decisions/owner-decisions-2026-11-20-build-caches.md)).
 
