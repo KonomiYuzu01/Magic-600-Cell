@@ -793,3 +793,39 @@ fn the_structure_reads_answer_the_kernel_s_rows() {
     }
     assert_eq!(f.fixed(), before);
 }
+
+/// The unavailable presentation outcome (RM.26, LI.21; `read_presented` answers `unavailable(Error)`; L13 (c) of the
+/// KN5 attack leads): the adapter cannot confirm presentation while a preview is presented. The preview is ready again,
+/// the shell's binding ends, the generation advances and `operation.execute` answers `no_fresh_preview`. Neither the
+/// newest frame repeated nor a delayed older one restores the presentation; a newer frame that draws the preview does,
+/// and the commit goes ahead. A report while nothing is presented changes nothing.
+#[test]
+fn an_unavailable_presentation_clears_the_latch_until_a_newer_frame() {
+    let mut f = fixture(&[]);
+    let p = f.preview(&word(&[1]));
+    f.present(p);
+    let older = f.layer.frame().cloned().expect("the frame that presented the preview");
+    let newest = f.frames.built_in(f.layer.preview().expect("the pending preview"));
+    f.shell.present(&mut f.layer, p, &newest).unwrap();
+    let before = f.layer.generation();
+    f.shell.presentation_unavailable(&mut f.layer);
+    assert_eq!(f.layer.generation(), before + 1);
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Ready));
+    assert!(f.shell.presented().is_none());
+    assert_eq!(f.layer.availability("operation.execute").unwrap_err().code, code::NO_FRESH_PREVIEW);
+    for frame in [&newest, &older] {
+        assert_eq!(f.shell.present(&mut f.layer, p, frame).unwrap_err().code, code::NO_FRESH_PREVIEW);
+        assert_eq!(f.layer.preview_state(p), Some(PreviewState::Ready));
+        assert!(f.shell.presented().is_none());
+    }
+    assert_eq!(f.layer.generation(), before + 1);
+
+    f.present(p);
+    assert_eq!(f.layer.generation(), before + 2);
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Presented));
+    f.shell.presentation_unavailable(&mut f.layer);
+    f.shell.presentation_unavailable(&mut f.layer);
+    assert_eq!(f.layer.generation(), before + 3);
+    f.present(p);
+    assert!(matches!(f.execute().status, Status::Committed(_)));
+}
