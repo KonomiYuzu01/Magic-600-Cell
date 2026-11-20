@@ -727,9 +727,9 @@ public partial class Level2 : Node
         Require("sa2_scene_stages", _native.sa2_scene_stages(_context, 0, 0, 0, null, 0, null, 0));
         _stagesAttached = false;
         ReleaseStages();
-        StringBuilder rows = new();
-        foreach (string row in _stageRows) rows.Append(row).Append('\n');
-        WriteNew(Path.Combine(_args.out_path, "stage-frames.jsonl"), Encoding.UTF8.GetBytes(rows.ToString()));
+        // WriteNew ends the file with the one newline after the last row; a newline per row here left a blank last
+        // line, which the finalizer refused as stage-rows (C9 U5, 20 Nov 2026).
+        WriteNew(Path.Combine(_args.out_path, "stage-frames.jsonl"), Encoding.UTF8.GetBytes(string.Join('\n', _stageRows)));
         _result.stages["rows"] = _stageRows.Count;
         _result.stages["trace_frames"] = _traceFirst == 0 ? null
             : new Dictionary<string, object> { ["first"] = _traceFirst, ["last"] = _traceLast };

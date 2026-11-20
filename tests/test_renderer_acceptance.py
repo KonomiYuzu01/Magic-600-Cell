@@ -714,24 +714,24 @@ CORE_CHAIN_CSV = "0x000001f2a3b4e000"   # PresentMon's own spelling, which the r
 WINDOW_CHAIN = "0x000001F2A3B4C5D0"     # Godot's window chain, also presenting
 
 
-def surface_csv(sync=1) -> str:
+def surface_csv(sync=1, core_dropped=0, window_dropped=lambda tick: 0, core_skip=lambda frame: False) -> str:
     """The core's chain 5 ticks after each trace entry and Godot's window chain at about 60 Hz."""
     lines = ["Application,ProcessID,SwapChainAddress,PresentRuntime,SyncInterval,PresentFlags,AllowsTearing,"
              "PresentMode,Dropped,QPCTime,msBetweenPresents,msBetweenDisplayChange"]
-    rows = [(T0 + frame * STEP + 5, f"godot.exe,{PID},{CORE_CHAIN_CSV},DXGI,{sync},0,0,Composed: Flip,0,"
-             f"{T0 + frame * STEP + 5},20.000,20.000") for frame in range(FRAMES)]
-    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,0,{tick},16.000,16.000")
-             for tick in range(T0 + 3, STOP, 16)]
+    rows = [(T0 + frame * STEP + 5, f"godot.exe,{PID},{CORE_CHAIN_CSV},DXGI,{sync},0,0,Composed: Flip,{core_dropped},"
+             f"{T0 + frame * STEP + 5},20.000,20.000") for frame in range(FRAMES) if not core_skip(frame)]
+    rows += [(tick, f"godot.exe,{PID},{WINDOW_CHAIN},DXGI,1,0,0,Composed: Flip,{window_dropped(tick)},{tick},"
+              "16.000,16.000") for tick in range(T0 + 3, STOP, 16)]
     return "\n".join(lines + [line for _, line in sorted(rows)]) + "\n"
 
 
-def surface_run(directory: Path, run_id: str, declared=CORE_CHAIN, sync=1, route="surface") -> Path:
+def surface_run(directory: Path, run_id: str, declared=CORE_CHAIN, sync=1, route="surface", **csv) -> Path:
     write_run(directory, "w3", run_id=run_id)
     record = read(directory / "harness.json")
     record["configuration"]["route"] = route
     record["presentation"] = {"route": "surface", "swap_chain": declared, "sync_interval": 1}
     write_json(directory / "harness.json", record)
-    (directory / "presentmon.csv").write_bytes(surface_csv(sync).encode("utf-8"))
+    (directory / "presentmon.csv").write_bytes(surface_csv(sync, **csv).encode("utf-8"))
     return directory
 
 
@@ -755,13 +755,41 @@ class RouteBFinalizerTests(unittest.TestCase):
             self.assertEqual(record["presentmon"]["swap_chain"], CORE_CHAIN_CSV)
             self.assertEqual(record["l2"]["presentation"],
                              {"route": "surface", "swap_chain": CORE_CHAIN, "sync_interval": 1,
-                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}]})
+                              "swap_chains_ignored": [{"swap_chain": WINDOW_CHAIN, "rows": windows}],
+                              "display": fr.SURFACE_DISPLAY})
             self.assertEqual(record["l2"]["presentmon"]["rows"], FRAMES)
             self.assertEqual(record["l2"]["presentmon"]["sync_intervals"], {"1": FRAMES})
             self.assertIs(record["environment"]["tearing"], False)
         result = scene_result(gate.summarize_private(runs), "w3")
         self.assertEqual((result["verdict"], len(result["runs"])), ("met", 3))
         self.assertAlmostEqual(result["pooled"]["fps"], 50.0)
+
+    def test_route_b_blind_seconds_read_the_window_display(self):
+        """C9 U4, 20 Nov 2026: PresentMon marks every core present Dropped and credits the window's chain."""
+        self.assertEqual(fr.SURFACE_DISPLAY, "core-present-and-window-display")
+        run = surface_run(self.base / "dropped", "c9-dropped", core_dropped=1)
+        self.assertEqual(finalize(run), 0)
+        self.assertEqual(read(run / "run.json")["l2"]["presentation"]["display"], fr.SURFACE_DISPLAY)
+        second = T0 + 12 * FREQ   # a whole checked second after the 10 s warm-up
+        cases = {
+            # The window's chain was not displayed for one second.
+            "window-blind": {"core_dropped": 1, "window_dropped": lambda tick: int(second <= tick < second + FREQ)},
+            # The core's chain did not present for one second, although the window was displayed.
+            "core-silent": {"core_skip": lambda frame: second <= T0 + frame * STEP + 5 < second + FREQ},
+        }
+        for name, options in cases.items():
+            with self.subTest(case=name):
+                run = surface_run(self.base / name, f"c9-{name}", **options)
+                self.assertEqual(finalize(run), 5)
+                self.assertIn("blind-seconds", read(run / "refusal.json")["reasons"])
+
+    def test_stage_rows_end_with_one_newline(self):
+        """C9 U5: the harness wrote a newline per row and WriteNew one more, a blank line the finalizer refuses."""
+        source = text(ACCEPTANCE / "project" / "Level2.cs")
+        self.assertIn("Encoding.UTF8.GetBytes(string.Join('\\n', _stageRows))", source)
+        self.assertNotIn("rows.Append(row).Append('\\n')", source)
+        writer = source[source.index("private static void WriteNew("):]
+        self.assertIn("stream.WriteByte((byte)'\\n');", writer[:writer.index("\n    }")])
 
     def test_texture_runs_keep_their_rules(self):
         run = write_run(self.base / "texture", "w3", run_id="c9-texture")
