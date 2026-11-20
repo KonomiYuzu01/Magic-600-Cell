@@ -2,13 +2,15 @@
 //! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
 //! "Exact linear algebra" and the exact sign and order of its Q(√5) values; LB1.8's row "Quaternion and icosian
 //! algebra" as far as quaternion factors and the tree at 2 go; LB1.8's row "Word equality keys" for 600-cell-Full
-//! words, under the owner's answer of 17 November 2026; the exact-completion half of LB2's row
-//! "Residuals and exact completion", over KN2.4's `positions` and `labels` rows; LB2's rows "Star and recipe
-//! construction" and "Collateral and support", over KN2.4's `effect` row; LB2's row "Net and Strict protection", over
-//! KN2.4's `protection` row; LB2's row "Guarded setups and buffers", over the draft `setups` row of the
-//! setup-search exception; LB2's row "Named macro analysis and comparison", over KN2.4's `effect` and `replay`
-//! rows; and LB2's rows "Seeds and full seed analysis" and "Orbit catalogue and collateral stage order" as far as the
-//! seeds' collateral and its stage order go, over KN2.4's `effect`.
+//! words, under the owner's answer of 17 November 2026; LB2's row "Residuals and exact completion", its
+//! exact-completion half over KN2.4's `positions` and `labels` rows and its residual half over the caller's
+//! `positions` answers; LB2's rows "Star and recipe construction" and "Collateral and support", over KN2.4's `effect`
+//! row; LB2's row "Net and Strict protection", over KN2.4's `protection` row; LB2's row "Guarded setups and buffers",
+//! over the draft `setups` row of the setup-search exception; LB2's row "Named macro analysis and comparison", over
+//! KN2.4's `effect` and `replay` rows; LB2's row "Seeds and full seed analysis" as far as the seeds' collateral goes,
+//! over KN2.4's `effect`; and LB2's row "Orbit catalogue and collateral stage order": the stage order over the seeds'
+//! collateral, and the orbit catalogue over the draft `orbits` row with the progress per orbit over the caller's
+//! `positions` answers.
 //!
 //! # Literal words
 //!
@@ -256,10 +258,36 @@
 //! the checker's effect `snapshot` and reads the rows [`SEEDS_ROWS`] names at the seed as given; `stage_order` is pure.
 //! `c600-tools/tests/seeds.rs` runs both on the model's 35 seeds in `assets/seed_atlas.json`.
 //!
+//! # Orbit catalogue, progress and residuals
+//!
+//! The source [`ORBITS_SOURCE`], `src/orbits.6cs`, is the module `orbits` in edition `6cs-draft-1`, in the
+//! formatter's canonical layout. Three entries:
+//!
+//! - `orbit_catalogue(named)` reads the draft row `orbits` at the orbits the caller names, -1 (the fixed cell centres)
+//!   to 34, and answers each orbit's pieces, by home position in increasing order: model data, the same at every head.
+//! - `orbit_progress(orbit, positions)`, pure, takes the caller's `positions` answer and counts, among its records of
+//!   the orbit, the pieces whose every sticker is in its home slot (`solved`), those in their home position with a
+//!   sticker elsewhere (`orientation_wrong`) and those not in their home position (`position_wrong`); `pieces` is
+//!   their sum and `others` counts the records of other orbits, so no record is dropped unseen.
+//! - `orbit_residuals(members, buffer_a, buffer_b, positions)`, pure, takes the orbit's catalogue row, its buffers A
+//!   and B (positions, as the `setups` row answers them) and the caller's `positions` answer, and answers the orbit's
+//!   residuals (solving workflow section 3.4): the non-buffer pieces not at Home (`misplaced`), the non-buffer pieces
+//!   at Home with a sticker elsewhere (`misoriented`), each buffer's occupant and whether it is solved, the pieces
+//!   whose stickers are split over positions, whose frame is unknown (`unknown`), whether the answer names exactly the
+//!   orbit's pieces in the catalogue's order (`complete`), and the exact solved status (`solved`).
+//!
+//! The row supplies membership only; the progress and the residuals take the positions as a parameter (chapter 03),
+//! so a host reads `positions` at the catalogue's pieces, which the built-in column admits only at what the solver
+//! names (LB3.5). No entry chooses an orbit, a target or a buffer, and none ranks what it lists.
+//! [`orbit_catalogue_and_progress`] and [`residuals_per_orbit`] are the catalogue rows; `orbit_catalogue` has the
+//! checker's effect `snapshot` and reads the row [`ORBITS_ROWS`] names, and the other two are pure.
+//! `c600-tools/tests/orbits.rs` runs them through the tool's host bridge: the catalogue and the progress on all 36
+//! orbits, and the residuals on the 35 moving orbits with the buffers of the certified setup table.
+//!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe, report, protection, guarded-setup, named macro and seed entries through the tool's host
-//! bridge, and the word keys on the model's relation. Every result of its tests is source and fixture evidence.
+//! exact-completion, recipe, report, protection, guarded-setup, named macro, seed and orbit entries through the tool's
+//! host bridge, and the word keys on the model's relation. Every result of its tests is source and fixture evidence.
 //!
 //! # Drafts
 //!
@@ -376,6 +404,43 @@
 //! - LB2, stage order: Kahn's order over the caller's rows, taking at each step the first ready row in the caller's
 //!   list; chapter 03 fixes the edges, not the order among rows that no edge separates. A collateral orbit with no row
 //!   of its own holds nothing back, and a row a cycle holds stays in `cycle` with every row behind it.
+//! - LB2, orbit catalogue: KN2.4 has no row that names an orbit's pieces, so `orbit_catalogue` reads the draft row
+//!   `orbits` (`c600_tools::kernel_rows`, pull request 358) until the command table freezes at LP3, which takes it or
+//!   drops it. Chapter 03 backs the catalogue with library code over KN2.4's `labels`, `positions` and `effect`; under
+//!   the draft budget ceiling that cannot serve it: `labels` names no orbit, `positions` names one only for the pieces
+//!   a program names, and sorting all 177,120 pieces by orbit takes at least ten steps a piece, about 1.8 million,
+//!   against the ceiling's 2^20 (1,048,576). The row is model data, read from the kernel's `positions` at the solved
+//!   state, and reads no state of the session; as for the recipes, the entry reads it with `read_snapshot` and carries
+//!   the effect `snapshot`, where chapter 03 says "pure".
+//! - LB2, progress: `orbit_progress` counts the caller's records. It never reads, so a count says what the named
+//!   positions show: a caller that names fewer pieces than the catalogue lists gets a smaller `pieces`, and compares it
+//!   with the catalogue. A record whose stickers are split over positions (`position` -1) counts as position wrong.
+//!   On a state twists reach, the counts over the catalogue's pieces are the kernel's progress row for the orbit; on
+//!   a label array with split stickers they can differ, since 0.4's row judges a position by its first slot only.
+//! - LB2, progress: no colour count. A sticker is colour-solved when its slot lies in its home slot's cell, slot ÷ 433,
+//!   and the IR draft has no division; colour never establishes completion either way (chapter 03).
+//! - LB2, residuals: `members` is the catalogue's row for the orbit, as `orbit_catalogue` answers it, and the entry
+//!   takes it as given; a host reads it in the same entry as `positions`, each at what the solver names, so that
+//!   `complete` compares the named pieces with the catalogue's. `complete` holds when `positions` has one record per
+//!   member, in the members' order, all of the orbit, and the list is not empty; `solved` holds when the answer is
+//!   complete and every member's stickers are in their home slots. Records of another orbit make the answer incomplete
+//!   and are not listed.
+//! - LB2, residuals: a buffer is a position. Its occupant is the piece whose stickers are at that position, -1 when no
+//!   named record is there, and it is solved when the occupant is the buffer's own piece with every sticker in its home
+//!   slot. A buffer's own piece elsewhere is not listed as misplaced: its absence shows as the buffer's occupant. A
+//!   non-buffer piece in a buffer is listed as misplaced.
+//! - LB2, residuals: "objects whose frame is unknown" (solving workflow section 3.4) are read as pieces whose stickers
+//!   are split over positions (`position` -1), which no twist makes and a label checkpoint can hold; they are listed in
+//!   `unknown` and, unless they are buffer pieces, as misplaced. A frame relative to a reference the solver names is
+//!   not built.
+//! - LB2, budgets: both pure entries make one pass over `positions`; on the largest orbit, 7,200 pieces, every piece
+//!   away from Home, each runs within the draft budget ceiling with the `positions` read before it
+//!   (`c600-tools/tests/orbits.rs`). The lists are built with `push`, which copies, so a list of k pieces costs about
+//!   k²/2 of kernel cost, within the ceiling's 2^40.
+//! - LB2: the catalogue rows are Rust data: [`orbit_catalogue_and_progress`], a second part of the row "Orbit catalogue
+//!   and collateral stage order" beside [`collateral_stage_order`], and [`residuals_per_orbit`], a second part of the
+//!   row "Residuals and exact completion" beside [`residuals_and_exact_completion`], because the parts are separate
+//!   modules.
 //! - LB1.8, Q(√5) signs: the sign is answered as an `Int`, -1, 0 or 1, because the IR draft has no ordering type; a
 //!   caller compares it with `exact_eq`. The entries take `Q5` only; an `Int` or a `Rat` widens to it with
 //!   `exact_add` or `exact_mul` before the call.
@@ -405,14 +470,13 @@
 //! - The rest of LB2's catalogue over `effect`: blocks and work sheets.
 //! - In "Seeds and full seed analysis": the target action as cycles with its exact frames, which need the piece-level
 //!   map, and KN6's certificates; the report says what the kernel's full map moves and certifies nothing more.
-//! - In "Orbit catalogue and collateral stage order": the orbit catalogue, which is model data, and the progress read
-//!   per orbit.
+//! - In "Orbit catalogue and collateral stage order": a colour count in the progress per orbit.
 //! - In "Named macro analysis and comparison": a captured lock in the report, which the `protection` module's checks
 //!   judge on the same recipe, and named macros of the jumbled puzzle, which are C8's.
-//! - In "Guarded setups and buffers": the editor in which the solver edits a setup, which is LP4's; setups of the
-//!   jumbled puzzle, which are C8's; and the buffers' current occupants, with the residual half below.
-//! - The residual half of LB2's row "Residuals and exact completion": non-buffer positions, buffer occupants and
-//!   frames.
+//! - In "Guarded setups and buffers": the editor in which the solver edits a setup, which is LP4's, and setups of the
+//!   jumbled puzzle, which are C8's. The buffers' current occupants are `orbits.orbit_residuals`'.
+//! - In "Residuals and exact completion": frames relative to a reference the solver names, and the residuals of blocks
+//!   and work sheets, which wait for them.
 //! - In "Word equality keys" and "Trace equality keys": keys of jumbling menu words. LG2.18's domain-preserving key
 //!   on the pinned menu matrices is C8's (CT-LB1-02's key half), and LB1.10's `jumble-locality/1` waits for an exact
 //!   Δ(c,d) entry in `c600-jumble`.
@@ -529,6 +593,20 @@ pub const SEEDS_STAGE_ORDER: [&str; 1] = ["stage_order"];
 /// The KN2.4 row the seeds module reads with `read_snapshot`.
 pub const SEEDS_ROWS: [&str; 1] = ["effect"];
 
+/// The orbit catalogue, progress and residuals source: edition `6cs-draft-1`, syntax candidate A, in the formatter's
+/// canonical layout.
+pub const ORBITS_SOURCE: &str = include_str!("orbits.6cs");
+/// The orbit catalogue, progress and residuals module.
+pub const ORBITS_MODULE: &str = "orbits";
+/// The orbits module's exported functions, in source order.
+pub const ORBITS_EXPORTS: [&str; 3] = ["orbit_catalogue", "orbit_progress", "orbit_residuals"];
+/// The exported functions behind LB2's row "Orbit catalogue and collateral stage order".
+pub const ORBITS_CATALOGUE: [&str; 2] = ["orbit_catalogue", "orbit_progress"];
+/// The exported function behind the residual half of LB2's row "Residuals and exact completion".
+pub const ORBITS_RESIDUALS: [&str; 1] = ["orbit_residuals"];
+/// The row the orbits module reads with `read_snapshot`: the draft `orbits` row of the orbit catalogue.
+pub const ORBITS_ROWS: [&str; 1] = ["orbits"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -584,6 +662,11 @@ pub fn seeds_sha256() -> String {
     sha256_hex(SEEDS_SOURCE.as_bytes())
 }
 
+/// The SHA-256 of [`ORBITS_SOURCE`], in hex.
+pub fn orbits_sha256() -> String {
+    sha256_hex(ORBITS_SOURCE.as_bytes())
+}
+
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CatalogueRow {
@@ -625,7 +708,7 @@ pub fn literal_words() -> CatalogueRow {
 pub fn residuals_and_exact_completion() -> CatalogueRow {
     CatalogueRow {
         entry: "Residuals and exact completion",
-        level: "Full labels and positions. Exact completion only; the residual half is not built.",
+        level: "Full labels and positions. Exact completion; the residual half is the `orbits` module's.",
         effects: &[Effect::ReadSnapshot],
         backing: "Library code: `completion.exact_completion` over KN2.4's `positions` and `labels`, each read with \
                   `read_snapshot` at what the host names, the candidates and their home slots; a host serves both \
@@ -845,7 +928,7 @@ pub fn collateral_stage_order() -> CatalogueRow {
     CatalogueRow {
         entry: "Orbit catalogue and collateral stage order",
         level: "Full labels: the caller's seed rows, each an orbit and its seed's collateral. The orbit catalogue \
-                and the progress read are not built.",
+                and the progress per orbit are the `orbits` module's.",
         effects: &[],
         backing: "Library code: `seeds.stage_order`, over the collateral that `seeds.seed_report` reads from KN2.4's \
                   `effect`.",
@@ -855,6 +938,50 @@ pub fn collateral_stage_order() -> CatalogueRow {
         module: SEEDS_MODULE,
         functions: &SEEDS_STAGE_ORDER,
         source_sha256: seeds_sha256(),
+    }
+}
+
+/// LB2's row "Orbit catalogue and collateral stage order", its orbit catalogue and progress per orbit, as far as this
+/// crate builds them.
+pub fn orbit_catalogue_and_progress() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Orbit catalogue and collateral stage order",
+        level: "Full labels; model data: the pieces of each orbit the caller names, and the caller's `positions` \
+                records for the progress. The stage order is the `seeds` module's; a colour count is not built.",
+        effects: &[Effect::ReadSnapshot],
+        backing: "Library code: `orbits.orbit_catalogue` reads the draft row `orbits` (KN2.4 has none) with \
+                  `read_snapshot`, model data from the kernel's `positions` at the solved state; \
+                  `orbits.orbit_progress` counts over the caller's `positions` answer, which a host reads at the \
+                  catalogue's pieces; a host serves both rows (`c600_tools::kernel_rows`).",
+        notes: "The catalogue answers each named orbit's pieces, the same at every head; the 36 orbits, -1 for the \
+                fixed cell centres and 0 to 34, split the 177,120 pieces between them. The progress counts the named \
+                records of the orbit: solved, orientation wrong and position wrong; records of other orbits are \
+                counted apart, never dropped. A count says what the named positions show; colour never establishes \
+                completion.",
+        module: ORBITS_MODULE,
+        functions: &ORBITS_CATALOGUE,
+        source_sha256: orbits_sha256(),
+    }
+}
+
+/// The residual half of LB2's row "Residuals and exact completion", as far as this crate builds it.
+pub fn residuals_per_orbit() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Residuals and exact completion",
+        level: "Full labels and positions: the orbit's catalogue row, its buffers A and B and the caller's \
+                `positions` records. Exact completion is the `completion` module's.",
+        effects: &[],
+        backing: "Library code: `orbits.orbit_residuals` over the caller's `positions` answer, which a host reads at \
+                  the catalogue's pieces, with the membership from `orbits.orbit_catalogue` and the buffers as the \
+                  `setups` row answers them.",
+        notes: "Per orbit: non-buffer pieces not at Home, non-buffer pieces at Home with a sticker elsewhere, each \
+                buffer's occupant and whether it is solved, pieces whose stickers are split over positions, whether \
+                the records name exactly the orbit's pieces, and the exact solved status. Solved needs every member \
+                named with every sticker in its home slot: an empty or partial list, or matching colours, never \
+                establishes it. The lists follow the caller's order; nothing is ranked or chosen.",
+        module: ORBITS_MODULE,
+        functions: &ORBITS_RESIDUALS,
+        source_sha256: orbits_sha256(),
     }
 }
 

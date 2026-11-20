@@ -1,0 +1,81 @@
+edition "6cs-draft-1";
+module orbits requires [];
+
+export fn orbit_catalogue(named: List<Int>) -> List<record { orbit: Int, pieces: List<Nat> }> effects [snapshot] {
+    return read_snapshot<List<record { orbit: Int, pieces: List<Nat> }>>("orbits", named);
+}
+
+export fn orbit_progress(orbit: Int, positions: List<record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, slots: List<Nat> }>) -> record { orbit: Int, orientation_wrong: Nat, others: Nat, pieces: Nat, position_wrong: Nat, solved: Nat } effects [] {
+    let s = repeat(length(positions), record { next = 0, orientation_wrong = 0, others = 0, position_wrong = 0, solved = 0 }, fn(s: record { next: Nat, orientation_wrong: Nat, others: Nat, position_wrong: Nat, solved: Nat }) -> record { next: Nat, orientation_wrong: Nat, others: Nat, position_wrong: Nat, solved: Nat } {
+        let at = index(positions, s.next);
+        return match exact_eq(at.orbit, orbit) {
+            true => match exact_eq(at.slots, at.home) {
+                true => record { next = exact_add(s.next, 1), orientation_wrong = s.orientation_wrong, others = s.others, position_wrong = s.position_wrong, solved = exact_add(s.solved, 1) };
+                _ => match exact_eq(at.position, at.piece) {
+                    true => record { next = exact_add(s.next, 1), orientation_wrong = exact_add(s.orientation_wrong, 1), others = s.others, position_wrong = s.position_wrong, solved = s.solved };
+                    _ => record { next = exact_add(s.next, 1), orientation_wrong = s.orientation_wrong, others = s.others, position_wrong = exact_add(s.position_wrong, 1), solved = s.solved };
+                };
+            };
+            _ => record { next = exact_add(s.next, 1), orientation_wrong = s.orientation_wrong, others = exact_add(s.others, 1), position_wrong = s.position_wrong, solved = s.solved };
+        };
+    });
+    return record { orbit = orbit, orientation_wrong = s.orientation_wrong, others = s.others, pieces = exact_add(s.solved, exact_add(s.orientation_wrong, s.position_wrong)), position_wrong = s.position_wrong, solved = s.solved };
+}
+
+export fn orbit_residuals(members: record { orbit: Int, pieces: List<Nat> }, buffer_a: Nat, buffer_b: Nat, positions: List<record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, slots: List<Nat> }>) -> record { buffer_a: record { occupant: Int, position: Nat, solved: Bool }, buffer_b: record { occupant: Int, position: Nat, solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, orbit: Int, solved: Bool, unknown: List<Nat> } effects [] {
+    let orbit = members.orbit;
+    let pieces = members.pieces;
+    let start = record { buffers = record { a = -1, a_solved = false, b = -1, b_solved = false }, complete = and(exact_less(0, length(pieces)), exact_eq(length(positions), length(pieces))), misoriented = list<Nat>(), misplaced = list<Nat>(), next = 0, solved = 0, unknown = list<Nat>() };
+    let s = repeat(length(positions), start, fn(s: record { buffers: record { a: Int, a_solved: Bool, b: Int, b_solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, next: Nat, solved: Nat, unknown: List<Nat> }) -> record { buffers: record { a: Int, a_solved: Bool, b: Int, b_solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, next: Nat, solved: Nat, unknown: List<Nat> } {
+        let at = index(positions, s.next);
+        let complete = and(s.complete, exact_eq(at.piece, index(pieces, s.next)));
+        return match exact_eq(at.orbit, orbit) {
+            true => match exact_eq(at.position, at.piece) {
+                true => at_home(s, at, complete, buffer_a, buffer_b);
+                _ => away(s, at, complete, buffer_a, buffer_b);
+            };
+            _ => record { buffers = s.buffers, complete = false, misoriented = s.misoriented, misplaced = s.misplaced, next = exact_add(s.next, 1), solved = s.solved, unknown = s.unknown };
+        };
+    });
+    return record { buffer_a = record { occupant = s.buffers.a, position = buffer_a, solved = s.buffers.a_solved }, buffer_b = record { occupant = s.buffers.b, position = buffer_b, solved = s.buffers.b_solved }, complete = s.complete, misoriented = s.misoriented, misplaced = s.misplaced, orbit = orbit, solved = and(s.complete, exact_eq(s.solved, length(pieces))), unknown = s.unknown };
+}
+
+fn at_home(s: record { buffers: record { a: Int, a_solved: Bool, b: Int, b_solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, next: Nat, solved: Nat, unknown: List<Nat> }, at: record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, slots: List<Nat> }, complete: Bool, buffer_a: Nat, buffer_b: Nat) -> record { buffers: record { a: Int, a_solved: Bool, b: Int, b_solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, next: Nat, solved: Nat, unknown: List<Nat> } effects [] {
+    let home = exact_eq(at.slots, at.home);
+    let solved = match home {
+        true => exact_add(s.solved, 1);
+        _ => s.solved;
+    };
+    return match exact_eq(at.piece, buffer_a) {
+        true => record { buffers = record { a = at.piece, a_solved = home, b = s.buffers.b, b_solved = s.buffers.b_solved }, complete = complete, misoriented = s.misoriented, misplaced = s.misplaced, next = exact_add(s.next, 1), solved = solved, unknown = s.unknown };
+        _ => match exact_eq(at.piece, buffer_b) {
+            true => record { buffers = record { a = s.buffers.a, a_solved = s.buffers.a_solved, b = at.piece, b_solved = home }, complete = complete, misoriented = s.misoriented, misplaced = s.misplaced, next = exact_add(s.next, 1), solved = solved, unknown = s.unknown };
+            _ => record { buffers = s.buffers, complete = complete, misoriented = oriented(s.misoriented, at.piece, home), misplaced = s.misplaced, next = exact_add(s.next, 1), solved = solved, unknown = s.unknown };
+        };
+    };
+}
+
+fn away(s: record { buffers: record { a: Int, a_solved: Bool, b: Int, b_solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, next: Nat, solved: Nat, unknown: List<Nat> }, at: record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, slots: List<Nat> }, complete: Bool, buffer_a: Nat, buffer_b: Nat) -> record { buffers: record { a: Int, a_solved: Bool, b: Int, b_solved: Bool }, complete: Bool, misoriented: List<Nat>, misplaced: List<Nat>, next: Nat, solved: Nat, unknown: List<Nat> } effects [] {
+    let misplaced = match or(exact_eq(at.piece, buffer_a), exact_eq(at.piece, buffer_b)) {
+        true => s.misplaced;
+        _ => push(s.misplaced, at.piece);
+    };
+    let unknown = match exact_eq(at.position, -1) {
+        true => push(s.unknown, at.piece);
+        _ => s.unknown;
+    };
+    return match exact_eq(at.position, buffer_a) {
+        true => record { buffers = record { a = at.piece, a_solved = false, b = s.buffers.b, b_solved = s.buffers.b_solved }, complete = complete, misoriented = s.misoriented, misplaced = misplaced, next = exact_add(s.next, 1), solved = s.solved, unknown = unknown };
+        _ => match exact_eq(at.position, buffer_b) {
+            true => record { buffers = record { a = s.buffers.a, a_solved = s.buffers.a_solved, b = at.piece, b_solved = false }, complete = complete, misoriented = s.misoriented, misplaced = misplaced, next = exact_add(s.next, 1), solved = s.solved, unknown = unknown };
+            _ => record { buffers = s.buffers, complete = complete, misoriented = s.misoriented, misplaced = misplaced, next = exact_add(s.next, 1), solved = s.solved, unknown = unknown };
+        };
+    };
+}
+
+fn oriented(misoriented: List<Nat>, piece: Nat, home: Bool) -> List<Nat> effects [] {
+    return match home {
+        true => misoriented;
+        _ => push(misoriented, piece);
+    };
+}

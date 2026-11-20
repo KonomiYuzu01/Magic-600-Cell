@@ -29,7 +29,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and its six rows: what they need from the command layer, and all six served there by a test host through the command and source routes, whose two snapshot reads `c600-tools`' bridge answers from LP2's structure rows (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), the repair list at a named cap under the built-in column's repair-list exception (`jumble_repair`), the three end tests read as their own verdict types (`jumble_end_tests`), the jumbling rows' host bridge (`rows`: KN2.4's jumbling rows and `seam_facts` as snapshot reads, also at the command layer's head with Jumble on), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
-| `c600-library` | The base library's first entries as 600 Cell Script, with their catalogue rows: LB1's literal words (`words.power` in `words.6cs`); LB1.8's F2 and F5 ranks and solutions (the module `linalg` in `linalg.6cs`), exact Q(√5) signs (`quadratic`) and quaternion factors and tree outputs (`trees`), CT-LB1-01's parts, and its word equality keys (`word_keys`), CT-LB1-02's 600-cell-Full half on the model's relation in `c600-tools`' tests; LB2's exact completion (`completion.exact_completion` in `completion.6cs`), recipes and reports (`recipes`), Net and Strict protection (`protection`), guarded setups and buffers (`guarded_setups` in `setups.6cs`), named macro analysis and comparison (`macros`) and seeds with their collateral stage order (`seeds`), whose entries that read state run whole through the tool's host bridge in `c600-tools`' tests (CT-LB2-04, CT-LB2-01, CT-LB2-02 and CT-BND-18 among them); and CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
+| `c600-library` | The base library's first entries as 600 Cell Script, with their catalogue rows: LB1's literal words (`words.power` in `words.6cs`); LB1.8's F2 and F5 ranks and solutions (the module `linalg` in `linalg.6cs`), exact Q(√5) signs (`quadratic`) and quaternion factors and tree outputs (`trees`), CT-LB1-01's parts, and its word equality keys (`word_keys`), CT-LB1-02's 600-cell-Full half on the model's relation in `c600-tools`' tests; LB2's exact completion (`completion.exact_completion` in `completion.6cs`), recipes and reports (`recipes`), Net and Strict protection (`protection`), guarded setups and buffers (`guarded_setups` in `setups.6cs`), named macro analysis and comparison (`macros`), seeds with their collateral stage order (`seeds`) and the orbit catalogue, progress per orbit and residuals (`orbits`), whose entries that read state run whole through the tool's host bridge in `c600-tools`' tests (CT-LB2-04, CT-LB2-01, CT-LB2-02 and CT-BND-18 among them); and CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 | `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests, and user stages as HLSL under `m600-stage-hlsl/1` with their binary32 CPU reference; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
@@ -2434,6 +2434,14 @@ run or not applicable is no pass (PHS.63).
     argument form before its charge, and an orbit outside -1 to 34 with `KN2:input.named_object_invalid` once charged;
     its draft tariff covers its largest answer; the built-in column admits a reading entry only with the read row in
     its class. A read changes nothing. The refusal with Jumble on is not run. Covers no conformance ID.
+  - `orbits.rs`: LB2's orbit catalogue, progress per orbit and residuals from `c600-library` on the same host (pull
+    request 363). The built-in column admits the catalogue with the `orbits` row, and a host entry that reads `orbits`
+    and `positions` at what the solver names with both rows; it refuses one that reads `positions` at the catalogue's
+    answer (LB3.5). The catalogue is the kernel's orbit table at solved and at a scrambled head; the progress is the
+    kernel's progress row on all 36 orbits at a scrambled head; the residuals agree with an oracle over the certified
+    setup table's buffers, and at solved every orbit is complete and solved while a partial or reversed list is neither.
+    The largest orbit, 7,200 pieces all away from Home, runs within the draft budget ceiling, and the test prints what
+    it used. Covers no conformance ID.
 - Open: the class rows are an LP3 draft until BND.57's rows by class exist as data. The built-in column's two exceptions
   (setup search for a named target, the repair list) are built in `c600-check` (LP2's pull request 229); the bridge
   serves the `setups` row only when the host gives it the setup table. The command layer's receipts carry no program
@@ -3137,6 +3145,20 @@ run or not applicable is no pass (PHS.63).
   before each orbit its seed moves: at each step the first ready row in the caller's order, so no orbit's ID or rank
   decides, and rows the edges hold in a cycle come back in `cycle`, none dropped. The entries choose no seed, orbit or
   target. Its catalogue rows are `seeds_and_full_seed_analysis` and `collateral_stage_order`.
+- Orbit catalogue, progress per orbit and residuals (pull request 363): the source
+  [`orbits.6cs`](c600-library/src/orbits.6cs) is the module `orbits` with three entries. `orbit_catalogue(named)`,
+  effect `snapshot`, reads the draft `orbits` row at the orbits the caller names, -1 (the fixed cell centres) to 34, and
+  answers each orbit's pieces by home position, model data the same at every head. `orbit_progress(orbit, positions)`,
+  pure, counts among the caller's `positions` records of the orbit the pieces with every sticker home (`solved`), at
+  Home with a sticker elsewhere (`orientation_wrong`) and not at Home (`position_wrong`), and counts the records of
+  other orbits apart (`others`), so none is dropped unseen. `orbit_residuals(members, buffer_a, buffer_b, positions)`,
+  pure, takes the orbit's catalogue row, its buffers A and B as the `setups` row answers them and the caller's
+  `positions` records, and answers the misplaced and misoriented non-buffer pieces, each buffer's occupant and whether
+  it is solved, the pieces whose stickers are split over positions (`unknown`), whether the records name exactly the
+  orbit's pieces in the catalogue's order (`complete`), and the exact solved status, which needs every member named with
+  every sticker in its home slot. The row supplies membership only; the progress and the residuals take the positions as
+  a parameter (chapter 03), which a host reads at what the solver names (LB3.5). The entries choose no orbit, target or
+  buffer and rank nothing. Its catalogue rows are `orbit_catalogue_and_progress` and `residuals_per_orbit`.
 - Tests (`c600-library/tests/`), each naming its part; CT-LB1-01 runs whole in two of them, `ct_lb1_01.rs` and
   `ct_lb1_01_trees.rs`, and no other conformance ID runs whole here:
   - `ct_lb1_03.rs`: CT-LB1-03's 600-cell-Full half. The language part: the source parses, keeps its canonical layout,
@@ -3182,6 +3204,11 @@ run or not applicable is no pass (PHS.63).
   - `macros.rs` and `seeds.rs`: the source parts of the named macro analysis and of the seeds. Each source checks with
     no diagnostic and keeps its canonical layout, each entry reads its rows and no other (`stage_order` none), and the
     catalogue rows' effects are the checker's; `seeds.rs` also runs the pure stage order with no host, a cycle included.
+  - `orbits.rs`: the source part of the orbit catalogue, progress and residuals. The source checks with no diagnostic
+    and keeps its canonical layout; `orbit_catalogue` reads `orbits` and no other row, and the other two are pure; the
+    two catalogue rows split the exports, with the checker's effects. With no host, the progress and the residuals
+    answer hand-made records as defined, and an empty, partial, longer, reordered or repeated list, or one with another
+    orbit's record, is neither complete nor solved.
 - CT-LB2-04's whole run is in `c600-tools/tests/exact_completion.rs`, since the library crate is a dev-dependency of the
   tools crate: whole, on 600-cell-Full, through `Boundary` and the tool's host bridge onto a command layer in the
   solving profile, author `built_in`. The solved state passes, for one piece of each of the 35 orbits and of the fixed
@@ -3199,6 +3226,8 @@ run or not applicable is no pass (PHS.63).
 - The named macro analysis runs whole in `c600-tools/tests/macros.rs` (pull request 353) and the seeds in
   `c600-tools/tests/seeds.rs` (pull request 357), on the same host; the word keys run on the pinned model's relation in
   `c600-tools/tests/ct_lb1_02.rs`, CT-LB1-02's 600-cell-Full half (pull request 350).
+- The orbit catalogue, progress per orbit and residuals run whole in `c600-tools/tests/orbits.rs` (pull request 363), on
+  the same host.
 - Drafts, in the crate documentation under "Drafts": the exponent is an `Int`, and a negative power is the inverse
   written out; `power` recurses through `exact_add`, because the IR draft has no subtraction or negation and had no loop
   when `power` was written (loops came with LP2's pull request 234); a power is a flat word, not a compressed one; the
@@ -3211,19 +3240,19 @@ run or not applicable is no pass (PHS.63).
   codes and tariff are `c600-tools`' drafts, and so are those of the `effect`, `protection`, `replay`, `setups`,
   `orbits`, `structure.compare` and `filter.preview` rows. The drafts of exact linear algebra (two copies of one
   elimination, matrices as `List<List<Int>>` and solutions as residues), of recipes and reports, and of the later
-  entries (Q(√5) signs, quaternions, word keys, macros and seeds) are in the crate documentation too.
+  entries (Q(√5) signs, quaternions, word keys, macros, seeds and orbits) are in the crate documentation too.
 - The jumbling library entries, on the IR draft's menu words, are C8's (`c600_jumble_tool::library`). Not built: library
   entries over kernel rows other than exact completion, recipes and reports, Net and Strict protection, guarded setups,
-  named macros and seeds: the IR draft passes a run's input as a query's argument since LP2's `read_snapshot<T>("q",
-  x)`, and the tool's bridge answers such a read for `positions` (LP2's pull request 226), `labels`, `effect`,
-  `protection`, `replay`, `orbits` (pull request 358), with the setup table `setups`, and the representations tool's
-  `structure.compare` and `filter.preview` (C6) only; the residual half of LB2's row (non-buffer positions, buffer
-  occupants and frames); the rest of LB2's catalogue over `effect` (blocks and work sheets); in the seed rows, the
-  target action as cycles with its exact frames, KN6's certificates, the orbit catalogue and the progress read per
-  orbit; a captured lock in a macro report; the cosets γK⁺, and the rest of "Exact linear algebra" (null spaces, and
-  ranks and solving over Z, Q and Q(√5)); keys of jumbling menu words in this crate (LG2.18's key on the pinned menu
-  matrices is C8's); the `labels` row's refusal with Jumble on, which is built and not run, because a jumbled layer
-  needs `c600-jumble`; the other entries of LB1.8's table.
+  named macros, seeds and the orbit catalogue: the IR draft passes a run's input as a query's argument since LP2's
+  `read_snapshot<T>("q", x)`, and the tool's bridge answers such a read for `positions` (LP2's pull request 226),
+  `labels`, `effect`, `protection`, `replay`, `orbits` (pull request 358), with the setup table `setups`, and the
+  representations tool's `structure.compare` and `filter.preview` (C6) only; in LB2's residual half, frames relative to
+  a reference the solver names; the rest of LB2's catalogue over `effect` (blocks and work sheets, and their residuals);
+  in the seed rows, the target action as cycles with its exact frames and KN6's certificates; a colour count in the
+  progress per orbit; a captured lock in a macro report; the cosets γK⁺, and the rest of "Exact linear algebra" (null
+  spaces, and ranks and solving over Z, Q and Q(√5)); keys of jumbling menu words in this crate (LG2.18's key on the
+  pinned menu matrices is C8's); the `labels` row's refusal with Jumble on, which is built and not run, because a
+  jumbled layer needs `c600-jumble`; the other entries of LB1.8's table.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C9 bridge: the display host over the S-A2 core
