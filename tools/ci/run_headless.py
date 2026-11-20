@@ -157,8 +157,9 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
 
 TIME_LIMIT_SECONDS = 1200
 # A check that needs longer, with its own limit. `cargo test` on the whole Rust workspace took 1045 s on the
-# Windows runner on 17 November 2026 (main e5cbf494), and it grows with every crate and test file.
-LONG_CHECK_SECONDS = {"tests/test_language_rust.py": 2400}
+# Windows runner on 17 November 2026 (main e5cbf494) and about 2250 s on 20 November 2026, and it grows with every
+# crate and test file. The shard job's own limit is 120 minutes.
+LONG_CHECK_SECONDS = {"tests/test_language_rust.py": 3600}
 
 
 def time_limit(check: list[str]) -> int:
@@ -292,7 +293,7 @@ SECONDS = {
     "tests/test_stop_gate.py": 16, "tests/test_checkout_bytes.py": 15,
     "tests/test_print_identity.py": 14, "tests/test_b412_fixture.py": 13,
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
-    "tests/test_language_rust.py": 1045,  # the full run on main of 17 November 2026
+    "tests/test_language_rust.py": 2300,  # about 2250 s on the Windows runner on 20 November 2026
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
     "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family
     "tests/test_lp3_loop.py": 120,  # an estimate until a CI run measures it
