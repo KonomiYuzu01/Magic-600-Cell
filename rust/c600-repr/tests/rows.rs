@@ -1,7 +1,7 @@
 //! The six rows of the representations tool at the command layer (LP3 plan, C6 item 7): `rows::NEEDS` against the
 //! stored H-08 table, the shipped entries, the layer's refusals and the rows it serves. Nothing here builds a row; the
 //! layer has the one implementation of tokens, receipts, undo and outcomes. It refuses all six as not built until a
-//! host serves them, and it serves five; `served_rows.rs` runs those five.
+//! host serves them, and it serves all six; `served_rows.rs` runs them.
 
 mod common;
 
