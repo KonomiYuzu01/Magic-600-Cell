@@ -236,12 +236,13 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
 - Menu words (LP2 draft until the IR freeze; LB1.8, LP3's plan, section 2). `MenuWord` is the type of a word of the
   run's pinned jumbling menu, and `Lit::MenuWord` a literal of letters `[cap, item]`, each index below
   `MENU_INDEX_LIMIT` (600). `concat`, `inverse`, `conjugate`, `commutator` and `compose` take menu words as they
-  take Full words and give a menu word, and `length` counts its letters; the first operand of a known type sets an
-  operation's alphabet. A Full word and a menu word never meet: an operation, collection, call, return, equality or
-  match that mixes them, also inside a list, record, map or callable type, and a menu word given to `word_key` or
-  `compress`, is `LB1:input.incompatible_alphabet` with the expected and the supplied type, not a mismatch; types
-  that differ in more than the alphabet stay a mismatch. A menu word is proposed as a word is, with the `preview`
-  effect, and the built-in column takes a `MenuWord` parameter as a word the solver named
+  take Full words and give a menu word, `length` counts its letters, and `word_key` gives a menu word's
+  `WordEqualityKey` under the run's pinned menu matrices (LG2.18; `c600_run::menu_key`, LP2's pull request 338); the
+  first operand of a known type sets an operation's alphabet. A Full word and a menu word never meet: an operation,
+  collection, call, return, equality or match that mixes them, also inside a list, record, map or callable type, and
+  a menu word given to `compress`, is `LB1:input.incompatible_alphabet` with the expected and the supplied type, not a
+  mismatch; types that differ in more than the alphabet stay a mismatch. A menu word is proposed as a word is, with
+  the `preview` effect, and the built-in column takes a `MenuWord` parameter as a word the solver named
   (`c600-check/tests/built_in.rs`, `c600-syntax/tests/menu_words.rs`).
 - End tests' verdicts (LP2 draft until the IR freeze; LB3.2, LG2.9; LP3's plan, section 2). `Ty::EndTest` is the
   type of the verdict of one of LB3.2's three end tests, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict` or
@@ -575,8 +576,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout (parameters,
   captures, `let` and loop slots and operand temporaries; a body's own result has no slot), a value's canonical byte
   length as retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a
-  word (LG2.18's word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the frozen vectors do not
-  price. The IR draft has one read construct for snapshots and workspace records; the IR freeze should split it.
+  word (a word key has none, LG2.13; LG2.18's key contract stays an open choice, PHS.55) and `DraftTariffs`, test-only
+  tariffs for the rows the frozen vectors do not price. The IR draft has one read construct for snapshots and
+  workspace records; the IR freeze should split it.
 - Lists and words (LP2 drafts): `Value::List` (`Value::list`) and `Value::WordEqualityKey`. A list's logical size is
   a record's, after DET.57's sequence row: a 4-byte tag, 8 bytes per variable-sequence element, and the elements. Its
   JSON form is an array in written order. Each operation is one step: `length` reserves its integer; `index` lends or
@@ -700,11 +702,30 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   count after the grip count; the Full forms are unchanged. A jumbling host pins the relation (LP3: `c600-jumble-tool`).
   Tests: `c600-jumble/tests/locality.rs` (the table, and CT-LB1-06's jumbling half on the model, part),
   `c600-run/tests/menu_trace_keys.rs` (on synthetic bits) and `c600-runtime/src/codec.rs`'s tests.
-- Open for menu words: the jumbling library entries that use them (LP3: the jumbling halves of CT-LB1-03 and
-  CT-LB1-06), and the alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock` and
-  the inverse items of its menu (`menu::MenuAlphabet::new`), the relation from `c600_jumble::locality::Locality::bits`
-  and `trace::Relation::jumble_locality`. Not built for trace keys: the operations on compressed words, which LP3
-  does not need, and EV4.9's report of a key's contract.
+- The jumbling word key (LP2 draft; LG2.18, LG2.23; LP2's pull request 338). `word_key` on a menu word gives
+  `word-key/1` under the item matrices of the run's pinned menu (`c600_run::menu_key`): each maximal run of adjacent
+  letters at one grip becomes one token, the grip and the exact product of the run's items in chronological action
+  order, in the menu's base frame, so two tokens at one grip are equal exactly when their twists are. A token stays
+  when its product is the identity, and a product outside the menu stays an exact group element; no commuting swap,
+  identity deletion, minimality or dynamic-target reduction is part of the key. A key carries LG2.23's header (the
+  alphabet's identity block, the grip count and the item count) and orders by header, then token by token. A run
+  keys menu words only when its pinned alphabet carries the item matrices (`MenuAlphabet::with_matrices`, which
+  refuses matrices that do not give the block's `menu_id` or `menu_order`), and such a run keys no Full word, so the
+  keys a run compares share one header: a menu word's key without the matrices, a Full word's key in such a run and a
+  host answer that holds a key under another header or out of its canonical form stop the run with
+  `LB1:input.key_contract_mismatch`. A key has no output form, so no argument or result holds one (LG2.13), and a key
+  where a menu word's letters are required is `LG2:type.word_key_not_executable`. The key reserves its products' size
+  bound and charges each product by its operands' sizes (a draft DET.57 price). `c600-runtime`'s codec carries a menu
+  word key as value tag 27 and a pinned menu alphabet with a matrices flag (the runtime's protocol, below). Tests:
+  `c600-run/tests/menu_word_keys.rs` (CT-LB1-02's jumbling half on a synthetic menu of seven items, part),
+  `c600-check/tests/mismatch.rs`, `c600-runtime/tests/protocol.rs` and the codec's own tests.
+- Open for menu words: the alphabet and relation a jumbling host pins: the alphabet from `c600_kernel::IdentityBlock`
+  and the inverse items of its menu (`menu::MenuAlphabet::new`), with the menu's item matrices for word keys
+  (`menu::MenuAlphabet::with_matrices`), and the relation from `c600_jumble::locality::Locality::bits` and
+  `trace::Relation::jumble_locality`. LP3's C8 pins the alphabet without the matrices (`word::Alphabet::pinned`) and
+  the relation (`locality`) in `c600-jumble-tool`; with the matrices, CT-LB1-02's key half and "Word keys remain
+  separate", CT-LB1-06's last part, can run there. Not built for trace keys: the operations on compressed words, which
+  LP3 does not need, and EV4.9's report of a key's contract.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -1544,10 +1565,12 @@ run or not applicable is no pass (PHS.63).
   host (RPI.54, RPI.1); a value with no canonical form stops the run with `PS1:input.noncanonical_value` before the
   host is called. Receipt-as-evidence is a question for the next milestone card.
 - Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changes once, in the amendment LP3 makes at its
-  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the six draft codes `c600-command`
+  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the ten draft codes `c600-command`
   emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`, `KN5:input.argument_form`,
-  `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, and KN5's `KN4:input.session_exists` for a store that
-  already holds a session), M5's section's four drafts, DET.36 in the rule source of `LG3:capability.not_granted`, and
+  `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN5:consistency.unadmitted_journal_action`,
+  `KN5:capability.preview_shown`, `KN5:capability.outside_solver_command`, `KN5:input.saved_set_exists`, and KN5's
+  `KN4:input.session_exists` for a store that already holds a session; `tests/test_language_scans.py` keeps the exact
+  list), M5's section's four drafts, DET.36 in the rule source of `LG3:capability.not_granted`, and
   these errata: in `13-errors.md`, the LB6 closure row `evidence.decomposition_mismatch` (line 661) sits between
   ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes before ERR.29 and ERR.30; the
   rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
@@ -1769,6 +1792,17 @@ run or not applicable is no pass (PHS.63).
   beneath an action that leaves, do the actions that wrote one of its other records. A replay
   decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
   `c600-command/tests/filter_apply.rs`.
+- Saved sets (LP3's C6, `set.save`; U1-057, U4-037; LP2's pull request 337; the drafts are in the crate
+  documentation). `set.save`'s entry writes the one record `set.save`, `{kind, members, name}`, and in the
+  completion's one durable action the layer writes the saved set's own record `set/<name>` in its place
+  (`c600_command::sets`): the kind, the members ascending and distinct, the identity of the model the job read, the
+  name and the capture revision. The result reference carries the exact set's digest, the SHA-256 of the FP.5 bytes of
+  `{kind, members, model}`, so saves of the same members of one kind under one model share a digest whatever their
+  names. Names under `set/` are reserved: only a `set.save` completion writes them, and `workspace.set` and
+  `worksheet.save` refuse them with `KN5:input.argument_form`. A save under a name that holds a saved set is refused
+  with the draft code `KN5:input.saved_set_exists`, at admission with no job and at completion, writing nothing, when
+  another save took the name meanwhile, unless the invocation carries the draft boolean `replace: true`. Tests:
+  `c600-command/tests/saved_sets.rs`.
 - Argument blocks (BND.22; LP3's C6, step 1 item 4; the drafts are in the crate documentation).
   `CommandLayer::invoke_with_inputs(caller, invocation, inputs)` takes the provenance blocks of an invocation's
   arguments beside the envelope. The host builds them; for a running program's invocation it builds them from the run's
@@ -1799,8 +1833,9 @@ run or not applicable is no pass (PHS.63).
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
   and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
   is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions, each 0
-  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`). Other types pass
-  unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and beside its
+  table arguments `set.save` takes the draft boolean `replace` (saved sets, above). Other types pass unchecked until
+  their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
@@ -2125,8 +2160,9 @@ run or not applicable is no pass (PHS.63).
   keys in all. Not built: CT-RTE-07's other 12 keys: 4 that need a recorded pick (MR17, MR18, A29 and A30; nothing
   writes or resolves a `c600-pick` record yet, FP.38 and BND.54); and 8 budget keys: B01 to B04 and B07, whose amounts
   follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices; B12, the host's row cache; and
-  B13 and B14, the command layer's budget declaration and ceiling. The jumbling keys' menu-word half waits for LG2.18's
-  jumbling word key (LP2). The Linux leg did not run.
+  B13 and B14, the command layer's budget declaration and ceiling. The jumbling keys' menu-word half waits for a
+  jumbling host that pins the menu with its item matrices (C8), for LG2.18's jumbling word key, which LP2 built at the
+  run level (`c600_run::menu_key`, pull request 338). The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2148,9 +2184,11 @@ run or not applicable is no pass (PHS.63).
   `c600_check::admit_built_in`, and both executors refuse class rows outside the solving profile at the admission
   stage. A menu word (LP2's draft, LB1.8) crosses with its identity block (value tag 21, type tag 23), a menu-word
   preview as `request.propose_menu` (request tag 6), and a job may pin a menu alphabet (`JobOptions::menu`), a
-  trailing field after the class rows: the identity block, the cap count and the inverse items, which the decoder
-  checks as `MenuAlphabet::new` does. `LB1:input.incompatible_alphabet` is one of the interpreter's own stop codes
-  (`codec::STATIC_CODES`). An end test's verdict (LP2's draft, LB3.2) crosses as value tag 22 with its test's and
+  trailing field after the class rows: the identity block, the cap count, the inverse items and a matrices flag (0
+  without the menu's item matrices, 1 with their count and each item's matrix; LG2.18, LP2's pull request 338), which
+  the decoder checks as `MenuAlphabet::new` and `MenuAlphabet::with_matrices` do. `LB1:input.incompatible_alphabet`
+  is one of the interpreter's own stop codes (`codec::STATIC_CODES`). An end test's verdict (LP2's draft, LB3.2)
+  crosses as value tag 22 with its test's and
   its outcome's indices, and its type as type tag 24 with the test's index. A trace key (LP2's draft, LB1.10)
   crosses as value tag 23 with its header in LG2.23's order and its letters, and its type as type tag 25; a job may
   pin a trace relation (`JobOptions::relation`), the run's last field, after the pinned menu: the contract, the
@@ -2160,10 +2198,13 @@ run or not applicable is no pass (PHS.63).
   interpreter's own stop codes. A menu word's trace key (LP2's draft, LB1.10, `jumble-locality/1`) crosses as value tag
   26 with its header (the jumbling identity block, the grip and item counts, the key, the contract and the digest) and
   its `[grip, item]` letters, and a pinned jumbling relation carries the menu's three identity fields after the model ID
-  and the item count after the grip count. A generator (LP2's draft, DET.61) stays in its run: it has no value tag, a
-  value that holds one is refused whole, and its type crosses as type tag 27 (tag 26 is F2 and F5's type, below). The
-  lengths that a frame's compressed words derive are bounded together by one frame's bits, so one word of up to 16,382
-  doublings of a letter crosses.
+  and the item count after the grip count. A menu word key (LP2's draft, LG2.18, `word-key/1`) crosses as value tag 27
+  with its header (the identity block, the key kind, the grip count and the item count) and its tokens in their
+  canonical form (each token's grip and the sixteen entries of its product row-major, each as its three integers), and
+  the run checks its header against its pinned menu. A generator (LP2's draft, DET.61) stays in its run: it has no
+  value tag, a value that holds one is refused whole, and its type crosses as type tag 27 (value and type tags are
+  separate spaces; type tag 26 is F2 and F5's type, below). The lengths that a frame's compressed words derive are
+  bounded together by one frame's bits, so one word of up to 16,382 doublings of a letter crosses.
   Above the bound a host's answer reaches the run in process but stops the child's run with
   `PS1:input.noncanonical_value`, a known difference (crate draft 15).
 - LP2's draft F2 and F5: an element crosses as value tag 24, its field's byte (0 for F2, 1 for F5) and its residue's
@@ -2627,11 +2668,14 @@ run or not applicable is no pass (PHS.63).
     job's entry in process through `c600-run`'s boundary. Invoked from the shell, `filter.preview` and
     `structure.compare` complete as `completed(query)` and `view.effect.scope` as `completed(view_published)`, at the
     job's revision and with nothing written; `filter.apply`, `set.save` and `structure.layer` each complete as one
-    durable workspace action that writes the entry's record through the reader, at a workspace revision one higher.
+    durable workspace action at a workspace revision one higher. `filter.apply`'s and `structure.layer`'s write the
+    entry's record through the reader; `set.save`'s writes the saved set's own record `set/<name>` with the exact-set
+    digest as the result reference (LP2's pull request 337, `c600_command::sets`).
     `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job; its action is the next
     undo target, and that undo removes its record and moves no state. The other two leave no undo entry. The source
     route (the same entry run in process on the same arguments and state, without the layer; not C5's runner) gives the
-    same value, views and records. On both routes the entries pass their arguments to the two snapshot reads
+    same value, views and records (for `set.save`, the saved set its record names, with the exact-set digest). On both
+    routes the entries pass their arguments to the two snapshot reads
     (`compare_cells` the two cells, `filter_counts` the layer predicate the `FilterRef` names, as the record its job
     wrote), and the engine side answers them on the session's layer with the kernel rows of `c600-tools`' bridge, so the
     views are the kernel's step count and layer counts. The layer refuses malformed and stale arguments before any job.
@@ -2647,9 +2691,13 @@ run or not applicable is no pass (PHS.63).
 - Built since: the host rows for the `structure.compare` and `filter.preview` snapshot reads, on LP2's structure rows
   (pull request 262), in `c600-tools`' bridge (`c600-tools/tests/structure_rows.rs`). LP2 built the
   `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal since.
+  LP2 built a record and an exact-set digest for each saved set (pull request 337): `set.save` writes `set/<name>`
+  (its kind, its members ascending and distinct, the model identity, the name and the capture revision) and gives the
+  exact-set digest as the result reference (`c600_command::sets`). `replace: true` and `KN5:input.saved_set_exists`
+  are drafts, and names under `set/` are reserved.
 - Not built, LP3's next steps: the two reads' tariffs in the command table, which freezes at LP3; a reference type in
-  the IR, so `filter_counts` takes the predicate as a record of its cell and layer; a record and an exact-set digest
-  for each saved set; a display that applies the published scope, and one that applies the applied filter (the
+  the IR, so `filter_counts` takes the predicate as a record of its cell and layer; a display that applies the
+  published scope, and one that applies the applied filter (the
   APIs are in the crate documentation under "Not built"); every device step (CT-LB4-04's rest, C9; the stage checker is
   LP2's since pull request 241); the relationship strip (C8 computes one of its typed relations, a slot's current
   occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record.
@@ -2854,8 +2902,8 @@ run or not applicable is no pass (PHS.63).
     alike and end at one digest on M5's states, while an identity letter at a straddled grip is refused where the
     empty word is admitted; `menu_traces` checks as pure code and answers as the keys do; and a key under another
     menu, contract revision, key version or relation version refuses comparison with
-    `LB1:input.key_contract_mismatch`. Not run: "Word keys remain separate" on the jumbling side (LG2.18's jumbling
-    word key, LP2).
+    `LB1:input.key_contract_mismatch`. Not run: "Word keys remain separate" on the jumbling side, on LG2.18's jumbling
+    word key, which LP2 built at the run level (pull request 338), until a host pins the menu with its item matrices.
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
     plane among them), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs
@@ -2875,10 +2923,11 @@ run or not applicable is no pass (PHS.63).
 - Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
   refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
   the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
-  CT-RTE-07's jumbling keys on menu words (LG2.18's jumbling word key, LP2); LB3.1's other rows as language code ("Menus
-  and pinned letters", "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under
-  `library` above, and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN,
-  Δn_h, Δu, the moved sets and the prefix digests; CT-LB1-02's key half (LG2.18's jumbling word key, LP2); BM5's review
+  CT-RTE-07's jumbling keys on menu words and CT-LB1-02's key half, on LG2.18's jumbling word key, which LP2 built at
+  the run level (`c600_run::menu_key`, pull request 338), once a host pins the menu with its item matrices; LB3.1's
+  other rows as language code ("Menus and pinned letters", "D and release accounting" and "Mode crossing
+  prerequisites"; twelve LB3.1 rows are built, under `library` above, and "Correction-combination solve" is a research
+  tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
   records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end
   stages are compared only in the whole-journal runs, on request. The survey's all-items loop is not served (LB3.5):
   `survey` answers the solver's named grip only. F03 on 600-cell-Full has no swept preview: the retained kernel names no
@@ -3019,7 +3068,8 @@ run or not applicable is no pass (PHS.63).
   entries (exact Q(√5) signs, quaternion factor reconstruction and tree outputs); the residual half of LB2's row
   (non-buffer positions, buffer occupants and frames); the `labels` row's refusal with Jumble on, which is built and not
   run, because a jumbled layer needs `c600-jumble`; the other entries of LB1.8's table. The IR draft has `word_key`,
-  Full's free reduction (LP2's pull request 176), and LB1.10's `trace_key` (`trace-key/1`, pull request 214).
+  Full's free reduction (LP2's pull request 176) and on menu words LG2.18's `word-key/1` (pull request 338), and
+  LB1.10's `trace_key` (`trace-key/1`, pull request 214).
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.
 
 ## Status of LP3, C9 bridge: the display host over the S-A2 core
