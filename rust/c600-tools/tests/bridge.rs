@@ -321,6 +321,7 @@ fn only_a_token_the_shell_mints_commits_the_pending_preview() {
         args: args.clone(),
         token: None,
         epoch,
+        budget: None,
     };
     assert_eq!(layer.invoke(&Caller::Shell, bare).status.code(), Some(code::TOKEN_INVALID));
     let genuine = shell.prepare(&layer, "operation.execute", args.clone()).unwrap();

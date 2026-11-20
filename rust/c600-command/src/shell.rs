@@ -16,6 +16,7 @@
 
 use c600_kernel::json::{self, Value};
 
+use crate::budget::Budget;
 use crate::frame::{PresentedFrame, ShownPreview};
 use crate::layer::{Caller, CommandLayer, Invocation};
 use crate::receipt::{code, ActionHint, CompletionKind, Direction, Error, Receipt, Revision, Status};
@@ -88,6 +89,8 @@ pub struct Shell {
     presented: Option<PreviewBinding>,
     /// The command ID of every invocation, in order.
     pub sent: Vec<String>,
+    /// The budget the shell declares on an invocation of a row an entry serves ([`crate::budget`]; draft).
+    pub budget: Option<Budget>,
 }
 
 impl Shell {
@@ -104,6 +107,7 @@ impl Shell {
             draft: None,
             presented: None,
             sent: Vec::new(),
+            budget: Some(Budget::DRAFT_CEILING),
         }
     }
 
@@ -192,7 +196,9 @@ impl Shell {
     }
 
     /// Builds one press's invocation of `row` with absolute arguments, minting a token when the row takes one, without
-    /// sending it. A word commit with no presented preview stops at the shell's gate (step 1).
+    /// sending it. A word commit with no presented preview stops at the shell's gate (step 1). An invocation of a row
+    /// an entry serves declares the shell's budget ([`Shell::budget`]: the draft ceiling until an owner reading sets
+    /// the product's budgets; `None` declares none); an invocation of another row declares none.
     pub fn prepare<S: Store>(&mut self, layer: &CommandLayer<S>, row: &str, args: Value) -> Result<Invocation, Error> {
         let Some(found) = layer.table().row(row).cloned() else {
             return Err(Error::new(code::UNKNOWN_ROW, format!("no row `{row}`")));
@@ -205,7 +211,8 @@ impl Shell {
         let token = self.mint(layer, &command, &found, &args);
         self.sent.push(command.clone());
         let epoch = layer.revision().epoch;
-        Ok(Invocation { command, row: row.to_owned(), args, token, epoch })
+        let budget = if found.overlay.is_some() { self.budget } else { None };
+        Ok(Invocation { command, row: row.to_owned(), args, token, epoch, budget })
     }
 
     /// Sends a prepared invocation on the shell's channel, which stamps [`Caller::Shell`] (ruling 4). A commit that moves

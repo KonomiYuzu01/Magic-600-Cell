@@ -101,6 +101,7 @@ impl Fixture {
             args,
             token: None,
             epoch: self.layer.revision().epoch,
+            budget: Some(c600_command::Budget::DRAFT_CEILING),
         };
         self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
     }

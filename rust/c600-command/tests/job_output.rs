@@ -376,10 +376,10 @@ fn no_undo_or_redo_writes_over_a_jobs_records() {
     assert_eq!((f.record("a"), f.record("keep")), ((4, Some(letters(&[5]))), (2, None)));
 }
 
-/// The journal form (draft): a workspace completion with records has `records` as an 18th key, a list of writes in
-/// the order of their names, and reads back to itself; one without records has its 17 keys as before. `records` on
-/// another kind of action, an empty list, names out of order or repeated, a write with no value and a list that is
-/// not one do not read.
+/// The journal form (draft): a workspace completion has its job's `budget` as an 18th key (`tests/budget.rs`); one
+/// with records has `records` as a 19th, a list of writes in the order of their names, and reads back to itself.
+/// `records` on another kind of action, an empty list, names out of order or repeated, a write with no value and a
+/// list that is not one do not read.
 #[test]
 fn a_workspace_completion_journals_its_records() {
     let mut f = fixture(true);
@@ -391,7 +391,7 @@ fn a_workspace_completion_journals_its_records() {
     assert!(completed(&f.write("w", letters(&[3]))));
     let log = f.layer.store().log.clone();
     let keys: Vec<usize> = log.iter().map(|t| t.to_json().as_object().unwrap().len()).collect();
-    assert_eq!(keys, [18, 17, 18]);
+    assert_eq!(keys, [19, 18, 18]);
     let names: Vec<Value> = log[0]
         .to_json()
         .get("records")

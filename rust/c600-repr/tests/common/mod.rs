@@ -82,14 +82,17 @@ impl Session {
     }
 
     /// An invocation of `row` by a running program, with one placeholder value for each argument the row names. It is
-    /// sent on [`program_channel`].
+    /// sent on [`program_channel`]. On a row an entry serves it declares the draft ceiling as its budget, and on
+    /// another row none, as `Bridge::invoke` does.
     pub fn runtime_call(&self, command: &str, row: &str) -> Invocation {
+        let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
         Invocation {
             command: command.to_owned(),
             row: row.to_owned(),
             args: placeholder_args(self.layer.table(), row),
             token: None,
             epoch: self.layer.revision().epoch,
+            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
         }
     }
 

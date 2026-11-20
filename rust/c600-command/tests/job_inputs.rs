@@ -71,7 +71,14 @@ fn runtime() -> Caller {
 }
 
 fn invocation(layer: &CommandLayer, command: &str, row: &str, args: Value) -> Invocation {
-    Invocation { command: command.into(), row: row.into(), args, token: None, epoch: layer.revision().epoch }
+    Invocation {
+        command: command.into(),
+        row: row.into(),
+        args,
+        token: None,
+        epoch: layer.revision().epoch,
+        budget: Some(c600_command::Budget::DRAFT_CEILING),
+    }
 }
 
 fn compare(layer: &CommandLayer, command: &str) -> Invocation {

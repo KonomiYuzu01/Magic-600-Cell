@@ -156,7 +156,14 @@ impl Fixture {
 
     fn invoke_on_run(&mut self, run: &str, command: &str, row: &str, args: Value) -> Receipt {
         let epoch = self.layer.revision().epoch;
-        let invocation = Invocation { command: command.into(), row: row.into(), args, token: None, epoch };
+        let invocation = Invocation {
+            command: command.into(),
+            row: row.into(),
+            args,
+            token: None,
+            epoch,
+            budget: Some(c600_command::Budget::DRAFT_CEILING),
+        };
         self.layer.invoke(&Caller::Runtime { run: run.into() }, invocation)
     }
 

@@ -447,7 +447,8 @@ fn only_the_solver_sets_the_policy_and_only_by_name() {
     let runtime = Caller::Runtime { run: "run-1".into() };
     let epoch = f.layer.revision().epoch;
     let args = json::object([("confirm", Value::Bool(true)), ("policy", text("strict"))]);
-    let theirs = Invocation { command: "run-1/1".into(), row: POLICY_ROW.into(), args, token: None, epoch };
+    let theirs =
+        Invocation { command: "run-1/1".into(), row: POLICY_ROW.into(), args, token: None, epoch, budget: None };
     f.refused_on(&runtime, theirs, code::NOT_GRANTED, "the runtime");
     let bad = [
         ("an unknown policy", json::object([("policy", text("loose"))])),

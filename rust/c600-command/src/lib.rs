@@ -490,6 +490,20 @@
 //!     invocation without blocks keeps its digest, and a retry with other blocks is other content
 //!     (`KN5:input.command_id_reused`).
 //!   - A run still reaches no workspace or file row (ruling of 18 November 2026). Blocks change no admission.
+//! - Budgets (KN7.7, BM3, DET.27, ERR.27; [`budget`]; CT-RTE-07's B13 and B14; draft):
+//!   - An invocation of a row an entry serves declares its budget in the envelope ([`Invocation::budget`]), beside
+//!     the epoch and the token.
+//!   - The layer admits it after the row's arguments, `FilterRef`s, gate and blocks, and before the lane and before a
+//!     job ID exists, so a refusal uses nothing. A missing budget is `KN7:input.budget_not_declared`. A dimension over
+//!     the ceiling is `KN7:resource_limit.budget_ceiling`, naming the dimension, the request and the ceiling.
+//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::DRAFT_CEILING`] for every profile
+//!     until an owner reading sets the product's values). A host may set a lower one
+//!     ([`CommandLayer::set_budget_ceiling`]); the lower applies in each dimension. The safety stop is not checked.
+//!   - The job carries the admitted budget ([`ProgramJob::budget`]). The request digest covers a declared budget
+//!     under the key `budget`, so an invocation without one keeps its digest, and a retry with another budget is other
+//!     content (`KN5:input.command_id_reused`). A workspace row's completion keeps the budget in its journal entry.
+//!   - Another row runs no program and reads no budget. [`Shell::prepare`] declares the shell's budget on an
+//!     invocation of a row an entry serves ([`Shell::budget`], the draft ceiling by default) and none on another.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
 //!   - A `FilterRef` names a completed job of a row that prepares a predicate (`structure.layer`) by its result
 //!     reference. It resolves while every record that job wrote still holds the job's write, to those records, each
@@ -524,6 +538,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod budget;
 pub mod filter;
 mod forms;
 pub mod frame;
@@ -541,6 +556,7 @@ pub mod view;
 pub mod worksheet;
 pub mod workspace;
 
+pub use budget::Budget;
 pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIEW_ROW, FRESH_FILTER_PREVIEW};
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
