@@ -131,6 +131,13 @@ outside the language workspace (CT-RPI-01). It is a draft:
   `poses`, `pose_lattice`) with one posed plan from `c600_display::jumble`. A fixture names its puzzle and opens only as
   that puzzle. c600-render hands the core the bundle's pose arrays over the home labels and draws every slot of the
   posed plan, none pickable (J13 stays unsupported).
+- ABI 6 adds the preload (charter E3's startup, a draft; `src/preload.rs`): `m6h_preload` starts `m6h_create`'s model
+  loads, and with a session the exact model's that the twist menu reads, each on a thread of its own, and returns at
+  once. The shell calls it before it opens the core's surface. `m6h_create_preloaded` is `m6h_create` with those loads:
+  it joins the kernel's and the geometry's where `m6h_create` makes them, and `m6h_open_session` joins the exact
+  model's, so each load answers where it did before. `m6h_preload_free` frees a preload that no call took. The model
+  loads themselves hash, unpack and check their files side by side (`c600_kernel::parallel`), taking each result in
+  its old order, so they give the same model and the same first error.
 - Every call checks its pointers, catches a panic and answers a status code.
 - The host context is c600-display's declared fixture context (with Jumble on, its jumbling context for the menu's
   identity) with the core's own support report, and the limit profile is a declared draft value. Picking and previews come later.

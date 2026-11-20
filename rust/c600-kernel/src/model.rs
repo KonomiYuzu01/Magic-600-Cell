@@ -3,6 +3,10 @@
 //! certificates read is kept. Every check here fails closed with a [`LoadError`]; the 0.4 runtime trusts some of these
 //! facts, and the kernel checks them instead because its loops rely on them (bounded indices, a tree whose walk
 //! ends, a move that is a permutation of its support).
+//!
+//! Charter E3's startup (a draft): the files are hashed, the arrays unpacked and the execution trees read side by side
+//! ([`crate::parallel`]). Each is taken where it was read one after another, so a load gives the same model and the
+//! same first error.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -10,6 +14,7 @@ use std::path::Path;
 
 use crate::archive::{self, Zip};
 use crate::json::{self, Value};
+use crate::parallel::{self, Background};
 use crate::LoadError;
 
 pub(crate) const PUZZLE: &str = "600-cell-Full";
@@ -182,15 +187,20 @@ pub fn verify_assets(assets: &Path, needed: &[&str]) -> Result<VerifiedAssets, L
     if c600_digest::sha256_hex(file_list.as_bytes()) != model_id {
         return Err(fail("manifest.json's model_id does not match its file list"));
     }
-    // Verify every listed file, as the 0.4 Model does, and keep the verified bytes of the needed files.
-    let mut digests = BTreeMap::new();
-    let mut kept = BTreeMap::new();
-    for (name, base, digest) in listed {
+    // Verify every listed file, as the 0.4 Model does, and keep the verified bytes of the needed files. The files are
+    // read and hashed side by side and taken in the list's order, so the first failing file is the answer.
+    let checked = parallel::map(listed.len(), |i| {
+        let (name, base, digest) = listed[i];
         let bytes = read(assets, base)?;
         if c600_digest::sha256_hex(&bytes) != digest {
             return Err(fail(format!("Asset hash mismatch: {name}")));
         }
-        if needed.contains(&base) {
+        Ok(needed.contains(&base).then_some(bytes))
+    });
+    let mut digests = BTreeMap::new();
+    let mut kept = BTreeMap::new();
+    for ((name, base, digest), checked) in listed.into_iter().zip(checked) {
+        if let Some(bytes) = parallel::taken(checked)? {
             kept.insert(base.to_owned(), bytes);
         }
         digests.insert(name.clone(), digest.to_owned());
@@ -201,6 +211,48 @@ pub fn verify_assets(assets: &Path, needed: &[&str]) -> Result<VerifiedAssets, L
     Ok(VerifiedAssets { model_id, manifest_sha256, digests, files: kept })
 }
 
+/// The execution trees of `execution_trees.json.gz`, checked: 35 trees in orbit order, each node's parent before it,
+/// valid primitives, two buffer pieces and a frame per node.
+fn read_trees(trees_gz: &[u8]) -> Result<Vec<Tree>, LoadError> {
+    let trees_bytes = archive::gunzip(trees_gz, LIMIT).map_err(|e| fail(format!("execution_trees.json.gz: {e}")))?;
+    let trees_json = json::parse(&trees_bytes).map_err(|e| fail(format!("execution_trees.json.gz: {e}")))?;
+    drop(trees_bytes);
+    let rows = trees_json.as_array().filter(|rows| rows.len() == ORBITS);
+    let rows = rows.ok_or_else(|| fail("execution_trees.json.gz does not hold 35 trees"))?;
+    let mut trees = Vec::with_capacity(ORBITS);
+    for (i, row) in rows.iter().enumerate() {
+        if row.get("orbit").and_then(Value::as_i64) != Some(i as i64) {
+            return Err(fail("Execution trees are out of order"));
+        }
+        let parent = ints(row.get("parent"), "Execution tree parents")?;
+        let moves = ints(row.get("move"), "Execution tree moves")?;
+        let buffers = ints(row.get("buffers"), "Execution tree buffers")?;
+        let frames = row.get("frames").and_then(Value::as_array);
+        let frames = frames.ok_or_else(|| fail("Execution tree frames are not a list"))?;
+        // Every node but the root has an earlier parent, so the walk to the root ends.
+        let shaped = !parent.is_empty()
+            && parent[0] == -1
+            && parent.iter().enumerate().skip(1).all(|(n, &p)| p >= 0 && (p as usize) < n)
+            && moves.len() == parent.len()
+            && frames.len() == parent.len()
+            && moves.iter().skip(1).all(|&m| valid_primitive(m))
+            && buffers.len() == 2
+            && buffers.iter().all(|&b| (0..PIECES as i64).contains(&b));
+        if !shaped {
+            return Err(fail("An execution tree is malformed"));
+        }
+        trees.push(Tree {
+            seed: primitives(row.get("seed"), "Execution tree seed")?,
+            relocation: primitives(row.get("relocation"), "Execution tree relocation")?,
+            parent: parent.iter().map(|&p| p as i32).collect(),
+            moves: moves.iter().map(|&m| m as i32).collect(),
+            buffers: [buffers[0] as usize, buffers[1] as usize],
+            frames: frames.iter().map(|f| slots(f, "Execution tree frame")).collect::<Result<_, _>>()?,
+        });
+    }
+    Ok(trees)
+}
+
 impl Model {
     pub(crate) fn load(assets: &Path) -> Result<Model, LoadError> {
         let VerifiedAssets { model_id, manifest_sha256, digests, files: mut kept } = verify_assets(assets, &NEEDED)?;
@@ -209,17 +261,43 @@ impl Model {
         let (model_npz, primitives_npz) = (take("model.npz")?, take("primitives.npz")?);
         let (trees_gz, census_bytes, atlas_bytes) =
             (take("execution_trees.json.gz")?, take("census.json")?, take("seed_atlas.json")?);
+        // The execution trees read only their own file: they are read on a thread of their own while the arrays are
+        // unpacked, and taken where they were read before, after the census and the atlas.
+        let trees = Background::start("c600-kernel-load-trees", move || read_trees(&trees_gz));
 
-        let zip = Zip::parse(&model_npz).map_err(|e| fail(format!("model.npz: {e}")))?;
-        let slot_piece = array(&zip, "slot_piece.npy", "<i4", Some(SLOTS))?;
-        let piece_orbit = array(&zip, "orbit_id.npy", "<i2", Some(PIECES))?;
-        let face_offsets = array(&zip, "face_offsets.npy", "<i4", Some(PIECES + 1))?;
-        let mask_offsets = array(&zip, "mask_offsets.npy", "<i4", Some(PIECES + 1))?;
-        let mask_values = array(&zip, "mask_values.npy", "<i2", None)?;
-        let zip = Zip::parse(&primitives_npz).map_err(|e| fail(format!("primitives.npz: {e}")))?;
-        let move_offsets = array(&zip, "offsets.npy", "<i4", Some(GENERATORS + 1))?;
-        let move_source = array(&zip, "src.npy", "<i4", None)?;
-        let move_destination = array(&zip, "dst.npy", "<i4", None)?;
+        // The arrays are unpacked side by side and taken in this order. The primitives' arrays are unpacked only from
+        // an archive that parses, and its failure is answered after the model's arrays, where it was read before.
+        let model_zip = Zip::parse(&model_npz).map_err(|e| fail(format!("model.npz: {e}")))?;
+        let primitives_zip = Zip::parse(&primitives_npz).map_err(|e| fail(format!("primitives.npz: {e}")));
+        let mut members = vec![
+            (&model_zip, "slot_piece.npy", "<i4", Some(SLOTS)),
+            (&model_zip, "orbit_id.npy", "<i2", Some(PIECES)),
+            (&model_zip, "face_offsets.npy", "<i4", Some(PIECES + 1)),
+            (&model_zip, "mask_offsets.npy", "<i4", Some(PIECES + 1)),
+            (&model_zip, "mask_values.npy", "<i2", None),
+        ];
+        if let Ok(zip) = &primitives_zip {
+            members.extend([
+                (zip, "offsets.npy", "<i4", Some(GENERATORS + 1)),
+                (zip, "src.npy", "<i4", None),
+                (zip, "dst.npy", "<i4", None),
+            ]);
+        }
+        let unpacked = parallel::map(members.len(), |i| {
+            let (zip, member, descr, length) = members[i];
+            array(zip, member, descr, length)
+        });
+        let mut unpacked = unpacked.into_iter().map(parallel::taken);
+        let mut next = || unpacked.next().expect("an array for each member");
+        let slot_piece = next()?;
+        let piece_orbit = next()?;
+        let face_offsets = next()?;
+        let mask_offsets = next()?;
+        let mask_values = next()?;
+        primitives_zip?;
+        let move_offsets = next()?;
+        let move_source = next()?;
+        let move_destination = next()?;
 
         if !slot_piece.iter().all(|&p| (0..PIECES as i32).contains(&p)) {
             return Err(fail("slot_piece holds a piece out of range"));
@@ -330,43 +408,7 @@ impl Model {
             });
         }
 
-        let trees_bytes =
-            archive::gunzip(&trees_gz, LIMIT).map_err(|e| fail(format!("execution_trees.json.gz: {e}")))?;
-        let trees_json = json::parse(&trees_bytes).map_err(|e| fail(format!("execution_trees.json.gz: {e}")))?;
-        drop(trees_bytes);
-        let rows = trees_json.as_array().filter(|rows| rows.len() == ORBITS);
-        let rows = rows.ok_or_else(|| fail("execution_trees.json.gz does not hold 35 trees"))?;
-        let mut trees = Vec::with_capacity(ORBITS);
-        for (i, row) in rows.iter().enumerate() {
-            if row.get("orbit").and_then(Value::as_i64) != Some(i as i64) {
-                return Err(fail("Execution trees are out of order"));
-            }
-            let parent = ints(row.get("parent"), "Execution tree parents")?;
-            let moves = ints(row.get("move"), "Execution tree moves")?;
-            let buffers = ints(row.get("buffers"), "Execution tree buffers")?;
-            let frames = row.get("frames").and_then(Value::as_array);
-            let frames = frames.ok_or_else(|| fail("Execution tree frames are not a list"))?;
-            // Every node but the root has an earlier parent, so the walk to the root ends.
-            let shaped = !parent.is_empty()
-                && parent[0] == -1
-                && parent.iter().enumerate().skip(1).all(|(n, &p)| p >= 0 && (p as usize) < n)
-                && moves.len() == parent.len()
-                && frames.len() == parent.len()
-                && moves.iter().skip(1).all(|&m| valid_primitive(m))
-                && buffers.len() == 2
-                && buffers.iter().all(|&b| (0..PIECES as i64).contains(&b));
-            if !shaped {
-                return Err(fail("An execution tree is malformed"));
-            }
-            trees.push(Tree {
-                seed: primitives(row.get("seed"), "Execution tree seed")?,
-                relocation: primitives(row.get("relocation"), "Execution tree relocation")?,
-                parent: parent.iter().map(|&p| p as i32).collect(),
-                moves: moves.iter().map(|&m| m as i32).collect(),
-                buffers: [buffers[0] as usize, buffers[1] as usize],
-                frames: frames.iter().map(|f| slots(f, "Execution tree frame")).collect::<Result<_, _>>()?,
-            });
-        }
+        let trees = trees.join()?;
 
         Ok(Model {
             model_id,

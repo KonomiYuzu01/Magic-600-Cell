@@ -6,8 +6,10 @@
 //! draft): a session fixture written through the same turns, a copy of it reopened at the revision that counts its
 //! presses, its refusals, and the runtime load's refusals. LX-4's jumble-on half (a draft): `jumble.on` committed at
 //! the open, twist keys that commit `jumble.twist.menu`, the control's pose replay, a jumble-on fixture, the posed
-//! bundle and plan that c600-display validates, and the core's adoption of the posed bundle's arrays. Every result is
-//! a synthetic fixture outcome, not a GPU run and not input evidence.
+//! bundle and plan that c600-display validates, and the core's adoption of the posed bundle's arrays. Charter E3's
+//! startup (a draft): a host created from a preload reopens a fixture as a host that loads on the caller's thread
+//! does, and opens a session after a refused open. Every result is a synthetic fixture outcome, not a GPU run and not
+//! input evidence.
 
 #[path = "../../tests/common/mod.rs"]
 mod common;
@@ -79,11 +81,33 @@ struct Run {
 impl Run {
     /// A host on the fake core with its first publication installed and a viewport and camera set.
     fn new() -> Run {
+        Run::created(None)
+    }
+
+    /// [`Run::new`] from a preload ([`m6h_preload`] and [`m6h_create_preloaded`]); with `session` the preload loads
+    /// the exact model too.
+    fn preloaded(session: bool) -> Run {
+        Run::created(Some(session))
+    }
+
+    fn created(preload: Option<bool>) -> Run {
         let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
         let assets = text(checkout().join("assets"));
         let mut host = ptr::null_mut();
-        // SAFETY: the table is the shim's, the context a live shim, and the path's bytes are readable.
-        let code = unsafe { m6h_create(&functions(), shim.cast(), assets.as_ptr(), assets.len(), &mut host) };
+        // SAFETY: the table is the shim's, the context a live shim, the path's bytes are readable, and the preload is
+        // passed to one call.
+        let code = unsafe {
+            match preload {
+                None => m6h_create(&functions(), shim.cast(), assets.as_ptr(), assets.len(), &mut host),
+                Some(session) => {
+                    let mut loads = ptr::null_mut();
+                    let started = m6h_preload(assets.as_ptr(), assets.len(), u32::from(session), &mut loads);
+                    assert_eq!(started, M6H_OK, "{}", last_error(ptr::null_mut()));
+                    assert!(!loads.is_null());
+                    m6h_create_preloaded(&functions(), shim.cast(), loads, &mut host)
+                }
+            }
+        };
         assert_eq!(code, M6H_OK, "{}", last_error(ptr::null_mut()));
         let run = Run { shim, host };
         run.fake().complete();
@@ -212,7 +236,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 5);
+    assert_eq!(m6h_abi_version(), 6);
     let run = Run::new();
     let folder = fresh("pass");
 
@@ -464,6 +488,61 @@ fn a_fixture_session_reopens_at_the_revision_that_counts_its_presses() {
     let control = record_of(run.host);
     assert_eq!(control.get("shown"), record.get("digest"));
     assert_eq!((int(&control, "committed"), int(&control, "shown_revision")), (Some(3), Some(4)));
+    let _ = std::fs::remove_dir_all(&out);
+}
+
+/// Charter E3's startup (a draft): a host created from a preload that loaded the exact model reopens a copy of the
+/// fixture as [`Run::new`]'s host does: the same adoptions, the same first correct frame and the same control record.
+/// A preload without the exact model opens a new session, which loads it on the caller's thread.
+#[test]
+fn a_preloaded_host_reopens_a_fixture_as_a_host_that_loads_on_its_thread() {
+    let (out, _) = write_fixture("preload", &KEYS);
+    let record_path = text(out.join(fixture::RECORD));
+    let shown = |run: Run, name: &str| -> (Vec<u64>, M6hFrame, Value) {
+        let copy = fresh(name);
+        copy_dir(&out.join("session"), Path::new(&copy));
+        assert_eq!(run.reopen(&copy, &menu(), &record_path), (M6H_OK, 4), "{}", last_error(run.host));
+        let adoptions = run.fake().adoptions.iter().map(|a| a.0).collect();
+        run.fake().complete();
+        // SAFETY: a live handle.
+        assert_eq!(unsafe { m6h_pump(run.host) }, M6H_OK);
+        let first = run.frame();
+        run.present();
+        assert_eq!(run.close(4), (M6H_OK, 1), "{}", last_error(run.host));
+        let control = record_of(run.host);
+        let _ = std::fs::remove_dir_all(&copy);
+        (adoptions, first, control)
+    };
+    let loaded = shown(Run::new(), "preload-loaded");
+    let preloaded = shown(Run::preloaded(true), "preload-preloaded");
+    assert_eq!(loaded.0, vec![1, 4]);
+    assert_eq!((loaded.1.engine_revision, loaded.1.publication_revision), (4, 4), "charter E3's first correct frame");
+    assert_eq!(preloaded, loaded);
+
+    let run = Run::preloaded(false);
+    let folder = fresh("preload-new");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&out);
+}
+
+/// A refused open takes the preload's exact model with it; the next open of the handle loads it on the caller's
+/// thread and opens.
+#[test]
+fn a_preloaded_host_opens_its_session_after_a_refused_open() {
+    let (out, _) = write_fixture("preload-retry", &KEYS[..1]);
+    let record_path = text(out.join(fixture::RECORD));
+    let run = Run::preloaded(true);
+    let missing = fresh("preload-retry-missing");
+    assert_eq!(run.reopen(&missing, &menu(), &record_path), (M6H_E_SESSION, 0));
+    assert!(last_error(run.host).contains("does not exist"), "{}", last_error(run.host));
+    let copy = fresh("preload-retry-copy");
+    copy_dir(&out.join("session"), Path::new(&copy));
+    assert_eq!(run.reopen(&copy, &menu(), &record_path), (M6H_OK, 2), "{}", last_error(run.host));
+    drop(run);
+    let _ = std::fs::remove_dir_all(&copy);
     let _ = std::fs::remove_dir_all(&out);
 }
 
