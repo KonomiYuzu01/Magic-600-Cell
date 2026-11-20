@@ -1,0 +1,226 @@
+edition "6cs-draft-1";
+module trees requires [];
+
+export fn factors(m: List<List<Q5>>) -> record { l: List<Q5>, r: List<Q5>, reconstructs: Bool } effects [] {
+    let a = factor_matrix(m);
+    let l = first_nonzero_column(a);
+    let r = first_nonzero_row(a);
+    return record { l = l, r = r, reconstructs = reconstructs(m, l, r) };
+}
+
+export fn reconstructs(m: List<List<Q5>>, l: List<Q5>, r: List<Q5>) -> Bool effects [] {
+    let rc = qconj(r);
+    let y = concat(concat(qmul(qmul(l, unit_vector(0)), rc), qmul(qmul(l, unit_vector(1)), rc)), concat(qmul(qmul(l, unit_vector(2)), rc), qmul(qmul(l, unit_vector(3)), rc)));
+    let columns = concat(concat(column_of(m, 0), column_of(m, 1)), concat(column_of(m, 2), column_of(m, 3)));
+    let pivot = repeat(16, record { at = 0, found = false, next = 0 }, fn(s: record { at: Nat, found: Bool, next: Nat }) -> record { at: Nat, found: Bool, next: Nat } {
+        let hit = and(not(s.found), not(is_zero(index(columns, s.next))));
+        let at = match hit {
+            true => s.next;
+            _ => s.at;
+        };
+        return record { at = at, found = or(s.found, hit), next = exact_add(s.next, 1) };
+    });
+    let y0 = index(y, pivot.at);
+    let m0 = index(columns, pivot.at);
+    let s = repeat(16, record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let same = exact_eq(exact_mul(index(y, s.next), m0), exact_mul(y0, index(columns, s.next)));
+        return record { holds = and(s.holds, same), next = exact_add(s.next, 1) };
+    });
+    return and(pivot.found, and(not(is_zero(y0)), s.holds));
+}
+
+export fn v2(x: Q5) -> Int effects [] {
+    let p = q5_parts(x);
+    let defined = assert(not(and(exact_eq(p.a, 0), exact_eq(p.b, 0))));
+    let u = exact_add(p.a, exact_mul(-1, p.b));
+    let t = exact_mul(2, p.b);
+    let low = match exact_eq(u, 0) {
+        true => v2int(t);
+        _ => match exact_eq(t, 0) {
+            true => v2int(u);
+            _ => min_int(v2int(u), v2int(t));
+        };
+    };
+    return exact_add(low, exact_mul(-1, v2int(p.d)));
+}
+
+export fn kval(x: List<Q5>) -> Int effects [] {
+    let c = coords(x);
+    let s = repeat(4, record { found = false, low = 0, next = 0 }, fn(s: record { found: Bool, low: Int, next: Nat }) -> record { found: Bool, low: Int, next: Nat } {
+        let v = index(c, s.next);
+        let low = match is_zero(v) {
+            true => s.low;
+            _ => match s.found {
+                true => min_int(s.low, v2(v));
+                _ => v2(v);
+            };
+        };
+        return record { found = or(s.found, not(is_zero(v))), low = low, next = exact_add(s.next, 1) };
+    });
+    let nonzero = assert(s.found);
+    return s.low;
+}
+
+export fn dist(x: List<Q5>) -> Int effects [] {
+    return exact_add(v2(qnorm(x)), exact_mul(-2, kval(x)));
+}
+
+export fn branch(x: List<Q5>) -> Int effects [] {
+    let d = dist(x);
+    return match exact_eq(d, 0) {
+        true => -1;
+        _ => branch_at(x, d);
+    };
+}
+
+export fn pose_tree(m: List<List<Q5>>) -> record { branch_l: Int, branch_r: Int, dist_l: Int, dist_r: Int } effects [] {
+    let f = factors(m);
+    let extracted = assert(f.reconstructs);
+    return record { branch_l = branch(f.l), branch_r = branch(f.r), dist_l = dist(f.l), dist_r = dist(f.r) };
+}
+
+fn neg(x: Q5) -> Q5 effects [] {
+    return exact_mul(q5(-1/1, 0/1), x);
+}
+
+fn is_zero(x: Q5) -> Bool effects [] {
+    return exact_eq(x, q5(0/1, 0/1));
+}
+
+fn min_int(x: Int, y: Int) -> Int effects [] {
+    return match exact_less(y, x) {
+        true => y;
+        _ => x;
+    };
+}
+
+fn v2int(n: Int) -> Int effects [] {
+    return match exact_eq(residue(to_f2(n)), 0) {
+        true => exact_add(1, v2int(q5_parts(q5_of(n, 0, 2)).a));
+        _ => 0;
+    };
+}
+
+fn qmul(p: List<Q5>, q: List<Q5>) -> List<Q5> effects [] {
+    let a0 = index(p, 0);
+    let a1 = index(p, 1);
+    let a2 = index(p, 2);
+    let a3 = index(p, 3);
+    let b0 = index(q, 0);
+    let b1 = index(q, 1);
+    let b2 = index(q, 2);
+    let b3 = index(q, 3);
+    let c0 = exact_add(exact_add(exact_mul(a0, b0), neg(exact_mul(a1, b1))), exact_add(neg(exact_mul(a2, b2)), neg(exact_mul(a3, b3))));
+    let c1 = exact_add(exact_add(exact_mul(a0, b1), exact_mul(a1, b0)), exact_add(exact_mul(a2, b3), neg(exact_mul(a3, b2))));
+    let c2 = exact_add(exact_add(exact_mul(a0, b2), neg(exact_mul(a1, b3))), exact_add(exact_mul(a2, b0), exact_mul(a3, b1)));
+    let c3 = exact_add(exact_add(exact_mul(a0, b3), exact_mul(a1, b2)), exact_add(neg(exact_mul(a2, b1)), exact_mul(a3, b0)));
+    return list<Q5>(c0, c1, c2, c3);
+}
+
+fn qconj(p: List<Q5>) -> List<Q5> effects [] {
+    return list<Q5>(index(p, 0), neg(index(p, 1)), neg(index(p, 2)), neg(index(p, 3)));
+}
+
+fn qnorm(p: List<Q5>) -> Q5 effects [] {
+    return dot(p, p);
+}
+
+fn dot(p: List<Q5>, q: List<Q5>) -> Q5 effects [] {
+    return exact_add(exact_add(exact_mul(index(p, 0), index(q, 0)), exact_mul(index(p, 1), index(q, 1))), exact_add(exact_mul(index(p, 2), index(q, 2)), exact_mul(index(p, 3), index(q, 3))));
+}
+
+fn unit_vector(b: Nat) -> List<Q5> effects [] {
+    return repeat(4, list<Q5>(), fn(done: List<Q5>) -> List<Q5> {
+        let one = match exact_eq(length(done), b) {
+            true => q5(1/1, 0/1);
+            _ => q5(0/1, 0/1);
+        };
+        return push(done, one);
+    });
+}
+
+fn column_of(m: List<List<Q5>>, b: Nat) -> List<Q5> effects [] {
+    return list<Q5>(index(index(m, 0), b), index(index(m, 1), b), index(index(m, 2), b), index(index(m, 3), b));
+}
+
+fn first_nonzero_column(a: List<List<Q5>>) -> List<Q5> effects [] {
+    let s = repeat(4, record { found = false, l = list<Q5>(q5(0/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1)), next = 0 }, fn(s: record { found: Bool, l: List<Q5>, next: Nat }) -> record { found: Bool, l: List<Q5>, next: Nat } {
+        let column = list<Q5>(index(index(a, 0), s.next), index(index(a, 1), s.next), index(index(a, 2), s.next), index(index(a, 3), s.next));
+        let hit = and(not(s.found), not(is_zero(qnorm(column))));
+        return match hit {
+            true => record { found = true, l = column, next = exact_add(s.next, 1) };
+            _ => record { found = s.found, l = s.l, next = exact_add(s.next, 1) };
+        };
+    });
+    return s.l;
+}
+
+fn first_nonzero_row(a: List<List<Q5>>) -> List<Q5> effects [] {
+    let s = repeat(4, record { found = false, next = 0, r = list<Q5>(q5(0/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1)) }, fn(s: record { found: Bool, next: Nat, r: List<Q5> }) -> record { found: Bool, next: Nat, r: List<Q5> } {
+        let row = index(a, s.next);
+        let hit = and(not(s.found), not(is_zero(qnorm(row))));
+        return match hit {
+            true => record { found = true, next = exact_add(s.next, 1), r = row };
+            _ => record { found = s.found, next = exact_add(s.next, 1), r = s.r };
+        };
+    });
+    return s.r;
+}
+
+fn factor_matrix(m: List<List<Q5>>) -> List<List<Q5>> effects [] {
+    let row0 = list<Q5>(exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 0), 0), index(index(m, 1), 1)), exact_add(index(index(m, 2), 2), index(index(m, 3), 3)))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(neg(index(index(m, 1), 0)), index(index(m, 0), 1)), exact_add(index(index(m, 3), 2), neg(index(index(m, 2), 3))))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(neg(index(index(m, 2), 0)), neg(index(index(m, 3), 1))), exact_add(index(index(m, 0), 2), index(index(m, 1), 3)))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(neg(index(index(m, 3), 0)), index(index(m, 2), 1)), exact_add(neg(index(index(m, 1), 2)), index(index(m, 0), 3)))));
+    let row1 = list<Q5>(exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 1), 0), neg(index(index(m, 0), 1))), exact_add(index(index(m, 3), 2), neg(index(index(m, 2), 3))))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 0), 0), index(index(m, 1), 1)), exact_add(neg(index(index(m, 2), 2)), neg(index(index(m, 3), 3))))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(neg(index(index(m, 3), 0)), index(index(m, 2), 1)), exact_add(index(index(m, 1), 2), neg(index(index(m, 0), 3))))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 2), 0), index(index(m, 3), 1)), exact_add(index(index(m, 0), 2), index(index(m, 1), 3)))));
+    let row2 = list<Q5>(exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 2), 0), neg(index(index(m, 3), 1))), exact_add(neg(index(index(m, 0), 2)), index(index(m, 1), 3)))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 3), 0), index(index(m, 2), 1)), exact_add(index(index(m, 1), 2), index(index(m, 0), 3)))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 0), 0), neg(index(index(m, 1), 1))), exact_add(index(index(m, 2), 2), neg(index(index(m, 3), 3))))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(neg(index(index(m, 1), 0)), neg(index(index(m, 0), 1))), exact_add(index(index(m, 3), 2), index(index(m, 2), 3)))));
+    let row3 = list<Q5>(exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 3), 0), index(index(m, 2), 1)), exact_add(neg(index(index(m, 1), 2)), neg(index(index(m, 0), 3))))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(neg(index(index(m, 2), 0)), index(index(m, 3), 1)), exact_add(neg(index(index(m, 0), 2)), index(index(m, 1), 3)))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 1), 0), index(index(m, 0), 1)), exact_add(index(index(m, 3), 2), index(index(m, 2), 3)))), exact_mul(q5(1/4, 0/1), exact_add(exact_add(index(index(m, 0), 0), neg(index(index(m, 1), 1))), exact_add(neg(index(index(m, 2), 2)), index(index(m, 3), 3)))));
+    return list<List<Q5>>(row0, row1, row2, row3);
+}
+
+fn coords(x: List<Q5>) -> List<Q5> effects [] {
+    let binv = local_basis_inverse();
+    return list<Q5>(dot(index(binv, 0), x), dot(index(binv, 1), x), dot(index(binv, 2), x), dot(index(binv, 3), x));
+}
+
+fn branch_at(x: List<Q5>, d: Int) -> Int effects [] {
+    let xi = qconj(x);
+    let units = projective_units();
+    let bound = exact_add(exact_mul(2, d), -1);
+    let fixed = repeat(60, record { members = list<Nat>(), next = 0 }, fn(s: record { members: List<Nat>, next: Nat }) -> record { members: List<Nat>, next: Nat } {
+        let near = exact_less(dist(qmul(qmul(xi, index(units, s.next)), x)), bound);
+        let members = match near {
+            true => push(s.members, s.next);
+            _ => s.members;
+        };
+        return record { members = members, next = exact_add(s.next, 1) };
+    });
+    let groups = tetrahedral_subgroups();
+    let found = repeat(5, record { at = -1, next = 0 }, fn(s: record { at: Int, next: Nat }) -> record { at: Int, next: Nat } {
+        let at = match same_members(fixed.members, index(groups, s.next)) {
+            true => s.next;
+            _ => s.at;
+        };
+        return record { at = at, next = exact_add(s.next, 1) };
+    });
+    let identified = assert(not(exact_eq(found.at, -1)));
+    return found.at;
+}
+
+fn same_members(x: List<Nat>, y: List<Nat>) -> Bool effects [] {
+    return match exact_eq(length(x), length(y)) {
+        true => repeat(length(x), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+            return record { holds = and(s.holds, exact_eq(index(x, s.next), index(y, s.next))), next = exact_add(s.next, 1) };
+        }).holds;
+        _ => false;
+    };
+}
+
+fn local_basis_inverse() -> List<List<Q5>> effects [] {
+    return list<List<Q5>>(list<Q5>(q5(1/2, 1/2), q5(-1/1, 0/1), q5(-3/2, -1/2), q5(0/1, 0/1)), list<Q5>(q5(-1/1, 0/1), q5(1/2, -1/2), q5(1/2, 1/2), q5(0/1, 0/1)), list<Q5>(q5(1/2, -1/2), q5(-1/1, 0/1), q5(0/1, 0/1), q5(-1/2, -1/2)), list<Q5>(q5(0/1, 0/1), q5(1/2, 1/2), q5(3/2, 1/2), q5(1/1, 0/1)));
+}
+
+fn projective_units() -> List<List<Q5>> effects [] {
+    return list<List<Q5>>(list<Q5>(q5(0/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1), q5(1/1, 0/1)), list<Q5>(q5(0/1, 0/1), q5(0/1, 0/1), q5(1/1, 0/1), q5(0/1, 0/1)), list<Q5>(q5(0/1, 0/1), q5(-1/4, 1/4), q5(-1/2, 0/1), q5(-1/4, -1/4)), list<Q5>(q5(0/1, 0/1), q5(-1/4, 1/4), q5(-1/2, 0/1), q5(1/4, 1/4)), list<Q5>(q5(0/1, 0/1), q5(-1/4, 1/4), q5(1/2, 0/1), q5(-1/4, -1/4)), list<Q5>(q5(0/1, 0/1), q5(-1/4, 1/4), q5(1/2, 0/1), q5(1/4, 1/4)), list<Q5>(q5(0/1, 0/1), q5(1/2, 0/1), q5(-1/4, -1/4), q5(1/4, -1/4)), list<Q5>(q5(0/1, 0/1), q5(1/2, 0/1), q5(-1/4, -1/4), q5(-1/4, 1/4)), list<Q5>(q5(0/1, 0/1), q5(1/2, 0/1), q5(1/4, 1/4), q5(1/4, -1/4)), list<Q5>(q5(0/1, 0/1), q5(1/2, 0/1), q5(1/4, 1/4), q5(-1/4, 1/4)), list<Q5>(q5(0/1, 0/1), q5(1/4, 1/4), q5(1/4, -1/4), q5(-1/2, 0/1)), list<Q5>(q5(0/1, 0/1), q5(1/4, 1/4), q5(1/4, -1/4), q5(1/2, 0/1)), list<Q5>(q5(0/1, 0/1), q5(1/4, 1/4), q5(-1/4, 1/4), q5(-1/2, 0/1)), list<Q5>(q5(0/1, 0/1), q5(1/4, 1/4), q5(-1/4, 1/4), q5(1/2, 0/1)), list<Q5>(q5(0/1, 0/1), q5(1/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(-1/4, -1/4), q5(-1/2, 0/1), q5(0/1, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(-1/4, -1/4), q5(1/2, 0/1), q5(0/1, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(-1/2, 0/1), q5(0/1, 0/1), q5(-1/4, -1/4)), list<Q5>(q5(-1/4, 1/4), q5(-1/2, 0/1), q5(0/1, 0/1), q5(1/4, 1/4)), list<Q5>(q5(-1/4, 1/4), q5(0/1, 0/1), q5(-1/4, -1/4), q5(-1/2, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(0/1, 0/1), q5(-1/4, -1/4), q5(1/2, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(0/1, 0/1), q5(1/4, 1/4), q5(-1/2, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(0/1, 0/1), q5(1/4, 1/4), q5(1/2, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(1/2, 0/1), q5(0/1, 0/1), q5(-1/4, -1/4)), list<Q5>(q5(-1/4, 1/4), q5(1/2, 0/1), q5(0/1, 0/1), q5(1/4, 1/4)), list<Q5>(q5(-1/4, 1/4), q5(1/4, 1/4), q5(-1/2, 0/1), q5(0/1, 0/1)), list<Q5>(q5(-1/4, 1/4), q5(1/4, 1/4), q5(1/2, 0/1), q5(0/1, 0/1)), list<Q5>(q5(1/2, 0/1), q5(-1/4, -1/4), q5(0/1, 0/1), q5(1/4, -1/4)), list<Q5>(q5(1/2, 0/1), q5(-1/4, -1/4), q5(0/1, 0/1), q5(-1/4, 1/4)), list<Q5>(q5(1/2, 0/1), q5(-1/2, 0/1), q5(-1/2, 0/1), q5(-1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(-1/2, 0/1), q5(-1/2, 0/1), q5(1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(-1/2, 0/1), q5(1/2, 0/1), q5(-1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(-1/2, 0/1), q5(1/2, 0/1), q5(1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/4, -1/4), q5(-1/4, -1/4), q5(0/1, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/4, -1/4), q5(1/4, 1/4), q5(0/1, 0/1)), list<Q5>(q5(1/2, 0/1), q5(0/1, 0/1), q5(1/4, -1/4), q5(-1/4, -1/4)), list<Q5>(q5(1/2, 0/1), q5(0/1, 0/1), q5(1/4, -1/4), q5(1/4, 1/4)), list<Q5>(q5(1/2, 0/1), q5(0/1, 0/1), q5(-1/4, 1/4), q5(-1/4, -1/4)), list<Q5>(q5(1/2, 0/1), q5(0/1, 0/1), q5(-1/4, 1/4), q5(1/4, 1/4)), list<Q5>(q5(1/2, 0/1), q5(-1/4, 1/4), q5(-1/4, -1/4), q5(0/1, 0/1)), list<Q5>(q5(1/2, 0/1), q5(-1/4, 1/4), q5(1/4, 1/4), q5(0/1, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/2, 0/1), q5(-1/2, 0/1), q5(-1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/2, 0/1), q5(-1/2, 0/1), q5(1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/2, 0/1), q5(1/2, 0/1), q5(-1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/2, 0/1), q5(1/2, 0/1), q5(1/2, 0/1)), list<Q5>(q5(1/2, 0/1), q5(1/4, 1/4), q5(0/1, 0/1), q5(1/4, -1/4)), list<Q5>(q5(1/2, 0/1), q5(1/4, 1/4), q5(0/1, 0/1), q5(-1/4, 1/4)), list<Q5>(q5(1/4, 1/4), q5(-1/2, 0/1), q5(1/4, -1/4), q5(0/1, 0/1)), list<Q5>(q5(1/4, 1/4), q5(-1/2, 0/1), q5(-1/4, 1/4), q5(0/1, 0/1)), list<Q5>(q5(1/4, 1/4), q5(1/4, -1/4), q5(0/1, 0/1), q5(-1/2, 0/1)), list<Q5>(q5(1/4, 1/4), q5(1/4, -1/4), q5(0/1, 0/1), q5(1/2, 0/1)), list<Q5>(q5(1/4, 1/4), q5(0/1, 0/1), q5(-1/2, 0/1), q5(1/4, -1/4)), list<Q5>(q5(1/4, 1/4), q5(0/1, 0/1), q5(-1/2, 0/1), q5(-1/4, 1/4)), list<Q5>(q5(1/4, 1/4), q5(0/1, 0/1), q5(1/2, 0/1), q5(1/4, -1/4)), list<Q5>(q5(1/4, 1/4), q5(0/1, 0/1), q5(1/2, 0/1), q5(-1/4, 1/4)), list<Q5>(q5(1/4, 1/4), q5(-1/4, 1/4), q5(0/1, 0/1), q5(-1/2, 0/1)), list<Q5>(q5(1/4, 1/4), q5(-1/4, 1/4), q5(0/1, 0/1), q5(1/2, 0/1)), list<Q5>(q5(1/4, 1/4), q5(1/2, 0/1), q5(1/4, -1/4), q5(0/1, 0/1)), list<Q5>(q5(1/4, 1/4), q5(1/2, 0/1), q5(-1/4, 1/4), q5(0/1, 0/1)), list<Q5>(q5(1/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1), q5(0/1, 0/1)));
+}
+
+fn tetrahedral_subgroups() -> List<List<Nat>> effects [] {
+    return list<List<Nat>>(list<Nat>(0, 1, 14, 29, 30, 31, 32, 41, 42, 43, 44, 59), list<Nat>(2, 8, 11, 28, 29, 34, 36, 37, 39, 44, 45, 59), list<Nat>(3, 9, 10, 27, 30, 34, 35, 38, 39, 43, 46, 59), list<Nat>(4, 6, 13, 28, 31, 33, 35, 38, 40, 42, 45, 59), list<Nat>(5, 7, 12, 27, 32, 33, 36, 37, 40, 41, 46, 59));
+}
