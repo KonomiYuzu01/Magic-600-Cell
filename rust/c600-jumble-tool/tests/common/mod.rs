@@ -13,8 +13,8 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::layer::JUMBLE_ON_MODE;
 use c600_command::{
-    CommandLayer, Completion, CompletionKind, Direction, Invocation, MemoryStore, Receipt, Secret, Shell, Status,
-    Table, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW,
+    CommandLayer, Completion, CompletionKind, Direction, Invocation, MemoryStore, Profile, Receipt, Secret, Shell,
+    Status, Table, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW, REPAIR_LIST_ROW,
 };
 use c600_display::plan::{Mode, RevisionRef};
 use c600_jumble::state::State;
@@ -136,6 +136,47 @@ impl Session {
         let receipt = session.shell.send(&mut session.layer, press.expect("the shell prepares the entry"));
         assert!(committed(&receipt), "`{JUMBLE_ON_ROW}` answered {:?}", receipt.status);
         session
+    }
+
+    /// [`Session::entered`] in a solving session with LP2's drafted rows admitted (`Table::h08().with_drafts()`,
+    /// `Profile::Solving`), as `c600-command/tests/repair_list.rs` builds it, so that `jumble.repair.list` is a row.
+    pub fn entered_solving(fixture: &Fixture) -> Session {
+        let kernel = shared_kernel().clone();
+        let (start, protected) = (kernel.solved(), kernel.protected_set(&[]).expect("no orbit"));
+        let table = Table::h08().with_drafts();
+        let store = MemoryStore::default();
+        let name = format!("c8-{}-solving", fixture.name);
+        let secret = Secret::fixed(SECRET);
+        let mut layer =
+            CommandLayer::new_with_profile(kernel, table, secret, store, &name, start, protected, Profile::Solving);
+        layer.pin_menu(shared_engine().clone(), fixture.menu()).expect("the pin");
+        let mut session = Session {
+            layer,
+            shell: Shell::new(Secret::fixed(SECRET), "shell"),
+            menu: fixture.menu(),
+            items: HashMap::new(),
+        };
+        assert!(committed(&session.on()), "`{JUMBLE_ON_ROW}` commits");
+        session
+    }
+
+    /// The solver's `jumble.repair.list` at `cap`, naming the current revision as its snapshot, run by
+    /// `CommandLayer::run_jobs`: the job and the list the layer keeps for it. The invocation must start one job, and
+    /// the job must complete as a query.
+    pub fn list(&mut self, cap: i64) -> (u64, Value) {
+        let snapshot = self.layer.revision().to_json();
+        let args = json::object([("snapshot", snapshot), ("cap", Value::Int(cap)), ("max_chunk", Value::Int(8))]);
+        let receipt = self.invoke(REPAIR_LIST_ROW, args);
+        let Status::Running(job) = receipt.status else { panic!("the list is not admitted: {:?}", receipt.status) };
+        assert_eq!(self.layer.run_jobs(), 1, "one job runs");
+        let settled = self.layer.outcome(&receipt.command, &receipt.request).expect("a settled receipt");
+        let kind = match &settled.status {
+            Status::Completed(Completion { kind, .. }) => Some(kind),
+            _ => None,
+        };
+        assert_eq!(kind, Some(&CompletionKind::Query), "the list completes as a query: {:?}", settled.status);
+        let value = self.layer.repair_list(job).cloned().expect("the kept list");
+        (job, value)
     }
 
     /// The item index of `twist` in the pinned menu at its grip.
