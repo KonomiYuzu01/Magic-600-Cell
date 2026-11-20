@@ -1,7 +1,8 @@
 //! The base library's first entries as 600 Cell Script (LP3, C5), written as language code over the IR draft (LB1.1):
 //! chapter 03's row "Literal words" (LB1.8), over the IR draft's word operations; the F2 and F5 part of LB1.8's row
 //! "Exact linear algebra" and the exact sign and order of its Q(√5) values; LB1.8's row "Quaternion and icosian
-//! algebra" as far as quaternion factors and the tree at 2 go; the exact-completion half of LB2's row
+//! algebra" as far as quaternion factors and the tree at 2 go; LB1.8's row "Word equality keys" for 600-cell-Full
+//! words, under the owner's answer of 17 November 2026; the exact-completion half of LB2's row
 //! "Residuals and exact completion", over KN2.4's `positions` and `labels` rows; LB2's rows "Star and recipe
 //! construction" and "Collateral and support", over KN2.4's `effect` row; LB2's row "Net and Strict protection", over
 //! KN2.4's `protection` row; and LB2's row "Guarded setups and buffers", over the draft `setups` row of the
@@ -102,6 +103,30 @@
 //! against `tests/fixtures/trees-reference.json`, trees.py's exact answers, and checks that trees.py and its `exact.py`
 //! are still the pinned bytes.
 //!
+//! # Word equality keys
+//!
+//! The source [`WORD_KEYS_SOURCE`], `src/word_keys.6cs`, is the module `word_keys` in edition `6cs-draft-1`, in the
+//! formatter's canonical layout. It exports two pure functions on 600-cell-Full words:
+//!
+//! - `key(w: Word) -> TraceEqualityKey`, the word's key: LB1.10's draft `trace-key/1`, the least topological word under
+//!   the independence relation the run pins, `full-disjoint-support/1` (two letters are independent when their
+//!   generators move disjoint sets of slots).
+//! - `same_word(x: Word, y: Word) -> Bool`, true exactly when the two keys are equal: the words differ only by swaps
+//!   of adjacent independent letters.
+//!
+//! The owner's answer of 17 November 2026 gives C5's word keys of 600-cell-Full words `trace-key/1`, so the entry keys
+//! with the IR draft's `trace_key`. The run must pin the model's relation (`c600_run::interp::Options::relation`,
+//! built by `c600_tools::supports::full_relation`); without one, `trace_key` stops the run. A key has its own type and
+//! is never letters: no replay, derivation, protection, proposal or commit takes it, and the checker refuses one where
+//! a `Word` is required (LG2.13, LB1.9). Equal keys are sound, not complete: the words have the same effect, so the
+//! same end digest at every state, and words with the same effect may still keep unequal keys. The key keeps every
+//! letter, so an inverse pair is not the empty word, and a word's key is refused under a protected set exactly when
+//! the word is, because it only reorders the letters. Strict protection still judges the literal word's prefixes.
+//!
+//! [`word_equality_keys`] is the row's catalogue entry. The checker infers no effect, capability or state read for
+//! either function. `c600-tools/tests/ct_lb1_02.rs` runs them on the pinned model's relation (CT-LB1-02's
+//! 600-cell-Full part).
+//!
 //! # Recipes, frames and support
 //!
 //! The source [`RECIPES_SOURCE`], `src/recipes.6cs`, is the module `recipes` in edition `6cs-draft-1`, in the
@@ -184,8 +209,8 @@
 //!
 //! The crate draws nothing and owns no state. It depends on the IR, syntax and digest crates only; its tests also run
 //! the checker, the interpreter (`c600-run`) and the 600-cell-Full kernel, and `c600-tools`' tests run the
-//! exact-completion, recipe, report, protection and guarded-setup entries through the tool's host bridge. Every result
-//! of its tests is source and fixture evidence.
+//! exact-completion, recipe, report, protection and guarded-setup entries through the tool's host bridge, and the word
+//! keys on the model's relation. Every result of its tests is source and fixture evidence.
 //!
 //! # Drafts
 //!
@@ -305,6 +330,13 @@
 //!   `exact_mul` by -1, halves an even integer with `q5_parts(q5_of(n, 0, 2))` and reads its parity with
 //!   `residue(to_f2(n))`. The constants are written out as literals, because the module computes no group closure.
 //! - LB1.8, quaternions: the catalogue row is Rust data in [`quaternion_and_icosian_algebra`].
+//! - LB1.8, word equality keys: the frozen row names free reduction for Full (LG2.18's `word-key/1`, the IR draft's
+//!   `word_key`). The owner's answer of 17 November 2026 gives 600-cell-Full words `trace-key/1` as C5's word key, a
+//!   draft that freezes with the IR, so the module keys with `trace_key` and does not wrap `word_key`. Free reduction
+//!   merges an inverse pair with the empty word, which Strict protection tells apart; `trace-key/1` keeps both letters.
+//!   The jumbling half, LG2.18's domain-preserving merging on menu words, is C8's.
+//! - LB1.8, word equality keys: the catalogue row is Rust data in [`word_equality_keys`]. The same two functions are
+//!   the Full half of the row "Trace equality keys", which this crate does not list as a second row.
 //!
 //! # Not built
 //!
@@ -320,7 +352,10 @@
 //!   jumbled puzzle, which are C8's; and the buffers' current occupants, with the residual half below.
 //! - The residual half of LB2's row "Residuals and exact completion": non-buffer positions, buffer occupants and
 //!   frames.
-//! - The other entries of LB1.8's table, among them the word and trace keys (LB1.9, LB1.10).
+//! - In "Word equality keys" and "Trace equality keys": keys of jumbling menu words. LG2.18's domain-preserving key
+//!   on the pinned menu matrices is C8's (CT-LB1-02's key half), and LB1.10's `jumble-locality/1` waits for an exact
+//!   Δ(c,d) entry in `c600-jumble`.
+//! - The other entries of LB1.8's table.
 
 #![forbid(unsafe_code)]
 
@@ -404,6 +439,13 @@ pub const TREES_MODULE: &str = "trees";
 /// The quaternion factors and tree outputs module's exported functions, in source order.
 pub const TREES_EXPORTS: [&str; 7] = ["factors", "reconstructs", "v2", "kval", "dist", "branch", "pose_tree"];
 
+/// The word equality keys source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const WORD_KEYS_SOURCE: &str = include_str!("word_keys.6cs");
+/// The word equality keys module.
+pub const WORD_KEYS_MODULE: &str = "word_keys";
+/// The word equality keys module's exported functions, in source order.
+pub const WORD_KEYS_EXPORTS: [&str; 2] = ["key", "same_word"];
+
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.
 pub fn source_sha256() -> String {
     sha256_hex(SOURCE.as_bytes())
@@ -442,6 +484,11 @@ pub fn quadratic_sha256() -> String {
 /// The SHA-256 of [`TREES_SOURCE`], in hex.
 pub fn trees_sha256() -> String {
     sha256_hex(TREES_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`WORD_KEYS_SOURCE`], in hex.
+pub fn word_keys_sha256() -> String {
+    sha256_hex(WORD_KEYS_SOURCE.as_bytes())
 }
 
 /// One row of chapter 03's catalogue with LB1.2's five fields, and the module that backs it.
@@ -553,6 +600,27 @@ pub fn quaternion_and_icosian_algebra() -> CatalogueRow {
         module: TREES_MODULE,
         functions: &TREES_EXPORTS,
         source_sha256: trees_sha256(),
+    }
+}
+
+/// LB1.8's row "Word equality keys", as far as this crate builds it: keys of 600-cell-Full words under the owner's
+/// answer of 17 November 2026.
+pub fn word_equality_keys() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Word equality keys",
+        level: "600-cell-Full words: LB1.10's draft `trace-key/1` under the relation the run pins, \
+                `full-disjoint-support/1`, with the model's identity and alphabet. C8 has the keys of menu words.",
+        effects: &[],
+        backing: "Library code: `word_keys.key` and `word_keys.same_word` over the IR draft's `trace_key` and \
+                  `exact_eq`; the run pins the model's relation (`c600_tools::supports::full_relation`).",
+        notes: "Two words are the same word when their keys are equal: they differ only by swaps of adjacent \
+                independent letters, whose generators move disjoint slots. Equal keys give the same end digest at \
+                every state; unequal keys say nothing. Nothing cancels, so an inverse pair is not the empty word. \
+                Keys do not replace executed letters (LB1.9): preview, Strict protection, peak height and commit \
+                read the literal word.",
+        module: WORD_KEYS_MODULE,
+        functions: &WORD_KEYS_EXPORTS,
+        source_sha256: word_keys_sha256(),
     }
 }
 
