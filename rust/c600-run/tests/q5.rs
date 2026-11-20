@@ -154,9 +154,13 @@ fn a_zero_denominator_stops_at_its_assertion() {
         assert_eq!(rows(&r.summary, "assert"), [(1, 0, 0)], "{a} {b}");
         assert!(rows(&r.summary, "q5_of").is_empty(), "the guarded operation does not run");
         assert!(r.value.is_none() && r.output.is_none());
-        // The predicate's byte is released before the stop, so only the three two-byte operands are live, and
-        // cleanup frees them.
-        assert_eq!((r.summary.live_before_cleanup, r.summary.live_after_cleanup), (6, 0), "{a} {b}");
+        // The predicate's byte is released before the stop. An error stop keeps no live snapshot, so the charge
+        // before cleanup is the root's at the end of the run: the three two-byte operands and the frame of `of`,
+        // which the stop does not unwind (16 bytes and 8 per slot: three parameters and three held operands).
+        // Cleanup frees them all.
+        let frame = loaded.frame_size(loaded.function("m", "of").expect("of"));
+        assert_eq!(frame, meter::frame_size(6));
+        assert_eq!((r.summary.live_before_cleanup, r.summary.live_after_cleanup), (6 + frame, 0), "{a} {b}");
     }
 }
 
