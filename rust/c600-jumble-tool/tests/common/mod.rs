@@ -12,7 +12,8 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::layer::JUMBLE_ON_MODE;
 use c600_command::{
-    CommandLayer, Direction, MemoryStore, Receipt, Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW,
+    CommandLayer, Direction, MemoryStore, Receipt, Secret, Shell, Status, Table, JUMBLE_OFF_ROW, JUMBLE_ON_ROW,
+    JUMBLE_TWIST_ROW,
 };
 use c600_display::plan::{Mode, RevisionRef};
 use c600_jumble::state::State;
@@ -156,6 +157,13 @@ impl Session {
         let hint = self.layer.undo_hint(Direction::Undo).expect("an action to undo");
         let args = json::object([("hint", hint.to_json())]);
         self.shell.invoke(&mut self.layer, "session.undo", args).expect("the shell invokes the undo")
+    }
+
+    /// `jumble.off`, naming the current revision: the exit to the full puzzle.
+    pub fn off(&mut self) -> Receipt {
+        let revision = self.layer.revision().to_json();
+        let args = json::object([("revision", revision)]);
+        self.shell.invoke(&mut self.layer, JUMBLE_OFF_ROW, args).expect("the shell invokes the exit")
     }
 
     /// The head's poses: the jumbling engine's state the layer holds.

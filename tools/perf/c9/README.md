@@ -12,6 +12,7 @@ choice marked DRAFT here is the integrator's draft (PHS.65) until the owner or a
 | `presentmon_capture.py` | Builds, checks and (administrator only) runs a timed PresentMon 2.6.0.0 capture |
 | `ui_skew.py` | Route B check B2: UI frame to 3D frame skew from `ui_frame` rows and PresentMon; no bar, numbers only |
 | `lx4.py` | LX-4: the schedule (10,800 S/M/L samples), posted window messages (`post`, Windows only; `--dry-run` posts nothing) and the RTE.49/RTE.53 analysis |
+| `lx2.py` | LX-2 in the shell (RTE.42 conditions 3 and 4): each metered fault's limit windows (its job runs to its end with no commit) and every fault's turn windows, with LX-4 echo samples (`post`, Windows only; `--dry-run` posts nothing), and the per-fault analysis (E2 over turn windows; echo and gate over a metered fault's limit windows, the others' turn windows) with conditions 1 and 2 from c600-lx2-faults' record |
 | `runbook.py` | The owner-machine batch in order (labels A1 to A3, U1 to U8); `--dry-run` checks prerequisites without a GPU |
 | `evidence.py` | The shared record format `magic600-c9-measure-record-v1` and log reading |
 
@@ -34,8 +35,9 @@ The same log also carries, for B2, a `ui_frame` row per Godot frame (`ui_seq`, `
 the process in the capture); for LX-4, an `lx4` row per endpoint (`sample`, `endpoint`, `frame_id`,
 `buffer_sha256`) and `puzzle` and `window` in the `run` row. `lx4.py post` turns with a physical turn key
 (`--turn-key`, default KeyJ) and sends each key message with the key's scan code (VK_BACK too), since the shell routes
-by Godot's physical keycode. `key_to_frame.py` skips those rows; `ui_skew.py` and
-`lx4.py` describe them.
+by Godot's physical keycode. For LX-2, LX-2's module writes `lx2` rows (`event`, `qpc`, `window`, `fault`, `kind`: phase,
+start, turn, kill, fault_end, child_exit, probe_refused, recovered, phase_end, error) and, like LX-4's, a `module` row
+when it starts. `key_to_frame.py` skips those rows; `ui_skew.py`, `lx4.py` and `lx2.py` describe them.
 
 **E3, `startup.jsonl`, format `magic600-c9-startup-v1`**: `run` (with `cold`: `new_process`,
 `no_product_process_at_launch`, `fresh_session_copy`, `seconds_since_previous_exit`), `process_start` (the launcher's

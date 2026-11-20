@@ -1,0 +1,37 @@
+edition "6cs-draft-1";
+module jumble_rim requires [];
+
+export fn rim_facts() -> record { admissible: Nat, at_floor: Nat, blocked: Nat, caps: List<record { A_c: List<Nat>, F_c: List<Nat>, In_c: List<Nat>, N_c: List<Nat>, Out_c: List<Nat>, at_floor: List<Bool>, blocked: List<Bool>, cap: Nat, status: Text, undefined: List<Text> }>, closed: Nat, complete: Bool, digest: Text, grip_n: List<Nat>, grip_n_undefined: List<Text>, misaligned: Nat, summed: Nat, totals: List<record { aligned: Nat, off_grip_mismatches: Nat, on_grip_mismatches: Nat, total_N: Nat }> } effects [snapshot] {
+    let summary = read_snapshot<record { complete: Bool, digest: Text, grip_n: List<Nat>, grip_n_undefined: List<Text>, rows: List<record { A_c: List<Nat>, F_c: List<Nat>, In_c: List<Nat>, N_c: List<Nat>, Out_c: List<Nat>, at_floor: List<Bool>, blocked: List<Bool>, cap: Nat, status: Text, undefined: List<Text> }> }>("rim_summary");
+    let seams = read_snapshot<record { totals: List<record { aligned: Nat, off_grip_mismatches: Nat, on_grip_mismatches: Nat, total_N: Nat }> }>("seam_facts", "all");
+    let sums = repeat(length(summary.rows), record { admissible = 0, at_floor = 0, blocked = 0, closed = 0, misaligned = 0, next = 0, summed = 0 }, fn(s: record { admissible: Nat, at_floor: Nat, blocked: Nat, closed: Nat, misaligned: Nat, next: Nat, summed: Nat }) -> record { admissible: Nat, at_floor: Nat, blocked: Nat, closed: Nat, misaligned: Nat, next: Nat, summed: Nat } {
+        let row = index(summary.rows, s.next);
+        let open = exact_eq(row.status, "admissible");
+        let n = value_of(row.N_c);
+        let closed = and(open, exact_eq(n, 0));
+        let misaligned = and(open, exact_less(0, n));
+        return record { admissible = exact_add(s.admissible, counted(open)), at_floor = exact_add(s.at_floor, counted(flag_of(row.at_floor))), blocked = exact_add(s.blocked, counted(flag_of(row.blocked))), closed = exact_add(s.closed, counted(closed)), misaligned = exact_add(s.misaligned, counted(misaligned)), next = exact_add(s.next, 1), summed = exact_add(s.summed, n) };
+    });
+    return record { admissible = sums.admissible, at_floor = sums.at_floor, blocked = sums.blocked, caps = summary.rows, closed = sums.closed, complete = summary.complete, digest = summary.digest, grip_n = summary.grip_n, grip_n_undefined = summary.grip_n_undefined, misaligned = sums.misaligned, summed = sums.summed, totals = seams.totals };
+}
+
+fn value_of(field: List<Nat>) -> Nat effects [] {
+    return match exact_eq(length(field), 0) {
+        true => 0;
+        _ => index(field, 0);
+    };
+}
+
+fn flag_of(field: List<Bool>) -> Bool effects [] {
+    return match exact_eq(length(field), 0) {
+        true => false;
+        _ => index(field, 0);
+    };
+}
+
+fn counted(holds: Bool) -> Nat effects [] {
+    return match holds {
+        true => 1;
+        _ => 0;
+    };
+}

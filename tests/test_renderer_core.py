@@ -9,7 +9,8 @@ Python standard library and run anywhere. They check that:
 - the ABI header pins version 5, keeps every ABI 2 declaration, layout and constant and the ABI 3
   additions, pins the ABI 4 product declarations, struct sizes and constants, and pins ABI 5's
   route B declarations and constants (route B is accepted for now by the owner on 18 Nov 2026,
-  pending three owner-machine checks).
+  pending three owner-machine checks), and pins C9 U5's user-stage declarations, constants and
+  report layout, added to ABI 5 without changing it.
 """
 from __future__ import annotations
 
@@ -154,12 +155,19 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 33)
+        self.assertEqual(len(values["CPU_CHECKS"]), 35)
         self.assertTrue({"wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls",
                          "wj native writer"} <= values["CPU_CHECKS"])
         self.assertTrue({"product arguments", "product adopt", "product tickets", "product frames", "product reports",
                          "product picks", "product device lost", "product describe"} <= values["CPU_CHECKS"])
         self.assertTrue({"route b arguments", "present matching", "recovery bookkeeping"} <= values["CPU_CHECKS"])
+        self.assertTrue({"stage arguments", "raster bound"} <= values["CPU_CHECKS"])
+
+    def test_stage_sources_are_embedded_from_the_core(self):
+        # C9 U5: the core's own HLSL is embedded at build time from renderer/core/shaders.
+        self.assertIn('"${CORE_SHADERS}/stages.hlsl"', self.cmake)
+        self.assertIn('-P "${CMAKE_CURRENT_SOURCE_DIR}/embed.cmake"', self.cmake)
+        self.assertTrue((CORE / "shaders" / "stages.hlsl").is_file())
 
     def test_default_build_directory_is_ignored_work(self):
         batch = (CORE / "build.cmd").read_bytes().decode("ascii")
@@ -207,10 +215,22 @@ ABI5 = {
     "SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, int32_t y, uint32_t width, uint32_t height);",
     "SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);",
     "SA2_API int32_t sa2_surface_detach(sa2_context* ctx);",
+    "SA2_API int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out);",
 }
 ABI5_DEFINES = {
     "SA2_TARGET_SURFACE": "0xFFFFFFFFu", "SA2_SURFACE_SYNC_INTERVAL": "1u", "SA2_SURFACE_BUFFERS": "3u",
     "SA2_SURFACE_MAX_PX": "16384u",
+}
+# C9 U5: user shader stages, additive in ABI 5 (the U5 design names ABI 6; the version stays 5).
+ABI5_U5 = {
+    "SA2_API int32_t sa2_stage_compile(sa2_context* ctx, uint32_t kind, const char* hlsl_utf8, uint32_t hlsl_size, uint64_t* out_handle, char* record, uint32_t record_size, uint32_t* out_record_size);",
+    "SA2_API int32_t sa2_scene_stages(sa2_context* ctx, uint64_t vertex_stage, uint64_t fragment_stage, uint32_t overdraw, const uint32_t* vertex_arrays, uint32_t vertex_count, const uint32_t* fragment_arrays, uint32_t fragment_count);",
+    "SA2_API int32_t sa2_stage_report(sa2_context* ctx, sa2_stage_frame* out);",
+    "SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);",
+}
+ABI5_U5_DEFINES = {
+    "SA2_STAGE_VERTEX": "1u", "SA2_STAGE_FRAGMENT": "2u", "SA2_STAGE_RECORD_BYTES": "65536u",
+    "SA2_STAGE_HLSL_MAX_BYTES": "1048576u", "SA2_STAGE_ARRAY_MAX": "1048576u",
 }
 
 
@@ -247,7 +267,7 @@ class AbiTests(unittest.TestCase):
 
     def test_abi4_and_abi5_additions(self):
         added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, ABI3 | ABI4 | ABI5)
+        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5)
 
     def test_abi4_struct_sizes_are_pinned(self):
         layouts = structs(self.header)
@@ -272,6 +292,15 @@ class AbiTests(unittest.TestCase):
             with self.subTest(define=name):
                 self.assertEqual(values.get(name), value)
         self.assertIn("static_assert(SA2_SURFACE_BUFFERS == SA2_RING_SLOTS", text(CORE / "src" / "interop.cpp"))
+
+    def test_u5_stage_additions_are_pinned(self):
+        values = defines(self.header)
+        for name, value in ABI5_U5_DEFINES.items():
+            with self.subTest(define=name):
+                self.assertEqual(values.get(name), value)
+        layout = structs(self.header).get("sa2_stage_frame", "")
+        self.assertTrue(layout.startswith("typedef struct sa2_stage_frame {\n    uint32_t struct_size;"))
+        self.assertIn('static_assert(sizeof(sa2_stage_frame) == 64, "sa2_stage_frame requires the x64 ABI");', self.header)
 
 
 if __name__ == "__main__":

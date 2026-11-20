@@ -52,6 +52,11 @@ IDENTITY_FORMAT = 'magic600-c9-acceptance-build-v1'
 GODOT_GLOB = ('GodotEngine.GodotEngine.Mono_*/Godot_v4.7.2-stable_mono_win64/'
               'Godot_v4.7.2-stable_mono_win64_console.exe')
 RUNNER = 'renderer/acceptance/run_scene.ps1'
+PREPARE_HOST = 'renderer/acceptance/prepare_host.py'
+PREPARE_DATA = 'renderer/acceptance/prepare_data.py'
+WJ_DATA = 'work/loop-memory/c9-acceptance/wj-data'
+# The acceptance host's route (prepare_host.py --route): U4 needs route B's; a build without one is a texture build.
+SURFACE = 'surface'
 SHELL = 'renderer/shell'
 LAUNCH = 'renderer/shell/launch.py'
 BUILD_PRODUCT = 'renderer/shell/build_product.py'
@@ -80,11 +85,16 @@ class Step:
 
 
 def wj_w3_commands():
-    runs = [f"& {RUNNER} -Scene {scene} -Build <product build> {DECLARE}   # three times"
+    prepare = (f'python -B {PREPARE_HOST} --route surface   # route B\'s host into {BUILDS}/<build>, offline; '
+               'no Godot window or GPU device')
+    data = (f'python -B {PREPARE_DATA}   # W-J\'s exports for S4, I_a and I_b into {WJ_DATA}, checked; no GPU')
+    check = (f'& {RUNNER} -Scene <scene> -Build <route-B build> {DECLARE} -DryRun   # per scene (S4, I_a, I_b, w3): '
+             'verifies the build (route: surface) and the W-J data, starts nothing')
+    runs = [f"& {RUNNER} -Scene {scene} -Build <route-B build> {DECLARE}   # three times"
             for scene in ('S4', 'I_a', 'I_b', 'w3')]
     gate = ('python -B tools/perf/renderer_gate.py <run 1> <run 2> <run 3> '
             '--out work/loop-memory/c9-acceptance/<scene>-summary.json   # per scene')
-    return (*runs, gate)
+    return (prepare, data, check, *runs, gate)
 
 
 STEPS = (
@@ -145,15 +155,16 @@ STEPS = (
          run_time=('an unlocked desktop', 'administrator PowerShell for PresentMon'),
          sources=('owner decision 2026-11-18 route B, check 2',)),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
-         False, 50, 'the route-B product build (the W-J and W3 evidence must come from it, not the texture path)',
+         False, 50, None,
          commands=wj_w3_commands(),
          prerequisites=(('file', RUNNER), ('compiles', 'renderer/acceptance/finalize_run.py'),
-                        ('compiles', 'renderer/acceptance/prepare_host.py'),
+                        ('compiles', PREPARE_HOST), ('compiles', PREPARE_DATA),
                         ('compiles', 'renderer/acceptance/file_guard.py'), ('imports', 'renderer_gate'),
-                        ('command', 'powershell'), ('presentmon', None), ('build', None), ('godot-launch', None),
-                        ('dir', 'work/loop-memory/c9-acceptance/wj-data')),
+                        ('command', 'powershell'), ('presentmon', None), ('build', SURFACE), ('godot-launch', None),
+                        ('dir', WJ_DATA)),
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power',
-                   'native resolution, no frame generation or upscaling'),
+                   'native resolution, no frame generation or upscaling',
+                   'the W-J and W3 evidence comes from the route-B build, not a texture build'),
          sources=('ADR-R01.3', 'owner decision 2026-11-18 route B')),
     Step('rpi79-gate', 'RPI.79: the renderer gate on the advertised combination with user stages, in one run', False,
          25, 'user shader stages compiled by DXC in the product build (RPI.80)',
@@ -162,30 +173,54 @@ STEPS = (
          sources=('RPI.79', 'RPI.80', 'owner decision 2026-11-18 (DXC ships)')),
     Step('e3-cold-start', 'Charter E3: three cold runs, process start to the first correct frame, each at most 3 s',
          False, 10, None,
-         commands=(f'python -B {LAUNCH} --out <new folder> --cold-start   # three times; the launcher waits out '
-                   'the 20 s pause and the shell exits at the first correct frame',
+         commands=(f'python -B {BUILD_PRODUCT}   # E3\'s build carries the session fixture and c600-runtime',
+                   f'python -B {LAUNCH} --out <new folder> --cold-start --dry-run   # checks the build, starts '
+                   'nothing',
+                   f'python -B {LAUNCH} --out <run n> --cold-start   # three times, each into a new folder; the '
+                   'launcher waits until 20 s after the previous product exit and copies the fixture fresh; the '
+                   'shell quits at the first correct frame and writes startup.jsonl',
                    'python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3> --out <record>.json'),
-         prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('mentions', (SHELL, '"--cold-start"'))),
+         prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('compiles', BUILD_PRODUCT),
+                        ('mentions', (SHELL, '"--cold-start"'))),
          run_time=('no product process running', 'a fresh copy of the session fixture'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
-    Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 60,
-         'native recursion and the native loop (LP3\'s lx2-faults hook in c600-runtime), and RTE.42 conditions 3 and '
-         '4 (the renderer gate, the LX-4 echo bar and at least 100 E2 commits during fault windows, in the shell\'s '
-         'frame loop)',
+    Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 79, None,
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
-                   '--bin c600-lx2-child   # the injection device of option (a), never shipped',
-                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 -- '
+                   '--features device --bin c600-lx2-child   # the injection device of option (a) on c600-runtime\'s '
+                   'fault hook, never shipped',
+                   'cargo run --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
+                   '--features device --bin c600-lx2-faults -- '
                    '--runtime <product build c600-runtime> --injection <c600-lx2-child release build> '
                    '--sessions <new folder> --out <record>.json'
-                   '   # metered, forced-kill and allocator-ceiling trials, alone and in a session (conditions 1 '
-                   'and 2)'),
-         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs')),
-         sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09')),
+                   '   # metered, forced-kill, allocator-ceiling, native recursion and native loop trials, alone '
+                   'and in a session (conditions 1 and 2)',
+                   'cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
+                   '   # LX-4\'s module set and edit script, once; U8 uses the same fixtures',
+                   'python -B tools/perf/c9/lx2.py post --fixtures <fixtures> --dry-run   # the fault plan and its '
+                   'time; posts nothing',
+                   f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --lx2-injection '
+                   '<c600-lx2-child release build>, PresentMon alongside; then python -B tools/perf/c9/lx2.py post '
+                   '--fixtures <fixtures> --run <run dir>   # each metered fault\'s limit windows (its job runs to '
+                   'the host\'s 60 s safety stop, no commit), then every fault\'s turn windows, with echo samples, '
+                   'about 13 minutes (at most about 70); it closes the shell after the last phase',
+                   'python -B tools/perf/c9/lx2.py analyze --fixtures <fixtures> <run dir> --faults <record>.json '
+                   '--out <lx2 record>.json   # conditions 3 and 4 per fault, with 1 and 2 from the faults record'),
+         prerequisites=(('file', 'rust/c600-lx2/src/main.rs'), ('file', 'rust/c600-lx2/src/bin/c600-lx2-child.rs'),
+                        ('mentions', ('rust/c600-runtime/src', 'pub fn main_with')),
+                        ('mentions', ('rust/c600-lx2/src', 'main_with(native::point)')),
+                        ('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx2'), ('presentmon', None),
+                        ('compiles', LAUNCH), ('mentions', (LAUNCH, '"--lx2-injection"')),
+                        ('mentions', (SHELL, 'Magic600.LX2.Phase')), ('mentions', (SHELL, 'WriteString("t", "lx2")')),
+                        ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, 'WriteString("t", "key")')),
+                        ('mentions', (LAUNCH, 'M600_LX4_DLL')), ('mentions', (LAUNCH, 'M600_LX4_FIXTURES'))),
+         run_time=('foreground', 'the owner starts it from the desktop, which stays unlocked'),
+         sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09', 'charter E2', 'renderer gate')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240, None,
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
                    '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
                    'python -B tools/perf/c9/lx4.py schedule --fixtures <fixtures>   # 10,800 S/M/L samples',
-                   f'python -B {LAUNCH} --out <run dir> --lx4 --puzzle jumble-off, PresentMon alongside; then '
+                   f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --puzzle jumble-off, '
+                   'PresentMon alongside; then '
                    'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
                    '--turn-key KeyJ',
                    'the same with --puzzle jumble-on in a second run directory   # refused until the host opens '
@@ -197,20 +232,37 @@ STEPS = (
          prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
                         ('compiles', LAUNCH), ('mentions', (SHELL, '"--lx4"')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),
-                        ('mentions', (SHELL, 'WriteString("t", "key")'))),
+                        ('mentions', (SHELL, 'WriteString("t", "key")')),
+                        # The module refuses to start without its library and fixtures (C9 product's launcher and
+                        # product build hand them over).
+                        ('mentions', (LAUNCH, '"--lx4-fixtures"')), ('mentions', (LAUNCH, 'M600_LX4_DLL')),
+                        ('mentions', (LAUNCH, 'M600_LX4_FIXTURES')),
+                        ('mentions', (BUILD_PRODUCT, 'c600-shell-lx4'))),
          run_time=('foreground', 'the owner starts it from the desktop'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )
 
 
-def newest_build(root=ROOT):
-    """The newest prepared acceptance build directory that holds an identity file, or None."""
+def build_route(directory):
+    """The route in a build's identity file ('texture' when it names none), or None when it is unreadable."""
+    try:
+        identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeError):
+        return None
+    return identity.get('route', 'texture') if isinstance(identity, dict) else None
+
+
+def newest_build(root=ROOT, route=None):
+    """The newest prepared acceptance build directory that holds an identity file (of that route, when given), or
+    None."""
     candidates = sorted((path.parent for path in (root / BUILDS).glob(f'*/{IDENTITY}')), key=lambda path: path.name)
+    if route is not None:
+        candidates = [path for path in candidates if build_route(path) == route]
     return candidates[-1] if candidates else None
 
 
-def read_identity(directory):
-    """(ok, detail) for a build directory's identity file."""
+def read_identity(directory, route=None):
+    """(ok, detail) for a build directory's identity file; with a route, the build must be that route's."""
     try:
         identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
     except (OSError, ValueError, UnicodeError):
@@ -220,7 +272,12 @@ def read_identity(directory):
     source = identity.get('source')
     if identity.get('format') != IDENTITY_FORMAT or not isinstance(source, dict) or not source.get('head'):
         return False, f'{IDENTITY} is not {IDENTITY_FORMAT}'
-    return True, f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}"
+    built = identity.get('route', 'texture')
+    detail = (f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}, "
+              f'route {built}')
+    if route is not None and built != route:
+        return False, f'{detail}, not {route}: python -B {PREPARE_HOST} --route {route}'
+    return True, detail
 
 
 def godot(environ=None):
@@ -254,7 +311,8 @@ def evaluate(kind, argument, build=None, environ=None):
         return shutil.which(argument) is not None, f'{argument} on PATH'
     if kind == 'mentions':
         folder, token = argument
-        for path in sorted((ROOT / folder).rglob('*')):
+        where = ROOT / folder
+        for path in [where] if where.is_file() else sorted(where.rglob('*')):
             if path.suffix in SOURCE_SUFFIXES and path.is_file():
                 try:
                     if token in path.read_text(encoding='utf-8', errors='replace'):
@@ -270,7 +328,7 @@ def evaluate(kind, argument, build=None, environ=None):
     if kind == 'build':
         if build is None:
             return False, f'no prepared build under {BUILDS}'
-        return read_identity(build)
+        return read_identity(build, argument)
     if kind == 'godot-launch':
         if build is None:
             return False, 'no launch.json without a build'
@@ -352,14 +410,14 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--list', action='store_true', help='print every step with its commands and prerequisites')
     mode.add_argument('--dry-run', action='store_true', help='check the prerequisites, one line per step')
-    parser.add_argument('--build', type=Path, help='prepared build directory (default: the newest under '
-                        f'{BUILDS})')
+    parser.add_argument('--build', type=Path, help='prepared build directory (default: the newest route-B build '
+                        f'under {BUILDS}, else the newest)')
     parser.add_argument('--check-quiet', action='store_true', help='also run the quiet-machine gate once (info only)')
     args = parser.parse_args(argv)
     if args.list:
         listing()
         return 0
-    build = args.build or newest_build()
+    build = args.build or newest_build(route=SURFACE) or newest_build()
     code = dry_run(check=lambda kind, argument: evaluate(kind, argument, build))
     if args.check_quiet:
         quiet, gate = quiet_machine()

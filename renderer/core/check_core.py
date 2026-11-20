@@ -1,5 +1,8 @@
 """Build the renderer core in a fresh ignored directory and run its CPU self-test; --gpu also runs the owner GPU checks.
 
+--stages DXC_DIR also runs C9 U5's user-stage check on WARP only (never a hardware adapter), with dxcompiler.dll and
+dxil.dll copied from DXC_DIR beside the built DLL.
+
 Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
 """
 
@@ -31,7 +34,10 @@ CPU_CHECKS = {
     # (route B is accepted for now by the owner on 18 Nov 2026, pending three
     # owner-machine checks).
     "route b arguments", "present matching", "recovery bookkeeping",
+    # C9 U5: user stages' compiler profile, source composition and compile record, and RPI.72's raster bound.
+    "stage arguments", "raster bound",
 }
+DXC_LIBRARIES = ("dxcompiler.dll", "dxil.dll")
 BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
 
 
@@ -56,12 +62,15 @@ def run_bounded(arguments, timeout, **kwargs):
     return stdout, stderr
 
 
-def check_result(executable, build, mode, vectors):
-    output = build / f"{mode}.json"
+def check_result(executable, build, mode, vectors, stages=False):
+    output = build / f"{mode}{'-stages' if stages else ''}.json"
     arguments = [str(executable), f"--{mode}", "--vectors", vectors, "--out", str(output)]
+    if stages:
+        arguments.append("--stages")
     if mode != "cpu":
         arguments.append("--debug")
-    stdout, _ = run_bounded(arguments, 300 if mode == "cpu" else 7200, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    timeout = 300 if mode == "cpu" else 900 if stages else 7200
+    stdout, _ = run_bounded(arguments, timeout, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(stdout, end="")
     if not stdout.splitlines() or stdout.splitlines()[-1] != "selftest: ok":
         raise RuntimeError(f"{mode}: missing final success marker")
@@ -73,6 +82,8 @@ def check_result(executable, build, mode, vectors):
             raise RuntimeError(f"{mode}: failed or incomplete check: {check}")
         if mode == "cpu" and check["status"] != "pass":
             raise RuntimeError("CPU acceptance requires all CPU checks to pass")
+        if stages and check["status"] != "pass":
+            raise RuntimeError("the WARP stage check requires every check to pass")
     if mode == "cpu" and {check["name"] for check in report["checks"]} != CPU_CHECKS:
         raise RuntimeError("CPU check set is incomplete")
     if mode == "cpu":
@@ -103,6 +114,8 @@ def check_sources(build):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--gpu", action="store_true", help="also run the WARP and hardware checks (owner only)")
+    parser.add_argument("--stages", metavar="DXC_DIR", type=Path,
+                        help="also run the WARP user-stage check with dxcompiler.dll and dxil.dll from DXC_DIR")
     options = parser.parse_args()
     source = Path(__file__).resolve().parent
     root = source.parent.parent
@@ -135,7 +148,14 @@ def main():
         if options.gpu:
             for mode in ("warp", "hardware"):
                 check_result(executable, build, mode, vectors)
-        print("check_core: ok" + (" (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"))
+        if options.stages:
+            for library in DXC_LIBRARIES:
+                shutil.copyfile(options.stages / library, build / library)
+            check_result(executable, build, "warp", vectors, stages=True)
+        summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
+        if options.stages:
+            summary = " (CPU, WARP and hardware; WARP stages)" if options.gpu else " (CPU and the WARP stage check; no hardware run)"
+        print("check_core: ok" + summary)
         return 0
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
         print(f"check_core: failed: {error}", file=sys.stderr)

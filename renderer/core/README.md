@@ -71,15 +71,38 @@ The record is `docs/wiki/decisions/owner-decisions-2026-11-18-route-b.md`. The r
 SA2_API int32_t sa2_create(uint64_t adapter_luid, const sa2_config* config, sa2_context** out);
 SA2_API int32_t sa2_surface_attach(sa2_context* ctx, uint64_t hwnd, int32_t x, int32_t y, uint32_t width, uint32_t height);
 SA2_API int32_t sa2_surface_move(sa2_context* ctx, int32_t x, int32_t y);
+SA2_API int32_t sa2_surface_swap_chain(sa2_context* ctx, uint64_t* out);
 SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
 ```
 
 - `sa2_create` makes the core's own device with the D3D12 device factory (not stored as the process singleton, so never Godot's device) on the adapter with that LUID (0: the first hardware adapter), with its own DIRECT queue and the context setup `sa2_attach` makes. An unknown LUID is `SA2_E_INVALID_ARGUMENT`; no hardware adapter or no device factory is `SA2_E_UNSUPPORTED` (there is no `D3D12CreateDevice` fallback).
-- `sa2_surface_attach` makes a DirectComposition target for the window, one visual at (x, y), and a composition swap chain (B8G8R8A8_UNORM, three FLIP_DISCARD buffers, the frame-latency waitable, maximum latency 2) on the producer queue. `sa2_surface_move` moves and commits the visual, also during device loss. `sa2_surface_detach` needs the scene unloaded and a drain. On a `sa2_create` context the ring-slot calls answer `SA2_E_WRONG_STATE`, and the scene loads at the surface's size.
+- `sa2_surface_attach` makes a DirectComposition target for the window, one visual at (x, y), and a composition swap chain (B8G8R8A8_UNORM, three FLIP_DISCARD buffers, the frame-latency waitable, maximum latency 2) on the producer queue. `sa2_surface_move` moves and commits the visual, also during device loss. `sa2_surface_detach` needs the scene unloaded and a drain. `sa2_surface_swap_chain` (C9 diagnostics, added without an ABI change, so a shell treats it as optional) writes the current swap chain's address, which the shell records so that a PresentMon capture can tell the core's presents from Godot's; a resize or recovery makes a new chain. On a `sa2_create` context the ring-slot calls answer `SA2_E_WRONG_STATE`, and the scene loads at the surface's size.
 - A frame with target `SA2_TARGET_SURFACE` waits for the back buffer's previous frame, then for the latency waitable, draws through a second product pipeline for the B8G8R8A8 format, presents with sync interval 1 and records `GetLastPresentCount`.
 - `sa2_presented` confirms a frame only by the probe's exact rule: a `GetFrameStatistics` row of the frame's swap-chain generation whose `PresentCount` equals the frame's count and is not above `GetLastPresentCount`. A frame whose count a row passed, or whose generation ended, is never reported; a failed statistics call returns `SA2_OK` with no row unless the device is removed. The rule is the pure function `present_match` in `src/product.cpp`, with CPU self-tests.
 - `sa2_recover` on a removed device builds a new device and queue on the same adapter, a new swap chain as the same visual's content (or a rebuilt target and visual on the same window and rectangle), and the scene again from its retained config, and only then releases the old objects. The adopted CPU engine image is kept, `device_epoch` increases by one, and it writes `{status: "recovered", reason, device_epoch, device_removed: "0x%08x"}`. Old tickets, sets, frames and picks answer `SA2_E_WRONG_STATE`, unread old reports are dropped, and numbers keep counting. A live device answers `SA2_E_WRONG_STATE` with `status: "not_removed"`.
 - `sa2_resize` resizes the swap chain after a drain; `sa2_describe` reports interface version 5 and lists F22 (recover) and F23 (read_presented) as supported only on a `sa2_create` context with a surface; `sa2_remove_device` works on a `sa2_create` context.
+
+## C9 U5: user shader stages (additive in ABI 5)
+
+The U5 design names ABI 6; these calls are added to ABI 5 instead, `SA2_ABI_VERSION` stays 5 and no earlier call changes. The header comment before the declarations gives the contract.
+
+```c
+#define SA2_STAGE_VERTEX 1u
+#define SA2_STAGE_FRAGMENT 2u
+#define SA2_STAGE_RECORD_BYTES 65536u
+#define SA2_STAGE_HLSL_MAX_BYTES 1048576u
+#define SA2_STAGE_ARRAY_MAX 1048576u
+SA2_API int32_t sa2_stage_compile(sa2_context* ctx, uint32_t kind, const char* hlsl_utf8, uint32_t hlsl_size, uint64_t* out_handle, char* record, uint32_t record_size, uint32_t* out_record_size);
+SA2_API int32_t sa2_scene_stages(sa2_context* ctx, uint64_t vertex_stage, uint64_t fragment_stage, uint32_t overdraw, const uint32_t* vertex_arrays, uint32_t vertex_count, const uint32_t* fragment_arrays, uint32_t fragment_count);
+SA2_API int32_t sa2_stage_report(sa2_context* ctx, sa2_stage_frame* out); /* sa2_stage_frame: 64 bytes on x64 */
+SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);
+```
+
+- A stage is HLSL text with one fixed entry: `uint m600_vertex(float x, float y, float z, float w, float t, out float3 position)` (x, y, z, w: Q*world; the result is the coverage code, 0 a point, 1 singular_neighbourhood, 2 nonfinite) or `float3 m600_fragment(float class_, float shade, float x, float y, float z, float t)` (x, y, z: the projected 3D position). Its arrays are `StructuredBuffer<float> m600_vertex_arrays : register(t20)` and `m600_fragment_arrays : register(t21)`; the core declares a buffer behind a `#define` guard only when the stage text does not name it.
+- `sa2_stage_compile` composes the stage text with the core's `geometry.hlsl`, `draw.hlsl` and `shaders/stages.hlsl`, embedded in the DLL at build time by `embed.cmake`, and compiles every pass with DXC at run time with exactly `-T <vs|ps|cs>_6_2 -E <entry> -HV 2021 -Gis -denorm preserve -O3 -Ges -WX`. `dxcompiler.dll` and `dxil.dll` load from the DLL's own folder by absolute path, never the search path; the build does not copy them. The compile record holds the compiler and validator versions, the arguments, and the SHA-256 of the composed source and of each pass's DXIL. A failure records `EV3:input.stage_compile_failed` with DXC's error text and keeps the built-in chain usable.
+- `sa2_scene_stages` attaches a chain to the loaded W1..W4 scene outside a trace. Every later `sa2_scene_produce` frame, traced or not, on a ring slot or route B's surface, runs RPI.72: eval (compute, the chain up to Q*world with a traced frame's W3 turn, the vertex stage, camera and clip), bound (compute, `rust/c600-display/src/raster.rs`'s raster bound with an exact 64-bit sum), decide (stopped when U exceeds width * height * overdraw), then the user draw under `D3D12_PREDICATION_OP_EQUAL_ZERO` and the built-in draw under `NOT_EQUAL_ZERO`. Product frames, W-J and frames without a chain draw exactly as before. C9 U5c changed U5b's rule, under which traced frames drew without the chain: the renderer gate measures traced frames, so they must run the stages.
+- `sa2_stage_report` returns the oldest completed chain frame not yet returned (U, the allowance, the stop decision and the pixel-shader invocations of both draws), so a caller that reports after each frame and again while the frame number rises sees every chain frame once, in order; with none waiting it returns the last row again. At most 4096 rows wait (C9 U5c; U5b returned only the newest).
+- A stage compile that cannot load DXC, compose a pass or build a pipeline returns its status with the compile record; no exception crosses the ABI (C9 U5c).
 
 ## Build and CPU check
 
@@ -95,9 +118,17 @@ The default build directory is `work\build\renderer-core`. Build only under the 
 python renderer/core/check_core.py
 ```
 
-This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose 33 checks must all pass (17 ABI 2 checks, 5 W-J checks, 8 product checks and 3 route B checks: route b arguments, present matching and recovery bookkeeping). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
+This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose 35 checks must all pass (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
 
 `tests/test_renderer_core.py` checks the provenance digests, the file list, the CMake sources and the ABI pins. It needs only the Python standard library and runs on Linux.
+
+```sh
+python renderer/core/check_core.py --stages <folder with dxcompiler.dll and dxil.dll>
+```
+
+This also copies the two DXC libraries beside the built DLL and runs `sa2_selftest.exe --warp --stages --debug`, C9 U5's user-stage check, on WARP only (the self-test refuses `--stages` with any other mode). At 640 x 360 it compiles hand-written fixture stages through DXC at run time, checks their compile records and a broken stage's refusal, draws W3 frames with the user chain, compares each frame's device U with the C++ bound over the dumped eval buffer, forces a stop with overdraw 0 and checks with pipeline statistics that the user draw ran no pixel shader and the built-in draw did, and checks the releases, the trace rule (traced frames draw with the chain) and that the report returns every chain frame once in order. It does not cover route B's surface, which needs a window.
+
+`sa2_selftest.exe --warp --measure-stages <folder> --size WxH --frames N --traced M --out <file>.jsonl` (C9 U5c, WARP only) measures U for a generated stage pair (`c600-stage-hlsl` output with an `arrays.json` beside it): it loads W3 at that size, attaches the pair with an unlimited allowance, produces N untraced frames (the camera turns 0.002 rad per frame, one period is 3142 frames) and M traced frames with W3's turns, and writes one JSON line per frame with U. It is a measurement, never a check; the acceptance harness's README gives the overdraw it sized.
 
 ## GPU checks (owner runs)
 
