@@ -544,6 +544,21 @@ class RunbookTests(NoProcessCase):
         self.assertTrue(runbook.evaluate('mentions', (runbook.LAUNCH, '"--lx4"'))[0])
         self.assertFalse(runbook.evaluate('mentions', (runbook.LAUNCH, 'a token no launcher writes'))[0])
 
+    def test_u8_runs_both_puzzles_once_the_build_holds_the_jumble_on_fixture_and_c600_render_poses(self):
+        step = next(step for step in runbook.STEPS if step.id == 'lx4')
+        mentions = {argument for kind, argument in step.prerequisites if kind == 'mentions'}
+        self.assertLessEqual({(runbook.BUILD_PRODUCT, '"session-fixture-jumble-on"'),
+                              (runbook.RENDER_BACKEND, 'Puzzle::Jumbling =>')}, mentions)
+        for puzzle in ('jumble-off', 'jumble-on'):
+            launches = [command for command in step.commands
+                        if command.startswith(f'python -B {runbook.LAUNCH} ') and f'--puzzle {puzzle},' in command]
+            self.assertEqual(len(launches), 1, puzzle)
+            self.assertIn(f'tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle {puzzle} --run', launches[0])
+        self.assertFalse(any('refused until' in command for command in step.commands))
+        # Both prerequisites hold on this source: the launcher's build writes the fixture and c600-render poses.
+        self.assertTrue(runbook.evaluate('mentions', (runbook.BUILD_PRODUCT, '"session-fixture-jumble-on"'))[0])
+        self.assertTrue(runbook.evaluate('mentions', (runbook.RENDER_BACKEND, 'Puzzle::Jumbling =>'))[0])
+
     def test_a_dry_run_prints_one_line_per_step_and_never_runs_the_quiet_gate(self):
         lines = []
         with mock.patch.object(runbook, 'quiet_machine', side_effect=forbidden):

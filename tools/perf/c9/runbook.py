@@ -57,6 +57,7 @@ PREPARE_DATA = 'renderer/acceptance/prepare_data.py'
 WJ_DATA = 'work/loop-memory/c9-acceptance/wj-data'
 # C9 U5c: the gate's user-stage pair; prepare_host.py --stages builds it into a route-B build's stages/ folder.
 STAGES = 'renderer/acceptance/stages'
+RENDER_BACKEND = 'rust/c600-render/src/backend.rs'
 # The acceptance host's route (prepare_host.py --route): U4 needs route B's; a build without one is a texture build.
 SURFACE = 'surface'
 SHELL = 'renderer/shell'
@@ -247,8 +248,11 @@ STEPS = (
                    'PresentMon alongside; then '
                    'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
                    '--turn-key KeyJ',
-                   'the same with --puzzle jumble-on in a second run directory   # refused until the host opens '
-                   'the jumbled puzzle\'s session and view (C9 product, 19 November 2026)',
+                   f'python -B {LAUNCH} --out <second run dir> --lx4 --lx4-fixtures <fixtures> --puzzle jumble-on, '
+                   'PresentMon alongside; then '
+                   'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-on '
+                   '--run <second run dir> --turn-key KeyJ   # the host reopens the build\'s jumble-on session and '
+                   'the core draws its posed engine images',
                    'python -B tools/perf/c9/key_to_frame.py <both run dirs> --out <e2 record>.json   # E2 in the same '
                    'runs',
                    'python -B tools/perf/c9/lx4.py analyze --fixtures <fixtures> <both run dirs> --e2 <e2 record>.json '
@@ -261,7 +265,11 @@ STEPS = (
                         # product build hand them over).
                         ('mentions', (LAUNCH, '"--lx4-fixtures"')), ('mentions', (LAUNCH, 'M600_LX4_DLL')),
                         ('mentions', (LAUNCH, 'M600_LX4_FIXTURES')),
-                        ('mentions', (BUILD_PRODUCT, 'c600-shell-lx4'))),
+                        ('mentions', (BUILD_PRODUCT, 'c600-shell-lx4')),
+                        # Jumble on: the build's jumble-on session fixture, and c600-render adopting the jumbling
+                        # engine bundle as the core's posed engine images (C9 product, 20 November 2026).
+                        ('mentions', (BUILD_PRODUCT, '"session-fixture-jumble-on"')),
+                        ('mentions', (RENDER_BACKEND, 'Puzzle::Jumbling =>'))),
          run_time=('foreground', 'the owner starts it from the desktop'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )
