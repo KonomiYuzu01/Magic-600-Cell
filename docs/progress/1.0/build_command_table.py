@@ -59,6 +59,7 @@ DELTA_REQUIRED_ARGUMENTS = {
     "recording.play": {"recording"},
     "recording.convert": {"recording", "target"},
     "twist.apply": {"cap", "rotation", "token"},
+    "workspace.set": {"record", "payload", "provenance"},
 }
 SERVICES = [
     {"id": "kernel.snapshot.open", "kind": "service", "caller": "both", "lane": "none",
@@ -158,11 +159,12 @@ c("view.names", "Names and addresses", "view", ["T-42"])
 c("macro.base.open", "Open Macro Base", "view", ["T-43"], key04="F3")
 c("macro.select", "Select macro (inspect)", "view", ["T-43", "T-44"], contexts=["macro_base", "solve"], key04="Ctrl+Alt+1/2")
 c("macro.add", "Add selected macro to Macro phase", "workspace", ["T-43"], undo="workspace", key04="Ctrl+M")
-c("worksheet.save", "Save worksheet", "workspace", ["T-45"])
+c("worksheet.save", "Save worksheet", "workspace", ["T-45"], undo="workspace")
 c("worksheet.load", "Load worksheet", "workspace", ["T-45"], undo="workspace")
 c("macro.compare", "Compare candidates", "query", ["T-45"], job=True)
 c("endgame.configure", "Configure endgame family", "workspace", ["T-46"], undo="workspace")
-c("macro.save", "Save as macro", "workspace", ["T-46"], gates=["confirm"], note="saving does not select, insert or execute")
+c("macro.save", "Save as macro", "workspace", ["T-46"], gates=["confirm"], undo="workspace",
+  note="saving does not select, insert or execute")
 c("macro.variant.create", "Create reference variant", "workspace", ["T-47"], undo="workspace")
 # protection
 c("protection.policy.set", "Set protection policy (net or strict)", "workspace", ["T-48"], undo="workspace",
@@ -196,10 +198,10 @@ c("view.reset", "Reset view", "view", ["T-65"])
 # structure (0.3 reference)
 c("structure.find", "Find colour or cell", "query", ["T-67"])
 c("structure.compare", "Compare cells", "query", ["T-67"])
-c("structure.layer", "Prepare layer predicate", "workspace", ["T-68"], contexts=["filter"])
+c("structure.layer", "Prepare layer predicate", "workspace", ["T-68"], undo="workspace", contexts=["filter"])
 c("view.cell_views", "Auxiliary cell views", "view", ["T-69"])
 c("camera.center", "Center main view on cell", "view", ["T-70"])
-c("set.save", "Save frozen set", "workspace", ["T-71"])
+c("set.save", "Save frozen set", "workspace", ["T-71"], undo="workspace")
 
 # Code-only purposes and the DT-M1 corrections. No jumbling rows belong here.
 c("operation.phase.append_twist", "Append resolved twist to phase", "workspace", ["T-52", "T-60"],
@@ -255,7 +257,7 @@ c("keymap.name", "Name saved key map", "workspace", [], undo="workspace")
 c("keyboard.disclosure.set", "Inspect or open disclosed keys", "workspace", [], undo="workspace")
 c("filter.edit", "Edit work-filter predicate", "workspace", [], undo="workspace")
 c("filter.preset", "Stage named work-filter preset", "workspace", [], undo="workspace")
-c("filter.save", "Save named filter", "workspace", [])
+c("filter.save", "Save named filter", "workspace", [], undo="workspace")
 c("filter.load", "Load filter for review", "workspace", [], undo="workspace")
 c("structure.select", "Select canonical structural cell", "workspace", [], undo="workspace")
 c("structure.adjacency", "Inspect cell adjacency", "query", [])

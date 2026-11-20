@@ -2,7 +2,9 @@
 
 Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
 [decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
-[the overview](00-overview.md), section 3, and its status says what the freeze covers.
+[the overview](00-overview.md), section 3, and its status says what the freeze covers. Amended once under PHS.52 at
+LP3's command-table freeze (owner, [16 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-16-phs52.md)
+and [20 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)); section 9 records it.
 
 This chapter defines error identity, the error envelope and its categories. It collects the codes proposed by the
 drafted chapters and reconciles their spellings with DT-L1 Round 3. It defines no implementation, concrete syntax or
@@ -268,17 +270,20 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `KN2:input.menu_binding_mismatch` | refusal | A menu letter or drag names a menu set or order digest other than the pinned menu's, or an M request arrives in free mode, which pins no menu. | `after_user_change` | KN3.7, KN3.8 | 01 KN3.7, KN3.8 |
 | `KN2:resource_limit.rotation_search_bound` | refusal | The bounds N and D of a free-mode request are outside the pinned search limit. No search runs and no choice is made. | `after_user_change` | KN3.7 | 01 KN3.7 |
 | `KN2:input.menu_invalid` | refusal | Menu fails inverse closure or A4 invariance. | | ENG-0J item 3 | Round 3; not yet used |
-| `KN2:input.word_blocked_prefix` | refusal | A stored word has a blocked prefix at the current input; context gives the prefix length. | | ENG-0J item 3; ONE.33 | Round 3; not yet used |
-| `KN2:input.recipe_shape` | refusal | Recipe violates the retained word/star step shape or step range. | | Partition section 13; PS1.22 | Round 3; not yet used |
+| `KN2:input.word_blocked_prefix` | refusal | A stored word has a blocked prefix at the current input; context gives the prefix length. | | ENG-0J item 3; ONE.33 | Round 3; M5's jumbling adapter for a refused word; M8's derive for a refused letter |
+| `KN2:input.recipe_shape` | refusal | Recipe violates the retained word/star step shape or step range. | | Partition section 13; PS1.22 | Round 3; LP2's kernel recipe admission; the command layer's inline recipe |
 | `KN2:unverified_reference.frame_ambiguous` | refusal | Ordered references do not fix one proper correspondence. | | V06 | Round 3; not yet used |
 | `KN2:protection.orbit_would_move` | refusal | Label-level protected orbit would move under the active protection contract. | | V06; KN1.11 | Round 3; 01 KN5.16 and 08 commit step 8 use the family |
 | `KN2:protection.piece_would_move` | refusal | Pose-level protected piece would move. No label-level substitution. | | KN1.11; LB3.4 | Round 3; 01 KN5.16 and 08 commit step 8 use the family |
-| `KN2:resource_limit.primitive_ceiling` | refusal | Total retained-generator primitive count exceeds the compatibility ceiling, regardless of chunks. | | V05.1; LB2.4; PS1.10 | Round 3; not yet used |
+| `KN2:resource_limit.primitive_ceiling` | refusal | Total retained-generator primitive count exceeds the compatibility ceiling, regardless of chunks. | | V05.1; LB2.4; PS1.10 | Round 3; LP2's kernel recipe expansion |
 | `KN2:resource_limit.word_length_bound` | refusal | Menu-word replay exceeds the X3 admission bound; exact length retained. Bound remains unset here. | | ENG-0J X3; KN2.10 | Round 3; not yet used |
 | `KN2:consistency.fixed_nu_nonzero` | freeze | A reachable lattice result under signed I_a has a nonzero fixed ν coordinate. | | ENG-0J item 3 and A5; DT-J1 Outcome fix-first 5 | 03 LB3.1 catalogue, section 11 |
 | `KN2:input.named_object_invalid` | refusal | Named cap/piece is missing or out of range, or a unit is empty, mixed-pose or contains a lattice piece. No alternate object is selected. | `after_user_change` | JI.9, JI.45; H15.16 | JI named-object queries |
 | `KN2:input.exposed_geometry_unavailable` | refusal | Certified exposed-face geometry or its size profile is absent. Context names the feature, source binding and missing certified data/profile; report it unavailable and fabricate no mesh. | `after_user_change` | JI.41, JI.45; H15.16 | JI.41; renderer feature matrix |
 | `KN2:stale.value_unavailable` | refusal | A saved derived-value reference cannot resolve its immutable reconstruction inputs; no guessed state or changed reachability claim. | `after_refresh` | LI.13 | LI value-store reads |
+| `KN2:consistency.star_certificate` | freeze | A star certificate of the loaded model fails one of 0.4's checks (seed definition, guarded buffer position, transported star frame); no result is published from that star. | `never` | KN2.1, KN2.4 | 01 KN2.4 rows; 08 preview and commit |
+| `KN2:input.named_cap_blocked_or_closed` | refusal | The cap a repair list names is blocked or uncertain, or closed (N_c = 0), so ENG-0J's unblocked or nonclosed premise fails (JI.12). No other cap is taken. | `after_user_change` | JI.12, JI.45 | JI repair list; 01 KN2.4 `repair_list` |
+| `KN2:input.menu_order_unpinned` | refusal | A repair list is asked for in free mode, which pins no menu, so its rows have no pinned order (JI.12, JI.15). No order is supplied in its place. | `after_user_change` | JI.12, JI.15, JI.45 | JI repair list; 01 KN2.4 `repair_list` |
 
 ### KN4: session store
 
@@ -288,6 +293,8 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `KN4:input.checkpoint_unwitnessed` | refusal | Checkpoint has neither a legal witness nor a label certificate. | | ENG-0J item 3; PS1.29 | Round 3; not yet used |
 | `KN4:resource_limit.disk_full` | refusal | A durable write could not be completed; no half-published state. | | R-06; KN4.2 | Round 3; not yet used |
 | `KN4:input.branch_path_unproved` | refusal | Target branch lacks a proved journal navigation path. Context names the target and missing path evidence; retain the current binding. An explicit validated restore instead uses the exit-void rule. | `after_user_change` | JI.27, JI.28, JI.45; H15.16 | JI branch navigation |
+| `KN4:input.session_exists` | refusal | A new session is begun in a store that already holds one; the held journal is kept and nothing is written. | `after_user_change` | KN4.1, KN4.2 | Command layer's session start; M6 session store |
+| `KN4:busy.session_locked` | refusal | Another opener holds the session lock, so the store does not open the session; nothing is read or written. | `after_user_request` | KN4.1, KN4.2; owner, 18 November 2026, item 3 | M6 session store open |
 
 ### KN5: command layer
 
@@ -319,9 +326,17 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `KN5:input.overlay_dependency_missing` | refusal | A required kernel row is absent from the supplied row table; overlay availability names that missing dependency. | `after_user_change` | LI.20 | LI overlay availability |
 | `KN5:input.scramble_policy_unset` | refusal | No owner-approved product scramble policy reference exists; keep the command unavailable and construct no scramble. | `after_user_change` | JI.38, JI.45; H15.16 | JI jumble.scramble availability |
 | `KN5:input.exit_record_voided` | refusal | A history action would reactivate a known void exit binding. Context names the exit and durable void fact; refuse that redo. A fresh validated crossing or solved-witness entry is a separate action. | `after_user_change` | JI.27, JI.45; H11, H15.16 | JI crossing/entry redo |
-| `KN5:stale.filter_preview` | refusal | The submitted FilterPreviewRef fails H15.4's filter_fresh predicate. Retain inputs for an explicit fresh filter preview; no pending word-preview slot or presentation is required. | `after_refresh` | H15.4; H15.16 | filter.apply fresh_filter_preview gate |
+| `KN5:stale.filter_preview` | refusal | The submitted FilterPreviewRef fails H15.4's filter_fresh predicate. Retain inputs for an explicit fresh filter preview; no pending word-preview slot or presentation is required. | `after_refresh` | H15.4; H15.16; KN0.9 | filter.apply fresh_filter_preview gate |
 | `KN5:stale.result_gone` | refusal | A known terminal's result payload is no longer available. Keep the receipt unchanged and do not rerun the command. | `after_refresh` | LI.29 | LI result retrieval |
 | `KN5:resource_limit.engine_lost` | stop | After an engine crash, complete recovery proves an accepted durable invocation rolled back without publication; lookup returns failed(Error). Missing proof remains unknown_outcome. | `after_user_request` | LI.30 | LI durable outcome lookup; a new action needs a new ID and current guards |
+| `KN5:input.unknown_row` | refusal | The request names a row that the command table does not hold. Nothing runs. | `after_user_change` | KN5.1; LI.5 | KN5.1 invoke; row serving |
+| `KN5:input.argument_form` | refusal | The request's arguments do not have the row's argument form: a name, type or value differs. Nothing runs. | `after_user_change` | KN5.1; LI.5 | KN5.1 invoke; 01 KN2.4 host bridge reads |
+| `KN5:input.row_not_built` | refusal | The table holds the row, but this build does not serve it or lacks what it needs, such as the host's pinned twist menu; the row stays unavailable. Nothing runs. | `after_user_change` | KN5.6; KN3.8 | KN5.1 invoke; KN5.6 availability |
+| `KN5:input.overlay_row_conflict` | refusal | A served or overlay row takes an ID that a row or service already holds, that the layer builds itself, or that another entry already serves. The table is unchanged. | `after_user_change` | KN5.3, KN5.4 | KN5.3 overlay and row serving |
+| `KN5:input.saved_set_exists` | refusal | `set.save` names a saved set without `replace: true`; the saved set is kept. | `after_user_change` | U1-057 | `set.save` |
+| `KN5:consistency.unadmitted_journal_action` | freeze | A reopen's replay meets a journal action that no solver action could have made: a commit whose caller is not the shell, a commit that moves a protected orbit under the protection and policy then in force, or a protection release without its confirmation. The session opens in read-only recovery before that action. | `never` | ONE.3, ONE.4; KN1.11; LI.26; KN5.23; owner, 18 November 2026, item 3 | Session reopen replay |
+| `KN5:capability.preview_shown` | refusal | A run asks for `operation.preview` or `operation.preview.cancel` while the solver is shown a preview; only the solver's own action ends a shown preview. | `after_user_change` | KN5.12; ONE.42; owner, 18 November 2026, item 1 | KN5 run admission |
+| `KN5:capability.outside_solver_command` | refusal | A run asks for `operation.preview` outside a command that the solver invoked; a preview is prepared only inside one. | `after_user_change` | ONE.34; owner, 18 November 2026, item 1 | KN5 run admission |
 
 ### KN6: independent checkers
 
@@ -392,8 +407,8 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `LG3:effect.view_writes_workspace` | diagnostic | View has a workspace-write effect through its body or callees. | | Default 16; LG3.5 | Round 3; not yet used as a concrete code |
 | `LG3:effect.flow_refused` | refusal | Retired before first use: the flow-label spelling, not selected (LQ21; RTE.24). Never emitted; use `LG3:capability.flow_refused`. | | BM2; ERR.24; Round 3 | 02 LG3.12, LG3.14, section 6; 07 BND.83, CT-BND-24; never active; edition unassigned |
 | `LG3:capability.flow_refused` | refusal | The flow-refusal code under capability separation (LQ21; RTE.24). The rule (BND.33) is chapter 07's; LQ2 decides which flows it refuses. | | BM2; ERR.24; Round 3 | 02 LG3.13, LG3.14, section 6; 07 BND.83, CT-BND-24 |
-| `LG3:capability.not_granted` | refusal | Requested authority is absent or barred by the effective sandbox/profile. | | LG3.8, LG3.9; BND.84, BND.85; DET.37, DET.42 | 01 KN5.26; 02 section 6; 07 BND.61, BND.83 to BND.85; 09 DET.37, DET.52; Round 3 |
-| `LG3:capability.ambient_read` | refusal | Clock, file or network read requested without a grant; network remains barred in 1.0. | | INV-10; default 2; LX-3 | Round 3; not yet used as a concrete code |
+| `LG3:capability.not_granted` | refusal | Requested authority is absent or barred by the effective sandbox/profile. | | LG3.8, LG3.9; BND.84, BND.85; DET.36, DET.37, DET.42 | 01 KN5.26; 02 section 6; 07 BND.61, BND.83 to BND.85; 09 DET.37, DET.52; Round 3 |
+| `LG3:capability.ambient_read` | refusal | Clock, file or network read requested without a grant; network remains barred in 1.0. | | INV-10; default 2; LX-3 | Round 3; the checker's admission, its built-in column and LP3's approval of a built-in tool (owner, 16 November 2026); LX-3 P01 to P03 |
 | `LG3:capability.grant_mismatch` | refusal | Resource, right, module or profile differs from the effective grant. | | DET.37, DET.40 | 07 BND.83, CT-BND-23; 09 DET.7, DET.52 |
 
 ### LG4: interpreter and run host
@@ -658,13 +673,13 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `unknown_outcome.import_publication` | `PS3:unknown_outcome.import_publication` | Prefix; unresolved durable pointer switch requires recovery, never blind retry. |
 | `unknown_outcome.read_only_recovery` | `KN5:unknown_outcome.read_only_recovery` | Prefix; refusal while recovery is already active. |
 
-| `evidence.decomposition_mismatch` | `LB6:evidence.decomposition_mismatch` | Component prefix; keep the owning clause's failed fact and continuation. |
 - **ERR.31 [D]** The closure rows below index component-local spellings under ERR.4. The three earlier reference
   spellings record H15.16's category corrections. Only the full codes in section 5 identify the errors; these are
   not runtime aliases. JI remains a rule family, not a raising component.
 
 | Local or earlier spelling | Registry code | What changed |
 | --- | --- | --- |
+| `evidence.decomposition_mismatch` | `LB6:evidence.decomposition_mismatch` | Component prefix; keep the owning clause's failed fact and continuation. |
 | `input.confirmation_required` | `KN5:input.confirmation_required` | Component prefix; keep the owning clause's failed fact and continuation. |
 | `input.generator_input` | `LG4:input.generator_input` | Component prefix; keep the owning clause's failed fact and continuation. |
 | `input.key_contract_mismatch` | `LB1:input.key_contract_mismatch` | Component prefix; keep the owning clause's failed fact and continuation. |
@@ -750,3 +765,32 @@ The remaining choices and mechanisms never silently change an allocated code's m
 | LP1, EN3 and EN4 | Final envelope encoding, typed context, command/revision transport, shared limits and the declared charge schedule still need their owning contracts. No new numerical limit is supplied here. The retained primitive ceiling is V05.1's source compatibility fact; fixed ν coordinates are ENG-0J A5's I_a-only invariant. | ERR.8, ERR.16, ERR.23, ERR.25, ERR.26 |
 | DT-L1 obligations | Round 3 cleared them (overview section 8). R2-E1 supports stored evidence/scope, R2-E3 supports provenance/flow, and R2-E4 supports partial-result and principle-record references where cited, each as round 3 corrected it. | ERR.21, ERR.24; LB6 and PS1 tables |
 | Design hold and evidence | Built-in tools retain the 2 October boundary and 17 October exception until the joint setting. No UI design or DT-J2 to DT-J4 work is opened. Required tests have no results here; the writing check proves structure only. | ERR.1, ERR.13, ERR.30 |
+
+## 9. The amendment at LP3's command-table freeze
+
+One change under PHS.52, made with H-08's freeze (PHS.53), carries items 1 to 4 of the last section of the owner's
+[16 November 2026 page](../../../../wiki/decisions/owner-decisions-2026-11-16-phs52.md) and item 6 of the
+[20 November 2026 page](../../../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md). No code is renamed,
+reused or retired, and no earlier row changes its meaning, form or retry (ERR.5).
+
+- Section 5 registers the eleven codes that the command layer and the session store used as drafts. Six are from
+  16 November: `KN2:consistency.star_certificate`, `KN5:input.unknown_row`, `KN5:input.argument_form`,
+  `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict` and `KN4:input.session_exists`. Five are from
+  20 November: `KN5:consistency.unadmitted_journal_action`, `KN5:capability.preview_shown`,
+  `KN5:capability.outside_solver_command`, `KN5:input.saved_set_exists` and `KN4:busy.session_locked`.
+- M8's four drafts, as section 3 (d) of the 16 November page settles them:
+  - two new rows, `KN2:input.named_cap_blocked_or_closed` and `KN2:input.menu_order_unpinned`;
+    `KN2:input.named_object_invalid` and `KN2:input.menu_binding_mismatch` are not widened;
+  - a repair list's `max_pairs` takes `KN7:budget.kernel_cost` once JI declares it part of that allowance, and
+    until then it has no code;
+  - a cancelled repair list needs no code (KN7.3's `cancelled`).
+- Errata:
+  - The LB6 closure row `evidence.decomposition_mismatch` heads ERR.31's table. ERR.31 keeps its number,
+    although it stands before ERR.29 and ERR.30.
+  - Rule sources: `KN5:stale.filter_preview` adds KN0.9, and `LG3:capability.not_granted` adds DET.36.
+  - The Used-by cells of `KN2:input.word_blocked_prefix`, `KN2:input.recipe_shape`,
+    `KN2:resource_limit.primitive_ceiling` and `LG3:capability.ambient_read` now name their users.
+- The store raises `KN4:busy.session_locked` for its session lock (KN4.1). Persistence likewise raises
+  `PS3:busy.legacy_session_locked`, and section 3's busy row lists neither layer. This amendment does not change
+  that row.
+- Items 5 and 6 of the same list change LI.5 and LI.33 in the layer interfaces, outside this chapter.

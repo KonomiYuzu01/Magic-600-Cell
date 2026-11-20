@@ -2,7 +2,8 @@
 
 Status: **`en4-layer-interfaces/1-draft`, frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
 [decision](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). A changed layer boundary follows chapter 12, PHS.52;
-complete typed coverage and implementation evidence stay open (PHS.53).
+complete typed coverage and implementation evidence stay open (PHS.53). Amended once under PHS.52 at LP3's
+command-table freeze, in LI.5 and LI.33 (owner, 16 November 2026); section 10 records it.
 
 This is the main-line contract requested by PHS.13. It accompanies [H-08](command-table.md),
 [chapter 01](../../architecture/1.0/language/architecture/01-kernel.md) and
@@ -53,9 +54,10 @@ supplies the settled undo, concurrency and routing rules. No product implementat
 - **LI.5 [D]** Every new invocation returning `Receipt` carries a common envelope: session, originating engine
   epoch, unique `CommandId`, stable `RowId`, absolute typed arguments and request digest. The digest covers the row,
   resolved arguments and their guards, pinned source/module/word identities, and any declared budget or grant
-  references. Computed results are output, not a change to the submitted request. A token's binding is covered;
-  its secret authenticator is not persisted. The engine checks the digest against the received content. Byte
-  encoding belongs to p3. A new press has a new command ID; a transport retry keeps
+  references. It also covers the caller, which the host stamps from the channel the envelope came on; the envelope
+  names no caller (section 10). Computed results are output, not a change to the submitted request. A token's
+  binding is covered; its secret authenticator is not persisted. The engine checks the digest against the received
+  content. Byte encoding belongs to p3. A new press has a new command ID; a transport retry keeps
   the entire envelope. A key, a relative grip or an unbound menu index is resolved before this point (EV4.3).
   Outcome lookup returns an existing record and creates no invocation. Finalization of an admitted job keeps
   that invocation's input envelope and identifies its output separately.
@@ -386,7 +388,8 @@ These are specified outcomes, not executed product tests. Symbolic P and L below
   An identical-envelope retry C/TC returns C's original committed receipt before token checks (LI.6).
   A new invocation N using consumed TC fails step 3 with `KN5:stale.token_used`. First delivery of D/TD,
   still in the same epoch with the commit lane free, passes the unused-token check but fails step 5 with
-  `KN5:stale.preview_replaced`: p was discarded. Equal hashes at state 9 cannot restore KN0.8 freshness.
+  `KN5:stale.no_fresh_preview`: C discarded p, and no preview is pending (section 10). Equal hashes at state 9
+  cannot restore KN0.8 freshness.
   In a separate branch before C or D is delivered, draft-edit command E (no token) changes a read record, or
   protection-edit command P (no token) changes protection to 3, while p remains pending. Delivery of D/TD then
   fails step 6 with `KN5:stale.revision_changed`. These are gate-order outcomes, not two definitions of freshness.
@@ -492,3 +495,21 @@ These are specified outcomes, not executed product tests. Symbolic P and L below
   `python -B docs/progress/1.0/test_command_table.py` and
   `python docs/architecture/1.0/language/closure/check_closure.py --all`.
   No final-table build, independent review, renderer run, performance measurement or owner ruling is claimed here.
+
+## 10. The amendment at LP3's command-table freeze
+
+The owner decided both changes on 16 November 2026
+([decision](../../wiki/decisions/owner-decisions-2026-11-16-phs52.md), sections 1 and 2, and items 5 and 6 of its
+amendment list). LP3's command-table freeze writes them under PHS.52 with the rest of that amendment
+([LP3's exit decision](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)). Nothing else in this draft
+changes.
+
+- **LI.5:** the request digest also covers the caller, which the host stamps from the channel the envelope came on,
+  and the envelope names no caller, so a sender cannot set it. The command layer's envelope
+  (`c600_command::Invocation`) has no caller field, and M6's session store applies the same rule to its origin.
+- **LI.33:** the first delivery of D/TD fails step 5 with `KN5:stale.no_fresh_preview`, not
+  `KN5:stale.preview_replaced`: C's commit discarded p, so no preview is pending, while `preview_replaced` answers a
+  token whose preview another pending preview replaced (ONE.38, KN5.11). The command layer answers this way.
+- The migration format packet pins this draft, so its pin is refreshed under FP.1; LP3's exit decision page records
+  the refresh. FP.36 encodes LI.5's resolved request in a durable admission and lists no caller; it is not edited
+  here.

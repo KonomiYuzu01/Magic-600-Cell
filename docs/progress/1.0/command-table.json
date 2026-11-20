@@ -2724,7 +2724,7 @@
    ],
    "gates": [],
    "preview": "none",
-   "undo": "none",
+   "undo": "workspace",
    "contexts": [
     "any"
    ],
@@ -2909,7 +2909,7 @@
     "confirm"
    ],
    "preview": "none",
-   "undo": "none",
+   "undo": "workspace",
    "contexts": [
     "any"
    ],
@@ -4133,7 +4133,7 @@
    ],
    "gates": [],
    "preview": "none",
-   "undo": "none",
+   "undo": "workspace",
    "contexts": [
     "filter"
    ],
@@ -4282,7 +4282,7 @@
    ],
    "gates": [],
    "preview": "none",
-   "undo": "none",
+   "undo": "workspace",
    "contexts": [
     "any"
    ],
@@ -6275,7 +6275,7 @@
    "inventory": [],
    "gates": [],
    "preview": "none",
-   "undo": "none",
+   "undo": "workspace",
    "contexts": [
     "any"
    ],
@@ -7732,6 +7732,32 @@
    "arguments": {
     "recording": "RecordingRef",
     "target": "draft | source"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "workspace.set",
+   "label": "Write workspace record",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "M6's record write: writes the named record's payload and provenance block as one durable action; the workspace revision and the record's version advance, and the state, the preview slot and the jobs stay. Undo and redo are workspace inverses. The host's provenance reader checks the block at the write. A program may not invoke it (LG3:capability.not_granted). OPEN: the payload's type Json is not frozen.",
+   "source": "M6 record write; KN5.18, KN5.23, LI.26, PS1.16; joins H-08 at the LP3 freeze (PHS.53)",
+   "arguments": {
+    "record": "Text",
+    "payload": "Json",
+    "provenance": "ProvenanceBlock"
    },
    "slot_map": "preserve",
    "decisions": []

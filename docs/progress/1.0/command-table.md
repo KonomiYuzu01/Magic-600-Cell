@@ -2,7 +2,7 @@
 
 Status: **EN4 reconciliation draft, final table candidate before review**. It joins the signed 3 October dispositions and carries DT-M1's fix-first items 2 to 4 and the [22 October answers](../../wiki/decisions/owner-decisions-2026-10-22-dt-m1.md). The owner answered LQ1 to LQ21 on [6 November 2026](../../wiki/decisions/owner-decisions-2026-11-06.md). The owner accepted the language ADRs and froze the language architecture on [15 November 2026](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md); this table freezes at LP3 (chapter 12, PHS.53). The design line remains closed.
 
-- **CM.1 [D]** [build_command_table.py](build_command_table.py) builds [command-table.json](command-table.json) from its retained rows, the signed join, [command-rows-jumbling.json](command-rows-jumbling.json) and [command-rows-language.json](command-rows-language.json). The stored table has 174 commands: 152 retained-purpose and DT-M1 rows, 16 jumbling additions and six language additions, with six existing rows amended by the jumbling delta and two notes by the language delta. It has `final: true` and equals a fresh default build. Nine service registrations are separate (CM.16). `--draft-without-jumbling` builds the 152-row base with `final: false` for isolated checks. `final: true` marks a non-draft build; equality with a fresh default build and the delta checks show completeness. It is not an architecture approval. The working forms are HANDOFF H15.
+- **CM.1 [D]** [build_command_table.py](build_command_table.py) builds [command-table.json](command-table.json) from its retained rows, the signed join, [command-rows-jumbling.json](command-rows-jumbling.json) and [command-rows-language.json](command-rows-language.json). The stored table has 175 commands: 152 retained-purpose and DT-M1 rows, 16 jumbling additions and seven language additions (the six of 6 November and LP3's record write `workspace.set`, CM.17), with six existing rows amended by the jumbling delta and two notes by the language delta. It has `final: true` and equals a fresh default build. Nine service registrations are separate (CM.16). `--draft-without-jumbling` builds the 152-row base with `final: false` for isolated checks. `final: true` marks a non-draft build; equality with a fresh default build and the delta checks show completeness. It is not an architecture approval. The working forms are HANDOFF H15.
 
 ```text
 python -B docs/progress/1.0/build_command_table.py
@@ -92,11 +92,32 @@ The old busy-bearing rows now have lanes. Commit rows use `commit`; `session.res
   `kernel.undo_hint` takes the session/epoch and `direction: undo | redo`, returning one `ActionHint` or `none`
   for that direction as LI.9 defines. The annex's signature and walks consume that service; no extra command is added.
 
+- **CM.17 [D]** H-08's workspace rows at the LP3 freeze (owner, 20 November 2026:
+  [LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)).
+  - `workspace.set {record: Text, payload: Json, provenance: ProvenanceBlock}` is M6's record write, a language
+    addition: lane `none`, no gate or preview, any context, undo `workspace`. It writes the named record's payload and
+    provenance block as one durable action; the workspace revision and the record's version advance, and the state,
+    the preview slot and the jobs stay (KN5.18, KN5.23). Its undo and redo are workspace inverses (LI.26). The host's
+    provenance reader checks the block at the write (PS1.16), and a program may not invoke the row
+    (`LG3:capability.not_granted`). The row has the form `c600-command`'s draft row has, so the command layer keeps
+    it unchanged. OPEN: `payload: Json` is not frozen; the record payload's typed forms (a work sheet, a saved set, a
+    layer predicate, a filter reference) are named where they are built, and a typed payload is a later change under
+    PHS.52.
+  - Undo (LB7.2: a workspace-changing operation forms an undoable action). The rows that save or write a named object
+    the workspace holds (LB7.1) have undo `workspace`, as their siblings `keymap.save`, `filter.edit`, `filter.preset`
+    and `structure.filter.compose` have: `worksheet.save` (CT-LB7-01), `macro.save`, `set.save`, `filter.save` and
+    `structure.layer`. Eight workspace rows keep undo `none`, each for a stated reason: `session.timer.start` and
+    `session.timer.stop` (CM.7, EV4.21); `recording.start`, `recording.stop` and `recording.play`, whose capture and
+    playback state is outside the undo order while each played step keeps its own row's class (EV4.20 to EV4.22);
+    `operation.preview.cancel`, since a preview slot is no workspace object and a reuse needs a fresh preview
+    (LB7.2); and `grip.select` and `input.destination.set`, input routing that the shell owns (section 1) and the
+    workspace does not hold, which give a receipt and no undo target, as a view row does (EV4.21).
+
 ## 3. What the table shows now
 
 | Kind | Commands | Examples |
 |---|---|---|
-| workspace | 66 | phases, buffers, intents, blocks, protection, macros, keymaps, timer, recordings |
+| workspace | 67 | phases, buffers, intents, blocks, protection, macros, keymaps, timer, recordings, record writes |
 | view | 45 | panels, cycle modes, inspection, display controls, camera, further views |
 | query | 38 | check, preview, buffer analyser, recommendations, structure, filter counts |
 | commit | 14 | execute, live twist, shared undo and redo, mode crossings, menu twist, new solve, reset, log import, checkpoint save/restore, branch selection, practice copy |
@@ -282,6 +303,7 @@ Eleven top-down inventory rows remain in `not_commands`. That historical index d
 | `recording.stop` | workspace | none |
 | `recording.play` | workspace | program |
 | `recording.convert` | workspace | none |
+| `workspace.set` | workspace | none |
 
 ## 4. Use by the design track
 
@@ -305,7 +327,7 @@ The old points 1 to 4 are settled in this draft: code-only purposes have explici
 | XM4 | Live commit and both shared undo/redo entries use `commit`, preview uses `exclusive`, undo has no gates, and held mutation keys cannot repeat. | B-004 atomic admission with a running query, concurrent pointer/key submissions and job cancellation (file jobs finishing); candidate engine. Real burst gaps and commit latency require the owner's machine. No thresholds or timings measured here. |
 | XM5 | Live/draft rows take the same absolute cap and exact rotation types; aliases retain source spellings and require resolution of relative parameters. | All input routes over all 59 menu items per grip, and equal journal hash under two key maps; p1's exact menu delta, G6 routing and the engine's replay fixture. |
 
-- **CM.12 [D]** The final table includes the real jumbling and language deltas under H15. Integration still reconciles the other packets' layer signatures, overlay/availability protocol, migration vectors and derived-display trace. The integrator refreshes the format packet's alias pin to `en4-2026-11-05.3` and its current digest under CM.3's profile. The two base rows without 0.4 contributors (`list.row.copy`, `view.preview.scrub`) all 16 jumbling additions and all six language additions cite their explicit newer sources. Independent semantic review of the handwritten join and aliases remains required. G6's real binding table must be passed to `validate_bindings`; K6's prefix, duplicate and layout-conflict checks and Windows IME/focus-release tests require that implementation. These are open verification inputs, not new design-table topics.
+- **CM.12 [D]** The final table includes the real jumbling and language deltas under H15. Integration still reconciles the other packets' layer signatures, overlay/availability protocol, migration vectors and derived-display trace. The integrator refreshes the format packet's alias pin to `en4-2026-11-05.3` and its current digest under CM.3's profile. The two base rows without 0.4 contributors (`list.row.copy`, `view.preview.scrub`) all 16 jumbling additions and all seven language additions cite their explicit newer sources. Independent semantic review of the handwritten join and aliases remains required. G6's real binding table must be passed to `validate_bindings`; K6's prefix, duplicate and layout-conflict checks and Windows IME/focus-release tests require that implementation. These are open verification inputs, not new design-table topics.
 
 After integration the integrator runs the following. The final-table test always reads the real deltas and requires `final: true`; it never overwrites the table. The example fixture is never used to build the stored final table.
 

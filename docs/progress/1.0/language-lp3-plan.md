@@ -179,7 +179,7 @@ One pull request per milestone; each names the checks that ran.
 | C7 | Durable receipts and undo through the session store | M6 (on main), C1 and LP2's KN5 implementation | Built in part (section 8) |
 | C8 | The jumbling tool | M5 (on main) | Built in part (section 8) |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze (signed 16 November 2026, ADR-R01); the owner's runs | Started on 18 November 2026 (owner): its components in a line of their own (section 8) |
-| C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
+| C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | The owner answered the exit card on 20 November 2026; the freeze pull request lands last (section 11) |
 
 ## 5. C1: the command layer and the oracle loop
 
@@ -694,7 +694,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   with W-J's runs (ADR-R01.3, option A: a failing run reopens the selection), RPI.79's gate run on the product build and
   route B's three checks; LX-4's time box is 4 hours, on the same day (owner, 18 November 2026).
 - **C10, the exit.** H-08 freezes (PHS.53), with the draft codes registered under PHS.52; every acceptance item has
-  evidence on one frozen candidate; the 82 tests run whole; the owner signs off.
+  evidence on one frozen candidate; the 82 tests run whole; the owner signs off. Section 11 has the owner's exit
+  answers of 20 November 2026 and the freeze pull request.
 
 ## 9. Section 15.4's 82 tests
 
@@ -804,5 +805,38 @@ Questions are batched (owner, 16 November 2026): at most one card per milestone,
   page).
 - C1 to C4: none. The command table's choices are drafts that freeze at LP3.
 - C9: none; the owner-machine runs follow PHS.64 and are done together.
-- C10: at the exit, H-08's freeze and the registration of the draft codes in chapter 13 (PHS.52, PHS.53), and
-  CT-RTE-04's form-2 traces and amendment candidates (section 9).
+- C10: answered by the owner on 20 November 2026
+  ([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)); section 11. The C10 sign-off
+  stays open.
+
+## 11. C10: the LP3 exit
+
+The owner answered LP3's exit card on 20 November 2026
+([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)): every item takes the recommended
+option except item 2, which takes option 2. This plan's freeze pull request carries items 3, 4, 6 and 7, H-08's content
+and the FP.1 pin refresh, and records items 1 and 5. Its merge is the frozen candidate, so it lands after the pull
+requests it waits for (below), and the integrator merges it.
+
+- **H-08 at the freeze (PHS.53).** [command-table.md](command-table.md), CM.17:
+  - `workspace.set` joins as M6's record write, in the form `c600-command`'s draft row has. `payload: Json` stays
+    OPEN.
+  - The workspace rows' undo follows LB7.2: `worksheet.save`, `macro.save`, `set.save`, `filter.save` and
+    `structure.layer` save or write a named object the workspace holds and become workspace inverses. Eight rows keep
+    `none`, each for the reason CM.17 states.
+  - Rows the layer does not build yet stay as they are; the layer refuses them with `KN5:input.row_not_built`.
+- **Item 1, recorded.** 1.0's host keeps no row-answer cache, so every read is answered fresh (KN7.8). CT-RTE-07's B12
+  is recorded as run cold, and its other five cache states (warm, evicted, poisoned, shared, relocated) are not
+  applicable while no cache exists. A cache, with all six states, is built only if E2 or LX-4 on the owner's machine
+  shows a need. The draft row cache of closed pull request 368 stays on its branch, `claude/lp3-b12-row-cache`.
+- **Item 5, recorded.** `push` keeps its price of `LIST_PER_ELEMENT` per element of the new list, although LP2's pull
+  request 364 extends a list in place when no other handle sees it. No pinned budget number moves.
+- **Items 2, 8 and 9 are C9's.** The measurement tools count a key without a confirmed frame as one failed key above
+  100 ms, and its run stays valid (item 2). Startup is made faster before the frozen candidate, and E3's 3 s is
+  measured on it (item 8). Route B's blind seconds come from the core's `GetFrameStatistics` only if PresentMon
+  cannot be kept (item 9).
+- **What lands before the freeze** (the integrator's list, 20 November 2026): this plan's pull requests 376 and 381;
+  378, C8's follow-ups; J10's exposed faces; LP2's 377, the KN5.6 table; c9-measure's fix and its `rerun` pull
+  request; and e3-startup's cold start under 3.0 s. LP2's KN4 journal query and FP.9 (a) land first if they are
+  ready.
+- **What the exit still needs:** every acceptance item's evidence on the frozen candidate, section 9's 82 tests whole
+  (PHS.62, PHS.63), the owner-machine runs done together (C9), and the owner's sign-off.

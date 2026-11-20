@@ -488,7 +488,8 @@ class CommandTableTests(unittest.TestCase):
             "recording.convert": ("workspace", "none", "workspace", False,
                                   {"recording": "RecordingRef", "target": "draft | source"}),
         }
-        self.assertEqual({r["id"] for r in self.language["add"]}, set(expected))
+        # The seventh addition, LP3's record write, has its own test below.
+        self.assertEqual({r["id"] for r in self.language["add"]}, set(expected) | {"workspace.set"})
         for name, (kind, lane, undo, job, arguments) in expected.items():
             row = self.by_id[name]
             with self.subTest(row=name):
@@ -499,8 +500,8 @@ class CommandTableTests(unittest.TestCase):
         for name in ("view.open", "view.close"):
             self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
         counts = Counter(r["kind"] for r in self.table["commands"])
-        self.assertEqual(len(self.table["commands"]), 174)
-        self.assertEqual((counts["workspace"], counts["view"]), (66, 45))
+        self.assertEqual(len(self.table["commands"]), 175)
+        self.assertEqual((counts["workspace"], counts["view"]), (67, 45))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -511,6 +512,22 @@ class CommandTableTests(unittest.TestCase):
         del next(r for r in mutant["add"] if r["id"] == "view.open")["lane_target"]
         with self.assertRaisesRegex(builder.TableError, "lane_target"):
             self.build(delta=[self.delta, mutant], draft_without_jumbling=False)
+
+    def test_lp3_record_write_and_workspace_undo_reading(self):
+        # CM.17: M6's record write joins in the form c600-command's draft row has (Table::with_drafts).
+        row = self.by_id["workspace.set"]
+        self.assertEqual((row["kind"], row["lane"], row["undo"], row["preview"], row["gates"], row["contexts"],
+                          row["repeat"], row["job"], row["key_0_4"]),
+                         ("workspace", "none", "workspace", "none", [], ["any"], False, False, None))
+        self.assertEqual(row["arguments"], {"record": "Text", "payload": "Json", "provenance": "ProvenanceBlock"})
+        self.assertNotIn("action_guard", row)
+        self.assertIn("OPEN", row["note"])
+        # LB7.2: saving a named workspace object is undoable; CM.17 names why the other eight are not.
+        for name in ("worksheet.save", "macro.save", "set.save", "filter.save", "structure.layer"):
+            self.assertEqual(self.by_id[name]["undo"], "workspace", name)
+        none = {r["id"] for r in self.table["commands"] if r["kind"] == "workspace" and r["undo"] == "none"}
+        self.assertEqual(none, {"session.timer.start", "session.timer.stop", "operation.preview.cancel", "grip.select",
+                                "input.destination.set", "recording.start", "recording.stop", "recording.play"})
 
     def test_a_field_amended_in_two_deltas_is_refused(self):
         again = deepcopy(next(r for r in self.language["amend"] if r["id"] == "twist.apply"))
