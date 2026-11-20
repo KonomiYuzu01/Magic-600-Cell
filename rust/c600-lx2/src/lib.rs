@@ -9,8 +9,9 @@
 //!   with `KN7:budget.steps`;
 //! - `recursion_metered` recurses without end until its live frames reach the memory limit (1 MiB) and the meter cuts
 //!   it off with `KN7:budget.memory` (the meter has no separate recursion dimension: a frame is charged as memory);
-//! - `alloc_metered` grows a list with `push` in a `repeat` loop until the meter's memory limit (64 KiB, kept small
-//!   because each `push` copies the list) cuts it off with `KN7:budget.memory`;
+//! - `alloc_metered` grows a list with `push` in a `repeat` loop until the meter's memory limit (64 KiB) cuts it off
+//!   with `KN7:budget.memory`; each `push` is priced as a new list and, since LP2's pull request 364, extends the list
+//!   in place;
 //! - `forced_kill` has the caller kill the child's actual process (`Killer`, `Child::kill`) inside the proposal's
 //!   perform, the barrier; the parent must report a typed `Lost` fault;
 //! - the native trials ([`Trial::NATIVE`]) run on the injection device of option (a) (top integrator, 18 November

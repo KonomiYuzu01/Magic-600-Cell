@@ -746,11 +746,21 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Drafts, which freeze with the IR and the command table: the acknowledgement is `{base, id}`, with the proposal
   number `<run>/<n>` as `id`; records are per run; the adapter serves a literal read of a name it stores as a
   workspace record and passes any other read to the engine, and a read with an argument always reaches the engine
-  and counts as state-derived data for the block's `may_read_state` (LG3.13); the engine's preview call does not take the block yet (KN5.9); the store is
-  in memory and returns a stored value as written, and M6's session store decodes by the reader's type.
-- Open: a built-in repair-list pick (CT-BND-29's third case) is refused with `PS1:capability.provenance_incompatible`
-  until the session store resolves `c600-pick` records (M6). The command layer is LP3's `c600-command` (below); the
-  boundary does not reach it yet.
+  and counts as state-derived data for the block's `may_read_state` (LG3.13); the engine's preview call does not take
+  the block yet (KN5.9); the store is in memory and returns a stored value as written, and M6's session store decodes
+  by the reader's type.
+- Picks (FP.38, BND.54; LP2's pull request 359): `Store::keep_pick` keeps a `c600-pick` record by its content digest,
+  and admission resolves a block's `pick` after the contract and checker pins and before the author checks. This
+  crate cannot depend on `c600-session`, so it reads a record with a minimal reader of its own
+  (`provenance::field::pick_*`); `c600-session`'s `persist::pick` checks a record's payload when the store writes it.
+  A pick whose record is not kept or does not read, or whose `chosen` differs from the record's, gives
+  `PS1:capability.provenance_incompatible` (CT-BND-29's third case among them). A pick from a list that is no fixed
+  entry is refused with `LG3:capability.not_granted` while BND.55 is open (LP2's draft, which fails closed), and a
+  fixed entry's admission follows the block's parts (BND.85). Tests: `c600-run/tests/conformance_bnd.rs` also runs
+  CT-BND-08, CT-BND-26, CT-BND-28 to CT-BND-30 and CT-KN5-13 with recorded picks, `c600-session/tests/persist_picks.rs`
+  runs FP.38's vectors, and `c600-command/tests/kn5_admission.rs` admits a fixed entry's pick and refuses another.
+- The command layer is LP3's `c600-command` (below); C5's bridge in `c600-tools` is the runtime's host onto it for one
+  run, used through `Boundary`.
 - Evidence kind: source and fixture.
 
 ## Status of M4: the 600-cell-Full kernel
@@ -1400,8 +1410,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   a published witness once a check record confirms it (KN7.4), and admits a reproduction before execution, which
   stays the caller's: LP3's runtime in a session, the interpreter in the tests. A stored menu word is admitted into a
   session only under the session's whole identity block, and with Jumble off only with retained letters
-  (`word::admit_in`). Its draft choices are listed in `src/persist/mod.rs`. The session's journal does not store
-  through this layer yet; it keeps its own draft frames (above), and the jumbling episodes are KN5's records in them.
+  (`word::admit_in`). FP.38's `c600-pick` record (`pick`, LP2's pull request 359): its payload `{list, fixed, options,
+  chosen, target}` is checked when the store writes it, and a block's pick resolves in FP.10's order. The layer's
+  draft choices are listed in `src/persist/mod.rs`. The session's journal does not store through this layer yet; it
+  keeps its own draft frames (above), and the jumbling episodes are KN5's records in them.
 - Tests: `persist_ps1.rs` runs CT-PS1-08 to CT-PS1-10, CT-PS1-19, CT-PS1-21 and CT-PS1-23 whole, and `persist_ps2.rs`
   runs CT-PS2-01 to CT-PS2-05 whole, over the packet's vectors read in place (shared helpers in
   `tests/persist_support/`). The publication runs on `MemDisk`, with each write failing in turn and with an outage
@@ -1410,7 +1422,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   executor's half that LP3's runtime plays in a session (capture, seal, run, `run::exact`). `persist_jumble.rs` runs
   CT-PS1-11 and CT-PS1-22 whole by the union of their parts: stored menu words and the journal's replay under the
   I_a menu for CT-PS1-11; the never-on journal, and a failure at each append of an entry, a pose move and an exit
-  with a power loss after it or after the step sent again, for CT-PS1-22, on `MemDisk` again.
+  with a power loss after it or after the step sent again, for CT-PS1-22, on `MemDisk` again. `persist_picks.rs` runs
+  FP.38's vectors, the payload rules and the admission of the vectors' picks.
 - Critical-path read of the record layer (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model
   read `src/persist/` and its tests with the acceptance check. Its two major findings were fixed before the pull
   request: R1, a publication after a torn pointer line wrote a line feed first, so a failure after that byte completed
@@ -1860,25 +1873,28 @@ run or not applicable is no pass (PHS.63).
 - LB7.2's work sheets (H-08's `worksheet.save`, `worksheet.load` and `worksheet.compare`; solving workflow section 4;
   the drafts are in the crate documentation). A work sheet is a workspace record whose payload is `{"worksheet":
   {...}}` (`Worksheet`): the phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a
-  position), the reference as given, and the piece roles' placements (`Resolution`). A draft `{"record": name}` of a
-  sheet previews its complete operation (`RecordValue::operation`). `worksheet.save` takes a draft `{"record": r}`
-  whose record holds letters or a sheet, and a `name`; the sheet keeps that record's provenance block, which the
-  reader checks again, and its piece roles are placed at the head through KN2.4's `positions` row. A sheet saved from
-  a record of letters keeps the record's name, version and content digest as its macro version (`MacroVersion`).
+  position), the reference as given, the piece roles' placements and the position roles' occupants (`Resolution`,
+  `Occupancy`). A draft `{"record": name}` of a sheet previews its complete operation (`RecordValue::operation`).
+  `worksheet.save` takes a draft `{"record": r}` whose record holds letters or a sheet, and a `name`; the sheet keeps
+  that record's provenance block, which the reader checks again, its piece roles are placed at the head through
+  KN2.4's `positions` row, and each position role's occupant is read there from KN2.4's `labels` row: the piece whose
+  stickers fill all of the position's slots, or none when no one piece does (LP2's pull request 361). A sheet saved
+  from a record of letters keeps the record's name, version and content digest as its macro version (`MacroVersion`).
   `worksheet.load` takes H-08's `WorksheetRevisionRef` as `{"record": name, "version": n}` (`WorksheetRef`); another
-  version is `KN5:stale.revision_changed`. It places the piece roles again, keeps where each was saved
-  (`Placement::moved` shows a mismatch, and nothing is retargeted) and writes the sheet again, so every preview that
-  read the sheet goes stale, also at the same state, and the reuse needs a fresh engine preview. Each of the two rows
-  is one record write, undoable as a workspace inverse (LB7.2; H-08 gives `worksheet.save` `undo: none`).
-  `worksheet.compare` takes the `WorksheetRevisionRef` and a draft `{"record": r}`, the current work, and runs as a
-  job on the exclusive lane in the layer (`CommandLayer::run_jobs`), since no entry can serve that lane: at the head
-  it compares the sheet's inputs with the draft's (`compare_inputs`), places the piece roles again, reports the macro
-  version as current, changed or missing, and analyses the sheet's complete operation afresh with LB2's gains and
-  losses. The comparison is the completion's result (`CommandLayer::comparison`); it grants nothing and writes no
-  record. The three rows need the host's provenance reader and Jumble off; the runtime may invoke none, and no entry
-  can serve them. Not built: reading a position role's occupant again. Tests: `c600-command/tests/worksheet.rs`
-  (CT-LB2-03's work-sheet part), the save and load rows with Jumble on in `jumble_on.rs`, and the three rows on M6's
-  journal in `c600-durable` (C7's section below).
+  version is `KN5:stale.revision_changed`. It places the piece roles and reads the occupants again, keeps where each
+  piece was saved and which piece filled each position then (`Placement::moved` and `Occupancy::changed` show a
+  mismatch, and nothing is retargeted) and writes the sheet again, so every preview that read the sheet goes stale,
+  also at the same state, and the reuse needs a fresh engine preview. Each of the two rows is one record write,
+  undoable as a workspace inverse (LB7.2; H-08 gives `worksheet.save` `undo: none`). `worksheet.compare` takes the
+  `WorksheetRevisionRef` and a draft `{"record": r}`, the current work, and runs as a job on the exclusive lane in the
+  layer (`CommandLayer::run_jobs`), since no entry can serve that lane: at the head it compares the sheet's inputs
+  with the draft's (`compare_inputs`), places the piece roles again, names the position roles whose occupant changed
+  (`occupant_changed`), reports the macro version as current, changed or missing, and analyses the sheet's complete
+  operation afresh with LB2's gains and losses. The comparison is the completion's result
+  (`CommandLayer::comparison`); it grants nothing and writes no record. The three rows need the host's provenance
+  reader and Jumble off; the runtime may invoke none, and no entry can serve them. Tests:
+  `c600-command/tests/worksheet.rs` (CT-LB2-03's work-sheet part), the save and load rows with Jumble on in
+  `jumble_on.rs`, and the three rows on M6's journal in `c600-durable` (C7's section below).
 - `twist.apply` (A6; ONE.46, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live twist
   committed at once with no preview. The host pins the twist menu with its exact model (`CommandLayer::pin_menu`);
   without a pin the row is refused with `KN5:input.row_not_built`, and the pin is not journaled. The row's `cap` and
@@ -2175,10 +2191,14 @@ run or not applicable is no pass (PHS.63).
   file keeps its closure and its approval; dynamic code is refused; a program for another IR version or execution
   contract is refused with the checker's code in every author column; capability separation holds at the preview point,
   for a menu word's proposal as for a literal word's (LB1.8; LP2's pull request 210). CT-RTE-07 on 600-cell-Full
-  (`ct_rte_07_full.rs`): 56 of LX-3's 75 frozen keys, each run ten times with one SHA-256 over its canonical result,
+  (`ct_rte_07_full.rs`): 60 of LX-3's 75 frozen keys, each run ten times with one SHA-256 over its canonical result,
   engine side and store, and a check that every key is either realised or listed as left, exactly once. Among them are
   the priced budget keys B01 to B07, of which B01 to B04 and B07 run since pull request 354 under the price mapping that
-  the crate documentation pins.
+  the crate documentation pins, and the four pick keys MR17, MR18, A29 and A30 since LP2's pull request 359. A pick key
+  is two runs, since the draft language has no pick inside a run: the built-in solving list, whose block and
+  `c600-pick` record the host keeps (FP.38, BND.54), then a proposal of the picked value. MR17 and MR18 pick from a
+  list that is no fixed entry and are refused at preview admission with the corpus's code while BND.55 is open; A29
+  and A30 pick a setup of the search for a named target, a fixed entry, and are admitted and previewed.
 - Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation
   refuses the preview of an allowed combination). P01 to P03 give the corpus's `LG3:capability.ambient_read` since
   the owner's decision of 16 November 2026 (PHS.52). A17's inverse of `D a` is `-1, +4`: the IR writes a letter's
@@ -2196,10 +2216,9 @@ run or not applicable is no pass (PHS.63).
   B14, a missing budget and one over the host's ceiling, at the command layer on the 600-cell-Full tool's row in
   `c600-tools` (C5, `tests/ct_rte_07_budget.rs`); and MR13, MR14, MR19 and MR20, in which a state-derived read decides
   whether a later preview is emitted at all, are refused at the built-in column's admission on both executors in
-  `c600-runtime` (`tests/ct_rte_07_admission.rs`): 70 of the 75 keys in all. Not built: CT-RTE-07's other 5 keys: 4 that
-  need a recorded pick (MR17, MR18, A29 and A30; nothing writes or resolves a `c600-pick` record yet, FP.38 and BND.54),
-  and B12, the host's row cache. The six jumbling keys also run with menu words of the I_a alphabet, which
-  `c600-jumble-tool` pins with its item matrices (C8, `tests/ct_rte_07_jumble.rs`). The Linux leg did not run.
+  `c600-runtime` (`tests/ct_rte_07_admission.rs`): 74 of the 75 keys in all. B12 waits for an owner reading of its
+  cache variants, since no host has a row cache. The six jumbling keys also run with menu words of the I_a alphabet,
+  which `c600-jumble-tool` pins with its item matrices (C8, `tests/ct_rte_07_jumble.rs`). The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2546,8 +2565,9 @@ run or not applicable is no pass (PHS.63).
     KN5.23). A sheet saved from a draft record comes back equal at a reuse in the same session, after a power loss on a
     memory disk and in a new session on a file-system disk; each reuse makes a presented preview of the sheet stale, so
     the press prepared before it commits nothing, and a fresh engine preview commits the sheet's complete operation; a
-    reuse after that commit places the piece roles again and shows the moved piece without retargeting the sheet, and
-    its undo restores the sheet. A comparison of a sheet with the current work completes as a query whose result
+    reuse after that commit places the piece roles again and shows the moved piece without retargeting the sheet, the
+    position role on the moved piece's home reads the piece that fills it now (LP2's pull request 361), and the
+    reuse's undo restores the sheet. A comparison of a sheet with the current work completes as a query whose result
     digests it, writes nothing, the journal's bytes included, and keeps a presented preview fresh; its fresh analysis
     of the sheet's complete operation gains nothing, loses the positions the operation unfinishes, as LB2 counts them,
     and ends where the operation committed inline ends; a sheet saved from a record of letters reports that record as
@@ -2590,9 +2610,10 @@ run or not applicable is no pass (PHS.63).
   serves through C5's `ModelViews` (the CT-EV3-07 view test above). LB7.2's fresh exact analysis of a reused work sheet
   (`worksheet.compare`, with LB2's gains and losses) and macro versions (pull request 277) run on the journal above. The
   session's profile (BND.14 to BND.17, pull request 287): the layer asks the reader to admit a record's word only in a
-  solving session, as KN5.26 asks. M6's session lock covers `JournalStore` too (LP2's pull request 195).
-  `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes
-  once their tests run against it.
+  solving session, as KN5.26 asks. A reuse reads each position role's occupant again, and a comparison names the roles
+  whose occupant changed (pull request 361; the journal test above). M6's session lock covers `JournalStore` too
+  (LP2's pull request 195). `kn5_on_session.rs` still drives M6's own `Session::invoke` and shell stub, which the
+  layer supersedes and LP2 removes once their tests run against it.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -3312,8 +3333,10 @@ run or not applicable is no pass (PHS.63).
   already holds (the whole revision reference) is adopted without a second copy, since the shell adopts into the core
   first, and any other reaches the core, which refuses a revision that does not increase; frame reports are empty,
   since RM.41's reports name frames that stopped a user stage and the product path runs none; and a pick on a frame
-  older than every frame the bridge keeps is stale at `sequence`, one on a stamp it never submitted is invalid, and the
-  core's refusal (for a frame it no longer retains, among others) is a core failure.
+  older than every frame the bridge keeps is stale at `sequence`, one on a stamp it never submitted is invalid, and so
+  is a point outside the frame's viewport; a frame the core certainly no longer retains (64 newer frames reported, or
+  an earlier device epoch) is stale at `sequence` before the core is asked, and the core's own refusal (for a frame it
+  dropped otherwise, among others) is a core failure.
 - User stages (C9 U5a; drafts until the IR freeze): the module `stage` takes a stage that `c600-check` admitted
   (`CheckedStage`) and gives its parameter binding (binding/1), deterministic HLSL under `m600-stage-hlsl/1`, the
   binary32 CPU reference evaluator (RPI.74) and a strict reader of a limits file. The bin `c600-stage-hlsl` writes
@@ -3325,12 +3348,14 @@ run or not applicable is no pass (PHS.63).
   constant against the Rust side; `bridge.rs` runs the host over the fake core: adoption, support, publication and
   install, frames and their reports, picks and their staleness after a view reopens or a set is retired,
   replacement, and device loss; on route B also confirmed presentations and their display times, the
-  presented-preview latch, a contradicting presented row, recovery and a publication drawn again on the new device.
+  presented-preview latch, a contradicting presented row, recovery, a pick on a frame of the old device epoch, and a
+  publication drawn again on the new device.
   The scenarios live in `tests/support`, which `renderer/bridge`'s tests include and run again through the C function
   table over a C shim; there `abi_functions.rs` checks every function's signature against the header and `ffi.rs`
   what `DllCore` refuses before a call and what it reads back. `trait_ops.rs` drives the trait's adoption, frame
   reports and picks through the host: adoption in the shell's order and alone, another image at the same state
-  counter, a pick requested, polled and resolved, and frames the core or the bridge no longer keeps.
+  counter, a pick requested, polled and resolved, a point outside the frame's viewport, and frames the core or the
+  bridge no longer keeps.
   `tests/test_render_ffi.py` runs that crate's tests, since `tests/test_language_rust.py` runs this workspace only.
 - Not run: no run against the built core library and no GPU run, so nothing here is Windows/DirectX, input or
   performance evidence. Not built: a check of the preparation's base revision by the core.
@@ -3366,12 +3391,12 @@ run or not applicable is no pass (PHS.63).
   SCENARIO.json's runtime word `[7, -11, 1200]`, which the host keeps as the pending preview.
 - `control` completes; `loop_metered` (a `repeat` loop with no kernel call, 100,000 steps) ends `KN7:budget.steps`;
   `recursion_metered` (endless recursion, 1 MiB) ends `KN7:budget.memory`, since the meter charges a frame as memory
-  and has no recursion dimension; `alloc_metered` (a list grown with `push`, 64 KiB, kept small because each `push`
-  copies the list) ends `KN7:budget.memory`; `forced_kill` kills the child's process inside the proposal's perform
-  (the barrier) and must end in a typed `Lost` fault (`KN7:resource_limit.runtime_lost`). After every trial the
-  pending preview is still the runtime word and the same runtime completes the control again, in a fresh child after a
-  fault and in the same child otherwise. The metered trials and the control also run in process, and the two
-  executors agree.
+  and has no recursion dimension; `alloc_metered` (a list grown with `push`, 64 KiB; each `push` is priced as a new
+  list and, since LP2's pull request 364, extends the list in place) ends `KN7:budget.memory`; `forced_kill` kills the
+  child's process inside the proposal's perform (the barrier) and must end in a typed `Lost` fault
+  (`KN7:resource_limit.runtime_lost`). After every trial the pending preview is still the runtime word and the same
+  runtime completes the control again, in a fresh child after a fault and in the same child otherwise. The metered
+  trials and the control also run in process, and the two executors agree.
 - With `--sessions`, each trial also runs with a session open (RTE.42 conditions 1 and 2; RTE.43): KN5's command
   layer over M6's journal on a file-system disk in its own fresh subfolder, with the shell and the headless display.
   The solver commits `[1, -2]` and invokes the trial's tool row from the shell; the trial's job runs as that command's
