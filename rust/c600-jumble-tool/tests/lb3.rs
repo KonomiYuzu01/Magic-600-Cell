@@ -159,7 +159,8 @@ fn play(state: &mut State, letter: &Letter) -> Status {
 }
 
 /// CT-LB1-02 (part: the kernel half of "at a blocked cap, literal a,a⁻¹ is refused; empty is admitted" and of "prefix
-/// protection still reads literal letters"; the library entry is not written as language code yet. The key half, "the
+/// protection still reads literal letters"; the library entry's 600-cell-Full half is `c600-library`'s `word_keys`
+/// (pull request 350), and its jumbling half is not written as language code yet. The key half, "the
 /// domain-preserving key is refused" and "keys preserve the end digest", is
 /// `ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest` below).
 ///
@@ -262,7 +263,8 @@ fn ended(fixture: &Fixture, start: &State, pairs: &[[u32; 2]]) -> Option<String>
 }
 
 /// CT-LB1-02 (part: the key half, on M5's states, with LG2.18's word key `word-key/1` under I_a's item matrices, which
-/// `word::Alphabet::pinned` pins for a run; the library entry is not written yet).
+/// `word::Alphabet::pinned` pins for a run; the library entry's jumbling half, domain-preserving merging of menu words
+/// as library code, is not written yet; its 600-cell-Full half is `c600-library`'s `word_keys`, pull request 350).
 ///
 /// At the state after 12 records of the I_a journal, with a blocked cap and an open one, the word key of the literal
 /// word a,a⁻¹ at the blocked cap is one token at that cap whose product is the identity: the key of the identity letter

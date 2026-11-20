@@ -2115,7 +2115,8 @@ run or not applicable is no pass (PHS.63).
   `not_established`); charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
   production precision rule (RPI.36). CT-RPI-08's rows J01 and J06 to J12 stay unsupported until a backend's own rows
   (C9), and J10's producer waits for certified exposed-face geometry and a size profile (LP2's
-  `faces::exposed_faces` refuses with JI.45's code, pull request 336); a decoder from the interpreter's values (the
+  `faces::exposed_faces` refuses with JI.45's code, pull request 336, and `jumble::exposed_faces` passes the refusal
+  on); a decoder from the interpreter's values (the
   IR draft has list types since pull request 176); F05 and F26 stay unsupported, and the quarantine is not wired
   into the host,
   until the host attaches user stages (the core compiles and bounds them, WARP only, C9 U5); CT-RM-09's rows 3 to 6, 8
@@ -2769,8 +2770,9 @@ run or not applicable is no pass (PHS.63).
   the cap-map witness and the named cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13,
   which places a sticker at any lattice pose by M8's slot action of K⁺ with A3's frame check
   (`levels::Tables::piece_slots`), with a fixture support report for J02 to J05, and, since pull request 301, the
-  producers of J01, J06, J07, J09, J11 and J12. Under a jumbling identity the validator now checks a posed row instead
-  of refusing it; 600-cell-Full is unchanged.
+  producers of J01, J06, J07, J09, J11 and J12; J10 passes LP2's refusal through (`jumble::exposed_faces`, after pull
+  request 336). Under a jumbling identity the validator now checks a posed row instead of refusing it; 600-cell-Full
+  is unchanged.
 - Tests, each naming its part:
   - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
     LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
@@ -2913,10 +2915,11 @@ run or not applicable is no pass (PHS.63).
     half, CT-LB1-06 runs whole.
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated, J03's transform with a swept
     preview whose R(θ) is the twist; unsupported and missing data explicit, a twist other than the identity with no
-    plane among them), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs
-    whole), RPI.23 and J13 at lattice poses other than the identity (every sticker in the slot of M8's labels, a turned
-    sticker resolved through the host to the slot k·s of the slot action, and an engine error of the level tables no
-    projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15; row 2's half-turn sweeps at π).
+    plane and J10's refusal from M5's producer among them), CT-RPI-12's off-lattice part on a real jumbling state
+    (with C2's stale half, CT-RPI-12 runs whole), RPI.23 and J13 at lattice poses other than the identity (every
+    sticker in the slot of M8's labels, a turned sticker resolved through the host to the slot k·s of the slot action,
+    and an engine error of the level tables no projection) and CT-RM-07's jumbling half on M5's model (rows 1 to 8 and
+    15; row 2's half-turn sweeps at π).
   - `c600-display/tests/jumbling_payloads.rs`: CT-RPI-08's producers of J01 (render/1's pinned shrink anchors), J06 (the
     readback check), J07 (domain and lattice masks; the rim map and counts), J09 (cover tables and repair lists), J11
     (word and release checks and the release log) and J12 (ν and the correction catalogue, the predicted ν equal to the
@@ -2930,7 +2933,8 @@ run or not applicable is no pass (PHS.63).
 - Not built: J10's producer (certified exposed-face geometry and a size profile; LP2's `faces::exposed_faces`
   refuses with JI.45's code, pull request 336); J01 and J06 to J12 as supported rows (a backend's own rows, C9);
   the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
-  CT-LB1-02's library entry "Word equality keys"; LB3.1's other rows as language code ("Menus and pinned letters",
+  the jumbling half of CT-LB1-02's library entry "Word equality keys" (its 600-cell-Full half is `c600-library`'s
+  `word_keys`, pull request 350); LB3.1's other rows as language code ("Menus and pinned letters",
   "D and release accounting" and "Mode crossing prerequisites"; twelve LB3.1 rows are built, under `library` above,
   and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
   records; the relationship strip's data contract (chapter 06, RPI.65). The posed arrays at the J1 fixture's mid and end

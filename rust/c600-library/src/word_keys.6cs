@@ -1,0 +1,10 @@
+edition "6cs-draft-1";
+module word_keys requires [];
+
+export fn key(w: Word) -> TraceEqualityKey effects [] {
+    return trace_key(w);
+}
+
+export fn same_word(x: Word, y: Word) -> Bool effects [] {
+    return exact_eq(trace_key(x), trace_key(y));
+}

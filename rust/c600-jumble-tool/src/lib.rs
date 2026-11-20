@@ -206,7 +206,9 @@
 //!   whole seam scan only.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
-//! - CT-LB1-02's library entry "Word equality keys": not written yet. Its key half runs in `tests/lb3.rs`.
+//! - CT-LB1-02's library entry "Word equality keys", the jumbling half (domain-preserving merging of menu words as
+//!   library code): not written yet. Its key half runs in `tests/lb3.rs`; the 600-cell-Full half is `c600-library`'s
+//!   `word_keys` (pull request 350).
 //! - The jumbling rows in the command table: [`rows`] serves them read-only beside the layer, in [`library`]'s draft
 //!   answer types and a draft tariff; the command table names and prices them when it freezes (KN5, PHS.52), and no
 //!   program runs here as a job of the layer. CT-LB3-03's agreement with `trees.py` stays M5's Python test on the
