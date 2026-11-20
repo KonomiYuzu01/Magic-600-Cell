@@ -313,12 +313,13 @@ class ShellProject(unittest.TestCase):
         for needle in ('Register("Magic600.LX4.Reset")', 'Register("Magic600.LX4.Select")',
                        'json.WriteString("t", "lx4");', "Context.Log?.Append("):
             self.assertIn(needle, lx4)
-        # LX-2's stub has the hook points only: its fault schedule, rows and fault variables are its owner's.
-        stub = text(PROJECT / "Lx2" / "Lx2Module.cs")
-        self.assertIn("public sealed class Lx2Module : IShellModule", stub)
-        self.assertIn("public bool OnWindowMessage(uint message, nuint wParam, nint lParam, long qpc) => false;", stub)
-        for needle in ("C600_LX2", '"lx2"', "RegisterWindowMessage", "Context.Host.", "Context.Log."):
-            self.assertNotIn(needle, stub)
+        # LX-2's module likewise (tests/test_c9_measure.py checks its schedule): a module that takes LX-2's phase
+        # message, writes its rows through the log and sets the fault variables only in the shell's process.
+        lx2 = text(PROJECT / "Lx2" / "Lx2Module.cs")
+        self.assertIn("public sealed class Lx2Module : IShellModule", lx2)
+        for needle in ('Register("Magic600.LX2.Phase")', 'json.WriteString("t", "lx2");', "Context.Log?.Append(",
+                       '"C600_LX2_CEILING"', '"C600_LX2_FAULT"'):
+            self.assertIn(needle, lx2)
 
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
         chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")

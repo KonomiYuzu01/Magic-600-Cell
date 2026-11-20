@@ -69,10 +69,10 @@ DISPLAYED = 'msUntilDisplayed'
 DROPPED = 'Dropped'
 FIELDS = {'key': ('seq', 'qpc'), 'frame': ('frame_id', 'qpc', 'device_epoch', 'surface'),
           'presented': ('frame_id', 'device_epoch', 'surface', 'sequence', 'display_qpc')}
-# Rows of the same log that other tools check (ui_skew.py's ui_frame, lx4.py's lx4, and the `module` row a shell module
-# writes when it starts, which a live poster reads); E2 skips them, so E2 runs over the same run directories as B2 and
-# LX-4 (RTE.51 step 8).
-OTHER_ROWS = ('ui_frame', 'lx4', 'module')
+# Rows of the same log that other tools check (ui_skew.py's ui_frame, lx4.py's lx4, lx2.py's lx2, and the `module`
+# row a shell module writes when it starts, which a live poster reads); E2 skips them, so E2 runs over the same run
+# directories as B2, LX-4 and LX-2 (RTE.51 step 8).
+OTHER_ROWS = ('ui_frame', 'lx4', 'lx2', 'module')
 BAR = {'text': ('Charter E2: A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the target '
                 'machine.'),
        'rule': ('key press to the core-confirmed present of the first frame carrying it; nearest-rank p95 <= 100 ms '
