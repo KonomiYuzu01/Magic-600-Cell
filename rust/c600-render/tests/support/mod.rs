@@ -416,6 +416,10 @@ pub fn route_b<C: Driver>(core: C) {
     assert_eq!(old, abi::Status::WRONG_STATE);
     let not_removed = host.backend.recover().expect_err("a live device has nothing to recover");
     assert_eq!(not_removed.context["status"], "E_WRONG_STATE");
+    // The old epoch's frames are gone in the core, so the bridge finds a pick on one stale before the core is asked
+    // (the host refuses it earlier, at its device epoch).
+    let error = Backend::request_pick(&mut host.backend, &again, (10, 20), Requested::Occurrence).expect_err("old");
+    assert_eq!((error.code, error.context["field"].as_str()), (codes::STALE_PICK, "sequence"));
 
     // The old epoch's set never draws on the new device (RM.23): the frame fails before it reaches the core.
     let count = host.backend.core.fake().submitted.len();
