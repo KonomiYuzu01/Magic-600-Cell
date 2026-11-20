@@ -11,6 +11,8 @@
 //!   admission reads them, and a solving run gets one fixed acknowledgement (chapter 07, milestone M3).
 //! - [`menu`] is the menu alphabet a run pins for LB1.8's literal words of one menu, and its identity block (LP2
 //!   draft).
+//! - [`menu_key`] is LG2.18's word key `word-key/1` of a menu word under the item matrices of the run's pinned menu
+//!   (LP2 draft).
 //! - [`trace`] is LB1.10's trace key `trace-key/1` of a Full word under the independence relation a run pins (LP2
 //!   draft).
 //! - [`contract`] runs a whole-state contract once per revision (LG4.10; LP2 draft).
@@ -23,6 +25,7 @@ pub mod contract;
 pub mod encode;
 pub mod interp;
 pub mod menu;
+pub mod menu_key;
 pub mod meter;
 pub mod provenance;
 pub mod rng;

@@ -142,7 +142,7 @@ fn the_word_operations_take_menu_words_to_menu_words() {
 }
 
 /// LB1.8 (LP2 draft): a Full word and a menu word are words of two alphabets. No word operation, collection, call,
-/// return or match mixes them, and a word key and a compressed word take Full words only. Each is refused with
+/// return or match mixes them, and a compressed word takes Full words only. Each is refused with
 /// `LB1:input.incompatible_alphabet`, naming the expected and the supplied type.
 #[test]
 fn a_full_word_and_a_menu_word_never_meet() {
@@ -154,7 +154,6 @@ fn a_full_word_and_a_menu_word_never_meet() {
         ("commutator(w, x)", "Word", "MenuWord"),
         ("compose(x, w)", "MenuWord", "Word"),
         ("inverse(concat(w, menu[0:1]))", "Word", "MenuWord"),
-        ("word_key(x)", "Word", "MenuWord"),
         ("compress(x)", "Word", "MenuWord"),
         ("list<Word>(w, x)", "Word", "MenuWord"),
     ];

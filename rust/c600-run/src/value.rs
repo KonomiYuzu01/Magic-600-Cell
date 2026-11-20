@@ -14,6 +14,7 @@ use num_traits::{One, Signed, Zero};
 
 use crate::approx::{self, Approx};
 use crate::menu::{MenuIdentity, MENU_INDEX_LIMIT};
+use crate::menu_key::MenuWordKey;
 use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs, GENERATOR_SIZE};
 use crate::rng::Cursor;
 use crate::trace::{tokens_order, TraceKey};
@@ -74,6 +75,10 @@ pub enum Value {
     /// A compressed word streamed through its semantic chunks (DET.63; LP2 draft): the stream's owner, with the
     /// length it covered and its literal digest.
     WordStream(Arc<WordStream>),
+    /// LG2.18's word key of a jumbling menu word (LP2 draft): its tokens, one per maximal run of adjacent letters at
+    /// one grip, under its alphabet's header ([`crate::menu_key`]). It is never a menu word, and the checker gives it
+    /// the type of a Full word's key, `WordEqualityKey`.
+    MenuWordKey(Arc<MenuWordKey>),
 }
 
 /// A completed word stream (DET.63, KN2.10, LG4.6; LP2 draft): the exact length its chunks covered and the literal
@@ -547,6 +552,7 @@ fn kind(v: &Value) -> u8 {
         Value::Field(..) => 23,
         Value::Bytes(_) => 24,
         Value::WordStream(_) => 25,
+        Value::MenuWordKey(_) => 26,
     }
 }
 
@@ -573,6 +579,8 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => tokens_order(x, y),
                 // Headers first, then LG2.23's token order. A run pins one relation, so its trace keys share a header.
                 (Value::TraceEqualityKey(x), Value::TraceEqualityKey(y)) => x.cmp(y),
+                // Headers first, then LG2.23's token order. A run keys the words of one menu, so its keys share one.
+                (Value::MenuWordKey(x), Value::MenuWordKey(y)) => x.cmp(y),
                 (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
                     parts(&mut stack, &x.items, &y.items);
                     Ordering::Equal
@@ -944,6 +952,8 @@ impl Value {
             Value::Word(w) | Value::WordEqualityKey(w) => 2 * w.len() as u128,
             // Its letters, as a word's or a menu word's; the header is shared with the run's relation.
             Value::TraceEqualityKey(k) => k.size(),
+            // Its tokens; the header is shared with the run's alphabet.
+            Value::MenuWordKey(k) => k.size(),
             Value::Record(r) | Value::Receipt(r) => r.size,
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,
@@ -984,6 +994,7 @@ impl Value {
                 | Value::Compressed(_)
                 | Value::MenuWord(_)
                 | Value::TraceEqualityKey(_)
+                | Value::MenuWordKey(_)
         )
     }
 
@@ -1025,6 +1036,7 @@ impl Value {
             | Value::Receipt(_)
             | Value::WordEqualityKey(_)
             | Value::TraceEqualityKey(_)
+            | Value::MenuWordKey(_)
             | Value::Compressed(_)
             | Value::Generator(_)
             | Value::Field(..)
@@ -1221,6 +1233,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x == y,
             // Matching headers and token sequences, not only matching hashes (LG2.23).
             (Value::TraceEqualityKey(x), Value::TraceEqualityKey(y)) => x == y,
+            (Value::MenuWordKey(x), Value::MenuWordKey(y)) => x == y,
             (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
                 stack.extend(x.items.iter().zip(&y.items));
                 x.items.len() == y.items.len()

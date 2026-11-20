@@ -1,12 +1,13 @@
 //! The protocol itself: no message can carry a user-action token (KN5.15); a lost acknowledgement causes at most an
-//! identical delivery, answered from the parent's record, never a second host call, and a new call must acknowledge
-//! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
-//! refuses the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is
-//! request tag 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; an end
-//! test's verdict (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; an
-//! F2 or F5 element (KN3.2) is value tag 24 and type tag 26; a generator (DET.61) has no value tag and is type tag 27;
-//! the built-in column, the pinned menu and the pinned trace relation are strict trailing fields of the run, in that
-//! order.
+//! identical delivery, answered from the parent's record, never a second host call, and a new call must acknowledge the
+//! last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and refuses
+//! the rest; frames are bounded. LP2's drafts keep the earlier bytes: a snapshot read with an argument is request tag
+//! 5, and a menu word (LB1.8) is value tag 21, type tag 23 and, as a preview, request tag 6; an end test's verdict
+//! (LB3.2) is value tag 22 and type tag 24; a trace key (LB1.10) is value tag 23 and type tag 25; an F2 or F5 element
+//! (KN3.2) is value tag 24 and type tag 26; a generator (DET.61) has no value tag and is type tag 27; a menu word key
+//! (LG2.18) is value tag 27; the built-in column, the pinned menu and the pinned trace relation are strict trailing
+//! fields of the run, in that order. The pinned menu's matrices flag (LG2.18) is the one change to earlier bytes: a
+//! pinned menu written before it no longer decodes, and nothing persists this draft encoding.
 
 mod support;
 
@@ -17,7 +18,7 @@ use c600_check::{Profile, Row};
 use c600_ir::{Capability, EndTest, EndTestOutcome, ExactRole, QTy, Ty};
 use c600_run::approx::Approx;
 use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
-use c600_run::menu::{MenuAlphabet, MenuError, MenuIdentity};
+use c600_run::menu::{menu_digests, ItemMatrix, MenuAlphabet, MenuError, MenuIdentity};
 use c600_run::meter::code::STEPS;
 use c600_run::meter::{Amounts, ChildRecord, Interruption, Outcome, Position, SourceRange};
 use c600_run::rng::Cursor;
@@ -27,7 +28,7 @@ use c600_runtime::codec::{self, Codes};
 use c600_runtime::message::{self, Answer, Call, ToChild, SCHEMA};
 use c600_runtime::wire::{self, Dec, Enc, FrameError, MAX_FRAME, PROTOCOL};
 use c600_runtime::{run_in_process, Ended, FaultKind, JobOptions, Refused, Stage, FAULT_VARIABLE};
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
 use support::{assert_same_end, header, job, runtime, Session, WIDE};
 
 /// Words that would name an authority in a field: a user-action token, a confirmation or a credential.
@@ -362,10 +363,11 @@ fn the_built_in_column_is_a_strict_trailing_field() {
 }
 
 /// A pinned menu alphabet (LB1.8; LP2 draft) crosses as a trailing field of the run, before the pinned relation: a
-/// flag, then the identity block in KN1.4's order, the cap count, the item count and the item of each item's inverse
-/// rotation, so an alphabet has one encoding and no alphabet differs from every one. A flag other than 0 or 1, an
-/// empty identity field, more than 600 caps or items, inverse items that are no involution, a count beyond the payload,
-/// a cut message and a trailing byte are refused, each with `MenuAlphabet::new`'s reason where it has one.
+/// flag, then the identity block in KN1.4's order, the cap count, the item count, the item of each item's inverse
+/// rotation and a matrices flag, 0 here, so an alphabet has one encoding and no alphabet differs from every one. A flag
+/// other than 0 or 1, an empty identity field, more than 600 caps or items, inverse items that are no involution, a
+/// count beyond the payload, a cut message and a trailing byte are refused, each with `MenuAlphabet::new`'s reason
+/// where it has one.
 #[test]
 fn the_pinned_menu_is_a_strict_trailing_field() {
     let run = |menu: Option<MenuAlphabet>| {
@@ -414,7 +416,8 @@ fn the_pinned_menu_is_a_strict_trailing_field() {
             for item in inverse {
                 e.u32(*item);
             }
-            // No pinned relation.
+            // No item matrices and no pinned relation.
+            e.u8(0);
             e.u8(0);
         })
     };
@@ -432,6 +435,124 @@ fn the_pinned_menu_is_a_strict_trailing_field() {
         (pinned(NAMED, 4, 2, &[1, 1]), MenuError::Inverse { item: 0 }.to_string()),
         (pinned(NAMED, 4, 2, &[0, 5]), MenuError::Inverse { item: 1 }.to_string()),
         (pinned(NAMED, 4, 2, &[0]), "a length beyond the payload".to_string()),
+    ];
+    for (bytes, why) in refusals {
+        assert_eq!(decoded(&bytes).unwrap_err(), why);
+    }
+}
+
+/// A rotation by the angle with cosine c/d and sine s/d in the plane of axes 0 and 1, rows first, each entry in
+/// Q(√5)'s lowest terms.
+fn rotation(c: i64, s: i64, d: i64) -> ItemMatrix {
+    let q = |a: i64, d: i64| Quad { a: BigInt::from(a), b: BigInt::from(0), d: BigInt::from(d) };
+    std::array::from_fn(|i| {
+        std::array::from_fn(|j| match (i, j) {
+            (0, 0) | (1, 1) => q(c, d),
+            (0, 1) => q(-s, d),
+            (1, 0) => q(s, d),
+            _ if i == j => q(1, 1),
+            _ => q(0, 1),
+        })
+    })
+}
+
+/// A pinned menu alphabet with its menu's item matrices (LG2.18; LP2 draft) has matrices flag 1 after its inverse
+/// items, then the matrix count and each item's sixteen entries rows first, each as Q(√5)'s `a`, `b` and `d`. It
+/// round-trips to the same alphabet and bytes, and every cut is refused. A matrices flag other than 0 or 1 is refused,
+/// and so is each alphabet that `MenuAlphabet::with_matrices` refuses, with its reason: another number of matrices
+/// than items, an entry outside lowest terms, an inverse item's matrix that is not the item's transpose, and matrices
+/// that do not give the block's `menu_id`. The codec is the draft `c600-rt1-wire-1` between two processes; nothing
+/// persists it.
+#[test]
+fn a_pinned_menu_crosses_with_its_item_matrices() {
+    // `Quad` is not `Clone`, so each use that takes the matrices gets its own.
+    let fresh = || vec![rotation(1, 0, 1), rotation(3, 4, 5), rotation(3, -4, 5)];
+    let items = fresh();
+    let (menu_id, menu_order) = menu_digests(&items);
+    let block = MenuIdentity { menu_id, menu_order, ..identity("menu") };
+    let bare = MenuAlphabet::new(block.clone(), 4, vec![0, 2, 1]).expect("an alphabet");
+    let menu = bare.clone().with_matrices(fresh()).expect("the menu's matrices");
+    let run = |menu: Option<MenuAlphabet>| {
+        let mut e = Enc::new();
+        let options = JobOptions { menu, ..JobOptions::new(WIDE) };
+        message::encode_run(1, &job("source", "f", vec![], options), &mut e).unwrap();
+        e.bytes
+    };
+    let decoded = |bytes: &[u8]| match message::decode_to_child(bytes) {
+        Ok(ToChild::Run { job, .. }) => Ok(job),
+        Ok(other) => panic!("{other:?}"),
+        Err(m) => Err(m.to_string()),
+    };
+    let bytes = run(Some(menu.clone()));
+    let job = decoded(&bytes).unwrap();
+    let back = job.options.menu.clone().expect("the pinned menu");
+    assert_eq!((&back, back.item_matrices()), (&menu, Some(&items[..])));
+    let mut again = Enc::new();
+    message::encode_run(1, &job, &mut again).unwrap();
+    assert_eq!(again.bytes, bytes);
+    for cut in 0..bytes.len() {
+        assert!(decoded(&bytes[..cut]).is_err(), "cut at {cut}");
+    }
+    assert!(decoded(&[&bytes[..], &[0]].concat()).is_err(), "a trailing byte");
+
+    // The run's head, then the pinned menu written field by field, then no pinned relation.
+    let none = run(None);
+    let head = &none[..none.len() - 2];
+    let int = |e: &mut Enc, n: &BigInt| {
+        // Zero is sign 0 with no magnitude bytes; any other integer its sign and its minimal magnitude.
+        let (sign, magnitude) = n.to_bytes_le();
+        match sign {
+            Sign::NoSign => {
+                e.u8(0);
+                e.bytes(&[]);
+            }
+            Sign::Plus => {
+                e.u8(1);
+                e.bytes(&magnitude);
+            }
+            Sign::Minus => {
+                e.u8(2);
+                e.bytes(&magnitude);
+            }
+        }
+    };
+    let pinned = |flag: u8, matrices: &[ItemMatrix]| {
+        let mut e = Enc::new();
+        e.u8(1);
+        for text in [&block.puzzle, &block.model_id, &block.menu_id, &block.menu_order, &block.contract_rev] {
+            e.text(text);
+        }
+        e.u32(4);
+        e.count(3);
+        for item in [0, 2, 1] {
+            e.u32(item);
+        }
+        e.u8(flag);
+        if flag == 1 {
+            e.count(matrices.len());
+            for q in matrices.iter().flatten().flatten() {
+                int(&mut e, &q.a);
+                int(&mut e, &q.b);
+                int(&mut e, &q.d);
+            }
+        }
+        e.u8(0);
+        [head, &e.bytes[..]].concat()
+    };
+    assert_eq!(pinned(1, &items), bytes);
+    let without = decoded(&pinned(0, &[])).unwrap().options.menu.expect("the pinned menu");
+    assert_eq!((&without, without.item_matrices()), (&bare, None));
+
+    let mut halved = fresh();
+    halved[0][2][2] = Quad { a: BigInt::from(2), b: BigInt::from(0), d: BigInt::from(2) };
+    let untransposed = vec![rotation(1, 0, 1), rotation(3, 4, 5), rotation(3, 4, 5)];
+    let other = vec![rotation(1, 0, 1), rotation(4, 3, 5), rotation(4, -3, 5)];
+    let refusals = [
+        (pinned(2, &[]), "a matrices flag other than 0 or 1".to_string()),
+        (pinned(1, &items[..2]), MenuError::Matrices { items: 3, matrices: 2 }.to_string()),
+        (pinned(1, &halved), MenuError::Entry { item: 0 }.to_string()),
+        (pinned(1, &untransposed), MenuError::Transpose { item: 1 }.to_string()),
+        (pinned(1, &other), MenuError::Digest("menu_id").to_string()),
     ];
     for (bytes, why) in refusals {
         assert_eq!(decoded(&bytes).unwrap_err(), why);

@@ -29,6 +29,7 @@
 //! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
 //! | `trace_key` (LB1.10; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per read of the least topological scan ([`crate::trace::Relation::reads`], [`crate::trace::Relation::menu_reads`] for a menu word) and 2 bytes reserved per letter, 4 per menu letter; a run that pins no trace relation of the word's alphabet (`full-disjoint-support/1` for a Full word, a `jumble-locality/1` relation that keys the pinned menu alphabet for a menu word) stops with `LB1:input.key_contract_mismatch`, and a letter outside the relation's alphabet with `LB1:input.incompatible_alphabet`, before its step |
+//! | `word_key` of a menu word (LG2.18; LP2 draft) | one step, priced before the key is built: `expand_per_letter` per letter scanned plus the draft work of its exact products at `field_per_unit_pair` ([`crate::menu_key::price`]), with that price's bound of its tokens reserved; a run whose pinned menu carries no item matrices stops with `LB1:input.key_contract_mismatch`, and a word of another alphabet with `LB1:input.incompatible_alphabet`, before its step. A run whose pinned menu carries item matrices keys no Full word |
 //! | `length`, `concat`, `inverse`, `conjugate`, `commutator`, `compose` of menu words (LB1.8; LP2 drafts) | as on words: `expand_per_letter` per letter built and 4 bytes reserved per letter; an inverse reads the pinned menu's inverse items, and a word of another alphabet stops with `LB1:input.incompatible_alphabet` before its step |
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
@@ -107,6 +108,7 @@ use num_bigint::{BigInt, Sign};
 use crate::approx;
 use crate::encode;
 use crate::menu::{self, MenuAlphabet, MenuIdentity};
+use crate::menu_key;
 use crate::meter::{
     self, frame_size, integer_size, Amounts, DraftTariffs, Interruption, Meter, OwnerId, SourceRange, Stop, Summary,
     Tariffs, GENERATOR_SIZE,
@@ -294,6 +296,7 @@ pub struct Options<'a> {
     pub cancel: Option<&'a dyn Cancel>,
     pub sources: Option<&'a dyn SourceRanges>,
     /// The menu alphabet the run pins for its menu words (LB1.8; LP2 draft). Without one the run holds no menu word.
+    /// With its item matrices ([`MenuAlphabet::with_matrices`]) the run keys menu words and no Full word (LG2.18).
     pub menu: Option<&'a MenuAlphabet>,
     /// The independence relation the run pins for its trace keys (LB1.10; LP2 draft). Without one the run holds no
     /// trace key.
@@ -1996,7 +1999,11 @@ impl<'a> Machine<'a> {
                 let result = Value::Compressed(Arc::new(Compressed::leaf(w)));
                 (per_letter.saturating_mul(letters), result.size(), Box::new(move || result))
             }
+            // A run that keys menu words keys no Full word, so the keys it compares share one header (LG2.23).
             (Prim::WordKey, Some(ws), _) => {
+                if self.menu.is_some_and(|m| m.item_matrices().is_some()) {
+                    return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
+                }
                 let w = ws[0].clone();
                 let read = w.len() as u128;
                 (
@@ -2042,6 +2049,26 @@ impl<'a> Machine<'a> {
                     Value::TraceEqualityKey(Arc::new(key))
                 };
                 (per_letter.saturating_mul(reads), size, Box::new(build))
+            }
+            // A menu word's key needs the item matrices of the run's pinned menu (LG2.18); a word of another
+            // alphabet is refused. The key is priced by its scan and by the draft price of its exact products.
+            (Prim::WordKey, None, [h]) if matches!(h.value, Value::MenuWord(_)) => {
+                let Value::MenuWord(w) = &h.value else { unreachable!("a menu word") };
+                let Some(menu) = self.menu.filter(|m| m.item_matrices().is_some()).cloned() else {
+                    return Err(self.fail(Some(n), name, code::KEY_CONTRACT_MISMATCH));
+                };
+                if w.identity() != menu.identity() || !w.letters().iter().all(|&l| menu.holds(l)) {
+                    return Err(self.fail(Some(n), name, code::INCOMPATIBLE_ALPHABET));
+                }
+                let w = w.clone();
+                let price = menu_key::price(&menu, w.letters(), self.draft.field_per_unit_pair);
+                let (work, size) = price.expect("letters of the alphabet");
+                let scan = per_letter.saturating_mul(w.letters().len() as u128);
+                let build = move || {
+                    let key = menu_key::key(&menu, w.letters()).expect("letters of the alphabet");
+                    Value::MenuWordKey(Arc::new(key))
+                };
+                (scan.saturating_add(work), size, Box::new(build))
             }
             (Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::Concat, Some(ws), _) => {
                 let (x, y) = (ws[0].clone(), ws.get(1).cloned().unwrap_or_else(|| Arc::from(Vec::new())));
@@ -2484,6 +2511,9 @@ impl<'a> Machine<'a> {
             return Err(self.fail(Some(n), op, code::INCOMPATIBLE_ALPHABET));
         }
         if trace::check_keys(&value, self.relation).is_err() {
+            return Err(self.fail(Some(n), op, code::KEY_CONTRACT_MISMATCH));
+        }
+        if menu_key::check_keys(&value, self.menu).is_err() {
             return Err(self.fail(Some(n), op, code::KEY_CONTRACT_MISMATCH));
         }
         self.settle(tariff.result_bound, value);

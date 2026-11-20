@@ -448,9 +448,9 @@ fn collections_outside_their_canonical_form_are_refused_on_both_sides() {
             }),
             "a part the word does not reach",
         ),
-        // The first tag after a menu trace key's (LP2 draft, LB1.10), which follows captured bytes' (DET.62) and an F2
-        // or F5 element's (KN3.2).
-        (decoded(|e| e.u8(27)), "an unknown value tag"),
+        // The first tag after a menu word key's (LP2 draft, LG2.18), which follows a menu trace key's (LB1.10),
+        // captured bytes' (DET.62) and an F2 or F5 element's (KN3.2).
+        (decoded(|e| e.u8(28)), "an unknown value tag"),
     ] {
         assert_eq!(got.err().as_deref(), Some(why));
     }

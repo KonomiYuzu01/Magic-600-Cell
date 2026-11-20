@@ -12,13 +12,15 @@
 //! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the lengths that
 //! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15). A menu word
 //! (LB1.8; LP2 draft) crosses with the identity block of its alphabet, and a pinned menu alphabet with its inverse
-//! items, so the receiver checks them as the interpreter does. An end test's verdict (LB3.2; LP2 draft) crosses as
-//! its test's and its outcome's indices in their declared orders, and its type with the test's index. A trace key
-//! (LB1.10; LP2 draft) crosses with its header and its letters, and a pinned trace relation with its contract, its
-//! identity block, its generator count and its independence bits; the receiver recomputes the relation's digest, and
-//! the run checks a key against its relation, since the codec cannot order letters without one. A generator (DET.61;
-//! LP2 draft) has no transfer form, since a copy would be a second cursor on its stream; its type is type tag 27. An
-//! F2 or F5 element (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
+//! items and, when it carries them, its menu's item matrices (LG2.18), so the receiver checks them as the interpreter
+//! does. An end test's verdict (LB3.2; LP2 draft) crosses as its test's and its outcome's indices in their declared
+//! orders, and its type with the test's index. A trace key (LB1.10; LP2 draft) crosses with its header and its letters,
+//! and a pinned trace relation with its contract, its identity block, its generator count and its independence bits;
+//! the receiver recomputes the relation's digest, and the run checks a key against its relation, since the codec cannot
+//! order letters without one. A menu word key (LG2.18; LP2 draft) crosses with its header and its tokens in their
+//! canonical form, and the run checks its header against its pinned menu. A generator (DET.61; LP2 draft) has no
+//! transfer form, since a copy would be a second cursor on its stream; its type is type tag 27. An F2 or F5 element
+//! (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -28,7 +30,8 @@ use c600_check::Row as ClassRow;
 use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
-use c600_run::menu::{MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
+use c600_run::menu::{ItemMatrix, MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
+use c600_run::menu_key::{MenuWordKey, Token, WORD_KEY};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
@@ -91,6 +94,11 @@ mod tag {
     /// fields in KN1.4's order, the grip count, the item count, the key kind, the independence contract and the 32
     /// digest bytes, then its letters as a menu word's.
     pub const MENU_TRACE_KEY: u8 = 26;
+    /// LP2's draft word key of menu letters (LG2.18, `word-key/1`): its header, the identity block's five fields in
+    /// KN1.4's order, the key kind, the grip count and the item count, then its tokens: their count, and each token's
+    /// grip and the sixteen entries of its product row-major, each as its three integers. Only a key in its canonical
+    /// form is written or read ([`MenuWordKey::canonical`]).
+    pub const MENU_WORD_KEY: u8 = 27;
 }
 
 /// A finite field's byte in a value or a type (LP2 draft): 0 for F2, 1 for F5.
@@ -208,6 +216,28 @@ fn decode_trace_header(d: &mut Dec) -> Result<TraceHeader, Malformed> {
     Ok(TraceHeader { puzzle, model_id, menu: None, generators, key, contract, digest })
 }
 
+/// A menu word key's header and tokens ([`tag::MENU_WORD_KEY`]), refused under another key kind, under an identity
+/// block that names no alphabet, or out of its canonical form.
+fn decode_menu_word_key(d: &mut Dec) -> Result<MenuWordKey, Malformed> {
+    let identity = decode_identity(d)?;
+    if d.text()? != WORD_KEY {
+        return Err(Malformed::new("a word key of another kind"));
+    }
+    let (grips, items) = (d.u32()?, d.u32()?);
+    // A token takes at least its grip and 48 integers, each a sign byte and a length.
+    let n = d.count(4 + 48 * 9)?;
+    let mut tokens = Vec::with_capacity(n);
+    for _ in 0..n {
+        let grip = d.u32()?;
+        tokens.push(Token { grip, product: decode_matrix(d)? });
+    }
+    let key = MenuWordKey::from_parts(Arc::new(identity), grips, items, tokens);
+    if !key.canonical() {
+        return Err(Malformed::new("a menu word key outside its canonical form"));
+    }
+    Ok(key)
+}
+
 fn decode_digest(d: &mut Dec) -> Result<[u8; 32], Malformed> {
     d.bytes()?.try_into().map_err(|_| Malformed::new("a relation digest of other than 32 bytes"))
 }
@@ -284,8 +314,9 @@ pub fn decode_relation(d: &mut Dec) -> Result<Relation, Malformed> {
     Relation::from_parts(&contract, &puzzle, &model_id, generators, bits).map_err(|why| Malformed::new(why.to_string()))
 }
 
-/// A pinned menu alphabet (LB1.8, LB1.9; LP2 draft): its identity block, its cap count, then the item count and the
-/// item of each item's inverse rotation, by item.
+/// A pinned menu alphabet (LB1.8, LB1.9, LG2.18; LP2 draft): its identity block, its cap count, the item count and
+/// the item of each item's inverse rotation, by item, then a flag: 0 without the menu's item matrices, 1 with them,
+/// followed by their count and each item's matrix in item order ([`encode_matrix`]).
 pub fn encode_alphabet(m: &MenuAlphabet, e: &mut Enc) -> Result<(), Unencodable> {
     encode_identity(m.identity(), e)?;
     e.u32(m.caps());
@@ -293,17 +324,61 @@ pub fn encode_alphabet(m: &MenuAlphabet, e: &mut Enc) -> Result<(), Unencodable>
     for item in m.inverse_items() {
         e.u32(*item);
     }
+    match m.item_matrices() {
+        None => e.u8(0),
+        Some(items) => {
+            e.u8(1);
+            e.count(items.len());
+            for m in items {
+                encode_matrix(m, e);
+            }
+        }
+    }
     Ok(())
 }
 
-/// Reads a pinned menu alphabet and refuses one that `MenuAlphabet::new` refuses, with its reason: the first empty
-/// field of the identity block by name, too many caps or items, or inverse items that are no involution.
+/// Reads a pinned menu alphabet and refuses one that `MenuAlphabet::new` or `MenuAlphabet::with_matrices` refuses,
+/// with its reason: the first empty field of the identity block by name, too many caps or items, inverse items that
+/// are no involution, not one matrix per item, an entry outside Q(√5)'s lowest terms, an inverse item's matrix that is
+/// not the item's transpose, or matrices that do not give the block's `menu_id` or `menu_order`. A matrices flag other
+/// than 0 or 1 is refused.
 pub fn decode_alphabet(d: &mut Dec) -> Result<MenuAlphabet, Malformed> {
     let identity = read_identity(d)?;
     let caps = d.u32()?;
     let n = d.count(4)?;
     let inverse = (0..n).map(|_| d.u32()).collect::<Result<Vec<_>, _>>()?;
-    MenuAlphabet::new(identity, caps, inverse).map_err(|why| Malformed::new(why.to_string()))
+    let alphabet = MenuAlphabet::new(identity, caps, inverse).map_err(|why| Malformed::new(why.to_string()))?;
+    match d.u8()? {
+        0 => Ok(alphabet),
+        1 => {
+            // A matrix takes at least 48 integers, each a sign byte and a length.
+            let n = d.count(48 * 9)?;
+            let items = (0..n).map(|_| decode_matrix(d)).collect::<Result<Vec<_>, _>>()?;
+            alphabet.with_matrices(items).map_err(|why| Malformed::new(why.to_string()))
+        }
+        _ => Err(Malformed::new("a matrices flag other than 0 or 1")),
+    }
+}
+
+/// An item matrix or a token's product (LG2.18; LP2 draft): its sixteen entries rows first, each as the payload of
+/// [`tag::Q5`], its `a`, `b` and `d`. The reader checks no entry's form; the alphabet or the key that holds the matrix
+/// does.
+fn encode_matrix(m: &ItemMatrix, e: &mut Enc) {
+    for q in m.iter().flatten() {
+        bigint(&q.a, e);
+        bigint(&q.b, e);
+        bigint(&q.d, e);
+    }
+}
+
+/// Reads [`encode_matrix`]'s sixteen entries.
+fn decode_matrix(d: &mut Dec) -> Result<ItemMatrix, Malformed> {
+    let mut entries = Vec::with_capacity(16);
+    for _ in 0..16 {
+        entries.push(Quad { a: decode_bigint(d)?, b: decode_bigint(d)?, d: decode_bigint(d)? });
+    }
+    let mut entries = entries.into_iter();
+    Ok(std::array::from_fn(|_| std::array::from_fn(|_| entries.next().expect("sixteen entries"))))
 }
 
 fn bigint(n: &BigInt, e: &mut Enc) {
@@ -535,6 +610,21 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 encode_menu_trace_header(k.header(), e)?;
                 encode_menu_letters(k.menu_letters(), e)?;
             }
+            Value::MenuWordKey(k) => {
+                if !k.canonical() {
+                    return Err(Unencodable("a menu word key outside its canonical form"));
+                }
+                e.u8(tag::MENU_WORD_KEY);
+                encode_identity(k.identity(), e)?;
+                e.text(WORD_KEY);
+                e.u32(k.grips());
+                e.u32(k.items());
+                e.count(k.tokens().len());
+                for t in k.tokens() {
+                    e.u32(t.grip);
+                    encode_matrix(&t.product, e);
+                }
+            }
             Value::TraceEqualityKey(k) => {
                 if !canonical_word(k.letters()) {
                     return Err(Unencodable("a letter outside 1 to 1200"));
@@ -751,6 +841,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 let header = Arc::new(decode_menu_trace_header(d)?);
                 Value::TraceEqualityKey(Arc::new(TraceKey::from_menu_parts(header, &decode_menu_letters(d)?)))
             }
+            tag::MENU_WORD_KEY => Value::MenuWordKey(Arc::new(decode_menu_word_key(d)?)),
             tag::FIELD => {
                 let field = field_from(d.u8()?)?;
                 let residue = d.u8()?;
@@ -1856,5 +1947,127 @@ mod menu_trace_tests {
         e.bytes(r.digest());
         e.count(0);
         assert!(value_from_bytes(&e.bytes).unwrap_err().0.contains("empty field"));
+    }
+}
+
+/// The transfer form of LG2.18's word key over menu letters (LP2 draft): tag 27, after the menu trace key's.
+#[cfg(test)]
+mod menu_word_key_tests {
+    use super::*;
+    use c600_run::menu::menu_digests;
+    use c600_run::menu_key;
+
+    /// A rotation by the angle with cosine c/d and sine s/d in the plane of axes 0 and 1.
+    fn rotation(c: i64, s: i64, d: i64) -> ItemMatrix {
+        let q = |a: i64, d: i64| Quad::new(BigInt::from(a), BigInt::zero(), BigInt::from(d));
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| match (i, j) {
+                (0, 0) | (1, 1) => q(c, d),
+                (0, 1) => q(-s, d),
+                (1, 0) => q(s, d),
+                _ if i == j => q(1, 1),
+                _ => q(0, 1),
+            })
+        })
+    }
+
+    /// The identity, the 3-4-5 rotation and its inverse.
+    fn items() -> Vec<ItemMatrix> {
+        vec![rotation(1, 0, 1), rotation(3, 4, 5), rotation(3, -4, 5)]
+    }
+
+    fn alphabet() -> MenuAlphabet {
+        let (menu_id, menu_order) = menu_digests(&items());
+        let identity = MenuIdentity {
+            puzzle: "600-cell-jumbled".into(),
+            model_id: "model-1".into(),
+            menu_id,
+            menu_order,
+            contract_rev: "rev-1".into(),
+        };
+        let bare = MenuAlphabet::new(identity, 600, vec![0, 2, 1]).expect("an alphabet");
+        bare.with_matrices(items()).expect("the menu's matrices")
+    }
+
+    /// The transfer form of a key's parts, written field by field.
+    fn parts(identity: &MenuIdentity, kind: &str, grips: u32, tokens: &[Token]) -> Vec<u8> {
+        let mut e = Enc::new();
+        e.u8(tag::MENU_WORD_KEY);
+        for (_, text) in identity.fields() {
+            e.text(text);
+        }
+        e.text(kind);
+        e.u32(grips);
+        e.u32(3);
+        e.count(tokens.len());
+        for t in tokens {
+            e.u32(t.grip);
+            for q in t.product.iter().flatten() {
+                bigint(&q.a, &mut e);
+                bigint(&q.b, &mut e);
+                bigint(&q.d, &mut e);
+            }
+        }
+        e.bytes
+    }
+
+    #[test]
+    fn a_menu_word_key_crosses_with_its_header_and_its_tokens() {
+        let alphabet = alphabet();
+        let key = menu_key::key(&alphabet, &[[4, 1], [4, 1], [2, 2], [2, 1]]).expect("letters of the alphabet");
+        assert_eq!(key.tokens().len(), 2);
+        let bytes = parts(alphabet.identity(), WORD_KEY, 600, key.tokens());
+        let value = Value::MenuWordKey(Arc::new(key));
+        assert_eq!(value_bytes(&value).expect("a transfer form"), bytes);
+        let back = value_from_bytes(&bytes).expect("a value");
+        assert!(same_value(&back, &value));
+        let (Value::MenuWordKey(back), Value::MenuWordKey(key)) = (&back, &value) else { panic!("menu word keys") };
+        assert_eq!(back, key);
+        // The empty key crosses as its header alone.
+        let empty = Value::MenuWordKey(Arc::new(menu_key::key(&alphabet, &[]).expect("a key")));
+        let back = value_from_bytes(&value_bytes(&empty).expect("a transfer form")).expect("a value");
+        assert!(same_value(&back, &empty));
+
+        // A key outside its canonical form, or under a block that names no alphabet, has no transfer form, and the
+        // receiver refuses what the sender would not write.
+        let token = |grip: u32, product: ItemMatrix| Token { grip, product };
+        let mut halves = rotation(3, 4, 5);
+        halves[0][0] = Quad { a: BigInt::from(6), b: BigInt::zero(), d: BigInt::from(10) };
+        let mut unnamed = alphabet.identity().clone();
+        unnamed.contract_rev.clear();
+        let named = alphabet.identity();
+        let cases: [(MenuIdentity, &str, u32, Vec<Token>, &str); 5] = [
+            (named.clone(), WORD_KEY, 600, vec![token(600, rotation(3, 4, 5))], "canonical form"),
+            (
+                named.clone(),
+                WORD_KEY,
+                600,
+                vec![token(4, rotation(3, 4, 5)), token(4, rotation(1, 0, 1))],
+                "canonical form",
+            ),
+            (named.clone(), WORD_KEY, 600, vec![token(4, halves)], "canonical form"),
+            (unnamed, WORD_KEY, 600, vec![token(4, rotation(3, 4, 5))], "names no alphabet"),
+            (named.clone(), "word-key/2", 600, vec![], "another kind"),
+        ];
+        for (identity, kind, grips, tokens, why) in cases {
+            let bytes = parts(&identity, kind, grips, &tokens);
+            assert!(value_from_bytes(&bytes).unwrap_err().0.contains(why), "{why}");
+            if kind == WORD_KEY {
+                let key = MenuWordKey::from_parts(Arc::new(identity), grips, 3, tokens);
+                assert!(value_bytes(&Value::MenuWordKey(Arc::new(key))).is_err(), "{why}");
+            }
+        }
+        // A token count beyond the payload.
+        let mut e = Enc::new();
+        e.u8(tag::MENU_WORD_KEY);
+        for (_, text) in named.fields() {
+            e.text(text);
+        }
+        e.text(WORD_KEY);
+        e.u32(600);
+        e.u32(3);
+        e.count(1);
+        e.u32(0);
+        assert!(value_from_bytes(&e.bytes).unwrap_err().0.contains("beyond the payload"));
     }
 }

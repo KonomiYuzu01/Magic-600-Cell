@@ -2351,8 +2351,9 @@ impl<'p> Checker<'p> {
     /// `LG2:type.mismatch` at the current position (LG2.1).
     fn mismatch(&mut self, expected: String, supplied: String, what: &str) {
         // A word equality key where literal letters are required has a code of its own (LG2.13, CT-LG2-11), and so
-        // has a trace equality key (LB1.10; LP2 draft).
-        if (supplied == "WordEqualityKey" || supplied == "TraceEqualityKey") && expected == "Word" {
+        // has a trace equality key (LB1.10; LP2 draft), for a Full word or a menu word (LG2.18; LP2 draft).
+        let letters = matches!(expected.as_str(), "Word" | "MenuWord");
+        if (supplied == "WordEqualityKey" || supplied == "TraceEqualityKey") && letters {
             let note = format!("{what}: a {supplied} is never literal letters (LG2.13, LG2.17, LB1.10)");
             return self.record(WORD_KEY_NOT_EXECUTABLE, None, Some(Mismatch { expected, supplied }), note);
         }
@@ -3928,9 +3929,9 @@ impl<'p> Checker<'p> {
             Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey | Prim::TraceKey => {
                 // One well-formed word domain for every word operation (LG2.15): Full words, or menu words of the
                 // run's pinned alphabet (LB1.8; LP2 draft), never a mix. The first operand of a known type sets the
-                // domain; a word key takes Full words only, and a trace key either (LB1.10: a menu word's key is under
-                // the run's `jumble-locality/1`).
-                let mut domain = matches!(op, Prim::WordKey).then_some(Ty::Word);
+                // domain. A word key takes either (LG2.18: a menu word's key is under the run's menu matrices), and so
+                // does a trace key (LB1.10: a menu word's key is under the run's `jumble-locality/1`).
+                let mut domain = None;
                 let mut q = Qual::Exact;
                 let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {
