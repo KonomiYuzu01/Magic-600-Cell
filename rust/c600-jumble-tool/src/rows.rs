@@ -27,11 +27,30 @@
 //! - `correction_set_check`, a list of records `{ id, m }`, the solver's drafted set: ν after the set as the catalogue
 //!   predicts it (`corrections::correction_set_check`), in the same record. The bridge keeps each set it was asked to
 //!   check ([`Rows::drafts`]); it never chooses, ranks or reduces a set.
-//! - `seam_facts`, a cap ID: KN2.4's seam facts of the cap's cut at the state (`observe::seam_facts` with the cap as
-//!   its scope, a whole batch and no cell rows), as a record `{ scope, status, complete, cells, domains, totals,
-//!   undefined }`. `totals` holds N_c and the aligned count when the cap is admissible, and is null with the reason in
-//!   `undefined` when it is not (`cap_not_admissible`). A cap outside 0..599 is `KN2:input.named_object_invalid`
-//!   (JI.45). The row answers for the cap it is asked about; it never surveys, ranks or selects caps.
+//! - `seam_facts`, a cap ID or the text `"all"`: KN2.4's seam facts of the cap's cut at the state
+//!   (`observe::seam_facts` with the cap as its scope, a whole batch and no cell rows), as a record `{ scope, status,
+//!   complete, cells, domains, totals, undefined }`. `totals` holds N_c and the aligned count when the cap is
+//!   admissible, and is null with the reason in `undefined` when it is not (`cap_not_admissible`). A cap outside 0..599
+//!   is `KN2:input.named_object_invalid` (JI.45). The row answers for the cap it is asked about; it never surveys,
+//!   ranks or selects caps. With `"all"` it scans every seam once (`Scope::All`), and `totals` holds total N with its
+//!   on-grip and off-grip mismatches and the aligned count: one total, not a row for each cap.
+//! - `rim_summary`, no argument: KN2.4's rim summary at the state (`observe::cuts::rim_summary` of every cap), as a
+//!   record `{ status, digest, rows, complete, uncertain_caps, grip_n, grip_n_undefined }`. `rows` holds one row for
+//!   each cap in cap-ID order, `{ cap, status, blocked, N_c, In_c, Out_c, A_c, F_c, at_floor, undefined }`; a blocked
+//!   cap keeps its row with null rim facts and `cap_not_admissible`. Grip N is the sum of N_c over the admissible caps.
+//!   The row answers every cap alike; it never ranks, selects or skips caps.
+//! - `covers`, a cap ID: KN2.4's covers at the named cap (`observe::cuts::covers`), as a record `{ status,
+//!   input_digest, parameters, domain, answers, message, by }`: for each of the 80 caps that meet it, in cap-ID order,
+//!   both directions, each with its counts, its face-piece flag and its straddlers, or not applicable with the reason
+//!   (`blocked`, `closed`). Each direction writes every field, null when not applicable. A blocked or closed named cap
+//!   answers status `error` with its message and no answers; a cap outside the model is
+//!   `KN2:input.named_object_invalid`. The row marks no covering cap and gives no top-cap verdict.
+//! - `correction_lookup`, a correction id: the catalogue's correction with that id (`corrections::Catalogue::lookup`),
+//!   as a record `{ family, id, letters, row }`: its literal letters `[grip, item]` and its fixed ν row. The letters
+//!   number the I_a menu's items in its recorded order, so a state under another menu, or under I_a's items in
+//!   another order, or in free mode, is `KN2:input.menu_binding_mismatch`, as `Catalogue::twists` refuses it. An id
+//!   the catalogue does not ship is `KN2:input.named_object_invalid`. The lookup answers the named correction only; it
+//!   checks no set and chooses no combination.
 //!
 //! A menu word is read as [`crate::word::LiteralWord::letters`] reads it: a word of another alphabet than the state's
 //! is `LB1:input.incompatible_alphabet`. Every field of an answer is written, null when undefined; a declared type that
@@ -50,19 +69,21 @@
 //! # Tariff (draft; the command table prices the rows when it freezes)
 //!
 //! The kernel cost is one unit for each piece of the model ([`NP`]) for each pass over a state: one pass for `heights`,
-//! `height_counts` and `nu`, and one more for each letter of a named word or each entry of a drafted set; two for
-//! `seam_facts`, the cap's classification and its cut. The result
-//! bound is [`RESULT_BOUND`] for every row; an answer above it stops the run with the interpreter's
-//! `KN7:resource_limit.host_exhausted`, never a cut answer.
+//! `height_counts`, `nu` and `correction_lookup`, and one more for each letter of a named word or each entry of a
+//! drafted set; two for `seam_facts`, the cap's classification and its cut, or the whole scan with `"all"`; one more
+//! for each cap ([`POLES`]) for `rim_summary`; and one more for the named cap and each of its [`MEETING_CAPS`] for
+//! `covers`. The result bound is [`RESULT_BOUND`] for every row; an answer above it stops the run with the
+//! interpreter's `KN7:resource_limit.host_exhausted`, never a cut answer.
 
 use c600_check::TYPE_MISMATCH;
 use c600_command::{code, CommandLayer, Store};
 use c600_ir::{QTy, Ty};
-use c600_jumble::codes::{IDENTITY_MISMATCH, MENU_WORD_NEEDS_JUMBLE_ON, NAMED_OBJECT_INVALID};
+use c600_jumble::codes::{IDENTITY_MISMATCH, MENU_BINDING_MISMATCH, MENU_WORD_NEEDS_JUMBLE_ON, NAMED_OBJECT_INVALID};
 use c600_jumble::corrections;
 use c600_jumble::levels::{self, Base, Derivation, Partial};
-use c600_jumble::model::NP;
+use c600_jumble::model::{NP, POLES};
 use c600_jumble::nu::{self, NuVector};
+use c600_jumble::observe::cuts::{covers, rim_summary};
 use c600_jumble::observe::{
     heights, prefix_observations, seam_facts, word_check, Batch, Fields, PrefixRequest, Rows as Cells, Scope,
 };
@@ -79,7 +100,7 @@ use c600_run::value::Value as RunValue;
 use crate::word::{self, menu_identity, Letter, INCOMPATIBLE_ALPHABET};
 
 /// The rows the bridge serves, each with whether it takes an argument.
-pub const ROWS: [(&str, bool); 8] = [
+pub const ROWS: [(&str, bool); 11] = [
     ("heights", false),
     ("height_counts", false),
     ("replay", true),
@@ -88,7 +109,13 @@ pub const ROWS: [(&str, bool); 8] = [
     ("nu", false),
     ("correction_set_check", true),
     ("seam_facts", true),
+    ("rim_summary", false),
+    ("covers", true),
+    ("correction_lookup", true),
 ];
+
+/// The caps that meet one cap: the classifications a `covers` read adds to the named cap's own.
+pub const MEETING_CAPS: usize = 80;
 
 /// The result bound of every row's answer (a draft): 16 MiB of logical size.
 pub const RESULT_BOUND: u128 = 1 << 24;
@@ -99,6 +126,10 @@ const AFTER_FACTS: [&str; 4] = ["phi_before", "phi_after", "delta_phi", "max_lef
 
 /// The fields of the `seam_facts` row's answer, each written, null when the engine's answer has none.
 const SEAM_FIELDS: [&str; 7] = ["cells", "complete", "domains", "scope", "status", "totals", "undefined"];
+
+/// The fields of each direction of a `covers` answer, each written, null when the engine's answer has none: an answered
+/// direction has no reason or status, and one that is not applicable has no counts, flag or straddlers.
+const COVER_FIELDS: [&str; 5] = ["counts", "covers", "reason", "status", "straddlers"];
 
 /// A whole batch: the engine's cells of one cap's cut in chunks, with no budget or cancellation.
 const WHOLE: Batch = Batch { chunk: 1 << 12, budget: None, cancel_after: None };
@@ -252,10 +283,51 @@ impl<'a> Rows<'a> {
                 self.drafts.push(draft);
                 served_nu(checked)
             }
-            ("seam_facts", Some(cap)) => {
+            ("seam_facts", Some(arg)) => {
+                let scope = match arg.as_text() {
+                    Some("all") => Scope::All,
+                    _ => Scope::Cap(integer(arg).ok_or(code::ARGUMENT_FORM)?),
+                };
+                let mut state = self.state()?.clone();
+                served_seam(seam_facts(ctx, &mut state, scope, &WHOLE, Cells::None, None).map_err(engine)?)
+            }
+            ("rim_summary", None) => {
+                let mut state = self.state()?.clone();
+                let summary = rim_summary(ctx, &mut state, None, None).map_err(engine)?;
+                match summary.get("status").and_then(Value::as_str) {
+                    Some("ok") => Ok(summary),
+                    _ => Err(code::STATE_HASH_MISMATCH),
+                }
+            }
+            ("covers", Some(cap)) => {
                 let cap = integer(cap).ok_or(code::ARGUMENT_FORM)?;
                 let mut state = self.state()?.clone();
-                served_seam(seam_facts(ctx, &mut state, Scope::Cap(cap), &WHOLE, Cells::None, None).map_err(engine)?)
+                served_covers(covers(ctx, &mut state, cap, None).map_err(engine)?)
+            }
+            ("correction_lookup", Some(id)) => {
+                let menu = self.state()?.menu();
+                let id = u32::try_from(integer(id).ok_or(code::ARGUMENT_FORM)?).map_err(|_| NAMED_OBJECT_INVALID)?;
+                let catalogue = corrections::catalogue().map_err(engine)?;
+                // The letters number I_a's items in its recorded order, so they are answered under that menu only.
+                let binding = catalogue.binding();
+                if ctx.model.model_id != binding.model_id {
+                    return Err(IDENTITY_MISMATCH);
+                }
+                match menu {
+                    Some(menu) if menu.identity == binding.menu_identity && menu.order == binding.menu_order => {}
+                    _ => return Err(MENU_BINDING_MISMATCH),
+                }
+                let correction = catalogue.lookup(id).map_err(|r| r.code)?;
+                let letters = correction
+                    .letters()
+                    .iter()
+                    .map(|&(grip, item)| Value::Array(vec![Value::Int(i64::from(grip)), Value::Int(i64::from(item))]));
+                Ok(json::object([
+                    ("family", Value::String(correction.family().to_owned())),
+                    ("id", Value::Int(i64::from(correction.id()))),
+                    ("letters", Value::Array(letters.collect())),
+                    ("row", correction.row().to_json()),
+                ]))
             }
             _ => Err(code::ARGUMENT_FORM),
         }
@@ -273,7 +345,7 @@ impl Host for Rows<'_> {
         };
         let takes = ROWS.iter().find(|(row, _)| *row == query).map(|&(_, takes)| takes).ok_or(NOT_GRANTED)?;
         let passes = match (takes, &arg) {
-            (false, None) => 1,
+            (false, None) => 1 + if query == "rim_summary" { POLES } else { 0 },
             (true, Some(arg)) => 1 + extent(query, arg)?,
             _ => return Err(code::ARGUMENT_FORM),
         };
@@ -302,13 +374,18 @@ fn engine(_: impl std::fmt::Debug) -> &'static str {
     code::STATE_HASH_MISMATCH
 }
 
-/// The passes a row's argument adds to its tariff: the letters of a named word, or the entries of a drafted set.
+/// The passes a row's argument adds to its tariff: the letters of a named word, the entries of a drafted set, a named
+/// cap's classification (with its meeting caps' for `covers`), or none for a correction id.
 fn extent(query: &str, arg: &Json) -> Result<usize, &'static str> {
+    let cap = |passes: usize| integer(arg).map(|_| passes).ok_or(code::ARGUMENT_FORM);
     let word = match query {
         "replay" => arg,
         "word_check" | "protection" => arg.get("word").ok_or(code::ARGUMENT_FORM)?,
         "correction_set_check" => return drafted(arg).map(|set| set.len()),
-        "seam_facts" => return integer(arg).map(|_| 1).ok_or(code::ARGUMENT_FORM),
+        "seam_facts" if arg.as_text() == Some("all") => return Ok(1),
+        "seam_facts" => return cap(1),
+        "covers" => return cap(1 + MEETING_CAPS),
+        "correction_lookup" => return cap(0),
         _ => return Err(code::ARGUMENT_FORM),
     };
     Ok(flat_letters(word)?.len() / 2)
@@ -389,6 +466,34 @@ fn served_seam(facts: Value) -> Result<Value, &'static str> {
         };
     }
     Ok(json::object(SEAM_FIELDS.map(|name| (name, facts.get(name).cloned().unwrap_or(Value::Null)))))
+}
+
+/// The cover table of a named cap as the `covers` row serves it: the engine's answer with each direction of each
+/// meeting cap's answer written in [`COVER_FIELDS`], null where the engine's answer writes none. A table that is not
+/// completed (a blocked or closed named cap) is served as it is, with its status, its message and no answers. The
+/// engine's JI.45 refusal of a cap outside the model is its code.
+fn served_covers(mut table: Value) -> Result<Value, &'static str> {
+    if table.get("status").and_then(Value::as_str) == Some("refused") {
+        return match table.get("code").and_then(Value::as_str) {
+            Some(NAMED_OBJECT_INVALID) => Err(NAMED_OBJECT_INVALID),
+            _ => Err(code::STATE_HASH_MISMATCH),
+        };
+    }
+    if let Value::Object(fields) = &mut table {
+        if let Some(Value::Array(answers)) = fields.get_mut("answers") {
+            for answer in answers {
+                let Value::Object(answer) = answer else { continue };
+                for direction in ["c_covers_d", "d_covers_c"] {
+                    if let Some(Value::Object(facts)) = answer.get_mut(direction) {
+                        for name in COVER_FIELDS {
+                            facts.entry(name.to_string()).or_insert(Value::Null);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(table)
 }
 
 /// ν's draft answer: its 45 values and no reason when ν is defined, no values and the reason when not.

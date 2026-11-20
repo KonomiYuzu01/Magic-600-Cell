@@ -3,9 +3,10 @@
 //! `session.undo` and `session.redo` walk across both kinds, also after a power loss; and a view cannot write
 //! workspace state or make undo stale. Each test names the conformance parts it covers with PHS.62 markers.
 //!
-//! Waits for LP2's KN5 implementation (crate documentation): EV3.2's view rows. The layer refuses H-08's `view` rows
-//! (`view.open` and `view.close` among them) with `KN5:input.row_not_built`, so a view is stood in for by a language
-//! overlay row of kind `view` (KN5.3), whose program job the test finishes as the host would.
+//! Waits for the host's view model (crate documentation): EV3.2's view rows. The layer leaves `view.open` and
+//! `view.close` to the host's view model (LP2's pull request 271), which this test does not install yet, so both
+//! answer `KN5:input.row_not_built` and a view is stood in for by a language overlay row of kind `view` (KN5.3), whose
+//! program job the test finishes as the host would.
 
 mod common;
 
@@ -85,7 +86,7 @@ fn ct_ev3_07_a_workspace_command_and_commits_share_one_undo_order() {
 /// on its run's channel, are refused, and a view, stood in for by a language overlay row of kind `view` invoked by a
 /// program and by the shell, publishes at the revision it was admitted at; none of them writes the journal or moves
 /// the revision, the records or the action order, and the undo hint taken before them still undoes the latest action,
-/// the workspace command; not run: EV3.2's view rows, which the layer does not build, and a view's evaluation, which
+/// the workspace command; not run: EV3.2's view rows, which need the host's view model, and a view's evaluation, which
 /// the test's finished job stands in for; C6's checker leg is `c600-repr`'s `tests/ct_ev3.rs`), EV3.2, EV4.15,
 /// KN5.3, KN5.15, ONE.77.
 #[test]

@@ -200,12 +200,14 @@
 //!   refused with that function's code and detail: `LG3:capability.not_granted` under BND.84 and BND.85, and
 //!   `PS1:capability.provenance_incompatible` for a pin the policy does not hold. The reader knows no session
 //!   profile: it takes every session to be a solving session, the only profile LP3's host runs, so it applies BND.84
-//!   and BND.85 at every record draft (KN5.26 asks for them in a solving session). It finds a part only among the
-//!   blocks its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]), and a part it does not
-//!   find reads `unknown` and fails closed. No session table of blocks exists (M6's journal holds a record's block
-//!   only as the record's provenance text), so a record write keeps nothing, and after a reopen the host keeps its
-//!   blocks again. The reader drops no block it keeps, so its blocks grow with the runs of the host's session, a
-//!   run's input and output blocks for each run of `c600-lp3-source`.
+//!   and BND.85 at every record draft (KN5.26 asks for them in a solving session). It finds a part among the blocks
+//!   its host keeps ([`workspace::Reader::keep`], [`workspace::Reader::keep_run`]) and the part blocks the session
+//!   keeps, and a part that neither holds reads `unknown` and fails closed. The session's part blocks are the layer's
+//!   (CT-BND-27; LP2's pull request 272): at a record's write the reader lists the parts of the record's block that
+//!   its host keeps, recursively, the layer keeps those it does not have with the action, and it gives them back at
+//!   admission, so after a reopen a record written while the host kept its parts is admitted without the host keeping
+//!   them again. The reader drops no block it keeps, so its blocks grow with the runs of the host's session, a run's
+//!   input and output blocks for each run of `c600-lp3-source`.
 //! - **The host's table.** `c600-lp3-source` serves H-08 with the command layer's draft rows ([`workspace::table`])
 //!   and installs a reader ([`workspace::install`]) that keeps each run's blocks, so a host can write and preview
 //!   workspace records. The runner writes none, so its traces and receipts are as before.

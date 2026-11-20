@@ -5,10 +5,12 @@
 
 mod process_support;
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use c600_command::{
     code, CommandLayer, Completion, CompletionKind, Provenance, Receipt, RecordValue, Shell, Status, RECORD_ROW,
 };
-use c600_digest::sha256;
+use c600_digest::{sha256, sha256_hex};
 use c600_kernel::json::{self, Value as Json};
 use c600_kernel::ProtectedSet;
 use c600_run::boundary::{Answer, Store as RunStore};
@@ -76,6 +78,26 @@ fn own_tool_block() -> Vec<u8> {
         profile: Profile::Solving,
     };
     provenance::canonical(&provenance::program(&producer, false, &[]))
+}
+
+/// The 600-cell-Full tool's proposal of WORD, from a run on a scratch session inside the command the solver invoked
+/// there: the run's store and the proposal's block, a built-in tool's block whose one part is the named word's block.
+fn proposal() -> (RunStore, Vec<u8>) {
+    let tool = Tool::full_600_cell().expect("the tool builds");
+    let (mut scratch, mut scratch_shell) = process_support::session("scratch");
+    let command = invoke_tool(&mut scratch_shell, &mut scratch, &tool, &WORD).expect("the tool's row");
+    let (name, read) = (command.run(), base(&command.job.revision));
+    let mut run = RunStore::default();
+    let mut bridge = Bridge::new(&mut scratch, &name);
+    let ran = run_in_process(&tool, &WORD, &name, &read, &mut bridge, &mut run).expect("the tool runs");
+    let [shown] = &ran.shell[..] else { panic!("one proposal: {:?}", ran.shell) };
+    assert!(matches!(shown.answer, Answer::Previewed(_)), "{:?}", shown.answer);
+    assert_eq!(shown.word, WORD);
+    let proposed = run.blocks[&shown.block].clone();
+    let read_back = provenance::read(&proposed).expect("the proposal's block reads");
+    assert_eq!((field::author(&read_back), field::producer(&read_back)), ("built_in", "program"));
+    assert_eq!(field::parts(&read_back), [sha256(&named_word_block())], "the named word is its one part");
+    (run, proposed)
 }
 
 impl Fixture {
@@ -154,23 +176,7 @@ fn a_record_write_whose_block_the_reader_refuses_is_refused_with_the_readers_err
 /// hold is refused with `PS1:capability.provenance_incompatible`).
 #[test]
 fn a_record_draft_is_admitted_or_refused_by_the_readers_admission() {
-    // The 600-cell-Full tool's proposal of WORD, from a run on a scratch session inside the command the solver invoked
-    // there, with the run's store.
-    let tool = Tool::full_600_cell().expect("the tool builds");
-    let (mut scratch, mut scratch_shell) = process_support::session("scratch");
-    let command = invoke_tool(&mut scratch_shell, &mut scratch, &tool, &WORD).expect("the tool's row");
-    let (name, read) = (command.run(), base(&command.job.revision));
-    let mut run = RunStore::default();
-    let mut bridge = Bridge::new(&mut scratch, &name);
-    let ran = run_in_process(&tool, &WORD, &name, &read, &mut bridge, &mut run).expect("the tool runs");
-    let [shown] = &ran.shell[..] else { panic!("one proposal: {:?}", ran.shell) };
-    assert!(matches!(shown.answer, Answer::Previewed(_)), "{:?}", shown.answer);
-    assert_eq!(shown.word, WORD);
-    let proposed = run.blocks[&shown.block].clone();
-    let read_back = provenance::read(&proposed).expect("the proposal's block reads");
-    assert_eq!((field::author(&read_back), field::producer(&read_back)), ("built_in", "program"));
-    assert_eq!(field::parts(&read_back), [sha256(&named_word_block())], "the named word is its one part");
-
+    let (run, proposed) = proposal();
     let mut f = fixture();
     let other = Pin::of("another-contract", b"a contract the policy in force does not hold\n");
     let unheld = provenance::canonical(&provenance::manual(&other));
@@ -206,4 +212,56 @@ fn a_record_draft_is_admitted_or_refused_by_the_readers_admission() {
     let resolved = preview.resolved.as_ref().expect("a record draft");
     let word: Vec<i64> = WORD.iter().map(|&letter| i64::from(letter)).collect();
     assert_eq!((resolved.letters.clone(), resolved.reads[0].record.as_str()), (word, "proposed"));
+}
+
+/// CT-BND-27 (part, draft: the host's reader lists the parts of a record's block that the host keeps, recursively;
+/// the layer keeps them with the record's write; and a reader that keeps nothing admits the record's word with the
+/// parts the layer keeps, while on its own it fails closed; not run here: a reopen, which `c600-durable`'s
+/// `tests/ct_rte_08_persisted_word.rs` runs on M6's journal) and KN5.26.
+#[test]
+fn a_record_write_keeps_the_parts_the_host_keeps_and_admission_reads_them() {
+    let (run, proposed) = proposal();
+    let named = text(&named_word_block());
+    let mut f = fixture();
+
+    // Before the host keeps the run's blocks, the reader lists no part, so a write of the word keeps none.
+    assert!(f.reader.parts(&proposed).is_empty());
+    assert!(completed(&f.write("early", &WORD, &text(&proposed))));
+    assert!(f.layer.blocks().is_empty());
+
+    // Once it keeps them, it lists the proposal's one part, and a write of the word keeps it under its digest.
+    f.reader.keep_run(&run);
+    assert_eq!(f.reader.parts(&proposed), std::slice::from_ref(&named));
+    assert!(completed(&f.write("proposed", &WORD, &text(&proposed))));
+    let kept = BTreeMap::from([(sha256_hex(named.as_bytes()), named.clone())]);
+    assert_eq!(f.layer.blocks(), &kept);
+
+    // The list is recursive: a block whose part is the proposal lists the proposal and the named word, each once.
+    let producer = Producer {
+        contract: tool::contract(),
+        checker: Some(tool::checker()),
+        author: Author::BuiltIn,
+        module: sha256(b"a module that composes the proposal\n"),
+        entry: "composed".into(),
+        profile: Profile::Solving,
+    };
+    let composed = provenance::canonical(&provenance::program(&producer, false, &[sha256(&proposed)]));
+    let listed = f.reader.parts(&composed);
+    assert_eq!(listed.len(), 2, "{listed:?}");
+    assert_eq!(listed.into_iter().collect::<BTreeSet<_>>(), BTreeSet::from([text(&proposed), named]));
+
+    // A reader that keeps nothing refuses the word on its own, and admits it with the parts the layer keeps.
+    let fresh = Reader::new(tool::pins());
+    let alone = fresh.admit(&proposed).expect_err("no part is held");
+    assert_eq!(alone.code, code::NOT_GRANTED);
+    assert!(alone.detail.ends_with("(BND.21, BND.85)"), "{}", alone.detail);
+    assert_eq!(fresh.admit_kept(&proposed, f.layer.blocks()), Ok(()));
+
+    // With that reader installed, the layer admits both records' drafts, the one written before the host kept the
+    // run's blocks too: the layer gives back every part it keeps.
+    f.layer.set_provenance(Box::new(fresh));
+    for record in ["early", "proposed"] {
+        let id = f.preview_with(record_draft(record));
+        assert_eq!(f.layer.preview().map(|preview| preview.id), Some(id), "{record}");
+    }
 }

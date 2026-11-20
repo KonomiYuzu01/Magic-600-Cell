@@ -438,8 +438,12 @@ class RunbookTests(NoProcessCase):
         wj = next(step for step in runbook.STEPS if step.id == 'wj-w3')
         self.assertTrue(wj.built)
         self.assertTrue(wj.commands[0].startswith('python -B renderer/acceptance/prepare_host.py --route surface'))
-        self.assertIn('-DryRun', wj.commands[1])
-        self.assertTrue(all('-Build <route-B build>' in command for command in wj.commands[1:-1]))
+        self.assertTrue(wj.commands[1].startswith('python -B renderer/acceptance/prepare_data.py'))
+        self.assertIn(f'{runbook.DECLARE} -DryRun', wj.commands[2])
+        self.assertTrue(all('-Build <route-B build>' in command and runbook.DECLARE in command
+                            for command in wj.commands[2:-1]))
+        self.assertIn(('dir', runbook.WJ_DATA), wj.prerequisites)
+        self.assertIn(('compiles', runbook.PREPARE_DATA), wj.prerequisites)
         self.assertIn(('build', 'surface'), wj.prerequisites)
         e3 = next(step for step in runbook.STEPS if step.id == 'e3-cold-start')
         self.assertTrue(e3.commands[0].startswith('python -B renderer/shell/build_product.py'))
@@ -482,8 +486,10 @@ class RunbookTests(NoProcessCase):
     def test_u8_needs_the_launcher_to_hand_the_module_its_library_and_fixtures(self):
         step = next(step for step in runbook.STEPS if step.id == 'lx4')
         mentions = {argument for kind, argument in step.prerequisites if kind == 'mentions'}
-        self.assertLessEqual({(runbook.LAUNCH, 'M600_LX4_DLL'), (runbook.LAUNCH, 'M600_LX4_FIXTURES'),
-                              (runbook.BUILD_PRODUCT, 'c600-shell-lx4')}, mentions)
+        self.assertLessEqual({(runbook.LAUNCH, '"--lx4-fixtures"'), (runbook.LAUNCH, 'M600_LX4_DLL'),
+                              (runbook.LAUNCH, 'M600_LX4_FIXTURES'), (runbook.BUILD_PRODUCT, 'c600-shell-lx4')},
+                             mentions)
+        self.assertTrue(any('--lx4 --lx4-fixtures <fixtures>' in command for command in step.commands))
         # A mention is searched in one file as well as in a folder.
         self.assertTrue(runbook.evaluate('mentions', (runbook.LAUNCH, '"--lx4"'))[0])
         self.assertFalse(runbook.evaluate('mentions', (runbook.LAUNCH, 'a token no launcher writes'))[0])

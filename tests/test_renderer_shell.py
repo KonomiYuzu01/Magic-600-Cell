@@ -139,6 +139,23 @@ class ShellProject(unittest.TestCase):
         csharp_presses = dict(re.findall(r"public const uint Press(\w+) = (\d+);", csharp))
         self.assertEqual(set(rust_presses), {"NONE", "COMMITTED", "REFUSED", "OTHER"})
         self.assertEqual({name.upper(): value for name, value in csharp_presses.items()}, rust_presses)
+        # The session's puzzle codes (LX-4's jumble-on half): the same values on both sides, each the index of its
+        # name in the shell's puzzle list, which the host's turns name in the same order.
+        rust_puzzles = dict(re.findall(r"pub const M6H_PUZZLE_([A-Z_]+): u32 = (\d+);", source))
+        csharp_puzzles = dict(re.findall(r"public const uint Puzzle(\w+) = (\d+);", csharp))
+        self.assertEqual(rust_puzzles, {"JUMBLE_OFF": "0", "JUMBLE_ON": "1"})
+        self.assertEqual({re.sub(r"(?<!^)(?=[A-Z])", "_", name).upper(): value
+                          for name, value in csharp_puzzles.items()}, rust_puzzles)
+        shell_names = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};",
+                                text(PROJECT / "EventLog.cs"))
+        turns_names = re.search(r"pub const NAMES: \[&'static str; 2\] = \[(.*?)\];",
+                                text(ROOT / "renderer" / "bridge" / "host" / "src" / "turns.rs"))
+        self.assertTrue(shell_names and turns_names)
+        names = re.findall(r'"([a-z-]+)"', shell_names.group(1))
+        self.assertEqual(names, re.findall(r'"([a-z-]+)"', turns_names.group(1)))
+        for rust, value in rust_puzzles.items():
+            self.assertEqual(names.index(rust.lower().replace("_", "-")), int(value), rust)
+        self.assertIn("(uint)Array.IndexOf(EventLog.Puzzles, puzzle)", text(PROJECT / "Shell.cs"))
         key = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hKey \{(.*?)\}", source, re.S)
         csharp_key = re.search(r"LayoutKind\.Sequential\)\]\s*public struct KeyResult\s*\{(.*?)\}", csharp, re.S)
         self.assertTrue(key and csharp_key)
@@ -415,7 +432,9 @@ class ProductBuild(unittest.TestCase):
                  "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
                  "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}", "runtime/c600-runtime.exe": b"runtime",
                  "session-fixture/fixture.json": b"{}", "session-fixture/session/lock": b"",
-                 "session-fixture/session/journal": b"journal"}
+                 "session-fixture/session/journal": b"journal",
+                 "session-fixture-jumble-on/fixture.json": b"{}", "session-fixture-jumble-on/session/lock": b"",
+                 "session-fixture-jumble-on/session/journal": b"jumbled journal"}
         for name, data in files.items():
             (self.build / name).parent.mkdir(parents=True, exist_ok=True)
             (self.build / name).write_bytes(data)
@@ -430,7 +449,9 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
                                                  "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
                                                  "menu:wj-I_a.json", "runtime:c600-runtime.exe", "fixture:fixture.json",
-                                                 "fixture:session/lock", "fixture:session/journal"})
+                                                 "fixture:session/lock", "fixture:session/journal",
+                                                 "fixture-jumble-on:fixture.json", "fixture-jumble-on:session/lock",
+                                                 "fixture-jumble-on:session/journal"})
         self.assertTrue(product["identity"].startswith("c9-product-"))
         self.assertTrue(all(not Path(part["path"]).is_absolute() for part in product["parts"].values()))
 
@@ -446,19 +467,33 @@ class ProductBuild(unittest.TestCase):
             self.build_product.verify(self.build)
 
     def test_a_build_without_a_fixture_session_is_refused(self):
-        shutil.rmtree(self.build / "session-fixture" / "session")
-        with self.assertRaises(self.build_product.ProductError):
-            self.build_product.record(self.build, self.godot, "0" * 40, False)
-        with self.assertRaises(self.build_product.ProductError):
-            self.build_product.verify(self.build)
+        for folder in ("session-fixture", "session-fixture-jumble-on"):
+            with self.subTest(folder=folder):
+                session = self.build / folder / "session"
+                moved = self.temp / "moved"
+                shutil.move(session, moved)
+                with self.assertRaises(self.build_product.ProductError):
+                    self.build_product.record(self.build, self.godot, "0" * 40, False)
+                with self.assertRaises(self.build_product.ProductError):
+                    self.build_product.verify(self.build)
+                shutil.move(moved, session)
+                self.build_product.verify(self.build)
 
     def test_the_build_writes_its_fixture_with_its_own_model_menu_and_runtime(self):
-        command = self.build_product.fixture_command(self.build)
-        self.assertEqual(Path(command[0]).name, "c600-shell-session-fixture.exe")
-        flags = dict(zip(command[1::2], command[2::2]))
-        self.assertEqual(flags, {"--assets": str(self.build / "assets"), "--menu": str(self.build / "menu" / "wj-I_a.json"),
-                                 "--out": str(self.build / "session-fixture"),
-                                 "--runtime": str(self.build / "runtime" / "c600-runtime.exe")})
+        # One fixture per puzzle the shell names, each in its own folder.
+        self.assertEqual(tuple(self.build_product.FIXTURES), self.launch.PUZZLES)
+        for puzzle, folder in (("jumble-off", "session-fixture"), ("jumble-on", "session-fixture-jumble-on")):
+            command = self.build_product.fixture_command(self.build, puzzle)
+            self.assertEqual(Path(command[0]).name, "c600-shell-session-fixture.exe")
+            flags = dict(zip(command[1::2], command[2::2]))
+            self.assertEqual(flags, {"--assets": str(self.build / "assets"),
+                                     "--menu": str(self.build / "menu" / "wj-I_a.json"),
+                                     "--out": str(self.build / folder), "--puzzle": puzzle,
+                                     "--runtime": str(self.build / "runtime" / "c600-runtime.exe")})
+            self.assertEqual(self.build_product.fixture_record(puzzle), folder + "/fixture.json")
+            self.assertEqual(self.build_product.fixture_session(puzzle), folder + "/session")
+        self.assertEqual(self.build_product.fixture_command(self.build),
+                         self.build_product.fixture_command(self.build, "jumble-off"))
         self.assertEqual(self.build_product.runtime_command()[:6],
                          ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
         self.assertEqual(self.build_product.runtime_command()[-2:], ["-p", "c600-runtime"])
@@ -580,15 +615,19 @@ class ProductBuild(unittest.TestCase):
                                 popen=refuse, out_stream=lines.append)
         self.assertEqual(code, 2)
         self.assertFalse(out.exists())
-        self.assertIn("does not run jumble-on yet", lines[-1])
+        self.assertIn("does not draw jumble-on yet", lines[-1])
         # The launcher and the shell name the same puzzles, and both refuse every other one.
         log = text(PROJECT / "EventLog.cs")
         puzzles = re.search(r"public static readonly string\[\] Puzzles = \{ (.*?) \};", log)
         self.assertTrue(puzzles)
         self.assertEqual(tuple(re.findall(r'"([a-z-]+)"', puzzles.group(1))), self.launch.PUZZLES)
         self.assertEqual(self.launch.RUNNABLE_PUZZLES, self.launch.PUZZLES[:1])
-        self.assertIn('throw new NotSupportedException($"the shell does not run {puzzle} yet");',
-                      text(PROJECT / "Shell.cs"))
+        # The shell runs Jumble on only with a session, whose host opens the jumbled puzzle (LX-4's jumble-on half);
+        # the launcher above refuses it until it passes one.
+        shell = text(PROJECT / "Shell.cs")
+        self.assertNotIn("does not run {puzzle} yet", shell)
+        self.assertIn('$"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");',
+                      shell)
 
     def test_a_used_run_folder_or_a_changed_build_is_refused(self):
         def refuse(*args, **kwargs):
@@ -659,6 +698,13 @@ class ProductBuild(unittest.TestCase):
         self.assertNotIn("M600_LX4", env)
         self.assertNotIn("m600_puzzle", env)
         self.assertEqual(env["M600_PUZZLE"], "jumble-off")
+        self.assertEqual(env["M600_SESSION_FIXTURE"], str(self.build / "session-fixture" / "fixture.json"))
+        # With Jumble on the host reopens the jumbled fixture: a fixture opens only as its own puzzle.
+        jumbled = self.launch.environment(product, self.build, self.temp / "run", "r1", False, base={},
+                                          puzzle="jumble-on")
+        self.assertEqual(jumbled["M600_PUZZLE"], "jumble-on")
+        self.assertEqual(jumbled["M600_SESSION_FIXTURE"],
+                         str(self.build / "session-fixture-jumble-on" / "fixture.json"))
         self.assertNotIn("m600_core_dll", env)
         self.assertEqual(env["PATH"], "p")
         self.assertEqual(env["M600_CORE_DLL"], str(self.build / "native" / "sa2_interop.dll"))

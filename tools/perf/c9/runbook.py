@@ -53,6 +53,8 @@ GODOT_GLOB = ('GodotEngine.GodotEngine.Mono_*/Godot_v4.7.2-stable_mono_win64/'
               'Godot_v4.7.2-stable_mono_win64_console.exe')
 RUNNER = 'renderer/acceptance/run_scene.ps1'
 PREPARE_HOST = 'renderer/acceptance/prepare_host.py'
+PREPARE_DATA = 'renderer/acceptance/prepare_data.py'
+WJ_DATA = 'work/loop-memory/c9-acceptance/wj-data'
 # The acceptance host's route (prepare_host.py --route): U4 needs route B's; a build without one is a texture build.
 SURFACE = 'surface'
 SHELL = 'renderer/shell'
@@ -85,13 +87,14 @@ class Step:
 def wj_w3_commands():
     prepare = (f'python -B {PREPARE_HOST} --route surface   # route B\'s host into {BUILDS}/<build>, offline; '
                'no Godot window or GPU device')
-    check = (f'& {RUNNER} -Scene w3 -Build <route-B build> -DryRun   # verifies the build (route: surface), starts '
-             'nothing')
+    data = (f'python -B {PREPARE_DATA}   # W-J\'s exports for S4, I_a and I_b into {WJ_DATA}, checked; no GPU')
+    check = (f'& {RUNNER} -Scene <scene> -Build <route-B build> {DECLARE} -DryRun   # per scene (S4, I_a, I_b, w3): '
+             'verifies the build (route: surface) and the W-J data, starts nothing')
     runs = [f"& {RUNNER} -Scene {scene} -Build <route-B build> {DECLARE}   # three times"
             for scene in ('S4', 'I_a', 'I_b', 'w3')]
     gate = ('python -B tools/perf/renderer_gate.py <run 1> <run 2> <run 3> '
             '--out work/loop-memory/c9-acceptance/<scene>-summary.json   # per scene')
-    return (prepare, check, *runs, gate)
+    return (prepare, data, check, *runs, gate)
 
 
 STEPS = (
@@ -155,10 +158,10 @@ STEPS = (
          False, 50, None,
          commands=wj_w3_commands(),
          prerequisites=(('file', RUNNER), ('compiles', 'renderer/acceptance/finalize_run.py'),
-                        ('compiles', PREPARE_HOST),
+                        ('compiles', PREPARE_HOST), ('compiles', PREPARE_DATA),
                         ('compiles', 'renderer/acceptance/file_guard.py'), ('imports', 'renderer_gate'),
                         ('command', 'powershell'), ('presentmon', None), ('build', SURFACE), ('godot-launch', None),
-                        ('dir', 'work/loop-memory/c9-acceptance/wj-data')),
+                        ('dir', WJ_DATA)),
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power',
                    'native resolution, no frame generation or upscaling',
                    'the W-J and W3 evidence comes from the route-B build, not a texture build'),
@@ -216,7 +219,8 @@ STEPS = (
          commands=('cargo run --locked --offline --manifest-path rust/Cargo.toml -p c600-lx4 -- --out <fixtures>'
                    '   # module set and edit script (DRAFT until RTE.51 step 1 freezes it)',
                    'python -B tools/perf/c9/lx4.py schedule --fixtures <fixtures>   # 10,800 S/M/L samples',
-                   f'python -B {LAUNCH} --out <run dir> --lx4 --puzzle jumble-off, PresentMon alongside; then '
+                   f'python -B {LAUNCH} --out <run dir> --lx4 --lx4-fixtures <fixtures> --puzzle jumble-off, '
+                   'PresentMon alongside; then '
                    'python -B tools/perf/c9/lx4.py post --fixtures <fixtures> --puzzle jumble-off --run <run dir> '
                    '--turn-key KeyJ',
                    'the same with --puzzle jumble-on in a second run directory   # refused until the host opens '
@@ -231,7 +235,8 @@ STEPS = (
                         ('mentions', (SHELL, 'WriteString("t", "key")')),
                         # The module refuses to start without its library and fixtures (C9 product's launcher and
                         # product build hand them over).
-                        ('mentions', (LAUNCH, 'M600_LX4_DLL')), ('mentions', (LAUNCH, 'M600_LX4_FIXTURES')),
+                        ('mentions', (LAUNCH, '"--lx4-fixtures"')), ('mentions', (LAUNCH, 'M600_LX4_DLL')),
+                        ('mentions', (LAUNCH, 'M600_LX4_FIXTURES')),
                         ('mentions', (BUILD_PRODUCT, 'c600-shell-lx4'))),
          run_time=('foreground', 'the owner starts it from the desktop'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
