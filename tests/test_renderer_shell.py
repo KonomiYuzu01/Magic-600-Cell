@@ -665,8 +665,9 @@ class ProductBuild(unittest.TestCase):
                                 state=self.temp / "last-exit.json")
         self.assertEqual(code, 0)
         self.assertEqual(started["env"]["M600_PUZZLE"], "jumble-on")
+        # main() resolves --build (a runner's temp folder may be an 8.3 short name).
         self.assertEqual(started["env"]["M600_SESSION_FIXTURE"],
-                         str(self.build / "session-fixture-jumble-on" / "fixture.json"))
+                         str(self.build.resolve() / "session-fixture-jumble-on" / "fixture.json"))
         self.assertEqual((out / "session" / "journal").read_bytes(), b"jumbled journal")
         self.assertEqual(json.loads((out / "launch.json").read_text(encoding="utf-8"))["puzzle"], "jumble-on")
         # The launcher and the shell name the same puzzles, and both refuse every other one.
