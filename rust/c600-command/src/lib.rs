@@ -100,21 +100,24 @@
 //!     workspace change, where H-08 has `undo: none`.
 //!   - `worksheet.load` ([`WORKSHEET_LOAD_ROW`]) takes H-08's `WorksheetRevisionRef` as `{"record": name, "version":
 //!     n}` ([`WorksheetRef`]); a record at another version is `KN5:stale.revision_changed`. It places the piece roles
-//!     again, keeps where each was saved, and writes the sheet again with its phases unchanged, so a reuse makes every
-//!     preview that read the sheet stale, also at the same state, and the reuse needs a fresh preview.
+//!     again and reads each position role's occupant again at the head, keeps where each piece was and what each
+//!     position held at the save, and writes the sheet again with its phases unchanged, so a reuse makes every preview
+//!     that read the sheet stale, also at the same state, and the reuse needs a fresh preview. A changed occupant
+//!     ([`Occupancy::changed`]) is shown beside a moved piece ([`Placement::moved`]): neither silent nor a refusal,
+//!     and nothing is retargeted (U1-057, U4-037, LB7.2).
 //!   - A sheet saved from a record of letters keeps the record's name, version and content digest as its macro
 //!     version ([`MacroVersion`]); a sheet saved from a sheet keeps the sheet's.
 //!   - `worksheet.compare` ([`WORKSHEET_COMPARE_ROW`]) takes the `WorksheetRevisionRef` and a draft `{"record": r}`,
 //!     the current work. Its job runs in the layer on the exclusive lane ([`CommandLayer::run_jobs`]), since no entry
 //!     can serve that lane: at the head it compares the sheet's phases, roles, reference and macro version with the
-//!     draft's ([`compare_inputs`]), places the piece roles again, reports the macro version as current, changed or
+//!     draft's ([`compare_inputs`]), places the piece roles and reads the position roles' occupants again, names the
+//!     moved pieces and the changed occupants, reports the macro version as current, changed or
 //!     missing, and analyses the sheet's complete operation afresh under the protection and policy in force, with
 //!     LB2's gains and losses (the positions whose home piece becomes solved, and the reverse). The comparison is the
 //!     completion's result ([`CommandLayer::comparison`]); it grants nothing, and a reuse still needs `worksheet.load`
 //!     and a fresh engine preview (LB7.2).
 //!   - The three rows need the host's provenance reader (`KN5:input.row_not_built` without it) and Jumble off, and the
 //!     runtime may invoke none (`LG3:capability.not_granted`). No entry can serve them.
-//!   - Not built: reading a position role's occupant again.
 //! - `view.open` and `view.close` ([`view`]; EV3.2, RPI.81 to RPI.83; draft). The layer admits them and the host's
 //!   view model ([`Views`], given with [`CommandLayer::set_views`]) holds the views and RPI.82's budget. The argument
 //!   forms, an overlay source's row and the caller come first (`KN5:input.argument_form`,
@@ -580,8 +583,8 @@ pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 pub use worksheet::{
-    compare_inputs, MacroVersion, Placement, Resolution, Role, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
-    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    compare_inputs, MacroVersion, Occupancy, Placement, Resolution, Role, Worksheet, WorksheetRef,
+    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 pub use workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
