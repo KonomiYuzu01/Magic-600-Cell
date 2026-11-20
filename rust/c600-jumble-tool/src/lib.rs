@@ -175,11 +175,15 @@
 //!   test reads names and shapes, not values. `tests/ct_lb3_07.rs` runs the entries themselves with the same names
 //!   and, for the rim and covers entries, the further names of LB3.5's selections and of a twist's outcome. This
 //!   settles nothing in the chapters.
+//! - **Jumble on through the command layer (LP2's pull requests 212, 217, 218, 220 and 254).**
+//!   `tests/jumble_on_layer.rs` compares the layer's jumbling journal with the fixtures' references, and
+//!   `tests/jumble_layer_verdicts.rs` runs `jumble.off`, the refusals with Jumble on, redo, protected pieces and free
+//!   mode beside the tool's own entries at the layer's head (`rows::Rows::at_head`): the label checkpoint predicts
+//!   each exit, and the twist check and a word's protection predict each press. The tests read the layer's decisions
+//!   and add no rule of their own. This settles nothing in the chapters.
 //!
 //! # What waits
 //!
-//! - Through the command layer, not taken up yet: refusals, redo, protected pieces and free mode, and `jumble.off`
-//!   beyond reading the bridge with Jumble off (LP2's route test and `c600-command`'s own tests run them).
 //! - ν: LB3's entry "ν and drafted correction-set check" is language code ([`library::NU`]) and reads its rows through
 //!   [`rows`], and so does the correction catalogue's entry ([`library::CORRECTIONS`]). M8's label checkpoint computes
 //!   no ν itself; the `label_checkpoint` row takes the `nu` row's value when the identity labels and a retained witness
