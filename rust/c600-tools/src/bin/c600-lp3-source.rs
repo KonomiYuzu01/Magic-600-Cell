@@ -60,7 +60,7 @@ use c600_kernel::{Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Refus
 use c600_run::boundary::Store as RunStore;
 use c600_run::meter::Outcome as RunOutcome;
 use c600_runtime::Refused;
-use c600_tools::bridge::{base, proposal_args, Bridge, Steps, WORD_CHUNK};
+use c600_tools::bridge::{proposal_args, Bridge, Steps, WORD_CHUNK};
 use c600_tools::case::{read_document, CASE_FORMAT};
 use c600_tools::expand::{expand, literal_digest, Expansion};
 use c600_tools::process::{
@@ -384,24 +384,25 @@ impl Session<'_> {
 
     /// Runs the tool on `word` on the session's host, inside the command the solver invokes to run it: the shell
     /// invokes the tool's row with the word and the host takes the job ([`invoke_tool`]). The entry runs as the job's
-    /// run through a bridge given `steps`, the solver's recipe of the step with its literal word. Returns the run's
-    /// one invocation's receipt with the command, which the step reports once the preview is built. Or returns the
-    /// start-stage refusal of a word with no transfer encoding, which both hosts give before the run reaches the layer;
-    /// the host then reports the command as its job's failure.
+    /// run under the job's budget, through a bridge given `steps`, the solver's recipe of the step with its literal
+    /// word, and the job's budget, which the run's invocations declare. Returns the run's one invocation's receipt
+    /// with the command, which the step reports once the preview is built. Or returns the start-stage refusal of a
+    /// word with no transfer encoding, which both hosts give before the run reaches the layer; the host then reports
+    /// the command as its job's failure.
     fn propose(&mut self, word: &[i32], steps: Option<Steps>) -> Result<Proposed, Failure> {
         let command = invoke_tool(&mut self.shell, &mut self.layer, self.tool, word)
             .map_err(|detail| disagree(format!("the solver's command to run the tool: {detail}")))?;
         self.commands += 1;
         self.keep(&command.receipt, &Caller::Shell);
         let run = command.run();
-        let read = base(&command.job.revision);
+        let read = command.base();
         let mut store = RunStore::default();
         // The one invocation's arguments: the word in one word step, or the solver's recipe, unchanged (LB2.4).
         let args = proposal_args(word, steps.as_ref());
-        let mut bridge = Bridge::new(&mut self.layer, &run).with_steps(steps);
+        let mut bridge = Bridge::new(&mut self.layer, &run).with_steps(steps).with_budget(command.job.budget);
         let result = match self.process.as_deref_mut() {
-            None => run_in_process(self.tool, word, &run, &read, &mut bridge, &mut store),
-            Some(host) => host.run(self.tool, SOURCE, word, &run, &read, &mut bridge, &mut store),
+            None => run_in_process(self.tool, &command, &mut bridge, &mut store),
+            Some(host) => host.run(self.tool, SOURCE, &command, &mut bridge, &mut store),
         };
         self.reader.keep_run(&store);
         let ran = match result {

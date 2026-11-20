@@ -18,9 +18,11 @@
 //! On either host a run starts inside a command the solver invoked (ONE.34; finding B2 of the KN5 boundary attack,
 //! the owner's reading of 18 November 2026). The shell invokes the tool's row, [`TOOL_ROW`], with the word, the layer
 //! admits a program job, and the host takes it ([`invoke_tool`]). The host runs the entry as the job's run, `job-<id>`,
-//! which the bridge stamps on the run's invocations. Then it reports the job ([`ToolCommand::finish`]) once the preview
-//! the run proposed is built: the layer prepares and builds a run's preview only while the host holds the job. A run
-//! refused at its start stage is reported as the job's failure.
+//! which the bridge stamps on the run's invocations, on the job's word at the job's revision, and under the job's
+//! budget: the budget the solver's command declared and the layer admitted (KN7.7; [`ToolCommand::limits`]). Then it
+//! reports the job ([`ToolCommand::finish`]) once the preview the run proposed is built: the layer prepares and builds
+//! a run's preview only while the host holds the job. A run refused at its start stage is reported as the job's
+//! failure.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -31,12 +33,13 @@ use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value as Json};
 use c600_run::boundary::{Boundary, Context, Shown, Store};
 use c600_run::interp::{code, Host};
+use c600_run::meter::Amounts;
 use c600_run::value::Value;
 use c600_runtime::codec::encode_value;
 use c600_runtime::wire::Enc;
 use c600_runtime::{Config, Ended, Fault, Job, JobOptions, Refused, Runtime, Stage};
 
-use crate::tool::{class_rows, Ran, Tool, LIMITS};
+use crate::tool::{class_rows, limits, Ran, Tool, LIMITS};
 
 /// The name of the in-process host in records: the tool's program runs on `c600-run` inside the caller's process.
 pub const IN_PROCESS: &str = "in-process";
@@ -85,15 +88,15 @@ pub struct Stopped {
     pub shell: Vec<Shown>,
 }
 
-/// Runs the tool's entry on a literal word in this process ([`Tool::run`]) and stops at the start stage, before any
-/// host call, where [`ProcessHost::run`] stops. A word the process host cannot send, one with a letter outside 1 to
-/// 1200 in magnitude, is refused with the interpreter's non-canonical value code before the tool runs, as the parent
-/// refuses its job (`c600_runtime::Runtime::run`); an entry or argument that `Loaded::run` refuses stops there too.
+/// Runs the tool's entry in this process as the job of `command`, the solver's command that ran the tool: on the job's
+/// word, as the job's run at the job's revision ([`Tool::context`]) and under the job's budget
+/// ([`ToolCommand::limits`]; [`Tool::run_under`]). It stops at the start stage, before any host call, where
+/// [`ProcessHost::run`] stops. A word the process host cannot send, one with a letter outside 1 to 1200 in magnitude,
+/// is refused with the interpreter's non-canonical value code before the tool runs, as the parent refuses its job
+/// (`c600_runtime::Runtime::run`); an entry or argument that `Loaded::run` refuses stops there too.
 pub fn run_in_process(
     tool: &Tool,
-    word: &[i32],
-    name: &str,
-    base: &str,
+    command: &ToolCommand,
     engine: &mut dyn Host,
     store: &mut Store,
 ) -> Result<Ran, Stopped> {
@@ -101,22 +104,30 @@ pub fn run_in_process(
         cause: Cause::Refused(Refused { stage: Stage::Start, codes, detail }),
         shell: Vec::new(),
     };
-    if encode_value(&Value::word(word), &mut Enc::new()).is_err() {
+    if encode_value(&Value::word(command.word()), &mut Enc::new()).is_err() {
         let detail = "an argument has no canonical transfer form".to_owned();
         return Err(refused(vec![code::NONCANONICAL_VALUE.into()], detail));
     }
-    tool.run(word, name, base, engine, store).map_err(|refusal| refused(vec![refusal.code.into()], refusal.detail))
+    let context = tool.context(&command.run(), &command.base());
+    tool.run_under(command.word(), context, command.limits(), engine, store)
+        .map_err(|refusal| refused(vec![refusal.code.into()], refusal.detail))
 }
 
-/// The job of one run of `tool` on a literal word: the source bytes, the manifest's module and entry, the word as the
-/// entry's one argument, [`LIMITS`], the test tariffs and no source ranges, as [`Tool::run_in`] runs it in process.
-/// The job runs in the solving profile and names the tool's class rows ([`class_rows`], `JobOptions::built_in`), so
-/// the child admits the entry in the built-in column with `c600_check::admit_built_in`, as [`Tool::new`] does in this
-/// process (chapter 07 section 8). Solving is the profile of the place where LP3's hosts start a run, a command in a
-/// solving session (BND.17). The tool editor and a research workspace, which would set the other two, do not exist
-/// yet, and in a session of another profile the layer refuses a run's `operation.preview` (BND.16, BND.60).
+/// The job of one run of `tool` on a literal word under [`LIMITS`], the shell's default budget ([`job_under`]).
 pub fn job(tool: &Tool, source: &str, word: &[i32]) -> Job {
-    let mut options = JobOptions::new(LIMITS);
+    job_under(tool, source, word, LIMITS)
+}
+
+/// The job of one run of `tool` on a literal word under `limits`: the source bytes, the manifest's module and entry,
+/// the word as the entry's one argument, `limits`, the test tariffs and no source ranges, as [`Tool::run_under`] runs
+/// it in process. The job runs in the solving profile and names the tool's class rows ([`class_rows`],
+/// `JobOptions::built_in`), so the child admits the entry in the built-in column with `c600_check::admit_built_in`, as
+/// [`Tool::new`] does in this process (chapter 07 section 8). Solving is the profile of the place where LP3's hosts
+/// start a run, a command in a solving session (BND.17). The tool editor and a research workspace, which would set the
+/// other two, do not exist yet, and in a session of another profile the layer refuses a run's `operation.preview`
+/// (BND.16, BND.60).
+pub fn job_under(tool: &Tool, source: &str, word: &[i32], limits: Amounts) -> Job {
+    let mut options = JobOptions::new(limits);
     options.profile = Profile::Solving;
     options.built_in = Some(class_rows(&tool.manifest));
     options.source_ranges = false;
@@ -158,22 +169,24 @@ impl ProcessHost {
         self.runtime.child_id()
     }
 
-    /// Runs the tool's entry on a literal word in the child, through a boundary onto `engine`. `source` is the
-    /// module's source, which must be the one `tool` was admitted from: the built-in column's admission is this
-    /// process's ([`Tool::new`]), and the child compiles the same bytes.
+    /// Runs the tool's entry on a literal word in the child under `limits` ([`job_under`]), through a boundary onto
+    /// `engine`. `source` is the module's source, which must be the one `tool` was admitted from: the built-in column's
+    /// admission is this process's ([`Tool::new`]), and the child compiles the same bytes.
+    #[allow(clippy::too_many_arguments)]
     pub fn run_in(
         &mut self,
         tool: &Tool,
         source: &str,
         word: &[i32],
         context: Context,
+        limits: Amounts,
         engine: &mut dyn Host,
         store: &mut Store,
     ) -> Result<Ran, Stopped> {
         if sha256_hex(source.as_bytes()) != tool.manifest.source_sha256 {
             return Err(Stopped { cause: Cause::OtherSource, shell: Vec::new() });
         }
-        let job = job(tool, source, word);
+        let job = job_under(tool, source, word, limits);
         let mut boundary = Boundary::new(engine, store, context);
         let cause = match self.runtime.run(&job, &mut boundary, self.deadline) {
             Ok(Ended::Ran(run)) => return Ok(Ran { run, shell: boundary.shell, captures: boundary.captures }),
@@ -183,18 +196,19 @@ impl ProcessHost {
         Err(Stopped { cause, shell: boundary.shell })
     }
 
-    /// Runs the entry on a literal word in the solving profile with [`Tool::context`].
+    /// Runs the tool's entry in the child as the job of `command`, as [`run_in_process`] runs it in this process: on
+    /// the job's word, as the job's run at the job's revision ([`Tool::context`]) and under the job's budget
+    /// ([`ToolCommand::limits`]).
     pub fn run(
         &mut self,
         tool: &Tool,
         source: &str,
-        word: &[i32],
-        name: &str,
-        base: &str,
+        command: &ToolCommand,
         engine: &mut dyn Host,
         store: &mut Store,
     ) -> Result<Ran, Stopped> {
-        self.run_in(tool, source, word, tool.context(name, base), engine, store)
+        let context = tool.context(&command.run(), &command.base());
+        self.run_in(tool, source, command.word(), context, command.limits(), engine, store)
     }
 }
 
@@ -231,6 +245,8 @@ pub struct ToolCommand {
     pub receipt: Receipt,
     /// The program job the host took.
     pub job: ProgramJob,
+    /// The word in the job's arguments, which [`invoke_tool`] checked is the solver's.
+    word: Vec<i32>,
 }
 
 impl ToolCommand {
@@ -239,11 +255,26 @@ impl ToolCommand {
         self.job.run()
     }
 
+    /// The word the host runs: the one in the job's arguments, [`TOOL_ROW`]'s `w`.
+    pub fn word(&self) -> &[i32] {
+        &self.word
+    }
+
+    /// The revision the run reads, the job's, as its text: the context's and the acknowledgement's `base`.
+    pub fn base(&self) -> String {
+        crate::bridge::base(&self.job.revision)
+    }
+
+    /// The run limits of the job's budget ([`crate::tool::limits`]): the budget the solver's command declared and the
+    /// layer admitted under its ceiling (KN7.7), which the host runs the entry under.
+    pub fn limits(&self) -> Amounts {
+        limits(self.job.budget)
+    }
+
     /// The result of a run that ran: the program's fixed acknowledgement of its one proposal (BND.42), the base the run
     /// read and the proposal's ID, `{"base": "<base>", "id": "<run>/1"}`.
     pub fn acknowledgement(&self) -> Json {
-        let read = crate::bridge::base(&self.job.revision);
-        json::object([("base", Json::String(read)), ("id", Json::String(format!("{}/1", self.run())))])
+        json::object([("base", Json::String(self.base())), ("id", Json::String(format!("{}/1", self.run())))])
     }
 
     /// Reports the job with the run's result and returns the receipt of the solver's command. The host reports it after
@@ -283,7 +314,7 @@ pub fn invoke_tool<S: c600_command::Store>(
     if job.job != id || job.row != TOOL_ROW || args_word(&job.args).as_deref() != Some(word) {
         return Err(format!("the program job {} is not {TOOL_ROW}'s on the word", job.job));
     }
-    Ok(ToolCommand { receipt, job })
+    Ok(ToolCommand { receipt, job, word: word.to_vec() })
 }
 
 /// The error a host reports for its job when the run was refused at the start stage because an argument has no

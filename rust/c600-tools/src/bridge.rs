@@ -34,7 +34,7 @@
 use std::sync::Arc;
 
 use c600_command::{
-    draft_args, Caller, CommandLayer, Invocation, MemoryStore, Receipt, Revision, Status, Store, Token,
+    draft_args, Budget, Caller, CommandLayer, Invocation, MemoryStore, Receipt, Revision, Status, Store, Token,
 };
 use c600_kernel::json::{self, Value as Json};
 use c600_kernel::Kernel;
@@ -119,6 +119,9 @@ pub struct Sent {
 pub struct Bridge<'l, S: Store = MemoryStore> {
     layer: &'l mut CommandLayer<S>,
     run: String,
+    /// The budget the run's invocations of a row an entry serves declare: the run's own, if the host gave it, and
+    /// otherwise the layer's draft ceiling.
+    budget: Budget,
     /// The solver's input recipe of the run and its literal word, if the host gave them.
     steps: Option<Steps>,
     /// The certified guarded setup tables, if the host gave them: the `setups` row reads them.
@@ -130,9 +133,18 @@ pub struct Bridge<'l, S: Store = MemoryStore> {
 impl<'l, S: Store> Bridge<'l, S> {
     /// The host of run `run` on `layer`. A run's name is new in its session: the bridge's command IDs are
     /// `<run>/<n>`, and the layer answers a command ID it knows by its outcome lookup. The bridge has no solver's
-    /// recipe: every proposal goes in one word step. It has no setup tables: a `setups` read is not granted.
+    /// recipe: every proposal goes in one word step. It has no setup tables: a `setups` read is not granted. It has
+    /// no run's budget: an invocation of a row an entry serves declares the layer's draft ceiling.
     pub fn new(layer: &'l mut CommandLayer<S>, run: &str) -> Self {
-        Bridge { layer, run: run.to_owned(), steps: None, setups: None, sent: Vec::new() }
+        let budget = Budget::DRAFT_CEILING;
+        Bridge { layer, run: run.to_owned(), budget, steps: None, setups: None, sent: Vec::new() }
+    }
+
+    /// This bridge with the run's budget, the budget of the program job the run is (`ProgramJob::budget`), which the
+    /// host gives for the run: the run's invocations of a row an entry serves then declare it (KN7.7).
+    pub fn with_budget(mut self, budget: Budget) -> Self {
+        self.budget = budget;
+        self
     }
 
     /// This bridge with the solver's input recipe of the run and its literal word ([`Steps::of`]), which the host gives
@@ -153,7 +165,7 @@ impl<'l, S: Store> Bridge<'l, S> {
     /// One invocation of `row` with absolute arguments on this run's channel, stamped [`Caller::Runtime`] for the run,
     /// with a fresh command ID and the layer's current epoch. A proposal never carries a token; `token` is there so a
     /// test can show that the layer refuses a runtime invocation carrying one. An invocation of a row an entry serves
-    /// declares the draft ceiling as its budget (KN7.7; until the host passes the run's own), and one of another row
+    /// declares the run's budget (KN7.7; [`Bridge::with_budget`], by default the draft ceiling), and one of another row
     /// declares none, as the shell does.
     pub fn invoke(&mut self, row: &str, args: Json, token: Option<Token>) -> Receipt {
         let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
@@ -163,7 +175,7 @@ impl<'l, S: Store> Bridge<'l, S> {
             args,
             token,
             epoch: self.layer.revision().epoch,
-            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
+            budget: served.then_some(self.budget),
         };
         let caller = Caller::Runtime { run: self.run.clone() };
         let receipt = self.layer.invoke(&caller, invocation.clone());
