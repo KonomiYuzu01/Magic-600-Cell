@@ -37,6 +37,9 @@ public partial class Shell : Control
     private CoreLibrary? _core;
     private HostLibrary? _hostLibrary;
     private CoreSurface? _surface;
+    /// <summary>The host's model loads (charter E3's startup), from m6h_preload until m6h_create_preloaded takes them.
+    /// </summary>
+    private IntPtr _preload;
     private IntPtr _host;
     private EventLog? _log;
     private InputLog? _input;
@@ -113,6 +116,9 @@ public partial class Shell : Control
             throw new NotSupportedException(
                 $"the shell runs {puzzle} only with a session (M600_SESSION_DIR and M600_TWIST_MENU)");
         }
+        // Charter E3's startup (a draft): the host loads the model on threads of its own while the core's surface
+        // opens, and with a session the exact model the session's twist menu reads.
+        Require(hostLibrary, "m6h_preload", hostLibrary.Preload(assets, withSession, out _preload));
         var hwnd = DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
         var window = (IntPtr)hwnd;
         _size = DisplayServer.WindowGetSize();
@@ -121,10 +127,13 @@ public partial class Shell : Control
             ?? throw new InvalidOperationException("the shell needs Godot's rendering device");
         var adapter = CoreSurface.AdapterLuid(device.GetDriverResource(RenderingDevice.DriverResource.PhysicalDevice, default, 0));
         var surface = _surface = CoreSurface.Open(coreLibrary, adapter, (ulong)hwnd, 0, 0, (uint)_size.X, (uint)_size.Y);
-        var code = hostLibrary.Create(coreLibrary, surface.Context, assets, out _host);
+        var preload = _preload;
+        _preload = IntPtr.Zero;
+        var code = hostLibrary.CreatePreloaded(coreLibrary, surface.Context, preload, out _host);
         if (code != HostLibrary.Ok)
         {
-            throw new InvalidOperationException($"m6h_create answered {code}: {hostLibrary.LastError(IntPtr.Zero)}");
+            throw new InvalidOperationException(
+                $"m6h_create_preloaded answered {code}: {hostLibrary.LastError(IntPtr.Zero)}");
         }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         _log = EventLog.FromEnvironment();
@@ -452,6 +461,12 @@ public partial class Shell : Control
         {
             library.Destroy(_host);
             _host = IntPtr.Zero;
+        }
+        // A preload that no host took: freeing it waits for its loads, so none runs after the library is freed.
+        if (_preload != IntPtr.Zero && _hostLibrary is { } preloads)
+        {
+            preloads.FreePreload(_preload);
+            _preload = IntPtr.Zero;
         }
         _surface?.Dispose();
         _surface = null;

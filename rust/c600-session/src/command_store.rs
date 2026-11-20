@@ -2,11 +2,13 @@
 //! section 6).
 //!
 //! [`JournalStore`] implements [`Store`] and [`Reopen`] on a [`Disk`]. Every record is one journal frame, appended and
-//! synced before the layer adopts what it records (R-06); the session's start state is a state object, written and
-//! synced before the frame that cites it. A failed append that the store cuts back is rolled back; any other failure
+//! synced before the layer adopts what it records (R-06). The session's start state and every record value an action
+//! writes are objects, each written and synced before the frame that cites it, so the frame is the commit point and an
+//! object that no frame cites is ignored. A failed append that the store cuts back is rolled back; any other failure
 //! leaves the fate unknown until the journal is read again, which then decides it (KN5.23, ONE.70).
-//! [`c600_command::CommandLayer::open`] replays the history through the kernel: a damaged frame, or a record that does
-//! not read, ends the history, and the layer opens in read-only recovery.
+//! [`c600_command::CommandLayer::open`] replays the history through the kernel: a damaged frame, a record that does
+//! not read, or a record object that is missing or does not match its name, ends the history, and the layer opens in
+//! read-only recovery.
 //!
 //! The record shapes are drafts (format `c600-command-journal-draft-1`, apart from M6's `c600-session-draft-1`; each is
 //! one canonical JSON value):
@@ -16,10 +18,22 @@
 //!   session's profile by BND.15's name (BND.17). A session record without `profile`, as journals written before it
 //!   have, reads as `solving`;
 //! - `{"record": "command_epoch", "epoch"}` for every epoch a layer opened after the first, so no open draws it again;
-//! - `{"record": "command_action", "transaction"}` for every durable action, in [`Transaction::to_json`]'s form. The
-//!   receipt is a function of the transaction, so the effect and its receipt are one write (KN5.23).
+//! - `{"record": "command_action", "transaction"}` for every durable action, in [`Transaction::to_json`]'s form,
+//!   except that each record value the action writes (`record`'s `value` and each of `records`', when not `null`) is
+//!   a reference `{"object": name}` to its record object. The receipt is a function of the transaction, so the effect
+//!   and its receipt are one write (KN5.23).
+//!
+//! A record object is a value's canonical [`c600_command::RecordValue::to_json`] bytes, named by their SHA-256, which
+//! is the value's content digest ([`c600_command::RecordValue::digest`], KN0.8). It is charged to FP.9's
+//! `record_stored` and `record_decoded` rows when it is written and when it is read; it is stored raw, so both amounts
+//! are its length. A value over FP.9's bound is refused with `PS1:resource_limit.persistence_size` before anything is
+//! written. An object that the disk already holds under its name with the same bytes is not written again, and its
+//! value is still charged. The frame holds the references, so a record value up to FP.9's bound is not held to the
+//! frame's 16 MiB draft bound; the frame's other fields, a record write's kept part blocks among them, still are. A
+//! journal written before record objects holds its values inline, and those still read.
 
 use std::cell::RefCell;
+use std::collections::BTreeSet;
 
 use c600_command::{
     identity_from_json, identity_json, Error, Fate, Genesis, History, Profile, Reopen, Store, Transaction,
@@ -30,6 +44,7 @@ use c600_kernel::SLOTS;
 
 use crate::disk::Disk;
 use crate::journal::MAX_PAYLOAD;
+use crate::persist::codec::charge;
 use crate::store::{self as journal, Fate as Written};
 use crate::types::code;
 
@@ -39,6 +54,13 @@ pub const FORMAT: &str = "c600-command-journal-draft-1";
 const SESSION: &str = "command_session";
 const EPOCH: &str = "command_epoch";
 const ACTION: &str = "command_action";
+/// A record value's reference to its record object: this one field, the object's name.
+const OBJECT: &str = "object";
+/// FP.9's rows that a record object is charged to.
+const RECORD_ROWS: [&str; 2] = ["record_stored", "record_decoded"];
+
+/// The objects a record cites, each with its name, in order.
+type Objects = Vec<(String, Vec<u8>)>;
 
 /// A store for one session of the command layer, on a journal.
 pub struct JournalStore(RefCell<Inner>);
@@ -48,6 +70,8 @@ struct Inner {
     held: Held,
     /// An append whose fate was unknown: the journal is read again before anything relies on what it holds.
     unsettled: bool,
+    /// The objects this store has written or synced, which a frame may cite without syncing them again.
+    synced: BTreeSet<String>,
 }
 
 /// What the journal holds, in order.
@@ -70,7 +94,8 @@ enum Record {
         profile: Profile,
     },
     Epoch(u64),
-    Action(Box<Transaction>),
+    /// An action's transaction as the frame holds it, before its record objects are read.
+    Action(Value),
 }
 
 fn io(e: std::io::Error) -> Error {
@@ -120,6 +145,99 @@ fn checked(value: &Value) -> Result<Vec<u8>, Error> {
     Ok(bytes)
 }
 
+/// FP.9's charges of a record object (PS1.11). The object is stored raw, so its length is both rows' amount.
+fn charged(bytes: &[u8]) -> Result<(), Error> {
+    for row in RECORD_ROWS {
+        if let Err(refusal) = charge(row, bytes.len() as u128) {
+            let detail = refusal.limit.map_or_else(String::new, |limit| {
+                format!("{} bytes above {} at FP.9's `{}`", limit.attempted, limit.max, limit.row)
+            });
+            return Err(Error::new(refusal.code, detail));
+        }
+    }
+    Ok(())
+}
+
+/// Whether a cited name can be an object's: 64 lowercase hexadecimal digits, so it never names a file outside
+/// `objects/`.
+fn object_name(name: &str) -> bool {
+    name.len() == 64 && name.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+}
+
+/// The record values a transaction's journal form carries: `record`'s `value` and each of `records`'.
+fn record_values(transaction: &mut Value) -> Vec<&mut Value> {
+    let Value::Object(fields) = transaction else { return Vec::new() };
+    let mut values = Vec::new();
+    for (field, value) in fields.iter_mut() {
+        let writes = match (field.as_str(), value) {
+            ("record", write) => std::slice::from_mut(write),
+            ("records", Value::Array(writes)) => writes.as_mut_slice(),
+            _ => continue,
+        };
+        for write in writes {
+            if let Value::Object(write) = write {
+                values.extend(write.get_mut("value"));
+            }
+        }
+    }
+    values
+}
+
+/// An action's record and the record objects it cites, in order. Each record value the transaction writes is charged
+/// to FP.9's record rows, checked to read back as itself and replaced by the reference to its object.
+fn action_record(transaction: &Transaction) -> Result<(Value, Objects), Error> {
+    let mut form = transaction.to_json();
+    let mut objects = Vec::new();
+    for value in record_values(&mut form) {
+        if *value == Value::Null {
+            continue;
+        }
+        let bytes = value.canonical().into_bytes();
+        charged(&bytes)?;
+        if json::parse(&bytes).ok().as_ref() != Some(&*value) {
+            return Err(Error::new(code::NONCANONICAL_VALUE, "a record value does not read back as itself"));
+        }
+        let name = sha256_hex(&bytes);
+        *value = json::object([(OBJECT, text(&name))]);
+        objects.push((name, bytes));
+    }
+    Ok((json::object([("record", text(ACTION)), ("transaction", form)]), objects))
+}
+
+/// Reads the record object that a record value's reference cites in place of the reference. A value written inline,
+/// as journals before record objects hold them, or `null` stays as it is. An object that is missing, that FP.9's
+/// record rows refuse, or whose bytes do not match its name or are not canonical does not read (`false`); a disk read
+/// that fails is an error.
+fn read_object(store: &mut journal::Store, value: &mut Value) -> Result<bool, Error> {
+    let reference = value.as_object().filter(|fields| fields.len() == 1).and_then(|_| value.get(OBJECT)?.as_str());
+    let Some(name) = reference.map(str::to_owned) else { return Ok(true) };
+    if !object_name(&name) {
+        return Ok(false);
+    }
+    let Some(bytes) = store.get_object(&name).map_err(io)? else { return Ok(false) };
+    if charged(&bytes).is_err() || sha256_hex(&bytes) != name {
+        return Ok(false);
+    }
+    match json::parse(&bytes) {
+        Ok(read) if read.canonical().as_bytes() == bytes.as_slice() => {
+            *value = read;
+            Ok(true)
+        }
+        _ => Ok(false),
+    }
+}
+
+/// An action's transaction, with its record objects read in place of their references; `None` when a cited object or
+/// the transaction does not read.
+fn read_action(store: &mut journal::Store, mut transaction: Value) -> Result<Option<Transaction>, Error> {
+    for value in record_values(&mut transaction) {
+        if !read_object(store, value)? {
+            return Ok(None);
+        }
+    }
+    Ok(Transaction::from_json(&transaction))
+}
+
 fn session_record(genesis: &Genesis) -> Value {
     json::object([
         ("record", text(SESSION)),
@@ -157,14 +275,14 @@ fn read_record(payload: &[u8]) -> Option<Record> {
             })
         }
         EPOCH if fields == 2 => Some(Record::Epoch(nat(value.get("epoch")?)?)),
-        ACTION if fields == 2 => Some(Record::Action(Box::new(Transaction::from_json(value.get("transaction")?)?))),
+        ACTION if fields == 2 => Some(Record::Action(value.get("transaction")?.clone())),
         _ => None,
     }
 }
 
 /// Reads what the journal holds: the session record first, then epochs and actions. The start state's object must be
-/// on the disk and match its name. A record that does not read, a second session record or a damaged frame ends the
-/// history there.
+/// on the disk and match its name. A record that does not read, a record object that does not read, a second session
+/// record or a damaged frame ends the history there.
 fn load(store: &mut journal::Store, records: Vec<Vec<u8>>, damaged: Option<u64>) -> Result<Held, Error> {
     let mut records = records.into_iter();
     let mut held = Held::default();
@@ -184,14 +302,24 @@ fn load(store: &mut journal::Store, records: Vec<Vec<u8>>, damaged: Option<u64>)
     };
     held.genesis = Some(Genesis { session, identity, epoch, labels, digest: start, orbits, profile });
     for (index, payload) in records.enumerate() {
-        match read_record(&payload) {
-            Some(Record::Epoch(epoch)) => held.epochs.push(epoch),
-            Some(Record::Action(transaction)) => held.transactions.push(*transaction),
-            _ => {
-                let detail = format!("journal record {} does not read", index + 2);
-                held.damaged = Some(Error::new(c600_command::code::READ_ONLY_RECOVERY, detail));
-                return Ok(held);
+        let read = match read_record(&payload) {
+            Some(Record::Epoch(epoch)) => {
+                held.epochs.push(epoch);
+                true
             }
+            Some(Record::Action(transaction)) => match read_action(store, transaction)? {
+                Some(transaction) => {
+                    held.transactions.push(transaction);
+                    true
+                }
+                None => false,
+            },
+            _ => false,
+        };
+        if !read {
+            let detail = format!("journal record {} does not read", index + 2);
+            held.damaged = Some(Error::new(c600_command::code::READ_ONLY_RECOVERY, detail));
+            return Ok(held);
         }
     }
     if let Some(at) = damaged {
@@ -212,7 +340,8 @@ impl JournalStore {
             return Err(Error::new(code::PERSISTENCE_FORMAT, "the disk already holds a journal"));
         }
         opened.settle().map_err(io)?;
-        Ok(JournalStore(RefCell::new(Inner { journal: opened.store, held: Held::default(), unsettled: false })))
+        let inner = Inner { journal: opened.store, held: Held::default(), unsettled: false, synced: BTreeSet::new() };
+        Ok(JournalStore(RefCell::new(inner)))
     }
 
     /// The store of the session a disk holds, for [`c600_command::CommandLayer::open`]. The journal is settled first: a
@@ -223,7 +352,7 @@ impl JournalStore {
         let opened = journal::Store::open(disk).map_err(open_io)?;
         let mut store = opened.store;
         let held = load(&mut store, opened.records, opened.damaged)?;
-        Ok(JournalStore(RefCell::new(Inner { journal: store, held, unsettled: false })))
+        Ok(JournalStore(RefCell::new(Inner { journal: store, held, unsettled: false, synced: BTreeSet::new() })))
     }
 }
 
@@ -241,8 +370,12 @@ impl Inner {
         }
     }
 
-    /// Appends one record as one frame and syncs it.
-    fn append(&mut self, record: &Value) -> Fate {
+    /// Makes each object the record cites durable, then appends the record as one frame and syncs it. The frame is the
+    /// commit point: a failed object write leaves the journal as it was, and an object that no frame cites is harmless.
+    /// An object this store has not written or synced yet is written and synced, or, when the disk holds it with the
+    /// same bytes, synced, since an earlier write may have reached the disk without its sync. An object the disk cannot
+    /// read is not written over, and the action is rolled back.
+    fn append(&mut self, record: &Value, objects: &[(String, Vec<u8>)]) -> Fate {
         self.settle();
         if self.unsettled {
             return Fate::Unknown;
@@ -254,6 +387,20 @@ impl Inner {
             Ok(bytes) => bytes,
             Err(error) => return Fate::RolledBack(error),
         };
+        for (name, object) in objects {
+            if self.synced.contains(name) {
+                continue;
+            }
+            let written = match self.journal.get_object(name) {
+                Ok(Some(stored)) if stored == *object => self.journal.sync_object(name),
+                Ok(_) => self.journal.put_object(name, object),
+                Err(_) => Err(Written::RolledBack),
+            };
+            if written.is_err() {
+                return Fate::RolledBack(Error::new(code::DISK_FULL, format!("the object {name} was not written")));
+            }
+            self.synced.insert(name.clone());
+        }
         match self.journal.append(&bytes) {
             Ok(()) => Fate::Durable,
             Err(Written::RolledBack) => Fate::RolledBack(Error::new(code::DISK_FULL, "the record was not written")),
@@ -271,8 +418,11 @@ impl Store for JournalStore {
         if inner.held.genesis.is_none() {
             return Fate::RolledBack(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
         }
-        let record = json::object([("record", text(ACTION)), ("transaction", transaction.to_json())]);
-        let fate = inner.append(&record);
+        let (record, objects) = match action_record(transaction) {
+            Ok(written) => written,
+            Err(error) => return Fate::RolledBack(error),
+        };
+        let fate = inner.append(&record, &objects);
         if fate == Fate::Durable {
             inner.held.transactions.push(transaction.clone());
         }
@@ -297,11 +447,7 @@ impl Store for JournalStore {
         if sha256_hex(&bytes) != genesis.digest {
             return Fate::RolledBack(Error::new(code::PERSISTENCE_FORMAT, "the start state does not match its digest"));
         }
-        let held = matches!(inner.journal.get_object(&genesis.digest), Ok(Some(stored)) if stored == bytes);
-        if !held && inner.journal.put_object(&genesis.digest, &bytes).is_err() {
-            return Fate::RolledBack(Error::new(code::DISK_FULL, "the start state was not written"));
-        }
-        let fate = inner.append(&session_record(genesis));
+        let fate = inner.append(&session_record(genesis), &[(genesis.digest.clone(), bytes)]);
         if fate == Fate::Durable {
             inner.held.genesis = Some(genesis.clone());
         }
@@ -310,7 +456,7 @@ impl Store for JournalStore {
 
     fn begin_epoch(&mut self, epoch: u64) -> Fate {
         let inner = self.0.get_mut();
-        let fate = inner.append(&json::object([("record", text(EPOCH)), ("epoch", Value::Int(epoch as i64))]));
+        let fate = inner.append(&json::object([("record", text(EPOCH)), ("epoch", Value::Int(epoch as i64))]), &[]);
         if fate == Fate::Durable {
             inner.held.epochs.push(epoch);
         }

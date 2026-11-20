@@ -1,7 +1,8 @@
 //! The shell's native host library through its C interface, over the bridge's C shim and the fake core on route B
 //! (accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks): creation on the shipped model,
 //! the publication installed, frames confirmed and read in batches with their display times, a lost device and
-//! recovery to epoch 2, and the refusals. Every result is a synthetic fixture outcome, not a GPU run.
+//! recovery to epoch 2, the refusals, and the preload's (charter E3's startup, a draft). Every result is a synthetic
+//! fixture outcome, not a GPU run.
 
 #[path = "../../tests/common/mod.rs"]
 mod common;
@@ -169,6 +170,48 @@ fn the_c_interface_refuses_what_it_cannot_use() {
     let (code, host) = create(&functions(), shim, &missing);
     assert_eq!((code, host), (M6H_E_MODEL, ptr::null_mut()));
     assert!(last_error(ptr::null_mut()).contains("shipped model"));
+
+    // The preload: a null output or path, a path that is not UTF-8 and a session flag other than 0 or 1 start nothing.
+    let mut preload = ptr::null_mut();
+    // SAFETY: every pointer is null or valid.
+    unsafe {
+        assert_eq!(m6h_preload(path.as_ptr(), path.len(), 0, ptr::null_mut()), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_preload(ptr::null(), 0, 0, &mut preload), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_preload([0xFFu8].as_ptr(), 1, 0, &mut preload), M6H_E_INVALID_ARGUMENT);
+        assert!(last_error(ptr::null_mut()).contains("UTF-8"));
+        assert_eq!(m6h_preload(path.as_ptr(), path.len(), 2, &mut preload), M6H_E_INVALID_ARGUMENT);
+        assert!(last_error(ptr::null_mut()).contains("session flag"), "{}", last_error(ptr::null_mut()));
+        assert!(preload.is_null());
+    }
+    // A create from a preload takes it whatever it answers: a null preload, table or context is refused, a core of
+    // the previous ABI is not bound, and a folder without the model answers as m6h_create does.
+    let started = |folder: &str, session: u32| {
+        let mut preload = ptr::null_mut();
+        // SAFETY: the path's bytes are readable and the output writable.
+        assert_eq!(unsafe { m6h_preload(folder.as_ptr(), folder.len(), session, &mut preload) }, M6H_OK);
+        assert!(!preload.is_null());
+        preload
+    };
+    let mut out = ptr::null_mut();
+    // SAFETY: every pointer is null or valid, and each preload goes to one call.
+    unsafe {
+        assert_eq!(m6h_create_preloaded(&functions(), shim.cast(), ptr::null_mut(), &mut out), M6H_E_INVALID_ARGUMENT);
+        assert!(last_error(ptr::null_mut()).contains("null preload"));
+        let preload = started(&path, 0);
+        assert_eq!(m6h_create_preloaded(&functions(), shim.cast(), preload, ptr::null_mut()), M6H_E_INVALID_ARGUMENT);
+        let preload = started(&path, 0);
+        assert_eq!(m6h_create_preloaded(ptr::null(), shim.cast(), preload, &mut out), M6H_E_INVALID_ARGUMENT);
+        let preload = started(&path, 1);
+        assert_eq!(m6h_create_preloaded(&previous, shim.cast(), preload, &mut out), M6H_E_CORE);
+        assert!(last_error(ptr::null_mut()).contains("UNSUPPORTED"), "{}", last_error(ptr::null_mut()));
+        let preload = started(&missing, 1);
+        assert_eq!(m6h_create_preloaded(&functions(), shim.cast(), preload, &mut out), M6H_E_MODEL);
+        assert!(last_error(ptr::null_mut()).contains("shipped model"));
+        assert!(out.is_null());
+        // A preload that no call takes is freed after its loads end.
+        m6h_preload_free(started(&path, 1));
+        m6h_preload_free(ptr::null_mut());
+    }
 
     // A null handle or output.
     let mut count = 0;
