@@ -24,6 +24,11 @@ c600-display = { path = "../../rust/c600-display" }
 c600-kernel = { path = "../../rust/c600-kernel" }
 
 # As in rust/Cargo.toml: the shared host scenario loads the shipped model, which is slow unoptimized. Here every
-# crate but this one is outside the workspace, so "*" covers the kernel and the jumbling crate too.
+# crate but this one is outside the workspace, so "*" covers the kernel and the jumbling crate too. Debug info is kept
+# small as in rust/Cargo.toml (owner, 20 November 2026): line tables only for this workspace's crates, none for the rest.
+[profile.dev]
+debug = "line-tables-only"
+
 [profile.dev.package."*"]
 opt-level = 2
+debug = false
