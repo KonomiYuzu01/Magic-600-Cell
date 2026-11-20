@@ -339,11 +339,14 @@ SA2_API int32_t sa2_scene_trace_end(sa2_context* ctx);
 
 /* After trace_end and a live-device confirmed sa2_drain covering every scene
  * command list, run S-B's exact label check (W3/W4) and write trace.jsonl and
- * native.json into an existing UTF-8 directory. Never writes run.json or
- * overwrites either output. NULL/empty/malformed UTF-8: INVALID_ARGUMENT;
+ * native.json into an existing UTF-8 directory. On a sa2_create context it
+ * also writes presented.jsonl: one {"display_qpc","frame","present_count"}
+ * row per traced frame that the surface's own frame statistics confirmed
+ * displayed (C9, owner item 9). Never writes run.json or overwrites any
+ * output. NULL/empty/malformed UTF-8: INVALID_ARGUMENT;
  * wrong lifecycle/drain: WRONG_STATE; file failures/existing output: E_IO.
  * Label mismatch (including an injection not reached): E_CHECK_FAILED with
- * both outputs written. Success: SA2_OK. Repeated writes need fresh outputs.
+ * every output written. Success: SA2_OK. Repeated writes need fresh outputs.
  * native.json's vram_peak_mb (MiB) is null with SA2_SCENE_NO_VRAM or when no
  * sample was taken; a harness refuses a gate record without it.
  */

@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-20-lp3-exit
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 20 November 2026 to the nine items of LP3's exit card - eight take the recommended option, and the E2 item takes option 2 (a key without a confirmed frame counts as one failed key, and its run stays valid). B12 is recorded cold only; CT-RTE-04's five form-2 traces and its three IR amendment candidates are amended under PHS.52 at the freeze; push keeps its per-element price; the five later draft codes are registered in chapter 13 with the six of 16 November; `replay` and `protection` keep one name each, typed by puzzle and level; E3 stays 3 s and startup is made faster; route B's blind seconds may come from the core's own frame statistics if PresentMon cannot be kept.
+summary: Owner answers of 20 November 2026 to the nine items of LP3's exit card - eight take the recommended option, and the E2 item takes option 2 (a key without a confirmed frame counts as one failed key, and its run stays valid). B12 is recorded cold only; CT-RTE-04's five form-2 traces and its three IR amendment candidates are amended under PHS.52 at the freeze; push keeps its per-element price; the five later draft codes are registered in chapter 13 with the six of 16 November; `replay` and `protection` keep one name each, typed by puzzle and level; E3 stays 3 s and startup is made faster; route B's blind seconds come from the core's own frame statistics, cross-checked against PresentMon, since PresentMon cannot be kept as the source (pull request 385).
 related: [owner-decisions-2026-11-16-phs52, owner-decisions-2026-11-18, owner-decisions-2026-11-18-route-b, owner-decisions-2026-11-16-time-saving]
 supersedes: []
 claims:
@@ -61,11 +61,21 @@ which cites this page.
    core's own frame statistics (`GetFrameStatistics`), cross-checked against PresentMon. That change goes in its own
    pull request, which names the gate text it changes ([route B](owner-decisions-2026-11-18-route-b.md)).
 
+   The condition was met: in the rehearsal PresentMon reported all 11,761 presents of the core's composition chain as
+   dropped, with no display time, so it cannot stay the source. Pull request 385 applies the option. Route B's
+   `blind-seconds` check needs, in each checked second, a traced frame that the core's frame statistics confirm
+   displayed (`presented.jsonl`) and a displayed present of the window's chain, and a new `presented` check has
+   PresentMon find each confirmed frame's own present, in order, no later than its display. For the same reason, the
+   PresentMon cross-check of E2 and LX-2, a draft rule, now checks present order (the first present of the declared
+   swap chain after a frame's submission comes no later than its confirmed display) instead of a 2 ms window. No bar
+   moves, and the renderer gate's frame times still come from PresentMon's time between the core chain's presents.
+
 ## What follows
 
 - LP3's freeze pull request carries items 3, 4, 6 and 7, with H-08's content, the FP.1 pin refresh and a C10 section
   in the LP3 plan, and records items 1 and 5.
-- The C9 measurement tools take item 2 (`key_to_frame.py` and the "Bars" section) and, if needed, item 9.
+- The C9 measurement tools take item 2 (`key_to_frame.py` and the "Bars" section, pull request 380) and item 9
+  (pull request 385).
 - Item 8 is product work on the shell's startup path before the frozen candidate.
 
 ## What this does not do

@@ -77,7 +77,9 @@ decision without a new question. If one fails, route B returns to the owner with
 
 **Evidence.** The selection evidence of build `06d14019` was presented through Godot's texture path, so it is not
 reused as evidence for route B. ADR-R01.3's W-J and W3 runs and RPI.79's gate run on the product build cover route B,
-with unchanged bars.
+with unchanged bars. Since 20 November 2026 their display evidence, and the display cross-check of charter E2 and LX-2,
+come from the core's own frame statistics, cross-checked against PresentMon, because PresentMon reports every present of
+the core's composition chain as dropped ([LP3 exit](owner-decisions-2026-11-20-lp3-exit.md), item 9; pull request 385).
 
 ## What this does not change
 
