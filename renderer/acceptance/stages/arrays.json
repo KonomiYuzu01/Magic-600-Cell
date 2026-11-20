@@ -1,0 +1,8 @@
+{
+  "format": "magic600-stage-arrays/1",
+  "vertex": {
+    "d4": ["0x3f970a3d"]
+  },
+  "fragment": {},
+  "note": "The gate stages' array values as binary32 bit patterns, by stage kind and array name, in each stage's declared order. d4 is the built-in projection's distance, 1.18f (renderer/core/src/scene.cpp constants(); bits 0x3f970a3d), so the gate vertex stage projects as the built-in chain does apart from its exclusion at |d4 - w| <= 2^-12. prepare_host.py --stages copies this file into the build's stages/ folder and records it in the build identity; the harness passes the values to sa2_scene_stages."
+}

@@ -13,7 +13,10 @@ the Python standard library, start no process, and run anywhere. They check that
 - the run finalizer accepts small synthetic W-J and W3 runs and checks, refuses or fails broken ones, and
   writes records that the unchanged renderer gate (tools/perf/renderer_gate.py) judges as the evidence was;
 - route B (C9 U4): a synthetic route-B run is measured on the core's declared chain at sync interval 1, and
-  the route-B build keeps the product shell's window settings, Godot's vsync and the guard over override.cfg.
+  the route-B build keeps the product shell's window settings, Godot's vsync and the guard over override.cfg;
+- user stages (C9 U5c): synthetic stage runs are accepted with a stages record, or refused for a failed compile,
+  a measured frame without a row or a stopped frame; the stage build's options, identity check and guard, the
+  harness argument and the runner flag agree; the gate stages declare one overdraw that limits.json allows.
 """
 from __future__ import annotations
 
@@ -285,6 +288,10 @@ class InteropTests(unittest.TestCase):
                     self.assertEqual(int(asserted[name]), size)
                 self.assertIn(f"sizeof({camel(name)}) != {constant}", self.native, "checked at load")
         self.assertEqual(x64_layout(header["sa2_wj_config"]), ([0, 4, 8, 16, 24, 32, 40, 44], 48))
+        # C9 U5c: the user-stage report row the harness reads, 64 bytes on x64 and size-checked at load.
+        self.assertIn("Sa2StageFrame", native)
+        self.assertEqual(x64_layout(header["sa2_stage_frame"]), ([0, 4, 8, 16, 24, 32, 40, 48, 56], 64))
+        self.assertIn("public const int StageFrameSize = 64;", self.native)
 
     def test_constants_match_the_header(self):
         defines = dict(re.findall(r"^#define (SA2_\w+) (\S+)", self.header, re.M))
@@ -487,10 +494,11 @@ def write_run(directory: Path, scene, menu=None, run_id="c9-test", pose_failure=
     return directory
 
 
-def finalize(directory: Path, mode="run", overlays=OVERLAYS, adapter=None, fault_injection=False, unattended=False):
+def finalize(directory: Path, mode="run", overlays=OVERLAYS, adapter=None, fault_injection=False, unattended=False,
+             build=None):
     """The finalizer with the Windows-only build guard replaced by a fixed identity and binding."""
     output = io.StringIO()
-    with mock.patch.object(fr, "build_identity", lambda *arguments: (dict(BUILD), dict(BINDING))), \
+    with mock.patch.object(fr, "build_identity", lambda *arguments: (dict(build or BUILD), dict(BINDING))), \
             mock.patch.object(fr, "final_guard_check", lambda *arguments: None), \
             contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
         return fr.finalize(directory, "sa2", mode, PID, 0, 2**40, overlays=overlays, fault_injection=fault_injection,
@@ -864,6 +872,354 @@ class RouteBBuildTests(unittest.TestCase):
             self.assertNotIn("override.cfg", names())
             (project / "override.cfg").write_bytes(b"")
             self.assertIn("override.cfg", names())
+
+
+# --- User stages (C9 U5c) -------------------------------------------------------------------------------
+
+STAGES = ACCEPTANCE / "stages"
+STAGE_FILE_NAMES = ("arrays.json", "fragment.hlsl", "fragment.json", "vertex.hlsl", "vertex.json")
+STAGE_DLLS = ("dxcompiler.dll", "dxil.dll")
+STAGE_KIND_NAMES = ("vertex", "fragment")
+STAGE_HANDLES = {"vertex": 7, "fragment": 9}
+STAGE_OVERDRAWS = {"vertex": 120, "fragment": 96}   # the harness attaches the smaller
+STAGE_PREROLL = 40                                   # chain frames drawn before the trace
+STAGE_ALLOWANCE = SIZE["width"] * SIZE["height"] * min(STAGE_OVERDRAWS.values())
+D4_BITS = "0x3f970a3d"                               # 1.18f, the built-in projection's distance
+STAGE_PARTS = {f"stage:{name}": hashlib.sha256(f"stage:{name}".encode()).hexdigest() for name in STAGE_FILE_NAMES}
+STAGE_PARTS.update({f"dxc:{name}": hashlib.sha256(name.encode()).hexdigest() for name in STAGE_DLLS})
+STAGE_BUILD = dict(BUILD, parts=[{"name": name, "sha256": digest} for name, digest in sorted(STAGE_PARTS.items())])
+STAGE_COMPILER = {"library": "dxcompiler.dll", "version": "1.9", "commit_count": 5000, "commit_hash": "0123abc",
+                  "custom_version": "", "validator": {"library": "dxil.dll", "version": "1.9"}}
+# The largest raster bound per pixel of W3 over 1920x1080, 2560x1440 and 2560x1600 (C9 U5c, renderer/acceptance/
+# overdraw: 1920x1080, frame 5803, turn angle -3pi/8), and the sizing margin.
+W3_LARGEST_BOUND_PER_PIXEL = 85.6749
+OVERDRAW_MARGIN = 1.25
+
+
+def stage_pass(entry, profile, status="compiled"):
+    return {"entry": entry, "profile": profile, "arguments": ["-E", entry, "-T", profile, "-HV", "2021"],
+            "source_sha256": HASH, "dxil_sha256": "e" * 64 if status == "compiled" else None, "status": status}
+
+
+def stage_compile(kind, status="compiled"):
+    """The core's compile record (renderer/core/src/stages.cpp, Registry::compile) as the harness writes it."""
+    compiled = status == "compiled"
+    profile = "cs_6_6" if kind == "vertex" else "ps_6_6"
+    return {"format": "magic600-stage-compile/1", "kind": kind, "status": status, "code": None if compiled else -9,
+            "handle": STAGE_HANDLES[kind] if compiled else 0, "stage_sha256": STAGE_PARTS[f"stage:{kind}.hlsl"],
+            "compiler": STAGE_COMPILER, "passes": [stage_pass("main", profile, "compiled" if compiled else "failed")],
+            "core_passes": [stage_pass("eval", "cs_6_6"), stage_pass("bound", "cs_6_6")],
+            "error": "" if compiled else f"main ({profile}): error X3004: undeclared identifier", "error_truncated": False}
+
+
+def stage_row(frame, bound=None, stopped=None):
+    bound = 3 * STAGE_ALLOWANCE // 4 if bound is None else bound
+    return {"frame": frame, "stopped": int(bound > STAGE_ALLOWANCE) if stopped is None else stopped, "bound": bound,
+            "allowance": STAGE_ALLOWANCE, "vertex_stage": STAGE_HANDLES["vertex"],
+            "fragment_stage": STAGE_HANDLES["fragment"], "user_pixel_invocations": 1000,
+            "builtin_pixel_invocations": 0}
+
+
+def stage_rows():
+    """One row per chain frame: the preroll, then the measured frames; the first measured frame's bound is exactly
+    the allowance, which does not stop it."""
+    return [stage_row(frame, STAGE_ALLOWANCE if frame == STAGE_PREROLL + 1 else None)
+            for frame in range(1, STAGE_PREROLL + FRAMES + 1)]
+
+
+def write_rows(directory: Path, rows) -> None:
+    (directory / "stage-frames.jsonl").write_bytes("".join(json.dumps(row) + "\n" for row in rows).encode("utf-8"))
+
+
+def stage_run(directory: Path, run_id: str, failed_kind=None, rows=None) -> Path:
+    """A W3 run with the user stages attached (Level2.AttachStages), or with `failed_kind`'s compile failed."""
+    write_run(directory, "w3", run_id=run_id)
+    record = read(directory / "harness.json")
+    folder = "C:\\c9\\build\\stages"
+    record["files"].update({f"stage:{name}": f"{folder}\\{name}" for name in STAGE_FILE_NAMES})
+    record["files"].update({f"dxc:{name}": f"C:\\c9\\build\\native\\{name}" for name in STAGE_DLLS})
+    rows = stage_rows() if rows is None else rows
+    stages = {"directory": folder, "contract": "m600-stage-hlsl/1", "overdraw": min(STAGE_OVERDRAWS.values()),
+              "d4": {"bits": D4_BITS, "builtin_bits": D4_BITS, "equal": True}, "attached": failed_kind is None,
+              "rows": 0, "trace_frames": None}
+    for kind in STAGE_KIND_NAMES:
+        compile_record = stage_compile(kind, "compile_failed" if kind == failed_kind else "compiled")
+        stages[kind] = {"digest": hashlib.sha256(kind.encode()).hexdigest(), "hlsl_sha256": compile_record["stage_sha256"],
+                        "overdraw": STAGE_OVERDRAWS[kind], "arrays": 1 if kind == "vertex" else 0,
+                        "handle": compile_record["handle"], "compile": compile_record["status"]}
+        (directory / f"stage-compile-{kind}.json").write_bytes((json.dumps(compile_record) + "\n").encode("utf-8"))
+        if kind == failed_kind:
+            break   # the harness stops at the first failed compile
+    if failed_kind is None:
+        stages.update(rows=len(rows), trace_frames={"first": STAGE_PREROLL + 1, "last": STAGE_PREROLL + FRAMES})
+        write_rows(directory, rows)
+    record["stages"] = stages
+    write_json(directory / "harness.json", record)
+    return directory
+
+
+@unittest.skipIf(fr is None, f"finalize_run does not import here: {FINALIZER_ERROR!r}")
+class StageFinalizerTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.base = Path(self.temporary.name)
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def refused(self, run, reason):
+        self.assertEqual(finalize(run, build=STAGE_BUILD), 5)
+        self.assertEqual(read(run / "refusal.json")["reasons"], [reason])
+        self.assertFalse((run / "run.json").exists())
+
+    def test_constants_match_the_harness(self):
+        self.assertEqual(fr.STAGE_FILES, STAGE_FILE_NAMES)
+        self.assertEqual(fr.STAGE_LIBRARIES, STAGE_DLLS)
+        self.assertEqual(fr.STAGE_KINDS, STAGE_KIND_NAMES)
+        self.assertEqual(fr.BUILTIN_D4_BITS, D4_BITS)
+        level2, arguments = text(PROJECT / "Level2.cs"), text(PROJECT / "Level2Arguments.cs")
+        self.assertIn("BuiltinD4 = 1.18f", level2)
+        self.assertIn(f'StageContract = "{fr.STAGE_CONTRACT}"', level2)
+        for output in fr.STAGE_OUTPUTS:
+            self.assertIn(f'"{output}"', arguments)
+        self.assertEqual(re.findall(r'\["(\w+)"\] = row\.\w+', level2), list(fr.STAGE_ROW_FIELDS))
+        self.assertIn(f'RecordFormat[] = "{fr.STAGE_COMPILE_FORMAT}"', text(ROOT / "renderer" / "core" / "src" / "stage_rules.h"))
+
+    def test_stage_runs_pass_and_three_meet_the_gate(self):
+        runs = [stage_run(self.base / f"s{index}", f"c9-w3-stages-{index}") for index in range(3)]
+        for run in runs:
+            self.assertEqual(finalize(run, build=STAGE_BUILD), 0)
+            record = read(run / "run.json")
+            stages = record["stages"]
+            self.assertEqual((stages["contract"], stages["overdraw"], stages["allowance"]),
+                             ("m600-stage-hlsl/1", 96, STAGE_ALLOWANCE))
+            self.assertEqual((stages["rows"], stages["measured_frames"], stages["measured_frames_with_row"]),
+                             (STAGE_PREROLL + FRAMES, FRAMES, FRAMES))
+            self.assertEqual((stages["stopped_frames"], stages["stopped"]), (0, []))
+            self.assertEqual((stages["largest_bound"], stages["largest_bound_frame"], stages["largest_bound_per_pixel"]),
+                             (STAGE_ALLOWANCE, STAGE_PREROLL + 1, 96.0))
+            self.assertEqual(stages["trace_frames"], {"first": STAGE_PREROLL + 1, "last": STAGE_PREROLL + FRAMES})
+            self.assertEqual(stages["measured_user_pixel_invocations"], 1000 * FRAMES)
+            self.assertEqual(stages["d4"]["bits"], D4_BITS)
+            self.assertEqual(stages["dxc"], {name: STAGE_PARTS[f"dxc:{name}"] for name in STAGE_DLLS})
+            self.assertEqual(stages["arrays_sha256"], STAGE_PARTS["stage:arrays.json"])
+            for kind in STAGE_KIND_NAMES:
+                self.assertEqual(stages[kind]["handle"], STAGE_HANDLES[kind])
+                self.assertEqual(stages[kind]["json_sha256"], STAGE_PARTS[f"stage:{kind}.json"])
+                self.assertEqual(stages[kind]["compile"]["status"], "compiled")
+            self.assertEqual({code: record["l2"]["checks"][code] for code in fr.STAGE_CHECKS},
+                             dict.fromkeys(fr.STAGE_CHECKS, "pass"))
+        result = scene_result(gate.summarize_private(runs), "w3")
+        self.assertEqual((result["verdict"], len(result["runs"])), ("met", 3))
+
+    def test_runs_without_stages_list_no_stage_checks(self):
+        plain = write_run(self.base / "plain", "w3", run_id="c9-plain")
+        self.assertEqual(finalize(plain), 0)
+        record = read(plain / "run.json")
+        self.assertNotIn("stages", record)
+        self.assertFalse(set(fr.STAGE_CHECKS) & set(record["l2"]["checks"]))
+        stray = write_run(self.base / "stray", "w3", run_id="c9-stray")
+        write_rows(stray, stage_rows()[:3])   # a stage output in a run without stages
+        self.assertEqual(finalize(stray), 5)
+        self.assertEqual(read(stray / "refusal.json")["reasons"], ["stage-compile"])
+
+    def test_failed_compile_is_refused(self):
+        for kind in STAGE_KIND_NAMES:
+            with self.subTest(failed=kind):
+                run = stage_run(self.base / f"failed-{kind}", f"c9-failed-{kind}", failed_kind=kind)
+                self.refused(run, "stage-compile")
+        missing = stage_run(self.base / "missing-record", "c9-missing-record")
+        (missing / "stage-compile-fragment.json").unlink()
+        self.refused(missing, "stage-compile")
+        other = stage_run(self.base / "other-hlsl", "c9-other-hlsl")
+        record = read(other / "stage-compile-vertex.json")
+        record["stage_sha256"] = "d" * 64   # compiled from another HLSL than the build's
+        write_json(other / "stage-compile-vertex.json", record)
+        self.refused(other, "stage-compile")
+        unlisted = stage_run(self.base / "unlisted", "c9-unlisted")
+        self.assertEqual(finalize(unlisted), 5, "the stage files must be among the build's parts")
+        self.assertEqual(read(unlisted / "refusal.json")["reasons"], ["stage-compile"])
+
+    def test_missing_rows_are_refused(self):
+        cases = {
+            "no-file": None,
+            "measured-gap": [row for row in stage_rows() if row["frame"] != STAGE_PREROLL + 100],
+            "short-trace": stage_rows()[:-1],
+            "order": [dict(reversed(list(row.items()))) for row in stage_rows()],
+            "handles": [dict(row, fragment_stage=8) for row in stage_rows()],
+            "flag": [dict(row, stopped=0, bound=STAGE_ALLOWANCE + 1) if row["frame"] == 5 else row
+                     for row in stage_rows()],
+        }
+        for name, rows in cases.items():
+            with self.subTest(case=name):
+                run = stage_run(self.base / name, f"c9-rows-{name}", rows=rows)
+                if rows is None:
+                    (run / "stage-frames.jsonl").unlink()
+                self.refused(run, "stage-rows")
+        miscounted = stage_run(self.base / "miscounted", "c9-miscounted")
+        record = read(miscounted / "harness.json")
+        record["stages"]["rows"] += 1   # the harness counted a row the file lacks
+        write_json(miscounted / "harness.json", record)
+        self.refused(miscounted, "stage-rows")
+
+    def test_stopped_frames_are_refused(self):
+        for name, frame in (("measured", STAGE_PREROLL + 7), ("preroll", 3)):
+            with self.subTest(frame=name):
+                rows = [stage_row(row["frame"], STAGE_ALLOWANCE + 1) if row["frame"] == frame else row
+                        for row in stage_rows()]
+                self.refused(stage_run(self.base / name, f"c9-stopped-{name}", rows=rows), "stage-stopped")
+
+    def test_stage_harness_refusals(self):
+        run = stage_run(self.base / "d4", "c9-d4")
+        record = read(run / "harness.json")
+        record["stages"]["d4"] = {"bits": "0x3f800000", "builtin_bits": D4_BITS, "equal": False}
+        write_json(run / "harness.json", record)
+        self.refused(run, "stage-compile")
+        larger = stage_run(self.base / "larger", "c9-larger")
+        record = read(larger / "harness.json")
+        record["stages"]["overdraw"] = max(STAGE_OVERDRAWS.values())   # not the smaller declared value
+        write_json(larger / "harness.json", record)
+        self.assertEqual(finalize(larger, build=STAGE_BUILD), 5)
+        self.assertIn("stage-compile", read(larger / "refusal.json")["reasons"])
+        injected = inject(stage_run(self.base / "injected", "c9-injected"), "stale-binding")
+        self.assertEqual(finalize(injected, overlays=None, fault_injection=True, build=STAGE_BUILD), 5)
+        self.assertIn("harness", read(injected / "refusal.json")["reasons"])
+
+
+class StageBuildTests(unittest.TestCase):
+    """The stage build (prepare_host --stages), its identity check, the guard, the harness argument and the runner."""
+
+    def setUp(self):
+        try:
+            import prepare_host
+        except (ImportError, OSError) as error:
+            self.skipTest(f"prepare_host does not import here: {error!r}")
+        self.host = prepare_host
+
+    def test_options(self):
+        for argv in (["--dxc", "C:\\dxc"], ["--verify", "C:\\b", "--stages", "renderer/acceptance/stages"],
+                     ["--verify", "C:\\b", "--dxc", "C:\\dxc"]):
+            with self.subTest(argv=argv), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    self.host.main(argv)
+                self.assertEqual(raised.exception.code, 2)
+        self.assertEqual(self.host.STAGE_SOURCE, STAGES)
+        self.assertEqual(self.host.STAGE_FILES, STAGE_FILE_NAMES)
+        self.assertEqual(tuple(self.host.DXC_LIBRARIES), STAGE_DLLS)
+        self.assertEqual(self.host.STAGE_TOOL_TARGET, ROOT / "work" / "build" / "c9-stage-tool")
+        self.assertEqual(self.host.BUILTIN_D4_BITS, D4_BITS)
+
+    def test_stage_sources(self):
+        source = self.host.stage_source("renderer/acceptance/stages")
+        self.assertEqual(source["directory"], "renderer/acceptance/stages")
+        self.assertEqual(source["files"], {name: sha256(STAGES / name) for name in self.host.STAGE_INPUTS})
+        self.assertEqual(sorted(p.name for p in STAGES.iterdir()), sorted(self.host.STAGE_INPUTS))
+        with tempfile.TemporaryDirectory() as outside:
+            with self.assertRaises(RuntimeError):
+                self.host.stage_source(outside)
+        arrays = self.host.read_arrays(STAGES / "arrays.json")
+        self.assertEqual(arrays, {"vertex": {"d4": [D4_BITS]}, "fragment": {}})
+
+    def test_gate_stages_declare_one_sized_overdraw(self):
+        declared = {kind: int(re.search(rf"^stage {kind} \w+ ops \d+ overdraw (\d+)", text(STAGES / f"{kind}.6cs"),
+                                        re.M).group(1)) for kind in STAGE_KIND_NAMES}
+        limit = json.loads((STAGES / "limits.json").read_bytes())["max_overdraw"]
+        self.assertEqual(set(declared.values()), {limit}, "both stages declare the limit's overdraw")
+        self.assertGreaterEqual(limit, -(-W3_LARGEST_BOUND_PER_PIXEL * OVERDRAW_MARGIN // 1),
+                                "the measured W3 bound with its margin")
+
+    def test_dxc_folder(self):
+        lock = self.host.dxc_lock()
+        self.assertEqual(lock["id"], "dxc")
+        self.assertTrue(lock["dest"].startswith("tools/.dxc/"))
+        with tempfile.TemporaryDirectory() as empty:
+            with self.assertRaisesRegex(RuntimeError, "--dxc"):
+                self.host.dxc_directory(empty)
+
+    def test_stage_inputs_are_checked_before_the_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            builds = Path(temporary) / "builds"
+            with mock.patch.object(self.host, "BUILD_ROOT", builds), \
+                    mock.patch.object(self.host, "source_identity", lambda: {}):
+                with self.assertRaises(RuntimeError):
+                    self.host.build_host(Path("C:\\godot\\godot.exe"), Path("C:\\godot\\nupkgs"),
+                                         stages_source=Path(temporary), dxc=Path(temporary))
+                with self.assertRaisesRegex(RuntimeError, "lacks"):
+                    self.host.build_host(Path("C:\\godot\\godot.exe"), Path("C:\\godot\\nupkgs"),
+                                         stages_source=STAGES, dxc=Path(temporary))
+            self.assertFalse(builds.exists(), "nothing is built when the stage inputs are missing")
+
+    def stage_identity(self, build: Path):
+        digest = lambda name: hashlib.sha256(name.encode()).hexdigest()
+        parts = {f"stages:{name}": {"sha256": digest(name)} for name in STAGE_FILE_NAMES}
+        parts.update({f"native:{name}": {"sha256": digest(name)} for name in STAGE_DLLS})
+        parts["native:sa2_interop.dll"] = {"sha256": digest("core")}
+        stages = {"directory": str(build / "stages"), "source": self.host.stage_source(STAGES),
+                  "overdraw": 96, "arrays": {"sha256": digest("arrays.json")},
+                  "d4": {"bits": D4_BITS, "builtin_bits": D4_BITS, "equal": True},
+                  "dxc": {"version": "1.9.2609", "files": {name: {"sha256": digest(name)} for name in STAGE_DLLS}},
+                  **{kind: {"hlsl_sha256": digest(f"{kind}.hlsl"), "json_sha256": digest(f"{kind}.json")}
+                     for kind in STAGE_KIND_NAMES}}
+        return {"parts": parts, "stages": stages}
+
+    def test_verify_checks_the_stages_record(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            build = Path(temporary)
+            identity = self.stage_identity(build)
+            self.assertIs(self.host.verify_stages(build, identity), identity["stages"])
+            plain = {"parts": {"native:sa2_interop.dll": {"sha256": HASH}}}
+            self.assertIsNone(self.host.verify_stages(build, plain))
+            changes = {
+                "unrecorded": lambda i: i.pop("stages"),
+                "hlsl": lambda i: i["parts"]["stages:vertex.hlsl"].update(sha256=HASH),
+                "arrays": lambda i: i["parts"]["stages:arrays.json"].update(sha256=HASH),
+                "dxc": lambda i: i["parts"]["native:dxil.dll"].update(sha256=HASH),
+                "missing": lambda i: i["parts"].pop("stages:fragment.json"),
+                "d4": lambda i: i["stages"]["d4"].update(bits="0x3f800000"),
+                "source": lambda i: i["stages"]["source"]["files"].update({"limits.json": HASH}),
+                "folder": lambda i: i["stages"].update(directory=str(build / "other")),
+            }
+            for name, change in changes.items():
+                with self.subTest(change=name):
+                    changed = json.loads(json.dumps(identity))
+                    change(changed)
+                    with self.assertRaises(RuntimeError):
+                        self.host.verify_stages(build, changed)
+            (build / "stages").mkdir()
+            with self.assertRaises(RuntimeError, msg="a stages folder without a record"):
+                self.host.verify_stages(build, plain)
+
+    def test_harness_and_runner_attach_the_stages(self):
+        arguments, level2 = text(PROJECT / "Level2Arguments.cs"), text(PROJECT / "Level2.cs")
+        runner = text(ACCEPTANCE / "run_scene.ps1")
+        self.assertIn('case "--sa2-stages": a.stages_path = value; break;', arguments)
+        self.assertIn('if (a.scene == "wj") throw new ArgumentException("user stages attach to W1..W4 only', arguments)
+        self.assertIn('if (a.mode != "run" || a.inject != null) throw new ArgumentException(', arguments)
+        self.assertIn("if (_args.stages_path != null) AttachStages();", level2)
+        self.assertLess(level2.index("_native.sa2_scene_stages(_context, 0, 0, 0, null, 0, null, 0)"),
+                        level2.index("private unsafe void ReleaseStages()"))
+        self.assertIn("if ($null -ne $stageDirectory) { $arguments += @('--sa2-stages',$stageDirectory) }", runner)
+        self.assertIn("$stageDirectory = Join-Path $buildDirectory 'stages'", runner)
+        self.assertIn("if ($wj -or $Mode -ne 'run' -or $Inject) { throw 'A stage build runs -Scene w3", runner)
+
+    @unittest.skipIf(fr is None, f"file_guard does not import here: {FINALIZER_ERROR!r}")
+    def test_guard_protects_a_stage_build(self):
+        import file_guard
+        self.assertEqual(file_guard.STAGE_FILES, STAGE_FILE_NAMES)
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            project = base / "project"
+            debug = project / ".godot" / "mono" / "temp" / "bin" / "Debug"
+            debug.mkdir(parents=True)
+            (debug / "SA2Smoke.dll").write_bytes(b"")
+            launch = {"format": "magic600-l2-launch-v1", "candidate": "sa2", "executable": str(base / "godot.exe"),
+                      "dll": str(base / "native" / "sa2_interop.dll"), "working_directory": str(project)}
+            protected = lambda: {Path(path).relative_to(base).as_posix()
+                                 for path in file_guard.protected_set(launch, "sa2")}
+            staged = {*(f"native/{name}" for name in STAGE_DLLS), *(f"stages/{name}" for name in STAGE_FILE_NAMES)}
+            self.assertFalse(staged & protected())
+            (base / "stages").mkdir()
+            self.assertLessEqual(staged, protected())
 
 
 if __name__ == "__main__":

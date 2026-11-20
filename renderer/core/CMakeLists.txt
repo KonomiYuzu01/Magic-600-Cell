@@ -27,15 +27,19 @@ target_compile_definitions(sa2_wj PRIVATE M600_REPO_ROOT="${REPO_ROOT}" main=sa2
 target_link_libraries(sa2_wj PUBLIC bcrypt)
 add_library(sa2_pure STATIC src/pure.cpp)
 target_include_directories(sa2_pure PUBLIC include src)
-add_library(sa2_scene_record STATIC src/scene_record.cpp src/product.cpp)
+add_library(sa2_scene_record STATIC src/scene_record.cpp src/product.cpp src/stage_rules.cpp)
 target_include_directories(sa2_scene_record PUBLIC include src)
 target_link_libraries(sa2_scene_record PUBLIC sa2_sb sa2_wj)
-add_library(sa2_interop SHARED src/interop.cpp src/scene.cpp)
+add_library(sa2_interop SHARED src/interop.cpp src/scene.cpp src/stages.cpp)
 target_compile_definitions(sa2_interop PRIVATE SA2_INTEROP_EXPORTS)
 # ABI 5's route B (accepted for now by the owner on 18 Nov 2026, pending three
 # owner-machine checks) adds the DirectComposition layer: dcomp, and user32 for
 # IsWindow.
 target_link_libraries(sa2_interop PRIVATE sa2_pure sa2_scene_record d3d12 dxgi dxguid dcomp user32)
+# C9 U5: user shader stages. DXC runs at run time from dxcompiler.dll and dxil.dll beside the DLL (loaded by
+# absolute path, never linked); ole32 frees the strings its version interfaces return. The core's own HLSL is
+# embedded at build time (embed.cmake).
+target_link_libraries(sa2_interop PRIVATE ole32)
 add_executable(sa2_selftest src/selftest.cpp src/gpu_test.cpp)
 target_link_libraries(sa2_selftest PRIVATE sa2_pure sa2_scene_record sa2_interop d3d12 dxgi dxguid)
 foreach(target sa2_sb sa2_wj sa2_pure sa2_scene_record sa2_interop sa2_selftest)
@@ -66,3 +70,15 @@ add_custom_target(sa2_shaders ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/draw_vs.d
     "${CMAKE_CURRENT_BINARY_DIR}/id_ps.dxil" "${CMAKE_CURRENT_BINARY_DIR}/product_ps.dxil"
     "${CMAKE_CURRENT_BINARY_DIR}/product_vs.dxil")
 add_dependencies(sa2_interop sa2_shaders)
+set(STAGE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/generated/stage_sources.h")
+add_custom_command(OUTPUT "${STAGE_SOURCES}"
+    COMMAND "${CMAKE_COMMAND}" -D "SHADERS=${CORE_SHADERS}" -D "OUTPUT=${STAGE_SOURCES}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/embed.cmake"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/embed.cmake" "${CORE_SHADERS}/geometry.hlsl" "${CORE_SHADERS}/draw.hlsl"
+        "${CORE_SHADERS}/stages.hlsl" VERBATIM)
+add_custom_target(sa2_stage_sources ALL DEPENDS "${STAGE_SOURCES}")
+add_dependencies(sa2_interop sa2_stage_sources)
+target_include_directories(sa2_interop PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+# The self-test's --stages run recomputes the composed source's digest from the same embedded text.
+add_dependencies(sa2_selftest sa2_stage_sources)
+target_include_directories(sa2_selftest PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")

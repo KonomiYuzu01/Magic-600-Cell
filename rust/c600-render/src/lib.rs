@@ -12,6 +12,10 @@
 //!
 //! Layers: [`abi`] declares the header's constants and rows; [`api::CoreAbi`] is the safe call interface; [`backend`]
 //! maps the host's publications, frames and picks onto it.
+//!
+//! [`stage`] (C9 U5a) turns a user shader stage that LP2's stage checker admitted into HLSL under the interface
+//! contract `m600-stage-hlsl/1`, and evaluates the same checked definition on the CPU in binary32 (RPI.74); the bin
+//! `c600-stage-hlsl` writes the text and its record. Compiling the text is U5b's.
 
 #![forbid(unsafe_code)]
 
@@ -19,6 +23,7 @@ pub mod abi;
 pub mod api;
 pub mod backend;
 pub mod fake;
+pub mod stage;
 
 pub use api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
 pub use backend::{DisplayTime, FrameReport, PickPoll, PickTicket, RenderBackend};

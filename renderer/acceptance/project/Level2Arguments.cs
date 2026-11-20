@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 public sealed class Level2Arguments
 {
-    public string mode, scene, out_path, run_id, dll_path, inject, menu, data_path;
+    public string mode, scene, out_path, run_id, dll_path, inject, menu, data_path, stages_path;
     public int trace_ms = 192000, preroll_ms = 4000;
     public double turn_ms = 190;
     public bool gpu_validation, no_vram, debug_half_target;
@@ -15,7 +15,7 @@ public sealed class Level2Arguments
     public int warmup = 3, timeout_ms = 5000;
     public Dictionary<string, object> declared = new();
     public static readonly string[] Outputs = { "harness.json", "harness.json.tmp", "native.json", "trace.jsonl", "geometry.json",
-        "pose_check.json", "lattice_check.json" };
+        "pose_check.json", "lattice_check.json", "stage-compile-vertex.json", "stage-compile-fragment.json", "stage-frames.jsonl" };
     // The injections each scene's DLL path accepts (renderer/core/include/sa2_interop.h).
     private static readonly string[] LabelInjections = { "corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding" };
     private static readonly string[] PoseInjections = { "corrupt-index", "swap-same-colour", "stale-pose", "delay-adoption", "stale-binding" };
@@ -81,6 +81,7 @@ public sealed class Level2Arguments
                 case "--sa2-render-thread": a.render_thread = Choice(value, "safe", "separate"); break;
                 case "--sa2-warmup": a.warmup = Number(value, 0, int.MaxValue); break;
                 case "--sa2-timeout-ms": a.timeout_ms = Number(value, 5000, 5000); break;
+                case "--sa2-stages": a.stages_path = value; break;
                 case "--sa2-gpu-validation":
                     Choice(value, "0", "1"); // Checked against the level 2 option below.
                     break;
@@ -121,6 +122,15 @@ public sealed class Level2Arguments
         if (noWarmup && !seen.Contains("--sa2-warmup")) a.warmup = 0;
         if ((noWarmup && a.warmup != 0) || (!noWarmup && a.warmup < 3))
             throw new ArgumentException("warmup must be zero for render-target and surface and at least three for tracked routes");
+        // User stages (C9 U5c, --sa2-stages): the build's stages/ folder, attached to a W1..W4 run. W-J refuses an attach.
+        if (a.stages_path != null)
+        {
+            if (a.scene == "wj") throw new ArgumentException("user stages attach to W1..W4 only; a W-J scene refuses them");
+            if (a.mode != "run" || a.inject != null) throw new ArgumentException("user stages need a run without fault injection");
+            if (!Path.IsPathFullyQualified(a.stages_path) || !Directory.Exists(a.stages_path))
+                throw new ArgumentException("--sa2-stages requires the absolute path of the build's stages folder");
+            a.stages_path = Path.GetFullPath(a.stages_path);
+        }
         return a;
     }
 
