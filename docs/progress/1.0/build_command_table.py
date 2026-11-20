@@ -82,6 +82,240 @@ SERVICES = [
      "clauses": ["RPI.10", "LI.25", "KI.5"], "note": "Publish to the resolved ViewId under the view grant. Scheduled publication finalizes its original invocation and lane generation; standalone publication uses normal admission."},
 ]
 
+# CM.18: the rows a program reads through a host bridge, each typed by puzzle and level (KN2.4). Table contracts for
+# the bridges' draft rows at LP3's freeze, not a bridge, a measured cost or a profile grant.
+READ_LEVELS = {"Full": {"labels"}, "jumbling": {"labels", "poses"}, "both": {"none"}}
+READ_FIELDS = ("id", "puzzle", "level", "argument", "answer", "fields", "tariff", "codes", "clauses", "note")
+CODE = re.compile(r"[A-Z]{2,3}[0-9]?:[a-z_]+\.[a-z0-9_]+")
+READ_PROTOCOL = {
+    "form": "read_snapshot<T>(\"<id>\") or read_snapshot<T>(\"<id>\", argument)",
+    "order": "The host prices the read first and refuses a malformed argument there, and on the Full bridge a declared "
+             "type it does not serve, at the cost of the read's step only. The run then charges the tariff and the "
+             "host answers; a refusal after the charge keeps the charge.",
+    "types": {"Recipe": "Word | List<Int> | List<record { kind: Text, moves: Word, node: Nat, orbit: Nat, sign: Int }>"},
+    "tariff": {"jumbling": "177,120, one unit per piece, per pass over a state; result bound 2^24 for every row"},
+    "codes": {"unserved": "LG3:capability.not_granted",
+              "every": ["LG2:type.mismatch", "KN5:input.argument_form", "KN7:budget.kernel_cost", "KN7:budget.memory",
+                        "KN7:budget.output", "KN7:resource_limit.host_exhausted"],
+              "Full": ["KN5:input.retained_tool_needs_jumble_off"],
+              "jumbling": ["KN5:input.menu_word_needs_jumble_on", "KN1:input.identity_mismatch",
+                           "KN5:consistency.state_hash_mismatch"],
+              "both": []},
+    "clauses": ["KN2.3", "KN2.4", "LG2.8"],
+}
+READS = [
+    {"id": "positions", "puzzle": "Full", "level": "labels", "argument": "List<Nat>",
+     "answer": "List<record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, slots: List<Nat> }>",
+     "fields": "all",
+     "tariff": "259,800 + 20 per piece named; result bound: that many of the largest records",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4"],
+     "note": "Pieces named by home position, 0 to 177,119, with repeats; any list of integers, such as a Set<Nat>. Each record gives the piece's orbit (-1 for a fixed cell centre), its home slots, the slots that hold its stickers now and the position whose slots hold them all (-1 when they are split)."},
+    {"id": "labels", "puzzle": "Full", "level": "labels", "argument": "List<Nat>",
+     "answer": "List<Nat>",
+     "fields": "all",
+     "tariff": "1 per slot named; result bound: that many of the largest labels",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4"],
+     "note": "Slots named, 0 to 259,799, with repeats; the label each holds at the head."},
+    {"id": "effect", "puzzle": "Full", "level": "labels", "argument": "Recipe",
+     "answer": "record { destination: List<Nat>, expansion_sha256: Text, moved_pieces: Nat, moved_stickers: Nat, net_sha256: Text, primitive_count: Nat, source: List<Nat>, support: List<record { orbit: Int, pieces: Nat, stickers: Nat }> }",
+     "fields": "subset",
+     "tariff": "259,800 + 1 per primitive of the recipe's expansion (0 when the kernel refuses the recipe); result bound: the largest answer with the declared fields",
+     "codes": ["KN2:consistency.star_certificate"],
+     "clauses": ["KN2.4"],
+     "note": "A recipe's net source-to-destination map, its digests and lengths and its support per orbit; it reads no state. The kernel's own refusal of a recipe passes through."},
+    {"id": "protection", "puzzle": "Full", "level": "labels", "argument": "record { lock: record { kind: Text, labels: List<Nat>, slots: List<Nat> }, mode: Text, recipe: Recipe }, with limit: Nat for Strict only",
+     "answer": "record { checked: Nat, conflicts: List<Nat>, expansion_sha256: Text, level: Text, primitive_count: Nat, refused_prefix: Int }",
+     "fields": "all",
+     "tariff": "the lock's pairs + the expansion's primitives + 259,800 x (generators + 1), with 0 generators for Net and min(primitives, 1,200) for Strict; result bound: the empty answer and one slot per pair",
+     "codes": ["KN2:input.named_object_invalid", "KN2:consistency.star_certificate"],
+     "clauses": ["KN2.4", "LB2.1"],
+     "note": "A captured lock judged Net or Strict against a recipe at the head; mode is net or strict, and level is labels. The kernel's own refusal of a recipe passes through."},
+    {"id": "replay", "puzzle": "Full", "level": "labels", "argument": "Recipe",
+     "answer": "record { conflicts: List<Nat>, expansion_sha256: Text, level: Text, net_sha256: Text, primitive_count: Nat, protected: List<Nat>, refused_prefix: Int }",
+     "fields": "all",
+     "tariff": "2 x 259,800 + 2 per primitive of the expansion (0 when the kernel refuses the recipe); result bound: the largest replay answer",
+     "codes": ["KN2:consistency.star_certificate"],
+     "clauses": ["KN2.4", "KN2.7"],
+     "note": "A recipe replayed prefix by prefix at the head under the session's protected orbits, keeping the head; level is labels. The kernel's own refusal of a recipe passes through."},
+    {"id": "setups", "puzzle": "Full", "level": "labels", "argument": "record { orbit: Nat, position: Nat }",
+     "answer": "record { buffers: List<Nat>, family: Text, orbit: Nat, position: Nat, setups: List<record { frame: List<Nat>, node: Nat, setup: Word }>, table_sha256: Text }",
+     "fields": "all",
+     "tariff": "259,800 + 3 x 259,800 per setup the named position has in the table; result bound: that many of the largest setups",
+     "codes": ["LG3:capability.not_granted", "KN1:input.identity_mismatch", "KN2:input.named_object_invalid", "KN2:consistency.star_certificate"],
+     "clauses": ["BND.1", "LB2.1"],
+     "note": "The certified setups for a target the solver names, in the table's order, none ranked; only the setup-search exception reads it. Without a certified table from the host it is not granted."},
+    {"id": "structure.compare", "puzzle": "Full", "level": "labels", "argument": "record { first: Nat, second: Nat }",
+     "answer": "record { first: Nat, second: Nat, steps: Nat }",
+     "fields": "all",
+     "tariff": "1; result bound: three integers",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.3", "LG2.8"],
+     "note": "The fewest face steps between two cells, 0 to 599; model data. The command row of the same name is its entry."},
+    {"id": "filter.preview", "puzzle": "Full", "level": "labels", "argument": "record { cell: Nat, layer: Nat }",
+     "answer": "record { cell: Nat, layer: Nat, pieces: Nat, slots: Nat }",
+     "fields": "all",
+     "tariff": "259,800; result bound: the largest answer",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.3", "LG2.8"],
+     "note": "The counts of a layer predicate: the positions with a home slot layer face steps from cell, and their home slots; model data. The command row of the same name is its entry."},
+    {"id": "structure.layer", "puzzle": "Full", "level": "labels", "argument": "record { cell: Nat, layer: Nat }",
+     "answer": "record { cell: Nat, layer: Nat, pieces: List<Nat>, slots: List<Nat> }",
+     "fields": "all",
+     "tariff": "259,800 + 177,120 + 259,800; result bound: an answer holding every position and slot",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.3", "LG2.8"],
+     "note": "The members that filter.preview counts, by home position and home slot, in increasing order; model data. The command row of the same name prepares its predicate."},
+    {"id": "orbits", "puzzle": "Full", "level": "labels", "argument": "List<Int>",
+     "answer": "List<record { orbit: Int, pieces: List<Nat> }>",
+     "fields": "all",
+     "tariff": "259,800 + 7,200 per orbit named; result bound: that many of the largest records",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.3", "LB2.1"],
+     "note": "The pieces of named orbits, -1 to 34 (-1 for the fixed cell centres), with repeats; model data, the orbit that the positions row gives each piece at every state."},
+    {"id": "journal", "puzzle": "both", "level": "none", "argument": "record { cursor: Text, from: Text, limit: Nat }",
+     "answer": "record { entries: List<record { event: Text, exit: Text, kind: Text, letters: Nat, solved: Bool }>, next: Text }",
+     "fields": "all",
+     "tariff": "1 per event of the page asked (limit, at most 4,096); result bound: limit of the largest entries and the longest cursor",
+     "codes": ["KN2:stale.revision_gone"],
+     "clauses": ["KN4.3"],
+     "note": "KN4.3's journal query: a page from from (the head when empty) toward the start on that event's line, newest first, limit 1 to 4,096. It answers with Jumble on or off, replays nothing and changes nothing."},
+    {"id": "heights", "puzzle": "jumbling", "level": "poses", "argument": None,
+     "answer": "record { lattice_key: Text, poses: Map<Text,record { branches: List<Int>, count: Nat, domain: Text, heights: List<Nat> }> }",
+     "fields": "subset",
+     "tariff": "1 pass",
+     "codes": [],
+     "clauses": ["KN2.4", "JI.6"],
+     "note": "Per exact pose its domain, branches and heights, with the lattice key."},
+    {"id": "height_counts", "puzzle": "jumbling", "level": "poses", "argument": None,
+     "answer": "record { max_above_6: List<Nat>, n_0: Nat, n_2: Nat, n_4: Nat, n_6: Nat, n_above_6: Nat }",
+     "fields": "subset",
+     "tariff": "1 pass",
+     "codes": [],
+     "clauses": ["KN2.4", "JI.6"],
+     "note": "The height counts n_0, n_2, n_4, n_6 and above 6, with the maximum above 6."},
+    {"id": "replay", "puzzle": "jumbling", "level": "poses", "argument": "MenuWord",
+     "answer": "record { complete: Bool, first_refused: List<Nat>, rows: List<record { after: Text, max_left_height: List<Nat>, phi_after: List<Nat> }>, start: record { digest: Text, max_left_height: Nat, phi: Nat } }",
+     "fields": "subset",
+     "tariff": "1 + 1 per letter of the word",
+     "codes": ["LB1:input.incompatible_alphabet"],
+     "clauses": ["KN2.4", "JI.10"],
+     "note": "A menu word replayed letter by letter at the head: each prefix's pose digest, left height and Phi, or the first refused prefix."},
+    {"id": "word_check", "puzzle": "jumbling", "level": "poses", "argument": "record { unit: List<Nat>, word: MenuWord }",
+     "answer": "record { admissible: Bool, applied_letters: Nat, lattice_pieces_lifted_off: List<Nat>, others: Nat, others_exact: List<Nat>, others_landed: List<Nat>, unit_on_lattice: List<Nat>, unit_size: List<Nat> }",
+     "fields": "subset",
+     "tariff": "1 + 1 per letter of the word (the unit adds none)",
+     "codes": ["LB1:input.incompatible_alphabet", "KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4", "JI.11"],
+     "note": "A whole word's observation for a unit the solver names, not an existence test. The units entry reads it with others_changed_ids, unit and unit_landed in place of unit_on_lattice and unit_size."},
+    {"id": "protection", "puzzle": "jumbling", "level": "poses", "argument": "record { mode: Text, pieces: List<Nat>, word: MenuWord }",
+     "answer": "record { first_refused_prefix: List<Nat>, level: Text, mode: Text, pieces: List<Nat>, protected: List<Nat>, verdict: Text }",
+     "fields": "subset",
+     "tariff": "1 + 1 per letter of the word (the pieces add none)",
+     "codes": ["LB1:input.incompatible_alphabet", "KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4", "KN1.11"],
+     "note": "Net or Strict for named pieces against a menu word at level poses; mode is net or strict. The derivation's own refusal passes through."},
+    {"id": "nu", "puzzle": "jumbling", "level": "labels", "argument": None,
+     "answer": "record { reason: List<Text>, values: List<Int> }",
+     "fields": "subset",
+     "tariff": "1 pass",
+     "codes": [],
+     "clauses": ["KN2.4", "JI.13"],
+     "note": "nu at the head in A5's fixed C5 convention, or its reason when it is undefined off the lattice; no correction is selected. nu's own refusal passes through."},
+    {"id": "correction_set_check", "puzzle": "jumbling", "level": "labels", "argument": "List<record { id: Nat, m: Int }>",
+     "answer": "record { reason: List<Text>, values: List<Int> }",
+     "fields": "subset",
+     "tariff": "1 + 1 per entry of the drafted set",
+     "codes": [],
+     "clauses": ["KN2.4", "JI.13"],
+     "note": "nu after the solver's drafted set of correction IDs and multiplicities. The check's own refusal passes through."},
+    {"id": "seam_facts", "puzzle": "jumbling", "level": "poses", "argument": "Nat | Text",
+     "answer": "record { totals: List<record { aligned: Nat, off_grip_mismatches: Nat, on_grip_mismatches: Nat, total_N: Nat }> }",
+     "fields": "subset",
+     "tariff": "2 passes, for one cap or for \"all\"",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["JI.7", "JI.8"],
+     "note": "The seam totals for a cap or for \"all\", including off-grip cells; LP3's library reads \"all\"."},
+    {"id": "rim_summary", "puzzle": "jumbling", "level": "poses", "argument": None,
+     "answer": "record { complete: Bool, digest: Text, grip_n: List<Nat>, grip_n_undefined: List<Text>, rows: List<record { A_c: List<Nat>, F_c: List<Nat>, In_c: List<Nat>, N_c: List<Nat>, Out_c: List<Nat>, at_floor: List<Bool>, blocked: List<Bool>, cap: Nat, status: Text, undefined: List<Text> }> }",
+     "fields": "subset",
+     "tariff": "601 passes: 1 + one per cap (600)",
+     "codes": [],
+     "clauses": ["KN2.4", "JI.6"],
+     "note": "Per cap N_c, In_c, Out_c, A_c, F_c, blocked and floor, each with its definedness."},
+    {"id": "covers", "puzzle": "jumbling", "level": "poses", "argument": "Nat",
+     "answer": "record { answers: List<record { c_covers_d: record { counts: List<record { aligned_inside: Nat, aligned_outside: Nat, inside: Nat, outside: Nat }>, reason: List<Text>, straddlers: List<Nat> }, cap: Nat, d_covers_c: record { counts: List<record { aligned_inside: Nat, aligned_outside: Nat, inside: Nat, outside: Nat }>, reason: List<Text>, straddlers: List<Nat> } }>, domain: List<Nat>, input_digest: Text, message: List<Text>, parameters: record { cap: Nat, threshold: Nat }, status: Text }",
+     "fields": "subset",
+     "tariff": "82 passes: 1 + the named cap and its 80 meeting caps",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4", "JI.12"],
+     "note": "Covers at a cap the solver names, in both directions; a blocked or closed cap answers status error, not a refusal."},
+    {"id": "correction_lookup", "puzzle": "jumbling", "level": "labels", "argument": "Nat",
+     "answer": "record { family: Text, id: Nat, letters: List<List<Nat>>, row: List<Nat> }",
+     "fields": "subset",
+     "tariff": "1 pass",
+     "codes": ["KN2:input.named_object_invalid", "KN2:input.menu_binding_mismatch"],
+     "clauses": ["JI.13"],
+     "note": "One shipped correction construction by ID, under the catalogue's menu binding."},
+    {"id": "classify", "puzzle": "jumbling", "level": "poses", "argument": "MenuWord",
+     "answer": "record { certificate: List<record { grip: Nat, h_above: Q5, h_below: Q5, orbit: Nat, piece: Nat, point_above: List<Q5>, point_below: List<Q5>, points_checked_against_all_constraints: Bool, transport: Nat, vertex_above: Nat, vertex_below: Nat }>, code: List<Text>, grip: Nat, moved: Nat, status: Text, uncertain: Nat }",
+     "fields": "subset",
+     "tariff": "2 passes",
+     "codes": ["LB1:input.incompatible_alphabet"],
+     "clauses": ["KN2.4", "JI.6"],
+     "note": "The outcome of one named twist, a menu word of exactly one letter, with its certificates; it changes nothing."},
+    {"id": "survey", "puzzle": "jumbling", "level": "poses", "argument": "Nat",
+     "answer": "record { cap: Nat, status: Text }",
+     "fields": "subset",
+     "tariff": "2 passes",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4", "LB3.5"],
+     "note": "One named grip's certified status; \"all\" is not served."},
+    {"id": "straddlers", "puzzle": "jumbling", "level": "poses", "argument": "Nat",
+     "answer": "record { cap: Nat, certificates: List<record { grip: Nat, h_above: Q5, h_below: Q5, orbit: Nat, piece: Nat, point_above: List<Q5>, point_below: List<Q5>, points_checked_against_all_constraints: Bool, transport: Nat, vertex_above: Nat, vertex_below: Nat }>, pieces: List<Nat>, status: Text, uncertain: Nat }",
+     "fields": "subset",
+     "tariff": "2 passes",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4", "JI.6"],
+     "note": "The straddlers of a cap the solver names, each with its certificate pair."},
+    {"id": "units", "puzzle": "jumbling", "level": "poses", "argument": "List<Nat> | Text",
+     "answer": "record { complete: Bool, units: List<record { branches: List<Int>, domain: Text, heights: List<Nat>, members: List<Nat>, pose: Text }> }",
+     "fields": "subset",
+     "tariff": "2 passes",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["JI.9"],
+     "note": "The exact-pose units of the off pieces, for \"all\" or for named pieces; LP3's library reads a named list with units only."},
+    {"id": "repair_list", "puzzle": "jumbling", "level": "poses", "argument": "Nat",
+     "answer": "record { input_digest: Text, message: List<Text>, parameters: record { cap: Nat, contract_revision: Text, menu_identity: List<Text>, order_digest: List<Text>, tie_rule: Text }, rows: List<record { d: Nat, delta: Int, x: Nat, y: Nat, z: Nat }>, status: Text }",
+     "fields": "subset",
+     "tariff": "1 + R passes, with R = 0 when the state's menu has no items and otherwise 1 + 80 + (items - 1) x (1 + 3 x 80), its worst case under the menu",
+     "codes": ["KN2:input.named_object_invalid"],
+     "clauses": ["KN2.4", "JI.12", "BND.2"],
+     "note": "The owner's three-twist exception: the pairs at a cap the solver names, in a neutral order. A blocked or closed cap, or free mode, answers status error with no rows."},
+    {"id": "sticker_test", "puzzle": "jumbling", "level": "labels", "argument": None,
+     "answer": "StickerTestVerdict",
+     "fields": "all",
+     "tariff": "1 pass",
+     "codes": [],
+     "clauses": ["KN2.4", "LB3.2"],
+     "note": "A5's sticker test: holds, fails or unestablished."},
+    {"id": "retained_checkpoint", "puzzle": "jumbling", "level": "poses", "argument": "Word",
+     "answer": "RetainedCheckpointVerdict",
+     "fields": "all",
+     "tariff": "1 + 1 per letter of the witness word",
+     "codes": [],
+     "clauses": ["KN2.4", "LB3.2"],
+     "note": "The retained-state checkpoint for a witness word of 600-cell-Full's letters, signed primitive IDs 1 to 1,200."},
+    {"id": "label_checkpoint", "puzzle": "jumbling", "level": "labels", "argument": None,
+     "answer": "LabelCheckpointVerdict",
+     "fields": "all",
+     "tariff": "2 passes (the labels and nu)",
+     "codes": [],
+     "clauses": ["KN2.4", "LB3.2"],
+     "note": "The label checkpoint, from the labels and nu."},
+]
+
 rows = []
 def c(cid, label, kind, src, *, gates=(), preview="none", undo="none", contexts=("any",),
       repeat=False, job=False, key04=None, note=None, lane=None, args=None, source="DT-M1 C1; signed dispositions"):
@@ -734,13 +968,59 @@ def validate_services(services, by_id):
             raise TableError(f"{name}: service needs clauses and note")
 
 
+def validate_reads(reads, services):
+    """CM.18: each bridge read is typed by puzzle and level; a code shared by every read of a puzzle is listed once."""
+    if not isinstance(reads, dict) or set(reads) != set(READ_PROTOCOL) | {"rows"}:
+        raise TableError("reads require only form, order, types, tariff, codes, clauses and rows")
+    codes = reads["codes"]
+    lists = ("every", *READ_LEVELS)
+    if not isinstance(codes, dict) or set(codes) != {"unserved", *lists} or any(not isinstance(codes[k], list) for k in lists):
+        raise TableError("read codes require unserved, every and one list per puzzle")
+    shared = [codes["unserved"]] + [code for key in lists for code in codes[key]]
+    if any(not isinstance(code, str) or not CODE.fullmatch(code) for code in shared):
+        raise TableError("invalid shared read code")
+    if not isinstance(reads["rows"], list) or not reads["rows"]:
+        raise TableError("reads require a nonempty row list")
+    services = {service["id"] for service in services}
+    puzzles = {}
+    for row in reads["rows"]:
+        if not isinstance(row, dict) or set(row) != set(READ_FIELDS):
+            raise TableError("read requires only " + ", ".join(READ_FIELDS))
+        name, puzzle = row["id"], row["puzzle"]
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*", name):
+            raise TableError("invalid read id")
+        if name in services:
+            raise TableError(f"read ID collision with a service: {name}")
+        if not isinstance(puzzle, str) or puzzle not in READ_LEVELS or not isinstance(row["level"], str) \
+                or row["level"] not in READ_LEVELS[puzzle]:
+            raise TableError(f"{name}: invalid read puzzle or level")
+        if puzzle in puzzles.setdefault(name, set()):
+            raise TableError(f"read {name} repeated for {puzzle}")
+        puzzles[name].add(puzzle)
+        if "both" in puzzles[name] and len(puzzles[name]) > 1:
+            raise TableError(f"read {name} for both puzzles cannot also be one puzzle's")
+        if row["argument"] is not None and (not isinstance(row["argument"], str) or not row["argument"]):
+            raise TableError(f"{name}: read argument must be a type or None")
+        if any(not isinstance(row[key], str) or not row[key] for key in ("answer", "tariff", "note")):
+            raise TableError(f"{name}: read needs answer, tariff and note")
+        if row["fields"] not in ("all", "subset"):
+            raise TableError(f"{name}: read fields must be all or subset")
+        if not isinstance(row["clauses"], list) or not row["clauses"] or any(not isinstance(c, str) or not c for c in row["clauses"]):
+            raise TableError(f"{name}: read needs clauses")
+        own = row["codes"]
+        if not isinstance(own, list) or any(not isinstance(code, str) or not CODE.fullmatch(code) for code in own) or len(set(own)) != len(own):
+            raise TableError(f"{name}: invalid read code")
+        if set(own) & set(codes["every"] + codes[puzzle]):
+            raise TableError(f"{name}: a shared read code is listed again")
+
+
 def default_deltas():
     """The stored table's deltas, in their order."""
     return [load(HERE / name) for name in DELTA_FILES]
 
 
 def build_table(*, base_rows=None, join=None, aliases=None, sources=None,
-                delta=None, draft_without_jumbling=False, bindings=(), services=None):
+                delta=None, draft_without_jumbling=False, bindings=(), services=None, reads=None):
     """Build and validate in memory. None means a missing delta, not an empty one.
 
     delta is one H2 delta or a list applied in order.
@@ -768,6 +1048,8 @@ def build_table(*, base_rows=None, join=None, aliases=None, sources=None,
     validate_bindings(bindings, by_id)
     services = deepcopy(SERVICES if services is None else services)
     validate_services(services, by_id)
+    reads = deepcopy({**READ_PROTOCOL, "rows": READS} if reads is None else reads)
+    validate_reads(reads, services)
     return {"draft": "H-08 EN4", "final": not draft_without_jumbling,
             "source_inventory": "inventory/top-down.json", "source_join": "command-join.json",
             "aliases": {"file": "command-aliases.json", "version": aliases["version"], "content_digest": aliases["content_digest"]},
@@ -775,7 +1057,7 @@ def build_table(*, base_rows=None, join=None, aliases=None, sources=None,
                              "contexts": sorted(CONTEXTS), "lane": sorted(LANES), "preview": ["none", "required", "filter"]},
             "undo_dispatch": {"entry": {"undo": "session.undo", "redo": "session.redo"}, "classes": ["journal", "workspace"], "guard": "action_hint",
                               "stale": "KN5:stale.undo_superseded", "protection": "original_permission_path_including_release_confirmation"},
-            "commands": candidate, "services": services, "not_commands": NOT_COMMANDS}
+            "commands": candidate, "services": services, "reads": reads, "not_commands": NOT_COMMANDS}
 
 
 def encoded(table):

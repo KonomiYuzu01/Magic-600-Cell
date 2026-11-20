@@ -1022,7 +1022,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     code); a cancelled repair list keeps its covered outcomes and needs no code (KN7.3's `cancelled`;
     `KN7:cancelled.by_user` exists if one is wanted); a blocked or closed named cap, and a repair list in free mode,
     get new rows in chapter 13's amendment rather than a wider `KN2:input.named_object_invalid` or
-    `KN2:input.menu_binding_mismatch` (ERR.5), and stay errors with no code until then.
+    `KN2:input.menu_binding_mismatch` (ERR.5), and stay errors with no code until then. Chapter 13's amendment at
+    LP3's command-table freeze registers the two rows, `KN2:input.named_cap_blocked_or_closed` and
+    `KN2:input.menu_order_unpinned` (its section 9); the errors take the codes when the crate names them.
   - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model found no blocker or
     major finding. Its minor points are the drafts above, which it found defensible, and engine faults that return a
     plain error without a code, as the crate's other engine faults do; no change.
@@ -1270,8 +1272,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   anyway" (no UI), puts it back and opens; it refuses while this machine's lock is held, and it does not see a lock
   that another machine or a sync service holds on a shared folder. This is not the lock of
   KN4.2's R-15, which is the in-process lock that 0.4 held while it wrote a response (B-005); M6 calls that one the
-  core lock. Drafts: the file's name and the code, which chapter 13 does not register (a row for LP3's amendment
-  list, PHS.52).
+  core lock. Drafts: the file's name and the code, which chapter 13 did not register until LP3's command-table freeze
+  registered it (its section 9; PHS.52).
 - The journal: one durable action is one frame (its length, the length's complement, the payload and its SHA-256),
   appended and synced before the reply (R-06). When the append or its sync fails, the store cuts the journal back and
   syncs the cut; only a cut that succeeds proves the rollback, answered `failed` with `KN4:resource_limit.disk_full`.
@@ -1553,11 +1555,11 @@ run or not applicable is no pass (PHS.63).
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the
   formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9); CT-BND-11's ONE.32
   fields in other profiles, which never arise (BND.60); form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
-  selection, which the owner may overrule); ERR.1 for the six codes `c600-command` names as drafts that chapter 13
-  does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); the parts of the
-  session's rows that their markers leave to LP3's view, display, command layer and runtime process, to A6's live
-  twist and to M5's crossing, and step 7 of CT-ONE-11, which M6 cannot reach (M6's section); and, as before,
-  CT-LG1-01's mixed dependency editions and CT-LG2-05's form 2.
+  selection, which the owner may overrule); ERR.1 for the six codes `c600-command` named as drafts until LP3's
+  command-table freeze registered them (`tests/test_language_scans.py`'s `UNREGISTERED_DRAFTS` is empty since); the
+  parts of the session's rows that their markers leave to LP3's view, display, command layer and runtime process, to
+  A6's live twist and to M5's crossing, and step 7 of CT-ONE-11, which M6 cannot reach (M6's section); and, as
+  before, CT-LG1-01's mixed dependency editions and CT-LG2-05's form 2.
 - Fixed, each found by a test:
   - A clock reading was an exact `Nat`, so `use_budget(read_clock())` was admitted against LG2.6, LG3.8 and DET.18; it
     is now `Display<Nat>`, and CT-LG2-06's seconds half runs. LP3 C4's clock probe P01
@@ -1591,7 +1593,9 @@ run or not applicable is no pass (PHS.63).
   rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
   cells of `KN2:input.recipe_shape` and `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits
   both, and the cell of `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused
-  word (M5) and M8's `derive` for a refused letter.
+  word (M5) and M8's `derive` for a refused letter. LP3's command-table freeze makes the amendment (chapter 13,
+  section 9), with the five later codes the owner added on 20 November 2026
+  (`../docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md`, item 6).
 - Open, each needing a decision:
   - ERR.6: `c600-kernel/tests/kernel.rs` compares refusal texts, because `c600_kernel::Refusal` has no typed context
     (CT-ERR-16's typed failed fact); `c600_syntax::LowerError` has no code.
@@ -1646,8 +1650,8 @@ run or not applicable is no pass (PHS.63).
   lists it.
 - Drafts, which freeze with the command table at LP3 (PHS.53): the list in the crate documentation, among them one
   session per layer with Jumble off, an inline recipe as `WordRef`, `twist.apply` refused as a row not built (KN3's
-  exact rotation requests exist since LP2's pull request 176; the row is KN5's), five codes chapter 13 does not register
-  yet, and the envelope's epoch (LI.5).
+  exact rotation requests exist since LP2's pull request 176; the row is KN5's), five codes chapter 13 did not register
+  until that freeze (its section 9), and the envelope's epoch (LI.5).
 - Not built: the durable transaction is `MemoryStore`, a stand-in until M6 is on main, so no receipt here is
   persistence evidence; the source route, the views and the other two tools (LP3 plan, C2 to C8); protection rows;
   every row the crate refuses with `KN5:input.row_not_built`.
@@ -1673,7 +1677,8 @@ run or not applicable is no pass (PHS.63).
   raced undo is `KN5:stale.undo_superseded`; ruling 3, no receipt or lookup answers `accepted`; ruling 5,
   `KN5:auth.token_invalid` for a failed authenticator and `KN5:stale.token_mismatch` for another session or epoch;
   ruling 7, `session.checkpoint.save` follows the table (a commit row with a token; not built), where M6's
-  `session.checkpoint` takes none; `KN4:input.session_exists`, a sixth code chapter 13 does not register.
+  `session.checkpoint` takes none; `KN4:input.session_exists`, a sixth code chapter 13 did not register until LP3's
+  command-table freeze (its section 9).
 - Owner decisions of 16 November 2026 under PHS.52 (`../docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`).
   (1) Ruling 4 (KN5.21, KN5.23) keeps the frozen order, the retry lookup before the token checks (chapter 01 KN5,
   chapter 08 section 7, LI.6), and the host stamps the caller from the channel the envelope came on and never takes
@@ -1687,18 +1692,19 @@ run or not applicable is no pass (PHS.63).
   authenticator, and commits nothing. (2) Ruling 1: a press whose preview ended answers `KN5:stale.no_fresh_preview`
   when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview. LI is frozen with the
   architecture, so LI changes follow PHS.52: the amendment adds the caller to LI.5's digest list and changes LI.33's
-  sentence to ruling 1.
+  sentence to ruling 1. LP3's command-table freeze makes both changes (`layer-interfaces.md`, section 10).
 - The owner's readings of 18 November 2026 for the KN5 boundary attack
   (`../docs/wiki/decisions/owner-decisions-2026-11-18.md`; the drafts are in the crate documentation), in the command
   layer:
   - Findings B1 and L17 (KN5.12, ONE.42 option (a)): only the solver's action ends a preview the solver is shown.
     While a frame presents the pending preview, a run's preview and a run's cancel of it are refused with
-    `KN5:capability.preview_shown` (a draft code), also for the run of a command the solver invoked.
+    `KN5:capability.preview_shown` (a draft code until LP3's freeze registered it), also for the run of a command the
+    solver invoked.
   - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
     program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
-    run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (a draft code). The
-    check is on. LP3's host starts every run through a tool row the shell invokes (section "Status of LP3, C5 next:
-    the process host and the tool's views"), so the check changes no LP3 route.
+    run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (registered at LP3's
+    freeze, like `preview_shown`). The check is on. LP3's host starts every run through a tool row the shell invokes
+    (section "Status of LP3, C5 next: the process host and the tool's views"), so the check changes no LP3 route.
   - Finding G1: each run has its own command-ID scope (`runtime/<run>`), so one run cannot use up another run's IDs.
     The scope is derived from the stored caller; the journal format is unchanged.
   - Finding LD1 (EV4.22): a change of the protection policy needs the solver's confirmed press (below).
@@ -1815,9 +1821,9 @@ run or not applicable is no pass (PHS.63).
   `{kind, members, model}`, so saves of the same members of one kind under one model share a digest whatever their
   names. Names under `set/` are reserved: only a `set.save` completion writes them, and `workspace.set` and
   `worksheet.save` refuse them with `KN5:input.argument_form`. A save under a name that holds a saved set is refused
-  with the draft code `KN5:input.saved_set_exists`, at admission with no job and at completion, writing nothing, when
-  another save took the name meanwhile, unless the invocation carries the draft boolean `replace: true`. Tests:
-  `c600-command/tests/saved_sets.rs`.
+  with `KN5:input.saved_set_exists` (a draft code until LP3's freeze registered it), at admission with no job and at
+  completion, writing nothing, when another save took the name meanwhile, unless the invocation carries the draft
+  boolean `replace: true`. Tests: `c600-command/tests/saved_sets.rs`.
 - Argument blocks (BND.22; LP3's C6, step 1 item 4; the drafts are in the crate documentation).
   `CommandLayer::invoke_with_inputs(caller, invocation, inputs)` takes the provenance blocks of an invocation's
   arguments beside the envelope. The host builds them; for a running program's invocation it builds them from the run's
@@ -2230,9 +2236,11 @@ run or not applicable is no pass (PHS.63).
   B14, a missing budget and one over the host's ceiling, at the command layer on the 600-cell-Full tool's row in
   `c600-tools` (C5, `tests/ct_rte_07_budget.rs`); and MR13, MR14, MR19 and MR20, in which a state-derived read decides
   whether a later preview is emitted at all, are refused at the built-in column's admission on both executors in
-  `c600-runtime` (`tests/ct_rte_07_admission.rs`): 74 of the 75 keys in all. B12 waits for an owner reading of its
-  cache variants, since no host has a row cache. The six jumbling keys also run with menu words of the I_a alphabet,
-  which `c600-jumble-tool` pins with its item matrices (C8, `tests/ct_rte_07_jumble.rs`). The Linux leg did not run.
+  `c600-runtime` (`tests/ct_rte_07_admission.rs`): 74 of the 75 keys in all. B12 is recorded as run cold, and its
+  other five cache states are not applicable while no host keeps a row cache (owner, 20 November 2026, item 1 of
+  `../docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md`). The six jumbling keys also run with menu words of
+  the I_a alphabet, which `c600-jumble-tool` pins with its item matrices (C8, `tests/ct_rte_07_jumble.rs`). The Linux
+  leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
@@ -2319,7 +2327,8 @@ run or not applicable is no pass (PHS.63).
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
   input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 8 traces need
   what the IR draft lacks: a call frame without a slot that holds bindings, text order, a flow check and an executor
-  for `lp1-exec-region-draft-1` (LP2).
+  for `lp1-exec-region-draft-1` (LP2). At LP3's command-table freeze they leave LP3's run under PHS.52 and stay on
+  record in DET.65's vectors (owner, 20 November 2026, items 3 and 4; DET.65), so CT-RTE-04 runs whole at 32.
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route

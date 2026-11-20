@@ -2,7 +2,7 @@
 
 Status: **EN4 reconciliation draft, final table candidate before review**. It joins the signed 3 October dispositions and carries DT-M1's fix-first items 2 to 4 and the [22 October answers](../../wiki/decisions/owner-decisions-2026-10-22-dt-m1.md). The owner answered LQ1 to LQ21 on [6 November 2026](../../wiki/decisions/owner-decisions-2026-11-06.md). The owner accepted the language ADRs and froze the language architecture on [15 November 2026](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md); this table freezes at LP3 (chapter 12, PHS.53). The design line remains closed.
 
-- **CM.1 [D]** [build_command_table.py](build_command_table.py) builds [command-table.json](command-table.json) from its retained rows, the signed join, [command-rows-jumbling.json](command-rows-jumbling.json) and [command-rows-language.json](command-rows-language.json). The stored table has 175 commands: 152 retained-purpose and DT-M1 rows, 16 jumbling additions and seven language additions (the six of 6 November and LP3's record write `workspace.set`, CM.17), with six existing rows amended by the jumbling delta and two notes by the language delta. It has `final: true` and equals a fresh default build. Nine service registrations are separate (CM.16). `--draft-without-jumbling` builds the 152-row base with `final: false` for isolated checks. `final: true` marks a non-draft build; equality with a fresh default build and the delta checks show completeness. It is not an architecture approval. The working forms are HANDOFF H15.
+- **CM.1 [D]** [build_command_table.py](build_command_table.py) builds [command-table.json](command-table.json) from its retained rows, the signed join, [command-rows-jumbling.json](command-rows-jumbling.json) and [command-rows-language.json](command-rows-language.json). The stored table has 175 commands: 152 retained-purpose and DT-M1 rows, 16 jumbling additions and seven language additions (the six of 6 November and LP3's record write `workspace.set`, CM.17), with six existing rows amended by the jumbling delta and two notes by the language delta. It has `final: true` and equals a fresh default build. Nine service registrations (CM.16) and 30 bridge reads (CM.18) are separate. `--draft-without-jumbling` builds the 152-row base with `final: false` for isolated checks. `final: true` marks a non-draft build; equality with a fresh default build and the delta checks show completeness. It is not an architecture approval. The working forms are HANDOFF H15.
 
 ```text
 python -B docs/progress/1.0/build_command_table.py
@@ -24,7 +24,7 @@ Old bank-scoped bindings have no target scope under DT-M1 K6. Preserve their raw
 
 Every required target argument must have a literal entry in `arguments`, a named `name: ...` resolution requirement in `requires`, or a nonempty acquisition rule in `invoke_requires`. A trailing `?` on the row's type marks an optional input. General prose supplies no binding; the builder rejects any missing required argument for every alias. `review` binds a resolved draft or pinned word, explicit requested `fields` and positive `max_chunk` from the checked binding or solver invocation, and acquires a fresh snapshot with `kernel.snapshot.open(current)` under LI.11 for each invocation. Missing fields or chunk limit remain unresolved, with no implicit defaults. `filter-apply` submits a `FilterPreviewRef` under KN0.9/LI.41, without presentation or pending word-preview dependence. Undo/redo hint acquisition supplies the corresponding direction under LI.9.
 
-- **CM.4 [D]** A build refuses unknown inventory IDs, duplicate command IDs, values outside a vocabulary, a missing decision or split part, a changed signed-source record, a command on a delete/automate decision, a missing non-command reason, a missing alias, or an invalid alias digest or target. It refuses repeat outside CM.6's allowlist, a commit outside the commit lane, inconsistent preview/gate fields and a live/draft twist or timer row that violates CM.7. H2's delta refusals apply: adding an existing ID, amending a missing ID, an incompatible `expect`, two amendments of one field, an invalid value, or a missing delta without the draft flag. An addition supplies every H2 field and its explicit argument schema; an amendment supplies nonempty `expect`, `set` and `source`, includes its full argument schema and cannot rename an ID (CM.15). Lane targets and service registrations are checked under CM.13 and CM.16. The draft flag and a delta cannot be combined. Removing U4-069/3 fails coverage even while U4-069/1 and /2 remain.
+- **CM.4 [D]** A build refuses unknown inventory IDs, duplicate command IDs, values outside a vocabulary, a missing decision or split part, a changed signed-source record, a command on a delete/automate decision, a missing non-command reason, a missing alias, or an invalid alias digest or target. It refuses repeat outside CM.6's allowlist, a commit outside the commit lane, inconsistent preview/gate fields and a live/draft twist or timer row that violates CM.7. H2's delta refusals apply: adding an existing ID, amending a missing ID, an incompatible `expect`, two amendments of one field, an invalid value, or a missing delta without the draft flag. An addition supplies every H2 field and its explicit argument schema; an amendment supplies nonempty `expect`, `set` and `source`, includes its full argument schema and cannot rename an ID (CM.15). Lane targets, service registrations and bridge reads are checked under CM.13, CM.16 and CM.18. The draft flag and a delta cannot be combined. Removing U4-069/3 fails coverage even while U4-069/1 and /2 remain.
 
 ## 1. The six layers
 
@@ -113,6 +113,37 @@ The old busy-bearing rows now have lanes. Commit rows use `commit`; `session.res
     (LB7.2); and `grip.select` and `input.destination.set`, input routing that the shell owns (section 1) and the
     workspace does not hold, which give a receipt and no undo target, as a view row does (EV4.21).
 
+- **CM.18 [D]** Top-level `reads` lists the rows a program reads through a host bridge at the LP3 freeze (KN2.3,
+  KN2.4, LG2.8; owner item 7 of the [LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)).
+  A program writes `read_snapshot<T>("<id>")` or `read_snapshot<T>("<id>", argument)`. A read is not a command or a
+  service: it has no key, alias, lane, availability or undo entry, grants nothing and does not enter C1's count.
+  - Each row has exactly `id`, `puzzle`, `level`, `argument`, `answer`, `fields`, `tariff`, `codes`, `clauses` and
+    `note`. `puzzle` is `Full`, `jumbling` or `both`, and `level` follows KN2.4. Every Full read is at `labels`
+    (`effect` reads no state; chapter 03 types the orbit catalogue as Full labels). The jumbling reads `nu`,
+    `correction_set_check`, `correction_lookup`, `sticker_test` and `label_checkpoint` are at `labels`, the other
+    fourteen at `poses` (JI.6 to JI.13). `journal` answers in both modes at level `none` (KN4.3).
+  - `replay` and `protection` keep one name each, with one entry per puzzle and level: Full at `labels`, jumbling at
+    `poses`. No other name repeats, and a name for both puzzles has no single-puzzle entry. The reads
+    `structure.compare`, `filter.preview` and `structure.layer` share a name with their command rows and stay
+    separate entries; a read ID cannot collide with a service.
+  - `answer` is the type a program declares. `fields: all` means `T` has exactly the answer's fields, in any order:
+    `journal`, every Full read except `effect`, and the three jumbling end tests. `fields: subset` means `T` declares a
+    nonempty subset of the served fields: `effect` and the other jumbling reads, whose `answer` is the type LP3's
+    library (C8) reads them with from a wider served record. On the Full bridge a `Nat` field may be declared `Int`,
+    and no field carries a display qualifier. `types` names the shared argument form `Recipe`.
+  - Order: the host prices the read first and refuses a malformed argument there, and on the Full bridge a declared
+    type it does not serve, at the cost of the read's step only. The run then charges the tariff and the host
+    answers; a refusal after the charge keeps it. A jumbling tariff counts passes of 177,120 units, one per piece.
+  - `codes` lists once the refusals every read shares (`every`) and those of each puzzle's bridge: a retained read
+    with Jumble on, a jumbling read with Jumble off, and the jumbling bridge's identity and state-hash checks. A row
+    lists only its own codes, and a kernel refusal a read passes through is named in its note.
+    `LG3:capability.not_granted` refuses a read the run's bridge does not serve; `setups` is served only with a
+    certified table (BND.1). Every code is registered in chapter 13 section 5.
+  - The rows are table contracts for the bridges' draft rows at the freeze, not a bridge, a measured cost or a
+    profile grant. OPEN: where a jumbling bridge serves a field under another name than JI.6 to JI.13 give (for
+    `straddlers`, `certificates` and `status`), the row keeps the served name, and a rename is a later change under
+    PHS.52.
+
 ## 3. What the table shows now
 
 | Kind | Commands | Examples |
@@ -123,7 +154,7 @@ The old busy-bearing rows now have lanes. Commit rows use `commit`; `session.res
 | commit | 14 | execute, live twist, shared undo and redo, mode crossings, menu twist, new solve, reset, log import, checkpoint save/restore, branch selection, practice copy |
 | file, app | 11 | exports, backup, resume, stop a job, exit, clipboard |
 
-These counts come from the stored final table and exclude the nine services. The row list below is checked against that same table. A commit row identifies an admission and transaction path; it does not imply that every such row changes puzzle labels. All labels and collateral remain present regardless of view filters.
+These counts come from the stored final table and exclude the nine services and the 30 bridge reads. The row list below is checked against that same table. A commit row identifies an admission and transaction path; it does not imply that every such row changes puzzle labels. All labels and collateral remain present regardless of view filters.
 
 Eleven top-down inventory rows remain in `not_commands`. That historical index does not replace the per-decision coverage check. The retained units behind old browser controls are mapped by purpose even where the separate browser infrastructure is deleted.
 
@@ -304,6 +335,41 @@ Eleven top-down inventory rows remain in `not_commands`. That historical index d
 | `recording.play` | workspace | program |
 | `recording.convert` | workspace | none |
 | `workspace.set` | workspace | none |
+
+The bridge reads (CM.18), in the table's order:
+
+| Read | Puzzle | Level | Fields | Clauses |
+| --- | --- | --- | --- | --- |
+| `positions` | Full | labels | all | KN2.4 |
+| `labels` | Full | labels | all | KN2.4 |
+| `effect` | Full | labels | subset | KN2.4 |
+| `protection` | Full | labels | all | KN2.4, LB2.1 |
+| `replay` | Full | labels | all | KN2.4, KN2.7 |
+| `setups` | Full | labels | all | BND.1, LB2.1 |
+| `structure.compare` | Full | labels | all | KN2.3, LG2.8 |
+| `filter.preview` | Full | labels | all | KN2.3, LG2.8 |
+| `structure.layer` | Full | labels | all | KN2.3, LG2.8 |
+| `orbits` | Full | labels | all | KN2.3, LB2.1 |
+| `journal` | both | none | all | KN4.3 |
+| `heights` | jumbling | poses | subset | KN2.4, JI.6 |
+| `height_counts` | jumbling | poses | subset | KN2.4, JI.6 |
+| `replay` | jumbling | poses | subset | KN2.4, JI.10 |
+| `word_check` | jumbling | poses | subset | KN2.4, JI.11 |
+| `protection` | jumbling | poses | subset | KN2.4, KN1.11 |
+| `nu` | jumbling | labels | subset | KN2.4, JI.13 |
+| `correction_set_check` | jumbling | labels | subset | KN2.4, JI.13 |
+| `seam_facts` | jumbling | poses | subset | JI.7, JI.8 |
+| `rim_summary` | jumbling | poses | subset | KN2.4, JI.6 |
+| `covers` | jumbling | poses | subset | KN2.4, JI.12 |
+| `correction_lookup` | jumbling | labels | subset | JI.13 |
+| `classify` | jumbling | poses | subset | KN2.4, JI.6 |
+| `survey` | jumbling | poses | subset | KN2.4, LB3.5 |
+| `straddlers` | jumbling | poses | subset | KN2.4, JI.6 |
+| `units` | jumbling | poses | subset | JI.9 |
+| `repair_list` | jumbling | poses | subset | KN2.4, JI.12, BND.2 |
+| `sticker_test` | jumbling | labels | all | KN2.4, LB3.2 |
+| `retained_checkpoint` | jumbling | poses | all | KN2.4, LB3.2 |
+| `label_checkpoint` | jumbling | labels | all | KN2.4, LB3.2 |
 
 ## 4. Use by the design track
 
