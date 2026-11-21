@@ -318,6 +318,18 @@ fn refused(bytes: &[u8]) -> &'static str {
 
 // ------------------------------------------------------------------------------------------------- CT-PS1-16
 
+/// CT-DET-02 (part: a completed exact run's payload bytes repeat on reproduction and read back from the stored record,
+/// with the wall-clock observation outside the bytes; not run: evidence records and checker traces in the record, and
+/// the pinned cross-platform comparison, which `c600-run`'s `tests/conformance_det.rs` runs).
+/// CT-DET-03 (whole: reproduction from a recorded key answers `not run` for missing source, module, seed or captured
+/// bytes and refuses other bytes under a digest and another edition, IR version, identity, metering revision, kernel
+/// cost table, kernel implementation or checker set, all before the re-run starts and with no fallback; the refusals in
+/// lowering, loading and the run entry are in `c600-run/tests/conformance_det.rs`).
+/// CT-LG5-03 (part: a run record's key names the module digests, edition, IR version, metering revision, kernel cost
+/// table, kernel and checker identities, and `reproduce` answers `not run` for missing bytes and refuses another
+/// edition, IR version, identity, metering revision, kernel cost table, kernel or checker set before executing; not
+/// run: the closure, manifest and lock digests, which the draft payload does not carry (PS1.31), and the record's tie
+/// to `c600-module`'s approval).
 /// CT-PS1-16 (whole), PS1.31, DET.1, DET.5 to DET.7, DET.17, KN7.10: a run record keeps chapter 09's complete key, its
 /// version and digest, and the exact payload; it reads back field for field. Reproducing a completed run or a
 /// deterministic cut-off gives the same exact bytes. Missing bytes give `not run`; other supplied bytes, another
@@ -620,6 +632,13 @@ fn ct_det_04_consulted_inputs_enter_the_key_while_the_puzzle_digest_stays() {
 
 // ------------------------------------------------------------------------------------------------- CT-DET-14
 
+/// CT-DET-09 (part: a search cut off by its step limit is kept in a run record with its stop boundary, reads as within
+/// its budget and never complete, and the same key reproduces the same cut-off (`ct_ps1_16_*` above); not run: the
+/// record under a kernel-cost, memory or output cut-off, and a cut-off that two limits reach together).
+/// CT-DET-13 (part: a record of a completed run reads complete and may deny; a cut-off within its budget, a wall-clock
+/// safety stop and a cancellation read open and never deny, and `reproduce` answers `not run` for the open ones; a
+/// checked witness counts once; not run: an empty completed enumeration read as complete, the record of a host error,
+/// and a safety stop that the runtime process produced).
 /// CT-DET-14 (whole), DET.29, DET.30, KN7.4, PS1.31: a search cut off by its budget keeps the witness it published; a
 /// separate check record confirms it, and it then counts, once; a check that reads open itself, as under a clock grant,
 /// confirms nothing. The unexamined domain stays open: the record never supports a negative claim. A continuation has

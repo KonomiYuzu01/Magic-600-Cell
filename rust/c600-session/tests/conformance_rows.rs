@@ -248,8 +248,8 @@ fn execute_writes() -> u64 {
 /// that takes a state or a digest to adopt; workspace records shaped like a digest or a label list, proposed as words,
 /// are refused or give the kernel's own derivation of a word from the current state, and a commit of that preview and a
 /// job reading a snapshot of another state adopt neither the record's state nor the snapshot; the runtime's half is
-/// `ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt` in `c600-run/tests/tables.rs`; not run: the command
-/// layer's and the overlay's rows (LP3))
+/// `ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt` in `c600-run/tests/tables.rs`, and the command layer's
+/// H-08 rows are `no_row_takes_a_state_or_a_digest_to_adopt` in `c600-command/tests/layer.rs`)
 #[test]
 fn ct_one_01_no_row_takes_a_state_or_a_digest_to_adopt() {
     // The enumeration: one row of each variant, and a job whose input is an opened snapshot.
@@ -341,11 +341,14 @@ fn ct_one_01_no_row_takes_a_state_or_a_digest_to_adopt() {
 /// included, delivered on a program's channel without a token and with a token the shell minted for that very command
 /// and row, is refused as `KN5:capability.commit_row_refused` and changes neither `overview()` nor `preview()`, and no
 /// other row a program delivers commits; the runtime's half is
-/// `ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile` in `c600-run/tests/tables.rs`; not run: the
-/// command layer's and the overlay's rows (LP3)). CT-ONE-23 (whole, with `no_runtime_request_changes_a_line` in
-/// `branches.rs` for the job hosts): the staged session has two lines and an undone action, so a program's execute
-/// would start a new line, its switch would change the active line and its undo or redo would change a line; each is
-/// refused, and the lines stay as they were.
+/// `ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile` in `c600-run/tests/tables.rs`, and the command
+/// layer's and the overlay's rows are in `c600-command/tests/profile.rs`). CT-KN5-02 (part: the session's rows: no
+/// `c600_session::Row` a program delivers commits, with or without a token the shell minted, and a session receipt has
+/// no field that could carry a token; the runtime's half is in `c600-run/tests/tables.rs` and the command layer's in
+/// `c600-command/tests/profile.rs`). CT-ONE-23 (whole, with `no_runtime_request_changes_a_line` in `branches.rs` for
+/// the job hosts): the staged session has two lines and an undone action, so a program's execute would start a new
+/// line, its switch would change the active line and its undo or redo would change a line; each is refused, and the
+/// lines stay as they were.
 #[test]
 fn ct_one_02_a_program_delivers_no_commit_row() {
     let mut seen = [false; VARIANTS];
@@ -360,6 +363,8 @@ fn ct_one_02_a_program_delivers_no_commit_row() {
             let before = session.overview();
             let receipt = from_program(&session, "program", row);
             assert!(!matches!(receipt.status, Status::Committed(_)), "{receipt:?}");
+            // No field of a receipt could carry a token: one added here stops this from compiling.
+            let Receipt { command: _, request: _, job: _, status: _ } = &receipt;
             if let Status::Running(job) = receipt.status {
                 session.wait_job(job).expect("the job's result");
             }
@@ -385,9 +390,9 @@ fn ct_one_02_a_program_delivers_no_commit_row() {
 /// CT-KN5-10 (part: R-05 for the session rows: with every orbit protected, every `c600_session::Row` variant is
 /// delivered by an exhaustive enumeration; `Execute` and `SwitchLine` are refused with the protection code and change
 /// nothing, an `Undo` or a `Redo` that would release protection and a `protection.set` release are refused until
-/// confirmed, and no row moves a protected orbit; not run: the H-08 restriction table, which exists only in LP3's
-/// `c600-command` and waits for KN5's placement, and an `Undo` or a `Redo` of a move refused with the protection code,
-/// which M6 cannot reach: protection changes share the one undo order, so what is on top of either stack was done
+/// confirmed, and no row moves a protected orbit; not run: the H-08 table's 175 rows, which `c600-command` holds and
+/// which no test walks against their restrictions yet, and an `Undo` or a `Redo` of a move refused with the protection
+/// code, which M6 cannot reach: protection changes share the one undo order, so what is on top of either stack was done
 /// under the protection now in force)
 #[test]
 fn ct_kn5_10_every_session_row_keeps_every_protected_orbit() {

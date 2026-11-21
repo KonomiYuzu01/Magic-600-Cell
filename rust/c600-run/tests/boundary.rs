@@ -315,9 +315,9 @@ fn stored_words_carry_the_host_block_and_later_runs_cite_it() {
 }
 
 /// CT-BND-02 (part: a damaged or legacy part joins as `read_state: yes` and is refused at preview admission; not run:
-/// the session's tables and the command layer's rows that admit `own`, which M6 and LP3 build): a damaged or legacy
-/// part never reads as `read_state: no`, and a damaged block is kept but never admitted as `own` or `manual` (BND.21,
-/// FP.17). CT-PS1-18 (part: the run-level join of a legacy part; the rest is in `legacy.rs`).
+/// the session's tables (M6); the command layer's rows are in `c600-command/tests/kn5_admission.rs`): a damaged or
+/// legacy part never reads as `read_state: no`, and a damaged block is kept but never admitted as `own` or `manual`
+/// (BND.21, FP.17). CT-PS1-18 (part: the run-level join of a legacy part; the rest is in `legacy.rs`).
 #[test]
 fn damaged_and_legacy_parts_never_read_as_no() {
     let solving = (Author::BuiltIn, Profile::Solving);
@@ -353,7 +353,8 @@ fn damaged_and_legacy_parts_never_read_as_no() {
 /// CT-BND-07 (part: a built preview, an admission refusal and a stale refusal; the whole row runs in
 /// `conformance_bnd.rs`), CT-BND-11 (part: the solving profile; not run: ONE.32's fields in the other profiles, which
 /// never arise, since BND.60 makes every proposal there a capture) and CT-BND-12 (part: the program's acknowledgement
-/// and the shell's record; not run: the shell's display, LP3), with BND.42 to BND.44: in the solving profile a
+/// and the shell's record; not run: the shell's display of reason and remedy, which no crate renders yet), with BND.42
+/// to BND.44: in the solving profile a
 /// previewing program receives one fixed acknowledgement, `{base, id}`, whether the preview was built, refused at
 /// admission or refused by the engine. Its output and every charge row are the same; the shell keeps the full answer.
 /// An outcome field is not granted to it.
@@ -395,7 +396,8 @@ fn a_solving_run_gets_one_fixed_acknowledgement() {
     assert!(summaries[3..].iter().all(|s| s == &summaries[3]));
 }
 
-/// CT-BND-14 (part: the engine and the program; not run: the session's digest, which the session store keeps (M6)),
+/// CT-BND-14 (part: the engine and the program; the command layer's refusal and the session's digest are in
+/// `c600-command`'s `tests/profile.rs`),
 /// with BND.60: in tool authoring and research, `propose` goes to a capture. The engine builds no preview, the capture
 /// keeps the word and its block for a test to read, and the program gets the acknowledgement.
 #[test]

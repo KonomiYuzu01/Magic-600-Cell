@@ -390,6 +390,8 @@ impl Fixture {
     }
 }
 
+/// CT-ONE-17 (part: a snapshot held across an exit keeps its labels and digest; not run: a snapshot of the jumbled
+/// puzzle's own level, which LP3's runtime opens).
 /// CT-JI-01 (part: an exit at the label checkpoint makes the poses' labels the retained state; not run: branch
 /// navigation, restore, import and the roots and void facts, which are not built), CT-ONE-03 (part: an exit commits
 /// with no preview object and no job), A5, ONE.54, JI.27, FP.31 (draft: the journal kind `exit`). At the entry's poses
@@ -407,8 +409,11 @@ fn an_exit_takes_the_labels_of_its_poses() {
     assert!(committed(&f.enter()));
     assert_eq!(f.layer.availability(JUMBLE_OFF_ROW), Ok(()));
     let on = f.layer.revision().clone();
+    let held = f.layer.snapshot().clone();
+    let held_labels = held.labels().to_vec();
     let receipt = f.exit();
     let Status::Committed(record) = &receipt.status else { panic!("{:?}", receipt.status) };
+    assert_eq!((held.digest(), held.labels()), (solved.digest(), held_labels.as_slice()), "a held snapshot");
     assert_eq!((record.pre.as_str(), record.post.as_str()), (on.digest.as_str(), solved.digest()));
     let off = f.layer.revision().clone();
     assert_eq!((off.mode, off.head.as_str(), off.digest.as_str()), (MODE, "e2", solved.digest()));

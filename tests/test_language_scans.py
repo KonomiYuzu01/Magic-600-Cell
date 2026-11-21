@@ -625,8 +625,8 @@ class ScanTests(unittest.TestCase):
 
     def test_ct_err_06_handling_never_reads_message_text(self):
         """CT-ERR-06 (part: the handling half in the members' sources; not run: changing or translating the summary
-        and diagnostic of a raised envelope, which has those fields only from LP3's command layer, and the test-file
-        half, where c600-kernel's tests still compare refusal texts, reported as a finding): no member's source
+        and diagnostic of a raised envelope, which the command layer carries as `detail` only, with no translation
+        seam, and the test-file half, where c600-kernel's tests still compare refusal texts, reported as a finding): no member's source
         compares, searches or matches an error's message, summary or diagnostic text; handling decides by code or
         by type. Controls: planted comparisons, searches and matches on message text fail; a field read for display
         does not."""

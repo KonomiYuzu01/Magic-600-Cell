@@ -92,7 +92,8 @@ fn tool(source: &str, statements: &str) -> String {
 
 /// CT-LG5-08 (part: a `.6cs` module of kind stage parses and formats in the same syntax family, lowers to a module of
 /// kind stage with its declared kind, costs and array inputs, and reaches the stage checker, which admits it under
-/// test limits; not run: module digests, locks and grants in LP3's `c600-module`).
+/// test limits; the closure checks of a stage module, its digest, lock and grants, run in
+/// `c600-module/tests/conformance_lg5.rs`).
 #[test]
 fn a_stage_module_shares_the_syntax_and_lowers_to_a_stage() {
     for source in [LENS, TINT] {
@@ -125,7 +126,7 @@ fn a_stage_module_shares_the_syntax_and_lowers_to_a_stage() {
 
 /// CT-LG5-08 (part: a stage module introduces no fourth profile: in a program with a tool module, a stage that breaks
 /// a rule is refused alike under each of the three profiles' admissions, and a tool module that imports a stage
-/// module by digest cannot call it; not run: as above).
+/// module by digest cannot call it).
 #[test]
 fn a_stage_in_source_reaches_the_stage_checker_under_every_profile() {
     let clocked = LENS.replace("let s = scale(x);", "let s = approx_add(scale(x), read_clock());");

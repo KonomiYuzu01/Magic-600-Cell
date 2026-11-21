@@ -975,7 +975,8 @@ fn ct_det_27_every_set_of_short_dimensions_stops_in_precedence_order() {
 }
 
 /// CT-DET-20 (part: typed endings and cleanup over the reference model and the library meter; RT1's runs are in
-/// `conformance_det.rs`; not run: the journal and the state hash under fault (M6) and a killed runtime (LP3)): each
+/// `conformance_det.rs`; not run: the journal and the state hash under fault in the real session store, and a runtime
+/// killed while attached to it): each
 /// frozen trace at its own limits, and each child-free one also at its use and with each limit at zero, ends typed:
 /// `completed` with no code and no stop, `cut_off` with the code of the dimension its stop names, or `error` with a
 /// code of the catalogue and its stop in phase `effect`. Every stop names its scope, every run releases all live

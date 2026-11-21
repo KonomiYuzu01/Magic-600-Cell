@@ -271,8 +271,8 @@ mod tests {
 
     /// CT-KN3-01 (part: the fixed-width sign test at the smallest margins, |a² − 5b²| = 4 along Lucas and Fibonacci
     /// numbers up to the 128-bit limit, at both signs and at the limits of the range, and sums of products with exact
-    /// zeros of contact type and a difference of one unit at 2^100; not run: the margins of the model's regions and
-    /// the big-integer path, which `c600-jumble`'s `q5` decides).
+    /// zeros of contact type and a difference of one unit at 2^100; not run: the margins of the model's regions, and
+    /// the big-integer path of `c600-jumble`'s `q5` at the same margins beyond 128 bits).
     #[test]
     fn signs_at_the_smallest_margins_are_exact() {
         let pairs = lucas_fibonacci();

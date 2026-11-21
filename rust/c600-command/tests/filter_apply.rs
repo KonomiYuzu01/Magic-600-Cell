@@ -644,6 +644,9 @@ fn the_cut_runs_on_through_the_redo_stack() {
     }
 }
 
+/// CT-LG3-03 and CT-LB7-01 (part: an invoked workspace change of a stored row, `filter.apply`, is one undoable action
+/// whose undo and redo each move the workspace revision once; not run: the same for a language-defined workspace row,
+/// to whose writes no undo reaches by the draft ruling in `src/lib.rs`).
 /// The workspace inverse (H-08: `filter.apply` undoes in the workspace): an undo writes back what each record held
 /// before the apply, absent ones included, and a redo writes the apply's records again; each moves every written
 /// record's version and the workspace revision once. An earlier record write keeps its place on the stack beneath

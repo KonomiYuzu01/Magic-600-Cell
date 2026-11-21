@@ -1555,12 +1555,13 @@ run or not applicable is no pass (PHS.63).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them), KN5's
   stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and M6's
   record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder, streamed
-  words, `filter.apply` and PHS.19's items 7 and 8 (CT-KN2-02's remaining states, R-11's jumbling fixtures), as
-  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 94 whole, 14 of them by
-  the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG2-12, CT-LG2-13,
-  CT-LG2-14, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 133 part; 4 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 17 waiting, each with
-  what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  words, `filter.apply`, PHS.19's items 7 and 8 (CT-KN2-02's remaining states, R-11's jumbling fixtures) and LP2's exit
+  re-marking pass, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 119
+  whole, 29 of them by the union of their parts (CT-BND-14, CT-BND-27, CT-ERR-09, CT-KN1-01, CT-KN1-04, CT-KN1-05,
+  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-KN5-02, CT-KN5-12, CT-LB7-02, CT-LG2-04, CT-LG2-12, CT-LG2-13, CT-LG2-14,
+  CT-LG3-01, CT-LG3-02, CT-LG3-04, CT-LG5-06, CT-LG5-08, CT-LI-04, CT-LI-07, CT-LI-13, CT-ONE-01, CT-ONE-02, CT-ONE-03,
+  CT-PS1-11 and CT-PS1-22); 128 part; none named only; none missing; 1 waiting (CT-LI-14), with what it waits for in
+  `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1641,12 +1642,8 @@ run or not applicable is no pass (PHS.63).
   - Gaps: the interpreter does not check a function's kind at run time; `provenance::import` makes the author `own`,
     so `Author::Imported` never arises (FP.18's example has `own`); `Loaded::run` does not require the entry function
     to be exported, and `load` does not run the checker again.
-- Missing, by what they wait for:
-  - LP3's lanes, views and shell (16): CT-ONE-13 to CT-ONE-16, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07,
-    CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
-  - A session's second level (2): CT-ONE-18, which needs a second level in the session, its crossing and `project`
-    (KN1.9); and CT-ONE-19, with LP3's view model. CT-ONE-17 runs in part since KN5's crossings (`jumble.on` and
-    `jumble.off` cancel the jobs on the replaced revision); a snapshot opened before a crossing is the runtime's.
+- Waiting (1): CT-LI-14, an output-exhausted `jumble.observe`, whose row no crate builds; LP3's command-table freeze
+  builds or drops the row. Every other ID runs at least in part, and each part names what it leaves out.
 - Evidence kind: source and fixture. The checks ran on Windows only.
 
 ## Status of LP3, C1: the command layer
@@ -1903,7 +1900,8 @@ run or not applicable is no pass (PHS.63).
   answer per binding in an `Availability`, keyed by the row and the digest of its absolute arguments (none for computed
   ones, LI.19), with the revision, the generation and a digest of the caller's context read at one moment; it grants
   nothing either. Tests: `c600-command/tests/availability.rs`, which also reads the crate's dependency closure from the
-  manifests: the kernel's crates and no language crate.
+  manifests: the kernel's crates and no language crate. A full read after missed changes equals the last of the
+  stepwise reads (CT-LI-07 in part).
 - The report after a command (KN5.22, R-02, ONE.70; the drafts are in the crate documentation). `report` pairs a
   receipt with the display's status, and `Shell::send_reported` sends and reports. When the command applied
   (committed, or completed as a workspace write, a view publication or a file publication), the display refreshes to
@@ -1911,7 +1909,8 @@ run or not applicable is no pass (PHS.63).
   (`DISPLAY_OUT_OF_DATE`) and leaves the receipt, the outcome lookup, the preview and the jobs as after any commit. The
   continuation, `refresh_display`, sends no command. The host's `Refresh` over LP3's view model and the message on
   screen are LP3's (CT-KN5-05 in part). Tests: `c600-command/tests/refresh.rs`, a port of 0.4's
-  `tests/test_native_reply_after_commit.py`.
+  `tests/test_native_reply_after_commit.py`, and a restart that keeps the durable terminal outcomes and answers the
+  transient ones `unknown_outcome` (CT-LI-02 in part).
 - LB7.2's work sheets (H-08's `worksheet.save`, `worksheet.load` and `worksheet.compare`; solving workflow section 4;
   the drafts are in the crate documentation). A work sheet is a workspace record whose payload is `{"worksheet":
   {...}}` (`Worksheet`): the phases Prepare, Macro and Cleanup, the named roles (a piece, by its home position, or a
@@ -1973,7 +1972,8 @@ run or not applicable is no pass (PHS.63).
   witness's letter count and `Digest<literal word>`; from an exit root also the exit's event (`crossing`) and the
   SHA-256 of its canonical record (`exit`), with the suffix as the witness. A reopen with the menu pinned
   (`CommandLayer::open_with_menu`) replays the entry and must make the same record; without it the layer stays in
-  read-only recovery before the crossing. Tests: `c600-command/tests/jumble_on.rs` and, for the entry from an exit
+  read-only recovery before the crossing. A crossing under a store fault commits whole or not at all (CT-LI-05 in
+  part). Tests: `c600-command/tests/jumble_on.rs` and, for the entry from an exit
   root, `c600-command/tests/jumble_off.rs` (the command layer's parts of CT-ONE-03, CT-ONE-11, CT-ONE-17 and
   CT-JI-08).
 - `jumble.twist.menu` (JI.27, JI.35, FP.31, ONE.78, KN3.7 to KN3.9; the drafts are in the crate documentation), a live
@@ -2061,7 +2061,10 @@ run or not applicable is no pass (PHS.63).
   `solving`), the session's start records it once (`Genesis::profile`) and a reopen reads it back; no program or row
   changes it. KN5.26's admission of a record's word runs only in a solving session, and in `tool_authoring` and
   `research` a run may not invoke `operation.preview` (`LG3:capability.not_granted`). Tests:
-  `c600-command/tests/profile.rs`. LP3's hosts start runs in solving sessions only; CT-RTE-07's B13 and B14 refuse a
+  `c600-command/tests/profile.rs`, which also invokes every row of the table on a run's channel in each profile: none
+  commits, the 19 commit and app rows are refused `COMMIT_ROW_REFUSED`, and `jumble.scramble`, the one other row
+  that takes a token, `TOKEN_INVALID` (CT-ONE-02 and CT-KN5-02, with `c600-run`'s and `c600-session`'s halves). LP3's
+  hosts start runs in solving sessions only; CT-RTE-07's B13 and B14 refuse a
   command in a tool-authoring session before any run (C5's section below).
 - Budgets (KN7.7, BM3, DET.27, ERR.27; LP2's pull request 348; draft). An invocation of a row an entry serves declares
   its budget in the envelope (`Invocation::budget`), and the shell declares its own (`Shell::budget`, by default

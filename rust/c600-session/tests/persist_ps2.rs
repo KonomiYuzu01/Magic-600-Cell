@@ -189,6 +189,11 @@ fn payload_of(record: &Json) -> &Json {
 
 // ------------------------------------------------------------------------------------------------- CT-PS2-01
 
+/// CT-DET-23 (part: the session store's generation publication interrupted at every write, as an error, a partial
+/// write or a write that took effect, and as an outage from each write on with torn and complete pointer tails: a
+/// reader sees the whole old generation or the whole new one, a torn pointer line never becomes active later, and a
+/// retry publishes; not run: the builder's write-then-rename publication in `c600-build` and a run record's
+/// publication, which `Publisher` does not carry).
 /// CT-PS2-01 (source, whole: a word migration's record compared field by field with the test's own transcription of
 /// FP.29, source fields the bytes do not carry, targetless and fabricated-target conversions, then its publication over
 /// a `MemDisk` with every write failing in turn as an error, a partial write or a write that took effect, an outage

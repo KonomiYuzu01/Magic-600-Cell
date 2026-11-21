@@ -103,6 +103,9 @@ fn fp38_a_pick_record_keeps_its_payload() {
     assert_eq!(outcome(pick::resolve(&none, &records)), PROVENANCE);
 }
 
+/// CT-BND-22 (part: a flow-form pick record kept in the store is refused at preview admission with
+/// `PS1:capability.provenance_incompatible`, a refusing pick moved into the capability-form block is refused at the
+/// pick, and the capability-form pick passes admission; not run: the recorded migration that switches forms).
 /// CT-FP-02 (part: a non-null built-in pick under each LQ21 form at preview admission, which `c600-run`'s
 /// `tests/boundary.rs` leaves to this file) with FP.38 and BND.85: with the vector's records kept and the
 /// capability-form vector's contract pin held, the capability-form built-in pick resolves and passes admission, and

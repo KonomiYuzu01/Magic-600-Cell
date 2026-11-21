@@ -55,6 +55,11 @@ fn evaluate(pose: &CameraPose, rule: PrecisionRule) -> Evaluation {
     reference::evaluate(&fixture, pose)
 }
 
+/// CT-DET-15 (whole: the display plan's exact fields and key equal one pinned digest on every platform that runs the
+/// test, a float pose gives the same exact fields whatever maths-library path built its matrix, and the approximate
+/// points stay within the declared precision of their exact images; the platforms are Windows on the headless shards
+/// and headless Linux in the Linux Rust job, which both run this crate's tests; RT1's display fields are in
+/// `c600-run/tests/conformance_det.rs` and `values.rs`).
 #[test]
 fn ct_rpi_19_windows_leg_one_key_gives_equal_exact_fields() {
     let (theta, q) = turns()[0];

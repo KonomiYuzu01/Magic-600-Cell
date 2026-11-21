@@ -426,18 +426,19 @@ const CLASSES: [(Author, Profile); 4] = [
     (Author::BuiltIn, Profile::Research),
 ];
 
-/// CT-KN5-02 (part: the runtime's half of the table, the IR's operations and the interpreter's host rows; not run: the
-/// session's table rows, which the session store builds (M6), and the command layer's and the overlay's rows (LP3)) and
-/// CT-ONE-02 (part: the runtime's half; the session's rows run in `c600-session/tests/conformance_rows.rs`; not run:
-/// the command layer's and the overlay's rows (LP3)): no operation in the runtime's table returns a token or calls
-/// `commit`, and no row is of kind `commit`, in any profile. The IR's operations, the interpreter's requests and sinks,
-/// LG3.1's effects and the receipt's fields are enumerated from the crates' own types, and none is a commit; the `Host`
-/// trait has three rows, a tariff, a request and a sink, and a fourth required row would not compile here. Every
-/// effectful operation, run through the boundary adapter as a built-in tool and a solver's own tool in a solving
-/// session, in tool authoring and in research, reaches the host exactly as the table classifies it; workspace records
-/// and files stay in the adapter's store, the engine is asked for no row of another kind, the meter records no `commit`
-/// operation, and every receipt the program receives holds the ID and the base only, although the engine's receipt also
-/// carries `token` and `commit` fields.
+/// CT-KN5-02 (part: the runtime's half of the table, the IR's operations and the interpreter's host rows; the session's
+/// rows run in `c600-session/tests/conformance_rows.rs` and the command layer's and the overlay's rows in
+/// `c600-command/tests/profile.rs`) and
+/// CT-ONE-02 (part: the runtime's half; the session's rows run in `c600-session/tests/conformance_rows.rs` and the
+/// command layer's and the overlay's rows in `c600-command/tests/profile.rs`): no operation in the runtime's table
+/// returns a token or calls `commit`, and no row is of kind `commit`, in any profile. The IR's operations, the
+/// interpreter's requests and sinks, LG3.1's effects and the receipt's fields are enumerated from the crates' own
+/// types, and none is a commit; the `Host` trait has three rows, a tariff, a request and a sink, and a fourth required
+/// row would not compile here. Every effectful operation, run through the boundary adapter as a built-in tool and a
+/// solver's own tool in a solving session, in tool authoring and in research, reaches the host exactly as the table
+/// classifies it; workspace records and files stay in the adapter's store, the engine is asked for no row of another
+/// kind, the meter records no `commit` operation, and every receipt the program receives holds the ID and the base
+/// only, although the engine's receipt also carries `token` and `commit` fields.
 #[test]
 fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
     let effects = [
@@ -492,7 +493,8 @@ fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
 }
 
 /// CT-ONE-01 (part: the runtime's half of the table; the session's rows run in
-/// `c600-session/tests/conformance_rows.rs`; not run: the command layer's and the overlay's rows (LP3)): no operation
+/// `c600-session/tests/conformance_rows.rs` and the command layer's H-08 rows in `c600-command/tests/layer.rs`, whose
+/// overlay rows are never `commit` or `app`): no operation
 /// takes a state or a digest to adopt. No IR type and no run-time value holds a state, a revision, a digest or a token,
 /// so no operand can carry one. The one row that reaches the engine's preview, `propose`, takes a word and a target and
 /// nothing else: its request carries the letters, the target's name and the canonical bytes of exactly `{target,
@@ -625,16 +627,16 @@ fn handing(output: Expr) -> Program {
     program(vec![module("m", vec![f, helper("hand", vec![], exact(Ty::Unit), output).exported()])])
 }
 
-/// CT-RPI-01 (part: the boundary enumeration; not run: switching a mock backend under a display plan, since display
-/// plans, the adapter and the backends are built in LP3): the language has no renderer call, backend handle or callback
-/// (RPI.1). The interpreter's requests and sinks carry names, types, letters, canonical bytes and an exact role only,
-/// as their typed enumeration shows; no IR type or run-time value is a handle; a function of the program never reaches
-/// a view, workspace, file or exact sink, since the canonical encoding refuses it before the host is asked (the exact
-/// sink since the owner decision of 16 November 2026 under PHS.52). Every package in
-/// `Cargo.lock` is a workspace member or one of the four approved numeric crates, so no renderer, graphics or windowing
-/// crate is linked; every member forbids unsafe code and no product source holds an `unsafe` block or an `extern`
-/// declaration, so nothing calls a foreign renderer API. LX-2's fault-injection device ([`DEVICE`]) is measurement
-/// tooling, not product source.
+/// CT-RPI-01 (part: the boundary enumeration; not run: switching a mock backend under a display plan; the mock and the
+/// bridge over the fake core share no observable of a plan's meaning yet): the language has no
+/// renderer call, backend handle or callback (RPI.1). The interpreter's requests and sinks carry names, types, letters,
+/// canonical bytes and an exact role only, as their typed enumeration shows; no IR type or run-time value is a
+/// handle; a function of the program never reaches a view, workspace, file or exact sink, since the canonical encoding
+/// refuses it before the host is asked (the exact sink since the owner decision of 16 November 2026 under PHS.52).
+/// Every package in `Cargo.lock` is a workspace member or one of the four approved numeric crates, so no renderer,
+/// graphics or windowing crate is linked; every member forbids unsafe code and no product source holds an `unsafe`
+/// block or an `extern` declaration, so nothing calls a foreign renderer API. LX-2's fault-injection device
+/// ([`DEVICE`]) is measurement tooling, not product source.
 #[test]
 fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
     let approved = [("autocfg", "1.5.1"), ("num-bigint", "0.5.1"), ("num-integer", "0.1.47"), ("num-traits", "0.2.19")];
@@ -707,12 +709,13 @@ const KEEPER: &str = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n\
     let e = use_evidence(claim);\n    return write_workspace<Word>(\"kept\", w);\n}\n";
 
 /// CT-EVD-21 (part: the policy, the grants, the pins, preview admission and the run's records; not run: the commit
-/// path, which the command layer and the session build (LP3, M6)): no policy row, capability or admission reads a word
-/// or a claim (EVD.56). The policy holds declassifier IDs, a grant holds capabilities, the pins hold contract and
-/// checker pins, and a run's context holds its producer, its state-read fact and its inputs' blocks, as their typed
-/// destructuring shows. Preview admission reads blocks only: stores with the same blocks and different records give
-/// the same answers. A run that keeps different words and hands different claims to the evidence sink stores the same
-/// block, and the checker admits two programs that differ only in a word and a claim alike.
+/// path of `c600-command` and `c600-session`, which no test drives with different words and claims): no policy row,
+/// capability or admission reads a word or a claim (EVD.56). The policy holds declassifier IDs, a grant holds
+/// capabilities, the pins hold contract and checker pins, and a run's context holds its producer, its state-read fact
+/// and its inputs' blocks, as their typed destructuring shows. Preview admission reads blocks only: stores with the
+/// same blocks and different records give the same answers. A run that keeps different words and hands different
+/// claims to the evidence sink stores the same block, and the checker admits two programs that differ only in a word
+/// and a claim alike.
 #[test]
 fn ct_evd_21_no_policy_row_capability_or_admission_reads_a_word_or_a_claim() {
     let Policy { enabled_declassifiers } = Policy::enabling(&["example"]);

@@ -374,8 +374,10 @@ fn ct_det_01_each_run_input_changes_the_result_and_ambient_state_does_not() {
 
 /// CT-DET-02 (part: completed exact runs repeated on the platform that runs the test, against bytes pinned from an
 /// independent computation, Windows on the headless shards and headless Linux in the Linux Rust job,
-/// `.github/workflows/linux-rust.yml`; not run: evidence records and the host envelope (M6)): payload bytes, charge
-/// rows and checker reports of completed exact runs repeat byte for byte and match their pinned values.
+/// `.github/workflows/linux-rust.yml`; the stored run record's exact bytes are `c600-session`'s `tests/persist_run.rs`;
+/// not run: evidence records and checker traces in a stored run record, which the draft payload does not carry
+/// (PS1.31), and the host envelope (LP3)): payload bytes, charge rows and checker reports of completed exact runs
+/// repeat byte for byte and match their pinned values.
 #[test]
 fn ct_det_02_completed_exact_runs_repeat_their_pinned_bytes() {
     let two = build(&[&source("random", TWO)]);
@@ -418,8 +420,8 @@ fn ct_det_02_completed_exact_runs_repeat_their_pinned_bytes() {
     assert_eq!(check(&refused).unwrap(), report);
 }
 
-/// CT-DET-03 (part: refusals before execution in lowering, loading and the run entry; not run: reproduction from a
-/// recorded key, which checks the key's identities and input digests (M6)): a missing or substituted dependency, an
+/// CT-DET-03 (part: refusals before execution in lowering, loading and the run entry; reproduction from a recorded
+/// key is in `c600-session/tests/persist_run.rs`): a missing or substituted dependency, an
 /// unsupported IR identity, an unknown entry, a wrong argument count, an argument without a canonical form and an
 /// invalid seed are refused or stop before any host request, with no fallback to another version.
 #[test]
@@ -613,8 +615,9 @@ fn ct_det_07_big_integers_fixed_width_inputs_and_text_pairs() {
     }
 }
 
-/// CT-DET-08 (part: cold and warm loads, repeated runs and arguments shared with other runs; not run: kernel and
-/// value-store caches and their eviction, which RT1 does not have yet (M4, M6)): result bytes and every charge row
+/// CT-DET-08 (part: cold and warm loads, repeated runs and arguments shared with other runs; the session's
+/// derived-query cache is in `c600-session/tests/jobs.rs`; not run: a value store and the eviction of its values,
+/// which no crate builds yet): result bytes and every charge row
 /// match whether the program is loaded afresh or reused, and whether an argument's payload is shared with values other
 /// runs keep.
 #[test]
@@ -642,13 +645,13 @@ fn ct_det_08_cold_and_warm_loads_and_shared_values_keep_bytes_and_charges() {
     assert!(value::equal(&kept, &Value::text("abc")), "runs do not change a shared payload");
 }
 
-/// CT-DET-09 and CT-DET-27 (part: RT1's runs at their own use and with every combination of limits one short; not
-/// run: coverage of a search and the run record that keeps it (M6), and child scopes in a program, since the IR has no
-/// child construct (the meter's child rules are in `ct_det_11` and `tests/traces.rs`)): a run with limits equal to its
-/// use completes unchanged, since equality is admitted. With any set of limits one short, it stops at the row the
-/// completed run's rows predict, in the root scope, with the step checked first and then kernel cost, memory and
-/// output; a failed step debits nothing and a denied request keeps its step and debits none of the three. Each stop
-/// repeats exactly.
+/// CT-DET-09 and CT-DET-27 (part: RT1's runs at their own use and with every combination of limits one short; the run
+/// record of a step cut-off is in `c600-session/tests/persist_run.rs` and RT1's child scopes in
+/// `tests/child_scopes.rs`; not run: a run record under a kernel-cost, memory or output cut-off (the meter's child
+/// rules are in `ct_det_11` and `tests/traces.rs`)): a run with limits equal to its use completes unchanged, since
+/// equality is admitted. With any set of limits one short, it stops at the row the completed run's rows predict, in the
+/// root scope, with the step checked first and then kernel cost, memory and output; a failed step debits nothing and a
+/// denied request keeps its step and debits none of the three. Each stop repeats exactly.
 #[test]
 fn ct_det_09_each_budget_stops_at_one_recorded_boundary() {
     let add = build(&[&source("", ADD)]);
@@ -701,8 +704,9 @@ fn ct_det_10_quiet_and_recorded_meters_agree() {
     }
 }
 
-/// CT-DET-11 (part: the meter's child scopes and RT1's recursion; not run: child jobs and nested checks in a program,
-/// since the IR has no child construct and jobs are M6): a child asks for more than its ancestors have left and gets
+/// CT-DET-11 (part: the meter's child scopes, RT1's recursion and RT1's `child` scopes in `tests/child_scopes.rs`; not
+/// run: checks nested in a program, which wait for LP5's checkers, and child jobs, which the session's scheduler does
+/// not have): a child asks for more than its ancestors have left and gets
 /// only what every one of them has left; a grandchild that exhausts its own cap absorbs its stop; the ledgers
 /// reconcile, each child's use lying within its effective caps and inside its parent's use; and live memory is counted
 /// in every scope that holds it. Recursion counts every live frame in the root, so it cannot exceed a limit either.
@@ -767,8 +771,9 @@ fn ct_det_11_children_and_recursion_cannot_mint_allowance() {
     }
 }
 
-/// CT-DET-12 (part: concurrent RT1 runs in one process sharing one loaded program; not run: jobs, the scheduler,
-/// child completion order and atomic one-job admission (M6), and the runtime process (LP3)): runs with fixed inputs
+/// CT-DET-12 (part: concurrent RT1 runs in one process sharing one loaded program; the atomic admission of a one-job
+/// lane is in `c600-session/tests/jobs.rs`; not run: other jobs of the session's scheduler or the runtime process
+/// varied around a fixed run, and child completion order, since no crate builds child jobs): runs with fixed inputs
 /// keep their exact payloads, charges and cut-offs whatever other runs are scheduled beside them, cancelled ones
 /// included.
 #[test]
@@ -810,8 +815,9 @@ fn ct_det_12_concurrent_runs_keep_payloads_and_budget_coverage() {
     }
 }
 
-/// CT-DET-13 (part: RT1's outcomes; not run: enumeration jobs, their witnesses and the claims a run record makes
-/// (M6), and the wall-clock safety stop of the runtime process (LP3)): a completed run with an empty result, a
+/// CT-DET-13 (part: RT1's outcomes and, in `c600-session/tests/persist_run.rs`, the claims a run record makes; not run:
+/// an empty completed enumeration read as a complete record, the record of a host error, and the wall-clock safety
+/// stop of the runtime process feeding a record): a completed run with an empty result, a
 /// deterministic cut-off, a host error, a cancellation and a refusal before the run (not run) stay distinct, and only
 /// the completed run has a result.
 #[test]
@@ -848,8 +854,9 @@ fn ct_det_13_outcomes_stay_distinct_and_only_completion_has_a_result() {
 }
 
 /// CT-DET-15 (part: exact and approximate display fields on the platform that runs the test, Windows on the headless
-/// shards and headless Linux in the Linux Rust job, with binary64 as the reference at the declared precision; not
-/// run: display plans of the maths library (LP3)): exact fields compare byte for byte; an approximate field equals the
+/// shards and headless Linux in the Linux Rust job, with binary64 as the reference at the declared precision; the
+/// display plans are in `c600-display/tests/ct_rpi_19.rs`): exact fields compare byte for byte; an approximate field
+/// equals the
 /// binary64 result at its declared precision; and perturbing an approximate input changes no exact decision.
 #[test]
 fn ct_det_15_exact_fields_ignore_approximate_perturbation() {
@@ -990,8 +997,9 @@ fn ct_det_18_grants_do_not_widen_through_calls_or_imports() {
     assert_eq!(host.refused, ["file", "file_read"]);
 }
 
-/// CT-DET-20 (part: endless recursion and the logical exhaustion of each budget on RT1; not run: the journal and the
-/// state hash, which the session store keeps (M6), and killed-runtime fixtures (LP3)): endless work and exhaustion of
+/// CT-DET-20 (part: endless recursion and the logical exhaustion of each budget on RT1; the killed-runtime rehearsals
+/// are in `c600-runtime/tests/faults.rs`; not run: the journal and the state hash under endless work or exhaustion in
+/// the real session store, and a runtime killed while attached to it): endless work and exhaustion of
 /// steps, kernel cost, memory or output each end with a typed cut-off, make no host request, release every owner and
 /// repeat exactly.
 #[test]

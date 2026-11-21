@@ -4,7 +4,7 @@
 
 mod common;
 
-use c600_command::{code, digest, draft_args, word_draft, Receipt, Status};
+use c600_command::{code, digest, draft_args, word_draft, CancelReason, Receipt, Status};
 use c600_input::{
     default_specs, resolve_binding, Chord, Destination, Focus, KeyEvent, KeyMap, Layout, Resolution, Routed,
     RoutingClass, RoutingContext, LIST_ROWS,
@@ -394,4 +394,100 @@ fn a_prefix_group_waits_without_a_time_out_and_escape_closes_it() {
     assert!(matches!(f.tap("KeyX"), Routed::PrefixClosed));
     assert!(matches!(f.tap("KeyF"), Routed::Unhandled));
     assert_eq!(f.reached(), 2);
+}
+
+/// CT-EV4-03 (whole; EV4.5, KN5.9): a blocked interpreter leaves kernel-row key dispatch independent and undo
+/// available through KN5. The tool key's program job is taken and held, as a slow program holds it; meanwhile the twist
+/// key commits through KN5 and starts no program job, and the undo key restores the start. The held job's revision was
+/// replaced, so its late result publishes nothing. The command route's half of the rule is CT-KN5-09 in
+/// `c600-command`'s layer tests.
+#[test]
+fn a_held_program_job_blocks_neither_a_twist_key_nor_the_undo_key() {
+    let mut f = fixture("key", "us-qwerty");
+    f.pin_menu();
+    f.router.context.grip = Some(2);
+    let start = f.layer.snapshot().digest().to_owned();
+    let tool = f.tap(TOOL_KEY).receipt().expect("the tool key reached the layer").clone();
+    assert!(matches!(tool.status, Status::Running(_)), "{:?}", tool.status);
+    let held = f.layer.take_program_job().expect("the tool row's job");
+    assert_eq!(held.row, TOOL);
+
+    let twist = f.tap("KeyJ");
+    assert_eq!(row(&twist), "twist.apply");
+    assert!(matches!(twist.receipt().unwrap().status, Status::Committed(_)), "{twist:?}");
+    assert_ne!(f.layer.snapshot().digest(), start);
+    assert!(f.layer.take_program_job().is_none(), "the twist key started no program");
+
+    let undo = f.tap("Ctrl+KeyZ");
+    assert_eq!(row(&undo), "session.undo");
+    assert!(matches!(undo.receipt().unwrap().status, Status::Committed(_)), "{undo:?}");
+    assert_eq!(f.layer.snapshot().digest(), start);
+    assert!(f.layer.take_program_job().is_none(), "the undo key started no program");
+
+    assert_eq!(f.layer.finish_program_job(held.job, Ok(Value::Null)), None, "the late result publishes nothing");
+    assert_eq!(
+        f.layer.outcome(&tool.command, &tool.request).unwrap().status,
+        Status::Cancelled(CancelReason::ReplacedRevision)
+    );
+    assert_eq!(f.layer.store().log.len(), 2, "the twist and the undo");
+}
+
+/// CT-LB7-02 (part: a key bound to a tool row adds no token or capability to the row's program job: the job the key
+/// route takes equals the job the command route takes (`Shell::invoke` of the same row and arguments on a second
+/// layer) in row, kind, arguments, caller, revision, overlay, inputs and budget, and neither route sends a token,
+/// since the row takes none; not run: grants, profiles, storage and forks, which `c600-run/tests/conformance_lg3.rs`
+/// runs) (EV4.5, LI.20).
+#[test]
+fn a_key_bound_to_a_tool_row_adds_no_token_or_capability_to_its_job() {
+    let mut keys = fixture("key", "us-qwerty");
+    let mut cmds = fixture("cmd", "us-qwerty");
+    assert!(!keys.layer.table().row(TOOL).unwrap().takes_token());
+    let routed = keys.tap(TOOL_KEY);
+    let dispatch = routed.dispatch().expect("the tool key reached the layer").clone();
+    assert_eq!((dispatch.invocation.row.as_str(), dispatch.binding.context), (TOOL, RoutingClass::Global));
+    assert!(dispatch.invocation.token.is_none(), "the key route sends no token");
+    let by_key = keys.layer.take_program_job().expect("the key's job");
+
+    let invoked = cmds.shell.invoke(&mut cmds.layer, TOOL, dispatch.invocation.args.clone()).unwrap();
+    assert!(matches!(invoked.status, Status::Running(_)), "{:?}", invoked.status);
+    let by_command = cmds.layer.take_program_job().expect("the command's job");
+
+    assert_eq!((&by_key.row, by_key.kind, &by_key.args), (&by_command.row, by_command.kind, &by_command.args));
+    assert_eq!((&by_key.caller, &by_key.overlay), (&by_command.caller, &by_command.overlay));
+    assert_eq!((&by_key.inputs, by_key.budget), (&by_command.inputs, by_command.budget));
+    assert_eq!(by_key.revision, by_command.revision);
+    assert_eq!(by_key.caller, c600_command::Caller::Shell, "the press runs as the shell, not as a run");
+    assert!(by_key.inputs.is_empty(), "no provenance block of the key reaches the job");
+}
+
+/// CT-LI-06 (part: a completed preview is no presentation permission, and building it changes no session head, on the
+/// key route; the view model's atomic installation runs in `c600-view`'s view rows; not run: a derived display plan
+/// checked against the session head (LP3's view lane)) (LI.24, ONE.36): the
+/// preview job completes, but the commit key finds no fresh preview until a frame presents it, and neither the job nor
+/// the refusal moves the head or writes the journal. Once presented, the same key commits.
+#[test]
+fn a_completed_preview_is_no_permission_to_commit_until_it_is_presented() {
+    let mut f = fixture("key", "us-qwerty");
+    let start = f.layer.snapshot().digest().to_owned();
+    f.shell.draft = Some(word_draft(&word(&[1])));
+    let preview = f.tap("Ctrl+Enter").receipt().expect("the preview reached the layer").clone();
+    let Status::Running(job) = preview.status else { panic!("{:?}", preview.status) };
+    assert_eq!(f.layer.run_jobs(), 1);
+    let built = f.layer.outcome(&preview.command, &preview.request).unwrap();
+    assert!(matches!(built.status, Status::Completed(_)), "{:?}", built.status);
+
+    match f.tap("Ctrl+Shift+Enter") {
+        Routed::Refused { row, error } => {
+            assert_eq!((row.as_str(), error.code), ("operation.execute", code::NO_FRESH_PREVIEW))
+        }
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(f.layer.snapshot().digest(), start);
+    assert!(f.layer.store().log.is_empty());
+
+    f.frames.present(&mut f.shell, &mut f.layer, job).unwrap();
+    let commit = f.tap("Ctrl+Shift+Enter");
+    assert!(matches!(commit.receipt().unwrap().status, Status::Committed(_)), "{commit:?}");
+    assert_ne!(f.layer.snapshot().digest(), start);
+    assert_eq!(f.layer.store().log.len(), 1);
 }

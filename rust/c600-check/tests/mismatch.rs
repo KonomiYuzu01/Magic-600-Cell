@@ -197,8 +197,8 @@ fn a_field_read_needs_a_record_with_that_field() {
 }
 
 /// CT-LG2-11 (part: a proposal takes a Word, in IR, and refuses a `WordEqualityKey` or LB1.10's `TraceEqualityKey`
-/// (LP2 drafts) with `LG2:type.word_key_not_executable`, as a word operation and a stored word do; not run: the other
-/// bindings, which wait for M4).
+/// (LP2 drafts) with `LG2:type.word_key_not_executable`, as a word operation and a stored word do; not run: an
+/// execution binding, which no program has).
 #[test]
 fn state_and_preview_operations_take_their_types() {
     assert_only(&cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), nat(1))), "f", "0", "Word", "Nat");

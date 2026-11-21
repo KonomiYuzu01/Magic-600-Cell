@@ -312,6 +312,9 @@ fn a_commit_ends_a_served_rows_jobs() {
     assert_eq!((f.layer.store().log.len(), f.layer.revision().workspace), (1, 0));
 }
 
+/// CT-LI-12 (part: a newer request of a view row supersedes its waiting one, where the target is the row itself; not
+/// run: a target resolved from an argument, a fixed view or a control name, and requests across rows, which the layer
+/// does not build).
 /// A served view row runs on H-08's `view` lane, keyed by the row: a newer invocation supersedes a waiting one, and
 /// the entry's result completes it as published with the revision unchanged and nothing written.
 #[test]
@@ -354,6 +357,8 @@ fn a_served_row_keeps_its_lane() {
     }
 }
 
+/// CT-LG3-02 (part: serving a stored row refuses the commit and app kinds, a token argument and an action guard; the
+/// effects of a program are in `c600-check`, `c600-syntax` and `c600-run`).
 /// Serving refuses a row whose admission or completion the layer cannot check without the entry, with
 /// `KN5:input.overlay_row_kind`: each shape condition alone on a synthetic table, and stored examples. It refuses a row
 /// the layer builds itself, a row an entry already serves and an overlay row with

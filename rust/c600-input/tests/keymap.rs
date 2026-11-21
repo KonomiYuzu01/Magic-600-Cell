@@ -1,5 +1,8 @@
 //! CT-EV4-06's synthetic half (EV4.7): the key-map checks test duplicates and the prefix-code property separately in
 //! each routing class and under every declared layout, and any finding refuses the whole map before it applies.
+//! CT-PS1-13 (part: the findings a stored map must report, duplicates, a complete binding that is also a prefix
+//! and a layout conversion that collides; not run: the round trip of `c600-binding` and `c600-key-map` records,
+//! which no writer stores yet).
 //!
 //! The layouts are this crate's tables, not a platform's: none of this is Windows input or IME evidence. No assertion
 //! reads a finding's detail text; each compares the code, the layout and the specs involved.

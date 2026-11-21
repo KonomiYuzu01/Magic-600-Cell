@@ -92,9 +92,10 @@ fn refused_at(step: u8, session: &Session, disk: &MemDisk, envelope: Envelope, e
 
 /// CT-ONE-11 (part: an `operation.execute` refused at steps 1, 3, 4, 5, 6 and 8 of chapter 08 section 7, and one
 /// failed by step 9's proved rollback, leaves the overview with every counter and digest, the pending preview, the
-/// write count and the durable journal as they were, and exactly one later commit succeeds; not run: step 7
-/// (`KN5:consistency.state_hash_mismatch`), which M6 cannot reach because step 6 refuses every head change first
-/// (`rust/README.md`, M6), and a refused live twist (ONE.46), because `twist.apply` is not an M6 row). Steps 2 and 10
+/// write count and the durable journal as they were, and exactly one later commit succeeds; not run here: step 7
+/// (`KN5:consistency.state_hash_mismatch`), which this store cannot reach because step 6 refuses every head change
+/// first (`rust/README.md`, M6), and a refused live twist (ONE.46), because `twist.apply` is not an M6 row; both run in
+/// `c600-command`'s `twist_apply.rs`). Steps 2 and 10
 /// have no refusal. Step 4 holds the first commit's write on the memory disk; while it is held, the commit holds the
 /// session core, so the refusal is compared on the disk, and the whole view is compared after the rollback.
 #[test]
@@ -189,9 +190,9 @@ fn ct_one_11_a_commit_refused_at_each_step_changes_nothing() {
 
 /// CT-ONE-20 (part: a program job that ends as `error`, here because its host refuses the proposal the job tries to
 /// make, leaves the pending preview fresh and the state and journal unchanged, and a token minted afterwards commits
-/// that preview; not run: the death of the runtime process itself, because M6 runs jobs in its own process and the
-/// runtime's process is LP3's `c600-runtime`; M6 tests `KN7:resource_limit.runtime_lost` through the terminal mapping
-/// only (`rust/README.md`, M6)).
+/// that preview; the death of the runtime process against a fake session is `c600-runtime/tests/faults.rs`'s; not run:
+/// that death against the real session store, which `c600-session` does not link to `c600-runtime` (LP3's shell
+/// integration); M6 tests `KN7:resource_limit.runtime_lost` through the terminal mapping only (`rust/README.md`, M6)).
 #[test]
 fn ct_one_20_a_job_ending_in_error_leaves_the_pending_preview_committable() {
     let (session, disk) = session();
