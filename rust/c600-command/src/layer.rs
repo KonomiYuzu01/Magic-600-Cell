@@ -719,6 +719,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     jobs_issued: u64,
     jobs: VecDeque<Job>,
     running: BTreeMap<u64, ProgramJob>,
+    /// View runners a newer request of their row fenced (LI.23): settled as superseded, they hold their row's runner
+    /// slot until the host reports them, and their result is dropped.
+    fenced: BTreeMap<u64, ProgramJob>,
     program_capacity: usize,
     /// The host's budget ceiling, if it set one ([`CommandLayer::set_budget_ceiling`]).
     host_ceiling: Option<Budget>,
@@ -799,6 +802,7 @@ impl<S: Store> CommandLayer<S> {
             jobs_issued: 0,
             jobs: VecDeque::new(),
             running: BTreeMap::new(),
+            fenced: BTreeMap::new(),
             program_capacity: 1,
             host_ceiling: None,
             slot: None,
@@ -1797,6 +1801,7 @@ impl<S: Store> CommandLayer<S> {
         self.run = None;
         self.jobs.clear();
         self.running.clear();
+        self.fenced.clear();
         self.comparison = None;
         self.repairs = None;
         self.commit_held = false;
@@ -4421,6 +4426,15 @@ impl<S: Store> CommandLayer<S> {
                 let reason = CancelReason::Superseded(invocation.command.clone());
                 self.settle(&(job.scope, job.command), Status::Cancelled(reason));
             }
+            // The row's runner is fenced too (LI.23): its result cannot publish after this request.
+            let runners: Vec<u64> =
+                self.running.iter().filter(|(_, program)| program.row == row.id).map(|(&job, _)| job).collect();
+            for job in runners {
+                let program = self.running.remove(&job).expect("a listed runner");
+                let reason = CancelReason::Superseded(invocation.command.clone());
+                self.settle(&(program.caller.scope(), program.command.clone()), Status::Cancelled(reason));
+                self.fenced.insert(job, program);
+            }
         }
         let program = ProgramJob {
             job: id,
@@ -4445,17 +4459,21 @@ impl<S: Store> CommandLayer<S> {
         Ok((Some(id), Status::Running(id)))
     }
 
-    /// Takes the next queued program job for the host to run.
+    /// Takes the next queued program job for the host to run. A view row's replacement starts only after the host
+    /// reported the runner it fenced (LI.23), so until then it stays queued.
     pub fn take_program_job(&mut self) -> Option<ProgramJob> {
-        let position = self.jobs.iter().position(|job| matches!(job.kind, JobKind::Program(_)))?;
+        let position = self.jobs.iter().position(|job| match &job.kind {
+            JobKind::Program(program) => !self.fenced.values().any(|runner| runner.row == program.row),
+            _ => false,
+        })?;
         let job = self.jobs.remove(position)?;
         let JobKind::Program(program) = job.kind else { unreachable!("the position names a program job") };
         self.running.insert(program.job, program.clone());
         Some(program)
     }
 
-    /// Reports a program job's result: the host's interface. A job a commit or undo cancelled meanwhile stays
-    /// cancelled, and its result is dropped (`None`). A workspace row's completion is one durable action, written with
+    /// Reports a program job's result: the host's interface. A job a commit or undo cancelled meanwhile, or a view
+    /// runner a newer request of its row fenced, stays cancelled, and its result is dropped (`None`). A workspace row's completion is one durable action, written with
     /// its receipt (KN5.23, L8); in read-only recovery it fails. Other completions stay transient. The same as
     /// [`CommandLayer::finish_program_job_with`] with an output that publishes no view and writes no record.
     pub fn finish_program_job(&mut self, job: u64, result: Result<Value, Error>) -> Option<Receipt> {
@@ -4474,6 +4492,11 @@ impl<S: Store> CommandLayer<S> {
     /// `session.undo` reaches only for a stored row whose undo class is `workspace`. A completed `filter.preview` job's
     /// result is kept as a filter preview ([`CommandLayer::filter_preview`]).
     pub fn finish_program_job_with(&mut self, job: u64, result: Result<JobOutput, Error>) -> Option<Receipt> {
+        // A fenced runner's report releases its row's runner slot; its result never publishes (LI.23).
+        if self.fenced.remove(&job).is_some() {
+            self.generation += 1;
+            return None;
+        }
         let program = self.running.remove(&job)?;
         let key = (program.caller.scope(), program.command.clone());
         // The gate `fresh_filter_preview` must hold again when the output is published (KN0.9).

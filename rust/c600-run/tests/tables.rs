@@ -627,8 +627,8 @@ fn handing(output: Expr) -> Program {
     program(vec![module("m", vec![f, helper("hand", vec![], exact(Ty::Unit), output).exported()])])
 }
 
-/// CT-RPI-01 (part: the boundary enumeration; not run: switching a mock backend under a display plan; the mock and the
-/// bridge over the fake core share no observable of a plan's meaning yet): the language has no
+/// CT-RPI-01 (part: the boundary enumeration; switching the backend under a display plan runs in
+/// `c600-render/tests/ct_rpi_01.rs`): the language has no
 /// renderer call, backend handle or callback (RPI.1). The interpreter's requests and sinks carry names, types, letters,
 /// canonical bytes and an exact role only, as their typed enumeration shows; no IR type or run-time value is a
 /// handle; a function of the program never reaches a view, workspace, file or exact sink, since the canonical encoding
@@ -708,8 +708,8 @@ const KEEPER: &str = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n\
     export fn keep(w: Word, claim: Nat) -> Unit effects [workspace] {\n    \
     let e = use_evidence(claim);\n    return write_workspace<Word>(\"kept\", w);\n}\n";
 
-/// CT-EVD-21 (part: the policy, the grants, the pins, preview admission and the run's records; not run: the commit
-/// path of `c600-command` and `c600-session`, which no test drives with different words and claims): no policy row,
+/// CT-EVD-21 (part: the policy, the grants, the pins, preview admission and the run's records; the commit paths run
+/// in `c600-command/tests/kn5_stages.rs` and `c600-session/tests/commit.rs`): no policy row,
 /// capability or admission reads a word or a claim (EVD.56). The policy holds declassifier IDs, a grant holds
 /// capabilities, the pins hold contract and checker pins, and a run's context holds its producer, its state-read fact
 /// and its inputs' blocks, as their typed destructuring shows. Preview admission reads blocks only: stores with the

@@ -1003,8 +1003,10 @@ fn ct_one_10_a_derived_state_with_an_open_claim_answers_unknown_at_nu_zero() {
 }
 
 /// CT-ONE-28 (part: a wordless import reads, compares and is a base for `derive`, whose value keeps the import's open
-/// claim and lineage; not run: display, which `c600-display` has no test for, and the session store's import (M6); that
-/// no H-08 row proposes or adopts either value runs in `c600-command/tests/layer.rs`).
+/// claim and lineage; a display plan of an imported value with its `imported` lineage runs on a fixture import record
+/// in `c600-tools/tests/views.rs`, and that no H-08 row proposes or adopts either value in
+/// `c600-command/tests/layer.rs`; not run: a display of this import's own value, since no layer joins an import to a
+/// view yet (LP3), and the session store's import (M6)).
 #[test]
 fn ct_one_28_a_wordless_import_reads_compares_and_derives() {
     let s = setup();

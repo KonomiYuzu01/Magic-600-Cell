@@ -7,9 +7,9 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::{
     code, digest, draft_args, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction, Error,
-    HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore, Overlay, Provenance, Receipt, RecordValue, ResultRef,
-    Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW,
-    WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, RecordValue,
+    ResultRef, Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, POLICY_ROW, RECORD_ROW,
+    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -449,4 +449,129 @@ fn the_representations_rows_can_be_served() {
         let served = table.serve_row(id, overlay(id)).unwrap();
         assert_eq!(Row { overlay: None, ..served.clone() }, kept, "{id}");
     }
+}
+
+// ----- ONE.49's job rows and LI.22 to LI.24's lanes in the command layer
+
+/// The undo of the action on top of the stack, through the command route.
+fn undo(f: &mut Fixture) -> Receipt {
+    let hint = f.layer.undo_hint(Direction::Undo).expect("an eligible target");
+    f.invoke("session.undo", json::object([("hint", hint.to_json())]))
+}
+
+/// `operation.preview` of `recipe` through the command route; returns its receipt and the job building the preview.
+fn ask_preview(f: &mut Fixture, recipe: &Value) -> (Receipt, u64) {
+    let receipt = f.invoke("operation.preview", draft_args(recipe));
+    let Status::Running(job) = receipt.status else { panic!("preview not admitted: {:?}", receipt.status) };
+    (receipt, job)
+}
+
+fn status_of(f: &Fixture, receipt: &Receipt) -> Status {
+    f.layer.outcome(&receipt.command, &receipt.request).expect("a receipt").status
+}
+
+/// CT-ONE-12 (part: ONE.49's row for a job building a preview, at a commit and at an undo: the queued job is
+/// cancelled with `replaced_revision`, its preview is discarded and never built, and no job is left; with the view
+/// job's row: a view row's taken runner and its queued request are cancelled the same way and the runner's late result
+/// is dropped; not run: latest-wins jobs, whose one H-08 row, `jumble.release.check`, the layer does not build (LP3's
+/// host)), KN5.18, LI.25.
+#[test]
+fn a_commit_and_an_undo_cancel_a_job_building_a_preview_and_a_view_rows_jobs() {
+    for change in ["commit", "undo"] {
+        let mut f = fixture();
+        f.layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
+        assert!(committed(&f.commit(&word(&[1]))), "{change}");
+        let press = if change == "commit" {
+            let (_, a) = ask_preview(&mut f, &word(&[2]));
+            assert_eq!(f.layer.run_jobs(), 1);
+            f.frames.present(&mut f.shell, &mut f.layer, a).unwrap();
+            Some(f.shell.prepare(&f.layer, "operation.execute", preview_args(a)).unwrap())
+        } else {
+            None
+        };
+        let (building, b) = ask_preview(&mut f, &word(&[3]));
+        let first = f.invoke(SCOPE, scope_args("body"));
+        let runner = f.layer.take_program_job().expect("the view row's job");
+        let waiting = f.invoke(SCOPE, scope_args("complete"));
+        assert_eq!(status_of(&f, &first), Status::Cancelled(CancelReason::Superseded(waiting.command.clone())));
+        assert!(f.layer.finish_program_job(runner.job, Ok(Value::Null)).is_none(), "{change}");
+
+        let moved = match press {
+            Some(press) => f.shell.send(&mut f.layer, press),
+            None => undo(&mut f),
+        };
+        assert!(committed(&moved), "{change}: {:?}", moved.status);
+        assert_eq!(status_of(&f, &building), Status::Cancelled(CancelReason::ReplacedRevision), "{change}");
+        assert_eq!(f.layer.preview_state(b), Some(PreviewState::Discarded), "{change}");
+        assert_eq!(status_of(&f, &waiting), Status::Cancelled(CancelReason::ReplacedRevision), "{change}");
+        assert_eq!((f.layer.run_jobs(), f.layer.take_program_job().map(|job| job.job)), (0, None), "{change}");
+        assert!(f.layer.preview().is_none(), "{change}");
+    }
+}
+
+/// CT-LI-03 (part: concurrent requests at once against the five lanes the layer builds: the commit lane refuses a
+/// press with `KN5:busy.commit_in_flight` while it is held, the exclusive lane a second preview with
+/// `KN7:busy.lane_full` while a preview job is queued, the program lane a request past its capacity, the `none` lane
+/// admits a workspace edit meanwhile, and on the view lane a newer request fences the row's taken runner and replaces
+/// its pending request, each settled as `superseded` by the newer command; the replacement waits until the fenced
+/// runner is reported, the runner's result is dropped, and the replaced request never runs; once released, the commit
+/// ends what read the replaced revision; not run: the `latest_wins` lane, whose one H-08 row the layer does not build,
+/// and lane targets resolved from an argument, a fixed view or a control name across rows (LP3's host)), KN7.2, LI.22
+/// to LI.24.
+#[test]
+fn concurrent_requests_obey_the_lanes_the_layer_builds() {
+    let mut f = fixture();
+    f.layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
+    f.layer.serve_row(PLAY, overlay("play")).unwrap();
+    f.layer.serve_row(SAVE, overlay("save_set")).unwrap();
+    f.layer.set_program_capacity(1);
+    assert_eq!(f.layer.availability("jumble.release.check").unwrap_err().code, code::ROW_NOT_BUILT);
+
+    let (_, a) = ask_preview(&mut f, &word(&[1]));
+    assert_eq!(f.layer.run_jobs(), 1);
+    f.frames.present(&mut f.shell, &mut f.layer, a).unwrap();
+    let play = json::object([("from", Value::Int(0)), ("recording", text("r1"))]);
+    let played = f.invoke(PLAY, play.clone());
+    let first = f.invoke(SCOPE, scope_args("body"));
+    assert!(running(&played) && running(&first));
+    let player = f.layer.take_program_job().expect("the program job");
+    let runner = f.layer.take_program_job().expect("the view runner");
+    assert_eq!((player.row.as_str(), runner.row.as_str()), (PLAY, SCOPE));
+
+    // Every lane at once.
+    let second = f.invoke(SCOPE, scope_args("complete"));
+    let third = f.invoke(SCOPE, scope_args("body"));
+    let (building, b) = ask_preview(&mut f, &word(&[2]));
+    assert_eq!(code_of(&f.invoke("operation.preview", draft_args(&word(&[3])))), code::LANE_FULL);
+    assert_eq!(code_of(&f.invoke(PLAY, play)), code::LANE_FULL);
+    let saved = f.invoke(SAVE, save_args("a"));
+    assert!(running(&second) && running(&third) && running(&saved));
+    f.layer.hold_commit_lane(true);
+    let press = f.shell.prepare(&f.layer, "operation.execute", preview_args(a)).unwrap();
+    assert_eq!(code_of(&f.shell.send(&mut f.layer, press)), code::COMMIT_IN_FLIGHT);
+
+    // The view lane: one runner and one newest pending request; older work is superseded by the newer command.
+    assert_eq!(status_of(&f, &first), Status::Cancelled(CancelReason::Superseded(second.command.clone())));
+    assert_eq!(status_of(&f, &second), Status::Cancelled(CancelReason::Superseded(third.command.clone())));
+    let next = f.layer.take_program_job().expect("the edit's job");
+    assert_eq!(next.row, SAVE, "the replacement waits for the fenced runner");
+    assert!(f.layer.take_program_job().is_none());
+    assert!(f.layer.finish_program_job(runner.job, Ok(Value::Null)).is_none(), "a superseded runner cannot publish");
+    assert_eq!(status_of(&f, &first), Status::Cancelled(CancelReason::Superseded(second.command.clone())));
+    let replacement = f.layer.take_program_job().expect("the replacement");
+    assert_eq!(Some(replacement.job), third.job);
+    assert!(f.layer.take_program_job().is_none(), "the replaced request never runs");
+    let shown = f.layer.finish_program_job(replacement.job, Ok(Value::Null)).unwrap();
+    assert!(matches!(&shown.status, Status::Completed(c) if c.kind == CompletionKind::ViewPublished), "{shown:?}");
+
+    // Released, the press commits, and the jobs that read the replaced revision end.
+    f.layer.hold_commit_lane(false);
+    let press = f.shell.prepare(&f.layer, "operation.execute", preview_args(a)).unwrap();
+    assert!(committed(&f.shell.send(&mut f.layer, press)));
+    for receipt in [&building, &played, &saved] {
+        assert_eq!(status_of(&f, receipt), Status::Cancelled(CancelReason::ReplacedRevision));
+    }
+    assert_eq!(f.layer.preview_state(b), Some(PreviewState::Discarded));
+    assert!(f.layer.finish_program_job(player.job, Ok(Value::Null)).is_none());
+    assert!(f.layer.finish_program_job(next.job, Ok(Value::Null)).is_none());
 }

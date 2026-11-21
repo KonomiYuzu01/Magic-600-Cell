@@ -76,8 +76,8 @@ fn trace() -> (Session, MemDisk, u64, String) {
 /// fails step 5. In separate runs, an edit of the record p read, or of the protection, makes D fail step 6. Every
 /// refusal leaves the state unchanged.
 /// CT-LI-01 (part: the session's preview freshness and its commit gates agree for an unread-record edit, a
-/// read-draft edit, a protection change and an undo to equal labels; not run: the command layer's availability rows
-/// on the same edits).
+/// read-draft edit, a protection change and an undo to equal labels; the command layer's availability rows on the same
+/// edits run whole in `c600-command/tests/kn5_stages.rs`).
 #[test]
 fn li_33_gate_order() {
     let (session, disk, p, start) = trace();
@@ -439,4 +439,25 @@ fn outcomes_are_looked_up_across_a_reopen() {
     let mut stranger = envelope(&reopened, "Y", Row::Propose { word: literal(&[3]) });
     stranger.session = "s2".into();
     assert_eq!(code(&reopened.invoke(Origin::Shell, stranger)), code::UNKNOWN_SESSION);
+}
+
+/// CT-EVD-21 (part: the session store's commit path: the modules that hold the session, its rows, tokens, previews,
+/// jobs, journal, wire form and disk name neither the evidence crate, nor the facts or legacy modules that read it, nor
+/// an evidence word kind, a claim or a graph (a `Word` there is a puzzle word, and a `Verdict` the kernel's protection
+/// verdict); they reach `persist` only for its codec's charge; the command layer's commit path runs in `c600-command/tests/kn5_stages.rs`), EVD.56.
+#[test]
+fn ct_evd_21_the_session_stores_commit_path_reads_no_word_or_claim() {
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let modules = ["session", "store", "command_store", "journal", "token", "wire", "types", "jobs", "disk"];
+    let lib = std::fs::read_to_string(src.join("lib.rs")).unwrap();
+    for module in modules {
+        assert!(lib.contains(&format!("mod {module};")), "lib.rs declares {module}");
+        let text = std::fs::read_to_string(src.join(format!("{module}.rs"))).unwrap();
+        for name in ["c600_evidence", "facts", "legacy", "WordKind", "Claim", "claim", "Graph"] {
+            assert!(!text.contains(name), "{module}.rs names {name}");
+        }
+        for (at, _) in text.match_indices("persist::") {
+            assert!(text[at..].starts_with("persist::codec::charge"), "{module}.rs reaches persist beyond the codec");
+        }
+    }
 }

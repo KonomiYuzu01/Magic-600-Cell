@@ -461,8 +461,8 @@ fn a_key_bound_to_a_tool_row_adds_no_token_or_capability_to_its_job() {
 }
 
 /// CT-LI-06 (part: a completed preview is no presentation permission, and building it changes no session head, on the
-/// key route; the view model's atomic installation runs in `c600-view`'s view rows; not run: a derived display plan
-/// checked against the session head (LP3's view lane)) (LI.24, ONE.36): the
+/// key route; the view model's atomic installation runs in `c600-view`'s view rows, and a derived plan that changes
+/// no session head and goes stale when the head moves in `c600-tools/tests/views.rs`) (LI.24, ONE.36): the
 /// preview job completes, but the commit key finds no fresh preview until a frame presents it, and neither the job nor
 /// the refusal moves the head or writes the journal. Once presented, the same key commits.
 #[test]
