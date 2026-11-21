@@ -90,9 +90,9 @@ const WORDS: &str = "export fn ops(x: Word, y: Word) -> \
     return record { i = inverse(x), c = conjugate(x, y), k = commutator(x, y), p = compose(x, y), n = length(x) };\n}\n";
 
 /// CT-LG2-12 (part, the run-time language half: R-11's inverse, conjugate, commutator and composition are total on
-/// the validated word domain, the empty word included, and form literal words without asserting admissibility; not
-/// run: validation, which is the kernel's, and the jumbling fixtures under LG2.14's four hypotheses, which wait for
-/// the jumbled puzzle's alphabet, M5; the static half is `c600-syntax`'s `collections.rs`). Conjugate is x·y·x⁻¹,
+/// the validated word domain, the empty word included, and form literal words without asserting admissibility;
+/// validation is the kernel's, the jumbling fixtures under LG2.14's four hypotheses are `c600-jumble-tool`'s `lb3.rs`
+/// and `c600-kernel`'s `load.rs`, and the static half is `c600-syntax`'s `collections.rs`). Conjugate is x·y·x⁻¹,
 /// commutator x·y·x⁻¹·y⁻¹ and composition x then y, in chronological order; each is priced per letter it builds.
 #[test]
 fn ct_lg2_12_word_operations_are_total_on_literal_words() {

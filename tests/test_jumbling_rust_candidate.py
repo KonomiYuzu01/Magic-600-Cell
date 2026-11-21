@@ -9,12 +9,13 @@ letters of H6030 run. Every compared step compares the pose digest: CT-KN1-05 (p
 is M4's, in rust/c600-kernel/tests/kernel.rs).
 
 The other cases, with PHS.62's markers: CT-KN1-02 (whole: a word recorded under the reversed I_a order is refused);
-CT-KN2-02 (part: heights and domain IDs against trees.py and the library's histograms on H6030's compared states and
-on u1, and the free-mode Cayley rotation; not run: the cases b20, b06-14, b14 and b03, for M8); CT-KN2-04 (part: a
-blocked, an invalid and an uncertain letter of the jumbled puzzle; 600-cell-Full's blocked and invalid recipes are
-M4's); CT-KN2-05 (part: no float type in c600-kernel and c600-jumble; M4's scan adds c600-digest); CT-KN3-02 (whole:
-pose entries beyond 2^64 and a 6,775-digit integer through the pose table); and CT-JI-03 (seam counts, JI.16's vector
-and a cancelled batch). CT-KN2-03 (whole) runs in `cargo test` (`rust/c600-jumble/tests/crossing.rs`).
+CT-KN2-02 (whole: heights and domain IDs against trees.py and the library's histograms on H6030's compared states, on u1
+and on the rest of ENG-0J item 8's states in `ItemEightStateTests`, its long states with JUMBLING_FULL_REPLAY=1, and the
+free-mode Cayley rotation); CT-KN2-04 (part: a blocked, an invalid and an uncertain letter of the jumbled puzzle;
+600-cell-Full's blocked and invalid recipes are M4's); CT-KN2-05 (part: no float type in c600-kernel and c600-jumble;
+M4's scan adds c600-digest); CT-KN3-02 (whole: pose entries beyond 2^64 and a 6,775-digit integer through the pose
+table); and CT-JI-03 (seam counts, JI.16's vector and a cancelled batch). CT-KN2-03 (whole) runs in `cargo test`
+(`rust/c600-jumble/tests/crossing.rs`).
 
 The adapter is built with `cargo build --release --locked --offline` in rust/ (into the ignored rust/target). A
 missing Rust toolchain or NumPy fails the check: a test that did not run is no pass (PHS.63). A pass is source and
@@ -26,8 +27,12 @@ import sys
 
 sys.dont_write_bytecode = True
 
+import ast
+import base64
 from contextlib import contextmanager
+import copy
 from dataclasses import fields as dataclass_fields, replace
+import gzip
 import json
 import os
 from pathlib import Path
@@ -40,7 +45,10 @@ JUMBLING = ROOT / 'research' / 'jumbling'
 FIXTURE_DIR = JUMBLING / 'fixtures'
 H6030 = JUMBLING / 'restoration/10-x1-unbounded/witnesses/H6030.json'
 U1 = JUMBLING / 'restoration/12-low-height/runs/lc13-k40/steps/u1.json'
+ROUND22 = JUMBLING / 'restoration/12-low-height/runs/round22'
+RESULTS = JUMBLING / 'differential/references/results'
 FULL = os.environ.get('JUMBLING_FULL_REPLAY') == '1'
+LONG_CASE = 'a long state of ENG-0J item 8: it runs with JUMBLING_FULL_REPLAY=1'
 
 FIXTURES = ('S4', 'I_a', 'I_b')
 RECORDS = 60
@@ -68,7 +76,8 @@ _ENGINES = {}
 
 
 def setUpModule():
-    global np, H, M, R, WC, obs_refs, census, O, sim, api, trees, rim, J1Engine
+    global np, H, M, R, WC, obs_refs, census, O, sim, api, trees, rim, J1Engine, matrix_from_json, state_record
+    global twists_from_letters
     try:
         import numpy as np
     except ImportError as error:
@@ -79,10 +88,12 @@ def setUpModule():
     from differential import harness as H, menu_order as M
     from differential.candidate import rust_jumble as R
     from differential.j1_adapter import J1Engine
+    from differential.j1_state import state_record, twists_from_letters
     from differential.references import obs_refs, observations as O, word_check as WC
     import rim
     import sim
     from sim import api
+    from sim.kplus import matrix_from_json
     import trees
     if Path(census.seams.CACHE).resolve().is_relative_to(ROOT):
         raise AssertionError('the centroid cache is inside the repository')
@@ -158,6 +169,105 @@ def max_left_height(summary):
     return max(int(key.split(',')[0]) for key in summary['pieces_by_heights'])
 
 
+def read_json(path):
+    raw = Path(path).read_bytes()
+    return json.loads(gzip.decompress(raw) if Path(path).suffix == '.gz' else raw)
+
+
+def recorded_word_check(case):
+    """The research run's word check of one recorded case (EH-16, EH-25), which passed against its records."""
+    for name in ('words', 'words-b06-14'):
+        for line in (RESULTS / name / 'word-checks.jsonl').read_text(encoding='utf-8').splitlines():
+            row = json.loads(line)
+            if row['case'] == case:
+                if row['status'] != 'passed':
+                    raise AssertionError(f'{case}: the recorded word check did not pass')
+                return row['word_check']
+    raise AssertionError(f'{case}: no recorded word check')
+
+
+def recorded_observation(folder, state):
+    return read_json(RESULTS / folder / f'observation-{state}.json')
+
+
+def program_word(path):
+    """A recorded program's literal word: word_check.py's `_program`, reading the inputs in the repository rather
+    than in an extraction (they are on main since stage 12's round 22 landed)."""
+    inverse = M.inverse_index(census.menu().record())
+
+    def invert(word):
+        return [[c, inverse[i]] for c, i in reversed(word)]
+
+    word = []
+    for index, segment in enumerate(read_json(path)['segments']):
+        kinds = [k for k in ('word', 'word_file', 'safe_word_file', 'core_file') if k in segment]
+        if len(kinds) != 1:
+            raise ValueError(f'program segment {index}: requires a literal word or core')
+        kind = kinds[0]
+        if kind == 'word':
+            part = segment[kind]
+        else:
+            doc = read_json(ROOT / segment[kind])
+            part = doc['P'] + doc['Q'] + invert(doc['P']) if kind == 'core_file' else doc['word']
+        word.extend(invert(part) if segment.get('inverse', False) else part)
+    return WC._letters(word, census.menu())
+
+
+def j1_play(state, letters, label):
+    """J1 applies menu letters, each of which must be admissible."""
+    for index, twist in enumerate(twists_from_letters(census.menu(), letters)):
+        outcome = state.apply(twist, journal=False)
+        if not outcome.applied:
+            raise AssertionError(f'{label} letter {index}: {outcome.status}')
+    return state
+
+
+def recorded_case(case):
+    """J1's start state and the literal word of a recorded word-check case (word_check.py's `case_input`)."""
+    if case == 'b20':
+        return (WC._table(ROUND22 / 'line-a/literal/run1/z-02-b16.json.gz'),
+                program_word(ROUND22 / 'line-a/literal/run1/03-b20-program.json'))
+    if case == 'b06-14':
+        return (WC._table(ROUND22 / 'line-a/literal/run2b/z-04-b15.json.gz'),
+                program_word(ROUND22 / 'line-a/literal/run3/t1/b06-14-program.json'))
+    if case == 'b14':
+        state = j1_play(WC.copy_state(census.state_at(7101, 98).st),
+                        read_json(ROUND22 / 't1prime-k40/steps/u12.json')['word'], 'b12 setup')
+        expected = read_json(ROUND22 / 'line-c/b14-after-b12/b12-replay.json')['end_digest']
+        if state.digest() != expected:
+            raise AssertionError(f'b12 setup digest: expected {expected}, actual {state.digest()}')
+        units = read_json(ROUND22 / 'line-a/census-class3.json')['units']
+        return state, units['eb5-k40-k00-b14']['zero_bad']['word']
+    if case == 'b03':
+        return (WC._table(ROUND22 / 'line-a/replay/tables/737.json.gz'),
+                read_json(ROUND22 / 't1prime-k40/steps/u3.json')['word'])
+    raise ValueError(f'unknown case {case}')
+
+
+def height4_descriptors():
+    """The six height-4 states of r22d25_d19_stops.py, read as literal data (obs_refs.py's `height4_inputs`, from
+    the repository rather than an extraction); the script is never imported or run."""
+    names = {}
+    script = ROOT / obs_refs.STAGE12 / 'scripts/round22/r22d25_d19_stops.py'
+    for node in ast.parse(script.read_text(encoding='utf-8')).body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            try:
+                names[node.targets[0].id] = obs_refs._literal(node.value, names)
+            except (ValueError, KeyError, TypeError):
+                continue
+            if node.targets[0].id == 'STATES':
+                break
+    return names['STATES']
+
+
+def j1_from_record(record):
+    """J1's state from a candidate state record (session_engine.py's reading); J1 computes its own digest."""
+    raw = base64.b64decode(record['pose_ids']['data'], validate=True)
+    entries = [(pose['k'], None) if 'k' in pose else (-1, matrix_from_json(pose['m'])) for pose in record['pose_table']]
+    return api.from_pose_table(census.restore.ctx, entries, np.frombuffer(raw, dtype='<u4').astype(np.int64),
+                               census.menu(), compact=False)
+
+
 class TimedCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -167,10 +277,11 @@ class TimedCase(unittest.TestCase):
     def tearDownClass(cls):
         _SECONDS[cls.__name__] = perf_counter() - cls._started
 
-    def assert_heights(self, label, state, recorded=None):
+    def assert_heights(self, label, state, recorded=None, got=None):
         """CT-KN2-02: the candidate's heights and domain IDs equal trees.py per pose class, and its histograms and X5
-        counts equal the library's (and the recorded trees-fixtures row where one exists)."""
-        got = candidate().heights()
+        counts equal the library's (and the recorded trees-fixtures row where one exists). `got` replaces the
+        candidate's answer, for a planted value."""
+        got = candidate().heights() if got is None else got
         expected = j1_heights(state)
         self.assertEqual(got['lattice_key'], O.LATTICE_KEY, label)
         self.assertEqual(set(got['poses']), set(expected), f'{label}: occupied pose classes')
@@ -573,6 +684,116 @@ class U1Tests(TimedCase):
             self.assertEqual(candidate().apply(letter_step(grip, item)).status, 'admissible')
         self.assertEqual(candidate().record()['digest'], expected)
         self.assert_heights('u1', state)
+
+
+class ItemEightStateTests(TimedCase):
+    """CT-KN2-02 on the rest of ENG-0J acceptance item 8's states (the W-J fixtures, H6030 and u1 are above): the
+    recorded word-check cases b20, b06-14, b14 and b03 at their start and end (EH-16, EH-25), the I_a@40 stop, the deep
+    scramble and the six height-4 states (EH-05, EH-26). The candidate reaches each state by loading J1's pose table or
+    by applying the recorded letters. Where J1's own replay takes minutes or hours (b20, b06-14, the deep scramble and
+    the height-4 states), J1's state is rebuilt from the candidate's pose table, and J1's digest of it must equal the
+    research run's recorded one. At each state the heights and domain IDs equal trees.py, and the histograms and X5
+    counts equal the library's and the research run's records; a planted height and a planted domain ID fail. b14,
+    b03 and the I_a@40 stop always run. b20, b06-14, the deep scramble and the height-4 states run with
+    JUMBLING_FULL_REPLAY=1 (the nightly full replay): on a development machine b20 took 80 s, the deep scramble 44 s,
+    the height-4 states 983 s and b06-14 2,032 s, past the Windows shards' limit of 1,200 s for a whole check."""
+
+    def compare(self, label, state, digest, recorded=None, counts=None):
+        self.assertEqual(state.digest(), digest, f'{label}: J1 digest')
+        self.assertEqual(candidate().record()['digest'], digest, f'{label}: candidate digest')
+        got = self.assert_heights(label, state, recorded)
+        if counts is not None:
+            self.assertEqual(dict(got['height_counts'], off=got['off']), counts, f'{label}: recorded counts')
+        off_lattice = [key for key, row in got['poses'].items() if row['domain'] != got['lattice_key']]
+        if off_lattice:
+            for field, value in (('heights', [h + 2 for h in got['poses'][off_lattice[0]]['heights']]),
+                                 ('domain', got['lattice_key'])):
+                planted = copy.deepcopy(got)
+                planted['poses'][off_lattice[0]][field] = value
+                with self.assertRaises(self.failureException, msg=f'{label}: planted {field}'):
+                    self.assert_heights(f'{label} (planted {field})', state, got=planted)
+        return got
+
+    def word_case(self, case):
+        recorded = recorded_word_check(case)
+        state, word = recorded_case(case)
+        self.assertEqual(len(word), recorded['letters'])
+        candidate().start(census.menu().record())
+        candidate().load(state_record(state))
+        self.compare(f'{case} start', state, recorded['start_digest'],
+                     counts=dict(recorded['heights_before'], off=recorded['off_before']))
+        applied = candidate().word(candidate().identity(), word)
+        self.assertEqual((applied['status'], applied['applied'], applied['refused_at']),
+                         ('admissible', len(word), None))
+        # A short word replays in J1 too; a long one is rebuilt from the candidate's table under J1's digest.
+        end = j1_play(state, word, case) if len(word) <= 1000 else j1_from_record(candidate().record())
+        self.compare(f'{case} end', end, recorded['end_digest'],
+                     counts=dict(recorded['heights_after'], off=recorded['off_after']))
+
+    @unittest.skipUnless(FULL, LONG_CASE)
+    def test_b20(self):
+        self.word_case('b20')
+
+    @unittest.skipUnless(FULL, LONG_CASE)
+    def test_b06_14(self):
+        self.word_case('b06-14')
+
+    def test_b14(self):
+        self.word_case('b14')
+
+    def test_b03(self):
+        self.word_case('b03')
+
+    def test_stop40(self):
+        """The I_a@40 stop: 40 records of wj-I_a, then the 62 recorded restorer letters."""
+        reference = obs_refs.stop40_reference()
+        doc = fixture('I_a')
+        candidate().start(doc['menu'])
+        for record in doc['journal']['records'][:40]:
+            candidate().apply(record_step(record))
+        for grip, item in reference['moves']:
+            self.assertEqual(candidate().apply(letter_step(grip, item)).status, 'admissible')
+        recorded = recorded_observation('obs-final', 'stop40')
+        self.compare('I_a@40 stop', obs_refs.stop40_state(), recorded['digest'], recorded, recorded['counts'])
+
+    @unittest.skipUnless(FULL, LONG_CASE)
+    def test_deep_scramble(self):
+        """The deep scramble's 360 recorded letters from solved (seed 7)."""
+        reference = obs_refs.deep_reference()
+        candidate().start(census.menu().record())
+        applied = candidate().word(candidate().identity(), reference['moves'])
+        self.assertEqual((applied['status'], applied['applied']), ('admissible', len(reference['moves'])))
+        state = j1_from_record(candidate().record())
+        self.assertEqual((int(state.off_lattice_count()), int(state.moved_count())),
+                         (reference['off_lattice_pieces'], reference['moved_pieces']))
+        recorded = recorded_observation('obs-final', 'deep')
+        self.assertEqual(recorded['digest'], reference['digest'])
+        self.compare('deep scramble', state, reference['digest'], recorded, recorded['counts'])
+
+    @unittest.skipUnless(FULL, LONG_CASE)
+    def test_height4_states(self):
+        """The six height-4 states: each census record's walk to its stop, then the descriptor's prefix, with every
+        checkpoint digest."""
+        descriptors = height4_descriptors()
+        self.assertEqual(len(descriptors), 6)
+        for tag, (source, stop, prefix, checkpoints, expected) in descriptors.items():
+            with self.subTest(tag=tag):
+                record = read_json(ROOT / source)
+                candidate().start(census.menu().record())
+                identity = candidate().identity()
+                walked = candidate().word(identity, record['history'] + record['moves'])
+                self.assertEqual((walked['status'], walked['digest']), ('admissible', stop))
+                done = 0
+                for step in sorted(checkpoints) + [len(prefix)]:
+                    applied = candidate().word(identity, prefix[done:step])
+                    self.assertEqual(applied['status'], 'admissible', f'{tag}: prefix to {step}')
+                    if step in checkpoints:
+                        self.assertEqual(applied['digest'], checkpoints[step], f'{tag}: checkpoint {step}')
+                    done = step
+                recorded = recorded_observation('height4-final', f'height4-{tag}')
+                self.assertEqual(recorded['digest'], expected)
+                counts = {k: v for k, v in recorded['counts'].items() if k != 'blocked_caps'}
+                self.compare(f'height4 {tag}', j1_from_record(candidate().record()), expected, recorded, counts)
 
 
 class SeamTests(TimedCase):
