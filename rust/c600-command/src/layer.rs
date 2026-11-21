@@ -636,7 +636,7 @@ fn argument_names<'a>(row: &Row, args: &'a Value) -> Result<&'a BTreeMap<String,
     if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
         return Err(Error::new(code::ARGUMENT_FORM, "`confirm` is a boolean"));
     }
-    // `set.save` takes an optional boolean `replace` beside its table arguments (draft; U1-057, [`crate::sets`]).
+    // `set.save` takes the optional boolean `replace` (`Bool?` since the freeze, CM.17; U1-057, [`crate::sets`]).
     let replaceable = row.id == SET_SAVE_ROW;
     if replaceable && args.get(REPLACE).is_some_and(|replace| !matches!(replace, Value::Bool(_))) {
         return Err(Error::new(code::ARGUMENT_FORM, "`replace` is a boolean"));

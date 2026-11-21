@@ -135,8 +135,8 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG3:capability.not_granted` at the call (DET.36, RTE.45); a call of a function value whose callable the checker
   cannot see keeps `LG3:effect.undeclared`. The value of `use_goal` and `use_evidence` must be portable exact data: a
   type that holds a function, a receipt, a word equality key or a compressed word at any depth, or a type variable, is
-  `LG2:type.mismatch` at the sink, and an approximate value keeps its exactness codes. Chapter 13 changes once, in the
-  amendment LP3 makes at its command-table freeze; until then the drafts stay in use.
+  `LG2:type.mismatch` at the sink, and an approximate value keeps its exactness codes. Chapter 13 changed once, in the
+  amendment LP3 made at its command-table freeze (PHS.53, chapter 13 section 9).
 - Base types (LG2.1). A value whose base type does not fit its use is the diagnostic `LG2:type.mismatch` at the path
   of the offending expression, with the expected and supplied types in source notation (`Diagnostic::mismatch`); the
   exactness fields stay empty. This covers arguments, conditions, branches and arms, patterns, operands, field reads,
@@ -1605,8 +1605,8 @@ run or not applicable is no pass (PHS.63).
   row before the `use_exact` row) and hands the host the canonical bytes, so a function or a receipt never reaches the
   host (RPI.54, RPI.1); a value with no canonical form stops the run with `PS1:input.noncanonical_value` before the
   host is called. Receipt-as-evidence is a question for the next milestone card.
-- Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changes once, in the amendment LP3 makes at its
-  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the ten draft codes `c600-command`
+- Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changed once, in the amendment LP3 made at its
+  command-table freeze (PHS.53). It took the ten draft codes `c600-command`
   emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`, `KN5:input.argument_form`,
   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN5:consistency.unadmitted_journal_action`,
   `KN5:capability.preview_shown`, `KN5:capability.outside_solver_command`, `KN5:input.saved_set_exists`, and KN5's
@@ -1617,7 +1617,7 @@ run or not applicable is no pass (PHS.63).
   rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
   cells of `KN2:input.recipe_shape` and `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits
   both, and the cell of `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused
-  word (M5) and M8's `derive` for a refused letter. LP3's command-table freeze makes the amendment (chapter 13,
+  word (M5) and M8's `derive` for a refused letter. LP3's command-table freeze made the amendment (chapter 13,
   section 9), with the five later codes the owner added on 20 November 2026
   (`../docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md`, item 6).
 - Open, each needing a decision:
@@ -1754,8 +1754,8 @@ run or not applicable is no pass (PHS.63).
     `attack_callers.rs` (G1), `attack_playback.rs` (LD1), `strict_policy.rs`, `attack_protection.rs` (B5) and
     `jumble_twist_menu.rs` (B5 under Net and Strict, a pose move that moves no protected piece, and the reopen).
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
-  - The workspace store. `workspace.set` (`RECORD_ROW`, M6's draft name; H-08 has no such row, so a host adds it with
-    `Table::with_drafts` until the typed workspace rows freeze at LP3) writes a named record, its payload and its
+  - The workspace store. `workspace.set` (`RECORD_ROW`, M6's name, which H-08 holds since the command table's freeze,
+    CM.17, with `payload: Json` OPEN) writes a named record, its payload and its
     provenance block as one durable action whose receipt is `completed(workspace)`. The workspace revision and the
     record's version advance; the state, the preview slot and the jobs stay (KN5.18, KN5.23). The row takes no token,
     and the runtime may not invoke it. The layer cannot read a provenance block, so the host gives it a `Provenance`
@@ -1883,11 +1883,11 @@ run or not applicable is no pass (PHS.63).
   (0 to 599), `CellIdPair` and `RevisionRef` (KN0.2's nine keys) before it admits the job. A malformed argument is
   refused with `KN5:input.argument_form`, and after every form check a `RevisionRef` that is not the current revision
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
-  and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
-  is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions, each 0
-  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and `set.save`'s
-  `replace` is a boolean (H-08's `replace: Bool?` since the freeze, CM.17; saved sets, above). Other types pass
-  unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what
+  they name is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions,
+  each 0 to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and
+  `set.save`'s `replace` is a boolean (H-08's `replace: Bool?` since the freeze, CM.17; saved sets, above). Other types
+  pass unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
@@ -2406,13 +2406,13 @@ run or not applicable is no pass (PHS.63).
   Net and Strict protection reads (pull request 300); and its `replay` row, a recipe replayed from the head prefix by
   prefix under the session's protected orbits, with Strict's first refused prefix and the orbits in conflict there,
   which LB2's named macro analysis reads (pull request 353). When the host gives it the certified setup table, it serves
-  a sixth read, the draft `setups` row: the certified setups for a target the solver names, which only the setup-search
-  exception may read (pull request 309). It serves the draft `orbits` row too, the pieces of named orbits, which LB2's
+  a sixth read, the `setups` row: the certified setups for a target the solver names, which only the setup-search
+  exception may read (pull request 309). It serves the `orbits` row too, the pieces of named orbits, which LB2's
   orbit catalogue reads: model data, the orbit the kernel's `positions` gives each piece at the solved state, so it
-  reads no state of the session (pull request 358). It also serves the three draft structure reads of LP3's
+  reads no state of the session (pull request 358). It also serves the three structure reads of LP3's
   representations tool (C6): `structure.compare`, two cells compared, `filter.preview`, the counts of a layer
   predicate, and `structure.layer`, its members, from LP2's structure rows (pull requests 262 and 375), which read no
-  state. It serves the draft `journal` row too, KN4.3's page of the session's move tree, newest first, which LP3's C8
+  state. It serves the `journal` row too, KN4.3's page of the session's move tree, newest first, which LP3's C8
   reads, through LP2's `CommandLayer::journal`, which changes nothing (pull request 383;
   `c600-tools/tests/journal_row.rs`). Admission refuses an entry that both reads one and proposes (LQ21). It grants
   no other state read, declassified value, file or workspace access, view, exact sink or clock. The command layer's
@@ -2502,7 +2502,7 @@ run or not applicable is no pass (PHS.63).
     blocked generator the literal `a, a⁻¹` and its key's spelling are both refused at their first letter under Strict
     protection, and the empty word is admitted; two words with one key are refused at different prefixes (pull request
     350).
-  - `setups_row.rs`: the draft `setups` row through the bridge: its answer in the declared order (buffers, family,
+  - `setups_row.rs`: the `setups` row through the bridge: its answer in the declared order (buffers, family,
     orbit, position, setups, table digest), its refusals and their costs, its tariff, which covers its largest answer,
     and the table's load through the kernel's asset check (CT-BND-18, part).
   - `ct_bnd_18.rs`: LB2's guarded setups and buffers from `c600-library`, CT-BND-18 whole on 600-cell-Full. The entry is
@@ -2519,7 +2519,7 @@ run or not applicable is no pass (PHS.63).
     type it does not answer and another argument form before its charge, and a cell outside 0 to 599 or a layer past
     the cell's last with `KN2:input.named_object_invalid` once charged; the tariffs (CM.18) cover the largest answers.
     The refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`. Covers no conformance ID.
-  - `orbits_row.rs`: the draft `orbits` row through the bridge (pull request 358). Each named orbit's pieces agree
+  - `orbits_row.rs`: the `orbits` row through the bridge (pull request 358). Each named orbit's pieces agree
     with the kernel's orbit table: the `positions` row, read at a scrambled head, gives each of them that orbit, and a
     moving orbit's count is the kernel's progress row's and the seed atlas's. The answer comes in the argument's order,
     repeats included, and in the declared order; the row refuses a declared type it does not answer and another
@@ -2984,9 +2984,9 @@ run or not applicable is no pass (PHS.63).
     decides no crossing).
 - The crate's `rows` is the jumbling rows' host bridge (pull request 299): it serves KN2.4's jumbling rows to a run as
   snapshot reads, at the command layer's head with Jumble on (`Rows::at_head`), on a witnessed base (`Rows::on`) or at a
-  state (`Rows::at_state`). It uses the crate's draft answer types and a draft tariff (one pass of the model's pieces
-  for the state and one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts),
-  and it grants those rows only. Since pull request 306 it also serves J08's `seam_facts` for a named cap, which
+  state (`Rows::at_state`). It uses the crate's draft answer types and H-08's tariff (CM.18; one pass of the model's
+  pieces for the state and one for each letter of a named word or entry of a drafted set, two for a named cap's seam
+  facts), and it grants those rows only. Since pull request 306 it also serves J08's `seam_facts` for a named cap, which
   CT-RTE-07's jumbling keys read.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03 with the plane the engine names for the twist (`twist::Twist::plane`; a jumbling twist has
@@ -3088,8 +3088,8 @@ run or not applicable is no pass (PHS.63).
   - `c600-jumble-tool/tests/rows.rs`: the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through
     `rows` at the head of jumbled sessions (I_a, S4, I_b), each run equal to the same run on a witnessed snapshot, byte
     for byte; with Jumble off, every read stops with `KN5:input.menu_word_needs_jumble_on`; the bridge's grants and
-    draft tariff; the `seam_facts` row at a named cap, whose N_c equals the engine's rim summary (pull requests 299 and
-    306); the rows `classify`, `survey`, `straddlers` and `units`, each for the solver's named letter, grip, cap or
+    tariff (CM.18); the `seam_facts` row at a named cap, whose N_c equals the engine's rim summary (pull requests 299
+    and 306); the rows `classify`, `survey`, `straddlers` and `units`, each for the solver's named letter, grip, cap or
     pieces only (pull request 314); the `repair_list` row, which serves the named cap's completed list in neutral order
     with no outcome table, rank or mark; and the three end-test rows, each with M8's verdict, level, reason and
     evidence, read by a program as that test's own verdict type, the outcome alone (`LG2:type.mismatch` for another
@@ -3257,7 +3257,7 @@ run or not applicable is no pass (PHS.63).
   carries `LB2:protection.incomplete_coverage` and is never safe. Its catalogue row is `net_and_strict_protection`.
 - Guarded setups and buffers (pull request 309): the source [`setups.6cs`](c600-library/src/setups.6cs) is the module
   `guarded_setups` with one entry, `setups_for(goal: record { orbit: Nat, position: Nat })`, effect `snapshot`. It reads
-  the draft `setups` row at the goal as given and returns the answer as read, so it reads state, prepares no preview and
+  the `setups` row at the goal as given and returns the answer as read, so it reads state, prepares no preview and
   runs only under the built-in column's setup-search exception. The row answers only for the target the solver names,
   lists its certified setups in a stable order with no rank, keeps the orbit's buffers fixed in every setup and executes
   nothing; applying a setup stays the solver's action. Its catalogue row is `guarded_setups_and_buffers`.
@@ -3300,7 +3300,7 @@ run or not applicable is no pass (PHS.63).
   target. Its catalogue rows are `seeds_and_full_seed_analysis` and `collateral_stage_order`.
 - Orbit catalogue, progress per orbit and residuals (pull request 363): the source
   [`orbits.6cs`](c600-library/src/orbits.6cs) is the module `orbits` with three entries. `orbit_catalogue(named)`,
-  effect `snapshot`, reads the draft `orbits` row at the orbits the caller names, -1 (the fixed cell centres) to 34, and
+  effect `snapshot`, reads the `orbits` row at the orbits the caller names, -1 (the fixed cell centres) to 34, and
   answers each orbit's pieces by home position, model data the same at every head. `orbit_progress(orbit, positions)`,
   pure, counts among the caller's `positions` records of the orbit the pieces with every sticker home (`solved`), at
   Home with a sticker elsewhere (`orientation_wrong`) and not at Home (`position_wrong`), and counts the records of

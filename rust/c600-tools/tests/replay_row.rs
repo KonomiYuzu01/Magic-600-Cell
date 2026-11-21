@@ -268,7 +268,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }
 
-/// The row's draft tariff covers its answer: an answer asked of the bridge directly fits the result bound of its
+/// The row's tariff covers its answer: an answer asked of the bridge directly fits the result bound of its
 /// tariff, and the tariff counts two passes over the slots and two units per primitive. The bound covers the largest
 /// answer: every orbit protected and in conflict, and [`MAX_PRIMITIVES`]. A read sends no invocation.
 #[test]

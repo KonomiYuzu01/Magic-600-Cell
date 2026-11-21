@@ -1,6 +1,6 @@
 //! CT-LB3-07 (chapter 03, LB3.5) on LB3.1's "Mode crossing prerequisites", the Jumble-on half (LP3, C8): Full labels
 //! with journal derivation. `jumble_crossing.jumble_on_facts` runs through LP2's interpreter against `c600-tools`' host
-//! bridge ([`Bridge`]) onto a command layer with the I_a menu pinned, and reads KN4.3's draft `journal` row (LP2's
+//! bridge ([`Bridge`]) onto a command layer with the I_a menu pinned, and reads KN4.3's `journal` row (LP2's
 //! pull request 383) from the head. Each answer is checked against `jumble.on` pressed at the same head:
 //!
 //! - an entrance the head's line reaches through retained commits only is the entrance of the crossing record that

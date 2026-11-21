@@ -236,7 +236,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }
 
-/// The row's draft tariff covers its answer: the whole answer for a scramble, asked of the bridge directly, fits the
+/// The row's tariff covers its answer: the whole answer for a scramble, asked of the bridge directly, fits the
 /// result bound of its tariff, and the tariff counts one pass over the slots and one unit per primitive. The bound for
 /// all fields covers the largest answer: every slot moved, the most support rows and [`MAX_PRIMITIVES`]. A read sends
 /// no invocation.

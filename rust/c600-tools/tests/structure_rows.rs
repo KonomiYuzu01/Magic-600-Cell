@@ -1,5 +1,5 @@
-//! The three draft structure rows of LP3's representations tool, served to an entry by the host bridge (KN5; LP3's C6;
-//! drafts until the command table freezes at LP3). An entry's snapshot read with an argument,
+//! The three structure rows of LP3's representations tool, served to an entry by the host bridge (KN5; LP3's C6;
+//! H-08's `reads` since the command table's freeze, CM.18). An entry's snapshot read with an argument,
 //! `read_snapshot<T>("structure.compare", cells)`, `read_snapshot<T>("filter.preview", predicate)` or
 //! `read_snapshot<T>("structure.layer", predicate)`, runs on `c600-run` through `Boundary` and [`Bridge`] onto a
 //! command layer, and the bridge answers it from LP2's structure rows, `CommandLayer::compare_cells`,
@@ -299,7 +299,7 @@ fn the_rows_refuse_what_they_do_not_answer() {
     }
 }
 
-/// The rows' draft tariffs cover their answers: the answers for the pair of cells farthest apart and for every layer
+/// The rows' tariffs cover their answers: the answers for the pair of cells farthest apart and for every layer
 /// around cell 0, asked of the bridge directly, fit the result bound, and each bound is the size of the largest answer
 /// the row can give: three integers of 599 for `structure.compare`; a cell and a layer of 599, 177,120 positions and
 /// 259,800 slots for `filter.preview`. `structure.compare` costs one lookup, `filter.preview` one pass over the home

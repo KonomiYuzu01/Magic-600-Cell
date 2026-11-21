@@ -12,8 +12,8 @@
 //!
 //! # Drafts
 //!
-//! G6 has no keymap table, chapter 05 owns the persisted key-map forms, and the command table freezes at LP3 (PHS.53);
-//! these choices are drafts until then.
+//! G6 has no keymap table, chapter 05 owns the persisted key-map forms, and the command table, frozen at LP3 (PHS.53),
+//! holds no 1.0 key map; these choices stay drafts until chapter 05's key-map forms settle them.
 //!
 //! - Routing class names (EV4.4; DT-M1 C2 and D3): [`RoutingClass::Capture`], [`RoutingClass::Text`],
 //!   [`RoutingClass::List`] (a list or a view) and [`RoutingClass::Global`]. H-08's eight contexts are not read for

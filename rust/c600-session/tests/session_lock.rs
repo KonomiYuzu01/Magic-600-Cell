@@ -1,6 +1,6 @@
 //! The session lock (KN4.1: only the engine opens the session files; Fable lead L9). A store takes it before it reads
 //! the journal, so one process opens a session at a time. A second open of a held session, in this process or another,
-//! is refused with `KN4:busy.session_locked` (a draft code) and changes no file. The session opens again once its
+//! is refused with `KN4:busy.session_locked` and changes no file. The session opens again once its
 //! holder lets go: when the holder is dropped, or when its process ends, a hard exit included. Each test uses a fresh
 //! directory in the target's temporary folder.
 
