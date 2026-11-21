@@ -255,7 +255,8 @@ fn concurrent_submissions_cannot_pass_a_lane_limit() {
 /// CT-KN7-07 (whole), KN7.5, KN7.3: after a commit, a digest-pinned job finishes on its original input. Its result
 /// applies to a revision with that input's digest, an undo back to it included, and never to another revision without a
 /// re-run. CT-ONE-24 (part: the pinned job finishes after a commit and its result is refused against the newer
-/// revision; not run: a view that shows the result, which `c600-view` can hold but no test joins to this job).
+/// revision; the view model refusing it at the newer revision runs in `c600-durable/tests/ct_one_24.rs`; not run: a
+/// host that binds a job's result to a view, LP3).
 #[test]
 fn a_pinned_job_finishes_on_its_input_and_binds_its_result_to_it() {
     let (session, _disk) = session();

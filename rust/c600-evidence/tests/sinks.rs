@@ -446,9 +446,8 @@ fn fn_parameters(text: &str) -> Vec<String> {
     out
 }
 
-/// CT-EVD-21 (part: the evidence library's half; not run: the command layer's and the session store's commit paths,
-/// which no test drives with different words and claims; the policy, grants and admission run in
-/// `c600-run/tests/tables.rs`): EVD.56 and EVD.57. No function of this crate
+/// CT-EVD-21 (part: the evidence library's half; the policy, grants and admission run in `c600-run/tests/tables.rs`,
+/// and the commit paths in `c600-command/tests/kn5_stages.rs` and `c600-session/tests/commit.rs`): EVD.56 and EVD.57. No function of this crate
 /// takes a word or a claim, neither converts to a boolean, no function grants, permits, commits or issues a token, and
 /// the `record` sink decides a write the same way whatever the target's word.
 #[test]

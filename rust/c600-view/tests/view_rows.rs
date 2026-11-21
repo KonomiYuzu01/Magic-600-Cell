@@ -285,12 +285,13 @@ fn ct_rpi_06_unchanged_view_does_no_work() {
 
 /// CT-LG4-06 (part: a burst of nine revisions keeps one pending request, five requests keep only the newest and end
 /// each older one as superseded, the one run that follows has the newest revision as its base, and a publication bound
-/// to an older base is refused (`ct_rpi_07_*`); not run: the burst driven by commits through the command layer, and a
-/// program run by the queue, since the model's runs are closures of the test).
+/// to an older base is refused (`ct_rpi_07_*`); the burst driven by commits through the command layer runs in
+/// `c600-tools/tests/views.rs` and `c600-input/tests/twist.rs`; not run: a program run by the queue, since the model's
+/// runs are closures of the test and no host binds a run's output to a view, LP3).
 /// CT-RPI-06 and KN7.2: a burst of revisions and requests keeps one runner and one newest pending request; each
 /// newer request supersedes the older one, and the view runs once more, at the newest revision (RPI.12, LI.23).
-/// CT-ONE-15 (part: a burst of revisions keeps one runner and one newest pending request; not run: the burst as
-/// twists committed through the command layer).
+/// CT-ONE-15 (part: a burst of revisions keeps one runner and one newest pending request; the burst as twists
+/// committed through the command layer runs whole in `c600-input/tests/twist.rs`).
 /// CT-LI-03 (part: the view lane, where a newer request supersedes the pending one and the view runs once at the
 /// newest revision; not run: all six lanes at once in the command layer).
 #[test]
@@ -330,8 +331,9 @@ fn ct_rpi_06_a_burst_runs_once_at_the_newest_revision() {
 /// CT-RPI-07: adoption makes mismatched output stale. It is drawn only as its view's stale presentation naming its
 /// base, never as output over the new revision, and a publication bound to the old base cannot attach (RPI.13,
 /// ONE.12, ONE.63).
-/// CT-ONE-14 (part: after adoption no output of the old revision is drawn against the new one; not run: the
-/// adoption driven by a commit through the command layer).
+/// CT-ONE-14 (part: after adoption no output of the old revision is drawn against the new one; adoptions driven by
+/// commits through the command layer run in `c600-input/tests/twist.rs` and `c600-tools/tests/views.rs`; not run: a
+/// frame drawn by the display host or a renderer, LP3).
 #[test]
 fn ct_rpi_07_adoption_makes_mismatched_output_stale() {
     let r12 = rev(12, 1, 1, 12);
@@ -1224,8 +1226,8 @@ fn rm_35_malformed_output_keeps_its_code() {
 /// again changes nothing; Jumble on needs all six arrays.
 /// CT-ONE-16 (whole).
 /// CT-LI-06 (part: view installation is atomic; presentation permission and a preview build's effect on the session
-/// head run in `c600-input`'s routing tests; not run: a derived display plan checked against the session head (LP3's
-/// view lane)).
+/// head run in `c600-input`'s routing tests, and a derived plan checked against the session head in
+/// `c600-tools/tests/views.rs`).
 #[test]
 fn rpi_09_incomplete_or_mismatched_bundles_install_nothing() {
     let r11 = rev(11, 1, 1, 11);

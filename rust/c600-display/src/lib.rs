@@ -238,9 +238,9 @@
 //! [`stage::Quarantine`] wired into its publications and frames behind the backend's `read_frame_reports`. Until
 //! then CT-RPI-32 and CT-RM-09's rows 3 to 6, 8 and 10 run only their headless parts, under declared fixture weights in
 //! place of RM.38's measured table (RPI.79). For charts: any chart or property outside the drafted repertoire (RPI.34
-//! stays open), the GPU agreement check (RPI.35) and a production precision rule (RPI.36 stays open). CT-RPI-19's
-//! headless Linux leg is not run here. For the relationship strip: its design, words and encoding tokens (EV3.8,
-//! EV5.11), and a strip record for a relation whose value is no canonical object.
+//! stays open), the GPU agreement check (RPI.35) and a production precision rule (RPI.36 stays open). For the
+//! relationship strip: its design, words and encoding tokens (EV3.8, EV5.11), and a strip record for a relation whose
+//! value is no canonical object.
 
 #![forbid(unsafe_code)]
 

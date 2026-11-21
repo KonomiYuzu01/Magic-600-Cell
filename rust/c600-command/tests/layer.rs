@@ -169,7 +169,8 @@ fn the_stored_table_reads() {
 /// CT-ONE-09 (part: no row takes a pose table or a raw table, and only `file.*` rows take a file; not run: the positive
 /// half, that a raw table enters through KN2.14's import, which `c600-jumble/tests/levels.rs` runs).
 /// CT-ONE-28 (part: no row of kind `commit` or `app`, and no workspace row but `grip.rebind`, takes a derived or an
-/// imported value, so none proposes or adopts one; not run: display and the import itself).
+/// imported value, so none proposes or adopts one; the import itself runs in `c600-jumble/tests/levels.rs`, and a
+/// display plan of an imported value in `c600-tools/tests/views.rs`; not run: the session store's import (M6)).
 #[test]
 fn no_row_takes_a_state_or_a_digest_to_adopt() {
     let table = Table::h08();
@@ -826,9 +827,9 @@ fn the_runtime_reaches_at_most_a_preview() {
 }
 
 /// CT-ONE-21 (part: a restart ends previews, keeps the durable receipts, answers `unknown_outcome` for the transient
-/// ones and revives no permission: the old epoch's token and envelope are refused; not run: the drafts, which
-/// `c600-session/tests/conformance_recovery.rs` runs on the session store, and the value-store handles and derived
-/// values of ONE.70, which no crate holds).
+/// ones and revives no permission: the old epoch's token and envelope are refused; the drafts run in `kn5_stages.rs`
+/// and on the session store in `c600-session/tests/conformance_recovery.rs`; not run: the value-store handles and
+/// derived values of ONE.70, which no crate holds).
 #[test]
 fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     let mut f = fixture(&[]);

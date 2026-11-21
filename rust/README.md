@@ -1555,12 +1555,13 @@ run or not applicable is no pass (PHS.63).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them), KN5's
   stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and M6's
   record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder, streamed
-  words, `filter.apply`, PHS.19's items 7 and 8 (CT-KN2-02's remaining states, R-11's jumbling fixtures) and LP2's exit
-  re-marking pass, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 119
-  whole, 29 of them by the union of their parts (CT-BND-14, CT-BND-27, CT-ERR-09, CT-KN1-01, CT-KN1-04, CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-KN5-02, CT-KN5-12, CT-LB7-02, CT-LG2-04, CT-LG2-12, CT-LG2-13, CT-LG2-14,
-  CT-LG3-01, CT-LG3-02, CT-LG3-04, CT-LG5-06, CT-LG5-08, CT-LI-04, CT-LI-07, CT-LI-13, CT-ONE-01, CT-ONE-02, CT-ONE-03,
-  CT-PS1-11 and CT-PS1-22); 128 part; none named only; none missing; 1 waiting (CT-LI-14), with what it waits for in
+  words, `filter.apply`, PHS.19's items 7 and 8 (CT-KN2-02's remaining states, R-11's jumbling fixtures), LP2's exit
+  re-marking pass and the command-layer tests of the owner's reading 11, as `tools/language/ct_index.py --summary`
+  prints it (`tests/test_ct_index.py` checks the tool): 126 whole, 32 of them by the union of their parts (CT-BND-14,
+  CT-BND-27, CT-ERR-09, CT-EVD-21, CT-KN1-01, CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-KN5-02,
+  CT-KN5-12, CT-LB7-02, CT-LG2-04, CT-LG2-12, CT-LG2-13, CT-LG2-14, CT-LG3-01, CT-LG3-02, CT-LG3-04, CT-LG5-06,
+  CT-LG5-08, CT-LI-04, CT-LI-06, CT-LI-07, CT-LI-13, CT-ONE-01, CT-ONE-02, CT-ONE-03, CT-PS1-11, CT-PS1-22 and
+  CT-RPI-01); 121 part; none named only; none missing; 1 waiting (CT-LI-14), with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
@@ -1817,14 +1818,15 @@ run or not applicable is no pass (PHS.63).
 - Stored rows served by a built-in tool's entry (LP3's C6, its first common need; the drafts are in the crate
   documentation). `CommandLayer::serve_row(id, overlay)` lets an entry serve a stored row. An invocation of the row then
   admits a program job for the entry, as for an overlay row, and the entry's result completes it: a query, view or file
-  row transiently, a workspace row as one durable workspace action with its result reference. The row keeps H-08's
-  kind, lane, undo class, gates and argument types, so a `none`-lane row has no occupancy limit (KN7.2) and a
-  `view`-lane row supersedes its own waiting invocation. Only a view, workspace, query or file row on the `none`,
-  `view` or `program` lane, with no action guard or token, is served, and only with no gate, preview rule or undo
-  entry, except a workspace row whose undo class is `workspace`, and one that takes exactly the gate
-  `fresh_filter_preview` with the `filter` preview rule; any other is refused with `KN5:input.overlay_row_kind`, and a
-  row the layer builds itself or one already served with `KN5:input.overlay_row_conflict`. Serving is not journaled,
-  so after a reopen the host serves its rows again. All six of the representations tool's rows and
+  row transiently, a workspace row as one durable workspace action with its result reference. The row keeps H-08's kind,
+  lane, undo class, gates and argument types, so a `none`-lane row has no occupancy limit (KN7.2) and a `view`-lane row
+  supersedes its own waiting invocation and fences its taken runner (LI.23): the runner is settled as superseded, its
+  late result is dropped, and the replacement is taken only after the host reports it. Only a view, workspace, query or
+  file row on the `none`, `view` or `program` lane, with no action guard or token, is served, and only with no gate,
+  preview rule or undo entry, except a workspace row whose undo class is `workspace`, and one that takes exactly the
+  gate `fresh_filter_preview` with the `filter` preview rule; any other is refused with `KN5:input.overlay_row_kind`,
+  and a row the layer builds itself or one already served with `KN5:input.overlay_row_conflict`. Serving is not
+  journaled, so after a reopen the host serves its rows again. All six of the representations tool's rows and
   `operation.phase.edit` can be served now. Tests: `c600-command/tests/served_rows.rs`.
 - Job output (LP3's C6, its second common need; the drafts are in the crate documentation).
   `CommandLayer::finish_program_job_with(job, Result<JobOutput, Error>)` takes a job's output as the runtime's sinks
@@ -2217,9 +2219,9 @@ run or not applicable is no pass (PHS.63).
   `stage_work_exceeded`'s context, and no frame report for a device fault or a later frame of a quarantined chain.
   C6's strip contract adds: a record states one relation over operands of one role with values of one role, each one
   canonical object ID; its level is the stored level it read, labels or poses; evidence references are opaque.
-- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the host to attach
-  user stages (the core compiles and bounds them since C9 U5, WARP only, but the host attaches none yet; RPI.78); an
-  exact checker of isometry and homomorphism for the stereographic chart, which is not a projective map (both stay
+- Not built: the rest of CT-RPI-32, which needs the host to attach user stages (the core compiles and bounds them
+  since C9 U5, WARP only, but the host attaches none yet; RPI.78); an exact checker of isometry and homomorphism for
+  the stereographic chart, which is not a projective map (both stay
   `not_established`); charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
   production precision rule (RPI.36). CT-RPI-08's rows J01 and J06 to J12 stay unsupported until a backend's own rows
   (C9); J10 stays an unsupported row with its payload built from M5's certified geometry and checked headless

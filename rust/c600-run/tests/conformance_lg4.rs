@@ -158,11 +158,12 @@ const VIEW: &str = "export view show() -> Unit effects [snapshot, view] {\n    \
     return publish_view(read_snapshot<Nat>(\"n\"));\n}\n";
 
 /// CT-LG4-06 (part: superseded view runs at the runtime; the view queue that revision bursts supersede is
-/// `c600-view/tests/view_rows.rs`'s; not run: the queue driving real runs after commits through the command layer,
-/// LP3): a view run whose revision is replaced stops with
-/// `KN7:cancelled.revision_replaced` at whichever operation the replacement reaches, publishes nothing after it, and
-/// changes no workspace record, preview or committed state; what a view publishes is its own revision's state. In a
-/// burst of three revisions whose first two are replaced before their runs start, only the third publishes.
+/// `c600-view/tests/view_rows.rs`'s, and a burst of commits through the command layer runs in
+/// `c600-tools/tests/views.rs` and `c600-input/tests/twist.rs`; not run: the queue driving a program's real runs, since
+/// no host binds a run's `publish_view` output to a view (LP3's host)): a view run whose revision is replaced stops
+/// with `KN7:cancelled.revision_replaced` at whichever operation the replacement reaches, publishes nothing after it,
+/// and changes no workspace record, preview or committed state; what a view publishes is its own revision's state. In
+/// a burst of three revisions whose first two are replaced before their runs start, only the third publishes.
 #[test]
 fn ct_lg4_06_a_replaced_revision_stops_view_work_before_it_publishes() {
     let source = m(VIEW);

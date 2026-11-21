@@ -1,8 +1,9 @@
-//! CT-RPI-19 (source), the Windows leg: one reproducibility key gives equal exact plan fields and approximate values
-//! within declared precision, including maths-library-sensitive cases (RPI.56, LX-3). The maths-library-sensitive
-//! cases are camera turns built with the platform's `sin`, `cos` and `sqrt`, compared with exact images in Q(√5). The
-//! headless Linux leg is these same tests on Linux against the same pinned key; it is not run here, so CT-RPI-19 stays
-//! partly run. Bitwise equality of floats across platforms is not claimed (RPI.56).
+//! CT-RPI-19 (source): one reproducibility key gives equal exact plan fields and approximate values within declared
+//! precision, including maths-library-sensitive cases (RPI.56, LX-3). The maths-library-sensitive cases are camera
+//! turns built with the platform's `sin`, `cos` and `sqrt`, compared with exact images in Q(√5). Both legs run these
+//! same tests against the same pinned key: the Windows leg on the headless shards and the headless Linux leg in the
+//! Linux Rust job (`.github/workflows/linux-rust.yml`), which both run this crate's tests. Bitwise equality of floats
+//! across platforms is not claimed (RPI.56).
 
 mod common;
 
@@ -61,7 +62,7 @@ fn evaluate(pose: &CameraPose, rule: PrecisionRule) -> Evaluation {
 /// and headless Linux in the Linux Rust job, which both run this crate's tests; RT1's display fields are in
 /// `c600-run/tests/conformance_det.rs` and `values.rs`).
 #[test]
-fn ct_rpi_19_windows_leg_one_key_gives_equal_exact_fields() {
+fn ct_rpi_19_one_key_gives_equal_exact_fields() {
     let (theta, q) = turns()[0];
     let at = CameraPose::Exact(exact_turn(&q));
     let (first, second) = (evaluate(&at, RULE), evaluate(&at, RULE));
@@ -94,7 +95,7 @@ fn ct_rpi_19_windows_leg_one_key_gives_equal_exact_fields() {
 }
 
 #[test]
-fn ct_rpi_19_windows_leg_approximate_values_within_declared_precision() {
+fn ct_rpi_19_approximate_values_within_declared_precision() {
     let mut worst = 0.0f64;
     let mut compared = 0;
     for (theta, q) in turns() {

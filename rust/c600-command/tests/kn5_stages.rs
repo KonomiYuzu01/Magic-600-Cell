@@ -233,6 +233,106 @@ fn a_record_write_keeps_its_receipt_across_a_restart_and_a_reopen() {
     assert_eq!((reopened.store().log.len(), reopened.revision().workspace), (1, 1));
 }
 
+/// CT-ONE-21 (part: a restart ends the preview built from a draft, and its prepared commit cannot commit it, while
+/// the draft, a workspace record with its durable receipt, stays across the restart and a reopen and builds a fresh
+/// preview that commits; the receipts, the transient outcomes and the old epoch's permissions run in `layer.rs`; not
+/// run: the value-store handles and derived values of ONE.70, which no crate holds), ONE.35, ONE.43, ONE.70.
+#[test]
+fn a_restart_ends_a_drafts_preview_and_keeps_the_draft() {
+    let mut f = fixture(true);
+    let written = f.write("w", letters(&[1, 2]), "block");
+    assert!(completed(&written));
+    let value = f.layer.record("w").cloned().expect("the draft");
+    let p = f.preview_with(record_draft("w"));
+    f.present(p);
+    let early = f.press(p);
+    let log = f.layer.store().log.len();
+
+    f.layer.restart(Secret::fixed([8; 32]));
+    f.shell.restart(Secret::fixed([8; 32]));
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Discarded));
+    assert!(f.layer.preview().is_none(), "restart never revives a preview");
+    assert_eq!((f.layer.record("w"), f.layer.records()["w"].version), (Some(&value), 1));
+    let epoch = f.layer.revision().epoch;
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, Invocation { epoch, ..early })), code::TOKEN_INVALID);
+    assert_eq!(f.layer.store().log.len(), log, "the old press committed nothing");
+
+    let reopened = reopen(&f.layer);
+    assert_eq!((reopened.record("w"), reopened.records()["w"].version), (Some(&value), 1));
+    assert!(reopened.preview().is_none());
+
+    let q = f.preview_with(record_draft("w"));
+    assert_ne!(q, p);
+    f.present(q);
+    let press = f.press(q);
+    assert!(committed(&f.shell.send(&mut f.layer, press)));
+    assert_eq!(f.layer.record("w"), Some(&value), "a commit keeps the draft (ONE.35)");
+}
+
+/// Every source file under `dir`, with its path, recursively.
+fn sources(dir: &Path) -> Vec<(PathBuf, String)> {
+    let mut out = Vec::new();
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            out.extend(sources(&path));
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            let text = std::fs::read_to_string(&path).unwrap();
+            out.push((path, text));
+        }
+    }
+    out
+}
+
+/// CT-EVD-21 (part: the command layer's commit path: the layer depends on no evidence crate and no source names one,
+/// and a preview, its commit and an undo answer the same, with the same revisions and digests, whether the workspace's
+/// records hold `proved` and a small claim or `refuted` and a large one; the evidence library's half runs in
+/// `c600-evidence/tests/sinks.rs`, the policy, grants and admission in `c600-run/tests/tables.rs`, and the session
+/// store's commit modules in `c600-session/tests/commit.rs`), EVD.56.
+#[test]
+fn the_commit_path_answers_the_same_whatever_words_and_claims_the_workspace_holds() {
+    let manifest = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml")).unwrap();
+    let dependencies = manifest.split("[dependencies]").nth(1).expect("a dependency table");
+    let dependencies = dependencies
+        .split(
+            "
+[",
+        )
+        .next()
+        .unwrap();
+    assert!(dependencies.contains("c600-kernel") && !dependencies.contains("c600-evidence"), "{dependencies}");
+    let files = sources(&Path::new(env!("CARGO_MANIFEST_DIR")).join("src"));
+    assert!(files.len() > 5);
+    for (path, text) in &files {
+        assert!(!text.contains("c600_evidence"), "{} names the evidence crate", path.display());
+    }
+
+    let run = |verdict: &str, claim: i64| {
+        let mut f = fixture(true);
+        assert!(completed(&f.write("verdict", text(verdict), "block")));
+        assert!(completed(&f.write("claim", Value::Int(claim), "block")));
+        assert!(completed(&f.write("w", letters(&[1, 2]), "block")));
+        let p = f.preview_with(record_draft("w"));
+        f.present(p);
+        let available = f.layer.availability("operation.execute");
+        let press = f.press(p);
+        let done = f.shell.send(&mut f.layer, press);
+        assert!(committed(&done), "{:?}", done.status);
+        let after = f.layer.revision().clone();
+        let undone = f.step(Direction::Undo);
+        assert!(committed(&undone), "{:?}", undone.status);
+        let back = f.layer.revision().clone();
+        (
+            available,
+            format!("{:?}", done.status),
+            format!("{after:?}"),
+            format!("{:?}", undone.status),
+            format!("{back:?}"),
+        )
+    };
+    assert_eq!(run("proved", 1), run("refuted", 1_000_000));
+}
+
 /// CT-KN5-09 (part: a record write and its undo and redo move no puzzle, so they keep the head, the state revision,
 /// the pending preview and a running program job, and the undo succeeds while that job runs; the undo of a record's
 /// first write removes its value and the redo writes it again, each a workspace inverse that answers `committed` with
@@ -381,6 +481,68 @@ fn a_record_drafts_preview_goes_stale_when_its_record_changes() {
             let unavailable = f.layer.availability("operation.execute").unwrap_err();
             assert_eq!(unavailable.code, code::REVISION_CHANGED, "{case}");
             f.refused(press, code::REVISION_CHANGED, case);
+        }
+    }
+}
+
+/// CT-LI-01 (whole): the commit row's availability and the commit share KN0.8's freshness check, against LI.33's edits.
+/// A record draft's preview p is presented and two presses C and D are prepared for it, then one edit runs: a write of
+/// a record p does not read leaves the row available and D commits; a write of the record p reads, a protection change
+/// to the same set and that change's undo each make the row `revision_changed` and refuse D with the same code; C's
+/// commit and its undo restore the start digest, and with p gone the row and D both answer `no_fresh_preview`. A
+/// version never goes back, so equal labels, an equal protected set or an equal record value revive no press.
+/// `c600-session/tests/commit.rs` runs the same edits against the session's own gates.
+#[test]
+fn availability_and_the_commit_agree_on_li_33s_edits() {
+    let edits = ["unread record", "read record", "protection", "protection undone", "commit undone"];
+    for edit in edits {
+        let mut f = fixture(true);
+        assert!(completed(&f.write("w", letters(&[1, 2]), "block")));
+        let start = f.layer.revision().digest.clone();
+        let p = f.preview_with(record_draft("w"));
+        f.present(p);
+        let d = f.press(p);
+        let c = f.press(p);
+        let expected = match edit {
+            "unread record" => {
+                assert!(completed(&f.write("keymap", letters(&[9]), "block")));
+                None
+            }
+            "read record" => {
+                assert!(completed(&f.write("w", letters(&[2, 1]), "block")));
+                Some(code::REVISION_CHANGED)
+            }
+            "protection" | "protection undone" => {
+                let orbits = json::object([("orbits", Value::Array(Vec::new()))]);
+                let set = f.shell.invoke(&mut f.layer, "protection.orbit.set", orbits).unwrap();
+                assert!(matches!(set.status, Status::Completed(_)), "{edit}: {:?}", set.status);
+                if edit == "protection undone" {
+                    assert!(committed(&f.step(Direction::Undo)), "{edit}");
+                }
+                assert!(f.layer.protected().orbits().is_empty(), "{edit}");
+                assert_eq!(f.layer.preview_state(p), Some(PreviewState::Presented), "{edit}");
+                Some(code::REVISION_CHANGED)
+            }
+            _ => {
+                let receipt = f.shell.send(&mut f.layer, c.clone());
+                assert!(committed(&receipt), "{edit}: {:?}", receipt.status);
+                assert_ne!(f.layer.revision().digest, start);
+                assert!(committed(&f.step(Direction::Undo)), "{edit}");
+                assert_eq!(f.layer.revision().digest, start, "the undo restores the start digest");
+                assert_eq!(f.shell.send(&mut f.layer, c.clone()), receipt, "a retry of C answers C's receipt");
+                Some(code::NO_FRESH_PREVIEW)
+            }
+        };
+        match expected {
+            None => {
+                assert_eq!(f.layer.availability("operation.execute"), Ok(()), "{edit}");
+                assert!(committed(&f.shell.send(&mut f.layer, d)), "{edit}");
+            }
+            Some(expected) => {
+                let unavailable = f.layer.availability("operation.execute").unwrap_err();
+                assert_eq!(unavailable.code, expected, "{edit}: {unavailable:?}");
+                f.refused(d, expected, edit);
+            }
         }
     }
 }
