@@ -445,6 +445,7 @@ struct PickRequest {
 
 /// A pick as [`Host::poll_pick`] sees it.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant, reason = "one per poll of a pick, returned at once; none is stored in bulk")]
 pub enum Picked {
     /// The backend has not answered yet.
     Pending,

@@ -50,12 +50,15 @@
 //!   verdict type (`StickerTestVerdict`, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict`; LG2.9), which a
 //!   program matches on `holds`, `fails` and `unestablished` only; the retained checkpoint takes the solver's witness
 //!   word and builds none.
-//! - `jumble_crossing` ([`CROSSING`]): LB3.1's "Mode crossing prerequisites", the Jumble-off half (A5).
+//! - `jumble_crossing` ([`CROSSING`]): LB3.1's "Mode crossing prerequisites" (A5), both halves.
 //!   `jumble_off_facts` reads the label checkpoint as its verdict type, JI.9's `units` of every unit off the lattice
 //!   and KN2.4's `nu`, and answers the prerequisites of Jumble off: the label checkpoint's outcome, the count of pieces
-//!   off the lattice, and whether ν is defined with the count of its nonzero values. It reports them and decides
-//!   nothing: the crossing and its refusals are the command layer's (KN5). The Jumble-on half waits for a KN4 journal
-//!   query served to programs (KN4.3).
+//!   off the lattice, and whether ν is defined with the count of its nonzero values. `jumble_on_facts` reads KN4.3's
+//!   `journal` page by page from the head and answers the derivation Jumble on would replay (JI.25, JI.26): whether
+//!   Jumble is on already, and else the entrance the head's line reaches through retained commits only, the last
+//!   crossing's exit (`exit_root`, with the exit's event and mark) or a solved start (`solved_witness`), with the
+//!   count of those commits and of their signed primitive letters. Both report and decide nothing: the crossings, the
+//!   identity check, the replay and their refusals are the command layer's (KN5).
 //!
 //! Every entry tracks, analyses or checks the solver's named word or state, and none previews or executes anything
 //! (no `propose`). None chooses or outputs a word, except at the one point the owner allowed (17 October 2026): at a
@@ -252,12 +255,12 @@ pub const END_TESTS: Module = Module {
     rows: &["label_checkpoint", "retained_checkpoint", "sticker_test"],
 };
 
-/// LB3.1's mode crossing prerequisites, the Jumble-off half (A5).
+/// LB3.1's mode crossing prerequisites (A5): Jumble off's and Jumble on's.
 pub const CROSSING: Module = Module {
     name: "jumble_crossing",
     source: include_str!("jumble_crossing.6cs"),
-    exports: &["jumble_off_facts"],
-    rows: &["label_checkpoint", "nu", "units"],
+    exports: &["jumble_off_facts", "jumble_on_facts"],
+    rows: &["journal", "label_checkpoint", "nu", "units"],
 };
 
 /// The library's modules.
@@ -569,24 +572,27 @@ pub fn retained_checkpoint_label_checkpoint_sticker_test() -> CatalogueRow {
     }
 }
 
-/// LB3.1's row "Mode crossing prerequisites", the Jumble-off half (A5). The Jumble-on half waits for a KN4 journal
-/// query served to programs (KN4.3).
+/// LB3.1's row "Mode crossing prerequisites" (A5): the prerequisites of Jumble off, and the journal derivation of
+/// Jumble on.
 pub fn mode_crossing_prerequisites() -> CatalogueRow {
     CatalogueRow {
-        backing:
-            "Library code over the end tests: `jumble_crossing.jumble_off_facts` reads KN2.4's `label_checkpoint` \
-                  as its verdict type, JI.9's `units` of every unit off the lattice and KN2.4's `nu`, each with \
-                  `read_snapshot`.",
+        backing: "Library code over the end tests and the journal: `jumble_crossing.jumble_off_facts` reads KN2.4's \
+                  `label_checkpoint` as its verdict type, JI.9's `units` of every unit off the lattice and KN2.4's \
+                  `nu`, each with `read_snapshot`; `jumble_crossing.jumble_on_facts` reads KN4.3's `journal` with \
+                  `read_snapshot`, a page of up to 4096 events at a time from the head, for at most 256 pages.",
         notes: "A5's prerequisites of Jumble off at this revision: every piece on the lattice, ν = 0, and the state \
                 shown reachable, which the label checkpoint tests (LB3.3) and answers as its outcome alone. The entry \
                 also answers the count of pieces off the lattice, whether ν is defined and how many of its 45 values \
-                are nonzero. It selects no correction and decides no crossing: Jumble off, its refusals and the \
-                stored exit poses are the command layer's (KN5; chapters 01 and 08). Not built: the Jumble-on half, \
-                Full labels with journal derivation, which needs a KN4 journal query served to programs (KN4.3, EN4) \
-                for the moves Full's journal holds since the last crossing.",
+                are nonzero. For Jumble on, Full labels with journal derivation (JI.25, JI.26): the head's line in \
+                the journal (KN4.3), walked through retained commits only, reaches the last crossing's exit \
+                (`exit_root`: its event and the exit record's digest) or the start, which is a witness when solved \
+                (`solved_witness`); the entry answers which, with the count of those commits and of their signed \
+                primitive letters, or that Jumble is on already, or no entrance. It selects no correction and decides \
+                no crossing: both crossings, the identity check, the replay of the retained moves, their refusals and \
+                the stored exit poses are the command layer's (KN5; chapters 01 and 08).",
         ..row(
             "Mode crossing prerequisites",
-            "Jumbling poses; Full labels with journal derivation for the Jumble-on half, not built.",
+            "Jumbling poses; Full labels with journal derivation.",
             &[Effect::ReadSnapshot],
             CROSSING,
         )

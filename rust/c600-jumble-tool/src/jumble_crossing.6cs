@@ -8,6 +8,47 @@ export fn jumble_off_facts() -> record { label_checkpoint: LabelCheckpointVerdic
     return record { label_checkpoint = checkpoint, nu_defined = exact_eq(length(nu.values), 45), nu_nonzero = nonzero(nu.values), off_lattice = pieces(off.units) };
 }
 
+export fn jumble_on_facts() -> record { commits: Nat, crossing: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } effects [snapshot] {
+    let start = record { commits = 0, crossing = "", cursor = "", entrance = "", exit = "", jumble_on = false, primitives = 0, reached = false };
+    let walked = repeat(256, start, fn(s: record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool }) -> record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } {
+        return match s.reached {
+            true => s;
+            _ => page(s, read_snapshot<record { entries: List<record { event: Text, exit: Text, kind: Text, letters: Nat, solved: Bool }>, next: Text }>("journal", record { cursor = s.cursor, from = "", limit = 4096 }));
+        };
+    });
+    return record { commits = walked.commits, crossing = walked.crossing, entrance = walked.entrance, exit = walked.exit, jumble_on = walked.jumble_on, primitives = walked.primitives, reached = walked.reached };
+}
+
+fn page(s: record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool }, read: record { entries: List<record { event: Text, exit: Text, kind: Text, letters: Nat, solved: Bool }>, next: Text }) -> record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } effects [] {
+    let walked = repeat(length(read.entries), record { at = 0, walk = s }, fn(w: record { at: Nat, walk: record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } }) -> record { at: Nat, walk: record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } } {
+        return record { at = exact_add(w.at, 1), walk = advance(w.walk, index(read.entries, w.at)) };
+    }).walk;
+    return record { commits = walked.commits, crossing = walked.crossing, cursor = read.next, entrance = walked.entrance, exit = walked.exit, jumble_on = walked.jumble_on, primitives = walked.primitives, reached = walked.reached };
+}
+
+fn advance(w: record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool }, e: record { event: Text, exit: Text, kind: Text, letters: Nat, solved: Bool }) -> record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } effects [] {
+    return match w.reached {
+        true => w;
+        _ => visit(w, e);
+    };
+}
+
+fn visit(w: record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool }, e: record { event: Text, exit: Text, kind: Text, letters: Nat, solved: Bool }) -> record { commits: Nat, crossing: Text, cursor: Text, entrance: Text, exit: Text, jumble_on: Bool, primitives: Nat, reached: Bool } effects [] {
+    return match e.kind {
+        "commit" => record { commits = exact_add(w.commits, 1), crossing = "", cursor = w.cursor, entrance = "", exit = "", jumble_on = false, primitives = exact_add(w.primitives, e.letters), reached = false };
+        "exit" => record { commits = w.commits, crossing = e.event, cursor = w.cursor, entrance = "exit_root", exit = e.exit, jumble_on = false, primitives = w.primitives, reached = true };
+        "start" => record { commits = w.commits, crossing = "", cursor = w.cursor, entrance = witness(e.solved), exit = "", jumble_on = false, primitives = w.primitives, reached = true };
+        _ => record { commits = w.commits, crossing = "", cursor = w.cursor, entrance = "", exit = "", jumble_on = exact_eq(w.commits, 0), primitives = w.primitives, reached = true };
+    };
+}
+
+fn witness(solved: Bool) -> Text effects [] {
+    return match solved {
+        true => "solved_witness";
+        _ => "";
+    };
+}
+
 fn pieces(units: List<record { members: List<Nat> }>) -> Nat effects [] {
     return repeat(length(units), record { at = 0, count = 0 }, fn(s: record { at: Nat, count: Nat }) -> record { at: Nat, count: Nat } {
         return record { at = exact_add(s.at, 1), count = exact_add(s.count, length(index(units, s.at).members)) };

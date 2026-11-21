@@ -47,9 +47,8 @@
 //!   bases. Each answer is compared with `c600_jumble`'s and each entry's reads are recorded with their arguments: the
 //!   rim entry answers every cap in cap-ID order and nothing of a twist, the covers and catalogue entries read the
 //!   solver's named cap or id only, and no answer names a recommendation, a next cap, a ranking or a selection. The
-//!   crossing entry ([`library::CROSSING`]), the Jumble-off half of "Mode crossing prerequisites", answers A5's
-//!   prerequisites of Jumble off; its Jumble-on half waits for a KN4 journal query served to programs (KN4.3), so
-//!   CT-LB3-07 stays part.
+//!   crossing entry ([`library::CROSSING`]), "Mode crossing prerequisites", answers A5's prerequisites of Jumble off
+//!   and, from KN4.3's journal, the entrance Jumble on would replay from.
 //! - `tests/rows.rs` runs the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through [`rows`] at the
 //!   command layer's head with Jumble on, in I_a, S4 and I_b sessions: each run equals, byte for byte, the same run on
 //!   the same state witnessed apart from the layer, which the two tests above compare with the kernel. With Jumble off
