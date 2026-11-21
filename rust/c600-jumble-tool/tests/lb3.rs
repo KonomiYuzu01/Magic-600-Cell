@@ -309,6 +309,11 @@ fn ended(fixture: &Fixture, start: &State, pairs: &[[u32; 2]]) -> Option<String>
     Some(state.digest(ctx()))
 }
 
+/// CT-LG2-13 (part: the jumbling key's half, at a straddling cap; the empty-word halves are `c600-run`'s and
+/// `c600-syntax`'s `conformance_lg2.rs`, and with them CT-LG2-13 runs whole): the blocked cap below has a nonempty
+/// straddler set, a,a⁻¹ there keys to the identity letter's one token, not to the empty word's key, both of that key's
+/// words are refused, and the empty word is admitted, so it cannot stand in for the literal pair.
+///
 /// CT-LB1-02 (part: the key half, on M5's states, with LG2.18's word key `word-key/1` under I_a's item matrices, which
 /// `word::Alphabet::pinned` pins for a run, asked through the library entry `menu_word_keys`; the entry's own checks
 /// are the next test, and the kernel half is the test above. With the entry's 600-cell-Full half, `c600-library`'s
@@ -336,6 +341,8 @@ fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_pres
     let blocked = cap(Status::Blocked).expect("a blocked cap");
     let open = cap(Status::Admissible).expect("an open cap");
     let third = grips.iter().map(|&g| g as u32).find(|&g| g != blocked && g != open).expect("a third cap");
+    let straddlers = state.clone().straddler_set(ctx, blocked as usize, None).expect("a straddler set");
+    assert!(!straddlers.pieces.is_empty() && straddlers.uncertain == 0, "cap {blocked} is a straddling cap");
     let matrices: Vec<&Mat4> = fixture.menu.items.iter().map(|(_, m)| m).collect();
     let id = matrices.iter().position(|m| **m == identity4()).expect("the identity item") as u32;
     let a = matrices.iter().position(|m| **m != identity4()).expect("a rotation") as u32;
@@ -429,6 +436,77 @@ fn ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_pres
     }
     assert!(merged > 0, "some runs were merged");
     assert!(admitted > 0 && refused > 0, "the states admit some words and refuse others: {admitted}, {refused}");
+}
+
+/// CT-LG2-12 (part: the jumbling fixtures under LG2.14's four hypotheses, with the key's preservation of admissible
+/// starts and end digests over random words of I_a from three states in
+/// `ct_lb1_02_the_domain_preserving_key_is_refused_at_a_blocked_cap_and_keys_preserve_the_end_digest` above; R-11's
+/// operations and the word domain are the language halves in `c600-run`'s and `c600-syntax`'s `collections.rs`, and
+/// literal prefix protection on 600-cell-Full is `c600-kernel`'s `load.rs`; with them CT-LG2-12 runs whole).
+///
+/// The fixture meets the four hypotheses: (1) and (2) are the key's own rule, `menu_key::key`, which merges only
+/// adjacent letters at one cap and keeps an identity token; (3) I_a is closed under products, every product of two
+/// items being an item; (4) at solved and after 4 and 12 records of the I_a journal, every cap the words above use
+/// classifies exactly, with no budget and no uncertain status. Literal prefix protection and peak height stay the
+/// literal word's: from solved, at some cap and item a, a,a⁻¹ and the identity letter have one key and end at solved,
+/// yet the literal a,a⁻¹ peaks at a left height above the identity letter's, and with a piece that a moves protected
+/// the literal a,a⁻¹ is refused at its first letter while the identity letter is admitted.
+#[test]
+fn ct_lg2_12_on_i_a_the_key_keeps_admissible_starts_and_end_digests_but_not_protection_or_peak_height() {
+    let ctx = ctx();
+    let fixture = fixture("I_a");
+    let matrices: Vec<&Mat4> = fixture.menu.items.iter().map(|(_, m)| m).collect();
+    for x in &matrices {
+        for y in &matrices {
+            let product = matmul(x, y);
+            assert!(matrices.iter().any(|m| **m == product), "I_a is closed under products");
+        }
+    }
+    let id = matrices.iter().position(|m| **m == identity4()).expect("the identity item") as u32;
+    let alphabet = Alphabet::of(ctx, &fixture.menu).expect("an inverse-closed menu");
+    let pinned = alphabet.pinned().expect("I_a's alphabet pins with its item matrices");
+    let key = |w: &[[u32; 2]]| menu_key::key(&pinned, w).expect("letters of the alphabet");
+    let grips: Vec<usize> = (0..12).collect();
+    let states = [fixture.solved(), fixture.after(4), fixture.after(12)];
+    for (s, state) in states.iter().enumerate() {
+        let statuses = state.clone().survey(ctx, &grips, None).expect("a survey");
+        assert!(!statuses.contains(&Status::Uncertain), "state {s} classifies exactly: {statuses:?}");
+    }
+
+    let state = &states[0];
+    let start = state.digest(ctx);
+    let peak = |pairs: &[[u32; 2]]| {
+        let signed: Vec<[i32; 2]> = pairs.iter().map(|&[cap, item]| [cap as i32, item as i32]).collect();
+        let check = checked(state, &fixture.letters(&signed), None, None);
+        assert_eq!((flag(&check, "admissible"), text(&check, "end_digest")), (Some(true), start.as_str()), "{pairs:?}");
+        int(&check, "peak_left_height")
+    };
+    let mut higher = None;
+    'search: for open in grips.iter().map(|&g| g as u32) {
+        let identity = [[open, id]];
+        let at_rest = peak(&identity);
+        for a in (0..matrices.len()).filter(|&i| *matrices[i] != identity4()) {
+            let pair = [[open, a as u32], [open, fixture.inverse(a as i32) as u32]];
+            assert_eq!(key(&pair), key(&identity), "a,a⁻¹ at cap {open} and the identity letter have one key");
+            if peak(&pair) > at_rest {
+                higher = Some(pair);
+                break 'search;
+            }
+        }
+    }
+    let pair = higher.expect("some a,a⁻¹ peaks above the identity letter");
+    let open = pair[0][0];
+
+    // The piece the first letter moves, protected: the literal pair is refused at its first letter, the identity
+    // letter of the same key is admitted, and neither changes the state.
+    let letters = fixture.letters(&[[pair[0][0] as i32, pair[0][1] as i32], [pair[1][0] as i32, pair[1][1] as i32]]);
+    let piece = state.clone().apply(ctx, &letters[0].1, None, &[]).expect("no engine error").inside[0];
+    let mut work = state.clone();
+    let refused = work.apply(ctx, &letters[0].1, None, &[piece]).expect("no engine error");
+    assert_eq!((refused.status, work.digest(ctx)), (Status::Protected, start.clone()));
+    let unit = fixture.letters(&[[open as i32, id as i32]]);
+    let admitted = work.apply(ctx, &unit[0].1, None, &[piece]).expect("no engine error");
+    assert_eq!((admitted.status, work.digest(ctx)), (Status::Admissible, start));
 }
 
 /// CT-LB1-02 (part: the library entry "Word equality keys", its jumbling half `menu_word_keys`; the key half is the

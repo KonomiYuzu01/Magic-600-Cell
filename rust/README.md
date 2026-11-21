@@ -864,7 +864,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and every layer's counts against digests taken from 0.4's `core.py` on the same assets, and that a layer's members
     are as many as its counts, its slots their home slots, and a cell's layers together every position.
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
-    CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
+    CT-LG2-14 (each whole by union with the language halves, and CT-LG2-12 also with `c600-jumble-tool`'s `lb3.rs`);
+    CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
     profile.
 - KN3 (LP2): `c600_kernel::exact` decides the sign of a + b√5 exactly for 128-bit a and b (`sign5`, a² against 5b²
@@ -928,14 +929,19 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   record of the three fixtures and all 3,156 letters of H6030 run. `tools/ci/run_headless.py` lists it.
 - Contract tests: CT-KN1-02, CT-KN2-03 (`c600-jumble/tests/crossing.rs`) and CT-KN3-02 whole; the jumbling halves
   of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
-  with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
-  histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
+  with M4's halves; CT-JI-03. CT-KN2-02 whole: heights and domain IDs against `trees.py` and the library's
+  histograms on H6030's compared states, the recorded fixture prefixes and u1, the free-mode Cayley rotation, and
+  (`ItemEightStateTests`) the rest of ENG-0J item 8's states: the word-check cases b20, b06-14, b14 and b03 at their
+  start and end, the I_a@40 stop, the deep scramble and the six height-4 states, each with a planted height and a
+  planted domain ID that fail. Where J1's own replay takes minutes or hours, J1's state is rebuilt from the
+  candidate's pose table and must reach the research run's recorded digest. b14, b03 and the stop always run; b20,
+  b06-14, the deep scramble and the height-4 states run with `JUMBLING_FULL_REPLAY=1`, since b06-14 alone takes
+  about 34 minutes on a development machine.
 - Not built, for M8: CT-KN3-03's model inputs (the filter itself is in `c600-a2-filter`, M4's section), the jumbling
-  words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's cases b20,
-  b06-14, b14 and b03; the observation nu (M8 builds rim_summary, covers, repair_list and release_check, below); and the
-  holding caps of seam cells and tree positions past the first step. Built since M5: KN3's exact rotation requests
-  (below; CT-KN3-05 whole, CT-KN3-01, CT-KN3-04 and CT-KN3-06 in part), the kernel rows for 600-cell-Full (M4's
-  section), and M8's levels, end tests and derived values, Strict protection included (below).
+  words of CT-KN2-07 and CT-KN3-01's small-margin set; the observation nu (M8 builds rim_summary, covers, repair_list
+  and release_check, below); and the holding caps of seam cells and tree positions past the first step. Built since M5:
+  KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01, CT-KN3-04 and CT-KN3-06 in part), the kernel rows
+  for 600-cell-Full (M4's section), and M8's levels, end tests and derived values, Strict protection included (below).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
   acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
   blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
@@ -1544,13 +1550,13 @@ run or not applicable is no pass (PHS.63).
     `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1,
     `tests/test_jumbling_rust_nu.py` compares ν with the ν reference, and `tests/test_jumbling_rust_corrections.py`
     the correction catalogue with the research library (M5's section).
-- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
-  KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder,
-  streamed words and `filter.apply`, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py`
-  checks the tool):
-  90 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
-  CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 137 part; 4 named only by LP3's command-layer
+- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them), KN5's
+  stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and M6's
+  record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder, streamed
+  words, `filter.apply` and PHS.19's items 7 and 8 (CT-KN2-02's remaining states, R-11's jumbling fixtures), as
+  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 94 whole, 14 of them by
+  the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG2-12, CT-LG2-13,
+  CT-LG2-14, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 133 part; 4 named only by LP3's command-layer
   tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 17 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
@@ -2975,7 +2981,12 @@ run or not applicable is no pass (PHS.63).
     `menu_word_keys`, and on random words from three states each word and its run-merged form have one key, one
     admissibility and one end digest; and the entry itself: canonical, pure, and refused by the checker with
     `LG2:type.word_key_not_executable` where letters are required, so CT-LB1-02 runs whole with C5's half),
-    CT-LB3-01 (ten fixtures on
+    CT-LG2-13's jumbling half (the blocked cap has a nonempty straddler set; whole by union with the empty-word halves
+    in `conformance_lg2.rs`), CT-LG2-12's jumbling fixtures under LG2.14's four hypotheses (the key merges only
+    adjacent same-grip runs and keeps identity tokens, I_a is closed under products, and surveys at three states
+    classify exactly; from solved some a,a⁻¹ and the identity letter have one key and end at solved, yet a,a⁻¹ peaks
+    at a greater left height, and with a piece that a moves protected a,a⁻¹ is refused at its first letter while the
+    identity letter is admitted; whole by union with the language and kernel halves), CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
     word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
