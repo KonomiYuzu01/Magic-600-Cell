@@ -14,14 +14,15 @@
 //! KN2.4's `protection` row, a captured lock judged against a recipe at the layer's head, which LB2's Net and Strict
 //! protection reads (CT-LB2-02); and KN2.4's `replay` row for 600-cell-Full, a recipe replayed prefix by prefix at the
 //! layer's head under the session's protected orbits, which LB2's named macro analysis reads. When the host gives it
-//! the certified guarded setup tables ([`Bridge::with_setups`]), it serves a sixth read: the draft `setups` row, the certified setups for a target the solver names, which only the
-//! setup-search exception may read and which LB2's guarded setups read (CT-BND-18; BND.1). It answers setups in the
-//! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the three draft
+//! the certified guarded setup tables ([`Bridge::with_setups`]), it serves a sixth read: the `setups` row, the
+//! certified setups for a target the solver names, which only the setup-search exception may read and which LB2's
+//! guarded setups read (CT-BND-18; BND.1). It answers setups in the
+//! table's order, ranks none and runs none: applying one stays the solver's action. It also serves the three
 //! structure reads of LP3's representations tool (C6): `structure.compare`, two cells compared, `filter.preview`, the
 //! counts of a layer predicate, and `structure.layer`, its members, through LP2's [`CommandLayer::compare_cells`],
-//! [`CommandLayer::layer_counts`] and [`CommandLayer::layer_members`], which read no state. And it serves the draft
+//! [`CommandLayer::layer_counts`] and [`CommandLayer::layer_members`], which read no state. And it serves the
 //! `orbits` read, the pieces of named orbits, which LB2's orbit catalogue reads: model data, the orbit the kernel's
-//! `positions` gives each piece, which reads no state of the session. It serves the draft `journal` read too, KN4.3's
+//! `positions` gives each piece, which reads no state of the session. It serves the `journal` read too, KN4.3's
 //! page of the session's move tree, newest first, which LP3's C8 reads, through LP2's [`CommandLayer::journal`], which
 //! changes nothing.
 //! Capability separation keeps an entry that reads them from also proposing: admission refuses an entry that does both
@@ -49,7 +50,7 @@ use c600_run::value::Value;
 use crate::expand::{expand, Expansion};
 use crate::kernel_rows::{self, SetupTable};
 
-/// The result bound of a proposal's answer (a draft; the command table prices the row when it freezes).
+/// The result bound of a proposal's answer (a draft; H-08 prices only reads, CM.18).
 pub const RESULT_BOUND: u128 = 4096;
 
 /// 0.4's word limit, which LB2.4 keeps: the most letters one word step of a draft carries (KN2).

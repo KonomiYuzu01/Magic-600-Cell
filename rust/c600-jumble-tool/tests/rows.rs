@@ -16,7 +16,7 @@
 //!
 //! With Jumble off, after `jumble.off`, every read stops with `KN5:input.menu_word_needs_jumble_on`. The bridge grants
 //! no preview, clock or other row (`LG3:capability.not_granted`), refuses a row read in another argument form with
-//! `KN5:input.argument_form` at its tariff, and its draft tariff counts one pass of the model's pieces for the state and
+//! `KN5:input.argument_form` at its tariff, and its tariff counts one pass of the model's pieces for the state and
 //! one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts or the whole scan,
 //! one more for each cap for the rim summary, one more for a named cap and each of its 80 meeting caps for covers, one
 //! for a named correction id, and one more for a named twist, grip, cap or unit, or every unit off the lattice; one for
@@ -263,7 +263,7 @@ fn with_jumble_off_every_read_stops() {
     }
 }
 
-/// What the bridge grants, and its draft tariff.
+/// What the bridge grants, and its tariff (CM.18).
 #[test]
 fn the_bridge_grants_its_rows_only_and_prices_each_pass() {
     let fixture = Fixture::load("I_a");

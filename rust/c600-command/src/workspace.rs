@@ -28,8 +28,8 @@ use c600_kernel::json::{self, Value};
 use crate::receipt::{digest, Error};
 use crate::worksheet::Worksheet;
 
-/// The row a record write takes: M6's draft name. H-08 has no such row; it joins the command table when the typed
-/// workspace rows freeze with it at LP3 (PHS.53).
+/// The row a record write takes: M6's name, which H-08 holds since the command table's freeze at LP3 (PHS.53, CM.17);
+/// its `payload: Json` is OPEN, a later change under PHS.52.
 pub const RECORD_ROW: &str = "workspace.set";
 
 /// A record's value: its payload and its provenance block, the block's canonical FP.17 JSON as text.

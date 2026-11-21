@@ -18,10 +18,10 @@
 //!   `RevisionRef` of the revision the job read, its counters as integers in the same value form.
 //! - Names under `set/` are saved sets. Only a `set.save` completion writes them; `workspace.set` and `worksheet.save`
 //!   refuse them with `KN5:input.argument_form`.
-//! - A save under a name that holds a saved set replaces it only when the invocation carries `replace: true`, a draft
-//!   boolean beside the row's table arguments (U1-057: named-set replacement stays explicit). Otherwise it is refused
-//!   with the draft code `KN5:input.saved_set_exists`: at admission, with no job, and at completion, writing nothing,
-//!   when another save took the name meanwhile.
+//! - A save under a name that holds a saved set replaces it only when the invocation carries `replace: true`, the
+//!   optional boolean H-08 gives the row since the command table's freeze (`replace: Bool?`, CM.17; U1-057: named-set
+//!   replacement stays explicit). Otherwise it is refused with `KN5:input.saved_set_exists`: at admission, with no
+//!   job, and at completion, writing nothing, when another save took the name meanwhile.
 
 use c600_kernel::json::{self, Value};
 
@@ -33,7 +33,7 @@ pub const SET_SAVE_ROW: &str = "set.save";
 pub const SET_SAVE_RECORD: &str = "set.save";
 /// The prefix of a saved set's record name.
 pub const SAVED_SET_PREFIX: &str = "set/";
-/// The draft boolean argument that lets a save replace the saved set of the same name.
+/// The optional boolean argument that lets a save replace the saved set of the same name (`replace: Bool?`, CM.17).
 pub const REPLACE: &str = "replace";
 
 /// The kinds of a saved set, as `set.save`'s `kind` names them.

@@ -220,7 +220,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }
 
-/// The row's draft tariff covers its answer: a Strict answer asked of the bridge directly fits the result bound of its
+/// The row's tariff covers its answer: a Strict answer asked of the bridge directly fits the result bound of its
 /// tariff, and the tariff counts the pairs, one unit per primitive, one pass over the slots and one more for each
 /// generator a Strict check may use. The bound covers the largest answer: every pair in conflict and counts of
 /// [`MAX_PRIMITIVES`]. A read sends no invocation.

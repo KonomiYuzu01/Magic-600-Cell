@@ -94,8 +94,8 @@ struct Fixture {
     frames: HeadlessFrames,
 }
 
-/// A session at the solved state whose table holds the draft rows (`workspace.set`), with the test reader when
-/// `reader`.
+/// A session at the solved state whose table holds `workspace.set` (H-08's row since the freeze, CM.17), with the test
+/// reader when `reader`.
 fn fixture(reader: bool) -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());

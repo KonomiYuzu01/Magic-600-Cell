@@ -1,6 +1,6 @@
 //! The jumbling rows' host bridge (LP3, C8): KN2.4's jumbling rows that the library entries ([`crate::library`]) and
 //! CT-RTE-07's jumbling keys read, answered by `c600_jumble` and served to a run as snapshot reads, in the library's
-//! draft answer types (KN5, LP2 draft until the command table freezes, PHS.52).
+//! draft answer types (KN5); H-08's `reads` name and price the rows since the command table's freeze (CM.18).
 //!
 //! [`Rows::at_head`] reads at the command layer's head with Jumble on: the head's derived value under the pinned menu
 //! ([`CommandLayer::jumbled`]) is the state every row reads and the base that `protection`, `nu` and
@@ -103,7 +103,7 @@
 //! the jumbling engine is `KN5:consistency.state_hash_mismatch`, as the command layer reports one (`c600-command`'s
 //! `jumble` module).
 //!
-//! # Tariff (draft; the command table prices the rows when it freezes)
+//! # Tariff (H-08's `reads`, CM.18)
 //!
 //! The kernel cost is one unit for each piece of the model ([`NP`]) for each pass over a state: one pass for `heights`,
 //! `height_counts`, `nu` and `correction_lookup`, and one more for each letter of a named word or each entry of a

@@ -1,5 +1,5 @@
-//! The draft `journal` row, KN4.3's page of the move tree, served to an entry by the host bridge (KN5; LP3's C8; a
-//! draft until the command table freezes at LP3). An entry's snapshot read with an argument,
+//! The `journal` row, KN4.3's page of the move tree, served to an entry by the host bridge (KN5; LP3's C8; H-08's
+//! `reads` since the command table's freeze, CM.18). An entry's snapshot read with an argument,
 //! `read_snapshot<T>("journal", page)`, runs on `c600-run` through `Boundary` and [`Bridge`] onto a command layer, and
 //! the bridge answers it from LP2's `CommandLayer::journal` (`c600_tools::kernel_rows`). The entry kinds of Jumble on
 //! are not run here: a layer in Jumble on needs a pinned twist menu, which `c600-jumble` builds, and this crate's tests

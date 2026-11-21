@@ -187,7 +187,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }
 
-/// The row's draft tariff covers its answer: the answer for every slot, asked of the bridge directly, fits the result
+/// The row's tariff covers its answer: the answer for every slot, asked of the bridge directly, fits the result
 /// bound of its tariff, and the tariff counts one label per named slot. A read sends no invocation.
 #[test]
 fn the_tariff_covers_the_largest_answer() {

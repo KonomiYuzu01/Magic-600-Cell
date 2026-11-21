@@ -1,7 +1,7 @@
 //! LB2's rows "Orbit catalogue and collateral stage order" and "Residuals and exact completion" on 600-cell-Full, as
 //! library code: `c600-library`'s module `orbits` runs on `c600-run` through `Boundary` and the tool's host bridge onto
 //! a command layer, in the solving profile, author `built_in`, within the draft budget ceiling
-//! (`Budget::DRAFT_CEILING`). `orbit_catalogue` reads the draft `orbits` row at the orbits the caller names. A client
+//! (`Budget::DRAFT_CEILING`). `orbit_catalogue` reads the `orbits` row at the orbits the caller names. A client
 //! entry reads `positions` at the pieces the caller names and hands the answer to the pure `orbit_progress` or
 //! `orbit_residuals`, so the row supplies membership only and the positions are a parameter (chapter 03). The
 //! references are the kernel's own: `positions` at the solved state for the orbit table, its progress rows,

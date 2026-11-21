@@ -22,7 +22,7 @@ use common::WIDE;
 
 /// The source parses with no diagnostic, is in the formatter's canonical layout with LF line endings, and lowers to one
 /// module, `orbits`, that requests no capability and exports the three entries. The checker reports no diagnostic.
-/// `orbit_catalogue` has the effect `snapshot` and reads the draft `orbits` row and no other, so under capability
+/// `orbit_catalogue` has the effect `snapshot` and reads the `orbits` row and no other, so under capability
 /// separation it reads state and prepares no preview; `orbit_progress` and `orbit_residuals` are pure: no effect,
 /// capability, state read or row. The two catalogue rows split the exports between them, their Effect field is the
 /// checker's effects of their functions, and their digest is the source's; each is a second part of a row whose other

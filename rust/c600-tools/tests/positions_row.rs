@@ -231,7 +231,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
 }
 
-/// The row's draft tariff covers its answer: [`MAX_PIECE_STICKERS`] is the kernel's largest piece, and the answer for
+/// The row's tariff covers its answer: [`MAX_PIECE_STICKERS`] is the kernel's largest piece, and the answer for
 /// every piece, asked of the bridge directly, fits the result bound of its tariff. The tariff depends only on the
 /// number of named pieces.
 #[test]
