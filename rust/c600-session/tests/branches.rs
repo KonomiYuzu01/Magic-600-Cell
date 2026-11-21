@@ -110,6 +110,9 @@ fn no_runtime_request_changes_a_line() {
     assert_eq!(disk.writes(), writes, "no runtime request wrote anything");
 }
 
+/// CT-PS1-14 (part: a checkpoint's state is read from its stored object after a reopen, and a damaged object is
+/// replayed along the checkpoint's own path to the same labels and digest; not run: a checkpoint of the jumbled puzzle
+/// through the store, and a certificate whose ν the ν row computes).
 /// A snapshot stays as it was opened while the session moves on. A checkpoint's snapshot is read from its stored
 /// state object, after a reopen too; a damaged object is not used, and the state is replayed along the checkpoint's
 /// path (PS1.29). Only revisions this session reached open; one stored in an earlier engine epoch opens again under

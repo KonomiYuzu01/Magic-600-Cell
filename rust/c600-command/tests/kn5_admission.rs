@@ -382,8 +382,9 @@ fn a_records_word_is_admitted_or_refused_by_every_block_in_its_parts() {
 }
 
 /// CT-KN5-13 (part: restored workspace provenance, L1 (e)) and CT-BND-27 (part: a reopen restores each record's block,
-/// and the restored word is refused at admission as before; not run: a part's block, which the journal does not keep
-/// (the durable home for part blocks is LP2's next step), and a restore from a file), with KN5.26 and BND.85. A reopen
+/// and the restored word is refused at admission as before; not run: a part's block, which `part_blocks.rs` runs on
+/// the journal, and a restore from a file, which `c600-durable`'s persisted-word test runs), with KN5.26 and BND.85.
+/// A reopen
 /// restores the records without an adapter, and every record draft is refused with `not_granted` until the host
 /// installs one. With an adapter that keeps the same blocks, each refusal and each admission is as before the reopen.
 /// With an adapter that keeps none, as a host has after a restart today, every refusal stands, a word with parts now
@@ -570,4 +571,80 @@ fn a_draft_carries_no_block_of_the_callers() {
     let receipt = f.layer.invoke(&run, invocation);
     assert!(matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);
     assert_eq!(f.layer.run_jobs(), 1);
+}
+
+/// `block` with `key` removed, or set to `value`.
+fn damaged(block: &[u8], key: &str, value: Option<Json>) -> Vec<u8> {
+    let Json::Object(mut fields) = provenance::read(block).expect("a good block") else { panic!("an object") };
+    match value {
+        Some(value) => fields.insert(key.into(), value),
+        None => fields.remove(key),
+    };
+    canonical(&Json::Object(fields))
+}
+
+/// CT-BND-02 (part: through the layer, a block that misses or garbles any of FP.17's nine fields, for a hand-entered,
+/// an imported and a built-in block, is refused as a record's own block at the write and, kept as a word's part,
+/// reads `unknown` and refuses the word at `operation.preview` with `PS1:capability.provenance_incompatible`, the
+/// presented preview, the generation and the records as they were; not run: the session's tables), with BND.21: a
+/// missing or unreadable field never reads as `own` or `manual`.
+#[test]
+fn a_record_whose_block_misses_or_garbles_a_field_reads_unknown() {
+    let mut f = fixture(&[]);
+    let kept = f.preview(draft_args(&word(&[5])));
+    f.frames.present(&mut f.shell, &mut f.layer, kept).unwrap();
+    let blocks = [
+        ("hand-entered", manual(&[])),
+        ("imported", imported_macro()),
+        ("built-in", program(Author::BuiltIn, Profile::Solving, &[])),
+    ];
+    for (what, good) in &blocks {
+        assert_eq!(f.adapter.admit(good), Ok(()), "{what} passes whole");
+        let Json::Object(fields) = provenance::read(good).unwrap() else { panic!("an object") };
+        assert_eq!(fields.len(), 9, "{what}");
+        for key in fields.keys() {
+            for bytes in [damaged(good, key, None), damaged(good, key, Some(Json::Int(7)))] {
+                let before = f.fixed();
+                // As a record's own block: the write is refused.
+                let args = json::object([("payload", letters(&[1, 2])), ("provenance", block_text(&bytes))]);
+                let args = with_record(args, "bad");
+                let receipt = f.shell.invoke(&mut f.layer, RECORD_ROW, args).unwrap();
+                let Status::Refused(error) = &receipt.status else { panic!("{what}: {key}: {:?}", receipt.status) };
+                assert_eq!(error.code, code::PROVENANCE_INCOMPATIBLE, "{what}: {key}");
+                assert!(f.layer.record("bad").is_none(), "{what}: {key}");
+                assert_eq!(f.fixed(), before, "{what}: {key}");
+                // As a part the host keeps: the word that cites it is refused.
+                let part = f.adapter.keep(&bytes);
+                f.write("cites", &[1, 2], &manual(&[part]));
+                f.refused("cites", code::PROVENANCE_INCOMPATIBLE, &format!("{what}: {key} damaged, as a part"));
+            }
+        }
+    }
+    assert_eq!(f.layer.preview_state(kept), Some(PreviewState::Presented));
+}
+
+fn with_record(args: Value, name: &str) -> Value {
+    let Value::Object(mut fields) = args else { panic!("arguments are an object") };
+    fields.insert("record".into(), text(name));
+    Value::Object(fields)
+}
+
+/// CT-BND-29 (part: retyping a solver tool's saved word through the command layer; the producers run in the tests
+/// above): the record of an own tool's word is refused at `operation.preview`, while the same letters typed inline are
+/// admitted as a new hand-entered word, with no record behind them and no change to the tool's record, so no tool
+/// origin is inferred for them (BND.13, BND.23, BND.84).
+#[test]
+fn a_retyped_tool_word_is_a_new_hand_entered_word() {
+    let mut f = fixture(&[]);
+    f.write("tool", &[1, 2], &program(Author::Own, Profile::Solving, &[]));
+    f.refused("tool", code::NOT_GRANTED, "the tool's saved word");
+    let records = format!("{:?}", f.layer.records());
+    let tool_record = f.layer.record("tool").cloned();
+    let id = f.preview(draft_args(&word(&[1, 2])));
+    let preview = f.layer.preview().unwrap();
+    assert_eq!(preview.id, id);
+    assert!(preview.resolved.is_none(), "an inline word reads no record, so none of the tool's");
+    assert_eq!(format!("{:?}", f.layer.records()), records);
+    assert_eq!(f.layer.record("tool").cloned(), tool_record);
+    f.refused("tool", code::NOT_GRANTED, "the tool's saved word, after the retyped one was admitted");
 }

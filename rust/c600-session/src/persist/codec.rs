@@ -250,6 +250,10 @@ pub fn read_blob(reference: &Json, stored: &[u8]) -> Result<Vec<u8>, Refusal> {
 mod tests {
     use super::*;
 
+    /// CT-PS1-06 (part: the product's FP.7 writer and its strict one-member reader round-trip 0 to 250,001 bytes across
+    /// the 65,535-byte block boundaries with FP.7's overhead and refuse a second member; not run: the product writer's
+    /// bytes against the three frozen vectors (header and stored digest), and a tampered stored or decoded digest in
+    /// `read_blob`).
     #[test]
     fn gzip_round_trips_across_block_boundaries() {
         for size in [0usize, 1, 65_535, 65_536, 250_000, 250_001] {

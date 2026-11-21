@@ -513,8 +513,12 @@ fn a_workspace_completion_keeps_its_receipt_across_a_restart_and_a_reopen() {
 /// nothing changes: another preview ID answers `preview_replaced`; another session, epoch, command, row, argument
 /// digest, literal digest or identity-block field `token_mismatch` (draft ruling 5 for the session and the epoch); a
 /// changed PreviewDeps field `revision_changed`; a frame stamp outside the preview's presentation `no_fresh_preview`
-/// (ONE.41); the unchanged binding commits; not run: the shell's display), CT-ONE-03 (part: the same matrix; not run:
-/// a live twist and a crossing commit, whose rows the headless layer does not build), KN5.14, KN5.16, L9.
+/// (ONE.41); the unchanged binding commits; not run: the shell's display), CT-ONE-03 (part: the same matrix for a word
+/// commit; the live twist and the crossing run in `twist_apply.rs`, `jumble_twist_menu.rs`, `jumble_on.rs` and
+/// `jumble_off.rs`), CT-ERR-09 (part: the replaced preview and the bound content fields), CT-LG3-05 (part: at
+/// `operation.execute` a changed epoch, identity, mode, state, protection or draft field of the preview's dependencies
+/// refuses `revision_changed`; not run: a program's proposal refused at `operation.preview` on a moved head, in the
+/// other mode or under another model), KN5.14, KN5.16, L9.
 #[test]
 fn every_bound_field_of_a_token_is_checked() {
     let mut f = fixture(&[]);

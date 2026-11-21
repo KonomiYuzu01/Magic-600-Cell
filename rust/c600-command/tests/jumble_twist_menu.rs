@@ -579,6 +579,8 @@ fn input_cases(now: &Value) -> Vec<(&'static str, Value, &'static str)> {
     ]
 }
 
+/// CT-LG2-16 (part: a menu drag that the kernel call refuses (a dragged menu index, or a drag onto a jumble item with
+/// Jumble off) is refused and changes nothing; not run: the language half).
 /// KN3.7, KN3.8, JI.35, CT-JI-06 (part: the live menu route resolves exact items under the pin, and another order is
 /// refused; not run: the draft route, alternate keymaps and Q7, which are LP3's) and H-08's argument form (draft:
 /// `letter` is KN3.7's binding without the cap the row names, the form of `twist.apply`'s `rotation`; every input

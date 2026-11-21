@@ -61,11 +61,12 @@ fn block_of(store: &Store, digest: &[u8; 32]) -> Json {
     provenance::read(&store.blocks[digest]).expect("a kept block reads")
 }
 
-/// CT-LG3-02 (part: the run-time guard; the static half is `c600-check`'s and `c600-syntax`'s `ct_lg3_02_*`; not run:
-/// overlay rows, which wait for the command layer, LP3): a running program can ask its host only for a state read, a
-/// granted input or a preview, and deliver only to a view, the workspace, a file or an exact sink. Both lists are
-/// matched without a wildcard, so a commit request added to the interpreter fails to compile here. A program reads
-/// its receipt's fields and nothing else, none of them a token, and a preview in any profile commits nothing.
+/// CT-LG3-02 (part: the run-time guard; the static half is `c600-check`'s and `c600-syntax`'s `ct_lg3_02_*`; the
+/// overlay rows are in `c600-command`'s `tests/layer.rs` and `tests/served_rows.rs`): a running program can ask its
+/// host only for a state read, a granted input or a preview, and deliver only to a view, the workspace, a file or an
+/// exact sink. Both lists are matched without a wildcard, so a commit request added to the interpreter fails to compile
+/// here. A program reads its receipt's fields and nothing else, none of them a token, and a preview in any profile
+/// commits nothing.
 #[test]
 fn ct_lg3_02_no_request_commits_or_obtains_a_token() {
     fn request(r: &Request) -> &'static str {
@@ -123,8 +124,10 @@ fn ct_lg3_04_an_ungranted_request_fails_at_run_time() {
     }
 }
 
-/// CT-LG3-05 (part: the engine's rechecks behind the runtime boundary; not run: the command layer's own rechecks at
-/// `operation.preview` and `operation.execute`, which wait for LP3): a program the checker admitted is still refused
+/// CT-LG3-05 (part: the engine's rechecks behind the runtime boundary, and the command layer's at `operation.execute`
+/// in `c600-command/tests/kn5.rs` and `layer.rs`; not run: a checker-admitted program's proposal refused by the layer's
+/// `operation.preview` on a moved head, in the other mode or under another model): a program the checker admitted is
+/// still refused
 /// at run time when the revision is stale, the mode is wrong either way, the model differs, an overlay row is
 /// unavailable or a piece would move. A refused preview reaches the shell with the engine's code while the program
 /// sees the fixed acknowledgement; a refused snapshot read stops the run with the engine's code.
@@ -177,9 +180,11 @@ fn ct_lg3_06_static_only_and_run_time_variants_are_checked_separately() {
     assert_eq!(engine.previews, [vec![1, -2]], "only the hand-entered word reached the engine");
 }
 
-/// CT-LG3-09 (part: R-12 for refused proposals, and saving through the runtime's store; not run: a failed write and
-/// rejected input at the session store and the session's assistance provenance record, which wait for M6's
-/// transactional store): a refused proposal changes no stored payload or block; a fork's output and a research result
+/// CT-LG3-09 (part: R-12 for refused proposals, and saving through the runtime's store; the command layer's rejected
+/// record write is in `c600-command`'s `profile.rs`, and a failed disk write of a record that carries a block is in
+/// `c600-session`'s `record_objects.rs`; not run: the session's assistance provenance record, which no crate keeps): a
+/// refused
+/// proposal changes no stored payload or block; a fork's output and a research result
 /// keep their blocks when saved and saved again, so a solving preview of either is refused; an imported word keeps its
 /// import block (BND.23) among the parts when saved, and a solver's tool that saves it makes it that tool's output.
 #[test]
@@ -261,7 +266,8 @@ fn ct_lb7_01_views_write_nothing_and_saved_research_output_previews_nothing() {
     }
 }
 
-/// CT-LB7-02 (part: grants, profiles, storage and forks; not run: bindings, which wait for the command layer, LP3):
+/// CT-LB7-02 (part: grants, profiles, storage and forks; that a key binding adds no token or capability to a tool
+/// row's job runs in `c600-input/tests/routing.rs`):
 /// the same module is admitted or refused by the run's grant and profile only, since admission takes no author and no
 /// place of storage; a copy of the module kept in the workspace and read back is the same program with the same
 /// admissions. At the boundary a fork's or an own tool's preview is refused where a built-in's passes, and each gets

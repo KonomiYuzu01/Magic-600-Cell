@@ -56,6 +56,9 @@ fn repeated_runs_of_one_key_stop_at_the_same_step() {
     assert_eq!(fingerprint(&after), fingerprint(&first), "after a reopen");
 }
 
+/// CT-DET-08 (part: the session's derived-query cache: each of five budget cases run cold, warm and after an eviction
+/// keeps its outcome, stop, every charge and its value, so a cache hit is charged as a miss; not run: a value store
+/// and the eviction of its values, which no crate builds yet).
 /// CT-KN7-02 (whole) and PHS.19's budget row: each declared-budget case, run cold, warm from the derived-query cache
 /// and again after an eviction, stops at the same step with the same coverage and charges. A cache hit is charged as a
 /// miss (KN7.8).
@@ -198,9 +201,14 @@ fn lane_full(receipts: &[Receipt]) -> usize {
     receipts.iter().filter(|r| matches!(&r.status, Status::Refused(e) if e.code == code::LANE_FULL)).count()
 }
 
+/// CT-DET-12 (part: one-job admission is atomic: eight concurrent submissions to a one-job lane admit one and refuse
+/// seven, a held key starts nothing more, and the program lane never passes its capacity; not run: other jobs'
+/// scheduling varied around a fixed run's payload and coverage, and child completion order).
 /// CT-KN7-05 (whole), R-16: concurrent invocations and a held key cannot pass a one-job limit, and the program lane
 /// admits no more than its declared capacity. A held key's repeats either carry the first command ID and get its
 /// receipt, or carry new ones and find the lane full.
+/// CT-LI-03 (part: the session's exclusive and program lanes under concurrent submission; not run: all six lanes at
+/// once in the command layer).
 #[test]
 fn concurrent_submissions_cannot_pass_a_lane_limit() {
     let (session, _disk) = session();
@@ -247,7 +255,7 @@ fn concurrent_submissions_cannot_pass_a_lane_limit() {
 /// CT-KN7-07 (whole), KN7.5, KN7.3: after a commit, a digest-pinned job finishes on its original input. Its result
 /// applies to a revision with that input's digest, an undo back to it included, and never to another revision without a
 /// re-run. CT-ONE-24 (part: the pinned job finishes after a commit and its result is refused against the newer
-/// revision; not run: a view that shows the result, which is LP3's).
+/// revision; not run: a view that shows the result, which `c600-view` can hold but no test joins to this job).
 #[test]
 fn a_pinned_job_finishes_on_its_input_and_binds_its_result_to_it() {
     let (session, _disk) = session();
@@ -287,9 +295,10 @@ fn a_pinned_job_finishes_on_its_input_and_binds_its_result_to_it() {
     assert_eq!(finished(&session, &endless).status, Status::Cancelled(CancelReason::ByUser));
 }
 
-/// CT-KN4-01 (part: a program job in the engine's process; not run: a runtime in its own process, LP3's
-/// `c600-runtime`): a program job has no row that opens a session file. A file read or write, a workspace write and a
-/// proposal are each refused by the job's host, and the store is not touched.
+/// CT-KN4-01 (part: a program job in the engine's process; not run: an operating-system check that the runtime's
+/// child opens no session file; its source scan is in `c600-runtime`): a program job has no row that opens a
+/// session file. A file read or write, a workspace write and a proposal are each refused by the job's host, and the
+/// store is not touched.
 #[test]
 fn a_program_job_opens_no_session_file() {
     let (session, disk) = session();
@@ -354,9 +363,10 @@ fn rust_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
     }
 }
 
-/// CT-KN4-01 (part: `c600-run`'s source; not run: a runtime in its own process, LP3's `c600-runtime`): `c600-run` makes
-/// no file-system call of its own. No path of its source reaches the standard library's file system, paths,
-/// environment, I/O, operating system, network or processes.
+/// CT-KN4-01 (part: `c600-run`'s source; not run: an operating-system check of the runtime's child, whose source scan
+/// is in `c600-runtime`'s `ct_kn4_01`): `c600-run` makes no file-system
+/// call of its own. No path of its source reaches the standard library's file system, paths, environment, I/O,
+/// operating system, network or processes.
 #[test]
 fn the_interpreter_makes_no_file_system_call_of_its_own() {
     let sample = std_modules("use std::{fs, io::{self, Write}};\nlet x = std::path::Path::new(\"a\"); // std::net\n");

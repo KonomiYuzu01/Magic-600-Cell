@@ -609,6 +609,9 @@ fn check_one(c: &Case, pins: &[(Json, Edition)], functions: &Functions, unknown:
     assert_eq!(facts::derive(&stored, unknown, functions), vec![("R".to_string(), Derived::NoVerdict)], "{c:?}");
 }
 
+/// CT-PS1-27 (part: permitted facts with their source and check dependencies round-trip through the FP.19 and FP.20
+/// envelope and derive the same word before and after; not run: a forbidden basis, check or formal proof written
+/// through storage, which `admit` does not check, and the envelope writer's call of the `record` sink).
 /// CT-PS1-21 (source, whole: the leaf facts crossed exhaustively, six bases, seven checks, six job outcomes, three
 /// search records and coverage, and four graph shapes with both identities and both statuses, each stored, written,
 /// read and admitted, then judged under two recorded function editions and one unavailable edition, and compared

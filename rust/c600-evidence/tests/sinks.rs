@@ -446,8 +446,9 @@ fn fn_parameters(text: &str) -> Vec<String> {
     out
 }
 
-/// CT-EVD-21 (part: the evidence library's half; not run: the policy rows, capabilities and commit paths of the host
-/// and the runtime, chapter 07 and the command layer, which LP3 builds): EVD.56 and EVD.57. No function of this crate
+/// CT-EVD-21 (part: the evidence library's half; not run: the command layer's and the session store's commit paths,
+/// which no test drives with different words and claims; the policy, grants and admission run in
+/// `c600-run/tests/tables.rs`): EVD.56 and EVD.57. No function of this crate
 /// takes a word or a claim, neither converts to a boolean, no function grants, permits, commits or issues a token, and
 /// the `record` sink decides a write the same way whatever the target's word.
 #[test]
@@ -707,8 +708,9 @@ fn ct_lb6_02_fork_inherits_no_evidence() {
 
 // --- CT-PS1-27 ------------------------------------------------------------------------------------------------
 
-/// CT-PS1-27 (part: the `record` sink that the envelope writer resolves to; not run: the catalogue's envelope writer
-/// and its storage round trip, PS1.12 and PS1.36 with the FP.19 and FP.20 encoding in the M6 session store): a program
+/// CT-PS1-27 (part: the `record` sink that the envelope writer resolves to; the storage round trip of permitted facts
+/// is `c600-session`'s `tests/persist_ps1.rs`; not run: the envelope writer's own call of the sink, so a forbidden
+/// basis, check or formal proof written through storage keeps EVD.65's code, which the store does not check): a program
 /// or an imported record cannot assert a forbidden basis or check or formal proof through the sink, a violation keeps
 /// EVD.65's code and adds nothing, and a permitted fact keeps its source and check dependencies.
 #[test]

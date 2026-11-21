@@ -161,7 +161,79 @@ fn the_stored_table_reads() {
     assert_eq!(table.rows().filter(|row| row.kind == Kind::Commit).count(), 14);
 }
 
-/// CT-KN5-07.
+/// CT-ONE-01 (part: the command layer's H-08 rows, with the overlay rows that
+/// `overlay_rows_are_never_commit_or_app_rows` shows are never `commit` or `app`; the runtime's half is in
+/// `c600-run/tests/tables.rs` and the session's in `c600-session/tests/conformance_rows.rs`): no row takes a state or a
+/// digest to adopt. A `commit` or `app` row names only references, hints, tokens and plain data, and the rows that take
+/// a state (`StateRef`) or a digest are queries or the one workspace row `grip.rebind`, whose digest guards a grip map.
+/// CT-ONE-09 (part: no row takes a pose table or a raw table, and only `file.*` rows take a file; not run: the positive
+/// half, that a raw table enters through KN2.14's import, which `c600-jumble/tests/levels.rs` runs).
+/// CT-ONE-28 (part: no row of kind `commit` or `app`, and no workspace row but `grip.rebind`, takes a derived or an
+/// imported value, so none proposes or adopts one; not run: display and the import itself).
+#[test]
+fn no_row_takes_a_state_or_a_digest_to_adopt() {
+    let table = Table::h08();
+    let carrying = |t: &str| matches!(t, "StateRef" | "Digest" | "TransportedSlotMap");
+    // What a `commit` or `app` row may name. Each is a reference to a recorded object, a hint, a token or plain data; a
+    // new type here needs a decision, as the count of rows below does.
+    let allowed = [
+        "ActionHint",
+        "CanonicalObjectRef",
+        "CapId",
+        "CheckedFileRef",
+        "CheckpointRef",
+        "ExactRotationRef",
+        "FixtureRef",
+        "JobId",
+        "JournalHeadRef",
+        "PinnedMenuLetter",
+        "PracticeSessionRef",
+        "PreviewId",
+        "RevisionRef",
+        "SessionRef",
+        "Text",
+        "UserActionToken",
+        "typed|canonical",
+    ];
+    let (mut state_rows, mut digest_rows, mut changing) = (Vec::new(), Vec::new(), 0);
+    for row in table.rows() {
+        for (name, t) in &row.arguments {
+            let t = t.as_str();
+            assert!(!t.to_ascii_lowercase().contains("table"), "{}: `{name}` takes a {t}", row.id);
+            if matches!(row.kind, Kind::Commit | Kind::App) {
+                assert!(allowed.contains(&t), "{}: `{name}` takes a {t}, which a commit or app row may not", row.id);
+                assert!(!carrying(t), "{}: `{name}`", row.id);
+            }
+            if carrying(t) {
+                assert!(
+                    row.kind == Kind::Query || row.id == "grip.rebind",
+                    "{}: kind {:?}: `{name}` takes a {t}",
+                    row.id,
+                    row.kind
+                );
+            }
+            // A file argument belongs to a row of the `file.*` family.
+            if matches!(t, "FileRef" | "CheckedFileRef" | "FileDigestRef") {
+                assert!(row.id.starts_with("file."), "{}: `{name}` takes a {t}", row.id);
+            }
+            match t {
+                "StateRef" => state_rows.push(row.id.as_str()),
+                "Digest" => digest_rows.push(row.id.as_str()),
+                _ => {}
+            }
+        }
+        changing += usize::from(matches!(row.kind, Kind::Commit | Kind::App));
+    }
+    // Pinned: a new row that takes a state or a digest changes these counts and needs a decision.
+    assert_eq!(state_rows.len(), 11, "{state_rows:?}");
+    assert_eq!(digest_rows, ["grip.rebind", "jumble.correction.lookup", "jumble.corrections.check"]);
+    assert_eq!(changing, 19);
+}
+
+/// CT-KN5-07 (whole): registering an overlay row of kind `commit` or `app` is refused, as is an overlay row that takes
+/// a token or takes an existing row's name; a query row lands on the program lane and a view row on the view lane.
+/// CT-LG3-02 (part: no overlay row can be a commit or app row or take a token; the program's effects and helpers are
+/// in `c600-check`, `c600-syntax` and `c600-run`).
 #[test]
 fn overlay_rows_are_never_commit_or_app_rows() {
     let mut table = Table::h08();
@@ -213,7 +285,9 @@ fn a_word_commits_undoes_and_redoes() {
     assert_eq!(f.layer.store().log.len(), 3);
 }
 
-/// CT-ONE-03.
+/// CT-ONE-03 (part: a word commit with no presented preview is refused with `KN5:stale.no_fresh_preview`, also with a
+/// token that names a ready but never presented preview; the live twist and the crossing run in `twist_apply.rs`,
+/// `jumble_twist_menu.rs`, `jumble_on.rs` and `jumble_off.rs`).
 #[test]
 fn a_commit_needs_its_token_and_a_presented_preview() {
     let mut f = fixture(&[]);
@@ -331,7 +405,9 @@ fn a_token_from_before_a_commit_and_its_undo_is_refused() {
     assert!(matches!(f.execute().status, Status::Committed(_)));
 }
 
-/// CT-KN5-03 (R-18).
+/// CT-KN5-03 (whole, R-18, with the token half in `c600-session/tests/conformance_rows.rs` and the input router's
+/// legs in `c600-input/tests/repeat.rs`): the shell's held-key guard admits a held commit chord once; five repeat
+/// presses reach nothing, the journal holds one transaction, and the next fresh press finds no fresh preview.
 #[test]
 fn a_held_commit_chord_commits_once() {
     let mut f = fixture(&[]);
@@ -383,7 +459,10 @@ fn a_draft_changed_after_the_press_changes_nothing_committed() {
     assert_eq!(f.layer.store().log[0].literal, literal);
 }
 
-/// CT-KN5-09, CT-KN7-04 and CT-LI-04's job half.
+/// CT-KN5-09 and CT-KN7-04: undo goes ahead while a program job runs.
+/// CT-LI-04 (part: an undo during a query commits, fences the query as `replaced_revision` and keeps the file job,
+/// which then completes; the obsolete hint is refused in the next test and the release of a protection through the
+/// usual gate in `attack_protection.rs`).
 #[test]
 fn undo_goes_ahead_while_a_program_job_runs() {
     let mut f = fixture(&[]);
@@ -411,6 +490,7 @@ fn undo_goes_ahead_while_a_program_job_runs() {
 }
 
 /// CT-KN5-11 and CT-LI-09's stale hint.
+/// CT-LI-04 (part: an undo naming a superseded action's hint is refused, and nothing changes).
 #[test]
 fn an_undo_naming_a_superseded_action_is_refused() {
     let mut f = fixture(&[]);
@@ -425,7 +505,13 @@ fn an_undo_naming_a_superseded_action_is_refused() {
     assert_eq!(f.fixed(), before);
 }
 
-/// CT-KN5-12.
+/// CT-KN5-12 (part: with the state revision at 0 throughout, a preview's creation, build, presentation and
+/// cancellation and the commit lane's hold and release each advance the generation, and `operation.execute` is
+/// `no_fresh_preview` while building and ready, live when presented, `commit_in_flight` while the lane is held and
+/// `no_fresh_preview` after the cancel; a second preview is `lane_full` while one builds; a program job's terminal
+/// and a lost presentation advance it in the tests below, and a stale preview's availability is
+/// `revision_changed` in `kn5_stages.rs` and `kn5_admission.rs`, and the ended states' in
+/// `availability_follows_the_ended_states_of_a_preview`; no keystroke commits, so the revision stays at 0).
 #[test]
 fn availability_follows_the_preview_lifecycle() {
     let mut f = fixture(&[]);
@@ -542,7 +628,7 @@ fn a_running_view_overlay_leaves_the_program_lane_free() {
     assert!(f.layer.availability("tool.full.inspect").is_ok());
 }
 
-/// CT-KN5-12: availability agrees with `operation.preview.cancel` while a preview is still building.
+/// CT-KN5-12 (part: availability agrees with `operation.preview.cancel` while a preview is still building).
 #[test]
 fn cancel_is_available_while_a_preview_builds() {
     let mut f = fixture(&[]);
@@ -562,7 +648,10 @@ fn cancel_is_available_while_a_preview_builds() {
     assert_eq!(f.layer.run_jobs(), 0);
 }
 
-/// CT-ONE-11.
+/// CT-ONE-11. CT-ERR-09 (part: a forged authenticator, a spent token, a moved protection revision and a replaced head
+/// hash each answer their own code and leave the state, the journal and the preview as they were; the replaced preview
+/// and the bound fields are in `kn5.rs`'s `every_bound_field_of_a_token_is_checked`; the codes' forms and retries are
+/// in `tests/test_error_registry.py`).
 #[test]
 fn a_commit_refused_at_each_step_changes_nothing() {
     let (clear, moves) = o06();
@@ -623,7 +712,51 @@ fn a_commit_refused_at_each_step_changes_nothing() {
     assert!(matches!(f.execute().status, Status::Committed(_)));
 }
 
-/// CT-LI-10.
+/// CT-KN5-12 (part: the ended states of chapter 08's lifecycle table, with the commit row unavailable as
+/// `no_fresh_preview` in each: a replaced preview, whose replacement advances the generation; a committed one; a
+/// presented preview that an undo discards when it moves the state revision, which advances the generation; and a
+/// refused prefix, which builds no preview and changes no revision).
+#[test]
+fn availability_follows_the_ended_states_of_a_preview() {
+    let mut f = fixture(&[]);
+    let execute = |f: &Fixture| f.layer.availability("operation.execute").map_err(|error| error.code);
+    let a = f.preview(&word(&[1]));
+    f.present(a);
+    assert_eq!(execute(&f), Ok(()));
+    let before = f.layer.generation();
+    let b = f.preview(&word(&[2]));
+    assert!(f.layer.generation() > before);
+    assert_eq!(f.layer.preview_state(a), Some(PreviewState::Replaced));
+    assert_eq!(execute(&f), Err(code::NO_FRESH_PREVIEW));
+
+    f.present(b);
+    assert!(matches!(f.execute().status, Status::Committed(_)));
+    assert_eq!(f.layer.preview_state(b), Some(PreviewState::Committed));
+    assert_eq!(execute(&f), Err(code::NO_FRESH_PREVIEW));
+
+    let c = f.preview(&word(&[3]));
+    f.present(c);
+    assert_eq!(execute(&f), Ok(()));
+    let before = f.layer.generation();
+    assert!(matches!(f.undo(Direction::Undo).status, Status::Committed(_)));
+    assert!(f.layer.generation() > before);
+    assert_eq!(f.layer.preview_state(c), Some(PreviewState::Discarded));
+    assert_eq!(execute(&f), Err(code::NO_FRESH_PREVIEW));
+
+    let revision = f.layer.revision().state;
+    for step in case("O07").get("steps").and_then(Value::as_array).unwrap() {
+        let receipt =
+            f.shell.invoke(&mut f.layer, "operation.preview", draft_args(step.get("recipe").unwrap())).unwrap();
+        assert!(code_of(&receipt).starts_with("KN2:"), "{:?}", receipt.status);
+        assert!(f.layer.preview().is_none());
+        assert_eq!(execute(&f), Err(code::NO_FRESH_PREVIEW));
+    }
+    assert_eq!(f.layer.revision().state, revision);
+}
+
+/// CT-LI-10 (whole): a complete word that would move a protected orbit builds its preview as
+/// `completed(preview_ready)`, and once presented its commit is unavailable with `orbit_would_move`; each
+/// mechanically refused recipe of O07 is refused with a KN2 code and builds no preview.
 #[test]
 fn a_protection_conflict_builds_a_preview_and_refuses_its_commit() {
     let (_, moves) = o06();
@@ -644,6 +777,8 @@ fn a_protection_conflict_builds_a_preview_and_refuses_its_commit() {
     assert_eq!(f.layer.preview().unwrap().id, id);
 }
 
+/// CT-LG3-02 (part: a run reaches no commit or app row, and a run's envelope that carries a token is refused, so it
+/// obtains no token; every row in every profile is in `profile.rs`).
 /// ADR-L02, KN5.15, CT-ONE-20. The run is inside a command the solver invoked (finding B2).
 #[test]
 fn the_runtime_reaches_at_most_a_preview() {
@@ -690,7 +825,10 @@ fn the_runtime_reaches_at_most_a_preview() {
     assert!(matches!(f.execute().status, Status::Committed(_)));
 }
 
-/// CT-ONE-21.
+/// CT-ONE-21 (part: a restart ends previews, keeps the durable receipts, answers `unknown_outcome` for the transient
+/// ones and revives no permission: the old epoch's token and envelope are refused; not run: the drafts, which
+/// `c600-session/tests/conformance_recovery.rs` runs on the session store, and the value-store handles and derived
+/// values of ONE.70, which no crate holds).
 #[test]
 fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     let mut f = fixture(&[]);
@@ -736,7 +874,13 @@ fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     assert!(matches!(f.undo(Direction::Undo).status, Status::Committed(_)));
 }
 
-/// CT-ONE-22, and the unknown fate settled at the restart.
+/// CT-ONE-22 (part: after an unknown commit fate the layer refuses `operation.preview` and `session.undo`'s
+/// availability with `KN5:unknown_outcome.read_only_recovery`, answers a read job, and settles the fate at the restart;
+/// not run: a program's proposal, and a real disk's read errors).
+/// CT-ERR-10 (part: an unknown commit fate enters read-only recovery, a new forbidden request answers
+/// `KN5:unknown_outcome.read_only_recovery`, reads work, and a retry of the press finds the settled outcome with no
+/// retry inferred from the missing receipt; not run: an unknown import publication fate, whose producer is the
+/// importer, a later phase).
 #[test]
 fn an_unknown_commit_fate_enters_read_only_recovery() {
     for written in [false, true] {

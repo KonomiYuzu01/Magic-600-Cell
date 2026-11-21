@@ -166,6 +166,10 @@ fn a_child_absorbs_its_own_error() {
     assert_eq!((stop.phase, stop.scope.as_str(), child.live_after_return), ("effect", "m.f:root", 0));
 }
 
+/// CT-DET-11 (part: a `child` in an RT1 program cannot mint allowance: each requested cap is cut to what the root has
+/// left, and nested children are cut to every ancestor's remainder (`an_outer_cap_stops_the_outer_child` below); not
+/// run: checks nested in a program, which wait for LP5's checkers, and child jobs, which the session's scheduler does
+/// not have).
 /// Each requested cap is cut to what the root has left after the `child` step; an omitted cap is that remainder, both
 /// requested and effective, so it creates no allowance.
 #[test]

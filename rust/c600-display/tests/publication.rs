@@ -193,6 +193,8 @@ fn ct_rm_03_budget_exhaustion_cancels_with_budget_and_installs_nothing() {
     one_terminal_each(&host);
 }
 
+/// CT-LI-13 (part: renderer loss by occurrence, a refusal before acceptance, a failed running job after it and the
+/// installed receipt kept after installation; not run: the instance ceiling, which `c600-view`'s view rows run).
 #[test]
 fn ct_rm_03_renderer_loss_before_acceptance_is_a_refusal() {
     let base = revision(12);

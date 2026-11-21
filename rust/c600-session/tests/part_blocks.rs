@@ -114,7 +114,8 @@ fn preview(layer: &mut CommandLayer<JournalStore>, shell: &mut Shell, name: &str
 /// CT-BND-27 (part: restoring a workspace after a power loss preserves a word's FP.17 block and its recursive parts,
 /// and the boundary's preview admission refuses the restored word, whose part is a solver tool's output, with
 /// `LG3:capability.not_granted` and installs no preview, while a restored built-in word whose part is a manual word is
-/// admitted; not run: LP3's own reader and a file-system disk) (BND.21, BND.24, BND.84, BND.85); CT-KN5-13 (part:
+/// admitted; not run here: C5's reader and a file-system disk, which `c600-tools/tests/workspace.rs` and
+/// `c600-durable/tests/ct_rte_08_persisted_word.rs` run) (BND.21, BND.24, BND.84, BND.85); CT-KN5-13 (part:
 /// restored workspace provenance); KN5.23, KN5.26.
 #[test]
 fn ct_bnd_27_a_restored_word_keeps_its_recursive_parts_on_the_journal() {

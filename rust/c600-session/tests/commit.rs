@@ -75,6 +75,9 @@ fn trace() -> (Session, MemDisk, u64, String) {
 /// identical retry of C returns its receipt before any token check; a new invocation with C's token fails step 3; D
 /// fails step 5. In separate runs, an edit of the record p read, or of the protection, makes D fail step 6. Every
 /// refusal leaves the state unchanged.
+/// CT-LI-01 (part: the session's preview freshness and its commit gates agree for an unread-record edit, a
+/// read-draft edit, a protection change and an undo to equal labels; not run: the command layer's availability rows
+/// on the same edits).
 #[test]
 fn li_33_gate_order() {
     let (session, disk, p, start) = trace();
@@ -268,9 +271,10 @@ fn undo_and_redo_cover_moves_records_and_protection() {
     assert_eq!(durable(&reopened), durable(&session));
 }
 
-/// CT-ONE-03 (part: a commit row without a token, or with a forged, foreign, misdirected or changed one; not run: a
-/// live twist, which waits for A6's exact rotation requests, and a crossing commit, which waits for M5's jumbled
-/// puzzle), KN5.14, KN5.15: a commit row needs a genuine token of this session, minted for this invocation, used once.
+/// CT-ONE-03 (part: a commit row without a token, or with a forged, foreign, misdirected or changed one; not run here:
+/// a live twist and a crossing commit, whose rows run on the command layer in `c600-command/tests/twist_apply.rs`
+/// and `jumble_on.rs`), KN5.14, KN5.15: a commit row needs a genuine token of this session, minted for this
+/// invocation, used once.
 #[test]
 fn commit_rows_need_a_genuine_unused_token() {
     let (session, disk) = session();

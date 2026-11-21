@@ -312,3 +312,52 @@ fn a_value_already_stored_is_cited_again_and_written_once() {
     assert!(g.layer.recovery().is_none(), "{:?}", g.layer.recovery());
     assert_eq!(g.layer.records(), &kept);
 }
+
+/// CT-PS1-02 (part: the store keeps a 6,775-digit integer byte for byte through a reopen; not run: an FP.6 reader in
+/// the store, which keeps payloads as canonical bytes and has none, and the keep-the-source rule after a digit
+/// refusal).
+#[test]
+fn a_record_with_a_big_integer_reads_back_byte_for_byte() {
+    let lexeme: String = std::iter::once('1').chain("0123456789".chars().cycle().take(6774)).collect();
+    assert_eq!(lexeme.len(), 6775);
+    let value = RecordValue { payload: Value::Number(lexeme.clone()), provenance: BLOCK.into() };
+    let disk = MemDisk::new();
+    let mut f = create(&disk);
+    assert!(completed(&f.write("n", &value)));
+    drop(f);
+    let g = reopen(&disk);
+    assert!(g.layer.recovery().is_none(), "{:?}", g.layer.recovery());
+    let read = g.layer.record("n").expect("the record");
+    assert_eq!(read.payload.canonical(), lexeme, "the payload's canonical bytes are the lexeme");
+    assert_eq!(read, &value);
+}
+
+/// CT-LG3-09 (part: R-12 at the session store: an overwrite of a record that carries a provenance block with one that
+/// carries another block, while the disk fails the write, is refused and leaves the record's payload and block as they
+/// were, also after a power loss and a reopen; not run: the session's assistance provenance record, which no crate
+/// keeps).
+#[test]
+fn a_failed_write_of_a_record_with_another_block_keeps_the_record_and_its_block() {
+    for offset in [0, 1] {
+        let disk = MemDisk::new();
+        let mut f = create(&disk);
+        let kept = RecordValue { payload: Value::String("kept".into()), provenance: "block-a".into() };
+        let other = RecordValue { payload: Value::String("other".into()), provenance: "block-b".into() };
+        assert!(completed(&f.write("w", &kept)));
+        let (journal, records) = (disk.durable("journal"), f.layer.records().clone());
+        // Write `next` creates the other record's object and `next + 1` syncs it; the write at `offset` fails.
+        let next = disk.writes();
+        disk.fail_write(next + offset, Fault::Error);
+        let failed = f.write("w", &other);
+        assert!(matches!(failed.status, Status::Failed(_)), "{offset}: {:?}", failed.status);
+        assert_eq!(f.layer.record("w"), Some(&kept), "{offset}: payload and block");
+        assert_eq!(f.layer.records(), &records, "{offset}");
+        assert_eq!(disk.durable("journal"), journal, "{offset}: the refusal wrote no frame");
+        disk.crash();
+        drop(f);
+        let g = reopen(&disk);
+        assert!(g.layer.recovery().is_none(), "{offset}: {:?}", g.layer.recovery());
+        assert_eq!(g.layer.record("w"), Some(&kept), "{offset}: after a reopen");
+        assert_eq!(g.layer.records()["w"].version, 1, "{offset}");
+    }
+}

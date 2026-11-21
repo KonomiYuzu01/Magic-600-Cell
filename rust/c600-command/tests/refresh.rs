@@ -258,3 +258,48 @@ fn a_command_that_applied_nothing_keeps_its_outcome() {
     quiet(&mut f, unknown);
     assert!(display.asked.is_empty());
 }
+
+/// CT-LI-02 (part: each kind but `app` ends in the terminal LI.10 gives it: `committed`, and `completed` as a workspace
+/// write, a query's answer, a view's publication, a file's publication and a preview's readiness; the outcome lookup a
+/// shell that lost the notification makes returns each receipt unchanged; after a restart, the lookup still returns the
+/// durable `commit` and `workspace` terminals and answers `unknown_outcome` for the transient ones; not run: an `app`
+/// row's terminal, since the headless layer builds no app row).
+#[test]
+fn a_restart_keeps_the_durable_terminals_and_loses_the_transient_ones() {
+    let mut f = fixture();
+    let mut terminals = Vec::new();
+    for (row, kind) in [
+        ("tool.full.note", CompletionKind::Workspace),
+        ("tool.full.inspect", CompletionKind::Query),
+        ("tool.full.view", CompletionKind::ViewPublished),
+        ("tool.full.export", CompletionKind::File),
+    ] {
+        assert!(matches!(f.invoke(row).status, Status::Running(_)), "{row}");
+        let done = f.finish(row);
+        assert!(matches!(&done.status, Status::Completed(Completion { kind: k, .. }) if *k == kind), "{row}");
+        terminals.push((row, kind == CompletionKind::Workspace, done));
+    }
+    let preview = f.shell.invoke(&mut f.layer, "operation.preview", draft_args(&word(&[3]))).unwrap();
+    assert_eq!(f.layer.run_jobs(), 1);
+    let ready = f.layer.outcome(&preview.command, &preview.request).unwrap();
+    assert!(matches!(ready.status, Status::Completed(Completion { kind: CompletionKind::PreviewReady, .. })));
+    terminals.push(("operation.preview", false, ready));
+    let press = f.press(&word(&[1]));
+    let committed = f.shell.send(&mut f.layer, press);
+    assert!(matches!(committed.status, Status::Committed(_)), "{:?}", committed.status);
+    terminals.push(("operation.execute", true, committed));
+
+    for (row, _, receipt) in &terminals {
+        assert_eq!(f.layer.outcome(&receipt.command, &receipt.request).as_ref(), Some(receipt), "{row}");
+    }
+    f.layer.restart(Secret::fixed([8; 32]));
+    for (row, durable, receipt) in &terminals {
+        let after = f.layer.outcome(&receipt.command, &receipt.request).unwrap();
+        if *durable {
+            assert_eq!(&after, receipt, "{row}");
+        } else {
+            assert_eq!(after.status, Status::UnknownOutcome, "{row}");
+            assert_eq!((&after.command, &after.request), (&receipt.command, &receipt.request), "{row}");
+        }
+    }
+}

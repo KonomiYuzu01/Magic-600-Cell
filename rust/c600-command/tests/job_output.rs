@@ -248,6 +248,8 @@ fn a_value_alone_completes_as_before() {
     assert_eq!(answers[0], answers[1]);
 }
 
+/// CT-LG3-03 (part: a workspace row's completion is one durable action that moves the workspace revision once; not
+/// run: the undo of a language-defined row's action, which the layer does not give).
 /// A workspace row's records are written in its completion's one durable action: every record's version advances,
 /// a record written before keeps counting, the workspace revision advances once, and the journal keeps the writes in
 /// the order of their names with the output's digest. A reopen without a reader writes them again, and the receipt
@@ -288,6 +290,8 @@ fn a_workspace_rows_records_are_written_in_its_one_durable_action() {
     assert_eq!(g.outcome(&started.command, &started.request), Some(done));
 }
 
+/// CT-LG3-03 and CT-LB7-01 (part: a view row's job that returns a record fails with `LG3:capability.not_granted` and
+/// writes nothing; not run: the undo of a language-defined workspace row's action).
 /// Only a workspace row's job writes records: a record from a query, view or file row's job fails the job with
 /// `LG3:capability.not_granted`, and nothing is written (draft).
 #[test]

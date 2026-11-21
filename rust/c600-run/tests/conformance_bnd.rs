@@ -397,8 +397,9 @@ fn ct_bnd_01_no_program_operation_sets_a_provenance_field() {
 // ---------------------------------------------------------------------------------------------------------------------
 // CT-BND-02: missing and unreadable fields.
 
-/// CT-BND-02 (part: preview admission, the one row built that admits `own`; not run: the session's tables, M6, and the
-/// command layer's rows, LP3): each of FP.17's nine fields, missing or unreadable, makes a hand-entered, an imported
+/// CT-BND-02 (part: preview admission, the one row built that admits `own`, and the command layer's `operation.preview`
+/// in `c600-command/tests/kn5_admission.rs`; not run: the session's tables (M6), whose block reader has no nine-field
+/// test): each of FP.17's nine fields, missing or unreadable, makes a hand-entered, an imported
 /// and a built-in block read `unknown` (BND.21). Preview admission refuses it with
 /// `PS1:capability.provenance_incompatible` although the same block passes whole; as a run's input its bytes are kept
 /// (PS1.33), it joins as `read_state: yes`, never `no`, and every word that cites it is refused. A readable block whose
@@ -558,7 +559,8 @@ fn families() -> Vec<(&'static str, Vec<String>)> {
 /// CT-BND-05 (part: the six families as a solver's own tools, and the cross-run routes of MR04, MR07 and MR08 through
 /// the runtime; not run: the corpus's built-in `analysis` runs, since no built-in tool class is reviewed and the
 /// built-in column stays open (BND.37, CT-BND-15, `rust/README.md` M1), and the corpus's session fields (labels,
-/// revision, journal, protected slots, preferences, recovery checkpoint), which the session store holds (M6)) and
+/// revision, journal, protected slots, preferences, recovery checkpoint), which the session store holds and no host
+/// serves to a run yet (LP3)) and
 /// CT-LG3-07 (part: state-reading preview programs, laundering through a second module (`module_flow`) and through a
 /// saved word (MR07); not run: a built-in state-reading previewer, for the same open column, and real declassifiers,
 /// which wait for LQ2 (BND.54); `c600-check`'s `ct_lg3_07_*` tests run the mechanism with a stand-in). Each family
@@ -660,8 +662,9 @@ fn trace(ran: &Ran) -> (Summary, Option<Vec<u8>>, Vec<(String, Vec<i32>, String)
 
 /// CT-BND-06 (part: capability separation as the fix in force for a solver's own tool, and a previewing program that
 /// passes separation; not run: the built-in tool column, since a built-in class review that keeps a state-reading
-/// built-in from previewing does not exist yet (BND.37, `rust/README.md` M1), and KN5.11's replacement of the pending
-/// preview, which the engine and the session build (M4, M6)): under capability separation a previewing program reads no
+/// built-in from previewing does not exist yet (BND.37, `rust/README.md` M1), and a program's proposal that replaces
+/// the pending preview, which `c600-command`'s tests run for the solver's own preview only): under capability
+/// separation a previewing program reads no
 /// state (BND.51). MR13's and MR14's stop-selected previews read the state and prepare previews, so separation sees
 /// both and the interim table refuses them with `LG3:capability.not_granted`. A previewing program that passes
 /// separation stops on its public input: in two different states it makes the same proposals, in the same order, with
@@ -867,8 +870,9 @@ fn ct_bnd_11_outcome_fields_by_profile() {
     }
 }
 
-/// CT-BND-12 (part: the program's acknowledgement and the record the adapter keeps for the shell; not run: the shell
-/// showing it to the solver with reason and remedy, which the command layer and the shell build (LP3)): a refused
+/// CT-BND-12 (part: the program's acknowledgement and the record the adapter keeps for the shell; the command layer's
+/// shell record runs in `c600-tools/tests/bridge.rs`; not run: the shell showing it to the solver with reason and
+/// remedy, which no crate renders yet): a refused
 /// proposal gives the program the fixed acknowledgement, the same bytes as a built preview (BND.43), while the shell's
 /// record keeps the full answer: the refusal's code and reason for a refusal at admission or by the engine, and every
 /// field of a built preview.
@@ -899,8 +903,9 @@ fn ct_bnd_12_a_refused_proposal_gets_the_acknowledgement_and_the_shell_the_full_
 // ---------------------------------------------------------------------------------------------------------------------
 // CT-BND-14: captures.
 
-/// CT-BND-14 (part: the engine and the program; not run: the session's digest, which the session store keeps (M6)): in
-/// tool authoring and research `propose` goes to a capture (BND.60). The engine is never asked to build a preview and
+/// CT-BND-14 (part: the engine and the program; the command layer's refusal and the session's digest are in
+/// `c600-command`'s `tests/profile.rs`): in tool authoring and research `propose` goes to a capture (BND.60). The
+/// engine is never asked to build a preview and
 /// receives no request at all, the program's receipt holds only the capture's ID and base, no token, and the capture
 /// keeps the word, the target and its block for a test to read.
 #[test]
@@ -997,8 +1002,9 @@ fn saved_and_restored(input: &[u8]) -> Store {
 }
 
 /// CT-BND-26 (part: composition and a file round trip through runs, with the entry block in `parts`, also behind a
-/// pick whose `c600-pick` record is kept (FP.38); not run: draft insertion, which the command layer and the session
-/// build (LP3, M6)): a word picked from the list of a tool of each solver-authored class, `own`, `forked_built_in`,
+/// pick whose `c600-pick` record is kept (FP.38); not run: draft insertion, which no row of the command layer or the
+/// session store serves yet): a word picked from the list of a tool of each solver-authored class, `own`,
+/// `forked_built_in`,
 /// `imported` and `unknown`, keeps the listed entry's block when a later run takes it in and stores it, and through a
 /// file; the word's letters are kept, and every later preview in a solving session refuses it with
 /// `LG3:capability.not_granted`, the tool block nested two levels down in `parts`.
@@ -1042,7 +1048,7 @@ fn ct_bnd_27_a_restored_tool_word_is_refused_at_admission() {
     assert_eq!(preview_stored(&mut restored, Some(ws("saved")), None), Err(NOT_GRANTED));
 }
 
-/// CT-BND-28 (part: missing content of a part and of a nested part, also behind a pick whose `c600-pick` record is
+/// CT-BND-28 (whole: missing content of a part and of a nested part, also behind a pick whose `c600-pick` record is
 /// kept (FP.38)): a picked word whose listed entry has no stored content, or whose entry is a built-in block citing a
 /// part with no stored content, is refused at preview admission with `LG3:capability.not_granted`: the absence reads
 /// `unknown`, never as the word's own `manual` block, its resolved pick or the entry's built-in producer.
@@ -1073,10 +1079,10 @@ fn ct_bnd_28_missing_origin_content_fails_closed() {
 }
 
 /// CT-BND-29 (part: hand-entered words, imported macros and a built-in-list entry kept in a picked word's parts, with
-/// their ordinary pin gates, the pick's `c600-pick` record (FP.38), and retyping; not run: retyping through the command
-/// layer (LP3)): a hand-entered word, an imported 0.4 macro and a word picked from a built-in list, with its pick
-/// record kept or not, pass BND.84's producer check and build a preview, unless an ordinary gate fails: a contract pin
-/// the policy does not hold refuses with
+/// their ordinary pin gates, the pick's `c600-pick` record (FP.38), and retyping; retyping through the command layer
+/// runs in `c600-command/tests/kn5_admission.rs`): a hand-entered word, an imported 0.4 macro and a word picked from a
+/// built-in list, with its pick record kept or not, pass BND.84's producer check and build a preview, unless an
+/// ordinary gate fails: a contract pin the policy does not hold refuses with
 /// `PS1:capability.provenance_incompatible`. A word retyped from a tool's saved word is a new hand-entered word with
 /// no parts: the host infers no tool origin for it.
 #[test]
@@ -1150,8 +1156,10 @@ fn ct_bnd_30_research_blocks_refuse_the_preview_on_every_route() {
 // ---------------------------------------------------------------------------------------------------------------------
 // CT-BND-22: forms.
 
-/// CT-BND-22 (part: an older block keeps its form, and a gated use it cannot justify is refused; not run: the recorded
-/// migration that switches forms, which no milestone of LP2 builds (the session store and the importer, M6)): FP.18's
+/// CT-BND-22 (part: an older block keeps its form, and a gated use it cannot justify is refused; flow-form pick records
+/// kept in the store are `c600-session`'s `tests/persist_picks.rs`; not run: the recorded migration that switches
+/// forms, which the session store's migration publisher does not do (it converts words and editions) and the importer
+/// does not build yet): FP.18's
 /// flow-form examples, taken in by a run, are kept byte for byte and still read in their form; a word that cites one is
 /// refused at preview admission with `PS1:capability.provenance_incompatible`, even under a policy that holds the
 /// flow-form contract pin.
@@ -1182,7 +1190,8 @@ fn ct_bnd_22_an_older_block_keeps_its_form_and_its_gated_use_is_refused() {
 // CT-KN5-13: the preview-admission adapter.
 
 /// CT-KN5-13 (part: the BND.84/BND.85 adapter of M3, with a pick through its `c600-pick` record (FP.38); not run:
-/// draft insertion (LP3, M6) and KN5.9's preview itself, which the kernel builds (M4)): in a solving session the
+/// draft insertion, which no row of the command layer or the session store serves yet; KN5.9's preview with a
+/// protection conflict runs in `c600-command/tests/kn5_admission.rs`): in a solving session the
 /// adapter refuses a word a solver's tool produced, through composition in a later run, a file round trip and a
 /// restored workspace record, and fails closed on missing origin content, all with `LG3:capability.not_granted`.
 /// Hand-entered words, imported 0.4 macros and a built-in-list entry, picked with its record or without, pass. A

@@ -306,8 +306,9 @@ fn ct_lg5_02_manifest_entries_are_checked_as_data_and_grant_nothing() {
 /// module that executed and its entry; the closure digest covers each module's edition and IR contract and the
 /// resolver, not a location; verifying again refuses a missing dependency, a locked edition, IR version, IR contract
 /// or resolver this runtime does not run, and a source in an unsupported edition; the checker, the interpreter and
-/// the loader refuse another IR version, and a substitute closure does not load; not run: chapter 05's run record and
-/// chapter 09's reproduction key, and a replay from them, which wait for M6's run records)
+/// the loader refuse another IR version, and a substitute closure does not load; the run record's key and its replay
+/// are `c600-session/tests/persist_run.rs`'s; not run: the closure, manifest and lock digests inside a run record and a
+/// replay that checks them, which the draft key does not carry yet (PS1.31))
 #[test]
 fn ct_lg5_03_the_approval_names_the_closure_and_a_rerun_refuses_missing_or_unsupported_versions() {
     let dep = constant(1);
@@ -639,4 +640,50 @@ fn ct_lg5_07_sharing_through_local_files_keeps_every_check_and_a_signature_grant
         assert_eq!(decide(&closure), decide(&received));
     }
     assert_eq!(code(Manifest::read(&signed(true))), PERSISTENCE_VERSION);
+}
+
+/// A stage module of kind fragment: it requires no capability, so its header names a kind and costs instead.
+const STAGE: &str =
+    "edition \"6cs-draft-1\";\nstage fragment tint ops 2 overdraw 2;\n\nexport fn main(u: Approx<P24>) \
+                     -> record { b: Approx<P24>, g: Approx<P24>, r: Approx<P24> } effects [] {\n    \
+                     return record { b = approx_div(u, ~24\"2\"), g = approx_cos(u), r = ~24\"0\" };\n}\n";
+
+/// CT-LG5-08 (part: a `.6cs` module of kind stage in a closure keeps the module checks: its bytes are locked by digest
+/// and a changed byte, a missing file, a changed lock entry or another closure fails verification or the approval, and
+/// it adds no capability, so the root's ungranted file read is refused as without it; the syntax and the stage checker
+/// are `c600-syntax/tests/stages.rs`'s; not run: a stage module's own run, which this crate does not do)
+#[test]
+fn ct_lg5_08_a_stage_module_keeps_digest_lock_and_grant_checks() {
+    let full = Identity::full();
+    let body = "export fn go() -> Int effects [] {\n    return 1;\n}\n";
+    let root = module("m", &[], &[("s", STAGE)], body);
+    let p = package(&root, &[STAGE]);
+    let (closure, approval) = approved(&p, own("go")).unwrap();
+    assert!(load(&closure, &approval).is_ok());
+    let lock = Lock::read(&p.lock).unwrap();
+    assert!(lock.modules.iter().any(|m| m.module == "tint" && m.source == sha256(STAGE.as_bytes())));
+    assert_eq!(closure.module_digest("tint"), Some(sha256(STAGE.as_bytes())));
+    let without = package(&module("m", &[], &[], body), &[]).verify().unwrap();
+    assert_ne!(closure.digest, without.digest, "the stage module is part of the closure");
+    assert_eq!(code(load(&without, &approval)), DIGEST_MISMATCH, "an approval of the closure with the stage");
+
+    // LG5.1: a changed byte of the stage module, or a missing file, fails as for any module.
+    let changed = format!("{STAGE}\n");
+    let files = p.files.clone().with("src/dep0.6cs", changed.as_bytes());
+    assert_eq!(code(verify(&p.manifest, &p.lock, &files, &full)), DIGEST_MISMATCH);
+    let mut missing = p.files.clone();
+    missing.entries.remove("src/dep0.6cs");
+    assert_eq!(code(verify(&p.manifest, &p.lock, &missing, &full)), DEPENDENCY_MISSING);
+
+    // LG5.3: the stage module's lock entry is checked, as an edition the runtime does not run.
+    let at = lock.modules.iter().position(|m| m.module == "tint").unwrap();
+    let old = lock_with(&lock, |l| l.modules[at].edition = "6cs-draft-0".into());
+    assert_eq!(code(verify(&p.manifest, &old.bytes(), &p.files, &full)), CONTRACT_MISMATCH);
+
+    // LG5.9, LG3.9: the stage module grants nothing; a root's file read stays an ambient read until its run grants it.
+    let reader = "export fn go() -> Text effects [file] {\n    return file_read<Text>(\"notes\");\n}\n";
+    let reading = package(&module("m", &["file"], &[("s", STAGE)], reader), &[STAGE]);
+    assert_eq!(code(approved(&reading, own("go"))), AMBIENT_READ);
+    let e = granted("go", Author::Own, Profile::ToolAuthoring, &[Capability::File]);
+    assert!(approved(&reading, e).is_ok());
 }

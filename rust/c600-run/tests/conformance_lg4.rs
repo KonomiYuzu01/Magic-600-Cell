@@ -157,8 +157,9 @@ fn ct_lg4_04_each_deterministic_resource_is_exhausted_separately() {
 const VIEW: &str = "export view show() -> Unit effects [snapshot, view] {\n    \
     return publish_view(read_snapshot<Nat>(\"n\"));\n}\n";
 
-/// CT-LG4-06 (part: superseded view runs at the runtime; not run: the view queue that revision bursts supersede,
-/// which waits for the command layer, LP3): a view run whose revision is replaced stops with
+/// CT-LG4-06 (part: superseded view runs at the runtime; the view queue that revision bursts supersede is
+/// `c600-view/tests/view_rows.rs`'s; not run: the queue driving real runs after commits through the command layer,
+/// LP3): a view run whose revision is replaced stops with
 /// `KN7:cancelled.revision_replaced` at whichever operation the replacement reaches, publishes nothing after it, and
 /// changes no workspace record, preview or committed state; what a view publishes is its own revision's state. In a
 /// burst of three revisions whose first two are replaced before their runs start, only the third publishes.

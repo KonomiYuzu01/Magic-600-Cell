@@ -49,10 +49,11 @@ const PREVIEWER: &str = "export fn go(w: Word) -> Text effects [preview] {\n    
     return receipt_id(propose(w, target(\"t\")));\n}\n\n\
     export fn keep(w: Word) -> Unit effects [workspace] {\n    return write_workspace<Word>(\"kept\", w);\n}\n";
 
-/// CT-LG2-08 (part: the run-time half for a retained word; not run: the static mode check and menu words, which wait
-/// for the jumbled puzzle's alphabet, M5, and mode changes, which are command-layer operations, LP3): a program checked
-/// once is refused at invocation after the session's mode changed, the shell keeps the engine's refusal and the
-/// program sees the same acknowledgement; storing a word asks the engine for nothing, so it cannot change the mode.
+/// CT-LG2-08 (part: the run-time half for a retained word against a mock engine; the command layer's refusals after a
+/// real mode change are in `c600-command`'s `jumble_on.rs` and `jumble_off.rs`; not run: the static mode check, which
+/// needs a session mode type in the IR): a program checked once is refused at invocation after the session's mode
+/// changed, the shell keeps the engine's refusal and the program sees the same acknowledgement; storing a word asks
+/// the engine for nothing, so it cannot change the mode.
 #[test]
 fn ct_lg2_08_a_mode_change_refuses_at_invocation() {
     let source = m(PREVIEWER);
@@ -98,8 +99,8 @@ fn proposing(word: Expr) -> c600_ir::Program {
     program(vec![module("m", vec![f])])
 }
 
-/// CT-LG2-11 (part: the run-time half of the proposal binding, a `WordEqualityKey` (LP2 draft) included; not run:
-/// execution, derivation and protection bindings, which wait for M4): a proposal that reaches the interpreter with
+/// CT-LG2-11 (part: the run-time half of the proposal binding, a `WordEqualityKey` (LP2 draft) included; not run: an
+/// execution binding, which no program has): a proposal that reaches the interpreter with
 /// anything but a literal word stops with `LG4:input.ir_rejected` before the host sees a request, although the loader
 /// does not re-run the checker; a literal word reaches the host letter for letter.
 #[test]

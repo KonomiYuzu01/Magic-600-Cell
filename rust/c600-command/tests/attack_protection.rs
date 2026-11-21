@@ -199,6 +199,8 @@ fn b5_a_round_trip_through_jumble_does_not_move_a_protected_orbit() {
     assert!(bypassed.is_empty(), "{bypassed:#?}");
 }
 
+/// CT-LI-04 (part: an undo whose target is a protection change releases the orbit only through the usual gate,
+/// the solver's confirmation).
 /// Guard (refuted, class D). A commit that moved orbit 0 before the orbit was protected cannot be undone past the
 /// protection: the protection change is the undo target first, and its undo releases the orbit, so it needs the
 /// solver's confirmation (LI.26). A redo cannot bring a word back over a protection that came later either: the

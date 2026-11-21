@@ -671,8 +671,8 @@ class RegistryTests(unittest.TestCase):
 
     def test_ct_err_06_codes_not_text_decide_handling(self):
         """CT-ERR-06 (part: the registry half; not run: changing and translating summaries and diagnostics of a
-        raised envelope, which has no summary or diagnostic field before LP3's command layer; the crates' handling
-        is scanned in tests/test_language_scans.py): ERR.6 binds tests and handling to the code, every row's code
+        raised envelope, which the command layer carries as `code` and `detail` only, with no translation seam; the
+        crates' handling is scanned in tests/test_language_scans.py): ERR.6 binds tests and handling to the code, every row's code
         is unique so no handling needs its meaning text to tell two failures apart, and every reconciled spelling
         maps to one code. Control: two rows with one code fail."""
         text = REGISTRY_PATH.read_text(encoding="utf-8")
@@ -743,8 +743,8 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(len(budget_problems(planted)), 3)
 
     def test_ct_err_09_commit_failures_keep_their_codes(self):
-        """CT-ERR-09 (part: the registry half; not run: the commit-step fixtures and the unchanged state on refusal,
-        which need the session store (M6) and the command layer (LP3)): the six commit-step failures (authenticator,
+        """CT-ERR-09 (part: the registry half; the commit-step fixtures and the unchanged state on refusal run in
+        c600-command/tests/layer.rs and kn5.rs): the six commit-step failures (authenticator,
         token reuse, replaced preview, bound content, moved revision, equal-revision head hash) have six distinct
         active codes with their own forms, retries and commit steps (ERR.29). Control: a merged pair fails."""
         self.assertEqual(commit_problems(self.registry, COMMIT_STEPS), [])
@@ -755,8 +755,9 @@ class RegistryTests(unittest.TestCase):
         self.assertTrue(commit_problems(retried, COMMIT_STEPS))
 
     def test_ct_err_10_unknown_outcomes_never_retry(self):
-        """CT-ERR-10 (part: the registry half; not run: read-only recovery after an unknown durable fate, which
-        needs the session store (M6) and the command layer (LP3)): the unknown_outcome category is not recoverable
+        """CT-ERR-10 (part: the registry half; read-only recovery after an unknown commit fate runs in
+        c600-command/tests/layer.rs; not run: an unknown import publication fate, which has no producer yet): the
+        unknown_outcome category is not recoverable
         and defaults to never; its three rows (commit fate and import publication freeze, the further request during
         recovery refuses) keep that default, so no retry follows from a missing receipt. Control: a planted
         unknown_outcome row with its own retry value fails."""
@@ -860,8 +861,8 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(len(content_problems(planted)), 2)
 
     def test_ct_err_14_runtime_loss_is_no_freeze(self):
-        """CT-ERR-14 (part: the registry half; not run: killing the runtime and checking state, journal and the
-        engine preview, which need the runtime process (LP3) and the session store (M6)): the runtime-loss code is
+        """CT-ERR-14 (part: the registry half; killing the runtime runs in c600-runtime/tests/faults.rs against a fake
+        session; not run: the same under the command layer and the session store): the runtime-loss code is
         an active resource_limit stop, citing KN7.13 and ONE.70, that preserves session and pending preview, and
         Round 3's consistency spelling for the same fault was moved to it. Control: a consistency version fails."""
         self.assertEqual(runtime_loss_problems(self.registry), [])

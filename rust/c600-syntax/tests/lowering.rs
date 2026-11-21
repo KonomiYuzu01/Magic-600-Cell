@@ -248,9 +248,10 @@ fn a_call_of_a_module_function_gives_one_argument_per_parameter_and_an_import_ne
     assert!(check(&lowered.program).unwrap().diagnostics.is_empty());
 }
 
-/// CT-LG2-01 (part: guard; constructor matches wait for M4), CT-LG2-02 (part: guard; puzzle and level indices
-/// wait for M4), CT-LG2-08 (part: guard; LX-8's fixture menu letters do not lower) and CT-LG2-09 (part: guard;
-/// verdicts wait for M4): each construct is refused at lowering and names what it waits for or what to write.
+/// CT-LG2-01 (part: guard; matches over other types than verdicts wait for the domain families), CT-LG2-02 (part:
+/// guard; puzzle and level indices wait for M4), CT-LG2-08 (part: guard; LX-8's fixture menu letters do not lower)
+/// and CT-LG2-09 (part: guard; verdicts wait for M4): each construct is refused at lowering and names what it waits
+/// for or what to write.
 #[test]
 fn lowering_refuses_what_the_ir_draft_cannot_hold_yet_and_names_what_it_waits_for() {
     let refusals = [
@@ -313,8 +314,8 @@ fn effects_and_capabilities_lower_to_the_ir_bound() {
     assert_eq!(bound.vars.iter().map(String::as_str).collect::<Vec<_>>(), ["E"]);
 }
 
-/// CT-LG2-06 (part: a budget mixes with integers only; not run: puzzle and unit indices, which wait for M4 and
-/// M5).
+/// CT-LG2-06 (part: a budget mixes with integers only; not run: puzzle and unit indices, which the IR draft does not
+/// have).
 #[test]
 fn exact_arithmetic_takes_rationals_and_q5_values() {
     // Z ⊂ Q ⊂ Q(√5): exact addition, ordering and equality take rationals and Q(√5) values, and integers widen to
