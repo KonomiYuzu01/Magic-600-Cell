@@ -27,6 +27,11 @@ search, DRAFT) and prints one line per step. It exits 1 when a prerequisite of a
 component is not built yet prints its missing prerequisites as a warning. Time estimates are DRAFTS from the runners'
 own timings (run_scene.ps1: 20 s pause, 4 s preroll, 192 s trace per cold run; the probe: about 31 s per harness).
 
+One build identity (PHS.23, PHS.64): the sitting runs on the frozen candidate only, so every build a step uses is made
+from the checkout's HEAD. `--dry-run` reads HEAD once (`git rev-parse HEAD`, its only process) and refuses a route-B
+acceptance build, a stage build or a product build made from another commit, and a product build made from a changed
+tree (C9, 21 November 2026).
+
 The quiet-machine gate is the probe's (`work/experiments/c9-present-probe/run_probe.py --check-only`: owner idle at
 least 300 s, no build, capture, Godot or busy Codex process, CPU at most 15 %, mains power, an unlocked desktop; exit
 0 quiet, 5 not quiet). `quiet_machine()` runs it; `--check-quiet` adds its answer to a dry run as information. The
@@ -69,10 +74,18 @@ SURFACE = 'surface'
 SHELL = 'renderer/shell'
 LAUNCH = 'renderer/shell/launch.py'
 BUILD_PRODUCT = 'renderer/shell/build_product.py'
+# build_product.py's output: one folder per build, each with its record (head, dirty, identity, parts).
+PRODUCT_BUILDS = 'work/build/c9-product'
+PRODUCT_RECORD = 'product.json'
+FINALIZE = 'renderer/acceptance/finalize_run.py'
+# C9 owner item 9 (PR 385): on route B the core writes presented.jsonl, the traced frames its own frame statistics
+# confirmed, and the finalizer's 'presented' check reads it; PresentMon becomes the cross-check.
+ROUTE_B_DISPLAY = ('route B\'s display evidence is the core\'s own frame statistics (presented.jsonl, the finalizer\'s '
+                   '"presented" check), cross-checked against the PresentMon capture (owner, 20 November 2026, item 9)')
 # The owner runbook's labels (C9 draft, 18 November 2026): A attended, U unattended.
 LABELS = {'shell-launch': 'A1', 'b1-input': 'A2', 'e2-key-to-frame': 'A3', 'core-gpu': 'U1', 'b3-probe': 'U2',
           'b2-skew': 'U3', 'wj-w3': 'U4', 'rpi79-gate': 'U5', 'e3-cold-start': 'U6', 'lx2': 'U7', 'lx4': 'U8'}
-SOURCE_SUFFIXES = ('.cs', '.gd', '.rs', '.py')
+SOURCE_SUFFIXES = ('.cs', '.gd', '.rs', '.py', '.cpp', '.h')
 DECLARE = "-Overlays 'none running' -Declare @('frame_generation=false','upscaling=false') -Unattended"
 
 
@@ -129,7 +142,7 @@ STEPS = (
                    f'python -B {LAUNCH} --out <new folder>   # from a desktop PowerShell; resize the window twice, '
                    'then close it'),
          prerequisites=(('compiles', 'renderer/core/check_core.py'), ('compiles', LAUNCH),
-                        ('compiles', BUILD_PRODUCT)),
+                        ('compiles', BUILD_PRODUCT), ('product-build', None)),
          run_time=('foreground', 'the owner at the machine', 'native resolution, no frame generation or upscaling',
                    'pass: the shell exits 0; launch.json in the run folder; events.jsonl with frame and presented '
                    'rows (display_qpc); the 3D view under the transparent window; no error on resize or close'),
@@ -138,21 +151,25 @@ STEPS = (
     Step('b1-input', 'Route B check B1: input through Godot\'s transparent window over the core\'s layer', True, 10,
          None,
          commands=(f'python -B {LAUNCH} --out <new folder> --echo   # press keys and click, then close the window',),
-         prerequisites=(('compiles', LAUNCH), ('mentions', (SHELL, 'input.jsonl'))),
+         prerequisites=(('compiles', LAUNCH), ('mentions', (SHELL, 'input.jsonl')), ('product-build', None)),
          run_time=('foreground', 'the owner at the machine',
                    'pass: every key press and click shows on the echo panel and is in <out>/input.jsonl'),
          sources=('owner decision 2026-11-18 route B, check 1',)),
     Step('e2-key-to-frame', 'Charter E2: key to the confirmed first correct frame, at least 100 presses', True, 20,
          None,
          commands=(f'python -B {LAUNCH} --out <new folder>   # the session is always on (<out>/session, twist menu '
-                   'wj-I_a); press at least 100 twists (J, K, L; Shift for the inverse), then close the window',
+                   'wj-I_a); press about 120 twists (J, K, L; Shift for the inverse) at a steady pace, about one a '
+                   'second, touching no other window, then close the window',
                    'python -B tools/perf/c9/key_to_frame.py <run dir> [<run dir> ...] --out <record>.json'),
          prerequisites=(('imports', 'key_to_frame'), ('presentmon', None), ('compiles', LAUNCH),
                         ('mentions', (SHELL, 'WriteString("t", "key")')),
-                        ('mentions', (SHELL, 'journal-reopen-and-kernel-replay'))),
+                        ('mentions', (SHELL, 'journal-reopen-and-kernel-replay')), ('product-build', None)),
          run_time=('foreground', 'the owner at the machine', 'a fresh run folder (the session is new in it)',
                    'the run row\'s correctness comes from the session\'s control at close '
-                   '(journal-reopen-and-kernel-replay)'),
+                   '(journal-reopen-and-kernel-replay)',
+                   'a key whose frame the core does not confirm counts as one failed key above 100 ms, and its run '
+                   'stays valid (owner, 20 November 2026, item 2); at least 100 confirmed keys are needed, hence '
+                   'about 120 presses; a lost foreground makes the run invalid'),
          sources=('charter E2', 'RTE.43', 'V11.1', 'PHS.64')),
     Step('core-gpu', 'ABI 5 GPU smoke, part 1: the renderer core self-test\'s WARP and hardware modes', False, 15, None,
          commands=('python -B renderer/core/check_core.py --gpu   # pass: check_core: ok (CPU, WARP and hardware)',),
@@ -176,46 +193,56 @@ STEPS = (
                    '   # no bar: the numbers go to the owner; check "UI present inside the draw"'),
          prerequisites=(('imports', 'ui_skew'), ('presentmon', None), ('compiles', LAUNCH),
                         ('mentions', (SHELL, '"ui_frame"')), ('mentions', (SHELL, '"ui_swap_chain"')),
-                        ('mentions', (SHELL, '"drawn_qpc"'))),
+                        ('mentions', (SHELL, '"drawn_qpc"')), ('product-build', None)),
          run_time=('an unlocked desktop', 'administrator PowerShell for PresentMon'),
          sources=('owner decision 2026-11-18 route B, check 2',)),
     Step('wj-w3', 'W-J item 5 (three cold runs each of S4, I_a, I_b) and W3 (three cold runs) on the product build',
          False, 50, None,
          commands=wj_w3_commands(),
-         prerequisites=(('file', RUNNER), ('compiles', 'renderer/acceptance/finalize_run.py'),
+         prerequisites=(('file', RUNNER), ('compiles', FINALIZE),
                         ('compiles', PREPARE_HOST), ('compiles', PREPARE_DATA),
                         ('compiles', 'renderer/acceptance/file_guard.py'), ('imports', 'renderer_gate'),
                         ('command', 'powershell'), ('presentmon', None), ('build', SURFACE), ('godot-launch', None),
-                        ('dir', WJ_DATA)),
+                        ('dir', WJ_DATA), ('mentions', ('renderer/core/src', 'presented.jsonl')),
+                        ('mentions', (FINALIZE, "'presented.jsonl'"))),
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power',
                    'native resolution, no frame generation or upscaling',
-                   'the W-J and W3 evidence comes from the route-B build, not a texture build'),
+                   'the W-J and W3 evidence comes from the route-B build, not a texture build', ROUTE_B_DISPLAY),
          sources=('ADR-R01.3', 'owner decision 2026-11-18 route B')),
     Step('rpi79-gate', 'RPI.79: the renderer gate on the advertised combination with user stages, in one run', False,
          25, None,
          commands=stage_gate_commands(),
          # C9 U5c (PR 316): the harness compiles both stages with the core's DXC when W3 loads, and the finalizer
          # refuses a failed compile, a measured frame without a row and a stopped frame.
-         prerequisites=(('file', RUNNER), ('compiles', 'renderer/acceptance/finalize_run.py'),
+         prerequisites=(('file', RUNNER), ('compiles', FINALIZE),
                         ('compiles', PREPARE_HOST), ('dir', STAGES), ('imports', 'renderer_gate'),
                         ('command', 'powershell'), ('presentmon', None),
-                        ('mentions', ('renderer/acceptance/finalize_run.py', "'stage-stopped'")),
+                        ('mentions', (FINALIZE, "'stage-stopped'")), ('mentions', (FINALIZE, "'presented.jsonl'")),
                         ('stage-build', SURFACE)),
          run_time=('administrator PowerShell started on the desktop', 'foreground', 'mains power',
-                   'native resolution, no frame generation or upscaling'),
+                   'native resolution, no frame generation or upscaling', ROUTE_B_DISPLAY),
          sources=('RPI.79', 'RPI.80', 'RTE.60', 'owner decision 2026-11-18 (DXC ships)')),
     Step('e3-cold-start', 'Charter E3: three cold runs, process start to the first correct frame, each at most 3 s',
          False, 10, None,
          commands=(f'python -B {BUILD_PRODUCT}   # E3\'s build carries the session fixture and c600-runtime',
                    f'python -B {LAUNCH} --out <new folder> --cold-start --dry-run   # checks the build, starts '
                    'nothing',
+                   f'python -B {LAUNCH} --out <warm-up folder> --cold-start   # once, untimed: the first launch of a '
+                   'fresh build also pays Windows\' first-run checks of its new binaries (PR 387\'s local leads: '
+                   '4.37 s against 3.1 s before it, 2.58 s against 1.9 s after); '
+                   'the cold definition allows earlier launches of the same build (cold_start.py); keep the folder',
                    f'python -B {LAUNCH} --out <run n> --cold-start   # three times, each into a new folder; the '
                    'launcher waits until 20 s after the previous product exit and copies the fixture fresh; the '
                    'shell quits at the first correct frame and writes startup.jsonl',
-                   'python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3> --out <record>.json'),
+                   'python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3> --out <record>.json',
+                   'python -B tools/perf/c9/cold_start.py <warm-up folder> --out <warm-up record>.json   # the '
+                   'warm-up\'s own time, reported beside the record and never counted (one run: insufficient)'),
          prerequisites=(('imports', 'cold_start'), ('compiles', LAUNCH), ('compiles', BUILD_PRODUCT),
-                        ('mentions', (SHELL, '"--cold-start"'))),
-         run_time=('no product process running', 'a fresh copy of the session fixture'),
+                        ('mentions', (SHELL, '"--cold-start"')),
+                        # PR 387: the host's model loads start before the core's surface opens (host ABI 6).
+                        ('mentions', (SHELL, '"m6h_preload"')), ('product-build', None)),
+         run_time=('no product process running', 'a fresh copy of the session fixture',
+                   'the three timed runs come after the warm-up launch (unattended.ps1 -Steps U6 runs it first)'),
          sources=('charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11')),
     Step('lx2', 'LX-2: fault placements, at least 100 commits under charter E2 during fault windows', False, 79, None,
          commands=('cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-lx2 '
@@ -249,7 +276,8 @@ STEPS = (
                         ('compiles', LAUNCH), ('mentions', (LAUNCH, '"--lx2-injection"')),
                         ('mentions', (SHELL, 'Magic600.LX2.Phase')), ('mentions', (SHELL, 'WriteString("t", "lx2")')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, 'WriteString("t", "key")')),
-                        ('mentions', (LAUNCH, 'M600_LX4_DLL')), ('mentions', (LAUNCH, 'M600_LX4_FIXTURES'))),
+                        ('mentions', (LAUNCH, 'M600_LX4_DLL')), ('mentions', (LAUNCH, 'M600_LX4_FIXTURES')),
+                        ('product-build', None)),
          run_time=('foreground', 'the owner starts it from the desktop, which stays unlocked'),
          sources=('RTE.42', 'CT-RTE-10', 'CT-RTE-11', 'CT-LG4-09', 'charter E2', 'renderer gate')),
     Step('lx4', 'LX-4: 10,800 S/M/L samples in three series per puzzle, time box 4 hours', False, 240, None,
@@ -286,8 +314,14 @@ STEPS = (
                         # Jumble on: the build's jumble-on session fixture, and c600-render adopting the jumbling
                         # engine bundle as the core's posed engine images (C9 product, 20 November 2026).
                         ('mentions', (BUILD_PRODUCT, '"session-fixture-jumble-on"')),
-                        ('mentions', (RENDER_BACKEND, 'Puzzle::Jumbling =>'))),
-         run_time=('foreground', 'the owner starts it from the desktop'),
+                        ('mentions', (RENDER_BACKEND, 'Puzzle::Jumbling =>')),
+                        # The rerun endpoint (RTE.50, PR 386): the shell runs the edited buffer's reference view as
+                        # the host's view job and reports its end to the library.
+                        ('mentions', (SHELL, '"lx4_rerun_ended"')), ('mentions', (SHELL, '"m6h_run_view"')),
+                        ('product-build', None)),
+         run_time=('foreground', 'the owner starts it from the desktop',
+                   'a rerun sample ends at the first confirmed frame that drew the re-run\'s reference publication; '
+                   'the host does not draw the run\'s value yet (lx4.py LIMITATIONS)'),
          sources=('RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06', 'owner decision 2026-11-18')),
 )
 
@@ -322,9 +356,10 @@ def newest_build(root=ROOT, route=None, stages=None):
     return candidates[-1] if candidates else None
 
 
-def read_identity(directory, route=None, stages=False):
+def read_identity(directory, route=None, stages=False, head=None, note=''):
     """(ok, detail) for a build directory's identity file; with a route, the build must be that route's, and it must
-    hold user stages exactly when stages is True."""
+    hold user stages exactly when stages is True; with a head, it must be built from that commit. The note follows the
+    build's description, before any command that would fix it."""
     try:
         identity = json.loads((Path(directory) / IDENTITY).read_text(encoding='utf-8'))
     except (OSError, ValueError, UnicodeError):
@@ -336,14 +371,52 @@ def read_identity(directory, route=None, stages=False):
         return False, f'{IDENTITY} is not {IDENTITY_FORMAT}'
     built = identity.get('route', 'texture')
     detail = (f"build {Path(directory).name}, source {str(source['head'])[:12]}, ABI {identity.get('abi_version')}, "
-              f'route {built}')
+              f'route {built}{note}')
     if route is not None and built != route:
         return False, f'{detail}, not {route}: python -B {PREPARE_HOST} --route {route}'
     if route is not None and (identity.get('stages') is not None) != stages:
         if stages:
             return False, f'{detail}, no user stages: python -B {PREPARE_HOST} --route {route} --stages {STAGES}'
         return False, f'{detail}, with user stages (W3 only): python -B {PREPARE_HOST} --route {route}'
+    if head is not None and source['head'] != head:
+        again = f' --route {route}' + (f' --stages {STAGES}' if stages else '') if route is not None else ''
+        return False, f'{detail}, not HEAD {head[:12]}: python -B {PREPARE_HOST}{again}'
     return True, detail
+
+
+def newest_product(root=ROOT):
+    """The newest product build that holds its record, or None."""
+    found = sorted((path.parent for path in (root / PRODUCT_BUILDS).glob(f'*/{PRODUCT_RECORD}')),
+                   key=lambda path: path.name)
+    return found[-1] if found else None
+
+
+def read_product(directory, head=None):
+    """(ok, detail) for a product build's record: readable, made from a clean tree and, with a head, from that commit.
+    The parts' digests are launch.py --dry-run's to recompute."""
+    try:
+        record = json.loads((Path(directory) / PRODUCT_RECORD).read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeError):
+        return False, f'{PRODUCT_RECORD} unreadable in {Path(directory).name}'
+    if not isinstance(record, dict) or not isinstance(record.get('head'), str) or not record.get('identity'):
+        return False, f'{PRODUCT_RECORD} in {Path(directory).name} names no head or identity'
+    detail = f"product build {Path(directory).name}, {record['identity']}, source {record['head'][:12]}"
+    if record.get('dirty') is not False:
+        return False, f'{detail}, built from a changed tree: python -B {BUILD_PRODUCT}'
+    if head is not None and record['head'] != head:
+        return False, f'{detail}, not HEAD {head[:12]}: python -B {BUILD_PRODUCT}'
+    return True, detail
+
+
+def checkout_head(run=subprocess.run):
+    """The checkout's HEAD commit, or None when git does not answer."""
+    try:
+        completed = run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True, timeout=60,
+                        check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    text = completed.stdout.strip()
+    return text if completed.returncode == 0 and len(text) == 40 else None
 
 
 def godot(environ=None):
@@ -353,8 +426,9 @@ def godot(environ=None):
     return bool(found), 'Godot 4.7.2 .NET console found' if found else 'Godot 4.7.2 .NET console missing'
 
 
-def evaluate(kind, argument, build=None, environ=None):
-    """(ok, detail) for one prerequisite; it reads files and metadata only and starts nothing."""
+def evaluate(kind, argument, build=None, environ=None, head=None):
+    """(ok, detail) for one prerequisite; it reads files and metadata only and starts nothing. With a head, every build
+    must be made from that commit."""
     environ = os.environ if environ is None else environ
     if kind == 'file':
         return (ROOT / argument).is_file(), argument
@@ -394,17 +468,23 @@ def evaluate(kind, argument, build=None, environ=None):
     if kind == 'build':
         if build is None:
             return False, f'no prepared build under {BUILDS}'
-        return read_identity(build, argument)
+        return read_identity(build, argument, head=head)
     if kind == 'stage-build':
         # U5's own build, found apart from --build: the newest build of that route with user stages.
         found = newest_build(ROOT, argument, stages=True)
         if found is None:
             return False, (f'no {argument} build with user stages under {BUILDS}: '
                            f'python -B {PREPARE_HOST} --route {argument} --stages {STAGES}')
-        ok, detail = read_identity(found, argument, stages=True)
         record = build_stages(found) or {}
         dxc = record.get('dxc') if isinstance(record.get('dxc'), dict) else {}
-        return ok, f"{detail}, user stages: overdraw {record.get('overdraw')}, DXC {dxc.get('version')}"
+        return read_identity(found, argument, stages=True, head=head,
+                             note=f", user stages: overdraw {record.get('overdraw')}, DXC {dxc.get('version')}")
+    if kind == 'product-build':
+        # The build U3, U6, U7 and U8 launch (unattended.ps1 -ProductBuild) and A1 to A3 use: the newest one.
+        found = newest_product(ROOT)
+        if found is None:
+            return False, f'no product build under {PRODUCT_BUILDS}: python -B {BUILD_PRODUCT}'
+        return read_product(found, head)
     if kind == 'godot-launch':
         if build is None:
             return False, 'no launch.json without a build'
@@ -494,7 +574,9 @@ def main(argv=None):
         listing()
         return 0
     build = args.build or newest_build(route=SURFACE, stages=False) or newest_build()
-    code = dry_run(check=lambda kind, argument: evaluate(kind, argument, build))
+    head = checkout_head()
+    print(f"checkout HEAD {head[:12] if head else 'unreadable (builds are not compared with it)'}")
+    code = dry_run(check=lambda kind, argument: evaluate(kind, argument, build, head=head))
     if args.check_quiet:
         quiet, gate = quiet_machine()
         print(f"quiet-machine gate: {'quiet' if quiet else 'not quiet'}"

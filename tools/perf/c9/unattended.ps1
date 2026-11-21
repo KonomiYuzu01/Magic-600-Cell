@@ -7,7 +7,8 @@ Run it from an administrator PowerShell started on the desktop, in the repositor
 
 -SceneBuild is U4's route-B acceptance build, -StageBuild U5's stage build (both under work\build\c9-acceptance), and
 -ProductBuild the product build (work\build\c9-product\<stamp>) that U3, U6, U7 and U8 launch and U7's fault trials
-run. A step whose build is not given is refused before anything starts.
+run. A step whose build is not given, or was not made from this checkout's HEAD (one build identity, PHS.23 and
+PHS.64), is refused before anything starts. U6 launches the product build once, untimed, before its three cold runs.
 -Steps U7,U8 runs only those steps (always in U1..U8 order), for example to redo a step that failed.
 -Suffix r2 appends "-r2" to every run folder, capture, record and gate summary this script writes, so a rerun never
 meets an earlier run's files.
@@ -66,6 +67,7 @@ if ($DryRun) {
 $Utf8 = New-Object Text.UTF8Encoding($false)
 $Python = $null
 $Cargo = $null
+$script:HeadFull = $null
 $script:Sessions = @()
 
 function Get-Utc { [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ') }
@@ -466,7 +468,12 @@ function Invoke-U5 {
     Invoke-Gate 'U5/gate' $made "$Acceptance\w3-stages-summary$Tag.json"
 }
 
+# U6 launches the build once, untimed, before its three cold runs: the first launch of a fresh build also pays Windows'
+# first-run checks of its new binaries (PR 387's local leads: 4.37 s against 3.1 s). cold_start.py's draft cold
+# definition allows earlier launches of the same build; the warm-up's own time is recorded apart and never counted.
 function Invoke-U6 {
+    Invoke-ShellStep -Step 'U6.warmup' -Name "e3$Tag-warmup" -LaunchArgs @('--cold-start') -Cap 300
+    $null = Invoke-Step 'U6/warmup' $Python @('-B', '-u', 'tools/perf/c9/cold_start.py', "$Runs\e3$Tag-warmup", '--out', "$Runs\e3$Tag-warmup.json") 600 "$Runs\e3$Tag-warmup.json"
     $made = @()
     foreach ($i in 1..3) {
         Invoke-ShellStep -Step "U6.$i" -Name "e3$Tag-$i" -LaunchArgs @('--cold-start') -Cap 300
@@ -529,6 +536,19 @@ function Invoke-U8 {
     $null = Invoke-Step 'U8/analyze' $Python $analyze 900 "$Runs\u8$Tag-lx4.json"
 }
 
+# The commit a build was made from (product.json's head, or the acceptance identity's source head), 'a changed tree'
+# for a product build made from one, or $null when its record is unreadable.
+function Get-BuildHead([string]$Folder, [string]$File) {
+    try {
+        $record = [IO.File]::ReadAllText((Join-Path $Root "$Folder\$File")) | ConvertFrom-Json
+        if ($File -eq 'product.json') {
+            if ($record.dirty -ne $false) { return 'a changed tree' }
+            return [string]$record.head
+        }
+        return [string]$record.source.head
+    } catch { return $null }
+}
+
 function Test-Inputs {
     $problems = @()
     $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -544,6 +564,13 @@ function Test-Inputs {
         if (-not $needs.Count) { continue }
         if (-not $given[$key]) { $problems += "-$key is needed for $($needs -join ', ')" }
         elseif (-not (Test-Path -LiteralPath (Join-Path $Root $given[$key]) -PathType Container)) { $problems += "missing folder $($given[$key]) (-$key)" }
+        elseif ($script:HeadFull) {
+            # One build identity (PHS.23, PHS.64): every build comes from this checkout's HEAD.
+            $file = if ($key -eq 'ProductBuild') { 'product.json' } else { 'c9-build-identity.json' }
+            $built = Get-BuildHead $given[$key] $file
+            if (-not $built) { $problems += "no readable $file in $($given[$key]) (-$key)" }
+            elseif ($built -ne $script:HeadFull) { $problems += "-$key was built from $built, not HEAD $($script:HeadFull)" }
+        }
     }
     if ($Steps | Where-Object { $_ -in 'U7', 'U8' }) {
         if (-not (Test-Path -LiteralPath (Join-Path $Root $Fixtures) -PathType Container)) { $problems += "missing folder $Fixtures" }
@@ -554,7 +581,7 @@ function Test-Inputs {
         U3 = @("$Runs\u3$Tag", "$Runs\u3$Tag.presentmon.csv", "$Runs\u3$Tag-skew.json")
         U4 = @("$Acceptance\S4-summary$Tag.json", "$Acceptance\I_a-summary$Tag.json", "$Acceptance\I_b-summary$Tag.json", "$Acceptance\w3-summary$Tag.json")
         U5 = @("$Acceptance\w3-stages-summary$Tag.json")
-        U6 = @("$Runs\e3$Tag-1", "$Runs\e3$Tag-2", "$Runs\e3$Tag-3", "$Runs\e3$Tag.json")
+        U6 = @("$Runs\e3$Tag-warmup", "$Runs\e3$Tag-warmup.json", "$Runs\e3$Tag-1", "$Runs\e3$Tag-2", "$Runs\e3$Tag-3", "$Runs\e3$Tag.json")
         U7 = @("$Runs\u7$Tag", "$Runs\u7$Tag-sessions", "$Runs\u7$Tag-faults.json", "$Runs\u7$Tag.presentmon.csv", "$Runs\u7$Tag-lx2.json")
         U8 = @("$Runs\u8-off$Tag", "$Runs\u8-on$Tag", "$Runs\u8-off$Tag.presentmon.csv", "$Runs\u8-on$Tag.presentmon.csv", "$Runs\u8$Tag-e2.json", "$Runs\u8$Tag-lx4.json")
     }
@@ -575,6 +602,7 @@ try {
     $Cargo = (Get-Command cargo -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
     $null = New-Item -ItemType Directory -Force -Path (Join-Path $Root $Out)
     $head = (& git -C $Root rev-parse --short=12 HEAD 2>$null)
+    $script:HeadFull = (& git -C $Root rev-parse HEAD 2>$null)
     $order = @('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8') | Where-Object { $Steps -contains $_ }
     Write-Host "unattended: $(if ($DryRun) { 'DRY RUN, nothing starts' } else { 'leave the machine alone until it prints unattended: done' })"
     Write-Host "  folder $Root, head $head, steps $($order -join ' '), suffix '$Suffix', retries $Retries, log $Log, child output $Out"

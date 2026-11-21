@@ -498,12 +498,21 @@ class RunbookTests(NoProcessCase):
         e3 = next(step for step in runbook.STEPS if step.id == 'e3-cold-start')
         self.assertTrue(e3.commands[0].startswith('python -B renderer/shell/build_product.py'))
         self.assertIn('--cold-start --dry-run', e3.commands[1])
-        self.assertIn('three times', e3.commands[2])
-        self.assertTrue(e3.commands[3].startswith('python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3>'))
+        # One untimed launch of the same build before the three timed runs; its time is recorded apart.
+        self.assertTrue(e3.commands[2].startswith('python -B renderer/shell/launch.py --out <warm-up folder> '
+                                                  '--cold-start   # once, untimed'))
+        self.assertIn('three times', e3.commands[3])
+        self.assertTrue(e3.commands[4].startswith('python -B tools/perf/c9/cold_start.py <run 1> <run 2> <run 3>'))
+        self.assertNotIn('warm-up', e3.commands[4])
+        self.assertTrue(e3.commands[5].startswith('python -B tools/perf/c9/cold_start.py <warm-up folder>'))
         self.assertIn(('compiles', runbook.BUILD_PRODUCT), e3.prerequisites)
+        self.assertIn(('mentions', (runbook.SHELL, '"m6h_preload"')), e3.prerequisites)
+        self.assertIn(('product-build', None), e3.prerequisites)
+        self.assertIn('Earlier launches of the same build are allowed', ' '.join(cold_start.__doc__.split()))
         for kind, argument in e3.prerequisites:
-            with self.subTest(prerequisite=(kind, argument)):
-                self.assertTrue(runbook.evaluate(kind, argument)[0])
+            if kind != 'product-build':
+                with self.subTest(prerequisite=(kind, argument)):
+                    self.assertTrue(runbook.evaluate(kind, argument)[0])
 
     def test_the_build_check_names_the_route_and_the_default_build_is_route_b(self):
         root = self.temp / 'root'
@@ -526,6 +535,79 @@ class RunbookTests(NoProcessCase):
         self.assertTrue(ok)
         self.assertIn('route surface', detail)
         self.assertTrue(runbook.evaluate('build', None, build=builds / '20261119T110000Z')[0])
+        # One build identity: with the checkout's HEAD given, a build made from another commit is refused.
+        self.assertTrue(runbook.evaluate('build', 'surface', build=builds / '20261119T100000Z', head='b' * 40)[0])
+        ok, detail = runbook.evaluate('build', 'surface', build=builds / '20261119T100000Z', head='d' * 40)
+        self.assertFalse(ok)
+        self.assertIn(f"not HEAD {'d' * 12}: python -B renderer/acceptance/prepare_host.py --route surface", detail)
+
+    def test_the_product_build_must_come_from_head_and_a_clean_tree(self):
+        root = self.temp / 'root'
+        products = root / runbook.PRODUCT_BUILDS
+        record = {'head': 'e' * 40, 'dirty': False, 'identity': 'c9-product-0123456789abcdef'}
+        for name, value in (('20261121T010000Z', dict(record, head='f' * 40)), ('20261121T020000Z', record)):
+            (products / name).mkdir(parents=True)
+            (products / name / runbook.PRODUCT_RECORD).write_bytes(json.dumps(value).encode())
+        with mock.patch.object(runbook, 'ROOT', root):
+            ok, detail = runbook.evaluate('product-build', None, head='e' * 40)
+            self.assertTrue(ok)
+            self.assertIn('product build 20261121T020000Z, c9-product-0123456789abcdef', detail)
+            ok, detail = runbook.evaluate('product-build', None, head='f' * 40)
+            self.assertFalse(ok)
+            self.assertIn(f"not HEAD {'f' * 12}: python -B renderer/shell/build_product.py", detail)
+            self.assertTrue(runbook.evaluate('product-build', None)[0])
+            (products / '20261121T020000Z' / runbook.PRODUCT_RECORD).write_bytes(
+                json.dumps(dict(record, dirty=True)).encode())
+            ok, detail = runbook.evaluate('product-build', None, head='e' * 40)
+            self.assertFalse(ok)
+            self.assertIn('built from a changed tree', detail)
+        with mock.patch.object(runbook, 'ROOT', self.temp / 'empty'):
+            ok, detail = runbook.evaluate('product-build', None)
+        self.assertFalse(ok)
+        self.assertIn('no product build under work/build/c9-product', detail)
+        # Every step that launches the product build checks it.
+        for step in runbook.STEPS:
+            launches = any(runbook.LAUNCH in command for command in step.commands)
+            self.assertEqual(('product-build', None) in step.prerequisites, launches, step.id)
+
+    def test_the_checkout_head_is_read_once_with_git(self):
+        calls = []
+
+        def run(arguments, **kwargs):
+            calls.append(arguments)
+            return subprocess.CompletedProcess(arguments, 0, stdout='a' * 40 + '\n')
+
+        self.assertEqual(runbook.checkout_head(run), 'a' * 40)
+        self.assertEqual(calls, [['git', '-C', str(runbook.ROOT), 'rev-parse', 'HEAD']])
+        self.assertIsNone(runbook.checkout_head(lambda arguments, **kwargs: subprocess.CompletedProcess(
+            arguments, 128, stdout='')))
+
+        def missing(arguments, **kwargs):
+            raise OSError('no git')
+
+        self.assertIsNone(runbook.checkout_head(missing))
+
+    def test_the_steps_follow_the_merged_e2_route_b_rerun_and_preload_changes(self):
+        steps = {step.id: step for step in runbook.STEPS}
+        # PR 380 (owner item 2): an unconfirmed key is one failed key and its run stays valid; 100 confirmed keys.
+        a3 = ' '.join(steps['e2-key-to-frame'].commands + steps['e2-key-to-frame'].run_time)
+        self.assertIn('about 120 twists', a3)
+        self.assertIn('counts as one failed key above 100 ms, and its run stays valid', a3)
+        # PR 385 (item 9): route B's display evidence is the core's presented.jsonl, checked by the finalizer.
+        for step_id in ('wj-w3', 'rpi79-gate'):
+            step = steps[step_id]
+            self.assertIn(runbook.ROUTE_B_DISPLAY, step.run_time)
+            self.assertIn(('mentions', (runbook.FINALIZE, "'presented.jsonl'")), step.prerequisites)
+        self.assertIn(('mentions', ('renderer/core/src', 'presented.jsonl')), steps['wj-w3'].prerequisites)
+        # PR 386: the rerun endpoint; PR 387: the preload.
+        self.assertLessEqual({('mentions', (runbook.SHELL, '"lx4_rerun_ended"')),
+                              ('mentions', (runbook.SHELL, '"m6h_run_view"'))}, set(steps['lx4'].prerequisites))
+        self.assertIn('the host does not draw the run\'s value yet', ' '.join(steps['lx4'].run_time))
+        for step_id in ('wj-w3', 'rpi79-gate', 'e3-cold-start', 'lx4'):
+            for kind, argument in steps[step_id].prerequisites:
+                if kind in ('mentions', 'compiles'):
+                    with self.subTest(step=step_id, prerequisite=argument):
+                        self.assertTrue(runbook.evaluate(kind, argument)[0])
 
     def test_u5_runs_w3_three_times_on_its_own_stage_build(self):
         step = next(step for step in runbook.STEPS if step.id == 'rpi79-gate')
@@ -569,9 +651,14 @@ class RunbookTests(NoProcessCase):
         # U5's check finds the stage build itself, whatever --build names.
         with mock.patch.object(runbook, 'ROOT', root):
             ok, detail = runbook.evaluate('stage-build', 'surface', build=builds / '20261120T100000Z')
+            self.assertTrue(runbook.evaluate('stage-build', 'surface', head='c' * 40)[0])
+            refused, why = runbook.evaluate('stage-build', 'surface', head='d' * 40)
         self.assertTrue(ok)
         self.assertIn('build 20261120T110000Z', detail)
         self.assertIn('overdraw 108, DXC 1.9.2609', detail)
+        self.assertFalse(refused)
+        self.assertIn(f"DXC 1.9.2609, not HEAD {'d' * 12}: python -B renderer/acceptance/prepare_host.py "
+                      '--route surface --stages renderer/acceptance/stages', why)
         with mock.patch.object(runbook, 'ROOT', self.temp / 'empty'):
             ok, detail = runbook.evaluate('stage-build', 'surface')
         self.assertFalse(ok)
@@ -1777,6 +1864,26 @@ class RunnerTests(unittest.TestCase):
         u8 = self.function('Invoke-U8')
         self.assertIn("'--gate-reference'", u8)
         self.assertNotIn("'--gate'", u8)
+
+    def test_u6_launches_once_untimed_before_its_three_runs(self):
+        u6 = self.function('Invoke-U6')
+        warmup = u6.index("Invoke-ShellStep -Step 'U6.warmup' -Name \"e3$Tag-warmup\" -LaunchArgs @('--cold-start')")
+        self.assertLess(warmup, u6.index('foreach ($i in 1..3)'))
+        self.assertIn("\"$Runs\\e3$Tag-warmup\", '--out', \"$Runs\\e3$Tag-warmup.json\"", u6)
+        # The timed record reads the three runs only.
+        timed = u6.split("Invoke-Step 'U6/cold_start'", 1)[1]
+        self.assertNotIn('warmup', timed)
+        self.assertIn('"$Runs\\e3$Tag-warmup", "$Runs\\e3$Tag-warmup.json"', self.function('Test-Inputs'))
+
+    def test_every_build_must_come_from_this_checkouts_head(self):
+        inputs = self.function('Test-Inputs')
+        self.assertIn('$script:HeadFull = (& git -C $Root rev-parse HEAD 2>$null)', self.text)
+        self.assertIn("$file = if ($key -eq 'ProductBuild') { 'product.json' } else { 'c9-build-identity.json' }",
+                      inputs)
+        self.assertIn('elseif ($built -ne $script:HeadFull) {', inputs)
+        head = self.text.split('function Get-BuildHead(', 1)[1].split('\nfunction ', 1)[0]
+        self.assertIn("if ($record.dirty -ne $false) { return 'a changed tree' }", head)
+        self.assertIn('return [string]$record.source.head', head)
 
 
 if __name__ == '__main__':
