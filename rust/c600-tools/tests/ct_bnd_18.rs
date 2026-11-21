@@ -3,7 +3,7 @@
 //! `c600-library`'s module `guarded_setups` (chapter 03's row "Guarded setups and buffers"). The built-in column
 //! admits it under the setup-search exception, `Row::SetupSearch("setups")` (BND.1), and it runs on `c600-run`
 //! through `Boundary` and the tool's host bridge onto a command layer, in the solving profile, author `built_in`. The
-//! bridge serves the draft `setups` row from the certified guarded setup tables, `assets/execution_trees.json.gz`,
+//! bridge serves the `setups` row from the certified guarded setup tables, `assets/execution_trees.json.gz`,
 //! which the host gives it (`c600_tools::kernel_rows::SetupTable`). The solver's edit is a word the solver names to the
 //! shipped tool's `preview_word` command; the editor that offers the edit is LP4's. The checker half of the exception
 //! is LP2's (`c600-check/tests/exceptions.rs`). A pass is source and fixture evidence.

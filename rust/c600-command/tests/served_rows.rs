@@ -356,7 +356,7 @@ fn a_served_row_keeps_its_lane() {
 
 /// Serving refuses a row whose admission or completion the layer cannot check without the entry, with
 /// `KN5:input.overlay_row_kind`: each shape condition alone on a synthetic table, and stored examples. It refuses a row
-/// the layer builds itself, a row an entry already serves and an overlay row with the draft code
+/// the layer builds itself, a row an entry already serves and an overlay row with
 /// `KN5:input.overlay_row_conflict`, and an ID that names no row (a service) with `KN5:input.unknown_row`. Since the
 /// command table's freeze H-08 holds `workspace.set` as the layer's drafts give it (CM.17), so it is a row the layer
 /// builds itself without the drafts too. Each refusal leaves the table as it was.

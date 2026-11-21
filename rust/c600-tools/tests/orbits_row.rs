@@ -1,5 +1,5 @@
-//! The draft `orbits` row for 600-cell-Full served to a library entry by the host bridge (KN5; a draft until the
-//! command table freezes at LP3). An entry's snapshot read with an argument, `read_snapshot<T>("orbits", orbits)`,
+//! The `orbits` row for 600-cell-Full served to a library entry by the host bridge (KN5; H-08's `reads` since the
+//! command table's freeze, CM.18). An entry's snapshot read with an argument, `read_snapshot<T>("orbits", orbits)`,
 //! runs on `c600-run` through `Boundary` and [`Bridge`] onto a command layer and answers the pieces of the named
 //! orbits: model data, which reads no state of the session (`c600_tools::kernel_rows`). The references are the
 //! kernel's own: the `positions` row the bridge serves, the kernel's progress rows, one per moving orbit with its piece
@@ -280,7 +280,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     }
 }
 
-/// The row's draft tariff covers its answer: an answer asked of the bridge directly fits the result bound of its
+/// The row's tariff covers its answer: an answer asked of the bridge directly fits the result bound of its
 /// tariff, for every orbit at once and for each orbit alone, and the tariff counts one pass over the slots and
 /// [`MAX_ORBIT_PIECES`] for each named orbit. A read sends no invocation.
 #[test]

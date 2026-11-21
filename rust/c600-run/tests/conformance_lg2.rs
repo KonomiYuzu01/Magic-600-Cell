@@ -126,8 +126,8 @@ fn ct_lg2_11_a_proposal_runs_a_literal_word_only() {
     );
 }
 
-/// CT-LG2-13 (part: the empty-word half at run time; not run: the key's domain test at a straddling cap, which waits
-/// for the jumbled puzzle's key, M5; the Full key's half is `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`):
+/// CT-LG2-13 (part: the empty-word half at run time; the key's domain test at a straddling cap is `c600-jumble-tool`'s
+/// `lb3.rs`; the Full key's half is `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`):
 /// an inverse pair is unequal to the empty word, and a proposal of the pair reaches the engine, or a capture, with
 /// both letters.
 #[test]
@@ -150,8 +150,8 @@ fn ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair() {
     assert_eq!(engine.previews.len(), 1, "a capture builds no preview");
 }
 
-/// CT-LG2-13 (part: the Full key's half, LP2 draft; not run: the jumbling key, which keeps a same-cap inverse pair at
-/// a straddling cap as one token with its domain test and waits for the jumbled puzzle's alphabet, M5): under Full's
+/// CT-LG2-13 (part: the Full key's half, LP2 draft; the jumbling key, which keeps a same-cap inverse pair at a
+/// straddling cap as one token with its domain test, is `c600-jumble-tool`'s `lb3.rs`): under Full's
 /// free reduction (LG2.14, LG2.18) the pair's key equals the empty word's, yet a proposal still carries the literal
 /// pair, so equal keys give the empty word no standing as its witness.
 #[test]

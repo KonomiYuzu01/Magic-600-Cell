@@ -9,9 +9,9 @@
 //!   invocation of `operation.preview` with the literal word as its absolute argument and no token, in one word step
 //!   or, for the input recipe's literal word longer than one chunk, in the solver's word steps.
 //! - [`kernel_rows`] holds the kernel rows that [`bridge`] serves to a program's snapshot read with an argument (KN5,
-//!   LP2 draft): KN2.4's `positions` and `labels`, which LB2's exact completion in `c600-library` reads (CT-LB2-04),
+//!   CM.18): KN2.4's `positions` and `labels`, which LB2's exact completion in `c600-library` reads (CT-LB2-04),
 //!   KN2.4's `effect`, which LB2's recipes and reports read (CT-LB2-01), and the `protection` row, which LB2's Net and
-//!   Strict protection reads (CT-LB2-02), and the draft `setups` row of the setup-search exception, which LB2's guarded
+//!   Strict protection reads (CT-LB2-02), and the `setups` row of the setup-search exception, which LB2's guarded
 //!   setups read (CT-BND-18).
 //! - [`expand`] is the source route's recipe expansion: a case step's recipe to its literal word, through the kernel,
 //!   outside the program and without a state read.
@@ -77,7 +77,7 @@
 //!   decide: it refuses a runtime invocation of a commit or app row and any runtime invocation carrying a token
 //!   (ADR-L02, KN5.15). Its command IDs are `<run>/<n>`, `n` counting the bridge's invocations in the run; for a run
 //!   whose one proposal the boundary admits, that is the boundary's proposal ID. A proposal's tariff is the word's
-//!   length (LG2.17) with a result bound of [`bridge::RESULT_BOUND`] bytes until the command table prices the row. The
+//!   length (LG2.17) with a result bound of [`bridge::RESULT_BOUND`] bytes; H-08 prices only reads (CM.18). The
 //!   answer the shell sees is a receipt `{base, id, status, job}`; the layer's refusal or failure is its error code.
 //!   The acknowledgement's `base` is `<session>@<epoch>/<head>`.
 //! - **Kernel rows** (KN2.4, KN5; [`kernel_rows`]). The bridge serves four reads, each to a snapshot read with an
@@ -95,7 +95,7 @@
 //!   slots per named piece, and `labels` one unit per named slot; each result bound is the size of an answer of that
 //!   many of the largest items. `effect` takes a recipe, a word or a list of word and star steps, and answers the
 //!   fields its declared record names (the map, its digests, the counts and the support per orbit); it refuses in the
-//!   same order, with the kernel's refusal of a recipe in place of a range error. The draft `setups` row, read only
+//!   same order, with the kernel's refusal of a recipe in place of a range error. The `setups` row, read only
 //!   under the built-in column's setup-search exception, answers the certified setups for the target the solver names,
 //!   and the bridge serves it only with the `SetupTable` the host gives it. Each row's argument, answer, codes and
 //!   tariff are in [`kernel_rows`].

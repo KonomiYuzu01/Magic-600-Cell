@@ -173,9 +173,9 @@ fn ct_lg2_05_a_list_keeps_the_display_qualifier_of_its_elements() {
 }
 
 /// CT-LG2-12 (part, the language half: R-11's inverse, conjugate, commutator and composition accept the validated
-/// word domain, the draft's `Word` of literal signed generators, the empty word included, and give a `Word`; not run:
-/// validation, which is the kernel's, and the jumbling fixtures under LG2.14's four hypotheses, which wait for the
-/// jumbled puzzle's alphabet, M5; the run-time totality half is `c600-run`'s `collections.rs`): anything else is
+/// word domain, the draft's `Word` of literal signed generators, the empty word included, and give a `Word`;
+/// validation is the kernel's, the jumbling fixtures under LG2.14's four hypotheses are `c600-jumble-tool`'s `lb3.rs`
+/// and `c600-kernel`'s `load.rs`, and the run-time totality half is `c600-run`'s `collections.rs`): anything else is
 /// refused, and a display word stays display, so it cannot become an exact word (LG2.19).
 #[test]
 fn ct_lg2_12_word_operations_accept_the_word_domain() {

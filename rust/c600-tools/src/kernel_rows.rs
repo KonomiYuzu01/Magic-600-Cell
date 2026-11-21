@@ -1,7 +1,7 @@
-//! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; LP2 draft until the
-//! command table freezes, PHS.52). Eleven rows so far: five of KN2.4, the draft `setups` row of the setup-search
-//! exception, the three draft structure rows of LP3's representations tool, the draft `orbits` row of LB2's orbit
-//! catalogue, and the draft `journal` row of KN4.3, which LP3's C8 reads. LB2's exact completion reads two of them
+//! Kernel rows that the host bridge serves to a program's snapshot read with an argument (KN5; H-08's `reads` since the
+//! command table's freeze, CM.18). Eleven rows so far: five of KN2.4, the `setups` row of the setup-search
+//! exception, the three structure rows of LP3's representations tool, the `orbits` row of LB2's orbit
+//! catalogue, and the `journal` row of KN4.3, which LP3's C8 reads. LB2's exact completion reads two of them
 //! (`c600_library`'s `completion.exact_completion`; CT-LB2-04: exact completion reads identities, slots and
 //! orientations): `positions`, the position of named pieces, and `labels`, the label of named slots. LB2's recipes
 //! and reports read the third (`c600_library`'s `recipes`; CT-LB2-01): `effect`, a recipe's net map and what it
@@ -171,7 +171,7 @@
 //!
 //! A program reads the row as `read_snapshot<T>("setups", target)`, and only under the built-in column's setup-search
 //! exception (`c600_check::Row::SetupSearch`, BND.1): LB2's guarded setups read it (`c600_library`'s
-//! `guarded_setups`; CT-BND-18). KN2.4 has no setup row, so this row is a draft until the command table freezes at LP3.
+//! `guarded_setups`; CT-BND-18). KN2.4 has no setup row; H-08's `reads` hold this one since LP3's freeze (CM.18).
 //! The bridge serves it only when the host gives it the certified guarded setup tables ([`SetupTable`],
 //! `assets/execution_trees.json.gz`, read through the kernel's asset check); otherwise the read is not granted.
 //! `target` is the target the solver names, `record { orbit: Nat, position: Nat }`: an orbit, 0 to 34, and a position
@@ -201,8 +201,8 @@
 //! # `structure.compare`
 //!
 //! A program reads the row as `read_snapshot<T>("structure.compare", cells)`: LP3's representations tool reads it in
-//! `compare_cells`, the entry of the command row `structure.compare` (C6). KN2.4 has no structure row, so this row is a
-//! draft until the command table freezes at LP3. `cells` is `record { first: Nat, second: Nat }`, two cells, each 0 to
+//! `compare_cells`, the entry of the command row `structure.compare` (C6). KN2.4 has no structure row; H-08's `reads`
+//! hold this row since LP3's freeze (CM.18). `cells` is `record { first: Nat, second: Nat }`, two cells, each 0 to
 //! 599. `T` is a record with these three fields, in any order:
 //!
 //! - `first: Nat` and `second: Nat`, the cells as named;
@@ -221,7 +221,7 @@
 //! # `filter.preview`
 //!
 //! A program reads the row as `read_snapshot<T>("filter.preview", predicate)`: LP3's representations tool reads it in
-//! `filter_counts`, the entry of the command row `filter.preview` (C6), and it is a draft as `structure.compare` is.
+//! `filter_counts`, the entry of the command row `filter.preview` (C6), and H-08's `reads` hold it too (CM.18).
 //! `predicate` is a layer predicate, `record { cell: Nat, layer: Nat }`, the record the command row `structure.layer`
 //! prepares: a cell, 0 to 599, and a layer around it, from 0 to the cell's last. `T` is a record with these four
 //! fields, in any order:
@@ -240,7 +240,7 @@
 //! # `structure.layer`
 //!
 //! A program reads the row as `read_snapshot<T>("structure.layer", predicate)`: LP3's representations tool reads it to
-//! show the members of an applied filter (C6), and it is a draft as `structure.compare` is. The command row
+//! show the members of an applied filter (C6), and H-08's `reads` hold it too (CM.18). The command row
 //! `structure.layer` prepares the predicate this row reads; a read and a command row share the name as
 //! `filter.preview`'s do. `predicate` is a layer predicate, as for `filter.preview`. `T` is a record with these four
 //! fields, in any order:
@@ -259,7 +259,7 @@
 //! # `orbits`
 //!
 //! A program reads the row as `read_snapshot<T>("orbits", orbits)`: LB2's orbit catalogue reads it (`c600_library`'s
-//! `orbits`). KN2.4 has no orbit row, so this row is a draft until the command table freezes at LP3, as `setups` is.
+//! `orbits`). KN2.4 has no orbit row; H-08's `reads` hold this one since LP3's freeze (CM.18), as they hold `setups`.
 //! Chapter 03 builds the catalogue as library code over `labels` and `positions`, and `positions` gives a piece's orbit
 //! only for pieces a program names. Read for all 177,120 pieces, it fits the budget ceiling's kernel cost
 //! (3,802,200 of 2^40), but sorting its records by orbit takes at least ten steps a piece, about 1,770,000 steps:
@@ -289,7 +289,7 @@
 //!
 //! A program reads the row as `read_snapshot<T>("journal", page)`: LP3's C8 reads it to page back from the head to
 //! an exit or the start, for its `exit_root` and `solved_witness` facts. It is KN4.3's frozen query
-//! `journal(session, from: EventId?, limit: Nat, cursor?) -> Page<JournalEntry>`, served as a draft row on the bridge's
+//! `journal(session, from: EventId?, limit: Nat, cursor?) -> Page<JournalEntry>`, served as a row on the bridge's
 //! own session ([`CommandLayer::journal`]). `page` is a record with these three fields, in any order:
 //!
 //! - `cursor: Text`, "" for a first page, else the `next` of the page before;
@@ -496,7 +496,7 @@ fn label_sizes() -> (u128, u128) {
     })
 }
 
-/// The row's draft tariff for `pieces` named pieces (DET.55; the command table prices the row when it freezes). The
+/// The row's tariff for `pieces` named pieces (DET.55; H-08's `reads`, CM.18). The
 /// kernel cost counts the slots the row reads: one pass over the state's 259,800 labels, then at most
 /// [`MAX_PIECE_STICKERS`] for each named piece. The result bound is the logical size of an answer of that many of the
 /// largest records: records whose integers all have magnitude 259,799 and whose `home` and `slots` hold
@@ -508,8 +508,8 @@ pub fn positions_tariff(pieces: usize) -> RowTariff {
     RowTariff { kernel_cost, result_bound: empty.saturating_add(n.saturating_mul(record)) }
 }
 
-/// The `labels` row's draft tariff for `slots` named slots (DET.55; the command table prices the row when it
-/// freezes). The kernel cost counts the labels the row reads, one for each named slot: the row reads the head's label
+/// The `labels` row's tariff for `slots` named slots (DET.55; H-08's `reads`,
+/// CM.18). The kernel cost counts the labels the row reads, one for each named slot: the row reads the head's label
 /// array where it stands and inverts nothing. The result bound is the logical size of an answer of that many of the
 /// largest labels, 259,799 each.
 pub fn labels_tariff(slots: usize) -> RowTariff {
@@ -777,8 +777,8 @@ fn effect_sizes() -> &'static (u128, [u128; 8]) {
     })
 }
 
-/// The `effect` row's draft tariff for a recipe of `primitives` primitives and an answer with `fields` (DET.55; the
-/// command table prices the row when it freezes). The kernel cost counts one pass over the 259,800 slots of the map and
+/// The `effect` row's tariff for a recipe of `primitives` primitives and an answer with `fields` (DET.55;
+/// H-08's `reads`, CM.18). The kernel cost counts one pass over the 259,800 slots of the map and
 /// one unit for each primitive of the expansion, as a proposal costs the length of its literal word (KN5.9). The
 /// result bound is the logical size of the largest answer with these fields ([`effect_sizes`]).
 fn effect_tariff_of(primitives: usize, fields: &[EffectField]) -> RowTariff {
@@ -788,7 +788,7 @@ fn effect_tariff_of(primitives: usize, fields: &[EffectField]) -> RowTariff {
     RowTariff { kernel_cost: (SLOTS as u128).saturating_add(primitives as u128), result_bound }
 }
 
-/// The `effect` row's draft tariff for a recipe of `primitives` primitives and an answer of the declared type `ty`;
+/// The `effect` row's tariff for a recipe of `primitives` primitives and an answer of the declared type `ty`;
 /// None for a type the row does not answer.
 pub fn effect_tariff(primitives: usize, ty: &QTy) -> Option<RowTariff> {
     effect_shape(ty).map(|shape| effect_tariff_of(primitives, &shape.fields))
@@ -986,8 +986,8 @@ fn protection_sizes() -> (u128, u128) {
     })
 }
 
-/// The `protection` row's draft tariff for a lock of `pairs` pairs and a recipe of `primitives` primitives (DET.55;
-/// the command table prices the row when it freezes). The kernel cost counts the lock's pairs, one unit per primitive
+/// The `protection` row's tariff for a lock of `pairs` pairs and a recipe of `primitives` primitives (DET.55;
+/// H-08's `reads`, CM.18). The kernel cost counts the lock's pairs, one unit per primitive
 /// of the expansion, one pass over the 259,800 slots for the net map or the held slots, and for Strict one more pass
 /// for each generator the word may use, at most [`GENERATORS`]. The result bound is the logical size of an answer whose
 /// integers are the largest a field holds and whose conflicts are all the pairs, each slot 259,799.
@@ -1002,7 +1002,7 @@ fn protection_tariff_of(pairs: usize, primitives: usize, mode: Mode) -> RowTarif
     RowTariff { kernel_cost, result_bound: empty.saturating_add((pairs as u128).saturating_mul(conflict)) }
 }
 
-/// The `protection` row's draft tariff for a lock of `pairs` pairs, a recipe of `primitives` primitives and the mode
+/// The `protection` row's tariff for a lock of `pairs` pairs, a recipe of `primitives` primitives and the mode
 /// (`strict` true for Strict).
 pub fn protection_tariff(pairs: usize, primitives: usize, strict: bool) -> RowTariff {
     protection_tariff_of(pairs, primitives, if strict { Mode::Strict { limit: None } } else { Mode::Net })
@@ -1208,8 +1208,8 @@ fn replay_size() -> u128 {
     })
 }
 
-/// The `replay` row's draft tariff for a recipe of `primitives` primitives (DET.55; the command table prices the row
-/// when it freezes). The kernel cost counts two passes over the expansion, one for the net map and one for the
+/// The `replay` row's tariff for a recipe of `primitives` primitives (DET.55; H-08's `reads`,
+/// CM.18). The kernel cost counts two passes over the expansion, one for the net map and one for the
 /// prefixes, and two over the 259,800 slots, one for the map and one for the derived state. The result bound is the
 /// logical size of the largest answer, whatever the recipe.
 pub fn replay_tariff(primitives: usize) -> RowTariff {
@@ -1264,8 +1264,8 @@ pub fn replay<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result
 }
 
 /// The `setups` row's query: the derived-state row of the setup-search exception (BND.1; `c600_check`'s
-/// [`c600_check::Row::SetupSearch`], whose tests read it as `setups`). KN2.4 has no setup row, so this one is a draft
-/// until the command table freezes at LP3.
+/// [`c600_check::Row::SetupSearch`], whose tests read it as `setups`). KN2.4 has no setup row; H-08's `reads` hold
+/// this one since LP3's freeze (CM.18).
 pub const SETUPS: &str = "setups";
 
 /// The family a `setups` answer examines, which an empty answer names (chapter 03, "Guarded setups and buffers"): the
@@ -1537,8 +1537,8 @@ fn setups_sizes(letters: usize) -> (u128, u128) {
     (empty, one - none)
 }
 
-/// The `setups` row's draft tariff for a target with `setups` setups in a table whose deepest setup has `letters`
-/// letters (DET.55; the command table prices the row when it freezes). The kernel cost counts one pass over the 259,800
+/// The `setups` row's tariff for a target with `setups` setups in a table whose deepest setup has `letters`
+/// letters (DET.55; H-08's `reads`, CM.18). The kernel cost counts one pass over the 259,800
 /// slots to find the named position's orbit, and for each setup the kernel's certification of its star: three passes,
 /// for the map, the net and the support. The result bound is the logical size of an answer of that many of the largest
 /// setups ([`setups_sizes`]).
@@ -1639,12 +1639,12 @@ pub fn setups<S: Store>(
     Ok(Value::record(shape.fields.iter().map(|&field| (name(field), value(field))).collect()))
 }
 
-/// The `structure.compare` row's query: two cells compared, which LP3's representations tool reads (C6; a draft, since
-/// KN2.4 has no structure row).
+/// The `structure.compare` row's query: two cells compared, which LP3's representations tool reads (C6; H-08's `reads`,
+/// CM.18).
 pub const STRUCTURE_COMPARE: &str = "structure.compare";
 
-/// The `filter.preview` row's query: the counts of a layer predicate, which LP3's representations tool reads (C6; a
-/// draft, since KN2.4 has no structure row).
+/// The `filter.preview` row's query: the counts of a layer predicate, which LP3's representations tool reads (C6;
+/// H-08's `reads`, CM.18).
 pub const FILTER_PREVIEW: &str = "filter.preview";
 
 /// The cells of 600-cell-Full, named 0 to 599. A layer and a step count count face steps between two of them, so no
@@ -1716,7 +1716,7 @@ fn record_size(fields: &[(&'static str, u64)]) -> u128 {
     Value::record(fields.iter().map(|&(name, n)| (name, Value::int(n))).collect()).size()
 }
 
-/// The `structure.compare` row's draft tariff (DET.55; the command table prices the row when it freezes). The kernel
+/// The `structure.compare` row's tariff (DET.55; H-08's `reads`, CM.18). The kernel
 /// cost is one: the kernel reads the step count from its table of every pair of cells. The result bound is the logical
 /// size of the largest answer, three integers of 599, since no cell or step count reaches [`CELLS`].
 pub fn structure_compare_tariff() -> RowTariff {
@@ -1726,7 +1726,7 @@ pub fn structure_compare_tariff() -> RowTariff {
     RowTariff { kernel_cost: 1, result_bound }
 }
 
-/// The `filter.preview` row's draft tariff (DET.55; the command table prices the row when it freezes). The kernel cost
+/// The `filter.preview` row's tariff (DET.55; H-08's `reads`, CM.18). The kernel cost
 /// counts one pass over the home slots of every position, 259,800 in all, which the kernel sorts into the layers
 /// around the cell. The result bound is the logical size of the largest answer: a cell and a layer of 599, 177,120
 /// positions and 259,800 slots.
@@ -1791,8 +1791,8 @@ pub fn filter_preview<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -
     }))
 }
 
-/// The `structure.layer` row's query: the members of a layer predicate, which LP3's representations tool reads (C6; a
-/// draft, since KN2.4 has no structure row).
+/// The `structure.layer` row's query: the members of a layer predicate, which LP3's representations tool reads (C6;
+/// H-08's `reads`, CM.18).
 pub const STRUCTURE_LAYER: &str = "structure.layer";
 
 /// The fields of the `structure.layer` row's answer, by name.
@@ -1825,7 +1825,7 @@ fn member_fields(ty: &QTy) -> Option<Vec<&'static str>> {
     Some(order)
 }
 
-/// The `structure.layer` row's draft tariff (DET.55; the command table prices the row when it freezes). The kernel cost
+/// The `structure.layer` row's tariff (DET.55; H-08's `reads`, CM.18). The kernel cost
 /// counts one pass over the home slots of every position, 259,800 in all, which finds the layer's positions, then one
 /// unit for each position and slot answered, at most 177,120 and 259,800. The result bound is the logical size of an
 /// answer no layer exceeds: a cell and a layer of 599, and every position and every slot, each of the largest value.
@@ -1867,8 +1867,8 @@ pub fn structure_layer<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) 
     Ok(Value::record(order.iter().map(|&name| (name, value(name))).collect()))
 }
 
-/// The `orbits` row's query: the pieces of named orbits, which LB2's orbit catalogue reads (a draft, since KN2.4 has
-/// no orbit row).
+/// The `orbits` row's query: the pieces of named orbits, which LB2's orbit catalogue reads (H-08's `reads`,
+/// CM.18).
 pub const ORBITS_ROW: &str = "orbits";
 
 /// The most pieces one orbit of 600-cell-Full has (the kernel's largest orbits; a test checks it). The `orbits` row's
@@ -1915,8 +1915,8 @@ fn orbits_sizes() -> (u128, u128) {
     })
 }
 
-/// The `orbits` row's draft tariff for `orbits` named orbits (DET.55; the command table prices the row when it
-/// freezes). The kernel cost counts one pass over the home slots of every piece, 259,800 in all, which gives each piece
+/// The `orbits` row's tariff for `orbits` named orbits (DET.55; H-08's `reads`,
+/// CM.18). The kernel cost counts one pass over the home slots of every piece, 259,800 in all, which gives each piece
 /// its orbit, then at most [`MAX_ORBIT_PIECES`] answered pieces for each named orbit. The result bound is the logical
 /// size of an answer of that many of the largest records: orbit 34 with [`MAX_ORBIT_PIECES`] pieces of 177,119.
 pub fn orbits_tariff(orbits: usize) -> RowTariff {
@@ -1969,8 +1969,8 @@ pub fn orbits<S: Store>(layer: &CommandLayer<S>, arg: &[u8], ty: &QTy) -> Result
     Ok(Value::list(named.iter().map(record).collect()))
 }
 
-/// The `journal` row's query: KN4.3's page of the move tree's events, which LP3's C8 reads (a draft until the command
-/// table freezes).
+/// The `journal` row's query: KN4.3's page of the move tree's events, which LP3's C8 reads (H-08's `reads` since the
+/// command table's freeze, CM.18).
 pub const JOURNAL: &str = JOURNAL_ROW;
 
 /// The fields of the `journal` row's answer, by name.
@@ -2099,8 +2099,8 @@ fn journal_sizes() -> (u128, u128) {
     })
 }
 
-/// The `journal` row's draft tariff for a page of `limit` events (DET.55; the command table prices the row when it
-/// freezes). The kernel cost counts one step of the walk for each event answered, whatever the history's length
+/// The `journal` row's tariff for a page of `limit` events (DET.55; H-08's `reads`,
+/// CM.18). The kernel cost counts one step of the walk for each event answered, whatever the history's length
 /// (R-13). The result bound is the logical size of an answer of that many of the largest entries and the longest
 /// cursor.
 pub fn journal_tariff(limit: u64) -> RowTariff {

@@ -6,10 +6,10 @@
 //! exact-completion half over KN2.4's `positions` and `labels` rows and its residual half over the caller's
 //! `positions` answers; LB2's rows "Star and recipe construction" and "Collateral and support", over KN2.4's `effect`
 //! row; LB2's row "Net and Strict protection", over KN2.4's `protection` row; LB2's row "Guarded setups and buffers",
-//! over the draft `setups` row of the setup-search exception; LB2's row "Named macro analysis and comparison", over
+//! over the `setups` row of the setup-search exception; LB2's row "Named macro analysis and comparison", over
 //! KN2.4's `effect` and `replay` rows; LB2's row "Seeds and full seed analysis" as far as the seeds' collateral goes,
 //! over KN2.4's `effect`; and LB2's row "Orbit catalogue and collateral stage order": the stage order over the seeds'
-//! collateral, and the orbit catalogue over the draft `orbits` row with the progress per orbit over the caller's
+//! collateral, and the orbit catalogue over the `orbits` row with the progress per orbit over the caller's
 //! `positions` answers.
 //!
 //! # Literal words
@@ -193,7 +193,7 @@
 //!
 //! The source [`SETUPS_SOURCE`], `src/setups.6cs`, is the module `guarded_setups` in edition `6cs-draft-1`, in the
 //! formatter's canonical layout. It exports one entry, `setups_for(goal: record { orbit: Nat, position: Nat })`, with
-//! the `snapshot` effect: the setup search for a target the solver names (BND.1). It reads the draft `setups` row at
+//! the `snapshot` effect: the setup search for a target the solver names (BND.1). It reads the `setups` row at
 //! the target as given and answers the row's record as read: the target, the orbit's two buffer positions, the family
 //! examined (`execution_tree`) with the table's digest, and the certified setups, each a frame node of the orbit's
 //! execution tree whose frame lies at the position, with its frame and its setup word, in the table's node order.
@@ -263,7 +263,7 @@
 //! The source [`ORBITS_SOURCE`], `src/orbits.6cs`, is the module `orbits` in edition `6cs-draft-1`, in the
 //! formatter's canonical layout. Three entries:
 //!
-//! - `orbit_catalogue(named)` reads the draft row `orbits` at the orbits the caller names, -1 (the fixed cell centres)
+//! - `orbit_catalogue(named)` reads the row `orbits` at the orbits the caller names, -1 (the fixed cell centres)
 //!   to 34, and answers each orbit's pieces, by home position in increasing order: model data, the same at every head.
 //! - `orbit_progress(orbit, positions)`, pure, takes the caller's `positions` answer and counts, among its records of
 //!   the orbit, the pieces whose every sticker is in its home slot (`solved`), those in their home position with a
@@ -379,12 +379,13 @@
 //!   jumbling. The tool's bridge serves Full at labels, with a lock argument `{lock, mode, recipe, limit?}`, answers
 //!   `level: "labels"`, and refuses with Jumble on. C8's jumbling library reads the pose-level form
 //!   `{mode, pieces, word}` from `c600-jumble-tool`'s own test host. A host that serves both tells them apart by the
-//!   Jumble state; the command table settles the row's one form when it freezes.
+//!   Jumble state; H-08's `reads` give the row one name and an entry per puzzle and level since the command table's
+//!   freeze (CM.18).
 //! - LB2: the catalogue row is Rust data in [`net_and_strict_protection`]. Its Effect field is the checker's
 //!   `ReadSnapshot`; chapter 03's "budgets" is the run's budget, which the row's tariff draws on
 //!   (`c600_tools::kernel_rows`).
-//! - BND.1, setup search: KN2.4 has no setup row, so the entry reads a draft derived-state row named `setups`, the
-//!   name `c600_check`'s setup-search tests use, until the command table freezes at LP3. Chapter 03 backs the row with
+//! - BND.1, setup search: KN2.4 has no setup row, so the entry reads the derived-state row named `setups`, the
+//!   name `c600_check`'s setup-search tests use, which H-08's `reads` hold (CM.18). Chapter 03 backs the row with
 //!   library code over KN2.4's `labels`, `positions` and `effect`; the entry cannot build the setups from those reads,
 //!   because the setup-search exception delivers its value only as read and the built-in column reads only at what the
 //!   solver names, so the row answers them whole and the kernel certifies each one.
@@ -404,9 +405,9 @@
 //! - LB2, stage order: Kahn's order over the caller's rows, taking at each step the first ready row in the caller's
 //!   list; chapter 03 fixes the edges, not the order among rows that no edge separates. A collateral orbit with no row
 //!   of its own holds nothing back, and a row a cycle holds stays in `cycle` with every row behind it.
-//! - LB2, orbit catalogue: KN2.4 has no row that names an orbit's pieces, so `orbit_catalogue` reads the draft row
-//!   `orbits` (`c600_tools::kernel_rows`, pull request 358) until the command table freezes at LP3, which takes it or
-//!   drops it. Chapter 03 backs the catalogue with library code over KN2.4's `labels`, `positions` and `effect`; under
+//! - LB2, orbit catalogue: KN2.4 has no row that names an orbit's pieces, so `orbit_catalogue` reads the row
+//!   `orbits` (`c600_tools::kernel_rows`, pull request 358), which H-08's `reads` hold since the command table's
+//!   freeze. Chapter 03 backs the catalogue with library code over KN2.4's `labels`, `positions` and `effect`; under
 //!   the draft budget ceiling that cannot serve it: `labels` names no orbit, `positions` names one only for the pieces
 //!   a program names, and sorting all 177,120 pieces by orbit takes at least ten steps a piece, about 1.8 million,
 //!   against the draft ceiling's 2^20 (1,048,576); the owner's 2^21 (2,097,152) holds the sort but little else. The
@@ -549,7 +550,7 @@ pub const SETUPS_SOURCE: &str = include_str!("setups.6cs");
 pub const SETUPS_MODULE: &str = "guarded_setups";
 /// The guarded setups module's exported functions.
 pub const SETUPS_EXPORTS: [&str; 1] = ["setups_for"];
-/// The row the guarded setups module reads with `read_snapshot`: the draft row of the setup-search exception.
+/// The row the guarded setups module reads with `read_snapshot`: the row of the setup-search exception.
 pub const SETUPS_ROWS: [&str; 1] = ["setups"];
 
 /// The exact Q(√5) signs source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
@@ -606,7 +607,7 @@ pub const ORBITS_EXPORTS: [&str; 3] = ["orbit_catalogue", "orbit_progress", "orb
 pub const ORBITS_CATALOGUE: [&str; 2] = ["orbit_catalogue", "orbit_progress"];
 /// The exported function behind the residual half of LB2's row "Residuals and exact completion".
 pub const ORBITS_RESIDUALS: [&str; 1] = ["orbit_residuals"];
-/// The row the orbits module reads with `read_snapshot`: the draft `orbits` row of the orbit catalogue.
+/// The row the orbits module reads with `read_snapshot`: the `orbits` row of the orbit catalogue.
 pub const ORBITS_ROWS: [&str; 1] = ["orbits"];
 
 /// The SHA-256 of [`SOURCE`], in hex: the digest a client's `import` names.

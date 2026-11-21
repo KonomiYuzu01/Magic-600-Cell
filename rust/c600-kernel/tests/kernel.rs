@@ -559,10 +559,11 @@ fn word_steps(word: &[i64], sizes: &[usize]) -> Recipe {
     kernel().recipe(&Value::Array(steps.collect())).unwrap()
 }
 
-/// CT-LG2-14 (part: the kernel's streaming of positions and letters on 600-cell-Full; not run: compressed words and
-/// their exact big-integer lengths, which are library code). Each recipe of O04, star steps included, streams in
-/// chunks of several sizes: the positions run on without a gap, every chunk but the last is full, and the letters
-/// equal the whole expansion and the oracle's independently expanded digest and count (0.4's `Model.expand`).
+/// CT-LG2-14 (part: the kernel's streaming of positions and letters on 600-cell-Full; compressed words and their
+/// exact big-integer lengths are `c600-run`'s `collections.rs`, and with it CT-LG2-14 runs whole). Each recipe of
+/// O04, star steps included, streams in chunks of several sizes: the positions run on without a gap, every chunk but
+/// the last is full, and the letters equal the whole expansion and the oracle's independently expanded digest and
+/// count (0.4's `Model.expand`).
 #[test]
 fn ct_lg2_14_streamed_positions_and_letters_equal_the_oracle_expansion() {
     let kernel = kernel();

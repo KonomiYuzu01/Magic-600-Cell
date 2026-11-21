@@ -540,8 +540,8 @@ fn f() -> Word effects [] {{
     }
 }
 
-/// CT-LG2-13 (part: the empty-word half statically, with the Full key (LP2 draft); not run: the jumbling key and its
-/// domain test at a straddling cap, which wait for the jumbled puzzle, M5; the run-time halves are `c600-run`'s
+/// CT-LG2-13 (part: the empty-word half statically, with the Full key (LP2 draft); the jumbling key and its domain
+/// test at a straddling cap are `c600-jumble-tool`'s `lb3.rs`; the run-time halves are `c600-run`'s
 /// `ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair` and
 /// `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`): an inverse pair is a literal word of its own, unequal
 /// to the empty word, and comparing keys gives a boolean, never a word to propose.

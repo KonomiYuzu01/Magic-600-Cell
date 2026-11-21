@@ -135,8 +135,8 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG3:capability.not_granted` at the call (DET.36, RTE.45); a call of a function value whose callable the checker
   cannot see keeps `LG3:effect.undeclared`. The value of `use_goal` and `use_evidence` must be portable exact data: a
   type that holds a function, a receipt, a word equality key or a compressed word at any depth, or a type variable, is
-  `LG2:type.mismatch` at the sink, and an approximate value keeps its exactness codes. Chapter 13 changes once, in the
-  amendment LP3 makes at its command-table freeze; until then the drafts stay in use.
+  `LG2:type.mismatch` at the sink, and an approximate value keeps its exactness codes. Chapter 13 changed once, in the
+  amendment LP3 made at its command-table freeze (PHS.53, chapter 13 section 9).
 - Base types (LG2.1). A value whose base type does not fit its use is the diagnostic `LG2:type.mismatch` at the path
   of the offending expression, with the expected and supplied types in source notation (`Diagnostic::mismatch`); the
   exactness fields stay empty. This covers arguments, conditions, branches and arms, patterns, operands, field reads,
@@ -864,7 +864,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     and every layer's counts against digests taken from 0.4's `core.py` on the same assets, and that a layer's members
     are as many as its counts, its slots their home slots, and a cell's layers together every position.
   - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
-    CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
+    CT-LG2-14 (each whole by union with the language halves, and CT-LG2-12 also with `c600-jumble-tool`'s `lb3.rs`);
+    CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
     profile.
 - KN3 (LP2): `c600_kernel::exact` decides the sign of a + b√5 exactly for 128-bit a and b (`sign5`, a² against 5b²
@@ -928,14 +929,19 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   record of the three fixtures and all 3,156 letters of H6030 run. `tools/ci/run_headless.py` lists it.
 - Contract tests: CT-KN1-02, CT-KN2-03 (`c600-jumble/tests/crossing.rs`) and CT-KN3-02 whole; the jumbling halves
   of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
-  with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
-  histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
+  with M4's halves; CT-JI-03. CT-KN2-02 whole: heights and domain IDs against `trees.py` and the library's
+  histograms on H6030's compared states, the recorded fixture prefixes and u1, the free-mode Cayley rotation, and
+  (`ItemEightStateTests`) the rest of ENG-0J item 8's states: the word-check cases b20, b06-14, b14 and b03 at their
+  start and end, the I_a@40 stop, the deep scramble and the six height-4 states, each with a planted height and a
+  planted domain ID that fail. Where J1's own replay takes minutes or hours, J1's state is rebuilt from the
+  candidate's pose table and must reach the research run's recorded digest. b14, b03 and the stop always run; b20,
+  b06-14, the deep scramble and the height-4 states run with `JUMBLING_FULL_REPLAY=1`, since b06-14 alone takes
+  about 34 minutes on a development machine.
 - Not built, for M8: CT-KN3-03's model inputs (the filter itself is in `c600-a2-filter`, M4's section), the jumbling
-  words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's cases b20,
-  b06-14, b14 and b03; the observation nu (M8 builds rim_summary, covers, repair_list and release_check, below); and the
-  holding caps of seam cells and tree positions past the first step. Built since M5: KN3's exact rotation requests
-  (below; CT-KN3-05 whole, CT-KN3-01, CT-KN3-04 and CT-KN3-06 in part), the kernel rows for 600-cell-Full (M4's
-  section), and M8's levels, end tests and derived values, Strict protection included (below).
+  words of CT-KN2-07 and CT-KN3-01's small-margin set; the observation nu (M8 builds rim_summary, covers, repair_list
+  and release_check, below); and the holding caps of seam cells and tree positions past the first step. Built since M5:
+  KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01, CT-KN3-04 and CT-KN3-06 in part), the kernel rows
+  for 600-cell-Full (M4's section), and M8's levels, end tests and derived values, Strict protection included (below).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
   acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
   blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
@@ -1546,13 +1552,13 @@ run or not applicable is no pass (PHS.63).
     `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1,
     `tests/test_jumbling_rust_nu.py` compares ν with the ν reference, and `tests/test_jumbling_rust_corrections.py`
     the correction catalogue with the research library (M5's section).
-- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
-  KN5's stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and
-  M6's record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder,
-  streamed words and `filter.apply`, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py`
-  checks the tool):
-  90 whole, eleven of them by the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05,
-  CT-LG2-04, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 137 part; 4 named only by LP3's command-layer
+- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them), KN5's
+  stages 1 to 5, its overlay availability and its report after a command, the Linux Rust job, M8's levels and M6's
+  record layer with its run record and jumbling records, the stage checker, whole-state contracts, the builder, streamed
+  words, `filter.apply` and PHS.19's items 7 and 8 (CT-KN2-02's remaining states, R-11's jumbling fixtures), as
+  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 94 whole, 14 of them by
+  the union of their parts (CT-KN1-04, CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG2-12, CT-LG2-13,
+  CT-LG2-14, CT-LG3-01, CT-LG3-04, CT-LG5-06, CT-PS1-11 and CT-PS1-22); 133 part; 4 named only by LP3's command-layer
   tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); none missing; 17 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
@@ -1561,8 +1567,13 @@ run or not applicable is no pass (PHS.63).
   cross-platform item). These are the six `tests/test_jumbling_rust_*.py` checks that the Windows shards run
   (candidate, attacks, M8's observations and levels, ν and the correction catalogue), one runner each. They use the
   same pinned CPython and hash-checked NumPy wheels and build the release adapter offline. Each system compares the
-  candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared byte for byte. A
-  pass is headless Linux source and fixture evidence only.
+  candidate with J1 on the same pinned inputs and keys. The two systems' payloads and stop reasons are compared byte
+  for byte by the LP2 workflow (`.github/workflows/lp2-full.yml`, nightly on main and on request): ten checks (the
+  kernel's oracle replay, the LP3 loop and source route, the jumbling command route and the six J1 comparisons) run
+  on windows-2025 and on ubuntu-24.04 with `C600_TRANSCRIPT_DIR` set and keep their exact outputs
+  (`tools/ci/transcripts.py`), and a third job compares them. The same workflow runs the J1 comparisons that read
+  `JUMBLING_FULL_REPLAY=1` on every record, and `jumble_on_layer.rs`'s whole fixtures (`--ignored`) in a release
+  build. A pass is headless Linux and Windows source and fixture evidence only.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the
@@ -1594,8 +1605,8 @@ run or not applicable is no pass (PHS.63).
   row before the `use_exact` row) and hands the host the canonical bytes, so a function or a receipt never reaches the
   host (RPI.54, RPI.1); a value with no canonical form stops the run with `PS1:input.noncanonical_value` before the
   host is called. Receipt-as-evidence is a question for the next milestone card.
-- Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changes once, in the amendment LP3 makes at its
-  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the ten draft codes `c600-command`
+- Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changed once, in the amendment LP3 made at its
+  command-table freeze (PHS.53). It took the ten draft codes `c600-command`
   emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`, `KN5:input.argument_form`,
   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN5:consistency.unadmitted_journal_action`,
   `KN5:capability.preview_shown`, `KN5:capability.outside_solver_command`, `KN5:input.saved_set_exists`, and KN5's
@@ -1606,7 +1617,7 @@ run or not applicable is no pass (PHS.63).
   rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
   cells of `KN2:input.recipe_shape` and `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits
   both, and the cell of `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused
-  word (M5) and M8's `derive` for a refused letter. LP3's command-table freeze makes the amendment (chapter 13,
+  word (M5) and M8's `derive` for a refused letter. LP3's command-table freeze made the amendment (chapter 13,
   section 9), with the five later codes the owner added on 20 November 2026
   (`../docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md`, item 6).
 - Open, each needing a decision:
@@ -1743,8 +1754,8 @@ run or not applicable is no pass (PHS.63).
     `attack_callers.rs` (G1), `attack_playback.rs` (LD1), `strict_policy.rs`, `attack_protection.rs` (B5) and
     `jumble_twist_menu.rs` (B5 under Net and Strict, a pose move that moves no protected piece, and the reopen).
 - KN5's stages 3 to 5 (LP2; the drafts are in the crate documentation):
-  - The workspace store. `workspace.set` (`RECORD_ROW`, M6's draft name; H-08 has no such row, so a host adds it with
-    `Table::with_drafts` until the typed workspace rows freeze at LP3) writes a named record, its payload and its
+  - The workspace store. `workspace.set` (`RECORD_ROW`, M6's name, which H-08 holds since the command table's freeze,
+    CM.17, with `payload: Json` OPEN) writes a named record, its payload and its
     provenance block as one durable action whose receipt is `completed(workspace)`. The workspace revision and the
     record's version advance; the state, the preview slot and the jobs stay (KN5.18, KN5.23). The row takes no token,
     and the runtime may not invoke it. The layer cannot read a provenance block, so the host gives it a `Provenance`
@@ -1872,11 +1883,11 @@ run or not applicable is no pass (PHS.63).
   (0 to 599), `CellIdPair` and `RevisionRef` (KN0.2's nine keys) before it admits the job. A malformed argument is
   refused with `KN5:input.argument_form`, and after every form check a `RevisionRef` that is not the current revision
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
-  and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
-  is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions, each 0
-  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and `set.save`'s
-  `replace` is a boolean (H-08's `replace: Bool?` since the freeze, CM.17; saved sets, above). Other types pass
-  unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what
+  they name is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions,
+  each 0 to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and
+  `set.save`'s `replace` is a boolean (H-08's `replace: Bool?` since the freeze, CM.17; saved sets, above). Other types
+  pass unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
@@ -2396,13 +2407,13 @@ run or not applicable is no pass (PHS.63).
   Net and Strict protection reads (pull request 300); and its `replay` row, a recipe replayed from the head prefix by
   prefix under the session's protected orbits, with Strict's first refused prefix and the orbits in conflict there,
   which LB2's named macro analysis reads (pull request 353). When the host gives it the certified setup table, it serves
-  a sixth read, the draft `setups` row: the certified setups for a target the solver names, which only the setup-search
-  exception may read (pull request 309). It serves the draft `orbits` row too, the pieces of named orbits, which LB2's
+  a sixth read, the `setups` row: the certified setups for a target the solver names, which only the setup-search
+  exception may read (pull request 309). It serves the `orbits` row too, the pieces of named orbits, which LB2's
   orbit catalogue reads: model data, the orbit the kernel's `positions` gives each piece at the solved state, so it
-  reads no state of the session (pull request 358). It also serves the three draft structure reads of LP3's
+  reads no state of the session (pull request 358). It also serves the three structure reads of LP3's
   representations tool (C6): `structure.compare`, two cells compared, `filter.preview`, the counts of a layer
   predicate, and `structure.layer`, its members, from LP2's structure rows (pull requests 262 and 375), which read no
-  state. It serves the draft `journal` row too, KN4.3's page of the session's move tree, newest first, which LP3's C8
+  state. It serves the `journal` row too, KN4.3's page of the session's move tree, newest first, which LP3's C8
   reads, through LP2's `CommandLayer::journal`, which changes nothing (pull request 383;
   `c600-tools/tests/journal_row.rs`). Admission refuses an entry that both reads one and proposes (LQ21). It grants
   no other state read, declassified value, file or workspace access, view, exact sink or clock. The command layer's
@@ -2492,7 +2503,7 @@ run or not applicable is no pass (PHS.63).
     blocked generator the literal `a, a⁻¹` and its key's spelling are both refused at their first letter under Strict
     protection, and the empty word is admitted; two words with one key are refused at different prefixes (pull request
     350).
-  - `setups_row.rs`: the draft `setups` row through the bridge: its answer in the declared order (buffers, family,
+  - `setups_row.rs`: the `setups` row through the bridge: its answer in the declared order (buffers, family,
     orbit, position, setups, table digest), its refusals and their costs, its tariff, which covers its largest answer,
     and the table's load through the kernel's asset check (CT-BND-18, part).
   - `ct_bnd_18.rs`: LB2's guarded setups and buffers from `c600-library`, CT-BND-18 whole on 600-cell-Full. The entry is
@@ -2509,7 +2520,7 @@ run or not applicable is no pass (PHS.63).
     type it does not answer and another argument form before its charge, and a cell outside 0 to 599 or a layer past
     the cell's last with `KN2:input.named_object_invalid` once charged; the tariffs (CM.18) cover the largest answers.
     The refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`. Covers no conformance ID.
-  - `orbits_row.rs`: the draft `orbits` row through the bridge (pull request 358). Each named orbit's pieces agree
+  - `orbits_row.rs`: the `orbits` row through the bridge (pull request 358). Each named orbit's pieces agree
     with the kernel's orbit table: the `positions` row, read at a scrambled head, gives each of them that orbit, and a
     moving orbit's count is the kernel's progress row's and the seed atlas's. The answer comes in the argument's order,
     repeats included, and in the declared order; the row refuses a declared type it does not answer and another
@@ -2974,9 +2985,9 @@ run or not applicable is no pass (PHS.63).
     decides no crossing).
 - The crate's `rows` is the jumbling rows' host bridge (pull request 299): it serves KN2.4's jumbling rows to a run as
   snapshot reads, at the command layer's head with Jumble on (`Rows::at_head`), on a witnessed base (`Rows::on`) or at a
-  state (`Rows::at_state`). It uses the crate's draft answer types and a draft tariff (one pass of the model's pieces
-  for the state and one for each letter of a named word or entry of a drafted set, two for a named cap's seam facts),
-  and it grants those rows only. Since pull request 306 it also serves J08's `seam_facts` for a named cap, which
+  state (`Rows::at_state`). It uses the crate's draft answer types and H-08's tariff (CM.18; one pass of the model's
+  pieces for the state and one for each letter of a named word or entry of a drafted set, two for a named cap's seam
+  facts), and it grants those rows only. Since pull request 306 it also serves J08's `seam_facts` for a named cap, which
   CT-RTE-07's jumbling keys read.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03 with the plane the engine names for the twist (`twist::Twist::plane`; a jumbling twist has
@@ -3002,7 +3013,12 @@ run or not applicable is no pass (PHS.63).
     `menu_word_keys`, and on random words from three states each word and its run-merged form have one key, one
     admissibility and one end digest; and the entry itself: canonical, pure, and refused by the checker with
     `LG2:type.word_key_not_executable` where letters are required, so CT-LB1-02 runs whole with C5's half),
-    CT-LB3-01 (ten fixtures on
+    CT-LG2-13's jumbling half (the blocked cap has a nonempty straddler set; whole by union with the empty-word halves
+    in `conformance_lg2.rs`), CT-LG2-12's jumbling fixtures under LG2.14's four hypotheses (the key merges only
+    adjacent same-grip runs and keeps identity tokens, I_a is closed under products, and surveys at three states
+    classify exactly; from solved some a,a⁻¹ and the identity letter have one key and end at solved, yet a,a⁻¹ peaks
+    at a greater left height, and with a piece that a moves protected a,a⁻¹ is refused at its first letter while the
+    identity letter is admitted; whole by union with the language and kernel halves), CT-LB3-01 (ten fixtures on
     M8's sticker test, retained checkpoint and label checkpoint, each pair of the three answering differently on some
     fixture; an imported table unestablished at the label checkpoint, and yes at the retained checkpoint only by the
     word its caller supplies; the ν case: a lattice state reached from solved under I_a whose ν, from LP2's `nu` row,
@@ -3073,8 +3089,8 @@ run or not applicable is no pass (PHS.63).
   - `c600-jumble-tool/tests/rows.rs`: the library entries of CT-LB1-03, CT-LB3-03, CT-LB3-04 and CT-LB3-06 through
     `rows` at the head of jumbled sessions (I_a, S4, I_b), each run equal to the same run on a witnessed snapshot, byte
     for byte; with Jumble off, every read stops with `KN5:input.menu_word_needs_jumble_on`; the bridge's grants and
-    draft tariff; the `seam_facts` row at a named cap, whose N_c equals the engine's rim summary (pull requests 299 and
-    306); the rows `classify`, `survey`, `straddlers` and `units`, each for the solver's named letter, grip, cap or
+    tariff (CM.18); the `seam_facts` row at a named cap, whose N_c equals the engine's rim summary (pull requests 299
+    and 306); the rows `classify`, `survey`, `straddlers` and `units`, each for the solver's named letter, grip, cap or
     pieces only (pull request 314); the `repair_list` row, which serves the named cap's completed list in neutral order
     with no outcome table, rank or mark; and the three end-test rows, each with M8's verdict, level, reason and
     evidence, read by a program as that test's own verdict type, the outcome alone (`LG2:type.mismatch` for another
@@ -3242,7 +3258,7 @@ run or not applicable is no pass (PHS.63).
   carries `LB2:protection.incomplete_coverage` and is never safe. Its catalogue row is `net_and_strict_protection`.
 - Guarded setups and buffers (pull request 309): the source [`setups.6cs`](c600-library/src/setups.6cs) is the module
   `guarded_setups` with one entry, `setups_for(goal: record { orbit: Nat, position: Nat })`, effect `snapshot`. It reads
-  the draft `setups` row at the goal as given and returns the answer as read, so it reads state, prepares no preview and
+  the `setups` row at the goal as given and returns the answer as read, so it reads state, prepares no preview and
   runs only under the built-in column's setup-search exception. The row answers only for the target the solver names,
   lists its certified setups in a stable order with no rank, keeps the orbit's buffers fixed in every setup and executes
   nothing; applying a setup stays the solver's action. Its catalogue row is `guarded_setups_and_buffers`.
@@ -3285,7 +3301,7 @@ run or not applicable is no pass (PHS.63).
   target. Its catalogue rows are `seeds_and_full_seed_analysis` and `collateral_stage_order`.
 - Orbit catalogue, progress per orbit and residuals (pull request 363): the source
   [`orbits.6cs`](c600-library/src/orbits.6cs) is the module `orbits` with three entries. `orbit_catalogue(named)`,
-  effect `snapshot`, reads the draft `orbits` row at the orbits the caller names, -1 (the fixed cell centres) to 34, and
+  effect `snapshot`, reads the `orbits` row at the orbits the caller names, -1 (the fixed cell centres) to 34, and
   answers each orbit's pieces by home position, model data the same at every head. `orbit_progress(orbit, positions)`,
   pure, counts among the caller's `positions` records of the orbit the pieces with every sticker home (`solved`), at
   Home with a sticker elsewhere (`orientation_wrong`) and not at Home (`position_wrong`), and counts the records of
