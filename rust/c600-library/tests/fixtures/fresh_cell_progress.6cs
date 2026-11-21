@@ -1,0 +1,65 @@
+edition "6cs-draft-1";
+module cell_progress requires [];
+
+export fn closest_cells(cells: Nat, per_cell: Nat, keep: Nat) -> record { cells: Nat, closest: List<record { cell: Nat, home: Nat }>, per_cell: Nat, solved: Nat } effects [snapshot] {
+    let counts = all_counts(cells, per_cell);
+    return record { cells = cells, closest = pick(counts, keep), per_cell = per_cell, solved = count_full(counts, per_cell) };
+}
+
+export fn cell_home_count(cell: Nat, per_cell: Nat) -> Nat effects [snapshot] {
+    let slots = repeat(per_cell, list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        return push(done, exact_add(exact_mul(cell, per_cell), length(done)));
+    });
+    let labels = read_snapshot<List<Nat>>("labels", slots);
+    return repeat(per_cell, record { home = 0, next = 0 }, fn(s: record { home: Nat, next: Nat }) -> record { home: Nat, next: Nat } {
+        let here = match exact_eq(index(labels, s.next), index(slots, s.next)) {
+            true => exact_add(s.home, 1);
+            _ => s.home;
+        };
+        return record { home = here, next = exact_add(s.next, 1) };
+    }).home;
+}
+
+fn all_counts(cells: Nat, per_cell: Nat) -> List<Nat> effects [snapshot] {
+    return repeat(cells, list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        return push(done, cell_home_count(length(done), per_cell));
+    });
+}
+
+fn count_full(counts: List<Nat>, per_cell: Nat) -> Nat effects [] {
+    return repeat(length(counts), record { full = 0, next = 0 }, fn(s: record { full: Nat, next: Nat }) -> record { full: Nat, next: Nat } {
+        let full = match exact_eq(index(counts, s.next), per_cell) {
+            true => exact_add(s.full, 1);
+            _ => s.full;
+        };
+        return record { full = full, next = exact_add(s.next, 1) };
+    }).full;
+}
+
+fn pick(counts: List<Nat>, keep: Nat) -> List<record { cell: Nat, home: Nat }> effects [] {
+    return repeat(keep, record { closest = list<record { cell: Nat, home: Nat }>(), taken = list<Nat>() }, fn(s: record { closest: List<record { cell: Nat, home: Nat }>, taken: List<Nat> }) -> record { closest: List<record { cell: Nat, home: Nat }>, taken: List<Nat> } {
+        let best = best_untaken(counts, s.taken);
+        return match best.found {
+            true => record { closest = push(s.closest, record { cell = best.cell, home = best.home }), taken = push(s.taken, best.cell) };
+            _ => s;
+        };
+    }).closest;
+}
+
+fn best_untaken(counts: List<Nat>, taken: List<Nat>) -> record { cell: Nat, found: Bool, home: Nat } effects [] {
+    let best = repeat(length(counts), record { cell = 0, found = false, home = 0, next = 0 }, fn(s: record { cell: Nat, found: Bool, home: Nat, next: Nat }) -> record { cell: Nat, found: Bool, home: Nat, next: Nat } {
+        let n = index(counts, s.next);
+        let better = and(not(is_taken(taken, s.next)), or(not(s.found), exact_less(s.home, n)));
+        return match better {
+            true => record { cell = s.next, found = true, home = n, next = exact_add(s.next, 1) };
+            _ => record { cell = s.cell, found = s.found, home = s.home, next = exact_add(s.next, 1) };
+        };
+    });
+    return record { cell = best.cell, found = best.found, home = best.home };
+}
+
+fn is_taken(taken: List<Nat>, cell: Nat) -> Bool effects [] {
+    return repeat(length(taken), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(taken, s.next), cell)), next = exact_add(s.next, 1) };
+    }).found;
+}
