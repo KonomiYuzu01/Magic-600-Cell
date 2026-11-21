@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-21] decision | Product budget ceilings, E3's cold start and the C9 sitting
+The owner took every recommended option on the card sent after the command-table freeze: one product budget ceiling for all three profiles (steps 2^21, memory 2^27, output 2^24; kernel_cost stays at the draft 2^40 until the rows are priced), the draft E3 cold definition with one untimed warm-up launch, and one C9 sitting on the frozen candidate 013900ff with its unattended part overnight ([record](decisions/owner-decisions-2026-11-21-ceilings-e3.md)).
+
 ## [2026-11-21] update | LP3's command-table freeze: H-08 and the PHS.52 amendment
 LP3's freeze pull request adds `workspace.set`, the workspace rows' undo reading and the bridge reads by puzzle and level to H-08, registers 13 codes in chapter 13 with the 16 November errata, amends LI.5 and LI.33 with the format packet's FP.1 pin refresh, and keeps CT-RTE-04's other eight traces on record out of LP3's run (DET.65), as the owner decided ([record](decisions/owner-decisions-2026-11-20-lp3-exit.md)). Its merge is the frozen candidate ([LP3 plan](../progress/1.0/language-lp3-plan.md), section 11).
 
