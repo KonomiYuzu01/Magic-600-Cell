@@ -53,9 +53,9 @@ pub const COMMON: [Common; 4] = [
         met: "`CommandLayer::serve_row` (pull request 200): an invocation of a served row admits a program job for \
               the entry, and the host ends the job with `finish_program_job_with`. The layer serves only a view, \
               workspace, query or file row on the `none`, `view` or `program` lane with no gate, preview rule, action \
-              guard, token or undo entry, which is five of the six rows; since pull request 256 it serves \
-              `filter.apply` too, with its gate, preview rule and workspace undo entry. Serving is not journaled: a \
-              host serves its rows again at every open.",
+              guard or token, and with no undo entry or, on a workspace row, a workspace one, which is five of the six \
+              rows; since pull request 256 it serves `filter.apply` too, with its gate and preview rule. Serving is \
+              not journaled: a host serves its rows again at every open.",
     },
     Common {
         need: "The source route's other end: the runtime's view and workspace sinks delivered to the layer as the \
@@ -171,7 +171,7 @@ pub const NEEDS: [RowNeed; 6] = [
         entry: Some("save_set"),
         kind: Kind::Workspace,
         lane: Lane::None,
-        undo: UndoClass::None,
+        undo: UndoClass::Workspace,
         preview: PreviewRule::None,
         gates: &[],
         arguments: &[("kind", "identity|position"), ("members", "CanonicalObjectRefs"), ("name", "Text")],
@@ -182,16 +182,18 @@ pub const NEEDS: [RowNeed; 6] = [
                   of the model or `kind` is neither value, and with the draft code \
                   `c600_command::code::SAVED_SET_EXISTS` when the name holds a saved set and the invocation does not \
                   carry `replace: true` (U1-057).",
-        undo_entry: "none: H-08 gives the row the undo class `none`, so a saved set is removed by its own row, not by \
-                     undo.",
+        undo_entry: "one workspace action in the durable action order, holding the saved set's record before and \
+                     after, which `session.undo` and `session.redo` invert and repeat as workspace actions: H-08 gives \
+                     the row the undo class `workspace` since the command table's freeze (LB7.2), so an undo removes \
+                     a new saved set or gives back the one a replacing save replaced.",
         served: true,
         met: "Served by `save_set`. The layer checks `kind`, `members` (pull request 269: pieces or positions, each \
               below the kernel's piece count) and `name`; the job completes as one durable workspace action at a \
-              revision whose workspace number is one higher, with the exact-set digest as the result reference and \
-              no undo entry. In place of the entry's record `set.save` the action writes the saved set's own record \
-              `set/<name>` through the host's provenance reader: its kind, its members ascending and distinct, the \
-              model identity, the name and the capture revision (pull request 337, `c600_command::sets`). A taken \
-              name is refused unless the invocation carries `replace: true`.",
+              revision whose workspace number is one higher, with the exact-set digest as the result reference, as \
+              one undoable action. In place of the entry's record `set.save` the action writes the saved set's own \
+              record `set/<name>` through the host's provenance reader: its kind, its members ascending and distinct, \
+              the model identity, the name and the capture revision (pull request 337, `c600_command::sets`). A \
+              taken name is refused unless the invocation carries `replace: true`.",
         remains: "Nothing in the layer. The argument `replace` and the code `SAVED_SET_EXISTS` are drafts until the \
                   command table freezes at LP3.",
     },
@@ -222,7 +224,7 @@ pub const NEEDS: [RowNeed; 6] = [
         entry: Some("layer_predicate"),
         kind: Kind::Workspace,
         lane: Lane::None,
-        undo: UndoClass::None,
+        undo: UndoClass::Workspace,
         preview: PreviewRule::None,
         gates: &[],
         arguments: &[("cell", "CellId"), ("layer", "Nat")],
@@ -231,13 +233,16 @@ pub const NEEDS: [RowNeed; 6] = [
         receipt: "completed(workspace) at a revision whose workspace number is one higher, with a result reference to \
                   the prepared predicate, which `filter.preview` then takes as its `predicate`; refused as an \
                   argument form when the cell is not a cell of the model.",
-        undo_entry: "none: H-08 gives the row the undo class `none`; the prepared predicate is a draft in the \
-                     workspace that the next one replaces.",
+        undo_entry: "one workspace action in the durable action order, holding the predicate's record before and \
+                     after, which `session.undo` and `session.redo` invert and repeat as workspace actions: H-08 gives \
+                     the row the undo class `workspace` since the command table's freeze (LB7.2). A predicate job that \
+                     writes over an applied filter's record is its own undo entry and leaves the applied filter's in \
+                     place.",
         served: true,
         met: "Served by `layer_predicate`. The layer checks the `CellId` and `Nat` forms; the job completes as one \
               durable workspace action at a revision whose workspace number is one higher, writing the record \
-              `structure.layer` through the host's provenance reader, with the output's digest as the result reference \
-              and no undo entry.",
+              `structure.layer` through the host's provenance reader, with the output's digest as the result \
+              reference, as one undoable action.",
         remains: "Nothing in the layer since pull requests 256 and 262: `filter.preview` takes this row's result \
                   reference as a `FilterRef`, and the layer counts the named layer with `CommandLayer::layer_counts`, \
                   which C5's host bridge serves to `filter.preview`'s entry (see that row).",

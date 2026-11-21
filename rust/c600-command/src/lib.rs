@@ -97,7 +97,7 @@
 //!   - `worksheet.save` ([`WORKSHEET_SAVE_ROW`]) takes a draft `{"record": r}` that holds letters or a sheet, and a
 //!     `name`. A recipe draft is refused with `KN5:input.argument_form`: the sheet keeps the draft record's provenance
 //!     block, and the layer cannot make one. The save is undoable as a workspace inverse, as LB7.2 orders for every
-//!     workspace change, where H-08 has `undo: none`.
+//!     workspace change and as H-08's `undo: workspace` reads since the command table's freeze (CM.17).
 //!   - `worksheet.load` ([`WORKSHEET_LOAD_ROW`]) takes H-08's `WorksheetRevisionRef` as `{"record": name, "version":
 //!     n}` ([`WorksheetRef`]); a record at another version is `KN5:stale.revision_changed`. It places the piece roles
 //!     again and reads each position role's occupant again at the head, keeps where each piece was and what each
@@ -539,13 +539,15 @@
 //!     word-preview slot nor a presentation. Missing or stale, the row is refused with `KN5:stale.filter_preview` when
 //!     the job is admitted; a preview that goes stale while the job runs fails the job with that code when its output
 //!     is published, and nothing is written.
-//!   - A workspace completion of a stored row whose undo class is `workspace`, `filter.apply`'s among them, is one
-//!     undoable action. `session.undo` and `session.redo` write each of its records' values before or after it again
-//!     as one action, answering `committed` with equal puzzle hashes and advancing the workspace revision and the
-//!     records' versions (LI.26). The journal keeps the writes in `records`, where an undo's value is `null` when it
-//!     leaves the record empty. A replay decides undoability from H-08's table, before the host serves its rows. A
-//!     completion that writes no record changes nothing an undo could restore, so it takes no undo entry. A predicate
-//!     job that later writes one of its records, whose undo class is `none`, takes it off both stacks, as above.
+//!   - A workspace completion of a stored row whose undo class is `workspace` is one undoable action: `filter.apply`'s,
+//!     and since the command table's freeze `set.save`'s, `filter.save`'s and `structure.layer`'s too (LB7.2, CM.17).
+//!     `session.undo` and `session.redo` write each of its records' values before or after it again as one action,
+//!     answering `committed` with equal puzzle hashes and advancing the workspace revision and the records' versions
+//!     (LI.26). The journal keeps the writes in `records`, where an undo's value is `null` when it leaves the record
+//!     empty. A replay decides undoability from H-08's table, before the host serves its rows. A completion that writes
+//!     no record changes nothing an undo could restore, so it takes no undo entry. A predicate job that later writes
+//!     one of an applied filter's records is an undoable action of its own above the apply, which keeps its place; a
+//!     job of a language-defined row that does takes the apply off both stacks, as above.
 //!   - The gate is answered by [`CommandLayer::availability_for`] too, after the `FilterRef`s.
 //! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
 //!   or the `test-hooks` feature (L15).

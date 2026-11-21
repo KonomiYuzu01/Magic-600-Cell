@@ -55,7 +55,7 @@ November 2026 as a line of its own.
 
 | Work | State | Waits for |
 | --- | --- | --- |
-| Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3. The draft rows the tool's bridge serves beyond KN2.4's are command-table candidates, which the freeze takes or drops: `setups` (pull request 309), C6's `structure.compare` and `filter.preview` (pull request 262) and `orbits` (pull request 358) |
+| Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 (section 11). The freeze takes the reads the tool's bridge serves beyond KN2.4's into H-08's `reads` (CM.18), as reads and not commands: `setups` (pull request 309), C6's `structure.compare`, `filter.preview` and `structure.layer` (pull requests 262 and 375), `orbits` (pull request 358) and `journal` (LP2's pull request 383) |
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
@@ -499,8 +499,9 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   except that `set.save`'s writes the saved set's own record `set/<name>` with the exact-set digest (LP2's pull
   request 337).
   `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job (a draft: the IR has no
-  reference type); its action is the next undo target, and that undo removes its record and moves no state. The other
-  two leave no undo entry. The source route, the entry's own run in process through `c600-run`'s boundary with no layer
+  reference type). Each of the three actions is an undo entry (H-08's undo class `workspace` since the command table's
+  freeze, LB7.2), and an undo removes its record and moves no state. The source route, the entry's own run in process
+  through `c600-run`'s boundary with no layer
   (not C5's runner or the runtime's own process), gives the same value, views and records for the same arguments and
   state. On both routes the entries pass their arguments to the two snapshot reads, and the engine side answers them on
   the session's layer with the kernel rows of C5's host bridge (`c600_tools::kernel_rows`), so the views are the

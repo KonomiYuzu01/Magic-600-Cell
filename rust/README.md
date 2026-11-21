@@ -1681,6 +1681,12 @@ run or not applicable is no pass (PHS.63).
   `confirm` to release an orbit (LI.26). A workspace overlay's completion is durable with its receipt (KN5.23). An
   action that does not move the puzzle keeps the state revision, the preview and the jobs (KN5.18). The layer's test
   hooks exist only in debug builds or with the `test-hooks` feature (L15).
+- KN4.3's journal query (LP2's pull request 383; the drafts are in the crate documentation).
+  `CommandLayer::journal(from, limit, cursor)` pages the move tree newest first, from the head or a named event along
+  its parents to the start, on that event's line only. Each `JournalEntry` gives the event, its `EntryKind` (start,
+  commit, crossing, pose or exit), a commit's retained letters, whether the start is solved and an exit's mark. A
+  `JournalPage` holds 1 to `JOURNAL_PAGE_LIMIT` (4096) events; its cursor binds the session, the walk and the next
+  event, and grants nothing. The read replays nothing and changes nothing. Tests: `c600-command/tests/journal.rs`.
 - KN5 tests (`c600-command/tests/kn5.rs`, from the Fable KN5 attack leads L3 to L11, L15 and L18): parts of
   CT-KN5-01, CT-KN5-04, CT-KN5-09, CT-KN5-10, CT-KN5-11, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-21 and
   CT-LI-09. `c600-session/tests/kn5_command.rs` runs the layer over the journal: parts of CT-ONE-21, CT-ONE-22,
@@ -1881,8 +1887,11 @@ run or not applicable is no pass (PHS.63).
   `availability_for(row, args)`, LI.18's argument-aware hint, does; a computed one by the row's argument-independent
   gates. Optional rows take no part, and a hint starts no program and takes no lane. A registration, a served row or a
   declaration advances the generation (LI.21). Metadata is not journaled, so after a reopen the host declares it again.
-  Tests: `c600-command/tests/availability.rs`, which also reads the crate's dependency closure from the manifests: the
-  kernel's crates and no language crate.
+  `CommandLayer::availability_table(bindings)` is KN5.6's draft table over LI.18's hints (LP2's pull request 377): one
+  answer per binding in an `Availability`, keyed by the row and the digest of its absolute arguments (none for computed
+  ones, LI.19), with the revision, the generation and a digest of the caller's context read at one moment; it grants
+  nothing either. Tests: `c600-command/tests/availability.rs`, which also reads the crate's dependency closure from the
+  manifests: the kernel's crates and no language crate.
 - The report after a command (KN5.22, R-02, ONE.70; the drafts are in the crate documentation). `report` pairs a
   receipt with the display's status, and `Shell::send_reported` sends and reports. When the command applied
   (committed, or completed as a workspace write, a view publication or a file publication), the display refreshes to
@@ -2391,9 +2400,11 @@ run or not applicable is no pass (PHS.63).
   reads no state of the session (pull request 358). It also serves the three draft structure reads of LP3's
   representations tool (C6): `structure.compare`, two cells compared, `filter.preview`, the counts of a layer
   predicate, and `structure.layer`, its members, from LP2's structure rows (pull requests 262 and 375), which read no
-  state. Admission refuses an entry that both
-  reads one and proposes (LQ21). It grants no other state read, declassified value, file or workspace access, view,
-  exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or app row and any runtime
+  state. It serves the draft `journal` row too, KN4.3's page of the session's move tree, newest first, which LP3's C8
+  reads, through LP2's `CommandLayer::journal`, which changes nothing (pull request 383;
+  `c600-tools/tests/journal_row.rs`). Admission refuses an entry that both reads one and proposes (LQ21). It grants
+  no other state read, declassified value, file or workspace access, view, exact sink or clock. The command layer's
+  own rules refuse a runtime invocation of a commit or app row and any runtime
   invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the pending preview the
   runtime proposed.
 - The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
@@ -2622,8 +2633,9 @@ run or not applicable is no pass (PHS.63).
     it at every open and the save's job finished with the entry's record, where the host runs the representations
     tool's `save_set` (`c600-repr`'s `tests/served_rows.rs` runs the entry). A save's receipt and the saved set's
     record `set/<name>` come back equal after a power loss on a memory disk and in a new session on a file-system
-    disk, and the exact-set digest follows from the record read back. The save takes an action order but no undo entry
-    (H-08's undo class `none`), after a reopen too, so an undo still removes the record write before it. An identical
+    disk, and the exact-set digest follows from the record read back. The save is undoable (H-08's undo class
+    `workspace` since the command table's freeze, LB7.2), after a reopen too: an undo of a replacing save gives back
+    the set it replaced, and the next undo removes the record write before it. An identical
     retry answers the stored receipt; a save under a taken name without `replace: true`, a `replace` that is no
     boolean and a `workspace.set` under `set/` are refused; a save whose name another save took meanwhile fails at its
     completion; none of these writes the journal. A save with `replace: true` replaces the set, also after a power
@@ -2853,8 +2865,10 @@ run or not applicable is no pass (PHS.63).
     durable workspace action at a workspace revision one higher. `filter.apply`'s and `structure.layer`'s write the
     entry's record through the reader; `set.save`'s writes the saved set's own record `set/<name>` with the exact-set
     digest as the result reference (LP2's pull request 337, `c600_command::sets`).
-    `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job; its action is the next
-    undo target, and that undo removes its record and moves no state. The other two leave no undo entry. The source
+    `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job. Each of the three
+    actions is an undo entry (H-08's undo class `workspace` since the command table's freeze, LB7.2): undo takes them
+    back newest first, `set.save`'s, `filter.apply`'s, then `structure.layer`'s, each removing its record and moving
+    no state, and then the commit before them. The source
     route (the same entry run in process on the same arguments and state, without the layer; not C5's runner) gives the
     same value, views and records (for `set.save`, the saved set its record names, with the exact-set digest). On both
     routes the entries pass their arguments to the two snapshot reads

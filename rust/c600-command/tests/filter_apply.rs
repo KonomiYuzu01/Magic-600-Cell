@@ -14,7 +14,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::filter::preview_ref;
 use c600_command::{
-    code, draft_args, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames, JobOutput,
+    code, draft_args, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames, JobOutput, Kind,
     MemoryStore, Overlay, Provenance, Receipt, RecordValue, ResultRef, Secret, Shell, Status, Table, Transaction,
     TransactionKind, RECORD_ROW,
 };
@@ -26,6 +26,8 @@ const SECRET: [u8; 32] = [7; 32];
 const LAYER: &str = "structure.layer";
 const PREVIEW: &str = "filter.preview";
 const APPLY: &str = "filter.apply";
+/// A language-defined workspace row the tests register: no undo reaches its job's writes.
+const NOTE: &str = "tool.full.note";
 
 /// The record the test's predicate job writes, and the record its apply job writes.
 const PREDICATE: &str = "layer";
@@ -140,11 +142,12 @@ fn fixture() -> Fixture {
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
-/// What a host does at every open: serves its rows again.
+/// What a host does at every open: serves its rows again and registers its language-defined row.
 fn serve(layer: &mut CommandLayer) {
     layer.serve_row(LAYER, overlay("layer_predicate")).unwrap();
     layer.serve_row(PREVIEW, overlay("filter_counts")).unwrap();
     layer.serve_row(APPLY, overlay("apply_filter")).unwrap();
+    layer.register_overlay(NOTE, Kind::Workspace, &[], overlay("note")).unwrap();
 }
 
 /// A reopen of `layer`'s store, which replays its actions with the test reader.
@@ -208,6 +211,12 @@ impl Fixture {
         let Status::Running(job) = receipt.status else { return receipt };
         assert_eq!(self.layer.take_program_job().map(|taken| taken.job), Some(job));
         self.finish(job, output(Value::Null, &[(FILTERED, payload)]))
+    }
+
+    /// A job of the language-defined row whose output writes `payload` to `name`: no undo reaches the write.
+    fn note(&mut self, name: &str, payload: Value) -> Receipt {
+        let job = self.start(NOTE, json::object([]));
+        self.finish(job, output(Value::Null, &[(name, payload)]))
     }
 
     fn refused(&mut self, row: &str, args: Value) -> &'static str {
@@ -490,13 +499,13 @@ fn a_reopen_keeps_no_filter_preview_but_its_predicates() {
 }
 
 /// An apply whose job writes no record completes but changes nothing an undo could restore, so it takes no undo
-/// entry: the undo stack's top stays the record write before it, before and after a reopen.
+/// entry: the undo stack's top stays the predicate's completion before it, before and after a reopen.
 #[test]
 fn an_apply_that_writes_no_record_takes_no_undo_entry() {
     let mut f = fixture();
     assert!(completed(&f.write("w", letters(&[1]))));
-    let top = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
     let predicate = f.predicate(letters(&[1]));
+    let top = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
     let preview = f.preview(predicate);
     let job = f.start(APPLY, apply_args(preview.clone()));
     assert!(completed(&f.finish(job, JobOutput::of(Value::Null))));
@@ -505,16 +514,18 @@ fn an_apply_that_writes_no_record_takes_no_undo_entry() {
     assert_eq!(g.undo_hint(Direction::Undo), f.layer.undo_hint(Direction::Undo));
 }
 
-/// A predicate row's completion takes no undo entry, so an undo or redo of an applied filter would write over what it
-/// wrote later: when a predicate job writes a record the apply wrote, the apply leaves the undo stack, or the redo
-/// stack after its undo, and a reopen leaves it off as well. Actions that wrote other records keep their place.
+/// A predicate row's completion is an undoable action of its own: H-08 gives `structure.layer` the undo class
+/// `workspace` (LB7.2, since the command table's freeze). When a predicate job writes a record an applied filter
+/// wrote, the apply keeps its place beneath it: the predicate job's undo gives back the apply's value, and the apply's
+/// undo the value before it. With the apply undone first, the predicate job's action clears the redo stack, as every
+/// new undoable action does, and its undo gives back the empty record. A reopen offers the same undo and redo.
 #[test]
-fn a_predicate_that_writes_over_an_applied_filter_drops_it_from_both_stacks() {
+fn a_predicate_that_writes_over_an_applied_filter_is_its_own_undo_entry() {
     for undone in [false, true] {
         let mut f = fixture();
         assert!(completed(&f.write("w", letters(&[1]))));
-        let below = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
         let predicate = f.predicate(letters(&[1]));
+        let below = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
         let preview = f.preview(predicate);
         assert!(completed(&f.apply(&preview, letters(&[7]))));
         if undone {
@@ -525,20 +536,26 @@ fn a_predicate_that_writes_over_an_applied_filter_drops_it_from_both_stacks() {
         assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[9]))]))));
         assert_eq!(f.record(FILTERED).1, Some(letters(&[9])), "{undone}");
         assert!(f.layer.undo_hint(Direction::Redo).is_none(), "{undone}");
-        assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), below, "{undone}");
         let g = reopen(&f.layer);
         for direction in [Direction::Undo, Direction::Redo] {
             assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{undone} {direction:?}");
         }
         assert!(committed(&f.step(Direction::Undo)));
-        assert_eq!((f.record("w").1, f.record(FILTERED).1), (None, Some(letters(&[9]))), "{undone}");
+        let applied = if undone { None } else { Some(letters(&[7])) };
+        assert_eq!(f.record(FILTERED).1, applied, "{undone}: the predicate job's undo");
+        if !undone {
+            assert!(committed(&f.step(Direction::Undo)));
+            assert_eq!(f.record(FILTERED).1, None, "the apply's undo");
+        }
+        assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), below, "{undone}");
+        assert_eq!(f.record("w").1, Some(letters(&[1])), "{undone}");
     }
 }
 
 /// The cut runs on through the other records of an apply it drops. The apply writes `filtered` and `b`, after
-/// earlier writes of `w` and `b`, and a predicate job then writes `filtered`:
+/// earlier writes of `w` and `b`, and a job of a language-defined row, which no undo reaches, then writes `filtered`:
 /// - The apply leaves the undo stack, and so does the earlier write of `b`: its undo would write over the apply's `b`,
-///   which no step reaches now. The write of `w` keeps its place.
+///   which no step reaches now. The write of `w` keeps its place, and so does the predicate's completion beneath it.
 /// - A write of `b` after the apply keeps its place: its undo gives back the apply's `b`.
 /// - With the apply undone first, its writes are gone: only the apply leaves the redo stack, and the earlier write of
 ///   `b` keeps its place on the undo stack.
@@ -549,11 +566,12 @@ fn a_cut_runs_on_through_the_other_records_of_an_applied_filter() {
     for case in ["plain", "written after", "undone"] {
         let mut f = fixture();
         let top = |f: &Fixture| f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
+        let predicate = f.predicate(letters(&[1]));
+        let first = top(&f);
         assert!(completed(&f.write("w", letters(&[1]))));
         let below = top(&f);
         assert!(completed(&f.write("b", letters(&[2]))));
         let earlier = top(&f);
-        let predicate = f.predicate(letters(&[1]));
         let preview = f.preview(predicate);
         let job = f.start(APPLY, apply_args(preview));
         let out = output(Value::Null, &[(FILTERED, letters(&[7])), ("b", letters(&[8]))]);
@@ -570,8 +588,7 @@ fn a_cut_runs_on_through_the_other_records_of_an_applied_filter() {
             }
             _ => {}
         }
-        let job = f.start(LAYER, layer_args(1, 2));
-        assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[9]))]))));
+        assert!(completed(&f.note(FILTERED, letters(&[9]))));
         assert!(f.layer.undo_hint(Direction::Redo).is_none(), "{case}");
         let g = reopen(&f.layer);
         for direction in [Direction::Undo, Direction::Redo] {
@@ -593,16 +610,16 @@ fn a_cut_runs_on_through_the_other_records_of_an_applied_filter() {
             }
         }
         assert!(committed(&f.step(Direction::Undo)));
-        assert!(f.layer.undo_hint(Direction::Undo).is_none(), "{case}");
+        assert_eq!(top(&f), first, "{case}: the predicate's completion is left");
         let b = if case == "undone" { None } else { Some(letters(&[8])) };
         assert_eq!((f.record("w").1, f.record("b").1, f.record(FILTERED).1), (None, b, Some(letters(&[9]))), "{case}");
     }
 }
 
 /// The cut runs on through the redo stack too. An apply that wrote `filtered` and `z` and a later write of `z` are
-/// both undone. A predicate job's write of `filtered` then drops the apply from the redo stack, and with it the later
-/// write of `z` beneath it: that write's redo would start from the apply's `z`, which no redo brings back now. The undo
-/// stack keeps its place, and a reopen offers the same undo and redo.
+/// both undone. A write of `filtered` by a job of a language-defined row then drops the apply from the redo stack, and
+/// with it the later write of `z` beneath it: that write's redo would start from the apply's `z`, which no redo brings
+/// back now. The undo stack keeps its place, and a reopen offers the same undo and redo.
 #[test]
 fn the_cut_runs_on_through_the_redo_stack() {
     let mut f = fixture();
@@ -618,8 +635,7 @@ fn the_cut_runs_on_through_the_redo_stack() {
     assert!(committed(&f.step(Direction::Undo)));
     assert_eq!((f.record("z").1, f.record(FILTERED).1), (None, None));
     assert!(f.layer.undo_hint(Direction::Redo).is_some());
-    let job = f.start(LAYER, layer_args(1, 2));
-    assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[9]))]))));
+    assert!(completed(&f.note(FILTERED, letters(&[9]))));
     assert!(f.layer.undo_hint(Direction::Redo).is_none(), "both undone actions leave the redo stack");
     assert_eq!(top(&f), below);
     let g = reopen(&f.layer);
@@ -631,12 +647,13 @@ fn the_cut_runs_on_through_the_redo_stack() {
 /// The workspace inverse (H-08: `filter.apply` undoes in the workspace): an undo writes back what each record held
 /// before the apply, absent ones included, and a redo writes the apply's records again; each moves every written
 /// record's version and the workspace revision once. An earlier record write keeps its place on the stack beneath
-/// the apply, and a reopen replays both and offers the same undo and redo.
+/// the apply, above the predicate's completion, and a reopen replays them and offers the same undo and redo.
 #[test]
 fn an_applied_filter_undoes_and_redoes_in_the_workspace() {
     let mut f = fixture();
-    assert!(completed(&f.write(FILTERED, letters(&[1]))));
     let predicate = f.predicate(letters(&[1]));
+    let first = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
+    assert!(completed(&f.write(FILTERED, letters(&[1]))));
     let preview = f.preview(predicate);
     let receipt = f.shell.invoke(&mut f.layer, APPLY, apply_args(preview.clone())).unwrap();
     let Status::Running(job) = receipt.status else { panic!("{:?}", receipt.status) };
@@ -667,7 +684,7 @@ fn an_applied_filter_undoes_and_redoes_in_the_workspace() {
     assert!(committed(&f.step(Direction::Undo)));
     assert!(committed(&f.step(Direction::Undo)));
     assert_eq!((f.record(FILTERED), f.record("count")), ((6, None), (4, None)));
-    assert!(f.layer.undo_hint(Direction::Undo).is_none());
+    assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), first, "the predicate's completion");
 }
 
 /// The journal form (draft): an applied filter's workspace completion, its undo and its redo carry `records` and read
