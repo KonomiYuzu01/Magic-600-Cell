@@ -18,6 +18,7 @@ use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projecti
 use c600_display::plan::*;
 use c600_display::receipt::{CancelReason, Status as Receipt};
 use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context, K_PLUS};
+use c600_display::Form;
 use c600_jumble::corrections;
 use c600_jumble::faces;
 use c600_jumble::levels::{self, Base, Snapshot};
@@ -754,8 +755,8 @@ fn rpi_23_an_engine_error_of_the_level_tables_is_no_projection() {
 /// unsupported projection stage), 8 (complete and interrupted seam totals), 10 (missing exposed geometry is
 /// unavailable: without M5's certified geometry or its admitted size profile J10 refuses with what is missing, and
 /// with both it is J10's checked payload, never a support claim) and 15 (a certificate-point hit on an off-lattice
-/// piece). Rows 9 and 11 to 13 are [`ct_rm_07_rows_9_and_11_to_13_hold_on_the_real_model`]'s; row 14 stays C2's
-/// fixture vector in `crosswalk.rs`.
+/// piece). Rows 9 and 11 to 13 are [`ct_rm_07_rows_9_and_11_to_13_hold_on_the_real_model`]'s, and row 14 is
+/// [`ct_rm_07_row_14_a_nonzero_fixed_coordinate_is_refused_on_the_real_model`]'s.
 #[test]
 fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     let world = world();
@@ -920,9 +921,8 @@ fn letter(n: usize) -> ([i64; 2], Twist) {
 /// checks; without a named unit no check carries a step flag. Row 12: ν of the twisted state is undefined
 /// (`off_lattice`), never zeros, and so is any prediction from it; the catalogue is the shipped 36 rows in ID order,
 /// read with no state. Row 13: at the solved state ν is all zero on the lattice and zero multiplicities predict all
-/// zero, as the engine's `correction_set_check` of the empty set does. Row 14 stays C2's fixture vector in
-/// `crosswalk.rs`: on M5's model the coordinates A5 fixes are 0 at every witnessed I_a state, so no real input
-/// reaches it.
+/// zero, as the engine's `correction_set_check` of the empty set does. Row 14 is
+/// [`ct_rm_07_row_14_a_nonzero_fixed_coordinate_is_refused_on_the_real_model`]'s.
 #[test]
 fn ct_rm_07_rows_9_and_11_to_13_hold_on_the_real_model() {
     let world = world();
@@ -1009,4 +1009,77 @@ fn ct_rm_07_rows_9_and_11_to_13_hold_on_the_real_model() {
     let checked = corrections::correction_set_check(engine, Base::Snapshot(&solved), &[]).expect("no engine error");
     let levels::Partial::Total(value) = checked.expect("not refused") else { panic!("ν on the lattice") };
     assert_eq!(value.values(), &[0; 45][..], "the engine's check of the empty set");
+}
+
+/// The word CT-LB3-04 plants (`c600-jumble-tool/tests/ct_lb3_04.rs`, `MIRROR`): letters (cap, item) of the I_b menu,
+/// each admissible from solved, that end on the lattice with b5 = 1, a coordinate A5 fixes at 0 under I_a.
+const MIRROR: [[usize; 2]; 6] = [[0, 12], [43, 9], [0, 1], [46, 3], [0, 4], [0, 43]];
+
+/// CT-RM-07, row 14 on M5's real model (RM.37, J12): a lattice ν check that reports a nonzero fixed I_a coordinate is
+/// `KN2:consistency.fixed_nu_nonzero` in form freeze, and no display shows it as a valid state. A5 keeps those
+/// coordinates at 0 at every witnessed I_a state, so the input is CT-LB3-04's plant: the I_b menu carrying I_a's
+/// order-free identity, under which [`MIRROR`], witnessed from solved, reaches a lattice configuration whose one
+/// nonzero fixed coordinate is b5. Its observation names the fixed coordinates, and ν and every prediction from it are
+/// refused, as the engine's `nu` row and `correction_set_check` refuse it. The same configuration under the true I_b
+/// menu claims nothing fixed: ν is the engine's value, b5 included.
+#[test]
+fn ct_rm_07_row_14_a_nonzero_fixed_coordinate_is_refused_on_the_real_model() {
+    let engine = &world().engine;
+    let fixture = std::fs::read(assets().join("../research/jumbling/fixtures/wj-I_b.json")).expect("the fixture");
+    let fixture = json::parse(&fixture).expect("the fixture is JSON");
+    let i_b = || Menu::from_record(engine, fixture.get("menu").expect("a menu")).expect("the pinned I_b menu");
+    let reached = |menu: Menu| {
+        let menu = Arc::new(menu);
+        let mut state = State::new(Some(menu.clone()));
+        let mut word = Vec::new();
+        for [cap, item] in MIRROR {
+            let twist = menu.for_cap(engine, cap).expect("the menu's twists")[item].clone();
+            let outcome = state.apply(engine, &twist, None, &[]).expect("no engine error");
+            assert_eq!(outcome.status, Status::Admissible, "({cap}, {item})");
+            word.push(twist);
+        }
+        assert_eq!(state.off_lattice_count(), 0, "the word ends on the lattice");
+        Snapshot::witnessed(engine, state, &word, None).expect("no engine error").expect("the word witnesses it")
+    };
+    let catalogue = obs::catalogue().expect("the shipped catalogue");
+
+    // The plant: the engine's raw value has b5 = 1, and the observation names the nine fixed coordinates.
+    let mut planted = i_b();
+    assert_ne!(planted.identity, nu::I_A_MENU_IDENTITY);
+    planted.identity = nu::I_A_MENU_IDENTITY.to_owned();
+    let snapshot = reached(planted);
+    let levels::Partial::Total(raw) = nu::value(engine, snapshot.state()).expect("no engine error") else {
+        panic!("ν on the lattice")
+    };
+    assert_eq!(raw.fixed_nonzero(), vec!["b5"]);
+    let observation = obs::nu_observation(engine, Base::Snapshot(&snapshot)).expect("ν");
+    assert_eq!(observation, NuObservation::Lattice { nu: raw.values().to_vec(), fixed: nu::I_A_FIXED.to_vec() });
+
+    // ν and every prediction from it are refused in form freeze, never shown as a valid state.
+    let refused = crosswalk::nu(&observation).expect_err("a nonzero fixed coordinate");
+    assert_eq!((refused.code, refused.form), (codes::FIXED_NU_NONZERO, Form::Freeze));
+    let mut some = vec![0i64; 36];
+    some[2] = 1;
+    for multiplicities in [vec![0i64; 36], some] {
+        let predicted = obs::predicted(&observation, &catalogue, &multiplicities).expect_err("refused as ν is");
+        assert_eq!((predicted.code, predicted.form), (codes::FIXED_NU_NONZERO, Form::Freeze));
+    }
+
+    // The engine's row and its drafted check refuse the same configuration with the same code.
+    let row = nu::nu(engine, Base::Snapshot(&snapshot)).expect("no engine error").expect_err("the row refuses");
+    assert_eq!(row.code, codes::FIXED_NU_NONZERO);
+    let checked = corrections::correction_set_check(engine, Base::Snapshot(&snapshot), &[(2, 1)]);
+    assert_eq!(checked.expect("no engine error").expect_err("the refusal passes through").code, row.code);
+
+    // Under the true I_b menu nothing is fixed: ν is the engine's value, b5 included.
+    let snapshot = reached(i_b());
+    let levels::Partial::Total(value) =
+        nu::nu(engine, Base::Snapshot(&snapshot)).expect("no engine error").expect("not refused")
+    else {
+        panic!("ν on the lattice")
+    };
+    assert_eq!(value.values(), raw.values(), "the same configuration");
+    let observation = obs::nu_observation(engine, Base::Snapshot(&snapshot)).expect("ν");
+    assert_eq!(observation, NuObservation::Lattice { nu: raw.values().to_vec(), fixed: Vec::new() });
+    assert_eq!(crosswalk::nu(&observation), Ok(Partial::Total(raw.values().to_vec())));
 }

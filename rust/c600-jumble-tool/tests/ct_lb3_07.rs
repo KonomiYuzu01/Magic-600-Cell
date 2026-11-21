@@ -33,11 +33,13 @@
 //!   2026): it reads the repair list once, for the cap the solver named, and returns it as read. The built-in column
 //!   admits it only under the repair-list exception (BND.2), which refuses a read for another cap and any use of the
 //!   list's value, so its rows keep the engine's neutral order with no mark; `tests/rows.rs` checks what it serves.
-//! - The crossing entry (`jumble_crossing`, LB3.1's "Mode crossing prerequisites", the Jumble-off half) reads the label
+//! - The crossing entry (`jumble_crossing`, LB3.1's "Mode crossing prerequisites") reads, for Jumble off, the label
 //!   checkpoint, every unit off the lattice and ν once each, and answers A5's prerequisites of Jumble off: the
 //!   checkpoint's outcome alone, the count of pieces off the lattice, and whether ν is defined with the count of its
 //!   nonzero values, with no correction and no word. `tests/jumble_layer_verdicts.rs` checks them against `jumble.off`.
-//!   The Jumble-on half, Full labels with journal derivation, waits for a KN4 journal query served to programs (KN4.3).
+//!   For Jumble on, Full labels with journal derivation, it reads KN4.3's `journal` from the head and answers the
+//!   entrance the head's line reaches through retained commits only; `tests/jumble_on_derivation.rs` checks it against
+//!   `jumble.on`.
 //!
 //! No answer of the other entries has a field whose name is a recommendation, a next cap, a ranking, a selection or a
 //! correction (a check of names), and the rim, covers, straddlers and units entries hold no field of a twist's
@@ -451,7 +453,7 @@ fn same_unit(ours: &RunValue, theirs: &Value, what: &str) {
 #[test]
 fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
     // Each entry, the rows it reads and its parameters: a named cap, id, twist, grip, unit or word, or nothing.
-    let reads: [(&str, &[&str], usize); 14] = [
+    let reads: [(&str, &[&str], usize); 15] = [
         ("rim_facts", &["rim_summary", "seam_facts"], 0),
         ("covers_at", &["covers"], 1),
         ("correction", &["correction_lookup"], 1),
@@ -466,6 +468,7 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
         ("retained_checkpoint", &["retained_checkpoint"], 1),
         ("label_checkpoint", &["label_checkpoint"], 0),
         ("jumble_off_facts", &["label_checkpoint", "nu", "units"], 0),
+        ("jumble_on_facts", &["journal"], 0),
     ];
     for module in [RIM, COVERS, CORRECTIONS, ADMISSIBILITY, STRADDLERS, UNITS, REPAIR, END_TESTS, CROSSING] {
         canonical(&module);
@@ -537,7 +540,8 @@ fn ct_lb3_07_the_inspector_entries_read_state_and_prepare_no_preview() {
     }
     assert!(library::rim_and_seam_facts().notes.contains("not the sum of the displayed N_c"));
     assert!(library::correction_catalogue().notes.contains("chooses no combination"));
-    assert!(library::mode_crossing_prerequisites().notes.contains("KN4 journal query"), "the Jumble-on half waits");
+    let crossing = library::mode_crossing_prerequisites();
+    assert!(crossing.notes.contains("journal derivation") && crossing.notes.contains("decides no crossing"));
 }
 
 /// CT-LB3-07 (part: the repair entry under the column's repair-list exception, BND.2 and the owner's decision of 17

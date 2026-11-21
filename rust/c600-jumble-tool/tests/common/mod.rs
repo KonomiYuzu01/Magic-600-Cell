@@ -13,8 +13,9 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::layer::JUMBLE_ON_MODE;
 use c600_command::{
-    CommandLayer, Completion, CompletionKind, Direction, Invocation, MemoryStore, Profile, Receipt, Secret, Shell,
-    Status, Table, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW, REPAIR_LIST_ROW,
+    draft_args, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Invocation, MemoryStore, Profile,
+    Receipt, Secret, Shell, Status, Table, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, POLICY_ROW,
+    REPAIR_LIST_ROW,
 };
 use c600_display::plan::{Mode, RevisionRef};
 use c600_jumble::state::State;
@@ -22,7 +23,7 @@ use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::Context as Engine;
 use c600_kernel::json::{self, Value};
 use c600_kernel::request::{self as wire, Binding, MenuPin, Operation};
-use c600_kernel::{Kernel, ProtectionMode};
+use c600_kernel::{Kernel, ProtectionMode, Snapshot};
 
 const SECRET: [u8; 32] = [11; 32];
 
@@ -103,6 +104,7 @@ pub fn completed(receipt: &Receipt) -> bool {
 pub struct Session {
     pub layer: CommandLayer,
     shell: Shell,
+    frames: HeadlessFrames,
     menu: Menu,
     /// The pinned menu's items by grip, in item order.
     items: HashMap<usize, Vec<Twist>>,
@@ -128,6 +130,7 @@ impl Session {
         let mut session = Session {
             layer,
             shell: Shell::new(Secret::fixed(SECRET), "shell"),
+            frames: HeadlessFrames::new(),
             menu: fixture.menu(),
             items: HashMap::new(),
         };
@@ -136,6 +139,34 @@ impl Session {
         let receipt = session.shell.send(&mut session.layer, press.expect("the shell prepares the entry"));
         assert!(committed(&receipt), "`{JUMBLE_ON_ROW}` answered {:?}", receipt.status);
         session
+    }
+
+    /// A new session at `start` under `fixture`'s menu, pinned, with no protected orbit and Jumble off: `jumble.on` is
+    /// not pressed, so its moves are 600-cell-Full's commits ([`Session::commit`]) until it is.
+    pub fn pinned_at(fixture: &Fixture, start: Snapshot) -> Session {
+        let kernel = shared_kernel().clone();
+        let protected = kernel.protected_set(&[]).expect("no orbit");
+        let (store, name, secret) = (MemoryStore::default(), format!("c8-{}-off", fixture.name), Secret::fixed(SECRET));
+        let mut layer = CommandLayer::new(kernel, Table::h08(), secret, store, &name, start, protected);
+        layer.pin_menu(shared_engine().clone(), fixture.menu()).expect("the pin");
+        Session {
+            layer,
+            shell: Shell::new(Secret::fixed(SECRET), "shell"),
+            frames: HeadlessFrames::new(),
+            menu: fixture.menu(),
+            items: HashMap::new(),
+        }
+    }
+
+    /// A 600-cell-Full commit of the literal word `letters` with Jumble off: `operation.preview`, its job run and its
+    /// frames presented headlessly, then `operation.execute` of the preview.
+    pub fn commit(&mut self, letters: &[i64]) -> Receipt {
+        let recipe = json::parse(format!(r#"[{{"kind": "word", "moves": {letters:?}}}]"#).as_bytes()).expect("JSON");
+        let receipt = self.invoke("operation.preview", draft_args(&recipe));
+        let Status::Running(id) = receipt.status else { panic!("preview not admitted: {:?}", receipt.status) };
+        assert_eq!(self.layer.run_jobs(), 1, "the preview's job runs");
+        self.frames.present(&mut self.shell, &mut self.layer, id).expect("the frames present");
+        self.invoke("operation.execute", json::object([("preview", Value::Int(id as i64))]))
     }
 
     /// [`Session::entered`] in a solving session with LP2's drafted rows admitted (`Table::h08().with_drafts()`,
@@ -153,6 +184,7 @@ impl Session {
         let mut session = Session {
             layer,
             shell: Shell::new(Secret::fixed(SECRET), "shell"),
+            frames: HeadlessFrames::new(),
             menu: fixture.menu(),
             items: HashMap::new(),
         };
