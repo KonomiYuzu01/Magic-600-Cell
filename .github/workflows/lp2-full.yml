@@ -1,0 +1,199 @@
+# PHS.19's two long items for LP2's exit, on GitHub-hosted runners, nightly on main and on request:
+#
+# - Full replay (ubuntu-24.04): the comparisons of the Rust jumbling candidate with J1 that read
+#   JUMBLING_FULL_REPLAY=1 run every record of the W-J fixtures, all of H6030 and every correction
+#   instead of their bounded default, and the command layer's whole-fixture oracle equality
+#   (`rust/c600-jumble-tool/tests/jumble_on_layer.rs`, its `#[ignore]` tests) runs in a release build.
+# - Cross-platform comparison: the same pinned inputs and keys run on windows-2025 and ubuntu-24.04,
+#   each check on its own runner with C600_TRANSCRIPT_DIR set, so the checks keep their exact outputs
+#   (`tools/ci/transcripts.py`: the jumbling adapter's request and answer lines, and the kernel's and
+#   the command layer's traces, receipts and derived cases). Both systems upload them, and a third job
+#   compares the canonical payloads and stop reasons byte for byte. No compared output carries a
+#   display field, so no declared precision applies.
+#
+# A pull request runs this workflow only when it changes the workflow or the transcript code. Each
+# runner uses the Windows shards' pinned CPython, hash-checked NumPy wheels and environment, and
+# builds the adapters with the locked, vendored crates. A pass is headless source and fixture
+# evidence on the two systems, not Windows/DirectX, input, long-session or performance evidence.
+# The runners have no personal data and get no secrets.
+name: LP2 full replay and cross-platform comparison
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/lp2-full.yml
+      - tools/ci/transcripts.py
+      - research/jumbling/differential/candidate/rust_jumble.py
+  schedule:
+    - cron: "47 18 * * *" # nightly on main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lp2-full-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The environment tools/ci/run_headless.py gives each check on the Windows shards.
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUTF8: "1"
+
+jobs:
+  full-replay:
+    name: full replay, ${{ matrix.check }} (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [rust_candidate, rust_corrections, command_route]
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the pinned CPython
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+          architecture: x64
+
+      - name: Install the pinned engine environment (hash-checked wheels only)
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes -r tools/python/engine.txt
+
+      - name: Print the toolchain identity
+        run: |
+          uname -srm
+          python -c "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
+          rustc --version --verbose
+          cargo --version
+
+      - name: Compare the candidate with J1 on every record
+        env:
+          JUMBLING_FULL_REPLAY: "1"
+        run: python tests/test_jumbling_${{ matrix.check }}.py
+
+  jumble-on-layer:
+    name: jumble on in the command layer, whole fixtures (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Print the toolchain identity
+        run: |
+          uname -srm
+          rustc --version --verbose
+          cargo --version
+
+      - name: Run the whole-fixture oracle equality in a release build
+        run: cargo test --release --locked --offline -p c600-jumble-tool --test jumble_on_layer -- --ignored
+
+  transcript:
+    name: transcript, ${{ matrix.check }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04]
+        check:
+          - kernel_oracle
+          - lp3_loop
+          - lp3_source_route
+          - jumbling_rust_candidate
+          - jumbling_command_route
+          - jumbling_rust_attacks
+          - jumbling_rust_m8_observations
+          - jumbling_rust_m8_levels
+          - jumbling_rust_nu
+          - jumbling_rust_corrections
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the pinned CPython
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+          architecture: x64
+
+      - name: Install the pinned engine environment (hash-checked wheels only)
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes -r tools/python/engine.txt
+
+      - name: Print the toolchain identity
+        run: |
+          uname -srm
+          python -c "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
+          rustc --version --verbose
+          cargo --version
+
+      - name: Run the check and keep its transcript
+        # The Windows shards' limit for one check (TIME_LIMIT_SECONDS in tools/ci/run_headless.py).
+        timeout-minutes: 20
+        env:
+          C600_TRANSCRIPT_DIR: ${{ runner.temp }}/transcripts
+        run: python tests/test_${{ matrix.check }}.py
+
+      - name: Upload the transcript
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: transcript-${{ matrix.os }}-${{ matrix.check }}
+          path: ${{ runner.temp }}/transcripts
+          if-no-files-found: error
+          retention-days: 7
+
+  compare:
+    needs: transcript
+    if: ${{ !cancelled() }}
+    name: compare the transcripts (windows-2025 against ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download both systems' transcripts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: transcript-*
+          path: ${{ runner.temp }}/transcripts
+
+      - name: Compare the payloads byte for byte
+        env:
+          FOLDER: ${{ runner.temp }}/transcripts
+        run: |
+          failed=0
+          for check in kernel_oracle lp3_loop lp3_source_route jumbling_rust_candidate jumbling_command_route \
+                       jumbling_rust_attacks jumbling_rust_m8_observations jumbling_rust_m8_levels jumbling_rust_nu \
+                       jumbling_rust_corrections; do
+            echo "== $check"
+            windows="$FOLDER/transcript-windows-2025-$check"
+            linux="$FOLDER/transcript-ubuntu-24.04-$check"
+            if [ ! -d "$windows" ] || [ ! -d "$linux" ]; then
+              echo "FAIL: a system uploaded no transcript for $check"
+              failed=1
+              continue
+            fi
+            python3 tools/ci/transcripts.py compare "$windows" "$linux" || failed=1
+          done
+          exit $failed

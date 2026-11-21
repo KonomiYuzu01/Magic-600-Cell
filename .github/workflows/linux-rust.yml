@@ -13,8 +13,8 @@
 # tools/ci/run_headless.py runs on the Windows shards, here one runner per check. Each runner uses
 # the Windows shards' pinned CPython, hash-checked NumPy wheels, environment and time limit for one
 # check, and builds the release adapter with the locked, vendored crates. Each system compares the
-# candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared
-# with each other.
+# candidate with J1 on the same pinned inputs and keys; the LP2 workflow (lp2-full.yml) compares the
+# two systems' payloads with each other.
 #
 # The plan job selects the jobs with tools/ci/run_headless.py (owner, 19 November 2026): a pull
 # request runs `cargo test` only when it selects tests/test_language_rust.py, and each J1
