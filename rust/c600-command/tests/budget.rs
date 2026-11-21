@@ -99,7 +99,7 @@ fn b13_an_invocation_without_a_budget_is_refused_before_a_job_exists() {
 #[test]
 fn b14_a_budget_over_the_host_ceiling_is_refused_before_a_job_exists() {
     let mut layer = session(Profile::ToolAuthoring);
-    layer.set_budget_ceiling(Budget { steps: 1, ..Budget::DRAFT_CEILING });
+    layer.set_budget_ceiling(Budget { steps: 1, ..Budget::CEILING });
     let (revision, journal) = (layer.revision().to_json(), layer.store().log.len());
     let receipt = layer.invoke(&Caller::Shell, envelope(&layer, "c1", TOOL, Some(B14)));
     let (code, detail) = refusal(&receipt);
@@ -115,24 +115,29 @@ fn b14_a_budget_over_the_host_ceiling_is_refused_before_a_job_exists() {
     assert!(matches!(receipt.status, Status::Running(1)), "{:?}", receipt.status);
 }
 
-/// BM3 (draft): every profile's ceiling is the draft ceiling, and a host ceiling lowers it in each dimension and raises
-/// none.
+/// BM3 (owner, 21 November 2026, option 1): every profile's ceiling is `Budget::CEILING`, and a host ceiling lowers it
+/// in each dimension and raises none. Memory and output are below the draft ceiling's, so a budget declared at the
+/// draft ceiling is refused.
 #[test]
 fn the_lower_ceiling_applies_in_each_dimension() {
     for profile in Profile::ALL {
-        assert_eq!(profile.budget_ceiling(), Budget::DRAFT_CEILING, "{}", profile.name());
+        assert_eq!(profile.budget_ceiling(), Budget::CEILING, "{}", profile.name());
         let mut layer = session(profile);
-        assert_eq!(layer.budget_ceiling(), Budget::DRAFT_CEILING);
+        assert_eq!(layer.budget_ceiling(), Budget::CEILING);
+        let receipt = layer.invoke(&Caller::Shell, envelope(&layer, "draft", TOOL, Some(Budget::DRAFT_CEILING)));
+        let (code, detail) = refusal(&receipt);
+        assert_eq!(code, code::BUDGET_CEILING, "{}", profile.name());
+        assert!(detail.contains("`memory`"), "{detail}");
         let high = Budget { steps: u128::MAX, kernel_cost: u128::MAX, memory: u128::MAX, output: u128::MAX };
         layer.set_budget_ceiling(high);
-        assert_eq!(layer.budget_ceiling(), Budget::DRAFT_CEILING, "a host ceiling raises nothing");
-        let mixed = Budget { steps: 10, memory: u128::MAX, ..Budget::DRAFT_CEILING };
+        assert_eq!(layer.budget_ceiling(), Budget::CEILING, "a host ceiling raises nothing");
+        let mixed = Budget { steps: 10, memory: u128::MAX, ..Budget::CEILING };
         layer.set_budget_ceiling(mixed);
-        assert_eq!(layer.budget_ceiling(), Budget { steps: 10, ..Budget::DRAFT_CEILING });
+        assert_eq!(layer.budget_ceiling(), Budget { steps: 10, ..Budget::CEILING });
     }
     assert_eq!(
-        Budget::DRAFT_CEILING,
-        Budget { steps: 1 << 20, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 },
+        Budget::CEILING,
+        Budget { steps: 1 << 21, kernel_cost: 1 << 40, memory: 1 << 27, output: 1 << 24 },
         "c600-tools' tool::LIMITS"
     );
 }
@@ -141,7 +146,7 @@ fn the_lower_ceiling_applies_in_each_dimension() {
 /// dimension in the meter's order (steps, kernel cost, memory, output).
 #[test]
 fn each_dimension_is_checked_in_the_meters_order() {
-    let ceiling = Budget::DRAFT_CEILING;
+    let ceiling = Budget::CEILING;
     let mut layer = session(Profile::Solving);
     let receipt = layer.invoke(&Caller::Shell, envelope(&layer, "at", TOOL, Some(ceiling)));
     assert!(matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);
@@ -169,11 +174,11 @@ fn the_job_carries_the_admitted_budget() {
     assert!(matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);
     let job = layer.take_program_job().expect("the tool's job");
     assert_eq!(job.budget, B14);
-    // The shell declares the draft ceiling by default.
+    // The shell declares every profile's ceiling by default.
     let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
     let receipt = shell.invoke(&mut layer, TOOL, json::object([])).unwrap();
     assert!(matches!(receipt.status, Status::Running(_)), "{:?}", receipt.status);
-    assert_eq!(layer.take_program_job().expect("the shell's job").budget, Budget::DRAFT_CEILING);
+    assert_eq!(layer.take_program_job().expect("the shell's job").budget, Budget::CEILING);
     assert_eq!(shell.prepare(&layer, "protection.orbit.set", json::object([])).unwrap().budget, None);
 }
 

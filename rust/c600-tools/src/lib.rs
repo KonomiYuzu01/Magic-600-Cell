@@ -62,7 +62,7 @@
 //!   named it. The producer is the tool's module digest and entry, author `built_in`, profile `solving`.
 //! - **Limits** (KN7.7; LP2's pull request 348). A run gets the run limits of its job's budget
 //!   ([`process::ToolCommand::limits`], [`tool::limits`]): the budget the solver's command declared, by default the
-//!   shell's, the layer's draft ceiling ([`tool::LIMITS`]), and the layer admitted under its ceiling. A command that
+//!   shell's, every profile's ceiling ([`tool::LIMITS`]), and the layer admitted under its ceiling. A command that
 //!   declares no budget, or one over the ceiling, is refused before a job exists, so the tool does not run. The
 //!   bridge declares the run's budget on the runtime invocations of a row an entry serves
 //!   ([`bridge::Bridge::with_budget`]). The run's charges are information only.

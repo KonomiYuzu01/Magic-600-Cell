@@ -32,8 +32,14 @@ pub struct Budget {
 }
 
 impl Budget {
-    /// The draft ceiling of every profile: `c600-tools`' `tool::LIMITS` (steps 2^20, kernel cost 2^40, memory 2^32,
-    /// output 2^26). The product's values wait for an owner reading.
+    /// The budget ceiling of every profile (BM3; owner, 21 November 2026, option 1:
+    /// `docs/wiki/decisions/owner-decisions-2026-11-21-ceilings-e3.md`): steps 2^21, memory 2^27 and output 2^24,
+    /// each a measured peak of the shipped entries times four, rounded up to a power of two; kernel cost keeps the
+    /// draft's 2^40 until the rows are priced, and is then measured again. It is `c600-tools`' `tool::LIMITS`.
+    pub const CEILING: Budget = Budget { steps: 1 << 21, kernel_cost: 1 << 40, memory: 1 << 27, output: 1 << 24 };
+
+    /// The draft ceiling every profile had before the owner's values (steps 2^20, kernel cost 2^40, memory 2^32,
+    /// output 2^26). The frozen candidate 013900ff and the C9 sitting's build admit under it.
     pub const DRAFT_CEILING: Budget = Budget { steps: 1 << 20, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
 
     /// The dimensions' names and amounts, in the meter's order.
@@ -98,8 +104,8 @@ fn decimal(amount: u128) -> Value {
 }
 
 impl Profile {
-    /// The profile's budget ceiling (BM3; draft): [`Budget::DRAFT_CEILING`] for every profile.
+    /// The profile's budget ceiling (BM3): [`Budget::CEILING`] for every profile (owner, 21 November 2026).
     pub fn budget_ceiling(self) -> Budget {
-        Budget::DRAFT_CEILING
+        Budget::CEILING
     }
 }

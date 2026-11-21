@@ -410,9 +410,10 @@
 //!   freeze. Chapter 03 backs the catalogue with library code over KN2.4's `labels`, `positions` and `effect`; under
 //!   the draft budget ceiling that cannot serve it: `labels` names no orbit, `positions` names one only for the pieces
 //!   a program names, and sorting all 177,120 pieces by orbit takes at least ten steps a piece, about 1.8 million,
-//!   against the ceiling's 2^20 (1,048,576). The row is model data, read from the kernel's `positions` at the solved
-//!   state, and reads no state of the session; as for the recipes, the entry reads it with `read_snapshot` and carries
-//!   the effect `snapshot`, where chapter 03 says "pure".
+//!   against the draft ceiling's 2^20 (1,048,576); the owner's 2^21 (2,097,152) holds the sort but little else. The row
+//!   is model data, read from the kernel's `positions` at the solved state, and reads no state of the session; as for
+//!   the recipes, the entry reads it with `read_snapshot` and carries the effect `snapshot`, where chapter 03 says
+//!   "pure".
 //! - LB2, progress: `orbit_progress` counts the caller's records. It never reads, so a count says what the named
 //!   positions show: a caller that names fewer pieces than the catalogue lists gets a smaller `pieces`, and compares it
 //!   with the catalogue. A record whose stickers are split over positions (`position` -1) counts as position wrong.
@@ -435,7 +436,7 @@
 //!   `unknown` and, unless they are buffer pieces, as misplaced. A frame relative to a reference the solver names is
 //!   not built.
 //! - LB2, budgets: both pure entries make one pass over `positions`; on the largest orbit, 7,200 pieces, every piece
-//!   away from Home, each runs within the draft budget ceiling with the `positions` read before it
+//!   away from Home, each runs within the budget ceiling with the `positions` read before it
 //!   (`c600-tools/tests/orbits.rs`). The lists are built with `push`, which is priced as a new list of its length even
 //!   where it extends the list in place (pull request 364), so a list of k pieces costs about k²/2 of kernel cost,
 //!   within the ceiling's 2^40.
@@ -868,10 +869,10 @@ pub fn guarded_setups_and_buffers() -> CatalogueRow {
         entry: "Guarded setups and buffers",
         level: "Full labels and positions: a target position in a named orbit, the orbit's two buffer positions.",
         effects: &[Effect::ReadSnapshot],
-        backing: "Library code: `guarded_setups.setups_for` reads the draft derived-state row `setups` (KN2.4 has \
-                  none) with `read_snapshot` at the target the solver names, under the setup-search exception; a host \
-                  serves the row from the certified execution trees, and the kernel certifies each setup's star \
-                  through KN2.4's `effect` (`c600_tools::kernel_rows`).",
+        backing: "Library code: `guarded_setups.setups_for` reads the derived-state row `setups` (KN2.4 has none; \
+                  H-08's `reads` hold it) with `read_snapshot` at the target the solver names, under the setup-search \
+                  exception; a host serves the row from the certified execution trees, and the kernel certifies each \
+                  setup's star through KN2.4's `effect` (`c600_tools::kernel_rows`).",
         notes: "Setup search for a target the solver names: the solver names the orbit and the position. The setups \
                 are delivered as read, in the table's node order, with no rank and no best mark; the solver chooses \
                 one and may edit it. Buffers are positions with changing occupants, and every prefix of every setup \
@@ -951,8 +952,8 @@ pub fn orbit_catalogue_and_progress() -> CatalogueRow {
         level: "Full labels; model data: the pieces of each orbit the caller names, and the caller's `positions` \
                 records for the progress. The stage order is the `seeds` module's; a colour count is not built.",
         effects: &[Effect::ReadSnapshot],
-        backing: "Library code: `orbits.orbit_catalogue` reads the draft row `orbits` (KN2.4 has none) with \
-                  `read_snapshot`, model data from the kernel's `positions` at the solved state; \
+        backing: "Library code: `orbits.orbit_catalogue` reads the row `orbits` (KN2.4 has none; H-08's `reads` hold \
+                  it) with `read_snapshot`, model data from the kernel's `positions` at the solved state; \
                   `orbits.orbit_progress` counts over the caller's `positions` answer, which a host reads at the \
                   catalogue's pieces; a host serves both rows (`c600_tools::kernel_rows`).",
         notes: "The catalogue answers each named orbit's pieces, the same at every head; the 36 orbits, -1 for the \

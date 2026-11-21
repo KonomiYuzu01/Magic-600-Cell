@@ -1,7 +1,7 @@
 //! LB2's rows "Orbit catalogue and collateral stage order" and "Residuals and exact completion" on 600-cell-Full, as
 //! library code: `c600-library`'s module `orbits` runs on `c600-run` through `Boundary` and the tool's host bridge onto
-//! a command layer, in the solving profile, author `built_in`, within the draft budget ceiling
-//! (`Budget::DRAFT_CEILING`). `orbit_catalogue` reads the `orbits` row at the orbits the caller names. A client
+//! a command layer, in the solving profile, author `built_in`, within the budget ceiling
+//! (`Budget::CEILING`). `orbit_catalogue` reads the `orbits` row at the orbits the caller names. A client
 //! entry reads `positions` at the pieces the caller names and hands the answer to the pure `orbit_progress` or
 //! `orbit_residuals`, so the row supplies membership only and the positions are a parameter (chapter 03). The
 //! references are the kernel's own: `positions` at the solved state for the orbit table, its progress rows,
@@ -54,12 +54,12 @@ export fn chained(named: List<Int>) -> List<record { home: List<Nat>, orbit: Int
 }
 "#;
 
-/// The draft budget ceiling of every profile (`Budget::DRAFT_CEILING`), as the run's limits.
+/// The budget ceiling of every profile (`Budget::CEILING`), as the run's limits.
 const CEILING: Amounts = Amounts {
-    steps: Budget::DRAFT_CEILING.steps,
-    kernel_cost: Budget::DRAFT_CEILING.kernel_cost,
-    memory: Budget::DRAFT_CEILING.memory,
-    output: Budget::DRAFT_CEILING.output,
+    steps: Budget::CEILING.steps,
+    kernel_cost: Budget::CEILING.kernel_cost,
+    memory: Budget::CEILING.memory,
+    output: Budget::CEILING.output,
 };
 
 /// A fixed scramble from solved.
@@ -178,7 +178,7 @@ fn context(layer: &CommandLayer, source: &str, entry: &str, inputs: usize) -> Co
     Context { run: "orbits".into(), base, producer, reads_state: true, inputs, pins: pins() }
 }
 
-/// Runs `module.entry` on `args` within the draft ceiling through a boundary and a bridge onto `layer`; a read sends
+/// Runs `module.entry` on `args` within the ceiling through a boundary and a bridge onto `layer`; a read sends
 /// no invocation and changes nothing.
 fn run(layer: &mut CommandLayer, module: &str, entry: &str, args: Vec<Value>) -> Run {
     let source = if module == ORBITS_MODULE { ORBITS_SOURCE } else { client_source() };
@@ -476,7 +476,7 @@ fn at_solved_an_orbit_is_solved_only_when_every_member_is_named() {
 }
 
 /// The largest orbit, [`MAX_ORBIT_PIECES`] pieces, with every piece away from Home, each in the next piece's position:
-/// the client's progress and residuals each run whole, their reads first, within the draft budget ceiling, and answer
+/// the client's progress and residuals each run whole, their reads first, within the budget ceiling, and answer
 /// what the definitions and the kernel's progress row give. The amounts used are printed.
 #[test]
 fn the_largest_orbit_runs_within_the_draft_ceiling() {

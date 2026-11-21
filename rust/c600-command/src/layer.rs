@@ -4642,7 +4642,7 @@ mod tests {
             args: json::object([]),
             token: None,
             epoch: layer.revision().epoch,
-            budget: Some(Budget::DRAFT_CEILING),
+            budget: Some(Budget::CEILING),
         };
         let receipt = layer.invoke(caller, invocation);
         assert!(matches!(receipt.status, Status::Running(_)), "{caller:?}: {:?}", receipt.status);

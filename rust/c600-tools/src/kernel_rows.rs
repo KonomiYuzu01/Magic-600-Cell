@@ -261,9 +261,10 @@
 //! A program reads the row as `read_snapshot<T>("orbits", orbits)`: LB2's orbit catalogue reads it (`c600_library`'s
 //! `orbits`). KN2.4 has no orbit row; H-08's `reads` hold this one since LP3's freeze (CM.18), as they hold `setups`.
 //! Chapter 03 builds the catalogue as library code over `labels` and `positions`, and `positions` gives a piece's orbit
-//! only for pieces a program names. Read for all 177,120 pieces, it fits the draft budget ceiling's kernel cost
-//! (3,802,200 of 2^40), but sorting its records by orbit takes at least ten steps a piece, about 1,770,000 steps
-//! against the ceiling's 1,048,576 (`Budget::DRAFT_CEILING`). The row answers that membership, and nothing else: an
+//! only for pieces a program names. Read for all 177,120 pieces, it fits the budget ceiling's kernel cost
+//! (3,802,200 of 2^40), but sorting its records by orbit takes at least ten steps a piece, about 1,770,000 steps:
+//! over the draft ceiling's 1,048,576 and most of the owner's 2,097,152 (`Budget::CEILING`), before the catalogue
+//! does anything else. The row answers that membership, and nothing else: an
 //! orbit's progress and its residuals stay library code that takes the positions it reads as a parameter.
 //!
 //! `orbits` is a list of integers, such as a `List<Int>`: orbits -1 to 34, -1 for the fixed cell centres, with repeats

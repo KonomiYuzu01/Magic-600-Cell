@@ -678,7 +678,7 @@ fn a_running_program_cannot_invoke_a_served_workspace_row() {
         args: json::object([("kind", text("identity")), ("members", ints(&[3, 5])), ("name", text("pair"))]),
         token: None,
         epoch: session.layer.revision().epoch,
-        budget: Some(c600_command::Budget::DRAFT_CEILING),
+        budget: Some(c600_command::Budget::CEILING),
     };
     let refused = session.layer.invoke(&program_channel(), invocation);
     assert_eq!(refused.status.code(), Some(code::NOT_GRANTED), "{:?}", refused.status);
@@ -729,7 +729,7 @@ fn a_running_programs_query_and_view_jobs_run_on_blocks_built_from_its_context()
             args: args.clone(),
             token: None,
             epoch: revision.epoch,
-            budget: Some(c600_command::Budget::DRAFT_CEILING),
+            budget: Some(c600_command::Budget::CEILING),
         };
         session.shell.invoke(&mut session.layer, row, args.clone()).expect("prepared");
         let (_, shell, _) = host.serve_next(&mut session.layer).expect("the shell's job");

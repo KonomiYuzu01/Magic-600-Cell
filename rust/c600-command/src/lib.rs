@@ -513,14 +513,14 @@
 //!   - The layer admits it after the row's arguments, `FilterRef`s, gate and blocks, and before the lane and before a
 //!     job ID exists, so a refusal uses nothing. A missing budget is `KN7:input.budget_not_declared`. A dimension over
 //!     the ceiling is `KN7:resource_limit.budget_ceiling`, naming the dimension, the request and the ceiling.
-//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::DRAFT_CEILING`] for every profile
-//!     until an owner reading sets the product's values). A host may set a lower one
+//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::CEILING`] for every profile, the
+//!     owner's values of 21 November 2026). A host may set a lower one
 //!     ([`CommandLayer::set_budget_ceiling`]); the lower applies in each dimension. The safety stop is not checked.
 //!   - The job carries the admitted budget ([`ProgramJob::budget`]). The request digest covers a declared budget
 //!     under the key `budget`, so an invocation without one keeps its digest, and a retry with another budget is other
 //!     content (`KN5:input.command_id_reused`). A workspace row's completion keeps the budget in its journal entry.
 //!   - Another row runs no program and reads no budget. [`Shell::prepare`] declares the shell's budget on an
-//!     invocation of a row an entry serves ([`Shell::budget`], the draft ceiling by default) and none on another.
+//!     invocation of a row an entry serves ([`Shell::budget`], [`Budget::CEILING`] by default) and none on another.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
 //!   - A `FilterRef` names a completed job of a row that prepares a predicate (`structure.layer`) by its result
 //!     reference. It resolves while every record that job wrote still holds the job's write, to those records, each

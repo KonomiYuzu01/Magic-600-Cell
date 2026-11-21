@@ -78,7 +78,7 @@ fn invocation(layer: &CommandLayer, command: &str, row: &str, args: Value) -> In
         args,
         token: None,
         epoch: layer.revision().epoch,
-        budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
+        budget: served.then_some(c600_command::Budget::CEILING),
     }
 }
 
@@ -134,7 +134,7 @@ fn only_an_invocation_with_blocks_has_them_in_its_request_digest() {
             ("row", text(COMPARE)),
             ("args", call.args.clone()),
             ("token", Value::Null),
-            ("budget", c600_command::Budget::DRAFT_CEILING.to_json()),
+            ("budget", c600_command::Budget::CEILING.to_json()),
         ]);
         if let (Value::Object(fields), false) = (&mut request, inputs == Value::Null) {
             fields.insert("inputs".to_owned(), inputs);
@@ -144,7 +144,7 @@ fn only_an_invocation_with_blocks_has_them_in_its_request_digest() {
     let receipt = first.invoke_with_inputs(&runtime(), call.clone(), Vec::new());
     assert_eq!(receipt.request, digest(&fields(Value::Null)));
     // Pinned, so that a change to the digest's fields shows here as well as in the rebuilt fields above.
-    assert_eq!(receipt.request, "a870e4db0fce072994a07913b528f2e9fa7505630412810a6f9ad54ee6e88468");
+    assert_eq!(receipt.request, "b442ea1238973628fb9af91585eba0f04737ba78b023ef1f1a640b86107ea225");
 
     let mut second = layer(true);
     let receipt = second.invoke_with_inputs(&runtime(), call.clone(), blocks());

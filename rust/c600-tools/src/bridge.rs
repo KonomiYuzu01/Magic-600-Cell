@@ -125,7 +125,7 @@ pub struct Bridge<'l, S: Store = MemoryStore> {
     layer: &'l mut CommandLayer<S>,
     run: String,
     /// The budget the run's invocations of a row an entry serves declare: the run's own, if the host gave it, and
-    /// otherwise the layer's draft ceiling.
+    /// otherwise every profile's ceiling, `Budget::CEILING`.
     budget: Budget,
     /// The solver's input recipe of the run and its literal word, if the host gave them.
     steps: Option<Steps>,
@@ -139,9 +139,9 @@ impl<'l, S: Store> Bridge<'l, S> {
     /// The host of run `run` on `layer`. A run's name is new in its session: the bridge's command IDs are
     /// `<run>/<n>`, and the layer answers a command ID it knows by its outcome lookup. The bridge has no solver's
     /// recipe: every proposal goes in one word step. It has no setup tables: a `setups` read is not granted. It has
-    /// no run's budget: an invocation of a row an entry serves declares the layer's draft ceiling.
+    /// no run's budget: an invocation of a row an entry serves declares every profile's ceiling.
     pub fn new(layer: &'l mut CommandLayer<S>, run: &str) -> Self {
-        let budget = Budget::DRAFT_CEILING;
+        let budget = Budget::CEILING;
         Bridge { layer, run: run.to_owned(), budget, steps: None, setups: None, sent: Vec::new() }
     }
 
@@ -170,7 +170,7 @@ impl<'l, S: Store> Bridge<'l, S> {
     /// One invocation of `row` with absolute arguments on this run's channel, stamped [`Caller::Runtime`] for the run,
     /// with a fresh command ID and the layer's current epoch. A proposal never carries a token; `token` is there so a
     /// test can show that the layer refuses a runtime invocation carrying one. An invocation of a row an entry serves
-    /// declares the run's budget (KN7.7; [`Bridge::with_budget`], by default the draft ceiling), and one of another row
+    /// declares the run's budget (KN7.7; [`Bridge::with_budget`], by default `Budget::CEILING`), and one of another row
     /// declares none, as the shell does.
     pub fn invoke(&mut self, row: &str, args: Json, token: Option<Token>) -> Receipt {
         let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
