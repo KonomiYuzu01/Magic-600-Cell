@@ -241,9 +241,9 @@ fn a_served_query_row_runs_its_entry_as_a_program_job() {
 /// A served workspace row: the entry's output completes it as one durable workspace action, with a result reference,
 /// at a revision whose workspace number is one higher and whose other fields are unchanged. For `set.save` the action
 /// writes the saved set's record `set/pair` and the reference carries the exact set's digest. H-08 gives `set.save` the
-/// undo class `none`, so the action takes no undo entry and the next undo still targets the commit before it. Serving
-/// is not journaled: a reopen keeps the receipt and the workspace revision, and the reopened layer refuses the row as
-/// not built until the host serves it again (draft).
+/// undo class `workspace` (LB7.2, since the command table's freeze), so the action is undoable and the next undo
+/// targets it, not the commit before it. Serving is not journaled: a reopen keeps the receipt and the workspace
+/// revision, and the reopened layer refuses the row as not built until the host serves it again (draft).
 #[test]
 fn a_served_workspace_row_completes_as_one_durable_action() {
     let mut f = fixture();
@@ -272,7 +272,9 @@ fn a_served_workspace_row_completes_as_one_durable_action() {
     assert_eq!(f.layer.record("set/pair").map(|value| &value.payload), Some(&saved));
     let kinds: Vec<TransactionKind> = f.layer.store().log.iter().map(|t| t.kind).collect();
     assert_eq!(kinds, [TransactionKind::Commit, TransactionKind::Workspace]);
-    assert_eq!(f.layer.undo_hint(Direction::Undo).map(|h| h.target), Some(hint.target));
+    let action = f.layer.store().log.last().map(|t| t.order);
+    assert_eq!(f.layer.undo_hint(Direction::Undo).map(|h| h.target), action, "the save is the next undo's target");
+    assert_ne!(action, Some(hint.target));
     assert_eq!(f.layer.invoke(&Caller::Shell, asked.clone()), done);
 
     let store = f.layer.store().clone();
@@ -355,8 +357,9 @@ fn a_served_row_keeps_its_lane() {
 /// Serving refuses a row whose admission or completion the layer cannot check without the entry, with
 /// `KN5:input.overlay_row_kind`: each shape condition alone on a synthetic table, and stored examples. It refuses a row
 /// the layer builds itself, a row an entry already serves and an overlay row with the draft code
-/// `KN5:input.overlay_row_conflict`, and an ID that names no row (a service, or `workspace.set` without the layer's
-/// drafts) with `KN5:input.unknown_row`. Each refusal leaves the table as it was.
+/// `KN5:input.overlay_row_conflict`, and an ID that names no row (a service) with `KN5:input.unknown_row`. Since the
+/// command table's freeze H-08 holds `workspace.set` as the layer's drafts give it (CM.17), so it is a row the layer
+/// builds itself without the drafts too. Each refusal leaves the table as it was.
 #[test]
 fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
     let mut table = Table::parse(SHAPES.as_bytes()).unwrap();
@@ -419,7 +422,10 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
     assert_eq!(rows(&h08), before);
 
     let mut plain = Table::h08();
-    assert_eq!(plain.serve_row(RECORD_ROW, overlay("record")).unwrap_err().code, code::UNKNOWN_ROW);
+    let draft = Table::parse(SHAPES.as_bytes()).unwrap().with_drafts();
+    assert!(draft.row(RECORD_ROW).is_some());
+    assert_eq!(plain.row(RECORD_ROW), draft.row(RECORD_ROW), "H-08 holds the draft row as it is");
+    assert_eq!(plain.serve_row(RECORD_ROW, overlay("record")).unwrap_err().code, code::OVERLAY_ROW_CONFLICT);
 
     let mut f = fixture();
     let refused = f.layer.serve_row("twist.apply", overlay("twist")).unwrap_err();

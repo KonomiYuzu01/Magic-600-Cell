@@ -231,9 +231,10 @@ impl Table {
         &self.services
     }
 
-    /// The table with the command layer's draft rows that H-08 does not hold yet: `workspace.set`
+    /// The table with the command layer's draft rows that it does not hold: `workspace.set`
     /// ([`crate::workspace::RECORD_ROW`]), M6's record write, a workspace row whose undo is a workspace inverse. A row
-    /// the table already holds is kept as it is.
+    /// the table already holds is kept as it is; H-08 holds `workspace.set` in this shape since the command table's
+    /// freeze (CM.17).
     pub fn with_drafts(mut self) -> Table {
         let id = crate::workspace::RECORD_ROW;
         let arguments = [("payload", "Json"), ("provenance", "ProvenanceBlock"), ("record", "Text")];

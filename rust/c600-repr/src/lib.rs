@@ -33,7 +33,8 @@
 //!   because the IR draft has no identity or reference type. The snapshot queries and workspace records the
 //!   entries name (`filter.preview`, `structure.compare`, `filter.apply`, `set.save`, `structure.layer`) are the rows'
 //!   own IDs. A served row's records reach the command layer as its job's output; C5's host bridge answers the two
-//!   snapshot queries from LP2's structure rows (pull request 262) with draft tariffs.
+//!   snapshot queries from LP2's structure rows (pull request 262) with the tariffs H-08's `reads` hold since the
+//!   freeze (CM.18).
 //! - BND.37, BND.63: the class review in [`tool::review_class`] reads `view_aid` as: no entry prepares a preview or
 //!   calls what the checker cannot resolve; no entry requests a capability or has a file, randomness or budget effect;
 //!   a workspace change sits in a command that serves a workspace row and reads no state-derived data, so that what
@@ -128,9 +129,9 @@
 //!   `read_snapshot<T>(query, x)` (pull request 199): `compare_cells` the two cells, `filter_counts` the layer
 //!   predicate. C5's host bridge answers `structure.compare` and `filter.preview` from LP2's structure rows (pull
 //!   request 262: `CommandLayer::compare_cells` and `layer_counts`, which read no state and refuse with Jumble on)
-//!   with `c600_tools::kernel_rows`. What is not built: the reads' tariffs in the command table, which freezes at
-//!   LP3, and a reference type in the IR, so `filter_counts` takes the predicate as a record of its cell and layer,
-//!   which the host reads from the record the predicate's job wrote.
+//!   with `c600_tools::kernel_rows`. What is not built: a reference type in the IR, so `filter_counts` takes the
+//!   predicate as a record of its cell and layer, which the host reads from the record the predicate's job wrote.
+//!   H-08's `reads` hold the two reads and their tariffs since the command table's freeze (CM.18).
 //! - `view.effect.scope`: a display that applies the published scope.
 
 #![forbid(unsafe_code)]

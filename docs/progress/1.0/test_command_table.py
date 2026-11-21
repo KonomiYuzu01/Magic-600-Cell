@@ -11,6 +11,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 import io
 from pathlib import Path
+import re
 import unittest
 from unittest.mock import patch
 
@@ -488,7 +489,8 @@ class CommandTableTests(unittest.TestCase):
             "recording.convert": ("workspace", "none", "workspace", False,
                                   {"recording": "RecordingRef", "target": "draft | source"}),
         }
-        self.assertEqual({r["id"] for r in self.language["add"]}, set(expected))
+        # The seventh addition, LP3's record write, has its own test below.
+        self.assertEqual({r["id"] for r in self.language["add"]}, set(expected) | {"workspace.set"})
         for name, (kind, lane, undo, job, arguments) in expected.items():
             row = self.by_id[name]
             with self.subTest(row=name):
@@ -499,8 +501,8 @@ class CommandTableTests(unittest.TestCase):
         for name in ("view.open", "view.close"):
             self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
         counts = Counter(r["kind"] for r in self.table["commands"])
-        self.assertEqual(len(self.table["commands"]), 174)
-        self.assertEqual((counts["workspace"], counts["view"]), (66, 45))
+        self.assertEqual(len(self.table["commands"]), 175)
+        self.assertEqual((counts["workspace"], counts["view"]), (67, 45))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -511,6 +513,27 @@ class CommandTableTests(unittest.TestCase):
         del next(r for r in mutant["add"] if r["id"] == "view.open")["lane_target"]
         with self.assertRaisesRegex(builder.TableError, "lane_target"):
             self.build(delta=[self.delta, mutant], draft_without_jumbling=False)
+
+    def test_lp3_record_write_and_workspace_undo_reading(self):
+        # CM.17: M6's record write joins in the form c600-command's draft row has (Table::with_drafts).
+        row = self.by_id["workspace.set"]
+        self.assertEqual((row["kind"], row["lane"], row["undo"], row["preview"], row["gates"], row["contexts"],
+                          row["repeat"], row["job"], row["key_0_4"]),
+                         ("workspace", "none", "workspace", "none", [], ["any"], False, False, None))
+        self.assertEqual(row["arguments"], {"record": "Text", "payload": "Json", "provenance": "ProvenanceBlock"})
+        self.assertNotIn("action_guard", row)
+        self.assertIn("OPEN", row["note"])
+        # LB7.2: saving a named workspace object is undoable; CM.17 names why the other eight are not.
+        for name in ("worksheet.save", "macro.save", "set.save", "filter.save", "structure.layer"):
+            self.assertEqual(self.by_id[name]["undo"], "workspace", name)
+        # U1-057: a save under a name that holds a saved set replaces it only when asked
+        # (KN5:input.saved_set_exists, chapter 13 section 9).
+        self.assertEqual(self.by_id["set.save"]["arguments"],
+                         {"members": "CanonicalObjectRefs", "kind": "identity|position", "name": "Text",
+                          "replace": "Bool?"})
+        none = {r["id"] for r in self.table["commands"] if r["kind"] == "workspace" and r["undo"] == "none"}
+        self.assertEqual(none, {"session.timer.start", "session.timer.stop", "operation.preview.cancel", "grip.select",
+                                "input.destination.set", "recording.start", "recording.stop", "recording.play"})
 
     def test_a_field_amended_in_two_deltas_is_refused(self):
         again = deepcopy(next(r for r in self.language["amend"] if r["id"] == "twist.apply"))
@@ -570,6 +593,64 @@ class CommandTableTests(unittest.TestCase):
         with self.assertRaisesRegex(builder.TableError, "collision"):
             self.build(services=services + [services[0]])
 
+    def test_bridge_reads_are_typed_by_puzzle_and_level(self):
+        reads = self.table["reads"]
+        rows = reads["rows"]
+        self.assertEqual(Counter(r["puzzle"] for r in rows), {"Full": 10, "jumbling": 19, "both": 1})
+        scopes = {}
+        for row in rows:
+            self.assertEqual(tuple(row), builder.READ_FIELDS)
+            scopes.setdefault(row["id"], set()).add((row["puzzle"], row["level"]))
+        # Owner item 7 (20 November 2026) as KN2.4 reads: one name each, one entry per puzzle and level.
+        for name in ("replay", "protection"):
+            self.assertEqual(scopes[name], {("Full", "labels"), ("jumbling", "poses")})
+        self.assertEqual(scopes["journal"], {("both", "none")})
+        self.assertTrue(all(r["level"] == "labels" for r in rows if r["puzzle"] == "Full"))
+        self.assertEqual({r["id"] for r in rows if r["puzzle"] == "jumbling" and r["level"] == "labels"},
+                         {"nu", "correction_set_check", "correction_lookup", "sticker_test", "label_checkpoint"})
+        self.assertEqual({r["id"] for r in rows if r["puzzle"] == "jumbling" and r["fields"] == "all"},
+                         {"sticker_test", "retained_checkpoint", "label_checkpoint"})
+        self.assertEqual({r["id"] for r in rows if r["puzzle"] != "jumbling" and r["fields"] == "subset"}, {"effect"})
+        self.assertFalse(scopes.keys() & {s["id"] for s in self.table["services"]})
+        self.assertEqual(scopes.keys() & self.by_id.keys(), {"structure.compare", "filter.preview", "structure.layer"})
+        codes = reads["codes"]
+        used = {codes["unserved"], *codes["every"], *codes["Full"], *codes["jumbling"], *codes["both"]}
+        used.update(code for row in rows for code in row["codes"])
+        chapter = (ROOT / "docs/architecture/1.0/language/architecture/13-errors.md").read_text(encoding="utf-8")
+        registry = chapter.split("\n## 5. ", 1)[1].split("\n## 6. ", 1)[0]
+        self.assertLessEqual(used, set(re.findall(r"^\| `([^`]+)` \|", registry, re.M)))
+        for change, message in (({"id": "kernel.outcome"}, "collision with a service"), ({"id": "Positions"}, "invalid read id"),
+                                ({"level": "poses"}, "invalid read puzzle or level"),
+                                ({"puzzle": "both"}, "invalid read puzzle or level"),
+                                ({"argument": ""}, "argument must be"), ({"answer": ""}, "answer, tariff and note"),
+                                ({"fields": "some"}, "fields must be"), ({"clauses": []}, "needs clauses"),
+                                ({"codes": ["KN2:input.named_object_invalid"] * 2}, "invalid read code"),
+                                ({"codes": ["kn2:named_object_invalid"]}, "invalid read code"),
+                                ({"codes": ["LG2:type.mismatch"]}, "shared read code is listed again"),
+                                ({"codes": ["KN5:input.retained_tool_needs_jumble_off"]}, "shared read code is listed again"),
+                                ({"tier": 1}, "requires only")):
+            changed = deepcopy(reads)
+            changed["rows"][0].update(change)
+            with self.subTest(change=change), self.assertRaisesRegex(builder.TableError, message):
+                self.build(reads=changed)
+        repeated = deepcopy(reads)
+        repeated["rows"].append(deepcopy(rows[0]))
+        both = deepcopy(reads)
+        both["rows"].append({**deepcopy(rows[0]), "id": "journal"})
+        extra = {**deepcopy(reads), "rows_by_level": {}}
+        missing = deepcopy(reads)
+        del missing["codes"]["both"]
+        shared = deepcopy(reads)
+        shared["codes"]["every"].append("type.mismatch")
+        text = deepcopy(reads)
+        text["codes"]["Full"] = "KN5:input.retained_tool_needs_jumble_off"
+        empty = {**deepcopy(reads), "rows": []}
+        for changed, message in ((repeated, "repeated for Full"), (both, "for both puzzles"), (extra, "require only"),
+                                 (missing, "one list per puzzle"), (text, "one list per puzzle"),
+                                 (shared, "invalid shared read code"), (empty, "nonempty row list")):
+            with self.subTest(message=message), self.assertRaisesRegex(builder.TableError, message):
+                self.build(reads=changed)
+
     def test_markdown_describes_the_final_table_and_layer_path(self):
         text = (HERE / "command-table.md").read_text(encoding="utf-8")
         self.assertNotIn("Each layer may call only the layer below", text)
@@ -577,6 +658,8 @@ class CommandTableTests(unittest.TestCase):
         self.assertIn("LI.4", text)
         for row in self.table["commands"]:
             self.assertIn(f"| `{row['id']}` | {row['kind']} | {row['lane']} |", text)
+        for row in self.table["reads"]["rows"]:
+            self.assertIn(f"| `{row['id']}` | {row['puzzle']} | {row['level']} |", text)
         for old in ("workspace.undo", "workspace.redo", "jumble.preview.scrub"):
             self.assertNotIn(old, text)
 

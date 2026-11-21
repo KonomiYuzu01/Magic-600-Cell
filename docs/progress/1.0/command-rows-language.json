@@ -141,6 +141,30 @@
         "recording": "RecordingRef",
         "target": "draft | source"
       }
+    },
+    {
+      "id": "workspace.set",
+      "label": "Write workspace record",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "M6's record write: writes the named record's payload and provenance block as one durable action; the workspace revision and the record's version advance, and the state, the preview slot and the jobs stay. Undo and redo are workspace inverses. The host's provenance reader checks the block at the write. A program may not invoke it (LG3:capability.not_granted). OPEN: the payload's type Json is not frozen.",
+      "source": "M6 record write; KN5.18, KN5.23, LI.26, PS1.16; joins H-08 at the LP3 freeze (PHS.53)",
+      "arguments": {
+        "record": "Text",
+        "payload": "Json",
+        "provenance": "ProvenanceBlock"
+      }
     }
   ],
   "amend": [
@@ -174,6 +198,27 @@
         }
       },
       "source": "Owner, 6 November 2026, decision 10; ONE.78"
+    },
+    {
+      "id": "set.save",
+      "expect": {
+        "kind": "workspace",
+        "arguments": {
+          "members": "CanonicalObjectRefs",
+          "kind": "identity|position",
+          "name": "Text"
+        }
+      },
+      "set": {
+        "note": "Saves a set of pieces or positions under a name. A name that holds a saved set is refused with KN5:input.saved_set_exists, and the saved set is kept, unless the invocation carries replace: true, which replaces it (U1-057: replacing a named set stays explicit).",
+        "arguments": {
+          "members": "CanonicalObjectRefs",
+          "kind": "identity|position",
+          "name": "Text",
+          "replace": "Bool?"
+        }
+      },
+      "source": "U1-057; LP2 pull request 337; chapter 13 section 9 (KN5:input.saved_set_exists)"
     }
   ]
 }

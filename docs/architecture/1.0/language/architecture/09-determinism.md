@@ -2,7 +2,8 @@
 
 Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
 [decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
-[the overview](00-overview.md), section 3, and its status says what the freeze covers.
+[the overview](00-overview.md), section 3, and its status says what the freeze covers. Amended once under PHS.52 at
+LP3's command-table freeze, in DET.65 (owner, 20 November 2026).
 
 This chapter defines the identity of a reproducible run and the limits on its execution. It uses `Budget`, `JobResult`,
 snapshots and kernel costs from [chapter 01](01-kernel.md). Chapter 02 owns types, effects and the IR; chapter 05 owns
@@ -702,6 +703,17 @@ RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the
   retained-JSON test profile also differs from LX-3's neutral UTF-8 profile; neither selects p3's production profile.
   Neither that experiment's 2048-byte reserve nor its default limits are adopted as production values. Its
   instruction, memory and output counters must not be compared as if these were the same contract (RTE.40).
+  Amended under PHS.52 at LP3's command-table freeze (owner,
+  [20 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md), items 3 and 4): CT-RTE-04
+  holds 32 of these 40 vectors to the admitted executors as programs. The other eight stay on record here, checked
+  by the reference checker alone, and are out of LP3's run. The five display form-2 vectors (`form2-equal-limit`,
+  `form2-one-short`, `form2-untaken-branch`, `form2-publication-equality` and `form2-publication-output-cutoff`)
+  need an executor for `lp1-exec-region-draft-1`, which LP2 does not build; they join the run when form 2 is built.
+  Three model what the IR draft does not express, for the reasons of LP2's pull request 234:
+  `generator-nested-same-name` binds two names in a call frame without a slot, while the IR binds a name with `let`,
+  which takes a slot (DET.57); the IR draft has no text order for `text-comparison` (DET.62); and
+  `abstract-trace-charges` charges a flow check, which only the unselected flow-label alternative has (BND.41). No
+  vector's bytes change.
 
 | Test | Checks | Class |
 | --- | --- | --- |

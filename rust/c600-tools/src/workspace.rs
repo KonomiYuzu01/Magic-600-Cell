@@ -107,7 +107,8 @@ fn parts_of(block: &[u8]) -> Vec<[u8; 32]> {
     provenance::read(block).map(|read| field::parts(&read)).unwrap_or_default()
 }
 
-/// The command table of a host of these tools: H-08 with the command layer's draft rows (`workspace.set`).
+/// The command table of a host of these tools: H-08 with the command layer's draft rows it does not hold
+/// ([`Table::with_drafts`]); H-08 holds `workspace.set` since the command table's freeze (CM.17).
 pub fn table() -> Table {
     Table::h08().with_drafts()
 }

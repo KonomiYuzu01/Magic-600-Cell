@@ -310,7 +310,7 @@ impl Fixture {
 /// The piece roles are placed at the head, where KN2.4's `positions` row finds them, and position roles stay as given,
 /// with the piece that fills each read there.
 /// The state and the presented preview stay and the workspace revision advances. The save is undoable and redoable as a
-/// workspace inverse (LB7.2, where H-08 has `undo: none`), a save under a name in use replaces that record's value, and
+/// workspace inverse (LB7.2; H-08's `undo: workspace`), a save under a name in use replaces that record's value, and
 /// a saved sheet saves again as a draft, placed again.
 #[test]
 fn a_saved_work_sheet_keeps_its_operation_and_places_its_pieces() {

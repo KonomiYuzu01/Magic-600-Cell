@@ -423,12 +423,12 @@ fn command_route(host: &ToolHost, session: &mut Session) -> Vec<Served> {
 /// (`filter.apply`, `set.save`, `structure.layer`) each complete as one durable workspace action at a revision whose
 /// workspace number is one higher. `filter.apply`'s and `structure.layer`'s write the entry's record through C5's
 /// reader, with the output's digest as the result reference; `set.save`'s writes the saved set's own record `set/pair`
-/// with the exact set's digest. `filter.apply`'s record is the `FilterPreviewRef` it applied, and H-08 gives the row
-/// the undo class `workspace`, so the next undo targets its action. H-08 gives the other two the undo class `none`, so
-/// the next undo still targets the action before them. The next undo inverts the applied filter: its record goes and no
-/// state moves. The one after it inverts the commit. Both leave the saved set and the prepared predicate as they were:
-/// a saved set is removed by its own row, not by undo. Covers no conformance ID: it is C6's evidence for the command
-/// route.
+/// with the exact set's digest. `filter.apply`'s record is the `FilterPreviewRef` it applied. H-08 gives the three
+/// rows the undo class `workspace` (LB7.2; `set.save` and `structure.layer` since the command table's freeze), so the
+/// next undo targets each one's action as it completes. Undo then inverts them in the reverse order (`set.save`,
+/// `filter.apply`, `structure.layer`): each undo removes that action's record, keeps the records of the actions beneath
+/// it and moves no state. The undo after them inverts the commit. Covers no conformance ID: it is C6's evidence for the
+/// command route.
 #[test]
 fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
     let host = ToolHost::new();
@@ -479,28 +479,37 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
         assert_eq!(session.layer.record(&write.name), write.value.as_ref(), "{}", write.name);
     }
 
-    // The undo classes `workspace` and `none`: the next undo inverts the applied filter, the one after it the commit,
-    // and the records the other two workspace rows wrote stay.
-    let applied = served.iter().find(|one| one.row == "filter.apply").and_then(|one| one.last.as_ref());
-    assert_eq!(applied.map(|action| action.order), Some(target), "the applied filter is on top of the undo stack");
-    let kept: Vec<RecordWrite> = served
+    // The undo class `workspace` of the three workspace rows: each undo inverts the last workspace action left,
+    // removing its record and keeping those beneath it, and the undo after them inverts the commit.
+    let mut actions: Vec<(u64, Vec<RecordWrite>)> = served
         .iter()
-        .filter(|one| one.row != "filter.apply")
-        .flat_map(|one| written(one.row, &one.output, &one.job.revision).1)
+        .filter(|one| NEEDS.iter().any(|need| need.row == one.row && need.kind == Kind::Workspace))
+        .map(|one| {
+            let order = one.last.as_ref().expect("a durable action").order;
+            (order, written(one.row, &one.output, &one.job.revision).1)
+        })
         .collect();
+    assert_eq!(actions.len(), 3);
+    assert_eq!(actions.last().map(|(order, _)| *order), Some(target), "the last workspace action is on top");
     let committed = session.layer.snapshot().digest().to_owned();
-    for (undone, digest) in [(target, committed), (commit, kernel().solved().digest().to_owned())] {
+    let undo = |session: &mut Session, undone: u64, digest: &str| {
         let hint = session.layer.undo_hint(Direction::Undo).expect("an undo target");
         assert_eq!(hint.target, undone);
         let undo = session.shell.invoke(&mut session.layer, "session.undo", json::object([("hint", hint.to_json())]));
         let undo = undo.expect("prepared");
         assert!(matches!(undo.status, Status::Committed(_)), "{:?}", undo.status);
         assert_eq!(session.layer.snapshot().digest(), digest);
-        assert_eq!(session.layer.record("filter.apply"), None, "the applied filter is undone");
-        for write in &kept {
-            assert_eq!(session.layer.record(&write.name), write.value.as_ref(), "{} after the undo", write.name);
+    };
+    while let Some((order, writes)) = actions.pop() {
+        undo(&mut session, order, &committed);
+        for write in &writes {
+            assert_eq!(session.layer.record(&write.name), None, "{} is undone", write.name);
+        }
+        for write in actions.iter().flat_map(|(_, writes)| writes) {
+            assert_eq!(session.layer.record(&write.name), write.value.as_ref(), "{} stays", write.name);
         }
     }
+    undo(&mut session, commit, kernel().solved().digest());
 }
 
 /// The same entry on the source route, this host's own run of it in process through `c600-run`'s boundary (not C5's
@@ -514,7 +523,7 @@ fn each_served_row_runs_its_entry_and_completes_as_its_kind_says() {
 /// completion's result reference is the source run's digest (for `set.save`, the exact set's). What differs is by
 /// design: only the command route has a receipt (command ID, request digest, caller and job), the layer's form and
 /// revision checks, `filter.apply`'s gate `fresh_filter_preview` and, for a workspace row, the durable action, the
-/// workspace revision it moves and, for `filter.apply`, its undo entry; on the source route the records stay in the
+/// workspace revision it moves and its undo entry; on the source route the records stay in the
 /// run's store, and the layer's revision, log and undo hint do not move. The run's name differs and appears in no
 /// output, since no entry proposes. Covers no conformance ID: it is C6's evidence for C5's item 1.
 #[test]

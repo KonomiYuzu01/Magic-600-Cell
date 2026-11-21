@@ -27,12 +27,19 @@ HANDOFF_PATH = ROOT / "docs/architecture/1.0/language/closure/HANDOFF.md"
 MANIFESTS = ROOT / "docs/architecture/1.0/language/closure/manifests"
 LP1_EDITION = ROOT / "tests/fixtures/error_registry/lp1-edition.json"
 
-# Frozen-text items that these tests tolerate and report as PHS.52 change items; nothing here edits them.
-# 13-errors.md:661 holds LB6's closure row outside both reconciliation tables: a blank line ends ERR.28's table, the row
-# has no header, and the ERR.31 bullet follows at once, so it renders as a paragraph. Its content belongs to ERR.31.
-KNOWN_DETACHED_ROWS = {"evidence.decomposition_mismatch": "ERR.31"}
-# 13-errors.md:322: the filter-freshness row cites H15.4 and H15.16 but not KN0.9, its clause in the p7-layers manifest.
-KNOWN_RULE_SOURCE_GAPS = {"KN5:stale.filter_preview": "KN0.9"}
+# Frozen-text items that these tests tolerate and report as PHS.52 change items; nothing here edits them. Both are
+# empty since chapter 13's amendment at LP3's command-table freeze (section 9; owner, 16 and 20 November 2026) moved
+# LB6's detached closure row into ERR.31's table and added KN0.9 to the filter-freshness row's rule source.
+KNOWN_DETACHED_ROWS: dict[str, str] = {}
+KNOWN_RULE_SOURCE_GAPS: dict[str, str] = {}
+# The codes that amendment registers; every other row is the LP1 edition's.
+LP3_AMENDMENT = frozenset({
+    "KN2:consistency.star_certificate", "KN2:input.named_cap_blocked_or_closed", "KN2:input.menu_order_unpinned",
+    "KN4:input.session_exists", "KN4:busy.session_locked", "KN5:input.unknown_row", "KN5:input.argument_form",
+    "KN5:input.row_not_built", "KN5:input.overlay_row_conflict", "KN5:input.saved_set_exists",
+    "KN5:consistency.unadmitted_journal_action", "KN5:capability.preview_shown",
+    "KN5:capability.outside_solver_command",
+})
 
 SOURCE = r"[A-Z]{2,3}[0-9]?"
 FULL_CODE = re.compile(rf"^({SOURCE}):([a-z_]+)\.([a-z0-9_]+)$")
@@ -562,12 +569,14 @@ class RegistryTests(unittest.TestCase):
         (tests/fixtures/error_registry/lp1-edition.json, one entry per row: status, form, retry and the digest of
         the meaning). No code is dropped, registered twice, reused after retirement or withdrawal, or changed in
         meaning, form or retry; every retired or withdrawn row keeps its meaning, and a pre-use withdrawal or
-        retirement states its edition as explicitly unassigned. Controls: synthetic next editions that drop a
+        retirement states its edition as explicitly unassigned. The codes added since LP1 are exactly those of chapter
+        13's amendment at LP3's command-table freeze (LP3_AMENDMENT). Controls: synthetic next editions that drop a
         retired row, change a meaning, revive a withdrawn code, register a code twice and invent a retirement
         edition for a pre-use withdrawal each fail."""
         lp1 = json.loads(LP1_EDITION.read_text(encoding="utf-8"))
         self.assertEqual(lp1["edition"], "LP1")
-        self.assertEqual(len(lp1["rows"]), len(self.registry.rows))
+        self.assertEqual({row.code for row in self.registry.rows} - set(lp1["rows"]), LP3_AMENDMENT)
+        self.assertEqual(len(lp1["rows"]) + len(LP3_AMENDMENT), len(self.registry.rows))
         self.assertEqual(compare_editions(lp1["rows"], self.registry), [])
         retired = [row for row in self.registry.rows if row.status in ("retired", "withdrawn")]
         self.assertEqual(sorted(row.code for row in retired), [

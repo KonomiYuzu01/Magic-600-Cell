@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-21] update | LP3's command-table freeze: H-08 and the PHS.52 amendment
+LP3's freeze pull request adds `workspace.set`, the workspace rows' undo reading and the bridge reads by puzzle and level to H-08, registers 13 codes in chapter 13 with the 16 November errata, amends LI.5 and LI.33 with the format packet's FP.1 pin refresh, and keeps CT-RTE-04's other eight traces on record out of LP3's run (DET.65), as the owner decided ([record](decisions/owner-decisions-2026-11-20-lp3-exit.md)). Its merge is the frozen candidate ([LP3 plan](../progress/1.0/language-lp3-plan.md), section 11).
+
 ## [2026-11-20] update | The PHS.52 page points to the receipt decision
 [owner-decisions-2026-11-16-phs52](decisions/owner-decisions-2026-11-16-phs52.md) still listed whether a receipt may count as evidence under "What stays open"; that item now points to the owner's answer of 17 November 2026 in [owner-decisions-2026-11-17-c5-evidence](decisions/owner-decisions-2026-11-17-c5-evidence.md) (a receipt is not evidence).
 

@@ -84,7 +84,8 @@ fn fixed(f: &Fixture, disk: &dyn Fn() -> Box<dyn Disk>) -> String {
 ///
 /// A save's completion is one durable action (KN5.23): its receipt, the saved set's record and the workspace revision
 /// come back after a power loss and in a new session, and the result reference's digest follows from the record read
-/// back. The save is no undo target (H-08's undo class `none`), and that too survives. An identical retry answers the
+/// back. The save is the next undo's target (H-08's undo class `workspace`, LB7.2, since the command table's freeze),
+/// and that too survives: an undo of a replacing save gives back the set it replaced. An identical retry answers the
 /// stored receipt, and a save under the taken name without `replace: true`, a `replace` that is no boolean and a
 /// `workspace.set` of the saved set's record are refused; none of these writes the journal. A save with
 /// `replace: true` replaces the set, and the replacement comes back after another power loss.
@@ -113,9 +114,10 @@ fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     assert_eq!(f.layer.record("set/pair"), Some(&record));
     assert_eq!(f.layer.record(SET_SAVE_RECORD), None, "the entry's record is not written");
 
-    // The save took the next action order but no undo entry: the undo hint still targets the write.
+    // The save took the next action order and is undoable: the undo hint targets it, not the write before it.
     let hint = f.hint(Direction::Undo);
-    assert_eq!((hint.order, hint.target), (write.order + 1, write.target));
+    assert_eq!((hint.order, hint.target), (write.order + 1, write.order + 1));
+    assert_ne!(hint.target, write.target);
     let kept = f.kept();
     drop(f);
     power_loss();
@@ -168,17 +170,24 @@ fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     drop(f);
     power_loss();
 
-    // After another power loss the replacement comes back, and the undo order still passes over both saves: an undo
-    // removes the write and leaves the saved set as it is.
+    // After another power loss the replacement comes back, and the undo order holds both saves above the write: an
+    // undo of the replacing save gives back the first set, the next undo removes it, and only the one after that
+    // removes the write.
     let mut f = Fixture::open(disk());
     assert_eq!(f.kept(), kept);
     assert_eq!(f.layer.records().get("set/pair"), Some(&current));
-    let hint = f.hint(Direction::Undo);
-    assert_eq!(hint.target, write.target);
-    let undone = f.step(Direction::Undo, hint);
-    assert!(matches!(undone.status, Status::Committed(_)), "{:?}", undone.status);
+    let undo = |f: &mut Fixture| {
+        let hint = f.hint(Direction::Undo);
+        let undone = f.step(Direction::Undo, hint);
+        assert!(matches!(undone.status, Status::Committed(_)), "{:?}", undone.status);
+    };
+    undo(&mut f);
+    assert_eq!(f.layer.record("set/pair"), Some(&record), "the first set is given back");
+    undo(&mut f);
+    assert_eq!(f.layer.record("set/pair"), None);
+    assert_eq!(f.hint(Direction::Undo).target, write.target);
+    undo(&mut f);
     assert_eq!(f.layer.record("sheet"), None);
-    assert_eq!(f.layer.records().get("set/pair"), Some(&current));
 }
 
 /// The durable leg on a memory disk with a power loss between the sessions: only what the store synced survives.

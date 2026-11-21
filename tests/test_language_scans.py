@@ -63,23 +63,12 @@ GUARDED_SLUGS = {
 RESERVED_NAMES = (
     ("rust/c600-display/src/error.rs", "PLAN_LIMIT", "KN7:budget.display_plan_limit"),
 )
-# Codes that LP3's command layer and LP2's session store name as drafts, which chapter 13 does not register yet, by
-# path (PHS.53: the command table's drafts settle at LP3; a new registry row is a change to chapter 13, PHS.52). ERR.1
-# is not run for them, and the list is exact: a code that becomes registered or leaves its source fails the scan until
-# the list follows.
-UNREGISTERED_DRAFTS = frozenset({
-    ("rust/c600-command/src/layer.rs", "KN2:consistency.star_certificate"),
-    ("rust/c600-command/src/receipt.rs", "KN5:input.unknown_row"),
-    ("rust/c600-command/src/receipt.rs", "KN5:input.argument_form"),
-    ("rust/c600-command/src/receipt.rs", "KN5:input.row_not_built"),
-    ("rust/c600-command/src/receipt.rs", "KN5:input.overlay_row_conflict"),
-    ("rust/c600-command/src/receipt.rs", "KN4:input.session_exists"),
-    ("rust/c600-command/src/receipt.rs", "KN5:consistency.unadmitted_journal_action"),
-    ("rust/c600-command/src/receipt.rs", "KN5:capability.preview_shown"),
-    ("rust/c600-command/src/receipt.rs", "KN5:capability.outside_solver_command"),
-    ("rust/c600-command/src/receipt.rs", "KN5:input.saved_set_exists"),
-    ("rust/c600-session/src/types.rs", "KN4:busy.session_locked"),
-})
+# Codes a crate names as drafts, which chapter 13 does not register yet, by path (a new registry row is a change to
+# chapter 13, PHS.52). ERR.1 is not run for them, and the list is exact: a code that becomes registered or leaves its
+# source fails the scan until the list follows. Empty since chapter 13's amendment at LP3's command-table freeze
+# (section 9; PHS.52, PHS.53; owner, 16 and 20 November 2026) registered the eleven drafts that LP3's command layer and
+# LP2's session store named.
+UNREGISTERED_DRAFTS: frozenset[tuple[str, str]] = frozenset()
 
 CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2,3}[0-9]?):([a-z_]+)\.([a-z0-9_]+)(?![A-Za-z0-9_])")
 SHORT_CODE = re.compile(r"^([a-z_]+)\.([a-z0-9_]+)$")
@@ -263,22 +252,25 @@ def emitted_codes(sources: dict[str, Lexed], registry: reg.Registry) -> list[Emi
     return found
 
 
-def draft_problems(sources: dict[str, Lexed], registry: reg.Registry) -> list[str]:
-    """UNREGISTERED_DRAFTS is exact: each draft is still named at its path and still unregistered."""
+def draft_problems(sources: dict[str, Lexed], registry: reg.Registry,
+                   drafts: frozenset[tuple[str, str]] = UNREGISTERED_DRAFTS) -> list[str]:
+    """The draft list (UNREGISTERED_DRAFTS unless a control passes its own) is exact: each draft is still named at its
+    path and still unregistered."""
     emitted = {(e.path, e.code) for e in emitted_codes(sources, registry)}
     return [f"{path}: {code} is " + ("registered now" if registry.row(code) else "no longer named there")
-            for path, code in sorted(UNREGISTERED_DRAFTS)
+            for path, code in sorted(drafts)
             if registry.row(code) is not None or (path, code) not in emitted]
 
 
-def emitted_problems(sources: dict[str, Lexed], registry: reg.Registry) -> list[str]:
-    """ERR.1, ERR.2, ERR.4, ERR.5: each emitted code is an active registry row, and none drops its prefix. A draft under
-    UNREGISTERED_DRAFTS, at its own path, is the one exception (not run; draft_problems keeps the list exact)."""
+def emitted_problems(sources: dict[str, Lexed], registry: reg.Registry,
+                     drafts: frozenset[tuple[str, str]] = UNREGISTERED_DRAFTS) -> list[str]:
+    """ERR.1, ERR.2, ERR.4, ERR.5: each emitted code is an active registry row, and none drops its prefix. A draft on
+    the draft list, at its own path, is the one exception (not run; draft_problems keeps the list exact)."""
     problems = []
     for e in emitted_codes(sources, registry):
         row = registry.row(e.code)
         if row is None:
-            if (e.path, e.code) not in UNREGISTERED_DRAFTS:
+            if (e.path, e.code) not in drafts:
                 problems.append(f"{e.path}:{e.line}: {e.code} is not registered")
         elif row.status != "active":
             problems.append(f"{e.path}:{e.line}: {e.code} is {row.status} and cannot be emitted")
@@ -532,11 +524,12 @@ class ScanTests(unittest.TestCase):
         which exist only from LP3's command layer; the registry half is in tests/test_error_registry.py): every code
         the workspace members' sources name in a string literal is an active registry row with its own prefix, and no
         literal drops a registered code's prefix. This is also CT-ERR-04's emitted half (forwarded codes keep their
-        full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). Not run either: ERR.1 for the
-        seven drafts that LP3's command layer and LP2's session store name and chapter 13 does not register
-        (UNREGISTERED_DRAFTS, a finding for the owner under PHS.52); the list is exact, and the same code at another
-        path fails. Controls: an unregistered code, a reserved code, a retired code, a short form and a draft outside
-        its path fail; a code in a comment is not read."""
+        full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). The eleven drafts that LP3's
+        command layer and LP2's session store named are registered by chapter 13's amendment at the command-table
+        freeze (section 9, PHS.52), so UNREGISTERED_DRAFTS is empty and ERR.1 runs for every emitted code. Controls:
+        an unregistered code, a reserved code, a retired code and a short form fail, and a former draft passes at any
+        path; a code in a comment is not read; on a planted draft list, a registered draft and a draft that left its
+        path fail, an unregistered draft passes at its own path and fails at another."""
         self.assertEqual(emitted_problems(self.sources, self.registry), [])
         self.assertEqual(draft_problems(self.sources, self.registry), [])
         self.assertGreaterEqual(len({e.code for e in self.emitted}), 25)
@@ -548,10 +541,19 @@ class ScanTests(unittest.TestCase):
             'const C: &str = "KN7:budget.over_ceiling";', 'const D: &str = "stale.token_used";',
             'const E: &str = "KN5:input.unknown_row";'])), self.registry)
         self.assertEqual(sorted(p.split(": ", 1)[0] for p in found),
-                         [f"rust/planted/src/lib.rs:{n}" for n in (2, 3, 4, 5, 6)])
-        stale = draft_problems(planted('const E: &str = "KN5:input.unknown_row";', "rust/c600-command/src/receipt.rs"),
-                               self.registry)
-        self.assertEqual(len(stale), len(UNREGISTERED_DRAFTS) - 1)
+                         [f"rust/planted/src/lib.rs:{n}" for n in (2, 3, 4, 5)])
+        path = "rust/c600-command/src/receipt.rs"
+        drafts = frozenset({(path, "KN5:input.unknown_row"), (path, "KN5:input.never_drafted")})
+        held = planted('const E: &str = "KN5:input.unknown_row";\nconst F: &str = "KN5:input.never_drafted";', path)
+        self.assertEqual(draft_problems(held, self.registry, drafts),
+                         [f"{path}: KN5:input.unknown_row is registered now"])
+        self.assertEqual(emitted_problems(held, self.registry, drafts), [])
+        moved = planted('const F: &str = "KN5:input.never_drafted";')
+        self.assertEqual(draft_problems(moved, self.registry, drafts),
+                         [f"{path}: KN5:input.never_drafted is no longer named there",
+                          f"{path}: KN5:input.unknown_row is registered now"])
+        self.assertEqual([p.split(": ", 1)[0] for p in emitted_problems(moved, self.registry, drafts)],
+                         ["rust/planted/src/lib.rs:1"])
 
     def test_ct_err_15_retired_and_reserved_codes_are_not_emitted(self):
         """CT-ERR-15 (part: the emitted half for the present source, which includes RM.13's fixed-ceiling path in

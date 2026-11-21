@@ -64,7 +64,8 @@
 //!   serves it at every open. Each test finishes the save's job with the entry's record under a hand-entered block,
 //!   where the host runs the representations tool's `save_set`. A save's receipt and the saved set's record come back
 //!   equal after a power loss on a memory disk and in a new session on a file-system disk, and the exact-set digest
-//!   follows from the record read back. The save takes no undo entry (H-08's undo class `none`), after a reopen too.
+//!   follows from the record read back. The save is undoable (H-08's undo class `workspace`, LB7.2, since the command
+//!   table's freeze), after a reopen too: an undo of a replacing save gives back the set it replaced.
 //!   An identical retry, a save under a taken name without `replace: true` (`KN5:input.saved_set_exists`), a `replace`
 //!   that is no boolean and a `workspace.set` under `set/` (`KN5:input.argument_form`), and a save whose name another
 //!   save took meanwhile write nothing to the journal. A save with `replace: true` replaces the set, also after a power

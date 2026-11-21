@@ -6,8 +6,8 @@ pull requests 240, 244, 245, 248, 252, 259, 261, 263, 267 and 268 and the owner'
 ([decision](../../wiki/decisions/owner-decisions-2026-11-18.md),
 [route B](../../wiki/decisions/owner-decisions-2026-11-18-route-b.md)), and on 19 November 2026 with LP2's pull request
 277 and C8's pull requests 278 and 288. It records the integrator's selections, and the
-owner may overrule any of them. It is no ADR and freezes nothing: the command table stays a draft until it freezes at
-LP3 (PHS.53), and the IR until its own freeze (PHS.49).
+owner may overrule any of them. It is no ADR and freezes nothing itself: the command table freezes at LP3 with the
+freeze pull request (PHS.53, section 11), and the IR stays a draft until its own freeze (PHS.49).
 
 Inputs: chapter 12 sections 5 and 15.4 (PHS.22 to PHS.25, PHS.61 to PHS.67); chapter 01 KN5; chapter 08 section 7;
 the [layer interfaces](layer-interfaces.md) (LI.5, LI.6, LI.9, LI.26, LI.30); H-08's stored
@@ -35,7 +35,7 @@ PHS.23's six acceptance items:
 
 | Acceptance item | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Same result through all routes | Command and key routes (C1); source route (C5); the representations tool's six rows through the command and source routes, on a test host whose two snapshot reads C5's host bridge answers from LP2's structure rows (C6, section 7); the jumbling library entries on the jumbling rows at the head of a jumbled session, through C8's host bridge (`c600_jumble_tool::rows`), each run equal to the same run on a snapshot witnessed apart (C8, pull request 299, section 8) | The actual key route (C9); the jumbling tool's entries through the command and source routes, whose rows the command table names and prices, with their program-job route, when it freezes (C8, section 8) |
+| Same result through all routes | Command and key routes (C1); source route (C5); the representations tool's six rows through the command and source routes, on a test host whose two snapshot reads C5's host bridge answers from LP2's structure rows (C6, section 7); the jumbling library entries on the jumbling rows at the head of a jumbled session, through C8's host bridge (`c600_jumble_tool::rows`), each run equal to the same run on a snapshot witnessed apart (C8, pull request 299, section 8) | The actual key route (C9); the jumbling tool's entries through the command and source routes, whose rows H-08's `reads` name and price since the freeze (CM.18), and their program-job route (C8, section 8) |
 | Oracle equality at every committed step | 600-cell-Full: O01 to O07, 3,201 steps per route, with undo and redo (C1). Jumbling: M5's W-J fixtures through `jumble.on` and `jumble.twist.menu`, every press beside M5's engine, the first 130 records of each journal by default and the whole journals on request (C8); LP2's `c600-jumble-route` compares the same layer with J1, with undo and redo, on the first 70 records (pull requests 212, 217, 218, 220 and 254) | Jumbling: protected pieces and free mode through the command layer (section 8) |
 | Presented-preview binding in the selected renderer | The token binds the presented preview, headless (C1) | The on-screen half on the selected renderer, on Windows (C9) |
 | Charter E2 with the tools' views active | Nothing: a timing here would be no evidence | The owner-machine runs (C9) |
@@ -55,12 +55,12 @@ November 2026 as a line of its own.
 
 | Work | State | Waits for |
 | --- | --- | --- |
-| Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3. The draft rows the tool's bridge serves beyond KN2.4's are command-table candidates, which the freeze takes or drops: `setups` (pull request 309), C6's `structure.compare` and `filter.preview` (pull request 262) and `orbits` (pull request 358) |
+| Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 (section 11). The freeze takes the reads the tool's bridge serves beyond KN2.4's into H-08's `reads` (CM.18), as reads and not commands: `setups` (pull request 309), C6's `structure.compare`, `filter.preview` and `structure.layer` (pull requests 262 and 375), `orbits` (pull request 358) and `journal` (LP2's pull request 383) |
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves are C8's (section 8) |
-| Representations tool, headless half | Built in part (C6, section 7): its six rows served through the command and source routes, on a test host whose two snapshot reads C5's host bridge answers from LP2's structure rows (pull request 262), with draft tariffs | The two reads' tariffs in the command table, which freezes at LP3 (section 7). LP2 built the `CanonicalObjectRefs` form (pull request 269) and a record and an exact-set digest for each saved set (pull request 337). The applied filter's display is built on LP2's members of a layer (pull request 375). Not built: a display of an applied filter whose filter preview the layer no longer keeps |
+| Representations tool, headless half | Built in part (C6, section 7): its six rows served through the command and source routes, on a test host whose two snapshot reads C5's host bridge answers from LP2's structure rows (pull request 262), with the tariffs H-08's `reads` hold since the freeze (CM.18) | Nothing for the two reads. LP2 built the `CanonicalObjectRefs` form (pull request 269) and a record and an exact-set digest for each saved set (pull request 337). The applied filter's display is built on LP2's members of a layer (pull request 375). Not built: a display of an applied filter whose filter preview the layer no longer keeps |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part, through the command layer over `JournalStore` and on M6's store (C7, section 8): the part blocks the layer keeps for C5's reader (LP2's pull request 272), and LB7.2's fresh exact analysis of a reused work sheet (`worksheet.compare`, with LB2's gains and losses) and macro versions (LP2's pull request 277); CT-EV3-07's view part with `c600-view`'s view model behind EV3.2's view rows (LP2's pull request 271), through C5's `ModelViews`. KN5.26's admission matrix L1 and L2 runs through the layer in LP2's tests (pull request 270). M6's session lock covers `JournalStore` (pull request 195). The session's profile (pull request 287) and a position role's occupant read again at a work-sheet reuse (pull request 361) are built | Nothing from LP2 |
 | The jumbling tool and every jumbling half | Built in part (C8, section 8) | J01 and J06 to J12 as supported rows, a backend's own rows (C9), and BM5's review records (section 8). C8 uses LG2.18's jumbling word key `word-key/1` (LP2's pull request 338) under the item matrices that the tool's menu alphabet pins, for CT-LB1-02's key half and its library entry `menu_word_keys`, CT-LB1-06's word keys and CT-RTE-07's six jumbling keys on menu words; the IR draft's F2 and F5 (pull request 222) for LB3's ν and drafted correction-set entry as language code (`jumble_nu`, pull request 295), `jumble-locality/1` with `trace_key` on menu words (pull request 251) for CT-LB1-06's jumbling half, and Jumble on in the command layer for oracle equality, CT-LB4-03 at a later revision, and `jumble.off`, the refusals, redo, protected pieces and free mode beside the tool's own entries (LP2's pull requests 212, 217, 218, 220 and 254, taken up in pull request 323), and the repair list as LP2's job that names its cap through the command layer, beside the tool's entry `jumble_repair` (LP2's pull request 326, taken up in pull request 339). M8's observations and levels are built (pull requests 176 and 182); C8 uses the slot action of K⁺, the end tests, the projection from poses to labels, a whole word's protection for CT-LB3-02 and the repair list; LP2's kernel pieces for C8 (pull request 190): the slot action with its frame check, the rotation plane and the label-level protection of named pieces; and LP2's ν and correction catalogue (pull requests 201 and 206) for CT-LB3-04, CT-LB3-01's ν case and CT-LB3-07's correction part (section 8) |
 | Tests that read the kernel rows LP2 built in pull requests 170 and 176: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and exact vertices | Built in part (C5 library: CT-LB2-02's Strict half at the kernel, CT-LB2-04 whole over `positions` and a `labels` host row, CT-LB2-01 whole over an `effect` host row (pull request 294), CT-LB2-02 whole over a `protection` host row (pull request 300) and CT-BND-18 whole over a `setups` host row (pull request 309); C5: its Strict half through the tool's route, on the command layer's Strict mode of LP2's pull request 198, and the twist keys' exact requests through `twist.apply`; C6: CT-LB4-01's checks on the polytope operations); the others can start | What the kernel alone does not give: host rows beyond `positions`, `labels`, `effect`, `protection`, `replay` (pull request 353), `orbits` (pull request 358), `setups` (served only when the host gives the bridge the setup table) and C6's `structure.compare` and `filter.preview` (on LP2's structure rows, pull request 262) in the tool's bridge, LP3's to add; LB7.2's work sheets are in the command layer (pull request 232) |
@@ -84,7 +84,7 @@ runnable") cover the kernel rows. LP3 builds nothing in LP2's crates. Each row s
 | The F2 and F5 number kinds. Built in the kernel (pull request 201: `c600_kernel::exact`), with ν (`c600_jumble::nu`, pull request 201) and the correction catalogue with `correction_set_check` (`c600_jumble::corrections`, pull request 206), and as number kinds of the IR draft (pull request 222: `F2`, `F5`, `to_f2`, `to_f5`, `residue` and the `field_*` operations) | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | None: CT-LB1-01's entries are LP3's library code |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator. Built (pull request 176), with `compose`, `length` and `word_key`, Full's free reduction; menu words (pull request 210), LB1.10's `trace-key/1` for 600-cell-Full words (pull request 214) and its jumbling half, `jumble-locality/1` with `trace_key` on menu words (pull request 251), and LG2.18's jumbling word key `word-key/1` on menu words under the run's pinned menu matrices (pull request 338). Not built: these operations on compressed words | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | None for the operations: CT-LB1-02's key half and its library entry `menu_word_keys` run on M5's states (C8); the library entry of CT-BND-18 is not written yet (CT-LB2-01's recipes and reports are, C5 library's `recipes.6cs` of pull request 294; CT-LB1-06's jumbling half runs `menu_traces`, C8) |
 | Collection types in the IR draft: lists, maps, sets. Built (pull request 176); they cross the runtime's wire (C3, pull request 180) | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | None |
-| The IR features CT-RTE-04's other 8 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216, generator draws with pull request 219, child scopes with pull request 225, loops with pull request 234, byte decoding with pull request 249, streamed words with pull request 250, and bytes the code holds, `text_decode_hex`, with pull request 367, for `child-decode-error-releases-reservation`). Three are amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five need `lp1-exec-region-draft-1`'s executor, which LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
+| The IR features CT-RTE-04's other 8 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170; exact multiplication and pointwise assertions came with LP2's pull request 216, generator draws with pull request 219, child scopes with pull request 225, loops with pull request 234, byte decoding with pull request 249, streamed words with pull request 250, and bytes the code holds, `text_decode_hex`, with pull request 367, for `child-decode-error-releases-reservation`). They leave LP3's run under PHS.52 and stay on record in DET.65's vectors (owner, 20 November 2026, items 3 and 4; section 11): three amendment candidates, with the reasons of LP2's pull request 234, and form 2's five, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in `c600-command`, takes two LP3
 requirements the LP2 integrator accepted: LP3's KN5.21 lead, closed in its stages 1 and 2 (pull request 174), and the
@@ -138,9 +138,9 @@ off-lattice part and both halves of CT-LB4-03 check it under a planted equal dig
    runtime's own process, RT1), `c600-module` (module closure) and, from C5, `c600-tools` (the built-in tools' sources
    and their host bridge). A change to an LP2 crate's API is agreed with the LP2 line first and kept small.
 2. **Command-table drafts.** The layer reads H-08's stored table as it is. Its draft choices are listed in
-   `c600-command`'s crate documentation and `rust/README.md`, and freeze with the table at LP3 (PHS.53). Codes the
+   `c600-command`'s crate documentation and `rust/README.md`; the freeze settles those H-08 holds (PHS.53). Codes the
    layer raises that chapter 13 does not register yet are drafts; registering them changes a frozen chapter, so it goes
-   through PHS.52 at C10.
+   through PHS.52 at C10. The freeze pull request registers the eleven drafts (section 11).
 3. **Session store stand-in.** Step 9's durable transaction sits behind a `Store` trait. `MemoryStore` stood in until
    KN5's one implementation (PHS.18): its stages 1 and 2 (LP2, pull request 174) make `c600_session::JournalStore`
    the layer's store over KN4's journal, with `CommandLayer::open` replaying its history. Nothing on `MemoryStore` is
@@ -179,7 +179,7 @@ One pull request per milestone; each names the checks that ran.
 | C7 | Durable receipts and undo through the session store | M6 (on main), C1 and LP2's KN5 implementation | Built in part (section 8) |
 | C8 | The jumbling tool | M5 (on main) | Built in part (section 8) |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze (signed 16 November 2026, ADR-R01); the owner's runs | Started on 18 November 2026 (owner): its components in a line of their own (section 8) |
-| C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
+| C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | The owner answered the exit card on 20 November 2026; the freeze pull request lands last (section 11) |
 
 ## 5. C1: the command layer and the oracle loop
 
@@ -227,10 +227,11 @@ acceptance check and stop condition.
   too, on bytes the host delivers as a snapshot: 28 of 40. With its streamed words (pull request 250) the three
   streaming traces run, the split and the coalesced trace as one job, since no host call or answer falls among a
   stream's rows: 31 of 40. With its bytes the code holds (`text_decode_hex`, pull request 367),
-  `child-decode-error-releases-reservation` runs, the child's rows its call and its decoding: 32 of 40. Of the other 8,
-  three are amendment candidates for C10, and form 2's five are not applicable, which is no pass, since LP2 builds only
-  form 1 of LG2.5 (section 9). A compressed word
-  crosses as its parts, within one frame's bound on the lengths they derive (crate draft 15, on LP2's pull request 185).
+  `child-decode-error-releases-reservation` runs, the child's rows its call and its decoding: 32 of 40. The other 8,
+  three amendment candidates and form 2's five (LP2 builds only form 1 of LG2.5), leave LP3's run under PHS.52 and
+  stay on record (owner, 20 November 2026, items 3 and 4; DET.65), so CT-RTE-04 runs whole (section 9). A compressed
+  word crosses as its parts, within one frame's bound on the lengths they derive (crate draft 15, on LP2's pull
+  request 185).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound to
   the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full; three more
   (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176), 39 in all; 12
@@ -241,9 +242,10 @@ acceptance check and stop condition.
   run on M5's rows with literal words (C8, pull request 306) and with menu words of the I_a alphabet (C8), B10 and B11
   with a runtime process (C5, pull request 329), B13 and B14 at the command layer on the 600-cell-Full tool's row (C5,
   `c600-tools`' `tests/ct_rte_07_budget.rs`), and MR13, MR14, MR19 and MR20 are refused at the built-in column's
-  admission (`c600-runtime`): 74 of 75. The last key, B12, waits for an owner reading of its cache variants, since no
-  host has a row cache. A built-in approval of a program for another IR version now gives the checker's code, as the
-  other author columns do (a gap LP2's conformance tests for LG5 found).
+  admission (`c600-runtime`): 74 of 75. The last key, B12, is recorded as run cold, and its other five cache states are
+  not applicable while no host keeps a row cache (owner, 20 November 2026, item 1; section 11). A built-in approval
+  of a program for another IR version now gives the checker's code, as the other author columns do (a gap LP2's
+  conformance tests for LG5 found).
 - C2, display next (`rust/c600-display`, branch `claude/lp3-c2-display-next`), built: CT-RPI-14 over the drafted chart
   repertoire (RPI.34 is open), CT-RPI-18 on the CPU reference, CT-RPI-19's Windows leg, CT-RPI-22's chart half (so
   CT-RPI-22 runs whole) and the headless part of CT-RPI-32. The rest of CT-RPI-32 waits until the host attaches user
@@ -497,8 +499,9 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   except that `set.save`'s writes the saved set's own record `set/<name>` with the exact-set digest (LP2's pull
   request 337).
   `filter.apply`'s entry takes the layer's `FilterPreviewRef` as a record of its epoch and job (a draft: the IR has no
-  reference type); its action is the next undo target, and that undo removes its record and moves no state. The other
-  two leave no undo entry. The source route, the entry's own run in process through `c600-run`'s boundary with no layer
+  reference type). Each of the three actions is an undo entry (H-08's undo class `workspace` since the command table's
+  freeze, LB7.2), and an undo removes its record and moves no state. The source route, the entry's own run in process
+  through `c600-run`'s boundary with no layer
   (not C5's runner or the runtime's own process), gives the same value, views and records for the same arguments and
   state. On both routes the entries pass their arguments to the two snapshot reads, and the engine side answers them on
   the session's layer with the kernel rows of C5's host bridge (`c600_tools::kernel_rows`), so the views are the
@@ -531,14 +534,15 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   read no state and refuse with Jumble on) answer the `structure.compare` and `filter.preview` snapshot reads. The
   entries pass their arguments with `read_snapshot<T>(query, x)`: `compare_cells` the two cells, and `filter_counts` the
   layer predicate as a record of its cell and layer, which the host reads from the record the predicate's job wrote,
-  because the IR has no reference type. The tool's bridge serves both reads with draft tariffs until the command table
-  freezes at LP3 (`c600_tools::kernel_rows`, `c600-tools/tests/structure_rows.rs`). LP2's pull request 269 checks the
+  because the IR has no reference type. The tool's bridge serves both reads with the tariffs H-08's `reads` hold since
+  the freeze (CM.18; `c600_tools::kernel_rows`, `c600-tools/tests/structure_rows.rs`). LP2's pull request 269 checks the
   `CanonicalObjectRefs` form: a member that is no piece or position (0 to 177,119) is refused at admission, and an empty
   list and repeats pass; LP3 keeps that form. LP2's pull request 337 keeps a record and an exact-set digest for each
   saved set: the layer writes `set/<name>` (the members ascending and distinct, with their kind, the model identity,
   the name and the revision of capture; U1-057, U4-037) and gives the exact-set digest as the result reference
-  (`c600_command::sets`); `replace: true` and `KN5:input.saved_set_exists` are drafts, and names under `set/` are
-  reserved. Built since: the applied filter's display (`c600_repr::applied`), on LP2's members of a layer
+  (`c600_command::sets`); at the freeze H-08 takes `replace: Bool?` and chapter 13 registers
+  `KN5:input.saved_set_exists` (CM.17), and names under `set/` are reserved. Built since: the applied filter's
+  display (`c600_repr::applied`), on LP2's members of a layer
   (`CommandLayer::layer_members`, pull request 375). While the layer keeps the applied filter preview and every record
   it read still holds what it read, a representation's layout keeps the members' slots, stickers, pieces and
   certificate points and nothing else, and its analysed set stays (LB4.4); otherwise the layout stays unfiltered and
@@ -657,7 +661,7 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   "Protection" at pose level (a whole word's Net and Strict verdicts, as M8's `levels::derive` gives them). Each entry
   that reads state reads only its KN2.4 rows. C8's host bridge (`c600_jumble_tool::rows`, pull request 299) serves
   those rows to a run at the command layer's head with Jumble on, on a witnessed base or at a state, in draft answer
-  types and a draft tariff; the command table names and prices them when it freezes. Each run through the bridge at a
+  types and a draft tariff; at the freeze H-08's `reads` name and price them (CM.18). Each run through the bridge at a
   head equals the same run on a state witnessed apart (`tests/rows.rs`), so CT-LB1-03, CT-LB3-03 and CT-LB3-06 now run
   whole. `jumble_nu` reads ν and checks a drafted set in F2 and F5 through the bridge (`tests/ct_lb3_04.rs`,
   `tests/rows.rs`). The bridge also serves J08's `seam_facts` for a named cap (pull request 306).
@@ -711,12 +715,13 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   with W-J's runs (ADR-R01.3, option A: a failing run reopens the selection), RPI.79's gate run on the product build and
   route B's three checks; LX-4's time box is 4 hours, on the same day (owner, 18 November 2026).
 - **C10, the exit.** H-08 freezes (PHS.53), with the draft codes registered under PHS.52; every acceptance item has
-  evidence on one frozen candidate; the 82 tests run whole; the owner signs off.
+  evidence on one frozen candidate; the 82 tests run whole; the owner signs off. Section 11 has the owner's exit
+  answers of 20 November 2026 and the freeze pull request.
 
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test runs now, with no need of the owner's machine, the on-screen half (C9) or an item LP2 has not
-built. 54 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 13 have a part that runs now, and 15
+built. 55 tests run whole now (CT-RPI-19 also needs a Linux run for its record), 12 have a part that runs now, and 15
 have no part that runs yet. The milestone is in parentheses; "next" marks LP3 work that needs nothing more from LP2 and
 is not built yet.
 
@@ -790,8 +795,8 @@ is not built yet.
 | CT-BND-18 | source | Now (C5 library: the setup-search entry `setups_for` in `c600-library`'s `setups.6cs` over the draft `setups` host row, pull request 309, run whole in `c600-tools/tests/ct_bnd_18.rs`; the checker half is the built-in column's setup-search exception, LP2's pull request 229, `c600-check/tests/exceptions.rs`) | - |
 | CT-BND-19 | source | Now (C5: the tool's views, and the live twist through the input router on the tool's view model) | - |
 | CT-BND-20 | windows | The on-screen half (C9) | A held chord commits once; the runtime gets no token (C1) |
-| CT-RTE-04 | source | `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, amendment candidates for C10 (reasons in LP2's pull request 234); form 2's five traces, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build (LP2 plan, section 3, selection 1; stated to the owner on 18 November 2026), so they are not applicable, which is no pass (PHS.63): an item for the owner at C10 | 32 of DET.65's 40 traces (C3; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, one after its loops, pull request 234, two after its byte decoding, pull request 249, three after its streamed words, pull request 250, and one after its bytes the code holds, `text_decode_hex`, pull request 367) |
-| CT-RTE-07 | source | An owner reading of B12's cache variants, since no host has a row cache; and a Linux run | 74 of LX-3's 75 frozen keys on 600-cell-Full: 60 in C4's file, B01 to B04 and B07 among them under the price mapping that `c600-module`'s documentation pins (pull request 354), and the four pick keys MR17, MR18, A29 and A30, each as two runs with the `c600-pick` record the host keeps between them (FP.38, BND.54; LP2's pull request 359); B10 and B11 with a runtime process (C4, C5, pull request 329); B13 and B14, a missing budget and one over the host's ceiling, refused before admission at the command layer on the 600-cell-Full tool's row (C5: `c600-tools/tests/ct_rte_07_budget.rs`); the six jumbling keys on M5's rows with literal words (C8, pull request 306) and with menu words of the I_a alphabet, pinned with its item matrices (C8: `c600-jumble-tool/tests/ct_rte_07_jumble.rs`); MR13, MR14, MR19 and MR20 refused at the built-in column's admission (`c600-runtime`) |
+| CT-RTE-04 | source | Now (C3: 32 of DET.65's 40 traces; three after LP2's M2 meter, six after LP2's `exact_mul` and `assert`, pull request 216, three after its generator draws, pull request 219, five after its child scopes, pull request 225, one after its loops, pull request 234, two after its byte decoding, pull request 249, three after its streamed words, pull request 250, and one after its bytes the code holds, `text_decode_hex`, pull request 367. The other eight leave LP3's run under PHS.52 and stay on record in DET.65's vectors: `generator-nested-same-name`, `text-comparison` and `abstract-trace-charges`, with the reasons of LP2's pull request 234, and form 2's five, which need `lp1-exec-region-draft-1`'s executor that LP2 does not build; owner, 20 November 2026, items 3 and 4) | - |
+| CT-RTE-07 | source | B12's cold run, as the owner recorded it on 20 November 2026 (item 1: no host keeps a row cache, so B12's other five states are not applicable); and a Linux run | 74 of LX-3's 75 frozen keys on 600-cell-Full: 60 in C4's file, B01 to B04 and B07 among them under the price mapping that `c600-module`'s documentation pins (pull request 354), and the four pick keys MR17, MR18, A29 and A30, each as two runs with the `c600-pick` record the host keeps between them (FP.38, BND.54; LP2's pull request 359); B10 and B11 with a runtime process (C4, C5, pull request 329); B13 and B14, a missing budget and one over the host's ceiling, refused before admission at the command layer on the 600-cell-Full tool's row (C5: `c600-tools/tests/ct_rte_07_budget.rs`); the six jumbling keys on M5's rows with literal words (C8, pull request 306) and with menu words of the I_a alphabet, pinned with its item matrices (C8: `c600-jumble-tool/tests/ct_rte_07_jumble.rs`); MR13, MR14, MR19 and MR20 refused at the built-in column's admission (`c600-runtime`) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9); the shell half of conditions 3 and 4 is built (`Lx2Module.cs`, `tools/perf/c9/lx2.py`), and its limit windows end at the host's 60 s safety stop | The headless fault half (C3) |
 | CT-RTE-11 | performance | Owner runs: LX-2 (C9); the shell half of conditions 3 and 4 is built (`Lx2Module.cs`, `tools/perf/c9/lx2.py`), and its limit windows end at the host's 60 s safety stop | - |
@@ -821,5 +826,54 @@ Questions are batched (owner, 16 November 2026): at most one card per milestone,
   page).
 - C1 to C4: none. The command table's choices are drafts that freeze at LP3.
 - C9: none; the owner-machine runs follow PHS.64 and are done together.
-- C10: at the exit, H-08's freeze and the registration of the draft codes in chapter 13 (PHS.52, PHS.53), and
-  CT-RTE-04's form-2 traces and amendment candidates (section 9).
+- C10: answered by the owner on 20 November 2026
+  ([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)); section 11. The C10 sign-off
+  stays open.
+
+## 11. C10: the LP3 exit
+
+The owner answered LP3's exit card on 20 November 2026
+([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)): every item takes the recommended
+option except item 2, which takes option 2. This plan's freeze pull request carries items 3, 4, 6 and 7, H-08's content
+and the FP.1 pin refresh, and records items 1 and 5. Its merge is the frozen candidate, so it lands after the pull
+requests it waits for (below), and the integrator merges it.
+
+- **H-08 at the freeze (PHS.53).** [command-table.md](command-table.md), CM.17:
+  - `workspace.set` joins as M6's record write, in the form `c600-command`'s draft row has. `payload: Json` stays
+    OPEN.
+  - The workspace rows' undo follows LB7.2: `worksheet.save`, `macro.save`, `set.save`, `filter.save` and
+    `structure.layer` save or write a named object the workspace holds and become workspace inverses. Eight rows keep
+    `none`, each for the reason CM.17 states.
+  - Rows the layer does not build yet stay as they are; the layer refuses them with `KN5:input.row_not_built`.
+  - The rows a program reads through a host bridge (KN2.4) get a section of their own, `reads` (CM.18): each row's
+    puzzle and level, arguments, answer type, tariff and refusal codes.
+- **Chapter 13 and the layer interfaces (PHS.52).** The owner's amendment list of
+  [16 November](../../wiki/decisions/owner-decisions-2026-11-16-phs52.md) and item 6:
+  - Chapter 13's section 9 registers 13 codes (the six of 16 November, the five later drafts and M8's two new rows),
+    with the errata of 16 November and DET.36 in `LG3:capability.not_granted`'s rule source.
+    `tests/test_language_scans.py`'s `UNREGISTERED_DRAFTS` is empty.
+  - The layer interfaces' section 10: LI.5's request digest covers the caller the host stamps from the channel, and
+    LI.33's first delivery of D/TD answers `KN5:stale.no_fresh_preview`. The format packet pins the draft, so its pin
+    is refreshed under FP.1, which the exit decision page records. FP.36, which encodes LI.5's resolved request in a
+    durable admission, lists no caller and is not edited: OPEN.
+- **Items 3 and 4.** Chapter 09's DET.65: CT-RTE-04 holds 32 of the 40 vectors as programs. The five form-2 traces and
+  the three amendment candidates (with the reasons of LP2's pull request 234) stay on record, out of LP3's run; no
+  vector's bytes change.
+- **Item 7, no frozen file changes.** `replay` and `protection` keep one name each, typed by puzzle and level, as
+  KN2.4 [D] lists them; H-08's `reads` give each one entry per puzzle and level (CM.18).
+- **Item 1, recorded.** 1.0's host keeps no row-answer cache, so every read is answered fresh (KN7.8). CT-RTE-07's B12
+  is recorded as run cold, and its other five cache states (warm, evicted, poisoned, shared, relocated) are not
+  applicable while no cache exists. A cache, with all six states, is built only if E2 or LX-4 on the owner's machine
+  shows a need. The draft row cache of closed pull request 368 stays on its branch, `claude/lp3-b12-row-cache`.
+- **Item 5, recorded.** `push` keeps its price of `LIST_PER_ELEMENT` per element of the new list, although LP2's pull
+  request 364 extends a list in place when no other handle sees it. No pinned budget number moves.
+- **Items 2, 8 and 9 are C9's.** The measurement tools count a key without a confirmed frame as one failed key above
+  100 ms, and its run stays valid (item 2). Startup is made faster before the frozen candidate, and E3's 3 s is
+  measured on it (item 8). Route B's blind seconds come from the core's `GetFrameStatistics`, cross-checked against
+  PresentMon, since PresentMon could not be kept as the source (item 9, pull request 385).
+- **What lands before the freeze** (the integrator's list, 20 November 2026): this plan's pull requests 376 and 381;
+  378, C8's follow-ups; J10's exposed faces; LP2's 377, the KN5.6 table; c9-measure's fix and its `rerun` pull
+  request; and e3-startup's cold start under 3.0 s. LP2's KN4 journal query and FP.9 (a) land first if they are
+  ready.
+- **What the exit still needs:** every acceptance item's evidence on the frozen candidate, section 9's 82 tests whole
+  (PHS.62, PHS.63), the owner-machine runs done together (C9), and the owner's sign-off.
