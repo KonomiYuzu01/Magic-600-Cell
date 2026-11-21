@@ -409,7 +409,8 @@
 //!   drops it. Chapter 03 backs the catalogue with library code over KN2.4's `labels`, `positions` and `effect`; under
 //!   the draft budget ceiling that cannot serve it: `labels` names no orbit, `positions` names one only for the pieces
 //!   a program names, and sorting all 177,120 pieces by orbit takes at least ten steps a piece, about 1.8 million,
-//!   against the ceiling's 2^20 (1,048,576). The row is model data, read from the kernel's `positions` at the solved
+//!   against the draft ceiling's 2^20 (1,048,576); the owner's 2^21 (2,097,152) holds the sort but little else. The
+//!   row is model data, read from the kernel's `positions` at the solved
 //!   state, and reads no state of the session; as for the recipes, the entry reads it with `read_snapshot` and carries
 //!   the effect `snapshot`, where chapter 03 says "pure".
 //! - LB2, progress: `orbit_progress` counts the caller's records. It never reads, so a count says what the named
@@ -434,7 +435,7 @@
 //!   `unknown` and, unless they are buffer pieces, as misplaced. A frame relative to a reference the solver names is
 //!   not built.
 //! - LB2, budgets: both pure entries make one pass over `positions`; on the largest orbit, 7,200 pieces, every piece
-//!   away from Home, each runs within the draft budget ceiling with the `positions` read before it
+//!   away from Home, each runs within the budget ceiling with the `positions` read before it
 //!   (`c600-tools/tests/orbits.rs`). The lists are built with `push`, which is priced as a new list of its length even
 //!   where it extends the list in place (pull request 364), so a list of k pieces costs about k²/2 of kernel cost,
 //!   within the ceiling's 2^40.

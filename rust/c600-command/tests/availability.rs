@@ -286,7 +286,7 @@ fn a_static_binding_answers_as_its_arguments_do() {
         args: b,
         token: None,
         epoch,
-        budget: Some(c600_command::Budget::DRAFT_CEILING),
+        budget: Some(c600_command::Budget::CEILING),
     };
     assert_eq!(f.layer.invoke(&runtime, invocation).status.code(), Some(code::ARGUMENT_FORM));
     f.declare(READ, requiring(vec![required(COMPARE, Binding::Static(Value::Int(3)))]));

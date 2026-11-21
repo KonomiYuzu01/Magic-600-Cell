@@ -213,16 +213,16 @@ fn both_hosts_refuse_a_word_with_no_transfer_encoding_at_the_start_stage() {
 }
 
 /// The run's budget (KN7.7; LP2's pull request 348). The solver's command declares the budget its job runs under, and
-/// on both hosts the tool's entry runs under the run limits of the job's budget, not under the draft ceiling: with a
+/// on both hosts the tool's entry runs under the run limits of the job's budget, not under the ceiling: with a
 /// budget of one step the run is cut off with the meter's steps code before it proposes anything, alike on the two
 /// hosts. The host reports the job as failed with that code, and the session is unchanged. The shell's default
-/// budget, the draft ceiling, gives the tool's limits.
+/// budget, every profile's ceiling, gives the tool's limits.
 #[test]
 fn both_hosts_run_the_tool_under_the_budget_its_command_declared() {
-    assert_eq!(limits(Budget::DRAFT_CEILING), LIMITS, "the shell's default budget gives the tool's limits");
+    assert_eq!(limits(Budget::CEILING), LIMITS, "the shell's default budget gives the tool's limits");
     let tool = Tool::full_600_cell().unwrap();
     let mut host = process_host();
-    let one = Budget { steps: 1, ..Budget::DRAFT_CEILING };
+    let one = Budget { steps: 1, ..Budget::CEILING };
     let mut summaries = Vec::new();
     for on_process in [false, true] {
         let (mut layer, mut shell) = session("budget");

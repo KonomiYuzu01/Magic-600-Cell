@@ -25,8 +25,9 @@ pub const ENTRY: &str = "preview_word";
 pub const ROW: &str = "operation.preview";
 
 /// The run limits of one run of a tool (DET.55): wide enough for a 100,000-letter word, 0.4's word limit. They are
-/// the command layer's draft ceiling ([`Budget::DRAFT_CEILING`]), the budget a shell declares by default.
-pub const LIMITS: Amounts = Amounts { steps: 1 << 20, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
+/// every profile's ceiling ([`Budget::CEILING`], the owner's values of 21 November 2026), the budget a shell declares
+/// by default.
+pub const LIMITS: Amounts = Amounts { steps: 1 << 21, kernel_cost: 1 << 40, memory: 1 << 27, output: 1 << 24 };
 
 /// The run limits of a program job's budget (KN7.7): the layer's [`Budget`] has the meter's four dimensions under the
 /// same names, so each maps by name. A host runs a job's entry under them ([`crate::process::ToolCommand::limits`]).

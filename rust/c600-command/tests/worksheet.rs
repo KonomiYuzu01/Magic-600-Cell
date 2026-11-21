@@ -494,7 +494,7 @@ fn the_work_sheet_rows_refuse_and_change_nothing() {
             args,
             token: None,
             epoch,
-            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
+            budget: served.then_some(c600_command::Budget::CEILING),
         };
         f.refused_on(&runtime, theirs, code::NOT_GRANTED, row);
     }

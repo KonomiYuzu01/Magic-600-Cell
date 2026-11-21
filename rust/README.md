@@ -2053,10 +2053,11 @@ run or not applicable is no pass (PHS.63).
   `c600-command/tests/profile.rs`. LP3's hosts start runs in solving sessions only; CT-RTE-07's B13 and B14 refuse a
   command in a tool-authoring session before any run (C5's section below).
 - Budgets (KN7.7, BM3, DET.27, ERR.27; LP2's pull request 348; draft). An invocation of a row an entry serves declares
-  its budget in the envelope (`Invocation::budget`), and the shell declares its own (`Shell::budget`, by default the
-  draft ceiling) on those rows only. The layer admits it before a job ID exists, so a refusal uses nothing: a missing
+  its budget in the envelope (`Invocation::budget`), and the shell declares its own (`Shell::budget`, by default
+  `Budget::CEILING`) on those rows only. The layer admits it before a job ID exists, so a refusal uses nothing: a missing
   budget is `KN7:input.budget_not_declared`, and a dimension over the ceiling `KN7:resource_limit.budget_ceiling`. The
-  ceiling is the profile's (`Budget::DRAFT_CEILING` for every profile until an owner reading sets the product's values),
+  ceiling is the profile's (`Budget::CEILING` for every profile: steps 2^21, kernel cost 2^40, memory 2^27 and output
+  2^24, owner, 21 November 2026, `docs/wiki/decisions/owner-decisions-2026-11-21-ceilings-e3.md`),
   or the host's where the host sets a lower one (`CommandLayer::set_budget_ceiling`), dimension by dimension. The job
   carries the admitted budget (`ProgramJob::budget`), and the request digest covers it. Tests:
   `c600-command/tests/budget.rs`. LP3's hosts run a job's entry under the run limits of its budget, and B13 and B14 also
@@ -2521,7 +2522,7 @@ run or not applicable is no pass (PHS.63).
     answer (LB3.5). The catalogue is the kernel's orbit table at solved and at a scrambled head; the progress is the
     kernel's progress row on all 36 orbits at a scrambled head; the residuals agree with an oracle over the certified
     setup table's buffers, and at solved every orbit is complete and solved while a partial or reversed list is neither.
-    The largest orbit, 7,200 pieces all away from Home, runs within the draft budget ceiling, and the test prints what
+    The largest orbit, 7,200 pieces all away from Home, runs within the budget ceiling, and the test prints what
     it used. Covers no conformance ID.
 - Open: the class rows are an LP3 draft until BND.57's rows by class exist as data. The built-in column's two exceptions
   (setup search for a named target, the repair list) are built in `c600-check` (LP2's pull request 229); the bridge
@@ -2687,14 +2688,14 @@ run or not applicable is no pass (PHS.63).
   reported as the job's failure with the refusal's code (`start_error`). The layer's check, `c600-command`'s
   `SOLVER_COMMAND_CHECK`, is on (the KN5 readings above), and every LP3 route and test runs this way.
 - Each run is under its job's budget (KN7.7; LP2's pull request 348; draft), on both hosts. The solver's command
-  declares the budget, by default the shell's, the draft ceiling, and the layer admits it under its ceiling before the
+  declares the budget, by default the shell's, `Budget::CEILING`, and the layer admits it under its ceiling before the
   job exists; a command with no budget, or with one over the ceiling, is refused there, so the tool does not run. The
   host runs the entry under the run limits of the job's budget (`ToolCommand::limits`, through
-  `c600_tools::tool::limits`, which maps the layer's four dimensions onto the meter's by name); the draft ceiling gives
-  the limits the tool had before, `tool::LIMITS`, and the process host sends them in the child's job
+  `c600_tools::tool::limits`, which maps the layer's four dimensions onto the meter's by name); the ceiling gives the
+  tool's own limits, `tool::LIMITS`, and the process host sends them in the child's job
   (`process::job_under`). The host runs the job's word (`ToolCommand::word`) at the job's revision
   (`ToolCommand::base`). The bridge declares the run's budget on the run's invocations of a row an entry serves
-  (`Bridge::with_budget`; without it, the draft ceiling).
+  (`Bridge::with_budget`; without it, `Budget::CEILING`).
 - `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
   compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
   records, receipts and callers equal across the hosts. On the source route each step that gives the tool a word adds
