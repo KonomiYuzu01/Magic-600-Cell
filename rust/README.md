@@ -1561,8 +1561,13 @@ run or not applicable is no pass (PHS.63).
   cross-platform item). These are the six `tests/test_jumbling_rust_*.py` checks that the Windows shards run
   (candidate, attacks, M8's observations and levels, ν and the correction catalogue), one runner each. They use the
   same pinned CPython and hash-checked NumPy wheels and build the release adapter offline. Each system compares the
-  candidate with J1 on the same pinned inputs and keys; the two systems' payloads are not compared byte for byte. A
-  pass is headless Linux source and fixture evidence only.
+  candidate with J1 on the same pinned inputs and keys. The two systems' payloads and stop reasons are compared byte
+  for byte by the LP2 workflow (`.github/workflows/lp2-full.yml`, nightly on main and on request): ten checks (the
+  kernel's oracle replay, the LP3 loop and source route, the jumbling command route and the six J1 comparisons) run
+  on windows-2025 and on ubuntu-24.04 with `C600_TRANSCRIPT_DIR` set and keep their exact outputs
+  (`tools/ci/transcripts.py`), and a third job compares them. The same workflow runs the J1 comparisons that read
+  `JUMBLING_FULL_REPLAY=1` on every record, and `jumble_on_layer.rs`'s whole fixtures (`--ignored`) in a release
+  build. A pass is headless Linux and Windows source and fixture evidence only.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the

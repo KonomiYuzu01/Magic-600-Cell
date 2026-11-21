@@ -6,6 +6,11 @@ policy (`differential/independence.py`) it imports no harness module either: the
 `StepResult` as `step_result`. `RustJumbleEngine` serves `harness.compare` (start, apply, survey,
 straddlers) and exposes the adapter's other requests for the tests: full outcomes with a budget or
 protected pieces, pose-table records, identity blocks, stored words and the observations.
+
+With C600_TRANSCRIPT_DIR set, each engine also writes its exchange to a file there, for the cross-platform comparison
+of PHS.19 (`.github/workflows/lp2-full.yml`): every request line as sent and every answer line as received, byte for
+byte, except the ready line's `load_ms`, a wall-clock time and no payload. The files are named after the running
+script and the engine's place in it, so the same run on two systems writes the same names.
 """
 
 from collections import namedtuple
@@ -14,12 +19,15 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 REPO = Path(__file__).resolve().parents[4]
 RUST = REPO / 'rust'
 ASSETS = REPO / 'assets'
 BINARY = RUST / 'target' / 'release' / ('c600-jumble-adapter.exe' if os.name == 'nt' else 'c600-jumble-adapter')
 BUILD_SECONDS = 1200
+TRANSCRIPT_DIR = os.environ.get('C600_TRANSCRIPT_DIR')
+_engines_started = 0
 
 
 class CandidateError(RuntimeError):
@@ -50,6 +58,21 @@ def _pairs(rows):
     return {key: value for key, value in rows}
 
 
+def _open_transcript():
+    """The transcript file of the next engine, or None without C600_TRANSCRIPT_DIR (see the module docstring)."""
+    global _engines_started
+    if not TRANSCRIPT_DIR:
+        return None
+    folder = Path(TRANSCRIPT_DIR)
+    folder.mkdir(parents=True, exist_ok=True)
+    while True:  # a script run twice in turn, in two processes, continues the numbering of the first run
+        _engines_started += 1
+        try:
+            return open(folder / f'{Path(sys.argv[0]).stem}.engine-{_engines_started:03d}.jsonl', 'xb')
+        except FileExistsError:
+            continue
+
+
 # The fields of one step, in the harness's order; the default result type when no `step_result` is passed.
 Step = namedtuple('Step', 'status moved moved_set digest lattice')
 
@@ -60,20 +83,26 @@ class RustJumbleEngine:
     def __init__(self, binary=BINARY, assets=ASSETS, name='rust-candidate', step_result=Step):
         self.name = name
         self._step_result = step_result
+        self._transcript = _open_transcript()
         self._process = subprocess.Popen([str(binary), str(assets)], stdin=subprocess.PIPE,
                                          stdout=subprocess.PIPE)
-        ready = self._read()
+        ready = self._read(ready=True)
         if not ready.get('ready'):
             self.close()
             raise CandidateError('setup', 'the adapter did not report ready')
         self.model_id = ready['model_id']
         self.load_ms = ready['load_ms']
 
-    def _read(self):
+    def _read(self, ready=False):
         line = self._process.stdout.readline()
         if not line:
             raise CandidateError('engine', f'the adapter exited with {self._process.poll()}')
         answer = json.loads(line)
+        if self._transcript is not None:
+            if ready and isinstance(answer.get('result'), dict):
+                kept = dict(answer, result={k: v for k, v in answer['result'].items() if k != 'load_ms'})
+                line = json.dumps(kept, separators=(',', ':')).encode('utf-8') + b'\n'
+            self._transcript.write(b'< ' + line)
         if not answer.get('ok'):
             error = answer.get('error', {})
             raise CandidateError(error.get('kind', 'engine'), error.get('message', 'no message'))
@@ -82,11 +111,17 @@ class RustJumbleEngine:
     def call(self, op, **fields):
         """Send one request and return its result; an error answer raises CandidateError."""
         request = dict(fields, op=op)
-        self._process.stdin.write(json.dumps(request, separators=(',', ':')).encode('utf-8') + b'\n')
+        line = json.dumps(request, separators=(',', ':')).encode('utf-8') + b'\n'
+        if self._transcript is not None:
+            self._transcript.write(b'> ' + line)
+        self._process.stdin.write(line)
         self._process.stdin.flush()
         return self._read()
 
     def close(self):
+        if self._transcript is not None:
+            self._transcript.close()
+            self._transcript = None
         if self._process.poll() is None:
             try:
                 self._process.stdin.write(b'{"op":"quit"}\n')
