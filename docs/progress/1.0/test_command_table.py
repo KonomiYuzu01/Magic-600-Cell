@@ -526,6 +526,11 @@ class CommandTableTests(unittest.TestCase):
         # LB7.2: saving a named workspace object is undoable; CM.17 names why the other eight are not.
         for name in ("worksheet.save", "macro.save", "set.save", "filter.save", "structure.layer"):
             self.assertEqual(self.by_id[name]["undo"], "workspace", name)
+        # U1-057: a save under a name that holds a saved set replaces it only when asked
+        # (KN5:input.saved_set_exists, chapter 13 section 9).
+        self.assertEqual(self.by_id["set.save"]["arguments"],
+                         {"members": "CanonicalObjectRefs", "kind": "identity|position", "name": "Text",
+                          "replace": "Bool?"})
         none = {r["id"] for r in self.table["commands"] if r["kind"] == "workspace" and r["undo"] == "none"}
         self.assertEqual(none, {"session.timer.start", "session.timer.stop", "operation.preview.cancel", "grip.select",
                                 "input.destination.set", "recording.start", "recording.stop", "recording.play"})

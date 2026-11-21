@@ -105,10 +105,10 @@ pub const NEEDS: [RowNeed; 6] = [
               host does the same. The layer checks the form of `revision` and refuses one that is not the current \
               revision as stale before any job; the job completes as `completed(query)` at its revision with the \
               output's digest as the result reference, and nothing is written.",
-        remains: "The read and its tariff are drafts until the command table freezes at LP3. The entry takes the \
-                  predicate as a record of its cell and layer, which the host reads from the record the predicate's \
-                  job wrote, since the IR draft has no reference type. The `FilterRef` form and the store of filter \
-                  previews are the layer's since pull request 256.",
+        remains: "H-08's `reads` hold the read and its tariff since the command table's freeze (CM.18). The entry \
+                  takes the predicate as a record of its cell and layer, which the host reads from the record the \
+                  predicate's job wrote, since the IR draft has no reference type. The `FilterRef` form and the store \
+                  of filter previews are the layer's since pull request 256.",
     },
     RowNeed {
         row: "filter.apply",
@@ -174,12 +174,17 @@ pub const NEEDS: [RowNeed; 6] = [
         undo: UndoClass::Workspace,
         preview: PreviewRule::None,
         gates: &[],
-        arguments: &[("kind", "identity|position"), ("members", "CanonicalObjectRefs"), ("name", "Text")],
+        arguments: &[
+            ("kind", "identity|position"),
+            ("members", "CanonicalObjectRefs"),
+            ("name", "Text"),
+            ("replace", "Bool?"),
+        ],
         effects: &[Effect::ChangeWorkspace],
         completion: CompletionKind::Workspace,
         receipt: "completed(workspace) at a revision whose workspace number is one higher, with a result reference to \
                   the saved set's exact-set digest; refused as an argument form when a member is no canonical object \
-                  of the model or `kind` is neither value, and with the draft code \
+                  of the model or `kind` is neither value, and with the code \
                   `c600_command::code::SAVED_SET_EXISTS` when the name holds a saved set and the invocation does not \
                   carry `replace: true` (U1-057).",
         undo_entry: "one workspace action in the durable action order, holding the saved set's record before and \
@@ -194,8 +199,8 @@ pub const NEEDS: [RowNeed; 6] = [
               record `set/<name>` through the host's provenance reader: its kind, its members ascending and distinct, \
               the model identity, the name and the capture revision (pull request 337, `c600_command::sets`). A \
               taken name is refused unless the invocation carries `replace: true`.",
-        remains: "Nothing in the layer. The argument `replace` and the code `SAVED_SET_EXISTS` are drafts until the \
-                  command table freezes at LP3.",
+        remains: "Nothing: since the command table's freeze H-08 takes the optional `replace` and chapter 13 \
+                  registers the code (CM.17).",
     },
     RowNeed {
         row: "structure.compare",
@@ -217,7 +222,7 @@ pub const NEEDS: [RowNeed; 6] = [
               `c600_tools::kernel_rows::structure_compare`, and the tests' host does the same. The layer checks the \
               `CellIdPair` form; the job completes as `completed(query)` at its revision with the output's digest as \
               the result reference, and nothing is written. The entry's answer is the job's view.",
-        remains: "Nothing in the layer. The read and its tariff are drafts until the command table freezes at LP3.",
+        remains: "Nothing: H-08's `reads` hold the read and its tariff since the command table's freeze (CM.18).",
     },
     RowNeed {
         row: "structure.layer",

@@ -26,8 +26,8 @@
 //!
 //! # Drafts
 //!
-//! H-08 (the command table) and the IR are drafts until their freezes. Where the text leaves a choice open or names no
-//! code, this crate takes the smallest reasonable option:
+//! The IR is a draft until its freeze, and H-08 (the command table) is frozen at LP3 (PHS.53). Where the text leaves a
+//! choice open or names no code, this crate takes the smallest reasonable option:
 //!
 //! - RM.12: validation precedence is invalid, then unsupported, then ceiling. A malformed publication is
 //!   `EV3:input.display_plan_invalid` even when it also names an unsupported row; only a publication with neither is

@@ -198,6 +198,27 @@
         }
       },
       "source": "Owner, 6 November 2026, decision 10; ONE.78"
+    },
+    {
+      "id": "set.save",
+      "expect": {
+        "kind": "workspace",
+        "arguments": {
+          "members": "CanonicalObjectRefs",
+          "kind": "identity|position",
+          "name": "Text"
+        }
+      },
+      "set": {
+        "note": "Saves a set of pieces or positions under a name. A name that holds a saved set is refused with KN5:input.saved_set_exists, and the saved set is kept, unless the invocation carries replace: true, which replaces it (U1-057: replacing a named set stays explicit).",
+        "arguments": {
+          "members": "CanonicalObjectRefs",
+          "kind": "identity|position",
+          "name": "Text",
+          "replace": "Bool?"
+        }
+      },
+      "source": "U1-057; LP2 pull request 337; chapter 13 section 9 (KN5:input.saved_set_exists)"
     }
   ]
 }

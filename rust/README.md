@@ -744,8 +744,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (CT-BND-24).
 - Tests (`c600-run/tests/boundary.rs`): the saved-word half of CT-LG3-07, and parts of CT-FP-02, CT-BND-01 to
   CT-BND-04, CT-BND-07, CT-BND-11 to CT-BND-14, CT-BND-22 and CT-BND-26 to CT-BND-30, each naming its part.
-- Drafts, which freeze with the IR and the command table: the acknowledgement is `{base, id}`, with the proposal
-  number `<run>/<n>` as `id`; records are per run; the adapter serves a literal read of a name it stores as a
+- Drafts, which freeze with the IR or stay open past H-08's freeze: the acknowledgement is `{base, id}`, with the
+  proposal number `<run>/<n>` as `id`; records are per run; the adapter serves a literal read of a name it stores as a
   workspace record and passes any other read to the engine, and a read with an argument always reaches the engine
   and counts as state-derived data for the block's `may_read_state` (LG3.13); the engine's preview call does not take
   the block yet (KN5.9); the store is in memory and returns a stored value as written, and M6's session store decodes
@@ -1661,7 +1661,7 @@ run or not applicable is no pass (PHS.63).
   every commit onto the recorded states, and the two routes write byte-identical traces and receipts. A tampered trace
   fails at its step, and a case with another model identity is refused without a trace. `tools/ci/run_headless.py`
   lists it.
-- Drafts, which freeze with the command table at LP3 (PHS.53): the list in the crate documentation, among them one
+- Drafts as of the command table's freeze at LP3 (PHS.53): the list in the crate documentation, among them one
   session per layer with Jumble off, an inline recipe as `WordRef`, `twist.apply` refused as a row not built (KN3's
   exact rotation requests exist since LP2's pull request 176; the row is KN5's), five codes chapter 13 did not register
   until that freeze (its section 9), and the envelope's epoch (LI.5).
@@ -1841,8 +1841,9 @@ run or not applicable is no pass (PHS.63).
   names. Names under `set/` are reserved: only a `set.save` completion writes them, and `workspace.set` and
   `worksheet.save` refuse them with `KN5:input.argument_form`. A save under a name that holds a saved set is refused
   with `KN5:input.saved_set_exists` (a draft code until LP3's freeze registered it), at admission with no job and at
-  completion, writing nothing, when another save took the name meanwhile, unless the invocation carries the draft
-  boolean `replace: true`. Tests: `c600-command/tests/saved_sets.rs`.
+  completion, writing nothing, when another save took the name meanwhile, unless the invocation carries the
+  boolean `replace: true` (H-08's `replace: Bool?` since the freeze, CM.17). Tests:
+  `c600-command/tests/saved_sets.rs`.
 - Argument blocks (BND.22; LP3's C6, step 1 item 4; the drafts are in the crate documentation).
   `CommandLayer::invoke_with_inputs(caller, invocation, inputs)` takes the provenance blocks of an invocation's
   arguments beside the envelope. The host builds them; for a running program's invocation it builds them from the run's
@@ -1873,9 +1874,9 @@ run or not applicable is no pass (PHS.63).
   in every field is refused with `KN5:stale.revision_changed` (EV4.14). Both refusals come before the lane's capacity
   and take no job. `FilterRef` and `FilterPreviewRef` have their forms too (the filter previews item above), and what they name
   is checked after every form. `CanonicalObjectRefs` (`set.save`'s members) is a list of pieces or positions, each 0
-  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and beside its
-  table arguments `set.save` takes the draft boolean `replace` (saved sets, above). Other types pass unchecked until
-  their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
+  to 177,119, the kernel's `PIECES`; an empty list and repeats pass (draft, after LP3's `save_set`), and `set.save`'s
+  `replace` is a boolean (H-08's `replace: Bool?` since the freeze, CM.17; saved sets, above). Other types pass
+  unchecked until their forms are written down. Tests: `c600-command/tests/argument_forms.rs`.
 - Overlay availability (KN5.5, KN5.7, LI.18 to LI.21; the drafts are in the crate documentation), computed with no
   language code running (CT-KN5-08). `CommandLayer::declare_overlay(id, Metadata)` stores a language-defined row's
   metadata: the static check's first failed diagnostic, and the kernel rows its program may invoke, each required or
@@ -2114,14 +2115,14 @@ run or not applicable is no pass (PHS.63).
   supporting tests: a burst of revisions while the lane is blocked leaves one pending request at the newest; output
   from an older engine epoch never attaches at the same revision numbers; a scheduled recomputation can neither open
   nor close a view.
-- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them Global and
-  Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no code), a
-  separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter D2), and an
-  LEB128 byte form standing in for H8's canonical output bytes. C2's next view piece adds one view model per session
-  profile, which no rule reads yet (LG3.9, RPI.42); a provenance block the host fills for installed output (RPI.45,
-  BND.22); the built-in class declared when a view opens (BND.27); the chart evaluator as the view's declared chain
-  (RPI.28, RPI.68); rebuild counters per view; a command ID on `view.open`, with scheduled IDs refused in both view
-  rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
+- Drafts, which freeze with the IR or stay open past H-08's freeze: the list in the crate documentation, among them
+  Global and Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no
+  code), a separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter
+  D2), and an LEB128 byte form standing in for H8's canonical output bytes. C2's next view piece adds one view model per
+  session profile, which no rule reads yet (LG3.9, RPI.42); a provenance block the host fills for installed output
+  (RPI.45, BND.22); the built-in class declared when a view opens (BND.27); the chart evaluator as the view's declared
+  chain (RPI.28, RPI.68); rebuild counters per view; a command ID on `view.open`, with scheduled IDs refused in both
+  view rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
   bundle from an older epoch is refused with `refresh_required`, and output attaches only within its own epoch
   (KN0.2, ONE.60, ONE.63).
 - Source edits (for C9's LX-4): `ViewModel::edit_source(version, draft)` takes the editor's draft of a module version,
@@ -2340,7 +2341,7 @@ run or not applicable is no pass (PHS.63).
   both executors, ten runs each under one SHA-256 (`ct_rte_07_admission.rs`); CT-RTE-10's headless fault half,
   rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session keeps its
   journal, state hash and pending preview (`faults.rs`).
-- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
+- Drafts, which freeze with the IR or stay open past H-08's freeze: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
   between messages only, so a blocking host call is not interrupted.
@@ -2441,13 +2442,13 @@ run or not applicable is no pass (PHS.63).
   - `positions_row.rs` and `labels_row.rs`: a library entry reads KN2.4's `positions` and `labels` rows through the
     bridge at the layer's head, in the asked order, and changes nothing (CT-LB2-04, part); each row refuses a declared
     type it does not answer and an argument that is not a list of integers before its charge, and a piece or slot
-    outside the model with `KN2:input.named_object_invalid` once charged; its draft tariff covers its largest answer;
+    outside the model with `KN2:input.named_object_invalid` once charged; its tariff (CM.18) covers its largest answer;
     the built-in column admits a reading entry only with the read row in its class.
   - `exact_completion.rs`: LB2's exact-completion entry from `c600-library`, CT-LB2-04 whole (section "Status of LP3,
     C5 library: LB1's and LB2's first entries").
   - `effect_row.rs`: a library entry reads KN2.4's `effect` row through the bridge, which answers a recipe's net map and
     what it touches without reading the head; the row refuses a declared type it does not answer and an argument in
-    neither recipe form before its charge and keeps the kernel's refusal of a recipe once charged; its draft tariff
+    neither recipe form before its charge and keeps the kernel's refusal of a recipe once charged; its tariff (CM.18)
     covers its largest answer; the built-in column admits a reading entry only with the read row in its class
     (CT-LB2-01, part; the refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`).
   - `ct_lb2_01.rs`: LB2's recipes and reports from `c600-library`, CT-LB2-01 whole on 600-cell-Full against the
@@ -2459,7 +2460,7 @@ run or not applicable is no pass (PHS.63).
     judges the end state at the head, Strict the base and each prefix of the literal expansion, up to an optional
     limit). The answer comes in its declared order; the row refuses a declared type it does not answer and another
     argument form before its charge, and, once charged, Jumble on, a recipe the kernel refuses and a slot or label
-    outside the model; its draft tariff covers its largest answer; an entry that captures and judges in one run is
+    outside the model; its tariff (CM.18) covers its largest answer; an entry that captures and judges in one run is
     refused by the built-in column (LB3.5) (CT-LB2-02, part).
   - `ct_lb2_02.rs`: LB2's Net and Strict protection from `c600-library`, CT-LB2-02 whole on 600-cell-Full through
     `Boundary`, the tool's bridge and a command layer. The captured locks (position, identity and block) hold the head,
@@ -2472,7 +2473,7 @@ run or not applicable is no pass (PHS.63).
     derivation judges it, at solved and at a scrambled head, with the first refused prefix (-1 with none protected) and
     the orbits in conflict there, and the whole word's net map digest as `effect` gives it; a read changes nothing. The
     answer comes in its declared order; the row refuses a declared type it does not answer and another argument form
-    before its charge, and keeps the kernel's refusal of a recipe once charged; its draft tariff covers its largest
+    before its charge, and keeps the kernel's refusal of a recipe once charged; its tariff (CM.18) covers its largest
     answer; the built-in column admits a reading entry only with the read row in its class. The refusal with Jumble on
     is not run, because a jumbled layer needs `c600-jumble`.
   - `macros.rs`: LB2's named macro analysis and comparison from `c600-library` on the same host, each entry admitted
@@ -2505,14 +2506,14 @@ run or not applicable is no pass (PHS.63).
     counts and their home slots, pull request 375) as LP2's structure rows give them, in the declared order and with
     `Nat` or `Int`, the same in a solved and a scrambled session; each row refuses a declared
     type it does not answer and another argument form before its charge, and a cell outside 0 to 599 or a layer past
-    the cell's last with `KN2:input.named_object_invalid` once charged; the draft tariffs cover the largest answers.
+    the cell's last with `KN2:input.named_object_invalid` once charged; the tariffs (CM.18) cover the largest answers.
     The refusal with Jumble on is not run, because a jumbled layer needs `c600-jumble`. Covers no conformance ID.
   - `orbits_row.rs`: the draft `orbits` row through the bridge (pull request 358). Each named orbit's pieces agree
     with the kernel's orbit table: the `positions` row, read at a scrambled head, gives each of them that orbit, and a
     moving orbit's count is the kernel's progress row's and the seed atlas's. The answer comes in the argument's order,
     repeats included, and in the declared order; the row refuses a declared type it does not answer and another
     argument form before its charge, and an orbit outside -1 to 34 with `KN2:input.named_object_invalid` once charged;
-    its draft tariff covers its largest answer; the built-in column admits a reading entry only with the read row in
+    its tariff (CM.18) covers its largest answer; the built-in column admits a reading entry only with the read row in
     its class. A read changes nothing. The refusal with Jumble on is not run. Covers no conformance ID.
   - `orbits.rs`: LB2's orbit catalogue, progress per orbit and residuals from `c600-library` on the same host (pull
     request 363). The built-in column admits the catalogue with the `orbits` row, and a host entry that reads `orbits`
@@ -2526,7 +2527,7 @@ run or not applicable is no pass (PHS.63).
   (setup search for a named target, the repair list) are built in `c600-check` (LP2's pull request 229); the bridge
   serves the `setups` row only when the host gives it the setup table. The command layer's receipts carry no program
   digest; the proposal's provenance block names the digest of the source bytes that ran.
-- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Drafts, which freeze with the IR or stay open past H-08's freeze, are in the crate documentation under "Drafts".
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
   source-route check prints are informational, not performance evidence.
 
@@ -2555,7 +2556,7 @@ run or not applicable is no pass (PHS.63).
     committed state.
   - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
     layout counterexample.
-- Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
+- Drafts as of H-08's freeze (PHS.53), which wait for chapter 05's key-map forms: the list in the crate
   documentation, among them the routing class names, the chord form (W3C `code` names with Ctrl, Shift, Alt and
   Meta), the two layout tables, the default global map, the repeat flag's source, placeholder camera values, and the
   twist keys: `KeyJ`, `KeyK` and `KeyL`, with Shift for the inverse, type items 1, 2 and 3 of the pinned menu in the
@@ -2567,7 +2568,8 @@ run or not applicable is no pass (PHS.63).
     chapter 13 (PHS.52).
   - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
     default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
-    which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
+    which DT-M1 C4 rules out. One map is to remain; the command table's freeze (PHS.53) left both, since H-08 holds
+    no 1.0 key map.
   - The host gives the router the pinned menu's two digests, since the command layer gives no read of its pin; a read
     in `c600-command` would remove the copy. No key binds `jumble.twist.menu`, and K2's other four axes, a slot's
     transported frame (D11) and C6's seat keys have no key.
@@ -2797,7 +2799,7 @@ run or not applicable is no pass (PHS.63).
   view model's scheduled runs (the host running the view's program and installing its content); named work-sheet reuse,
   which C7 runs on the layer. CT-LB3-01's checker half and CT-LB3-07's recommendation rule are `c600-check`'s (LP2, pull
   request 213).
-- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Drafts, which freeze with the IR or stay open past H-08's freeze, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
 
@@ -2893,18 +2895,19 @@ run or not applicable is no pass (PHS.63).
   `CanonicalObjectRefs` form (pull request 269); `tests/served_rows.rs`'s `[3, -5]` case is an admission refusal since.
   LP2 built a record and an exact-set digest for each saved set (pull request 337): `set.save` writes `set/<name>`
   (its kind, its members ascending and distinct, the model identity, the name and the capture revision) and gives the
-  exact-set digest as the result reference (`c600_command::sets`). `replace: true` and `KN5:input.saved_set_exists`
-  are drafts, and names under `set/` are reserved. LP2 built the members of a layer (pull request 375), and the
+  exact-set digest as the result reference (`c600_command::sets`). At the freeze H-08 takes `replace: Bool?` and
+  chapter 13 registers `KN5:input.saved_set_exists` (CM.17); names under `set/` are reserved. LP2 built the members
+  of a layer (pull request 375), and the
   applied filter's display reads them (`applied`, above).
-- Not built, LP3's next steps: the two reads' tariffs in the command table, which freezes at LP3; a reference type in
-  the IR, so `filter_counts` takes the predicate as a record of its cell and layer; a display that applies the
+- Not built, LP3's next steps: a reference type in the IR, so `filter_counts` takes the predicate as a record of its
+  cell and layer (the two reads and their tariffs are H-08's since the freeze, CM.18); a display that applies the
   published scope (its API is in the crate documentation under "Not built"); a display of an applied filter whose
   filter preview the layer no longer keeps, after a reopen or once a newer one replaced it, which needs the applied
   predicate kept with the record or by the layer; every device step (CT-LB4-04's rest, C9; the stage checker is
   LP2's since pull request 241); the relationship strip's design and its other typed relations (C8 computes one, a
   slot's current occupant, at pose level, and `c600_display::strip` carries it); filters of trees, complexes and
   graphs; a BM5 review record.
-- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Drafts, which freeze with the IR or stay open past H-08's freeze, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
 
@@ -3163,7 +3166,8 @@ run or not applicable is no pass (PHS.63).
   beside the entry `jumble_repair` (`tests/jumble_layer_repair.rs`, above). C8 uses the IR draft's F2 and F5 (pull
   request 222) for LB3's ν entry (`src/jumble_nu.6cs`, `library::NU`).
 - Not built: J01 and J06 to J12 as supported rows (a backend's own rows, C9);
-  the jumbling rows' names, prices and program-job route in the command table (KN5, when the table freezes);
+  the jumbling rows' program-job route in the command table (KN5; H-08's `reads` name and price the rows since the
+  freeze, CM.18);
   LB3.1's other rows as language code ("Menus and pinned letters" and "D and release accounting"; thirteen LB3.1 rows
   are built, under `library` above,
   and "Correction-combination solve" is a research tier candidate), and LB3.8's named cap with ΔN, Δn_h, Δu, the moved sets and the prefix digests; BM5's review
@@ -3174,7 +3178,7 @@ run or not applicable is no pass (PHS.63).
   plane for its twists, and which engine names one is not settled. The language entry `jumble_repair` reads the
   named cap's list under the built-in column's repair-list exception (LP2's pull request 229) and runs as no job of
   the layer (the program-job route, above); LP2's job serves the same list (pull request 326, taken up above).
-- Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
+- Drafts, which freeze with the IR or stay open past H-08's freeze, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
 

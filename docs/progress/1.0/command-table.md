@@ -112,6 +112,10 @@ The old busy-bearing rows now have lanes. Commit rows use `commit`; `session.res
     `operation.preview.cancel`, since a preview slot is no workspace object and a reuse needs a fresh preview
     (LB7.2); and `grip.select` and `input.destination.set`, input routing that the shell owns (section 1) and the
     workspace does not hold, which give a receipt and no undo target, as a view row does (EV4.21).
+  - `set.save` takes the optional `replace: Bool?` beside `members`, `kind` and `name`, an amendment in the
+    language delta (U1-057: replacing a named set stays explicit; LP2's pull request 337). A save under a name
+    that holds a saved set is refused with `KN5:input.saved_set_exists`, and the saved set is kept, unless the
+    invocation carries `replace: true` (chapter 13 section 9).
 
 - **CM.18 [D]** Top-level `reads` lists the rows a program reads through a host bridge at the LP3 freeze (KN2.3,
   KN2.4, LG2.8; owner item 7 of the [LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)).

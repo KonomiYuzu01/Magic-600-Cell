@@ -60,6 +60,7 @@ DELTA_REQUIRED_ARGUMENTS = {
     "recording.convert": {"recording", "target"},
     "twist.apply": {"cap", "rotation", "token"},
     "workspace.set": {"record", "payload", "provenance"},
+    "set.save": {"members", "kind", "name"},
 }
 SERVICES = [
     {"id": "kernel.snapshot.open", "kind": "service", "caller": "both", "lane": "none",

@@ -107,10 +107,12 @@ pub fn program_channel() -> Caller {
     Caller::Runtime { run: "run-1".to_owned() }
 }
 
-/// Arguments with the names the row takes, each a placeholder: the layer checks the names before it dispatches.
+/// Arguments with the names the row requires, each a placeholder: the layer checks the names before it dispatches.
+/// An optional argument, whose type H-08 writes with a trailing `?` (`set.save`'s `replace`), is left out.
 pub fn placeholder_args(table: &Table, row: &str) -> Value {
     let row = table.row(row).unwrap_or_else(|| panic!("{row} is a stored row"));
-    Value::Object(row.plain_arguments().map(|name| (name.to_owned(), Value::Int(1))).collect())
+    let required = |name: &&str| row.arguments.get(*name).is_some_and(|ty| !ty.ends_with('?'));
+    Value::Object(row.plain_arguments().filter(required).map(|name| (name.to_owned(), Value::Int(1))).collect())
 }
 
 pub fn geometry() -> &'static GeometryInput {
