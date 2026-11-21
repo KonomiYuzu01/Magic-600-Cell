@@ -22,7 +22,9 @@ shell are not built yet and will write it; one JSON object per line, QPC values 
 Cold (DRAFT; the sources do not define it): a new product process, no product process running at launch, a fresh copy
 of the session fixture (PHS.64), and at least 20 s since a previous product process exited (run_scene.ps1's pause), or
 null when none ran before in this sign-in. The machine is not rebooted and the OS file cache is not flushed; a
-reboot-cold reading would be stricter and is the owner's choice.
+reboot-cold reading would be stricter and is the owner's choice. Earlier launches of the same build are allowed: C9
+launches a fresh build once, untimed, before its three runs (unattended.ps1 U6), because the first launch of new
+binaries also pays Windows' first-run checks (PR 387), and records that launch's time apart, never among the runs.
 
 A run without a passing `first_correct_frame` row, or without `session_opened` or `runtime_loaded`, has failed: the
 product did not reach the bar's end point, so the verdict is not met. A run that is not cold, repeats an event, or
@@ -55,7 +57,8 @@ BAR = {'text': ('Charter E3 (owner, 18 November 2026): 3 s, cold start, with an 
        'limit_s': LIMIT_S, 'runs_min': RUNS_MIN,
        'source': ['charter E3', 'owner decision 2026-11-18', 'RTE.42', 'CT-RTE-11', 'PHS.64']}
 DRAFTS = ['log schema magic600-c9-startup-v1', 'start = launcher QPC before process creation',
-          'cold = new process, none running, fresh session copy, >= 20 s since the last exit; no reboot']
+          'cold = new process, none running, fresh session copy, >= 20 s since the last exit; no reboot',
+          'one untimed launch of the same build before the runs (first-run checks of new binaries), not counted']
 
 
 def analyze(rows):

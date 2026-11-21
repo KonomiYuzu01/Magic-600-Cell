@@ -14,7 +14,7 @@ choice marked DRAFT here is the integrator's draft (PHS.65) until the owner or a
 | `ui_skew.py` | Route B check B2: UI frame to 3D frame skew from `ui_frame` rows and PresentMon; no bar, numbers only |
 | `lx4.py` | LX-4: the schedule (10,800 S/M/L samples), posted window messages (`post`, Windows only; `--dry-run` posts nothing) and the RTE.49/RTE.53 analysis |
 | `lx2.py` | LX-2 in the shell (RTE.42 conditions 3 and 4): each metered fault's limit windows (its job runs to its end with no commit) and every fault's turn windows, with LX-4 echo samples (`post`, Windows only; `--dry-run` posts nothing), and the per-fault analysis (E2 over turn windows; echo and gate over a metered fault's limit windows, the others' turn windows) with conditions 1 and 2 from c600-lx2-faults' record |
-| `runbook.py` | The owner-machine batch in order (labels A1 to A3, U1 to U8); `--dry-run` checks prerequisites without a GPU |
+| `runbook.py` | The owner-machine batch in order (labels A1 to A3, U1 to U8); `--dry-run` checks prerequisites without a GPU, including that every build comes from the checkout's HEAD |
 | `unattended.ps1` | Runs U1 to U8 with one command from an administrator PowerShell (`-SceneBuild`, `-StageBuild`, `-ProductBuild`, `-Steps`, `-Suffix`, `-Retries`, `-DryRun`); in a shell run the watcher, capture and poster start before the shell, and a run with owner input or a lost foreground is set aside and run again, at most twice; for U7 alone the script's own error mode (inherited by the processes it starts) keeps the injected crashes out of Windows Error Reporting |
 | `foreground.py` | The shell-run watcher `unattended.ps1` starts: owner input (GetLastInputInfo), the shell's window, and with `--hold` topmost plus one SetForegroundWindow (no foreground-lock workaround) and a lost foreground |
 | `evidence.py` | The shared record format `magic600-c9-measure-record-v1` and log reading |
@@ -58,7 +58,9 @@ QPC before process creation), `session_opened`, `runtime_loaded`, `first_correct
   windows) counts the same way.
 - **E3** (owner, 18 November 2026): 3 s, cold start, with an existing session and runtime loaded, to the first
   correct frame, in each of three cold runs. A run that never reaches a passing first correct frame fails the bar.
-  Cold (DRAFT): new process, none running, fresh session copy, at least 20 s since the last exit, no reboot.
+  Cold (DRAFT): new process, none running, fresh session copy, at least 20 s since the last exit, no reboot. One
+  untimed launch of the same build comes first (the first launch of new binaries also pays Windows' first-run checks,
+  PR 387); its time is recorded apart and never counted.
 
 ## Records
 
