@@ -1,0 +1,7 @@
+{
+  "name": "magic600-tool-lilex",
+  "private": true,
+  "dependencies": {
+    "@fontsource/lilex": "5.3.0"
+  }
+}

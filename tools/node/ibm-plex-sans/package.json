@@ -1,0 +1,7 @@
+{
+  "name": "magic600-tool-ibm-plex-sans",
+  "private": true,
+  "dependencies": {
+    "@ibm/plex-sans": "2.0.0"
+  }
+}
