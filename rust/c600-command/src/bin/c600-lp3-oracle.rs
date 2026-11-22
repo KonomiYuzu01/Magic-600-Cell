@@ -27,7 +27,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use c600_command::{
     code, draft_args, word_draft, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Receipt, Secret,
@@ -426,7 +426,7 @@ fn replay(kernel: &Arc<Kernel>, case: &Value, route: Route, build: &str) -> Resu
     let initial = start.digest().to_owned();
 
     let secret = Secret::launch();
-    let layer = CommandLayer::new(
+    let mut layer = CommandLayer::new(
         kernel.clone(),
         Table::h08(),
         secret.clone(),
@@ -435,6 +435,10 @@ fn replay(kernel: &Arc<Kernel>, case: &Value, route: Route, build: &str) -> Resu
         start,
         protected,
     );
+    // The oracle loop commits each preview on the frame that presents it, a preview after a refused step included;
+    // ADR-D01.9's settle interval, which holds that press, is c600-command's `tests/settle.rs` concern and not an
+    // oracle case's.
+    layer.set_settle(Duration::ZERO);
     let shell = Shell::new(secret, &case_id);
     let mut session = Session { layer, shell, frames: HeadlessFrames::new(), route, receipts: Vec::new() };
     let mut memo = HashMap::new();
