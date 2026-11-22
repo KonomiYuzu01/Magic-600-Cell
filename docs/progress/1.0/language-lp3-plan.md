@@ -179,7 +179,7 @@ One pull request per milestone; each names the checks that ran.
 | C7 | Durable receipts and undo through the session store | M6 (on main), C1 and LP2's KN5 implementation | Built in part (section 8) |
 | C8 | The jumbling tool | M5 (on main) | Built in part (section 8) |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze (signed 16 November 2026, ADR-R01); the owner's runs | Started on 18 November 2026 (owner): its components in a line of their own (section 8) |
-| C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | The owner answered the exit card on 20 November 2026; the freeze pull request lands last (section 11) |
+| C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | The owner answered the exit card on 20 November 2026; the freeze pull request lands last (section 11); signed by the owner on 22 November 2026 ([decision](../../wiki/decisions/owner-decisions-2026-11-22-c10-lp2-exit.md)) |
 
 ## 5. C1: the command layer and the oracle loop
 
@@ -827,8 +827,8 @@ Questions are batched (owner, 16 November 2026): at most one card per milestone,
 - C1 to C4: none. The command table's choices are drafts that freeze at LP3.
 - C9: none; the owner-machine runs follow PHS.64 and are done together.
 - C10: answered by the owner on 20 November 2026
-  ([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)); section 11. The C10 sign-off
-  stays open.
+  ([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)); section 11. The owner signed
+  C10 on 22 November 2026 ([decision](../../wiki/decisions/owner-decisions-2026-11-22-c10-lp2-exit.md)).
 
 ## 11. C10: the LP3 exit
 

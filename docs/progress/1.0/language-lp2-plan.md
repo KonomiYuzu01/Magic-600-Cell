@@ -380,6 +380,10 @@ progress item is ticked until the owner signs LP2's exit, on one card with LP3's
 Evidence class throughout: source and fixture (PHS.19). Nothing here is Windows interaction, DirectX, long-session or
 performance evidence.
 
+**Signed on 22 November 2026.** The owner signed LP2's exit on `0260e6b1`, on one card with LP3's C10
+([decision](../../wiki/decisions/owner-decisions-2026-11-22-c10-lp2-exit.md)). LP2 has exited. Under that page's
+reading (a), reading 17's eight owner-machine IDs move to the owner-machine sitting of the post-freeze on-screen line.
+
 - **Candidate.** `0260e6b1f17485a1e3689e867c73435c6cfe5aac`, main after
   [pull request 401](https://github.com/KonomiYuzu01/Magic-600-Cell/pull/401). LP2 exits on it, with no new candidate
   (item 6). Changes merged after it, pull request 404 among them, are not part of it; none of them edits a line that
