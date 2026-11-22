@@ -1040,3 +1040,11 @@ Gallery workspace.
 - Reduced motion (Appearance dock, the gallery's Motion page, `motion.reduced.set`) shows every motion's still
   picture at once. Cue slots carry no audio.
 - The core tests include a token lint: no colour is written in `app/Chrome/Ui` or in the lab's wiring of it.
+
+### A5 stage 9: the same frame in the product shell
+
+The chrome library has no second copy: `renderer/shell/build_shell.py` stages `app/Chrome` and `data/design` into the
+shell's build. Three members exist for a host whose picture lies beneath a transparent window: `ChromeFrame.OpenGround`
+(the ground is painted everywhere but the Global view), `ChromeFrame.Opening` (that rectangle) and
+`ChromeFrame.Claims` (whether the chrome takes a key). Look Lab sets none of them. See `renderer/shell/README.md`,
+"The frame (A5 stage 9)".

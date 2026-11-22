@@ -53,6 +53,8 @@ public sealed partial class ViewFrame : PanelContainer
     public bool Focused { get; private set; }
     // With labels off a mark is its glyph alone; its words stay in the tooltip.
     public bool ShowLabels { get; set; } = true;
+    // An open view frame draws its border only: the host's picture lies beneath the window.
+    public bool Open { get; set; }
     private readonly TokenSet tokens;
 
     public ViewFrame(string name, TokenSet tokens)
@@ -98,7 +100,7 @@ public sealed partial class ViewFrame : PanelContainer
     public void ClearMarks() { foreach (Node child in Marks.GetChildren()) { Marks.RemoveChild(child); child.QueueFree(); } }
 
     // The visible focus indicator: keys route to the hovered view first (ADR-D01.19).
-    public void SetFocused(bool on) { Focused = on; ThemeTypeVariation = on ? "ViewFrameFocus" : "ViewFrame"; }
+    public void SetFocused(bool on) { Focused = on; ThemeTypeVariation = (Open ? "ViewFrameOpen" : "ViewFrame") + (on ? "Focus" : ""); }
 }
 
 // The fixed frame (ADR-D01.36): top bar, three docks that each show one panel at a time, and a centre pane group
@@ -266,6 +268,19 @@ public sealed partial class ChromeFrame : Control
     // Keys of the host itself, outside the command table: a lab uses them for its compare and tour keys.
     public IDictionary<string, Action> HostKeys { get; } = new Dictionary<string, Action>(StringComparer.Ordinal);
 
+    // A host whose picture lies beneath a transparent window (the product shell on route B) opens the ground over
+    // the Global view: every other region stays opaque chrome.
+    public bool OpenGround { get; set; }
+    public Rect2 Opening => OpenGround && Global != null && IsInstanceValid(Global) && Global.Slot.IsVisibleInTree() ? Global.Slot.GetGlobalRect() : default;
+
+    // Whether the chrome takes this key. A host that also routes keys elsewhere asks first, so that no key does both.
+    public bool Claims(string key, Func<Binding, bool>? can = null)
+    {
+        if (KeyCapture != null || OpenOverlay != null || HostKeys.ContainsKey(key)) return true;
+        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return true;
+        return Keys?.Resolve(key, KeyContexts()) is { } binding && (can == null || can(binding));
+    }
+
     public bool Press(string key)
     {
         if (KeyCapture is { } capture) { KeyCapture = null; capture(key); return true; }
@@ -306,8 +321,9 @@ public sealed partial class ChromeFrame : Control
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
-        var window = new PanelContainer { ThemeTypeVariation = "FrameGround" }; root = window;
+        var window = new PanelContainer { ThemeTypeVariation = OpenGround ? "FrameOpen" : "FrameGround" }; root = window;
         AddChild(window); MoveChild(window, 0); window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        if (OpenGround) window.AddChild(new GroundMask(this));
         var column = (VBoxContainer)Tight(new VBoxContainer()); window.AddChild(column);
         // Feedback in place: the notice has the quiet slot of the top bar, so it never moves the layout.
         if (Notice != null && IsInstanceValid(Notice) && Notice.GetParent() == null) Notice.QueueFree();
@@ -321,6 +337,7 @@ public sealed partial class ChromeFrame : Control
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
         if (topStrip != null && !focus) centre.AddChild(topStrip);
         Global = View("Global", globalContent); Local = View("Local", localContent);
+        if (OpenGround) { Global.Open = true; Global.SetFocused(false); }
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
         if (strip != null) centre.AddChild(strip);
         if (!focus) { centre.AddChild(BottomDock()); middle.AddChild(SideDock(DockSide.Right)); }
@@ -494,5 +511,30 @@ public sealed partial class ChromeFrame : Control
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent);
+    }
+}
+
+// The ground of a frame over a transparent window: the window colour everywhere but the opening.
+internal sealed partial class GroundMask : Control
+{
+    private readonly ChromeFrame frame; private Rect2 last;
+    public GroundMask(ChromeFrame frame) { this.frame = frame; Name = "GroundMask"; MouseFilter = MouseFilterEnum.Ignore; }
+
+    public override void _Process(double delta)
+    {
+        Rect2 now = frame.Opening;
+        if (now != last) { last = now; QueueRedraw(); }
+    }
+
+    public override void _Draw()
+    {
+        Color ground = frame.Tokens.C("window.background");
+        var all = new Rect2(Vector2.Zero, Size);
+        Rect2 open = new Rect2(last.Position - GlobalPosition, last.Size).Intersection(all);
+        if (!open.HasArea()) { DrawRect(all, ground); return; }
+        DrawRect(new Rect2(0, 0, Size.X, open.Position.Y), ground);
+        DrawRect(new Rect2(0, open.End.Y, Size.X, Size.Y - open.End.Y), ground);
+        DrawRect(new Rect2(0, open.Position.Y, open.Position.X, open.Size.Y), ground);
+        DrawRect(new Rect2(open.End.X, open.Position.Y, Size.X - open.End.X, open.Size.Y), ground);
     }
 }

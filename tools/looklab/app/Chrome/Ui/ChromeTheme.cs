@@ -70,6 +70,12 @@ public static class ChromeTheme
         }
         theme.SetTypeVariation("FrameGround", "PanelContainer"); theme.SetStylebox("panel", "FrameGround", Box(t, "window.background", null, "radius.panel", 0));
         theme.SetTypeVariation("ViewFrame", "PanelContainer"); theme.SetStylebox("panel", "ViewFrame", Box(t, "window.background", "panel.border", "radius.panel", 0));
+        theme.SetTypeVariation("FrameOpen", "PanelContainer"); theme.SetStylebox("panel", "FrameOpen", new StyleBoxEmpty());
+        foreach ((string open, string edge) in new[] { ("ViewFrameOpen", "panel.border"), ("ViewFrameOpenFocus", "control.focus") })
+        {
+            StyleBoxFlat box = Box(t, "window.background", edge, "radius.panel", 0, t.Px("border.width")); box.DrawCenter = false;
+            theme.SetTypeVariation(open, "PanelContainer"); theme.SetStylebox("panel", open, box);
+        }
         theme.SetTypeVariation("ViewFrameFocus", "PanelContainer"); theme.SetStylebox("panel", "ViewFrameFocus", Box(t, "window.background", "control.focus", "radius.panel", 0));
         theme.SetTypeVariation("Chip", "PanelContainer"); theme.SetStylebox("panel", "Chip", Box(t, "panel.background", "panel.border", "radius.control", s1));
         var rowBox = Box(t, t.Lines ? "panel.background" : "popup.background", null, "radius.control", s1);
