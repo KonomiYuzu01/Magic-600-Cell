@@ -3,7 +3,7 @@
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
 ## [2026-11-22] update | C9's LX-2 and LX-4 analysed again under the 100 ms bars
-The recorded U7 and U8 data was analysed again with the changed C9 tools under the owner's decision of 22 November 2026, with no new run: LX-2 and LX-4 are still not met, only because of samples without a confirmed frame (LX-2's echo in four of seven faults, two syntax cells of LX-4), while every timed latency is within its bar, so under RTE.21 LQ9 reopens and the numbers go to the owner ([results](evidence/c9-sitting-results.md)).
+The recorded U7 and U8 data was analysed again with the changed C9 tools under the owner's decision of 22 November 2026, items 1 to 5 and 10, with no new run: LX-2 and LX-4 are met on the samples with a confirmed frame, and the confirmation gap is published as a known limit (48 of 1,062 LX-2 echo samples, 26 of 110 in alloc_ceiling; 16 LX-4 samples), so LQ9 does not reopen ([results](evidence/c9-sitting-results.md)).
 
 ## [2026-11-22] decision | ADR-D01 and the frozen clauses
 The owner decided that LP3 freezes without waiting for the design-system ADR, that ADR-D01 (revision 3, content approved, still a draft until A7) wins over the frozen clauses it conflicts with without a versioned-change review, and that its command-table rows come after the freeze: view and workspace rows as ordinary edits, commit rows as separate work with KN5 boundary attack tests ([record](decisions/owner-decisions-2026-11-22-adr-d01-overrules.md)).

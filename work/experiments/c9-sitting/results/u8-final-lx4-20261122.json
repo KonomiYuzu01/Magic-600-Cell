@@ -3,7 +3,7 @@
   "measurement": "lx4-editor-latency",
   "evidence_kind": "performance",
   "synthetic": false,
-  "created_utc": "2026-11-22T03:03:16Z",
+  "created_utc": "2026-11-22T03:20:40Z",
   "build_identity": "c9-product-2efda50d54592f20",
   "inputs": [
     {
@@ -48,7 +48,7 @@
     "implementation": "CPython",
     "tool": {
       "name": "lx4.py",
-      "sha256": "33cfd55cec7f3454f4ba36629e8b9c6861c96757e5ede9a9864f3094be3d20d1"
+      "sha256": "a9c1466fd154010fa0038b429826fc5e5586724ac286ca21fd9bbca232d58434"
     },
     "helpers": {
       "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
@@ -74,7 +74,7 @@
   ],
   "bar": {
     "text": "RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1,000/1,500 ms, every bar below 100 ms raised to 100 ms (owner, 22 November 2026, item 1); RTE.53: every bar in each of three series at S, M and L on both puzzles, with the renderer gate and charter E2 in the same runs",
-    "rule": "timed post to the core-confirmed present of the first frame showing the endpoint, matched by frame id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 S/M/L samples counted, each sample without a confirmed frame one failed sample above its bars (owner, 22 November 2026, item 2)",
+    "rule": "timed post to the core-confirmed present of the first frame showing the endpoint, matched by frame id; nearest-rank p95 and p99 per puzzle, series, size and metric over the samples with a confirmed frame; 10,800 S/M/L samples accounted for, each sample without a confirmed frame counted apart in the confirmation gap, a known limit (owner, 22 November 2026, item 10)",
     "bars_ms": {
       "echo": {
         "S": [
@@ -177,7 +177,7 @@
       "RTE.53",
       "CT-RTE-12",
       "CT-EV1-06",
-      "owner decision 2026-11-22 (LX bars, items 1 and 2)"
+      "owner decision 2026-11-22 (LX bars, items 1, 2 and 10)"
     ]
   },
   "result": {
@@ -211,7 +211,7 @@
         "reasons": []
       }
     ],
-    "decision": "fail-s-m",
+    "decision": "all-bars",
     "series": [
       {
         "puzzle": "jumble-off",
@@ -226,7 +226,7 @@
           "p99": 93.3359,
           "max": 93.3359,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -247,7 +247,7 @@
           "p99": 105.9288,
           "max": 105.9288,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -268,7 +268,7 @@
           "p99": 65.7169,
           "max": 65.7169,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -289,7 +289,7 @@
           "p99": 140.8776,
           "max": 140.8776,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -310,7 +310,7 @@
           "p99": 73.1003,
           "max": 73.1003,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -331,7 +331,7 @@
           "p99": 89.2918,
           "max": 89.2918,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -352,7 +352,7 @@
           "p99": 88.6189,
           "max": 88.6189,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -373,7 +373,7 @@
           "p99": 88.4413,
           "max": 88.4413,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -394,7 +394,7 @@
           "p99": 72.2703,
           "max": 72.2703,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -415,7 +415,7 @@
           "p99": 107.1207,
           "max": 107.1207,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -436,7 +436,7 @@
           "p99": 74.3553,
           "max": 74.3553,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -457,7 +457,7 @@
           "p99": 92.8412,
           "max": 92.8412,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -478,7 +478,7 @@
           "p99": 89.4514,
           "max": 89.4514,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -499,7 +499,7 @@
           "p99": 90.5519,
           "max": 90.5519,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -520,7 +520,7 @@
           "p99": 76.9753,
           "max": 76.9753,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -541,7 +541,7 @@
           "p99": 104.307,
           "max": 104.307,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -562,7 +562,7 @@
           "p99": 72.6533,
           "max": 72.6533,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -583,7 +583,7 @@
           "p99": 90.4809,
           "max": 90.4809,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -604,7 +604,7 @@
           "p99": 206.7101,
           "max": 206.7101,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           1000,
@@ -625,7 +625,7 @@
           "p99": 93.8358,
           "max": 94.0016,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -646,7 +646,7 @@
           "p99": 111.052,
           "max": 111.0905,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -667,7 +667,7 @@
           "p99": 81.8078,
           "max": 82.5376,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -688,7 +688,7 @@
           "p99": 156.7343,
           "max": 160.1205,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -709,7 +709,7 @@
           "p99": 79.2069,
           "max": 82.0336,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -730,7 +730,7 @@
           "p99": 93.6848,
           "max": 94.7458,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -751,7 +751,7 @@
           "p99": 94.1201,
           "max": 98.7282,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -772,7 +772,7 @@
           "p99": 94.4933,
           "max": 98.6266,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -793,7 +793,7 @@
           "p99": 78.0009,
           "max": 82.5177,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -814,7 +814,7 @@
           "p99": 127.3607,
           "max": 141.7585,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -835,7 +835,7 @@
           "p99": 77.48,
           "max": 78.0636,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -856,7 +856,7 @@
           "p99": 94.4712,
           "max": 94.5384,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -877,7 +877,7 @@
           "p99": 93.6428,
           "max": 93.7531,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -898,7 +898,7 @@
           "p99": 94.2472,
           "max": 98.2117,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -919,7 +919,7 @@
           "p99": 77.8192,
           "max": 77.9981,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -940,7 +940,7 @@
           "p99": 126.3044,
           "max": 126.4522,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -961,7 +961,7 @@
           "p99": 77.6508,
           "max": 82.2544,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -982,7 +982,7 @@
           "p99": 94.462,
           "max": 94.9295,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -997,13 +997,13 @@
         "metric": "dependents",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 191.43677676767678,
           "p50": 190.8034,
           "p95": 205.7598,
           "p99": 207.3249,
-          "max": null
+          "max": 207.3249,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           1000,
@@ -1024,7 +1024,7 @@
           "p99": 94.3212,
           "max": 98.3792,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -1039,13 +1039,13 @@
         "metric": "diagnostics",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 107.79873232323233,
           "p50": 107.6235,
           "p95": 110.6395,
           "p99": 115.4504,
-          "max": null
+          "max": 115.4504,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           500,
@@ -1066,7 +1066,7 @@
           "p99": 81.4202,
           "max": 81.8777,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1087,7 +1087,7 @@
           "p99": 159.9839,
           "max": 171.6975,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -1108,7 +1108,7 @@
           "p99": 77.3673,
           "max": 77.6379,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1123,19 +1123,19 @@
         "metric": "syntax",
         "stats": {
           "n": 100,
+          "mean": 91.11996938775509,
+          "p50": 91.0122,
+          "p95": 94.0526,
+          "p99": 99.3165,
+          "max": 99.3165,
           "timed": 98,
-          "failed": 2,
-          "mean": null,
-          "p50": 91.082,
-          "p95": 94.0668,
-          "p99": null,
-          "max": null
+          "unconfirmed": 2
         },
         "bar_ms": [
           100,
           150
         ],
-        "met": false
+        "met": true
       },
       {
         "puzzle": "jumble-off",
@@ -1150,7 +1150,7 @@
           "p99": 93.7334,
           "max": 93.8427,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1171,7 +1171,7 @@
           "p99": 94.5874,
           "max": 94.7614,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -1192,7 +1192,7 @@
           "p99": 77.955,
           "max": 81.5667,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1213,7 +1213,7 @@
           "p99": 125.073,
           "max": 125.4162,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -1228,13 +1228,13 @@
         "metric": "stale",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 74.2329404040404,
           "p50": 74.1162,
           "p95": 77.2803,
           "p99": 77.5984,
-          "max": null
+          "max": 77.5984,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -1255,7 +1255,7 @@
           "p99": 94.0258,
           "max": 94.248,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1276,7 +1276,7 @@
           "p99": 94.1039,
           "max": 98.4605,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1297,7 +1297,7 @@
           "p99": 98.6221,
           "max": 98.6627,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -1318,7 +1318,7 @@
           "p99": 77.9949,
           "max": 82.4292,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1339,7 +1339,7 @@
           "p99": 125.7106,
           "max": 132.3196,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -1360,7 +1360,7 @@
           "p99": 77.6105,
           "max": 81.9842,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1375,13 +1375,13 @@
         "metric": "syntax",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 90.7833898989899,
           "p50": 90.7289,
           "p95": 93.7047,
           "p99": 94.2031,
-          "max": null
+          "max": 94.2031,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -1402,7 +1402,7 @@
           "p99": 194.139,
           "max": 194.1977,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           1000,
@@ -1423,7 +1423,7 @@
           "p99": 98.4851,
           "max": 98.5278,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -1444,7 +1444,7 @@
           "p99": 111.1974,
           "max": 114.996,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -1465,7 +1465,7 @@
           "p99": 77.5672,
           "max": 78.4245,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1486,7 +1486,7 @@
           "p99": 157.9116,
           "max": 159.5396,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -1507,7 +1507,7 @@
           "p99": 77.7994,
           "max": 82.0478,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1528,7 +1528,7 @@
           "p99": 94.4363,
           "max": 94.6629,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1543,13 +1543,13 @@
         "metric": "completion",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 90.2326,
           "p50": 89.9612,
           "p95": 93.4056,
           "p99": 98.2687,
-          "max": null
+          "max": 98.2687,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -1570,7 +1570,7 @@
           "p99": 94.4134,
           "max": 94.4291,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -1591,7 +1591,7 @@
           "p99": 77.7763,
           "max": 77.8436,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1612,7 +1612,7 @@
           "p99": 126.0981,
           "max": 126.3515,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -1633,7 +1633,7 @@
           "p99": 77.2478,
           "max": 77.7495,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1648,13 +1648,13 @@
         "metric": "syntax",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 91.15144141414142,
           "p50": 91.0245,
           "p95": 93.8932,
           "p99": 94.7673,
-          "max": null
+          "max": 94.7673,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -1675,7 +1675,7 @@
           "p99": 94.1086,
           "max": 94.1737,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1696,7 +1696,7 @@
           "p99": 94.252,
           "max": 94.4204,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -1711,13 +1711,13 @@
         "metric": "echo",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 74.62906464646464,
           "p50": 74.4755,
           "p95": 77.6784,
           "p99": 82.6203,
-          "max": null
+          "max": 82.6203,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -1738,7 +1738,7 @@
           "p99": 123.5584,
           "max": 125.4308,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -1759,7 +1759,7 @@
           "p99": 77.4313,
           "max": 77.5503,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1780,7 +1780,7 @@
           "p99": 94.2791,
           "max": 94.3989,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1801,7 +1801,7 @@
           "p99": 207.1553,
           "max": 207.6574,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           1000,
@@ -1822,7 +1822,7 @@
           "p99": 88.8357,
           "max": 88.8357,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -1843,7 +1843,7 @@
           "p99": 106.1333,
           "max": 106.1333,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -1864,7 +1864,7 @@
           "p99": 73.3672,
           "max": 73.3672,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1885,7 +1885,7 @@
           "p99": 139.7936,
           "max": 139.7936,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -1906,7 +1906,7 @@
           "p99": 76.4814,
           "max": 76.4814,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1927,7 +1927,7 @@
           "p99": 90.746,
           "max": 90.746,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1948,7 +1948,7 @@
           "p99": 89.8982,
           "max": 89.8982,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -1969,7 +1969,7 @@
           "p99": 92.5523,
           "max": 92.5523,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -1990,7 +1990,7 @@
           "p99": 72.7273,
           "max": 72.7273,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2011,7 +2011,7 @@
           "p99": 106.8721,
           "max": 106.8721,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -2032,7 +2032,7 @@
           "p99": 71.374,
           "max": 71.374,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2053,7 +2053,7 @@
           "p99": 91.5177,
           "max": 91.5177,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2074,7 +2074,7 @@
           "p99": 90.5653,
           "max": 90.5653,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2095,7 +2095,7 @@
           "p99": 90.403,
           "max": 90.403,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -2116,7 +2116,7 @@
           "p99": 73.7013,
           "max": 73.7013,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2137,7 +2137,7 @@
           "p99": 108.714,
           "max": 108.714,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -2158,7 +2158,7 @@
           "p99": 74.4682,
           "max": 74.4682,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2179,7 +2179,7 @@
           "p99": 92.2431,
           "max": 92.2431,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2200,7 +2200,7 @@
           "p99": 210.199,
           "max": 210.199,
           "timed": 1,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           1000,
@@ -2221,7 +2221,7 @@
           "p99": 93.9009,
           "max": 98.4815,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -2242,7 +2242,7 @@
           "p99": 111.2643,
           "max": 115.1287,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -2263,7 +2263,7 @@
           "p99": 77.7983,
           "max": 77.8496,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2284,7 +2284,7 @@
           "p99": 144.2742,
           "max": 148.8763,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -2305,7 +2305,7 @@
           "p99": 77.5144,
           "max": 82.0051,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2326,7 +2326,7 @@
           "p99": 94.663,
           "max": 102.237,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2347,7 +2347,7 @@
           "p99": 94.1195,
           "max": 94.1325,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2368,7 +2368,7 @@
           "p99": 94.6079,
           "max": 94.8075,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -2389,7 +2389,7 @@
           "p99": 77.8131,
           "max": 82.468,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2410,7 +2410,7 @@
           "p99": 115.5251,
           "max": 115.685,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -2431,7 +2431,7 @@
           "p99": 77.313,
           "max": 77.8916,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2452,7 +2452,7 @@
           "p99": 94.4201,
           "max": 94.7713,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2473,7 +2473,7 @@
           "p99": 94.048,
           "max": 98.4762,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2494,7 +2494,7 @@
           "p99": 93.9879,
           "max": 94.591,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -2515,7 +2515,7 @@
           "p99": 78.4014,
           "max": 82.6909,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2536,7 +2536,7 @@
           "p99": 110.9074,
           "max": 111.1341,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -2557,7 +2557,7 @@
           "p99": 77.5011,
           "max": 77.5158,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2572,19 +2572,19 @@
         "metric": "syntax",
         "stats": {
           "n": 100,
+          "mean": 91.1756775510204,
+          "p50": 90.7857,
+          "p95": 94.1831,
+          "p99": 94.656,
+          "max": 94.656,
           "timed": 98,
-          "failed": 2,
-          "mean": null,
-          "p50": 90.8799,
-          "p95": 94.2532,
-          "p99": null,
-          "max": null
+          "unconfirmed": 2
         },
         "bar_ms": [
           100,
           100
         ],
-        "met": false
+        "met": true
       },
       {
         "puzzle": "jumble-on",
@@ -2599,7 +2599,7 @@
           "p99": 208.6924,
           "max": 208.7551,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           1000,
@@ -2620,7 +2620,7 @@
           "p99": 98.0958,
           "max": 98.3118,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -2641,7 +2641,7 @@
           "p99": 110.6109,
           "max": 110.6541,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -2662,7 +2662,7 @@
           "p99": 77.8447,
           "max": 78.1519,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2683,7 +2683,7 @@
           "p99": 148.4029,
           "max": 157.7046,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -2698,13 +2698,13 @@
         "metric": "stale",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 74.04020808080809,
           "p50": 73.9133,
           "p95": 76.746,
           "p99": 81.4669,
-          "max": null
+          "max": 81.4669,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -2725,7 +2725,7 @@
           "p99": 94.2855,
           "max": 94.5734,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2746,7 +2746,7 @@
           "p99": 93.4826,
           "max": 93.6871,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2767,7 +2767,7 @@
           "p99": 94.2387,
           "max": 94.4498,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -2788,7 +2788,7 @@
           "p99": 77.8683,
           "max": 77.9745,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2809,7 +2809,7 @@
           "p99": 110.6767,
           "max": 110.8991,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -2830,7 +2830,7 @@
           "p99": 77.0327,
           "max": 77.1074,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2845,13 +2845,13 @@
         "metric": "syntax",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 91.22150808080808,
           "p50": 91.1468,
           "p95": 93.9448,
           "p99": 94.7794,
-          "max": null
+          "max": 94.7794,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -2872,7 +2872,7 @@
           "p99": 93.6557,
           "max": 93.7229,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2893,7 +2893,7 @@
           "p99": 95.0146,
           "max": 98.4979,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -2914,7 +2914,7 @@
           "p99": 77.8724,
           "max": 82.5152,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2935,7 +2935,7 @@
           "p99": 115.3424,
           "max": 115.7053,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -2956,7 +2956,7 @@
           "p99": 77.4454,
           "max": 81.9919,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2977,7 +2977,7 @@
           "p99": 94.5644,
           "max": 99.0557,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -2992,13 +2992,13 @@
         "metric": "dependents",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 190.9819,
           "p50": 191.1007,
           "p95": 193.7299,
           "p99": 199.154,
-          "max": null
+          "max": 199.154,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           1000,
@@ -3013,13 +3013,13 @@
         "metric": "completion",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 90.62775858585859,
           "p50": 90.4876,
           "p95": 93.7628,
           "p99": 94.0712,
-          "max": null
+          "max": 94.0712,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           150,
@@ -3040,7 +3040,7 @@
           "p99": 110.6571,
           "max": 110.9903,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -3061,7 +3061,7 @@
           "p99": 77.5492,
           "max": 77.8022,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3082,7 +3082,7 @@
           "p99": 156.2553,
           "max": 159.9311,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           500,
@@ -3103,7 +3103,7 @@
           "p99": 77.5903,
           "max": 78.0499,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3124,7 +3124,7 @@
           "p99": 94.0966,
           "max": 94.2625,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3139,13 +3139,13 @@
         "metric": "completion",
         "stats": {
           "n": 100,
-          "timed": 99,
-          "failed": 1,
-          "mean": null,
+          "mean": 90.59412222222223,
           "p50": 90.7998,
           "p95": 93.6241,
           "p99": 98.2111,
-          "max": null
+          "max": 98.2111,
+          "timed": 99,
+          "unconfirmed": 1
         },
         "bar_ms": [
           100,
@@ -3166,7 +3166,7 @@
           "p99": 94.0826,
           "max": 94.3625,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           200,
@@ -3187,7 +3187,7 @@
           "p99": 77.6122,
           "max": 77.6192,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3208,7 +3208,7 @@
           "p99": 115.5321,
           "max": 115.5501,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -3229,7 +3229,7 @@
           "p99": 82.0885,
           "max": 82.11,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3250,7 +3250,7 @@
           "p99": 94.4947,
           "max": 94.5908,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3271,7 +3271,7 @@
           "p99": 94.106,
           "max": 98.5668,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3292,7 +3292,7 @@
           "p99": 93.9457,
           "max": 99.0418,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           150,
@@ -3313,7 +3313,7 @@
           "p99": 77.9931,
           "max": 78.0314,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3334,7 +3334,7 @@
           "p99": 110.8246,
           "max": 126.2998,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           250,
@@ -3355,7 +3355,7 @@
           "p99": 77.4551,
           "max": 81.9335,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3376,7 +3376,7 @@
           "p99": 94.6805,
           "max": 95.0025,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           100,
@@ -3397,7 +3397,7 @@
           "p99": 208.2334,
           "max": 210.474,
           "timed": 100,
-          "failed": 0
+          "unconfirmed": 0
         },
         "bar_ms": [
           1000,
@@ -3413,7 +3413,114 @@
       "smoke_samples": 40
     },
     "timed_sml_samples": 10786,
-    "failed_sml_samples": 14,
+    "unconfirmed_sml_samples": 14,
+    "confirmation_gap": {
+      "source": "owner decision 2026-11-22 (LX bars), item 10",
+      "judged": false,
+      "rule": "a sample whose endpoint frame has no confirmed display is counted here and not in its cell's percentiles",
+      "runs": [
+        {
+          "run_id": "20261121T133423Z",
+          "puzzle": "jumble-off",
+          "status": "valid",
+          "unconfirmed": 9,
+          "cells": [
+            {
+              "series": 1,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 1
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 1
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 2
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 1
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 1
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 1
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 1
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 1
+            }
+          ]
+        },
+        {
+          "run_id": "20261121T151540Z",
+          "puzzle": "jumble-on",
+          "status": "valid",
+          "unconfirmed": 7,
+          "cells": [
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 2
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 1
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 1
+            },
+            {
+              "series": 2,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 1
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 1
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 1
+            }
+          ]
+        }
+      ]
+    },
     "gate_same_run_checked": false,
     "gate_reference": {
       "counted_as_gate": true,
@@ -3431,11 +3538,9 @@
       "the rerun endpoint's frame is the first confirmed frame that drew the run's reference publication; the host does not draw the run's value yet"
     ]
   },
-  "verdict": "not-met",
-  "reasons": [
-    "bar-missed"
-  ],
-  "passes_bar": false,
+  "verdict": "met",
+  "reasons": [],
+  "passes_bar": true,
   "drafts": [
     "metric to edit-kind mapping",
     "schedule order and smoke series",

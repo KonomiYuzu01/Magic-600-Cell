@@ -34,7 +34,7 @@ local paths. Each record names its inputs with their SHA-256 values.
 | `e3-final-warmup.json`, `e3-final.json` | U6, charter E3 | `tools/perf/c9/cold_start.py`: the untimed warm-up launch alone, then the three timed runs |
 | `u7-final-faults.json`, `u7-final-lx2.json` | U7, LX-2 | `c600-lx2`'s faults record and `tools/perf/c9/lx2.py analyze` |
 | `u8-final-e2.json`, `u8-final-lx4.json` | U8, charter E2 and LX-4 | `tools/perf/c9/key_to_frame.py` and `tools/perf/c9/lx4.py analyze` over both puzzles' runs |
-| `u7-final-lx2-20261122.json`, `u8-final-lx4-20261122.json` | U7 and U8 analysed again under the owner's decision of 22 November 2026 ([decision](../../../docs/wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)), no new run | The changed `lx2.py analyze` and `lx4.py analyze` (the latter with `--gate-reference` U4's W3 summary) over the same run folders and inputs as the first analyses; each record names its inputs and tool digests |
+| `u7-final-lx2-20261122.json`, `u8-final-lx4-20261122.json` | U7 and U8 analysed again under the owner's decision of 22 November 2026, items 1 to 5 and 10 ([decision](../../../docs/wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)), no new run; both records list the confirmation gap | The changed `lx2.py analyze` and `lx4.py analyze` (the latter with `--gate-reference` U4's W3 summary) over the same run folders and inputs as the first analyses; each record names its inputs and tool digests |
 
 A record states what its logs show. It does not establish the machine, the conditions or the build (PHS.64), and it
 is never a phase pass on its own (PHS.66).

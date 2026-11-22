@@ -3,7 +3,7 @@ id: c9-sitting-results
 type: evidence
 status: verified
 visibility: public
-summary: LP3's C9 sitting on the frozen candidate 013900ff, on the owner's RTX 4070 Laptop GPU, 21 and 22 November 2026. Charter E3 (1.89 to 1.91 s against 3 s), charter E2 in A3 (p95 82.7 ms) and in U8 (p95 82.6 ms, one failed key) and the renderer gate in W-J S4, I_a, I_b, W3 and W3 with user stages (60 fps at vsync, p99 about 17 ms) are met. Analysed again under the owner's 100 ms bars of 22 November 2026, LX-2 and LX-4 are still not met, only because of samples without a confirmed frame - LX-2's echo in four of seven faults (1 to 26 such samples each) and two syntax cells of LX-4 (two each) - while every timed latency is within its bar. Key to confirmed display takes 77 to 83 ms.
+summary: LP3's C9 sitting on the frozen candidate 013900ff, on the owner's RTX 4070 Laptop GPU, 21 and 22 November 2026. Charter E3 (1.89 to 1.91 s against 3 s), charter E2 in A3 (p95 82.7 ms) and in U8 (p95 82.6 ms, one failed key) and the renderer gate in W-J S4, I_a, I_b, W3 and W3 with user stages (60 fps at vsync, p99 about 17 ms) are met. Analysed again under the owner's decisions of 22 November 2026 (100 ms bars; samples without a confirmed frame counted apart as the confirmation gap, a known limit), LX-2 and LX-4 are met on the samples with a confirmed frame. The gap holds 48 of 1,062 echo samples in LX-2's fault windows (26 of 110 in alloc_ceiling) and 16 LX-4 samples (14 of 10,800 at S, M and L, 2 of 600 at W). Key to confirmed display takes 77 to 83 ms.
 related: [owner-decisions-2026-11-22-lx-bars-freeze, owner-decisions-2026-11-21-ceilings-e3, owner-decisions-2026-11-20-lp3-exit, owner-decisions-2026-11-18-route-b, renderer-freeze, w-j-probe-results]
 supersedes: []
 claims:
@@ -26,8 +26,8 @@ claims:
   - {id: c9-u7-lx2-not-met, evidence_kind: performance, path: work/experiments/c9-sitting/results/u7-final-lx2.json, sha256: 670f65eca3cfed946d9f437acf6cb7f6390b6445675dc7de7cec99ac5f5c2725, checked_at: 2026-11-22}
   - {id: c9-u8-e2-met, evidence_kind: performance, path: work/experiments/c9-sitting/results/u8-final-e2.json, sha256: 92f7ee7877c719b2571c6d34ddb4adb322fc7ccaa6610331c3521e9499dd86f6, checked_at: 2026-11-22}
   - {id: c9-u8-lx4-invalid, evidence_kind: performance, path: work/experiments/c9-sitting/results/u8-final-lx4.json, sha256: 513c16d7c23afecb435f10b278ee1be3b32e400fd8a96149f80e1790761f6f20, checked_at: 2026-11-22}
-  - {id: c9-u7-lx2-not-met-100ms, evidence_kind: performance, path: work/experiments/c9-sitting/results/u7-final-lx2-20261122.json, sha256: 3fcca5790b3e61a67775d166d9209559c5e01594d1662216ea65a27163d6b667, checked_at: 2026-11-22}
-  - {id: c9-u8-lx4-not-met-100ms, evidence_kind: performance, path: work/experiments/c9-sitting/results/u8-final-lx4-20261122.json, sha256: aa6026c1c41466bc83feea5b159296a917b29057e75fb152657203ee845d435a, checked_at: 2026-11-22}
+  - {id: c9-u7-lx2-met-100ms, evidence_kind: performance, path: work/experiments/c9-sitting/results/u7-final-lx2-20261122.json, sha256: 89a4a464b8303104211ea87533ddeedcce6977666ff21e67ba8ae5cd950868a2, checked_at: 2026-11-22}
+  - {id: c9-u8-lx4-met-100ms, evidence_kind: performance, path: work/experiments/c9-sitting/results/u8-final-lx4-20261122.json, sha256: f90224153c0c7bfc9aef656e3000d3c057f6e4447e17fe595bf25834f3203395, checked_at: 2026-11-22}
 ---
 
 # C9 sitting results
@@ -38,7 +38,7 @@ candidate, main `013900ffc013d4c63f0dd8c39d83836de2b7c443`, and on builds made f
 ([owner decision](../decisions/owner-decisions-2026-11-21-ceilings-e3.md), item 3). The records are copied byte for
 byte into `work/experiments/c9-sitting/results/` ([README](../../../work/experiments/c9-sitting/README.md)). The two
 analyses of the recorded U7 and U8 data made again on 22 November 2026, with no new run, are written there beside them
-([owner decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 to 5).
+([owner decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 to 5 and 10).
 
 - **Unattended part (U1 to U8).** `tools/perf/c9/unattended.ps1 -Suffix final` ran from 11:39 to 16:57 UTC on 21
   November 2026. No run was aborted or retried, and no quiet-gate wait ran out (`unattended.log`).
@@ -73,9 +73,9 @@ logs show (PHS.64), and none of them is a phase pass on its own (PHS.66).
 | U5 | RPI.79: W3 with user stages | **met** | Pooled 60.0 fps, p99 16.96 ms, max 17.99 ms, VRAM peak 488 MB |
 | U6 | Charter E3 | **met** | 1.890 s, 1.895 s and 1.905 s against 3 s; the untimed warm-up took 1.899 s |
 | U7 | LX-2 conditions 1 and 2 (faults record) | agree | Every trial's outcome is the expected one; each session stays open and replays equal to the control |
-| U7 | LX-2 conditions 3 and 4 | **not met** | Under the 100 ms bars of 22 November: the echo bar fails in alloc_ceiling, forced_kill, loop_native and recursion_metered, each on 1 to 26 samples without a confirmed frame; every timed echo p95 and p99 is at most 93.8 ms. See below |
+| U7 | LX-2 conditions 3 and 4 | **met** | Under the 100 ms bars and item 10 of 22 November: echo met in every fault on the samples with a confirmed frame, p95 and p99 at most 93.8 ms; 48 of 1,062 echo samples are in the confirmation gap. The first analysis read `not-met`. See below |
 | U8 | Charter E2 | **met** | 602 keys, 601 confirmed, 1 failed key; pooled p95 82.63 ms; run p95 82.65 and 82.19 ms; PresentMon cross-check 0 disagreements |
-| U8 | LX-4 | **not met** | Under the 100 ms bars and E2's counting of 22 November: both runs valid; two syntax cells miss their p99 bar on two samples without a confirmed frame each (`fail-s-m`). The first analysis read `invalid` |
+| U8 | LX-4 | **met** | Under the 100 ms bars and item 10 of 22 November: both runs valid, every cell within its bars on the samples with a confirmed frame (`all-bars`); 16 samples are in the confirmation gap. The first analysis read `invalid` |
 
 ## Attended steps
 
@@ -120,11 +120,12 @@ U7 ran the injection child `c600-lx2-child` in place of the build's runtime; lau
 the same child. The candidate contains pull request 356, so the session job is the process host's job.
 
 On 22 November 2026 the recorded U7 data was analysed again under the owner's decision of that day
-([decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1, 3, 4 and 5), with no new run. The
-record is `u7-final-lx2-20261122.json`, made by `lx2.py` at sha256 `a96a1fe6…` with `lx4.py` at `33cfd55c…`. The
+([decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1, 3, 4, 5 and 10), with no new run.
+The record is `u7-final-lx2-20261122.json`, made by `lx2.py` at sha256 `1d93d292…` with `lx4.py` at `a9c1466f…`. The
 first analysis, `u7-final-lx2.json`, stays unchanged as evidence. Bars and rules:
-- echo, at most 100 ms at p95 and at p99 (item 1). An echo sample in a fault window without a confirmed frame fails
-  the bar; that is LX-2's draft rule, and the decision does not change it;
+- echo, at most 100 ms at p95 and at p99 (item 1), over the echo samples with a confirmed frame. An echo sample in a
+  fault window without a confirmed frame is counted apart, in the confirmation gap, and not judged (item 10). Any
+  other in-window echo failure still fails the bar, and the minimum of 100 samples counts confirmed samples;
 - the renderer gate, at least 30 fps and at most 33.3 ms at p99, in the metered faults. In forced_kill, alloc_ceiling,
   recursion_native and loop_native, where the runtime is lost, its figures are computed and recorded as a known limit,
   not judged (item 4);
@@ -133,33 +134,31 @@ first analysis, `u7-final-lx2.json`, stays unchanged as evidence. Bars and rules
 - alloc_ceiling's 84 timed echo samples are accepted for that fault as the owner's exception, not as sufficient by
   rule (item 5).
 
-E2 was met in every fault. The run had 1,741 keys, 1,731 of them confirmed. Conditions 1 and 2 agree (faults record).
+E2 keeps its own rule: a key without a confirmed frame counts as a failed key (item 10). E2 was met in every fault. The
+run had 1,741 keys, 1,731 of them confirmed. Conditions 1 and 2 agree (faults record).
 
-| Fault | Windows | E2 p95 (ms) | Echo timed p95 / p99 (ms) | Echo samples without a confirmed frame | Echo | Gate fps / p99 (ms) |
+| Fault | Windows | E2 p95 (ms) | Echo p95 / p99 over confirmed samples (ms) | Confirmation gap (not judged) | Echo | Gate fps / p99 (ms) |
 | --- | --- | --- | --- | --- | --- | --- |
 | alloc_metered | 61 limit windows, 60 s, all ended at kernel_cost | 82.6 | 77.1 / 77.4, 110 timed | 0 of 110 | **met** | 59.8 / 19.4: met |
-| recursion_metered | 2 limit windows, 123 s | 82.5 | 76.2 / 77.2, 211 timed | 1 of 212 | **not met** | 59.7 / 17.1: met |
+| recursion_metered | 2 limit windows, 123 s | 82.5 | 76.2 / 77.2, 211 timed | 1 of 212 | **met** | 59.7 / 17.1: met |
 | loop_metered | 2 limit windows, 120 s | 82.4 | 76.5 / 82.1, 209 timed | 0 of 209 | **met** | 60.0 / 16.9: met |
-| forced_kill | 148 turn windows | 82.6 | 90.0 / 92.8, 102 timed | 8 of 110 | **not met** | 57.2 / 52.2: known limit |
-| alloc_ceiling | 404 turn windows | 82.4 | 92.0 / 92.8, 84 timed (accepted, item 5) | 26 of 110 | **not met** | 46.7 / 54.1: known limit |
+| forced_kill | 148 turn windows | 82.6 | 90.0 / 92.8, 102 timed | 8 of 110 | **met** | 57.2 / 52.2: known limit |
+| alloc_ceiling | 404 turn windows | 82.4 | 92.0 / 92.8, 84 timed (accepted, item 5) | 26 of 110 | **met** | 46.7 / 54.1: known limit |
 | recursion_native | 622 turn windows | 82.4 | 92.9 / 93.8, 110 timed | 0 of 110 | **met** | 39.2 / 58.8: known limit |
-| loop_native | 2 turn windows, 120 s | 82.6 | 89.0 / 92.9, 188 timed | 13 of 201 | **not met** | 57.6 / 53.2: known limit |
+| loop_native | 2 turn windows, 120 s | 82.6 | 89.0 / 92.9, 188 timed | 13 of 201 | **met** | 57.6 / 53.2: known limit |
 
-So LX-2 is **not met**: alloc_ceiling, forced_kill, loop_native and recursion_metered fail the echo bar. Every timed
-echo p95 and p99 is within 100 ms. Each of the four fails only because some of its echo samples had no confirmed frame.
-Item 5 accepts alloc_ceiling's number of timed samples; it does not cover that fault's 26 samples without a confirmed
-frame.
-
-The record also reports each fault's echo percentiles with those samples counted as failed, as charter E2 counts a
-key. These are reported, not judged. Counted that way, recursion_metered reads p95 76.3 ms and p99 78.2 ms, within the
-bar; forced_kill, alloc_ceiling and loop_native have no p95 or p99 within the bar.
+So LX-2 is **met** (`lx2-fault-windows`, exit 0). Every fault meets the echo bar on its samples with a confirmed frame,
+with no other echo failure in any window. The confirmation gap holds 48 of the 1,062 echo samples in the fault windows,
+47 of them in the faults that lose the runtime; see "The confirmation gap" below.
 
 In the shell, alloc_metered's view job runs under the product's own view limits, and all 61 of its limit windows ended
 at `KN7:budget.kernel_cost`, which now counts (item 3). In the faults record, under the trial's limits, the same fault
 ends at `KN7:budget.memory`.
 
-Under RTE.21 a failing LX-2 run reopens LQ9, and the numbers go to the owner
-([decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), "What follows").
+Under items 1 to 5 alone, an echo sample without a confirmed frame still failed the bar (LX-2's draft rule), and
+alloc_ceiling, forced_kill, loop_native and recursion_metered failed the echo bar on those samples alone; item 10 of
+the decision records those numbers. Item 10 replaced that rule before the 22 November records were merged, so they
+were made again under it. With LX-2 met, LQ9 does not reopen.
 
 ## LX-4
 
@@ -168,38 +167,69 @@ confirmed frame, and both puzzles' runs had such samples (9 of 5,400 with Jumble
 unchanged as evidence.
 
 On 22 November 2026 the recorded U8 data was analysed again under the owner's decision of that day
-([decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 and 2), with no new run. The record is
-`u8-final-lx4-20261122.json`, made by `lx4.py` at sha256 `33cfd55c…`. Rules:
-- a sample without a confirmed frame counts as one failed sample, as charter E2 counts a key, and the run stays valid.
-  A percentile then has a value only if it falls on a timed sample within its bar;
+([decision](../decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1, 2 and 10), with no new run. The
+record is `u8-final-lx4-20261122.json`, made by `lx4.py` at sha256 `a9c1466f…`. Rules:
+- a sample without a confirmed frame is counted apart, in the confirmation gap, and the run stays valid. Each cell's
+  p95 and p99 are taken over its samples with a confirmed frame (item 10, which replaces item 2's E2-style counting);
 - typed echo is 100 / 100 ms at p95 / p99 at S, M and L, and syntax feedback is 100 / 100 ms at S and M. Every other
   RTE.49 bar is unchanged, syntax feedback at L (100 / 150 ms) among them;
 - U4's W3 summary (`w3-summary-final.json`, met) counts as the renderer gate reference.
 
-Both runs are valid. Of the S, M and L samples, 10,786 were timed and 14 failed; 2 W samples failed. U8's charter E2 is
-met. LX-4 is **not met** (`bar-missed`, decision `fail-s-m`). Two cells miss their p99 bar, each because two of its 100
-samples had no confirmed frame:
-- Jumble on, series 1, syntax feedback at S (100 / 100 ms): 98 timed, p95 94.3 ms, no p99 within the bar;
-- Jumble off, series 2, syntax feedback at L (100 / 150 ms): 98 timed, p95 94.1 ms, no p99 within the bar.
+Both runs are valid. Of the 10,800 S, M and L samples, 10,786 were timed and 14 are in the confirmation gap; 2 of the
+600 W samples are in it too. U8's charter E2 is met. LX-4 is **met** (decision `all-bars`, exit 0): every cell is
+within its p95 and p99 bars on its samples with a confirmed frame. The two cells that missed their p99 under item 2's
+counting, each with two samples in the gap, now read:
+- Jumble on, series 1, syntax feedback at S (100 / 100 ms): 98 timed, p95 94.2 ms, p99 94.7 ms;
+- Jumble off, series 2, syntax feedback at L (100 / 150 ms): 98 timed, p95 94.1 ms, p99 99.3 ms.
 
-Every timed p95 and p99 is within its bar. Ranges over the series and both puzzles:
+Ranges over the series and both puzzles, over the samples with a confirmed frame:
 
-| Interval (`lx4.py` name) | Sizes | Bars p95 / p99 (ms) | Timed p95 (ms) | Timed p99 (ms) |
+| Interval (`lx4.py` name) | Sizes | Bars p95 / p99 (ms) | p95 (ms) | p99 (ms) |
 | --- | --- | --- | --- | --- |
 | `echo` | S, M, L | 100 / 100 | 77.0 to 77.7 | 77.5 to 82.6 |
-| `syntax` | S, M | 100 / 100 | 93.7 to 94.3 | 94.0 to 94.8 |
-| `syntax` | L | 100 / 150 | 93.2 to 94.1 | 93.7 to 94.7 |
+| `syntax` | S, M | 100 / 100 | 93.7 to 94.2 | 94.0 to 94.8 |
+| `syntax` | L | 100 / 150 | 93.2 to 94.1 | 93.7 to 99.3 |
 | `stale` | S, M, L | 100 / 150 | 76.7 to 77.3 | 77.0 to 82.1 |
 | `completion` | S, M; L | 100 / 150; 150 / 250 | 93.1 to 93.8 | 93.5 to 98.5 |
 | `diagnostics` | S; M; L | 150 / 250; 200 / 300; 500 / 750 | 93.3 to 110.6 | 93.9 to 115.5 |
 | `rerun` | S, M; L | 250 / 400; 500 / 750 | 110.2 to 157.7 | 110.7 to 160.0 |
 | `dependents` | W | 1000 / 1500 | 193.7 to 206.5 | 194.1 to 208.7 |
 
-Under RTE.21 a failing LX-4 run reopens LQ9, and the numbers go to the owner.
+With LX-4 met, LQ9 does not reopen (item 10).
 
 Two limitations are in the record:
 - the module set's views read no host rows, so both puzzles time the same rerun path;
 - the rerun endpoint's frame is the first confirmed frame that drew the run's reference publication.
+
+## The confirmation gap
+
+A sample is in the confirmation gap when its endpoint frame was drawn but the core received no confirmation that it
+was displayed. Under item 10 such a sample is counted apart, published as a known limit and not judged; the bars are
+judged on the samples with a confirmed frame. Both records list the gap: `known_limits` in the LX-2 record (condition
+`confirmation-gap`, per fault) and `confirmation_gap` in the LX-4 record (per run and cell).
+
+LX-2, echo samples in the fault windows (48 of 1,062):
+
+| Fault | In the gap | Judged |
+| --- | --- | --- |
+| alloc_metered | 0 of 110 | 110 |
+| recursion_metered | 1 of 212 | 211 |
+| loop_metered | 0 of 209 | 209 |
+| forced_kill | 8 of 110 | 102 |
+| alloc_ceiling | 26 of 110 | 84 |
+| recursion_native | 0 of 110 | 110 |
+| loop_native | 13 of 201 | 188 |
+
+LX-4, samples per run (16 in all; every listed cell has 100 samples):
+- Jumble off (`20261121T133423Z`), 9: series 1 W dependents 1; series 2 L diagnostics 1, L syntax 2, M stale 1, S
+  syntax 1; series 3 M completion 1, M syntax 1, S echo 1;
+- Jumble on (`20261121T151540Z`), 7: series 1 S syntax 2; series 2 L stale 1, M syntax 1, W dependents 1; series 3 L
+  completion 1, M completion 1.
+
+The cost is on record (item 10): in alloc_ceiling about a quarter of the echo samples, 26 of 110, are not judged, and
+in loop_native and forced_kill 6 to 7 %. With no fault running, the gap is small: at most 2 of 100 samples in any LX-4
+cell. Charter E2 keeps its own rule, so U7's 10 and U8's 1 unconfirmed keys stay failed keys, and E2 is met with them.
+Closing the gap is product work after the freeze (item 10).
 
 ## Leads (not decisions)
 
@@ -214,9 +244,10 @@ Two limitations are in the record:
    - 1 of 602 U8 keys, and none of 222 in A3;
    - 77 of 32,254 UI frames in U3.
 
-   E2 counts such a key as a failed key in a valid run (owner, 20 November 2026, item 2), and LX-4 now counts a sample
-   the same way (owner, 22 November 2026, item 2). LX-2's echo bar fails on one such sample in a fault window. These
-   samples alone decide both failing verdicts. Whether such a frame was dropped, or its endpoint was shown by the next
+   E2 counts such a key as a failed key in a valid run (owner, 20 November 2026, item 2). LX-2 and LX-4 count such a
+   sample apart, in the confirmation gap (owner, 22 November 2026, item 10); under item 2's counting these samples
+   alone made both verdicts fail. The integrator's reading, an inference, is that the gap lies in the display
+   confirmation path and not in the route. Whether such a frame was dropped, or its endpoint was shown by the next
    presented frame, is not checked.
 3. **The gate under runtime loss.** The renderer gate drops to 39 to 57 fps, with p99 of 52 to 59 ms, while the runtime
    process dies and is restarted. It holds at 60 fps under the metered faults. It is now a known limit (owner, 22
@@ -225,9 +256,9 @@ Two limitations are in the record:
 ## What it does not show
 
 - It is not LP3's exit. C10 needs the whole index on the frozen candidate and the owner's sign-off.
-- It records no owner answer on LQ9. Under RTE.21 the failing LX-2 and LX-4 runs reopen it, and the numbers go to
-  the owner.
-- Chapter 11's RTE.42, RTE.49 and RTE.53 keep the draft bars until LP3's PHS.52 amendment cites the decision of 22
-  November 2026.
+- It does not show that the samples in the confirmation gap were displayed in time, or at all. Their latencies are
+  unknown, and the bars do not cover them.
+- Chapter 11's RTE.42, RTE.49 and RTE.53 keep the draft bars and counting until LP3's PHS.52 amendment cites the
+  decision of 22 November 2026, item 10 included.
 - It gives no result for other hardware, resolutions or refresh rates, frame generation, or long sessions.
 - For A1 and A2, the items that only the screen shows rest on the owner's report, not on a log or a capture.

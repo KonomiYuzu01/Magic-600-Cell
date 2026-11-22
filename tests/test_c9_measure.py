@@ -1061,37 +1061,54 @@ class Lx4Tests(NoProcessCase):
         self.assertEqual(lx4.judge(self.runs(at(100.0)), self.e2, self.gate, {'events'})[2], 'all-bars')
         self.assertEqual(lx4.judge(self.runs(at(100.5)), self.e2, self.gate, {'events'})[2], 'fail-s-m')
 
-    def test_an_unconfirmed_sample_is_a_failed_sample_and_its_run_stays_valid(self):
-        # Owner decision, 22 November 2026, item 2: charter E2's counting.
+    def test_an_unconfirmed_sample_is_counted_apart_and_the_bars_judge_the_confirmed_ones(self):
+        # Owner decision, 22 November 2026, item 10, which replaces item 2's E2-style counting: a sample without a
+        # confirmed frame is counted apart, in the confirmation gap, a known limit; its run stays valid.
         def unconfirm(events, samples):
             frames = {row['frame_id'] for row in events if row['t'] == 'lx4' and row['sample'] in samples}
             return [row for row in events if not (row['t'] == 'presented' and row['frame_id'] in frames)]
 
+        def runs_with(gap, latency=lambda sample: 10.0):
+            runs = []
+            for puzzle, samples in (('jumble-off', gap), ('jumble-on', set())):
+                events, posts = lx4_logs(self.edits, self.digests, puzzle, latency)
+                runs.append(lx4.analyze_run(unconfirm(events, samples), posts, self.edits, self.digests))
+            return runs
+
+        def echo_row(table):
+            return next(row for row in table if (row['puzzle'], row['series'], row['size'], row['metric'])
+                        == ('jumble-off', 1, 'S', 'echo'))
+
         cell = [sample['id'] for sample in lx4.schedule(self.edits, 'jumble-off')
                 if (sample['series'], sample['size'], sample['metric']) == (1, 'S', 'echo')]
-        runs = []
-        for puzzle, failed in (('jumble-off', set(cell[:1])), ('jumble-on', set())):
-            events, posts = lx4_logs(self.edits, self.digests, puzzle, lambda sample: 10.0)
-            runs.append(lx4.analyze_run(unconfirm(events, failed), posts, self.edits, self.digests))
-        self.assertEqual((runs[0]['status'], runs[0]['failures'], runs[0]['unconfirmed']), ('valid', {}, 1))
+        runs = runs_with(set(cell[:2]))
+        self.assertEqual((runs[0]['status'], runs[0]['failures'], runs[0]['unconfirmed']), ('valid', {}, 2))
+        # Two of 100 without a confirmed frame no longer put p99 on a failed sample: every bar holds.
         verdict, reasons, decision, table = lx4.judge(runs, self.e2, self.gate, {'events'})
-        # One failed sample of 100: nearest rank 99 still falls on a time, so every bar holds.
-        self.assertEqual((verdict, decision), ('met', 'all-bars'))
-        row = next(row for row in table if (row['puzzle'], row['series'], row['size'], row['metric'])
-                   == ('jumble-off', 1, 'S', 'echo'))
-        self.assertEqual({key: row['stats'][key] for key in ('n', 'timed', 'failed', 'mean', 'p95', 'p99', 'max')},
-                         {'n': 100, 'timed': 99, 'failed': 1, 'mean': None, 'p95': 10.0, 'p99': 10.0, 'max': None})
-        # Two failed samples of 100: p99's rank lies where a failed sample stands, so it has no number and misses.
-        events, posts = lx4_logs(self.edits, self.digests, 'jumble-off', lambda sample: 10.0)
-        runs[0] = lx4.analyze_run(unconfirm(events, set(cell[:2])), posts, self.edits, self.digests)
-        verdict, reasons, decision, table = lx4.judge(runs, self.e2, self.gate, {'events'})
+        self.assertEqual((verdict, reasons, decision), ('met', [], 'all-bars'))
+        row = echo_row(table)
+        self.assertEqual({key: row['stats'][key] for key in ('n', 'timed', 'unconfirmed', 'mean', 'p95', 'p99', 'max')},
+                         {'n': 100, 'timed': 98, 'unconfirmed': 2, 'mean': 10.0, 'p95': 10.0, 'p99': 10.0,
+                          'max': 10.0})
+        self.assertTrue(row['met'])
+        gap = lx4.confirmation_gap(runs)
+        self.assertEqual((gap['source'], gap['judged']), ('owner decision 2026-11-22 (LX bars), item 10', False))
+        self.assertEqual([(entry['puzzle'], entry['unconfirmed'], entry['cells']) for entry in gap['runs']],
+                         [('jumble-off', 2, [{'series': 1, 'size': 'S', 'metric': 'echo', 'unconfirmed': 2}]),
+                          ('jumble-on', 0, [])])
+        # The confirmed samples still carry the bar: a slow cell misses whatever its gap.
+        slow = lambda sample: 100.5 if (sample['series'], sample['size'], sample['metric']) == (1, 'S', 'echo') \
+            else 10.0  # noqa: E731
+        self.assertEqual(lx4.judge(runs_with(set(cell[:2]), slow), self.e2, self.gate, {'events'})[:3],
+                         ('not-met', ['bar-missed'], 'fail-s-m'))
+        # A cell with no confirmed sample has no percentile and misses; its samples are all accounted for.
+        verdict, reasons, decision, table = lx4.judge(runs_with(set(cell)), self.e2, self.gate, {'events'})
         self.assertEqual((verdict, reasons, decision), ('not-met', ['bar-missed'], 'fail-s-m'))
-        row = next(row for row in table if (row['puzzle'], row['series'], row['size'], row['metric'])
-                   == ('jumble-off', 1, 'S', 'echo'))
-        self.assertEqual((row['stats']['p95'], row['stats']['p99'], row['met']), (10.0, None, False))
-        self.assertEqual(lx4.counted_percentile([50.0, 120.0], 1, 30, 100), 50.0)
-        self.assertIsNone(lx4.counted_percentile([50.0, 120.0], 1, 95, 100))
-        self.assertEqual(lx4.counted_percentile([50.0, 120.0], 0, 95, 100), 120.0)
+        row = echo_row(table)
+        self.assertEqual((row['stats']['n'], row['stats']['timed'], row['stats']['unconfirmed'], row['stats']['p99'],
+                          row['met']), (100, 0, 100, None, False))
+        self.assertFalse(hasattr(lx4, 'counted_percentile'))
+        self.assertIn('owner decision 2026-11-22 (LX bars, items 1, 2 and 10)', lx4.BAR['source'])
         self.assertNotIn('unconfirmed sample invalidates its run', lx4.DRAFTS)
 
     def test_e2_and_the_gate_must_hold_in_the_same_runs(self):
@@ -1620,14 +1637,15 @@ class Lx2Tests(NoProcessCase):
             # Still computed: the figures are recorded either way.
             self.assertEqual((gate['state'], gate['required']), ('not-met', fault not in lx2.RUNTIME_LOSS), fault)
             self.assertAlmostEqual(gate['result']['fps'], 25.0, places=3, msg=fault)
-        limits = record['result']['known_limits']
+        limits = [entry for entry in record['result']['known_limits'] if entry['condition'] == 'gate']
         self.assertEqual([entry['fault'] for entry in limits], list(lx2.RUNTIME_LOSS))
         self.assertTrue(all(entry['state'] == 'not-met' and entry['required'] is False and entry['p99_ms'] == 40.0
                             and entry['source'] == 'owner decision 2026-11-22 (LX bars), item 4' for entry in limits))
         # The echo bar and condition 4 still apply in those windows.
         run = self.record(echo_ms=120.0)['result']['run']
         self.assertTrue({f'{fault}:echo-not-met' for fault in lx2.RUNTIME_LOSS} <= set(lx2.judge(run)[1]))
-        self.assertEqual(self.record()['result']['known_limits'][0]['state'], 'met')
+        self.assertEqual([entry['state'] for entry in self.record()['result']['known_limits']
+                          if entry['condition'] == 'gate'], ['met'] * len(lx2.RUNTIME_LOSS))
 
     def test_alloc_metered_counts_its_kernel_cost_end_and_only_that_fault_does(self):
         def change(fault, kind, index, rows):
@@ -1665,21 +1683,46 @@ class Lx2Tests(NoProcessCase):
         self.assertEqual(run['faults']['alloc_ceiling']['echo']['samples'], 'insufficient')
         self.assertEqual(lx2.ACCEPTED_ECHO_SAMPLES, {('20261121T131440Z', 'alloc_ceiling'): 84})
 
-    def test_an_unconfirmed_echo_sample_fails_the_bar_and_its_counted_percentiles_are_reported(self):
-        directory = lx2_run(self.temp / 'run-echo', self.edits, self.digests, windows=5)
-        path = directory / key_to_frame.EVENTS
-        rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
-        sample = next(row for row in rows if row['t'] == 'lx4')
-        write_jsonl(path, [row for row in rows if not (row['t'] == 'presented'
-                                                         and row['frame_id'] == sample['frame_id'])])
-        run = lx2.build(self.temp / 'fixtures', directory, lx2_faults(self.temp / 'faults-echo.json'),
-                        ['analyze'])['result']['run']
+    def test_an_unconfirmed_echo_sample_is_counted_apart_and_the_bar_judges_the_confirmed_ones(self):
+        # Owner decision, 22 November 2026, item 10: the confirmation gap is a known limit, not a failed sample; any
+        # other in-window failure still fails the bar, and the minimum counts confirmed samples.
+        def record(name, unconfirmed=0, wrong=0):
+            directory = lx2_run(self.temp / name, self.edits, self.digests, windows=5)
+            path = directory / key_to_frame.EVENTS
+            rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+            echoes = [row for row in rows if row['t'] == 'lx4'][:unconfirmed + wrong]
+            gone = {row['frame_id'] for row in echoes[:unconfirmed]}
+            for row in echoes[unconfirmed:]:
+                row['buffer_sha256'] = '0' * 64
+            write_jsonl(path, [row for row in rows if not (row['t'] == 'presented' and row['frame_id'] in gone)])
+            return lx2.build(self.temp / 'fixtures', directory, lx2_faults(self.temp / f'{name}.json'), ['analyze'])
+
+        result = record('run-gap', unconfirmed=1)
+        run = result['result']['run']
         self.assertEqual(run['status'], 'valid', run['reasons'])
         echo = run['faults']['alloc_metered']['echo']
-        self.assertEqual((echo['timed'], echo['failed'], echo['state']), (4, ['unconfirmed'], 'not-met'))
-        # Five samples, one failed: nearest rank 5 of 5 lies where the failed sample stands.
-        self.assertEqual(echo['failed_counted'], {'n': 5, 'p95': None, 'p99': None})
-        self.assertEqual(run['faults']['loop_metered']['echo']['failed_counted'], {'n': 5, 'p95': 20.0, 'p99': 20.0})
+        self.assertEqual({key: echo[key] for key in ('samples_in_windows', 'timed', 'unconfirmed', 'failed', 'samples',
+                                                     'state')},
+                         {'samples_in_windows': 5, 'timed': 4, 'unconfirmed': 1, 'failed': [], 'samples': 'sufficient',
+                          'state': 'met'})
+        self.assertNotIn('failed_counted', echo)
+        self.assertEqual(lx2.judge(run), ('met', []))
+        gaps = {entry['fault']: entry for entry in result['result']['known_limits']
+                if entry['condition'] == 'confirmation-gap'}
+        self.assertEqual(list(gaps), list(lx2.FAULTS))
+        self.assertEqual({key: gaps['alloc_metered'][key] for key in ('samples', 'unconfirmed', 'judged', 'source')},
+                         {'samples': 5, 'unconfirmed': 1, 'judged': 4,
+                          'source': 'owner decision 2026-11-22 (LX bars), item 10'})
+        self.assertEqual(gaps['loop_metered']['unconfirmed'], 0)
+        # Below the minimum on confirmed samples: insufficient, never met.
+        echo = record('run-gap-2', unconfirmed=2)['result']['run']['faults']['alloc_metered']['echo']
+        self.assertEqual((echo['timed'], echo['unconfirmed'], echo['state']), (3, 2, 'insufficient'))
+        # Another failure in a window still fails the bar.
+        run = record('run-wrong', wrong=1)['result']['run']
+        echo = run['faults']['alloc_metered']['echo']
+        self.assertEqual((echo['unconfirmed'], echo['failed'], echo['state']), (0, ['wrong-buffer'], 'not-met'))
+        self.assertIn('alloc_metered:echo-not-met', lx2.judge(run)[1])
+        self.assertIn('an in-window echo failure other than a missing confirmation fails the bar', lx2.DRAFTS)
 
     def test_conditions_1_and_2_come_from_the_faults_record_of_the_same_child(self):
         run = self.record(disagree=('loop_native',))['result']['run']

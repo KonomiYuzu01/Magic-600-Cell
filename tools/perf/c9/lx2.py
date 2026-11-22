@@ -64,15 +64,16 @@ kind), one `fault` row per phase with its counts, and a `close` row.
   confirmed frame counted as one failed key above 100 ms (charter E2's counting, owner, 20 November 2026, item 2).
 - Condition 3, per fault, over its effective limit windows (a metered fault) or turn windows (the others): LX-4's echo
   samples whose timed post lies inside one, timed as lx4.py times them (to the core-confirmed present of the frame its
-  echo row names): at least 100, none failed, p95 and p99 at most 100 ms (LX-4's echo bar, owner decision,
-  22 November 2026, item 1); and the renderer gate over the core swap chain's presents whose QPC time lies inside one
-  (`renderer_gate.judge` over PresentMon's msBetweenPresents): at least `GATE_FRAMES_MIN` presents, fps at least 30
-  and p99 at most 33.3 ms. In the faults that lose the runtime (`RUNTIME_LOSS`: forced_kill, alloc_ceiling,
-  recursion_native and loop_native) the gate is computed and recorded as a known limit, but not required (owner
-  decision, 22 November 2026, item 4). The echo samples' p95 and p99 with each failed sample counted above the bar, as
-  charter E2 counts a key, are reported beside them (`failed_counted`); they do not change the rule. An echo sample
-  count below 100 that the owner accepted for one fault of one run (`ACCEPTED_ECHO_SAMPLES`: U7's alloc_ceiling, 84,
-  owner decision, 22 November 2026, item 5) is enough for that fault and is recorded as accepted, not as sufficient.
+  echo row names): at least 100 with a confirmed frame, none failed, p95 and p99 over those at most 100 ms (LX-4's echo
+  bar, owner decision, 22 November 2026, item 1); and the renderer gate over the core swap chain's presents whose QPC
+  time lies inside one (`renderer_gate.judge` over PresentMon's msBetweenPresents): at least `GATE_FRAMES_MIN`
+  presents, fps at least 30 and p99 at most 33.3 ms. An echo sample whose frame has no confirmed display is not a
+  failed sample: it is counted apart, in the fault's confirmation gap (`unconfirmed`), and published as a known limit
+  (owner decision, 22 November 2026, item 10). In the faults that lose the runtime (`RUNTIME_LOSS`: forced_kill,
+  alloc_ceiling, recursion_native and loop_native) the gate is computed and recorded as a known limit, but not
+  required (item 4). An echo sample count below 100 that the owner accepted for one fault of one run
+  (`ACCEPTED_ECHO_SAMPLES`: U7's alloc_ceiling, 84, item 5) is enough for that fault and is recorded as accepted, not
+  as sufficient.
 - Conditions 1 and 2: the faults record agrees, every fault and the control ran alone and in a session that stayed
   open and agreed with the control, and its injection device is the child launch.json names.
 
@@ -151,6 +152,8 @@ LAUNCH = 'launch.json'
 WM_CLOSE = 0x0010
 ECHO, ECHO_SIZE, ECHO_KIND = 'echo', 'S', 'inside-body'
 ECHO_BAR_MS = lx4.BARS[ECHO][ECHO_SIZE]
+# An echo sample whose frame has no confirmed display: in the confirmation gap, not a failure (item 10).
+UNCONFIRMED = 'unconfirmed'
 E2_P95_MS = key_to_frame.P95_MAX_MS
 OBSERVATIONS_MIN = 100
 TARGET = 110
@@ -166,17 +169,19 @@ LOOP_LIFE_MIN_S = 0.9 * VIEW_DEADLINE_S
 RECOVERY_S = 0.3
 SOURCES = ['RTE.42', 'RTE.43', 'RTE.49', 'CT-RTE-10', 'charter E2', 'renderer gate', 'option (a), 18 November 2026',
            'limit and turn windows, top integrator, 19 November 2026', 'owner decision 2026-11-20 (LP3 exit, item 2)',
-           f'{DECISION}, items 1, 3, 4 and 5']
+           f'{DECISION}, items 1, 3, 4, 5 and 10']
 BAR = {'text': ('RTE.42: every fault meets (1) journal and state hash equal to a control run, (2) a typed outcome '
                 'with the session open, (3) the renderer gate and the LX-4 echo bar during the fault window, (4) at '
                 'least 100 commits during fault windows under charter E2'),
        'rule': ('per fault, over its effective windows (start row to recovered row): E2 keys in turn windows '
                 'confirmed, at least 100, nearest-rank p95 <= 100 ms with each unconfirmed key a failed key above '
                 '100 ms; in limit windows (a metered '
-                'fault, its job run to its limit with no commit) or turn windows (the others), LX-4 echo samples at '
-                'least 100 (or the count the owner accepted), none failed, p95 <= 100 ms and p99 <= 100 ms, and the '
-                'gate over at least 300 presents, fps >= 30 and p99 <= 33.3 ms, not required in the four faults that '
-                'lose the runtime; conditions 1 and 2 from c600-lx2-faults with sessions'),
+                'fault, its job run to its limit with no commit) or turn windows (the others), LX-4 echo samples with '
+                'a confirmed frame at least 100 (or the count the owner accepted), none failed, p95 <= 100 ms and p99 '
+                '<= 100 ms over them, each echo sample without a confirmed frame counted apart in the confirmation '
+                'gap, a known limit; and the gate over at least 300 presents, fps >= 30 and p99 <= 33.3 ms, not '
+                'required in the four faults that lose the runtime; conditions 1 and 2 from c600-lx2-faults with '
+                'sessions'),
        'e2_p95_ms': E2_P95_MS, 'echo_bar_ms': list(ECHO_BAR_MS), 'gate': {'fps_min': FPS_MIN, 'p99_max_ms': P99_MAX_MS,
                                                                           'presents_min': GATE_FRAMES_MIN},
        'gate_not_required': list(RUNTIME_LOSS),
@@ -191,7 +196,8 @@ LIMITATIONS = [
 DRAFTS = ['fault order, message Magic600.LX2.Phase and the lx2 rows', 'window = start row to recovered row',
           'effective-window rules per fault', f'post targets {TARGET} turns and echo samples per fault, time box '
           f'{TIME_BOX_S:g} s', f'lead {LEAD_S:g} s, native-loop pace {PACE_S:g} s, gap {GAP_S:g} s',
-          f'gate over presents inside windows, at least {GATE_FRAMES_MIN}', 'an in-window echo failure fails the bar',
+          f'gate over presents inside windows, at least {GATE_FRAMES_MIN}',
+          'an in-window echo failure other than a missing confirmation fails the bar',
           'one echo sample per fault every 0.25 s (S inside-body, first key)',
           'limit windows: wParam len(FAULTS) plus the fault\'s number, before its turn windows; the ends that count '
           '(LIMIT_ENDS: the integrator\'s choice of the meter\'s limit or the view deadline; alloc_metered\'s '
@@ -551,7 +557,7 @@ def echo_times(rows, posts, done, edits, edit, frames, presented, frequency, con
             failure = 'frame-before-post'
             contradictions.add('frame-before-post')
         elif row['frame_id'] not in presented:
-            failure = 'unconfirmed'
+            failure = UNCONFIRMED
         latency = None if failure else (presented[row['frame_id']]['display_qpc'] - anchor) * 1000 / frequency
         samples.append(((sent[0].get('fault'), sent[0].get('kind')), anchor, latency, failure))
     return samples
@@ -609,15 +615,15 @@ def analyze_run(rows, post_rows, edits, digests, *, launch=None, presents=None, 
         samples = [(latency, failure) for owner, anchor, latency, failure in echoes
                    if owner == (fault, over) and inside(echo_windows, anchor)]
         timed = [latency for latency, failure in samples if failure is None]
-        failed = sorted(failure for latency, failure in samples if failure is not None)
+        # A sample without a confirmed frame is counted apart in the confirmation gap, never judged (owner decision,
+        # 22 November 2026, item 10); every other failure fails the bar.
+        unconfirmed = sum(failure == UNCONFIRMED for latency, failure in samples)
+        failed = sorted(failure for latency, failure in samples if failure not in (None, UNCONFIRMED))
         sufficient = len(timed) >= OBSERVATIONS_MIN
         accepted = not sufficient and ACCEPTED_ECHO_SAMPLES.get((head['run_id'], fault)) == len(timed)
-        echo = {'over': over, 'timed': len(timed), 'failed': failed, 'stats': statistics(timed) if timed else None,
+        echo = {'over': over, 'samples_in_windows': len(samples), 'timed': len(timed), 'unconfirmed': unconfirmed,
+                'failed': failed, 'stats': statistics(timed) if timed else None,
                 'samples': 'sufficient' if sufficient else 'accepted-by-owner' if accepted else 'insufficient',
-                'failed_counted': {
-                    'n': len(samples),
-                    'p95': lx4.counted_percentile(timed, len(failed), 95, ECHO_BAR_MS[0]) if samples else None,
-                    'p99': lx4.counted_percentile(timed, len(failed), 99, ECHO_BAR_MS[1]) if samples else None},
                 'state': state_of(sufficient or accepted,
                                   not failed and timed and nearest_rank(timed, 95) <= ECHO_BAR_MS[0]
                                   and nearest_rank(timed, 99) <= ECHO_BAR_MS[1])}
@@ -701,9 +707,14 @@ def judge(run):
 
 
 def known_limits(run):
-    """The renderer gate's figures inside the windows of the faults where it is not required (RUNTIME_LOSS)."""
+    """Per fault, the echo bar's confirmation gap (item 10: its count, published whether or not it is zero), and the
+    renderer gate's figures inside the windows of the faults where it is not required (RUNTIME_LOSS, item 4)."""
     out = []
     for fault, result in (run.get('faults') or {}).items():
+        echo = result['echo']
+        out.append({'fault': fault, 'condition': 'confirmation-gap', 'over': echo['over'],
+                    'samples': echo['samples_in_windows'], 'unconfirmed': echo['unconfirmed'],
+                    'judged': echo['timed'], 'source': f'{DECISION}, item 10'})
         gate = result['gate']
         if gate.get('required') is not False:
             continue
@@ -807,7 +818,8 @@ def main(argv=None, system_factory=lx4.Windows):
         counts = ', '.join(f"{entry['effective']} of {entry['windows']} {kind} windows"
                            for kind, entry in result['windows'].items())
         print(f"  {fault}: {counts} effective; E2 {result['e2']['state']} ({result['e2']['confirmed']} keys), echo "
-              f"{result['echo']['state']} ({result['echo']['timed']}, {len(result['echo']['failed'])} failed), gate "
+              f"{result['echo']['state']} ({result['echo']['timed']}, {len(result['echo']['failed'])} failed, "
+              f"{result['echo']['unconfirmed']} in the confirmation gap), gate "
               f"{result['gate']['state']} ({result['gate']['presents']} presents"
               f"{', not required' if result['gate'].get('required') is False else ''})")
     if 'conditions_1_2' in run:

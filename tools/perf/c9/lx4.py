@@ -69,9 +69,10 @@ str, "puzzle": str, "qpc_frequency": int}`, which the module writes when it star
 `START_TIMEOUT_S` for it).
 
 Rules (DRAFT, as key_to_frame.py). A sample's time runs from its timed post's QPC to the core-confirmed display QPC of
-the frame its endpoint row names. A sample without a confirmed frame gets no time and counts as one failed sample above
-its cell's bars, and its run stays valid (charter E2's counting of a key; owner decision, 22 November 2026, item 2): a
-cell's p95 or p99 has a number only where it falls on a time within that percentile's bar, and is missed otherwise. A
+the frame its endpoint row names. A sample whose endpoint frame has no confirmed display gets no time and is counted
+apart, in the confirmation gap: a known limit, published with its count per run and cell (`confirmation_gap`), and its
+run stays valid. A cell's p95 and p99 are taken over its samples with a confirmed frame (owner decision, 22 November
+2026, item 10, which replaces item 2's counting of such a sample as a failed one; charter E2 keeps its own rule). A
 buffer that differs from the edit's result (the correctness control, step 7), a failed post, a timeout, a missing
 `ready` row, a lost foreground, a frame submitted before its post and the contradictions key_to_frame.py refuses make
 the run invalid. An invalid run is kept and repeated whole; it is never pooled. Each puzzle needs exactly one valid
@@ -79,7 +80,8 @@ run, both of one build.
 
 Verdict (RTE.53). Per puzzle, series, size and metric: nearest-rank p95 and p99 against RTE.49's bars, each bar below
 100 ms raised to 100 ms (owner decision, 22 November 2026, item 1). `met` only when every bar holds in each of the
-three series at S, M and L on both puzzles, W's bar holds, all 10,800 S/M/L samples are counted (timed or failed), and
+three series at S, M and L on both puzzles, W's bar holds, all 10,800 S/M/L samples are accounted for (timed or in
+the confirmation gap), and
 the E2 record (key_to_frame.py over these same run directories, matched by events.jsonl digests) and a renderer gate
 summary of the same build are met. The decision names RTE.53's case: `fail-s-m` (a miss at S or M), `fail-gate-or-e2`,
 `owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or `all-bars`. The gate
@@ -164,12 +166,13 @@ BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1
                 'raised to 100 ms (owner, 22 November 2026, item 1); RTE.53: every bar in each of three series at S, '
                 'M and L on both puzzles, with the renderer gate and charter E2 in the same runs'),
        'rule': ('timed post to the core-confirmed present of the first frame showing the endpoint, matched by frame '
-                'id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 S/M/L samples counted, '
-                'each sample without a confirmed frame one failed sample above its bars (owner, 22 November 2026, '
-                'item 2)'),
+                'id; nearest-rank p95 and p99 per puzzle, series, size and metric over the samples with a confirmed '
+                'frame; 10,800 S/M/L samples accounted for, each sample without a confirmed frame counted apart in '
+                'the confirmation gap, a known limit (owner, 22 November 2026, item 10)'),
        'bars_ms': BARS, 'samples': TOTAL_SML,
        'source': ['RTE.47', 'RTE.48', 'RTE.49', 'RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06',
-                  'owner decision 2026-11-22 (LX bars, items 1 and 2)']}
+                  'owner decision 2026-11-22 (LX bars, items 1, 2 and 10)']}
+GAP_SOURCE = 'owner decision 2026-11-22 (LX bars), item 10'
 LIMITATIONS = ['the module set\'s views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time '
                'the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged',
                'the rerun endpoint\'s frame is the first confirmed frame that drew the run\'s reference publication; '
@@ -500,7 +503,7 @@ def analyze_run(events, post_rows, edits, digests):
         if row.get('t') == 'lx4':
             require(integer(row.get('sample')) and isinstance(row.get('endpoint'), str), 'bad-lx4')
             endpoints.setdefault((row['sample'], row['endpoint']), row)
-    times, failed, failures = {}, {}, {}
+    times, gap, failures = {}, {}, {}
     for sample in schedule(edits, posts_head['puzzle']):
         if sample['metric'] == 'turn':
             continue
@@ -528,9 +531,9 @@ def analyze_run(events, post_rows, edits, digests):
             failure = 'frame-before-post'
             contradictions.add('frame-before-post')
         elif row['frame_id'] not in presented:
-            # A sample without a confirmed frame: one failed sample of its cell; the run stays valid (owner decision,
-            # 22 November 2026, item 2).
-            failed[cell] = failed.get(cell, 0) + 1
+            # A sample without a confirmed frame: counted apart in its cell's confirmation gap, never judged; the run
+            # stays valid (owner decision, 22 November 2026, item 10).
+            gap[cell] = gap.get(cell, 0) + 1
             continue
         if failure:
             failures[failure] = failures.get(failure, 0) + 1
@@ -547,8 +550,8 @@ def analyze_run(events, post_rows, edits, digests):
         reasons.add('correctness-failed')
     return {'run_id': head['run_id'], 'build_identity': head['build_identity'], 'synthetic': head['synthetic'],
             'puzzle': posts_head['puzzle'], 'failures': dict(sorted(failures.items())),
-            'unconfirmed': sum(failed.values()), 'contradictions': sorted(contradictions),
-            'status': 'invalid' if reasons else 'valid', 'reasons': sorted(reasons), 'times': times, 'failed': failed}
+            'unconfirmed': sum(gap.values()), 'contradictions': sorted(contradictions),
+            'status': 'invalid' if reasons else 'valid', 'reasons': sorted(reasons), 'times': times, 'gap': gap}
 
 
 def read_run(directory, edits, digests):
@@ -558,42 +561,24 @@ def read_run(directory, edits, digests):
                            evidence.read_jsonl(directory / POSTS), edits, digests)
     except RunError as error:
         return {'run_id': directory.name, 'build_identity': None, 'synthetic': None, 'puzzle': None,
-                'status': 'unreadable', 'reasons': [str(error)], 'times': {}, 'failed': {}}
+                'status': 'unreadable', 'reasons': [str(error)], 'times': {}, 'gap': {}}
 
 
-def counted_percentile(values, failed, percentile, bar):
-    """Nearest-rank percentile over the timed values and `failed` samples, each failed sample above `bar` (charter E2's
-    counting); None when the rank lies above the bar, where a failed sample could stand, since it has no number."""
-    ordered = sorted(values)
-    count = len(ordered) + failed
-    if not count:
-        return None
-    rank = (percentile * count + 99) // 100
-    if not failed:
-        return ordered[rank - 1]
-    within = sum(value <= bar for value in ordered)
-    return ordered[rank - 1] if rank <= within else None
-
-
-def cell_statistics(values, failed, bars):
-    """A cell's statistics with its failed samples counted: `n` all samples, `timed`, `failed`; `mean` and `max` only
-    without failed samples; p50 and p95 against the p95 bar, p99 against the p99 bar."""
-    if not failed:
-        return {**statistics(values), 'timed': len(values), 'failed': 0}
-    return {'n': len(values) + failed, 'timed': len(values), 'failed': failed, 'mean': None,
-            'p50': counted_percentile(values, failed, 50, bars[0]),
-            'p95': counted_percentile(values, failed, 95, bars[0]),
-            'p99': counted_percentile(values, failed, 99, bars[1]), 'max': None}
+def cell_statistics(values, unconfirmed):
+    """A cell's statistics: `n` all its samples, `timed` those with a confirmed frame, `unconfirmed` its confirmation
+    gap; mean, p50, p95, p99 and max over the timed samples only (owner decision, 22 November 2026, item 10)."""
+    stats = statistics(values) if values else {'mean': None, 'p50': None, 'p95': None, 'p99': None, 'max': None}
+    return {**stats, 'n': len(values) + unconfirmed, 'timed': len(values), 'unconfirmed': unconfirmed}
 
 
 def series_table(run):
     """Per series, size and metric: statistics and the bar's outcome. Smoke samples (series 0) are listed apart."""
     table = []
-    failed = run.get('failed', {})
-    for cell in sorted(set(run['times']) | set(failed)):
+    gap = run.get('gap', {})
+    for cell in sorted(set(run['times']) | set(gap)):
         series, size, metric = cell
         p95_bar, p99_bar = BARS[metric][size]
-        stats = cell_statistics(run['times'].get(cell, []), failed.get(cell, 0), (p95_bar, p99_bar))
+        stats = cell_statistics(run['times'].get(cell, []), gap.get(cell, 0))
         table.append({'puzzle': run['puzzle'], 'series': series, 'size': size, 'metric': metric, 'stats': stats,
                       'bar_ms': [p95_bar, p99_bar],
                       'met': series == 0 or (stats['p95'] is not None and stats['p95'] <= p95_bar
@@ -674,6 +659,22 @@ def gate_reference(summary, sha256):
             'verdicts': {str(scene.get('scene')): scene.get('verdict') for scene in summary['scenes']}}
 
 
+def confirmation_gap(runs):
+    """The known limit of item 10: per readable run, its samples without a confirmed frame, in total and per cell
+    (series, size, metric), smoke samples (series 0) included; never judged."""
+    out = []
+    for run in runs:
+        if run['status'] == 'unreadable':
+            continue
+        cells = [{'series': series, 'size': size, 'metric': metric, 'unconfirmed': count}
+                 for (series, size, metric), count in sorted(run.get('gap', {}).items())]
+        out.append({'run_id': run['run_id'], 'puzzle': run['puzzle'], 'status': run['status'],
+                    'unconfirmed': sum(cell['unconfirmed'] for cell in cells), 'cells': cells})
+    return {'source': GAP_SOURCE, 'judged': False,
+            'rule': 'a sample whose endpoint frame has no confirmed display is counted here and not in its cell\'s '
+                    'percentiles', 'runs': out}
+
+
 def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_flag=False, reference_path=None):
     _, edits, digests = load_fixtures(fixtures)
     runs = [read_run(directory, edits, digests) for directory in directories]
@@ -697,15 +698,17 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
                (('e2', e2_path), ('gate', gate_path), ('gate-reference', reference_path)) if path]
     synthetic = evidence.is_synthetic([Path(directory) / key_to_frame.EVENTS for directory in directories],
                                       [run.get('synthetic') for run in runs], synthetic_flag)
+    gap = confirmation_gap(runs)
     for run in runs:
         run.pop('times', None)
-        run.pop('failed', None)
+        run.pop('gap', None)
     sml = [row for row in table if row['series'] > 0 and row['size'] in SIZES]
     result = {'fixtures': digests, 'runs': runs, 'decision': decision, 'series': table,
               'accounting': accounting([schedule(edits, puzzle) for puzzle in PUZZLES]),
               'timed_sml_samples': sum(row['stats']['timed'] for row in sml),
-              'failed_sml_samples': sum(row['stats']['failed'] for row in sml),
-              'gate_same_run_checked': False, 'gate_reference': reference, 'limitations': LIMITATIONS}
+              'unconfirmed_sml_samples': sum(row['stats']['unconfirmed'] for row in sml),
+              'confirmation_gap': gap, 'gate_same_run_checked': False, 'gate_reference': reference,
+              'limitations': LIMITATIONS}
     return evidence.make_record(
         'lx4-editor-latency', 'performance', synthetic=synthetic,
         build_identity=identities[0] if len(identities) == 1 else None, inputs=inputs,
@@ -766,7 +769,7 @@ def main(argv=None, system_factory=Windows):
         print(f"{run['run_id']} ({run.get('puzzle')}): {run['status']}"
               f"{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}")
     print(f"decision: {record['result']['decision']}; timed S/M/L samples {record['result']['timed_sml_samples']} "
-          f"and failed {record['result']['failed_sml_samples']} of {TOTAL_SML}")
+          f"and {record['result']['unconfirmed_sml_samples']} in the confirmation gap, of {TOTAL_SML}")
     evidence.report(record)
     if args.out:
         try:
