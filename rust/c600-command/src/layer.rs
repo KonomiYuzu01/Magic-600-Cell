@@ -894,7 +894,10 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     rollback: Option<Rollback>,
     /// The gesture, step and kind of the last action when it was a rollback's step (ADR-D01.15; draft), so a replay
     /// admits a step after the first only when it follows the gesture's step before it.
-    last_step: Option<(String, u64, TransactionKind)>,
+    last_step: Option<(String, u64, TransactionKind, u64)>,
+    /// The command IDs of the rollback steps the layer journaled or tried, by caller scope, for LI.30's lookup of a
+    /// gesture's steps (ADR-D01.15): an ordinary command whose ID looks like a step is no step.
+    step_ids: BTreeSet<Key>,
     /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
     /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
     blocks: BTreeMap<String, String>,
@@ -988,6 +991,7 @@ impl<S: Store> CommandLayer<S> {
             kept: BTreeSet::new(),
             rollback: None,
             last_step: None,
+            step_ids: BTreeSet::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
@@ -1173,6 +1177,10 @@ impl<S: Store> CommandLayer<S> {
         if stored.order != self.order + 1 {
             return Err(broken("the action order is broken"));
         }
+        // The rollback row journals only its undo and redo steps (ADR-D01.15).
+        if stored.row == ROLLBACK_ROW && !matches!(stored.kind, TransactionKind::Undo | TransactionKind::Redo) {
+            return Err(unadmitted("a rollback row whose action is not an undo or redo step"));
+        }
         let meta = Meta::replay(stored);
         let planned = match stored.kind {
             // A twist's rotation record is adopted as stored: the replay derives the recorded recipe and runs neither
@@ -1226,14 +1234,19 @@ impl<S: Store> CommandLayer<S> {
                         let Some((gesture, step)) = rollback_step(&stored.command) else {
                             return Err(unadmitted("a rollback step whose command names no gesture and step"));
                         };
-                        let follows = self
-                            .last_step
-                            .as_ref()
-                            .is_some_and(|(last, at, kind)| last == gesture && *at + 1 == step && *kind == stored.kind);
+                        let follows = self.last_step.as_ref().is_some_and(|(last, at, kind, epoch)| {
+                            last == gesture
+                                && step.checked_sub(1) == Some(*at)
+                                && *kind == stored.kind
+                                && *epoch == stored.revision.epoch
+                        });
                         if step > 1 && !follows {
                             return Err(unadmitted(
-                                "a rollback step that does not follow its gesture's step before it",
+                                "a rollback step that does not follow its gesture's step before it in its epoch",
                             ));
+                        }
+                        if step == 1 && self.receipts.contains_key(&(stored.caller.scope(), gesture.to_owned())) {
+                            return Err(unadmitted("a rollback whose gesture ID an earlier action used"));
                         }
                         if self.receipts.contains_key(&(stored.caller.scope(), stored.command.clone())) {
                             return Err(unadmitted("a rollback step whose command ID an earlier action used"));
@@ -1887,6 +1900,9 @@ impl<S: Store> CommandLayer<S> {
         let mut steps = Vec::new();
         for step in 1.. {
             let key = (scope.clone(), format!("{gesture}#{step}"));
+            if !self.step_ids.contains(&key) {
+                break;
+            }
             match (self.receipts.get(&key), self.lost.get(&key)) {
                 (Some(record), _) => steps.push(record.receipt.clone()),
                 (None, Some(request)) => {
@@ -2291,7 +2307,12 @@ impl<S: Store> CommandLayer<S> {
     /// `fresh_filter_preview` names a fresh filter preview. Like every hint it grants nothing: an invocation checks its
     /// actual arguments and the current inputs again.
     pub fn availability_for(&self, row: &str, args: &Value) -> Result<(), Error> {
-        self.binding(self.known(row)?, args)
+        let found = self.known(row)?;
+        self.binding(found, args)?;
+        if found.id == ROLLBACK_ROW && ["gesture", "step", "of"].iter().any(|name| args.get(name).is_some()) {
+            return Err(Error::new(code::ARGUMENT_FORM, "only the layer names a rollback's gesture and steps"));
+        }
+        Ok(())
     }
 
     /// KN5.6's availability table for the shell's `bindings` (draft; L13 (d) of the KN5 attack leads): a static
@@ -3487,11 +3508,13 @@ impl<S: Store> CommandLayer<S> {
         }
         // A rollback's step, for the replay's check of the next one (ADR-D01.15).
         self.last_step = match transaction.row == ROLLBACK_ROW {
-            true => {
-                rollback_step(&transaction.command).map(|(gesture, step)| (gesture.to_owned(), step, transaction.kind))
-            }
+            true => rollback_step(&transaction.command)
+                .map(|(gesture, step)| (gesture.to_owned(), step, transaction.kind, transaction.revision.epoch)),
             false => None,
         };
+        if transaction.row == ROLLBACK_ROW {
+            self.step_ids.insert((transaction.caller.scope(), transaction.command.clone()));
+        }
         let receipt = transaction.receipt();
         let key = (transaction.caller.scope(), transaction.command.clone());
         self.lost.remove(&key);
@@ -3992,11 +4015,19 @@ impl<S: Store> CommandLayer<S> {
     /// press answers with the last landed step's receipt, a refusal when no step landed, or `unknown_outcome` when a
     /// step's fate is unknown.
     fn rollback_press(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        // A press ends the report of the gesture before it, refused or not.
+        if self.rollback.take().is_some() {
+            self.generation += 1;
+        }
         let Some(hint) = invocation.args.get("hint").and_then(ActionHint::from_json) else {
             return refused(code::ARGUMENT_FORM, "`hint` is an ActionHint");
         };
         if ["gesture", "step", "of"].iter().any(|name| invocation.args.get(name).is_some()) {
             return refused(code::ARGUMENT_FORM, "only the layer names a rollback's gesture and steps");
+        }
+        let gesture = invocation.command.as_str();
+        if rollback_step(&format!("{gesture}#1")) != Some((gesture, 1)) {
+            return refused(code::ARGUMENT_FORM, "a rollback's command ID must name its gesture's steps");
         }
         let binding = self.authenticate(invocation)?;
         self.commit_lane()?;
@@ -4026,6 +4057,7 @@ impl<S: Store> CommandLayer<S> {
             let receipt =
                 Receipt { command: step.command.clone(), request: request.clone(), job, status: status.clone() };
             let record = Record { request, receipt, durable: false };
+            self.step_ids.insert((scope.clone(), step.command.clone()));
             self.receipts.entry((scope.clone(), step.command.clone())).or_insert(record);
             if !matches!(status, Status::Committed(_)) {
                 stop = Some(status);

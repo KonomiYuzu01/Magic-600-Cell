@@ -49,7 +49,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use c600_command::{
     code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames,
@@ -674,6 +674,9 @@ fn replay(
         start,
         protected,
     );
+    // The oracle replay commits each preview its tool run prepared on the frame that presents it; ADR-D01.9's settle
+    // interval, which holds that press, is c600-command's `tests/settle.rs` concern and not an oracle case's.
+    layer.set_settle(Duration::ZERO);
     let reader = workspace::install(&mut layer);
     let shell = Shell::new(secret, &case_id);
     let tamper = tamper.filter(|(case, _)| *case == case_id).map(|&(_, index)| index);
