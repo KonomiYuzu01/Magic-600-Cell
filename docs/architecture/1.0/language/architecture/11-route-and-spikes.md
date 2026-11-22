@@ -2,7 +2,9 @@
 
 Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
 [decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
-[the overview](00-overview.md), section 3, and its status says what the freeze covers.
+[the overview](00-overview.md), section 3, and its status says what the freeze covers. Amended once under PHS.52
+after LP3's C9 sitting, in RTE.42, RTE.49, RTE.53 and CT-RTE-11 (owner,
+[22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)).
 
 This chapter gives the obligations of each implementation route and the evidence needed to choose a route, an engine
 language and a runtime placement. It supplies experiment cards and decision rules. LX-1 to LX-9 ran as far as the
@@ -461,6 +463,13 @@ LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind noth
   bytes for the pose bundle at P = 2,049 with one mask. Startup runs from process start to the first interactive
   frame, with an existing session and runtime loaded, in each of three cold runs, within charter E3's proposed 3 s.
   E3 remains a proposal until the owner sets it. This rule feeds LQ9.
+  Amended under PHS.52 after LP3's C9 sitting (owner,
+  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 and 4): in
+  condition 3 the LX-4 echo bar is 100 ms at p95 and at p99 (RTE.49 as amended). The renderer gate is not required
+  inside the fault windows of the four faults in which the runtime process dies and is restarted (in the C9 records:
+  `forced_kill`, `alloc_ceiling`, `recursion_native` and `loop_native`); the gate's figures there are recorded as a
+  known limit. In those windows the echo bar and conditions 1, 2 and 4 still apply. The gate still applies in the
+  faults that the meter stops and everywhere outside fault windows.
 - **RTE.43 [D]** "Unchanged" in KN7.13 concerns the fault's effect, not the absence of legitimate solver commits
   during the test (ONE.70, DET.43). RTE.42 therefore compares the same command sequence with and without the fault.
   Each durable receipt still means committed. Charter E2 uses the full key-to-first-correct-frame interval; LP3
@@ -536,14 +545,20 @@ LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind noth
 
 | Interval | S | M | L |
 | --- | --- | --- | --- |
-| Typed echo | 50 / 67 | 50 / 67 | 50 / 67 |
-| Syntax feedback | 67 / 100 | 67 / 100 | 100 / 150 |
+| Typed echo | 100 / 100 | 100 / 100 | 100 / 100 |
+| Syntax feedback | 100 / 100 | 100 / 100 | 100 / 150 |
 | Completion list shown | 100 / 150 | 100 / 150 | 150 / 250 |
 | Type and effect diagnostics, from the last key of a burst | 150 / 250 | 200 / 300 | 500 / 750 |
 | Stale state shown on a view, charter D2 | 100 / 150 | 100 / 150 | 100 / 150 |
 | Reference view re-run, updated view presented | 250 / 400 | 250 / 400 | 500 / 750 |
 
   At W an edit to an exported signature has its dependents re-checked within 1,000 / 1,500 ms, p95 / p99.
+
+  Amended under PHS.52 after LP3's C9 sitting (owner,
+  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), item 1): every p95
+  and p99 bar below 100 ms became 100 ms, the bar of charter E2 (RTE.43). Typed echo was 50 / 67 at S, M and L, and
+  syntax feedback 67 / 100 at S and M. The other bars are unchanged, and RTE.50 keeps the reasoning given for the
+  earlier ones.
 
 - **RTE.50 [D]** The reasoning is the one recorded with those bars. At the gate's 30 fps floor a key can land
   just after input sampling; two 33.3 ms frames give about 66.7 ms (arithmetic on the gate, not a timing). Syntax
@@ -582,6 +597,12 @@ LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind noth
   editor path until fixed. A bar missed only at L or W goes to the owner with the numbers. If editor work makes a
   run miss the gate or E2, the route fails at any size. No bar is relaxed without the owner. This rule feeds LQ9;
   an L-only miss is reported under the specific escalation sentence and cannot be called an all-bars pass.
+  Amended under PHS.52 after LP3's C9 sitting (owner,
+  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 and 2): the
+  bars are RTE.49's as amended. A sample without a confirmed frame counts as one failed sample, and its run stays
+  valid, as charter E2 counts a key without a confirmed frame (owner, 20 November 2026, item 2). The renderer gate's
+  reference for these runs may be a met W3 summary of the same build from the same night, in place of a gate result
+  from the same runs. Charter E2 still holds in the same runs.
 
 ## 17. LX-5: exact arithmetic
 
@@ -780,7 +801,7 @@ LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind noth
 | CT-RTE-08 | Static subset approval remains bound to executed dependency bytes; substitution or dynamic code is refused, and module, branch, preview-outcome and persisted-word cases retain the selected BM2 discipline | source |
 | CT-RTE-09 | Cold/warm caches, eviction, aliasing and host allocation do not change KN7.9 charges; synthetic large entries and deep recursion end at the specified logical boundaries without host wraparound | synthetic |
 | CT-RTE-10 | LX-2's native fault/control command sequences leave equal journal rows and hashes, preserve the open session and typed outcome, and retain the engine-owned pending preview after runtime death | windows |
-| CT-RTE-11 | Every LX-2 fault window meets renderer and echo bars and contains at least 100 E2 commits; each of three cold startups is measured against the explicitly proposed E3 bar | performance |
+| CT-RTE-11 | Every LX-2 fault window meets the renderer and echo bars that RTE.42, as amended, requires there and contains at least 100 E2 commits; each of three cold startups is measured against the explicitly proposed E3 bar | performance |
 | CT-RTE-12 | LX-4 freezes deterministic S/M/L/W fixtures, records all nine protocol steps and all three series per puzzle, accounts for 10,800 S/M/L samples separately from W/additional work and applies the stated S/M versus L/W rule | performance |
 | CT-RTE-13 | LX-5 uses every RTE.55 size, obtains exact Python-reference agreement, streams literal letters without silent splitting and computes the 166,788,405-letter length without claiming literal replay | source |
 | CT-RTE-14 | LX-6 identifies frozen O01 to O07 bytes and compares required state, net and expansion digests through the oracle comparator; a difference stops the spike with its case and step | source |
