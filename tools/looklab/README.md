@@ -1150,3 +1150,18 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
   unnoticed; they are not the owner's text budgets for trial content. Text an instrument draws itself (rail ids,
   keycaps) and tooltips are not counted. The reach check reads source text: a control whose handler acts without
   raising a command by name is not seen by it, and focus order by Tab is not checked.
+
+### A5 stage 10, point 7: History in full
+
+- Already there before this point: abandoned redo steps kept as a branch, the partial undo (one move back inside the
+  last applied entry, recorded as its own action) and "roll to here".
+- New (ADR-D01.16): each kept branch has a row with its starting entry, its entries and moves, and two controls.
+  Switch makes the branch the line: it asks first (Confirm or Cancel in the row), the later entries of the current
+  line become a branch in its place, and nothing is rewritten or lost. Switch is off while an entry is partly undone
+  or when the branch's starting entry is no longer on the line, and its tooltip says why. Replay brings the branch's
+  moves back as a preview that the commit bar commits.
+- The command `session.branch.select` runs from the palette too: there it only opens the confirm gate in History.
+- Tour stop 18 shows a partial undo inside an entry and a kept branch.
+- Demo data: the entries and moves are the sample session's; the puzzle state does not follow the history.
+- Not shown: names for branches, a tree drawing of more than one level, and restoring a named version. Replay has
+  no command of its own (it is a button only).

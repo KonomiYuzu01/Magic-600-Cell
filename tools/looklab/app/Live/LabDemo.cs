@@ -52,7 +52,7 @@ internal sealed class LabDemo
     private const string Cut = "\n\u001e\n";
 
     public static bool Handles(string command) => command is "operation.preview" or "operation.preview.commit" or "operation.preview.cancel" or "view.preview.open" or
-        "view.preview.scrub" or "session.undo" or "session.redo" or "session.undo.partial" or "session.rollback" or "layout.undo" or "layout.redo" or "history.dock.mode";
+        "view.preview.scrub" or "session.undo" or "session.redo" or "session.undo.partial" or "session.branch.select" or "session.rollback" or "layout.undo" or "layout.redo" or "history.dock.mode";
 
     public LabDemo(ChromeFrame frame, Keymap keymap, Action<string, string?> run)
     {
@@ -63,7 +63,7 @@ internal sealed class LabDemo
         Button stage = ChromeWidgets.Tool("Stage", "Stage the next sample preview"); stage.Name = "StageSample";
         stage.Pressed += () => run("operation.preview", null);
         Bar.Tools.AddChild(stage);
-        Bar.Command += run; Bar.Parameter += SetParameter; History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
+        Bar.Command += run; Bar.Parameter += SetParameter; History.Replay += ReplayBranch; History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
         foreach ((string origin, string name, string time, int sample) in new[] { ("hand", "twist(cell 5, axis 0, +1)", "10:02", 2), ("macro", "my.corner_swap(cell 40)", "10:05", 0),
             ("script", "sweep.6cs on ring 1", "10:11", 1), ("hand", "twist(cell 77, axis 3, -1)", "10:12", 2), ("macro", "my.corner_swap(cell 117)", "10:20", 0) })
             Moves.Commit(origin, name, time, "commit " + name, origin == "hand" ? new[] { name } : Samples[sample].Moves);
@@ -127,6 +127,16 @@ internal sealed class LabDemo
     }
 
     private (int Id, Sample Sample)? rebuilt;
+    // The later moves of an old line come back as a preview the solver commits (ADR-D01.16).
+    public void ReplayBranch(int branch)
+    {
+        if (branch < 0 || branch >= Moves.Branches.Count) return;
+        HistoryBranch kept = Moves.Branches[branch]; string[] moves = kept.Entries.SelectMany(e => e.Moves).ToArray();
+        string name = $"replay of the branch after {kept.From}";
+        Preview shown = Preview.Show("preview " + name, "kept branch", moves, PreviewStatus.Ready, null, Array.Empty<OrbitEffect>(), "not checked (demo)", Clock());
+        rebuilt = (shown.Id, new Sample(shown.Statement, "kept branch", "macro", name, moves, PreviewStatus.Ready, null, new int[Samples[0].Moved.Length], ""));
+        frame.Say($"{moves.Length} moves of the old line are back as a preview");
+    }
     // A host part that owns a preview's source rebuilds it itself and answers true.
     public Func<Preview, int, int, bool>? Reparam { get; set; }
     public const string NotEvaluated = " Parameters changed: the moves and effects are still the sample's (demo data).";
@@ -182,6 +192,17 @@ internal sealed class LabDemo
             case "session.undo": Moved(Moves.Undo(), "Nothing to undo"); break;
             case "session.redo": Moved(Moves.Redo(), "Nothing to redo"); break;
             case "session.undo.partial": Moved(Moves.StepBack(), "Nothing to step back in"); break;
+            case "session.branch.select":
+            {
+                // A branch switch passes its confirm gate: the first request only asks, in the History dock.
+                string[] parts = (argument ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries); bool confirmed = parts.Length == 2 && parts[0] == "confirm";
+                if (Moves.Branches.Count == 0) { frame.Say("There is no kept branch", true); break; }
+                if (!int.TryParse(parts.Length > 0 ? parts[^1] : "0", NumberStyles.None, CultureInfo.InvariantCulture, out int branch)) { frame.Say("Switch branch: it needs the number of a branch", true); break; }
+                if (Moves.SelectRefusal(branch) is { } no) { frame.Say("Branch not switched: " + no, true); break; }
+                if (!confirmed) { History.Show(false); History.Ask(branch); frame.Say("Switch lines? Confirm in History"); break; }
+                Preview.Discard(); Moves.SelectBranch(branch); frame.Say(Moves.Actions[^1]);
+                break;
+            }
             case "session.rollback": Moved(argument != null && Moves.RollTo(int.Parse(argument, CultureInfo.InvariantCulture)), "The history is already there"); break;
             case "layout.undo": Nothing(Restore(Layout.Undo()), "No layout change to undo"); break;
             case "layout.redo": Nothing(Restore(Layout.Redo()), "No layout change to redo"); break;

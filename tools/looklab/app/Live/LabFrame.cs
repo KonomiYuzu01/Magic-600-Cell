@@ -344,7 +344,10 @@ internal static class LabFrame
             ("the orbit rail: 35 cells in one admissible order, the working cell opened in place", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(solve.Demo.State.Orbit); }),
             ("the draft line: Prepare, Core and Cleanup, the Goal unmet and the commit still open; Strict fails where Net passes", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); solve.Draft.SetRoute("draft");
                 solve.Draft.Edit("prepare: twist(cell 5, axis 0, +1)"); solve.Draft.Edit("core: twist(cell 40, axis 2, -1)"); solve.Draft.SetGoal(OperationDraft.SampleGoal); solve.Draft.SetMode(CheckMode.Strict); }),
-            ("inline parameters on the commit bar: the numbers of the staged statement, edited in place", () => { Home(); solve.Draft.Clear(); demo.Stage(2); demo.SetParameter(1, 3); }),
+            ("History in full: a partial undo inside an entry, and a kept branch with Replay and Switch (Switch waits while an entry is partly undone, and asks first)", () => { Home(); solve.Draft.Clear(); demo.Preview.Discard();
+                if (demo.Moves.Branches.Count == 0) { demo.Moves.RollTo(Math.Max(0, demo.Moves.Entries.Count - 1)); demo.CommitDirect("twist(cell 7, axis 1, +1)"); }
+                demo.History.Show(false); demo.History.Ask(-1); demo.Moves.RollTo(Math.Min(3, demo.Moves.Entries.Count)); demo.Moves.StepBack(); demo.Moves.StepBack(); }),
+            ("inline parameters on the commit bar: the numbers of the staged statement, edited in place", () => { Home(); solve.Draft.Clear(); demo.Moves.RollTo(demo.Moves.Entries.Count); demo.History.Ask(-1); demo.Stage(2); demo.SetParameter(1, 3); }),
             ("the key map, pinned: what each key does with the pointer over Local, and the active key set", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); keys.ContextsOverride = new[] { "local-view", "global" }; keys.Shown.Pin(true); }),
             ("the strip and the rail at the last buffer of the endgame", () => { Home(); keys.ContextsOverride = null; keys.Shown.Pin(false); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),
             ("the strip after a fresh scramble: nothing is set", () => { Home(); solve.Demo.Show("fresh"); }),

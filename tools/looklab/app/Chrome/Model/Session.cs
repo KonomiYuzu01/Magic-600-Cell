@@ -151,6 +151,27 @@ public sealed class MoveHistory
         return true;
     }
 
+    private int At(string from) => from == "start" ? 0 : entries.FindIndex(e => e.Id == from) + 1 is var at && at > 0 ? at : -1;
+
+    // Why a branch cannot become the line now, or null (ADR-D01.16).
+    public string? SelectRefusal(int branch) =>
+        branch < 0 || branch >= branches.Count ? "there is no such branch"
+        : Inner > 0 ? $"{entries[Cursor - 1].Id} is partly undone; redo it or finish the undo first"
+        : At(branches[branch].From) < 0 ? $"{branches[branch].From} is not on this line" : null;
+
+    // The branch becomes the line and is applied to its end. The later entries of the old line are kept as a
+    // branch in its place: nothing is rewritten and nothing is lost.
+    public bool SelectBranch(int branch)
+    {
+        if (SelectRefusal(branch) != null) return false;
+        HistoryBranch taken = branches[branch]; int at = At(taken.From);
+        HistoryEntry[] tail = entries.Skip(at).ToArray(); entries.RemoveRange(at, entries.Count - at); entries.AddRange(taken.Entries);
+        branches.RemoveAt(branch); if (tail.Length > 0) branches.Insert(branch, new HistoryBranch(taken.From, tail));
+        Cursor = entries.Count; Inner = 0;
+        Did($"switch to the branch after {taken.From} ({taken.Entries.Count} {(taken.Entries.Count == 1 ? "entry" : "entries")})");
+        return true;
+    }
+
     // "Roll to here": one action that may take several steps.
     public bool RollTo(int cursor)
     {

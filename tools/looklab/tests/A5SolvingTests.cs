@@ -218,4 +218,34 @@ internal static partial class Program
         Check(words.Values.All(v => v > 0 && v < 400), "a word limit that limits nothing");
         Check(File.ReadAllText(Path.Combine(Lab, "app/Live/Sweep.cs")).Contains("over its limit of", StringComparison.Ordinal), "the sweep no longer counts words");
     }
+
+    // History in full (ADR-D01.15, ADR-D01.16): branches switch without loss, behind a confirm gate.
+    private static void A5HistoryBranchesInFull()
+    {
+        var h = new MoveHistory();
+        HistoryEntry Add(string name, int moves) => h.Commit("hand", name, "10:00", "commit " + name, Enumerable.Range(0, moves).Select(i => name + i).ToArray())!;
+        HistoryEntry a = Add("a", 2), b = Add("b", 3), c = Add("c", 1);
+        string[] All() => h.Entries.Concat(h.Branches.SelectMany(x => x.Entries)).Select(e => e.Id).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        // A commit in the middle records a branch from that point: the later entries of the old line are kept.
+        h.RollTo(1); HistoryEntry d = Add("d", 2);
+        Check(h.Branches.Count == 1 && h.Branches[0].From == a.Id && h.Branches[0].Entries.Select(e => e.Id).SequenceEqual(new[] { b.Id, c.Id }) && h.Entries.Select(e => e.Id).SequenceEqual(new[] { a.Id, d.Id }), "the branch of a commit in the middle");
+        string[] every = All(); Check(every.Length == 4, "an entry was lost");
+        // A partly undone entry refuses the switch, and so does a branch that does not exist.
+        h.StepBack(); Check(h.Inner == 1 && h.SelectRefusal(0) != null && !h.SelectBranch(0) && h.Actions[^1].StartsWith("partial undo " + d.Id, StringComparison.Ordinal), "a switch inside a partial undo");
+        h.Redo(); Check(h.SelectRefusal(0) == null && h.SelectRefusal(1) != null && h.SelectRefusal(-1) != null && !h.SelectBranch(3), "refusals");
+        // The switch swaps the lines: the branch is applied to its end, the old later entries become the branch.
+        int actions = h.Actions.Count;
+        Check(h.SelectBranch(0) && h.Entries.Select(e => e.Id).SequenceEqual(new[] { a.Id, b.Id, c.Id }) && h.Cursor == 3 && h.Inner == 0, "the branch did not become the line");
+        Check(h.Branches.Count == 1 && h.Branches[0].From == a.Id && h.Branches[0].Entries.Single().Id == d.Id && All().SequenceEqual(every) && h.Actions.Count == actions + 1 && h.Actions[^1].StartsWith("switch to the branch after " + a.Id, StringComparison.Ordinal), "the old line was rewritten or lost");
+        // Switching back gives the earlier line again, and a branch whose starting entry left the line is refused.
+        Check(h.SelectBranch(0) && h.Entries.Select(e => e.Id).SequenceEqual(new[] { a.Id, d.Id }) && All().SequenceEqual(every), "switching back");
+        h.RollTo(0); Add("e", 1);
+        Check(h.Branches.Count == 2 && h.Branches.Any(x => x.From == "start") && h.SelectRefusal(h.Branches.ToList().FindIndex(x => x.From == a.Id)) != null && h.SelectRefusal(h.Branches.ToList().FindIndex(x => x.From == "start")) == null, "a branch off the line");
+        Check(All().Length == 5, "an entry was lost at the start");
+        // The command exists, the lab handles it, and the panel sends it only from its confirm control.
+        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        string panel = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/SessionPanels.cs")), lab = File.ReadAllText(Path.Combine(Lab, "app/Live/LabDemo.cs"));
+        Check(registry.Commands.ContainsKey("session.branch.select") && lab.Contains("if (!confirmed) {", StringComparison.Ordinal), "the branch switch has no command or no gate");
+        Check(System.Text.RegularExpressions.Regex.Matches(panel, "Send\\(\"session.branch.select\"").Count == 1 && panel.Contains("\"confirm \" + at", StringComparison.Ordinal), "the panel switches without the confirm gate");
+    }
 }

@@ -214,6 +214,11 @@ public sealed partial class HistoryPanel : VBoxContainer
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
     private readonly HashSet<string> open = new(StringComparer.Ordinal);
+    // The confirm gate of a branch switch: the branch that is being asked about, or -1.
+    public int Asking { get; private set; } = -1;
+    public void Ask(int branch) { Asking = branch; Refresh(); }
+    // Bring a kept branch's moves back as a preview the solver commits.
+    public event Action<int>? Replay;
 
     public HistoryPanel(MoveHistory moves, LayoutHistory layout, Func<TokenSet> tokens)
     {
@@ -278,13 +283,30 @@ public sealed partial class HistoryPanel : VBoxContainer
         }
         if (Moves.Cursor == 0 && Moves.Entries.Count > 0) List.AddChild(CursorLine(t));
         Control start = Row(t, false, false, null, "Start of the session", "", null, () => Send("session.rollback", "0")); List.AddChild(start);
-        foreach (HistoryBranch branch in Moves.Branches)
+        if (Asking >= Moves.Branches.Count) Asking = -1;
+        for (int b = 0; b < Moves.Branches.Count; b++)
         {
+            HistoryBranch branch = Moves.Branches[b]; int at = b;
             var line = new HBoxContainer(); line.SetMeta("branch", branch.From);
             Label mark = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(mark, "history.branch", t.Px("icon.small")); mark.AddThemeColorOverride("font_color", t.C("state.stale")); line.AddChild(mark);
-            Label text = ChromeWidgets.Text($"kept branch after {branch.From}: {string.Join(", ", branch.Entries.Select(e => e.Name))}", "DimLabel", true);
+            Label text = ChromeWidgets.Text($"branch after {branch.From} \u00b7 {branch.Entries.Count} {(branch.Entries.Count == 1 ? "entry" : "entries")}, {branch.Entries.Sum(e => e.Moves.Count)} moves: {string.Join(", ", branch.Entries.Select(e => e.Name))}", "DimLabel", true);
             text.SizeFlagsHorizontal = SizeFlags.ExpandFill; text.TooltipText = "Abandoned redo steps stay recoverable; nothing is rewritten."; line.AddChild(text);
-            List.AddChild(line);
+            var tools = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End }; tools.SetMeta("branch_tools", at);
+            if (Asking == at)
+            {
+                Label ask = ChromeWidgets.Text("Switch lines?", "AccentLabel"); tools.AddChild(ask);
+                Button yes = ChromeWidgets.Tool("Confirm", "Make this branch the line. The later entries of the current line are kept as a branch."); yes.Name = "BranchConfirm";
+                yes.Pressed += () => { Asking = -1; Send("session.branch.select", "confirm " + at.ToString(System.Globalization.CultureInfo.InvariantCulture)); }; tools.AddChild(yes);
+                Button no = ChromeWidgets.Tool("Cancel", "Keep the current line"); no.Name = "BranchCancel"; no.Pressed += () => Ask(-1); tools.AddChild(no);
+            }
+            else
+            {
+                Button replay = ChromeWidgets.Tool("Replay", "Bring this branch's moves back as a preview you commit"); replay.Name = "BranchReplay"; replay.Pressed += () => Safe.Raise(Replay, at); tools.AddChild(replay);
+                string? why = Moves.SelectRefusal(at);
+                Button swap = ChromeWidgets.Tool("Switch", why == null ? "Switch to this branch; it asks first" : "Not now: " + why); swap.Name = "BranchSwitch"; swap.Disabled = why != null;
+                swap.Pressed += () => Ask(at); tools.AddChild(swap);
+            }
+            List.AddChild(line); List.AddChild(tools);
         }
     }
 
