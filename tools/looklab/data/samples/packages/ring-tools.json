@@ -1,0 +1,13 @@
+{
+  "format": "magic600-script-package",
+  "id": "ring-tools",
+  "title": "Ring tools",
+  "author": "another author",
+  "digest": "sha256:5df99ff75645f75f3253a8d316fda24b2236f18770e7ee799b8a18c93c814494",
+  "capabilities": [
+    "read",
+    "preview"
+  ],
+  "file": "ring_tools.6cs",
+  "source": "edition \"6cs-draft-1\";\n# Ring tools, a package by another author.\n\nexport fn count_rings() -> Nat effects [snapshot] {\n    return count(rings());\n}\n\nexport command solve_ring(ring: Nat) -> Preview effects [preview] {\n    let cells = ring_cells(ring);\n    return preview(sweep(cells, axis 1));\n}\n"
+}

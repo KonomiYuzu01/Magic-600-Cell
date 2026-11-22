@@ -68,6 +68,13 @@ public partial class Shell : Control
     private (ulong FrameId, ulong DisplayQpc)? _firstShown;
     private bool _exitAtFirstFrame;
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
+    /// <summary>The frame (A5): the chrome library over the window. Null unless M600_CHROME is 1.</summary>
+    private ShellChrome? _chrome;
+    /// <summary>The window rectangle the core's surface has, the one the frame's opening asks for, and for how many
+    /// process steps it has asked for it.</summary>
+    private Rect2I _area;
+    private Rect2I _wanted;
+    private int _steady;
 
     public override void _Ready()
     {
@@ -89,6 +96,7 @@ public partial class Shell : Control
         var assets = System.Environment.GetEnvironmentVariable("M600_ASSETS");
         if (string.IsNullOrEmpty(core) || string.IsNullOrEmpty(host) || string.IsNullOrEmpty(assets))
         {
+            OpenChrome();
             return;
         }
         try
@@ -99,6 +107,31 @@ public partial class Shell : Control
         {
             GD.PushError($"the core did not open: {error.Message}");
             CloseCore();
+        }
+        OpenChrome();
+    }
+
+    /// <summary>
+    /// Opens the frame (A5): the chrome library and the design data that build_shell.py staged, with the Global view as
+    /// an opening over the core's picture when the core is open. Without M600_CHROME=1 the window stays bare, as every measured run has it.
+    /// </summary>
+    private void OpenChrome()
+    {
+        if (System.Environment.GetEnvironmentVariable("M600_CHROME") != "1" || ShellChrome.DesignFolder() is not { } folder)
+        {
+            return;
+        }
+        try
+        {
+            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero);
+            if (_echo is { } echo)
+            {
+                MoveChild(echo, -1);
+            }
+        }
+        catch (Exception error)
+        {
+            GD.PushError($"the frame did not open: {error.Message}");
         }
     }
 
@@ -122,6 +155,7 @@ public partial class Shell : Control
         var hwnd = DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
         var window = (IntPtr)hwnd;
         _size = DisplayServer.WindowGetSize();
+        _area = new Rect2I(Vector2I.Zero, _size);
         // The core opens Godot's own adapter, not DXGI's first hardware adapter (C9 U4).
         var device = RenderingServer.GetRenderingDevice()
             ?? throw new InvalidOperationException("the shell needs Godot's rendering device");
@@ -216,10 +250,16 @@ public partial class Shell : Control
         if (result.Press == HostLibrary.PressCommitted)
         {
             _log?.Press(qpc, handled, result.EngineRevision);
+            _chrome?.Committed(chord, result.EngineRevision);
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
             _log?.Press(qpc, handled, 0);
+            _chrome?.Refused(chord);
+        }
+        else if (result.Press == HostLibrary.PressOther)
+        {
+            _chrome?.Stepped(chord);
         }
     }
 
@@ -243,7 +283,20 @@ public partial class Shell : Control
         var qpc = EventLog.Now();
         if (@event is InputEventKey turn)
         {
-            Turn(turn, qpc);
+            // One router decides (A5): a key the chrome takes never reaches the session, and a key that goes to the
+            // session's router never reaches the chrome.
+            if (_chrome is not { } chrome)
+            {
+                Turn(turn, qpc);
+            }
+            else if (!chrome.Takes(turn))
+            {
+                Turn(turn, qpc);
+                if (_session && KeyChord.Code(turn.PhysicalKeycode) is not null)
+                {
+                    GetViewport().SetInputAsHandled();
+                }
+            }
         }
         if (_echo is not { } echo)
         {
@@ -313,13 +366,26 @@ public partial class Shell : Control
         {
             return;
         }
-        var size = DisplayServer.WindowGetSize();
-        if (size != _size && size.X > 0 && size.Y > 0)
+        // With the frame (A5) the core's surface lies under the Global view's opening and follows it once the opening
+        // has kept one place for a few steps; without the frame it lies under the whole window.
+        var area = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+        _steady = area == _wanted ? _steady + 1 : 0;
+        _wanted = area;
+        if (area != _area && area.Size.X > 0 && area.Size.Y > 0 && (_chrome is null || _steady >= 6))
         {
-            surface.Resize((uint)size.X, (uint)size.Y);
-            _log?.SwapChain(surface.SwapChain());
-            Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
-            _size = size;
+            if (area.Position != _area.Position)
+            {
+                surface.Move(area.Position.X, area.Position.Y);
+            }
+            var size = area.Size;
+            if (size != _size)
+            {
+                surface.Resize((uint)size.X, (uint)size.Y);
+                _log?.SwapChain(surface.SwapChain());
+                Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
+                _size = size;
+            }
+            _area = area;
         }
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
@@ -377,6 +443,7 @@ public partial class Shell : Control
                 }
             }
         } while (count == _presented.Length);
+        _chrome?.Shown(_shownRevision);
     }
 
     /// <summary>Before Godot draws and presents its frame (RenderingServer's frame_pre_draw).</summary>

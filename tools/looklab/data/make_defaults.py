@@ -123,6 +123,9 @@ def main():
                        region("review", "overlay", .66, .08, .32, .40, "overlay"),
                        region("commands", "overlay", .28, .90, .36, .08, "overlay")]
         placements = {context: {"placed": {}, "hidden": []} for context in contexts}
+        # The owner places new commands: one the stored layout does not place yet stays hidden.
+        stored = HERE / f"layouts/{id}.json"
+        known = json.loads(stored.read_bytes())["contexts"] if stored.exists() else None
         for command in commands["commands"]:
             name = command["id"]
             target = ("stage" if name in ("camera.rotate", "object.inspect", "grip.select", "twist.apply") else
@@ -131,7 +134,10 @@ def main():
             if target == "stage" and id in ("split-views", "focus-inset"):
                 target = "global"
             for context in command["contexts"]:
-                placements[context]["placed"][name] = target
+                if known is None or name in known.get(context, {}).get("placed", {}):
+                    placements[context]["placed"][name] = target
+                else:
+                    placements[context]["hidden"].append(name)
         write(HERE / f"layouts/{id}.json", {"format": "magic600-look-layout", "version": 1, "id": id,
                                             "grid": {"columns": 12, "rows": 12}, "regions": regions, "contexts": placements})
     flows = [

@@ -412,6 +412,7 @@ def godot_lane(mode, temporary, env, parent, stems=()):
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll6.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll7.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll8.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_a5.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
         elif mode == "--godot-gpu":
             run = godot_run(godot, stage, temporary, env, [*common, "stage0-gpu"], graphics=True)
             if "LOOKLAB_STAGE0_GPU_PASS" not in run.stdout:

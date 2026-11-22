@@ -1,0 +1,134 @@
+{
+  "format": "magic600-design-motion",
+  "version": 1,
+  "motions": [
+    {
+      "id": "twist.committed",
+      "meaning": "A committed twist turns once, the faster preset.",
+      "duration": "twist",
+      "curve": "standard",
+      "static": "The stickers sit in their new places.",
+      "cue": "cue.twist"
+    },
+    {
+      "id": "twist.queued",
+      "meaning": "A committed twist while more wait: faster.",
+      "duration": "twist.queued",
+      "curve": "linear",
+      "static": "The stickers sit in their new places.",
+      "cue": "cue.twist"
+    },
+    {
+      "id": "twist.preview",
+      "meaning": "A preview twist goes out and comes back: it is not committed.",
+      "duration": "slow",
+      "curve": "enter",
+      "static": "The preview mark on the frame and the pending chip.",
+      "cue": null
+    },
+    {
+      "id": "view.transition",
+      "meaning": "The view eases to its new place; repeated presses add up.",
+      "duration": "view",
+      "curve": "standard",
+      "static": "The view at its new place.",
+      "cue": null
+    },
+    {
+      "id": "span.flash",
+      "meaning": "The evaluated span flashes once.",
+      "duration": "flash",
+      "curve": "exit",
+      "static": "The lasting bar in the gutter.",
+      "cue": "cue.evaluated"
+    },
+    {
+      "id": "dock.open",
+      "meaning": "A dock or the palette opens.",
+      "duration": "fast",
+      "curve": "enter",
+      "static": "The dock is open.",
+      "cue": null
+    },
+    {
+      "id": "task.done",
+      "meaning": "A finished task flashes its row once.",
+      "duration": "flash",
+      "curve": "exit",
+      "static": "The state glyph of the row.",
+      "cue": "cue.task"
+    },
+    {
+      "id": "marker.pending",
+      "meaning": "The pending marker breathes while something waits.",
+      "duration": "slow",
+      "curve": "linear",
+      "static": "The pending glyph, still.",
+      "cue": null
+    },
+    {
+      "id": "cursor.rollback",
+      "meaning": "The rollback cursor slides to the chosen entry.",
+      "duration": "base",
+      "curve": "standard",
+      "static": "The cursor at the entry.",
+      "cue": null
+    },
+    {
+      "id": "reward.mark",
+      "meaning": "A small mark changes in place at a milestone. Never a dialog.",
+      "duration": "settle",
+      "curve": "enter",
+      "static": "The changed mark.",
+      "cue": "cue.milestone"
+    },
+    {
+      "id": "strip.change",
+      "meaning": "A strip item that changed shows its edge once.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "The item shows its new value.",
+      "cue": "cue.strip"
+    },
+    {
+      "id": "orbit.complete",
+      "meaning": "An orbit's cell takes its solved mark in place. Nothing travels to another cell.",
+      "duration": "settle",
+      "curve": "enter",
+      "static": "The solved mark on the cell.",
+      "cue": "cue.orbit"
+    },
+    {
+      "id": "next.activate",
+      "meaning": "The Next bookmark becomes the Target: the bookmark empties as the Target fills.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "The Target shows the piece's home and Next is unset.",
+      "cue": "cue.next"
+    },
+    {
+      "id": "lock.set",
+      "meaning": "A lock closes on a rail cell.",
+      "duration": "flash",
+      "curve": "enter",
+      "static": "The lock mark, partial or whole.",
+      "cue": "cue.lock"
+    },
+    {
+      "id": "lock.release",
+      "meaning": "A lock opens on a rail cell.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "No lock mark.",
+      "cue": "cue.lock"
+    },
+    {
+      "id": "route.switch",
+      "meaning": "The Draft or Direct mark changes sides and the grip marker changes pattern.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "The mark on its new side.",
+      "cue": "cue.route"
+    }
+  ]
+}

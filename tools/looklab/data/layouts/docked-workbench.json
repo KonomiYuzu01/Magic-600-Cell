@@ -144,9 +144,6 @@
         "protection.orbit.unlock": "review",
         "keyboard.toggle": "commands",
         "input.destination.set": "commands",
-        "bank.select": "commands",
-        "grip.capture": "commands",
-        "bank.functions.toggle": "commands",
         "keymap.edit": "commands",
         "command.find": "commands",
         "filter.open": "instruments",
@@ -160,7 +157,106 @@
         "camera.center": "commands",
         "set.save": "commands"
       },
-      "hidden": []
+      "hidden": [
+        "grip.anchor.set",
+        "grip.rebind",
+        "workspace.reset",
+        "session.branch.select",
+        "session.history",
+        "session.completion",
+        "session.practice",
+        "file.session.backup",
+        "file.proof.export",
+        "file.certificate.export",
+        "file.macro.export",
+        "file.macro.check",
+        "file.macro.import",
+        "app.exit",
+        "app.reconnect",
+        "help.open",
+        "work.surface.show",
+        "work.surface.close",
+        "work.layout.set",
+        "work.layout.reset",
+        "work.fullscreen.toggle",
+        "transient.close",
+        "list.move",
+        "list.row.copy",
+        "camera.zoom",
+        "view.preview.scrub",
+        "view.local.configure",
+        "display.references.set",
+        "display.mode.set",
+        "object.copy",
+        "object.locate",
+        "target.current.set",
+        "target.next.clear",
+        "target.frame.set",
+        "block.reference.set",
+        "block.remove",
+        "protection.orbit.set",
+        "grip.behavior.set",
+        "grip.frames",
+        "grip.rotations",
+        "grip.members",
+        "keymap.defaults",
+        "keymap.save",
+        "keymap.name",
+        "keyboard.disclosure.set",
+        "filter.edit",
+        "filter.preset",
+        "filter.save",
+        "filter.load",
+        "structure.select",
+        "structure.adjacency",
+        "structure.vertex",
+        "structure.filter.compose",
+        "macro.replace",
+        "macro.metadata.set",
+        "macro.filter",
+        "macro.library.check",
+        "macro.compose",
+        "macro.operand.set",
+        "macro.reference.check",
+        "endgame.choices",
+        "endgame.check",
+        "reference.set",
+        "worksheet.compare",
+        "view.cycle.select",
+        "view.cycle.page",
+        "view.reason",
+        "view.journal.delta",
+        "view.open",
+        "view.close",
+        "recording.start",
+        "recording.stop",
+        "recording.play",
+        "recording.convert",
+        "workspace.set",
+        "theme.select",
+        "theme.tune",
+        "token.override.set",
+        "token.override.reset",
+        "density.preset.set",
+        "type.scale.set",
+        "motion.preset.set",
+        "motion.reduced.set",
+        "panel.mount",
+        "panel.unmount",
+        "radial.edit",
+        "palette.pin",
+        "palette.alias",
+        "explore.set",
+        "view.preview.open",
+        "view.pin",
+        "view.compare.wipe",
+        "history.dock.mode",
+        "layout.undo",
+        "layout.redo",
+        "session.undo.partial",
+        "operation.preview.commit",
+        "session.rollback"
+      ]
     },
     "editor": {
       "placed": {},
@@ -180,13 +276,19 @@
         "twist.apply": "stage",
         "twist.inverse.toggle": "commands"
       },
-      "hidden": []
+      "hidden": [
+        "operation.phase.append_twist",
+        "jumble.twist.menu",
+        "jumble.twist.append"
+      ]
     },
     "macro_base": {
       "placed": {
         "macro.select": "instruments"
       },
-      "hidden": []
+      "hidden": [
+        "jumble.correction.lookup"
+      ]
     },
     "operation": {
       "placed": {
@@ -195,7 +297,13 @@
         "operation.execute": "review",
         "operation.preview.cancel": "review"
       },
-      "hidden": []
+      "hidden": [
+        "jumble.twist.append",
+        "jumble.observe",
+        "jumble.release.check",
+        "jumble.corrections.check",
+        "jumble.correction.lookup"
+      ]
     },
     "puzzle": {
       "placed": {
@@ -203,7 +311,23 @@
         "twist.apply": "stage",
         "camera.rotate": "stage"
       },
-      "hidden": []
+      "hidden": [
+        "operation.phase.append_twist",
+        "jumble.on",
+        "jumble.off",
+        "jumble.twist.menu",
+        "jumble.survey",
+        "jumble.observe",
+        "jumble.straddlers",
+        "jumble.certificate.inspect",
+        "jumble.release.check",
+        "jumble.covers",
+        "jumble.repair.list",
+        "jumble.nu",
+        "jumble.corrections.check",
+        "jumble.checkpoint.check",
+        "jumble.scramble"
+      ]
     },
     "solve": {
       "placed": {

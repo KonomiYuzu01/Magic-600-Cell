@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] decision | The design-system ADR line's evening decisions and A5
+Recorded the owner's evening answers on the ADR line in [owner-decisions-2026-11-22-adr-line-evening](decisions/owner-decisions-2026-11-22-adr-line-evening.md): revision 4's seven options, A5's stage 10 scope, the ADR-D02 and ADR-D03 shells, ADR-D03's learning-curve solve test, A5's budget past the USD 150 ceiling, the 1.0 log file to LP4, and A6 with computer use. The same pull request lands A5's Look Lab build.
+
 ## [2026-11-22] decision | The design and art path in four freeze rounds
 The owner approved the design, art and promotion path: stage 2 ends with a usable program framework, UI/UX freezes in four rounds (round 1 at A7, round 2 ends stage 2), K2 opens after A7 and the Jumbling ADR (ADR-D02) beside LP4 and LP5, sound, motion and icons are not cut, and the line uses no API until the owner says so; the briefing records it, with its format-packet pin refreshed under FP.1 ([decision](decisions/owner-decisions-2026-11-22-design-art-path.md)).
 

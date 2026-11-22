@@ -1,0 +1,31 @@
+edition "6cs-draft-1";
+# One program, six mounts: palette entries, a context action, an inspector
+# section, a docked panel, a free view and an overlay annotation.
+
+# Context action of a cell: the cells that touch it.
+export fn neighbours(of: Cell) -> Set effects [snapshot] {
+    return context(cell, touching(of));
+}
+
+# Inspector section: the rings the selection lies on.
+export fn facts() -> record { cells: Nat, rings: Nat } effects [snapshot] {
+    let chosen = selection();
+    return inspector(record { cells: count(chosen), rings: count(rings_of(chosen)) });
+}
+
+# Docked panel: every host widget, tuned by the solver.
+export fn tuner(ring: Nat) -> Nat effects [snapshot] {
+    let cells = ring_cells(ring);
+    return panel(tuner_widgets(cells));
+}
+
+# Free view: the census of one ring as a diagram.
+export command ring_view(ring: Nat) -> View effects [view] {
+    return view(ring_diagram(ring_cells(ring)));
+}
+
+# Overlay annotation: mark the ring in both views. Display only.
+export fn annotate_ring(ring: Nat) -> Nat effects [snapshot] {
+    let cells = ring_cells(ring);
+    return annotate(cells, mark(ring));
+}

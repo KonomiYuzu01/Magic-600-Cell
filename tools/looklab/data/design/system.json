@@ -1,0 +1,1001 @@
+{
+  "format": "magic600-design-system",
+  "version": 1,
+  "density": {
+    "unit": 4,
+    "presets": [
+      "compact",
+      "default",
+      "comfortable"
+    ],
+    "shipped": "compact",
+    "tokens": {
+      "space.1": [
+        0.5,
+        1,
+        1
+      ],
+      "space.2": [
+        1,
+        1.5,
+        2
+      ],
+      "space.3": [
+        2,
+        2.5,
+        3
+      ],
+      "space.4": [
+        3,
+        4,
+        5
+      ],
+      "control.height": [
+        5.5,
+        6.5,
+        7.5
+      ],
+      "row.height": [
+        5,
+        6,
+        7
+      ],
+      "bar.height": [
+        6.5,
+        7.5,
+        8.5
+      ],
+      "status.height": [
+        5,
+        5.5,
+        6.5
+      ],
+      "radius.control": [
+        0.5,
+        0.75,
+        1
+      ],
+      "radius.panel": [
+        0,
+        0.5,
+        1
+      ],
+      "border.width": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "focus.width": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "icon.small": [
+        3,
+        3.5,
+        4
+      ],
+      "icon.medium": [
+        4,
+        4,
+        5
+      ],
+      "icon.large": [
+        5,
+        6,
+        6
+      ],
+      "dock.width": [
+        46,
+        54,
+        62
+      ],
+      "dock.height": [
+        30,
+        34,
+        38
+      ],
+      "rail.width": [
+        7,
+        8,
+        9
+      ],
+      "strip.width": [
+        9,
+        10,
+        11
+      ],
+      "relation.width": [
+        38,
+        42,
+        46
+      ],
+      "rail.height": [
+        13,
+        15,
+        17
+      ],
+      "scrollbar.width": [
+        2,
+        2.5,
+        3
+      ],
+      "slider.height": [
+        3,
+        4,
+        4
+      ]
+    }
+  },
+  "type": {
+    "ui": {
+      "faces": [
+        "IBM Plex Sans",
+        "Segoe UI"
+      ],
+      "files": {
+        "400": [
+          "ibm-plex-sans/node_modules/@ibm/plex-sans/fonts/complete/woff2/IBMPlexSans-Regular.woff2"
+        ],
+        "600": [
+          "ibm-plex-sans/node_modules/@ibm/plex-sans/fonts/complete/woff2/IBMPlexSans-SemiBold.woff2"
+        ]
+      },
+      "ramp": {
+        "micro": 11,
+        "small": 12,
+        "body": 13,
+        "title": 14,
+        "heading": 17
+      },
+      "tabular": true
+    },
+    "content": {
+      "faces": [
+        "IBM Plex Serif",
+        "Georgia"
+      ],
+      "files": {
+        "400": [
+          "ibm-plex-serif/node_modules/@ibm/plex-serif/fonts/complete/woff2/IBMPlexSerif-Regular.woff2"
+        ],
+        "600": [
+          "ibm-plex-serif/node_modules/@ibm/plex-serif/fonts/complete/woff2/IBMPlexSerif-SemiBold.woff2"
+        ]
+      },
+      "ramp": {
+        "small": 13,
+        "body": 14,
+        "title": 17,
+        "heading": 21
+      },
+      "tabular": false
+    },
+    "code": {
+      "faces": [
+        "Lilex",
+        "Consolas"
+      ],
+      "files": {
+        "400": [
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-ext-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-greek-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-symbols2-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-cyrillic-400-normal.woff2"
+        ],
+        "600": [
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-ext-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-greek-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-symbols2-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-cyrillic-600-normal.woff2"
+        ]
+      },
+      "ramp": {
+        "small": 12,
+        "body": 13,
+        "large": 15
+      },
+      "tabular": true
+    }
+  },
+  "motion": {
+    "durations": {
+      "instant": 0,
+      "fast": 80,
+      "base": 140,
+      "slow": 240,
+      "twist": 220,
+      "twist.queued": 110,
+      "view": 260,
+      "flash": 320,
+      "settle": 180,
+      "debounce.caret": 150,
+      "debounce.diagnostics": 300
+    },
+    "curves": {
+      "standard": [
+        0.2,
+        0,
+        0,
+        1
+      ],
+      "enter": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "exit": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    }
+  },
+  "roles": {
+    "surface.window": {
+      "group": "chrome",
+      "meaning": "The window behind every panel."
+    },
+    "surface.panel": {
+      "group": "chrome",
+      "meaning": "A docked panel or bar."
+    },
+    "strip.ground": {
+      "group": "chrome",
+      "meaning": "The ground of the relationship strip and the orbit rail."
+    },
+    "surface.control": {
+      "group": "chrome",
+      "meaning": "A control at rest."
+    },
+    "surface.raised": {
+      "group": "chrome",
+      "meaning": "A hovered control, a popup or a tooltip."
+    },
+    "surface.sunken": {
+      "group": "chrome",
+      "meaning": "A pressed control or an editable field."
+    },
+    "border.subtle": {
+      "group": "chrome",
+      "meaning": "The line between regions and around controls."
+    },
+    "border.strong": {
+      "group": "chrome",
+      "meaning": "The line around popups and the grabbers of scrollbars."
+    },
+    "text.primary": {
+      "group": "chrome",
+      "meaning": "Text and icons that are read."
+    },
+    "text.secondary": {
+      "group": "chrome",
+      "meaning": "Supporting text and idle icons."
+    },
+    "text.disabled": {
+      "group": "chrome",
+      "meaning": "Text of a control that cannot be used now."
+    },
+    "accent.base": {
+      "group": "chrome",
+      "meaning": "The one accent: the active choice, a filled slider, the text selection."
+    },
+    "accent.strong": {
+      "group": "chrome",
+      "meaning": "The accent as text or as a thin line on a surface."
+    },
+    "accent.text": {
+      "group": "chrome",
+      "meaning": "Text on the accent."
+    },
+    "focus.ring": {
+      "group": "chrome",
+      "meaning": "The keyboard focus indicator."
+    },
+    "grid.line": {
+      "group": "chrome",
+      "meaning": "Grid and guide lines; their strength follows the grid intensity knob."
+    },
+    "script.frame": {
+      "group": "chrome",
+      "meaning": "The frame around every area a script draws."
+    },
+    "state.committed": {
+      "group": "state",
+      "meaning": "The committed puzzle state.",
+      "cue": "solid outline, no label"
+    },
+    "state.preview": {
+      "group": "state",
+      "meaning": "A pending preview that is not committed.",
+      "cue": "dashed outline and the label \"preview\""
+    },
+    "state.pending": {
+      "group": "state",
+      "meaning": "A preview is waiting; shown on the main views.",
+      "cue": "ring marker at the view corner"
+    },
+    "state.stale": {
+      "group": "state",
+      "meaning": "Applied, display stale: computed before the current state.",
+      "cue": "hatched fill and the label \"stale\""
+    },
+    "state.invalid": {
+      "group": "state",
+      "meaning": "Impossible or refused.",
+      "cue": "struck-through outline and the reason as text"
+    },
+    "state.selected": {
+      "group": "state",
+      "meaning": "The selection.",
+      "cue": "corner brackets"
+    },
+    "state.protected": {
+      "group": "state",
+      "meaning": "A protected orbit or position.",
+      "cue": "lock glyph"
+    },
+    "severity.error": {
+      "group": "state",
+      "meaning": "An error.",
+      "cue": "octagon"
+    },
+    "severity.warning": {
+      "group": "state",
+      "meaning": "A warning.",
+      "cue": "triangle"
+    },
+    "severity.info": {
+      "group": "state",
+      "meaning": "A note.",
+      "cue": "circle"
+    },
+    "severity.ok": {
+      "group": "state",
+      "meaning": "Done without a problem.",
+      "cue": "check mark"
+    },
+    "strip.cell.target": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the Target, a position.",
+      "cue": "a ring with a centre"
+    },
+    "strip.cell.occupant": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the Occupant of a position.",
+      "cue": "a filled cell"
+    },
+    "strip.cell.wanted": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the Wanted piece.",
+      "cue": "an outlined diamond"
+    },
+    "strip.cell.buffer_a": {
+      "group": "encoding",
+      "meaning": "Relationship strip: Buffer A, a position.",
+      "cue": "a single bracket"
+    },
+    "strip.cell.buffer_b": {
+      "group": "encoding",
+      "meaning": "Relationship strip: Buffer B, a position.",
+      "cue": "a double bracket"
+    },
+    "strip.cell.target_frame": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the Target frame, Home or Captured.",
+      "cue": "two axes"
+    },
+    "strip.cell.residual": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the working orbit's Residual.",
+      "cue": "a delta"
+    },
+    "strip.next": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the Next bookmark, apart from the relation.",
+      "cue": "a bookmark at the strip's end"
+    },
+    "strip.link": {
+      "group": "encoding",
+      "meaning": "The link from a strip item to its anchor in a view.",
+      "cue": "a thin line and a ring"
+    },
+    "anchor.target": {
+      "group": "encoding",
+      "meaning": "Anchor on a position: the Target.",
+      "cue": "a ring with a centre"
+    },
+    "anchor.buffer_a": {
+      "group": "encoding",
+      "meaning": "Anchor on a position: Buffer A.",
+      "cue": "a single bracket"
+    },
+    "anchor.buffer_b": {
+      "group": "encoding",
+      "meaning": "Anchor on a position: Buffer B.",
+      "cue": "a double bracket"
+    },
+    "anchor.wanted": {
+      "group": "encoding",
+      "meaning": "Anchor on a piece: the Wanted piece. It follows the piece.",
+      "cue": "an outlined diamond around the place"
+    },
+    "anchor.next": {
+      "group": "encoding",
+      "meaning": "Anchor on a piece: the Next bookmark. It follows the piece.",
+      "cue": "a bookmark around the place"
+    },
+    "rail.ground": {
+      "group": "chrome",
+      "meaning": "The ground of the orbit rail."
+    },
+    "rail.cell.id": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the orbit id, O00 to O34.",
+      "cue": "the id in the code face"
+    },
+    "rail.cell.group": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the orientation-group glyph.",
+      "cue": "one glyph per group type"
+    },
+    "rail.cell.residual_level": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the residual level, a quantity drawn as a length.",
+      "cue": "a bar whose length is the quantity"
+    },
+    "rail.cell.solved": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the solved mark, stated only when exactly solved.",
+      "cue": "a check mark"
+    },
+    "rail.cell.lock": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the lock.",
+      "cue": "a padlock, open for partial and closed for whole"
+    },
+    "rail.cell.working": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the working orbit.",
+      "cue": "a border and a bar under the cell"
+    },
+    "rail.cell.next": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the Next bookmark lies in this orbit.",
+      "cue": "a bookmark"
+    },
+    "rail.lock.none": {
+      "group": "encoding",
+      "meaning": "Orbit rail lock: none.",
+      "cue": "no mark"
+    },
+    "rail.lock.partial": {
+      "group": "encoding",
+      "meaning": "Orbit rail lock: partial.",
+      "cue": "an open padlock"
+    },
+    "rail.lock.whole": {
+      "group": "encoding",
+      "meaning": "Orbit rail lock: the whole orbit.",
+      "cue": "a closed, filled padlock"
+    },
+    "rail.status.open": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: open.",
+      "cue": "a residual bar"
+    },
+    "rail.status.solved": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: exactly solved.",
+      "cue": "a check mark and an empty track"
+    },
+    "rail.status.permitted_residual": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: a permitted residual at the last buffer.",
+      "cue": "a short bar with a tick"
+    },
+    "rail.status.unknown_frame": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: unknown, which is never zero.",
+      "cue": "a hatched track"
+    },
+    "rail.moment.complete": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the completion moment, in place on its own cell.",
+      "cue": "the solved mark appears on the cell"
+    },
+    "mark.route.draft": {
+      "group": "encoding",
+      "meaning": "The route mark: Draft. Twists go to the active phase.",
+      "cue": "a broken outline"
+    },
+    "mark.route.direct": {
+      "group": "encoding",
+      "meaning": "The route mark: Direct. A twist is one complete operation.",
+      "cue": "a whole outline"
+    },
+    "draft.phase.prepare": {
+      "group": "encoding",
+      "meaning": "Draft line: the Prepare phase.",
+      "cue": "first segment"
+    },
+    "draft.phase.core": {
+      "group": "encoding",
+      "meaning": "Draft line: the Core phase.",
+      "cue": "middle segment"
+    },
+    "draft.phase.cleanup": {
+      "group": "encoding",
+      "meaning": "Draft line: the Cleanup phase.",
+      "cue": "last segment"
+    },
+    "commit.goal.unset": {
+      "group": "encoding",
+      "meaning": "Goal: none declared.",
+      "cue": "the word unset"
+    },
+    "commit.goal.met": {
+      "group": "encoding",
+      "meaning": "Goal: met over the head and the staged effect.",
+      "cue": "the word met and a filled mark"
+    },
+    "commit.goal.unmet": {
+      "group": "encoding",
+      "meaning": "Goal: not met. It never gates a commit.",
+      "cue": "the word unmet and an empty mark"
+    },
+    "commit.goal.unknown": {
+      "group": "encoding",
+      "meaning": "Goal: not evaluated.",
+      "cue": "the word unknown and a hatched mark"
+    },
+    "chip.check_mode.net": {
+      "group": "encoding",
+      "meaning": "Check mode: Net.",
+      "cue": "the word Net"
+    },
+    "chip.check_mode.strict": {
+      "group": "encoding",
+      "meaning": "Check mode: Strict.",
+      "cue": "the word Strict"
+    },
+    "commit.status.settling": {
+      "group": "encoding",
+      "meaning": "Commit status: the settle interval runs.",
+      "cue": "a lit lamp"
+    },
+    "keymap.key.bound": {
+      "group": "encoding",
+      "meaning": "Key map: a key bound where the pointer is.",
+      "cue": "a whole outline and the command"
+    },
+    "keymap.key.unbound": {
+      "group": "encoding",
+      "meaning": "Key map: a key with no binding.",
+      "cue": "a faint outline and no command"
+    },
+    "keymap.key.held": {
+      "group": "encoding",
+      "meaning": "Key map: a key that is held down.",
+      "cue": "a filled cap"
+    },
+    "keymap.key.out_of_context": {
+      "group": "encoding",
+      "meaning": "Key map: a key bound in another place.",
+      "cue": "a broken outline and the place"
+    },
+    "keymap.key.twist": {
+      "group": "encoding",
+      "meaning": "Key map: a twist key.",
+      "cue": "a double outline"
+    },
+    "lamp.idle": {
+      "group": "encoding",
+      "meaning": "A lamp at rest.",
+      "cue": "an empty ring"
+    },
+    "lamp.active": {
+      "group": "encoding",
+      "meaning": "A lamp that is on: something is in progress or not at its newest.",
+      "cue": "a filled lamp"
+    },
+    "lamp.attention": {
+      "group": "encoding",
+      "meaning": "A lamp that asks for a look.",
+      "cue": "a filled lamp inside a ring"
+    },
+    "syntax.keyword": {
+      "group": "syntax",
+      "meaning": "A 600 Cell Script keyword."
+    },
+    "syntax.identifier": {
+      "group": "syntax",
+      "meaning": "A name."
+    },
+    "syntax.type": {
+      "group": "syntax",
+      "meaning": "A type name."
+    },
+    "syntax.number": {
+      "group": "syntax",
+      "meaning": "A number."
+    },
+    "syntax.string": {
+      "group": "syntax",
+      "meaning": "A string."
+    },
+    "syntax.operator": {
+      "group": "syntax",
+      "meaning": "An operator or a maths symbol."
+    },
+    "syntax.reference": {
+      "group": "syntax",
+      "meaning": "A typed reference to a cell, sticker, orbit or macro."
+    },
+    "syntax.comment": {
+      "group": "syntax",
+      "meaning": "A comment."
+    }
+  },
+  "components": {
+    "window.background": "surface.window",
+    "panel.background": "surface.panel",
+    "panel.border": "border.subtle",
+    "control.background": "surface.control",
+    "control.hover": "surface.raised",
+    "control.pressed": "surface.sunken",
+    "control.border": "border.subtle",
+    "control.focus": "focus.ring",
+    "field.background": "surface.sunken",
+    "text": "text.primary",
+    "text.dim": "text.secondary",
+    "text.off": "text.disabled",
+    "tab.selected": "surface.panel",
+    "tab.idle": "surface.window",
+    "separator": "border.subtle",
+    "selection.background": "accent.base",
+    "selection.text": "accent.text",
+    "slider.fill": "accent.base",
+    "popup.background": "surface.raised",
+    "popup.border": "border.strong",
+    "scrollbar.grabber": "border.strong",
+    "tooltip.background": "surface.raised"
+  },
+  "contrast": [
+    {
+      "text": "text.primary",
+      "surface": "surface.window",
+      "minimum": 7
+    },
+    {
+      "text": "text.primary",
+      "surface": "surface.panel",
+      "minimum": 7
+    },
+    {
+      "text": "text.primary",
+      "surface": "surface.raised",
+      "minimum": 7
+    },
+    {
+      "text": "text.secondary",
+      "surface": "surface.panel",
+      "minimum": 4.5
+    },
+    {
+      "text": "accent.text",
+      "surface": "accent.base",
+      "minimum": 4.5
+    },
+    {
+      "text": "accent.strong",
+      "surface": "surface.panel",
+      "minimum": 4.5
+    },
+    {
+      "text": "focus.ring",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.committed",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.preview",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.pending",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.stale",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.invalid",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.selected",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.protected",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.error",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.warning",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.info",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.ok",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.target",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.occupant",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.wanted",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.buffer_a",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.buffer_b",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.target_frame",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.residual",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.next",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.link",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.target",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.buffer_a",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.buffer_b",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.wanted",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.next",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.id",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.residual_level",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.solved",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.lock",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.working",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "mark.route.draft",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "mark.route.direct",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "draft.phase.prepare",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "draft.phase.core",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "draft.phase.cleanup",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.unset",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.met",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.unmet",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.unknown",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "chip.check_mode.net",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "chip.check_mode.strict",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.status.settling",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.bound",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.unbound",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.held",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.out_of_context",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.twist",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "lamp.idle",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "lamp.active",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "lamp.attention",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.keyword",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.identifier",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.type",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.number",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.string",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.operator",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.reference",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.comment",
+      "surface": "surface.panel",
+      "minimum": 3
+    }
+  ]
+}
