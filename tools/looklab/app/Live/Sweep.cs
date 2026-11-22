@@ -113,11 +113,22 @@ internal static class Sweep
             settings.Add((workspace, null));
             if (workspace == frame.Workspaces.Order[0]) settings.AddRange(frame.Model.Docks[DockSide.Right].Panels.Where(p => p != LabFrame.Tune).Select(p => (workspace, (string?)p)));
         }
+        var counted = new HashSet<string>(StringComparer.Ordinal); var wordLimits = new Dictionary<string, int>(StringComparer.Ordinal);
+        using (System.Text.Json.JsonDocument limits = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools/looklab/data/design/screen-words.json"))))
+            foreach (System.Text.Json.JsonProperty p in limits.RootElement.GetProperty("words").EnumerateObject()) wordLimits[p.Name] = p.Value.GetInt32();
         foreach ((string workspace, string? right) in settings)
         {
             var pressed = new HashSet<string>(StringComparer.Ordinal);
             for (int guard = 0; ; guard++)
             {
+                if (guard == 1 && counted.Add(workspace))
+                {
+                    // Words per screen: what a person reads in labels and on buttons, against the screen's limit.
+                    int words = ScreenWords(frame, session.App);
+                    if (!wordLimits.TryGetValue(workspace, out int limit)) throw new Exception($"{Mode}: the {workspace} screen has no word limit in screen-words.json");
+                    GD.Print($"LOOKLAB_A5_WORDS workspace={workspace} words={words} limit={limit}");
+                    if (words > limit) throw new Exception($"{Mode}: the {workspace} screen shows {words} words, over its limit of {limit}");
+                }
                 if (guard > 400) throw new Exception(Mode + ": the buttons of " + workspace + " never ran out");
                 Calm(); frame.SelectWorkspace(workspace); if (right != null) frame.Model.ShowDock(DockSide.Right, right);
                 await Frames(2);
@@ -170,6 +181,16 @@ internal static class Sweep
         }
         parts.Reverse();
         return string.Join("/", parts);
+    }
+
+    // The words on screen: the text of every label, button and empty field that is shown inside the window. Text
+    // drawn by an instrument itself (rail ids, keycaps) and tooltips are not counted.
+    private static int ScreenWords(ChromeFrame frame, LabApp app)
+    {
+        Rect2 window = frame.GetViewport().GetVisibleRect();
+        return TokenLint.Words(frame.FindChildren("*", "Control", true, false).OfType<Control>()
+            .Where(c => c.IsVisibleInTree() && c.Size.X >= 2 && c.Size.Y >= 2 && window.HasPoint(c.GetGlobalRect().GetCenter()) && !app.ParameterPanel.IsAncestorOf(c) && !app.Greybox.Canvas.IsAncestorOf(c))
+            .Select(c => c switch { Label l => l.Text, Button b => b.Text, LineEdit e => e.Text.Length == 0 ? e.PlaceholderText : "", _ => "" }));
     }
 
     private static Button[] Visible(ChromeFrame frame, LabApp app)

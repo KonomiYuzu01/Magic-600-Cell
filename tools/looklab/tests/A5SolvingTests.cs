@@ -180,4 +180,42 @@ internal static partial class Program
         string bar = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/SessionPanels.cs"));
         Check(bar.Contains("Safe.Raise(Parameter, index", StringComparison.Ordinal) && bar.Contains("InlineParameters.Find(p.Statement)", StringComparison.Ordinal), "the commit bar has no inline parameters");
     }
+
+    // Two automatic screen checks: every action has a path from the keyboard, and each screen has a word limit.
+    private static void A5ScreenChecksKeyboardAndWords()
+    {
+        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        string text = Read("data/design/keymap.json"); Keymap keys = Keymap.Parse(text, registry);
+        using System.Text.Json.JsonDocument checks = System.Text.Json.JsonDocument.Parse(Read("data/design/screen-words.json"));
+        // The palette lists every command and opens from the keyboard in every key set, so a command is a path.
+        var sets = new List<Keymap> { keys };
+        foreach (string preset in Directory.GetFiles(Path.Combine(Lab, "data/design/keymaps"), "*.json")) sets.Add(Keymap.Parse(File.ReadAllText(preset), registry, keys));
+        foreach (Keymap set in sets)
+        {
+            Check(set.Bindings.Any(b => b.Command == "command.find" && b.Context == Keymap.Global), "a key set cannot open the palette");
+            Check(set.Bindings.Any(b => b.Command == "transient.close" && b.Context == Keymap.Global) && set.Bindings.Any(b => b.Command == "help.open"), "a key set cannot close an overlay or show the key map");
+        }
+        var palette = new PaletteModel(registry, keys, (_, _) => null);
+        Check(registry.Commands.Keys.All(id => palette.Rows(registry.Commands[id].Label).Any(r => r.Command == id)), "a command is missing from the palette");
+        // Every action an element raises is a command of the registry, or is listed as pointer-only.
+        var raised = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (string folder in new[] { "app/Chrome/Ui", "app/Live" })
+            foreach (string file in Directory.GetFiles(Path.Combine(Lab, folder), "*.cs"))
+                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "Raise\\(Command, \"([a-z0-9_.]+)\""))
+                    raised.Add(m.Groups[1].Value);
+        string[] listed = checks.RootElement.GetProperty("pointer_only").EnumerateArray().Select(e => e.GetString()!).ToArray();
+        string[] pointerOnly = raised.Where(id => !registry.Commands.ContainsKey(id)).ToArray();
+        Check(raised.Count >= 10, "the scan found too few actions: " + raised.Count);
+        Sequence(pointerOnly, listed, "actions with no path from the keyboard: " + string.Join(", ", pointerOnly));
+        // The solving surface from the keyboard alone: eleven commands have a key, and the orbit jump is a held key.
+        string[] keyed = { "target.current.set", "target.next.set", "target.next.activate", "target.next.clear", "buffer.assign", "target.frame.set", "input.destination.set", "intent.set",
+            "operation.phase.select", "operation.phase.edit", "operation.phase.append_twist" };
+        foreach (string id in keyed) Check(keys.Bindings.Any(b => b.Command == id), id + " has no key");
+        Check(File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/OrbitRail.cs")).Contains("Key.O ", StringComparison.Ordinal), "the orbit jump lost its key");
+        // Each workspace has a word limit, and the running sweep holds each screen to it.
+        var words = checks.RootElement.GetProperty("words").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetInt32());
+        Sequence(words.Keys.OrderBy(k => k, StringComparer.Ordinal), new[] { "analyse", "gallery", "reference", "script", "solve" });
+        Check(words.Values.All(v => v > 0 && v < 400), "a word limit that limits nothing");
+        Check(File.ReadAllText(Path.Combine(Lab, "app/Live/Sweep.cs")).Contains("over its limit of", StringComparison.Ordinal), "the sweep no longer counts words");
+    }
 }

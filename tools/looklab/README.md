@@ -1135,3 +1135,18 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
   the effects stay those of the sample, which the preview says.
 - Tour stop 18 shows a typed twist with its three fields.
 - Not shown: parameters that are not whole numbers, and a parameter of a macro's own definition.
+
+### A5 stage 10, point 14: two automatic screen checks
+
+- Keyboard reach, in the tests that `python tools/looklab/check.py` runs: every key set (the default and each
+  preset) opens the palette, closes an overlay and shows the key map; the palette lists every command; every action
+  that an element raises by name is a command, or is listed under `pointer_only` in
+  `data/design/screen-words.json` (the list is empty today); eleven of the twelve solving commands have a key and
+  the twelfth is the held orbit jump.
+- Words per screen, in the sweep of the Godot lane (`check.py --godot`): for each of the five workspaces the sweep
+  counts the words of the labels, buttons and empty fields shown in the window and fails over the limit in the same
+  file. Counts on 22 November 2026: solve 129, script 99, analyse 160, reference 96, gallery 141.
+- Limits of the checks: the word limits are those counts with a margin, kept so that a screen does not grow
+  unnoticed; they are not the owner's text budgets for trial content. Text an instrument draws itself (rail ids,
+  keycaps) and tooltips are not counted. The reach check reads source text: a control whose handler acts without
+  raising a command by name is not seen by it, and focus order by Tab is not checked.
