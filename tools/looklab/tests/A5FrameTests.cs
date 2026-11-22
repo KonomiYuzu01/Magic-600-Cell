@@ -95,6 +95,52 @@ internal static partial class Program
         Refuse(() => again.Restore("use|theme.tune||many|1"), "palette");
     }
 
+    private static void A5SessionPreviewAndTwoHistories()
+    {
+        var effects = new[] { new OrbitEffect("a", 2, 10) }; string[] three = { "m1", "m2", "m3" };
+        var preview = new PreviewModel(); int changes = 0; preview.Changed += () => changes++;
+        Equal(preview.CommitRefusal(0), "there is no preview"); Check(preview.Take(0) == null && !preview.Discard(), "nothing to take");
+        Preview first = preview.Show("preview a", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 10);
+        Check(first.Id == 1 && preview.Scrub == 3 && !preview.Replaced && preview.CommitRefusal(10) == null, "a first preview commits at once");
+        // A replacement takes a new id and cannot be committed inside the settle interval.
+        Preview second = preview.Show("preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 20);
+        Check(second.Id == 2 && preview.Replaced && preview.CommitRefusal(20 + PreviewModel.Settle / 2) != null && preview.Take(20.1) == null && preview.Pending == second, "settle");
+        Check(preview.CommitRefusal(20 + PreviewModel.Settle * 1.01) == null, "settle ends");
+        preview.SetScrub(9); Equal(preview.Scrub, 3); preview.SetScrub(0); Check(preview.CommitRefusal(30) != null, "an empty prefix commits nothing");
+        preview.SetScrub(2); Preview prefix = preview.Take(30)!;
+        Check(prefix.Id == 3 && prefix.Moves.Count == 2 && prefix.Statement.EndsWith("prefix(2)", StringComparison.Ordinal) && preview.Pending == null, "the prefix is its own preview");
+        Refuse(() => preview.Show("preview c", "x", three, PreviewStatus.Refused, " ", effects, "ok", 40), "preview");
+        preview.Show("preview c", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", effects, "none", 40);
+        Check(preview.CommitRefusal(99) == "not yours" && preview.Take(99) == null, "a refused preview never commits");
+        preview.Show("preview d", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 50); preview.MarkStale("state moved");
+        Check(preview.Pending!.Status == PreviewStatus.Stale && preview.Take(99) == null && preview.Discard() && preview.Pending == null && changes > 8, "stale");
+
+        var moves = new MoveHistory();
+        Refuse(() => moves.Commit("robot", "x", "t", "s", three), "robot"); Refuse(() => moves.Commit("hand", "x", "t", "s", Array.Empty<string>()), "x");
+        foreach (string name in new[] { "one", "two", "three" }) moves.Commit("hand", name, "10:00", "commit " + name, three);
+        Sequence(moves.Entries.Select(e => e.Id), new[] { "t-0001", "t-0002", "t-0003" }); Equal(moves.Cursor, 3);
+        Check(moves.Undo() && moves.Undo() && moves.Cursor == 1 && moves.Redo() && moves.Cursor == 2 && moves.Entries.Count == 3, "undo and redo move the cursor only");
+        // A partial undo steps inside the entry and is recorded as its own action; a commit waits for it.
+        Check(moves.StepBack() && moves.Inner == 1 && moves.Cursor == 2 && moves.Actions[^1] == "partial undo t-0002 move 3" && moves.CommitRefusal != null &&
+            moves.Commit("hand", "x", "t", "s", three) == null, "partial undo");
+        Check(moves.StepBack() && moves.StepBack() && moves.Inner == 0 && moves.Cursor == 1 && moves.Actions[^1] == "partial undo t-0002 move 1", "the last inner step finishes the undo");
+        // A commit in mid-history keeps the abandoned steps as a branch.
+        HistoryEntry four = moves.Commit("macro", "four", "10:05", "commit four", three)!;
+        Check(four.Id == "t-0004" && moves.Entries.Count == 2 && moves.Branches.Count == 1 && moves.Branches[0].From == "t-0001" &&
+            moves.Branches[0].Entries.Select(e => e.Name).SequenceEqual(new[] { "two", "three" }), "branch kept");
+        Check(moves.RollTo(0) && moves.Actions[^1] == "roll to start (2 steps)" && !moves.RollTo(0) && !moves.RollTo(3) && !moves.Undo() && moves.RollTo(2) && !moves.Redo(), "roll");
+        Equal(moves.Actions.Count, 3 + 3 + 3 + 1 + 2);
+
+        var layout = new LayoutHistory();
+        Check(layout.Undo() == null && layout.Record("Opened", "a") && !layout.Record("Same", "a") && layout.Record("Theme", "b") && layout.Record("Panes", "c"), "record");
+        Check(layout.Undo()!.State == "b" && layout.Undo()!.State == "a" && layout.Undo() == null && layout.Redo()!.State == "b" && layout.Cursor == 1, "layout undo and redo");
+        Check(layout.Record("Density", "d") && layout.Steps.Count == 3 && layout.Redo() == null && layout.RollTo(0)!.State == "a" && layout.RollTo(0) == null, "a new step drops the redo");
+        layout.RollTo(2); layout.Record("Knob 1", "k1", "knob"); layout.Record("Knob 2", "k2", "knob"); layout.Record("Knob 3", "k3", "knob");
+        Check(layout.Steps.Count == 4 && layout.Steps[^1].State == "k3" && layout.Undo()!.State == "d", "a dragged knob is one step");
+        for (int i = 0; i < LayoutHistory.Kept + 20; i++) layout.Record("step", "s" + i);
+        Check(layout.Steps.Count == LayoutHistory.Kept && layout.Cursor == LayoutHistory.Kept - 1, "the layout history is bounded");
+    }
+
     private static void A5FrameStoredArrangementRoundTripAndWorkspaces()
     {
         FrameModel frame = Frame();

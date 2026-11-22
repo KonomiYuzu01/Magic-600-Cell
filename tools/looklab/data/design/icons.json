@@ -99,6 +99,62 @@
     "help.keys": {
       "glyph": "keyboard",
       "fallback": "K"
+    },
+    "step.back": {
+      "glyph": "chevron-left",
+      "fallback": "<"
+    },
+    "step.forward": {
+      "glyph": "chevron-right",
+      "fallback": ">"
+    },
+    "history.undo": {
+      "glyph": "undo-2",
+      "fallback": "<-"
+    },
+    "history.redo": {
+      "glyph": "redo-2",
+      "fallback": "->"
+    },
+    "history.roll": {
+      "glyph": "corner-down-left",
+      "fallback": "<"
+    },
+    "history.partial": {
+      "glyph": "step-back",
+      "fallback": "|<"
+    },
+    "history.branch": {
+      "glyph": "git-branch",
+      "fallback": "Y"
+    },
+    "mark.pending": {
+      "glyph": "hourglass",
+      "fallback": "~"
+    },
+    "preview.commit": {
+      "glyph": "check",
+      "fallback": "ok"
+    },
+    "preview.discard": {
+      "glyph": "trash-2",
+      "fallback": "x"
+    },
+    "preview.promote": {
+      "glyph": "bookmark-plus",
+      "fallback": "+"
+    },
+    "preview.moves": {
+      "glyph": "list",
+      "fallback": "="
+    },
+    "fold.open": {
+      "glyph": "chevron-down",
+      "fallback": "v"
+    },
+    "fold.closed": {
+      "glyph": "chevrons-right",
+      "fallback": ">"
     }
   }
 }

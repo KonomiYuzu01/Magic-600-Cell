@@ -189,9 +189,28 @@
       "command": "operation.preview"
     },
     {
+      "key": "Ctrl+Enter",
+      "context": "global",
+      "command": "operation.preview.commit"
+    },
+    {
       "key": "Escape",
       "context": "preview",
-      "command": "transient.close"
+      "command": "operation.preview.cancel"
+    },
+    {
+      "key": "Left",
+      "context": "preview",
+      "command": "view.preview.scrub",
+      "argument": "back",
+      "label": "Preview: one move back"
+    },
+    {
+      "key": "Right",
+      "context": "preview",
+      "command": "view.preview.scrub",
+      "argument": "forward",
+      "label": "Preview: one move forward"
     }
   ]
 }

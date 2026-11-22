@@ -127,6 +127,21 @@ public sealed partial class ChromeFrame : Control
     private string Hint(string tooltip, string command, string? argument) =>
         keys?.KeysFor(command, argument) is { Length: > 0 } bound ? $"{tooltip} ({bound})" : tooltip;
     public event Action<Binding>? KeyCommand;
+    // Contexts the host adds in front of the view contexts, such as "preview" while a preview waits.
+    public Func<IEnumerable<string>>? Contexts { get; set; }
+    private Control? strip;
+    // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
+    public void SetStrip(Control control) { strip = control; dirty = true; }
+    // Replaces the content of a dock panel or of a pane, keeping its place.
+    public void SetContent(string id, Control content)
+    {
+        content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        int at = dockPanels.FindIndex(p => p.Id == id); Control old;
+        if (at >= 0) { old = dockPanels[at].Content; dockPanels[at] = dockPanels[at] with { Content = content }; }
+        else if (panes.TryGetValue(id, out Pane? pane)) { old = pane.Content; panes[id] = pane with { Content = content }; }
+        else throw new ArgumentException("no panel or pane is named " + id);
+        ChromeWidgets.Detach(old); old.QueueFree(); dirty = true;
+    }
 
     public ChromeFrame(TokenSet tokens, WorkspaceSet workspaces)
     {
@@ -198,6 +213,7 @@ public sealed partial class ChromeFrame : Control
     public IReadOnlyList<string> KeyContexts()
     {
         var chain = new List<string>();
+        if (Contexts != null && OpenOverlay == null) chain.AddRange(Contexts());
         if (HoveredView != null) chain.Add(ReferenceEquals(HoveredView, Global) ? "global-view" : "local-view");
         if (focusedContext != null && !chain.Contains(focusedContext)) chain.Add(focusedContext);
         chain.Add(Keymap.Global);
@@ -237,7 +253,7 @@ public sealed partial class ChromeFrame : Control
         dirty = false; HoveredView = null;
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
-        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health);
+        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -254,6 +270,7 @@ public sealed partial class ChromeFrame : Control
         centre.AddChild(Notice);
         Global = View("Global", globalContent); Local = View("Local", localContent);
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
+        if (strip != null) centre.AddChild(strip);
         if (!focus) { centre.AddChild(BottomDock()); middle.AddChild(SideDock(DockSide.Right)); }
         Rebuilt?.Invoke();
     }

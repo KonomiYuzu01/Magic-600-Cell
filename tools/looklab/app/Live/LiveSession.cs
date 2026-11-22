@@ -163,7 +163,7 @@ internal static class LiveChecks
         var restarted = new LiveSession(root, folder); host.AddChild(restarted);
         Same(before, restarted.App.CaptureView(), first.State.Schema, fault, "restart");
         Framed(restarted, fault);
-        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=6");
+        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=7");
     }
 
     // The window frame around the lab: both main views in the locked pair, the lab's panel in the right dock,
@@ -244,7 +244,7 @@ internal static class LiveChecks
         Require(frame.Press("Escape") && !palette.IsOpen && frame.Press("1") && frame.Workspace == "solve", fault, "single keys did not act");
         string theme = frame.Tokens.Theme.Id;
         Require(frame.Press("T") && frame.Tokens.Theme.Id != theme && frame.Press("T") && frame.Tokens.Theme.Id == theme, fault, "the theme key did not step the families");
-        Require(frame.Press("Ctrl+Z") && frame.Notice.Visible && frame.Notice.Text.Contains("no engine", StringComparison.Ordinal), fault, "an unavailable key gave no reason in place");
+        Require(frame.Press("Ctrl+Z") && frame.Notice.Visible && frame.Notice.Text.StartsWith("undo t-", StringComparison.Ordinal) && frame.Press("Ctrl+Y"), fault, "a key gave no feedback in place");
         // The shortcut sheet lists every binding of the keymap; while it is open only closing keys act.
         var sheet = (ShortcutSheet)frame.Overlays.FindChild("ShortcutSheet", true, false);
         Require(frame.Press("Shift+Slash") && sheet.IsOpen && sheet.Shown == frame.Keys!.Bindings.Count && sheet.Shown > 15, fault, "the shortcut sheet does not list the keymap");
@@ -258,6 +258,35 @@ internal static class LiveChecks
         Require(frame.Press("W") && radial.IsOpen && radial.Menu!.Id == "radial.workspace" && radial.Entries.Count == radial.Menu.Entries.Count && radial.Entries.Count >= 4, fault, "the radial menu did not open");
         Require(radial.Entries.Select(b => b.Position).Distinct().Count() == radial.Entries.Count && frame.Press("2") && !radial.IsOpen && frame.Workspace == "script", fault, "a radial entry was not chosen by its number");
         Require(frame.Press("W") && frame.Press("Escape") && !radial.IsOpen && frame.Workspace == "script" && frame.Press("1") && frame.Workspace == "solve", fault, "Esc did not close the radial menu");
+        // Preview and commit: one pending preview in its own view, the pair keeps the committed state, a
+        // replaced preview cannot be committed by the same key-down, and a refused one never commits.
+        LabDemo demo = LabFrame.DemoOf(frame); double now = 100; demo.Clock = () => now;
+        var commitBar = (CommitBar)frame.FindChild("CommitBar", true, false);
+        int marks = frame.Global.Marks.GetChildCount(), entries = demo.Moves.Entries.Count;
+        Require(commitBar.Commit.Disabled && frame.Press("Ctrl+Enter") && demo.Moves.Entries.Count == entries && frame.IsAncestorOf(demo.History), fault, "a commit ran without a preview");
+        ((Button)commitBar.Tools.FindChild("StageSample", true, false)).EmitSignal(BaseButton.SignalName.Pressed); frame.Flush();
+        Require(demo.Preview.Pending is { Id: 1, Status: PreviewStatus.Ready } && frame.Model.IsOpen(LabDemo.PreviewPane) && frame.IsAncestorOf(demo.PreviewView) &&
+            frame.Global.Marks.GetChildCount() == marks + 1 && frame.Global.Slot.IsAncestorOf(app.GlobalStage) && !commitBar.Commit.Disabled, fault, "the preview is not in its own view with the pair marked pending");
+        demo.Execute("operation.preview", "sample:1");
+        if (fault == "a5-settle-ignored") now += 1;
+        Require(demo.Preview.Replaced && demo.Preview.Pending!.Id == 2 && frame.Press("Ctrl+Enter") && demo.Preview.Pending != null && demo.Moves.Entries.Count == entries, fault, "a preview was committed as it replaced another");
+        now += 1; int moves = demo.Preview.Pending!.Moves.Count;
+        Require(frame.Press("Left") && demo.Preview.Scrub == moves - 1 && frame.Press("Ctrl+Enter") && demo.Preview.Pending == null &&
+            demo.Moves.Entries.Count == entries + 1 && demo.Moves.Entries[^1].Moves.Count == moves - 1 && demo.Moves.Entries[^1].Origin == "script", fault, "the prefix up to the scrub was not committed as one entry");
+        demo.Execute("operation.preview", "sample:3"); now += 1;
+        Require(commitBar.Commit.Disabled && commitBar.Reason.Text.Contains("protected", StringComparison.Ordinal) && frame.Press("Ctrl+Enter") && demo.Moves.Entries.Count == entries + 1 &&
+            frame.Press("Escape") && demo.Preview.Pending == null, fault, "an impossible preview was committed, or Esc did not discard it");
+        // Two histories: an undo in one never moves the other; an abandoned redo is kept as a branch.
+        int layoutAt = demo.Layout.Cursor, cursor = demo.Moves.Cursor;
+        Require(frame.Press("Ctrl+Z") && demo.Moves.Cursor == cursor - 1 && frame.Press("Ctrl+Y") && demo.Moves.Cursor == cursor && demo.Layout.Cursor == layoutAt, fault, "the move history keys did not act alone");
+        string themeWas = frame.Tokens.Theme.Id;
+        Require(frame.Press("T") && demo.Layout.Cursor == layoutAt + 1 && demo.Layout.Steps[^1].Name.StartsWith("Appearance: theme", StringComparison.Ordinal) &&
+            frame.Press("Ctrl+Alt+Z") && frame.Tokens.Theme.Id == themeWas && demo.Layout.Cursor == layoutAt && demo.Moves.Cursor == cursor &&
+            frame.Press("Ctrl+Alt+Y") && frame.Tokens.Theme.Id != themeWas && frame.Press("Ctrl+Alt+Z") && frame.Tokens.Theme.Id == themeWas, fault, "the layout history did not undo and redo the theme alone");
+        demo.Execute("session.undo.partial", null); bool inside = demo.Moves.Inner == 1;
+        demo.Execute("session.rollback", "2"); demo.Execute("operation.preview", "sample:2"); now += 1;
+        Require(inside && demo.Moves.Cursor == 2 && frame.Press("Ctrl+Enter") && demo.Moves.Entries.Count == 3 && demo.Moves.Branches.Count == 1 &&
+            demo.Moves.Branches[0].Entries.Count == entries - 1 && demo.History.List.GetChildren().Count(c => c.HasMeta("entry")) == 3, fault, "the abandoned redo steps were not kept as a branch");
         Require(app.CaptureView().Ui["frame.palette"].Contains("use|workspace.set|layout:analyse|1|", StringComparison.Ordinal), fault, "palette use is not kept");
         string before = frame.Model.Store();
         bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);

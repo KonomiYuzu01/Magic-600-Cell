@@ -12,6 +12,8 @@ namespace LookLab.App.Live;
 // chrome library; only this file knows about the lab.
 internal static class LabFrame
 {
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabDemo> Demos = new();
+    public static LabDemo DemoOf(ChromeFrame frame) => Demos.TryGetValue(frame, out LabDemo? demo) ? demo : throw new InvalidOperationException("the frame has no lab session");
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
@@ -96,6 +98,7 @@ internal static class LabFrame
             "command.find" or "transient.close" or "help.open" => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
+            _ when LabDemo.Handles(command) => null,
             _ => "Look Lab has no engine; this command runs in the product",
         };
         var commands = new PaletteModel(registry, keymap, Unavailable);
@@ -111,6 +114,7 @@ internal static class LabFrame
         find.Pressed += palette.Open; help.Pressed += sheet.Open;
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
+        LabDemo demo = null!;
         void Execute(string command, string? argument)
         {
             if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
@@ -131,12 +135,17 @@ internal static class LabFrame
                     break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
+                case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
                 default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;
             }
         }
         palette.Run += row => Execute(row.Command, row.Argument);
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap; frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
+        // The sample session: commit bar under the views, the preview view and the History dock.
+        demo = new LabDemo(frame, keymap, Execute); Demos.Add(frame, demo);
+        frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
+        frame.Contexts = () => demo.Preview.Pending != null ? new[] { "preview" } : Array.Empty<string>();
         app.ViewParts["frame.palette"] = (() => commands.Store(), v => { try { commands.Restore(v); } catch (FormatException) { } });
         // The token specimen in the left dock follows every change of the appearance.
         var specimen = new TokenSpecimen();
@@ -169,6 +178,7 @@ internal static class LabFrame
             {
                 view.ClearMarks();
                 view.AddMark("mark.committed", "committed", "state.committed", "This view shows the committed state.");
+                if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
                 view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
             }
             frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", "Local re-frames on the moving cells.");
@@ -176,10 +186,13 @@ internal static class LabFrame
             frame.Local.SetStatus("moving cells", new[] { "drag: rotate 4D" }, "follows Global");
         }
         frame.Rebuilt += Describe; frame.Recoloured += Describe;
+        demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         app.State.Changed += (_, _) => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         app.ViewParts["frame.workspace"] = (() => frame.Workspace, v => { if (frame.Workspaces.Stored.ContainsKey(v)) frame.SelectWorkspace(v); });
         app.ViewParts["frame.zlayout"] = (() => frame.Model.Store(), v => frame.Model.Apply(v));
         frame.Flush();
+        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout" };
+        demo.TrackLayout(() => kept.Select(k => app.ViewParts[k].Get()).ToArray(), parts => { for (int i = 0; i < kept.Length; i++) app.ViewParts[kept[i]].Set(parts[i]); });
         return frame;
     }
 }
