@@ -1,4 +1,4 @@
-//! CT-RPI-18 (synthetic), the whole definition on the CPU reference evaluator: singular and domain-boundary fixtures
+//! CT-RPI-18 (synthetic, whole definition on the CPU reference evaluator): singular and domain-boundary fixtures
 //! produce missing coverage, no non-finite draw or pick coordinates, and unchanged exact subjects (RPI.36, RPI.37).
 //! The exclusion neighbourhood is a declared fixture value, since RPI.36 is open. The same rule on a device with a user
 //! vertex stage is CT-RPI-33 (windows) and is not run here.

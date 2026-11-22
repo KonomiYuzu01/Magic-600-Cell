@@ -32,6 +32,10 @@ shows an event before process start or a load after the first correct frame is i
 counted (PHS.64). The time is (display_qpc - process_start) / qpc_frequency. Met only if at least three valid runs of
 one build exist, no run failed, and every valid run takes at most 3.0 s.
 """
+# CT-RTE-11 (performance, part: the three cold startups: U6 of LP3's C9 sitting ran them on the owner's machine with
+# the product build of 013900ff, `work/experiments/c9-sitting/results/e3-final.json`, `verdict` met, three valid cold
+# runs in `result.runs` of 1.890 to 1.905 s against 3.0 s, `result.max_seconds`; not run here: the fault windows, in
+# `rust/c600-lx2/src/lib.rs`).
 from __future__ import annotations
 
 import argparse

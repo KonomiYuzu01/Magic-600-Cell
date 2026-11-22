@@ -415,13 +415,14 @@ fn user_chart(id: u64, description: &StageDescription, properties: &[&str]) -> C
     user
 }
 
-/// CT-LB4-04 (part, the admission half as far as `c600-display` reaches it). A user chart whose vertex stage passes the
-/// stage rules is bound to that stage by its digest, and that admission alone leaves `admit_chart` at
-/// `not_established` for the property the chart claims. A stage outside the stage rules, a fragment stage and a chart
-/// that names another stage are refused before `admit_chart` is asked. An exact property claim needs LB4.2's checks:
-/// the claim is established only by exact checks of this chart at exact poses, with those scopes; checks of another
-/// chart, and a survey of float poses only, establish nothing; a refuted check refuses the chart. Not run: reading the
-/// declared outputs from a stage module (no stage-language checker), HLSL compilation and the compile record.
+/// CT-LB4-04 (part, the admission half as far as `c600-display` reaches it; not run: the on-screen half, on the owner's
+/// machine (C9)). A user chart whose vertex stage passes the stage rules is bound to that stage by its digest, and that
+/// admission alone leaves `admit_chart` at `not_established` for the property the chart claims. A stage outside the
+/// stage rules, a fragment stage and a chart that names another stage are refused before `admit_chart` is asked. An
+/// exact property claim needs LB4.2's checks: the claim is established only by exact checks of this chart at exact
+/// poses, with those scopes; checks of another chart, and a survey of float poses only, establish nothing; a refuted
+/// check refuses the chart. Not run: reading the declared outputs from a stage module (no stage-language checker), HLSL
+/// compilation and the compile record.
 #[test]
 fn ct_lb4_04_admission_half_a_user_chart_stays_not_established_without_exact_checks() {
     let description = describe("user chart stage", StageKind::Vertex, &[Output::Position, Output::CoverageCode]);

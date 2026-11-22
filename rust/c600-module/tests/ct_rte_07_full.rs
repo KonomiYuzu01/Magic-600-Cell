@@ -22,6 +22,13 @@
 //!
 //! Evidence kind: source and synthetic. The fixture is LX-3's fake data, not Full's mechanics; nothing here measures
 //! time or performance.
+//!
+//! CT-RTE-07 (source, part: the 600-cell-Full subset's keys except those in `LEFT`, each run ten times; not run here:
+//! the keys of `LEFT` other than B12: B10 and B11 in `c600-tools/tests/ct_rte_07_c5.rs`, B13 and B14 in its
+//! `ct_rte_07_budget.rs`, MR13, MR14, MR19 and MR20 in `c600-runtime/tests/ct_rte_07_admission.rs`, and the six
+//! jumbling keys on M5's rows in `c600-jumble-tool/tests/ct_rte_07_jumble.rs`; not run: B12, whose cold run has no
+//! test on this commit and whose other five cache states are not applicable by the owner's decision of 20 November
+//! 2026, item 1, which is no pass).
 
 mod support;
 

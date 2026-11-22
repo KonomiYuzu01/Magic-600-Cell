@@ -16,6 +16,11 @@
 //! timeout of the test, not a measurement.
 //!
 //! Evidence kind: source and synthetic. Nothing here measures time or performance, and no Windows/DirectX claim.
+//!
+//! CT-RTE-07 (source, part: B10 and B11, with a runtime process; not run here: the other keys, in
+//! `c600-module/tests/ct_rte_07_full.rs` and the files it names, B12's cold run, which has no test on this commit,
+//! B12's other five cache states, not applicable by the owner's decision of 20 November 2026 item 1 and no pass, and
+//! the Linux run).
 
 mod process_support;
 

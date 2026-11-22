@@ -1,6 +1,11 @@
 //! The budget a program row's invocation declares (KN7.7, BM3, DET.27, ERR.27; draft): CT-RTE-07's B13 and B14 at the
 //! command layer, the ceiling's dimensions, the job's budget, the request digest and the journal. Where the frozen text
 //! is silent, the tests follow the draft recorded in `src/lib.rs` under "Budgets".
+//!
+//! CT-RTE-07 (source, part: B13 and B14 at the command layer; not run here: the same keys on the 600-cell-Full tool's
+//! row in `c600-tools/tests/ct_rte_07_budget.rs`, and the other keys, B12's cold run, which has no test on this
+//! commit, B12's other five cache states, not applicable by the owner's decision of 20 November 2026 item 1 and no
+//! pass, and the Linux run).
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};

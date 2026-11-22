@@ -1,6 +1,7 @@
-//! CT-RM-07: RM.37's fifteen jumbling rows as fixture payloads, one test per row in the table's order. They are
-//! source-contract outcomes over supplied producer data under a synthetic jumbling identity; no jumbling geometry,
-//! kernel or backend run is involved (M5). Bindings are current and budgets fit unless a row says otherwise.
+//! CT-RM-07 (source, whole): RM.37's fifteen jumbling rows as fixture payloads, one test per row in the table's order.
+//! They are source-contract outcomes over supplied producer data under a synthetic jumbling identity; no jumbling
+//! geometry, kernel or backend run is involved here. `jumbling.rs` runs the rows that M5 can check on its real model,
+//! and `c600-jumble`'s `faces.rs` row 10's geometry. Bindings are current and budgets fit unless a row says otherwise.
 
 mod common;
 

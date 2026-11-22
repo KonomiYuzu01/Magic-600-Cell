@@ -68,7 +68,8 @@ fn the_source_parses_and_lowers_to_one_exported_command() {
 /// solving profile. `c600-check`'s own `Profile::Solving`, the column of a solver's own tool, refuses it as it refuses
 /// every previewing program until the joint setting; tool authoring admits it.
 ///
-/// CT-LB6-03 (part, the 600-cell-Full tool: the checker half of the review of its exact entry definition).
+/// CT-LB6-03 (part, the 600-cell-Full tool: the checker half of the review of its exact entry definition; not run:
+/// BM5's review and its record, when the tools ship).
 #[test]
 fn the_checker_admits_the_tool_and_it_only_prepares_previews() {
     let program = lower_source(SOURCE).unwrap();

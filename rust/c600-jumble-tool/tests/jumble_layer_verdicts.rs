@@ -32,7 +32,9 @@
 //! Every refusal changes nothing the layer keeps (the revision, the journal, the policy, the poses and the retained
 //! state) and nothing the tool reads at the head. LP2's `c600-command/tests/jumble_*.rs` and `attack_protection.rs`
 //! check the layer's own order of checks, its codes and its journal; this file checks that the tool's verdicts and the
-//! layer's decisions agree on W-J fixture walks. A pass is source and fixture evidence.
+//! layer's decisions agree on W-J fixture walks. A pass is source and fixture evidence. CT-LB3-07 (part: LB3.1's "Mode
+//! crossing prerequisites", the Jumble-off half, in `the_label_checkpoint_the_tool_reads_decides_the_exit`; not run
+//! here: the Jumble-on half, in `jumble_on_derivation.rs`)
 
 mod common;
 

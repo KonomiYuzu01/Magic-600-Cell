@@ -1,6 +1,9 @@
 //! CT-EV4-02 (synthetic; EV4.3, EV4.4): key capture, text, list navigation and global dispatch run in the fixed order,
 //! and resolved absolute arguments survive later camera, focus, hover and filter changes. Every key event here is
 //! synthetic; none of this is Windows input evidence.
+//!
+//! CT-EV4-02 (whole: the routing order, the text, list, global, argument and route legs, `resolve_binding` and the
+//! prefix group, on the draft keymap; synthetic events, no Windows input evidence).
 
 mod common;
 

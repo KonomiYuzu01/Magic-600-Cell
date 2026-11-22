@@ -1,7 +1,12 @@
-//! Picking and stamps (part K): CT-RPI-09 to CT-RPI-12, and CT-RM-04 with RM.30's source vectors and RM.31's derived
-//! subject. A pick first obtains an instance ID and then resolves it through the installed source map (RPI.22); no
-//! pixel, position, token colour or chart inverse enters a reply. Every result is a source or synthetic fixture
-//! outcome, not a backend run.
+//! Picking and stamps (part K). A pick first obtains an instance ID and then resolves it through the installed source
+//! map (RPI.22); no pixel, position, token colour or chart inverse enters a reply. Every result is a source or
+//! synthetic fixture outcome, not a backend run.
+//!
+//! - CT-RPI-09 (source, whole).
+//! - CT-RPI-10 (synthetic, whole).
+//! - CT-RPI-11 (synthetic, whole).
+//! - CT-RPI-12 (source, whole); `jumbling.rs` repeats its off-lattice part on a real jumbling state.
+//! - CT-RM-04 (source, whole), with RM.30's source vectors and RM.31's derived subject.
 
 mod common;
 

@@ -126,15 +126,16 @@ fn fixed(f: &Fixture, disk: &dyn Fn() -> Box<dyn Disk>) -> String {
 
 /// The durable leg on a disk that `disk` hands out again for each session, with `power_loss` between the sessions.
 ///
-/// CT-RTE-08 (the persisted-word case, its durable leg); CT-BND-27 (part: a restored workspace keeps a tool word's
-/// block, byte for byte, and the layer's preview admission in this session refuses the restored word with
-/// `LG3:capability.not_granted` and installs no preview; a built-in tool's word whose one part the layer kept with
-/// its write (LP2 draft) is admitted after a power loss by a host that keeps no block; not run: parts of parts, which
-/// `c600-session`'s `tests/part_blocks.rs` runs on the journal, and C5's reader lists in `c600-tools`'
-/// `tests/workspace.rs`); CT-KN5-13 (part: the host's BND.84/BND.85 adapter refuses a solver tool's word from restored
-/// workspace provenance, and fails closed on a restored built-in word's missing part; not run: picks, draft insertion,
-/// composition, file round trips, imported 0.4 macros and KN5.9's preview with a protection conflict); KN0.8 and
-/// KN5.26.
+/// CT-RTE-08 (source, part: the persisted-word case, its durable leg; not run here: the module, branch and
+/// preview-outcome cases and the in-memory persisted word, in `c600-module/tests/ct_rte_08.rs`); CT-BND-27 (part: a
+/// restored workspace keeps a tool word's block, byte for byte, and the layer's preview admission in this session
+/// refuses the restored word with `LG3:capability.not_granted` and installs no preview; a built-in tool's word whose
+/// one part the layer kept with its write (LP2 draft) is admitted after a power loss by a host that keeps no block; not
+/// run: parts of parts, which `c600-session`'s `tests/part_blocks.rs` runs on the journal, and C5's reader lists in
+/// `c600-tools`' `tests/workspace.rs`); CT-KN5-13 (part: the host's BND.84/BND.85 adapter refuses a solver tool's word
+/// from restored workspace provenance, and fails closed on a restored built-in word's missing part; not run: picks,
+/// draft insertion, composition, file round trips, imported 0.4 macros and KN5.9's preview with a protection conflict);
+/// KN0.8 and KN5.26.
 fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     // An approved own tool stores the word, and so does the same entry approved as a built-in tool (BND.22).
     let (saver, block, _) = saved(Author::Own);

@@ -97,9 +97,10 @@ const KEYS: &str = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n\
     export fn traces(x: Word, y: Word) -> Bool effects [] {\n    return exact_eq(trace_key(x), trace_key(y));\n}\n\n\
     export fn words(x: Word, y: Word) -> Bool effects [] {\n    return exact_eq(word_key(x), word_key(y));\n}\n";
 
-/// CT-LB1-06 (part: LB1.10's Full half on the pinned model; not run: the jumbling half, which waits for an exact
-/// Δ(c,d) entry in `c600-jumble`): for the first generators a < b < c of the model, by ID, with b independent of a and
-/// c and a dependent on c, bca and cab have the trace key bca, abc keeps its own, and the word keys stay distinct.
+/// CT-LB1-06 (part: LB1.10's Full half on the pinned model; not run here: the jumbling half, in
+/// `c600-jumble/tests/locality.rs` and `c600-jumble-tool/tests/ct_lb1_06.rs`): for the first generators a < b < c of
+/// the model, by ID, with b independent of a and c and a dependent on c, bca and cab have the trace key bca, abc keeps
+/// its own, and the word keys stay distinct.
 #[test]
 fn ct_lb1_06_on_the_pinned_model() {
     let relation = pinned();

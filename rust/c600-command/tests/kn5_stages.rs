@@ -480,6 +480,8 @@ fn only_a_frame_of_the_built_in_chain_presents_the_pending_preview() {
 /// the run keeps a token from its first frame valid. CT-ONE-04 (part: with B received and A still shown, the report of
 /// A's frame is refused, the shell keeps its binding to A with that frame's stamp, and the chord's token for A is
 /// refused as replaced; B's own frame then presents B, and its chord commits; not run: the shell's display).
+/// CT-ONE-26 (part: the token binds the presented preview and the stamp of the frame that presented it, headless; not
+/// run: the on-screen half (C9)).
 #[test]
 fn a_token_binds_the_frame_run_that_presents_its_preview() {
     let mut f = fixture(false);

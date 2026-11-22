@@ -162,7 +162,8 @@ fn without_a_view_model_both_rows_are_not_built() {
 }
 
 /// The solver opens and closes a further view: each row reaches the host once with its command ID and answers
-/// `accepted` with no job, and neither writes (CT-EV3-07's view half): the revision, the records and the jobs stay.
+/// `accepted` with no job, and neither writes: the revision, the records and the jobs stay. CT-EV3-07 (source, part:
+/// the view half on the layer: an open or close writes nothing).
 #[test]
 fn the_solver_opens_and_closes_a_further_view_and_nothing_is_written() {
     let mut f = fixture(true);
@@ -269,8 +270,8 @@ fn argument_forms_are_checked_before_the_host() {
     assert_eq!(refusal(&f.from_run("recompute/1", "r1", VIEW_CLOSE_ROW, close_args(""))), code::ARGUMENT_FORM);
 }
 
-/// Either row runs only inside a command the solver invoked (CT-RPI-36's layer half). A run that is not a program
-/// job's run the host holds, as a recomputation started by a revision change is not, is refused with
+/// Either row runs only inside a command the solver invoked: CT-RPI-36 (source, part: the layer half). A run that is
+/// not a program job's run the host holds, as a recomputation started by a revision change is not, is refused with
 /// `LG3:capability.not_granted` and never reaches the host, so a view cannot open views. A run of a job the solver
 /// invoked may open and close a view while the host holds its job, and not after the job is reported.
 #[test]

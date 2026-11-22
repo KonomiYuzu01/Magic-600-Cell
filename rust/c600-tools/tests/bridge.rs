@@ -256,7 +256,8 @@ fn the_runtime_cannot_set_the_protection_policy() {
 /// KN5.15: the runtime never holds a token. A runtime invocation carrying a genuine token the shell minted for the
 /// presented preview is refused, `KN5:auth.token_invalid` on `operation.preview` and
 /// `KN5:capability.commit_row_refused` on `operation.execute`, and neither attempt spends the token: the shell's own
-/// invocation then commits.
+/// invocation then commits. CT-BND-20 (part: the runtime gets no token, headless; the held-chord half is in
+/// `c600-input/tests/repeat.rs`; not run: the actual Windows half, on the owner's machine (C9)).
 #[test]
 fn a_runtime_invocation_carrying_a_token_is_refused() {
     let (mut layer, mut shell) = session();

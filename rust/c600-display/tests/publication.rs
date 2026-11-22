@@ -1,7 +1,10 @@
-//! The host publication state machine (part H): CT-RM-03 with RM.32's supersession and latch vectors, RM.35's paired
-//! ceiling vectors on the two sides of acceptance and RM.36's three device-loss contexts, RM.23's recovery, which
-//! prepares a retained publication again before it draws, and CT-RPI-04's late older completion. A mock backend
-//! drives the host; every result is a source fixture outcome, not a backend run.
+//! The host publication state machine (part H). A mock backend drives the host; every result is a source fixture
+//! outcome, not a backend run.
+//!
+//! - CT-RM-03 (source, whole), with RM.32's supersession and latch vectors, RM.35's paired ceiling vectors on the two
+//!   sides of acceptance and RM.36's three device-loss contexts, and RM.23's recovery, which prepares a retained
+//!   publication again before it draws.
+//! - CT-RPI-04 (source, part: an older completion cannot replace a newer one; the missing source map is in `plan.rs`).
 
 mod common;
 

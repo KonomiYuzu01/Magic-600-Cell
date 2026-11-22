@@ -3,6 +3,9 @@
 //! and CT-BND-19's live-twist part, with the router joined to the view model and the tool's view as `c600-tools`
 //! builds them. Every event is synthetic and every result is a source fixture outcome: no device, renderer or timing
 //! is involved.
+//! CT-BND-19 (source, part: no view-model field holds a live twist before its key releases it, with the router joined
+//! to the view model and the tool's view; not run here: the tool's views holding a word's values only for the named
+//! word, in `c600-tools/tests/views.rs`, which with this file is the whole by union).
 
 mod common;
 

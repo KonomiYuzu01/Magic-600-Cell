@@ -1,8 +1,8 @@
-//! CT-RPI-19 (source), the Windows leg: one reproducibility key gives equal exact plan fields and approximate values
-//! within declared precision, including maths-library-sensitive cases (RPI.56, LX-3). The maths-library-sensitive
-//! cases are camera turns built with the platform's `sin`, `cos` and `sqrt`, compared with exact images in Q(√5). The
-//! headless Linux leg is these same tests on Linux against the same pinned key; it is not run here, so CT-RPI-19 stays
-//! partly run. Bitwise equality of floats across platforms is not claimed (RPI.56).
+//! CT-RPI-19 (source, whole: these tests are both legs against one pinned key, the Windows leg on Windows and the
+//! headless Linux leg in the Linux CI job): one reproducibility key gives equal exact plan fields and approximate
+//! values within declared precision, including maths-library-sensitive cases (RPI.56, LX-3). These cases are camera
+//! turns built with the platform's `sin`, `cos` and `sqrt`, compared with exact images in Q(√5). Bitwise equality of
+//! floats across platforms is not claimed (RPI.56).
 
 mod common;
 

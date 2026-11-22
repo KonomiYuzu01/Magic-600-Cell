@@ -44,6 +44,26 @@
 //! Not here: the barrier's release acknowledgement, and conditions 3 and 4 (the renderer gate, LX-4's echo bar and E2
 //! commits during fault windows). Evidence kind: source and synthetic until the owner's machine runs it on the product
 //! build; nothing here is timing.
+//!
+//! U7 of LP3's C9 sitting ran these trials, and LX-2's fault windows in the product shell, on the owner's machine with
+//! the product build of `013900ff` (`c9-product-2efda50d54592f20`, 21 November 2026). The records are in
+//! `work/experiments/c9-sitting/results/`; the LX-2 analysis is the one of 22 November 2026 (owner decision of that
+//! day, items 1 to 5 and 10; pull request 411):
+//!
+//! - CT-RTE-10 (windows, whole: `u7-final-faults.json`: `agrees` is true; in every entry of `trials` `observed`, a
+//!   typed outcome, equals `expected`, and `preview_kept` and `recovered` are true; in every entry of `sessions`
+//!   `open`, `replayed_equal` and `agrees_with_control` are true, with the control's `journal_rows` and
+//!   `journal_sha256`).
+//! - CT-KN7-06 (performance, whole: `u7-final-lx2-20261122.json`: in each metered fault `result.run.faults.<fault>.e2`
+//!   is met over 110 or 111 turn windows, p95 at most 82.6 ms, and `windows.turn.ends` shows every turn window ending
+//!   at `KN7:cancelled.revision_replaced`: each commit replaced the revision of the fault's program job while that job
+//!   ran at full load; E2 is met in the other four faults too).
+//! - CT-RTE-11 (performance, part: the fault windows: `u7-final-lx2-20261122.json`, `verdict` met; in every fault
+//!   `e2` holds at least 110 commits and `echo` is met, with alloc_ceiling's 84 samples accepted (item 5) and samples
+//!   without a confirmed frame counted apart (item 10); `gate` is met in the three metered faults and not required in
+//!   the four that lose the runtime (item 4); not run here: the three cold startups, in `tools/perf/c9/cold_start.py`).
+//! - CT-LG4-09 (performance, part: LX-2's half: the fault programs ran as the shell's view jobs while it took commits
+//!   and echo samples, `u7-final-lx2-20261122.json`, `verdict` met; not run here: LP3's own checks, in `c600-lx4`).
 
 #![forbid(unsafe_code)]
 

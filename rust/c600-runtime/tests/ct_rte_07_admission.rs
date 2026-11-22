@@ -31,6 +31,11 @@
 //! Each key runs ten times on both executors, each run against fresh sessions; the ten runs give one SHA-256 over the
 //! refusals and the sessions. Evidence kind: source and synthetic. The host is `support`'s fake session, not Full's
 //! mechanics; nothing here measures time.
+//!
+//! CT-RTE-07 (source, part: MR13, MR14, MR19 and MR20 refused at the built-in column's admission; not run here: the
+//! other keys, in `c600-module/tests/ct_rte_07_full.rs` and the files it names, B12's cold run, which has no test on
+//! this commit, B12's other five cache states, not applicable by the owner's decision of 20 November 2026 item 1 and
+//! no pass, and the Linux run).
 
 mod support;
 

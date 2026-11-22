@@ -227,7 +227,8 @@ impl Fixture {
 /// envelope's retry answers its own stored receipt; a later envelope whose request digest equals the committed one's is
 /// a retry of it whatever its authenticator, since the retry lookup precedes authentication (chapter 08 section 7), and
 /// it commits nothing; not run: the shell's transport), L11 (a), L18 (c), ruling 4. The control case sends no
-/// first envelope.
+/// first envelope. CT-BND-20 (part: a runtime envelope never takes the press's command ID, so the press commits once,
+/// headless at the layer; not run: the actual Windows half, on the owner's machine (C9)).
 #[test]
 fn an_envelope_that_does_not_authenticate_never_takes_the_command_id() {
     for attack in ["forged", "runtime", "control"] {
@@ -515,6 +516,8 @@ fn a_workspace_completion_keeps_its_receipt_across_a_restart_and_a_reopen() {
 /// changed PreviewDeps field `revision_changed`; a frame stamp outside the preview's presentation `no_fresh_preview`
 /// (ONE.41); the unchanged binding commits; not run: the shell's display), CT-ONE-03 (part: the same matrix; not run:
 /// a live twist and a crossing commit, whose rows the headless layer does not build), KN5.14, KN5.16, L9.
+/// CT-ONE-26 (part: the token binds the presented preview, its ID, literal digest, dependencies and frame stamp, in the
+/// headless layer; not run: the on-screen half (C9)).
 #[test]
 fn every_bound_field_of_a_token_is_checked() {
     let mut f = fixture(&[]);

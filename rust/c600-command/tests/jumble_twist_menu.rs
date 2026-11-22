@@ -349,7 +349,7 @@ impl Fixture {
 }
 
 /// CT-EV4-04 (part: the menu-twist leg in the command layer, a pose move admitted and committed once with no preview
-/// and no job; not run: held-key repeats, which are the shell's and LP3's `c600-input`), CT-ONE-03 (part: a live menu
+/// and no job; not run here: held-key repeats, in `c600-input/tests/repeat.rs`), CT-ONE-03 (part: a live menu
 /// twist commits with no preview object; not run: the view model's fields), JI.35, FP.31 (draft: the journal kind
 /// `jumble_move`). With Jumble on an item of the pinned menu, a retained one too, is a pose move: the jumbling engine
 /// derives the item's exact twist from the head's poses, the revision's digest becomes the new pose digest and the
