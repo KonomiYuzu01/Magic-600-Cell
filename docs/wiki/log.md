@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] update | ADR-D01's overrules noted in the chapters
+Thirteen clauses that ADR-D01 overrules now carry a note citing the owner's decision, in chapters 01, 02, 04, 08 and 09 and ADR-L11. Chapter 07 is a file of the frozen format candidate, so BND.15 and BND.84 stay unnoted and the decision page is their record. Chapter 01's pin and the packet's input commit are refreshed under FP.1 ([record](decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), "What follows").
+
 ## [2026-11-22] decision | Samples without a confirmed frame in LX-2 and LX-4
 After the re-analysis of U7 and U8 found every timed p95 and p99 within 100 ms, the owner chose to count samples without a confirmed frame apart, as a published known limit (the confirmation gap), and to judge the LX bars on confirmed samples, so LQ9 does not reopen and RT1 stays; the gap is closed after the freeze ([record](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), item 10).
 

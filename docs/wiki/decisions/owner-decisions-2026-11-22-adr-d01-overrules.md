@@ -78,7 +78,25 @@ This page records the decision in English. It accepts no ADR, freezes nothing an
 
 - The integrator marks each clause in item 2 in its chapter with a note that cites this page. Where a pinned chapter
   changes, the format packet's pin refresh (FP.1) follows. This comes after LP3's chapter 11 amendment lands, so that
-  one pull request at a time changes the pins.
+  one pull request at a time changes the pins. Done on 22 November 2026, after pull request 409:
+  - Thirteen clauses carry a note:
+    - chapter 02: LG3.1, LG3.5, LG3.6 and LG3.7;
+    - chapter 01: KN4.6, KN5.12, KN5.14, KN5.19 and KN5.20;
+    - chapter 04: EV4.16;
+    - chapter 08: ONE.74;
+    - chapter 09: DET.37;
+    - ADR-L11.5.
+  - BND.15 and BND.84 carry none. Chapter 07 is a file of the frozen format candidate `en4-data-core-draft-1`, and a
+    byte change there would change the frozen format's identity, which needs the owner. This page is their record.
+  - Chapter 01 is an input of the format packet, so its pin is refreshed under FP.1:
+    - `docs/architecture/1.0/language/architecture/01-kernel.md`, SHA-256
+      `fdd5348f4d251a756a1890343a4a80adf1cd89522e802face6e0d42af8919a68` to
+      `28d221846f2e7223167abc9e198e73239f38a48459c669b5df8dc3f1711b859a`;
+    - `input_commit`, `b7cb2bd625ec93fddf3ee1acc9376d407e59d777` to `f58e1242f1ad2654c7450e8d89b67f8f38901b2c`, the
+      commit that adds the notes.
+
+    The packet cites none of the noted clauses. The candidate files, `candidate_sha256` and every other pin are
+    unchanged.
 - A session adds item 3's rows after `013900ff`. Item 4's work starts after the owner signs C10.
 - ADR-D01's accepted text enters the repository at A7.
 
