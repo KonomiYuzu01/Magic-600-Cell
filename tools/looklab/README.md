@@ -659,7 +659,7 @@ are retained, and paths through links are refused.
 `python tools/looklab/check.py --godot` adds three headless result lines: exact
 metrics for the fixed docked layout and 14-step piece-operation flow, refusal
 of an unreachable final command, and exact catalogue coverage in all eight
-contexts on all four layouts: `layouts=4 contexts=32 commands=86 placements=360`.
+contexts on all four layouts: `layouts=4 contexts=32 commands=198 placements=348`.
 The harness also requires the refusal-handler and
 catalogue-filter faults to fail their own checks. Core tests cover all six
 flows on all four layouts, progression, refusal/reset, JSON precision and scoped
