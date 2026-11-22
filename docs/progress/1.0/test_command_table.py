@@ -38,7 +38,8 @@ class CommandTableTests(unittest.TestCase):
         cls.delta = builder.load(HERE / "command-rows-jumbling.json")
         cls.language = builder.load(HERE / "command-rows-language.json")
         cls.design = builder.load(HERE / "command-rows-design.json")
-        cls.table = builder.build_table(delta=[cls.delta, cls.language, cls.design])
+        cls.commit = builder.load(HERE / "command-rows-commit.json")
+        cls.table = builder.build_table(delta=[cls.delta, cls.language, cls.design, cls.commit])
         cls.by_id = {r["id"]: r for r in cls.table["commands"]}
 
     def build(self, **overrides):
@@ -339,7 +340,8 @@ class CommandTableTests(unittest.TestCase):
         self.assertEqual(self.table["undo_dispatch"], {
             "entry": {"undo": "session.undo", "redo": "session.redo"}, "classes": ["journal", "workspace"],
             "guard": "action_hint", "stale": "KN5:stale.undo_superseded",
-            "protection": "original_permission_path_including_release_confirmation"})
+            "protection": "original_permission_path_including_release_confirmation",
+            "layout": {"entry": {"undo": "layout.undo", "redo": "layout.redo"}, "classes": ["layout"]}})
         for old in ("workspace.undo", "workspace.redo"):
             self.assertNotIn(old, self.by_id)
             row = deepcopy(self.by_id["session.undo"])
@@ -450,7 +452,7 @@ class CommandTableTests(unittest.TestCase):
 
     def test_each_delta_row_rejects_each_missing_or_optional_required_argument(self):
         required = builder.DELTA_REQUIRED_ARGUMENTS
-        deltas = (self.delta, self.language, self.design)
+        deltas = (self.delta, self.language, self.design, self.commit)
         self.assertEqual(set(required), {r["id"] for part in deltas for group in ("add", "amend") for r in part[group]})
         for position, part in enumerate(deltas):
             for group in ("add", "amend"):
@@ -502,9 +504,10 @@ class CommandTableTests(unittest.TestCase):
         for name in ("view.open", "view.close"):
             self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
         counts = Counter(r["kind"] for r in self.table["commands"])
-        # 175 commands at the LP3 freeze, plus ADR-D01's 14 workspace and 4 view rows (owner, 22 November 2026).
-        self.assertEqual(len(self.table["commands"]), 193)
-        self.assertEqual((counts["workspace"], counts["view"]), (81, 49))
+        # 175 commands at the LP3 freeze, plus ADR-D01's 14 workspace and 4 view rows (owner, 22 November 2026,
+        # item 3) and its commit rows (item 4), which also make work.layout.set and work.layout.reset workspace rows.
+        self.assertEqual(len(self.table["commands"]), 195)
+        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (83, 47, 16))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -533,7 +536,7 @@ class CommandTableTests(unittest.TestCase):
         self.assertEqual(self.by_id["set.save"]["arguments"],
                          {"members": "CanonicalObjectRefs", "kind": "identity|position", "name": "Text",
                           "replace": "Bool?"})
-        # ADR-D01's rows have their own test below: the layout history, not session.undo, will hold them.
+        # ADR-D01's rows have their own tests below: the layout history, not session.undo, holds them.
         none = {r["id"] for r in self.table["commands"]
                 if r["kind"] == "workspace" and r["undo"] == "none" and r["source"] != ADR_D01_SOURCE}
         self.assertEqual(none, {"session.timer.start", "session.timer.stop", "operation.preview.cancel", "grip.select",
@@ -548,15 +551,18 @@ class CommandTableTests(unittest.TestCase):
         added = {r["id"] for r in self.design["add"]}
         self.assertEqual(added, workspace | view)
         self.assertEqual(self.design["amend"], [])
-        self.assertEqual({r["id"] for r in self.table["commands"] if r["source"] == ADR_D01_SOURCE}, added)
+        self.assertEqual({r["id"] for r in self.table["commands"] if r["source"] == ADR_D01_SOURCE},
+                         added | {r["id"] for r in self.commit["add"]})
         for name in sorted(added):
             row = self.by_id[name]
             with self.subTest(row=name):
                 self.assertEqual(row["source"], ADR_D01_SOURCE)
                 self.assertNotEqual(row["kind"], "commit")
                 self.assertEqual(row["kind"], "workspace" if name in workspace else "view")
+                # Item 4: a design-profile change is a layout-history step (ADR-D01.14); explore.set is no step.
+                undo = "layout" if name in workspace - {"explore.set"} else "none"
                 self.assertEqual((row["lane"], row["undo"], row["preview"], row["gates"], row["job"], row["repeat"]),
-                                 ("none" if name in workspace else "view", "none", "none", [], False, False))
+                                 ("none" if name in workspace else "view", undo, "none", [], False, False))
                 self.assertNotIn("UserActionToken", row["arguments"].values())
                 # CT-ONE-09 in c600-command's tests: no row takes a type that names a table.
                 self.assertFalse([t for t in row["arguments"].values() if "table" in t.lower()])
@@ -567,18 +573,63 @@ class CommandTableTests(unittest.TestCase):
         for name in ("view.preview.open", "view.pin", "view.compare.wipe"):
             self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
         self.assertEqual(self.by_id["history.dock.mode"]["lane_target"], {"control": "history.dock.mode"})
-        # No duplicate purpose: a stored layout is applied by work.layout.set, and session undo/redo stay the only
-        # undo entries until the layout-history rows come with the commit work.
+        # No duplicate purpose: a stored layout is applied by work.layout.set, and the layout history has its own
+        # two undo entries beside session undo/redo.
         for kept in ("work.layout.set", "view.open", "view.preview.scrub", "keymap.edit"):
             self.assertNotEqual(self.by_id[kept]["source"], ADR_D01_SOURCE)
         self.assertFalse({"arrangement.apply", "view.back", "view.forward"} & self.by_id.keys())
         self.assertEqual({r["id"] for r in self.table["commands"] if r["id"].endswith((".undo", ".redo"))},
-                         set(builder.UNDO_ROWS))
-        self.assertEqual(builder.DELTA_FILES[-1], "command-rows-design.json")
+                         builder.UNDO_ROWS | builder.LAYOUT_UNDO_ROWS)
+        self.assertEqual(builder.DELTA_FILES[-2:], ("command-rows-design.json", "command-rows-commit.json"))
         mutant = deepcopy(self.design)
         next(r for r in mutant["add"] if r["id"] == "explore.set")["kind"] = "commit"
         with self.assertRaisesRegex(builder.TableError, "commit requires commit lane"):
-            self.build(delta=[self.delta, self.language, mutant], draft_without_jumbling=False)
+            self.build(delta=[self.delta, self.language, mutant, self.commit], draft_without_jumbling=False)
+
+    def test_adr_d01_layout_history_rows(self):
+        # Owner, 22 November 2026, item 4; ADR-D01.14: the layout history has its own undo and redo rows, and the
+        # design-profile, keymap and layout rows are its steps; session undo/redo never reach them.
+        for name in sorted(builder.LAYOUT_UNDO_ROWS):
+            row = self.by_id[name]
+            with self.subTest(row=name):
+                self.assertEqual((row["kind"], row["lane"], row["undo"], row["preview"], row["gates"], row["job"]),
+                                 ("commit", "commit", "layout", "none", [], False))
+                self.assertEqual(row["arguments"], {"hint": "ActionHint", "token": "UserActionToken"})
+                self.assertEqual((row["action_guard"], row["slot_map"], row["source"]),
+                                 ("action_hint", "preserve", ADR_D01_SOURCE))
+                self.assertIn("ADR-D01.14", row["note"])
+        moved = {"keymap.edit", "keymap.defaults", "keymap.save", "keymap.name", "file.keymap.apply",
+                 "work.layout.set", "work.layout.reset"}
+        self.assertEqual({a["id"] for a in self.commit["amend"]}, moved)
+        design = {r["id"] for r in self.design["add"] if r["kind"] == "workspace"} - {"explore.set"}
+        layout = {r["id"] for r in self.table["commands"] if r["undo"] == "layout"}
+        self.assertEqual(layout, builder.LAYOUT_UNDO_ROWS | moved | design)
+        for name in sorted(layout - builder.LAYOUT_UNDO_ROWS):
+            self.assertEqual(self.by_id[name]["kind"], "workspace", name)
+        for name in ("work.layout.set", "work.layout.reset"):
+            row = self.by_id[name]
+            self.assertEqual((row["kind"], row["lane"], row["lane_target"]), ("workspace", "none", None), name)
+            self.assertIn("ADR-D01.38", row["note"])
+        self.assertEqual(self.by_id["work.layout.set"]["arguments"], {"layout": "LayoutRef"})
+        self.assertEqual(self.by_id["work.layout.reset"]["arguments"], {"layout": "LayoutRef?"})
+        # The disclosure toggle stays a move-history step: it is the keyboard's teaching aid, not a layout.
+        self.assertEqual(self.by_id["keyboard.disclosure.set"]["undo"], "workspace")
+        for name, changes, message in (
+                ("layout.undo", {"slot_map": "by_target"}, "only session undo/redo"),
+                ("layout.redo", {"undo": "journal"}, "layout undo/redo"),
+                ("layout.undo", {"action_guard": None}, "layout undo/redo")):
+            mutant = deepcopy(self.commit)
+            changed = next(r for r in mutant["add"] if r["id"] == name)
+            changed.update(changes)
+            if changed.get("action_guard", "") is None:
+                del changed["action_guard"]
+            with self.subTest(row=name, changes=changes), self.assertRaisesRegex(builder.TableError, message):
+                self.build(delta=[self.delta, self.language, self.design, mutant], draft_without_jumbling=False)
+        mutant = deepcopy(self.design)
+        next(r for r in mutant["add"] if r["id"] == "theme.select").update(
+            kind="view", lane="view", lane_target={"control": "theme.select"})
+        with self.assertRaisesRegex(builder.TableError, "layout-history step"):
+            self.build(delta=[self.delta, self.language, mutant, self.commit], draft_without_jumbling=False)
 
     def test_a_field_amended_in_two_deltas_is_refused(self):
         again = deepcopy(next(r for r in self.language["amend"] if r["id"] == "twist.apply"))

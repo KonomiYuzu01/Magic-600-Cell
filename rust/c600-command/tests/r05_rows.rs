@@ -218,7 +218,7 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     assert!(matches!(started.status, Status::Running(_)), "the tool's row: {:?}", started.status);
     let runtime = Caller::Runtime { run: f.layer.take_program_job().expect("the tool's job").run() };
     let rows: Vec<Row> = f.layer.table().rows().filter(|row| row.overlay.is_none()).cloned().collect();
-    assert_eq!(rows.len(), 193);
+    assert_eq!(rows.len(), 195);
     let mut tally: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (n, row) in rows.iter().enumerate() {
         let args = formed(row, &f.layer.revision().to_json());

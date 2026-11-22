@@ -73,6 +73,10 @@ pub mod code {
     /// A `set.save` under a name that holds a saved set, without `replace: true` (U1-057: named-set replacement stays
     /// explicit; [`crate::sets`]).
     pub const SAVED_SET_EXISTS: &str = "KN5:input.saved_set_exists";
+    /// A commit row while ADR-D01.39's explore state is on (owner, 22 November 2026, item 4; draft until chapter 13
+    /// registers it): the explore state pauses commits and never makes one. The refusal comes before the token is
+    /// spent.
+    pub const COMMITS_PAUSED: &str = "KN5:capability.commits_paused";
 }
 
 /// An error with its chapter 13 code.

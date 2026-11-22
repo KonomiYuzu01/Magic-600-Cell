@@ -17,6 +17,15 @@
 //! reaches the recorded node; a protection change that releases an orbit needs `confirm`. The journal keeps recipes,
 //! digests, protected orbits, policies and record values, not states.
 //!
+//! ADR-D01.14's layout history (owner, 22 November 2026, item 4; draft) sits beside that move history:
+//! [`LAYOUT_UNDO_ROW`] and [`LAYOUT_REDO_ROW`] take the same hint and token and step only the completions of workspace
+//! rows whose undo class is `layout` (`UndoClass::Layout`), which `session.undo` and `session.redo` never reach. Each
+//! history keeps its own undo and redo stacks over the shared change map, and a step of one cuts the other's actions
+//! that wrote one of its records, so no record is held by both. A layout step journals as a workspace transaction and
+//! its undo or redo as an undo or redo whose row names the history, so a replay rebuilds both. While the explore state
+//! ([`EXPLORE_ROW`]; ADR-D01.39) is on, every commit row but the two layout rows is refused with
+//! `KN5:capability.commits_paused` before its token is spent; the state is transient and a restart clears it.
+//!
 //! The protection policy ([`CommandLayer::policy`]) is Net from a session's start; `protection.policy.set`
 //! ([`POLICY_ROW`]) switches it. Net judges the end of the complete operation; Strict judges every executed literal
 //! prefix, so a word with an identity net map can pass Net and fail Strict (KN2.7, LB2.3). The policy in force decides
@@ -138,6 +147,13 @@ pub const MODE: &str = "jumble_off";
 pub const JUMBLE_ON_MODE: &str = "jumble_on";
 /// H-08's row that sets the protection policy, Net or Strict.
 pub const POLICY_ROW: &str = "protection.policy.set";
+/// ADR-D01.14's layout-history undo row (owner, 22 November 2026, item 4; draft): it inverts the layout history's top
+/// step, as `session.undo` inverts the move history's.
+pub const LAYOUT_UNDO_ROW: &str = "layout.undo";
+/// ADR-D01.14's layout-history redo row (draft): it repeats the layout history's top undone step.
+pub const LAYOUT_REDO_ROW: &str = "layout.redo";
+/// ADR-D01.39's explore state (draft): while it is on, the commit rows of the move history are paused.
+pub const EXPLORE_ROW: &str = "explore.set";
 /// Whether a run's preview is admitted only inside a command the solver invoked (finding B2 of the KN5 boundary attack,
 /// ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must start its runs through a tool row
 /// the shell invokes, as LP3's host does on both its hosts.
@@ -477,9 +493,36 @@ enum Tree {
     },
     Undo,
     Redo,
+    /// A new step of ADR-D01.14's layout history ([`History::Layout`]): a workspace completion of a stored row whose
+    /// undo class is `layout`, which drops the layout history's redo stack and leaves the move history's stacks.
+    LayoutPush(Change),
+    LayoutUndo,
+    LayoutRedo,
     /// A workspace completion that no undo reaches: a language-defined row's, or a stored row's whose undo class is
     /// `none`.
     None,
+}
+
+/// ADR-D01.14's two histories (owner, 22 November 2026, item 4; draft). The move history holds the commits and the
+/// puzzle-related workspace actions, and `session.undo` and `session.redo` step it; the layout history holds the
+/// completions of the rows whose undo class is `layout` (design-profile and layout changes), and `layout.undo` and
+/// `layout.redo` step it. Neither holds the other's steps. Both share the session's action order, so a step of either
+/// takes the next order, and both survive a restart and a reopen, since the journal keeps every step.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum History {
+    Moves,
+    Layout,
+}
+
+impl History {
+    /// The history an undo or redo row steps: the layout history for `layout.undo` and `layout.redo`, the move history
+    /// for every other row.
+    fn of(row: &str) -> History {
+        match row {
+            LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW => History::Layout,
+            _ => History::Moves,
+        }
+    }
 }
 
 /// The jumbling engine's value at the head while Jumble is on, with its pose digest.
@@ -714,6 +757,14 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     changes: BTreeMap<u64, Change>,
     undo: Vec<u64>,
     redo: Vec<u64>,
+    /// ADR-D01.14's layout history: the undo and redo stacks of the completions whose row's undo class is `layout`
+    /// ([`History::Layout`]). Their changes sit in `changes` beside the move history's, under their own action orders.
+    layout_undo: Vec<u64>,
+    layout_redo: Vec<u64>,
+    /// ADR-D01.39's explore state (draft): while it is on, every commit row but `layout.undo` and `layout.redo` is
+    /// refused before its token is spent ([`code::COMMITS_PAUSED`]). It only pauses commits and never makes one. It is
+    /// transient: a restart and a reopen clear it, since the runs that provided it end with them.
+    explore: bool,
     /// Every epoch of the session, so no open or restart draws one again (L10).
     epochs: BTreeSet<u64>,
     jobs_issued: u64,
@@ -799,6 +850,9 @@ impl<S: Store> CommandLayer<S> {
             changes: BTreeMap::new(),
             undo: Vec::new(),
             redo: Vec::new(),
+            layout_undo: Vec::new(),
+            layout_redo: Vec::new(),
+            explore: false,
             jobs_issued: 0,
             jobs: VecDeque::new(),
             running: BTreeMap::new(),
@@ -1020,14 +1074,16 @@ impl<S: Store> CommandLayer<S> {
                 }
             }
             TransactionKind::Undo | TransactionKind::Redo => {
-                let (direction, stack) = match stored.kind {
-                    TransactionKind::Undo => (Direction::Undo, &self.undo),
-                    _ => (Direction::Redo, &self.redo),
+                let direction = match stored.kind {
+                    TransactionKind::Undo => Direction::Undo,
+                    _ => Direction::Redo,
                 };
-                if stored.target != stack.last().copied() {
+                // The row names the history: `layout.undo` and `layout.redo` step the layout history (ADR-D01.14).
+                let history = History::of(&stored.row);
+                if stored.target != self.stack(history, direction).last().copied() {
                     return Err(broken("the action does not invert or repeat the top of its stack"));
                 }
-                self.plan_step(meta, direction, &ProtectedSet::none()).map_err(release)?
+                self.plan_step(meta, history, direction, &ProtectedSet::none()).map_err(release)?
             }
             TransactionKind::Protection => {
                 let orbits: Vec<i64> = stored.orbits.iter().map(|&orbit| orbit as i64).collect();
@@ -1571,11 +1627,37 @@ impl<S: Store> CommandLayer<S> {
 
     /// `kernel.undo_hint`: the current order and the eligible target for `direction`, read together (LI.9).
     pub fn undo_hint(&self, direction: Direction) -> Option<ActionHint> {
-        let stack = match direction {
-            Direction::Undo => &self.undo,
-            Direction::Redo => &self.redo,
-        };
-        stack.last().map(|&target| ActionHint { order: self.order, target })
+        self.hint(History::Moves, direction)
+    }
+
+    /// The layout history's hint (ADR-D01.14; draft): the current order and the eligible target of `layout.undo` or
+    /// `layout.redo`, read together, as [`CommandLayer::undo_hint`] reads the move history's.
+    pub fn layout_hint(&self, direction: Direction) -> Option<ActionHint> {
+        self.hint(History::Layout, direction)
+    }
+
+    fn hint(&self, history: History, direction: Direction) -> Option<ActionHint> {
+        self.stack(history, direction).last().map(|&target| ActionHint { order: self.order, target })
+    }
+
+    fn stack(&self, history: History, direction: Direction) -> &Vec<u64> {
+        match (history, direction) {
+            (History::Moves, Direction::Undo) => &self.undo,
+            (History::Moves, Direction::Redo) => &self.redo,
+            (History::Layout, Direction::Undo) => &self.layout_undo,
+            (History::Layout, Direction::Redo) => &self.layout_redo,
+        }
+    }
+
+    /// Whether ADR-D01.39's explore state is on (draft): the host signals it on every view frame.
+    pub fn explore(&self) -> bool {
+        self.explore
+    }
+
+    /// Whether the explore state pauses `row`: every commit row but the layout history's undo and redo, which commit
+    /// no puzzle state (ADR-D01.39).
+    fn paused(&self, row: &Row) -> bool {
+        self.explore && row.kind == Kind::Commit && !matches!(row.id.as_str(), LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW)
     }
 
     /// The shell's outcome lookup: [`CommandLayer::kernel_outcome`] for a shell command ID, or `None` when the shell's
@@ -1805,6 +1887,7 @@ impl<S: Store> CommandLayer<S> {
         self.comparison = None;
         self.repairs = None;
         self.commit_held = false;
+        self.explore = false;
         if let Some(adoption) = self.limbo.take() {
             match self.store.durable(&adoption.transaction.event) {
                 Some(true) => {
@@ -1937,6 +2020,9 @@ impl<S: Store> CommandLayer<S> {
         if self.recovery.is_some() && Self::mutates(row) {
             return Err(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"));
         }
+        if self.paused(row) {
+            return Err(Error::new(code::COMMITS_PAUSED, "the explore state pauses commits (ADR-D01.39)"));
+        }
         match row.id.as_str() {
             "operation.preview" => {
                 self.retained_mode()?;
@@ -1982,6 +2068,17 @@ impl<S: Store> CommandLayer<S> {
                     None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
                 }
             }
+            LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW => {
+                if self.commit_held {
+                    return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
+                }
+                let direction = if row.id == LAYOUT_UNDO_ROW { Direction::Undo } else { Direction::Redo };
+                match self.layout_hint(direction) {
+                    Some(_) => Ok(()),
+                    None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
+                }
+            }
+            EXPLORE_ROW => Ok(()),
             TWIST_ROW => match (&self.twists, self.commit_held) {
                 (None, _) => {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu")))
@@ -2244,12 +2341,19 @@ impl<S: Store> CommandLayer<S> {
         if !inputs.is_empty() && row.overlay.is_none() {
             return refused(code::ARGUMENT_FORM, format!("`{}` runs no entry, so it takes no argument blocks", row.id));
         }
+        // Before the token is spent: a paused commit leaves the press's token unused (ADR-D01.39).
+        if self.paused(&row) {
+            return refused(code::COMMITS_PAUSED, "the explore state pauses commits (ADR-D01.39)");
+        }
         match row.id.as_str() {
             "operation.preview" => self.admit_preview(caller, invocation),
             "operation.execute" => self.execute(caller, invocation, request),
             "operation.preview.cancel" => self.cancel(caller, invocation),
-            "session.undo" => self.undo(caller, invocation, request, Direction::Undo),
-            "session.redo" => self.undo(caller, invocation, request, Direction::Redo),
+            "session.undo" => self.undo(caller, invocation, request, History::Moves, Direction::Undo),
+            "session.redo" => self.undo(caller, invocation, request, History::Moves, Direction::Redo),
+            LAYOUT_UNDO_ROW => self.undo(caller, invocation, request, History::Layout, Direction::Undo),
+            LAYOUT_REDO_ROW => self.undo(caller, invocation, request, History::Layout, Direction::Redo),
+            EXPLORE_ROW => self.set_explore(caller, &row, args),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
@@ -2771,14 +2875,20 @@ impl<S: Store> CommandLayer<S> {
         // earlier write of one of its records would write over it. The actions that wrote one leave both stacks
         // (draft), and the cut runs on beneath them ([`cut_stack`]). An undoable completion, and an undo or redo of
         // one, keep them: the stack inverts them in order.
-        if matches!(tree, Tree::None) && !transaction.records.is_empty() {
-            let cut: BTreeSet<String> = transaction.records.iter().map(|write| write.name.clone()).collect();
-            let mut dropped = cut_stack(&self.changes, &self.undo, &cut);
-            dropped.extend(cut_stack(&self.changes, &self.redo, &cut));
-            self.undo.retain(|order| !dropped.contains(order));
-            self.redo.retain(|order| !dropped.contains(order));
-            for order in dropped {
-                self.changes.remove(&order);
+        //
+        // Neither history holds the other's steps (ADR-D01.14), so a new step of one history cuts the other's actions
+        // that wrote one of its records the same way: an undo there would write over the new step's write.
+        let writes = transaction.record.iter().chain(&transaction.records);
+        let cut: BTreeSet<String> = writes.map(|write| write.name.clone()).collect();
+        let others: &[History] = match &tree {
+            Tree::None => &[History::Moves, History::Layout],
+            Tree::Push { .. } => &[History::Layout],
+            Tree::LayoutPush(_) => &[History::Moves],
+            Tree::Undo | Tree::Redo | Tree::LayoutUndo | Tree::LayoutRedo => &[],
+        };
+        if !cut.is_empty() {
+            for &history in others {
+                self.cut_history(history, &cut);
             }
         }
         // A predicate row's completion is what a `FilterRef` names while its writes stand ([`crate::filter`]). Those
@@ -2817,6 +2927,23 @@ impl<S: Store> CommandLayer<S> {
                     self.undo.push(order);
                 }
             }
+            Tree::LayoutPush(change) => {
+                for order in std::mem::take(&mut self.layout_redo) {
+                    self.changes.remove(&order);
+                }
+                self.changes.insert(transaction.order, change);
+                self.layout_undo.push(transaction.order);
+            }
+            Tree::LayoutUndo => {
+                if let Some(order) = self.layout_undo.pop() {
+                    self.layout_redo.push(order);
+                }
+            }
+            Tree::LayoutRedo => {
+                if let Some(order) = self.layout_redo.pop() {
+                    self.layout_undo.push(order);
+                }
+            }
             Tree::None => {}
         }
         let receipt = transaction.receipt();
@@ -2829,6 +2956,21 @@ impl<S: Store> CommandLayer<S> {
         }
         self.generation += 1;
         receipt
+    }
+
+    /// Drops the actions of `history`'s stacks that a write of `cut` reaches ([`cut_stack`]), with their changes.
+    fn cut_history(&mut self, history: History, cut: &BTreeSet<String>) {
+        let (undo, redo) = match history {
+            History::Moves => (&mut self.undo, &mut self.redo),
+            History::Layout => (&mut self.layout_undo, &mut self.layout_redo),
+        };
+        let mut dropped = cut_stack(&self.changes, undo, cut);
+        dropped.extend(cut_stack(&self.changes, redo, cut));
+        undo.retain(|order| !dropped.contains(order));
+        redo.retain(|order| !dropped.contains(order));
+        for order in dropped {
+            self.changes.remove(&order);
+        }
     }
 
     /// Ends what read the state an action replaced: the pending preview, and every job but file jobs (KN5.18).
@@ -2984,12 +3126,23 @@ impl<S: Store> CommandLayer<S> {
     /// its path under `protected`, and a protection change that releases an orbit needs `confirm` (LI.26). A pose
     /// move's undo applies the exact inverse of its twist and its redo the twist again; an exit's undo returns to the
     /// poses before it and its redo checks A5's label checkpoint again (JI.27; draft).
-    fn plan_step(&self, meta: Meta, direction: Direction, protected: &ProtectedSet) -> Result<Adoption, Error> {
-        let (stack, kind, tree) = match direction {
-            Direction::Undo => (&self.undo, TransactionKind::Undo, Tree::Undo),
-            Direction::Redo => (&self.redo, TransactionKind::Redo, Tree::Redo),
+    ///
+    /// A step of the layout history ([`History::Layout`]) inverts or repeats a workspace completion's records, as a
+    /// workspace inverse; it is journaled as an undo or redo whose row is `layout.undo` or `layout.redo` (ADR-D01.14).
+    fn plan_step(
+        &self,
+        meta: Meta,
+        history: History,
+        direction: Direction,
+        protected: &ProtectedSet,
+    ) -> Result<Adoption, Error> {
+        let (kind, tree) = match (history, direction) {
+            (History::Moves, Direction::Undo) => (TransactionKind::Undo, Tree::Undo),
+            (History::Moves, Direction::Redo) => (TransactionKind::Redo, Tree::Redo),
+            (History::Layout, Direction::Undo) => (TransactionKind::Undo, Tree::LayoutUndo),
+            (History::Layout, Direction::Redo) => (TransactionKind::Redo, Tree::LayoutRedo),
         };
-        let Some(&target) = stack.last() else {
+        let Some(&target) = self.stack(history, direction).last() else {
             return Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target"));
         };
         let change = self.changes.get(&target).expect("a stacked action keeps its change").clone();
@@ -3198,6 +3351,7 @@ impl<S: Store> CommandLayer<S> {
         caller: &Caller,
         invocation: &Invocation,
         request: &str,
+        history: History,
         direction: Direction,
     ) -> Result<(Option<u64>, Status), Error> {
         let Some(hint) = invocation.args.get("hint").and_then(ActionHint::from_json) else {
@@ -3210,15 +3364,44 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::TOKEN_MISMATCH, "an undo or redo token binds its hint");
         }
         // The hint before the bound revisions, so a raced undo is `undo_superseded` (draft ruling 2).
-        if self.undo_hint(direction) != Some(hint) {
+        if self.hint(history, direction) != Some(hint) {
             return refused(code::UNDO_SUPERSEDED, "the hint's order or target changed");
         }
         if binding.revision != Some((self.revision.state, self.revision.protection)) {
             return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
         }
         let protected = self.protected.clone();
-        let adoption = self.plan_step(Meta::of(caller, invocation, request), direction, &protected)?;
+        let adoption = self.plan_step(Meta::of(caller, invocation, request), history, direction, &protected)?;
         self.transact(adoption)
+    }
+
+    // ----- explore.set -----
+
+    /// `explore.set {on}` (ADR-D01.39; draft): turns the explore state on or off and answers `accepted` with no job.
+    /// It writes no journal action and takes no undo (ADR-D01.14). A run turns it only inside a command the solver
+    /// invoked (ADR-D01.2's first route; `LG3:capability.not_granted` otherwise). While it is on, the commit rows are
+    /// refused with [`code::COMMITS_PAUSED`] ([`CommandLayer::paused`]); the solver's own `explore.set` turns it off.
+    fn set_explore(
+        &mut self,
+        caller: &Caller,
+        row: &Row,
+        args: &BTreeMap<String, Value>,
+    ) -> Result<(Option<u64>, Status), Error> {
+        forms::check_forms(row, args)?;
+        let Some(&Value::Bool(on)) = args.get("on") else {
+            return refused(code::ARGUMENT_FORM, "`on` is a Bool");
+        };
+        if let Caller::Runtime { run } = caller {
+            if !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (ADR-D01.2)");
+                return refused(code::NOT_GRANTED, detail);
+            }
+        }
+        if self.explore != on {
+            self.explore = on;
+            self.generation += 1;
+        }
+        Ok((None, Status::Accepted))
     }
 
     // ----- protection.orbit.set -----
@@ -3361,14 +3544,18 @@ impl<S: Store> CommandLayer<S> {
         records: Vec<RecordWrite>,
         budget: Option<Budget>,
     ) -> Adoption {
-        let tree = match self.workspace_undoable(&meta.row) && !records.is_empty() {
-            true => {
+        let tree = match self.workspace_undoable(&meta.row).filter(|_| !records.is_empty()) {
+            Some(history) => {
                 let value = |name: &str| self.records.get(name).and_then(|record| record.value.clone());
                 let before =
                     records.iter().map(|write| RecordWrite { name: write.name.clone(), value: value(&write.name) });
-                Tree::Push { node: None, change: Change::Records { before: before.collect(), after: records.clone() } }
+                let change = Change::Records { before: before.collect(), after: records.clone() };
+                match history {
+                    History::Moves => Tree::Push { node: None, change },
+                    History::Layout => Tree::LayoutPush(change),
+                }
             }
-            false => Tree::None,
+            None => Tree::None,
         };
         let order = self.order + 1;
         let digest = self.state_digest().to_owned();
@@ -3403,12 +3590,19 @@ impl<S: Store> CommandLayer<S> {
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
 
-    /// Whether a completion of workspace row `row` is undoable: a stored row whose undo class is `workspace`. A replay
+    /// The history a completion of workspace row `row` is undone in: the move history for a stored row whose undo class
+    /// is `workspace`, the layout history for one whose undo class is `layout` (ADR-D01.14), none otherwise. A replay
     /// reads the same answer before the host serves its rows again, since H-08's table holds the stored rows; a
     /// language-defined row's completion is never undoable (draft).
-    fn workspace_undoable(&self, row: &str) -> bool {
-        !self.table.language_defined(row)
-            && self.table.row(row).is_some_and(|row| row.kind == Kind::Workspace && row.undo == UndoClass::Workspace)
+    fn workspace_undoable(&self, row: &str) -> Option<History> {
+        if self.table.language_defined(row) {
+            return None;
+        }
+        match self.table.row(row) {
+            Some(row) if row.kind == Kind::Workspace && row.undo == UndoClass::Workspace => Some(History::Moves),
+            Some(row) if row.kind == Kind::Workspace && row.undo == UndoClass::Layout => Some(History::Layout),
+            _ => None,
+        }
     }
 
     // ----- workspace.set -----

@@ -294,7 +294,8 @@ fn a_run_reaches_no_commit_or_token_row_in_any_profile() {
                 assert_eq!(error.code, code::TOKEN_INVALID, "{profile:?}: {}", row.id);
             }
         }
-        assert_eq!((commit_rows, token_rows), (19, 1), "{profile:?}");
+        // 19 commit and app rows before ADR-D01's layout.undo and layout.redo (owner, 22 November 2026, item 4).
+        assert_eq!((commit_rows, token_rows), (21, 1), "{profile:?}");
         assert_eq!((f.layer.store().log.len(), f.layer.revision().state), (log, state), "{profile:?}");
     }
 }

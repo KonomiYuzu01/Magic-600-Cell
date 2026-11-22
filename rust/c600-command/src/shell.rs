@@ -12,7 +12,8 @@
 //! date" ([`report`]). The display itself is the host's ([`Refresh`]).
 //!
 //! The keymap is a draft: G6 has no keymap table yet. It follows 0.4 where 0.4 has a key (`Ctrl+Enter`,
-//! `Ctrl+Shift+Enter`) and uses `Ctrl+Z`, `Ctrl+Y` and `Escape` for undo, redo and cancel.
+//! `Ctrl+Shift+Enter`) and uses `Ctrl+Z`, `Ctrl+Y` and `Escape` for undo, redo and cancel, and ADR-D01.14's
+//! `Ctrl+Alt+Z` and `Ctrl+Alt+Y` for the layout history's undo and redo (owner, 22 November 2026).
 
 use c600_kernel::json::{self, Value};
 
@@ -33,6 +34,9 @@ pub enum ArgSource {
     PresentedPreview,
     UndoHint,
     RedoHint,
+    /// The layout history's hints ([`CommandLayer::layout_hint`]; ADR-D01.14).
+    LayoutUndoHint,
+    LayoutRedoHint,
     Fixed(Value),
 }
 
@@ -70,6 +74,8 @@ pub fn default_keymap() -> Vec<KeyBinding> {
         KeyBinding::new("Escape", "operation", "operation.preview.cancel", &[("preview", ArgSource::PresentedPreview)]),
         KeyBinding::new("Ctrl+Z", "any", "session.undo", &[("hint", ArgSource::UndoHint)]),
         KeyBinding::new("Ctrl+Y", "any", "session.redo", &[("hint", ArgSource::RedoHint)]),
+        KeyBinding::new("Ctrl+Alt+Z", "any", crate::layer::LAYOUT_UNDO_ROW, &[("hint", ArgSource::LayoutUndoHint)]),
+        KeyBinding::new("Ctrl+Alt+Y", "any", crate::layer::LAYOUT_REDO_ROW, &[("hint", ArgSource::LayoutRedoHint)]),
     ]
 }
 
@@ -285,6 +291,13 @@ impl Shell {
                 ArgSource::UndoHint | ArgSource::RedoHint => {
                     let direction = if *source == ArgSource::UndoHint { Direction::Undo } else { Direction::Redo };
                     let hint = layer.undo_hint(direction);
+                    let hint = hint.ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))?;
+                    hint.to_json()
+                }
+                ArgSource::LayoutUndoHint | ArgSource::LayoutRedoHint => {
+                    let direction =
+                        if *source == ArgSource::LayoutUndoHint { Direction::Undo } else { Direction::Redo };
+                    let hint = layer.layout_hint(direction);
                     let hint = hint.ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))?;
                     hint.to_json()
                 }

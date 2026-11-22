@@ -1,0 +1,162 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {
+      "id": "layout.undo",
+      "label": "Undo layout change",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "layout",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Undoes the layout history's newest step: a completion of a row whose undo class is layout (theme, density, type, motion, keymap, panel, radial, palette and layout changes), from LI.9's ActionHint of that history, as session.undo does for the move history; neither history reaches the other's steps (ADR-D01.14). Default key Ctrl+Alt+Z. It journals as an undo whose row is layout.undo, a workspace inverse with equal puzzle hashes, and the explore state does not pause it (ADR-D01.39). Camera and view-filter steps are not journaled yet.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "hint": "ActionHint",
+        "token": "UserActionToken"
+      },
+      "action_guard": "action_hint",
+      "slot_map": "preserve"
+    },
+    {
+      "id": "layout.redo",
+      "label": "Redo layout change",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "layout",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Redoes the layout history's newest undone step: a completion of a row whose undo class is layout (theme, density, type, motion, keymap, panel, radial, palette and layout changes), from LI.9's ActionHint of that history, as session.redo does for the move history; neither history reaches the other's steps (ADR-D01.14). Default key Ctrl+Alt+Y. It journals as a redo whose row is layout.redo, a workspace inverse with equal puzzle hashes, and the explore state does not pause it (ADR-D01.39). Camera and view-filter steps are not journaled yet.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "hint": "ActionHint",
+        "token": "UserActionToken"
+      },
+      "action_guard": "action_hint",
+      "slot_map": "preserve"
+    }
+  ],
+  "amend": [
+    {
+      "id": "keymap.edit",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "keymap": "KeymapRevisionRef",
+          "candidate": "BindingEdits"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "keymap.defaults",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "keymap": "KeymapRevisionRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "keymap.save",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "candidate": "CheckedBindingsRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "keymap.name",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "keymap": "KeymapRevisionRef",
+          "name": "Text"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "file.keymap.apply",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "checked": "CheckedFileRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "work.layout.set",
+      "expect": {
+        "kind": "view",
+        "lane": "view",
+        "undo": "none"
+      },
+      "set": {
+        "kind": "workspace",
+        "lane": "none",
+        "undo": "layout",
+        "lane_target": null,
+        "note": "Applies a stored layout or named workspace (ADR-D01.38): a workspace row whose completion is a step of the layout history, so layout.undo reaches it and session.undo does not (ADR-D01.14). Applying it is the solver's action, a bound entry point or a recorded step; a program may only prepare one as a layout preview.",
+        "arguments": {
+          "layout": "LayoutRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a layout change is a workspace step in the layout history (ADR-D01.14, ADR-D01.38)"
+    },
+    {
+      "id": "work.layout.reset",
+      "expect": {
+        "kind": "view",
+        "lane": "view",
+        "undo": "none"
+      },
+      "set": {
+        "kind": "workspace",
+        "lane": "none",
+        "undo": "layout",
+        "lane_target": null,
+        "note": "Resets a named workspace, or the one in use when layout is not given, to its shipped preset (ADR-D01.38): a step of the layout history (ADR-D01.14).",
+        "arguments": {
+          "layout": "LayoutRef?"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a layout change is a workspace step in the layout history (ADR-D01.14, ADR-D01.38)"
+    }
+  ]
+}

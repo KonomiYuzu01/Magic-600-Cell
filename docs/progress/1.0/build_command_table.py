@@ -14,7 +14,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 KINDS = {"commit", "workspace", "view", "query", "file", "app"}
-UNDO = {"journal", "workspace", "none"}
+UNDO = {"journal", "workspace", "layout", "none"}
 GATES = {"protection", "fresh_preview", "fresh_filter_preview", "confirm", "model_match", "file_check"}
 LANES = {"commit", "exclusive", "latest_wins", "program", "view", "none"}
 CONTEXTS = {"puzzle", "solve", "operation", "keyboard", "filter", "macro_base", "editor", "any"}
@@ -23,11 +23,15 @@ LIST_ACTIONS = {"list.move": "navigation", "object.inspect": "inspection", "list
 USER_ENTRY_KINDS = {"key", "button", "menu", "command", "mouse", "control"}
 DELTA_FORMAT = "c600-command-rows-delta-1"
 # Applied in this order: the language delta may amend a jumbling row. The design delta adds ADR-D01's view and
-# workspace rows, ordinary edits after the LP3 freeze (owner, 22 November 2026).
-DELTA_FILES = ("command-rows-jumbling.json", "command-rows-language.json", "command-rows-design.json")
+# workspace rows, ordinary edits after the LP3 freeze (owner, 22 November 2026, item 3), and the commit delta its
+# commit rows and the rows it moves into the layout history (item 4).
+DELTA_FILES = ("command-rows-jumbling.json", "command-rows-language.json", "command-rows-design.json",
+               "command-rows-commit.json")
 ROW_FIELDS = {"id", "label", "kind", "inventory", "gates", "lane", "preview", "undo", "contexts",
               "repeat", "job", "key_0_4", "disposition", "note", "source", "arguments"}
 UNDO_ROWS = {"session.undo", "session.redo"}
+# ADR-D01.14's layout history: its own undo and redo rows, which only the layout undo class reaches.
+LAYOUT_UNDO_ROWS = {"layout.undo", "layout.redo"}
 # CM.15 and JI.32/JI.33: required names, independent of the generating delta.
 # Optional parameters remain in the delta's full schemas.
 DELTA_REQUIRED_ARGUMENTS = {
@@ -80,6 +84,15 @@ DELTA_REQUIRED_ARGUMENTS = {
     "view.pin": {"view", "pinned"},
     "view.compare.wipe": {"view"},
     "history.dock.mode": {"mode"},
+    "layout.undo": {"hint", "token"},
+    "layout.redo": {"hint", "token"},
+    "keymap.edit": {"keymap", "candidate"},
+    "keymap.defaults": {"keymap"},
+    "keymap.save": {"candidate"},
+    "keymap.name": {"keymap", "name"},
+    "file.keymap.apply": {"checked"},
+    "work.layout.set": {"layout"},
+    "work.layout.reset": set(),
 }
 SERVICES = [
     {"id": "kernel.snapshot.open", "kind": "service", "caller": "both", "lane": "none",
@@ -787,6 +800,12 @@ def validate_rows(candidate, inventory_ids):
         if name in UNDO_ROWS and (row["kind"] != "commit" or row["gates"] or row.get("action_guard") != "action_hint"
                                  or arguments != {"hint": "ActionHint", "token": "UserActionToken"} or row.get("slot_map") != "by_target"):
             raise TableError(f"{name}: undo/redo must be ungated with ActionHint and by_target slot map")
+        if name in LAYOUT_UNDO_ROWS and (row["kind"] != "commit" or row["gates"] or row.get("action_guard") != "action_hint"
+                                        or arguments != {"hint": "ActionHint", "token": "UserActionToken"}
+                                        or row.get("slot_map", "preserve") != "preserve" or row["undo"] != "layout"):
+            raise TableError(f"{name}: layout undo/redo must be ungated with ActionHint and the layout undo class")
+        if row["undo"] == "layout" and row["kind"] != "workspace" and name not in LAYOUT_UNDO_ROWS:
+            raise TableError(f"{name}: only a workspace row is a layout-history step (ADR-D01.14)")
         if name in {"workspace.undo", "workspace.redo", "jumble.preview.scrub"}:
             raise TableError(f"{name}: duplicate purpose; use the shared session or view entry")
         if name == "twist.apply" and (row["preview"] != "none" or row["undo"] != "journal" or "protection" not in row["gates"]):
@@ -1076,7 +1095,8 @@ def build_table(*, base_rows=None, join=None, aliases=None, sources=None,
             "vocabularies": {"kind": sorted(KINDS), "undo": sorted(UNDO), "gates": sorted(GATES),
                              "contexts": sorted(CONTEXTS), "lane": sorted(LANES), "preview": ["none", "required", "filter"]},
             "undo_dispatch": {"entry": {"undo": "session.undo", "redo": "session.redo"}, "classes": ["journal", "workspace"], "guard": "action_hint",
-                              "stale": "KN5:stale.undo_superseded", "protection": "original_permission_path_including_release_confirmation"},
+                              "stale": "KN5:stale.undo_superseded", "protection": "original_permission_path_including_release_confirmation",
+                              "layout": {"entry": {"undo": "layout.undo", "redo": "layout.redo"}, "classes": ["layout"]}},
             "commands": candidate, "services": services, "reads": reads, "not_commands": NOT_COMMANDS}
 
 

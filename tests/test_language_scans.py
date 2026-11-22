@@ -65,10 +65,13 @@ RESERVED_NAMES = (
 )
 # Codes a crate names as drafts, which chapter 13 does not register yet, by path (a new registry row is a change to
 # chapter 13, PHS.52). ERR.1 is not run for them, and the list is exact: a code that becomes registered or leaves its
-# source fails the scan until the list follows. Empty since chapter 13's amendment at LP3's command-table freeze
-# (section 9; PHS.52, PHS.53; owner, 16 and 20 November 2026) registered the eleven drafts that LP3's command layer and
-# LP2's session store named.
-UNREGISTERED_DRAFTS: frozenset[tuple[str, str]] = frozenset()
+# source fails the scan until the list follows. Chapter 13's amendment at LP3's command-table freeze (section 9;
+# PHS.52, PHS.53; owner, 16 and 20 November 2026) registered the eleven drafts that LP3's command layer and LP2's
+# session store named. ADR-D01's explore state (owner, 22 November 2026, item 4; ADR-D01.39) names one new draft: the
+# refusal of a commit row while the state pauses commits.
+UNREGISTERED_DRAFTS: frozenset[tuple[str, str]] = frozenset({
+    ("rust/c600-command/src/receipt.rs", "KN5:capability.commits_paused"),
+})
 
 CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2,3}[0-9]?):([a-z_]+)\.([a-z0-9_]+)(?![A-Za-z0-9_])")
 SHORT_CODE = re.compile(r"^([a-z_]+)\.([a-z0-9_]+)$")
@@ -526,7 +529,8 @@ class ScanTests(unittest.TestCase):
         literal drops a registered code's prefix. This is also CT-ERR-04's emitted half (forwarded codes keep their
         full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). The eleven drafts that LP3's
         command layer and LP2's session store named are registered by chapter 13's amendment at the command-table
-        freeze (section 9, PHS.52), so UNREGISTERED_DRAFTS is empty and ERR.1 runs for every emitted code. Controls:
+        freeze (section 9, PHS.52); UNREGISTERED_DRAFTS holds only ADR-D01's explore refusal, and ERR.1 runs for every
+        other emitted code. Controls:
         an unregistered code, a reserved code, a retired code and a short form fail, and a former draft passes at any
         path; a code in a comment is not read; on a planted draft list, a registered draft and a draft that left its
         path fail, an unregistered draft passes at its own path and fails at another."""

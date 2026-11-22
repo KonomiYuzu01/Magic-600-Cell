@@ -731,7 +731,8 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         .collect();
     calls.sort_unstable();
     calls.dedup();
-    let reads = ["frame", "identity_binding", "revision", "table", "undo_hint"];
+    // `layout_hint` is the layout history's hint (ADR-D01.14), read as `undo_hint` is.
+    let reads = ["frame", "identity_binding", "layout_hint", "revision", "table", "undo_hint"];
     let mut expected = vec!["invoke", "present", "presentation_unavailable"];
     expected.extend(reads);
     expected.sort_unstable();
