@@ -113,6 +113,7 @@ public sealed partial class ChromeFrame : Control
     private Control? globalContent, localContent;
     private Control? root;
     private bool dirty;
+    private string baseline = "";
     private double noticeLeft;
 
     public ChromeFrame(TokenSet tokens, WorkspaceSet workspaces)
@@ -146,9 +147,20 @@ public sealed partial class ChromeFrame : Control
     {
         if (!Workspaces.Stored.TryGetValue(id, out string? stored)) return false;
         if (!Model.Apply(stored)) return false;
-        Workspace = id; dirty = true;
+        Workspace = id; baseline = Model.Store(); dirty = true;
         WorkspaceSelected?.Invoke(id);
         return true;
+    }
+
+    // A workspace the solver has rearranged is marked on its tab and can be reset to its preset (ADR-D01.38).
+    public bool WorkspaceModified => Model.Store() != baseline;
+    public void MarkBaseline() { baseline = Model.Store(); dirty = true; }
+
+    private static double Ratio(SplitContainer split)
+    {
+        var a = (Control)split.GetChild(0); var b = (Control)split.GetChild(1);
+        double first = split.Vertical ? a.Size.Y : a.Size.X, second = split.Vertical ? b.Size.Y : b.Size.X;
+        return first + second > 0 ? first / (first + second) : .5;
     }
 
     public void Flush() { if (dirty) Build(); }
@@ -198,10 +210,16 @@ public sealed partial class ChromeFrame : Control
         row.AddChild(new VSeparator());
         foreach (string id in Workspaces.Order)
         {
-            Button tab = ChromeWidgets.Tool(Workspaces.Names[id], "Workspace: " + Workspaces.Names[id], true, "TabButton");
+            bool modified = id == Workspace && WorkspaceModified;
+            Button tab = ChromeWidgets.Tool(Workspaces.Names[id] + (modified ? " •" : ""), "Workspace: " + Workspaces.Names[id] + (modified ? " (rearranged)" : ""), true, "TabButton");
             tab.SetPressedNoSignal(id == Workspace); tab.SetMeta("workspace", id);
             tab.Pressed += () => { if (!SelectWorkspace(id)) dirty = true; };
             row.AddChild(tab);
+        }
+        if (WorkspaceModified)
+        {
+            Button reset = ChromeWidgets.Tool("↺", "Reset " + Workspaces.Names[Workspace] + " to its preset"); reset.Name = "WorkspaceReset";
+            reset.Pressed += () => SelectWorkspace(Workspace); row.AddChild(reset);
         }
         row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         row.AddChild(BarTools); row.AddChild(new VSeparator()); row.AddChild(Health);
@@ -285,6 +303,7 @@ public sealed partial class ChromeFrame : Control
         split.Name = "MainPair"; split.SizeFlagsVertical = SizeFlags.ExpandFill; split.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         Global.SizeFlagsStretchRatio = (float)Model.PairRatio; Local.SizeFlagsStretchRatio = (float)(1 - Model.PairRatio);
         split.AddChild(Global); split.AddChild(Local);
+        split.DragEnded += () => { if (!Model.SetPairArrangement(Model.PairArrangement, Math.Clamp(Ratio(split), .2, .8))) dirty = true; };
         Button arrange = ChromeWidgets.Tool(side ? "=" : "||", side ? "Stack Global over Local" : "Put Global and Local side by side");
         arrange.Pressed += () => Model.SetPairArrangement(side ? "stacked" : "side", Model.PairRatio);
         Button maximise = ChromeWidgets.Tool(Model.PairMaximised ? "><" : "<>", Model.PairMaximised ? "Restore the other panes" : "Maximise the pair", true);
@@ -304,6 +323,7 @@ public sealed partial class ChromeFrame : Control
             Control a = Node(node.A!), b = Node(node.B!);
             a.SizeFlagsStretchRatio = (float)node.Ratio; b.SizeFlagsStretchRatio = (float)(1 - node.Ratio);
             split.AddChild(a); split.AddChild(b);
+            split.DragEnded += () => Model.Resize(node, Ratio(split));
             return split;
         }
         if (node.Tabs.Contains(FrameModel.Pair)) return PairControl();

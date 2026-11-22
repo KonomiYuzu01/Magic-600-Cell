@@ -160,6 +160,17 @@ public sealed class FrameModel
         return Accept();
     }
 
+    // Dragging a splitter: the ratio is kept inside the range a stored arrangement accepts.
+    public bool Resize(PaneNode split, double ratio)
+    {
+        if (!split.IsSplit || !Contains(Centre, split)) return Refuse("that splitter is not part of the arrangement");
+        split.Ratio = Math.Clamp(ratio, .1, .9);
+        return Accept();
+    }
+
+    private static bool Contains(PaneNode node, PaneNode target) =>
+        ReferenceEquals(node, target) || node.IsSplit && (Contains(node.A!, target) || Contains(node.B!, target));
+
     public bool IsOpen(string pane) => Find(Centre, pane) != null;
 
     // ----- stored form: a workspace, the session's layout and each layout-history step -----

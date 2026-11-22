@@ -28,6 +28,8 @@ internal static partial class Program
         Check(frame.Drop("canvas", "preview", DropZone.Tab) && frame.Activate("editor") && frame.Close("preview"), "panes not moved or closed");
         Sequence(frame.Centre.Panes(), new[] { "editor", "canvas", FrameModel.Pair });
         Check(frame.Close("editor") && frame.Close("canvas") && !frame.Centre.IsSplit && frame.IsOpen(FrameModel.Pair), "the pair is not what remains");
+        Check(frame.Drop("editor", FrameModel.Pair, DropZone.Left) && frame.Resize(frame.Centre, .02) && frame.Centre.Ratio == .1, "a splitter left its range");
+        Check(!frame.Resize(PaneNode.Split(true, .5, PaneNode.Group("a"), PaneNode.Group("b")), .5) && !frame.Resize(frame.Centre.A!, .5) && frame.Close("editor"), "a foreign splitter was resized");
         // One panel per dock; the open panel's button collapses the dock.
         Check(frame.ToggleDock(DockSide.Left, "history") && frame.Docks[DockSide.Left].Open == "history", "dock not opened");
         Check(frame.ToggleDock(DockSide.Left, "scripts") && frame.Docks[DockSide.Left].Open == "scripts", "dock shows two panels");

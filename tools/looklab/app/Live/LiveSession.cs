@@ -181,6 +181,13 @@ internal static class LiveChecks
         Require(refused && frame.Model.Store() == before && frame.Notice.Visible && frame.Notice.Text.Contains("Global and Local", StringComparison.Ordinal),
             fault, "a change that hides a main view was not refused on screen");
         Require(frame.SelectWorkspace("script") && frame.Model.IsOpen("editor") && frame.Model.PairArrangement == "stacked", fault, "the Script workspace was not applied");
+        frame.Flush();
+        Require(!frame.WorkspaceModified && frame.FindChild("WorkspaceReset", true, false) == null, fault, "a fresh workspace is marked as rearranged");
+        PaneNode centre = frame.Model.Centre;
+        Require(frame.Model.Resize(centre, .97) && centre.Ratio == .9 && frame.Model.SetPairArrangement("side", .3), fault, "a splitter drag was not kept in range");
+        frame.Flush();
+        Require(frame.WorkspaceModified && frame.FindChild("WorkspaceReset", true, false) != null, fault, "a rearranged workspace is not marked");
+        Require(frame.SelectWorkspace("script") && !frame.WorkspaceModified && frame.Model.PairArrangement == "stacked", fault, "reset to preset failed");
         frame.Model.SetFocusMode(true); frame.Flush();
         Require(frame.FindChild("TopBar", true, false) == null && frame.Global.Slot.IsAncestorOf(app.GlobalStage) && !frame.IsAncestorOf(app.ParameterPanel),
             fault, "focus mode shows more than the pair");

@@ -46,7 +46,7 @@ internal static class LabFrame
         frame.Health.Text = "Look Lab · full detail · 259,800 slots";
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         // The lab opens on its own panel; every other default comes from the workspace.
-        frame.Model.ShowDock(DockSide.Right, Tune);
+        frame.Model.ShowDock(DockSide.Right, Tune); frame.MarkBaseline();
         // The greybox canvas is a pane beside the pair while its switch is on.
         void ShowGreybox(bool on)
         {
