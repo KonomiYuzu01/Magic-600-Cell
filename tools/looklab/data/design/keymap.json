@@ -47,6 +47,11 @@
           "command": "workspace.set",
           "argument": "layout:reference",
           "label": "Workspace: Reference"
+        },
+        {
+          "command": "workspace.set",
+          "argument": "layout:gallery",
+          "label": "Workspace: Gallery"
         }
       ]
     }
@@ -99,6 +104,13 @@
       "command": "workspace.set",
       "argument": "layout:reference",
       "label": "Workspace: Reference"
+    },
+    {
+      "key": "5",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:gallery",
+      "label": "Workspace: Gallery"
     },
     {
       "key": "F",
@@ -211,6 +223,13 @@
       "command": "view.preview.scrub",
       "argument": "forward",
       "label": "Preview: one move forward"
+    },
+    {
+      "key": "F6",
+      "context": "global",
+      "command": "theme.select",
+      "argument": "preset.next",
+      "label": "Theme: next of the six presets"
     }
   ]
 }

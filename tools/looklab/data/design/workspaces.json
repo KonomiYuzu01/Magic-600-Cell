@@ -120,6 +120,38 @@
           }
         }
       }
+    },
+    {
+      "id": "gallery",
+      "name": "Gallery",
+      "arrangement": {
+        "docks": {
+          "left": null,
+          "right": null,
+          "bottom": null
+        },
+        "pair": {
+          "arrangement": "stacked",
+          "ratio": 0.5
+        },
+        "focus": false,
+        "centre": {
+          "split": "horizontal",
+          "ratio": 0.3,
+          "a": {
+            "tabs": [
+              "pair"
+            ],
+            "active": 0
+          },
+          "b": {
+            "tabs": [
+              "gallery"
+            ],
+            "active": 0
+          }
+        }
+      }
     }
   ]
 }

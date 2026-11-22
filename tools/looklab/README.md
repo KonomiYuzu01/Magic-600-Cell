@@ -1017,3 +1017,26 @@ sample programs under `data/samples/`, whose entry points give fixed results.
 - A key that commits is never given to a run. Restart scripts and safe mode are in the Scripts dock; F4 opens the
   command bar; F9 steps through the ten screens of this stage.
 - `a5-sweep` also fails when a script frame holds a commit control.
+
+### A5 stage 8: colour, type, icons, motion and the component gallery
+
+Look Lab opens on the Solve workspace. F9 steps through the screens of this stage; F6 (and the palette row
+"Theme: next of the six presets") steps through Graphite and Paper with their three scene looks; key 5 opens the
+Gallery workspace.
+
+- The two families are two characters (`character` in `data/design/themes/*.json`): Graphite builds depth with
+  hairlines and square corners, Paper with tone steps and soft corners. The Appearance dock can draw a family the
+  other way, to compare. Each family gives committed, preview, script and selection an accent of their own.
+- A scene look sets the ground, the fog, the glow and the edges through the lab's own parameters, inside their ranges.
+- The gallery (`app/Chrome/Ui/Gallery.cs`, model in `app/Chrome/Model/Gallery.cs`) has seven pages: every widget in
+  every state, type with the notation glyphs each face chain misses, both icon tiers at 16 px with the command
+  coverage, the motion table (`data/design/motion.json`) with a play button per entry, the candidate sticker palettes
+  (`data/design/palettes.json`) with their smallest OKLab distances under four kinds of colour vision, a list of
+  10,000 rows that builds only the rows in view, and the five designed states of a pane.
+- Only a palette that passes is offered; choosing one writes the lab's palette parameters, so both views show it.
+- `data/design/command-icons.json` gives every registered command an icon or marks it label only on purpose.
+- The top bar has readout cells; each view has pick-layer keys (6 to 0, F10 cycles how the other layers show).
+  The layers change marks only: the core does not draw per-layer opacity yet.
+- Reduced motion (Appearance dock, the gallery's Motion page, `motion.reduced.set`) shows every motion's still
+  picture at once. Cue slots carry no audio.
+- The core tests include a token lint: no colour is written in `app/Chrome/Ui` or in the lab's wiring of it.

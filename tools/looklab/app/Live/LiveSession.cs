@@ -256,7 +256,7 @@ internal static class LiveChecks
         frame.Labels = false; frame.Flush();
         frame.Model.ShowDock(DockSide.Right, LabFrame.Tune); frame.Flush();
         Require(frame.Model.IsOpen(LabFrame.Greybox) && frame.IsAncestorOf(app.Greybox.Canvas), fault, "the open greybox is not a pane of the frame");
-        Require(frame.FindChild("TopBar", true, false) != null && frame.Workspaces.Order.SequenceEqual(new[] { "solve", "script", "analyse", "reference" }), fault, "top bar or workspaces missing");
+        Require(frame.FindChild("TopBar", true, false) != null && frame.Workspaces.Order.SequenceEqual(new[] { "solve", "script", "analyse", "reference", "gallery" }), fault, "top bar or workspaces missing");
         // The theme button: the other family, the scene behind the puzzle follows, and the choice is kept.
         var themeButton = (Button)frame.FindChild("ThemeButton", true, false);
         string family = frame.Tokens.Theme.Id; Color window = frame.Tokens.C("window.background");

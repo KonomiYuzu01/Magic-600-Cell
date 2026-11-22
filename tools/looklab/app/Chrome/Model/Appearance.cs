@@ -14,6 +14,8 @@ public sealed class Appearance
     public string Density { get; private set; }
     public double DisplayScale { get; private set; } = 1;
     public bool HighContrast { get; set; }
+    public bool OtherCharacter { get; set; }
+    public bool ReducedMotion { get; set; }
     // The scale of the display the window is on, set by the host and not stored: the user's display scale
     // multiplies it, so the same stored appearance reads the same on a dense and on a plain screen.
     public double SystemScale { get; private set; } = 1;
@@ -55,7 +57,7 @@ public sealed class Appearance
     public void ResetKnobs() => knobs.Remove(Theme);
 
     public TokenSet Resolve() => new(system, Family, Density, EffectiveScale,
-        ThemeFamily.KnobIds.ToDictionary(id => id, Knob), null, HighContrast);
+        ThemeFamily.KnobIds.ToDictionary(id => id, Knob), null, HighContrast) { OtherCharacter = OtherCharacter, ReducedMotion = ReducedMotion };
 
     private static string N(double v) => v.ToString("R", CultureInfo.InvariantCulture);
 
@@ -63,6 +65,8 @@ public sealed class Appearance
     public string Store()
     {
         var lines = new List<string> { "theme=" + Theme, "density=" + Density, "scale=" + N(DisplayScale), "contrast=" + (HighContrast ? "high" : "standard"), "scene=" + SceneLook };
+        if (OtherCharacter) lines.Add("character=other");
+        if (ReducedMotion) lines.Add("motion=reduced");
         foreach (var family in knobs) foreach (var knob in family.Value) lines.Add($"knob.{family.Key}.{knob.Key}={N(knob.Value)}");
         return string.Join("\n", lines);
     }
@@ -85,6 +89,8 @@ public sealed class Appearance
             else if (name == "scale") result.DisplayScale = Number();
             else if (name == "contrast") result.HighContrast = value == "high" ? true : value == "standard" ? false : throw J.Error(name, "expected high or standard");
             else if (name == "scene") result.SetSceneLook(value);
+            else if (name == "character" && value == "other") result.OtherCharacter = true;
+            else if (name == "motion" && value == "reduced") result.ReducedMotion = true;
             else if (parts.Length == 3 && parts[0] == "knob" && themes.FirstOrDefault(t => t.Id == parts[1]) is { } family) result.SetKnob(family, parts[2], Number());
             else throw J.Error(name, "unknown setting");
         }

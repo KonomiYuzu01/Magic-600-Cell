@@ -186,7 +186,7 @@ public sealed partial class SixCsEditor : VBoxContainer
         Diagnostics = Open == null ? Array.Empty<ScriptDiagnostic>() : SixCsService.Diagnose(Open.Source);
         Fixes = Open == null ? Array.Empty<QuickFix>() : SixCsService.Fixes(Open.Source);
         TokenSet t = tokens();
-        for (int i = 0; i < Code.GetLineCount(); i++) Code.SetLineBackgroundColor(i, new Color(0, 0, 0, 0));
+        for (int i = 0; i < Code.GetLineCount(); i++) Code.SetLineBackgroundColor(i, default);
         foreach (ScriptDiagnostic d in Diagnostics.Where(d => d.Severity != Severity.Info && d.Line <= Code.GetLineCount()))
             Code.SetLineBackgroundColor(d.Line - 1, t.C(FeedbackPanel.Shapes[d.Severity].Colour, .14f));
         SessionWidgets.Clear(Notes);

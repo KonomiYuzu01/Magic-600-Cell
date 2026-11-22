@@ -4,6 +4,7 @@
   "id": "paper",
   "name": "Paper",
   "scheme": "light",
+  "character": "tone",
   "ladder": [
     0.975,
     0.95,
@@ -110,13 +111,13 @@
       "knob": "gridIntensity",
       "scale": 0.4
     },
-    "script.frame": "magenta.8",
+    "script.frame": "violet.8",
     "state.committed": "neutral.10",
-    "state.preview": "violet.8",
+    "state.preview": "orange.8",
     "state.pending": "violet.9",
     "state.stale": "amber.8",
     "state.invalid": "red.8",
-    "state.selected": "accent.9",
+    "state.selected": "green.9",
     "state.protected": "green.8",
     "severity.error": "red.8",
     "severity.warning": "amber.8",
@@ -141,17 +142,29 @@
     "solving": {
       "bgLightness": 0.93,
       "bgHue": 85,
-      "bgTint": 0.01
+      "bgTint": 0.01,
+      "fog": 0.2,
+      "glow": 0,
+      "edgeBrightness": 0.2,
+      "edgeWeight": 0
     },
     "inspecting": {
-      "bgLightness": 0.88,
+      "bgLightness": 0.86,
       "bgHue": 85,
-      "bgTint": 0.01
+      "bgTint": 0.006,
+      "fog": 0,
+      "glow": 0,
+      "edgeBrightness": 0.1,
+      "edgeWeight": 0.6
     },
     "celebrating": {
       "bgLightness": 0.95,
       "bgHue": 60,
-      "bgTint": 0.03
+      "bgTint": 0.035,
+      "fog": 0.1,
+      "glow": 0.5,
+      "edgeBrightness": 0.2,
+      "edgeWeight": 0
     }
   }
 }

@@ -42,7 +42,7 @@ public sealed partial class TokenSpecimen : ScrollContainer
     private ColorRect Swatch(TokenSet tokens, Rgb colour, string tooltip)
     {
         int size = tokens.Px("icon.medium"); Swatches++;
-        return new ColorRect { Color = new Color((float)colour.R, (float)colour.G, (float)colour.B), CustomMinimumSize = new Vector2(size, size), TooltipText = tooltip,
+        return new ColorRect { Color = ChromeBody.Engine(colour), CustomMinimumSize = new Vector2(size, size), TooltipText = tooltip,
             SizeFlagsVertical = SizeFlags.ShrinkCenter };
     }
 

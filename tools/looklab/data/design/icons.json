@@ -371,6 +371,138 @@
     "keymap.defaults": {
       "glyph": "list-restart",
       "fallback": "d"
+    },
+    "layer.cells": {
+      "glyph": "boxes",
+      "fallback": "C"
+    },
+    "layer.stickers": {
+      "glyph": "sticker",
+      "fallback": "S"
+    },
+    "layer.grips": {
+      "glyph": "grip",
+      "fallback": "G"
+    },
+    "layer.axes": {
+      "glyph": "axis-3d",
+      "fallback": "A"
+    },
+    "layer.orbit": {
+      "glyph": "orbit",
+      "fallback": "O"
+    },
+    "layer.cycle": {
+      "glyph": "eye-off",
+      "fallback": "C"
+    },
+    "workspace.gallery": {
+      "glyph": "gallery-vertical-end",
+      "fallback": "G"
+    },
+    "motion.play": {
+      "glyph": "play-circle",
+      "fallback": "P"
+    },
+    "motion.reduced": {
+      "glyph": "snail",
+      "fallback": "R"
+    },
+    "cue.mute": {
+      "glyph": "volume-x",
+      "fallback": "M"
+    },
+    "preset.next": {
+      "glyph": "paint-bucket",
+      "fallback": "N"
+    },
+    "contrast.high": {
+      "glyph": "contrast",
+      "fallback": "H"
+    },
+    "readout.revision": {
+      "glyph": "git-commit-horizontal",
+      "fallback": "R"
+    },
+    "readout.position": {
+      "glyph": "map-pin",
+      "fallback": "P"
+    },
+    "readout.queue": {
+      "glyph": "list-ordered",
+      "fallback": "Q"
+    },
+    "glyph.cell": {
+      "glyph": "hexagon",
+      "fallback": "C"
+    },
+    "glyph.grip": {
+      "glyph": "circle-dot-dashed",
+      "fallback": "G"
+    },
+    "glyph.axis": {
+      "glyph": "move-diagonal",
+      "fallback": "A"
+    },
+    "glyph.macro": {
+      "glyph": "workflow",
+      "fallback": "M"
+    },
+    "glyph.preview": {
+      "glyph": "scan-search",
+      "fallback": "P"
+    },
+    "glyph.proof": {
+      "glyph": "badge-check",
+      "fallback": "P"
+    },
+    "state.loading": {
+      "glyph": "loader-circle",
+      "fallback": "L"
+    },
+    "state.notdrawn": {
+      "glyph": "image-off",
+      "fallback": "N"
+    },
+    "character.swap": {
+      "glyph": "replace",
+      "fallback": "S"
+    },
+    "state.empty": {
+      "glyph": "inbox",
+      "fallback": "E"
+    },
+    "state.error": {
+      "glyph": "circle-alert",
+      "fallback": "E"
+    },
+    "state.stale": {
+      "glyph": "clock-alert",
+      "fallback": "S"
+    },
+    "density.next": {
+      "glyph": "rows-3",
+      "fallback": "N"
+    },
+    "view.reset": {
+      "glyph": "brush",
+      "fallback": "R"
+    },
+    "view.names": {
+      "glyph": "tags",
+      "fallback": "N"
+    },
+    "view.findings": {
+      "glyph": "flag-triangle-right",
+      "fallback": "F"
+    },
+    "display.frame": {
+      "glyph": "frame",
+      "fallback": "F"
+    },
+    "display.adaptive": {
+      "glyph": "gauge",
+      "fallback": "A"
     }
   }
 }

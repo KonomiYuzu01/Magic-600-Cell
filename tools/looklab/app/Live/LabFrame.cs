@@ -44,7 +44,8 @@ internal static class LabFrame
         (LabScripts.RingView, "Script view", "mount.view", "No script view yet"),
     };
     // The showing this build opens on. A kept arrangement from an earlier showing is not restored.
-    public const string Showing = "stage7";
+    public const string Showing = "stage8";
+    public const string GalleryPane = "gallery";
 
     // Installed packages are looked for under tools/node of this checkout, of every folder above it (a copy of
     // the tree exported inside another checkout) and, from a linked worktree, of its main checkout.
@@ -66,9 +67,12 @@ internal static class LabFrame
     public static ChromeFrame Attach(LabApp app, string root)
     {
         ChromeFonts.SetRoots(PackageFolders(root));
-        ChromeIcons.Use(IconSet.Load(Path.Combine(root, "tools/looklab/data/design/icons.json")));
+        IconSet iconSet = IconSet.Load(Path.Combine(root, "tools/looklab/data/design/icons.json")); ChromeIcons.Use(iconSet);
         string folder = Path.Combine(root, "tools/looklab/data/design");
         DesignSystem design = DesignSystem.Load(Path.Combine(folder, "system.json"));
+        MotionTable motions = MotionTable.Parse(File.ReadAllText(Path.Combine(folder, "motion.json")), design);
+        var palettes = StickerPalette.Parse(File.ReadAllText(Path.Combine(folder, "palettes.json")));
+        CommandIcons commandIcons = CommandIcons.Parse(File.ReadAllText(Path.Combine(folder, "command-icons.json"))); ChromeBody.Commands = commandIcons;
         ThemeFamily[] themes = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)
             .Select(p => ThemeFamily.Load(p, design)).ToArray();
         var look = new Appearance(design, themes);
@@ -111,12 +115,40 @@ internal static class LabFrame
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         LabScripts scripts = null!;
+        // The component gallery: a pane of its own workspace, drawn from the tokens in force.
+        var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
+        frame.AddPane(GalleryPane, "Gallery", gallery);
+        void NextPreset()
+        {
+            var all = themes.SelectMany(t => ThemeFamily.SceneLooks.Select(l => (t.Id, Look: l))).ToArray();
+            int at = (Array.FindIndex(all, x => x.Id == look.Theme && x.Look == look.SceneLook) + 1) % all.Length;
+            appearance.Edit(a => { a.SetTheme(all[at].Id); a.SetSceneLook(all[at].Look); }, true, true);
+            frame.Say($"preset {at + 1}/{all.Length}: {look.Family.Name} · {look.SceneLook}");
+        }
+        gallery.Asked += what =>
+        {
+            if (what == "preset") NextPreset();
+            else if (what == "contrast") appearance.Edit(a => a.HighContrast = !a.HighContrast, true, false);
+            else if (what == "character") appearance.Edit(a => a.OtherCharacter = !a.OtherCharacter, true, false);
+            else appearance.Edit(a => a.SetDensity(design.Densities[(design.Densities.ToList().IndexOf(a.Density) + 1) % design.Densities.Count]), true, false);
+        };
+        // A chosen sticker palette is written through the lab's own palette parameters.
+        gallery.PaletteChosen += chosen =>
+        {
+            foreach (var value in chosen.Lab)
+                app.State.Set(value.Key, ParameterSchema.ReadValue(app.State.Schema[value.Key], System.Text.Json.JsonDocument.Parse(value.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).RootElement));
+            frame.Say("Sticker palette: " + chosen.Name);
+        };
+        gallery.MotionChanged += () => appearance.Edit(a => a.ReducedMotion = gallery.Motion.Reduced, true, false);
+        void ShowGallery() { if (GodotObject.IsInstanceValid(gallery)) gallery.Rebuild(); }
+        frame.Rebuilt += ShowGallery; frame.Recoloured += ShowGallery;
+        var layers = new System.Collections.Generic.Dictionary<string, FocusLayers> { ["global"] = new FocusLayers(), ["local"] = new FocusLayers() };
         string? Unavailable(string command, string? argument) => command switch
         {
             "keymap.defaults" or "file.keymap.export" => null,
             "panel.mount" or "panel.unmount" => argument != null ? null : "it needs the id of a script panel",
             _ when command.StartsWith("script.", StringComparison.Ordinal) => scripts?.Unavailable(command),
-            "command.find" or "transient.close" or "help.open" => null,
+            "command.find" or "transient.close" or "help.open" or "motion.reduced.set" => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             _ when LabDemo.Handles(command) => null,
@@ -161,6 +193,11 @@ internal static class LabFrame
                 case "workspace.set" when argument!.StartsWith("layout:", StringComparison.Ordinal):
                     if (!frame.SelectWorkspace(argument.Substring(7))) frame.Say("No workspace is named " + argument.Substring(7), true);
                     break;
+                case "motion.reduced.set":
+                    appearance.Edit(a => a.ReducedMotion = argument == null ? !a.ReducedMotion : argument == "on", true, false);
+                    frame.Say(look.ReducedMotion ? "Reduced motion: every motion shows its still picture at once" : "Motion on");
+                    break;
+                case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
                 case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
@@ -202,6 +239,31 @@ internal static class LabFrame
         // One chip says that what the docks hold is sample data.
         PanelContainer sample = SessionWidgets.Chip("sample", look.Resolve().C("text.dim"), "History, problems, tasks and scripts hold sample data"); sample.Name = "SampleChip";
         frame.BarTools.AddChild(sample);
+        // The top bar is an instrument strip: readout cells for the revision, the history position and the run queue.
+        var revision = new Readout("RevisionReadout", "readout.revision", "Revision of the committed state", () => frame.Tokens);
+        var position = new Readout("PositionReadout", "readout.position", "History position: the entry in view, of the entries kept", () => frame.Tokens);
+        var waiting = new Readout("QueueReadout", "readout.queue", "Script runs waiting or running", () => frame.Tokens);
+        foreach (Readout cell in new[] { waiting, position, revision }) { frame.BarTools.AddChild(cell); frame.BarTools.MoveChild(cell, 0); }
+        void Readouts()
+        {
+            if (!GodotObject.IsInstanceValid(revision)) return;
+            var plain = System.Globalization.CultureInfo.InvariantCulture;
+            revision.Set("r " + (1200 + demo.Moves.Cursor).ToString("0000", plain)); position.Set($"{demo.Moves.Cursor}/{demo.Moves.Entries.Count}"); waiting.Set(scripts.Queue.Active.Count().ToString(plain));
+        }
+        var clock = new Godot.Timer { WaitTime = .25, Autostart = true }; clock.Timeout += Readouts; frame.AddChild(clock);
+        frame.Rebuilt += () => { foreach (Readout cell in new[] { revision, position, waiting }) if (GodotObject.IsInstanceValid(cell)) cell.Dress(); };
+        // Pick-layer keys beside each view: 6 to 0 pick a layer in the view under the pointer, F10 cycles how the others show.
+        string LayerKey(string id) => id == "cycle" ? "F10" : ((FocusLayers.Layers.ToList().FindIndex(l => l.Id == id) + 6) % 10).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        void DressViews()
+        {
+            foreach ((ViewFrame view, string id) in new[] { (frame.Global, "global"), (frame.Local, "local") })
+                if (view.Tools.GetNodeOrNull("LayerKeys") == null) { var keys = new LayerKeys(layers[id], () => frame.Tokens, LayerKey); view.Tools.AddChild(keys); view.Tools.MoveChild(keys, 0); }
+        }
+        DressViews(); frame.Rebuilt += DressViews;
+        FocusLayers Aimed() => layers[frame.Local.Focused ? "local" : "global"];
+        foreach (var layer in FocusLayers.Layers) { string id = layer.Id; frame.HostKeys[LayerKey(id)] = () => Aimed().SetPick(id); }
+        frame.HostKeys["F10"] = () => Aimed().Cycle();
+        app.ViewParts["frame.layers"] = (() => layers["global"].Store() + "|" + layers["local"].Store(), v => { string[] kept = v.Split('|'); if (kept.Length == 2) { layers["global"].Restore(kept[0]); layers["local"].Restore(kept[1]); } });
         frame.AlertPressed += () => frame.Model.ShowDock(DockSide.Bottom, "problems");
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         // Every default comes from the workspace; the right dock starts collapsed (ADR-D01.22).
@@ -226,6 +288,10 @@ internal static class LabFrame
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
                 view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
                 foreach (var mark in scripts.ViewMarks()) view.AddMark(mark.Glyph, mark.Text, mark.Colour, mark.Tip);
+                FocusLayers own = layers[view == frame.Global ? "global" : "local"]; var picked = FocusLayers.Layers.First(l => l.Id == own.Pick);
+                view.AddMark(picked.Icon, picked.Name.ToLowerInvariant(), "text.dim", $"A click picks {picked.Name.ToLowerInvariant()} in this view.");
+                if (own.Inactive != InactiveMode.Normal)
+                    view.AddMark("mark.protected", "shows through", "state.protected", $"The other layers are {own.Inactive.ToString().ToLowerInvariant()} and cannot be picked. A protection conflict still shows through every layer (sample).");
             }
             bool cap = app.Linked.Shape is { Ghost: > 0 }, rings = p.Choice("projection") == "hopfRings";
             frame.Local.AddMark("mark.autoframe", cap ? "A · cap" : "B · spread", "text.dim", cap ? "Local A: centred on the moving cells, their neighbours faint. F7 shows B." : "Local B: the moving cells spread apart. F7 shows A.");
@@ -239,27 +305,27 @@ internal static class LabFrame
         frame.HostKeys["F4"] = () => Execute("script.bar", null);
         // The tour key steps through the screens this showing changed.
         int tour = 0;
-        void Home() { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }
+        void Home() { frame.SelectWorkspace(frame.Workspaces.Order[0]); }
+        void Preset(string theme, string scene, bool contrast = false) => appearance.Edit(x => { x.SetTheme(theme); x.SetSceneLook(scene); x.HighContrast = contrast; }, true, true);
+        void Page(string page) { frame.SelectWorkspace(GalleryPane); gallery.ShowPage(page); }
+        string dark = themes[0].Id, light = themes[^1].Id;
         (string Name, Action Go)[] stops =
         {
-            ("editor: a program and its entry points", () => { Home(); }),
-            ("faults of each severity, a fix as ghost text", () => { Home(); if (!scripts.Editor.Faulted) scripts.Editor.ToggleFaults(); scripts.Editor.NextFix(); }),
-            ("a read result under its region", () => { Home(); if (scripts.Editor.Faulted) scripts.Editor.ToggleFaults(); scripts.Start("script.sweep.reach"); scripts.Drain(); }),
-            ("a run ends in a preview; only the commit key commits", () => { scripts.Start("script.sweep.ring"); scripts.Drain(); }),
-            ("after a commit the older result dims", () => { Execute("operation.preview.commit", null); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),
-            ("six mounts of one program", () =>
-            {
-                foreach (string entry in new[] { "facts", "tuner", "ring_view", "annotate_ring" }) scripts.Start("script.mounts." + entry);
-                scripts.Drain(); if (frame.Model.IsOpen(LabDemo.PreviewPane)) frame.Model.Close(LabDemo.PreviewPane); scripts.Open("mounts", 1); frame.Model.ShowDock(DockSide.Right, LabScripts.SlotId(scripts.Slots.SlotOf(LabScripts.TunerPanel)));
-            }),
-            ("a package by another author asks first", () => { frame.Model.ShowDock(DockSide.Left, "scripts"); scripts.Consent.Ask(scripts.Packages[0]); }),
-            ("in a solving session its preview is refused", () =>
-            {
-                if (scripts.Installed.Install(scripts.Packages[0])) scripts.RestoreState(scripts.StoreState());
-                scripts.Start("script.ring_tools.solve_ring"); scripts.Drain(); scripts.Editor.ShowLower("console");
-            }),
-            ("layout, density and a key in one history step", () => { scripts.Start("script.layout.studio"); scripts.Drain(); frame.Model.ShowDock(DockSide.Left, "history"); }),
-            ("command bar", () => Execute("script.bar", null)),
+            ("Graphite, the machined instrument: lines build depth", () => { Preset(dark, "solving"); Home(); }),
+            ("Paper, the drafting sheet: tone steps build depth", () => { Preset(light, "solving"); Home(); }),
+            ("every widget in every state", () => { Preset(dark, "solving"); Page("widgets"); }),
+            ("the same under Paper, inspecting", () => { Preset(light, "inspecting"); Page("widgets"); }),
+            ("high contrast", () => { Preset(dark, "solving", true); Page("widgets"); }),
+            ("the celebrating look", () => { Preset(dark, "celebrating"); Home(); }),
+            ("the motion table: each entry plays", () => { Preset(dark, "solving"); Page("motion"); gallery.Play(motions["twist.preview"]); }),
+            ("sticker palettes with their distances", () => Page("palette")),
+            ("icons, both tiers", () => Page("icons")),
+            ("type and notation", () => Page("type")),
+            ("a list of 10,000 rows", () => { Page("list"); gallery.List?.ScrollTo(5000); }),
+            ("the five states of a pane", () => Page("panes")),
+            ("pick layers; the other layers dimmed", () => { Home(); layers["global"].SetPick("stickers"); if (layers["global"].Inactive == InactiveMode.Normal) layers["global"].Cycle(); }),
+            ("a radial menu", () => { Home(); Execute("radial.view", null); }),
+            ("the script workspace in the new body", () => { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),
         };
         frame.HostKeys["F9"] = () =>
         {
@@ -269,6 +335,7 @@ internal static class LabFrame
             tour = (tour + 1) % stops.Length;
         };
         frame.Rebuilt += Describe; frame.Recoloured += Describe;
+        foreach (FocusLayers changed in layers.Values) changed.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         app.State.Changed += (_, _) => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         // A kept view from an earlier showing keeps its values but not its arrangement: this build opens on its

@@ -93,11 +93,17 @@ public sealed partial class RadialOverlay : ChromeOverlay
             RadialEntry entry = menu.Entries[i]; int index = i;
             double angle = Math.PI * 2 * i / menu.Entries.Count;
             string? why = unavailable(entry.Command, entry.Argument);
-            var button = new Button { Text = $"{i + 1}  {Label(entry)}", ThemeTypeVariation = "RadialButton", CustomMinimumSize = size, ClipText = true, FocusMode = FocusModeEnum.None };
+            string icon = ChromeBody.Commands?.Of(entry.Command, entry.Argument) ?? "command.bar";
+            var button = new Button { Text = "       " + Label(entry), Alignment = HorizontalAlignment.Left, ThemeTypeVariation = "RadialButton", CustomMinimumSize = size, ClipText = true, FocusMode = FocusModeEnum.None };
             button.TooltipText = why == null ? registry.Commands[entry.Command].Help : "Unavailable: " + why;
             if (why != null) button.AddThemeColorOverride("font_color", tokens.C("text.off"));
             button.SetMeta("entry", index); button.Pressed += () => Choose(index);
             ring.AddChild(button); button.Size = size;
+            var mark = new Label { MouseFilter = MouseFilterEnum.Ignore }; ChromeIcons.Apply(mark, icon, tokens.Px("icon.medium")); button.AddChild(mark);
+            mark.Position = new Vector2(tokens.Px("space.2"), (size.Y - mark.GetCombinedMinimumSize().Y) / 2);
+            Label number = ChromeWidgets.Text((i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), "MicroLabel"); number.MouseFilter = MouseFilterEnum.Ignore; button.AddChild(number);
+            number.Position = new Vector2(size.X - tokens.Px("space.3") - number.GetCombinedMinimumSize().X, (size.Y - number.GetCombinedMinimumSize().Y) / 2);
+            if (why != null) mark.Modulate = mark.Modulate with { A = .4f };
             button.Position = centre + new Vector2((float)Math.Sin(angle), -(float)Math.Cos(angle) * .8f) * radius - size / 2;
             entries.Add(button);
         }

@@ -59,7 +59,7 @@ public sealed partial class ChartView : Control
         Font font = GetThemeFont("font", "Label"); int text = Math.Max(8, GetThemeFontSize("font_size", "Label") - 3);
         if (Chart.Form == "heat")
         {
-            for (int i = 0; i < n; i++) DrawRect(new Rect2(i * (w + gap), 0, w, Size.Y), new Color(colour, (float)(.12 + .88 * Chart.Points[i].Value / top)));
+            for (int i = 0; i < n; i++) DrawRect(new Rect2(i * (w + gap), 0, w, Size.Y), colour with { A = (float)(.12 + .88 * Chart.Points[i].Value / top) });
             return;
         }
         DrawLine(new Vector2(0, h), new Vector2(Size.X, h), t.C("border.strong"), thin);

@@ -31,11 +31,15 @@ public static class ChromeTheme
 
     public static StyleBoxFlat Box(TokenSet t, string background, string? border = null, string radius = "radius.control", int pad = -1, int borderWidth = -1)
     {
-        var box = new StyleBoxFlat { BgColor = t.C(background), AntiAliasing = false };
+        // Lines: every cell has a hairline and square corners. Tone: no border on a plain surface, depth from the tone step, soft corners.
+        bool plain = !t.Lines && !t.HighContrast && borderWidth < 0 && border is "control.border" or "panel.border";
+        if (plain && background == "panel.background") background = "control.background";
+        if (plain) border = null;
+        var box = new StyleBoxFlat { BgColor = t.C(background), AntiAliasing = !t.Lines };
         int width = border == null ? 0 : borderWidth >= 0 ? borderWidth : t.Px("border.width");
         box.SetBorderWidthAll(width);
         if (border != null) box.BorderColor = t.C(border);
-        box.SetCornerRadiusAll(t.Px(radius));
+        box.SetCornerRadiusAll(t.Lines ? 0 : t.Px(radius) * 2);
         int p = pad >= 0 ? pad : t.Px("space.2");
         box.ContentMarginLeft = p + t.Px("space.1"); box.ContentMarginRight = p + t.Px("space.1"); box.ContentMarginTop = p; box.ContentMarginBottom = p;
         return box;
@@ -44,7 +48,7 @@ public static class ChromeTheme
     private static StyleBoxFlat Edge(TokenSet t, string background, string border, Side side)
     {
         var box = new StyleBoxFlat { BgColor = t.C(background), BorderColor = t.C(border), AntiAliasing = false };
-        box.SetBorderWidth(side, t.Px("border.width"));
+        box.SetBorderWidth(side, t.Lines || t.HighContrast ? t.Px("border.width") : 0);
         box.SetContentMarginAll(0);
         return box;
     }
@@ -62,13 +66,19 @@ public static class ChromeTheme
         foreach ((string name, Side side) in new[] { ("BarTop", Side.Bottom), ("BarBottom", Side.Top), ("DockLeft", Side.Right), ("DockRight", Side.Left), ("DockBottom", Side.Top) })
         {
             theme.SetTypeVariation(name, "PanelContainer");
-            theme.SetStylebox("panel", name, Edge(t, "panel.background", "panel.border", side));
+            theme.SetStylebox("panel", name, Edge(t, !t.Lines && name.StartsWith("Bar", StringComparison.Ordinal) ? "control.background" : "panel.background", "panel.border", side));
         }
         theme.SetTypeVariation("FrameGround", "PanelContainer"); theme.SetStylebox("panel", "FrameGround", Box(t, "window.background", null, "radius.panel", 0));
         theme.SetTypeVariation("ViewFrame", "PanelContainer"); theme.SetStylebox("panel", "ViewFrame", Box(t, "window.background", "panel.border", "radius.panel", 0));
         theme.SetTypeVariation("ViewFrameFocus", "PanelContainer"); theme.SetStylebox("panel", "ViewFrameFocus", Box(t, "window.background", "control.focus", "radius.panel", 0));
         theme.SetTypeVariation("Chip", "PanelContainer"); theme.SetStylebox("panel", "Chip", Box(t, "panel.background", "panel.border", "radius.control", s1));
-        theme.SetTypeVariation("Row", "PanelContainer"); theme.SetStylebox("panel", "Row", Box(t, "popup.background", null, "radius.control", s1));
+        var rowBox = Box(t, t.Lines ? "panel.background" : "popup.background", null, "radius.control", s1);
+        if (t.Lines) { rowBox.BorderColor = t.C("separator"); rowBox.SetBorderWidth(Side.Bottom, t.Px("border.width")); }
+        theme.SetTypeVariation("Row", "PanelContainer"); theme.SetStylebox("panel", "Row", rowBox);
+        // A readout cell of the instrument strip: an inset cell with a caption glyph and a number in the code face.
+        var cell = Box(t, "field.background", "control.border", "radius.control", 0); cell.ContentMarginLeft = s2; cell.ContentMarginRight = s2;
+        theme.SetTypeVariation("ReadoutCell", "PanelContainer"); theme.SetStylebox("panel", "ReadoutCell", cell);
+        theme.SetTypeVariation("GalleryCell", "PanelContainer"); theme.SetStylebox("panel", "GalleryCell", Box(t, "window.background", "panel.border", "radius.panel", s2));
         var rowOn = Box(t, "control.pressed", null, "radius.control", s1); rowOn.BorderColor = t.C("accent.base"); rowOn.SetBorderWidth(Side.Left, t.Px("focus.width"));
         theme.SetTypeVariation("RowSelected", "PanelContainer"); theme.SetStylebox("panel", "RowSelected", rowOn);
         theme.SetTypeVariation("OverlayBox", "PanelContainer"); theme.SetStylebox("panel", "OverlayBox", Box(t, "popup.background", "popup.border", "radius.control", s3));
@@ -140,7 +150,7 @@ public static class ChromeTheme
         foreach ((string name, string colour, string role, string step, bool bold) in new[] {
             ("DimLabel", "text.dim", "ui", "small", false), ("MicroLabel", "text.dim", "ui", "micro", false), ("TitleLabel", "text", "ui", "title", true),
             ("HeadingLabel", "text", "ui", "heading", true), ("ContentLabel", "text", "content", "body", false), ("CodeLabel", "text", "code", "body", false),
-            ("AccentLabel", "accent.strong", "ui", "small", true) })
+            ("AccentLabel", "accent.strong", "ui", "small", true), ("ReadoutLabel", "text", "code", "small", false) })
         {
             theme.SetTypeVariation(name, "Label"); theme.SetColor("font_color", name, t.C(colour));
             theme.SetFont("font", name, Face(t, role, bold)); theme.SetFontSize("font_size", name, (int)t.TypeSize(role, step));
@@ -171,7 +181,8 @@ public static class ChromeTheme
         {
             theme.SetConstant("separation", type, t.Px("border.width")); theme.SetConstant("minimum_grab_thickness", type, s3);
             theme.SetConstant("autohide", type, 1);
-            theme.SetStylebox("split_bar_background", type, new StyleBoxFlat { BgColor = t.C("panel.border") });
+            theme.SetStylebox("split_bar_background", type, new StyleBoxFlat { BgColor = t.C(t.Lines ? "panel.border" : "window.background") });
+            if (!t.Lines) theme.SetConstant("separation", type, s1);
         }
         theme.SetConstant("separation", "VBoxContainer", s2); theme.SetConstant("separation", "HBoxContainer", s2);
         foreach (string side in new[] { "margin_left", "margin_right", "margin_top", "margin_bottom" }) theme.SetConstant(side, "MarginContainer", s3);

@@ -258,6 +258,8 @@ public sealed class ThemeFamily
     public string Id { get; }
     public string Name { get; }
     public string Scheme { get; }
+    // How the family builds depth: with lines (hairline borders, square corners) or with tone steps (no borders, soft corners).
+    public string Character { get; }
     public IReadOnlyList<double> Ladder { get; }
     public IReadOnlyDictionary<string, (double Hue, double Chroma)> Ramps { get; }
     public IReadOnlyDictionary<string, Knob> Knobs { get; }
@@ -268,13 +270,15 @@ public sealed class ThemeFamily
     public static ThemeFamily Parse(string text, DesignSystem system)
     {
         using JsonDocument d = J.Parse(text);
-        return new ThemeFamily(J.Root(d, "magic600-design-theme", "id", "name", "scheme", "ladder", "ramps", "knobs", "roles", "sceneLooks"), system);
+        return new ThemeFamily(J.Root(d, "magic600-design-theme", "id", "name", "scheme", "character", "ladder", "ramps", "knobs", "roles", "sceneLooks"), system);
     }
 
     private ThemeFamily(JsonElement root, DesignSystem system)
     {
         Id = J.Text(root, "id"); Name = J.Text(root, "name"); Scheme = J.Text(root, "scheme");
         if (Scheme != "dark" && Scheme != "light") throw J.Error("scheme", "expected dark or light");
+        Character = J.Text(root, "character");
+        if (Character != "lines" && Character != "tone") throw J.Error("character", "expected lines or tone");
         double[] ladder = J.Numbers(root.GetProperty("ladder"), "ladder", Steps);
         bool rising = ladder[^1] > ladder[0];
         if (ladder.Any(v => v < 0 || v > 1) || ladder.Zip(ladder.Skip(1), (a, b) => rising ? b > a : b < a).Any(ok => !ok) || rising != (Scheme == "dark"))
@@ -363,6 +367,10 @@ public sealed class TokenSet
     // "non-standard colours" mark (ADR-D01.51).
     public bool NonStandardColours { get; }
     public bool HighContrast { get; }
+    // The comparison character: the family drawn in the other family's way.
+    public bool OtherCharacter { get; init; }
+    public bool Lines => (Theme.Character == "lines") != OtherCharacter;
+    public bool ReducedMotion { get; init; }
 
     public TokenSet(DesignSystem system, ThemeFamily theme, string density, double displayScale,
         IReadOnlyDictionary<string, double>? knobs = null, IReadOnlyDictionary<string, Oklch>? overrides = null, bool highContrast = false)

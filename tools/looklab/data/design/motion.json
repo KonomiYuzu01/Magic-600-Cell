@@ -1,0 +1,86 @@
+{
+  "format": "magic600-design-motion",
+  "version": 1,
+  "motions": [
+    {
+      "id": "twist.committed",
+      "meaning": "A committed twist turns once, the faster preset.",
+      "duration": "twist",
+      "curve": "standard",
+      "static": "The stickers sit in their new places.",
+      "cue": "cue.twist"
+    },
+    {
+      "id": "twist.queued",
+      "meaning": "A committed twist while more wait: faster.",
+      "duration": "twist.queued",
+      "curve": "linear",
+      "static": "The stickers sit in their new places.",
+      "cue": "cue.twist"
+    },
+    {
+      "id": "twist.preview",
+      "meaning": "A preview twist goes out and comes back: it is not committed.",
+      "duration": "slow",
+      "curve": "enter",
+      "static": "The preview mark on the frame and the pending chip.",
+      "cue": null
+    },
+    {
+      "id": "view.transition",
+      "meaning": "The view eases to its new place; repeated presses add up.",
+      "duration": "view",
+      "curve": "standard",
+      "static": "The view at its new place.",
+      "cue": null
+    },
+    {
+      "id": "span.flash",
+      "meaning": "The evaluated span flashes once.",
+      "duration": "flash",
+      "curve": "exit",
+      "static": "The lasting bar in the gutter.",
+      "cue": "cue.evaluated"
+    },
+    {
+      "id": "dock.open",
+      "meaning": "A dock or the palette opens.",
+      "duration": "fast",
+      "curve": "enter",
+      "static": "The dock is open.",
+      "cue": null
+    },
+    {
+      "id": "task.done",
+      "meaning": "A finished task flashes its row once.",
+      "duration": "flash",
+      "curve": "exit",
+      "static": "The state glyph of the row.",
+      "cue": "cue.task"
+    },
+    {
+      "id": "marker.pending",
+      "meaning": "The pending marker breathes while something waits.",
+      "duration": "slow",
+      "curve": "linear",
+      "static": "The pending glyph, still.",
+      "cue": null
+    },
+    {
+      "id": "cursor.rollback",
+      "meaning": "The rollback cursor slides to the chosen entry.",
+      "duration": "base",
+      "curve": "standard",
+      "static": "The cursor at the entry.",
+      "cue": null
+    },
+    {
+      "id": "reward.mark",
+      "meaning": "A small mark changes in place at a milestone. Never a dialog.",
+      "duration": "settle",
+      "curve": "enter",
+      "static": "The changed mark.",
+      "cue": "cue.milestone"
+    }
+  ]
+}

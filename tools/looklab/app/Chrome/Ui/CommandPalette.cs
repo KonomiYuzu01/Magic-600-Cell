@@ -13,11 +13,12 @@ public abstract partial class ChromeOverlay : Control
     protected Func<TokenSet> Tokens { get; }
     public bool IsOpen => Visible;
     public event Action? Closed;
+    private Tween? fade;
 
     protected ChromeOverlay(Func<TokenSet> tokens, float widthShare, float top)
     {
         Tokens = tokens; Visible = false; SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); MouseFilter = MouseFilterEnum.Stop;
-        var ground = new ColorRect { Color = new Color(0, 0, 0, .35f), MouseFilter = MouseFilterEnum.Stop }; AddChild(ground);
+        var ground = new ColorRect { Color = tokens().C("text", .3f), MouseFilter = MouseFilterEnum.Stop }; AddChild(ground);
         ground.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         ground.GuiInput += e => { if (e is InputEventMouseButton { Pressed: true }) Close(); };
         AddChild(Panel);
@@ -30,6 +31,8 @@ public abstract partial class ChromeOverlay : Control
     {
         if (GetParent() is { } parent) foreach (ChromeOverlay other in parent.GetChildren().OfType<ChromeOverlay>()) if (other != this) other.Close();
         Visible = true; MoveToFront();
+        fade?.Kill(); Modulate = Modulate with { A = 1 };
+        if (!Tokens().ReducedMotion && IsInsideTree()) { Modulate = Modulate with { A = 0 }; fade = CreateTween(); fade.TweenProperty(this, "modulate:a", 1f, Tokens().Duration("fast") / 1000); }
     }
     // A key pressed while the overlay is open and no text field holds the focus; true when the overlay used it.
     public virtual bool Key(string key) => false;

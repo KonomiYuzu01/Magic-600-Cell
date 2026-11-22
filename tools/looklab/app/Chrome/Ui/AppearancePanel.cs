@@ -80,6 +80,13 @@ public sealed partial class AppearancePanel : ScrollContainer
         var contrast = new CheckButton { Name = "HighContrast", Text = "High contrast", ButtonPressed = Look.HighContrast };
         contrast.Toggled += on => Edit(a => a.HighContrast = on, false, false);
         column.AddChild(contrast);
+        var character = new CheckButton { Name = "OtherCharacter", Text = Look.Family.Character == "lines" ? "Draw with tone steps" : "Draw with lines", ButtonPressed = Look.OtherCharacter,
+            TooltipText = "The comparison character: this family drawn the other family's way" };
+        character.Toggled += on => Edit(a => a.OtherCharacter = on, true, false);
+        column.AddChild(character);
+        var reduced = new CheckButton { Name = "ReducedMotion", Text = "Reduced motion", ButtonPressed = Look.ReducedMotion, TooltipText = "Every motion shows its static equivalent at once" };
+        reduced.Toggled += on => Edit(a => a.ReducedMotion = on, false, false);
+        column.AddChild(reduced);
         string[] looks = ThemeFamily.SceneLooks.ToArray();
         Choice("Scene look", looks, looks.Select(Title).ToArray(), Look.SceneLook, id => Edit(a => a.SetSceneLook(id), false, true));
         column.AddChild(new HSeparator());

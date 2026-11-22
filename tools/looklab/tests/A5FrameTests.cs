@@ -240,8 +240,8 @@ internal static partial class Program
         Equal(StatusLine.Compose(new string('x', 200), new[] { "drag" }, "v").Length, StatusLine.Cap);
         Refuse(() => StatusLine.Compose("a", Array.Empty<string>(), null, 3), "cap");
         WorkspaceSet shipped = WorkspaceSet.Load(FileAt("data/design/workspaces.json"));
-        Sequence(shipped.Order, new[] { "solve", "script", "analyse", "reference" });
-        Sequence(shipped.Order.Select(id => shipped.Names[id]), new[] { "Solve", "Script", "Analyse", "Reference" });
+        Sequence(shipped.Order, new[] { "solve", "script", "analyse", "reference", "gallery" });
+        Sequence(shipped.Order.Select(id => shipped.Names[id]), new[] { "Solve", "Script", "Analyse", "Reference", "Gallery" });
         foreach (string id in shipped.Order) { FrameModel f = Frame(); Check(f.Apply(shipped.Stored[id]) && f.IsOpen(FrameModel.Pair) && !f.FocusMode, id + " not applied"); }
         string text = Read("data/design/workspaces.json");
         Refuse(() => WorkspaceSet.Parse(text.Replace("\"id\": \"script\"", "\"id\": \"solve\"")), "solve");
