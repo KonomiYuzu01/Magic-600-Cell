@@ -506,8 +506,8 @@ class CommandTableTests(unittest.TestCase):
         counts = Counter(r["kind"] for r in self.table["commands"])
         # 175 commands at the LP3 freeze, plus ADR-D01's 14 workspace and 4 view rows (owner, 22 November 2026,
         # item 3) and its commit rows (item 4), which also make work.layout.set and work.layout.reset workspace rows.
-        self.assertEqual(len(self.table["commands"]), 196)
-        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (83, 47, 17))
+        self.assertEqual(len(self.table["commands"]), 197)
+        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (83, 47, 18))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -650,6 +650,28 @@ class CommandTableTests(unittest.TestCase):
                 ({"arguments": {"entry": "ActionNumber", "token": "UserActionToken"}}, "required arguments")):
             mutant = deepcopy(self.commit)
             next(r for r in mutant["add"] if r["id"] == builder.PARTIAL_UNDO_ROW).update(changes)
+            with self.subTest(changes=changes), self.assertRaisesRegex(builder.TableError, message):
+                self.build(delta=[self.delta, self.language, self.design, mutant], draft_without_jumbling=False)
+
+    def test_adr_d01_one_key_row(self):
+        # Owner, 22 November 2026, item 4; ADR-D01.12: one press prepares, rechecks and commits the solver's own macro,
+        # a record draft, as a live journal commit with the protection recheck and no default key.
+        row = self.by_id[builder.ONE_KEY_ROW]
+        self.assertEqual((row["kind"], row["lane"], row["undo"], row["preview"], row["gates"], row["job"]),
+                         ("commit", "commit", "journal", "none", ["protection"], False))
+        self.assertEqual(row["arguments"], builder.ONE_KEY_ARGUMENTS)
+        self.assertEqual((row["slot_map"], row["source"], row["key_0_4"]), ("preserve", ADR_D01_SOURCE, None))
+        self.assertNotIn("action_guard", row)
+        self.assertIn("ADR-D01.12", row["note"])
+        for changes, message in (
+                ({"preview": "required", "gates": ["fresh_preview", "protection"]}, "one-key"),
+                ({"gates": []}, "one-key"),
+                ({"arguments": {"draft": "ResolvedDraftRef|WordRef", "token": "UserActionToken"}}, "one-key"),
+                ({"key_0_4": "Ctrl+K"}, "one-key"),
+                ({"action_guard": "action_hint"}, "one-key"),
+                ({"arguments": {"draft": "ResolvedDraftRef"}}, "required arguments")):
+            mutant = deepcopy(self.commit)
+            next(r for r in mutant["add"] if r["id"] == builder.ONE_KEY_ROW).update(changes)
             with self.subTest(changes=changes), self.assertRaisesRegex(builder.TableError, message):
                 self.build(delta=[self.delta, self.language, self.design, mutant], draft_without_jumbling=False)
 

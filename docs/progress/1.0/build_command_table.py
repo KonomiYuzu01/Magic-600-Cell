@@ -35,6 +35,10 @@ LAYOUT_UNDO_ROWS = {"layout.undo", "layout.redo"}
 # ADR-D01.15's partial undo: a live commit inside the head's journal entry, with the protection recheck.
 PARTIAL_UNDO_ROW = "session.undo.partial"
 PARTIAL_UNDO_ARGUMENTS = {"entry": "ActionNumber", "move": "Nat", "token": "UserActionToken"}
+# ADR-D01.12's one-key preview-and-commit: a live commit of the solver's own macro, a record draft, with the recheck
+# operation.execute makes, and no default key.
+ONE_KEY_ROW = "operation.preview.commit"
+ONE_KEY_ARGUMENTS = {"draft": "ResolvedDraftRef", "token": "UserActionToken"}
 # CM.15 and JI.32/JI.33: required names, independent of the generating delta.
 # Optional parameters remain in the delta's full schemas.
 DELTA_REQUIRED_ARGUMENTS = {
@@ -68,6 +72,7 @@ DELTA_REQUIRED_ARGUMENTS = {
     "recording.convert": {"recording", "target"},
     "twist.apply": {"cap", "rotation", "token"},
     "session.undo.partial": {"entry", "move", "token"},
+    "operation.preview.commit": {"draft", "token"},
     "workspace.set": {"record", "payload", "provenance"},
     "set.save": {"members", "kind", "name"},
     "theme.select": set(),
@@ -815,6 +820,12 @@ def validate_rows(candidate, inventory_ids):
                                          or arguments != PARTIAL_UNDO_ARGUMENTS or "action_guard" in row
                                          or row.get("slot_map", "preserve") != "preserve"):
             raise TableError(f"{name}: partial undo must be a live journal commit with the protection gate (ADR-D01.15)")
+        if name == ONE_KEY_ROW and (row["kind"] != "commit" or row["lane"] != "commit" or row["preview"] != "none"
+                                    or row["undo"] != "journal" or row["gates"] != ["protection"]
+                                    or arguments != ONE_KEY_ARGUMENTS or "action_guard" in row
+                                    or row["key_0_4"] is not None or row.get("slot_map", "preserve") != "preserve"):
+            raise TableError(f"{name}: one-key preview-and-commit must be a live journal commit of a record draft with "
+                             "the protection gate and no default key (ADR-D01.12)")
         if name in {"workspace.undo", "workspace.redo", "jumble.preview.scrub"}:
             raise TableError(f"{name}: duplicate purpose; use the shared session or view entry")
         if name == "twist.apply" and (row["preview"] != "none" or row["undo"] != "journal" or "protection" not in row["gates"]):

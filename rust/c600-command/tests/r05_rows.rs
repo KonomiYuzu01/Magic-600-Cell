@@ -165,10 +165,11 @@ impl Fixture {
 
 /// CT-KN5-10 (whole): R-05 against the command layer, beside the session's rows in
 /// `c600-session/tests/conformance_rows.rs` and the layer's entry-point allowlist in `tests/kn5.rs`. With every orbit
-/// protected, each of the H-08 table's 196 rows is delivered from the shell, with its token where it takes one, and on
+/// protected, each of the H-08 table's 197 rows is delivered from the shell, with its token where it takes one, and on
 /// a run's channel, with arguments of the forms the layer knows. No delivery changes the labels' digest or the
-/// protected set. The table's `protection` gate names the five rows the restriction blocks: `operation.execute` and
-/// `twist.apply` are refused with the protection code for a word that would move an orbit, `session.undo.partial` has
+/// protected set. The table's `protection` gate names the six rows the restriction blocks: `operation.execute`,
+/// `operation.preview.commit` (the solver's own macro kept in a record) and `twist.apply` are refused with the
+/// protection code for a word that would move an orbit, `session.undo.partial` has
 /// no entry to step back inside at the start (its protection refusal is in `tests/partial_undo.rs`), and
 /// `session.practice` and `jumble.twist.menu` change nothing. Every path that releases protection asks for confirmation: a release by
 /// `protection.orbit.set`, a weaker policy by `protection.policy.set`, and the undo of the change that protected the
@@ -189,7 +190,14 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
         f.layer.table().rows().filter(|row| row.has_gate("protection")).map(|row| row.id.as_str()).collect();
     assert_eq!(
         gated,
-        ["jumble.twist.menu", "operation.execute", "session.practice", "session.undo.partial", "twist.apply"]
+        [
+            "jumble.twist.menu",
+            "operation.execute",
+            "operation.preview.commit",
+            "session.practice",
+            "session.undo.partial",
+            "twist.apply"
+        ]
     );
 
     // operation.execute: a preview of a word that would move an orbit is shown, and its press is refused.
@@ -218,6 +226,18 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     let hint = f.layer.undo_hint(Direction::Undo).expect("the protection change is on top");
     let undo = f.shell.prepare(&f.layer, "session.undo", json::object([("hint", hint.to_json())])).unwrap();
     f.refused(&Caller::Shell, undo, code::CONFIRMATION_REQUIRED, "the undo of the protection");
+    // operation.preview.commit (after the undo above, whose target the record write would become): the solver's
+    // macro kept in a record moves an orbit, and its press is refused.
+    let kept = json::object([
+        ("payload", Value::Array(vec![Value::Int(1)])),
+        ("provenance", text("block")),
+        ("record", text("own")),
+    ]);
+    let written = f.shell.invoke(&mut f.layer, "workspace.set", kept).unwrap();
+    assert!(matches!(written.status, Status::Completed(_)), "the record: {:?}", written.status);
+    let own = json::object([("draft", json::object([("record", text("own"))]))]);
+    let press = f.shell.prepare(&f.layer, "operation.preview.commit", own).unwrap();
+    f.refused(&Caller::Shell, press, code::ORBIT_WOULD_MOVE, "operation.preview.commit");
 
     // The walk: every row, from the shell and on a run's channel.
     let tool = Overlay { module: "tools/full".into(), entry: "run".into() };
@@ -226,7 +246,7 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     assert!(matches!(started.status, Status::Running(_)), "the tool's row: {:?}", started.status);
     let runtime = Caller::Runtime { run: f.layer.take_program_job().expect("the tool's job").run() };
     let rows: Vec<Row> = f.layer.table().rows().filter(|row| row.overlay.is_none()).cloned().collect();
-    assert_eq!(rows.len(), 196);
+    assert_eq!(rows.len(), 197);
     let mut tally: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (n, row) in rows.iter().enumerate() {
         let args = formed(row, &f.layer.revision().to_json());

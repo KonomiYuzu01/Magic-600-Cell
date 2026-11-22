@@ -129,6 +129,9 @@
 //! - `session.undo.partial` ([`layer`]; ADR-D01.15; draft): a commit that steps back inside the head's journal entry
 //!   to one of its moves, journaled as a retained move that names the entry and the move
 //!   ([`CommandLayer::head_entry`] reads its target).
+//! - `operation.preview.commit` ([`layer`]; ADR-D01.12; draft): one press prepares the solver's own macro, a record
+//!   draft, replacing the pending preview, rechecks it as `operation.execute` rechecks a presented preview, and
+//!   commits it.
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
 //! - The session's profile ([`Profile`]: `solving`, `tool_authoring` or `research`; BND.14, BND.15, BND.17, KN5.26):
@@ -590,7 +593,7 @@ pub use journal::{EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT, JOUR
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 pub use layer::{
     Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, EXPLORE_ROW, LAYOUT_REDO_ROW,
-    LAYOUT_UNDO_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
+    LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
 };
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,

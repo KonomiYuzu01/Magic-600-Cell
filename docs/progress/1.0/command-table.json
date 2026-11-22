@@ -8329,6 +8329,33 @@
    },
    "slot_map": "preserve",
    "decisions": []
+  },
+  {
+   "id": "operation.preview.commit",
+   "label": "Preview and commit own macro",
+   "kind": "commit",
+   "inventory": [],
+   "gates": [
+    "protection"
+   ],
+   "lane": "commit",
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "One press prepares, rechecks and commits the solver's own macro (ADR-D01.12). The draft is a record only, resolved now as operation.preview resolves one, so in a solving session the host's provenance reader admits it (KN5.26); an inline recipe is refused, so no keymap a script supplies commits a word the solver never kept. Its preview replaces the pending one (ADR-D01.9) and is checked as operation.execute checks a presented one: the token's state and protection revisions, the preview's dependencies, the head hash and the protected orbits under the policy in force. A failed recheck leaves the preview pending and uncommitted. No run or recording reaches it, and the explore state pauses it. A twist's one-key commit is twist.apply. No default key: the solver binds their own macros.",
+   "source": "ADR-D01 (owner, 22 Nov 2026)",
+   "arguments": {
+    "draft": "ResolvedDraftRef",
+    "token": "UserActionToken"
+   },
+   "slot_map": "preserve",
+   "decisions": []
   }
  ],
  "services": [

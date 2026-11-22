@@ -161,6 +161,10 @@ pub const PARTIAL_UNDO_ROW: &str = "session.undo.partial";
 /// 0.4's word limit: a partial undo's inverse enters the kernel in word steps of at most this many letters, since an
 /// entry's expansion may be longer than one word step allows.
 const WORD_CHUNK: usize = 100_000;
+
+/// ADR-D01.12's one-key preview-and-commit of the solver's own macro (owner, 22 November 2026, item 4; draft): one
+/// press prepares the macro's preview, checks it as `operation.execute` checks a presented one, and commits it.
+pub const ONE_KEY_ROW: &str = "operation.preview.commit";
 /// Whether a run's preview is admitted only inside a command the solver invoked (finding B2 of the KN5 boundary attack,
 /// ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must start its runs through a tool row
 /// the shell invokes, as LP3's host does on both its hosts.
@@ -2180,6 +2184,12 @@ impl<S: Store> CommandLayer<S> {
                 }
             }
             EXPLORE_ROW => Ok(()),
+            ONE_KEY_ROW => {
+                if self.commit_held {
+                    return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
+                }
+                self.retained_mode()
+            }
             PARTIAL_UNDO_ROW => {
                 if self.commit_held {
                     return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
@@ -2466,6 +2476,7 @@ impl<S: Store> CommandLayer<S> {
             LAYOUT_REDO_ROW => self.undo(caller, invocation, request, History::Layout, Direction::Redo),
             EXPLORE_ROW => self.set_explore(caller, &row, args),
             PARTIAL_UNDO_ROW => self.partial_undo(caller, invocation, request),
+            ONE_KEY_ROW => self.one_key(caller, invocation, request),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
@@ -2821,12 +2832,24 @@ impl<S: Store> CommandLayer<S> {
         if p.literal != bound.literal {
             return refused(code::TOKEN_MISMATCH, "the token's literal digest differs from the preview's");
         }
+        let end = self.recheck(p, Some(&bound.deps))?;
+        let (recipe, literal) = (p.recipe.clone(), p.literal.clone());
+        let adoption = self.commit_adoption(Meta::of(caller, invocation, request), recipe, end, literal, Some(id));
+        self.transact(adoption)
+    }
+
+    /// Steps 6 to 8 of a preview's commit, which `operation.execute` and the one-key commit share: the preview's
+    /// dependencies as they stand now, and as the token bound them where it binds them (`KN5:stale.revision_changed`),
+    /// the head hash at the preview's start (`KN5:stale.state_hash_mismatch`), and the operation judged again under the
+    /// policy in force, Net its effect and Strict every executed prefix of its recipe's literal expansion
+    /// (`KN2:protection.orbit_would_move`). The answer is the state the commit adopts.
+    fn recheck(&self, p: &Preview, bound: Option<&PreviewDeps>) -> Result<Snapshot, Error> {
         let now = self.deps(&self.draft_now(p));
-        if p.deps != now || bound.deps != now {
-            return refused(code::REVISION_CHANGED, "the preview's dependencies changed");
+        if p.deps != now || bound.is_some_and(|deps| *deps != now) {
+            return Err(Error::new(code::REVISION_CHANGED, "the preview's dependencies changed"));
         }
         if self.current.digest() != p.base.digest() {
-            return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the preview's start");
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the preview's start"));
         }
         // Step 8 judges the operation again under the policy in force: Net its effect, Strict every executed prefix of
         // its recipe's literal expansion.
@@ -2834,10 +2857,70 @@ impl<S: Store> CommandLayer<S> {
             ProtectionMode::Net => self.kernel.protection(&p.effect, &self.protected),
             ProtectionMode::Strict => self.kernel.strict_protection(&p.recipe, &self.protected)?,
         };
-        let end = match (&p.end, protection.verdict) {
-            (Some(end), Verdict::Clear) => end.clone(),
-            _ => return refused(code::ORBIT_WOULD_MOVE, c600_kernel::PROTECTED_MESSAGE),
+        match (&p.end, protection.verdict) {
+            (Some(end), Verdict::Clear) => Ok(end.clone()),
+            _ => Err(Error::new(code::ORBIT_WOULD_MOVE, c600_kernel::PROTECTED_MESSAGE)),
+        }
+    }
+
+    // ----- operation.preview.commit -----
+
+    /// `operation.preview.commit {draft, token}` (ADR-D01.12; draft): one press prepares, rechecks and commits the
+    /// solver's own macro. The draft is `{"record": name}` only (`KN5:input.argument_form` otherwise, before the token
+    /// is spent), a record resolved now as `operation.preview` resolves one, so in a solving session the host's
+    /// provenance reader admits it (KN5.26): no inline recipe, so no keymap a script supplies commits a word the solver
+    /// never kept. After the token, the commit lane, the binding and Jumble off, the record is resolved and its preview
+    /// built at the head, replacing the pending preview (ADR-D01.9); a draft that does not resolve, or a word the kernel
+    /// refuses, builds none. Then the preview is checked as `operation.execute` checks a presented one
+    /// ([`Self::recheck`]), after the token's state and protection revisions (LI.6), and committed with its preview's
+    /// ID. A failed recheck leaves the preview pending and uncommitted, for the solver to see. No run reaches it, since
+    /// it is a commit row, and the explore state pauses it. A twist's one-key commit is `twist.apply`.
+    fn one_key(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let draft = invocation.args.get("draft").cloned().unwrap_or(Value::Null);
+        let only = draft.as_object().filter(|fields| fields.len() == 1);
+        let Some(name) = only.and_then(|fields| fields.get("record")).and_then(Value::as_str).map(str::to_owned) else {
+            return refused(code::ARGUMENT_FORM, "a one-key draft is `{\"record\": name}`, the solver's own macro");
         };
+        let binding = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&binding, invocation)?;
+        self.retained_mode()?;
+        let resolved = self.resolve_record(&draft, &name)?;
+        let recipe = self.kernel.word(&resolved.letters)?;
+        let base = self.current.clone();
+        let (end, effect, protection) = match self.derive(&base, &recipe, &self.protected).map_err(kernel_error)? {
+            Derivation::Derived(d) => (Some(d.state), d.effect, d.protection),
+            Derivation::Refused(r) => (None, r.effect, r.protection),
+        };
+        let id = self.next_job();
+        let preview = Preview {
+            id,
+            command: invocation.command.clone(),
+            caller: caller.clone(),
+            deps: self.deps(&resolved.digest()),
+            resolved: Some(resolved),
+            literal: effect.expansion_sha256.clone(),
+            state: PreviewState::Ready,
+            base,
+            end,
+            recipe,
+            effect,
+            protection,
+        };
+        if let Some(old) = self.slot.replace(preview) {
+            self.history.insert(old.id, PreviewState::Replaced);
+        }
+        self.generation += 1;
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        let p = self.slot.as_ref().expect("the slot holds the preview just built");
+        let end = self.recheck(p, None)?;
         let (recipe, literal) = (p.recipe.clone(), p.literal.clone());
         let adoption = self.commit_adoption(Meta::of(caller, invocation, request), recipe, end, literal, Some(id));
         self.transact(adoption)

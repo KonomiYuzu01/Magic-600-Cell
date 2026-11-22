@@ -150,9 +150,9 @@ impl Fixture {
 #[test]
 fn the_stored_table_reads() {
     let table = Table::h08();
-    // 193 at PR 415, plus ADR-D01's layout.undo, layout.redo and session.undo.partial (owner, 22 November 2026,
-    // item 4).
-    assert_eq!(table.rows().count(), 196);
+    // 193 at PR 415, plus ADR-D01's layout.undo, layout.redo, session.undo.partial and operation.preview.commit
+    // (owner, 22 November 2026, item 4).
+    assert_eq!(table.rows().count(), 197);
     let execute = table.row("operation.execute").unwrap();
     assert_eq!((execute.kind, execute.lane, execute.preview), (Kind::Commit, Lane::Commit, PreviewRule::Required));
     assert!(execute.has_gate("fresh_preview") && execute.has_gate("protection") && execute.takes_token());
@@ -160,7 +160,7 @@ fn the_stored_table_reads() {
     assert_eq!((preview.kind, preview.lane, preview.job), (Kind::Query, Lane::Exclusive, true));
     assert_eq!(table.row("session.undo").unwrap().action_guard.as_deref(), Some("action_hint"));
     assert!(table.services().iter().any(|s| s == "kernel.undo_hint"));
-    assert_eq!(table.rows().filter(|row| row.kind == Kind::Commit).count(), 17);
+    assert_eq!(table.rows().filter(|row| row.kind == Kind::Commit).count(), 18);
 }
 
 /// CT-ONE-01 (part: the command layer's H-08 rows, with the overlay rows that
@@ -179,8 +179,9 @@ fn no_row_takes_a_state_or_a_digest_to_adopt() {
     let carrying = |t: &str| matches!(t, "StateRef" | "Digest" | "TransportedSlotMap");
     // What a `commit` or `app` row may name. Each is a reference to a recorded object, a hint, a token or plain data; a
     // new type here needs a decision, as the count of rows below does.
-    // ADR-D01.15's partial undo names a journal entry by its action number and one of its moves by a natural number
-    // (owner, 22 November 2026, item 4).
+    // ADR-D01.15's partial undo names a journal entry by its action number and one of its moves by a natural number,
+    // and ADR-D01.12's one-key commit names the record that keeps the solver's own macro (owner, 22 November 2026,
+    // item 4).
     let allowed = [
         "ActionHint",
         "ActionNumber",
@@ -196,6 +197,7 @@ fn no_row_takes_a_state_or_a_digest_to_adopt() {
         "PinnedMenuLetter",
         "PracticeSessionRef",
         "PreviewId",
+        "ResolvedDraftRef",
         "RevisionRef",
         "SessionRef",
         "Text",
@@ -234,9 +236,10 @@ fn no_row_takes_a_state_or_a_digest_to_adopt() {
     // Pinned: a new row that takes a state or a digest changes these counts and needs a decision.
     assert_eq!(state_rows.len(), 11, "{state_rows:?}");
     assert_eq!(digest_rows, ["grip.rebind", "jumble.correction.lookup", "jumble.corrections.check"]);
-    // 19 before ADR-D01's layout.undo and layout.redo, which take only the shared undo rows' arguments, and
-    // session.undo.partial, which takes an entry, a move and a token.
-    assert_eq!(changing, 22);
+    // 19 before ADR-D01's layout.undo and layout.redo, which take only the shared undo rows' arguments,
+    // session.undo.partial, which takes an entry, a move and a token, and operation.preview.commit, which takes a
+    // record draft and a token.
+    assert_eq!(changing, 23);
 }
 
 /// CT-KN5-07 (whole): registering an overlay row of kind `commit` or `app` is refused, as is an overlay row that takes
@@ -806,7 +809,8 @@ fn the_runtime_reaches_at_most_a_preview() {
     assert_eq!(f.layer.run_jobs(), 1);
     let rows: Vec<String> =
         f.layer.table().rows().filter(|r| matches!(r.kind, Kind::Commit | Kind::App)).map(|r| r.id.clone()).collect();
-    assert_eq!(rows.len(), 22);
+    // 22 before ADR-D01's operation.preview.commit (owner, 22 November 2026, item 4).
+    assert_eq!(rows.len(), 23);
     for row in rows {
         let receipt = f.layer.invoke(&runtime, call(&format!("rt/{row}"), &row, json::object([])));
         assert_eq!(code_of(&receipt), code::COMMIT_ROW_REFUSED, "{row}");
