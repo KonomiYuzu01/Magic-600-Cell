@@ -5,6 +5,8 @@ using Godot;
 
 namespace Magic600.Chrome;
 
+// With the keyboard on a field: Left and Right step by the ladder's rung, Up and Down change the rung, Enter
+// types, = starts an expression, Delete resets. The small ladder beside the value shows the rung.
 // One numeric field with the shared gesture set (ADR-D01.23): drag the value, double-click to type a number or
 // "=" and an expression, Up and Down as the ladder while typing (Shift coarser, Alt finer), click the label to
 // reset. The mark beside the label names where the value comes from.
@@ -22,6 +24,7 @@ public sealed partial class ValueField : HBoxContainer
     public Label Mark { get; } = ChromeWidgets.Text("", "MicroLabel");
     public Button Value { get; }
     public LineEdit? Editor { get; private set; }
+    public Control Ladder { get; } = new() { Name = "Ladder", CustomMinimumSize = new Vector2(9, 0), MouseFilter = MouseFilterEnum.Pass };
     private readonly InspectorModel model;
     private readonly Func<TokenSet> tokens;
     private readonly Action<string> refuse;
@@ -37,8 +40,9 @@ public sealed partial class ValueField : HBoxContainer
         Caption.Pressed += () => model.Reset(field.Id);
         Value = ChromeWidgets.Tool("", "", false, field.IsFact ? "FieldFact" : "FieldValue");
         Value.Alignment = HorizontalAlignment.Right; Value.CustomMinimumSize = new Vector2(tokens().Px("control.height") * (field.IsFact ? 3f : 2.4f), 0);
-        if (!field.IsFact) { Value.MouseDefaultCursorShape = CursorShape.Hsize; Value.GuiInput += Gesture; AddChild(Mark); }
+        if (!field.IsFact) { Value.MouseDefaultCursorShape = CursorShape.Hsize; Value.GuiInput += Gesture; Value.FocusMode = FocusModeEnum.All; AddChild(Mark); }
         AddChild(Caption); AddChild(Value);
+        if (!field.IsFact) { AddChild(Ladder); Ladder.Draw += DrawLadder; }
         Refresh();
     }
 
@@ -53,6 +57,19 @@ public sealed partial class ValueField : HBoxContainer
         Value.TooltipText = Field.Binding != null ? $"Live binding: = {Field.Binding}. Its value is derived each time and never stored."
             : $"{Field.Label}: drag, or double-click to type a value or = and an expression ({Field.Min}..{Field.Max})";
         Value.AddThemeColorOverride("font_color", t.C(Field.Binding != null ? "state.preview" : Field.Provenance == Provenance.Default ? "text.dim" : "text"));
+        Ladder.TooltipText = $"Ladder: {InspectorModel.Rungs[model.Rung(Field.Id)]:0} of its steps for each notch. Up and Down change the rung; Left and Right step.";
+        Ladder.QueueRedraw();
+    }
+
+    // Three rungs, the longest the coarsest; the field's own is the bright one.
+    private void DrawLadder()
+    {
+        TokenSet t = tokens(); int at = model.Rung(Field.Id);
+        for (int i = 0; i < InspectorModel.Rungs.Count; i++)
+        {
+            float y = Ladder.Size.Y / 2 + (i - 1) * 5;
+            Ladder.DrawLine(new Vector2(0, y), new Vector2(8 - i * 2.5f, y), t.C(i == at ? "accent.strong" : "text.off"), i == at ? 2 : 1);
+        }
     }
 
     private void Gesture(InputEvent input)
@@ -62,7 +79,25 @@ public sealed partial class ValueField : HBoxContainer
             if (button.Pressed) dragged = 0;
             if (button.Pressed && button.DoubleClick) BeginEdit();
         }
-        else if (input is InputEventMouseMotion motion && (motion.ButtonMask & MouseButtonMask.Left) != 0) DragBy(motion.Relative.X, motion.ShiftPressed ? 10 : motion.AltPressed ? .1 : 1);
+        else if (input is InputEventMouseMotion motion && (motion.ButtonMask & MouseButtonMask.Left) != 0)
+            DragBy(motion.Relative.X, motion.ShiftPressed ? 10 : motion.AltPressed ? .1 : InspectorModel.Rungs[model.Rung(Field.Id)]);
+        else if (input is InputEventKey { Pressed: true } key && Editor == null && Keyed(key.Keycode)) Value.AcceptEvent();
+    }
+
+    // The keyboard alternative to the drag and the ladder; false when the key is not the field's.
+    public bool Keyed(Key key)
+    {
+        switch (key)
+        {
+            case Key.Left: model.Step(Field.Id, -1); return true;
+            case Key.Right: model.Step(Field.Id, 1); return true;
+            case Key.Up: model.Climb(Field.Id, -1); return true;
+            case Key.Down: model.Climb(Field.Id, 1); return true;
+            case Key.Enter: case Key.KpEnter: BeginEdit(); return true;
+            case Key.Equal: BeginEdit("= "); return true;
+            case Key.Delete: case Key.Backspace: model.Reset(Field.Id); return true;
+            default: return false;
+        }
     }
 
     public void DragBy(float pixels, double scale = 1)
@@ -72,11 +107,12 @@ public sealed partial class ValueField : HBoxContainer
         if (steps != 0) { dragged -= steps * DragPixels; model.Nudge(Field.Id, steps, scale); }
     }
 
-    public void BeginEdit()
+    public void BeginEdit(string? start = null)
     {
         if (Editor != null || Field.IsFact) return;
-        Editor = new LineEdit { Text = Field.Display, CustomMinimumSize = Value.CustomMinimumSize, SelectAllOnFocus = true };
+        Editor = new LineEdit { Text = start ?? Field.Display, CustomMinimumSize = Value.CustomMinimumSize, SelectAllOnFocus = start == null };
         Value.Visible = false; AddChild(Editor); Editor.GrabFocus();
+        if (start != null) Editor.CaretColumn = start.Length;
         Editor.TextSubmitted += text => Type(text);
         Editor.FocusExited += EndEdit;
         Editor.GuiInput += input =>
@@ -116,6 +152,8 @@ public sealed partial class InspectorStrip : PanelContainer
     public Label Selection { get; private set; } = null!;
     public HBoxContainer Tools { get; } = new();
     public IReadOnlyList<ValueField> Fields => fields;
+    // The strip's count of what the docked inspector holds beyond it was pressed.
+    public event Action? More;
     private readonly List<ValueField> fields = new();
     private readonly Func<TokenSet> tokens;
     private readonly Action<string> refuse;
@@ -146,6 +184,12 @@ public sealed partial class InspectorStrip : PanelContainer
             row.AddChild(new VSeparator());
             var value = new ValueField(Model, field, tokens, refuse, false); fields.Add(value); row.AddChild(value);
         }
+        if (Model.Beyond > 0)
+        {
+            row.AddChild(new VSeparator());
+            Button more = ChromeWidgets.Tool($"+{Model.Beyond}", $"{Model.Beyond} more fields in the Inspector dock: show or hide it"); more.Name = "InspectorMore";
+            more.Pressed += () => Safe.Raise(More); row.AddChild(more);
+        }
         row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         row.AddChild(Tools);
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
@@ -166,6 +210,7 @@ public sealed partial class InspectorPanel : ScrollContainer
     private readonly Func<TokenSet> tokens;
     private readonly Action<string> refuse;
     private readonly VBoxContainer column = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+    private readonly Dictionary<string, (Label Away, Button Reset)> heads = new();
 
     public InspectorPanel(InspectorModel model, Func<TokenSet> tokens, Action<string> refuse)
     {
@@ -175,12 +220,22 @@ public sealed partial class InspectorPanel : ScrollContainer
         Refresh();
     }
 
-    private void Update(InspectField field) { foreach (ValueField f in fields.Where(f => IsInstanceValid(f) && f.Field == field)) f.Refresh(); }
+    private void Update(InspectField field) { foreach (ValueField f in fields.Where(f => IsInstanceValid(f) && f.Field == field)) f.Refresh(); Heads(); }
+
+    // A section's head counts the numbers away from their defaults and resets them together.
+    private void Heads()
+    {
+        foreach ((string section, (Label away, Button reset)) in heads)
+        {
+            if (!IsInstanceValid(away)) continue;
+            int n = Model.Away(section); away.Text = n == 0 ? "" : $"{n} changed"; away.Visible = reset.Visible = n > 0;
+        }
+    }
 
     public void Refresh()
     {
         if (!IsInstanceValid(this)) return;
-        SessionWidgets.Clear(column); fields.Clear();
+        SessionWidgets.Clear(column); fields.Clear(); heads.Clear();
         TokenSet t = tokens();
         foreach (string section in InspectorModel.Sections)
         {
@@ -192,6 +247,9 @@ public sealed partial class InspectorPanel : ScrollContainer
             fold.SetMeta("section", section); head.AddChild(fold);
             head.AddChild(ChromeWidgets.Text(section.ToUpperInvariant(), "MicroLabel"));
             Label note = ChromeWidgets.Text(Notes[section], "MicroLabel", true); note.HorizontalAlignment = HorizontalAlignment.Right; head.AddChild(note);
+            Label away = ChromeWidgets.Text("", "MicroLabel"); away.Name = "Away"; away.AddThemeColorOverride("font_color", t.C("accent.strong")); head.AddChild(away);
+            Button reset = ChromeWidgets.Tool("Reset", $"Reset every {section} field to its default"); reset.Name = "ResetSection";
+            reset.Pressed += () => Model.ResetSection(section); head.AddChild(reset); heads[section] = (away, reset);
             if (folded) continue;
             if (own.Length == 0) column.AddChild(ChromeWidgets.Text(section == InspectorModel.Preview ? "  No preview is staged." : "  Nothing selected.", "MicroLabel"));
             foreach (InspectField field in own)
@@ -200,6 +258,7 @@ public sealed partial class InspectorPanel : ScrollContainer
             }
             column.AddChild(new HSeparator());
         }
+        Heads();
     }
 }
 

@@ -1186,3 +1186,34 @@ Done together at the owner's request.
 - Tour stops 19 (readouts), 20 (panel states) and 21 (the palette's row menu).
 - Not shown: opening a readout from the keyboard (a click only), panel states on panes outside the docks, a state
   that a real panel sets by itself (only the demo key sets them), and a binding that keeps a row's argument.
+
+### Stage 10 point 8: the inspector's two tiers and the shared field gestures
+
+Both tiers read one field model (ADR-D01.22, ADR-D01.23). The strip above the views shows the selection and the
+Essential preview parameters, and a count (`+n`) of the fields the Inspector dock holds beyond it; pressing the count
+shows or hides the dock. In the dock, the head of a section counts the numbers that are away from their defaults and
+resets them together. Neither tier has a commit control, and a test reads the source to keep it so.
+
+Every numeric field has the same gestures in both tiers:
+
+- drag the value; Shift is ten times coarser and Alt ten times finer for that drag;
+- the value ladder: three rungs of 100, 10 and 1 of the field's steps for each notch, never finer than the step. The
+  small ladder beside the value shows the rung, and both tiers show the same one. Changing the rung is not an edit;
+- the keyboard, with the field focused: Left and Right step by the rung, Up and Down change the rung, Enter types a
+  value, `=` starts an expression that stays a live binding, Delete resets;
+- the mark beside the label names where the value comes from, and clicking the label resets the field.
+
+Not built: the View section's scope switch (the lab's View fields always act on both views), and the ladder as a
+pop-up under the pointer.
+
+### Stage 10 point 6: the preview view's before and after, and the range a preview touches
+
+The stage of the preview view compares the committed state with the state after the whole sequence (ADR-D01.10):
+one row of cells for each orbit, the share that will move outlined before and filled after. The button in the head
+steps through both sides, before only and after only. The line under the panes is the scrub, one notch for each move.
+Above the per-orbit bars one line names the range: how many orbits and how many pieces the sequence moves. The
+comparison is a picture; it has no control and raises no command, and the commit stays on the host's commit bar.
+
+The orbits, their sizes and the moved counts are sample numbers (the orbits are named "sample orbit"). The comparison
+draws the two ends only; the state between them, the collateral pieces one by one and the different animation of a
+preview twist are the core's to draw and are not built here.

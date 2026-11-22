@@ -368,6 +368,8 @@ internal static class LabFrame
                 Readouts(); foreach (Readout cell in new[] { revision, position, waiting }) cell.Expand(true); }),
             ("panel states: the docks are stale, with the word, the glyph, the reason and Refresh (F12 steps through all five)", () => { Home(); demo.Moves.RollTo(demo.Moves.Entries.Count); ShowPanelState(3); }),
             ("the palette row menu: pin, alias and bind, and a row found by its alias", () => { Home(); palette.Open(); palette.Type("target"); palette.Model.Alias(palette.Rows[0], "aim"); palette.Type("aim"); palette.OpenMenu(0); }),
+            ("the inspector's two tiers: the strip counts what the dock holds beyond it, and a field's ladder set to ten steps a notch", () => { Home(); frame.Model.ShowDock(DockSide.Right, "inspector"); inspect.Inspector.Climb("view.gap", -1); }),
+            ("the preview view: before beside after, the scrub between them and the range the preview touches", () => { Home(); solve.Draft.Clear(); demo.Stage(1); demo.Preview.SetScrub(5); }),
             ("inline parameters on the commit bar: the numbers of the staged statement, edited in place", () => { Home(); solve.Draft.Clear(); demo.Moves.RollTo(demo.Moves.Entries.Count); demo.History.Ask(-1); demo.Stage(2); demo.SetParameter(1, 3); }),
             ("the key map, pinned: what each key does with the pointer over Local, and the active key set", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); keys.ContextsOverride = new[] { "local-view", "global" }; keys.Shown.Pin(true); }),
             ("the strip and the rail at the last buffer of the endgame", () => { Home(); keys.ContextsOverride = null; keys.Shown.Pin(false); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),

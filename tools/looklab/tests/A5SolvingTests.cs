@@ -294,4 +294,40 @@ internal static partial class Program
         string box = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/PanelStateBox.cs"));
         foreach (PanelCondition c in PanelStates.Five) Check(box.Contains("case PanelCondition." + c + ":", StringComparison.Ordinal), c + " has no glyph");
     }
+
+    // Stage 10 points 8 and 6: one ladder for every field of both tiers, what is away from default, no commit
+    // control in the inspector; the preview view's sides and the range a preview touches.
+    private static void A5InspectorLadderAndPreviewRange()
+    {
+        var m = new InspectorModel(); int edits = 0; m.Edited += _ => edits++;
+        m.AddFact("sel.kind", "kind", "edge piece");
+        m.AddNumber(InspectorModel.View, "v.gap", "gap", 0, 1, .01, .2, .2);
+        m.AddNumber(InspectorModel.Preview, "p.cell", "cell", 0, 599, 1, 117, 117, true);
+        Check(InspectorModel.Rungs.SequenceEqual(new[] { 100d, 10d, 1d }), "the ladder has three rungs, never finer than the step");
+        Check(m.Rung("p.cell") == 2 && m.Beyond == 2, "a field starts on its own step; the dock holds two fields beyond the strip");
+        Check(m.Step("p.cell", 1) && m["p.cell"].Value == 118 && m["p.cell"].Provenance == Provenance.Session, "one notch is one step");
+        Check(m.Climb("p.cell", -1) && m.Rung("p.cell") == 1 && edits == 1, "changing the rung is not an edit");
+        Check(m.Step("p.cell", 2) && m["p.cell"].Value == 138, "a notch is ten steps on the middle rung");
+        Check(m.Climb("p.cell", -1) && !m.Climb("p.cell", -1) && m.Step("p.cell", 9) && m["p.cell"].Value == 599, "the top rung stays inside the range");
+        Check(m.Climb("p.cell", 5) && m.Rung("p.cell") == 2 && !m.Climb("p.cell", 1), "the ladder ends at the field's step");
+        Check(!m.Climb("sel.kind", 1) && !m.Step("sel.kind", 1), "a fact has no ladder");
+        Check(m.Enter("v.gap", "= 0.1 + 0.1") == null && m.Away(InspectorModel.View) == 1 && m.Away(InspectorModel.Preview) == 1 && m.Away(InspectorModel.Selection) == 0, "a section counts what is away from default, a binding too");
+        Check(m.ResetSection(InspectorModel.View) == 1 && m.Away(InspectorModel.View) == 0 && m["v.gap"].Binding == null && m["p.cell"].Value == 599, "one reset for a section leaves the others");
+        string ui = Read("app/Chrome/Ui/InspectorPanels.cs"); int from = ui.IndexOf("class ValueField", StringComparison.Ordinal), to = ui.IndexOf("class FeedbackPanel", StringComparison.Ordinal);
+        Check(from > 0 && to > from && !ui.Substring(from, to - from).Contains("preview.commit", StringComparison.Ordinal), "neither inspector tier has a commit control");
+
+        var p = new PreviewModel();
+        Check(p.Range() == null && p.Side == PreviewSide.Both, "no preview has no range; the stage starts with both sides");
+        var effects = new[] { new OrbitEffect("a", 0, 120), new OrbitEffect("b", 30, 720), new OrbitEffect("c", 1, 2400), new OrbitEffect("d", 600, 600) };
+        p.Show("preview x", "own macro", new[] { "m1", "m2" }, PreviewStatus.Ready, null, effects, "Protected orbits untouched.", 0);
+        Check(p.Range() == new AffectedRange(3, 4, 631, 3840), "the range counts the orbits and pieces that move");
+        int changes = 0; p.Changed += () => changes++;
+        p.CycleSide(); Check(p.Side == PreviewSide.Before, "the next side is before"); p.CycleSide(); p.CycleSide();
+        Check(p.Side == PreviewSide.Both && changes == 3, "the sides come round: both, before, after");
+        p.SetSide(PreviewSide.Both); Check(changes == 3, "the same side changes nothing");
+        Check(effects.Select(e => PreviewModel.Lit(e, 24)).SequenceEqual(new[] { 0, 1, 1, 24 }), "an untouched orbit lights nothing, a touched one at least one cell, a whole one all");
+        Check(PreviewModel.Lit(new OrbitEffect("e", 719, 720), 24) == 23, "all cells only when every piece moves");
+        string panel = Read("app/Chrome/Ui/PreviewCompare.cs");
+        Check(!panel.Contains("Safe.Raise(Command", StringComparison.Ordinal) && !panel.Contains("Button", StringComparison.Ordinal), "the comparison is a picture: it has no control and raises no command");
+    }
 }

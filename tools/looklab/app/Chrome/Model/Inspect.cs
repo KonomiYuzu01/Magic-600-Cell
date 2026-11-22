@@ -51,6 +51,13 @@ public sealed class InspectorModel
     public event Action<InspectField>? Updated;
     public event Action<InspectField>? Edited;
     private readonly List<InspectField> fields = new();
+    // The value ladder (ADR-D01.23): a notch is a hundred, ten or one of the field's steps, never finer than the
+    // step. Each field remembers its rung, and both tiers read the same one.
+    public static readonly IReadOnlyList<double> Rungs = Array.AsReadOnly(new[] { 100d, 10d, 1d });
+    private readonly Dictionary<string, int> rungs = new(StringComparer.Ordinal);
+    public int Rung(string id) => rungs.TryGetValue(id, out int rung) ? rung : Rungs.Count - 1;
+    // What the docked inspector holds beyond the strip.
+    public int Beyond => fields.Count - Essentials.Count();
 
     public InspectField this[string id] => fields.FirstOrDefault(f => f.Id == id) ?? throw J.Error(id, "unknown field");
 
@@ -106,6 +113,22 @@ public sealed class InspectorModel
         Safe.Raise(Updated, field); Safe.Raise(Edited, field);
         return true;
     }
+
+    // Up the ladder is coarser. Changing the rung is not an edit.
+    public bool Climb(string id, int by)
+    {
+        InspectField field = this[id];
+        int to = Math.Clamp(Rung(id) + by, 0, Rungs.Count - 1);
+        if (field.IsFact || to == Rung(id)) return false;
+        rungs[id] = to; Safe.Raise(Updated, field);
+        return true;
+    }
+
+    public bool Step(string id, int notches) => Nudge(id, notches, Rungs[Rung(id)]);
+
+    // How many numbers of a section are away from their defaults, and one reset for all of them.
+    public int Away(string section) => fields.Count(f => f.Section == section && !f.IsFact && (f.Binding != null || f.Value != f.Default));
+    public int ResetSection(string section) => fields.Where(f => f.Section == section).ToArray().Count(f => Reset(f.Id));
 
     public bool Reset(string id)
     {

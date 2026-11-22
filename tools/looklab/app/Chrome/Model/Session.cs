@@ -13,6 +13,13 @@ public sealed record OrbitEffect(string Orbit, int Moved, int Total);
 
 // One built preview (ADR-D01.8): its staged .6cs statement, where it came from, the witness sequence, the
 // effect on every orbit and on protection.
+// What the stage of the preview view compares (ADR-D01.10): the committed state, the state after the whole
+// sequence, or the two side by side.
+public enum PreviewSide { Both, Before, After }
+
+// The range a preview touches: how many orbits and how many pieces of them move over the whole sequence.
+public sealed record AffectedRange(int Orbits, int OrbitsTotal, int Moved, int Total);
+
 public sealed record Preview(int Id, string Statement, string Source, IReadOnlyList<string> Moves, PreviewStatus Status,
     string? Reason, IReadOnlyList<OrbitEffect> Effects, string Protection);
 
@@ -25,8 +32,18 @@ public sealed class PreviewModel
     public Preview? Pending { get; private set; }
     public int Scrub { get; private set; }
     public bool Replaced { get; private set; }
+    public PreviewSide Side { get; private set; }
     public event Action? Changed;
     private int next = 1;
+
+    public void SetSide(PreviewSide side) { if (side == Side) return; Side = side; Safe.Raise(Changed); }
+    public void CycleSide() => SetSide((PreviewSide)(((int)Side + 1) % 3));
+    public AffectedRange? Range() => Pending is not { } p ? null
+        : new AffectedRange(p.Effects.Count(e => e.Moved > 0), p.Effects.Count, p.Effects.Sum(e => e.Moved), p.Effects.Sum(e => e.Total));
+    // How many of a row's cells stand for the moved share of an orbit: none only when nothing moves, all only
+    // when everything does.
+    public static int Lit(OrbitEffect effect, int cells) => effect.Moved <= 0 || effect.Total <= 0 ? 0 : effect.Moved >= effect.Total ? cells
+        : Math.Clamp((int)Math.Round((double)cells * effect.Moved / effect.Total), 1, cells - 1);
     private double shownAt = double.NegativeInfinity;
 
     public Preview Show(string statement, string source, IReadOnlyList<string> moves, PreviewStatus status, string? reason,

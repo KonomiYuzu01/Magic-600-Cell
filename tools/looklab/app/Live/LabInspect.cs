@@ -85,6 +85,7 @@ internal sealed class LabInspect
         demo.Moves.Changed += () => { if (Feedback.StateChanged() is > 0 and int n) Feedback.Log($"cancelled {n} task(s) that read the state the commit changed"); };
         Panel.SizeFlagsVertical = Control.SizeFlags.ExpandFill; InspectorColumn.AddChild(Panel); frame.SetContent("inspector", InspectorColumn); frame.SetContent("problems", Problems); frame.SetContent("console", Console); frame.SetContent("tasks", Tasks);
         frame.SetTopStrip(Strip);
+        Strip.More += () => frame.Model.ToggleDock(DockSide.Right, "inspector");
         frame.Rebuilt += Rebuilt; frame.Recoloured += Rebuilt;
         var timer = new Timer { WaitTime = .2, Autostart = true, Name = "SampleTaskClock" }; timer.Timeout += () => Tick(.2); frame.AddChild(timer);
         StartTask();

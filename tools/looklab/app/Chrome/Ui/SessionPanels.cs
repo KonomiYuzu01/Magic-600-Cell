@@ -119,13 +119,15 @@ public sealed partial class CommitBar : PanelContainer
 }
 
 // The preview view (ADR-D01.10): the witness sequence with move-by-move stepping, the effect on every orbit
-// and on protection. The previewed state itself is drawn by the core into Stage.
+// and on protection. The previewed state itself is drawn by the core into Stage; the comparison above it sets
+// before beside after, and one line names the range the preview touches. Nothing here commits.
 public sealed partial class PreviewPanel : VBoxContainer
 {
     public PreviewModel Model { get; }
     public Control Stage { get; } = new PanelContainer { ThemeTypeVariation = "ViewFrame", SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
     public VBoxContainer Moves { get; } = new() { Name = "PreviewMoves" };
     public VBoxContainer Effects { get; } = new() { Name = "PreviewEffects" };
+    public PreviewCompare Compare { get; }
     public Label Title { get; } = ChromeWidgets.Text("", "HeadingLabel");
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
@@ -140,7 +142,8 @@ public sealed partial class PreviewPanel : VBoxContainer
         Moves.SizeFlagsHorizontal = SizeFlags.ExpandFill; Moves.AddThemeConstantOverride("separation", 0); left.AddChild(Moves);
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1.6f };
         stageNote.AutowrapMode = TextServer.AutowrapMode.WordSmart; stageNote.HorizontalAlignment = HorizontalAlignment.Center; stageNote.VerticalAlignment = VerticalAlignment.Center;
-        Stage.AddChild(stageNote); right.AddChild(Stage); right.AddChild(Effects);
+        Compare = new PreviewCompare(model, tokens); var stageBox = new VBoxContainer(); stageBox.AddChild(Compare); stageBox.AddChild(stageNote);
+        Stage.AddChild(stageBox); right.AddChild(Stage); right.AddChild(Effects);
         body.AddChild(left); body.AddChild(right);
         model.Changed += Refresh; Refresh();
     }
@@ -152,6 +155,7 @@ public sealed partial class PreviewPanel : VBoxContainer
         ChromeWidgets.Detach(Title); SessionWidgets.Clear(head); SessionWidgets.Clear(Moves); SessionWidgets.Clear(Effects);
         head.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
         Title.Text = p == null ? "No preview" : $"Preview #{p.Id}"; ChromeWidgets.Detach(Title); head.AddChild(Title);
+        Compare.Visible = p is { Status: PreviewStatus.Ready };
         if (p == null)
         {
             stageNote.Text = "no preview staged";
@@ -161,6 +165,11 @@ public sealed partial class PreviewPanel : VBoxContainer
         head.AddChild(SessionWidgets.Chip(text, t.C(colour), p.Reason ?? ""));
         if (Model.Replaced) head.AddChild(SessionWidgets.Chip("replaced the earlier preview", t.C("state.stale"), "The earlier preview can no longer be committed."));
         head.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        if (p.Status == PreviewStatus.Ready)
+        {
+            Button side = ChromeWidgets.Tool(Model.Side.ToString(), "What the stage compares: both, before or after. Press for the next."); side.Name = "PreviewSide";
+            side.Pressed += Model.CycleSide; head.AddChild(side);
+        }
         head.AddChild(ChromeWidgets.Text($"{Model.Scrub} of {p.Moves.Count}", "DimLabel"));
         head.AddChild(SessionWidgets.Tool("step.back", "One move back (Left)", t, () => Model.SetScrub(Model.Scrub - 1)));
         head.AddChild(SessionWidgets.Tool("step.forward", "One move forward (Right)", t, () => Model.SetScrub(Model.Scrub + 1)));
@@ -179,6 +188,11 @@ public sealed partial class PreviewPanel : VBoxContainer
             line.AddChild(move);
             holder.GuiInput += e => { if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Model.SetScrub(index + 1); };
             Moves.AddChild(holder);
+        }
+        if (Model.Range() is { } range && p.Status == PreviewStatus.Ready)
+        {
+            Label touched = ChromeWidgets.Text($"{range.Orbits} of {range.OrbitsTotal} orbits, {range.Moved:N0} of {range.Total:N0} pieces", "CodeLabel"); touched.Name = "PreviewRange"; touched.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            touched.TooltipText = "The range this preview touches over its whole sequence"; touched.MouseFilter = MouseFilterEnum.Pass; Effects.AddChild(touched);
         }
         Effects.AddChild(ChromeWidgets.Text("EFFECT ON EVERY ORBIT", "MicroLabel"));
         foreach (OrbitEffect effect in p.Effects)
