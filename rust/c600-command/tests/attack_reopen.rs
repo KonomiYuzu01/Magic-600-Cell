@@ -5,6 +5,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::{
     draft_args, CommandLayer, Direction, Error, HeadlessFrames, JobOutput, Kind, MemoryStore, Overlay, Provenance,
@@ -109,6 +110,8 @@ struct Session {
 
 fn equip(mut layer: CommandLayer, prefix: &str) -> Session {
     layer.set_provenance(Box::new(Reader));
+    // ADR-D01.9's settle interval is tested in tests/settle.rs; these sessions commit on the first presented press.
+    layer.set_settle(Duration::ZERO);
     layer.serve_row(PLAY_ROW, Overlay { module: "recordings".into(), entry: "play".into() }).unwrap();
     let overlay = Overlay { module: "notes".into(), entry: "note".into() };
     layer.register_overlay(NOTE_ROW, Kind::Workspace, &[], overlay).unwrap();

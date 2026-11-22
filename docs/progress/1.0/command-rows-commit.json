@@ -1,0 +1,243 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {
+      "id": "layout.undo",
+      "label": "Undo layout change",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "layout",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Undoes the layout history's newest step: a completion of a row whose undo class is layout (theme, density, type, motion, keymap, panel, radial, palette and layout changes), from LI.9's ActionHint of that history, as session.undo does for the move history; neither history reaches the other's steps (ADR-D01.14). Default key Ctrl+Alt+Z. It journals as an undo whose row is layout.undo, a workspace inverse with equal puzzle hashes, and the explore state does not pause it (ADR-D01.39). Camera and view-filter steps are not journaled yet.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "hint": "ActionHint",
+        "token": "UserActionToken"
+      },
+      "action_guard": "action_hint",
+      "slot_map": "preserve"
+    },
+    {
+      "id": "layout.redo",
+      "label": "Redo layout change",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "layout",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Redoes the layout history's newest undone step: a completion of a row whose undo class is layout (theme, density, type, motion, keymap, panel, radial, palette and layout changes), from LI.9's ActionHint of that history, as session.redo does for the move history; neither history reaches the other's steps (ADR-D01.14). Default key Ctrl+Alt+Y. It journals as a redo whose row is layout.redo, a workspace inverse with equal puzzle hashes, and the explore state does not pause it (ADR-D01.39). Camera and view-filter steps are not journaled yet.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "hint": "ActionHint",
+        "token": "UserActionToken"
+      },
+      "action_guard": "action_hint",
+      "slot_map": "preserve"
+    },
+    {
+      "id": "session.undo.partial",
+      "label": "Step back inside entry",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [
+        "protection"
+      ],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Steps back inside the head's journal entry, a commit or a partial undo of one, so that its first move literal moves stay applied (ADR-D01.15). A live commit with no preview: the token binds the state and protection revisions, and the head hash and the protected orbits are checked again under the policy in force. Its recipe is the inverses of the undone moves, last first, and it journals as a retained move whose row and request name the entry and the move, so nothing is rewritten; session.undo undoes it as any commit. An entry that is not the head, or a move that is not one of its applied moves, has no eligible target. No default key.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "entry": "ActionNumber",
+        "move": "Nat",
+        "token": "UserActionToken"
+      },
+      "slot_map": "preserve"
+    },
+    {
+      "id": "operation.preview.commit",
+      "label": "Preview and commit own macro",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [
+        "protection"
+      ],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "One press prepares, rechecks and commits the solver's own macro (ADR-D01.12). The draft is a record only, resolved now as operation.preview resolves one, so in a solving session the host's provenance reader admits it (KN5.26); an inline recipe is refused, so no keymap a script supplies commits a word the solver never kept. Its preview replaces the pending one (ADR-D01.9) and is checked as operation.execute checks a presented one: the token's state and protection revisions, the preview's dependencies, the head hash and the protected orbits under the policy in force. A failed recheck leaves the preview pending and uncommitted. No run or recording reaches it, and the explore state pauses it. A twist's one-key commit is twist.apply. No default key: the solver binds their own macros.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "draft": "ResolvedDraftRef",
+        "token": "UserActionToken"
+      },
+      "slot_map": "preserve"
+    },
+    {
+      "id": "session.rollback",
+      "label": "Roll back to action",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "One solver action rolls the move history back or forward to the state just after a target action (0: the session's start), from an ActionHint whose target names that action (ADR-D01.15). It is k ordinary session.undo or session.redo steps, each its own transaction with its own admission and receipt under the command ID {gesture}#{i}, and the layer adds the gesture, step i and the count k to each step's arguments, so the journal gains no action kind and every span has one encoding. The layer holds the writer for the whole gesture and stops at the first step that does not commit, reporting j of k; each step takes its original permission path, and the press's confirm confirms every release in the span (LI.26). A crash leaves a complete prefix, which a retry finds by LI.30's lookup of the step IDs; there is no all-or-nothing across a crash. The history dock groups the steps by gesture. No run or recording reaches it, and the explore state pauses it. No default key.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "hint": "ActionHint",
+        "gesture": "Text?",
+        "step": "Nat?",
+        "of": "Nat?",
+        "token": "UserActionToken"
+      },
+      "action_guard": "action_hint",
+      "slot_map": "by_target"
+    }
+  ],
+  "amend": [
+    {
+      "id": "keymap.edit",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "keymap": "KeymapRevisionRef",
+          "candidate": "BindingEdits"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "keymap.defaults",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "keymap": "KeymapRevisionRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "keymap.save",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "candidate": "CheckedBindingsRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "keymap.name",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "keymap": "KeymapRevisionRef",
+          "name": "Text"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "file.keymap.apply",
+      "expect": {
+        "undo": "workspace"
+      },
+      "set": {
+        "undo": "layout",
+        "arguments": {
+          "checked": "CheckedFileRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a keymap is a design-profile change in the layout history (ADR-D01.14)"
+    },
+    {
+      "id": "work.layout.set",
+      "expect": {
+        "kind": "view",
+        "lane": "view",
+        "undo": "none"
+      },
+      "set": {
+        "kind": "workspace",
+        "lane": "none",
+        "undo": "layout",
+        "lane_target": null,
+        "note": "Applies a stored layout or named workspace (ADR-D01.38): a workspace row whose completion is a step of the layout history, so layout.undo reaches it and session.undo does not (ADR-D01.14). Applying it is the solver's action, a bound entry point or a recorded step; a program may only prepare one as a layout preview.",
+        "arguments": {
+          "layout": "LayoutRef"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a layout change is a workspace step in the layout history (ADR-D01.14, ADR-D01.38)"
+    },
+    {
+      "id": "work.layout.reset",
+      "expect": {
+        "kind": "view",
+        "lane": "view",
+        "undo": "none"
+      },
+      "set": {
+        "kind": "workspace",
+        "lane": "none",
+        "undo": "layout",
+        "lane_target": null,
+        "note": "Resets a named workspace, or the one in use when layout is not given, to its shipped preset (ADR-D01.38): a step of the layout history (ADR-D01.14).",
+        "arguments": {
+          "layout": "LayoutRef?"
+        }
+      },
+      "source": "ADR-D01 (owner, 22 Nov 2026): a layout change is a workspace step in the layout history (ADR-D01.14, ADR-D01.38)"
+    }
+  ]
+}

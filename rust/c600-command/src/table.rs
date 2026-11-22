@@ -40,6 +40,9 @@ pub enum UndoClass {
     Journal,
     None,
     Workspace,
+    /// ADR-D01.14's layout history (owner, 22 November 2026): a design-profile or layout change, which
+    /// `layout.undo` and `layout.redo` invert and repeat and `session.undo` never reaches.
+    Layout,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -168,7 +171,12 @@ fn row(value: &Value) -> Result<Row, String> {
         ("program", Lane::Program),
         ("view", Lane::View),
     ];
-    let undos = [("journal", UndoClass::Journal), ("none", UndoClass::None), ("workspace", UndoClass::Workspace)];
+    let undos = [
+        ("journal", UndoClass::Journal),
+        ("layout", UndoClass::Layout),
+        ("none", UndoClass::None),
+        ("workspace", UndoClass::Workspace),
+    ];
     let previews = [("none", PreviewRule::None), ("required", PreviewRule::Required), ("filter", PreviewRule::Filter)];
     let mut arguments = BTreeMap::new();
     if let Some(args) = value.get("arguments") {
@@ -330,7 +338,8 @@ impl Table {
     ///
     /// Only a row whose admission and completion the layer can check without the entry is served: a view, workspace,
     /// query or file row on the `none`, `view` or `program` lane, with no action guard or token. Its undo class is
-    /// `none`, or `workspace` on a workspace row, whose completion the layer inverts as a workspace inverse. It has no
+    /// `none`, or `workspace` or `layout` on a workspace row, whose completion the layer inverts as a workspace inverse
+    /// in the move history or the layout history (ADR-D01.14). It has no
     /// gate and no preview rule, except a workspace row with the undo class `workspace`, the gate `fresh_filter_preview`
     /// and the `filter` preview rule together (LI.41: `filter.apply`'s shape), whose gate the layer checks against the
     /// filter previews it keeps ([`crate::filter`]).
@@ -353,10 +362,11 @@ impl Table {
             return Err(Error::new(code::OVERLAY_ROW_CONFLICT, format!("an entry already serves `{id}`")));
         }
         let inverse = row.kind == Kind::Workspace && row.undo == UndoClass::Workspace;
+        let layout = row.kind == Kind::Workspace && row.undo == UndoClass::Layout;
         let filter = row.gates == [crate::filter::FRESH_FILTER_PREVIEW] && row.preview == PreviewRule::Filter;
         let checkable = !matches!(row.kind, Kind::Commit | Kind::App)
             && matches!(row.lane, Lane::None | Lane::View | Lane::Program)
-            && (row.undo == UndoClass::None || inverse)
+            && (row.undo == UndoClass::None || inverse || layout)
             && ((row.preview == PreviewRule::None && row.gates.is_empty()) || (inverse && filter))
             && row.action_guard.is_none()
             && !row.takes_token();
@@ -369,12 +379,18 @@ impl Table {
 }
 
 /// The stored rows the command layer builds itself; no entry serves them.
-const LAYER_ROWS: [&str; 11] = [
+const LAYER_ROWS: [&str; 17] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
     "session.undo",
     "session.redo",
+    crate::layer::LAYOUT_UNDO_ROW,
+    crate::layer::LAYOUT_REDO_ROW,
+    crate::layer::EXPLORE_ROW,
+    crate::layer::PARTIAL_UNDO_ROW,
+    crate::layer::ONE_KEY_ROW,
+    crate::layer::ROLLBACK_ROW,
     "protection.orbit.set",
     crate::layer::POLICY_ROW,
     crate::workspace::RECORD_ROW,

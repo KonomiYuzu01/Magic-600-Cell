@@ -49,7 +49,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use c600_command::{
     code, digest, word_draft, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames,
@@ -356,6 +356,12 @@ struct Session<'k> {
     /// The solver's commands invoked so far, one per word given to the tool. Each takes a job number, so the command
     /// route's job and preview numbers are this route's less this count.
     commands: u64,
+    /// The command route's number of each preview this route built, for a summary that names a preview it replaced.
+    numbers: HashMap<u64, u64>,
+    /// The command route's number of the preview the solver dismissed after its commit was refused. The command route
+    /// leaves that preview shown, so until a state move its next preview carries it as the mark of the change
+    /// (ADR-D01.9); on this route the solver's dismissal ends the mark.
+    dismissed: Option<u64>,
     receipts: Vec<Value>,
     callers: Vec<Value>,
 }
@@ -531,10 +537,20 @@ impl Session<'_> {
         // recipe; the source route drafts the literal word, in one word step or, longer than one chunk, in the
         // recipe's word steps. The command route makes no solver's command, so its preview's number is this one's
         // less the solver's commands so far. The rebased digest is the preview's result over the case recipe's draft
-        // under the command route's number.
+        // under the command route's number. A preview that replaced one the solver was shown names it (ADR-D01.9): the
+        // rebased summary names the command route's number of the preview it replaced there.
         let mut rebased = preview.clone();
         rebased.deps.draft = digest(&word_draft(recipe));
         rebased.id = preview.id.checked_sub(self.commands).ok_or_else(|| disagree("a preview before its command"))?;
+        rebased.replaced = match preview.replaced {
+            Some(replaced) => {
+                let number = self.numbers.get(&replaced).copied();
+                Some(number.ok_or_else(|| disagree("a replaced preview this route did not build"))?)
+            }
+            None => self.dismissed,
+        };
+        self.dismissed = None;
+        self.numbers.insert(preview.id, rebased.id);
         record.draft = Some(preview.deps.draft.clone());
         record.result = Some(digest(&preview.summary()));
         record.rebased = Some(digest(&rebased.summary()));
@@ -551,6 +567,7 @@ impl Session<'_> {
             }
             Status::Refused(error) if error.code == code::ORBIT_WOULD_MOVE => {
                 self.dismiss()?;
+                self.dismissed = Some(rebased.id);
                 Ok(Outcome::Protected(seen))
             }
             other => Err(unexpected("operation.execute", other)),
@@ -576,6 +593,8 @@ impl Session<'_> {
             Direction::Undo => ("session.undo", "Ctrl+Z"),
             Direction::Redo => ("session.redo", "Ctrl+Y"),
         };
+        // A state move ends the command route's mark of a shown preview.
+        self.dismissed = None;
         let receipt = self.press(chord)?;
         match &receipt.status {
             Status::Committed(commit) if commit.post == expected && self.layer.snapshot().digest() == expected => {
@@ -674,6 +693,9 @@ fn replay(
         start,
         protected,
     );
+    // The oracle replay commits each preview its tool run prepared on the frame that presents it; ADR-D01.9's settle
+    // interval, which holds that press, is c600-command's `tests/settle.rs` concern and not an oracle case's.
+    layer.set_settle(Duration::ZERO);
     let reader = workspace::install(&mut layer);
     let shell = Shell::new(secret, &case_id);
     let tamper = tamper.filter(|(case, _)| *case == case_id).map(|&(_, index)| index);
@@ -691,6 +713,8 @@ fn replay(
         start_refused: 0,
         commands: 0,
         receipts: Vec::new(),
+        numbers: HashMap::new(),
+        dismissed: None,
         callers: Vec::new(),
     };
     let mut memo = HashMap::new();

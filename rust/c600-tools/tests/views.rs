@@ -17,6 +17,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::{
     code as layer_code, CommandLayer, Error as CommandError, FrameChain, HeadlessFrames, PreviewState, Secret, Shell,
@@ -72,13 +73,16 @@ fn context() -> Context {
     produce::fixture_context(geometry(), LimitProfile::uniform("fixture/1", BIG))
 }
 
-/// A layer at the solved state with no protected orbit, and its shell, sharing one fixed secret.
+/// A layer at the solved state with no protected orbit, and its shell, sharing one fixed secret. ADR-D01.9's settle
+/// interval is zero here: these tests commit a run's preview on the press after its first frame, and a preview a run
+/// prepared waits out the interval (c600-command `tests/settle.rs` covers the wait).
 fn session() -> (CommandLayer, Shell) {
     let kernel = kernel();
     let secret = Secret::fixed([5; 32]);
     let solved = kernel.solved();
     let none = ProtectedSet::none();
-    let layer = CommandLayer::new(kernel, Table::h08(), secret.clone(), Default::default(), "views", solved, none);
+    let mut layer = CommandLayer::new(kernel, Table::h08(), secret.clone(), Default::default(), "views", solved, none);
+    layer.set_settle(Duration::ZERO);
     (layer, Shell::new(secret, "shell"))
 }
 

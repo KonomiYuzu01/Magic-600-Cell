@@ -5,6 +5,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::{
     code, draft_args, policy_from_name, policy_name, Caller, CommandLayer, Completion, CompletionKind, Direction,
@@ -61,7 +62,9 @@ fn fixture(orbits: &[i64]) -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(orbits).unwrap());
     let table = Table::h08().with_drafts();
-    let layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
+    let mut layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
+    // ADR-D01.9's settle interval is tested in tests/settle.rs; these sessions commit on the first presented press.
+    layer.set_settle(Duration::ZERO);
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 

@@ -48,10 +48,14 @@
 //!   before it with `KN5:consistency.unadmitted_journal_action`, so the session does not open as an
 //!   intact writable one. The journal carries no authentication: an edit that rewrites a program-made action as the
 //!   solver's own is not detected.
-//! - Findings B1 and L17 (KN5.12, ONE.42 option (a)): a run cannot replace or cancel a preview the solver is shown;
-//!   only the solver's action ends it. While a frame presents the pending preview, a run's preview and a run's cancel
-//!   of it are refused with `KN5:capability.preview_shown`, also for the run of a command the solver
-//!   invoked.
+//! - Findings B1 and L17 (KN5.12): a run cannot cancel a preview the solver is shown; only the solver's action ends
+//!   it, and a run's cancel of it is refused with `KN5:capability.preview_shown`, also for the run of a command the
+//!   solver invoked. ADR-D01.9 (owner, 22 November 2026, item 4; draft) answers KN5.12's replacement: the run of a
+//!   command the solver invoked may replace the shown preview. The replacement takes a new ID when it builds and names
+//!   the preview it replaced ([`Preview::replaced`]), and the commit key ignores a press on it for a settle interval
+//!   from the first frame that shows it (`KN5:busy.preview_settling`; [`SETTLE_DRAFT`] until Look Lab tunes it, the
+//!   host's [`Clock`]), so a key-down never commits a preview the solver has not seen. A recording never replaces a
+//!   preview: a run inside a `recording.play` job is refused with `LG3:capability.not_granted` while one is pending.
 //! - Finding B2 (ONE.34): a run prepares a preview only inside a command the solver invoked, and the one check is in
 //!   the layer, not in each host. The run must be the run of a program job ([`ProgramJob::run`], `job-<id>`) that the
 //!   host has taken and not yet reported, invoked by the shell or by a run that is itself inside such a command.
@@ -124,6 +128,14 @@
 //!   forms, an overlay source's row and the caller come first (`KN5:input.argument_form`,
 //!   `LG3:capability.not_granted` for a run not inside a command the solver invoked); an admitted open or close is
 //!   `accepted` with no job. Without a view model both rows are `KN5:input.row_not_built`.
+//! - `layout.undo`, `layout.redo` and `explore.set` ([`layer`]; ADR-D01.14, ADR-D01.39; owner, 22 November 2026, item
+//!   4; draft): the layout history beside the move history, and the explore state that pauses every other commit row.
+//! - `session.undo.partial` ([`layer`]; ADR-D01.15; draft): a commit that steps back inside the head's journal entry
+//!   to one of its moves, journaled as a retained move that names the entry and the move
+//!   ([`CommandLayer::head_entry`] reads its target).
+//! - `operation.preview.commit` ([`layer`]; ADR-D01.12; draft): one press prepares the solver's own macro, a record
+//!   draft, replacing the pending preview, rechecks it as `operation.execute` rechecks a presented preview, and
+//!   commits it.
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
 //! - The session's profile ([`Profile`]: `solving`, `tool_authoring` or `research`; BND.14, BND.15, BND.17, KN5.26):
@@ -587,7 +599,11 @@ pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIE
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
 pub use journal::{EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT, JOURNAL_ROW};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
-pub use layer::{Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, POLICY_ROW};
+pub use layer::{
+    rollback_step, Caller, Clock, CommandLayer, Invocation, JobOutput, MonotonicClock, Preview, PreviewState,
+    ProgramJob, Rollback, EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
+    ROLLBACK_ROW, SETTLE_DRAFT,
+};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
