@@ -118,8 +118,8 @@ fn ct_lg3_02_no_program_effect_commits_or_obtains_a_token() {
     }
 }
 
-/// CT-LG3-03 (part: the static half in source; not run: one undoable action per invoked workspace change, which waits
-/// for the session store (M6) and the command layer (LP3)): a view refuses workspace and preview effects, declared or
+/// CT-LG3-03 (part: the static half in source; one undoable action per invoked workspace change runs in
+/// `c600-command`'s `job_output.rs` and `filter_apply.rs`): a view refuses workspace and preview effects, declared or
 /// reached through a helper or a higher-order argument, and may publish what it reads.
 #[test]
 fn ct_lg3_03_views_refuse_workspace_and_preview_effects_in_source() {

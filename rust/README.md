@@ -188,8 +188,8 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   parameter in a `display_if` branch and is passed a function that reaches the helper again, is admitted.
 - Not in M1, because they need the runtime (M2, M3): the fixed acknowledgement of BND.43, the saved-word half of
   CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
-  the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 stays
-  open.
+  the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 runs in
+  `c600-command` since LP2's reading 18 (the job output, below).
 - Lists and word operations (LP2 drafts until the IR freeze, PHS.49). `List<T>` is a finite sequence in written
   order, built by the IR's collection form; `length`, `index`, `push` and `concat` work on it. A list with a display
   element is display-qualified as a whole, so its length, an element or an equality cannot extract an exact result
@@ -1835,12 +1835,14 @@ run or not applicable is no pass (PHS.63).
   is the value's own digest when there are no views and no records. Only a workspace row's job writes records; a record
   from any other row fails the job with `LG3:capability.not_granted`. The host's provenance reader checks every
   record's block, as for `workspace.set`. A job whose output fails a check writes nothing. A workspace row's records are
-  written in its completion's one durable action and kept in the journal (`Transaction::records`). For a stored row
-  whose undo class is `workspace` (`filter.apply`, `operation.phase.edit`) the completion is a workspace inverse: its
-  undo writes back what each record held before, absent ones included, and its redo writes the records again. No undo
-  reaches any other row's records, so earlier writes of the same records leave the undo and redo stacks, and so,
-  beneath an action that leaves, do the actions that wrote one of its other records. A replay
-  decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
+  written in its completion's one durable action and kept in the journal (`Transaction::records`). For a row whose
+  undo class is `workspace`, every language-defined workspace row (LG3.5, LB7.2; LP2's reading 18) and a stored row
+  such as `filter.apply` or `operation.phase.edit`, the completion is a workspace inverse: its undo writes back what
+  each record held before, absent ones included, and its redo writes the records again. No undo reaches the records
+  of a stored row whose undo class is `none`, so earlier writes of the same records leave the undo and redo stacks,
+  and so, beneath an action that leaves, do the actions that wrote one of its other records. A replay decides from the
+  table it opens with, since rows are served and registered after the open: a stored row's undo class is H-08's, and
+  a row the table does not hold is a language-defined one. Tests: `c600-command/tests/job_output.rs` and
   `c600-command/tests/filter_apply.rs`.
 - Saved sets (LP3's C6, `set.save`; U1-057, U4-037; LP2's pull request 337; the drafts are in the crate
   documentation). `set.save`'s entry writes the one record `set.save`, `{kind, members, name}`, and in the

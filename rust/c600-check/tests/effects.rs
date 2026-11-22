@@ -214,9 +214,10 @@ fn ct_lg3_02_no_effect_commits_or_obtains_a_token() {
 }
 
 // CT-LG3-03: views refuse workspace and preview effects through direct and indirect calls. The one undoable action of
-// an invoked workspace change is the runtime's (M2, M3).
+// an invoked workspace change is the command layer's (`c600-command`).
 
-/// CT-LG3-03 (part: the static half in IR; not run: the undoable action, which waits for M6 and LP3).
+/// CT-LG3-03 (part: the static half in IR; the undoable action runs in `c600-command`'s `job_output.rs` and
+/// `filter_apply.rs`).
 #[test]
 fn ct_lg3_03_views_refuse_workspace_and_preview_effects() {
     let in_view = |body: Expr, mut functions: Vec<Function>| {
