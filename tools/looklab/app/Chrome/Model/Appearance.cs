@@ -1,0 +1,87 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+
+namespace Magic600.Chrome;
+
+// What the user has chosen for the look of the chrome: theme family, density, display scale, high contrast,
+// scene look and the tuning knobs of each family (ADR-D01.35, ADR-D01.45, ADR-D01.49, ADR-D01.50). It names
+// tokens and knob values only; every colour and size is resolved from the design data.
+public sealed class Appearance
+{
+    public string Theme { get; private set; }
+    public string Density { get; private set; }
+    public double DisplayScale { get; private set; } = 1;
+    public bool HighContrast { get; set; }
+    public string SceneLook { get; private set; } = ThemeFamily.SceneLooks[0];
+    private readonly DesignSystem system;
+    private readonly IReadOnlyList<ThemeFamily> themes;
+    private readonly SortedDictionary<string, SortedDictionary<string, double>> knobs = new(StringComparer.Ordinal);
+
+    public Appearance(DesignSystem system, IReadOnlyList<ThemeFamily> themes)
+    {
+        if (themes.Count == 0) throw J.Error("themes", "at least one theme family required");
+        this.system = system; this.themes = themes;
+        Theme = themes[0].Id; Density = system.ShippedDensity;
+    }
+
+    public IReadOnlyList<ThemeFamily> Themes => themes;
+    public ThemeFamily Family => themes.First(t => t.Id == Theme);
+    public double Knob(string id) => knobs.TryGetValue(Theme, out var set) && set.TryGetValue(id, out double v) ? v : Family.Knobs[id].Default;
+    public bool Tuned => knobs.TryGetValue(Theme, out var set) && set.Any(k => k.Value != Family.Knobs[k.Key].Default);
+
+    public void SetTheme(string id) { if (themes.All(t => t.Id != id)) throw J.Error(id, "unknown theme family"); Theme = id; }
+    public void SetDensity(string preset) { system.Density(preset, DisplayScale); Density = preset; }
+    public void SetDisplayScale(double scale) { system.Density(Density, scale); DisplayScale = scale; }
+    public void SetSceneLook(string look) { if (!ThemeFamily.SceneLooks.Contains(look)) throw J.Error(look, "unknown scene look"); SceneLook = look; }
+
+    public void SetKnob(string id, double value) => SetKnob(Family, id, value);
+    private void SetKnob(ThemeFamily family, string id, double value)
+    {
+        if (!family.Knobs.TryGetValue(id, out Knob? knob)) throw J.Error(id, "unknown knob");
+        if (!double.IsFinite(value) || value < knob.Min || value > knob.Max) throw J.Error(id, "outside its range");
+        if (!knobs.TryGetValue(family.Id, out var set)) knobs[family.Id] = set = new SortedDictionary<string, double>(StringComparer.Ordinal);
+        set[id] = value;
+    }
+
+    public void ResetKnobs() => knobs.Remove(Theme);
+
+    public TokenSet Resolve() => new(system, Family, Density, DisplayScale,
+        ThemeFamily.KnobIds.ToDictionary(id => id, Knob), null, HighContrast);
+
+    private static string N(double v) => v.ToString("R", CultureInfo.InvariantCulture);
+
+    // One line per setting, in a fixed order.
+    public string Store()
+    {
+        var lines = new List<string> { "theme=" + Theme, "density=" + Density, "scale=" + N(DisplayScale), "contrast=" + (HighContrast ? "high" : "standard"), "scene=" + SceneLook };
+        foreach (var family in knobs) foreach (var knob in family.Value) lines.Add($"knob.{family.Key}.{knob.Key}={N(knob.Value)}");
+        return string.Join("\n", lines);
+    }
+
+    // A stored appearance is applied whole or refused whole.
+    public static Appearance Parse(string stored, DesignSystem system, IReadOnlyList<ThemeFamily> themes)
+    {
+        var result = new Appearance(system, themes);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string line in stored.Split('\n'))
+        {
+            int cut = line.IndexOf('=');
+            if (cut <= 0) throw J.Error("appearance", "expected name=value lines");
+            string name = line.Substring(0, cut), value = line.Substring(cut + 1);
+            if (!seen.Add(name)) throw J.Error(name, "repeated setting");
+            double Number() => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double v) ? v : throw J.Error(name, "expected a number");
+            string[] parts = name.Split('.');
+            if (name == "theme") result.SetTheme(value);
+            else if (name == "density") result.Density = system.Densities.Contains(value) ? value : throw J.Error(value, "unknown density preset");
+            else if (name == "scale") result.DisplayScale = Number();
+            else if (name == "contrast") result.HighContrast = value == "high" ? true : value == "standard" ? false : throw J.Error(name, "expected high or standard");
+            else if (name == "scene") result.SetSceneLook(value);
+            else if (parts.Length == 3 && parts[0] == "knob" && themes.FirstOrDefault(t => t.Id == parts[1]) is { } family) result.SetKnob(family, parts[2], Number());
+            else throw J.Error(name, "unknown setting");
+        }
+        system.Density(result.Density, result.DisplayScale);
+        return result;
+    }
+}

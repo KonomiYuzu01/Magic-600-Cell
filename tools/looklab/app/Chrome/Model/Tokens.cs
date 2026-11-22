@@ -350,11 +350,12 @@ public sealed class TokenSet
     // True when a state or encoding role differs from its shipped colour: the view frame then shows the
     // "non-standard colours" mark (ADR-D01.51).
     public bool NonStandardColours { get; }
+    public bool HighContrast { get; }
 
     public TokenSet(DesignSystem system, ThemeFamily theme, string density, double displayScale,
-        IReadOnlyDictionary<string, double>? knobs = null, IReadOnlyDictionary<string, Oklch>? overrides = null)
+        IReadOnlyDictionary<string, double>? knobs = null, IReadOnlyDictionary<string, Oklch>? overrides = null, bool highContrast = false)
     {
-        System = system; Theme = theme; Density = density; DisplayScale = displayScale;
+        HighContrast = highContrast; System = system; Theme = theme; Density = density; DisplayScale = displayScale;
         Sizes = system.Density(density, displayScale);
         var values = new SortedDictionary<string, double>(StringComparer.Ordinal);
         foreach (Knob knob in theme.Knobs.Values)
@@ -374,6 +375,17 @@ public sealed class TokenSet
             Rgb a = colours[role.Value.MixFrom!].Value, b = colours[role.Value.MixTo!].Value;
             double t = Math.Clamp(values[role.Value.MixKnob!] * role.Value.MixScale, 0, 1);
             colours.Add(role.Key, new ResolvedColour(new Rgb(a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t, a.B + (b.B - a.B) * t), false));
+        }
+        if (highContrast)
+        {
+            // High contrast (ADR-D01.35): text and lines at the end of the scale on a ground at the other end;
+            // each weaker text step takes the next stronger one. State and encoding colours are not changed.
+            bool dark = theme.Scheme == "dark";
+            Rgb end = dark ? new Rgb(1, 1, 1) : new Rgb(0, 0, 0), ground = dark ? new Rgb(0, 0, 0) : new Rgb(1, 1, 1);
+            Rgb primary = colours["text.primary"].Value, secondary = colours["text.secondary"].Value;
+            foreach ((string role, Rgb value) in new[] { ("text.primary", end), ("text.secondary", primary), ("text.disabled", secondary),
+                ("border.subtle", secondary), ("border.strong", end), ("surface.window", ground), ("surface.sunken", ground) })
+                colours[role] = new ResolvedColour(value, false);
         }
         if (overrides != null) foreach (var entry in overrides)
         {

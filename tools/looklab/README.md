@@ -939,5 +939,5 @@ so the structure is easier to read. Checks, stills and shots do not read it. A p
 state through `LabApp.ViewParts`.
 
 `python tools/looklab/check.py --godot` adds one result line,
-`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=6 checks=2`, and
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=7 checks=3`, and
 three faults that must fail their own check.

@@ -140,7 +140,16 @@ public sealed partial class ChromeFrame : Control
         panes[id] = new Pane(id, title, content); dirty = true;
     }
 
-    public void ApplyTokens(TokenSet tokens) { Tokens = tokens; Build(); }
+    // A new token set. Sizes and faces need the frame rebuilt; a colour change only needs the theme, so a knob
+    // can be dragged without the control under the pointer being replaced.
+    public void ApplyTokens(TokenSet tokens, bool rebuild = true)
+    {
+        Tokens = tokens;
+        if (rebuild) { Build(); return; }
+        Theme = ChromeTheme.Build(tokens); Notice.AddThemeColorOverride("font_color", tokens.C("severity.warning"));
+        Recoloured?.Invoke();
+    }
+    public event Action? Recoloured;
 
     // Applying a workspace is the solver's action; it changes the arrangement and nothing else (ADR-D01.38, ADR-D01.39).
     public bool SelectWorkspace(string id)

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Godot;
+using LookLab.Core;
 using Magic600.Chrome;
 
 namespace LookLab.App.Live;
@@ -33,16 +34,41 @@ internal static class LabFrame
     {
         string folder = Path.Combine(root, "tools/looklab/data/design");
         DesignSystem design = DesignSystem.Load(Path.Combine(folder, "system.json"));
-        ThemeFamily theme = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)
-            .Select(p => ThemeFamily.Load(p, design)).First();
-        var tokens = new TokenSet(design, theme, design.ShippedDensity, 1);
-        var frame = new ChromeFrame(tokens, WorkspaceSet.Load(Path.Combine(folder, "workspaces.json")));
+        ThemeFamily[] themes = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)
+            .Select(p => ThemeFamily.Load(p, design)).ToArray();
+        var look = new Appearance(design, themes);
+        var frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json")));
         app.EnterFrame();
         foreach (var panel in Panels) frame.AddDockPanel(panel.Side, panel.Id, panel.Title, panel.Glyph, ChromeWidgets.Empty(panel.Title, panel.Hint));
         frame.AddDockPanel(DockSide.Right, Tune, "Tune", "~", app.ParameterPanel);
         foreach (var pane in Panes) frame.AddPane(pane.Id, pane.Title, ChromeWidgets.Empty(pane.Title, pane.Hint));
         frame.AddPane(Greybox, "Greybox", app.Greybox.Canvas);
         frame.SetMainViews(app.GlobalStage, app.Linked.LocalStage!);
+        // The theme button in the top bar steps through the families; the scene behind the puzzle follows the
+        // family's scene look, written through the lab's own parameters and inside their ranges.
+        Button themeButton = ChromeWidgets.Tool(look.Family.Name, "Theme family: click for the next one"); themeButton.Name = "ThemeButton";
+        frame.BarTools.AddChild(themeButton);
+        void ApplyScene()
+        {
+            foreach (var value in look.Family.Scenes[look.SceneLook])
+                app.State.Set(value.Key, ParameterSchema.ReadValue(app.State.Schema[value.Key], value.Value));
+        }
+        void ApplyLook(bool rebuild, bool scene)
+        {
+            themeButton.Text = look.Family.Name;
+            frame.ApplyTokens(look.Resolve(), rebuild);
+            if (scene) ApplyScene();
+        }
+        themeButton.Pressed += () =>
+        {
+            int next = (Array.FindIndex(themes, t => t.Id == look.Theme) + 1) % themes.Length;
+            look.SetTheme(themes[next].Id); ApplyLook(true, true);
+        };
+        app.ViewParts["frame.appearance"] = (() => look.Store(), v =>
+        {
+            try { look = Appearance.Parse(v, design, themes); ApplyLook(true, false); }
+            catch (FormatException) { }
+        });
         frame.Health.Text = "Look Lab · full detail · 259,800 slots";
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         // The lab opens on its own panel; every other default comes from the workspace.
@@ -70,7 +96,7 @@ internal static class LabFrame
             frame.Global.SetStatus(null, new[] { "drag: rotate 4D" }, $"gap {F("gap")}  shrink {F("stickerShrink")}");
             frame.Local.SetStatus("moving cells", new[] { "drag: rotate 4D" }, "follows Global");
         }
-        frame.Rebuilt += Describe;
+        frame.Rebuilt += Describe; frame.Recoloured += Describe;
         app.State.Changed += (_, _) => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         app.ViewParts["frame.workspace"] = (() => frame.Workspace, v => { if (frame.Workspaces.Stored.ContainsKey(v)) frame.SelectWorkspace(v); });
         app.ViewParts["frame.zlayout"] = (() => frame.Model.Store(), v => frame.Model.Apply(v));

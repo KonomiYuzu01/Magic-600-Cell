@@ -84,6 +84,40 @@ internal static partial class Program
         Refuse(() => new TokenSet(Design, theme, "compact", 1, null, TokenOverrides.Parse(file.Replace("0.7", "1.7").Replace("ROLE", "state.preview"), theme)), "state.preview");
     }
 
+    private static void A5AppearanceResolvesStoresAndRefuses()
+    {
+        ThemeFamily[] themes = Themes();
+        var look = new Appearance(Design, themes);
+        Equal(look.Theme, themes[0].Id); Equal(look.Density, "compact"); Check(!look.Tuned && !look.HighContrast, "a fresh appearance is tuned");
+        Equal(look.Resolve().Colour("surface.panel"), new TokenSet(Design, themes[0], "compact", 1).Colour("surface.panel"));
+        look.SetKnob("accentHue", 20); look.SetTheme(themes[1].Id);
+        Check(!look.Tuned && look.Knob("accentHue") == themes[1].Knobs["accentHue"].Default, "a knob of one family moved another");
+        look.SetTheme(themes[0].Id); Check(look.Tuned && look.Knob("accentHue") == 20, "a family lost its knob");
+        look.SetDensity("comfortable"); look.SetDisplayScale(1.25); look.SetSceneLook("inspecting"); look.HighContrast = true;
+        Appearance again = Appearance.Parse(look.Store(), Design, themes);
+        Equal(again.Store(), look.Store()); Equal(again.Resolve().Size("control.height"), look.Resolve().Size("control.height"));
+        // High contrast: text and lines at the end of the scale, in both schemes, with every contrast rule still met.
+        foreach (ThemeFamily theme in themes)
+        {
+            var plain = new TokenSet(Design, theme, "compact", 1); var high = new TokenSet(Design, theme, "compact", 1, null, null, true);
+            Near(Oklch.Contrast(high.Colour("text.primary"), high.Colour("surface.window")), 21);
+            Check(Oklch.Contrast(high.Colour("border.subtle"), high.Colour("surface.panel")) > Oklch.Contrast(plain.Colour("border.subtle"), plain.Colour("surface.panel")) * 2, "high contrast borders are not stronger");
+            Sequence(high.ContrastIssues(), Array.Empty<string>()); Check(!high.NonStandardColours, "high contrast counted as a colour override");
+            Equal(high.Colour("state.preview"), plain.Colour("state.preview"));
+        }
+        look.ResetKnobs(); Check(!look.Tuned, "knobs not reset");
+        Refuse(() => look.SetTheme("neon"), "neon"); Refuse(() => look.SetDensity("roomy"), "roomy"); Refuse(() => look.SetDisplayScale(9), "displayScale");
+        Refuse(() => look.SetKnob("tone", 5), "tone"); Refuse(() => look.SetSceneLook("resting"), "resting");
+        string stored = again.Store();
+        foreach ((string from, string to, string name) in new[] { ("scale=1.25", "scale=40", "displayScale"), ("contrast=high", "contrast=max", "contrast"),
+            ("density=comfortable", "density=roomy", "roomy"), ("scene=inspecting", "scene=inspecting\nscene=solving", "scene"), ("accentHue=20", "accentHue=720", "accentHue"),
+            ("theme=", "family=", "family") })
+        {
+            Check(stored.Contains(from, StringComparison.Ordinal), "fixture lost " + from);
+            Refuse(() => Appearance.Parse(stored.Replace(from, to), Design, themes), name);
+        }
+    }
+
     private static void A5TokensFileRefusals()
     {
         string system = Read("data/design/system.json"), theme = File.ReadAllText(Directory.GetFiles(FileAt("data/design/themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal).First());

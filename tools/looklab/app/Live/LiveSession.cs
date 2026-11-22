@@ -161,7 +161,7 @@ internal static class LiveChecks
         var restarted = new LiveSession(root, folder); host.AddChild(restarted);
         Same(before, restarted.App.CaptureView(), first.State.Schema, fault, "restart");
         Framed(restarted, fault);
-        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=2");
+        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=3");
     }
 
     // The window frame around the lab: both main views in the locked pair, the lab's panel in the right dock,
@@ -174,6 +174,14 @@ internal static class LiveChecks
         Require(frame.Model.Docks[DockSide.Right].Open == LabFrame.Tune && frame.IsAncestorOf(app.ParameterPanel), fault, "the Tune panel is not in the right dock");
         Require(frame.Model.IsOpen(LabFrame.Greybox) && frame.IsAncestorOf(app.Greybox.Canvas), fault, "the open greybox is not a pane of the frame");
         Require(frame.FindChild("TopBar", true, false) != null && frame.Workspaces.Order.SequenceEqual(new[] { "solve", "script", "analyse", "reference" }), fault, "top bar or workspaces missing");
+        // The theme button: the other family, the scene behind the puzzle follows, and the choice is kept.
+        var themeButton = (Button)frame.FindChild("ThemeButton", true, false);
+        string family = frame.Tokens.Theme.Id; Color window = frame.Tokens.C("window.background");
+        double ground = app.State.Preset.Params.Number("bgLightness");
+        themeButton.EmitSignal(BaseButton.SignalName.Pressed); frame.Flush();
+        Require(frame.Tokens.Theme.Id != family && frame.Tokens.C("window.background") != window && themeButton.Text == frame.Tokens.Theme.Name &&
+            app.State.Preset.Params.Number("bgLightness") != ground && app.CaptureView().Ui["frame.appearance"].Contains("theme=" + frame.Tokens.Theme.Id, StringComparison.Ordinal),
+            fault, "the theme button did not switch the family and the scene");
         string before = frame.Model.Store();
         bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);
         if (fault == "a5-pair-hidden") refused = false;

@@ -102,6 +102,7 @@ internal static partial class Program
             ("A5TokensKnobsMoveSeedsInsideTheirRanges", A5TokensKnobsMoveSeedsInsideTheirRanges),
             ("A5TokensOverridesFlagNonStandardStateColours", A5TokensOverridesFlagNonStandardStateColours),
             ("A5TokensFileRefusals", A5TokensFileRefusals),
+            ("A5AppearanceResolvesStoresAndRefuses", A5AppearanceResolvesStoresAndRefuses),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),
