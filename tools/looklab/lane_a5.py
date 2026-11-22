@@ -3,7 +3,7 @@ import re
 
 
 CHECKS = (
-    ("a5-live", r"LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=10 checks=7"),
+    ("a5-live", r"LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=12 checks=7"),
 )
 FAULTS = (
     ("a5-live", "a5-view-dropped"),

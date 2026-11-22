@@ -49,6 +49,9 @@ public sealed partial class CommandPalette : ChromeOverlay
     public IReadOnlyList<PaletteRow> Rows { get; private set; } = Array.Empty<PaletteRow>();
     public int Selected { get; private set; }
     public event Action<PaletteRow>? Run;
+    // Typed mode also takes a whole 600 Cell Script line (ADR-D01.59) and keeps its own history.
+    public event Action<string>? TypedLine;
+    public LineHistory History { get; } = new();
     private readonly VBoxContainer list = new() { Name = "PaletteRows" };
     private readonly Label count = new() { ThemeTypeVariation = "MicroLabel" };
 
@@ -69,6 +72,11 @@ public sealed partial class CommandPalette : ChromeOverlay
     private void Typed(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true } key) return;
+        if (Query.Text.StartsWith('>') && Rows.Count == 0 && key.Keycode is Godot.Key.Up or Godot.Key.Down)
+        {
+            Type("> " + History.Step(key.Keycode == Godot.Key.Up ? -1 : 1)); Query.CaretColumn = Query.Text.Length; Query.AcceptEvent();
+            return;
+        }
         if (key.Keycode == Godot.Key.Down) Move(1);
         else if (key.Keycode == Godot.Key.Up) Move(-1);
         else if (key.Keycode is Godot.Key.Enter or Godot.Key.KpEnter) Accept();
@@ -82,6 +90,11 @@ public sealed partial class CommandPalette : ChromeOverlay
     // Runs the highlighted row. An unavailable row stays on screen with its reason; nothing runs.
     public bool Accept()
     {
+        if (Query.Text.StartsWith('>') && Query.Text.Substring(1).Trim() is { Length: > 0 } line && (Rows.Count == 0 || line.Contains('(')))
+        {
+            History.Add(line); Close(); TypedLine?.Invoke(line);
+            return true;
+        }
         if (Selected >= Rows.Count) return false;
         PaletteRow row = Rows[Selected];
         if (row.Unavailable != null) { Describe(); return false; }
@@ -107,7 +120,7 @@ public sealed partial class CommandPalette : ChromeOverlay
     {
         if (Rows.Count == 0)
         {
-            Help.Text = Query.Text.StartsWith('>') ? "Typed mode: a command id, then its argument. A run ends in a read result or a preview, never a commit." : "No command matches. The palette always holds every command.";
+            Help.Text = Query.Text.StartsWith('>') ? "Typed mode: a command id and its argument, or a 600 Cell Script line. Up recalls a line. A run ends in a read result or a preview, never a commit." : "No command matches. The palette always holds every command.";
             return;
         }
         PaletteRow row = Rows[Math.Min(Selected, Rows.Count - 1)];

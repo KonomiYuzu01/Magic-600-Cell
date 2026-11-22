@@ -147,7 +147,9 @@ public sealed record PaletteRow(string Command, string? Argument, string Label, 
 public sealed class PaletteModel
 {
     private readonly CommandRegistry registry;
-    private readonly Keymap keymap;
+    private Keymap keymap;
+    // The keymap in force; it changes when the solver binds a key or swaps the preset.
+    public Keymap Keymap { get => keymap; set => keymap = value; }
     private readonly Func<string, string?, string?> unavailable;
     private readonly Dictionary<string, (int Count, long Last)> uses = new(StringComparer.Ordinal);
     private readonly SortedSet<string> pins = new(StringComparer.Ordinal);

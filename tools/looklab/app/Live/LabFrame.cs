@@ -15,6 +15,8 @@ internal static class LabFrame
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabDemo> Demos = new();
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabInspect> Inspects = new();
     public static LabInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out LabInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabScripts> AllScripts = new();
+    public static LabScripts ScriptsOf(ChromeFrame frame) => AllScripts.TryGetValue(frame, out LabScripts? scripts) ? scripts : throw new InvalidOperationException("the frame has no lab scripts");
     public static LabDemo DemoOf(ChromeFrame frame) => Demos.TryGetValue(frame, out LabDemo? demo) ? demo : throw new InvalidOperationException("the frame has no lab session");
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
@@ -22,6 +24,8 @@ internal static class LabFrame
         (DockSide.Left, "history", "History", "panel.history", "Puzzle history and layout history appear here."),
         (DockSide.Left, "scripts", "Scripts", "panel.scripts", "The session's .6cs programs and panels appear here."),
         (DockSide.Right, "inspector", "Inspector", "panel.inspector", "Select a cell, a sticker or a command to inspect it."),
+        (DockSide.Right, "slot.1", "Script panel 1", "panel.slot1", "A panel a script declares mounts here."),
+        (DockSide.Right, "slot.2", "Script panel 2", "panel.slot2", "A panel a script declares mounts here."),
         (DockSide.Bottom, "problems", "Problems", "panel.problems", "No problems."),
         (DockSide.Bottom, "console", "Console", "panel.console", "The 600 Cell Script console appears here."),
         (DockSide.Bottom, "tasks", "Tasks", "panel.tasks", "No task is running."),
@@ -96,8 +100,12 @@ internal static class LabFrame
         // lab has no engine, so only the commands the frame itself carries out are available here.
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
+        LabScripts scripts = null!;
         string? Unavailable(string command, string? argument) => command switch
         {
+            "keymap.defaults" or "file.keymap.export" => null,
+            "panel.mount" or "panel.unmount" => argument != null ? null : "it needs the id of a script panel",
+            _ when command.StartsWith("script.", StringComparison.Ordinal) => scripts?.Unavailable(command),
             "command.find" or "transient.close" or "help.open" => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
@@ -121,8 +129,14 @@ internal static class LabFrame
         void Execute(string command, string? argument)
         {
             if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
+            scripts.Echo(command, argument);
             switch (command)
             {
+                case "keymap.defaults": scripts.Defaults(); break;
+                case "file.keymap.export": scripts.Export(); break;
+                case "panel.mount": scripts.Mount(argument!); break;
+                case "panel.unmount": if (!scripts.Slots.Unmount(argument!)) frame.Say("No script panel is named " + argument, true); break;
+                case var entry when entry.StartsWith("script.", StringComparison.Ordinal): scripts.RunEntry(entry); break;
                 case "command.find": palette.Open(); break;
                 case var menu when keymap.Radials.ContainsKey(menu): radial.Open(keymap.Radials[menu], frame.GetLocalMousePosition()); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
@@ -151,6 +165,15 @@ internal static class LabFrame
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
         inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
         app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
+        // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.
+        scripts = new LabScripts(frame, demo, inspect, registry, keymap, root, Execute, k =>
+        {
+            keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; demo.Bar.CommitKeys = k.KeysFor("operation.preview.commit", null);
+        });
+        AllScripts.Add(frame, scripts);
+        palette.TypedLine += scripts.RunLine;
+        app.ViewParts["frame.keymap"] = (() => scripts.Store(), v => scripts.Restore(v));
+        app.ViewParts["frame.slots"] = (() => scripts.Slots.Store(), v => scripts.Slots.Restore(v));
         app.ViewParts["frame.labels"] = (() => frame.Labels ? "on" : "off", v => frame.Labels = v == "on");
         frame.Contexts = () => demo.Preview.Pending != null ? new[] { "preview" } : Array.Empty<string>();
         app.ViewParts["frame.palette"] = (() => commands.Store(), v => { try { commands.Restore(v); } catch (FormatException) { } });

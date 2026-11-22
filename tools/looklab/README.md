@@ -960,6 +960,20 @@ Labels are off by default; the tag button in the top bar turns them on (view
 part `frame.labels`). The theme follows the Windows
 light or dark setting until a choice is kept.
 
+The script interface (ADR-D01 section 6 and ADR-D01.57 to ADR-D01.59) is in
+the chrome library: the `.6cs` editor pane with diagnostics beside the code,
+the Scripts dock, the console line, the palette's typed mode for a whole
+line, two script panel slots in the right dock and the canvas. Every exported
+`fn` or `command` of a program is a command row `script.<program>.<entry>`,
+so the palette lists it and a key binds to it. Own bindings are kept apart
+from the default keymap (view part `frame.keymap`) and over the preset in
+force (`data/design/keymaps/`); `file.keymap.export` writes them as a
+versioned keymap file. Ctrl+Enter in the editor runs the entry point at the
+caret and Ctrl+Shift+Enter is the commit key there. Look Lab has no
+interpreter: the entry points of the sample programs in `data/samples/` are
+wired by hand in `app/Live/LabScripts.cs`, their values are sample values,
+and an edited program is checked but not saved.
+
 `python tools/looklab/check.py --godot` adds one result line,
-`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=10 checks=7`, and
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=12 checks=7`, and
 three faults that must fail their own check.

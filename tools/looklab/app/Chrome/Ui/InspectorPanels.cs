@@ -219,15 +219,34 @@ public sealed partial class FeedbackPanel : VBoxContainer
     public int? Found { get; private set; }
     // A row was chosen: the host opens its source line and marks its puzzle element.
     public event Action<Problem>? Opened;
+    // The console's typed line (ADR-D01.57): Enter sends it to the host, Up and Down step its history.
+    public LineEdit Input { get; } = new() { PlaceholderText = "A 600 Cell Script line, then Enter. A line never commits.", Name = "ConsoleInput" };
+    public LineHistory History { get; } = new();
+    public event Action<string>? Entered;
+    public void Enter(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return;
+        History.Add(line.Trim()); Input.Text = ""; Entered?.Invoke(line.Trim());
+    }
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer bar = new();
+    private readonly ScrollContainer scroll = new() { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
 
     public FeedbackPanel(FeedbackModel model, Kind shows, Func<TokenSet> tokens)
     {
         Model = model; Shows = shows; this.tokens = tokens; Name = shows + "Panel";
         AddThemeConstantOverride("separation", 0);
         AddChild(bar);
-        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }; AddChild(scroll); scroll.AddChild(List);
+        AddChild(scroll); scroll.AddChild(List);
+        if (shows == Kind.Console)
+        {
+            AddChild(Input); Input.TextSubmitted += Enter;
+            Input.GuiInput += e =>
+            {
+                if (e is not InputEventKey { Pressed: true } key || key.Keycode is not (Key.Up or Key.Down)) return;
+                Input.Text = History.Step(key.Keycode == Key.Up ? -1 : 1); Input.CaretColumn = Input.Text.Length; Input.AcceptEvent();
+            };
+        }
         model.Changed += Refresh;
         Refresh();
     }
@@ -277,6 +296,8 @@ public sealed partial class FeedbackPanel : VBoxContainer
         {
             foreach (string text in Model.Console) List.AddChild(ChromeWidgets.Text(text, "CodeLabel", true));
             if (Model.Console.Count == 0) List.AddChild(ChromeWidgets.Text("  The console is empty.", "MicroLabel"));
+            // The newest line stays in view.
+            Callable.From(() => { if (IsInstanceValid(scroll)) scroll.ScrollVertical = (int)scroll.GetVScrollBar().MaxValue; }).CallDeferred();
         }
         else
         {

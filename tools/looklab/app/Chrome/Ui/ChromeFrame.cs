@@ -243,8 +243,12 @@ public sealed partial class ChromeFrame : Control
         return chain;
     }
 
+    // While set, the next key goes to it instead of the keymap: the Scripts dock binds a key this way.
+    public Action<string>? KeyCapture { get; set; }
+
     public bool Press(string key)
     {
+        if (KeyCapture is { } capture) { KeyCapture = null; capture(key); return true; }
         ChromeOverlay? overlay = OpenOverlay;
         if (overlay != null && overlay.Key(key)) return true;
         if (Keys?.Resolve(key, KeyContexts()) is not { } binding) return false;

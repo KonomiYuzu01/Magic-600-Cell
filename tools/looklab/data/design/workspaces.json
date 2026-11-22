@@ -34,13 +34,13 @@
           "bottom": null
         },
         "pair": {
-          "arrangement": "stacked",
+          "arrangement": "side",
           "ratio": 0.5
         },
         "focus": false,
         "centre": {
           "split": "horizontal",
-          "ratio": 0.58,
+          "ratio": 0.6,
           "a": {
             "tabs": [
               "pair"
@@ -99,13 +99,13 @@
           "bottom": null
         },
         "pair": {
-          "arrangement": "stacked",
+          "arrangement": "side",
           "ratio": 0.5
         },
         "focus": false,
         "centre": {
           "split": "horizontal",
-          "ratio": 0.6,
+          "ratio": 0.62,
           "a": {
             "tabs": [
               "pair"

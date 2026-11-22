@@ -1,0 +1,17 @@
+edition "6cs-draft-1";
+# A Look Lab sample: a read program with a docked panel and a canvas drawing.
+
+# Counts the elements of the puzzle and mounts a panel in a script slot.
+# The host draws the panel from this declaration, inside the script frame.
+export fn orbits() -> record { cells: Nat, edges: Nat, faces: Nat, vertices: Nat } effects [snapshot] {
+    let found = record { cells: count(cells()), edges: count(edges()), faces: count(faces()), vertices: count(vertices()) };
+    panel("census.orbits", table(found), chart(found));
+    return found;
+}
+
+# Draws the twelve fibres of the vertices on the canvas. Display only.
+export fn fibres() -> Nat effects [snapshot] {
+    let rings = hopf_fibres(vertices());
+    canvas(for ring in rings { dot(base_point(ring)) });
+    return count(rings);
+}

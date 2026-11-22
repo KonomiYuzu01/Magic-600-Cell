@@ -227,6 +227,18 @@
     "prov.script": {
       "glyph": "braces",
       "fallback": "="
+    },
+    "script.run": {
+      "glyph": "play",
+      "fallback": ">"
+    },
+    "panel.slot1": {
+      "glyph": "panel-right",
+      "fallback": "S1"
+    },
+    "panel.slot2": {
+      "glyph": "panel-right-dashed",
+      "fallback": "S2"
     }
   }
 }

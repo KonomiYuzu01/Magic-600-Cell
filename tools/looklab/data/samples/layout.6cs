@@ -1,0 +1,11 @@
+edition "6cs-draft-1";
+# A Look Lab sample: entry points that rearrange the layout. Bind a key to
+# one in the Scripts dock. A layout change belongs to the layout history.
+
+export command side_by_side() -> View effects [view] {
+    return arrange(pair(side, 0.5));
+}
+
+export command stacked() -> View effects [view] {
+    return arrange(pair(stacked, 0.5));
+}

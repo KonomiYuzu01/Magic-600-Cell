@@ -16,7 +16,8 @@ public sealed partial class ShortcutSheet : ChromeOverlay
     };
     public int Shown { get; private set; }
     private readonly CommandRegistry registry;
-    private readonly Keymap keymap;
+    private Keymap keymap;
+    public Keymap Keymap { get => keymap; set => keymap = value; }
     private readonly HBoxContainer columns = new() { Name = "ShortcutColumns" };
 
     public ShortcutSheet(CommandRegistry registry, Keymap keymap, Func<TokenSet> tokens) : base(tokens, .8f, .08f)

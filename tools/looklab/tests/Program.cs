@@ -108,6 +108,7 @@ internal static partial class Program
             ("A5CommandsRegistryKeymapAndPalette", A5CommandsRegistryKeymapAndPalette),
             ("A5SessionPreviewAndTwoHistories", A5SessionPreviewAndTwoHistories),
             ("A5InspectorFieldsAndFeedbackIndex", A5InspectorFieldsAndFeedbackIndex),
+            ("A5ScriptsEntriesKeysAndSlots", A5ScriptsEntriesKeysAndSlots),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

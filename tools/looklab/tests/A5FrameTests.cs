@@ -95,6 +95,37 @@ internal static partial class Program
         Refuse(() => again.Restore("use|theme.tune||many|1"), "palette");
     }
 
+    private static void A5ScriptsEntriesKeysAndSlots()
+    {
+        string source = "edition \"6cs-draft-1\";\n# a note with one \" in it\nexport fn reach(ring: Nat) -> Nat effects [snapshot] {\n    return ring;\n}\n" +
+            "export command ring(ring: Nat) -> Preview effects [preview] {\n    return preview(sweep(ring));\n}\nfn inner() -> Nat effects [] {\n    return 1;\n}\n";
+        var entries = SixCs.Entries("sweep", source);
+        Sequence(entries.Select(e => e.Command), new[] { "script.sweep.reach", "script.sweep.ring" });
+        Check(entries[0].Kind == ScriptKind.Read && entries[0].Line == 3 && entries[1].Kind == ScriptKind.Preview && entries[1].Line == 6, "an entry point has the wrong kind or line");
+        Equal(SixCs.Diagnose(source).Count, 0);
+        var bad = SixCs.Diagnose("export fn f() -> Nat effects [commit] {\n    let x;\n    return g(1;\n");
+        Check(bad.Any(d => d.Line == 1 && d.Severity == Severity.Error && d.Text.Contains("never commits")) && bad.Any(d => d.Line == 2 && d.Severity == Severity.Warning) &&
+            bad.Count(d => d.Text.Contains("never closed")) == 2 && bad.Any(d => d.Severity == Severity.Info), "a broken program was not diagnosed");
+        var registry = new CommandRegistry();
+        registry.Add(new ChromeCommand("command.find", "Find", "app", new[] { "any" }, "")); registry.Add(new ChromeCommand("script.sweep.ring", "sweep.6cs: ring", "query", new[] { "any" }, ""));
+        Keymap defaults = Keymap.Parse("{\"format\": \"magic600-design-keymap\", \"version\": 1, \"radials\": {}, \"bindings\": [{\"key\": \"F1\", \"context\": \"global\", \"command\": \"command.find\"}]}", registry);
+        var own = new KeymapOverrides(); own.Bind("F6", "global", "script.sweep.ring"); own.Bind("F1", "global", "script.sweep.ring");
+        Keymap both = own.Over(defaults, registry); string[] global = { "global" };
+        Check(both.Resolve("F6", global)?.Command == "script.sweep.ring" && both.Resolve("F1", global)?.Command == "script.sweep.ring" && defaults.Resolve("F1", global)?.Command == "command.find",
+            "own bindings do not sit over the defaults");
+        Equal(KeymapOverrides.Parse(own.ToJson(), registry, defaults).ToJson(), own.ToJson());
+        Check(own.Unbind("F1", "global") && !own.Unbind("F1", "global") && own.Over(defaults, registry).Resolve("F1", global)?.Command == "command.find", "an unbound key did not return to its default");
+        Refuse(() => KeymapOverrides.Parse(own.ToJson().Replace("script.sweep.ring", "script.gone"), registry, defaults), "unknown command");
+        var lines = new LineHistory(); lines.Add("a"); lines.Add("b"); lines.Add("a"); lines.Add(" ");
+        Sequence(lines.Lines, new[] { "b", "a" });
+        Sequence(new[] { lines.Step(-1), lines.Step(-1), lines.Step(-1), lines.Step(1), lines.Step(1) }, new[] { "a", "b", "b", "a", "" });
+        var slots = new ScriptSlots(); int changes = 0; slots.Changed += () => changes++;
+        Check(slots.Mount("a") == 0 && slots.Mount("b") == 1 && slots.Mount("c") == -1 && slots.Mount("a") == 0 && changes == 2, "the two slots were not filled in order");
+        Check(slots.Unmount("a") && !slots.Unmount("a") && slots.Store() == "|b", "an unmounted panel kept its slot");
+        var again = new ScriptSlots(); again.Restore(slots.Store()); again.Restore("one part");
+        Equal(again.Store(), "|b");
+    }
+
     private static void A5InspectorFieldsAndFeedbackIndex()
     {
         var model = new InspectorModel(); int edits = 0; model.Edited += _ => edits++;
