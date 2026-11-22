@@ -2858,14 +2858,6 @@ impl<S: Store> CommandLayer<S> {
         Ok((Some(id), Status::Running(id)))
     }
 
-    /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6, or a work
-    /// sheet, whose complete operation it previews ([`RecordValue::operation`]; `KN2:input.named_object_invalid`
-    /// otherwise). In a solving session the host's provenance reader must admit the record's block, or the draft is
-    /// refused with the reader's error (`LG3:capability.not_granted` without a reader). The record is checked before
-    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. In
-    /// a `tool_authoring` or `research` session KN5.26 does not apply and no reader is asked, so the solver's own
-    /// preview there, and a commit of it, needs no admission; a record previewed later in a solving session meets its
-    /// check there (BND.61; draft). The read set holds the record's content digest and version.
     /// Whether record `name` holds a value the solver kept with `workspace.set` (ADR-D01.12; the layer's `kept`).
     fn kept_now(&self, name: &str) -> bool {
         let value = self.records.get(name).and_then(|record| record.value.as_ref());
@@ -2882,6 +2874,14 @@ impl<S: Store> CommandLayer<S> {
         })
     }
 
+    /// Resolves a draft `{"record": name}` (KN0.8, KN5.26): the record must hold a list of letters, as in M6, or a work
+    /// sheet, whose complete operation it previews ([`RecordValue::operation`]; `KN2:input.named_object_invalid`
+    /// otherwise). In a solving session the host's provenance reader must admit the record's block, or the draft is
+    /// refused with the reader's error (`LG3:capability.not_granted` without a reader). The record is checked before
+    /// the reader, so a session without a reader answers `named_object_invalid` for a record that holds no letters. In
+    /// a `tool_authoring` or `research` session KN5.26 does not apply and no reader is asked, so the solver's own
+    /// preview there, and a commit of it, needs no admission; a record previewed later in a solving session meets its
+    /// check there (BND.61; draft). The read set holds the record's content digest and version.
     fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
         let record = self.records.get(name);
         let Some(value) = record.and_then(|record| record.value.as_ref()) else {

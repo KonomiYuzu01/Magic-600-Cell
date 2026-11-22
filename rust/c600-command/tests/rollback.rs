@@ -400,3 +400,79 @@ fn the_explore_state_pauses_a_rollback() {
     assert_eq!(code_of(&f.roll(a)), code::COMMITS_PAUSED);
     f.unchanged(order, &digest);
 }
+
+/// The integrator's ruling, point 3: the layer holds the writer for the whole gesture, so each step's admission is
+/// based on its own pre-step state, the steps take consecutive orders, and a press another writer prepared before the
+/// gesture is refused as stale afterwards and folds nothing into it.
+#[test]
+fn an_interleaved_writer_is_refused_as_stale() {
+    let mut f = fixture();
+    f.commit(&[1]);
+    f.commit(&[2]);
+    f.commit(&[3]);
+    let hint = f.layer.undo_hint(Direction::Undo).unwrap();
+    let other = f.shell.prepare(&f.layer, "session.undo", json::object([("hint", hint.to_json())])).unwrap();
+    let press = f.roll(0);
+    assert!(committed(&press), "{:?}", press.status);
+    let log = &f.layer.store().log;
+    assert_eq!(log.len(), 6);
+    for pair in log[3..].windows(2) {
+        assert_eq!(pair[1].pre, pair[0].post, "a step is based on the step before it");
+        assert_eq!(pair[1].order, pair[0].order + 1, "no action between two steps");
+    }
+    assert_eq!(log[3].pre, log[2].post, "the first step is based on the head the press saw");
+
+    let (order, digest) = (f.last_order(), f.digest());
+    let late = f.shell.send(&mut f.layer, other);
+    assert_eq!(code_of(&late), code::UNDO_SUPERSEDED);
+    f.unchanged(order, &digest);
+}
+
+/// LI.30's retry of the same envelope: the press sent again with the same command ID and request answers the same
+/// receipt and takes no step, and each step's lookup by command and request answers its own receipt.
+#[test]
+fn a_retried_press_answers_the_same_receipts() {
+    let mut f = fixture();
+    let a = f.commit(&[1]);
+    f.commit(&[2]);
+    f.commit(&[3]);
+    let hint = f.layer.rollback_hint(a).unwrap();
+    let press = f.shell.prepare(&f.layer, ROLLBACK_ROW, json::object([("hint", hint.to_json())])).unwrap();
+    let first = f.shell.send(&mut f.layer, press.clone());
+    assert!(committed(&first), "{:?}", first.status);
+    let steps = f.layer.rollback_steps(&first.command);
+    assert_eq!(steps.len(), 2);
+    let (order, digest) = (f.last_order(), f.digest());
+
+    let again = f.shell.send(&mut f.layer, press);
+    assert_eq!(again, first);
+    f.unchanged(order, &digest);
+    assert_eq!(f.layer.rollback_steps(&first.command), steps);
+    for step in &steps {
+        assert_eq!(f.layer.outcome(&step.command, &step.request).as_ref(), Some(step));
+    }
+}
+
+/// Redo after a gesture that stopped at j of k: the landed steps are ordinary undos, so a forward rollback redoes
+/// exactly them, with the solver's confirmation for the release, and reaches the state before the gesture; a later
+/// `session.redo` has nothing left.
+#[test]
+fn a_partial_rollback_is_redone_step_by_step() {
+    let mut f = fixture();
+    f.protect(&[0], false);
+    let released = f.protect(&[], true);
+    let a = f.commit(&[1]);
+    let before = f.digest();
+    let press = f.roll(0);
+    assert!(committed(&press), "{:?}", press.status);
+    assert_eq!(f.layer.rollback().map(|r| (r.of, r.landed)), Some((3, 2)));
+    assert_eq!(f.layer.undo_hint(Direction::Redo).map(|hint| hint.target), Some(released));
+
+    let forward = f.roll_with(a, &[("confirm", Value::Bool(true))]);
+    assert!(committed(&forward), "{:?}", forward.status);
+    assert_eq!(f.layer.rollback().map(|r| (r.direction, r.of, r.landed)), Some((Direction::Redo, 2, 2)));
+    assert_eq!(f.digest(), before);
+    assert!(f.layer.protected().orbits().is_empty());
+    assert_eq!(f.layer.undo_hint(Direction::Redo), None);
+    assert_eq!(reopen(f.layer.store().clone()).recovery(), None);
+}

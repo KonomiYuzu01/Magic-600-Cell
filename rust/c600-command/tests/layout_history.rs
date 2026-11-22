@@ -13,7 +13,7 @@ use c600_command::layer::{EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW};
 use c600_command::{
     code, draft_args, Caller, CommandLayer, Completion, CompletionKind, Direction, Error, HeadlessFrames, Invocation,
     JobOutput, Kind, MemoryStore, Overlay, Provenance, Receipt, RecordValue, Secret, Shell, Status, Table,
-    TransactionKind, RECORD_ROW,
+    TransactionKind, RECORD_ROW, ROLLBACK_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -544,4 +544,37 @@ fn only_a_run_inside_a_solver_command_turns_the_explore_state() {
     f.explore(true);
     f.layer.restart(Secret::fixed(SECRET));
     assert!(!f.layer.explore(), "a restart clears the explore state");
+}
+
+/// ADR-D01.14 and ADR-D01.15 (the integrator's ruling, point 6): a multi-step rollback walks the move history only. A
+/// span with layout steps between its commits passes over them, the layout history and its records stay, and no
+/// layout step is a rollback target.
+#[test]
+fn a_rollback_passes_over_the_layout_steps_in_its_span() {
+    let mut f = fixture();
+    assert!(committed(&f.commit(&word(&[1]))));
+    f.theme("design/theme", "dawn");
+    let first = f.last_order().unwrap();
+    assert!(committed(&f.commit(&word(&[2]))));
+    f.theme("design/theme", "dusk");
+    let second = f.last_order().unwrap();
+    assert!(committed(&f.commit(&word(&[3]))));
+    let layout = f.layer.layout_hint(Direction::Undo).map(|hint| hint.target);
+    assert_eq!(layout, Some(second));
+    assert_eq!(f.layer.rollback_hint(first), None, "a layout step is no target");
+    assert_eq!(f.layer.rollback_hint(second), None, "a layout step is no target");
+
+    let hint = f.layer.rollback_hint(0).expect("three commits to roll back");
+    let press = f.shell.invoke(&mut f.layer, ROLLBACK_ROW, json::object([("hint", hint.to_json())])).unwrap();
+    assert!(committed(&press), "{:?}", press.status);
+    assert_eq!(f.layer.rollback().map(|r| (r.of, r.landed)), Some((3, 3)));
+    let rows: Vec<&str> = f.layer.store().log.iter().skip(5).map(|t| t.row.as_str()).collect();
+    assert_eq!(rows, [ROLLBACK_ROW; 3]);
+    assert_eq!(f.layer.undo_hint(Direction::Undo), None);
+    assert_eq!(f.layer.layout_hint(Direction::Undo).map(|hint| hint.target), layout, "the layout history stays");
+    assert_eq!(f.layer.layout_hint(Direction::Redo), None);
+    assert_eq!(f.payload("design/theme"), Some(text("dusk")));
+    let g = reopen(&f.layer);
+    assert_eq!(g.recovery(), None);
+    assert_eq!(g.layout_hint(Direction::Undo), f.layer.layout_hint(Direction::Undo));
 }
