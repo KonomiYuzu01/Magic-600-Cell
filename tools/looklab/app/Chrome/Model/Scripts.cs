@@ -163,7 +163,10 @@ public sealed class LineHistory
 
 // A panel a program declares (ADR-D01.30): the host draws it with design-system widgets. Rows are a small table;
 // bars are a chart; both are display only.
-public sealed record ScriptPanelSpec(string Id, string Title, string Program, IReadOnlyList<(string Label, string Value)> Rows, IReadOnlyList<(string Label, double Value)> Bars);
+public sealed record ScriptPanelSpec(string Id, string Title, string Program, IReadOnlyList<(string Label, string Value)> Rows, IReadOnlyList<(string Label, double Value)> Bars)
+{
+    public IReadOnlyList<PanelWidget> Widgets { get; init; } = Array.Empty<PanelWidget>();
+}
 
 // One mark of the canvas primitive (ADR-D01.31): vector content in design tokens, display only.
 public sealed record CanvasMark(string Shape, double X, double Y, double A, double B, string Colour, string? Text = null)

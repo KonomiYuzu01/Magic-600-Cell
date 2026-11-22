@@ -998,3 +998,22 @@ apart). F8 compares the two Global layouts (rings and the ball), and F9 steps
 through the screens of the current showing. Global is fitted to its pane by
 scale alone. A kept arrangement from an earlier showing is not restored (view
 part `frame.showing`); a fresh start takes the scene of its theme family.
+
+### A5 stage 7: the script interface
+
+The Script workspace opens on `sweep.6cs`. The editor, the Scripts dock, the console, the script panel slots, the
+mounts, the canvas and the package sheet are the chrome library (`app/Chrome/Model/Editor.cs`,
+`app/Chrome/Ui/ScriptPanels.cs`, `app/Chrome/Ui/ScriptWidgets.cs`); `app/Live/LabScripts.cs` wires them to the
+sample programs under `data/samples/`, whose entry points give fixed results.
+
+- Every run waits in a visible queue and ends in a preview, a read result or a view change, never in a commit.
+  A read result stays under its region and dims, with the name of what came between, after a commit or an undo.
+- Diagnostics show in the gutter, at the end of the line, on the scrollbar and in the list; a fix shows as ghost
+  text and Tab takes it. The bug button gives one fault of each severity.
+- `mounts.6cs` mounts in six places (palette entries, a context action, an inspector section, a docked panel, a
+  free view, an overlay annotation), each with a switch in the Scripts dock. Two panel slots, then tabs.
+- `data/samples/packages/ring-tools.json` is a package by another author: its digest binds its source, the consent
+  sheet lists what it asks for, and in a solving session its preview is refused before anything is prepared.
+- A key that commits is never given to a run. Restart scripts and safe mode are in the Scripts dock; F4 opens the
+  command bar; F9 steps through the ten screens of this stage.
+- `a5-sweep` also fails when a script frame holds a commit control.

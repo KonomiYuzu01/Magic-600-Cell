@@ -43,7 +43,8 @@ internal static class Sweep
     {
         string folder = Path.Combine(scratch, Mode);
         string tracePath = OS.GetEnvironment("LOOKLAB_SWEEP_TRACE"); bool trace = tracePath.Length > 0;
-        void Trace(string text) { if (trace) File.AppendAllText(tracePath, text + System.Environment.NewLine); }
+        long began = System.Environment.TickCount64;
+        void Trace(string text) { if (trace) File.AppendAllText(tracePath, (System.Environment.TickCount64 - began) + " " + text + System.Environment.NewLine); }
         Trace("start");
         if (Directory.Exists(folder)) Directory.Delete(folder, true);
         LabErrors.Install(Path.Combine(folder, "errors.log")); LabErrors.Reset(); Trace("errors installed");
@@ -145,6 +146,10 @@ internal static class Sweep
                 await Frames(1); Clean($"a press on {path} in {workspace}");
             }
         }
+        // A script frame never holds a commit control (ADR-D01.58): the commit bar is the frame's own.
+        foreach (PanelContainer script in frame.FindChildren("*", "PanelContainer", true, false).OfType<PanelContainer>().Where(p => p.ThemeTypeVariation == "ScriptFrame"))
+            if (script.FindChildren("*", "Button", true, false).OfType<Button>().Any(b => b.Text == "Commit" || b.TooltipText.StartsWith("Commit", StringComparison.Ordinal)))
+                throw new Exception(Mode + ": a script frame holds a commit control");
         Calm(); await Frames(1);
         // The close request keeps the view and logs nothing.
         session.Closing(false); await Frames(1); Clean("the close request");

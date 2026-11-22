@@ -239,6 +239,138 @@
     "panel.slot2": {
       "glyph": "panel-right-dashed",
       "fallback": "S2"
+    },
+    "script.abort": {
+      "glyph": "octagon-x",
+      "fallback": "x"
+    },
+    "script.rerun": {
+      "glyph": "rotate-cw",
+      "fallback": "r"
+    },
+    "script.mark": {
+      "glyph": "square-code",
+      "fallback": "s"
+    },
+    "follow.pause": {
+      "glyph": "pause",
+      "fallback": "p"
+    },
+    "follow.goto": {
+      "glyph": "locate",
+      "fallback": "g"
+    },
+    "editor.wrap": {
+      "glyph": "wrap-text",
+      "fallback": "w"
+    },
+    "editor.unused": {
+      "glyph": "eraser",
+      "fallback": "u"
+    },
+    "editor.faults": {
+      "glyph": "bug",
+      "fallback": "f"
+    },
+    "kind.read": {
+      "glyph": "eye",
+      "fallback": "r"
+    },
+    "kind.view": {
+      "glyph": "layout-grid",
+      "fallback": "v"
+    },
+    "mount.context": {
+      "glyph": "mouse-pointer-click",
+      "fallback": "c"
+    },
+    "mount.view": {
+      "glyph": "app-window",
+      "fallback": "v"
+    },
+    "mount.overlay": {
+      "glyph": "layers",
+      "fallback": "o"
+    },
+    "bind.key": {
+      "glyph": "command",
+      "fallback": "k"
+    },
+    "package": {
+      "glyph": "package",
+      "fallback": "P"
+    },
+    "package.install": {
+      "glyph": "download",
+      "fallback": "+"
+    },
+    "package.revoke": {
+      "glyph": "shield-x",
+      "fallback": "-"
+    },
+    "cap.read": {
+      "glyph": "scan-eye",
+      "fallback": "r"
+    },
+    "cap.preview": {
+      "glyph": "circle-play",
+      "fallback": "p"
+    },
+    "cap.view": {
+      "glyph": "layout-panel-top",
+      "fallback": "v"
+    },
+    "cap.panel": {
+      "glyph": "panel-right-open",
+      "fallback": "d"
+    },
+    "cap.canvas": {
+      "glyph": "pen-tool",
+      "fallback": "c"
+    },
+    "lock": {
+      "glyph": "lock-keyhole",
+      "fallback": "L"
+    },
+    "ref.pick": {
+      "glyph": "crosshair",
+      "fallback": "+"
+    },
+    "tree.leaf": {
+      "glyph": "minus",
+      "fallback": "."
+    },
+    "command.bar": {
+      "glyph": "square-terminal",
+      "fallback": ">"
+    },
+    "console.typed": {
+      "glyph": "arrow-right",
+      "fallback": ">"
+    },
+    "console.echo": {
+      "glyph": "corner-down-right",
+      "fallback": "~"
+    },
+    "console.result": {
+      "glyph": "equal",
+      "fallback": "="
+    },
+    "scripts.restart": {
+      "glyph": "refresh-cw",
+      "fallback": "R"
+    },
+    "scripts.safe": {
+      "glyph": "shield",
+      "fallback": "S"
+    },
+    "keymap.export": {
+      "glyph": "file-output",
+      "fallback": "e"
+    },
+    "keymap.defaults": {
+      "glyph": "list-restart",
+      "fallback": "d"
     }
   }
 }

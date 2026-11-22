@@ -9,3 +9,8 @@ export command side_by_side() -> View effects [view] {
 export command stacked() -> View effects [view] {
     return arrange(pair(stacked, 0.5));
 }
+
+# Layout, density and a key in one run: one step of the layout history.
+export command studio() -> View effects [view] {
+    return arrange(pair(stacked, 0.6)) |> then(density(next)) |> then(bind(key "F10", side_by_side));
+}

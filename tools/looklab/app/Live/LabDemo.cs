@@ -89,6 +89,7 @@ internal sealed class LabDemo
             string key = changed.Split('=')[0]; if (key.StartsWith("knob.", StringComparison.Ordinal) || key == "scale") merge = key;
         }
         else if (now[1] != before[1]) name = "Workspace: " + frame.Workspaces.Names[frame.Workspace];
+        else if (now.Count > 4 && before.Length > 4 && now[4] != before[4]) name = "Key bindings";
         Layout.Record(name, string.Join(Cut, now), merge);
     }
 
@@ -101,6 +102,22 @@ internal sealed class LabDemo
         return true;
     }
 
+    // One named step of the layout history for everything the change does.
+    public void LayoutRun(string name, Action change)
+    {
+        restoring = true;
+        try { change(); frame.Flush(); } finally { restoring = false; }
+        if (layoutState != null) Layout.Record(name, string.Join(Cut, layoutState()));
+        History.Refresh();
+    }
+
+    // A preview that was refused before anything was prepared.
+    public void Refuse(string statement, string source, string reason)
+    {
+        Preview.Show(statement, source, Array.Empty<string>(), PreviewStatus.Refused, reason, Orbits.Select((o, i) => new OrbitEffect(o, 0, Totals[i])).ToArray(), "Nothing was prepared.", Clock());
+        if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right);
+    }
+
     public void Stage(int? sample = null)
     {
         Current = (sample ?? nextSample++) % Samples.Length;
@@ -109,7 +126,7 @@ internal sealed class LabDemo
         if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right);
     }
 
-    private Sample Of(Preview preview) => Samples.First(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal));
+    private Sample Of(Preview preview) => Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal)) ?? Samples[^1];
 
     public void Execute(string command, string? argument)
     {

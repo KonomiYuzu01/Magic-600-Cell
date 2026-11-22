@@ -223,6 +223,13 @@ public sealed partial class FeedbackPanel : VBoxContainer
     public LineEdit Input { get; } = new() { PlaceholderText = "A 600 Cell Script line, then Enter. A line never commits.", Name = "ConsoleInput" };
     public LineHistory History { get; } = new();
     public event Action<string>? Entered;
+    // Tab completes the typed word from what the host offers.
+    public Func<string, IReadOnlyList<string>>? Completer { get; set; }
+    private static readonly IReadOnlyDictionary<ConsoleKind, (string Icon, string Colour)> RowShapes = new Dictionary<ConsoleKind, (string, string)>
+    {
+        [ConsoleKind.Echo] = ("console.echo", "text.dim"), [ConsoleKind.Typed] = ("console.typed", "accent.strong"), [ConsoleKind.Result] = ("console.result", "severity.ok"),
+        [ConsoleKind.Error] = ("severity.error", "severity.error"), [ConsoleKind.Lock] = ("lock", "severity.warning"),
+    };
     public void Enter(string line)
     {
         if (string.IsNullOrWhiteSpace(line)) return;
@@ -243,6 +250,11 @@ public sealed partial class FeedbackPanel : VBoxContainer
             AddChild(Input); Input.TextSubmitted += Enter;
             Input.GuiInput += e =>
             {
+                if (e is InputEventKey { Pressed: true, Keycode: Key.Tab } && Completer != null)
+                {
+                    if (Completer(Input.Text) is { Count: > 0 } found) { Input.Text = found[0]; Input.CaretColumn = Input.Text.Length; }
+                    Input.AcceptEvent(); return;
+                }
                 if (e is not InputEventKey { Pressed: true } key || key.Keycode is not (Key.Up or Key.Down)) return;
                 Input.Text = History.Step(key.Keycode == Key.Up ? -1 : 1); Input.CaretColumn = Input.Text.Length; Input.AcceptEvent();
             };
@@ -294,7 +306,16 @@ public sealed partial class FeedbackPanel : VBoxContainer
         }
         else if (Shows == Kind.Console)
         {
-            foreach (string text in Model.Console) List.AddChild(ChromeWidgets.Text(text, "CodeLabel", true));
+            foreach (string text in Model.Console)
+            {
+                // What was typed, what the frame echoed, a result, an error and a refusal each have a shape.
+                (ConsoleKind kind, string body) = ConsoleRows.Read(text); (string icon, string colour) = RowShapes[kind];
+                var line = new HBoxContainer(); line.SetMeta("console", (int)kind); List.AddChild(line);
+                Label shape = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(shape, icon, t.Px("icon.small")); shape.AddThemeColorOverride("font_color", t.C(colour));
+                shape.TooltipText = kind switch { ConsoleKind.Typed => "typed", ConsoleKind.Result => "result", ConsoleKind.Error => "error", ConsoleKind.Lock => "refused", _ => "done in the window" };
+                shape.MouseFilter = MouseFilterEnum.Pass; line.AddChild(shape);
+                Label words = ChromeWidgets.Text(body, "CodeLabel", true); if (kind is ConsoleKind.Echo) words.AddThemeColorOverride("font_color", t.C("text.dim")); line.AddChild(words);
+            }
             if (Model.Console.Count == 0) List.AddChild(ChromeWidgets.Text("  The console is empty.", "MicroLabel"));
             // The newest line stays in view.
             Callable.From(() => { if (IsInstanceValid(scroll)) scroll.ScrollVertical = (int)scroll.GetVScrollBar().MaxValue; }).CallDeferred();

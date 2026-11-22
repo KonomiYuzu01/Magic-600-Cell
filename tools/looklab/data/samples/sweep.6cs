@@ -1,6 +1,5 @@
 edition "6cs-draft-1";
-# A Look Lab sample in the draft syntax. The lab has no interpreter:
-# its entry points are wired by hand and their values are sample values.
+# What a sweep of one ring reaches, and the sweep itself as a preview.
 
 # What a sweep of one ring would reach. A read: its result shows inline.
 export fn reach(ring: Nat) -> record { cells: Nat, orbits: Nat, stickers: Nat } effects [snapshot] {

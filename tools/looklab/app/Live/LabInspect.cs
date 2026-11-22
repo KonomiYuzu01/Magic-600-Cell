@@ -20,6 +20,8 @@ internal sealed class LabInspect
     public FeedbackModel Feedback { get; } = new();
     public InspectorStrip Strip { get; }
     public InspectorPanel Panel { get; }
+    // The inspector and, under it, the sections scripts add.
+    public VBoxContainer InspectorColumn { get; } = new() { Name = "InspectorColumn" };
     public FeedbackPanel Problems { get; }
     public FeedbackPanel Console { get; }
     public FeedbackPanel Tasks { get; }
@@ -81,7 +83,7 @@ internal sealed class LabInspect
         foreach (string line in new[] { "> preview my.corner_swap(cell 117)", "prepared 8 moves, 9 pieces move, protection holds", "> check sweep.6cs", "sweep.6cs:12 unknown word `swep`" }) Feedback.Log(line);
         Feedback.Changed += Badges; Feedback.Ended += task => frame.Say($"Task {task.State.ToString().ToLowerInvariant()}: {task.Name}", task.State != TaskState.Ok);
         demo.Moves.Changed += () => { if (Feedback.StateChanged() is > 0 and int n) Feedback.Log($"cancelled {n} task(s) that read the state the commit changed"); };
-        frame.SetContent("inspector", Panel); frame.SetContent("problems", Problems); frame.SetContent("console", Console); frame.SetContent("tasks", Tasks);
+        Panel.SizeFlagsVertical = Control.SizeFlags.ExpandFill; InspectorColumn.AddChild(Panel); frame.SetContent("inspector", InspectorColumn); frame.SetContent("problems", Problems); frame.SetContent("console", Console); frame.SetContent("tasks", Tasks);
         frame.SetTopStrip(Strip);
         frame.Rebuilt += Rebuilt; frame.Recoloured += Rebuilt;
         var timer = new Timer { WaitTime = .2, Autostart = true, Name = "SampleTaskClock" }; timer.Timeout += () => Tick(.2); frame.AddChild(timer);

@@ -41,9 +41,10 @@ internal static class LabFrame
         ("preview", "Preview", "preview.moves", "No preview staged"),
         ("canvas", "Canvas", "workspace.analyse", "Nothing drawn"),
         ("reference", "Reference", "workspace.reference", "Nothing pinned yet"),
+        (LabScripts.RingView, "Script view", "mount.view", "No script view yet"),
     };
     // The showing this build opens on. A kept arrangement from an earlier showing is not restored.
-    public const string Showing = "repair";
+    public const string Showing = "stage7";
 
     // Installed packages are looked for under tools/node of this checkout, of every folder above it (a copy of
     // the tree exported inside another checkout) and, from a linked worktree, of its main checkout.
@@ -145,9 +146,9 @@ internal static class LabFrame
                 case "file.keymap.export": scripts.Export(); break;
                 case "panel.mount": scripts.Mount(argument!); break;
                 case "panel.unmount": if (!scripts.Slots.Unmount(argument!)) frame.Say("No script panel is named " + argument, true); break;
-                case var entry when entry.StartsWith("script.", StringComparison.Ordinal): scripts.RunEntry(entry); break;
+                case var entry when entry.StartsWith("script.", StringComparison.Ordinal): scripts.Start(entry); break;
                 case "command.find": palette.Open(); break;
-                case var menu when keymap.Radials.ContainsKey(menu): radial.Open(keymap.Radials[menu], frame.GetLocalMousePosition()); break;
+                case var menu when keymap.Radials.ContainsKey(menu): radial.Open(scripts.WithContext(keymap.Radials[menu]), frame.GetLocalMousePosition()); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
                 case "transient.close":
                     if (frame.OpenOverlay is { } open) open.Close();
@@ -183,6 +184,7 @@ internal static class LabFrame
         Kits.Add(frame, new LabKit(Execute, commands, appearance, themes.Select(t => t.Id).ToArray(), design.Densities.ToArray()));
         palette.TypedLine += scripts.RunLine;
         app.ViewParts["frame.keymap"] = (() => scripts.Store(), v => scripts.Restore(v));
+        app.ViewParts["frame.scripts"] = (() => scripts.StoreState(), v => scripts.RestoreState(v));
         app.ViewParts["frame.slots"] = (() => scripts.Slots.Store(), v => scripts.Slots.Restore(v));
         app.ViewParts["frame.labels"] = (() => frame.Labels ? "on" : "off", v => frame.Labels = v == "on");
         frame.Contexts = () => demo.Preview.Pending != null ? new[] { "preview" } : Array.Empty<string>();
@@ -223,6 +225,7 @@ internal static class LabFrame
                 view.AddMark("mark.committed", "committed", "state.committed", "This view shows the committed state.");
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
                 view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
+                foreach (var mark in scripts.ViewMarks()) view.AddMark(mark.Glyph, mark.Text, mark.Colour, mark.Tip);
             }
             bool cap = app.Linked.Shape is { Ghost: > 0 }, rings = p.Choice("projection") == "hopfRings";
             frame.Local.AddMark("mark.autoframe", cap ? "A · cap" : "B · spread", "text.dim", cap ? "Local A: centred on the moving cells, their neighbours faint. F7 shows B." : "Local B: the moving cells spread apart. F7 shows A.");
@@ -233,19 +236,30 @@ internal static class LabFrame
         // Compare keys of the lab: the other Local, the other Global.
         frame.HostKeys["F7"] = () => { app.Linked.LocalChoice = (app.Linked.LocalChoice + 1) % Math.Max(1, app.Linked.LocalChoices); Describe(); };
         frame.HostKeys["F8"] = () => app.State.Set("projection", new EnumValue(app.State.Preset.Params.Choice("projection") == "hopfRings" ? "perspective" : "hopfRings"));
+        frame.HostKeys["F4"] = () => Execute("script.bar", null);
         // The tour key steps through the screens this showing changed.
         int tour = 0;
+        void Home() { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }
         (string Name, Action Go)[] stops =
         {
-            ("Solve, Local A and Global A", () => { frame.SelectWorkspace("solve"); app.Linked.LocalChoice = 0; app.State.Set("projection", new EnumValue("hopfRings")); }),
-            ("Local B", () => app.Linked.LocalChoice = 1),
-            ("Global B", () => app.State.Set("projection", new EnumValue("perspective"))),
-            ("next theme family", () => { app.Linked.LocalChoice = 0; app.State.Set("projection", new EnumValue("hopfRings")); Execute("theme.select", null); }),
-            ("first theme family", () => Execute("theme.select", null)),
-            ("Script", () => frame.SelectWorkspace("script")),
-            ("Analyse", () => frame.SelectWorkspace("analyse")),
-            ("Reference", () => frame.SelectWorkspace("reference")),
-            ("command palette", () => { frame.SelectWorkspace("solve"); palette.Open(); }),
+            ("editor: a program and its entry points", () => { Home(); }),
+            ("faults of each severity, a fix as ghost text", () => { Home(); if (!scripts.Editor.Faulted) scripts.Editor.ToggleFaults(); scripts.Editor.NextFix(); }),
+            ("a read result under its region", () => { Home(); if (scripts.Editor.Faulted) scripts.Editor.ToggleFaults(); scripts.Start("script.sweep.reach"); scripts.Drain(); }),
+            ("a run ends in a preview; only the commit key commits", () => { scripts.Start("script.sweep.ring"); scripts.Drain(); }),
+            ("after a commit the older result dims", () => { Execute("operation.preview.commit", null); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),
+            ("six mounts of one program", () =>
+            {
+                foreach (string entry in new[] { "facts", "tuner", "ring_view", "annotate_ring" }) scripts.Start("script.mounts." + entry);
+                scripts.Drain(); if (frame.Model.IsOpen(LabDemo.PreviewPane)) frame.Model.Close(LabDemo.PreviewPane); scripts.Open("mounts", 1); frame.Model.ShowDock(DockSide.Right, LabScripts.SlotId(scripts.Slots.SlotOf(LabScripts.TunerPanel)));
+            }),
+            ("a package by another author asks first", () => { frame.Model.ShowDock(DockSide.Left, "scripts"); scripts.Consent.Ask(scripts.Packages[0]); }),
+            ("in a solving session its preview is refused", () =>
+            {
+                if (scripts.Installed.Install(scripts.Packages[0])) scripts.RestoreState(scripts.StoreState());
+                scripts.Start("script.ring_tools.solve_ring"); scripts.Drain(); scripts.Editor.ShowLower("console");
+            }),
+            ("layout, density and a key in one history step", () => { scripts.Start("script.layout.studio"); scripts.Drain(); frame.Model.ShowDock(DockSide.Left, "history"); }),
+            ("command bar", () => Execute("script.bar", null)),
         };
         frame.HostKeys["F9"] = () =>
         {
@@ -266,10 +280,10 @@ internal static class LabFrame
         Callable.From(() =>
         {
             if (seen == Showing || !GodotObject.IsInstanceValid(frame)) { seen = Showing; return; }
-            seen = Showing; ApplyScene();
+            seen = Showing; ApplyScene(); Home(); Describe();
         }).CallDeferred();
         frame.Flush();
-        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout", "frame.labels" };
+        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout", "frame.labels", "frame.keymap" };
         demo.TrackLayout(() => kept.Select(k => app.ViewParts[k].Get()).ToArray(), parts => { for (int i = 0; i < kept.Length; i++) app.ViewParts[kept[i]].Set(parts[i]); });
         return frame;
     }

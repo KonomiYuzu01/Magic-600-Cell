@@ -391,21 +391,23 @@ internal static class LiveChecks
 
     // The script interface: entry points are commands, a run ends in a preview or a read result and never in a
     // commit, a key binds to an entry point over the default keymap, a panel mounts in a slot and keeps it.
+    private static bool Drained(LabScripts scripts) { scripts.Drain(); return true; }
+
     private static void Scripts(ChromeFrame frame, string fault)
     {
         LabScripts scripts = LabFrame.ScriptsOf(frame); LabDemo demo = LabFrame.DemoOf(frame); LabInspect inspect = LabFrame.InspectOf(frame);
-        Require(scripts.Programs.Count == 3 && scripts.Find("script.sweep.ring") is { Kind: ScriptKind.Preview } && scripts.Find("script.census.orbits") is { Kind: ScriptKind.Read } &&
+        Require(scripts.Programs.Count == 4 && scripts.Find("script.sweep.ring") is { Kind: ScriptKind.Preview } && scripts.Find("script.census.orbits") is { Kind: ScriptKind.Read } &&
             scripts.Find("script.layout.stacked") is { Kind: ScriptKind.View } && scripts.Programs.All(p => SixCs.Diagnose(p.Source).Count == 0), fault, "the sample programs or their entry points are missing");
         demo.Preview.Discard(); int entries = demo.Moves.Entries.Count;
         scripts.Open("sweep", scripts.Find("script.sweep.ring")!.Line + 1); frame.Flush();
         Require(frame.Model.IsOpen("editor") && frame.IsAncestorOf(scripts.Editor) && scripts.Editor.EntryAtCaret()?.Name == "ring", fault, "the editor does not show the program at its entry point");
-        scripts.Editor.RunAtCaret();
+        scripts.Editor.RunAtCaret(); scripts.Drain();
         Require(demo.Preview.Pending != null && inspect.Feedback.Console.Contains("sweep.ring();") && demo.Moves.Entries.Count == entries, fault, "a run from the editor did not end in a preview");
         scripts.RunLine("commit sweep.ring(4)");
         Require(demo.Moves.Entries.Count == entries && frame.Notice.Text.Contains("never commits", StringComparison.Ordinal), fault, "a typed line committed");
         demo.Preview.Discard();
-        inspect.Console.Enter("sweep.reach(4)");
-        Require(scripts.LastResult != null && scripts.LastResult.StartsWith("sweep.reach(4) = record", StringComparison.Ordinal) && scripts.Editor.Result.Text == scripts.LastResult &&
+        inspect.Console.Enter("sweep.reach(4)"); scripts.Drain();
+        Require(scripts.LastResult != null && scripts.LastResult.StartsWith("sweep.reach(4) = record", StringComparison.Ordinal) && scripts.Results.Of("script.sweep.reach") is { Since: null } &&
             inspect.Console.History.Lines.Count == 1 && demo.Preview.Pending == null, fault, "a read entry point gave no inline result");
         scripts.Editor.Replace(scripts.Editor.Open!.Source + "export fn bad() -> Nat effects [commit] {\n");
         Require(scripts.Editor.Diagnostics.Any(d => d.Severity == Severity.Error && d.Text.Contains("never commits", StringComparison.Ordinal)) &&
@@ -417,7 +419,7 @@ internal static class LiveChecks
         scripts.Capture("script.layout.stacked");
         Require(scripts.List.Binding == "script.layout.stacked" && frame.Press("F6") && scripts.List.Binding == null && frame.Keys!.KeysFor("script.layout.stacked", null) == "F6", fault, "a key was not bound to an entry point");
         frame.Model.SetPairArrangement("side", .5);
-        Require(frame.Press("F6") && frame.Model.PairArrangement == "stacked" && !scripts.Bind("Ctrl+Enter", "script.sweep.ring") && demo.Preview.Pending == null, fault, "the bound key did not run its entry point");
+        Require(frame.Press("F6") && Drained(scripts) && frame.Model.PairArrangement == "stacked" && !scripts.Bind("Ctrl+Enter", "script.sweep.ring") && demo.Preview.Pending == null, fault, "the bound key did not run its entry point");
         Require(scripts.Store().Contains("\"key\": \"F6\"", StringComparison.Ordinal) && !scripts.Store().Contains("command.find", StringComparison.Ordinal), fault, "own bindings are not kept apart from the defaults");
         scripts.SetPreset("left-hand");
         Require(frame.Keys!.KeysFor("command.find", null).Contains("Q", StringComparison.Ordinal) && frame.Keys.KeysFor("script.layout.stacked", null) == "F6", fault, "the keymap preset was not applied under the own bindings");
@@ -428,10 +430,10 @@ internal static class LiveChecks
         scripts.Defaults();
         // A declared panel mounts in a slot; a panel whose program is missing keeps its slot and says so.
         scripts.RunEntry("script.census.orbits"); frame.Flush();
-        Require(scripts.Slots.Mounted[0] == LabScripts.CensusPanel && frame.Model.Docks[DockSide.Right].Open == "slot.1" &&
+        Require(scripts.Slots.Shown(0) == LabScripts.CensusPanel && frame.Model.Docks[DockSide.Right].Open == "slot.1" &&
             frame.FindChild("ScriptPanel_census_orbits", true, false) is ScriptPanelHost { Spec: not null }, fault, "the declared panel is not in a slot");
-        scripts.Slots.Restore("ghost.panel|" + LabScripts.CensusPanel); frame.Model.ShowDock(DockSide.Right, "slot.1"); frame.Flush();
-        Require(frame.FindChild("ScriptPanel_ghost_panel", true, false) is ScriptPanelHost { Spec: null } && scripts.Slots.Mount("third") == -1, fault, "a panel without its program lost its slot");
+        scripts.Slots.Restore("ghost.panel:0|" + LabScripts.CensusPanel + ":0"); frame.Model.ShowDock(DockSide.Right, "slot.1"); frame.Flush();
+        Require(frame.FindChild("ScriptPanel_ghost_panel", true, false) is ScriptPanelHost { Spec: null } && scripts.Slots.Mount("third") >= 0 && scripts.Slots.Tabs(scripts.Slots.SlotOf("third")).Count == 2, fault, "a panel without its program lost its slot");
         scripts.Slots.Restore("|");
         scripts.RunEntry("script.census.fibres"); frame.Flush();
         Require(scripts.Canvas.Marks.Count == 24 && frame.Model.IsOpen("canvas") && frame.IsAncestorOf(scripts.Canvas), fault, "the canvas shows no drawing");
