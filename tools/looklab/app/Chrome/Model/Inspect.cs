@@ -54,7 +54,7 @@ public sealed class InspectorModel
 
     public InspectField this[string id] => fields.FirstOrDefault(f => f.Id == id) ?? throw J.Error(id, "unknown field");
 
-    public void Select(int count, string kind) { SelectionCount = count; SelectionKind = kind; Changed?.Invoke(); }
+    public void Select(int count, string kind) { SelectionCount = count; SelectionKind = kind; Safe.Raise(Changed); }
 
     public void AddFact(string id, string label, string fact) => Add(new InspectField(id, Selection, label, fact));
 
@@ -70,18 +70,18 @@ public sealed class InspectorModel
     private void Add(InspectField field)
     {
         if (fields.Any(f => f.Id == field.Id)) throw J.Error(field.Id, "duplicate field");
-        fields.Add(field); Changed?.Invoke();
+        fields.Add(field); Safe.Raise(Changed);
     }
 
     // Removes the fields of a section, for parameters that follow what is staged.
-    public void Clear(string section) { if (fields.RemoveAll(f => f.Section == section) > 0) Changed?.Invoke(); }
+    public void Clear(string section) { if (fields.RemoveAll(f => f.Section == section) > 0) Safe.Raise(Changed); }
 
     // The host reports a value that changed elsewhere; it is not an edit.
     public void Sync(string id, double value, Provenance provenance)
     {
         InspectField field = this[id];
         if (field.Value == value && field.Provenance == provenance) return;
-        field.Value = Math.Clamp(value, field.Min, field.Max); field.Provenance = provenance; Updated?.Invoke(field);
+        field.Value = Math.Clamp(value, field.Min, field.Max); field.Provenance = provenance; Safe.Raise(Updated, field);
     }
 
     public bool Set(string id, double value)
@@ -91,7 +91,7 @@ public sealed class InspectorModel
         double snapped = Math.Clamp(field.Min + Math.Round((value - field.Min) / field.Step) * field.Step, field.Min, field.Max);
         if (snapped == field.Value && field.Binding == null) return false;
         field.Value = snapped; field.Binding = null; field.Provenance = snapped == field.Default ? Provenance.Default : Provenance.Session;
-        Updated?.Invoke(field); Edited?.Invoke(field);
+        Safe.Raise(Updated, field); Safe.Raise(Edited, field);
         return true;
     }
 
@@ -103,7 +103,7 @@ public sealed class InspectorModel
         double to = Math.Clamp(field.Value + steps * field.Step * scale, field.Min, field.Max);
         if (to == field.Value) return false;
         field.Value = to; field.Binding = null; field.Provenance = to == field.Default ? Provenance.Default : Provenance.Session;
-        Updated?.Invoke(field); Edited?.Invoke(field);
+        Safe.Raise(Updated, field); Safe.Raise(Edited, field);
         return true;
     }
 
@@ -112,7 +112,7 @@ public sealed class InspectorModel
         InspectField field = this[id];
         if (field.IsFact || (field.Value == field.Default && field.Binding == null)) return false;
         field.Value = field.Default; field.Binding = null; field.Provenance = Provenance.Default;
-        Updated?.Invoke(field); Edited?.Invoke(field);
+        Safe.Raise(Updated, field); Safe.Raise(Edited, field);
         return true;
     }
 
@@ -127,7 +127,7 @@ public sealed class InspectorModel
             string expression = text.Substring(1).Trim();
             if (expression.Length == 0) return "an expression follows the = sign";
             field.Binding = expression; field.Provenance = Provenance.Script;
-            Updated?.Invoke(field); Edited?.Invoke(field);
+            Safe.Raise(Updated, field); Safe.Raise(Edited, field);
             return null;
         }
         if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) || !double.IsFinite(value)) return "expected a number, or = and an expression";
@@ -145,7 +145,7 @@ public sealed class InspectorModel
         {
             int cut = line.IndexOf('=');
             if (cut <= 0 || fields.FirstOrDefault(f => f.Id == line.Substring(0, cut) && !f.IsFact) is not { } field) continue;
-            field.Binding = line.Substring(cut + 1); field.Provenance = Provenance.Script; Updated?.Invoke(field);
+            field.Binding = line.Substring(cut + 1); field.Provenance = Provenance.Script; Safe.Raise(Updated, field);
         }
     }
 }
@@ -186,24 +186,24 @@ public sealed class FeedbackModel
         int at = problems.FindIndex(p => p.Severity == severity && p.Text == text && p.Source == source && p.Line == line);
         Problem problem = at >= 0 ? problems[at] with { Count = problems[at].Count + 1 } : new Problem(next++, severity, text, source, line, element, 1);
         if (at >= 0) problems.RemoveAt(at);
-        problems.Add(problem); Changed?.Invoke();
+        problems.Add(problem); Safe.Raise(Changed);
         return problem;
     }
 
-    public void ClearSource(string source) { if (problems.RemoveAll(p => p.Source == source) > 0) Changed?.Invoke(); }
+    public void ClearSource(string source) { if (problems.RemoveAll(p => p.Source == source) > 0) Safe.Raise(Changed); }
 
-    public void Filter(Severity severity, bool shown) { if (shown ? Hidden.Remove(severity) : Hidden.Add(severity)) Changed?.Invoke(); }
+    public void Filter(Severity severity, bool shown) { if (shown ? Hidden.Remove(severity) : Hidden.Add(severity)) Safe.Raise(Changed); }
 
     public void Log(string line)
     {
         console.Add(line); if (console.Count > ConsoleKept) console.RemoveAt(0);
-        Changed?.Invoke();
+        Safe.Raise(Changed);
     }
 
     public TaskItem Start(string name, string origin, bool readsState)
     {
         var task = new TaskItem(next++, name, origin, readsState, 0, TaskState.Running);
-        tasks.Add(task); Changed?.Invoke();
+        tasks.Add(task); Safe.Raise(Changed);
         return task;
     }
 
@@ -211,8 +211,8 @@ public sealed class FeedbackModel
     {
         int at = tasks.FindIndex(t => t.Id == id && t.State == TaskState.Running);
         if (at < 0) return false;
-        tasks[at] = change(tasks[at]); Changed?.Invoke();
-        if (ended) Ended?.Invoke(tasks[at]);
+        tasks[at] = change(tasks[at]); Safe.Raise(Changed);
+        if (ended) Safe.Raise(Ended, tasks[at]);
         return true;
     }
 

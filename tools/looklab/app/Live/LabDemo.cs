@@ -60,10 +60,9 @@ internal sealed class LabDemo
         Bar = new CommitBar(Preview, () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };
         PreviewView = new PreviewPanel(Preview, () => frame.Tokens);
         History = new HistoryPanel(Moves, Layout, () => frame.Tokens);
-        Button stage = ChromeWidgets.Tool("Stage a sample preview", "Look Lab has no engine: this stages the next sample preview"); stage.Name = "StageSample";
+        Button stage = ChromeWidgets.Tool("Stage", "Stage the next sample preview"); stage.Name = "StageSample";
         stage.Pressed += () => run("operation.preview", null);
         Bar.Tools.AddChild(stage);
-        Bar.Tools.AddChild(ChromeWidgets.Text("sample data", "MicroLabel"));
         Bar.Command += run; History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
         foreach ((string origin, string name, string time, int sample) in new[] { ("hand", "twist(cell 5, axis 0, +1)", "10:02", 2), ("macro", "my.corner_swap(cell 40)", "10:05", 0),
             ("script", "sweep.6cs on ring 1", "10:11", 1), ("hand", "twist(cell 77, axis 3, -1)", "10:12", 2), ("macro", "my.corner_swap(cell 117)", "10:20", 0) })

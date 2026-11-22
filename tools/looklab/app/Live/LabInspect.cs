@@ -35,7 +35,7 @@ internal sealed class LabInspect
         Inspector.AddFact("selection.cells", "Cells", cells.ToString());
         Inspector.AddFact("selection.slots", "Sticker slots", (cells * Geometry.StickersPerCell).ToString("N0", System.Globalization.CultureInfo.InvariantCulture));
         Inspector.AddFact("selection.all", "Of all slots", "259,800");
-        Inspector.AddFact("selection.source", "Chosen by", "the lab's turn");
+        Inspector.AddFact("selection.source", "Chosen by", "the current twist");
         double Default(ParameterDefinition p) => ((NumberValue)p.Default).Value;
         foreach ((string id, string label) in ViewFields)
         {
@@ -44,7 +44,7 @@ internal sealed class LabInspect
         }
         Inspector.Edited += field =>
         {
-            if (field.Binding != null) { frame.Say($"{field.Label} = {field.Binding}: kept as a live binding. Look Lab has no runtime to evaluate it.", true); return; }
+            if (field.Binding != null) { frame.Say($"{field.Label} = {field.Binding}: kept as a live binding", true); return; }
             if (field.Section == InspectorModel.View) app.State.Set(field.Id.Substring(5), new NumberValue(field.Value));
             else if (demo.Current >= 0 && demo.Preview.Pending != null) demo.Stage(demo.Current);
         };
@@ -67,15 +67,13 @@ internal sealed class LabInspect
             }
         };
         Strip = new InspectorStrip(Inspector, () => frame.Tokens, Refuse);
-        Strip.Tools.AddChild(ChromeWidgets.Text("sample selection", "MicroLabel"));
         Panel = new InspectorPanel(Inspector, () => frame.Tokens, Refuse);
         Problems = new FeedbackPanel(Feedback, FeedbackPanel.Kind.Problems, () => frame.Tokens);
         Console = new FeedbackPanel(Feedback, FeedbackPanel.Kind.Console, () => frame.Tokens);
         Tasks = new FeedbackPanel(Feedback, FeedbackPanel.Kind.Tasks, () => frame.Tokens);
-        Button run = ChromeWidgets.Tool("Run a sample task", "Look Lab has no runtime: this runs a sample task"); run.Name = "RunSampleTask";
-        run.Pressed += StartTask; Tasks.Tools.AddChild(run); Tasks.Tools.AddChild(ChromeWidgets.Text("sample data", "MicroLabel"));
-        Problems.Tools.AddChild(ChromeWidgets.Text("sample data", "MicroLabel"));
-        Problems.Opened += p => frame.Say($"{p.Source}:{p.Line}  {p.Text}" + (p.Element != null ? $"  ({p.Element} is marked in both views in the product)" : ""), p.Severity != Severity.Info);
+        Button run = ChromeWidgets.Tool("Run task", "Run a sample task"); run.Name = "RunSampleTask";
+        run.Pressed += StartTask; Tasks.Tools.AddChild(run);
+        Problems.Opened += p => frame.Say($"{p.Source}:{p.Line}  {p.Text}" + (p.Element != null ? $"  ({p.Element})" : ""), p.Severity != Severity.Info);
         for (int i = 0; i < 3; i++) Feedback.Report(Severity.Error, "unknown word `swep`; did you mean `sweep`?", "sweep.6cs", 12);
         Feedback.Report(Severity.Warning, "this macro moves a protected orbit", "my.6cs", 40, "cell 117");
         Feedback.Report(Severity.Info, "3 definitions are unused", "my.6cs", 1);
@@ -109,7 +107,7 @@ internal sealed class LabInspect
         frame.SetBadge("problems", errors > 0 ? errors.ToString() : warnings > 0 ? warnings.ToString() : null, errors > 0 ? "severity.error" : "severity.warning",
             $"{errors} errors, {warnings} warnings, {Feedback.Count(Severity.Info)} notes");
         frame.SetBadge("tasks", Feedback.Running > 0 ? Feedback.Running.ToString() : null, "state.pending", Feedback.Running + " running");
-        frame.Health.Text = "Look Lab · no runtime · " + (Feedback.Running == 1 ? "1 task" : Feedback.Running + " tasks");
-        frame.Health.TooltipText = "Full detail: 259,800 slots. Look Lab has no engine and no runtime process; tasks and problems are sample data."; frame.Health.MouseFilter = Control.MouseFilterEnum.Pass;
+        string health = Feedback.Running == 0 ? "" : Feedback.Running == 1 ? "1 task" : Feedback.Running + " tasks";
+        if (frame.Health.Text != health) { frame.Health.Text = health; frame.Invalidate(); }
     }
 }

@@ -955,7 +955,7 @@ the bottom index (Problems, Console and Tasks, collapsed, with count badges).
 The inspector's View fields are the lab's own parameters; the selection, the
 preview parameters, the problems and the task are sample data and are marked
 so. A typed `=` expression is kept as a live binding (view part
-`frame.bindings`) and is not evaluated, because the lab has no runtime.
+`frame.bindings`) and is not evaluated.
 Labels are off by default; the tag button in the top bar turns them on (view
 part `frame.labels`). The theme follows the Windows
 light or dark setting until a choice is kept.
@@ -975,5 +975,26 @@ wired by hand in `app/Live/LabScripts.cs`, their values are sample values,
 and an edited program is checked but not saved.
 
 `python tools/looklab/check.py --godot` adds one result line,
-`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=12 checks=7`, and
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=13 checks=7`, and
 three faults that must fail their own check.
+
+The sweep (`app/Live/Sweep.cs`, mode `a5-sweep`) uses the whole frame the way
+a person does: time runs past the end of the sample task, every available
+command runs through the entry the palette, the keys and the radial menus
+share, every dock panel, pane, workspace, theme family, scene look and
+density is shown, every visible button takes a real mouse press through the
+root viewport, and the close request keeps the view. A logged engine error, a
+listener the chrome caught (`Safe.Raise`) or a button whose press did not
+reach it fails the check. Its line is
+`LOOKLAB_A5_SWEEP_PASS commands=N clicks=M errors=0`, with two faults (a
+token no theme has, a listener that throws). While the window is open the
+same failures light the error lamp in the top bar, become Problems rows and
+are written to `work/loop-memory/looklab/errors.log`.
+
+Local has two shapes on file, compared on F7: `data/local-view-cap.json`
+(the default: stereographic, centred on the moving cells, the cells around
+them faint and behind) and `data/local-view.json` (the moving cells spread
+apart). F8 compares the two Global layouts (rings and the ball), and F9 steps
+through the screens of the current showing. Global is fitted to its pane by
+scale alone. A kept arrangement from an earlier showing is not restored (view
+part `frame.showing`); a fresh start takes the scene of its theme family.

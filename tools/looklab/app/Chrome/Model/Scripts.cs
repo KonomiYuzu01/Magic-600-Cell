@@ -185,7 +185,7 @@ public sealed class ScriptSlots
         int at = Array.IndexOf(mounted, panel);
         if (at < 0) at = Array.IndexOf(mounted, null);
         if (at < 0) return -1;
-        if (mounted[at] != panel) { mounted[at] = panel; Changed?.Invoke(); }
+        if (mounted[at] != panel) { mounted[at] = panel; Safe.Raise(Changed); }
         return at;
     }
 
@@ -193,7 +193,7 @@ public sealed class ScriptSlots
     {
         int at = Array.IndexOf(mounted, panel);
         if (at < 0) return false;
-        mounted[at] = null; Changed?.Invoke();
+        mounted[at] = null; Safe.Raise(Changed);
         return true;
     }
 
@@ -204,6 +204,6 @@ public sealed class ScriptSlots
         string[] parts = stored.Split('|');
         if (parts.Length != Count) return;
         for (int i = 0; i < Count; i++) mounted[i] = parts[i].Length == 0 ? null : parts[i];
-        Changed?.Invoke();
+        Safe.Raise(Changed);
     }
 }

@@ -33,7 +33,7 @@ public sealed partial class AppearancePanel : ScrollContainer
         try { change(Look); }
         catch (FormatException ex) { Issues.Text = ex.Message; return false; }
         if (rebuild) Refresh(); else Report();
-        Changed?.Invoke(rebuild, scene);
+        Safe.Raise(Changed, rebuild, scene);
         return true;
     }
 

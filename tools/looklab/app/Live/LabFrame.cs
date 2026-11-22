@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Godot;
@@ -10,8 +11,12 @@ namespace LookLab.App.Live;
 // Look Lab inside the ADR-D01 window frame: the lab's Global and Local views fill the locked pair and its
 // parameter panel is the "Tune" panel of the right dock. The frame, its tokens and its workspaces are the
 // chrome library; only this file knows about the lab.
+internal sealed record LabKit(Action<string, string?> Run, PaletteModel Commands, AppearancePanel Appearance, IReadOnlyList<string> Themes, IReadOnlyList<string> Densities);
+
 internal static class LabFrame
 {
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabKit> Kits = new();
+    public static LabKit KitOf(ChromeFrame frame) => Kits.TryGetValue(frame, out LabKit? kit) ? kit : throw new InvalidOperationException("the frame has no lab kit");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabDemo> Demos = new();
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabInspect> Inspects = new();
     public static LabInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out LabInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
@@ -21,22 +26,24 @@ internal static class LabFrame
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
-        (DockSide.Left, "history", "History", "panel.history", "Puzzle history and layout history appear here."),
-        (DockSide.Left, "scripts", "Scripts", "panel.scripts", "The session's .6cs programs and panels appear here."),
-        (DockSide.Right, "inspector", "Inspector", "panel.inspector", "Select a cell, a sticker or a command to inspect it."),
-        (DockSide.Right, "slot.1", "Script panel 1", "panel.slot1", "A panel a script declares mounts here."),
-        (DockSide.Right, "slot.2", "Script panel 2", "panel.slot2", "A panel a script declares mounts here."),
-        (DockSide.Bottom, "problems", "Problems", "panel.problems", "No problems."),
-        (DockSide.Bottom, "console", "Console", "panel.console", "The 600 Cell Script console appears here."),
-        (DockSide.Bottom, "tasks", "Tasks", "panel.tasks", "No task is running."),
+        (DockSide.Left, "history", "History", "panel.history", "No moves yet"),
+        (DockSide.Left, "scripts", "Scripts", "panel.scripts", "No programs yet"),
+        (DockSide.Right, "inspector", "Inspector", "panel.inspector", "Nothing selected"),
+        (DockSide.Right, "slot.1", "Script panel 1", "panel.slot1", "Empty panel slot"),
+        (DockSide.Right, "slot.2", "Script panel 2", "panel.slot2", "Empty panel slot"),
+        (DockSide.Bottom, "problems", "Problems", "panel.problems", "No problems"),
+        (DockSide.Bottom, "console", "Console", "panel.console", "Console is empty"),
+        (DockSide.Bottom, "tasks", "Tasks", "panel.tasks", "No task running"),
     };
-    private static readonly (string Id, string Title, string Hint)[] Panes =
+    private static readonly (string Id, string Title, string Glyph, string Hint)[] Panes =
     {
-        ("editor", "Editor", "Open a .6cs program to edit it here."),
-        ("preview", "Preview", "A pending preview is shown here, never in Global or Local."),
-        ("canvas", "Canvas", "A script draws here, inside the script frame."),
-        ("reference", "Reference", "Pinned references and nexus cards appear here."),
+        ("editor", "Editor", "workspace.script", "No program open"),
+        ("preview", "Preview", "preview.moves", "No preview staged"),
+        ("canvas", "Canvas", "workspace.analyse", "Nothing drawn"),
+        ("reference", "Reference", "workspace.reference", "Nothing pinned yet"),
     };
+    // The showing this build opens on. A kept arrangement from an earlier showing is not restored.
+    public const string Showing = "repair";
 
     // Installed packages are looked for under tools/node of this checkout, of every folder above it (a copy of
     // the tree exported inside another checkout) and, from a linked worktree, of its main checkout.
@@ -53,6 +60,8 @@ internal static class LabFrame
         return folders.ToArray();
     }
 
+    public const string NotInSample = "not in this sample";
+
     public static ChromeFrame Attach(LabApp app, string root)
     {
         ChromeFonts.SetRoots(PackageFolders(root));
@@ -68,9 +77,9 @@ internal static class LabFrame
         look.SetSystemScale(screen);
         var frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json")));
         app.EnterFrame();
-        foreach (var panel in Panels) frame.AddDockPanel(panel.Side, panel.Id, panel.Title, panel.Glyph, ChromeWidgets.Empty(panel.Title, panel.Hint));
+        foreach (var panel in Panels) frame.AddDockPanel(panel.Side, panel.Id, panel.Title, panel.Glyph, ChromeWidgets.Empty(panel.Glyph, panel.Hint));
         frame.AddDockPanel(DockSide.Right, Tune, "Tune", "panel.tune", app.ParameterPanel);
-        foreach (var pane in Panes) frame.AddPane(pane.Id, pane.Title, ChromeWidgets.Empty(pane.Title, pane.Hint));
+        foreach (var pane in Panes) frame.AddPane(pane.Id, pane.Title, ChromeWidgets.Empty(pane.Glyph, pane.Hint));
         frame.AddPane(Greybox, "Greybox", app.Greybox.Canvas);
         frame.SetMainViews(app.GlobalStage, app.Linked.LocalStage!);
         // The theme button in the top bar steps through the families; the scene behind the puzzle follows the
@@ -110,7 +119,7 @@ internal static class LabFrame
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             _ when LabDemo.Handles(command) => null,
-            _ => "Look Lab has no engine; this command runs in the product",
+            _ => NotInSample,
         };
         var commands = new PaletteModel(registry, keymap, Unavailable);
         var palette = new CommandPalette(commands, () => frame.Tokens);
@@ -171,6 +180,7 @@ internal static class LabFrame
             keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; demo.Bar.CommitKeys = k.KeysFor("operation.preview.commit", null);
         });
         AllScripts.Add(frame, scripts);
+        Kits.Add(frame, new LabKit(Execute, commands, appearance, themes.Select(t => t.Id).ToArray(), design.Densities.ToArray()));
         palette.TypedLine += scripts.RunLine;
         app.ViewParts["frame.keymap"] = (() => scripts.Store(), v => scripts.Restore(v));
         app.ViewParts["frame.slots"] = (() => scripts.Slots.Store(), v => scripts.Slots.Restore(v));
@@ -187,7 +197,10 @@ internal static class LabFrame
             try { Appearance kept = Appearance.Parse(v, design, themes); kept.SetSystemScale(screen); look = kept; appearance.Show(look); ApplyLook(true, false); }
             catch (FormatException) { }
         });
-        frame.Health.Text = "Look Lab · full detail · 259,800 slots";
+        // One chip says that what the docks hold is sample data.
+        PanelContainer sample = SessionWidgets.Chip("sample", look.Resolve().C("text.dim"), "History, problems, tasks and scripts hold sample data"); sample.Name = "SampleChip";
+        frame.BarTools.AddChild(sample);
+        frame.AlertPressed += () => frame.Model.ShowDock(DockSide.Bottom, "problems");
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         // Every default comes from the workspace; the right dock starts collapsed (ADR-D01.22).
         frame.MarkBaseline();
@@ -211,15 +224,50 @@ internal static class LabFrame
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
                 view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
             }
-            frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", app.Linked.Shape != null ? "Local stays on the moving cells, spread apart so the inner ones show. Its shape is the data file local-view.json." : "Local re-frames on the moving cells.");
+            bool cap = app.Linked.Shape is { Ghost: > 0 }, rings = p.Choice("projection") == "hopfRings";
+            frame.Local.AddMark("mark.autoframe", cap ? "A · cap" : "B · spread", "text.dim", cap ? "Local A: centred on the moving cells, their neighbours faint. F7 shows B." : "Local B: the moving cells spread apart. F7 shows A.");
+            frame.Global.AddMark("mark.autoframe", rings ? "A · rings" : "B · ball", "text.dim", rings ? "Global A: the cells laid out as rings. F8 shows B." : "Global B: the whole puzzle as one ball. F8 shows A.");
             frame.Global.SetStatus(null, new[] { "drag: rotate 4D" }, $"gap {F("gap")}  shrink {F("stickerShrink")}");
-            frame.Local.SetStatus(app.Linked.Shape != null ? $"{app.Linked.FocusCells} moving cells, spread apart" : "moving cells", new[] { app.Linked.Shape != null ? "drag: turn" : "drag: rotate 4D" }, app.Linked.Shape != null ? "own shape" : "follows Global");
+            frame.Local.SetStatus($"{app.Linked.FocusCells} moving cells", new[] { "drag: turn" }, null);
         }
+        // Compare keys of the lab: the other Local, the other Global.
+        frame.HostKeys["F7"] = () => { app.Linked.LocalChoice = (app.Linked.LocalChoice + 1) % Math.Max(1, app.Linked.LocalChoices); Describe(); };
+        frame.HostKeys["F8"] = () => app.State.Set("projection", new EnumValue(app.State.Preset.Params.Choice("projection") == "hopfRings" ? "perspective" : "hopfRings"));
+        // The tour key steps through the screens this showing changed.
+        int tour = 0;
+        (string Name, Action Go)[] stops =
+        {
+            ("Solve, Local A and Global A", () => { frame.SelectWorkspace("solve"); app.Linked.LocalChoice = 0; app.State.Set("projection", new EnumValue("hopfRings")); }),
+            ("Local B", () => app.Linked.LocalChoice = 1),
+            ("Global B", () => app.State.Set("projection", new EnumValue("perspective"))),
+            ("next theme family", () => { app.Linked.LocalChoice = 0; app.State.Set("projection", new EnumValue("hopfRings")); Execute("theme.select", null); }),
+            ("first theme family", () => Execute("theme.select", null)),
+            ("Script", () => frame.SelectWorkspace("script")),
+            ("Analyse", () => frame.SelectWorkspace("analyse")),
+            ("Reference", () => frame.SelectWorkspace("reference")),
+            ("command palette", () => { frame.SelectWorkspace("solve"); palette.Open(); }),
+        };
+        frame.HostKeys["F9"] = () =>
+        {
+            frame.OpenOverlay?.Close();
+            (string name, Action go) = stops[tour]; go(); Describe();
+            frame.Say($"tour {tour + 1}/{stops.Length}: {name}");
+            tour = (tour + 1) % stops.Length;
+        };
         frame.Rebuilt += Describe; frame.Recoloured += Describe;
         demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         app.State.Changed += (_, _) => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
-        app.ViewParts["frame.workspace"] = (() => frame.Workspace, v => { if (frame.Workspaces.Stored.ContainsKey(v)) frame.SelectWorkspace(v); });
-        app.ViewParts["frame.zlayout"] = (() => frame.Model.Store(), v => frame.Model.Apply(v));
+        // A kept view from an earlier showing keeps its values but not its arrangement: this build opens on its
+        // own first screen, with the scene of the theme family.
+        string? seen = null;
+        app.ViewParts["frame.showing"] = (() => Showing, v => seen = v);
+        app.ViewParts["frame.workspace"] = (() => frame.Workspace, v => { if (seen == Showing && frame.Workspaces.Stored.ContainsKey(v)) frame.SelectWorkspace(v); });
+        app.ViewParts["frame.zlayout"] = (() => frame.Model.Store(), v => { if (seen == Showing) frame.Model.Apply(v); });
+        Callable.From(() =>
+        {
+            if (seen == Showing || !GodotObject.IsInstanceValid(frame)) { seen = Showing; return; }
+            seen = Showing; ApplyScene();
+        }).CallDeferred();
         frame.Flush();
         string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout", "frame.labels" };
         demo.TrackLayout(() => kept.Select(k => app.ViewParts[k].Get()).ToArray(), parts => { for (int i = 0; i < kept.Length; i++) app.ViewParts[kept[i]].Set(parts[i]); });

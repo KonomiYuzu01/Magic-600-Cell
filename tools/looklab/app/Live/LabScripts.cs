@@ -14,7 +14,6 @@ namespace LookLab.App.Live;
 // (entry points as commands, key binding, keymap presets and export, slots, diagnostics) is the chrome library.
 internal sealed class LabScripts
 {
-    public const string Stand = "Look Lab has no interpreter";
     public const string DefaultPreset = "default", CensusPanel = "census.orbits";
     public static string SlotId(int slot) => "slot." + (slot + 1);
     public SixCsEditor Editor { get; }
@@ -100,7 +99,7 @@ internal sealed class LabScripts
             foreach (ScriptEntry e in p.Entries)
                 if (!registry.Commands.ContainsKey(e.Command))
                     registry.Add(new ChromeCommand(e.Command, $"{p.File}: {e.Name}", e.Kind == ScriptKind.View ? "view" : "query", new[] { "any" },
-                        $"Entry point of {p.File}; a run ends in {(e.Kind == ScriptKind.Preview ? "a preview" : e.Kind == ScriptKind.View ? "a view or layout change" : "a read result")}, never a commit. {Stand}: the sample entry points are wired by hand."));
+                        $"Entry point of {p.File}; a run ends in {(e.Kind == ScriptKind.Preview ? "a preview" : e.Kind == ScriptKind.View ? "a view or layout change" : "a read result")}, never a commit."));
     }
 
     public ScriptEntry? Find(string command) => programs.SelectMany(p => p.Entries).FirstOrDefault(e => e.Command == command);
@@ -152,7 +151,7 @@ internal sealed class LabScripts
             case "script.layout.stacked":
                 frame.Model.SetPairArrangement("stacked", .5); Result(entry, "layout.stacked(): Global sits over Local. A layout change, in the layout history.", false); break;
             default:
-                Fail($"{entry.Program}.{entry.Name}: {Stand}, so only the sample entry points give a result. The entry point is registered, and a key can be bound to it."); break;
+                Fail($"{entry.Program}.{entry.Name}: no sample result for this entry point"); break;
         }
     }
 
@@ -170,7 +169,7 @@ internal sealed class LabScripts
             string[] parts = line.Split(' ', 2);
             if (call.Success && Find($"script.{call.Groups[1].Value}.{call.Groups[2].Value}") is { } entry) run(entry.Command, null);
             else if (registry.Commands.ContainsKey(parts[0])) run(parts[0], parts.Length > 1 ? parts[1].Trim() : null);
-            else Fail($"unknown word `{parts[0]}`. {Stand}: a line names a sample entry point, such as sweep.ring(4), or a command id.");
+            else Fail($"unknown word `{parts[0]}`");
         }
         finally { quiet = false; }
     }
@@ -251,7 +250,7 @@ internal sealed class LabScripts
         for (int i = 0; i < ScriptSlots.Count; i++)
         {
             string? id = Slots.Mounted[i];
-            if (id == null) { frame.SetContent(SlotId(i), ChromeWidgets.Empty("Script panel slot " + (i + 1), "A panel a script declares mounts here. Run census.orbits from the Scripts dock.")); continue; }
+            if (id == null) { frame.SetContent(SlotId(i), ChromeWidgets.Empty(i == 0 ? "panel.slot1" : "panel.slot2", "Empty panel slot")); continue; }
             var host = new ScriptPanelHost(id, Spec(id), () => frame.Tokens); host.Unmount += panel => run("panel.unmount", panel);
             frame.SetContent(SlotId(i), host);
         }

@@ -121,6 +121,7 @@
     "severity.error": "red.8",
     "severity.warning": "amber.8",
     "severity.info": "blue.8",
+    "severity.ok": "green.9",
     "strip.destination": "blue.8",
     "strip.occupant": "amber.9",
     "strip.wanted": "magenta.8",

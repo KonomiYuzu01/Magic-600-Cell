@@ -40,7 +40,7 @@ public sealed partial class SixCsEditor : VBoxContainer
         Code.GuiInput += input =>
         {
             if (input is not InputEventKey { Pressed: true, Echo: false, CtrlPressed: true } key || key.Keycode is not (Key.Enter or Key.KpEnter)) return;
-            if (key.ShiftPressed) CommitKey?.Invoke(); else RunAtCaret();
+            if (key.ShiftPressed) Safe.Raise(CommitKey); else RunAtCaret();
             Code.AcceptEvent();
         };
         Refresh();
@@ -51,7 +51,7 @@ public sealed partial class SixCsEditor : VBoxContainer
         if (Open == null) return;
         int at = programs.FindIndex(p => p.Id == Open.Id); Open = Open with { Source = Code.Text }; programs[at] = Open;
         if (pause.IsInsideTree()) pause.Start();
-        Edited?.Invoke(Open);
+        Safe.Raise(Edited, Open);
     }
 
     // Replaces the text of the open program, as typing would.
@@ -76,7 +76,7 @@ public sealed partial class SixCsEditor : VBoxContainer
     }
 
     public ScriptEntry? EntryAtCaret() => Open?.Entries.LastOrDefault(e => e.Line <= Code.GetCaretLine() + 1);
-    public void RunAtCaret() { if (Open != null) Run?.Invoke(Open, EntryAtCaret()); }
+    public void RunAtCaret() { if (Open != null) Safe.Raise(Run, Open, EntryAtCaret()); }
 
     // A read result is shown inline; one computed before a later commit is dimmed and names its entry.
     public void ShowResult(string text, bool stale = false)
@@ -134,7 +134,7 @@ public sealed partial class SixCsEditor : VBoxContainer
         foreach (string word in SixCs.Types) colours.AddKeywordColor(word, t.C("syntax.type"));
         colours.AddColorRegion("\"", "\"", t.C("syntax.string")); colours.AddColorRegion("#", "", t.C("syntax.comment"), true);
         Code.SyntaxHighlighter = colours;
-        Code.Editable = Open != null; Code.PlaceholderText = "Open a .6cs program from the Scripts dock to edit it here.";
+        Code.Editable = Open != null; Code.PlaceholderText = "no program open";
         notesOverlay.QueueRedraw();
     }
 }
@@ -179,7 +179,7 @@ public sealed partial class ScriptList : VBoxContainer
             state.AddThemeColorOverride("font_color", t.C(failed ? "severity.error" : "state.committed")); state.TooltipText = failed ? "failed its check" : "checked"; state.MouseFilter = MouseFilterEnum.Pass;
             line.AddChild(state); line.AddChild(ChromeWidgets.Text(program.File, "CodeLabel", true));
             if (found.Count > 0) line.AddChild(SessionWidgets.Chip(found.Count.ToString(), t.C(failed ? "severity.error" : "text.dim"), found.Count + " notes"));
-            head.GuiInput += input => { if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Opened?.Invoke(program, 0); };
+            head.GuiInput += input => { if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Safe.Raise(Opened, program, 0); };
             List.AddChild(head);
             foreach (ScriptEntry entry in program.Entries)
             {
@@ -188,14 +188,14 @@ public sealed partial class ScriptList : VBoxContainer
                 string colour = entry.Kind == ScriptKind.Preview ? "state.preview" : entry.Kind == ScriptKind.View ? "accent.strong" : "text.dim";
                 row.AddChild(SessionWidgets.Chip(entry.Kind.ToString().ToLowerInvariant(), t.C(colour), "What a run of this entry point may end in"));
                 Button name = ChromeWidgets.Tool(entry.Name, $"Line {entry.Line}: click to show it", false, "FieldCaption"); name.Alignment = HorizontalAlignment.Left; name.ClipText = true;
-                name.SizeFlagsHorizontal = SizeFlags.ExpandFill; name.Pressed += () => Opened?.Invoke(program, entry.Line); row.AddChild(name);
+                name.SizeFlagsHorizontal = SizeFlags.ExpandFill; name.Pressed += () => Safe.Raise(Opened, program, entry.Line); row.AddChild(name);
                 bool waiting = Binding == entry.Command; string keys = KeysOf(entry);
                 Button bind = ChromeWidgets.Tool(waiting ? "press a key" : keys.Length > 0 ? keys : "bind", waiting ? "Press the key to bind; Esc leaves it" : "Bind a key to this entry point", true, "FieldValue");
-                bind.SetPressedNoSignal(waiting); bind.SetMeta("bind", entry.Command); bind.Pressed += () => BindEntry?.Invoke(entry); row.AddChild(bind);
-                row.AddChild(SessionWidgets.Tool("script.run", "Run this entry point", t, () => RunEntry?.Invoke(entry)));
+                bind.SetPressedNoSignal(waiting); bind.SetMeta("bind", entry.Command); bind.Pressed += () => Safe.Raise(BindEntry, entry); row.AddChild(bind);
+                row.AddChild(SessionWidgets.Tool("script.run", "Run this entry point", t, () => Safe.Raise(RunEntry, entry)));
             }
         }
-        if (programs.Count == 0) List.AddChild(ChromeWidgets.Empty("Scripts", "The session's .6cs programs and panels appear here."));
+        if (programs.Count == 0) List.AddChild(ChromeWidgets.Empty("panel.scripts", "No programs yet"));
     }
 }
 
@@ -229,9 +229,9 @@ public sealed partial class ScriptPanelHost : PanelContainer
         head.AddChild(SessionWidgets.Chip("script", t.C("script.frame"), spec != null ? "Drawn by the host from " + spec.Program : "Its program is missing"));
         Button pin = ChromeWidgets.Tool("", "Pin: keep this panel on its target when the selection changes", true); ChromeIcons.Apply(pin, "palette.pin", t.Px("icon.small"));
         pin.SetPressedNoSignal(Pinned); pin.Toggled += on => Pinned = on; head.AddChild(pin);
-        head.AddChild(SessionWidgets.Tool("pane.close", "Unmount this panel", t, () => Unmount?.Invoke(id)));
+        head.AddChild(SessionWidgets.Tool("pane.close", "Unmount this panel", t, () => Safe.Raise(Unmount, id)));
         column.AddChild(new HSeparator());
-        if (spec == null) { column.AddChild(ChromeWidgets.Empty(id, "The program of this panel is missing. Its slot is kept.")); return; }
+        if (spec == null) { column.AddChild(ChromeWidgets.Empty("panel.scripts", "Program missing, slot kept")); return; }
         column.AddChild(ChromeWidgets.Text("target: the selection", "MicroLabel"));
         var grid = new GridContainer { Columns = 2 }; column.AddChild(grid);
         foreach ((string label, string value) in spec.Rows)
@@ -273,7 +273,7 @@ public sealed partial class ScriptCanvas : PanelContainer
     {
         foreach (CanvasMark mark in marks) if (!CanvasMark.Shapes.Contains(mark.Shape)) throw J.Error(mark.Shape, "unknown canvas shape");
         Marks = marks; Source = source;
-        caption.Text = marks.Count == 0 ? "script canvas: nothing is drawn. A script draws here, display only." : $"script canvas: {source}, {marks.Count} marks, display only";
+        caption.Text = marks.Count == 0 ? "nothing drawn" : $"{source} · {marks.Count} marks";
         surface.QueueRedraw();
     }
 

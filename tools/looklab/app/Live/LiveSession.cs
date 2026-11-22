@@ -66,9 +66,19 @@ internal sealed partial class LiveSession : Control
         window.Size = size; window.Position = screen.Position + (screen.Size - size) / 2;
     }
 
+    private int lamp;
+
     public override void _Process(double delta)
     {
         sincePoll += delta; sinceSave += delta; open += delta;
+        // Failures show: the error lamp counts them and the Problems panel lists them.
+        if (LabErrors.Count != lamp && IsInstanceValid(Frame))
+        {
+            IReadOnlyList<string> all = LabErrors.All;
+            for (int i = lamp; i < all.Count; i++) LabFrame.InspectOf(Frame).Feedback.Report(Severity.Error, all[i].Split('\n')[0], "look-lab", 0);
+            lamp = all.Count;
+            Frame.SetAlert(lamp, lamp == 0 ? "" : all[0].Split('\n')[0]);
+        }
         // A picture of the window, four and twelve seconds after it opened, beside the kept view: what the lab looked like.
         if (pictured < 2 && open >= PictureSeconds * (1 + 2 * pictured) && DisplayServer.GetName() != "headless")
         {
@@ -147,7 +157,17 @@ internal sealed partial class LiveSession : Control
 
     public override void _Notification(int what)
     {
-        if (what == NotificationWMCloseRequest || what == NotificationPredelete) { if (IsInstanceValid(App)) Save(); }
+        if (what == NotificationWMCloseRequest) Closing(true);
+        else if (what == NotificationPredelete && IsInstanceValid(App)) Keep();
+    }
+
+    private void Keep() { try { Save(); } catch (Exception ex) { Safe.Report(ex); } }
+
+    // The window's close button: keep the view, then leave. Nothing here may stop the window from closing.
+    public void Closing(bool quit)
+    {
+        if (IsInstanceValid(App)) Keep();
+        if (quit) { LabErrors.Remove(); GetTree().Quit(); }
     }
 }
 
@@ -195,10 +215,11 @@ internal static class LiveChecks
             fault, "a main view is missing from the locked pair");
         if (frame.Model.Docks[DockSide.Right].Open != LabFrame.Tune) { frame.Model.ShowDock(DockSide.Right, LabFrame.Tune); frame.Flush(); }
         Require(frame.Model.Docks[DockSide.Right].Open == LabFrame.Tune && frame.IsAncestorOf(app.ParameterPanel), fault, "the Tune panel is not in the right dock");
-        // Local has its own shape: an orthographic cap around the moving cells; Global draws every cell.
+        // Local has its own shape: a cap around the moving cells, the one on file that is chosen; Global draws every cell.
         app.View._Process(0);
-        Require(app.Linked.Shape != null && app.Linked.Local!.Material.GetShaderParameter("focus_cos").AsDouble() > -1 &&
-            app.Linked.Local.Material.GetShaderParameter("projection_kind").AsInt32() == (int)ProjectionKind.Orthographic &&
+        Require(app.Linked.Shape != null && app.Linked.LocalChoices == 2 && app.Linked.Local!.Material.GetShaderParameter("focus_cos").AsDouble() > -1 &&
+            app.Linked.Local.Material.GetShaderParameter("projection_kind").AsInt32() == (int)app.Linked.Shape.Projection &&
+            Math.Abs(app.Linked.Local.Material.GetShaderParameter("ghost").AsDouble() - app.Linked.Shape.Ghost) < 1e-6 &&
             app.View.Material.GetShaderParameter("focus_cos").AsDouble() < -1.5 && app.State.Preset.Params.Choice("projection") != "",
             fault, "Local does not draw its own shape of the moving cells");
         // The two inspector tiers read one model; a View field acts on the lab, stays in range and resets.

@@ -25,7 +25,7 @@ public sealed partial class ShortcutSheet : ChromeOverlay
         this.registry = registry; this.keymap = keymap; Name = "ShortcutSheet";
         var column = new VBoxContainer(); Panel.AddChild(column);
         column.AddChild(ChromeWidgets.Text("Keyboard shortcuts", "TitleLabel"));
-        column.AddChild(ChromeWidgets.Text("A key acts on the view under the pointer first, then everywhere. Esc closes this sheet.", "DimLabel"));
+        column.AddChild(ChromeWidgets.Text("Keys act on the view under the pointer first.", "DimLabel"));
         column.AddChild(new HSeparator()); column.AddChild(columns);
     }
 
@@ -107,7 +107,7 @@ public sealed partial class RadialOverlay : ChromeOverlay
     {
         if (Menu == null || index < 0 || index >= Menu.Entries.Count) return false;
         RadialEntry entry = Menu.Entries[index];
-        Close(); Chosen?.Invoke(entry);
+        Close(); Safe.Raise(Chosen, entry);
         return true;
     }
 

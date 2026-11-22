@@ -346,6 +346,11 @@
       "meaning": "A note.",
       "cue": "circle"
     },
+    "severity.ok": {
+      "group": "state",
+      "meaning": "Done without a problem.",
+      "cue": "check mark"
+    },
     "strip.destination": {
       "group": "encoding",
       "meaning": "Relationship strip: the destination.",
@@ -516,6 +521,11 @@
     },
     {
       "text": "severity.info",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.ok",
       "surface": "surface.panel",
       "minimum": 3
     },

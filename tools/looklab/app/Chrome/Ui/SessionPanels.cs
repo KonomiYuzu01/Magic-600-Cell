@@ -66,8 +66,7 @@ public sealed partial class CommitBar : PanelContainer
         if (p == null)
         {
             row.AddChild(SessionWidgets.Chip("no preview", t.C("text.dim")));
-            Label idle = ChromeWidgets.Text("Global and Local show the committed state. A preview is staged here before anything commits.", "DimLabel", true);
-            idle.SizeFlagsHorizontal = SizeFlags.ExpandFill; row.AddChild(idle);
+            row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
             Commit = ChromeWidgets.Tool("Commit", "There is no preview"); Commit.Disabled = true;
         }
         else
@@ -89,12 +88,12 @@ public sealed partial class CommitBar : PanelContainer
                 Reason.Text = p.Reason; Reason.TooltipText = p.Reason; Reason.SizeFlagsHorizontal = SizeFlags.ExpandFill;
                 Reason.AddThemeColorOverride("font_color", t.C(colour)); row.AddChild(Reason);
             }
-            row.AddChild(SessionWidgets.Tool("preview.moves", "Open the preview view with the move strip", t, () => Command?.Invoke("view.preview.open", null)));
-            row.AddChild(SessionWidgets.Tool("preview.promote", "Promote: save this preview as a macro", t, () => Command?.Invoke("macro.save", null)));
-            row.AddChild(SessionWidgets.Tool("preview.discard", "Discard the preview (Esc)", t, () => Command?.Invoke("operation.preview.cancel", null), "Discard"));
+            row.AddChild(SessionWidgets.Tool("preview.moves", "Open the preview view with the move strip", t, () => Safe.Raise(Command, "view.preview.open", null)));
+            row.AddChild(SessionWidgets.Tool("preview.promote", "Promote: save this preview as a macro", t, () => Safe.Raise(Command, "macro.save", null)));
+            row.AddChild(SessionWidgets.Tool("preview.discard", "Discard the preview (Esc)", t, () => Safe.Raise(Command, "operation.preview.cancel", null), "Discard"));
             string label = Model.Scrub < p.Moves.Count && Model.Scrub > 0 ? $"Commit {Model.Scrub}" : "Commit";
             Commit = SessionWidgets.Tool("preview.commit", p.Status == PreviewStatus.Ready ? $"Commit one labelled entry ({CommitKeys})" : "Commit is off: " + p.Reason, t,
-                () => Command?.Invoke("operation.preview.commit", null), label);
+                () => Safe.Raise(Command, "operation.preview.commit", null), label);
             Commit.Disabled = p.Status != PreviewStatus.Ready || Model.Scrub == 0;
             if (!Commit.Disabled) Commit.AddThemeColorOverride("font_color", t.C("accent.strong"));
         }
@@ -135,12 +134,12 @@ public sealed partial class PreviewPanel : VBoxContainer
     {
         if (!IsInstanceValid(this)) return;
         TokenSet t = tokens(); Preview? p = Model.Pending;
-        SessionWidgets.Clear(head); SessionWidgets.Clear(Moves); SessionWidgets.Clear(Effects);
+        ChromeWidgets.Detach(Title); SessionWidgets.Clear(head); SessionWidgets.Clear(Moves); SessionWidgets.Clear(Effects);
         head.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
         Title.Text = p == null ? "No preview" : $"Preview #{p.Id}"; ChromeWidgets.Detach(Title); head.AddChild(Title);
         if (p == null)
         {
-            stageNote.Text = "A pending preview is drawn here, never in Global or Local.";
+            stageNote.Text = "no preview staged";
             return;
         }
         (string text, string colour) = SessionWidgets.Status[p.Status];
@@ -151,7 +150,7 @@ public sealed partial class PreviewPanel : VBoxContainer
         head.AddChild(SessionWidgets.Tool("step.back", "One move back (Left)", t, () => Model.SetScrub(Model.Scrub - 1)));
         head.AddChild(SessionWidgets.Tool("step.forward", "One move forward (Right)", t, () => Model.SetScrub(Model.Scrub + 1)));
         stageNote.Text = p.Status == PreviewStatus.Ready
-            ? $"State after move {Model.Scrub} of {p.Moves.Count}.\nThe core draws the previewed puzzle here in the product."
+            ? $"after move {Model.Scrub} of {p.Moves.Count}"
             : "Nothing to draw: " + p.Reason;
         for (int i = 0; i < p.Moves.Count; i++)
         {
@@ -215,7 +214,7 @@ public sealed partial class HistoryPanel : VBoxContainer
     public void Toggle(string entry) { if (!open.Add(entry)) open.Remove(entry); Refresh(); }
     public bool IsOpen(string entry) => open.Contains(entry);
 
-    private void Send(string command, string? argument = null) => Command?.Invoke(command, argument);
+    private void Send(string command, string? argument = null) => Safe.Raise(Command, command, argument);
 
     public void Refresh()
     {

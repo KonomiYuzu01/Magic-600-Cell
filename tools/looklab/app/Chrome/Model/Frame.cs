@@ -57,8 +57,8 @@ public sealed class FrameModel
     public string? Refusal { get; private set; }
     public event Action? Changed;
 
-    private bool Refuse(string reason) { Refusal = reason; Changed?.Invoke(); return false; }
-    private bool Accept() { Refusal = null; Changed?.Invoke(); return true; }
+    private bool Refuse(string reason) { Refusal = reason; Safe.Raise(Changed); return false; }
+    private bool Accept() { Refusal = null; Safe.Raise(Changed); return true; }
 
     public void AddDockPanel(DockSide side, string id)
     {

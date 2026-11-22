@@ -411,8 +411,19 @@ public sealed class TokenSet
         Colours = colours;
     }
 
-    public Rgb Colour(string token) => Colours[System.Components.TryGetValue(token, out string? role) ? role : token].Value;
-    public double Size(string token) => Sizes.TryGetValue(token, out double v) ? v : throw J.Error(token, "unknown size token");
+    // A name no theme has never throws while the frame draws: it shows as a loud colour, or as one unit, and is
+    // reported once. The token lint keeps such a name out of the sources.
+    public static readonly Rgb MissingColour = new(1, 0, 1);
+    private static readonly HashSet<string> missing = new(StringComparer.Ordinal);
+    private static T Missing<T>(string token, T shown)
+    {
+        bool first; lock (missing) first = missing.Add(token);
+        if (first) Safe.Report("missing token: " + token);
+        return shown;
+    }
+    public bool Has(string token) => Colours.ContainsKey(System.Components.TryGetValue(token, out string? role) ? role : token) || Sizes.ContainsKey(token);
+    public Rgb Colour(string token) => Colours.TryGetValue(System.Components.TryGetValue(token, out string? role) ? role : token, out ResolvedColour? found) ? found.Value : Missing(token, MissingColour);
+    public double Size(string token) => Sizes.TryGetValue(token, out double v) ? v : Missing(token, System.Unit);
     public double TypeSize(string role, string step) => Math.Round(System.Type[role].Ramp[step] * DisplayScale);
     public double Duration(string token) => System.Durations[token];
 

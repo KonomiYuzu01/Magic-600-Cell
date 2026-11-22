@@ -18,15 +18,25 @@ public static class ChromeWidgets
     public static Button Tool(string text, string tooltip, bool toggle = false, string variation = "ToolButton") =>
         new() { Text = text, TooltipText = tooltip, ToggleMode = toggle, ThemeTypeVariation = variation, FocusMode = Control.FocusModeEnum.None };
 
-    // The designed empty state of a view or panel (ADR-D01.6): what it is for and how it fills, in place.
-    public static Control Empty(string title, string hint)
+    // The designed empty state of a view or panel (ADR-D01.6), drawn: its glyph dimmed, at most six words, and
+    // the key that fills it as a key cap.
+    public static Control Empty(string glyph, string words, string? key = null)
     {
         var centre = new CenterContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        var column = new VBoxContainer(); centre.AddChild(column);
-        var head = Text(title, "DimLabel"); head.HorizontalAlignment = HorizontalAlignment.Center; column.AddChild(head);
-        var body = Text(hint, "MicroLabel"); body.HorizontalAlignment = HorizontalAlignment.Center; body.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        body.CustomMinimumSize = new Vector2(160, 0); column.AddChild(body);
+        var column = new VBoxContainer { Name = "EmptyState" }; centre.AddChild(column);
+        var mark = Text("", "DimLabel"); mark.HorizontalAlignment = HorizontalAlignment.Center; ChromeIcons.Apply(mark, glyph, ChromeIcons.EmptySize); column.AddChild(mark);
+        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center }; column.AddChild(row);
+        row.AddChild(Text(words, "MicroLabel"));
+        if (!string.IsNullOrEmpty(key)) row.AddChild(KeyCap(key));
         return centre;
+    }
+
+    // A key, drawn as a key cap.
+    public static Control KeyCap(string key)
+    {
+        var cap = new PanelContainer { ThemeTypeVariation = "Chip", MouseFilter = Control.MouseFilterEnum.Ignore };
+        cap.AddChild(Text(key, "CodeLabel"));
+        return cap;
     }
 
     public static void Detach(Node? node) { if (node != null && GodotObject.IsInstanceValid(node)) node.GetParent()?.RemoveChild(node); }
@@ -134,7 +144,7 @@ public sealed partial class ChromeFrame : Control
     private Control? strip, topStrip;
     // Labels are off by default (ADR-D01.44): tabs and marks show icons, and every word stays in a tooltip.
     private bool labels;
-    public bool Labels { get => labels; set { if (labels != value) { labels = value; dirty = true; LabelsChanged?.Invoke(); } } }
+    public bool Labels { get => labels; set { if (labels != value) { labels = value; dirty = true; Safe.Raise(LabelsChanged); } } }
     public event Action? LabelsChanged;
     private readonly Dictionary<string, (string Text, string Colour, string Tip)> badges = new(StringComparer.Ordinal);
     // A count on a dock panel's button, shown while the panel is collapsed too (ADR-D01.27).
@@ -152,6 +162,11 @@ public sealed partial class ChromeFrame : Control
         return label;
     }
     // One thin strip at the top edge of the views: the inspector's first tier (ADR-D01.22).
+    private int alerts; private string alertTip = "";
+    public int Alerts => alerts;
+    public event Action? AlertPressed;
+    // The error lamp of the top bar: how many failures the host has counted, and what the first one was.
+    public void SetAlert(int count, string tooltip) { if (count == alerts && tooltip == alertTip) return; alerts = count; alertTip = tooltip; dirty = true; }
     public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
@@ -185,6 +200,8 @@ public sealed partial class ChromeFrame : Control
         dockPanels.Add(new DockPanel(side, id, title, glyph, content)); dirty = true;
     }
 
+    public IReadOnlyList<string> PaneIds => panes.Keys.ToArray();
+
     public void AddPane(string id, string title, Control content)
     {
         content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -198,7 +215,7 @@ public sealed partial class ChromeFrame : Control
         Tokens = tokens;
         if (rebuild) { Build(); return; }
         Theme = ChromeTheme.Build(tokens); Notice.AddThemeColorOverride("font_color", tokens.C("severity.warning"));
-        Recoloured?.Invoke();
+        Safe.Raise(Recoloured);
     }
     public event Action? Recoloured;
 
@@ -208,7 +225,7 @@ public sealed partial class ChromeFrame : Control
         if (!Workspaces.Stored.TryGetValue(id, out string? stored)) return false;
         if (!Model.Apply(stored)) return false;
         Workspace = id; baseline = Model.Store(); dirty = true;
-        WorkspaceSelected?.Invoke(id);
+        Safe.Raise(WorkspaceSelected, id);
         return true;
     }
 
@@ -246,14 +263,18 @@ public sealed partial class ChromeFrame : Control
     // While set, the next key goes to it instead of the keymap: the Scripts dock binds a key this way.
     public Action<string>? KeyCapture { get; set; }
 
+    // Keys of the host itself, outside the command table: a lab uses them for its compare and tour keys.
+    public IDictionary<string, Action> HostKeys { get; } = new Dictionary<string, Action>(StringComparer.Ordinal);
+
     public bool Press(string key)
     {
         if (KeyCapture is { } capture) { KeyCapture = null; capture(key); return true; }
+        if (OpenOverlay == null && HostKeys.TryGetValue(key, out Action? host)) { Safe.Raise(host); return true; }
         ChromeOverlay? overlay = OpenOverlay;
         if (overlay != null && overlay.Key(key)) return true;
         if (Keys?.Resolve(key, KeyContexts()) is not { } binding) return false;
         if (overlay != null && !OverlayCommands.Contains(binding.Command)) return false;
-        KeyCommand?.Invoke(binding);
+        Safe.Raise(KeyCommand, binding);
         return true;
     }
 
@@ -263,6 +284,7 @@ public sealed partial class ChromeFrame : Control
         if (Press(Keymap.KeyName(key.CtrlPressed, key.AltPressed, key.ShiftPressed, OS.GetKeycodeString(key.Keycode)))) GetViewport().SetInputAsHandled();
     }
 
+    public void Invalidate() => dirty = true;
     public void Flush() { if (dirty) Build(); }
 
     public override void _Process(double delta)
@@ -270,7 +292,7 @@ public sealed partial class ChromeFrame : Control
         Flush();
         Vector2 mouse = GetGlobalMousePosition();
         Hover(Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
-        if (noticeLeft > 0 && (noticeLeft -= delta) <= 0) { Notice.Visible = false; message = null; }
+        if (noticeLeft > 0 && (noticeLeft -= delta) <= 0) { Notice.Text = ""; Notice.TooltipText = ""; message = null; }
     }
 
     private Container Tight(Container container) { container.AddThemeConstantOverride("separation", 0); return container; }
@@ -284,23 +306,25 @@ public sealed partial class ChromeFrame : Control
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
-        var window = new PanelContainer { ThemeTypeVariation = "Window" }; root = window;
+        var window = new PanelContainer { ThemeTypeVariation = "FrameGround" }; root = window;
         AddChild(window); MoveChild(window, 0); window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var column = (VBoxContainer)Tight(new VBoxContainer()); window.AddChild(column);
+        // Feedback in place: the notice has the quiet slot of the top bar, so it never moves the layout.
+        if (Notice != null && IsInstanceValid(Notice) && Notice.GetParent() == null) Notice.QueueFree();
+        Notice = ChromeWidgets.Text(Model.Refusal ?? message ?? "", "DimLabel", true); Notice.Name = "FrameNotice";
+        Notice.AddThemeColorOverride("font_color", Tokens.C(Model.Refusal != null || messageWarns ? "severity.warning" : "text.dim"));
+        Notice.HorizontalAlignment = HorizontalAlignment.Right;
+        if (Model.Refusal != null) noticeLeft = 6;
         if (!focus) column.AddChild(TopBar());
         var middle = (HBoxContainer)Tight(new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }); column.AddChild(middle);
         if (!focus) middle.AddChild(SideDock(DockSide.Left));
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
-        Notice = ChromeWidgets.Text(Model.Refusal ?? message ?? "", "DimLabel", true); Notice.Name = "FrameNotice";
-        Notice.AddThemeColorOverride("font_color", Tokens.C(Model.Refusal != null || messageWarns ? "severity.warning" : "text.dim"));
-        Notice.Visible = Model.Refusal != null || message != null; if (Model.Refusal != null) noticeLeft = 6;
-        centre.AddChild(Notice);
         if (topStrip != null && !focus) centre.AddChild(topStrip);
         Global = View("Global", globalContent); Local = View("Local", localContent);
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
         if (strip != null) centre.AddChild(strip);
         if (!focus) { centre.AddChild(BottomDock()); middle.AddChild(SideDock(DockSide.Right)); }
-        Rebuilt?.Invoke();
+        Safe.Raise(Rebuilt);
     }
 
     private Control TopBar()
@@ -324,10 +348,18 @@ public sealed partial class ChromeFrame : Control
             Button reset = ChromeWidgets.Tool("", "Reset " + Workspaces.Names[Workspace] + " to its preset"); reset.Name = "WorkspaceReset"; ChromeIcons.Apply(reset, "workspace.reset", Tokens.Px("icon.small"));
             reset.Pressed += () => SelectWorkspace(Workspace); row.AddChild(reset);
         }
-        row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        row.AddChild(Notice);
+        if (alerts > 0)
+        {
+            // The error lamp: something failed while the window was open.
+            Button lamp = ChromeWidgets.Tool(alerts.ToString(System.Globalization.CultureInfo.InvariantCulture), alertTip); lamp.Name = "ErrorLamp";
+            ChromeIcons.Apply(lamp, "severity.error", Tokens.Px("icon.small")); lamp.Text = " " + alerts.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            lamp.AddThemeColorOverride("font_color", Tokens.C("severity.error")); lamp.Pressed += () => Safe.Raise(AlertPressed);
+            row.AddChild(lamp);
+        }
         Button words = ChromeWidgets.Tool("", Labels ? "Labels are on: click for icons alone" : "Labels are off: click to show them", true); words.Name = "LabelsToggle";
         ChromeIcons.Apply(words, "labels", Tokens.Px("icon.small")); words.SetPressedNoSignal(Labels); words.Pressed += () => Labels = !Labels; row.AddChild(words);
-        row.AddChild(BarTools); row.AddChild(new VSeparator()); row.AddChild(Health);
+        row.AddChild(BarTools); if (Health.Text.Length > 0) { row.AddChild(new VSeparator()); row.AddChild(Health); }
         row.AddChild(new Control { CustomMinimumSize = new Vector2(Tokens.Px("space.3"), 0) });
         return bar;
     }
@@ -392,7 +424,7 @@ public sealed partial class ChromeFrame : Control
     private ViewFrame View(string name, Control? content)
     {
         var view = new ViewFrame(name, Tokens) { ShowLabels = Labels };
-        if (content != null) view.SetContent(content); else view.Slot.AddChild(ChromeWidgets.Empty(name, "No view is attached."));
+        if (content != null) view.SetContent(content); else view.Slot.AddChild(ChromeWidgets.Empty("pane.close", "No view attached"));
         return view;
     }
 
@@ -452,7 +484,7 @@ public sealed partial class ChromeFrame : Control
         Button close = ChromeWidgets.Tool("", "Close " + active); ChromeIcons.Apply(close, "pane.close", Tokens.Px("icon.small")); close.Pressed += () => Model.Close(active); tabs.AddChild(close);
         var body = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
         group.AddChild(body);
-        body.AddChild(panes.TryGetValue(active, out Pane? pane) ? pane.Content : ChromeWidgets.Empty(active, "This pane is not available in this build."));
+        body.AddChild(panes.TryGetValue(active, out Pane? pane) ? pane.Content : ChromeWidgets.Empty("pane.close", "Pane not available"));
         return group;
     }
 

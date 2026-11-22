@@ -9,7 +9,7 @@ namespace Magic600.Chrome;
 // windows are not part of the frame (ADR-D01.37), so the palette and the shortcut sheet are drawn in the window.
 public abstract partial class ChromeOverlay : Control
 {
-    protected PanelContainer Panel { get; } = new() { ThemeTypeVariation = "Popup" };
+    protected PanelContainer Panel { get; } = new() { ThemeTypeVariation = "OverlayBox" };
     protected Func<TokenSet> Tokens { get; }
     public bool IsOpen => Visible;
     public event Action? Closed;
@@ -33,7 +33,7 @@ public abstract partial class ChromeOverlay : Control
     }
     // A key pressed while the overlay is open and no text field holds the focus; true when the overlay used it.
     public virtual bool Key(string key) => false;
-    public void Close() { if (!Visible) return; Visible = false; Closed?.Invoke(); }
+    public void Close() { if (!Visible) return; Visible = false; Safe.Raise(Closed); }
 }
 
 // The command palette (ADR-D01.18): every command of the registry, filtered by what is typed and ordered only
@@ -92,13 +92,13 @@ public sealed partial class CommandPalette : ChromeOverlay
     {
         if (Query.Text.StartsWith('>') && Query.Text.Substring(1).Trim() is { Length: > 0 } line && (Rows.Count == 0 || line.Contains('(')))
         {
-            History.Add(line); Close(); TypedLine?.Invoke(line);
+            History.Add(line); Close(); Safe.Raise(TypedLine, line);
             return true;
         }
         if (Selected >= Rows.Count) return false;
         PaletteRow row = Rows[Selected];
         if (row.Unavailable != null) { Describe(); return false; }
-        Model.Used(row); Close(); Run?.Invoke(row);
+        Model.Used(row); Close(); Safe.Raise(Run, row);
         return true;
     }
 
@@ -120,7 +120,7 @@ public sealed partial class CommandPalette : ChromeOverlay
     {
         if (Rows.Count == 0)
         {
-            Help.Text = Query.Text.StartsWith('>') ? "Typed mode: a command id and its argument, or a 600 Cell Script line. Up recalls a line. A run ends in a read result or a preview, never a commit." : "No command matches. The palette always holds every command.";
+            Help.Text = Query.Text.StartsWith('>') ? "Type a command or a script line. Up recalls. A run never commits." : "No command matches.";
             return;
         }
         PaletteRow row = Rows[Math.Min(Selected, Rows.Count - 1)];

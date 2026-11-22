@@ -36,7 +36,7 @@ public sealed class PreviewModel
         Replaced = Pending != null; if (Replaced) shownAt = now;
         Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection);
         Scrub = Pending.Moves.Count;
-        Changed?.Invoke();
+        Safe.Raise(Changed);
         return Pending;
     }
 
@@ -44,13 +44,13 @@ public sealed class PreviewModel
     {
         if (Pending == null) return;
         int to = Math.Clamp(moves, 0, Pending.Moves.Count);
-        if (to != Scrub) { Scrub = to; Changed?.Invoke(); }
+        if (to != Scrub) { Scrub = to; Safe.Raise(Changed); }
     }
 
     public void MarkStale(string reason)
     {
         if (Pending == null) return;
-        Pending = Pending with { Status = PreviewStatus.Stale, Reason = reason }; Changed?.Invoke();
+        Pending = Pending with { Status = PreviewStatus.Stale, Reason = reason }; Safe.Raise(Changed);
     }
 
     // Why the pending preview cannot be committed now, or null when it can.
@@ -66,7 +66,7 @@ public sealed class PreviewModel
     public bool Discard()
     {
         if (Pending == null) return false;
-        Pending = null; Scrub = 0; Replaced = false; Changed?.Invoke();
+        Pending = null; Scrub = 0; Replaced = false; Safe.Raise(Changed);
         return true;
     }
 
@@ -77,7 +77,7 @@ public sealed class PreviewModel
         if (CommitRefusal(now) != null) return null;
         Preview taken = Pending!;
         if (Scrub < taken.Moves.Count) taken = taken with { Id = next++, Moves = taken.Moves.Take(Scrub).ToArray(), Statement = $"{taken.Statement} |> prefix({Scrub})" };
-        Pending = null; Scrub = 0; Replaced = false; Changed?.Invoke();
+        Pending = null; Scrub = 0; Replaced = false; Safe.Raise(Changed);
         return taken;
     }
 }
@@ -103,7 +103,7 @@ public sealed class MoveHistory
     private readonly List<string> actions = new();
     private int next = 1;
 
-    private void Did(string action) { actions.Add(action); Changed?.Invoke(); }
+    private void Did(string action) { actions.Add(action); Safe.Raise(Changed); }
 
     // Why a commit is refused now, or null.
     public string? CommitRefusal => Inner > 0 ? $"{entries[Cursor - 1].Id} is partly undone; redo it or finish the undo first" : null;
@@ -179,12 +179,12 @@ public sealed class LayoutHistory
     public bool Record(string name, string state, string? merge = null)
     {
         if (Cursor >= 0 && steps[Cursor].State == state) return false;
-        if (merge != null && merge == merged && Cursor == steps.Count - 1 && Cursor > 0) { steps[Cursor] = new LayoutStep(name, state); Changed?.Invoke(); return true; }
+        if (merge != null && merge == merged && Cursor == steps.Count - 1 && Cursor > 0) { steps[Cursor] = new LayoutStep(name, state); Safe.Raise(Changed); return true; }
         merged = merge;
         steps.RemoveRange(Cursor + 1, steps.Count - Cursor - 1);
         steps.Add(new LayoutStep(name, state));
         if (steps.Count > Kept) steps.RemoveAt(0);
-        Cursor = steps.Count - 1; Changed?.Invoke();
+        Cursor = steps.Count - 1; Safe.Raise(Changed);
         return true;
     }
 
@@ -196,7 +196,7 @@ public sealed class LayoutHistory
     {
         int to = Cursor + by;
         if (Cursor < 0 || to < 0 || to >= steps.Count) return null;
-        Cursor = to; Changed?.Invoke();
+        Cursor = to; Safe.Raise(Changed);
         return steps[to];
     }
 }

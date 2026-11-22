@@ -140,7 +140,7 @@ public sealed partial class InspectorStrip : PanelContainer
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
         Label icon = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(icon, "panel.inspector", t.Px("icon.small")); row.AddChild(icon);
         Selection = ChromeWidgets.Text(Model.SelectionCount == 0 ? "nothing selected" : $"{Model.SelectionCount} {Model.SelectionKind}", "DimLabel");
-        Selection.TooltipText = "The selection both inspector tiers read"; Selection.MouseFilter = MouseFilterEnum.Pass; row.AddChild(Selection);
+        Selection.TooltipText = "What is selected"; Selection.MouseFilter = MouseFilterEnum.Pass; row.AddChild(Selection);
         foreach (InspectField field in Model.Essentials)
         {
             row.AddChild(new VSeparator());
@@ -226,7 +226,7 @@ public sealed partial class FeedbackPanel : VBoxContainer
     public void Enter(string line)
     {
         if (string.IsNullOrWhiteSpace(line)) return;
-        History.Add(line.Trim()); Input.Text = ""; Entered?.Invoke(line.Trim());
+        History.Add(line.Trim()); Input.Text = ""; Safe.Raise(Entered, line.Trim());
     }
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer bar = new();
@@ -254,7 +254,7 @@ public sealed partial class FeedbackPanel : VBoxContainer
     public bool FindLastError()
     {
         if (Model.LastError is not { } last) return false;
-        Model.Filter(Severity.Error, true); Found = last.Id; Refresh(); Opened?.Invoke(last);
+        Model.Filter(Severity.Error, true); Found = last.Id; Refresh(); Safe.Raise(Opened, last);
         return true;
     }
 
@@ -287,7 +287,7 @@ public sealed partial class FeedbackPanel : VBoxContainer
                 if (p.Count > 1) line.AddChild(SessionWidgets.Chip("×" + p.Count, t.C("text.dim"), $"Reported {p.Count} times"));
                 if (p.Element != null) line.AddChild(SessionWidgets.Chip(p.Element, t.C(colour), "The puzzle element this is about"));
                 line.AddChild(ChromeWidgets.Text($"{p.Source}:{p.Line}", "CodeLabel"));
-                row.GuiInput += input => { if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) { Found = p.Id; Refresh(); Opened?.Invoke(p); } };
+                row.GuiInput += input => { if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) { Found = p.Id; Refresh(); Safe.Raise(Opened, p); } };
                 List.AddChild(row);
             }
             if (!Model.Shown.Any()) List.AddChild(ChromeWidgets.Text(Model.Problems.Count == 0 ? "  No problems." : "  Every row is filtered out.", "MicroLabel"));

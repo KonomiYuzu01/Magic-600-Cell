@@ -10,6 +10,8 @@ namespace Magic600.Chrome;
 // placeholder icon font and to a short text that stands in when the font is not installed.
 public static class ChromeIcons
 {
+    // The size of the glyph of a drawn empty state; the frame sets it from the token set.
+    public static int EmptySize { get; set; } = 48;
     public static IconSet? Set { get; private set; }
     public static bool Installed => font != null;
     private static FontFile? font;

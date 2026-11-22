@@ -138,8 +138,17 @@ internal sealed partial class GreyboxControls : VBoxContainer
         catch (UnauthorizedAccessException) { Message.Text = "Could not save the report in the Look Lab flows folder."; }
     }
 
+    // The frame moves this panel between docks, so it leaves and enters the tree more than once.
+    private bool listening = true;
+    public override void _EnterTree()
+    {
+        if (listening || app == null) return;
+        app.State.Changed += Change; app.Resized += ResizeViews; listening = true;
+    }
+
     public override void _ExitTree()
     {
-        app.State.Changed -= Change; app.Resized -= ResizeViews;
+        if (!listening) return;
+        app.State.Changed -= Change; app.Resized -= ResizeViews; listening = false;
     }
 }

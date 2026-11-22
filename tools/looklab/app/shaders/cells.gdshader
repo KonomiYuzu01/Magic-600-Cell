@@ -57,6 +57,8 @@ uniform vec4 focus_axis = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float focus_cos = -2.0;
 // In such a view the cells are moved apart from the middle by this factor, without changing their size.
 uniform float focus_spread = 1.0;
+// How far the pieces that do not move fade into the background (the Local view's neighbours).
+uniform float ghost = 0.0;
 
 varying vec3 projected;
 varying float visible_w;
@@ -138,6 +140,8 @@ void vertex() {
     float w = 5.0 - projected.z;
     // Godot's Vulkan/D3D12 depth is reversed (near=1, far=0).
     vec4 clip = vec4(projected.x * zoom / aspect, projected.y * zoom, (0.05 / 99.95) * (100.0 - w), w);
+    // Ghost pieces sit behind every piece that moves, so they never cover one.
+    if (ghost > 0.0 && moving < 0.5) clip.z *= 0.05;
     clip.xy = (clip.xy - view_frame.xy * clip.w) * view_frame.z;
     geometry_value = vec3(clip.x / clip.w, clip.y / clip.w, clip.w);
     POSITION = clip;
@@ -179,6 +183,7 @@ void fragment() {
         float edge = 1.0 - min(min(e.x, e.y), e.z);
         colour = mix(colour, vec3(edgeBrightness), edge * 0.85);
     }
+    if (ghost > 0.0 && moving < 0.5) colour = mix(colour, background.rgb, ghost);
     float depth_fog = 1.0 - exp(-fog * 0.6 * max(5.0 - projected.z - 1.5, 0.0));
     ALBEDO = clamp(mix(colour, background.rgb, clamp(depth_fog, 0.0, 1.0)), vec3(0.0), vec3(1.0));
     if (cvd_enabled) {
