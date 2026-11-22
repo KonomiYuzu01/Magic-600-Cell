@@ -104,6 +104,7 @@ internal static partial class Program
             ("A5TokensFileRefusals", A5TokensFileRefusals),
             ("A5AppearanceResolvesStoresAndRefuses", A5AppearanceResolvesStoresAndRefuses),
             ("A5IconSetNamesGlyphsAndFallbacks", A5IconSetNamesGlyphsAndFallbacks),
+            ("A5CommandsRegistryKeymapAndPalette", A5CommandsRegistryKeymapAndPalette),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

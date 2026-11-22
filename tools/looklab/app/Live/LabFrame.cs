@@ -87,6 +87,44 @@ internal static class LabFrame
             appearance.Edit(a => a.SetTheme(themes[next].Id), true, true);
         };
         appearance.Changed += ApplyLook;
+        // Commands: the registry is the command table, the keymap and the palette are generated from it. The
+        // lab has no engine, so only the commands the frame itself carries out are available here.
+        var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
+        Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
+        string? Unavailable(string command, string? argument) => command switch
+        {
+            "command.find" or "transient.close" => null,
+            "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
+            _ => "Look Lab has no engine; this command runs in the product",
+        };
+        var commands = new PaletteModel(registry, keymap, Unavailable);
+        var palette = new CommandPalette(commands, () => frame.Tokens);
+        frame.Overlays.AddChild(palette);
+        string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
+        void Execute(string command, string? argument)
+        {
+            if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
+            switch (command)
+            {
+                case "command.find": palette.Open(); break;
+                case "transient.close":
+                    if (palette.IsOpen) palette.Close();
+                    else if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
+                    else if (frame.Model.PairMaximised) frame.Model.SetPairMaximised(false);
+                    break;
+                case "workspace.set" when argument == "layout:focus": frame.Model.SetFocusMode(!frame.Model.FocusMode); break;
+                case "workspace.set" when argument == "layout:maximise": frame.Model.SetPairMaximised(!frame.Model.PairMaximised); break;
+                case "workspace.set" when argument!.StartsWith("layout:", StringComparison.Ordinal):
+                    if (!frame.SelectWorkspace(argument.Substring(7))) frame.Say("No workspace is named " + argument.Substring(7), true);
+                    break;
+                case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
+                case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
+                default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;
+            }
+        }
+        palette.Run += row => Execute(row.Command, row.Argument);
+        frame.Keys = keymap; frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
+        app.ViewParts["frame.palette"] = (() => commands.Store(), v => { try { commands.Restore(v); } catch (FormatException) { } });
         // The token specimen in the left dock follows every change of the appearance.
         var specimen = new TokenSpecimen();
         frame.AddDockPanel(DockSide.Left, Tokens, "Tokens", "panel.tokens", specimen);

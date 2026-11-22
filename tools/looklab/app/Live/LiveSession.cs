@@ -139,6 +139,8 @@ internal static class LiveChecks
     public static void Run(Node host, string root, string scratch, string fault)
     {
         string folder = Path.Combine(scratch, "a5-live");
+        // Each run starts from no kept view, so a fault is judged by its own check and not by an earlier run's file.
+        if (Directory.Exists(folder)) Directory.Delete(folder, true);
         var session = new LiveSession(root, folder); host.AddChild(session);
         LabApp first = session.App;
         first.View.SetProcess(false);
@@ -161,7 +163,7 @@ internal static class LiveChecks
         var restarted = new LiveSession(root, folder); host.AddChild(restarted);
         Same(before, restarted.App.CaptureView(), first.State.Schema, fault, "restart");
         Framed(restarted, fault);
-        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=5");
+        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=6");
     }
 
     // The window frame around the lab: both main views in the locked pair, the lab's panel in the right dock,
@@ -222,6 +224,28 @@ internal static class LiveChecks
         Require(frame.Model.ToggleDock(DockSide.Left, LabFrame.Tokens), fault, "the Tokens panel did not close");
         Require(frame.Model.ToggleDock(DockSide.Right, LabFrame.Tune), fault, "the Tune panel did not come back");
         frame.Flush();
+        // Commands: a key opens the palette; it filters by what is typed, orders by pins and use only, refuses an
+        // unavailable row with its reason, runs a typed command, and single keys act without it.
+        var palette = (CommandPalette)frame.Overlays.FindChild("CommandPalette", true, false);
+        Require(frame.Press("F1") && palette.IsOpen && palette.Rows.Count >= 198 && !frame.Press("R"), fault, "the palette did not open with every command");
+        palette.Type("workspace"); int found = palette.Rows.Count;
+        Require(found > 3 && found < 30 && palette.Rows.All(r => (r.Label + r.Command).Contains("workspace", StringComparison.OrdinalIgnoreCase)), fault, "the palette did not filter");
+        PaletteRow last = palette.Rows[^1]; palette.TogglePin(found - 1);
+        Require(palette.Rows[0].Id == last.Id && palette.Rows[0].Pinned, fault, "a pinned row is not first");
+        palette.TogglePin(0);
+        palette.Type("New solve");
+        bool held = !palette.Accept() && palette.IsOpen && palette.Help.Text.Contains("Unavailable", StringComparison.Ordinal);
+        if (fault == "a5-unavailable-ran") held = false;
+        Require(held, fault, "an unavailable command ran from the palette");
+        palette.Type("> workspace.set layout:analyse");
+        Require(palette.Rows.Count == 1 && palette.Accept() && !palette.IsOpen && frame.Workspace == "analyse", fault, "the typed command did not run");
+        frame.Press("F1"); palette.Type("");
+        Require(palette.Rows[0].Command == "workspace.set" && palette.Rows[0].Argument == "layout:analyse" && palette.Rows[0].Keys == "3", fault, "the used row is not first with its key");
+        Require(frame.Press("Escape") && !palette.IsOpen && frame.Press("1") && frame.Workspace == "solve", fault, "single keys did not act");
+        string theme = frame.Tokens.Theme.Id;
+        Require(frame.Press("T") && frame.Tokens.Theme.Id != theme && frame.Press("T") && frame.Tokens.Theme.Id == theme, fault, "the theme key did not step the families");
+        Require(frame.Press("Ctrl+Z") && frame.Notice.Visible && frame.Notice.Text.Contains("no engine", StringComparison.Ordinal), fault, "an unavailable key gave no reason in place");
+        Require(app.CaptureView().Ui["frame.palette"].Contains("use|workspace.set|layout:analyse|1|", StringComparison.Ordinal), fault, "palette use is not kept");
         string before = frame.Model.Store();
         bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);
         if (fault == "a5-pair-hidden") refused = false;

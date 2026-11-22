@@ -115,6 +115,12 @@ public sealed partial class ChromeFrame : Control
     private bool dirty;
     private string baseline = "";
     private double noticeLeft;
+    private string? message; private bool messageWarns;
+    private string? focusedContext;
+    // In-window overlays (palette, shortcut sheet, radial menus) live above the frame and survive its rebuilds.
+    public Control Overlays { get; } = new() { Name = "Overlays", MouseFilter = MouseFilterEnum.Ignore };
+    public Keymap? Keys { get; set; }
+    public event Action<Binding>? KeyCommand;
 
     public ChromeFrame(TokenSet tokens, WorkspaceSet workspaces)
     {
@@ -123,6 +129,7 @@ public sealed partial class ChromeFrame : Control
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Model.Changed += () => dirty = true;
         Build();
+        AddChild(Overlays); Overlays.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
 
     public void SetMainViews(Control global, Control local) { globalContent = global; localContent = local; Build(); }
@@ -172,6 +179,38 @@ public sealed partial class ChromeFrame : Control
         return first + second > 0 ? first / (first + second) : .5;
     }
 
+    // Feedback in place (ADR-D01.24): one line above the views, never a dialog.
+    public void Say(string text, bool warning = false)
+    {
+        message = text; messageWarns = warning; noticeLeft = 6;
+        Notice.Text = text; Notice.TooltipText = text; Notice.Visible = true;
+        Notice.AddThemeColorOverride("font_color", Tokens.C(warning ? "severity.warning" : "text.dim"));
+    }
+
+    // Keys route to the hovered view first, then to the view that was hovered last, then to the global context
+    // (ADR-D01.19). A key typed into a text field never arrives here.
+    public IReadOnlyList<string> KeyContexts()
+    {
+        var chain = new List<string>();
+        if (HoveredView != null) chain.Add(ReferenceEquals(HoveredView, Global) ? "global-view" : "local-view");
+        if (focusedContext != null && !chain.Contains(focusedContext)) chain.Add(focusedContext);
+        chain.Add(Keymap.Global);
+        return chain;
+    }
+
+    public bool Press(string key)
+    {
+        if (Keys?.Resolve(key, KeyContexts()) is not { } binding) return false;
+        KeyCommand?.Invoke(binding);
+        return true;
+    }
+
+    public override void _UnhandledKeyInput(InputEvent input)
+    {
+        if (input is not InputEventKey { Pressed: true, Echo: false } key || key.Keycode is Key.Shift or Key.Ctrl or Key.Alt or Key.Meta or Key.None) return;
+        if (Press(Keymap.KeyName(key.CtrlPressed, key.AltPressed, key.ShiftPressed, OS.GetKeycodeString(key.Keycode)))) GetViewport().SetInputAsHandled();
+    }
+
     public void Flush() { if (dirty) Build(); }
 
     public override void _Process(double delta)
@@ -179,7 +218,7 @@ public sealed partial class ChromeFrame : Control
         Flush();
         Vector2 mouse = GetGlobalMousePosition();
         Hover(Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
-        if (noticeLeft > 0 && (noticeLeft -= delta) <= 0) Notice.Visible = false;
+        if (noticeLeft > 0 && (noticeLeft -= delta) <= 0) { Notice.Visible = false; message = null; }
     }
 
     private Container Tight(Container container) { container.AddThemeConstantOverride("separation", 0); return container; }
@@ -194,15 +233,15 @@ public sealed partial class ChromeFrame : Control
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
         var window = new PanelContainer { ThemeTypeVariation = "Window" }; root = window;
-        AddChild(window); window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddChild(window); MoveChild(window, 0); window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var column = (VBoxContainer)Tight(new VBoxContainer()); window.AddChild(column);
         if (!focus) column.AddChild(TopBar());
         var middle = (HBoxContainer)Tight(new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }); column.AddChild(middle);
         if (!focus) middle.AddChild(SideDock(DockSide.Left));
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
-        Notice = ChromeWidgets.Text(Model.Refusal ?? "", "DimLabel", true); Notice.Name = "FrameNotice";
-        Notice.AddThemeColorOverride("font_color", Tokens.C("severity.warning"));
-        Notice.Visible = Model.Refusal != null; if (Notice.Visible) noticeLeft = 6;
+        Notice = ChromeWidgets.Text(Model.Refusal ?? message ?? "", "DimLabel", true); Notice.Name = "FrameNotice";
+        Notice.AddThemeColorOverride("font_color", Tokens.C(Model.Refusal != null || messageWarns ? "severity.warning" : "text.dim"));
+        Notice.Visible = Model.Refusal != null || message != null; if (Model.Refusal != null) noticeLeft = 6;
         centre.AddChild(Notice);
         Global = View("Global", globalContent); Local = View("Local", localContent);
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
@@ -302,6 +341,7 @@ public sealed partial class ChromeFrame : Control
         if (ReferenceEquals(view, HoveredView)) return;
         if (HoveredView != null && IsInstanceValid(HoveredView)) HoveredView.SetFocused(false);
         HoveredView = view; view?.SetFocused(true);
+        if (view != null) focusedContext = ReferenceEquals(view, Global) ? "global-view" : "local-view";
     }
 
     // The locked pair: both views, always, side by side or stacked.

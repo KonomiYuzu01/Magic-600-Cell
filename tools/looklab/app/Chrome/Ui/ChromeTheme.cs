@@ -67,6 +67,9 @@ public static class ChromeTheme
         theme.SetTypeVariation("ViewFrame", "PanelContainer"); theme.SetStylebox("panel", "ViewFrame", Box(t, "window.background", "panel.border", "radius.panel", 0));
         theme.SetTypeVariation("ViewFrameFocus", "PanelContainer"); theme.SetStylebox("panel", "ViewFrameFocus", Box(t, "window.background", "control.focus", "radius.panel", 0));
         theme.SetTypeVariation("Chip", "PanelContainer"); theme.SetStylebox("panel", "Chip", Box(t, "panel.background", "panel.border", "radius.control", s1));
+        theme.SetTypeVariation("Row", "PanelContainer"); theme.SetStylebox("panel", "Row", Box(t, "popup.background", null, "radius.control", s1));
+        var rowOn = Box(t, "control.pressed", null, "radius.control", s1); rowOn.BorderColor = t.C("accent.base"); rowOn.SetBorderWidth(Side.Left, t.Px("focus.width"));
+        theme.SetTypeVariation("RowSelected", "PanelContainer"); theme.SetStylebox("panel", "RowSelected", rowOn);
         theme.SetTypeVariation("Popup", "PanelContainer"); theme.SetStylebox("panel", "Popup", Box(t, "popup.background", "popup.border", "radius.control", s3));
         // Every script-drawn area carries this frame (ADR-D01.4 item 4).
         theme.SetTypeVariation("ScriptFrame", "PanelContainer"); theme.SetStylebox("panel", "ScriptFrame", Box(t, "panel.background", "script.frame", "radius.panel", s2, t.Px("focus.width")));

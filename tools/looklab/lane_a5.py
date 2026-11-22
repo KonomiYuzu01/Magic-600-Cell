@@ -3,7 +3,7 @@ import re
 
 
 CHECKS = (
-    ("a5-live", r"LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=7 checks=5"),
+    ("a5-live", r"LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=8 checks=6"),
 )
 FAULTS = (
     ("a5-live", "a5-view-dropped"),
@@ -11,6 +11,7 @@ FAULTS = (
     ("a5-live", "a5-view-not-written"),
     ("a5-live", "a5-pair-hidden"),
     ("a5-live", "a5-knob-ignored"),
+    ("a5-live", "a5-unavailable-ran"),
 )
 
 

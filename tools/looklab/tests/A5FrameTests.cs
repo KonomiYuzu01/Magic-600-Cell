@@ -52,6 +52,49 @@ internal static partial class Program
         Refuse(() => IconSet.Parse(text.Replace("\"glyph\": \"history\",", "")), "panel.history");
     }
 
+    private static void A5CommandsRegistryKeymapAndPalette()
+    {
+        CommandRegistry registry = CommandRegistry.FromTable(System.IO.File.ReadAllText(System.IO.Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        Equal(registry.Order.Count, 198); Equal(registry.Commands["session.new"].Label, "New solve"); Equal(CommandRegistry.Location("view.preview.open"), "view");
+        string text = Read("data/design/keymap.json");
+        Keymap keys = Keymap.Parse(text, registry);
+        Check(registry.Commands.ContainsKey("radial.view") && keys.Radials["radial.view"].Entries.Count == 6, "a radial menu is not a command");
+        // The hovered view's context wins, then the focused one, then global; an unbound key resolves to nothing.
+        Equal(keys.Resolve("R", new[] { "global-view", "global" })!.Command, "view.reset");
+        Equal(keys.Resolve("R", new[] { "local-view", "global-view", "global" })!.Command, "view.local.configure");
+        Check(keys.Resolve("R", new[] { "global" }) == null && keys.Resolve("F1", new[] { "local-view", "global" })!.Command == "command.find", "context fallback");
+        Equal(keys.KeysFor("command.find", null), "F1, Space"); Equal(keys.KeysFor("workspace.set", "layout:script"), "2"); Equal(Keymap.KeyName(true, true, false, "Z"), "Ctrl+Alt+Z");
+        // User overrides are a second file: rebind, add and remove without touching the defaults.
+        string overrides = "{\"format\":\"magic600-design-keymap\",\"version\":1,\"radials\":{},\"bindings\":[{\"key\":\"F1\",\"context\":\"global\",\"command\":\"help.open\"}," +
+            "{\"key\":\"Space\",\"context\":\"global\",\"command\":\"\"},{\"key\":\"Ctrl+K\",\"context\":\"global\",\"command\":\"command.find\"}]}";
+        Keymap mine = Keymap.Parse(overrides, registry, keys);
+        Equal(mine.KeysFor("command.find", null), "Ctrl+K"); Equal(mine.KeysFor("help.open", null), "Shift+Slash, F1"); Equal(keys.KeysFor("command.find", null), "F1, Space");
+        Check(mine.Resolve("Space", new[] { "global" }) == null && mine.Radials.Count == keys.Radials.Count, "override");
+        foreach ((string from, string to, string name) in new[] {
+            ("\"key\": \"Ctrl+Alt+Z\"", "\"key\": \"Alt+Ctrl+Z\"", "Alt+Ctrl+Z"), ("\"key\": \"Space\"", "\"key\": \"F1\"", "F1"),
+            ("\"command\": \"help.open\"", "\"command\": \"help.shut\"", "Shift+Slash"), ("\"context\": \"editor\"", "\"context\": \"dialog\"", "Ctrl+Enter"),
+            ("\"radial.workspace\": {", "\"wheel.workspace\": {", "wheel.workspace"), ("\"argument\": \"next\",\n      \"label\": \"Next theme family\"", "\"argument\": \"next\"", "T") })
+        {
+            Check(text.Contains(from, StringComparison.Ordinal), "fixture lost " + from);
+            Refuse(() => Keymap.Parse(text.Replace(from, to), CommandRegistry.FromTable(System.IO.File.ReadAllText(System.IO.Path.Combine(Root, "docs/progress/1.0/command-table.json")))), name);
+        }
+        // The palette: a query filters, and only pins, recency and frequency order the rows.
+        var palette = new PaletteModel(registry, keys, (command, argument) => command == "session.new" ? "no engine" : null);
+        var all = palette.Rows("");
+        Check(all.Count > registry.Order.Count && all[0].Command == registry.Order[0] && all.Single(r => r.Command == "session.new").Unavailable == "no engine", "palette rows");
+        var theme = palette.Rows("theme");
+        Check(theme.Count >= 3 && theme.All(r => (r.Label + r.Command).Contains("theme", StringComparison.OrdinalIgnoreCase)) && palette.Rows("THEME family").Count < theme.Count, "palette filter");
+        PaletteRow tune = theme.Single(r => r.Command == "theme.tune"), next = theme.Single(r => r.Argument == "next");
+        Equal(next.Label, "Next theme family"); Equal(next.Keys, "T"); Equal(next.Location, "theme");
+        palette.Used(tune); palette.Used(next); palette.Used(tune); palette.Used(next);
+        Sequence(palette.Rows("theme").Take(2).Select(r => r.Id), new[] { next.Id, tune.Id });
+        palette.Pin(tune, true); Equal(palette.Rows("")[0].Id, tune.Id); Check(palette.Rows("")[0].Pinned, "pin not shown");
+        var again = new PaletteModel(registry, keys, (_, _) => null); again.Restore(palette.Store());
+        Equal(again.Store(), palette.Store()); Sequence(again.Rows("theme").Take(2).Select(r => r.Id), new[] { tune.Id, next.Id });
+        again.Restore("use|gone.command||3|9\npin|gone.command|"); Equal(again.Store(), "");
+        Refuse(() => again.Restore("use|theme.tune||many|1"), "palette");
+    }
+
     private static void A5FrameStoredArrangementRoundTripAndWorkspaces()
     {
         FrameModel frame = Frame();

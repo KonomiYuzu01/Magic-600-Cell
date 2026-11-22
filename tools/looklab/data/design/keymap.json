@@ -1,0 +1,197 @@
+{
+  "format": "magic600-design-keymap",
+  "version": 1,
+  "radials": {
+    "radial.view": {
+      "label": "View and display",
+      "entries": [
+        {
+          "command": "view.reset"
+        },
+        {
+          "command": "display.frame.toggle"
+        },
+        {
+          "command": "display.adaptive.toggle"
+        },
+        {
+          "command": "view.names"
+        },
+        {
+          "command": "view.cell_views"
+        },
+        {
+          "command": "view.findings"
+        }
+      ]
+    },
+    "radial.workspace": {
+      "label": "Workspaces",
+      "entries": [
+        {
+          "command": "workspace.set",
+          "argument": "layout:solve",
+          "label": "Workspace: Solve"
+        },
+        {
+          "command": "workspace.set",
+          "argument": "layout:script",
+          "label": "Workspace: Script"
+        },
+        {
+          "command": "workspace.set",
+          "argument": "layout:analyse",
+          "label": "Workspace: Analyse"
+        },
+        {
+          "command": "workspace.set",
+          "argument": "layout:reference",
+          "label": "Workspace: Reference"
+        }
+      ]
+    }
+  },
+  "bindings": [
+    {
+      "key": "F1",
+      "context": "global",
+      "command": "command.find"
+    },
+    {
+      "key": "Space",
+      "context": "global",
+      "command": "command.find"
+    },
+    {
+      "key": "Shift+Slash",
+      "context": "global",
+      "command": "help.open"
+    },
+    {
+      "key": "Escape",
+      "context": "global",
+      "command": "transient.close"
+    },
+    {
+      "key": "1",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:solve",
+      "label": "Workspace: Solve"
+    },
+    {
+      "key": "2",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:script",
+      "label": "Workspace: Script"
+    },
+    {
+      "key": "3",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:analyse",
+      "label": "Workspace: Analyse"
+    },
+    {
+      "key": "4",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:reference",
+      "label": "Workspace: Reference"
+    },
+    {
+      "key": "F",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:focus",
+      "label": "Focus mode: only the pair"
+    },
+    {
+      "key": "M",
+      "context": "global",
+      "command": "workspace.set",
+      "argument": "layout:maximise",
+      "label": "Maximise the pair"
+    },
+    {
+      "key": "T",
+      "context": "global",
+      "command": "theme.select",
+      "argument": "next",
+      "label": "Next theme family"
+    },
+    {
+      "key": "D",
+      "context": "global",
+      "command": "density.preset.set",
+      "argument": "next",
+      "label": "Next density preset"
+    },
+    {
+      "key": "W",
+      "context": "global",
+      "command": "radial.workspace"
+    },
+    {
+      "key": "Ctrl+Z",
+      "context": "global",
+      "command": "session.undo"
+    },
+    {
+      "key": "Ctrl+Y",
+      "context": "global",
+      "command": "session.redo"
+    },
+    {
+      "key": "Ctrl+Alt+Z",
+      "context": "global",
+      "command": "layout.undo"
+    },
+    {
+      "key": "Ctrl+Alt+Y",
+      "context": "global",
+      "command": "layout.redo"
+    },
+    {
+      "key": "V",
+      "context": "global-view",
+      "command": "radial.view"
+    },
+    {
+      "key": "V",
+      "context": "local-view",
+      "command": "radial.view"
+    },
+    {
+      "key": "R",
+      "context": "global-view",
+      "command": "view.reset"
+    },
+    {
+      "key": "R",
+      "context": "local-view",
+      "command": "view.local.configure"
+    },
+    {
+      "key": "G",
+      "context": "local-view",
+      "command": "view.global"
+    },
+    {
+      "key": "L",
+      "context": "global-view",
+      "command": "view.local"
+    },
+    {
+      "key": "Ctrl+Enter",
+      "context": "editor",
+      "command": "operation.preview"
+    },
+    {
+      "key": "Escape",
+      "context": "preview",
+      "command": "transient.close"
+    }
+  ]
+}

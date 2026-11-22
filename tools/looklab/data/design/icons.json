@@ -91,6 +91,10 @@
     "search": {
       "glyph": "search",
       "fallback": "?"
+    },
+    "palette.pin": {
+      "glyph": "pin",
+      "fallback": "*"
     }
   }
 }
