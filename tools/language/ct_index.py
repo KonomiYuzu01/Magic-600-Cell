@@ -10,7 +10,12 @@ phase), scans the test sources for PHS.62 markers and reads the hand-maintained 
 - named: the ID is mentioned without a marker (a test or a document names it, which is no run);
 - missing: no mention, or a note says only documentation names it;
 - not applicable: a note says so;
-- waiting: a note says what it waits for (it overrides named and missing, never a marker).
+- waiting: a note says what it waits for (it overrides part, named and missing, never a whole marker);
+- indexed elsewhere: a note names the work that runs what LP2's products cannot, under an owner-approved index
+  change (PHS.52); it overrides part, named and missing, never a whole marker.
+
+Not applicable, waiting and indexed elsewhere are no pass (PHS.63); for an ID with part markers the index keeps
+their not-run text beside the note.
 
 A marker applies to the IDs before it on the same line, back to the previous marker on that line. It may name the
 evidence kind first, one of the table's columns, as in `CT-XXX-NN (synthetic, part: ...)`.
@@ -32,8 +37,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CHAPTER = Path("docs/architecture/1.0/language/architecture/12-phases-and-conformance.md")
 NOTES_DIR = Path("docs/progress/1.0")  # a phase reads <phase in lower case>-ct-index-notes.md, if the file exists
 COLUMNS = ("source", "synthetic", "windows", "performance", "human")
-NOTE_KINDS = ("whole by union", "not applicable", "waiting", "missing despite name")
-STATES = ("whole", "part", "named", "missing", "not applicable", "waiting")
+NOTE_KINDS = ("whole by union", "not applicable", "waiting", "missing despite name", "indexed elsewhere")
+STATES = ("whole", "part", "named", "missing", "not applicable", "waiting", "indexed elsewhere")
 
 ID_RE = re.compile(r"CT-[A-Z0-9]+-\d{2}")
 MARK_RE = re.compile(r"\((?:(?:" + "|".join(COLUMNS) + r"), )?(whole|parts?)\b")
@@ -235,14 +240,14 @@ def build_index(ids: dict[str, str], scan: dict[str, dict], notes: dict[str, tup
             # a union note on an ID without parts is ignored and shows in the warnings
         elif note_kind == "not applicable":
             state = "not applicable"
-        elif note_kind == "waiting" and state in ("named", "missing"):
-            state = "waiting"
+        elif note_kind in ("waiting", "indexed elsewhere") and state in ("part", "named", "missing"):
+            state = note_kind
         elif note_kind == "missing despite name" and state == "named":
             state = "missing"
         waiting_for = []
-        if note_kind in ("waiting", "not applicable", "missing despite name") and note_text:
+        if note_kind in ("waiting", "not applicable", "missing despite name", "indexed elsewhere") and note_text:
             waiting_for.append(note_text)
-        if state == "part":
+        if state != "whole":
             waiting_for.extend(not_run)
         if state == "whole" and by_union and note_text:
             waiting_for.append(note_text)
@@ -278,7 +283,8 @@ def summary_line(phase: str, rows: list[dict]) -> str:
     return (
         f"{phase}: {len(rows)} IDs: {count['whole']} whole, of which {count['by_union']} by union; "
         f"{count['part']} part; {count['named']} named only; {count['missing']} missing; "
-        f"{count['not applicable']} not applicable; {count['waiting']} waiting"
+        f"{count['not applicable']} not applicable; {count['waiting']} waiting; "
+        f"{count['indexed elsewhere']} indexed elsewhere"
     )
 
 

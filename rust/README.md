@@ -1562,7 +1562,9 @@ run or not applicable is no pass (PHS.63).
   CT-KN5-12, CT-LB7-02, CT-LG2-04, CT-LG2-12, CT-LG2-13, CT-LG2-14, CT-LG3-01, CT-LG3-02, CT-LG3-04, CT-LG5-06,
   CT-LG5-08, CT-LI-04, CT-LI-06, CT-LI-07, CT-LI-13, CT-ONE-01, CT-ONE-02, CT-ONE-03, CT-PS1-11, CT-PS1-22 and
   CT-RPI-01); 121 part; none named only; none missing; 1 waiting (CT-LI-14), with what it waits for in
-  `docs/progress/1.0/lp2-ct-index-notes.md`.
+  `docs/progress/1.0/lp2-ct-index-notes.md`. That is the count on LP2's exit candidate `0260e6b1`. With the owner's
+  readings of 22 November 2026 in those notes (LP2 plan section 12), the tool prints 126 whole (32 by union), none
+  part, 7 not applicable, 8 waiting and 107 indexed elsewhere; none of these 122 is a pass (PHS.63).
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's

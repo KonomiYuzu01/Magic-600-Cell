@@ -5,6 +5,9 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-11-22] update | ADR-D01's overrules noted in the chapters
 Thirteen clauses that ADR-D01 overrules now carry a note citing the owner's decision, in chapters 01, 02, 04, 08 and 09 and ADR-L11. Chapter 07 is a file of the frozen format candidate, so BND.15 and BND.84 stay unnoted and the decision page is their record. Chapter 01's pin and the packet's input commit are refreshed under FP.1 ([record](decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), "What follows").
 
+## [2026-11-22] update | C9's LX-2 and LX-4 analysed again under the 100 ms bars
+The recorded U7 and U8 data was analysed again with the changed C9 tools under the owner's decision of 22 November 2026, items 1 to 5 and 10, with no new run: LX-2 and LX-4 are met on the samples with a confirmed frame, and the confirmation gap is published as a known limit (48 of 1,062 LX-2 echo samples, 26 of 110 in alloc_ceiling; 16 LX-4 samples), so LQ9 does not reopen ([results](evidence/c9-sitting-results.md)).
+
 ## [2026-11-22] decision | Samples without a confirmed frame in LX-2 and LX-4
 After the re-analysis of U7 and U8 found every timed p95 and p99 within 100 ms, the owner chose to count samples without a confirmed frame apart, as a published known limit (the confirmation gap), and to judge the LX bars on confirmed samples, so LQ9 does not reopen and RT1 stays; the gap is closed after the freeze ([record](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), item 10).
 
@@ -13,6 +16,9 @@ The owner decided that LP3 freezes without waiting for the design-system ADR, th
 
 ## [2026-11-22] decision | LX bars at 100 ms and the exits on the existing candidates
 After the C9 sitting the owner took every recommended option with no new measurement: LX-2's and LX-4's latency bars move to 100 ms, LX-4 uses E2's counting and U4's W3 summary, alloc_metered's kernel_cost limit end counts, the renderer gate is not required in the four faults that lose the runtime, alloc_ceiling's 84 echo samples are accepted, and LP3 and LP2 exit on 013900ff and 0260e6b1 with the recorded U7 and U8 data analysed again ([record](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)).
+
+## [2026-11-22] update | LP2's exit record
+Wrote LP2's exit record on candidate `0260e6b1` in the [LP2 plan](../progress/1.0/language-lp2-plan.md), section 12, with item 8's readings of [the owner's decision](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md) in the CT index notes (126 whole, 7 not applicable, 8 waiting, 107 indexed elsewhere, none a pass) and reading 8's PHS.52 amendment below chapter 12's section 15.3 table. The owner's sign-off of LP2's exit is still to come.
 
 ## [2026-11-22] update | The owner's report on C9's A1 and A2
 The owner reported that A1 and A2 of the C9 sitting were normal (the window resized normally, and the echo panel showed the presses), so both are recorded as passing on the [results](evidence/c9-sitting-results.md) page; the logs alone cannot show those items.
