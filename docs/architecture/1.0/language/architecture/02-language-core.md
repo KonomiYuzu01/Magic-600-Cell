@@ -329,6 +329,11 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 | Seeded randomness | Draw from the run's explicitly supplied random stream | INV-10; chapter 09 |
 | Budgets | Inspect and spend the run's granted deterministic resources | KN7.7 to KN7.11; cannot raise the grant |
 
+LG3.1 is overruled in part for the 1.0 product by ADR-D01 (owner, [22 November
+2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a versioned-change
+review: an invoked entry point may run view and workspace rows (ADR-D01.2, .23). Views still never write the
+workspace, and live bindings are derived values.
+
 - **LG3.2 [D]** Effects and capability requirements are inferred, checked and inherited through calls (partition LG3).
   A function's type includes the effects of every callee it may invoke, including a function passed as an argument.
   A generic instantiation preserves them. An annotation can restrict what checks successfully; it cannot erase an
@@ -350,14 +355,27 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   change occurs only inside a command the solver invokes, as one undoable action. Its action order and stale-undo
   check are KN5.19's, following DT-M1 Q4 (a). Re-evaluating a view therefore cannot add workspace actions that supersede
   the undo hint. The checker refuses a view that calls a workspace-writing helper.
+  Overruled in part for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: an invoked entry point may run view and workspace rows (ADR-D01.2, .23). Views still have
+  no workspace-write effect, and live bindings are derived values.
 - **LG3.6 [D]** Preparing a preview also occurs only inside a command the solver invokes. Views have no preview
   effect, including through callees. This is a new integrator default that follows from BM1's explicit action gate
   and default 16's separation of reactive views from invoked workspace changes; the owner may overrule it. It prevents
   a view from replacing a shown preview on its own. It does not answer KN5.12's question about an invoked command.
+  Overruled for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: a view may drive a live preview through the caret, live parameters and `=` bindings on
+  preview parameters (ADR-D01.9, .23, .43).
 - **LG3.7 [O]** Whether an invoked command may replace a preview already on screen remains KN5.12's open dependency
   (DT-L1 E2). Refusing replacement and allowing replacement under a fresh preview ID both retain KN5.14 to KN5.16's
   binding to the shown preview and literal digest. The owner and integrator settle the replacement permission when
   that question is taken up; this chapter does not resume the design line.
+  Answered for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: a view may drive a live preview (LG3.6), and a shown preview may be replaced, with a new
+  preview ID, a visible mark and a settle interval (KN5.12; ADR-D01.9). KN5.14 to KN5.16's binding to the shown
+  preview and its literal digest stays.
 - **LG3.8 [B]** Files, clock and randomness are capabilities granted explicitly, with no ambient authority (INV-10).
   Network and process access are not granted in 1.0. A function that reads a clock declares that requirement even
   though the effect families above contain no general system-access effect. A clock grant cannot make seconds a

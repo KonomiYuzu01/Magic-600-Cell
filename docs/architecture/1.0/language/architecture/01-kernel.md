@@ -457,6 +457,10 @@ query job_result(command: CommandId, job: JobId) -> JobResult
   episode recovers as on or rolls back to its last committed revision (ENG-0J section 4).
 - **KN4.6 [B]** An experiment branch is a journal branch the engine owns. Exactly one line per session is active.
   Other branches can be viewed and compared, and programs cannot change them (owner, 6 November 2026, LQ4).
+  Extended for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: a branch may also come from a mid-history insert, with the old line's later moves offered
+  as a preview (ADR-D01.16).
 - **KN4.7 [D]** One word commit is one journal row that cites the literal letters by digest, and the letters are
   stored as `ia16` chunks for menu-letter words only. These chunks decode in the pinned menu order, never as retained
   generator IDs (PS3.13); 600-cell-Full words use the recipe form (PS1.22). As J1 rows a word of 2,352,984 letters would
@@ -568,6 +572,10 @@ query job_result(command: CommandId, job: JobId) -> JobResult
   unchanged. A replaced preview cannot be committed.
 - **KN5.12 [O]** Whether a program may replace a shown preview at all is a design-line question (DT-L1 E2). The token
   binding keeps the commit safe either way.
+  Answered for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: a program may replace a shown preview, with a new preview ID, a visible mark and a settle
+  interval (ADR-D01.9). The settle interval is built after the freeze, with KN5 boundary attack tests (item 4).
 - **KN5.13 [B]** A proposal never carries a state or a digest for the engine to adopt (INV-1).
 
 ### Commit
@@ -585,6 +593,12 @@ query job_result(command: CommandId, job: JobId) -> JobResult
     errors:  KN5:auth.token_invalid, stale.*, KN2:protection.*, KN5:busy.commit_in_flight, consistency.*,
              unknown_outcome.*
   ```
+
+  Extended for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: the solver's own macros and twists also get a one-key preview-and-commit, which rechecks
+  the gates as `operation.execute` does (ADR-D01.12). It is built after the freeze, with KN5 boundary attack tests
+  (item 4).
 
 - **KN5.15 [D]** The token is single-use and never persisted (V03.5). It carries an authenticator from a per-launch secret
   that the runtime never receives. No operation available to the runtime returns a token, in any placement of the
@@ -604,6 +618,10 @@ query job_result(command: CommandId, job: JobId) -> JobResult
 
 - **KN5.19 [B]** There is one undo key and one durable order of actions across the journal and the workspace. An undo
   carries LI.9's `ActionHint`, and it is refused as stale if its order or target changed (DT-M1 Q4 (a)).
+  Overruled for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: there are two histories with their own keys, one for moves and one for layout (ADR-D01.14).
+  The layout history is built after the freeze, with KN5 boundary attack tests (item 4).
 - **KN5.20 [B]** Undo is available while a job or a program runs (charter E4; DT-M1 fix-first 3). `session.undo` and
   `session.redo` are the only entries; both take `hint: ActionHint` and `token: UserActionToken`, use the commit lane
   and have no `not_busy` gate. Both hint fields enter the request and token binding. Internal dispatch selects the
@@ -611,6 +629,12 @@ query job_result(command: CommandId, job: JobId) -> JobResult
   journal actions preserve the map; workspace actions restore a map only if they recorded one. A workspace inverse
   returns `committed` with equal puzzle hashes and unchanged head/state revision, while advancing affected workspace
   versions. Only another commit in flight makes that lane busy. The final row metadata remains p7-table's input.
+
+  Overruled for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: a multi-step rollback is one action, and a partial undo inside a journal entry is appended
+  as its own recorded action (ADR-D01.15). Both are built after the freeze, with KN5 boundary attack tests. A new
+  journal action kind that touches the frozen migration format goes to the owner (item 4).
 
 ### Receipts
 
