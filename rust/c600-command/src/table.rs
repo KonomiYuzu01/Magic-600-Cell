@@ -1,6 +1,6 @@
 //! H-08's rows and the language's overlay rows (ADR-L02; KN5.3).
 //!
-//! The stored table is `docs/progress/1.0/command-table.json`, compiled in. It freezes at LP3 (PHS.53); until then
+//! The stored table is `docs/progress/1.0/command-table.json`, compiled in. It is frozen at LP3 (PHS.53), and
 //! this module reads only the fields the command layer uses and ignores the rest. A language-defined command is an
 //! overlay row of kind view, workspace, query or file, never commit or app. A view overlay runs on the `view` lane and
 //! every other overlay on the `program` lane. A stored row that a built-in tool's entry serves ([`Table::serve_row`])
@@ -259,7 +259,7 @@ impl Table {
     /// Registers a language-defined row. Its lane follows its kind, it takes no token, it has no gates and it is
     /// available in every context. Its metadata starts as the default until [`Table::declare`] stores it. A commit or
     /// app row is refused with `KN5:input.overlay_row_kind`; an ID that a row or service already holds is refused with
-    /// the draft code `KN5:input.overlay_row_conflict`.
+    /// `KN5:input.overlay_row_conflict`.
     pub fn register_overlay(
         &mut self,
         id: &str,
@@ -308,7 +308,7 @@ impl Table {
 
     /// Stores language-defined row `id`'s metadata, replacing what it held (draft; KN5.5, LI.20): the host declares
     /// it from the module's static check and the kernel rows the program may invoke. Refused: an ID that names no row,
-    /// with `KN5:input.unknown_row`, and a stored row, with the draft code `KN5:input.overlay_row_conflict`. A refusal
+    /// with `KN5:input.unknown_row`, and a stored row, with `KN5:input.overlay_row_conflict`. A refusal
     /// leaves the table as it was.
     pub fn declare(&mut self, id: &str, metadata: Metadata) -> Result<(), Error> {
         if !self.rows.contains_key(id) {
@@ -338,7 +338,7 @@ impl Table {
     /// Refused:
     /// - an ID that names no row, with `KN5:input.unknown_row`;
     /// - a row of any other shape, with `KN5:input.overlay_row_kind`;
-    /// - a row the layer builds itself, or one an entry already serves, with the draft code
+    /// - a row the layer builds itself, or one an entry already serves, with
     ///   `KN5:input.overlay_row_conflict`.
     ///
     /// A refusal leaves the row as it was.

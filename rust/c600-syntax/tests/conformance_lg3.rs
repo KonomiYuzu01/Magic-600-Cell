@@ -90,7 +90,8 @@ fn ct_lg3_01_the_call_graph_keeps_effects_and_capabilities_in_source() {
     assert!(!r.diagnostics.is_empty());
 }
 
-/// CT-LG3-02 (part: program effects in source; not run: overlay rows, which wait for the command layer, LP3): no
+/// CT-LG3-02 (part: program effects in source; the overlay rows are in `c600-command`'s `tests/layer.rs` and
+/// `tests/served_rows.rs`): no
 /// effect or operation commits or obtains a token, a preview gives a receipt, and a helper cannot hide a preview under
 /// another effect.
 #[test]

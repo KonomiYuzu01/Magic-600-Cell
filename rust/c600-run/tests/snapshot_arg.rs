@@ -125,6 +125,8 @@ fn an_argument_without_canonical_bytes_or_with_an_approximation_never_reaches_th
     assert_eq!((engine.tariffs, engine.asked.len()), (0, 0));
 }
 
+/// CT-LG2-11 (part: the protection binding of a snapshot read takes no `WordEqualityKey`, bare or inside a record; not
+/// run: an execution binding, which no program has, and a key indexed by puzzle and identity).
 /// The argument is exact portable data: a display-qualified value would lose its qualifier at the host (LG2.19), and a
 /// word equality key or a receipt has no portable form (owner decision of 16 November 2026 under PHS.52).
 #[test]

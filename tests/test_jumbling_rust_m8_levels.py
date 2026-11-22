@@ -5,9 +5,13 @@
 CT-PS1-14 (part: a retained checkpoint's own path, the supplied witness word or the journal's reduction, replays to its
 pose digest as J1's `State.checkpoint` replays it; the certificate of a label checkpoint under the journal's witnessed
 claim gives the pose digest of J1's `label_certificate` and `Digest<labels>` of J1's labels and of 600-cell-Full's label
-permutation (`assets/primitives.npz`); retained words resumed from a kept checkpoint reproduce both digests; not run:
-the session store's checkpoint records and their resume through the store (M6), and a certificate whose ν the ν row
-computes).
+permutation (`assets/primitives.npz`); retained words resumed from a kept checkpoint reproduce both digests; the store's
+labels-level checkpoints and their resume through the store are `c600-session`'s `tests/branches.rs`; not run: a
+checkpoint of the jumbled puzzle through the store, and a certificate whose ν the ν row computes).
+
+CT-PS1-04 (part: the pose digest of a jumbled state equals J1's `State.digest()`, and `Digest<labels>` equals the digest
+of J1's labels and of 600-cell-Full's permutation, in `check_digests`; not run: refusing confused levels or hashed render
+floats, which the candidate's API cannot express, and a store helper for `Digest<poses>`, which does not exist).
 
 CT-KN2-06 (whole: Theorem 1 of KN1.14 as a conformance test of the candidate against J1 on J1's fixtures, with the
 gauges S, R and all (σ ≠ id) built from J1's regions, on the lattice at solved and at the end of a correction of the

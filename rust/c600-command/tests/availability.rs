@@ -165,6 +165,8 @@ impl Fixture {
     }
 }
 
+/// CT-LI-07 (part: an availability read starts no program, admits no job and takes no lane, so no language code runs
+/// for it; convergence by full reads is in `a_full_read_after_missed_changes_equals_the_stepwise_reads`).
 /// An overlay row answers from its stored metadata. Before any declaration the metadata is the default, a passing
 /// static verdict and no kernel row; a declaration replaces it. Asking changes nothing: no program starts, no job is
 /// admitted and no lane is taken (LI.20), and the generation stays (LI.21).
@@ -259,6 +261,8 @@ fn the_first_failure_is_reported_in_li20_order() {
     }
 }
 
+/// CT-LI-12 (part: static A and B bindings keep their own answers, and a computed binding uses only the
+/// argument-independent gates; not run: resolved lane targets, which the layer does not build).
 /// LI.20's vector: with every other gate passing, `(K, A)` available and `(K, B)` refused give an available overlay
 /// for static A and that refusal for static B; a computed binding of K is available on K's argument-independent gates,
 /// and computing B later still gets the refusal at invocation. A static binding that names a revision is stale once the
@@ -286,7 +290,7 @@ fn a_static_binding_answers_as_its_arguments_do() {
         args: b,
         token: None,
         epoch,
-        budget: Some(c600_command::Budget::DRAFT_CEILING),
+        budget: Some(c600_command::Budget::CEILING),
     };
     assert_eq!(f.layer.invoke(&runtime, invocation).status.code(), Some(code::ARGUMENT_FORM));
     f.declare(READ, requiring(vec![required(COMPARE, Binding::Static(Value::Int(3)))]));
@@ -308,6 +312,8 @@ fn a_static_binding_answers_as_its_arguments_do() {
     assert_eq!(f.layer.availability(READ), Ok(()));
 }
 
+/// CT-LI-07 (part: an optional overlay row never blocks and a required one does; convergence by full reads is in
+/// `a_full_read_after_missed_changes_equals_the_stepwise_reads`).
 /// Optional rows take no part: an ungranted, missing, busy or refused optional row leaves the overlay available.
 #[test]
 fn optional_rows_take_no_part() {
@@ -408,6 +414,8 @@ fn the_generation_advances_when_the_overlay_table_changes() {
     assert_eq!(f.layer.generation(), start + 3);
 }
 
+/// CT-LI-12 (part: two static bindings of one row keep their own answers and a computed binding answers on the
+/// argument-independent gates; not run: resolved lane targets, which the layer does not build).
 /// KN5.6's table (L13 (d) of the KN5 attack leads): one entry per binding the shell passes, keyed by row and the digest
 /// of its absolute arguments, each answer the one LI.18's hint gives, stamped with the current revision and generation
 /// and with a context that names the session's profile. Two static bindings of one row keep their own answers, and a
@@ -487,6 +495,51 @@ fn the_table_answers_each_binding_as_its_hint_does() {
     assert!(contexts.contains(&table.context));
 }
 
+/// CT-LI-07 (part: events lost or coalesced converge by a full read: one session reads its table after each of four
+/// changes, a commit, a preview that fills the exclusive lane, a declaration that makes an overlay row require the
+/// preview row, and a new overlay row; another session makes the same changes and reads once at the end, as a shell
+/// that missed every event between would; the two last tables are equal, and each answer is the one the hint gives).
+#[test]
+fn a_full_read_after_missed_changes_equals_the_stepwise_reads() {
+    const MORE: &str = "user.more";
+    let computed = Binding::Computed;
+    let bindings =
+        [(PREVIEW, &computed), (EXECUTE, &computed), (READ, &computed), (VIEW, &computed), (MORE, &computed)];
+    let changes: [fn(&mut Fixture); 4] = [
+        |f| {
+            let id = f.presented();
+            assert!(matches!(f.execute(id).status, Status::Committed(_)));
+        },
+        |f| {
+            f.building();
+        },
+        |f| f.declare(READ, requiring(vec![required(PREVIEW, Binding::Computed)])),
+        |f| f.layer.register_overlay(MORE, Kind::Query, &[], absent("more")).unwrap(),
+    ];
+
+    let (mut stepwise, mut missed) = (fixture(), fixture());
+    let first = missed.layer.availability_table(bindings);
+    let mut tables = vec![stepwise.layer.availability_table(bindings)];
+    for change in changes {
+        change(&mut stepwise);
+        tables.push(stepwise.layer.availability_table(bindings));
+        change(&mut missed);
+    }
+    let late = missed.layer.availability_table(bindings);
+    assert_eq!(&late, tables.last().unwrap());
+    assert_eq!(first, tables[0]);
+    assert!(late.generation >= first.generation + 3, "{} after {}", late.generation, first.generation);
+    assert_ne!(late.revision, first.revision);
+    for (row, binding) in bindings {
+        let hint = missed.layer.availability(row).map_err(|error| error.code);
+        assert_eq!(late.answer(row, binding), Some(hint), "{row}");
+    }
+    assert_eq!(first.answer(MORE, &computed), Some(Err(code::UNKNOWN_ROW)));
+    assert_eq!(late.answer(MORE, &computed), Some(Ok(())));
+    assert_eq!(late.answer(PREVIEW, &computed), Some(Err(code::LANE_FULL)));
+    assert_ne!(late.answer(READ, &computed), first.answer(READ, &computed));
+}
+
 /// The entries of a manifest's dependency and build-dependency tables, its target tables among them: each name, and
 /// the directory of a crate of this workspace that it names by its relative path, or `None` for a crate from the
 /// registry, which must pin a version. A dependency's own table section, such as `[dependencies.name]`, fails the
@@ -514,6 +567,7 @@ fn dependencies(manifest: &str) -> Vec<(String, Option<String>)> {
     entries
 }
 
+/// CT-LI-07 (part: the layer's crate reaches no language crate, so no availability answer can execute language code).
 /// The command layer's crate depends on the kernel's crates only, read from the manifests: no language crate (the
 /// checker, the IR, the modules, the runtime, the tools, the library) is in its closure, so the layer cannot run
 /// language code to answer availability. The other crates in the closure come from the registry.

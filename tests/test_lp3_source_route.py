@@ -58,6 +58,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "rust"
+sys.path.insert(0, str(ROOT))
+from tools.ci.transcripts import keep as keep_transcript  # noqa: E402  (standard library only)
 ASSETS = ROOT / "assets"
 INPUTS = ROOT / "work" / "experiments" / "language-lx" / "inputs"
 COMPARE = ROOT / "tools" / "oracle" / "compare.py"
@@ -516,6 +518,7 @@ def main() -> int:
                     and process_summary.get("tools") == source_summary.get("tools"),
                     "the two hosts' runs report different builds")
             check_hosts_agree(source_traces, process_traces, source_receipts, process_receipts)
+            keep_transcript("test_lp3_source_route", folder)  # with C600_TRANSCRIPT_DIR set (PHS.19, cross-platform)
     except (Failed, OSError, KeyError, ValueError, TypeError, IndexError) as error:
         print(f"FAIL: {error}")
         return 1

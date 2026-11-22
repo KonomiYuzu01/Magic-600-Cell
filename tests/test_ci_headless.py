@@ -1,6 +1,8 @@
 """Tests for the check selection of tools/ci/run_headless.py."""
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import re
@@ -13,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "ci"))
 import run_headless as rh  # noqa: E402
+import transcripts  # noqa: E402
 
 
 def git(root, *args):
@@ -199,6 +202,60 @@ class ChangedFilesTests(unittest.TestCase):
             self.assertEqual(rh.changed_files("HEAD", root), None)
             self.assertIsNone(rh.changed_files("no-such-commit", root))
             self.assertIsNone(rh.changed_files("", root))
+
+
+
+class TranscriptTests(unittest.TestCase):
+    """tools/ci/transcripts.py: what the cross-platform job keeps and how it compares two systems' folders."""
+
+    def main(self, argv):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return transcripts.main(argv)
+
+    def write(self, folder, name, data):
+        path = folder / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def test_keep_copies_the_work_folder_only_when_asked(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            work, kept = Path(temporary) / "work", Path(temporary) / "kept"
+            self.write(work, "a.trace.json", b"{}\n")
+            self.write(work, "sub/receipts.json", b"[]\n")
+            saved = os.environ.pop(transcripts.ENVIRONMENT, None)
+            try:
+                transcripts.keep("check", work)
+                self.assertFalse(kept.exists())
+                os.environ[transcripts.ENVIRONMENT] = str(kept)
+                transcripts.keep("check", work)
+            finally:
+                os.environ.pop(transcripts.ENVIRONMENT, None)
+                if saved is not None:
+                    os.environ[transcripts.ENVIRONMENT] = saved
+            self.assertEqual(sorted(transcripts.files(kept)), ["check/a.trace.json", "check/sub/receipts.json"])
+            self.assertEqual((kept / "check" / "sub" / "receipts.json").read_bytes(), b"[]\n")
+
+    def test_compare_passes_only_identical_folders(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            a, b = Path(temporary) / "a", Path(temporary) / "b"
+            for folder in (a, b):
+                self.write(folder, "x.jsonl", b"> {}\n< {}\n")
+            self.assertEqual(transcripts.compare(a, b), ([], 1, 10))
+            self.assertEqual(self.main(["compare", str(a), str(b)]), 0)
+            self.write(b, "x.jsonl", b"> {}\n< {1}\n")
+            self.write(b, "y.jsonl", b"")
+            self.write(a, "y.jsonl", b"z")
+            self.write(a, "z.jsonl", b"z")
+            problems, count, _ = transcripts.compare(a, b)
+            self.assertEqual(count, 2)
+            self.assertEqual(problems[0], "only in a: z.jsonl")
+            self.assertIn("x.jsonl: 10 bytes against 11; line 2: '< {}' against '< {1}'", problems)
+            self.assertIn("y.jsonl: empty on b", problems)
+            self.assertEqual(self.main(["compare", str(a), str(b)]), 1)
+            self.assertEqual(transcripts.compare(Path(temporary) / "c", Path(temporary) / "d")[0],
+                             ["no transcript on either system"])
+            self.assertEqual(self.main(["compare", str(a)]), 2)
+            self.assertEqual(self.main(["compare", str(a), str(Path(temporary) / "missing")]), 2)
 
 
 if __name__ == "__main__":

@@ -283,8 +283,17 @@ fn ct_rpi_06_unchanged_view_does_no_work() {
     assert_eq!(model.counters(&v), Some(before));
 }
 
+/// CT-LG4-06 (part: a burst of nine revisions keeps one pending request, five requests keep only the newest and end
+/// each older one as superseded, the one run that follows has the newest revision as its base, and a publication bound
+/// to an older base is refused (`ct_rpi_07_*`); the burst driven by commits through the command layer runs in
+/// `c600-tools/tests/views.rs` and `c600-input/tests/twist.rs`; not run: a program run by the queue, since the model's
+/// runs are closures of the test and no host binds a run's output to a view, LP3).
 /// CT-RPI-06 and KN7.2: a burst of revisions and requests keeps one runner and one newest pending request; each
 /// newer request supersedes the older one, and the view runs once more, at the newest revision (RPI.12, LI.23).
+/// CT-ONE-15 (part: a burst of revisions keeps one runner and one newest pending request; the burst as twists
+/// committed through the command layer runs whole in `c600-input/tests/twist.rs`).
+/// CT-LI-03 (part: the view lane, where a newer request supersedes the pending one and the view runs once at the
+/// newest revision; not run: all six lanes at once in the command layer).
 #[test]
 fn ct_rpi_06_a_burst_runs_once_at_the_newest_revision() {
     let mut model = model_at(profile(&[]), rev(11, 1, 1, 11));
@@ -322,6 +331,9 @@ fn ct_rpi_06_a_burst_runs_once_at_the_newest_revision() {
 /// CT-RPI-07: adoption makes mismatched output stale. It is drawn only as its view's stale presentation naming its
 /// base, never as output over the new revision, and a publication bound to the old base cannot attach (RPI.13,
 /// ONE.12, ONE.63).
+/// CT-ONE-14 (part: after adoption no output of the old revision is drawn against the new one; adoptions driven by
+/// commits through the command layer run in `c600-input/tests/twist.rs` and `c600-tools/tests/views.rs`; not run: a
+/// frame drawn by the display host or a renderer, LP3).
 #[test]
 fn ct_rpi_07_adoption_makes_mismatched_output_stale() {
     let r12 = rev(12, 1, 1, 12);
@@ -706,6 +718,8 @@ fn ct_rpi_37_view_budget_vectors() {
 /// CT-RM-02, instances: ceiling 4 passes 4. Five are refused at standalone admission with A left pending, and fail
 /// the original scheduled invocation, which superseded A, with the same field and counts (RM.11, RM.12, RM.35).
 /// Compression changes nothing.
+/// CT-LI-13 (part: ceiling 4 and five instances, standalone and scheduled; not run: renderer loss, which
+/// `c600-display`'s publication tests run).
 #[test]
 fn ct_rm_02_instance_ceiling_standalone_and_scheduled() {
     let mut model = model_at(profile(&[("instances", 4)]), rev(11, 1, 1, 11));
@@ -1114,6 +1128,9 @@ fn ct_ev3_08_admission_semantics_in_every_profile() {
 
 // ----- supporting clauses
 
+/// CT-ONE-06 (whole, with the session's half in `c600-session/tests/conformance_jobs.rs`: the view model installs the
+/// equal read result again after an undo without a program run, charged as a miss with its output; a drawn frame is
+/// not involved).
 /// ONE.10, KN7.3, KN7.8: after an undo returns to an equal state digest with larger counters, the view's equal read
 /// result comes back without a program run and is charged as a miss, output included.
 #[test]
@@ -1210,6 +1227,10 @@ fn rm_35_malformed_output_keeps_its_code() {
 /// RPI.9, ONE.60: incomplete, duplicated, foreign or mixed arrays are `refresh_required(display_bundle_mismatch)`
 /// and install nothing; an older bundle or a counter reuse with other content is refused; the identical bundle
 /// again changes nothing; Jumble on needs all six arrays.
+/// CT-ONE-16 (whole).
+/// CT-LI-06 (part: view installation is atomic; presentation permission and a preview build's effect on the session
+/// head run in `c600-input`'s routing tests, and a derived plan checked against the session head in
+/// `c600-tools/tests/views.rs`).
 #[test]
 fn rpi_09_incomplete_or_mismatched_bundles_install_nothing() {
     let r11 = rev(11, 1, 1, 11);
@@ -1632,4 +1653,48 @@ fn ev3_06_a_hidden_view_keeps_its_lag_until_evicted() {
     assert_eq!(model.show(&v), Ok(true));
     run_all(&mut model);
     assert_eq!(model.source_lag(&v), lag);
+}
+
+// ----- CT-ONE-13
+
+/// CT-ONE-13 (whole): a blocked view leaves bundle adoption undelayed, and the view shows its stale state with its base
+/// revision. View v shows its output for revision 11; adopting 12 starts its recomputation, which is taken and never
+/// finishes, so v is blocked. Revisions 13 and 14 are adopted at once all the same: Global, Local and the frame show
+/// each, and v is drawn only as its stale presentation naming revision 11's base. The blocked run is fenced, its late
+/// completion installs nothing, and v's one pending run then installs at revision 14 (ONE.12, ONE.63, ONE.64, RPI.13).
+#[test]
+fn ct_one_13_a_blocked_view_leaves_adoption_undelayed_and_shows_its_stale_base() {
+    let mut model = model_at(profile(&[]), rev(11, 1, 1, 11));
+    let v = open(&mut model, "v", Depends::STATE);
+    run_all(&mut model);
+    let old = model.installed(&v).expect("installed").base;
+    assert_eq!(old, Base::new(rev(11, 1, 1, 11), Depends::STATE));
+
+    model.adopt(&bundle(rev(12, 1, 1, 12))).expect("adopted");
+    let blocked = model.take_jobs().into_iter().find(|job| job.view == v).expect("v's recomputation");
+    for state in [13, 14] {
+        let next = rev(state, 1, 1, state as u8);
+        assert_eq!(model.adopt(&bundle(next)), Ok(next), "adoption waits for no view");
+        for view in [ViewId::global(), ViewId::local()] {
+            assert_eq!(model.shown_revision(&view), Some(next));
+        }
+        assert_eq!(model.frame_input().revision, next);
+        assert_eq!(draw_of(&model, &v), Some(Draw::Stale { base: old }));
+        assert_eq!(model.installed(&v).map(|installed| installed.base), Some(old));
+        let status = model.status(&v);
+        assert!(
+            matches!(status, Some(ViewStatus::Stale { base, adopted, refresh: Some(_), .. }) if base == old && adopted == next),
+            "{status:?}"
+        );
+    }
+    assert!(model.is_fenced(blocked.job));
+    let late = model.finish(blocked.job, RunOutcome::Published(content(12)));
+    assert_eq!(late, Some(Status::Cancelled(CancelReason::ReplacedRevision)));
+    assert_eq!(model.installed(&v).map(|installed| installed.base), Some(old));
+    let jobs = model.take_jobs();
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0].base.revision, rev(14, 1, 1, 14));
+    assert!(matches!(model.finish(jobs[0].job, RunOutcome::Published(content(14))), Some(Status::Completed(_))));
+    assert_eq!(model.shown_revision(&v), Some(rev(14, 1, 1, 14)));
+    assert!(matches!(draw_of(&model, &v), Some(Draw::Output { .. })));
 }

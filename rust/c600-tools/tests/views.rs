@@ -433,6 +433,136 @@ fn ct_ev3_02_a_burst_adopts_the_newest_bundle_and_skips_obsolete_evaluations() {
     assert!(!host.stale(V1));
 }
 
+// ----- CT-LG4-06
+
+/// A standalone publication of `content` bound to `base`, for the tool's view as a host would build it.
+fn standalone(
+    model: &view::ViewModel,
+    id: &view::ViewId,
+    base: view::Base,
+    content: view::Content,
+) -> view::PublicationInput {
+    view::PublicationInput {
+        generation: model.generation(id).expect("the view is open"),
+        base,
+        content,
+        transport: view::Transport::Canonical,
+        output: view::OutputAllowance::new(BIG, 16),
+        provenance: view::Provenance {
+            profile: model.session_profile(),
+            producer: views::source(&manifest()),
+            class: None,
+        },
+    }
+}
+
+/// The three things the view and display work must never touch: the session's fingerprint, its revision (state,
+/// workspace and protection counters among them) and the pending preview's state.
+type Untouched = ((String, String, u64, usize), c600_command::Revision, Option<PreviewState>);
+
+fn untouched(layer: &CommandLayer, preview: u64) -> Untouched {
+    (fingerprint(layer), layer.revision().clone(), layer.preview_state(preview))
+}
+
+/// CT-LG4-06 (part: four word commits through the shell's commit chord while the tool's first run is held, each
+/// followed by the view model's adoption, supersede the queued view work, which stays one pending request; the held
+/// run's late result is cancelled and installs nothing; a completed run's receipt keeps the revision and the digest of
+/// its input; a publication bound to an old revision is refused by the view model and by the display host; and the
+/// layer's fingerprint, revision (workspace counter included) and pending preview state are the same before and after
+/// every adoption, late result, refusal and display adoption; not run: a program run by the queue, since no code
+/// publishes a run's `publish_view` output into the view model and `c600-tools/src/bridge.rs` refuses the view sink,
+/// so the view's runs here are closures of the test and the job results are the view model's own)
+#[test]
+fn ct_lg4_06_a_commit_burst_supersedes_view_work_and_late_results_publish_nothing() {
+    let (mut layer, mut shell) = session();
+    let ran = name_word(&mut layer, &mut shell, &[1, -2]);
+    let first = view_of(&layer, &ran);
+    let base = base_of(&layer);
+    let (mut model, id) = model_with_view(&layer);
+    let mut ran_at = Vec::new();
+    model.pump(|job| {
+        ran_at.push(job.base);
+        view::RunOutcome::Published(content(&first))
+    });
+    let old = model.installed(&id).expect("installed").clone();
+    assert_eq!(ran_at, [old.base]);
+    let Some(view::Status::Completed(done)) = model.receipt(old.command).cloned() else { panic!("completed") };
+    assert_eq!((done.revision, done.result.digest), (old.base.revision, old.digest), "the result keeps its input");
+    let mut host = host_at(&base);
+    install(&mut host, 1, first.clone());
+
+    let mut frames = HeadlessFrames::new();
+    let (mut held, mut pending, mut newest, mut last_preview) = (None, Vec::new(), first.clone(), 0);
+    for (round, word) in [[3, -4], [5, 6], [-7, 8], [9, -10]].iter().enumerate() {
+        let preview = layer.preview().expect("the pending preview").id;
+        frames.present(&mut shell, &mut layer, preview).expect("presented by the built-in chain");
+        let receipt = shell.press(&mut layer, COMMIT, false).expect("the commit chord").expect("not a repeat");
+        assert!(matches!(receipt.status, LayerStatus::Committed(_)), "{receipt:?}");
+        let ran = name_word(&mut layer, &mut shell, word);
+        newest = view_of(&layer, &ran);
+        last_preview = layer.preview().expect("the pending preview").id;
+        let before = untouched(&layer, last_preview);
+        let adopted = model.adopt(&candidate(&layer)).expect("a complete bundle of one revision");
+        assert_eq!(adopted.state, layer.revision().state, "adopted at once");
+        if round == 0 {
+            let jobs = model.take_jobs();
+            let [job] = &jobs[..] else { panic!("one run: {jobs:?}") };
+            assert_eq!(job.base.revision, adopted);
+            held = Some(job.clone());
+        } else {
+            pending.push(model.pending(&id).expect("one pending request"));
+            assert!(model.take_jobs().is_empty(), "nothing runs behind the running evaluation");
+        }
+        assert_eq!(untouched(&layer, last_preview), before, "round {round}: adopting changes nothing in the layer");
+    }
+    pending.dedup();
+    assert_eq!(pending.len(), 1, "one pending request, never a queue per revision");
+    let held = held.expect("the held run");
+    let last = *model.adopted();
+    let before = untouched(&layer, last_preview);
+    let workspace = layer.revision().workspace;
+
+    // The held run's late result installs nothing and ends cancelled.
+    let late = model.finish(held.job, view::RunOutcome::Published(content(&newest)));
+    assert!(matches!(late, Some(view::Status::Cancelled(_))), "{late:?}");
+    assert!(matches!(model.receipt(held.command), Some(view::Status::Cancelled(_))));
+    let result = model.job_result(held.command);
+    assert!(result.is_none_or(|result| result.outcome != view::JobOutcome::Completed), "{result:?}");
+    let kept = model.installed(&id).expect("the old output stays");
+    assert_eq!((kept.command, kept.base, kept.digest), (old.command, old.base, old.digest));
+
+    // A publication bound to an old revision cannot attach, in the view model or in the display host.
+    let input = standalone(&model, &id, old.base, content(&first));
+    let refused = model.publish(view::CommandId::Caller(1), &id, input);
+    let view::Status::Refused(error) = refused else { panic!("attached") };
+    assert_eq!(error.code, view::code::STALE_DISPLAY_PLAN);
+    assert_eq!(error.context, view::Context::Stale { base: old.base, adopted: last });
+    assert_eq!(model.installed(&id).map(|installed| installed.digest), Some(old.digest));
+
+    // The one run that follows has the newest revision as its input, and its receipt keeps it.
+    let mut jobs = Vec::new();
+    let ran = model.pump(|job| {
+        jobs.push((job.command, job.base));
+        view::RunOutcome::Published(content(&newest))
+    });
+    let [(command, input)] = &jobs[..] else { panic!("one run: {jobs:?}") };
+    assert_eq!((ran, input.revision), (1, last));
+    let installed = model.installed(&id).expect("installed");
+    let Some(view::Status::Completed(done)) = model.receipt(*command).cloned() else { panic!("completed") };
+    assert_eq!((done.revision, done.result.digest), (last, installed.digest), "the result keeps its input");
+    assert_eq!(installed.base.revision, last);
+
+    let now = base_of(&layer);
+    assert_eq!(host.adopt(&engine_bundle(layer.snapshot(), &now)), Ok(now.clone()));
+    let DisplayStatus::Refused(error) = host.publish(CommandId(2), first).status else { panic!("attached") };
+    assert_eq!(error.code, codes::STALE_PLAN);
+    assert_eq!(host.adopted(), &now);
+
+    assert_eq!(untouched(&layer, last_preview), before, "view and display work changed nothing in the layer");
+    assert_eq!(layer.revision().workspace, workspace);
+    assert_eq!(layer.store().log.len(), 4, "one journal entry per commit and none for view work");
+}
+
 // ----- CT-EV3-03
 
 /// The state after `word` from solved, derived by the kernel outside any session.
@@ -519,6 +649,128 @@ fn ct_ev3_03_a_derived_display_names_its_derivation_and_base_and_an_import_its_l
     );
     assert_eq!(label.lineage, Some(stated), "no derivation or session ancestor is made up");
     assert_eq!(host.adopted(), &base);
+}
+
+// ----- CT-LI-06 and CT-ONE-12
+
+/// CT-LI-06 (part: the derived plan of the tool's view names the head it was built on as its base and changes no
+/// session head; installing it in the display host and the view model changes neither the layer's fingerprint nor
+/// its pending preview's state, and a display publication leaves the view model's adopted revision as it was; once a
+/// different word is committed and the host adopts the new engine bundle, the old derived plan is refused as
+/// `stale.display_plan`, and that refusal changes nothing in the layer; not run here: the presentation permission of a
+/// completed preview, which `c600-input`'s `tests/routing.rs` runs, and atomic installation, which `c600-view`'s
+/// `tests/view_rows.rs` runs)
+#[test]
+fn ct_li_06_a_derived_plan_never_changes_the_head_and_goes_stale_when_the_head_moves() {
+    let (mut layer, mut shell, publication) = proposed(&[1, -2]);
+    let base = base_of(&layer);
+    let preview = layer.preview().expect("the pending preview").clone();
+    let derived = publication.plans[1].clone();
+    assert_eq!((derived.plan, &derived.base), (DERIVED_PLAN, &base), "the derived plan's base is the head it saw");
+    assert_eq!(derived.subject.digest(), preview.end.as_ref().expect("an end state").digest());
+    let idle = untouched(&layer, preview.id);
+
+    let mut host = host_at(&base);
+    install(&mut host, 1, publication.clone());
+    let (mut model, id) = model_with_view(&layer);
+    model.pump(|_| view::RunOutcome::Published(content(&publication)));
+    let at = *model.adopted();
+    assert_eq!(untouched(&layer, preview.id), idle, "installing the derived plan changed nothing in the layer");
+    assert_eq!(layer.preview_state(preview.id), Some(PreviewState::Ready));
+    assert_eq!((host.adopted(), model.adopted()), (&base, &at));
+
+    // A different word is committed, and the host adopts the new engine bundle.
+    let mut frames = HeadlessFrames::new();
+    frames.present(&mut shell, &mut layer, preview.id).expect("presented by the built-in chain");
+    let receipt = shell.press(&mut layer, COMMIT, false).expect("the commit chord").expect("not a repeat");
+    assert!(matches!(receipt.status, LayerStatus::Committed(_)), "{receipt:?}");
+    let now = base_of(&layer);
+    assert_eq!(now.state, base.state + 1);
+    assert_eq!(derived.base.state + 1, now.state, "the derived plan keeps its old base");
+    let moved = untouched(&layer, preview.id);
+    assert_eq!(host.adopt(&engine_bundle(layer.snapshot(), &now)), Ok(now.clone()));
+    assert!(host.stale(V1));
+
+    // Publishing the old derived plan again is refused, and the display work changes nothing in the layer.
+    let DisplayStatus::Refused(error) = host.publish(CommandId(2), publication).status else { panic!("attached") };
+    assert_eq!(error.code, codes::STALE_PLAN);
+    assert_eq!(host.adopted(), &now);
+    assert_eq!(untouched(&layer, preview.id), moved, "the display's adoption and refusal changed nothing");
+    assert_eq!((model.adopted(), model.shown_revision(&id)), (&at, Some(at)), "no display work moved the view model");
+    assert_eq!(layer.store().log.len(), 1, "one journal entry, for the commit and nothing for the plan");
+}
+
+/// CT-ONE-12 (part: a commit driven through the shell's commit chord, for the rows of ONE.49 for the view job, the
+/// per-revision fact on screen, the adopted bundle and a derived state: the view's run is replaced and runs at the
+/// newest revision; the old output is drawn only as the view's stale presentation and none of it against the new
+/// revision; the adopted bundle is the new revision whole, every part of it; and a derived state built before the
+/// commit keeps its base, its word and its digest, its base is no longer the head, and the journal holds no entry
+/// for it; the undo's view job, frame and adopted bundle run in `c600-input/tests/twist.rs`, the preview job in
+/// `c600-command/tests/served_rows.rs`, and the open snapshot, the job reading the replaced revision, the file and
+/// pinned jobs, the pending preview, the unused token and the draft in `c600-session/tests/conformance_jobs.rs`; not
+/// run: the latest-wins jobs, whose lane no crate builds (LP3's host))
+#[test]
+fn ct_one_12_a_commit_acts_on_the_view_job_the_screen_the_bundle_and_a_derived_state() {
+    let (mut layer, mut shell) = session();
+    let kernel = kernel();
+    let recipe = kernel.word(&[3, 4]).expect("a word of legal letters");
+    let Derivation::Derived(derived) =
+        kernel.derive(&layer.snapshot().clone(), &recipe, &ProtectedSet::none()).expect("derives")
+    else {
+        panic!("refused")
+    };
+    let (derived_base, derived_word) = (derived.base.clone(), derived.word.clone());
+    let derived_digest = derived.state.digest().to_owned();
+    let started = layer.snapshot().digest().to_owned();
+    assert_eq!(derived_base, started);
+
+    let ran = name_word(&mut layer, &mut shell, &[1, -2]);
+    let first = view_of(&layer, &ran);
+    let (mut model, id) = model_with_view(&layer);
+    model.pump(|_| view::RunOutcome::Published(content(&first)));
+    let old = model.installed(&id).expect("installed").clone();
+
+    let preview = layer.preview().expect("the pending preview").id;
+    HeadlessFrames::new().present(&mut shell, &mut layer, preview).expect("presented by the built-in chain");
+    let receipt = shell.press(&mut layer, COMMIT, false).expect("the commit chord").expect("not a repeat");
+    assert!(matches!(receipt.status, LayerStatus::Committed(_)), "{receipt:?}");
+    let adopted = model.adopt(&candidate(&layer)).expect("a complete bundle of one revision");
+    assert_eq!(adopted.state, old.base.revision.state + 1);
+
+    // The adopted bundle is replaced whole: every part is at the adopted revision.
+    assert_eq!(model.bundle().revision(), &adopted);
+    assert!(model.bundle().parts().iter().all(|part| part.revision == adopted), "{:?}", model.bundle().parts());
+    assert_eq!(model.adopted(), &adopted);
+
+    // The per-revision fact on screen: the old output is drawn only as the view's stale presentation.
+    let frame = model.frame_input();
+    assert_eq!(frame.revision, adopted);
+    for drawn in &frame.views {
+        if let view::Draw::Output { base, .. } = &drawn.draw {
+            assert!(base.matches(&adopted), "{:?} draws output of another revision", drawn.view);
+        }
+    }
+    let drawn = frame.views.iter().find(|drawn| drawn.view == id).expect("the tool's view is visible");
+    assert_eq!(drawn.draw, view::Draw::Stale { base: old.base });
+
+    // The view job recomputes at the newest revision.
+    let (job, _) = model.runner(&id).expect("the recomputation started at once");
+    assert!(!model.is_fenced(job));
+    let mut ran_at = Vec::new();
+    model.pump(|job| {
+        ran_at.push(job.base.revision);
+        view::RunOutcome::Published(content(&first))
+    });
+    assert_eq!(ran_at, [adopted]);
+    assert_eq!(model.installed(&id).map(|installed| installed.base.revision), Some(adopted));
+
+    // The derived state keeps its derivation and its old base, and acquired no revision.
+    assert_eq!((derived.base.as_str(), derived.word.as_str()), (derived_base.as_str(), derived_word.as_str()));
+    assert_eq!(derived.state.digest(), derived_digest);
+    assert_eq!(derived.state.digest(), outside(&[3, 4]).digest());
+    assert_ne!(derived.base, layer.snapshot().digest(), "its base is no longer the head");
+    assert_eq!(layer.store().log.len(), 1, "one journal entry, for the commit");
+    assert!(layer.store().log.iter().all(|entry| entry.literal != derived_word), "no entry for the derived state");
 }
 
 // ----- CT-EV3-04

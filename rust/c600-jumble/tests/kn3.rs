@@ -335,8 +335,8 @@ fn replay_uses_the_recorded_rotation_without_the_chooser() {
 
 /// CT-LG2-16 (part: on 600-cell-Full every item of the pinned menu at cap 0, requested by M, either dispatches to the
 /// retained word of its A4 element, which M4's kernel reads and derives, or refuses with
-/// `KN5:input.menu_word_needs_jumble_on`; a free resolution refuses there; not run: the language half and the command
-/// layer's dispatch, which consumes this word).
+/// `KN5:input.menu_word_needs_jumble_on`; a free resolution refuses there; the command layer's dispatch, which consumes
+/// this word, is in `c600-command`'s `twist_apply.rs` and `jumble_twist_menu.rs`; not run: the language half).
 #[test]
 fn on_600_cell_full_retained_items_dispatch_and_jumble_items_refuse() {
     let ctx = ctx();

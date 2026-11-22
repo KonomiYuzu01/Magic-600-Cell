@@ -160,8 +160,9 @@ fn replay(name: &str, limit: usize) -> usize {
 }
 
 /// CT-KN1-01 (part: identity blocks and the registry here; snapshots and recipes of another model in
-/// `tests/load.rs`, `ct_kn1_01_values_of_another_model_are_refused`. A jumbling identity is only refused here, since
-/// the jumbling half is M5's; not run: marking a value as recorded, which needs the session store, M6).
+/// `tests/load.rs`, `ct_kn1_01_values_of_another_model_are_refused`. A jumbling identity is only refused here; the
+/// jumbling half is in `c600-jumble`'s `tests/levels.rs` and the store's half in `c600-session`'s
+/// `tests/persist_jumble.rs`).
 #[test]
 fn ct_kn1_01_identity_block_and_registry() {
     let kernel = kernel();
@@ -559,10 +560,11 @@ fn word_steps(word: &[i64], sizes: &[usize]) -> Recipe {
     kernel().recipe(&Value::Array(steps.collect())).unwrap()
 }
 
-/// CT-LG2-14 (part: the kernel's streaming of positions and letters on 600-cell-Full; not run: compressed words and
-/// their exact big-integer lengths, which are library code). Each recipe of O04, star steps included, streams in
-/// chunks of several sizes: the positions run on without a gap, every chunk but the last is full, and the letters
-/// equal the whole expansion and the oracle's independently expanded digest and count (0.4's `Model.expand`).
+/// CT-LG2-14 (part: the kernel's streaming of positions and letters on 600-cell-Full; compressed words and their
+/// exact big-integer lengths are `c600-run`'s `collections.rs`, and with it CT-LG2-14 runs whole). Each recipe of
+/// O04, star steps included, streams in chunks of several sizes: the positions run on without a gap, every chunk but
+/// the last is full, and the letters equal the whole expansion and the oracle's independently expanded digest and
+/// count (0.4's `Model.expand`).
 #[test]
 fn ct_lg2_14_streamed_positions_and_letters_equal_the_oracle_expansion() {
     let kernel = kernel();
@@ -846,8 +848,9 @@ fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
 }
 
 /// CT-PS1-04 (part: the labels half; M4's API holds the one level `Labels`, builds a snapshot only from labels and
-/// reads no render float; not run: refusing confused levels or hashed render floats, which that API cannot express,
-/// and `Digest<poses>` against J1 and the store helper, M5's and M6's). `Digest<labels>` is the SHA-256
+/// reads no render float; `Digest<poses>` against J1 is in `tests/test_jumbling_rust_m8_levels.py`; not run: refusing
+/// confused levels or hashed render floats, which that API cannot express, and `Digest<poses>` against a store helper,
+/// which does not exist). `Digest<labels>` is the SHA-256
 /// of the labels as little-endian int32 in slot order (PS1.6), which is `core.state_hash`: on the solved state in
 /// `ct_kn1_05_labels_digest_is_the_oracle_state_hash`, on O03's scrambled initial state here, and on every row the
 /// replays compare. A protection verdict carries its level.

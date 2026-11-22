@@ -1,10 +1,10 @@
-//! The draft `orbits` row for 600-cell-Full served to a library entry by the host bridge (KN5; a draft until the
-//! command table freezes at LP3). An entry's snapshot read with an argument, `read_snapshot<T>("orbits", orbits)`,
+//! The `orbits` row for 600-cell-Full served to a library entry by the host bridge (KN5; H-08's `reads` since the
+//! command table's freeze, CM.18). An entry's snapshot read with an argument, `read_snapshot<T>("orbits", orbits)`,
 //! runs on `c600-run` through `Boundary` and [`Bridge`] onto a command layer and answers the pieces of the named
 //! orbits: model data, which reads no state of the session (`c600_tools::kernel_rows`). The references are the
 //! kernel's own: the `positions` row the bridge serves, the kernel's progress rows, one per moving orbit with its piece
 //! count, and the model's seed atlas, `assets/seed_atlas.json`, with each moving orbit's piece count. Every run here
-//! runs within the draft budget ceiling, `Budget::DRAFT_CEILING`. The refusal with Jumble on is not run here: a layer
+//! runs within the budget ceiling, `Budget::CEILING`. The refusal with Jumble on is not run here: a layer
 //! in Jumble on needs a pinned twist menu, which `c600-jumble` builds, and this crate's tests do not depend on it. A
 //! pass is source and fixture evidence.
 
@@ -52,12 +52,12 @@ const SOURCE: &str = "edition \"6cs-draft-1\";\nmodule catalogue requires [];\n\
     return read_snapshot<List<record { home: List<Nat>, orbit: Int, piece: Nat, position: Int, \
     slots: List<Nat> }>>(\"positions\", pieces);\n}\n";
 
-/// The draft budget ceiling of every profile (`Budget::DRAFT_CEILING`), as the run's limits.
+/// The budget ceiling of every profile (`Budget::CEILING`), as the run's limits.
 const CEILING: Amounts = Amounts {
-    steps: Budget::DRAFT_CEILING.steps,
-    kernel_cost: Budget::DRAFT_CEILING.kernel_cost,
-    memory: Budget::DRAFT_CEILING.memory,
-    output: Budget::DRAFT_CEILING.output,
+    steps: Budget::CEILING.steps,
+    kernel_cost: Budget::CEILING.kernel_cost,
+    memory: Budget::CEILING.memory,
+    output: Budget::CEILING.output,
 };
 
 /// A fixed scramble from solved.
@@ -126,7 +126,7 @@ fn context(layer: &CommandLayer, entry: &str) -> Context {
     Context { run: "orbits".into(), base, producer, reads_state: true, inputs: vec![named_word_block()], pins: pins() }
 }
 
-/// Runs `entry` on `arg` within the draft ceiling through a boundary and a bridge onto `layer`; a read sends no
+/// Runs `entry` on `arg` within the ceiling through a boundary and a bridge onto `layer`; a read sends no
 /// invocation and changes nothing.
 fn run(layer: &mut CommandLayer, entry: &str, arg: Value) -> Run {
     let before = (layer.revision().clone(), layer.store().log.len(), layer.snapshot().digest().to_owned());
@@ -280,7 +280,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     }
 }
 
-/// The row's draft tariff covers its answer: an answer asked of the bridge directly fits the result bound of its
+/// The row's tariff covers its answer: an answer asked of the bridge directly fits the result bound of its
 /// tariff, for every orbit at once and for each orbit alone, and the tariff counts one pass over the slots and
 /// [`MAX_ORBIT_PIECES`] for each named orbit. A read sends no invocation.
 #[test]

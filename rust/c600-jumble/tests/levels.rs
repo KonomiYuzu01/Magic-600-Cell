@@ -785,6 +785,8 @@ fn moved_piece(piece: u32, from: u16, to: u16) -> Value {
     ])
 }
 
+/// CT-KN1-01 (part: the jumbling half; a derivation under another identity block is refused with
+/// `KN1:input.identity_mismatch`; the retained half is `c600-kernel`'s `tests/kernel.rs` and `tests/load.rs`).
 /// KN1.4 and chapter 13: a derivation names its base's identity block and protects pieces of the model; otherwise the
 /// request is refused before any letter runs.
 #[test]
@@ -934,9 +936,12 @@ fn a_derived_value_keeps_its_identity_lineage_and_claim() {
     assert_eq!(record.get("lineage").and_then(|l| l.get("revision")), Some(&Value::Null));
 }
 
+/// CT-KN1-01 (part: the jumbling half; an import with another identity block is refused with
+/// `KN1:input.identity_mismatch`; the retained half is `c600-kernel`'s `tests/kernel.rs` and `tests/load.rs`).
 /// CT-ONE-09 (part: KN2.14's import in c600-jumble, which takes a raw pose table only with an open or promised claim,
 /// validates its form and identity, and makes a derived value with no derivation, no protection report and its own
-/// digest as its lineage; not run: the runtime's entry points and table rows, LP3, and the session store's import, M6).
+/// digest as its lineage; not run: the runtime's entry points and the session store's import, M6; that no H-08 row
+/// takes a raw table runs in `c600-command/tests/layer.rs`).
 #[test]
 fn ct_one_09_a_raw_table_enters_with_an_open_or_promised_claim() {
     let s = setup();
@@ -998,8 +1003,10 @@ fn ct_one_10_a_derived_state_with_an_open_claim_answers_unknown_at_nu_zero() {
 }
 
 /// CT-ONE-28 (part: a wordless import reads, compares and is a base for `derive`, whose value keeps the import's open
-/// claim and lineage; not run: display, LP3's views, and that no row proposes or adopts either value, LP3's command
-/// table and M6).
+/// claim and lineage; a display plan of an imported value with its `imported` lineage runs on a fixture import record
+/// in `c600-tools/tests/views.rs`, and that no H-08 row proposes or adopts either value in
+/// `c600-command/tests/layer.rs`; not run: a display of this import's own value, since no layer joins an import to a
+/// view yet (LP3), and the session store's import (M6)).
 #[test]
 fn ct_one_28_a_wordless_import_reads_compares_and_derives() {
     let s = setup();
@@ -1069,6 +1076,8 @@ fn ct_lg2_07_a_jumbling_witness_does_not_assert_retained_reachability() {
 /// ONE.25: two values compare at one level. Off the lattice the comparison is made on the keys that both cover, with
 /// each side's missing part; an S-gauge image has equal labels and other poses; the sticker class is not held, and two
 /// identity blocks that differ are refused.
+/// CT-ONE-18 (part: a comparison at the sticker class, which no jumbling state holds, is refused; not run: a
+/// retained value compared with a jumbled one across the session's crossing (KN1.9)).
 #[test]
 fn compare_answers_partially_off_the_lattice() {
     let s = setup();

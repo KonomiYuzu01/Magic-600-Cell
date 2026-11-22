@@ -22,8 +22,9 @@ REPEAT = {"camera.rotate", "camera.zoom", "list.move", "view.preview.scrub"}
 LIST_ACTIONS = {"list.move": "navigation", "object.inspect": "inspection", "list.row.copy": "row_copy"}
 USER_ENTRY_KINDS = {"key", "button", "menu", "command", "mouse", "control"}
 DELTA_FORMAT = "c600-command-rows-delta-1"
-# Applied in this order: the language delta may amend a jumbling row.
-DELTA_FILES = ("command-rows-jumbling.json", "command-rows-language.json")
+# Applied in this order: the language delta may amend a jumbling row. The design delta adds ADR-D01's view and
+# workspace rows, ordinary edits after the LP3 freeze (owner, 22 November 2026).
+DELTA_FILES = ("command-rows-jumbling.json", "command-rows-language.json", "command-rows-design.json")
 ROW_FIELDS = {"id", "label", "kind", "inventory", "gates", "lane", "preview", "undo", "contexts",
               "repeat", "job", "key_0_4", "disposition", "note", "source", "arguments"}
 UNDO_ROWS = {"session.undo", "session.redo"}
@@ -61,6 +62,24 @@ DELTA_REQUIRED_ARGUMENTS = {
     "twist.apply": {"cap", "rotation", "token"},
     "workspace.set": {"record", "payload", "provenance"},
     "set.save": {"members", "kind", "name"},
+    "theme.select": set(),
+    "theme.tune": {"family", "knobs"},
+    "token.override.set": {"name", "value"},
+    "token.override.reset": {"name"},
+    "density.preset.set": {"preset"},
+    "type.scale.set": {"preset"},
+    "motion.preset.set": {"preset"},
+    "motion.reduced.set": {"on"},
+    "panel.mount": {"panel", "mount"},
+    "panel.unmount": {"panel"},
+    "radial.edit": {"radial", "entries"},
+    "palette.pin": {"command", "pinned"},
+    "palette.alias": {"command", "aliases"},
+    "explore.set": {"on"},
+    "view.preview.open": {"view", "preview"},
+    "view.pin": {"view", "pinned"},
+    "view.compare.wipe": {"view"},
+    "history.dock.mode": {"mode"},
 }
 SERVICES = [
     {"id": "kernel.snapshot.open", "kind": "service", "caller": "both", "lane": "none",

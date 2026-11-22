@@ -2,7 +2,9 @@
 
 Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
 [decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
-[the overview](00-overview.md), section 3, and its status says what the freeze covers.
+[the overview](00-overview.md), section 3, and its status says what the freeze covers. Amended once under PHS.52 at
+LP2's exit, below section 15.3's table (owner,
+[22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)).
 
 A phase ends when its acceptance is evidenced. This chapter makes the partition's phase table checkable, connects it
 to the other engineering lines, and assigns the existing chapters' test requirements to their first runnable phase.
@@ -616,6 +618,15 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | BND | CT-BND-01, CT-BND-02, CT-BND-04, CT-BND-05, CT-BND-06, CT-BND-07, CT-BND-08, CT-BND-09, CT-BND-10, CT-BND-11, CT-BND-12, CT-BND-13, CT-BND-14, CT-BND-22, CT-BND-23, CT-BND-24, CT-BND-26, CT-BND-27, CT-BND-28, CT-BND-29, CT-BND-30 | none | none | none | none |
 | ERR | CT-ERR-01, CT-ERR-02, CT-ERR-03, CT-ERR-04, CT-ERR-05, CT-ERR-06, CT-ERR-07, CT-ERR-08, CT-ERR-09, CT-ERR-10, CT-ERR-12, CT-ERR-13, CT-ERR-14, CT-ERR-15, CT-ERR-16, CT-ERR-17 | none | none | none | none |
 | LI | CT-LI-01, CT-LI-02, CT-LI-03, CT-LI-04, CT-LI-05, CT-LI-06, CT-LI-07, CT-LI-09, CT-LI-10, CT-LI-11, CT-LI-12, CT-LI-13, CT-LI-14 | none | none | none | none |
+
+Amended under PHS.52 at LP2's exit (owner,
+[22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 6 and 8). LP2 does
+not build form 2 (LG2.21), which has no executor. The form-2 halves of CT-DET-32 and CT-LG2-05 stay out of LP2 until
+form 2 is built; their form-1 halves run in LP2. The undo halves of CT-LG3-03 and CT-LB7-01 move to the fix that gives
+a language-defined row's completion an undo entry (LG3.5, LB7.2), which LP3's command layer makes after LP2's exit.
+Every other half that LP2's products cannot run is indexed with the work that builds its piece, waits, or is not
+applicable while a recorded decision stands, as [LP2's index notes](../../../../progress/1.0/lp2-ct-index-notes.md)
+record (PHS.62, PHS.63). No ID, class or definition changes, and none of these halves counts as a pass.
 
 ### 15.4. LP3
 

@@ -425,9 +425,10 @@ fn slot_orbits() -> Vec<i32> {
     slot_piece.iter().map(|&piece| orbit[piece as usize]).collect()
 }
 
-/// CT-LG2-12 (part: the kernel half on 600-cell-Full, that literal prefix protection does not follow the key; not run:
-/// R-11's operations, the jumbling fixtures and the peak height) and CT-PS1-12 (part: the Strict clause; the rest in
-/// `tests/kernel.rs`). On the shipped model every generator moves every orbit, so this test changes a copy:
+/// CT-LG2-12 (part: the kernel half on 600-cell-Full, that literal prefix protection does not follow the key; R-11's
+/// operations are `c600-run`'s and `c600-syntax`'s `collections.rs`, the jumbling fixtures and the peak height
+/// `c600-jumble-tool`'s `lb3.rs`, and with them CT-LG2-12 runs whole) and CT-PS1-12 (part: the Strict clause; the
+/// rest in `tests/kernel.rs`). On the shipped model every generator moves every orbit, so this test changes a copy:
 /// generator 1200 lists its orbit-0 pairs as fixed (each slot to itself), which keeps it a permutation of its listed
 /// slots and lets it leave orbit 0 alone. With orbit 0 protected, `[1200]` and `[1200, 1, -1]` have the same net map
 /// and the same freely reduced key, and Net accepts both; Strict accepts the first and refuses the second at prefix 2.

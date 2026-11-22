@@ -1,4 +1,4 @@
-//! The draft `setups` row served to a library entry by the host bridge (KN5; LP2 draft; BND.1). CT-BND-18 (part: a
+//! The `setups` row served to a library entry by the host bridge (KN5; CM.18; BND.1). CT-BND-18 (part: a
 //! host row serves the setup search for a target the solver names; the library entry runs whole in
 //! `tests/ct_bnd_18.rs`). An entry's snapshot read with an argument, `read_snapshot<T>("setups", target)`, runs on
 //! `c600-run` through `Boundary` and [`Bridge`] onto a command layer, and the bridge answers it from the certified
@@ -233,7 +233,7 @@ fn the_row_refuses_what_it_does_not_answer() {
     }
 }
 
-/// The row's draft tariff covers its answer: the answer for the target with the most setups, asked of the bridge
+/// The row's tariff covers its answer: the answer for the target with the most setups, asked of the bridge
 /// directly, fits the result bound of its tariff, and the tariff counts one pass over the slots and three for each
 /// setup the kernel certifies. The bound covers the largest answer: as many setups as any target has, each with a frame
 /// of [`MAX_PIECE_STICKERS`] slots and a setup as long as the deepest. A read sends no invocation.

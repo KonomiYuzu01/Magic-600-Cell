@@ -189,7 +189,8 @@ fn family(e: Effect) -> &'static str {
     }
 }
 
-/// CT-LG3-02 (part: no effect commits or obtains a token, in IR; not run: overlay rows, which wait for LP3).
+/// CT-LG3-02 (part: no effect commits or obtains a token, in IR; the overlay rows are in `c600-command`'s
+/// `tests/layer.rs` and `tests/served_rows.rs`).
 #[test]
 fn ct_lg3_02_no_effect_commits_or_obtains_a_token() {
     let all = [

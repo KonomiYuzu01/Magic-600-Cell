@@ -102,7 +102,7 @@ impl Fixture {
             args,
             token: None,
             epoch: self.layer.revision().epoch,
-            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
+            budget: served.then_some(c600_command::Budget::CEILING),
         };
         self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
     }
@@ -158,6 +158,9 @@ fn a_session_keeps_the_profile_the_host_created_it_in() {
     assert_eq!(Profile::from_name("practice"), None);
 }
 
+/// CT-LG3-09 (part: R-12 at the command layer: a record write whose block the host's reader refuses is refused with
+/// `PS1:capability.provenance_incompatible` and leaves no record; not run: a failed disk write, and the session's
+/// assistance provenance record).
 /// KN5.26 applies only in a solving session (draft): there the host's reader is asked to admit a record's word at
 /// `operation.preview`, and its refusal stands; in `tool_authoring` and `research` the reader is not asked. The reader's
 /// check at `workspace.set` (PS1.16) runs in every profile.
@@ -215,6 +218,12 @@ fn a_comparison_admits_the_sheets_word_only_in_a_solving_session() {
     }
 }
 
+/// CT-BND-14 (part: in tool authoring and research a run's `operation.preview` is refused, so `propose` creates no
+/// engine preview and no token, and the session's snapshot digest and revision are unchanged; the capture is
+/// `c600-run`'s).
+/// CT-LB7-01 (part: a run in a research or authoring session gets no engine preview, so its output cannot become an
+/// interim solving preview; save/load and import run in `c600-run`; not run: the undo of a language-defined workspace
+/// command).
 /// BND.16's table by profile, chapter 07 section 8 (draft): a run in a `tool_authoring` or `research` session may not
 /// invoke `operation.preview` (BND.60: its `propose` goes to a capture), so an entry that requires the row is
 /// unavailable there, while the solver's own preview is admitted in every profile. In a solving session the run's
@@ -229,6 +238,7 @@ fn a_run_prepares_no_engine_preview_outside_a_solving_session() {
             Profile::Solving => f.solver_run(),
             _ => "r1".to_owned(),
         };
+        let (digest, revision) = (f.layer.snapshot().digest().to_owned(), f.layer.revision().clone());
         let receipt = f.runtime(&run, "operation.preview", draft_args(&word(&[1])));
         match profile {
             Profile::Solving => {
@@ -242,9 +252,56 @@ fn a_run_prepares_no_engine_preview_outside_a_solving_session() {
                 assert!(error.detail.contains("BND.60"), "{}", error.detail);
                 assert_eq!(availability.map_err(|e| e.code), Err(code::NOT_GRANTED), "{profile:?}");
                 assert_eq!(f.layer.run_jobs(), 0, "no job was queued");
+                assert_eq!(f.layer.snapshot().digest(), digest, "{profile:?}: the session's digest");
+                assert_eq!(f.layer.revision(), &revision, "{profile:?}: the session's revision");
                 let mine = f.shell.invoke(&mut f.layer, "operation.preview", draft_args(&word(&[1]))).unwrap();
                 assert!(running(&mine), "{profile:?}: the solver's preview: {:?}", mine.status);
             }
         }
+    }
+}
+
+/// CT-ONE-02 and CT-KN5-02 (part: the command layer's half, which with `c600-run`'s and `c600-session`'s tables
+/// completes them: every row of the table, in each profile, invoked on a run's channel with each of its arguments
+/// named; a row of kind `commit` or `app` is refused as one, a row that takes a token is refused, since a run holds
+/// none, and no answer commits; a receipt has no field that could carry a token, and the journal and the state revision
+/// stay as they were).
+#[test]
+fn a_run_reaches_no_commit_or_token_row_in_any_profile() {
+    for profile in PROFILES {
+        let mut f = session(profile);
+        let run = match profile {
+            Profile::Solving => f.solver_run(),
+            _ => "r1".to_owned(),
+        };
+        let (log, state) = (f.layer.store().log.len(), f.layer.revision().state);
+        let rows: Vec<_> = f.layer.table().rows().cloned().collect();
+        assert!(rows.len() > 100, "{profile:?}: the whole table, {} rows", rows.len());
+        let (mut commit_rows, mut token_rows) = (0, 0);
+        for row in &rows {
+            let args = Value::Object(row.plain_arguments().map(|name| (name.to_owned(), Value::Null)).collect());
+            let receipt = f.runtime(&run, &row.id, args);
+            // No field of a receipt could carry a token: one added here stops this from compiling.
+            let Receipt { command: _, request: _, job: _, status } = receipt;
+            assert!(!matches!(status, Status::Committed(_)), "{profile:?}: {}", row.id);
+            if matches!(row.kind, Kind::Commit | Kind::App) {
+                commit_rows += 1;
+                let error = refused_with_status(&status).unwrap_or_else(|| panic!("{}: {status:?}", row.id));
+                assert_eq!(error.code, code::COMMIT_ROW_REFUSED, "{profile:?}: {}", row.id);
+            } else if row.takes_token() {
+                token_rows += 1;
+                let error = refused_with_status(&status).unwrap_or_else(|| panic!("{}: {status:?}", row.id));
+                assert_eq!(error.code, code::TOKEN_INVALID, "{profile:?}: {}", row.id);
+            }
+        }
+        assert_eq!((commit_rows, token_rows), (19, 1), "{profile:?}");
+        assert_eq!((f.layer.store().log.len(), f.layer.revision().state), (log, state), "{profile:?}");
+    }
+}
+
+fn refused_with_status(status: &Status) -> Option<&Error> {
+    match status {
+        Status::Refused(error) => Some(error),
+        _ => None,
     }
 }

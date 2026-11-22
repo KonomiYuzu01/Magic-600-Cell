@@ -1,0 +1,425 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {
+      "id": "theme.select",
+      "label": "Select theme family",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Selects a theme family, whose scene looks come with it (ADR-D01.49). Without family the theme follows the Windows light or dark setting, the default (ADR-D01.50). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "family": "ThemeFamilyId?"
+      }
+    },
+    {
+      "id": "theme.tune",
+      "label": "Tune theme seeds",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Writes a theme family's ranged seed knobs (tone, contrast, black level, accent hue, grid intensity); only the raw seeds move (ADR-D01.50). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "family": "ThemeFamilyId",
+        "knobs": "ThemeSeedKnobs"
+      }
+    },
+    {
+      "id": "token.override.set",
+      "label": "Override colour token",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Overrides one semantic token, for one theme family when theme is given, as a difference file with a contrast check on save (ADR-D01.50). The colour keeps its value across theme switches and is flagged as an override; a state or encoding role that differs from its shipped colour puts the non-standard colours mark on the view frame (ADR-D01.51). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "name": "TokenName",
+        "value": "TokenValue",
+        "theme": "ThemeFamilyId?"
+      }
+    },
+    {
+      "id": "token.override.reset",
+      "label": "Reset colour token",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Resets an overridden token to its token value, for one theme family when theme is given (ADR-D01.51). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "name": "TokenName",
+        "theme": "ThemeFamilyId?"
+      }
+    },
+    {
+      "id": "density.preset.set",
+      "label": "Set density preset",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Selects a preset of the one density token table: compact, default or comfortable; compact ships (ADR-D01.45). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "preset": "DensityPresetId"
+      }
+    },
+    {
+      "id": "type.scale.set",
+      "label": "Set type scale",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Selects a preset of the closed size ramps of the three type roles (ui, content, code); faces and metrics stay the same in every theme family and look, and the ramps are tuned later (ADR-D01.47). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "preset": "TypeScalePresetId"
+      }
+    },
+    {
+      "id": "motion.preset.set",
+      "label": "Set motion preset",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Selects a motion preset of the motion table (H-03). The engine commits before any animation, so a preset never changes state; curves are tuned in G5 (ADR-D01.55). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "preset": "MotionPresetId"
+      }
+    },
+    {
+      "id": "motion.reduced.set",
+      "label": "Set reduced motion",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Turns reduced motion on or off; it is off by default, and reducing motion never changes state (ADR-D01.55). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "on": "Bool"
+      }
+    },
+    {
+      "id": "panel.mount",
+      "label": "Mount script panel",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Mounts a program's declared panel at one of its declared mount points: palette entry, context action, inspector section, docked panel in a slot, free view or overlay annotation (ADR-D01.30). The panel keeps a stable id in the session store. Capabilities stay with the package's install consent (ADR-D01.32). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "panel": "ScriptPanelRef",
+        "mount": "MountPoint"
+      }
+    },
+    {
+      "id": "panel.unmount",
+      "label": "Unmount script panel",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Removes a mounted script panel by its stable id (ADR-D01.30). The main Global and Local pair is not a script panel and stays (ADR-D01.36). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "panel": "PanelId"
+      }
+    },
+    {
+      "id": "radial.edit",
+      "label": "Edit radial menu",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Edits a user-editable radial menu; an entry may be a command or a .6cs entry and behaves exactly like its palette row (ADR-D01.20). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "radial": "RadialMenuId",
+        "entries": "RadialEntryEdits"
+      }
+    },
+    {
+      "id": "palette.pin",
+      "label": "Pin palette row",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Pins or unpins a palette row; the palette ranks only by the solver's own recency, frequency and pins (ADR-D01.18). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "command": "CommandId",
+        "pinned": "Bool"
+      }
+    },
+    {
+      "id": "palette.alias",
+      "label": "Alias palette row",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Sets the solver's aliases for a palette row. An alias is a synonym the palette matches and never renames the command's stable id (ADR-D01.17, ADR-D01.18). A design-profile change: it belongs to the layout history and never to the move history (ADR-D01.14), so session.undo does not reach it; the layout-history undo rows come with the later commit work.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "command": "CommandId",
+        "aliases": "List<Text>"
+      }
+    },
+    {
+      "id": "explore.set",
+      "label": "Set explore state",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Turns the explore state on or off. While it is on, commits are paused and every view frame signals it. It may only pause commits: it never enables or makes a commit, and it changes no command vocabulary or capability (ADR-D01.39). The refusal a paused commit answers comes with the later commit work. Not in the move history (ADR-D01.14), so session.undo does not reach it.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "on": "Bool"
+      }
+    },
+    {
+      "id": "view.preview.open",
+      "label": "Open preview view",
+      "kind": "view",
+      "inventory": [],
+      "gates": [],
+      "lane": "view",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Opens the preview view, a free view outside the main pair, on an identified preview: its full collateral effect, witness sequence, effect on every orbit and on protection, with a before-to-after scrub and move-by-move stepping (ADR-D01.10). The main Global and Local views keep the committed state with a pending marker. It prepares no preview and commits nothing.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "view": "ViewId",
+        "preview": "PreviewId"
+      },
+      "lane_target": {
+        "arg": "view"
+      }
+    },
+    {
+      "id": "view.pin",
+      "label": "Pin free view",
+      "kind": "view",
+      "inventory": [],
+      "gates": [],
+      "lane": "view",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Pins or unpins a free view, the preview view included, to the source its binding chip names: committed state, a preview, a saved reference or a history position (ADR-D01.42, ADR-D01.43). Global and Local always show the committed state (ADR-D01.40).",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "view": "ViewId",
+        "pinned": "Bool"
+      },
+      "lane_target": {
+        "arg": "view"
+      }
+    },
+    {
+      "id": "view.compare.wipe",
+      "label": "Compare with A/B wipe",
+      "kind": "view",
+      "inventory": [],
+      "gates": [],
+      "lane": "view",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Compares a free view's source with another binding (committed state, a preview, a saved reference or a history position) by an A/B wipe; without against the wipe ends (ADR-D01.42).",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "view": "ViewId",
+        "against": "ViewBindingRef?"
+      },
+      "lane_target": {
+        "arg": "view"
+      }
+    },
+    {
+      "id": "history.dock.mode",
+      "label": "Set history dock mode",
+      "kind": "view",
+      "inventory": [],
+      "gates": [],
+      "lane": "view",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Shows the History dock as the move history in .6cs (one expandable header row per transaction) or as the plain list of named transactions (ADR-D01.15). Display only: it moves no rollback cursor.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "mode": "source|list"
+      },
+      "lane_target": {
+        "control": "history.dock.mode"
+      }
+    }
+  ],
+  "amend": []
+}

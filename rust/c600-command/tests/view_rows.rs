@@ -138,7 +138,7 @@ impl Fixture {
             args,
             token: None,
             epoch,
-            budget: served.then_some(c600_command::Budget::DRAFT_CEILING),
+            budget: served.then_some(c600_command::Budget::CEILING),
         };
         self.layer.invoke(&Caller::Runtime { run: run.into() }, invocation)
     }

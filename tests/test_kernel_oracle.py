@@ -42,6 +42,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from tools.ci.transcripts import keep as keep_transcript  # noqa: E402  (standard library only)
 from tools.oracle import invalid_recipes  # noqa: E402  (standard library only)
 
 WORKSPACE = ROOT / "rust"
@@ -418,7 +419,8 @@ def check_tampered_trace(cases: list[Path], traces: dict[str, Path], folder: Pat
     original = step["state_hash"]
     step["state_hash"] = ("1" if original[0] == "0" else "0") + original[1:]
     tampered = folder / "tampered.trace.json"
-    tampered.write_text(json.dumps(trace, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    # Bytes, not text: the file is the same on Windows and Linux (tools/ci/transcripts.py compares them).
+    tampered.write_bytes((json.dumps(trace, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"))
     case = next(case for case in cases if case.name.startswith(TAMPERED_CASE))
     code, report, line = compare(case, tampered)
     print(f"negative control ({TAMPERED_CASE} step {TAMPERED_INDEX} state_hash changed): exit {code} {line}")
@@ -491,7 +493,7 @@ def extended_o07(cases: list[Path], case_id: str, recipes: list[tuple[str, str]]
         require(text.count(mark) == 1, "a recipe mark is not unique")
         text = text.replace(mark, recipe)
     path = folder / f"{case_id}.case.json"
-    path.write_text(text, encoding="utf-8")
+    path.write_bytes(text.encode("utf-8"))  # bytes: the same file on Windows and Linux
     return path, len(case["steps"])
 
 
@@ -592,6 +594,7 @@ def main() -> int:
             check_invalid_steps(adapter, cases, folder, "L1", invalid_recipes.json_edges())
             check_unreadable_recipe_json(adapter, cases, traces, folder)
             new = check_new_cases(adapter, new_cases, folder)
+            keep_transcript("test_kernel_oracle", folder)  # with C600_TRANSCRIPT_DIR set (PHS.19, cross-platform)
         agreement = check_agreement(adapter)
     except (Failed, OSError, KeyError, ValueError) as error:
         print(f"FAIL: {error}")

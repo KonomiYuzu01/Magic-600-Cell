@@ -150,7 +150,8 @@ impl Drop for StopOnDrop<'_> {
     }
 }
 
-/// CT-ONE-06 (part: the session's half; not run: a view that shows the result, which is LP3's): a read result is valid
+/// CT-ONE-06 (part: the session's half; the view model's half is `c600-view/tests/view_rows.rs`'s): a read result is
+/// valid
 /// wherever its inputs are equal, and a cache hit is charged as a miss (ONE.10, KN7.3, KN7.8). A query at A computes
 /// and caches its whole-state diff. After a commit to B and an undo back to A's digest under a newer revision, the
 /// session gives A's result again at the undo's revision and refuses it at B's; a run at the undo takes its diff from
@@ -435,10 +436,10 @@ fn one_49(change: Change) {
 
 /// CT-ONE-12 (part: an execute, driven headless, with ONE.49's session-owned things open at once: an open snapshot,
 /// queries reading the replaced revision in the exclusive and the program lane, a file job, a pinned job, the pending
-/// preview (here the one committed), an unused token that binds it and a draft record; not run: the rows for a job
-/// building a preview and for latest-wins jobs (M6 builds a preview inside its row and has no latest-wins lane), for a
-/// view job, a per-revision fact on screen and an adopted bundle (LP3's view and display products), and for a derived
-/// state (a kernel value that no session row holds)).
+/// preview (here the one committed), an unused token that binds it and a draft record; not run: the row for latest-wins
+/// jobs, whose one H-08 row no crate builds (LP3's host); the job building a preview runs in
+/// `c600-command/tests/served_rows.rs`, and the view job, the per-revision fact on screen, the adopted bundle and a
+/// derived state in `c600-tools/tests/views.rs` and `c600-input/tests/twist.rs`).
 #[test]
 fn ct_one_12_an_execute_acts_on_each_open_thing_as_one_49_says() {
     one_49(Change::Execute);
@@ -446,21 +447,21 @@ fn ct_one_12_an_execute_acts_on_each_open_thing_as_one_49_says() {
 
 /// CT-ONE-12 (part: an undo, driven headless, with ONE.49's session-owned things open at once: an open snapshot,
 /// queries reading the replaced revision in the exclusive and the program lane, a file job, a pinned job, a pending
-/// preview (discarded), an unused token that binds it and a draft record; not run: the rows for a job building a
-/// preview and for latest-wins jobs (M6 builds a preview inside its row and has no latest-wins lane), for a view job, a
-/// per-revision fact on screen and an adopted bundle (LP3's view and display products), and for a derived state (a
-/// kernel value that no session row holds)).
+/// preview (discarded), an unused token that binds it and a draft record; not run: the row for latest-wins jobs, whose
+/// one H-08 row no crate builds (LP3's host); the job building a preview runs in `c600-command/tests/served_rows.rs`,
+/// and the view job, the per-revision fact on screen, the adopted bundle and a derived state in
+/// `c600-tools/tests/views.rs` and `c600-input/tests/twist.rs`).
 #[test]
 fn ct_one_12_an_undo_acts_on_each_open_thing_as_one_49_says() {
     one_49(Change::Undo);
 }
 
-/// CT-ONE-12 (part: a redo, driven headless, with ONE.49's session-owned things open at once: an open snapshot,
-/// queries reading the replaced revision in the exclusive and the program lane, a file job, a pinned job, a pending
-/// preview (discarded), an unused token that binds it and a draft record; not run: the rows for a job building a
-/// preview and for latest-wins jobs (M6 builds a preview inside its row and has no latest-wins lane), for a view job, a
-/// per-revision fact on screen and an adopted bundle (LP3's view and display products), and for a derived state (a
-/// kernel value that no session row holds)).
+/// CT-ONE-12 (part: a redo, driven headless, with ONE.49's session-owned things open at once: an open snapshot, queries
+/// reading the replaced revision in the exclusive and the program lane, a file job, a pinned job, a pending preview
+/// (discarded), an unused token that binds it and a draft record; not run: the row for latest-wins jobs, whose one H-08
+/// row no crate builds (LP3's host); the job building a preview runs in `c600-command/tests/served_rows.rs`, and the
+/// view job, the per-revision fact on screen, the adopted bundle and a derived state in `c600-tools/tests/views.rs` and
+/// `c600-input/tests/twist.rs`).
 #[test]
 fn ct_one_12_a_redo_acts_on_each_open_thing_as_one_49_says() {
     one_49(Change::Redo);
@@ -468,10 +469,10 @@ fn ct_one_12_a_redo_acts_on_each_open_thing_as_one_49_says() {
 
 /// CT-ONE-12 (part: a line switch, driven headless, with ONE.49's session-owned things open at once: an open snapshot,
 /// queries reading the replaced revision in the exclusive and the program lane, a file job, a pinned job, a pending
-/// preview (discarded), an unused token that binds it and a draft record; not run: the rows for a job building a
-/// preview and for latest-wins jobs (M6 builds a preview inside its row and has no latest-wins lane), for a view job, a
-/// per-revision fact on screen and an adopted bundle (LP3's view and display products), and for a derived state (a
-/// kernel value that no session row holds)).
+/// preview (discarded), an unused token that binds it and a draft record; not run: the row for latest-wins jobs, whose
+/// one H-08 row no crate builds (LP3's host); the job building a preview runs in `c600-command/tests/served_rows.rs`,
+/// and the view job, the per-revision fact on screen, the adopted bundle and a derived state in
+/// `c600-tools/tests/views.rs` and `c600-input/tests/twist.rs`).
 #[test]
 fn ct_one_12_a_line_switch_acts_on_each_open_thing_as_one_49_says() {
     one_49(Change::SwitchLine);

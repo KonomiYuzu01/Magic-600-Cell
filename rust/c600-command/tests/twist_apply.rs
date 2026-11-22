@@ -10,7 +10,7 @@ use std::sync::{Arc, OnceLock};
 
 use c600_command::{
     code, draft_args, policy_from_name, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction,
-    HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, PreviewState, Receipt, Secret, Shell, Status, Table,
+    Fate, HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, PreviewState, Receipt, Secret, Shell, Status, Table,
     Transaction, TransactionKind, POLICY_ROW, TWIST_ROW,
 };
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
@@ -260,11 +260,14 @@ impl Fixture {
     }
 }
 
-/// CT-EV4-04 (part: the twist leg in the command layer, a twist admitted and committed once with no preview and no job;
-/// not run here: held-key repeats, which run in `c600-input/tests/repeat.rs`), CT-BND-19 (part: the layer holds nothing
-/// for a twist before its press commits, neither a preview nor a job nor a revision change; not run here: the view
-/// model's fields, in `c600-input/tests/twist.rs` and `c600-tools/tests/views.rs`), KN3.8, JI.35. A menu item resolves
-/// to its retained word at the binding's cap, and the commit journals the resolution's record as `rotation` (draft).
+/// CT-LG2-16 (part: a menu drag resolves through KN3.8's kernel call into the journaled rotation, and the twist
+/// commits the retained word of its menu item; not run: the language half, because the IR has no rotation request).
+/// CT-EV4-04 (part: the twist leg in the command layer, a twist admitted and committed once with no preview and no
+/// job; not run here: held-key repeats, which run in `c600-input/tests/repeat.rs`), CT-ONE-03 (part: a live twist
+/// commits with no preview object), CT-BND-19 (part: the layer holds nothing for a twist before its press commits,
+/// neither a preview nor a job nor a revision change; not run here: the view model's fields, in
+/// `c600-input/tests/twist.rs` and `c600-tools/tests/views.rs`), KN3.8, JI.35. A menu item resolves to its retained
+/// word at the binding's cap, and the commit journals the resolution's record as `rotation` (draft).
 #[test]
 fn a_twist_commits_the_retained_word_of_its_menu_item() {
     let k = kernel();
@@ -346,6 +349,8 @@ fn the_row_needs_a_pinned_menu() {
     assert_eq!(f.layer.store().log.len(), 2);
 }
 
+/// CT-ONE-11 (part: a refused live twist (ONE.46) at the input steps leaves the journal, the revision and the state
+/// digest as they were).
 /// KN3.7, KN3.8, JI.35 and H-08's argument form (draft: `rotation` is KN3.7's binding without the cap the row names;
 /// every input refusal comes before the token, so it changes nothing). The table's argument names answer
 /// `KN5:input.argument_form`; a binding that does not read answers `KN2:input.rotation_request_malformed`; the
@@ -481,6 +486,8 @@ fn a_retried_twist_answers_its_receipt_and_commits_once() {
     assert_eq!(g.layer.store().log.len(), 1);
 }
 
+/// CT-ONE-11 (part: a refused live twist (ONE.46) with the commit lane held leaves the journal, the revision and the
+/// state digest as they were).
 /// CT-EV4-04 (part: busy input is not queued: while the commit lane is held, the row is unavailable and a twist is
 /// refused `KN5:busy.commit_in_flight`; nothing waits to commit when the lane frees, and the refused press keeps its
 /// answer), L15.
@@ -497,6 +504,27 @@ fn a_held_commit_lane_refuses_a_twist_and_queues_nothing() {
     assert_eq!(f.layer.store().log.len(), 0);
     assert_eq!(f.layer.invoke(&Caller::Shell, held), busy);
     assert!(committed(&f.twist(&item(1))));
+}
+
+/// CT-ONE-22 (part: a live twist in read-only recovery is refused with `KN5:unknown_outcome.read_only_recovery` and
+/// changes nothing: the journal, the revision and the snapshot digest stay as they were, whether or not the unknown
+/// write happened; not run: a program's proposal, a real disk's read errors and a runtime's reads, which LP3 opens).
+#[test]
+fn a_twist_in_read_only_recovery_is_refused_and_changes_nothing() {
+    for written in [false, true] {
+        let mut f = fixture(&[]);
+        let waiting = f.press(&item(2));
+        f.layer.store_mut().inject.push_back(Fate::Unknown);
+        f.layer.store_mut().unknown_writes = written;
+        assert_eq!(f.twist(&item(1)).status, Status::UnknownOutcome, "written: {written}");
+        assert_eq!(f.layer.recovery().unwrap().code, code::COMMIT_FATE);
+        assert_eq!(f.layer.availability(TWIST_ROW).unwrap_err().code, code::READ_ONLY_RECOVERY);
+        let (digest, log) = (f.layer.snapshot().digest().to_owned(), f.layer.store().log.len());
+        f.refused(waiting, code::READ_ONLY_RECOVERY, "a twist press in read-only recovery");
+        let fresh = f.press(&item(3));
+        f.refused(fresh, code::READ_ONLY_RECOVERY, "a twist press prepared in read-only recovery");
+        assert_eq!((f.layer.snapshot().digest(), f.layer.store().log.len()), (digest.as_str(), log));
+    }
 }
 
 /// KN2.4, KN2.7, KN5.9 and step 8 (draft: a twist is judged under the protection policy in force, as a word commit is):

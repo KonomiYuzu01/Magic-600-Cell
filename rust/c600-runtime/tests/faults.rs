@@ -92,6 +92,11 @@ fn lost(fault: &Fault) {
     assert_eq!((fault.code(), fault.outcome()), (RUNTIME_LOST, Outcome::Error));
 }
 
+/// CT-DET-20 and CT-ONE-20 (part: a runtime child killed from inside a host call ends typed, as `error` with
+/// `runtime_lost`; the host's journal rows, state hash and the pending preview its run set are kept, nothing replays
+/// the proposal, and the shell's confirm then commits that preview; the other rehearsals here do the same for a panic,
+/// an abort, an exit, broken output and a hang past the deadline, which ends as a `safety_stop` cut-off; not run: the
+/// same against the real session store, which these tests replace by a fake session, and LX-2's native sequences).
 /// Rehearsal: the caller kills the child from inside its second `perform`, the first snapshot read.
 #[test]
 fn rehearsal_child_killed_mid_run() {

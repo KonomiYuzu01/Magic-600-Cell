@@ -841,6 +841,9 @@ requests it waits for (below), and the integrator merges it.
 - **H-08 at the freeze (PHS.53).** [command-table.md](command-table.md), CM.17:
   - `workspace.set` joins as M6's record write, in the form `c600-command`'s draft row has. `payload: Json` stays
     OPEN.
+  - The frozen texts that give H-08 174 commands (ADR-L01 line 112, ADR-L02 line 93, chapter 12 lines 418, 453 and 718)
+    describe LP1's table as it was and take no erratum (integrator, 21 November 2026); the frozen H-08 has 175, with
+    CM.17's `workspace.set`.
   - The workspace rows' undo follows LB7.2: `worksheet.save`, `macro.save`, `set.save`, `filter.save` and
     `structure.layer` save or write a named object the workspace holds and become workspace inverses. Eight rows keep
     `none`, each for the reason CM.17 states.

@@ -351,3 +351,159 @@ fn ct_bnd_19_no_view_model_field_holds_a_live_twist_before_its_key_releases_it()
     assert_eq!(held(&model), held_after);
     assert_eq!(f.layer.store().log.len(), 1);
 }
+
+/// A small non-empty publication: one node, one plan of one instance and its source map.
+fn some_content() -> view::Content {
+    view::Content {
+        nodes: vec![vec![1, 2, 3, 4]],
+        plans: vec![view::PlanDescriptor { plan: 1, source_map: 7, instances: 1, ..view::PlanDescriptor::default() }],
+        maps: vec![view::MapDescriptor { map: 7, entries: 1 }],
+        source_bytes: 12,
+    }
+}
+
+fn published() -> view::RunOutcome {
+    view::RunOutcome::Published(some_content())
+}
+
+/// After a twist (ONE.12, ONE.63; RPI.13), source: the twist key's key-down commits through the router and the
+/// command layer, and the host adopts the layer's bundle. The tool's view, installed at the old revision, is stale
+/// and names its old base; every output the next frame draws has a base that matches the frame's revision, and the
+/// tool's view is drawn only as its stale presentation; a publication built at the old base is refused as
+/// `stale.display_plan` and installs nothing; the recomputation then installs output at the adopted revision.
+/// CT-ONE-14 (part: after a twist committed by the input router's key, and after the undo key's commit, no
+/// per-revision output of the old revision is in the view model's next frame input as output, and the old publication
+/// cannot attach; a word commit through the shell's chord runs in `c600-tools/tests/views.rs`; not run: a frame drawn
+/// by the display host or a renderer, since the view model's frame input is the model's input to a draw and no pixel
+/// is drawn)
+#[test]
+fn ct_one_14_after_a_twist_no_output_of_the_old_revision_is_drawn_against_the_new_one() {
+    let mut f = fixture("one14", "us-qwerty");
+    f.pin_menu();
+    f.router.context.grip = Some(0);
+    let (mut model, tool) = model_with_view(&f.layer);
+    assert_eq!(model.pump(|_| published()), 1);
+    let old = model.installed(&tool).expect("installed at the start revision").base;
+    assert!(matches!(model.status(&tool), Some(view::ViewStatus::Current { base, .. }) if base == old));
+    let stale_input = view::PublicationInput {
+        generation: model.generation(&tool).expect("the view is open"),
+        base: old,
+        content: some_content(),
+        transport: view::Transport::Canonical,
+        output: view::OutputAllowance::new(BIG, 16),
+        provenance: view::Provenance {
+            profile: model.session_profile(),
+            producer: views::source(&manifest()),
+            class: None,
+        },
+    };
+
+    let released = f.tap("KeyJ");
+    assert!(committed(&released), "{:?}", released.receipt());
+    let adopted = model.adopt(&candidate(&f.layer)).expect("a complete bundle of one revision");
+    assert_eq!(adopted.state, old.revision.state + 1);
+    assert!(matches!(
+        model.status(&tool),
+        Some(view::ViewStatus::Stale { base, adopted: now, .. }) if base == old && now == adopted
+    ));
+    let frame = model.frame_input();
+    assert_eq!(frame.revision, adopted);
+    for drawn in &frame.views {
+        if let view::Draw::Output { base, .. } = &drawn.draw {
+            assert!(base.matches(&frame.revision), "{:?} draws output of another revision", drawn.view);
+        }
+    }
+    let drawn = frame.views.iter().find(|drawn| drawn.view == tool).expect("the tool's view is visible");
+    assert_eq!(drawn.draw, view::Draw::Stale { base: old });
+
+    let view::Status::Refused(error) = model.publish(view::CommandId::Caller(1), &tool, stale_input) else {
+        panic!("a publication of the old base attached")
+    };
+    assert_eq!(error.code, view::code::STALE_DISPLAY_PLAN);
+    assert_eq!(error.context, view::Context::Stale { base: old, adopted });
+    assert_eq!(model.installed(&tool).map(|installed| installed.base), Some(old), "nothing was installed");
+
+    assert_eq!(model.pump(|_| published()), 1, "the recomputation runs at the adopted revision");
+    assert!(matches!(model.status(&tool), Some(view::ViewStatus::Current { base, .. }) if base.revision == adopted));
+    let frame = model.frame_input();
+    let drawn = frame.views.iter().find(|drawn| drawn.view == tool).expect("the tool's view is visible");
+    assert!(matches!(&drawn.draw, view::Draw::Output { base, .. } if base.revision == adopted), "{drawn:?}");
+
+    // The undo key's commit returns to the start digest: the output of the twist's revision is not drawn, and the
+    // start's read result comes back at the undo's revision under ONE.10.
+    let current = model.installed(&tool).expect("installed at the twist's revision").base;
+    let hits = model.counters(&tool).expect("the view is open").cache_hits;
+    let undone = f.tap("Ctrl+KeyZ");
+    assert!(committed(&undone), "{:?}", undone.receipt());
+    let back = model.adopt(&candidate(&f.layer)).expect("a complete bundle of one revision");
+    assert_eq!(back.state, adopted.state + 1);
+    let frame = model.frame_input();
+    assert_eq!(frame.revision, back);
+    for drawn in &frame.views {
+        if let view::Draw::Output { base, .. } = &drawn.draw {
+            assert!(base.matches(&frame.revision), "{:?} draws output of another revision", drawn.view);
+        }
+    }
+    let drawn = frame.views.iter().find(|drawn| drawn.view == tool).expect("the tool's view is visible");
+    assert!(matches!(&drawn.draw, view::Draw::Output { base, .. } if base.revision == back), "{drawn:?}");
+    assert_ne!(current.revision, back);
+    assert_eq!(model.counters(&tool).expect("the view is open").cache_hits, hits + 1);
+    assert!(matches!(model.status(&tool), Some(view::ViewStatus::Current { base, .. }) if base.revision == back));
+}
+
+/// A burst of twists (LI.23, KN7.2), source: eight twists committed through the router's keys, one per fixture grip
+/// slot and key pair, while the tool's first run is still held. After each commit the host adopts the layer's bundle
+/// and the tool's view keeps one pending request, always the same one, and starts nothing behind the held run; the
+/// command layer queues no program job and no preview job, and its journal grows by one entry per twist. When the held
+/// run ends its late result installs nothing, and the one run that follows has the newest revision as its base: the
+/// seven revisions between are never evaluated.
+/// CT-ONE-15 (whole: a burst of eight twists committed through the input router and the command layer keeps one
+/// pending request on the view lane and runs once more at the newest revision; the layer queues no program job and no
+/// preview job for them)
+#[test]
+fn ct_one_15_a_burst_of_twists_queues_no_view_work_beyond_one_pending_request() {
+    let mut f = fixture("one15", "us-qwerty");
+    f.pin_menu();
+    let (mut model, tool) = model_with_view(&f.layer);
+    let jobs = model.take_jobs();
+    let [held] = &jobs[..] else { panic!("the first run: {jobs:?}") };
+    let start = model.adopted().state;
+    assert_eq!(held.base.revision.state, start);
+
+    let mut pending = Vec::new();
+    let mut states = Vec::new();
+    for n in 0..8usize {
+        f.router.context.grip = Some(n % CAPS.len());
+        let (key, _, _) = TWIST_KEYS[n % TWIST_KEYS.len()];
+        let routed = f.tap(key);
+        assert!(committed(&routed), "twist {n}: {:?}", routed.receipt());
+        assert_eq!(f.layer.store().log.len(), n + 1, "twist {n}: one journal entry");
+        let adopted = model.adopt(&candidate(&f.layer)).expect("a complete bundle of one revision");
+        states.push(adopted.state);
+        pending.push(model.pending(&tool).expect("one pending request"));
+        assert!(model.take_jobs().is_empty(), "twist {n}: nothing starts behind the held run");
+        assert_eq!(model.runner(&tool).map(|(job, _)| job), Some(held.job), "twist {n}");
+        assert!(model.is_fenced(held.job), "twist {n}: the held run can no longer publish");
+        assert!(f.layer.take_program_job().is_none(), "twist {n}: no program job");
+        assert_eq!(f.layer.run_jobs(), 0, "twist {n}: no preview job");
+        assert!(f.layer.preview().is_none(), "twist {n}: a live twist has no preview");
+    }
+    pending.dedup();
+    assert_eq!(pending.len(), 1, "one pending request, never a queue per revision");
+    assert_eq!(states, (start + 1..=start + 8).collect::<Vec<u64>>(), "every twist made its own revision");
+
+    // The held run ends: its late result installs nothing; the one run that follows has the newest revision.
+    let late = model.finish(held.job, published());
+    assert_eq!(late, Some(view::Status::Cancelled(view::CancelReason::ReplacedRevision)));
+    assert!(model.installed(&tool).is_none(), "the late result of the held run installed nothing");
+    let mut bases = Vec::new();
+    let ran = model.pump(|job| {
+        bases.push(job.base.revision.state);
+        published()
+    });
+    assert_eq!((ran, bases), (1, vec![start + 8]), "the revisions between are never evaluated");
+    assert_eq!(model.counters(&tool).map(|counters| counters.program_runs), Some(2), "the held run and the newest");
+    let newest = start + 8;
+    let status = model.status(&tool);
+    assert!(matches!(status, Some(view::ViewStatus::Current { base, .. }) if base.revision.state == newest));
+}

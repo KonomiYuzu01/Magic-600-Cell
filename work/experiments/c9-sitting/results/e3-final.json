@@ -1,0 +1,124 @@
+{
+  "format": "magic600-c9-measure-record-v1",
+  "measurement": "charter-e3-cold-start",
+  "evidence_kind": "performance",
+  "synthetic": false,
+  "created_utc": "2026-11-21T13:14:21Z",
+  "build_identity": "c9-product-2efda50d54592f20",
+  "inputs": [
+    {
+      "role": "20261121T131317Z:startup.jsonl",
+      "name": "startup.jsonl",
+      "bytes": 503,
+      "sha256": "2e8e8926f1e46b9090301cc9f5d9be682b880960e9f8abe5b642df2279fd4a89"
+    },
+    {
+      "role": "20261121T131340Z:startup.jsonl",
+      "name": "startup.jsonl",
+      "bytes": 501,
+      "sha256": "a1be8401adea739e8a95668fec35f815c1ca958027d3a4c018ac391cf7533189"
+    },
+    {
+      "role": "20261121T131402Z:startup.jsonl",
+      "name": "startup.jsonl",
+      "bytes": 501,
+      "sha256": "1dac161283abde13b2852ceb7fa44080f1b6e98f114f3cf5b7306258d2f50e33"
+    }
+  ],
+  "tools": {
+    "python": "3.15.1",
+    "implementation": "CPython",
+    "tool": {
+      "name": "cold_start.py",
+      "sha256": "3d92559e1becedec1c99ec3e6e1771ac72c98a9c66e477d346282b8942d87840"
+    },
+    "helpers": {
+      "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
+      "b412_summary.py": "40015c19b73771181dac836f6aeb8979724a775cb239c20b9857aa23de936acc"
+    }
+  },
+  "command": [
+    "python",
+    "-B",
+    "tools/perf/c9/cold_start.py",
+    "work/c9-runs/e3-final-1",
+    "work/c9-runs/e3-final-2",
+    "work/c9-runs/e3-final-3",
+    "--out",
+    "work/c9-runs/e3-final.json"
+  ],
+  "bar": {
+    "text": "Charter E3 (owner, 18 November 2026): 3 s, cold start, with an existing session and runtime loaded, to the first correct frame, in each of three cold runs.",
+    "rule": "process creation to the confirmed display of the first correct frame; every valid run at most 3.0 s, at least three valid cold runs of one build, and no failed run",
+    "limit_s": 3.0,
+    "runs_min": 3,
+    "source": [
+      "charter E3",
+      "owner decision 2026-11-18",
+      "RTE.42",
+      "CT-RTE-11",
+      "PHS.64"
+    ]
+  },
+  "result": {
+    "runs": [
+      {
+        "run_id": "20261121T131317Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "status": "valid",
+        "reasons": [],
+        "seconds": 1.8900506,
+        "within_bar": true,
+        "cold": {
+          "new_process": true,
+          "no_product_process_at_launch": true,
+          "fresh_session_copy": true,
+          "seconds_since_previous_exit": 20.015
+        }
+      },
+      {
+        "run_id": "20261121T131340Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "status": "valid",
+        "reasons": [],
+        "seconds": 1.8948039,
+        "within_bar": true,
+        "cold": {
+          "new_process": true,
+          "no_product_process_at_launch": true,
+          "fresh_session_copy": true,
+          "seconds_since_previous_exit": 20.0
+        }
+      },
+      {
+        "run_id": "20261121T131402Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "status": "valid",
+        "reasons": [],
+        "seconds": 1.9051689,
+        "within_bar": true,
+        "cold": {
+          "new_process": true,
+          "no_product_process_at_launch": true,
+          "fresh_session_copy": true,
+          "seconds_since_previous_exit": 20.0
+        }
+      }
+    ],
+    "valid_runs": 3,
+    "max_seconds": 1.9051689
+  },
+  "verdict": "met",
+  "reasons": [],
+  "passes_bar": true,
+  "drafts": [
+    "log schema magic600-c9-startup-v1",
+    "start = launcher QPC before process creation",
+    "cold = new process, none running, fresh session copy, >= 20 s since the last exit; no reboot",
+    "one untimed launch of the same build before the runs (first-run checks of new binaries), not counted"
+  ],
+  "redactions": 0
+}

@@ -196,9 +196,10 @@ const EVERYTHING: &str = "edition \"6cs-draft-1\";\nmodule tool requires [file, 
 // CT-LG2-01: algebraic matches account for every constructor; generics and inference cannot erase a model, level,
 // mode, precision, unit or effect requirement.
 
-/// CT-LG2-01 (part: the match clause on the draft's literal matches; not run: matches over algebraic constructors,
-/// since the IR draft has no data types or verdict constructors yet, M4): a match ends with a `_` arm, so no
-/// alternative is left out, even where the literal arms happen to be exhaustive; a verdict match does not lower.
+/// CT-LG2-01 (part: the match clause on the draft's literal matches; the verdict constructors are in `end_tests.rs`;
+/// not run: matches over other algebraic types, which the IR draft does not have): a match ends with a `_` arm, so no
+/// alternative is left out, even where the literal arms happen to be exhaustive; a verdict arm on a `Nat` does not
+/// lower.
 #[test]
 fn ct_lg2_01_a_match_accounts_for_every_alternative() {
     for declaration in [
@@ -218,8 +219,8 @@ fn ct_lg2_01_a_match_accounts_for_every_alternative() {
 }
 
 /// CT-LG2-01 (part: precision, exactness, unit, effect and capability requirements through generic substitution and
-/// inference; not run: model, level and mode indices, which the IR draft does not have yet, M4, M5 and LP3; the unit
-/// half covers `Budget` only, since puzzle-indexed costs wait for M5).
+/// inference; not run: model, level and mode indices, which no crate adds to the IR draft (the domain families are
+/// unbuilt); the unit half covers `Budget` only, since no crate builds puzzle-indexed units).
 #[test]
 fn ct_lg2_01_generics_and_inference_keep_precision_unit_and_effect() {
     // Precision: substitution keeps P24, which does not fit a P53 result.
@@ -308,9 +309,9 @@ fn ct_lg2_04_conversions_in_source() {
 // CT-LG2-05 is `c600-check`'s (`exactness.rs`, `vectors.rs`) and `lowering.rs`'s; its DET.6 half runs in `c600-run`.
 
 /// CT-LG2-06 (part: the budget half on the draft's single `Budget` unit; not run: puzzle and unit indices for menu
-/// letters, retained generators (M5) and UI actions (LP3); the seconds half is
-/// `ct_lg2_06_a_clock_reading_is_no_deterministic_budget`): a budget mixes with integers only, in addition, ordering
-/// and budget use, and an approximate value is no budget.
+/// letters and retained generators, which no crate adds to the IR draft (the domain families are unbuilt), and UI
+/// actions (LP3); the seconds half is `ct_lg2_06_a_clock_reading_is_no_deterministic_budget`): a budget mixes with
+/// integers only, in addition, ordering and budget use, and an approximate value is no budget.
 #[test]
 fn ct_lg2_06_a_budget_mixes_with_integers_only() {
     admitted("command f(b: Budget) -> Unit effects [budget] {\n    return use_budget(exact_add(b, 1));\n}\n");
@@ -361,9 +362,10 @@ fn ct_lg2_07_no_state_enters_from_raw_data_before_the_domain_families() {
     assert_guard(EVERYTHING);
 }
 
-/// CT-LG2-08 (part, static guard: the session mode waits for the command layer, LP3, and LX-8's fixture menu letters
-/// do not lower; menu words of the run's pinned menu lower as an LP2 draft, `menu_words.rs`; the run-time refusal at
-/// invocation is `c600-run`'s `ct_lg2_08_a_mode_change_refuses_at_invocation`).
+/// CT-LG2-08 (part, static guard: the session mode is not an IR type, so no static mode check exists, and LX-8's
+/// fixture menu letters do not lower; menu words of the run's pinned menu lower as an LP2 draft, `menu_words.rs`; the
+/// run-time refusal at invocation is `c600-run`'s `ct_lg2_08_a_mode_change_refuses_at_invocation` and the command
+/// layer's, after a real mode change, is in `c600-command`'s `jumble_on.rs`).
 #[test]
 fn ct_lg2_08_fixture_menu_letters_and_modes_do_not_lower() {
     let fixture = refused_at_lowering("fn f() -> Word effects [] {\n    return menu[2:spin];\n}\n");
@@ -394,8 +396,9 @@ fn ct_lg2_10_goals_wait_for_the_domain_families() {
     assert_types_wait(&goals, "M4, M5");
 }
 
-/// CT-LG2-11 (part: the proposal binding statically; not run: execution and protection bindings, which wait for M4;
-/// the key's half is `ct_lg2_11_a_word_equality_key_is_never_literal_letters` and the run-time half is `c600-run`'s
+/// CT-LG2-11 (part: the proposal binding statically; not run: an execution binding, which no program has (a program
+/// cannot execute); the protection read is in `c600-run`'s `tests/snapshot_arg.rs`, the key's half is
+/// `ct_lg2_11_a_word_equality_key_is_never_literal_letters` and the run-time half is `c600-run`'s
 /// `ct_lg2_11_a_proposal_runs_a_literal_word_only`): `propose` takes a literal word and nothing else.
 #[test]
 fn ct_lg2_11_a_proposal_takes_a_literal_word_only() {
@@ -413,9 +416,9 @@ fn ct_lg2_11_a_proposal_takes_a_literal_word_only() {
 }
 
 /// CT-LG2-11 (part: the `WordEqualityKey` type and `word_key` (LP2 drafts) in source, against the proposal binding,
-/// the word operations (derivation) and a `Word` parameter; not run: execution and protection bindings, which wait
-/// for M4, and a key indexed by puzzle and identity, which waits for the domain families, M4 and M5): a key is never
-/// accepted where literal letters are required, and no source form converts it back.
+/// the word operations (derivation) and a `Word` parameter; not run: an execution binding, which no program has, and a
+/// key indexed by puzzle and identity, which waits for the domain families): a key is never accepted where literal
+/// letters are required, and no source form converts it back.
 #[test]
 fn ct_lg2_11_a_word_equality_key_is_never_literal_letters() {
     let key = "word_key(word[+1, -2])";
@@ -540,8 +543,8 @@ fn f() -> Word effects [] {{
     }
 }
 
-/// CT-LG2-13 (part: the empty-word half statically, with the Full key (LP2 draft); not run: the jumbling key and its
-/// domain test at a straddling cap, which wait for the jumbled puzzle, M5; the run-time halves are `c600-run`'s
+/// CT-LG2-13 (part: the empty-word half statically, with the Full key (LP2 draft); the jumbling key and its domain
+/// test at a straddling cap are `c600-jumble-tool`'s `lb3.rs`; the run-time halves are `c600-run`'s
 /// `ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair` and
 /// `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`): an inverse pair is a literal word of its own, unequal
 /// to the empty word, and comparing keys gives a boolean, never a word to propose.

@@ -181,7 +181,7 @@ pub enum Row {
     SwitchLine { line: usize },
     /// `session.checkpoint` (draft name): a named state object; not undoable (LI.9).
     Checkpoint { name: String },
-    /// `workspace.set` (draft name): writes one workspace record.
+    /// `workspace.set` (H-08's row since the freeze, CM.17): writes one workspace record.
     WorkspaceSet { record: String, payload: Json, provenance: Vec<u8> },
     /// `protection.set` (draft name): a workspace action that sets the protected orbits.
     ProtectionSet { orbits: Vec<i64>, confirm: bool },

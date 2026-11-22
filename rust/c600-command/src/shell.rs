@@ -107,7 +107,7 @@ impl Shell {
             draft: None,
             presented: None,
             sent: Vec::new(),
-            budget: Some(Budget::DRAFT_CEILING),
+            budget: Some(Budget::CEILING),
         }
     }
 
@@ -204,8 +204,8 @@ impl Shell {
 
     /// Builds one press's invocation of `row` with absolute arguments, minting a token when the row takes one, without
     /// sending it. A word commit with no presented preview stops at the shell's gate (step 1). An invocation of a row
-    /// an entry serves declares the shell's budget ([`Shell::budget`]: the draft ceiling until an owner reading sets
-    /// the product's budgets; `None` declares none); an invocation of another row declares none.
+    /// an entry serves declares the shell's budget ([`Shell::budget`]: every profile's ceiling, [`Budget::CEILING`],
+    /// by default; `None` declares none); an invocation of another row declares none.
     pub fn prepare<S: Store>(&mut self, layer: &CommandLayer<S>, row: &str, args: Value) -> Result<Invocation, Error> {
         let Some(found) = layer.table().row(row).cloned() else {
             return Err(Error::new(code::UNKNOWN_ROW, format!("no row `{row}`")));

@@ -169,6 +169,9 @@ fn ct_lb3_01_only_an_end_tests_row_answers_its_verdict() {
     );
 }
 
+/// CT-LG2-01 (part: a match over the verdict constructors with a `_` arm admits the arms that name an outcome and takes
+/// the remaining outcomes in its `_` arm; not run: matches over other algebraic types, and model, level and mode
+/// indices).
 /// CT-LG2-09 (part: unknown cannot pass as false: a match's `_` arm on an end test's verdict takes `unestablished`
 /// alone or not at all; LP2 draft).
 ///
@@ -188,6 +191,19 @@ fn ct_lg2_09_unestablished_never_falls_together_with_another_outcome() {
         &["tag(\"holds\") => 1;", "tag(\"fails\") => 2;", "tag(\"unestablished\") => 3;"],
     ] {
         admitted(&matching(arms));
+    }
+}
+
+/// CT-LG2-01 (part: a match over the verdict constructors with `holds`, `fails` and `unestablished` arms and no `_` arm
+/// is refused at lowering with the message that a match ends with a `_` arm; not run: matches over other algebraic
+/// types, and model, level and mode indices).
+#[test]
+fn a_verdict_match_without_a_wildcard_arm_does_not_lower() {
+    let arms = "tag(\"holds\") => 1;\n        tag(\"fails\") => 2;\n        tag(\"unestablished\") => 3;\n";
+    let declaration = over_verdict("Nat", &format!("match v {{\n        {arms}    }}"));
+    match lowered(&declaration) {
+        Err(message) => assert!(message.contains("a match ends with a `_` arm"), "{message}"),
+        Ok(_) => panic!("a match over every verdict constructor lowered without a `_` arm: {declaration}"),
     }
 }
 

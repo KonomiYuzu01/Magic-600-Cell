@@ -1,0 +1,132 @@
+{
+  "format": "magic600-c9-measure-record-v1",
+  "measurement": "route-b-b2-ui-3d-skew",
+  "evidence_kind": "performance",
+  "synthetic": false,
+  "created_utc": "2026-11-21T12:16:18Z",
+  "build_identity": "c9-product-2efda50d54592f20",
+  "inputs": [
+    {
+      "role": "20261121T120714Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 10613152,
+      "sha256": "473a5de70a0d372275e700852cf976ede9c3d4c7d0eb5040d89e0942b6049620"
+    },
+    {
+      "role": "20261121T120714Z:presentmon.csv",
+      "name": "presentmon.csv",
+      "bytes": 17889282,
+      "sha256": "9e6895fb39bc45d6369de69caf0c28148b534117e112b97fc9b94c8225361508"
+    }
+  ],
+  "tools": {
+    "python": "3.15.1",
+    "implementation": "CPython",
+    "tool": {
+      "name": "ui_skew.py",
+      "sha256": "7000abf9c5ce315b05b343793a998e30b92b39d002a20a678a5be4821cd18477"
+    },
+    "helpers": {
+      "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
+      "b412_summary.py": "40015c19b73771181dac836f6aeb8979724a775cb239c20b9857aa23de936acc",
+      "renderer_gate.py": "46d28b14d318b0c297fa02b2fbe2472ceb327a2cc3d9b51338e20eff177b0a7e",
+      "c9/key_to_frame.py": "35fa0305d5f1d1f8c162e1913c7c20551c5573a2e25650f392d888be032611b7"
+    }
+  },
+  "command": [
+    "python",
+    "-B",
+    "tools/perf/c9/ui_skew.py",
+    "work/c9-runs/u3-final",
+    "--out",
+    "work/c9-runs/u3-final-skew.json"
+  ],
+  "bar": {
+    "text": "Route B check 2: a measurement of the skew between the UI frame and the 3D frame.",
+    "rule": "no bar: the owner decision of 18 November 2026 sets none; the record reports the numbers and the owner judges them",
+    "limit_ms": null,
+    "observations_min": 100,
+    "source": [
+      "owner decision 2026-11-18 route B, check 2",
+      "RM.26",
+      "ONE.41"
+    ]
+  },
+  "result": {
+    "runs": [
+      {
+        "run_id": "20261121T120714Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "ui_frames": 32254,
+        "pairs": 32177,
+        "statuses": {
+          "3d-unconfirmed": 77,
+          "matched": 32177
+        },
+        "present_in_draw": {
+          "checked": 32177,
+          "within": 32177
+        },
+        "contradictions": [],
+        "stats": {
+          "signed": {
+            "n": 32177,
+            "mean": 0.018145330515585666,
+            "p50": 0.0115,
+            "p95": 0.0488,
+            "p99": 0.2838,
+            "max": 0.8204
+          },
+          "absolute": {
+            "n": 32177,
+            "mean": 0.02365775864748112,
+            "p50": 0.0166,
+            "p95": 0.0493,
+            "p99": 0.2838,
+            "max": 0.8204
+          },
+          "refresh_ms": 16.6669,
+          "within_one_refresh": 1.0
+        },
+        "status": "valid",
+        "reasons": [],
+        "ui_swap_chain": 2137191515984,
+        "ui_swap_chain_inferred": true
+      }
+    ],
+    "pooled": {
+      "signed": {
+        "n": 32177,
+        "mean": 0.018145330515585666,
+        "p50": 0.0115,
+        "p95": 0.0488,
+        "p99": 0.2838,
+        "max": 0.8204
+      },
+      "absolute": {
+        "n": 32177,
+        "mean": 0.02365775864748112,
+        "p50": 0.0166,
+        "p95": 0.0493,
+        "p99": 0.2838,
+        "max": 0.8204
+      },
+      "refresh_ms": 16.6669,
+      "within_one_refresh": 1.0
+    },
+    "valid_runs": 1,
+    "invalid_runs": 0
+  },
+  "verdict": "no-bar",
+  "reasons": [],
+  "passes_bar": false,
+  "drafts": [
+    "ui_frame rows in magic600-c9-shell-events-v1",
+    "UI frame time = Godot frame_pre_draw (present inside the draw on the RenderingDevice path)",
+    "UI present = first displayed present of the UI swap chain after the row and before the next",
+    "at least 100 matched pairs per run",
+    "one refresh = median confirmed 3D present interval"
+  ],
+  "redactions": 0
+}

@@ -514,8 +514,12 @@ fn a_workspace_completion_keeps_its_receipt_across_a_restart_and_a_reopen() {
 /// nothing changes: another preview ID answers `preview_replaced`; another session, epoch, command, row, argument
 /// digest, literal digest or identity-block field `token_mismatch` (draft ruling 5 for the session and the epoch); a
 /// changed PreviewDeps field `revision_changed`; a frame stamp outside the preview's presentation `no_fresh_preview`
-/// (ONE.41); the unchanged binding commits; not run: the shell's display), CT-ONE-03 (part: the same matrix; not run:
-/// a live twist and a crossing commit, whose rows the headless layer does not build), KN5.14, KN5.16, L9.
+/// (ONE.41); the unchanged binding commits; not run: the shell's display), CT-ONE-03 (part: the same matrix for a word
+/// commit; the live twist and the crossing run in `twist_apply.rs`, `jumble_twist_menu.rs`, `jumble_on.rs` and
+/// `jumble_off.rs`), CT-ERR-09 (part: the replaced preview and the bound content fields), CT-LG3-05 (part: at
+/// `operation.execute` a changed epoch, identity, mode, state, protection or draft field of the preview's dependencies
+/// refuses `revision_changed`; not run: a program's proposal refused at `operation.preview` on a moved head, in the
+/// other mode or under another model), KN5.14, KN5.16, L9.
 /// CT-ONE-26 (part: the token binds the presented preview, its ID, literal digest, dependencies and frame stamp, in the
 /// headless layer; not run: the on-screen half (C9)).
 #[test]
@@ -669,8 +673,8 @@ fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
 
 /// CT-KN5-10 (part: the layer's public functions that take `&mut self` are the allowlisted entry points, its test hooks
 /// exist only in builds with debug assertions or the `test-hooks` feature, and the shell reaches the layer through
-/// `invoke`, `present` and `presentation_unavailable` alone besides reads; not run: calling each entry point against a
-/// journal), R-05, KN5.1, L15.
+/// `invoke`, `present` and `presentation_unavailable` alone besides reads; each row's delivery against the restriction
+/// table runs whole in `tests/r05_rows.rs`), R-05, KN5.1, L15.
 #[test]
 fn the_layer_has_no_public_mutator_beside_its_entry_points() {
     const HOOK: &str = "#[cfg(any(debug_assertions, feature = \"test-hooks\"))]";
@@ -738,7 +742,7 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
 }
 
 /// CT-ONE-11 (part: when two commit steps fail together the earlier step's code answers and nothing changes, for each
-/// pair of adjacent steps from 3 to 8 and for steps 3 and 8; not run: the other pairs), CT-KN5-06 (part: a protection
+/// pair of adjacent steps from 3 to 8 and for steps 3 and 8; every pair runs in the next test), CT-KN5-06 (part: a protection
 /// release and its undo restore the set, and a press from before them is still stale; a record edit and its undo are
 /// in `kn5_stages.rs`), L18 (a), L18 (d), L18 (e).
 #[test]
@@ -798,5 +802,55 @@ fn the_earliest_failing_step_answers() {
     // L18 (e): no row that takes a token repeats on a held key.
     for row in f.layer.table().rows().filter(|row| row.takes_token()) {
         assert!(!row.repeat, "{} takes a token and repeats", row.id);
+    }
+}
+
+/// CT-ONE-11 (whole): a commit row refused at any step of section 7 from 3 to 8, alone or with any one other step,
+/// answers the earliest failing step's code and leaves the state digest, the revision, the protected set and the log
+/// unchanged. Each case starts from a fresh session under O06's protected set, presents one preview, prepares its
+/// press, then breaks it at the case's steps: 3 a forged authenticator, 4 a held commit lane, 5 other arguments than
+/// the token binds, 6 a protection change after the press, 7 a head that differs from the preview's start, and 8 a
+/// preview that moves a protected orbit. Steps 1 and 2 are the shell's (`c600-input/tests/routing.rs`), and the
+/// session's own gates are in `c600-session/tests/commit.rs`.
+#[test]
+fn every_failing_step_and_pair_of_steps_answers_the_earliest_step() {
+    let (clear, moves) = o06();
+    let codes = [
+        (3, code::TOKEN_INVALID),
+        (4, code::COMMIT_IN_FLIGHT),
+        (5, code::TOKEN_MISMATCH),
+        (6, code::REVISION_CHANGED),
+        (7, code::STATE_HASH_MISMATCH),
+        (8, code::ORBIT_WOULD_MOVE),
+    ];
+    let mut cases: Vec<Vec<u8>> = (3..=8).map(|step| vec![step]).collect();
+    for first in 3..=8u8 {
+        cases.extend((first + 1..=8).map(|second| vec![first, second]));
+    }
+    assert_eq!(cases.len(), 6 + 15);
+    for steps in cases {
+        let what = format!("steps {steps:?}");
+        let mut f = fixture(&[1]);
+        let p = f.preview(if steps.contains(&8) { &moves[0] } else { &clear[0] });
+        f.present(p);
+        let mut press = f.press(p);
+        if steps.contains(&3) {
+            press.token = Some(Token::mint(&Secret::fixed([9; 32]), press.token.unwrap().binding));
+        }
+        if steps.contains(&5) {
+            press.args = preview_args(p + 7);
+        }
+        if steps.contains(&6) {
+            assert!(matches!(f.protect("[1]", false).status, Status::Completed(_)), "{what}");
+        }
+        if steps.contains(&7) {
+            let head = derived(f.layer.snapshot(), &word(&[3]));
+            f.layer.fault_replace_head(head);
+        }
+        if steps.contains(&4) {
+            f.layer.hold_commit_lane(true);
+        }
+        let expected = codes.iter().find(|(step, _)| *step == steps[0]).unwrap().1;
+        f.refused(press, expected, &what);
     }
 }

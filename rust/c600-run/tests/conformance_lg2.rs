@@ -49,10 +49,11 @@ const PREVIEWER: &str = "export fn go(w: Word) -> Text effects [preview] {\n    
     return receipt_id(propose(w, target(\"t\")));\n}\n\n\
     export fn keep(w: Word) -> Unit effects [workspace] {\n    return write_workspace<Word>(\"kept\", w);\n}\n";
 
-/// CT-LG2-08 (part: the run-time half for a retained word; not run: the static mode check and menu words, which wait
-/// for the jumbled puzzle's alphabet, M5, and mode changes, which are command-layer operations, LP3): a program checked
-/// once is refused at invocation after the session's mode changed, the shell keeps the engine's refusal and the
-/// program sees the same acknowledgement; storing a word asks the engine for nothing, so it cannot change the mode.
+/// CT-LG2-08 (part: the run-time half for a retained word against a mock engine; the command layer's refusals after a
+/// real mode change are in `c600-command`'s `jumble_on.rs` and `jumble_off.rs`; not run: the static mode check, which
+/// needs a session mode type in the IR): a program checked once is refused at invocation after the session's mode
+/// changed, the shell keeps the engine's refusal and the program sees the same acknowledgement; storing a word asks
+/// the engine for nothing, so it cannot change the mode.
 #[test]
 fn ct_lg2_08_a_mode_change_refuses_at_invocation() {
     let source = m(PREVIEWER);
@@ -98,8 +99,8 @@ fn proposing(word: Expr) -> c600_ir::Program {
     program(vec![module("m", vec![f])])
 }
 
-/// CT-LG2-11 (part: the run-time half of the proposal binding, a `WordEqualityKey` (LP2 draft) included; not run:
-/// execution, derivation and protection bindings, which wait for M4): a proposal that reaches the interpreter with
+/// CT-LG2-11 (part: the run-time half of the proposal binding, a `WordEqualityKey` (LP2 draft) included; not run: an
+/// execution binding, which no program has): a proposal that reaches the interpreter with
 /// anything but a literal word stops with `LG4:input.ir_rejected` before the host sees a request, although the loader
 /// does not re-run the checker; a literal word reaches the host letter for letter.
 #[test]
@@ -126,8 +127,8 @@ fn ct_lg2_11_a_proposal_runs_a_literal_word_only() {
     );
 }
 
-/// CT-LG2-13 (part: the empty-word half at run time; not run: the key's domain test at a straddling cap, which waits
-/// for the jumbled puzzle's key, M5; the Full key's half is `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`):
+/// CT-LG2-13 (part: the empty-word half at run time; the key's domain test at a straddling cap is `c600-jumble-tool`'s
+/// `lb3.rs`; the Full key's half is `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`):
 /// an inverse pair is unequal to the empty word, and a proposal of the pair reaches the engine, or a capture, with
 /// both letters.
 #[test]
@@ -150,8 +151,8 @@ fn ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair() {
     assert_eq!(engine.previews.len(), 1, "a capture builds no preview");
 }
 
-/// CT-LG2-13 (part: the Full key's half, LP2 draft; not run: the jumbling key, which keeps a same-cap inverse pair at
-/// a straddling cap as one token with its domain test and waits for the jumbled puzzle's alphabet, M5): under Full's
+/// CT-LG2-13 (part: the Full key's half, LP2 draft; the jumbling key, which keeps a same-cap inverse pair at a
+/// straddling cap as one token with its domain test, is `c600-jumble-tool`'s `lb3.rs`): under Full's
 /// free reduction (LG2.14, LG2.18) the pair's key equals the empty word's, yet a proposal still carries the literal
 /// pair, so equal keys give the empty word no standing as its witness.
 #[test]

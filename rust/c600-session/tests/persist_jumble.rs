@@ -137,6 +137,11 @@ fn identity_with(identity: &Json, key: &str, value: Json) -> Json {
     identity
 }
 
+/// CT-KN1-01 (part: the store keeps a value of another model out of the live session: a stored word under another
+/// model, contract or menu order is refused with `KN1:input.identity_mismatch` before a letter is read).
+/// CT-LG2-08 (part: a stored menu word that holds a jumble letter is refused with Jumble off with the command layer's
+/// `KN5:input.menu_word_needs_jumble_on`, and a word of another identity is refused; not run: the static check, and a
+/// program's call).
 /// CT-PS1-11 (part: stored menu words, whole for PS1.18's identity block and PS1.21's Jumble-off rule; the journal
 /// part is below): a word recorded under the pinned I_a menu replays its literal letters. One recorded under the
 /// reversed I_a order, another contract revision or another model is refused as `KN1:input.identity_mismatch` before
@@ -340,6 +345,8 @@ fn field<'a>(value: &'a mut Value, path: &[&str]) -> &'a mut Value {
     })
 }
 
+/// CT-KN1-01 (part: a context of another model does not open the session and writes nothing, and a crossing record
+/// edited to another model is not replayed while the journal is kept).
 /// CT-PS1-11 (part: the session journal, whole for the replay of a journaled episode): a crossing journaled under the
 /// I_a menu replays only under that menu. Reopened with no menu, or with the I_a items in reversed order (the same
 /// set, another identity block), the layer stops in read-only recovery at the revision before the crossing with

@@ -18,8 +18,8 @@
 //! # Owner decisions
 //!
 //! The owner decided these readings of the frozen text under PHS.52 on 16 November 2026
-//! (`docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`). The frozen text itself changes with the amendment LP3
-//! makes at its command-table freeze.
+//! (`docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`). The frozen text itself changed with the amendment LP3
+//! made at its command-table freeze (PHS.53).
 //!
 //! - Ruling 1: a press whose preview ended is refused `KN5:stale.no_fresh_preview` when the slot is empty and
 //!   `KN5:stale.preview_replaced` when it holds another preview; a token for a preview never presented is
@@ -45,17 +45,17 @@
 //!   only from the shell's caller and derives under the protected set and the policy in force at its place in the
 //!   journal; a protection change that releases an orbit, or the undo or redo of one, replays only with the
 //!   confirmation stored with it. A journal action that fails either check leaves the layer in read-only recovery
-//!   before it with `KN5:consistency.unadmitted_journal_action` (a draft code), so the session does not open as an
+//!   before it with `KN5:consistency.unadmitted_journal_action`, so the session does not open as an
 //!   intact writable one. The journal carries no authentication: an edit that rewrites a program-made action as the
 //!   solver's own is not detected.
 //! - Findings B1 and L17 (KN5.12, ONE.42 option (a)): a run cannot replace or cancel a preview the solver is shown;
 //!   only the solver's action ends it. While a frame presents the pending preview, a run's preview and a run's cancel
-//!   of it are refused with `KN5:capability.preview_shown` (a draft code), also for the run of a command the solver
+//!   of it are refused with `KN5:capability.preview_shown`, also for the run of a command the solver
 //!   invoked.
 //! - Finding B2 (ONE.34): a run prepares a preview only inside a command the solver invoked, and the one check is in
 //!   the layer, not in each host. The run must be the run of a program job ([`ProgramJob::run`], `job-<id>`) that the
 //!   host has taken and not yet reported, invoked by the shell or by a run that is itself inside such a command.
-//!   Otherwise its preview is refused with `KN5:capability.outside_solver_command` (a draft code). The check is on, so
+//!   Otherwise its preview is refused with `KN5:capability.outside_solver_command`. The check is on, so
 //!   a host, LP3's included, must start its runs through a tool row the shell invokes.
 //! - Finding G1: a command ID lives in its caller's namespace. Each run has its own scope (`runtime/<run>`), so one run
 //!   cannot use up another run's IDs. The scope is derived from the stored caller, so the journal format is unchanged.
@@ -72,7 +72,8 @@
 //!
 //! # Drafts
 //!
-//! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.
+//! The command table is frozen at LP3 (PHS.53) and the IR freezes later; a choice below stays a draft until a frozen
+//! text settles it.
 //!
 //! - One session per layer, 600-cell-Full only. Of the jumbling rows, `jumble.on`'s entry from solved, `jumble.off`,
 //!   `jumble.twist.menu` and `jumble.repair.list` are built (below); the rest is refused with
@@ -82,8 +83,8 @@
 //!   argument in any other form is refused with `KN5:input.argument_form`. A record draft's digest is M6's
 //!   `{"letters", "source", "reads"}`, with the record's content digest and version in `reads` (KN0.8).
 //! - The workspace store ([`workspace`]) holds M6's records: `workspace.set` ([`RECORD_ROW`]) takes `record`, `payload`
-//!   and `provenance`, the provenance block's canonical JSON as text. H-08 has no such row yet, so [`Table::with_drafts`]
-//!   adds it, and the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
+//!   and `provenance`, the provenance block's canonical JSON as text. H-08 holds the row since the freeze (CM.17), and
+//!   the layer refuses it to the runtime with `LG3:capability.not_granted`, as M6 does. The layer cannot
 //!   read a provenance block: the host's [`Provenance`] reader checks it at the write (PS1.16) and, in a solving
 //!   session, admits a record's word at `operation.preview` (KN5.26); without a reader both are refused. A record
 //!   write and a workspace row's completion keep the part blocks the reader holds for the blocks they write
@@ -427,8 +428,8 @@
 //!     Nat}`, a job and the epoch it ran in (draft). After the forms and the revisions, a `FilterRef` must resolve
 //!     (filter previews, below).
 //!   - `CanonicalObjectRefs`, which `set.save` takes, is a list of pieces or positions, each 0 to 177,119 (the
-//!     kernel's `PIECES`); an empty list and repeated members pass (draft). `set.save` also takes the draft boolean
-//!     `replace` beside its table arguments, and its completion writes the saved set's own record ([`sets`]).
+//!     kernel's `PIECES`); an empty list and repeated members pass (draft). `set.save` also takes the optional boolean
+//!     `replace` (`Bool?` since the freeze, CM.17), and its completion writes the saved set's own record ([`sets`]).
 //!   - The forms of the other types are not written down yet, and they pass unchecked: among them a union of types
 //!     such as `ResolvedDraftRef|WordRef`. The layer's own rows check their arguments where they are built.
 //! - Overlay availability (KN5.7, LI.18 to LI.21; CT-KN5-08). [`CommandLayer::declare_overlay`] stores a
@@ -512,14 +513,14 @@
 //!   - The layer admits it after the row's arguments, `FilterRef`s, gate and blocks, and before the lane and before a
 //!     job ID exists, so a refusal uses nothing. A missing budget is `KN7:input.budget_not_declared`. A dimension over
 //!     the ceiling is `KN7:resource_limit.budget_ceiling`, naming the dimension, the request and the ceiling.
-//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::DRAFT_CEILING`] for every profile
-//!     until an owner reading sets the product's values). A host may set a lower one
+//!   - The ceiling is the session profile's ([`Profile::budget_ceiling`], [`Budget::CEILING`] for every profile, the
+//!     owner's values of 21 November 2026). A host may set a lower one
 //!     ([`CommandLayer::set_budget_ceiling`]); the lower applies in each dimension. The safety stop is not checked.
 //!   - The job carries the admitted budget ([`ProgramJob::budget`]). The request digest covers a declared budget
 //!     under the key `budget`, so an invocation without one keeps its digest, and a retry with another budget is other
 //!     content (`KN5:input.command_id_reused`). A workspace row's completion keeps the budget in its journal entry.
 //!   - Another row runs no program and reads no budget. [`Shell::prepare`] declares the shell's budget on an
-//!     invocation of a row an entry serves ([`Shell::budget`], the draft ceiling by default) and none on another.
+//!     invocation of a row an entry serves ([`Shell::budget`], [`Budget::CEILING`] by default) and none on another.
 //! - Filter previews (KN0.9, H15.4, LI.41; LP3's C6, [`filter`]). Draft choices:
 //!   - A `FilterRef` names a completed job of a row that prepares a predicate (`structure.layer`) by its result
 //!     reference. It resolves while every record that job wrote still holds the job's write, to those records, each

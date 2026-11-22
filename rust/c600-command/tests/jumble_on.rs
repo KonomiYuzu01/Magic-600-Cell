@@ -10,8 +10,8 @@ use std::sync::{Arc, OnceLock};
 use c600_command::layer::{JUMBLE_ON_MODE, MODE};
 use c600_command::{
     code, draft_args, identity_json, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction, Error,
-    HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, Secret, Shell, Status,
-    Table, Transaction, TransactionKind, JUMBLE_ON_ROW, POLICY_ROW, RECORD_ROW, TWIST_ROW, WORKSHEET_LOAD_ROW,
+    Fate, HeadlessFrames, Invocation, Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, Secret, Shell,
+    Status, Table, Transaction, TransactionKind, JUMBLE_ON_ROW, POLICY_ROW, RECORD_ROW, TWIST_ROW, WORKSHEET_LOAD_ROW,
     WORKSHEET_SAVE_ROW,
 };
 use c600_jumble::levels::{self, Base};
@@ -286,6 +286,11 @@ impl Fixture {
     }
 }
 
+/// CT-LI-05 (part: a crossing commits its mode, head, digest and state revision together with its `crossing` record;
+/// a store fault is in `a_crossing_under_a_store_fault_commits_whole_or_not_at_all`; not run: an equal-label restore,
+/// which the layer does not build).
+/// CT-ONE-17 (part: a snapshot opened before a crossing keeps its labels and digest across the entry; not run: a
+/// snapshot of the jumbled puzzle's own level, which LP3's runtime opens).
 /// CT-ONE-03 (part: a crossing commits with no preview object), CT-JI-08 (part: the solved-witness entry with both of
 /// its sides; the exit-root entry is in `tests/jumble_off.rs`), JI.25, ONE.55, ONE.80. After a word commit and
 /// a twist from solved, `jumble.on` enters at the jumbling engine's replay of their literal letters from solved, whose
@@ -302,9 +307,12 @@ fn an_entry_crosses_at_the_poses_of_the_solved_witness() {
     assert_eq!(f.layer.availability(JUMBLE_ON_ROW), Ok(()));
     let before = f.layer.revision().clone();
     let labels = f.layer.snapshot().digest().to_owned();
+    let held = f.layer.snapshot().clone();
+    let held_labels = held.labels().to_vec();
 
     let receipt = f.enter();
     let Status::Committed(record) = &receipt.status else { panic!("{:?}", receipt.status) };
+    assert_eq!((held.digest(), held.labels()), (labels.as_str(), held_labels.as_slice()), "a held snapshot");
     let letters = [2, 1, -2, 1];
     let pose = replayed(&letters).digest(&ctx());
     assert_ne!(pose, labels);
@@ -343,6 +351,51 @@ fn an_entry_crosses_at_the_poses_of_the_solved_witness() {
         ("word", text(&word_digest(&letters))),
     ]);
     assert_eq!(crossing.crossing.as_ref(), Some(&expected));
+}
+
+/// CT-LI-05 (part: a crossing commits its complete tuple or none: a write the store rolls back leaves the mode, head,
+/// state revision, digest and journal as they were, and the next press crosses; a write whose fate the store cannot
+/// tell holds the layer in read-only recovery at Jumble off until a restart settles it, which adopts the whole crossing
+/// when the write happened and nothing when it did not; not run: an equal-label restore and its durable void, since the
+/// layer builds no restore row).
+#[test]
+fn a_crossing_under_a_store_fault_commits_whole_or_not_at_all() {
+    let mut f = fixture(&[]);
+    assert!(committed(&f.twist(&item(6))));
+    let (before, log) = (restored(&f.layer), f.layer.store().log.len());
+    f.layer.store_mut().inject.push_back(Fate::RolledBack(Error::new("PS1:io.injected", "injected rollback")));
+    let receipt = f.enter();
+    assert!(!committed(&receipt), "{:?}", receipt.status);
+    assert_eq!((restored(&f.layer), f.layer.store().log.len()), (before.clone(), log));
+    assert!(f.layer.jumbled().is_none());
+    assert!(committed(&f.enter()));
+    assert_eq!(f.layer.revision().mode, JUMBLE_ON_MODE);
+
+    for written in [false, true] {
+        let mut f = fixture(&[]);
+        assert!(committed(&f.twist(&item(6))));
+        let before = restored(&f.layer);
+        f.layer.store_mut().inject.push_back(Fate::Unknown);
+        f.layer.store_mut().unknown_writes = written;
+        let receipt = f.enter();
+        assert_eq!(receipt.status, Status::UnknownOutcome, "{written}");
+        assert!(f.layer.recovery().is_some(), "{written}");
+        assert_eq!(restored(&f.layer), before, "{written}");
+        assert!(f.layer.jumbled().is_none(), "{written}");
+        f.layer.restart(Secret::fixed([8; 32]));
+        f.shell.restart(Secret::fixed([8; 32]));
+        assert!(f.layer.recovery().is_none(), "{written}");
+        let after = restored(&f.layer);
+        if written {
+            assert_eq!((after.2, after.6), (before.2 + 1, JUMBLE_ON_MODE), "{written}");
+            assert!(f.layer.jumbled().is_some(), "{written}");
+            let outcome = f.layer.outcome(&receipt.command, &receipt.request).unwrap();
+            assert!(committed(&outcome), "{:?}", outcome.status);
+        } else {
+            assert_eq!(after, before, "{written}");
+            assert!(f.layer.jumbled().is_none(), "{written}");
+        }
+    }
 }
 
 /// A5, ONE.54, JI.25 (the solved-witness entry's refusal): a session that did not start at solved holds no retained
@@ -478,6 +531,8 @@ fn a_retried_entry_answers_its_receipt_and_enters_once() {
     assert_eq!(g.layer.store().log.len(), 1);
 }
 
+/// CT-LG2-08 (part: a call made for the other mode is refused at invocation after a real mode change, with the mode
+/// refusal checked before a stale press; not run: the static check, and a program's call, which LP3's host makes).
 /// LG2.8 and the draft rulings in `src/lib.rs`: with Jumble on, `operation.preview`, `operation.execute` and
 /// `twist.apply` are `KN5:input.retained_tool_needs_jumble_off` and change nothing: a preview before its draft is read,
 /// a commit after its token's binding, a twist after its token, so a jumble item answers the mode too. So are LB7.2's
@@ -556,6 +611,8 @@ fn the_retained_workflow_needs_jumble_off() {
     assert_eq!((r.state, r.head.as_str(), r.digest.as_str()), (on.state, on.head.as_str(), on.digest.as_str()));
 }
 
+/// CT-LI-05 (part: a crossing's undo and its redo each commit the whole recorded tuple with a new state revision; not
+/// run: an equal-label restore and its durable void, which the layer does not build).
 /// CT-JI-08 (part: the solved-witness entry survives undo and redo using its own sides; the exit-root entry is in
 /// `tests/jumble_off.rs`; not run: branch navigation), ONE.81, JI.27. An undo of the entry returns to the exact Jumble
 /// off state before it and a redo replays the solved witness again, each with a new state revision and a committed
@@ -621,6 +678,8 @@ fn undo_and_redo_restore_the_entry_s_own_sides() {
     assert_eq!(kinds, [Commit, Crossing, Undo, Redo, Undo, Redo, Undo, Undo, Commit, Crossing]);
 }
 
+/// CT-LI-05 (part: a reopen replays a crossing whole, or stays in read-only recovery before it, never half-crossed;
+/// not run: a restore's durable void under recovery, which waits for the restore row).
 /// KN5.23, ONE.58 and JI.27's recovery row (draft): a reopen with the session's twist menu pinned before the replay
 /// (`CommandLayer::open_with_menu`) replays the entry's witness, makes the same crossing record and restores the mode,
 /// the head and the poses, and its undo and redo work there. Without the menu, or under a menu with another identity

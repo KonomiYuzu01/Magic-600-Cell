@@ -183,8 +183,9 @@ fn ct_ps1_01_canonical_json_vectors() {
     }
 }
 
-/// CT-PS1-02 (part; not run: the store's FP.6 record reader and its keep-the-source rule after a digit refusal
-/// (PS1.33), both M6): exact integers beyond 2^64, reduced rationals and Q(√5) triples round-trip byte for byte through
+/// CT-PS1-02 (part; not run: a reader of FP.6 wrappers in the session store, which keeps payloads as canonical bytes
+/// and has none, and its keep-the-source rule after a digit refusal (PS1.33)): exact integers beyond 2^64, reduced
+/// rationals and Q(√5) triples round-trip byte for byte through
 /// the product's parsers, exact values and encoder; integers never pass through a float; the 6,775-digit vector
 /// round-trips; and a 10,001-digit integer is refused without changing the text it was given.
 #[test]
@@ -244,8 +245,9 @@ fn ct_ps1_02_exact_numbers_round_trip_without_floats() {
     assert_eq!(over, before, "a refusal leaves the given text as it was");
 }
 
-/// CT-PS1-03 (part; not run: the store's own reader of persisted Q(√5) entries and matrices, and its refusal path for
-/// display wrappers (M6)): invalid Q(√5) denominators and unreduced triples, unreduced or negative-denominator
+/// CT-PS1-03 (part; not run: a reader of persisted Q(√5) entries and matrices and a refusal path for display wrappers
+/// in the session store, which keeps payloads as canonical bytes and has neither): invalid Q(√5) denominators and
+/// unreduced triples, unreduced or negative-denominator
 /// rationals, non-canonical integer text, duplicate keys and floats are refused; an `f64` wrapper is no exact value;
 /// and the run-time writer never emits a non-finite or negative-zero display value.
 #[test]
@@ -360,8 +362,10 @@ fn overhead(n: usize) -> usize {
     18 + 5 * n.div_ceil(65_535).max(1)
 }
 
-/// CT-PS1-06 (part; not run: the product's FP.7 writer and its strict one-member reader, both M6; the kernel's
-/// `gunzip` is the retained-asset reader): the three gzip vectors are exactly the selected profile (fixed header, the
+/// CT-PS1-06 (part; the product's FP.7 writer and its strict one-member reader are in `c600-session`'s
+/// `persist/codec.rs`; not run: the product writer against these vectors, and `read_blob`'s separate stored and
+/// decoded digest checks; the kernel's `gunzip` is the retained-asset reader): the three gzip vectors are exactly
+/// the selected profile (fixed header, the
 /// stored-block algorithm, CRC32 and size trailer, FP.7's overhead), their stored digests are the frozen ones, and
 /// their decoded bytes and decoded digests are checked separately from them. The decoder bounds output before it
 /// expands a block.
@@ -483,8 +487,9 @@ fn ct_kn3_02_a_6775_digit_integer_round_trips() {
     assert_eq!(run.output, Some(bytes));
 }
 
-/// CT-DET-23 (part: content identity under compression metadata; not run: atomic publication and its interruption at
-/// every boundary, which wait for the session store's publication path (M6)): stored bytes that differ only in gzip
+/// CT-DET-23 (part: content identity under compression metadata; the interruption of the session store's generation
+/// publication is in `c600-session/tests/persist_ps2.rs`; not run: the builder's atomic publication and a run record's
+/// publication under interruption): stored bytes that differ only in gzip
 /// metadata (mtime, OS, a file name) have different stored digests and the same decoded bytes, so the canonical content
 /// digest and the exact value read from it are unchanged (DET.47).
 #[test]

@@ -25,8 +25,9 @@ pub const ENTRY: &str = "preview_word";
 pub const ROW: &str = "operation.preview";
 
 /// The run limits of one run of a tool (DET.55): wide enough for a 100,000-letter word, 0.4's word limit. They are
-/// the command layer's draft ceiling ([`Budget::DRAFT_CEILING`]), the budget a shell declares by default.
-pub const LIMITS: Amounts = Amounts { steps: 1 << 20, kernel_cost: 1 << 40, memory: 1 << 32, output: 1 << 26 };
+/// every profile's ceiling ([`Budget::CEILING`], the owner's values of 21 November 2026), the budget a shell declares
+/// by default.
+pub const LIMITS: Amounts = Amounts { steps: 1 << 21, kernel_cost: 1 << 40, memory: 1 << 27, output: 1 << 24 };
 
 /// The run limits of a program job's budget (KN7.7): the layer's [`Budget`] has the meter's four dimensions under the
 /// same names, so each maps by name. A host runs a job's entry under them ([`crate::process::ToolCommand::limits`]).
@@ -269,7 +270,8 @@ impl Tool {
     }
 
     /// Runs the entry on a literal word through a boundary onto `engine` under `limits`: a job's run is under its
-    /// budget's ([`limits`]).
+    /// budget's ([`limits`]). The run keeps no per-operation rows (`Options::record`): the meter does not charge them
+    /// to the memory limit, so they would grow with the run's steps, and a quiet run has the same counters and stops.
     pub fn run_under(
         &self,
         word: &[i32],
@@ -280,7 +282,8 @@ impl Tool {
     ) -> Result<Ran, Refusal> {
         let mut boundary = Boundary::new(engine, store, context);
         let (module, entry) = (self.manifest.module, self.manifest.entry);
-        let run = self.loaded.run(module, entry, vec![Value::word(word)], &mut boundary, &Options::new(limits))?;
+        let options = Options { record: false, ..Options::new(limits) };
+        let run = self.loaded.run(module, entry, vec![Value::word(word)], &mut boundary, &options)?;
         Ok(Ran { run, shell: boundary.shell, captures: boundary.captures })
     }
 

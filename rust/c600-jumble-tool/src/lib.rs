@@ -22,7 +22,7 @@
 //! - [`rows`] is the jumbling rows' host bridge: KN2.4's jumbling rows that [`library`]'s entries read, answered by
 //!   `c600_jumble` and served to a run as snapshot reads at the command layer's head with Jumble on
 //!   ([`rows::Rows::at_head`]), on a witnessed base or at a state. It grants those rows only, refuses another argument
-//!   form with `KN5:input.argument_form` and prices each pass over the state in a draft tariff.
+//!   form with `KN5:input.argument_form` and prices each pass over the state in H-08's tariff (CM.18).
 //! - `tests/tool.rs` runs the jumbling tool's parts of CT-LB6-03 and CT-BND-15.
 //! - `tests/lb3.rs` runs the kernel halves of CT-LB1-02, CT-LB3-01, CT-LB3-03, CT-LB3-05 with CT-BND-17, CT-LB3-06 and
 //!   CT-LB3-07 on `c600_jumble`'s public API, with milestone M8's end tests (`levels`) and repair list
@@ -211,7 +211,7 @@
 //!   372). The occupant relation carries none of them itself; CT-EV3-06 (`c600-repr`'s `tests/ct_ev3.rs`) writes it
 //!   as strip records, and no code here does yet.
 //! - The jumbling rows in the command table: [`rows`] serves them read-only beside the layer, in [`library`]'s draft
-//!   answer types and a draft tariff; the command table names and prices them when it freezes (KN5, PHS.52), and no
+//!   answer types and the tariff H-08's `reads` give them since the command table's freeze (KN5, CM.18), and no
 //!   program runs here as a job of the layer. CT-LB3-03's agreement with `trees.py` stays M5's Python test on the
 //!   same kernel API.
 //! - LB3's other entries as language code, not written yet; also the named cap of "Release and whole-word checks",

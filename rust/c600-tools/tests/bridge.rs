@@ -110,7 +110,9 @@ fn report(layer: &mut CommandLayer, command: ToolCommand) {
 ///
 /// CT-BND-11 (part, the 600-cell-Full tool on the command layer: in the solving profile its preview outcome is withheld)
 /// and CT-BND-07 (part, the 600-cell-Full tool on the command layer: whatever the engine answers, the program gets the
-/// fixed acknowledgement).
+/// fixed acknowledgement) and CT-BND-12 (part, on the command layer: a proposal the layer or preview admission refuses
+/// gives the program the same fixed acknowledgement as a built preview, and the shell's record keeps the full answer;
+/// not run: the shell showing it to the solver with reason and remedy, which no crate renders yet).
 #[test]
 fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowledgement() {
     let tool = Tool::full_600_cell().unwrap();

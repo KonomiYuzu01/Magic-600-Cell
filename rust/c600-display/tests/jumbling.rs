@@ -672,6 +672,8 @@ fn retained() -> State {
 /// the slot k·s of M8's slot action with its frame check (`levels::Tables::slot_image`), not to its home slot s. A
 /// piece has no single slot, on the lattice as off it, and a label-level subject gets `KN1:input.level_not_held`
 /// before any digest is compared.
+/// CT-ONE-19 (part: at lattice poses the label path and the pose path put each sticker in the same slot; not run:
+/// the view model's switch at a crossing itself).
 #[test]
 fn rpi_23_a_sticker_at_a_lattice_pose_is_in_the_slot_of_the_slot_action() {
     let world = world();

@@ -138,7 +138,7 @@ fn recovery(disk: &MemDisk) -> Option<&'static str> {
     open(disk).ok()?.layer.recovery().map(|error| error.code)
 }
 
-/// The draft code of a journal action that no solver action could have made (B7).
+/// The code of a journal action that no solver action could have made (B7).
 const UNADMITTED: &str = "KN5:consistency.unadmitted_journal_action";
 
 fn committed(receipt: &Receipt) -> bool {
