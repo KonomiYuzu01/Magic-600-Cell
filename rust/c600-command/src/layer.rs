@@ -525,14 +525,26 @@ enum History {
 }
 
 impl History {
-    /// The history an undo or redo row steps: the layout history for `layout.undo` and `layout.redo`, the move history
-    /// for every other row.
-    fn of(row: &str) -> History {
+    /// The history and direction an undo or redo row steps: `session.undo` and `session.redo` the move history,
+    /// `layout.undo` and `layout.redo` the layout history; no other row steps one.
+    fn of(row: &str) -> Option<(History, Direction)> {
         match row {
-            LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW => History::Layout,
-            _ => History::Moves,
+            "session.undo" => Some((History::Moves, Direction::Undo)),
+            "session.redo" => Some((History::Moves, Direction::Redo)),
+            LAYOUT_UNDO_ROW => Some((History::Layout, Direction::Undo)),
+            LAYOUT_REDO_ROW => Some((History::Layout, Direction::Redo)),
+            _ => None,
         }
     }
+}
+
+/// Who turned ADR-D01.39's explore state on (draft): the solver, by `explore.set` from the shell, or a run inside a
+/// command the solver invoked. The state may only pause commits, never enable them, so no run ends a pause the solver
+/// set.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Explorer {
+    Solver,
+    Run,
 }
 
 /// The jumbling engine's value at the head while Jumble is on, with its pose digest.
@@ -773,8 +785,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     layout_redo: Vec<u64>,
     /// ADR-D01.39's explore state (draft): while it is on, every commit row but `layout.undo` and `layout.redo` is
     /// refused before its token is spent ([`code::COMMITS_PAUSED`]). It only pauses commits and never makes one. It is
-    /// transient: a restart and a reopen clear it, since the runs that provided it end with them.
-    explore: bool,
+    /// transient: a restart and a reopen clear it, since the runs that provided it end with them. It holds who turned it
+    /// on ([`Explorer`]).
+    explore: Option<Explorer>,
     /// Every epoch of the session, so no open or restart draws one again (L10).
     epochs: BTreeSet<u64>,
     jobs_issued: u64,
@@ -869,7 +882,7 @@ impl<S: Store> CommandLayer<S> {
             redo: Vec::new(),
             layout_undo: Vec::new(),
             layout_redo: Vec::new(),
-            explore: false,
+            explore: None,
             jobs_issued: 0,
             jobs: VecDeque::new(),
             running: BTreeMap::new(),
@@ -1099,8 +1112,19 @@ impl<S: Store> CommandLayer<S> {
                     TransactionKind::Undo => Direction::Undo,
                     _ => Direction::Redo,
                 };
-                // The row names the history: `layout.undo` and `layout.redo` step the layout history (ADR-D01.14).
-                let history = History::of(&stored.row);
+                // Only the solver's own action steps a history: the four undo and redo rows are commit rows, which no
+                // run reaches (KN5.15, B7).
+                if !matches!(stored.caller, Caller::Shell) {
+                    return Err(unadmitted("an undo or redo whose caller is not the shell"));
+                }
+                // The row names the history and the direction: `layout.undo` and `layout.redo` step the layout history
+                // (ADR-D01.14), `session.undo` and `session.redo` the move history.
+                let history = match History::of(&stored.row) {
+                    Some((history, named)) if named == direction => history,
+                    _ => {
+                        return Err(broken("an undo or redo action whose row is not its direction's undo or redo row"))
+                    }
+                };
                 if stored.target != self.stack(history, direction).last().copied() {
                     return Err(broken("the action does not invert or repeat the top of its stack"));
                 }
@@ -1115,6 +1139,13 @@ impl<S: Store> CommandLayer<S> {
                 let (Some(job), Some(result)) = (stored.job, stored.result.clone()) else {
                     return Err(broken("a workspace completion names no job and result"));
                 };
+                // No run reaches a stored workspace row's job (ONE.52, findings B3 and B4: [`Self::runtime_may`]), a
+                // layout-history step included (ADR-D01.14), so a completion the journal gives to a run was never
+                // admitted (B7).
+                let stored_workspace = self.table.row(&stored.row).is_some_and(|row| row.kind == Kind::Workspace);
+                if stored_workspace && !matches!(stored.caller, Caller::Shell) {
+                    return Err(unadmitted("a workspace row's completion whose caller is not the shell"));
+                }
                 self.jobs_issued = self.jobs_issued.max(job);
                 // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
                 self.workspace_adoption(meta, job, result, stored.records.clone(), stored.budget)
@@ -1672,7 +1703,7 @@ impl<S: Store> CommandLayer<S> {
 
     /// Whether ADR-D01.39's explore state is on (draft): the host signals it on every view frame.
     pub fn explore(&self) -> bool {
-        self.explore
+        self.explore.is_some()
     }
 
     /// The journal entry that the head is inside, with how many of its literal moves stay applied (ADR-D01.15; draft):
@@ -1725,7 +1756,9 @@ impl<S: Store> CommandLayer<S> {
     /// Whether the explore state pauses `row`: every commit row but the layout history's undo and redo, which commit
     /// no puzzle state (ADR-D01.39).
     fn paused(&self, row: &Row) -> bool {
-        self.explore && row.kind == Kind::Commit && !matches!(row.id.as_str(), LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW)
+        self.explore.is_some()
+            && row.kind == Kind::Commit
+            && !matches!(row.id.as_str(), LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW)
     }
 
     /// The shell's outcome lookup: [`CommandLayer::kernel_outcome`] for a shell command ID, or `None` when the shell's
@@ -1955,7 +1988,7 @@ impl<S: Store> CommandLayer<S> {
         self.comparison = None;
         self.repairs = None;
         self.commit_held = false;
-        self.explore = false;
+        self.explore = None;
         if let Some(adoption) = self.limbo.take() {
             match self.store.durable(&adoption.transaction.event) {
                 Some(true) => {
@@ -3520,6 +3553,9 @@ impl<S: Store> CommandLayer<S> {
     /// It writes no journal action and takes no undo (ADR-D01.14). A run turns it only inside a command the solver
     /// invoked (ADR-D01.2's first route; `LG3:capability.not_granted` otherwise). While it is on, the commit rows are
     /// refused with [`code::COMMITS_PAUSED`] ([`CommandLayer::paused`]); the solver's own `explore.set` turns it off.
+    /// The state may only pause commits, never enable them, so a run that turns it off while the solver's pause holds
+    /// is refused with `LG3:capability.not_granted`; a run ends only a pause a run provided, and the solver's
+    /// `explore.set {on: true}` makes a run's pause the solver's.
     fn set_explore(
         &mut self,
         caller: &Caller,
@@ -3530,14 +3566,27 @@ impl<S: Store> CommandLayer<S> {
         let Some(&Value::Bool(on)) = args.get("on") else {
             return refused(code::ARGUMENT_FORM, "`on` is a Bool");
         };
-        if let Caller::Runtime { run } = caller {
-            if !self.inside_solver_command(run) {
-                let detail = format!("run `{run}` is not inside a command the solver invoked (ADR-D01.2)");
-                return refused(code::NOT_GRANTED, detail);
+        let by = match caller {
+            Caller::Shell => Explorer::Solver,
+            Caller::Runtime { run } => {
+                if !self.inside_solver_command(run) {
+                    let detail = format!("run `{run}` is not inside a command the solver invoked (ADR-D01.2)");
+                    return refused(code::NOT_GRANTED, detail);
+                }
+                Explorer::Run
             }
-        }
-        if self.explore != on {
-            self.explore = on;
+        };
+        let next = match (on, by, self.explore) {
+            (true, Explorer::Solver, _) => Some(Explorer::Solver),
+            (true, Explorer::Run, held) => held.or(Some(Explorer::Run)),
+            (false, Explorer::Run, Some(Explorer::Solver)) => {
+                let detail = "a run may not end the pause the solver set: the explore state never enables commits";
+                return refused(code::NOT_GRANTED, format!("{detail} (ADR-D01.39)"));
+            }
+            (false, _, _) => None,
+        };
+        if self.explore != next {
+            self.explore = next;
             self.generation += 1;
         }
         Ok((None, Status::Accepted))

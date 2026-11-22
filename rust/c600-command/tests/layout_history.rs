@@ -158,6 +158,32 @@ impl Fixture {
     fn explore(&mut self, on: bool) -> Receipt {
         self.shell.invoke(&mut self.layer, EXPLORE_ROW, json::object([("on", Value::Bool(on))])).unwrap()
     }
+
+    /// Starts `tool.probe` (registered by the test) from the shell and takes its job: the job and the caller of a run
+    /// inside a command the solver invoked.
+    fn probe(&mut self) -> (u64, Caller) {
+        let probe = self.shell.invoke(&mut self.layer, "tool.probe", json::object([])).unwrap();
+        assert!(matches!(probe.status, Status::Running(_)), "{:?}", probe.status);
+        let taken = self.layer.take_program_job().expect("the probe's job");
+        (taken.job, Caller::Runtime { run: taken.run() })
+    }
+
+    /// `explore.set {on}` from `caller`'s run under command ID `command`.
+    fn run_explore(&mut self, caller: &Caller, command: &str, on: bool) -> Receipt {
+        let invocation = Invocation {
+            command: command.into(),
+            row: EXPLORE_ROW.into(),
+            args: json::object([("on", Value::Bool(on))]),
+            token: None,
+            epoch: self.layer.revision().epoch,
+            budget: None,
+        };
+        self.layer.invoke(caller, invocation)
+    }
+}
+
+fn register_probe(layer: &mut CommandLayer) {
+    layer.register_overlay("tool.probe", Kind::Query, &[], Overlay { module: "t".into(), entry: "p".into() }).unwrap();
 }
 
 /// ADR-D01.14: a design-profile step is the layout history's, not the move history's. `Ctrl+Alt+Z` undoes it and
@@ -278,6 +304,138 @@ fn a_step_of_one_history_cuts_the_others_writes_of_its_records() {
     }
 }
 
+/// The cut reaches the redo stacks too: a move-history write of a record whose layout step was undone leaves the layout
+/// redo without that step, so a layout redo never writes over the newer write, and a layout step that writes a record
+/// whose move-history write was undone leaves the move redo without that write. A write of another record keeps the
+/// other history's redo. A reopen rebuilds the same stacks.
+#[test]
+fn a_step_of_one_history_cuts_the_others_redo_of_its_records() {
+    let mut f = fixture();
+    f.theme("design/theme", "dawn");
+    assert!(committed(&f.press("Ctrl+Alt+Z").unwrap()));
+    let undone = f.layer.layout_hint(Direction::Redo).map(|h| h.target).expect("the undone step");
+    assert!(matches!(f.write("other", "moves").status, Status::Completed(_)));
+    assert_eq!(f.layer.layout_hint(Direction::Redo).map(|h| h.target), Some(undone), "another record cuts nothing");
+    assert!(matches!(f.write("design/theme", "moves").status, Status::Completed(_)));
+    assert_eq!(f.layer.layout_hint(Direction::Redo), None, "the undone step left the layout redo");
+    assert_eq!(f.press("Ctrl+Alt+Y").unwrap_err().code, code::UNDO_SUPERSEDED);
+    assert_eq!(f.payload("design/theme"), Some(text("moves")));
+    let g = reopen(&f.layer);
+    for direction in [Direction::Undo, Direction::Redo] {
+        assert_eq!(g.layout_hint(direction), f.layer.layout_hint(direction), "{direction:?}");
+        assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{direction:?}");
+    }
+
+    let mut g = fixture();
+    assert!(matches!(g.write("shared", "moves").status, Status::Completed(_)));
+    assert!(committed(&g.press("Ctrl+Z").unwrap()));
+    let undone = g.layer.undo_hint(Direction::Redo).map(|h| h.target).expect("the undone write");
+    g.theme("design/theme", "dawn");
+    assert_eq!(g.layer.undo_hint(Direction::Redo).map(|h| h.target), Some(undone), "another record cuts nothing");
+    g.step(DENSITY, json::object([("preset", text("compact"))]), "shared", "layout");
+    assert_eq!(g.layer.undo_hint(Direction::Redo), None, "the undone write left the move redo");
+    assert_eq!(g.press("Ctrl+Y").unwrap_err().code, code::UNDO_SUPERSEDED);
+    assert_eq!(g.payload("shared"), Some(text("layout")));
+    let h = reopen(&g.layer);
+    for direction in [Direction::Undo, Direction::Redo] {
+        assert_eq!(h.layout_hint(direction), g.layer.layout_hint(direction), "{direction:?}");
+        assert_eq!(h.undo_hint(direction), g.layer.undo_hint(direction), "{direction:?}");
+    }
+}
+
+/// A journal of a commit, a layout step, and the four undo and redo keys in turn: commit, `theme.select`,
+/// `layout.undo`, `session.undo`, `layout.redo`, `session.redo`.
+fn both_histories_stepped() -> Fixture {
+    let mut f = fixture();
+    assert!(committed(&f.commit(&word(&[1]))));
+    f.theme("design/theme", "dawn");
+    for keys in ["Ctrl+Alt+Z", "Ctrl+Z", "Ctrl+Alt+Y", "Ctrl+Y"] {
+        assert!(committed(&f.press(keys).unwrap()), "{keys}");
+    }
+    let rows: Vec<&str> = f.layer.store().log.iter().map(|t| t.row.as_str()).collect();
+    let expected = ["operation.execute", THEME, LAYOUT_UNDO_ROW, "session.undo", LAYOUT_REDO_ROW, "session.redo"];
+    assert_eq!(rows, expected);
+    assert_eq!(reopen(&f.layer).recovery(), None, "the journal as written replays");
+    f
+}
+
+fn reopen_forged(forged: MemoryStore) -> Option<&'static str> {
+    let reopened = CommandLayer::open(kernel(), Table::h08().with_drafts(), Secret::fixed(SECRET), forged).unwrap();
+    reopened.recovery().map(|error| error.code)
+}
+
+/// An undo or redo journals with the row of its own direction and history: a stored undo action whose row is
+/// `layout.redo`, `session.redo` or no undo row at all, or a redo action whose row is `layout.undo` or `session.undo`,
+/// stops the replay in read-only recovery, as an action that inverts or repeats nothing does.
+#[test]
+fn an_undo_or_redo_on_another_directions_row_stops_the_replay() {
+    let f = both_histories_stepped();
+    let forgeries = [
+        (2, TransactionKind::Undo, LAYOUT_REDO_ROW),
+        (3, TransactionKind::Undo, "session.redo"),
+        (3, TransactionKind::Undo, "operation.execute"),
+        (4, TransactionKind::Redo, LAYOUT_UNDO_ROW),
+        (5, TransactionKind::Redo, "session.undo"),
+    ];
+    for (index, kind, row) in forgeries {
+        let mut forged = f.layer.store().clone();
+        assert_eq!(forged.log[index].kind, kind);
+        forged.log[index].row = row.into();
+        assert_eq!(reopen_forged(forged), Some(code::READ_ONLY_RECOVERY), "{row} on {kind:?}");
+    }
+}
+
+/// A journal that gives a history step to a run does not reopen intact (B7; finding F5 of the row 1 attack): no run
+/// reaches the four undo and redo rows, which are commit rows, or a stored workspace row's job, a layout step's
+/// included, so a stored undo, redo or layout step whose caller is a run stops the replay with
+/// `KN5:consistency.unadmitted_journal_action`.
+#[test]
+fn a_journal_that_gives_a_history_step_to_a_run_does_not_reopen_intact() {
+    let f = both_histories_stepped();
+    for index in 1..6 {
+        let mut forged = f.layer.store().clone();
+        forged.log[index].caller = Caller::Runtime { run: "probe/2".into() };
+        let row = f.layer.store().log[index].row.clone();
+        assert_eq!(reopen_forged(forged), Some(code::UNADMITTED_JOURNAL_ACTION), "{row}");
+    }
+}
+
+/// ADR-D01.39: the explore state may only pause commits, never enable them, so no run ends the pause the solver set
+/// (finding F1 of the row 1 attack): a run's `explore.set {on: false}` is refused with `LG3:capability.not_granted`
+/// and the pause holds, and a run's `on: true` leaves it the solver's. A run ends a pause a run provided; the solver's
+/// `on: true` makes a run's pause the solver's, which no run ends either. A run's pause outlives its run (the state is
+/// signalled on every view frame), and the solver ends it.
+#[test]
+fn no_run_ends_the_pause_the_solver_set() {
+    let mut f = fixture();
+    assert!(committed(&f.commit(&word(&[1]))));
+    register_probe(&mut f.layer);
+    let (job, run) = f.probe();
+    f.explore(true);
+    assert_eq!(code_of(&f.run_explore(&run, "a1", false)), code::NOT_GRANTED);
+    assert!(f.layer.explore());
+    assert_eq!(f.run_explore(&run, "a2", true).status, Status::Accepted);
+    assert_eq!(code_of(&f.run_explore(&run, "a3", false)), code::NOT_GRANTED, "a run's on leaves the solver's pause");
+    assert_eq!(f.layer.availability("session.undo").unwrap_err().code, code::COMMITS_PAUSED);
+
+    f.explore(false);
+    assert_eq!(f.run_explore(&run, "a4", true).status, Status::Accepted);
+    assert_eq!(f.run_explore(&run, "a5", false).status, Status::Accepted, "a run ends a run's pause");
+    assert!(!f.layer.explore());
+    assert_eq!(f.run_explore(&run, "a6", true).status, Status::Accepted);
+    f.explore(true);
+    assert_eq!(code_of(&f.run_explore(&run, "a7", false)), code::NOT_GRANTED, "the solver's on makes it the solver's");
+    f.explore(false);
+
+    assert_eq!(f.run_explore(&run, "a8", true).status, Status::Accepted);
+    let output = JobOutput { value: Value::Null, views: Vec::new(), records: Default::default() };
+    f.layer.finish_program_job_with(job, Ok(output)).unwrap();
+    assert!(f.layer.explore(), "the run's pause outlives its run");
+    assert_eq!(code_of(&f.run_explore(&run, "a9", false)), code::NOT_GRANTED, "the ended run turns nothing");
+    f.explore(false);
+    assert!(committed(&f.press("Ctrl+Z").unwrap()));
+}
+
 /// A new layout step drops the layout history's redo, as a new action drops the move history's; a move-history step
 /// keeps it.
 #[test]
@@ -294,7 +452,7 @@ fn a_new_layout_step_drops_only_the_layout_redo() {
 }
 
 /// ADR-D01.39: while the explore state is on, every commit row but the two layout rows is unavailable and refused with
-/// `KN5:capability.commits_paused` before its token is spent, so the same press commits once the state is off. A
+/// `KN5:capability.commits_paused` before its token is spent, so the shell's next press commits once the state is off. A
 /// layout undo is not paused, a preview may still be asked, and the state writes nothing and answers `accepted`.
 #[test]
 fn the_explore_state_pauses_commits_before_their_token_is_spent() {
@@ -374,13 +532,8 @@ fn only_a_run_inside_a_solver_command_turns_the_explore_state() {
     assert_eq!(code_of(&outside), code::NOT_GRANTED);
     assert!(!f.layer.explore());
 
-    f.layer
-        .register_overlay("tool.probe", Kind::Query, &[], Overlay { module: "t".into(), entry: "p".into() })
-        .unwrap();
-    let probe = f.shell.invoke(&mut f.layer, "tool.probe", json::object([])).unwrap();
-    assert!(matches!(probe.status, Status::Running(_)));
-    let run = f.layer.take_program_job().expect("the probe's job").run();
-    let caller = Caller::Runtime { run: run.clone() };
+    register_probe(&mut f.layer);
+    let (_, caller) = f.probe();
     assert_eq!(f.layer.invoke(&caller, invocation("p1", true, epoch)).status, Status::Accepted);
     assert!(f.layer.explore());
     assert_eq!(f.layer.invoke(&caller, invocation("p2", false, epoch)).status, Status::Accepted);
