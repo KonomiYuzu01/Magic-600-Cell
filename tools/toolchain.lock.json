@@ -9,7 +9,7 @@
     "renderer-spike": "Stage 2.4 renderer experiments",
     "media": "Stages 5 and 7",
     "release": "Stage 8",
-    "api": "Paid Anthropic API runs the owner confirms (ADR line A1 to A3); never product code",
+    "api": "Paid Anthropic API runs the owner confirms (ADR line A1 to A3 and A5); never product code",
     "optional": "Install only when needed"
   },
   "owner_required": [
@@ -965,6 +965,44 @@
       ],
       "note": "Holds no key: the SDK reads ANTHROPIC_API_KEY from the owner's environment at run time. Each run needs the owner's confirmation of provider, models and budget, and writes one ledger line per call (AGENTS.md, Records and budgets).",
       "uninstall": "delete tools/.venv/api"
+    },
+    {
+      "id": "claude-agent-sdk",
+      "purpose": "Claude Agent SDK, with the Claude Code CLI it bundles, for the owner-confirmed ADR line A5 run on the owner's API credits (Fable building in Look Lab); no product code imports it",
+      "profiles": [
+        "api"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "0.2.187",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/agent-sdk",
+      "requirements": "tools/python/agent-sdk.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "import claude_agent_sdk; print(claude_agent_sdk.__version__)"
+      ],
+      "expect": "^0\\.2\\.187$",
+      "license": "MIT (the SDK); the bundled Claude Code CLI 2.1.330 is used under Anthropic's terms",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "note": "Holds no key: the bundled CLI reads ANTHROPIC_API_KEY from the owner's environment at run time. The owner's Max plan API credits cover the Agent SDK but not Claude Code itself (platform.claude.com, API credits for Max, Ultra and Team plans). Each run needs the owner's confirmation of provider, models and budget, and writes ledger lines (AGENTS.md, Records and budgets).",
+      "uninstall": "delete tools/.venv/agent-sdk"
     },
     {
       "id": "clip-vit-b-16",
