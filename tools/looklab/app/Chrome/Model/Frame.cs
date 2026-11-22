@@ -253,6 +253,27 @@ public sealed class FrameModel
     }
 }
 
+// A main view's status line (ADR-D01.45): the hovered element, its gestures and the set and effective values,
+// under a capped length. The hovered element is kept longest; gestures are dropped from the end first.
+public static class StatusLine
+{
+    public const int Cap = 96;
+    public const string Separator = "  ·  ";
+    public static string Compose(string? hovered, IReadOnlyList<string> gestures, string? values, int cap = Cap)
+    {
+        if (cap < 8) throw J.Error("cap", "a status line needs at least 8 characters");
+        string head = string.IsNullOrWhiteSpace(hovered) ? "nothing hovered" : hovered!;
+        for (int kept = gestures.Count; kept >= 0; kept--)
+        {
+            var parts = new List<string> { head }; parts.AddRange(gestures.Take(kept));
+            if (!string.IsNullOrWhiteSpace(values)) parts.Add(values!);
+            string line = string.Join(Separator, parts);
+            if (line.Length <= cap) return line;
+        }
+        return head.Length <= cap ? head : head.Substring(0, cap - 1) + "…";
+    }
+}
+
 // The shipped workspace presets (ADR-D01.38): Solve, Script, Analyse, Reference.
 public sealed class WorkspaceSet
 {

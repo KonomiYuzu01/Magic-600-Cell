@@ -61,6 +61,12 @@ internal static partial class Program
             Check(!other.Apply(stored.Replace(from, to)) && other.Refusal!.Contains(reason, StringComparison.Ordinal), "accepted: " + to + " / " + other.Refusal);
             Equal(other.Store(), stored, "a refused arrangement was applied in part");
         }
+        // Status line: hovered element first, gestures dropped from the end to fit, never longer than the cap.
+        Equal(StatusLine.Compose("cell 17", new[] { "drag: rotate", "wheel: zoom" }, "gap 0.30"), "cell 17  ·  drag: rotate  ·  wheel: zoom  ·  gap 0.30");
+        Equal(StatusLine.Compose("cell 17", new[] { "drag: rotate", "wheel: zoom" }, "gap 0.30", 40), "cell 17  ·  drag: rotate  ·  gap 0.30");
+        Equal(StatusLine.Compose(null, Array.Empty<string>(), null), "nothing hovered");
+        Equal(StatusLine.Compose(new string('x', 200), new[] { "drag" }, "v").Length, StatusLine.Cap);
+        Refuse(() => StatusLine.Compose("a", Array.Empty<string>(), null, 3), "cap");
         WorkspaceSet shipped = WorkspaceSet.Load(FileAt("data/design/workspaces.json"));
         Sequence(shipped.Order, new[] { "solve", "script", "analyse", "reference" });
         Sequence(shipped.Order.Select(id => shipped.Names[id]), new[] { "Solve", "Script", "Analyse", "Reference" });

@@ -55,6 +55,23 @@ internal static class LabFrame
         }
         app.Greybox.Toggle.Toggled += ShowGreybox;
         frame.Rebuilt += () => { if (app.Greybox.Toggle.ButtonPressed != frame.Model.IsOpen(Greybox)) app.Greybox.Toggle.ButtonPressed = frame.Model.IsOpen(Greybox); };
+        // Status lines and frame marks. Both main views show the committed state; the 4D rotation link is named on both.
+        void Describe()
+        {
+            var p = app.State.Preset.Params;
+            string F(string id) => p.Number(id).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            foreach (ViewFrame view in new[] { frame.Global, frame.Local })
+            {
+                view.ClearMarks();
+                view.AddMark("■", "committed", "state.committed", "This view shows the committed state.");
+                view.AddMark("⇄", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
+            }
+            frame.Local.AddMark("◎", "auto-frame", "text.dim", "Local re-frames on the moving cells.");
+            frame.Global.SetStatus(null, new[] { "drag: rotate 4D" }, $"gap {F("gap")}  shrink {F("stickerShrink")}");
+            frame.Local.SetStatus("moving cells", new[] { "drag: rotate 4D" }, "follows Global");
+        }
+        frame.Rebuilt += Describe;
+        app.State.Changed += (_, _) => { if (GodotObject.IsInstanceValid(frame)) Describe(); };
         app.ViewParts["frame.workspace"] = (() => frame.Workspace, v => { if (frame.Workspaces.Stored.ContainsKey(v)) frame.SelectWorkspace(v); });
         app.ViewParts["frame.zlayout"] = (() => frame.Model.Store(), v => frame.Model.Apply(v));
         frame.Flush();

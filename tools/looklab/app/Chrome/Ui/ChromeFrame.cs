@@ -41,9 +41,11 @@ public sealed partial class ViewFrame : PanelContainer
     public Label Status { get; } = ChromeWidgets.Text("", "DimLabel", true);
     public HBoxContainer Tools { get; } = new();
     public bool Focused { get; private set; }
+    private readonly TokenSet tokens;
 
     public ViewFrame(string name, TokenSet tokens)
     {
+        this.tokens = tokens;
         ViewName = name; Name = name + "Frame"; ThemeTypeVariation = "ViewFrame";
         SizeFlagsHorizontal = SizeFlags.ExpandFill; SizeFlagsVertical = SizeFlags.ExpandFill;
         var column = new VBoxContainer(); column.AddThemeConstantOverride("separation", 0); AddChild(column);
@@ -53,7 +55,7 @@ public sealed partial class ViewFrame : PanelContainer
         var row = new HBoxContainer(); line.AddChild(row);
         var pad = new Control { CustomMinimumSize = new Vector2(tokens.Px("space.2"), 0) }; row.AddChild(pad);
         row.AddChild(ChromeWidgets.Text(name, "AccentLabel")); row.AddChild(Status); row.AddChild(Tools);
-        Marks.Position = new Vector2(tokens.Px("space.3"), tokens.Px("space.3"));
+        Marks.Position = new Vector2(tokens.Px("space.3"), tokens.Px("space.3")); Marks.AddThemeConstantOverride("separation", tokens.Px("space.2"));
     }
 
     public void SetContent(Control content)
@@ -62,6 +64,26 @@ public sealed partial class ViewFrame : PanelContainer
         Slot.AddChild(content); content.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Slot.AddChild(Marks);
     }
+
+    // Hovered element, gestures, then set and effective values; the full line stays on hover of the line itself.
+    public void SetStatus(string? hovered, IReadOnlyList<string> gestures, string? values)
+    {
+        Status.Text = StatusLine.Compose(hovered, gestures, values);
+        Status.TooltipText = StatusLine.Compose(hovered, gestures, values, 4096);
+    }
+
+    // A mark on the view frame: a state role in its colour with its cue as a glyph and a word, never colour alone.
+    public Control AddMark(string glyph, string text, string colourToken, string tooltip)
+    {
+        var chip = new PanelContainer { ThemeTypeVariation = "Chip", TooltipText = tooltip, MouseFilter = MouseFilterEnum.Pass };
+        var row = new HBoxContainer(); chip.AddChild(row);
+        Label mark = ChromeWidgets.Text(glyph, "MicroLabel"); mark.AddThemeColorOverride("font_color", tokens.C(colourToken)); row.AddChild(mark);
+        row.AddChild(ChromeWidgets.Text(text, "MicroLabel"));
+        Marks.AddChild(chip);
+        return chip;
+    }
+
+    public void ClearMarks() { foreach (Node child in Marks.GetChildren()) { Marks.RemoveChild(child); child.QueueFree(); } }
 
     // The visible focus indicator: keys route to the hovered view first (ADR-D01.19).
     public void SetFocused(bool on) { Focused = on; ThemeTypeVariation = on ? "ViewFrameFocus" : "ViewFrame"; }
