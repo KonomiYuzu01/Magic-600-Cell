@@ -69,22 +69,27 @@ str, "puzzle": str, "qpc_frequency": int}`, which the module writes when it star
 `START_TIMEOUT_S` for it).
 
 Rules (DRAFT, as key_to_frame.py). A sample's time runs from its timed post's QPC to the core-confirmed display QPC of
-the frame its endpoint row names. A sample without a confirmed frame gets no time and makes its run invalid; so do a
+the frame its endpoint row names. A sample without a confirmed frame gets no time and counts as one failed sample above
+its cell's bars, and its run stays valid (charter E2's counting of a key; owner decision, 22 November 2026, item 2): a
+cell's p95 or p99 has a number only where it falls on a time within that percentile's bar, and is missed otherwise. A
 buffer that differs from the edit's result (the correctness control, step 7), a failed post, a timeout, a missing
-`ready` row, a lost foreground, a frame submitted before its post and the contradictions key_to_frame.py refuses. An
-invalid run is kept and repeated whole; it is never pooled. Each puzzle needs exactly one valid run, both of one build.
+`ready` row, a lost foreground, a frame submitted before its post and the contradictions key_to_frame.py refuses make
+the run invalid. An invalid run is kept and repeated whole; it is never pooled. Each puzzle needs exactly one valid
+run, both of one build.
 
-Verdict (RTE.53). Per puzzle, series, size and metric: nearest-rank p95 and p99 against RTE.49's bars. `met` only when
-every bar holds in each of the three series at S, M and L on both puzzles, W's bar holds, all 10,800 S/M/L samples
-are timed, and the E2 record (key_to_frame.py over these same run directories, matched by events.jsonl digests) and a
-renderer gate summary of the same build are met. The decision names RTE.53's case: `fail-s-m` (a miss at S or M),
-`fail-gate-or-e2`, `owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or
-`all-bars`. The gate summary is checked for its build and verdicts only; that it comes from these runs' captures is
-the integrator's check (`gate_same_run_checked` false). renderer_gate.py reads acceptance builds only, never the
-product build these runs use, so today no summary passes the build check (C9, 20 Nov 2026). `--gate-reference` records
-such a summary (U4's W3 summary) in `gate_reference` with its builds and verdicts, and among the inputs, without
-counting it as the gate: the reason then reads `gate-summary-other-build` instead of `gate-summary-missing`. Whether an
-acceptance build of the same commit may stand in for the product build is the owner's question.
+Verdict (RTE.53). Per puzzle, series, size and metric: nearest-rank p95 and p99 against RTE.49's bars, each bar below
+100 ms raised to 100 ms (owner decision, 22 November 2026, item 1). `met` only when every bar holds in each of the
+three series at S, M and L on both puzzles, W's bar holds, all 10,800 S/M/L samples are counted (timed or failed), and
+the E2 record (key_to_frame.py over these same run directories, matched by events.jsonl digests) and a renderer gate
+summary of the same build are met. The decision names RTE.53's case: `fail-s-m` (a miss at S or M), `fail-gate-or-e2`,
+`owner-l-or-w` (misses only at L or W go to the owner with the numbers, never an all-bars pass) or `all-bars`. The gate
+summary is checked for its build and verdicts only; that it comes from these runs' captures is the integrator's check
+(`gate_same_run_checked` false). renderer_gate.py reads acceptance builds only, never the product build these runs use,
+so no summary passes the build check (C9, 20 Nov 2026). `--gate-reference` records such a summary in `gate_reference`
+with its digest, builds and verdicts, and among the inputs. It counts as the gate only when the owner accepted that
+summary for runs of that build (`ACCEPTED_GATE_REFERENCES`: U4's W3 summary for the C9 sitting's U8 runs, owner
+decision, 22 November 2026, item 2) and its every scene is met; otherwise the reason reads `gate-summary-other-build`
+instead of `gate-summary-missing`.
 
 Limitations (stated in every record, `limitations`). Top integrator, 19 November 2026: the module set's views read no
 host rows on either puzzle (the host runs them with `NoHost`), so jumble-off and jumble-on time the same rerun path.
@@ -104,7 +109,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import evidence  # noqa: E402
 import key_to_frame  # noqa: E402
 from evidence import RunError, integer, require  # noqa: E402
-from b412_summary import nearest_rank, statistics  # noqa: E402
+from b412_summary import statistics  # noqa: E402
 
 POSTS = 'lx4-posts.jsonl'
 # The shell's live log: its rows while it runs, before it seals events.jsonl at close (EventLog.BodyName).
@@ -127,9 +132,10 @@ METRICS = {'echo': ('inside-body', 'first'), 'syntax': ('syntax-break', 'last'),
            'completion': ('completion-trigger', 'last'), 'diagnostics': ('exported-signature', 'last'),
            'stale': ('inside-body', 'last'), 'rerun': ('inside-body', 'last')}
 W_METRIC = ('dependents', 'exported-signature', 'last')
-# RTE.49: (p95, p99) in ms per metric and size; W's dependent re-check
-BARS = {'echo': {'S': (50, 67), 'M': (50, 67), 'L': (50, 67)},
-        'syntax': {'S': (67, 100), 'M': (67, 100), 'L': (100, 150)},
+# RTE.49: (p95, p99) in ms per metric and size; W's dependent re-check. Every bar below 100 ms is 100 ms (owner
+# decision, 22 November 2026, item 1): typed echo at S, M and L was 50/67 and syntax feedback at S and M was 67/100.
+BARS = {'echo': {'S': (100, 100), 'M': (100, 100), 'L': (100, 100)},
+        'syntax': {'S': (100, 100), 'M': (100, 100), 'L': (100, 150)},
         'completion': {'S': (100, 150), 'M': (100, 150), 'L': (150, 250)},
         'diagnostics': {'S': (150, 250), 'M': (200, 300), 'L': (500, 750)},
         'stale': {'S': (100, 150), 'M': (100, 150), 'L': (100, 150)},
@@ -148,19 +154,28 @@ SCAN_BACK = 0x0E
 # inverse twist; the harness turns forward only.
 TURN_KEYS = {'KeyJ': (0x4A, 0x24), 'KeyK': (0x4B, 0x25), 'KeyL': (0x4C, 0x26)}
 TURN_KEY = 'KeyJ'
-BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1,000/1,500 ms; RTE.53: every bar in '
-                'each of three series at S, M and L on both puzzles, with the renderer gate and charter E2 in the '
-                'same runs'),
+# Renderer gate summaries of another build that the owner accepted as the gate of runs of one build: (the summary's
+# file SHA-256, the runs' build identity) -> the decision. U4's W3 summary of the C9 sitting, for its U8 runs (same
+# commit, same night; owner decision, 22 November 2026, item 2).
+ACCEPTED_GATE_REFERENCES = {
+    ('c7a43ae68505f1c4df5d59400189070346765dad5a119333533e6a2ac968a0ca', 'c9-product-2efda50d54592f20'):
+        'owner decision 2026-11-22 (LX bars), item 2: U4 W3 summary of the C9 sitting'}
+BAR = {'text': ('RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1,000/1,500 ms, every bar below 100 ms '
+                'raised to 100 ms (owner, 22 November 2026, item 1); RTE.53: every bar in each of three series at S, '
+                'M and L on both puzzles, with the renderer gate and charter E2 in the same runs'),
        'rule': ('timed post to the core-confirmed present of the first frame showing the endpoint, matched by frame '
-                'id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 timed S/M/L samples'),
+                'id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 S/M/L samples counted, '
+                'each sample without a confirmed frame one failed sample above its bars (owner, 22 November 2026, '
+                'item 2)'),
        'bars_ms': BARS, 'samples': TOTAL_SML,
-       'source': ['RTE.47', 'RTE.48', 'RTE.49', 'RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06']}
+       'source': ['RTE.47', 'RTE.48', 'RTE.49', 'RTE.51', 'RTE.52', 'RTE.53', 'CT-RTE-12', 'CT-EV1-06',
+                  'owner decision 2026-11-22 (LX bars, items 1 and 2)']}
 LIMITATIONS = ['the module set\'s views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time '
                'the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged',
                'the rerun endpoint\'s frame is the first confirmed frame that drew the run\'s reference publication; '
                'the host does not draw the run\'s value yet']
 DRAFTS = ['metric to edit-kind mapping', 'schedule order and smoke series', 'message protocol Magic600.LX4.*',
-          'lx4 rows in magic600-c9-shell-events-v1', 'unconfirmed sample invalidates its run',
+          'lx4 rows in magic600-c9-shell-events-v1',
           f'post timeout {TIMEOUT_S:g} s, pace {PACE_S:g} s', 'gate summary checked for build and verdict only',
           'fixture set DRAFT until RTE.51 step 1 freezes it']
 
@@ -485,10 +500,11 @@ def analyze_run(events, post_rows, edits, digests):
         if row.get('t') == 'lx4':
             require(integer(row.get('sample')) and isinstance(row.get('endpoint'), str), 'bad-lx4')
             endpoints.setdefault((row['sample'], row['endpoint']), row)
-    times, failures = {}, {}
+    times, failed, failures = {}, {}, {}
     for sample in schedule(edits, posts_head['puzzle']):
         if sample['metric'] == 'turn':
             continue
+        cell = (sample['series'], sample['size'], sample['metric'])
         failure = None
         timed = [row for row in posts.get(sample['id'], []) if row.get('timed')]
         state = done.get(sample['id'], {})
@@ -512,24 +528,27 @@ def analyze_run(events, post_rows, edits, digests):
             failure = 'frame-before-post'
             contradictions.add('frame-before-post')
         elif row['frame_id'] not in presented:
-            failure = 'unconfirmed'
+            # A sample without a confirmed frame: one failed sample of its cell; the run stays valid (owner decision,
+            # 22 November 2026, item 2).
+            failed[cell] = failed.get(cell, 0) + 1
+            continue
         if failure:
             failures[failure] = failures.get(failure, 0) + 1
             continue
         latency = (presented[row['frame_id']]['display_qpc'] - timed[0]['qpc']) * 1000 / frequency
-        times.setdefault((sample['series'], sample['size'], sample['metric']), []).append(latency)
+        times.setdefault(cell, []).append(latency)
     if contradictions:
         reasons.add('contradiction')
     if failures:
-        reasons.add('unconfirmed-or-failed-samples')
+        reasons.add('failed-samples')
     if not head['foreground_throughout']:
         reasons.add('not-foreground')
     if head['correctness'] != 'pass':
         reasons.add('correctness-failed')
     return {'run_id': head['run_id'], 'build_identity': head['build_identity'], 'synthetic': head['synthetic'],
             'puzzle': posts_head['puzzle'], 'failures': dict(sorted(failures.items())),
-            'contradictions': sorted(contradictions), 'status': 'invalid' if reasons else 'valid',
-            'reasons': sorted(reasons), 'times': times}
+            'unconfirmed': sum(failed.values()), 'contradictions': sorted(contradictions),
+            'status': 'invalid' if reasons else 'valid', 'reasons': sorted(reasons), 'times': times, 'failed': failed}
 
 
 def read_run(directory, edits, digests):
@@ -539,18 +558,46 @@ def read_run(directory, edits, digests):
                            evidence.read_jsonl(directory / POSTS), edits, digests)
     except RunError as error:
         return {'run_id': directory.name, 'build_identity': None, 'synthetic': None, 'puzzle': None,
-                'status': 'unreadable', 'reasons': [str(error)], 'times': {}}
+                'status': 'unreadable', 'reasons': [str(error)], 'times': {}, 'failed': {}}
+
+
+def counted_percentile(values, failed, percentile, bar):
+    """Nearest-rank percentile over the timed values and `failed` samples, each failed sample above `bar` (charter E2's
+    counting); None when the rank lies above the bar, where a failed sample could stand, since it has no number."""
+    ordered = sorted(values)
+    count = len(ordered) + failed
+    if not count:
+        return None
+    rank = (percentile * count + 99) // 100
+    if not failed:
+        return ordered[rank - 1]
+    within = sum(value <= bar for value in ordered)
+    return ordered[rank - 1] if rank <= within else None
+
+
+def cell_statistics(values, failed, bars):
+    """A cell's statistics with its failed samples counted: `n` all samples, `timed`, `failed`; `mean` and `max` only
+    without failed samples; p50 and p95 against the p95 bar, p99 against the p99 bar."""
+    if not failed:
+        return {**statistics(values), 'timed': len(values), 'failed': 0}
+    return {'n': len(values) + failed, 'timed': len(values), 'failed': failed, 'mean': None,
+            'p50': counted_percentile(values, failed, 50, bars[0]),
+            'p95': counted_percentile(values, failed, 95, bars[0]),
+            'p99': counted_percentile(values, failed, 99, bars[1]), 'max': None}
 
 
 def series_table(run):
     """Per series, size and metric: statistics and the bar's outcome. Smoke samples (series 0) are listed apart."""
     table = []
-    for (series, size, metric), values in sorted(run['times'].items()):
+    failed = run.get('failed', {})
+    for cell in sorted(set(run['times']) | set(failed)):
+        series, size, metric = cell
         p95_bar, p99_bar = BARS[metric][size]
-        stats = statistics(values)
+        stats = cell_statistics(run['times'].get(cell, []), failed.get(cell, 0), (p95_bar, p99_bar))
         table.append({'puzzle': run['puzzle'], 'series': series, 'size': size, 'metric': metric, 'stats': stats,
                       'bar_ms': [p95_bar, p99_bar],
-                      'met': series == 0 or (nearest_rank(values, 95) <= p95_bar and nearest_rank(values, 99) <= p99_bar)})
+                      'met': series == 0 or (stats['p95'] is not None and stats['p95'] <= p95_bar
+                                             and stats['p99'] is not None and stats['p99'] <= p99_bar)})
     return table
 
 
@@ -561,8 +608,15 @@ def other_record(path):
         return None
 
 
-def judge(runs, e2, gate, valid_events):
-    """(verdict, reasons, decision, table)."""
+def reference_counts(reference, build):
+    """Whether a gate reference counts as the gate of runs of `build`: the owner accepted that summary for that build
+    (ACCEPTED_GATE_REFERENCES) and its every scene is met."""
+    return (isinstance(reference, dict) and (reference.get('sha256'), build) in ACCEPTED_GATE_REFERENCES
+            and bool(reference.get('verdicts')) and all(verdict == 'met' for verdict in reference['verdicts'].values()))
+
+
+def judge(runs, e2, gate, valid_events, reference=None):
+    """(verdict, reasons, decision, table); `reference` from gate_reference, or None."""
     valid = [run for run in runs if run['status'] == 'valid']
     by_puzzle = {puzzle: [run for run in valid if run['puzzle'] == puzzle] for puzzle in PUZZLES}
     if any(len(chosen) != 1 for chosen in by_puzzle.values()):
@@ -583,9 +637,10 @@ def judge(runs, e2, gate, valid_events):
     gate_ok = (isinstance(gate, dict) and gate.get('format') == 'magic600-renderer-gate-v1' and bool(gate.get('scenes'))
                and all(scene.get('verdict') == 'met' and {run.get('build_identity') for run in scene.get('runs', [])}
                        == {build} for scene in gate['scenes']))
+    referenced = gate is None and reference_counts(reference, build)
     if not e2_ok:
         reasons.append('e2-not-met-in-these-runs' if e2 is not None else 'e2-record-missing')
-    if not gate_ok:
+    if not (gate_ok or referenced):
         reasons.append('gate-not-met' if gate is not None else 'gate-summary-missing')
     missed = [row for row in timed if not row['met']]
     if missed:
@@ -596,7 +651,7 @@ def judge(runs, e2, gate, valid_events):
         decision = 'fail-gate-or-e2'
     elif missed:
         decision = 'owner-l-or-w'
-    elif complete and e2_ok and gate_ok:
+    elif complete and e2_ok and (gate_ok or referenced):
         decision = 'all-bars'
     else:
         decision = None
@@ -607,12 +662,13 @@ def judge(runs, e2, gate, valid_events):
     return 'insufficient', reasons, decision, table
 
 
-def gate_reference(summary):
-    """A renderer gate summary of another build as recorded beside the verdict: its builds and verdicts, not a gate."""
+def gate_reference(summary, sha256):
+    """A renderer gate summary of another build as recorded beside the verdict: its digest, builds and verdicts;
+    `counted_as_gate` is set by build() (reference_counts)."""
     if not (isinstance(summary, dict) and summary.get('format') == 'magic600-renderer-gate-v1'
             and isinstance(summary.get('scenes'), list)):
         raise FixtureError('--gate-reference: not a renderer gate summary')
-    return {'counted_as_gate': False,
+    return {'counted_as_gate': False, 'accepted_by': None, 'sha256': sha256,
             'build_identities': sorted({str(run.get('build_identity')) for scene in summary['scenes']
                                         for run in scene.get('runs', [])}),
             'verdicts': {str(scene.get('scene')): scene.get('verdict') for scene in summary['scenes']}}
@@ -625,11 +681,15 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
               for directory, run in zip(directories, runs) if run['status'] == 'valid'}
     e2 = other_record(e2_path) if e2_path else None
     gate = other_record(gate_path) if gate_path else None
-    reference = gate_reference(other_record(reference_path)) if reference_path else None
-    verdict, reasons, decision, table = judge(runs, e2, gate, set(events.values()))
+    reference = (gate_reference(other_record(reference_path), evidence.sha256(reference_path)) if reference_path
+                 else None)
+    verdict, reasons, decision, table = judge(runs, e2, gate, set(events.values()), reference)
+    identities = sorted({run['build_identity'] for run in runs if run['status'] == 'valid'})
     if reference is not None:
         reasons = ['gate-summary-other-build' if reason == 'gate-summary-missing' else reason for reason in reasons]
-    identities = sorted({run['build_identity'] for run in runs if run['status'] == 'valid'})
+        if gate is None and len(identities) == 1 and reference_counts(reference, identities[0]):
+            reference.update(counted_as_gate=True,
+                             accepted_by=ACCEPTED_GATE_REFERENCES[(reference['sha256'], identities[0])])
     inputs = [evidence.file_entry(f'{run["run_id"]}:{name}', Path(directory) / name)
               for directory, run in zip(directories, runs) for name in (key_to_frame.EVENTS, POSTS)
               if (Path(directory) / name).is_file()]
@@ -639,9 +699,12 @@ def build(fixtures, directories, argv, e2_path=None, gate_path=None, synthetic_f
                                       [run.get('synthetic') for run in runs], synthetic_flag)
     for run in runs:
         run.pop('times', None)
+        run.pop('failed', None)
+    sml = [row for row in table if row['series'] > 0 and row['size'] in SIZES]
     result = {'fixtures': digests, 'runs': runs, 'decision': decision, 'series': table,
               'accounting': accounting([schedule(edits, puzzle) for puzzle in PUZZLES]),
-              'timed_sml_samples': sum(row['stats']['n'] for row in table if row['series'] > 0 and row['size'] in SIZES),
+              'timed_sml_samples': sum(row['stats']['timed'] for row in sml),
+              'failed_sml_samples': sum(row['stats']['failed'] for row in sml),
               'gate_same_run_checked': False, 'gate_reference': reference, 'limitations': LIMITATIONS}
     return evidence.make_record(
         'lx4-editor-latency', 'performance', synthetic=synthetic,
@@ -703,7 +766,7 @@ def main(argv=None, system_factory=Windows):
         print(f"{run['run_id']} ({run.get('puzzle')}): {run['status']}"
               f"{' (' + ', '.join(run['reasons']) + ')' if run['reasons'] else ''}")
     print(f"decision: {record['result']['decision']}; timed S/M/L samples {record['result']['timed_sml_samples']} "
-          f'of {TOTAL_SML}')
+          f"and failed {record['result']['failed_sml_samples']} of {TOTAL_SML}")
     evidence.report(record)
     if args.out:
         try:

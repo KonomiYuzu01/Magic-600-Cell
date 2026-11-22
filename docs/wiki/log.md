@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] update | C9's LX-2 and LX-4 analysed again under the 100 ms bars
+The recorded U7 and U8 data was analysed again with the changed C9 tools under the owner's decision of 22 November 2026, with no new run: LX-2 and LX-4 are still not met, only because of samples without a confirmed frame (LX-2's echo in four of seven faults, two syntax cells of LX-4), while every timed latency is within its bar, so under RTE.21 LQ9 reopens and the numbers go to the owner ([results](evidence/c9-sitting-results.md)).
+
 ## [2026-11-22] decision | LX bars at 100 ms and the exits on the existing candidates
 After the C9 sitting the owner took every recommended option with no new measurement: LX-2's and LX-4's latency bars move to 100 ms, LX-4 uses E2's counting and U4's W3 summary, alloc_metered's kernel_cost limit end counts, the renderer gate is not required in the four faults that lose the runtime, alloc_ceiling's 84 echo samples are accepted, and LP3 and LP2 exit on 013900ff and 0260e6b1 with the recorded U7 and U8 data analysed again ([record](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)).
 
