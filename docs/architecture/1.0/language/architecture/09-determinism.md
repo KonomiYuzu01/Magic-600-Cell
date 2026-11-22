@@ -287,6 +287,10 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | Network | no | no | no |
 | Process | no | no | no |
 
+DET.37 is overruled for the 1.0 product by ADR-D01 (owner, [22 November
+2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a versioned-change
+review: a module's capabilities are consented to at install, and the consent is revocable (ADR-D01.32).
+
 - **DET.38 [D]** The table does not answer LQ2's option set. Chapter 07 supplies `Profile`, provenance, boundary
   classes and declassifiers. Under capability separation, the form LQ21 chose (owner, 14 November 2026; RTE.24),
   reading state-derived data and preparing previews cannot coexist except through policy-enabled declassifiers, and
