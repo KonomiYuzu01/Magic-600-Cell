@@ -155,6 +155,78 @@
     "fold.closed": {
       "glyph": "chevrons-right",
       "fallback": ">"
+    },
+    "severity.error": {
+      "glyph": "circle-x",
+      "fallback": "x"
+    },
+    "severity.warning": {
+      "glyph": "octagon-alert",
+      "fallback": "!"
+    },
+    "severity.info": {
+      "glyph": "message-circle",
+      "fallback": "i"
+    },
+    "task.running": {
+      "glyph": "loader",
+      "fallback": "~"
+    },
+    "task.ok": {
+      "glyph": "circle-check",
+      "fallback": "ok"
+    },
+    "task.cancelled": {
+      "glyph": "circle-slash",
+      "fallback": "/"
+    },
+    "task.cancel": {
+      "glyph": "circle-stop",
+      "fallback": "x"
+    },
+    "problems.last": {
+      "glyph": "locate-fixed",
+      "fallback": ">!"
+    },
+    "labels": {
+      "glyph": "tag",
+      "fallback": "Aa"
+    },
+    "workspace.solve": {
+      "glyph": "box",
+      "fallback": "So"
+    },
+    "workspace.script": {
+      "glyph": "code-xml",
+      "fallback": "Sc"
+    },
+    "workspace.analyse": {
+      "glyph": "chart-line",
+      "fallback": "An"
+    },
+    "workspace.reference": {
+      "glyph": "book-open",
+      "fallback": "Re"
+    },
+    "prov.default": {
+      "glyph": "dot",
+      "fallback": "."
+    },
+    "prov.theme": {
+      "glyph": "paintbrush",
+      "fallback": "t"
+    },
+    "prov.session": {
+      "glyph": "circle-dot",
+      "fallback": "*"
+    },
+    "prov.override": {
+      "glyph": "pencil",
+      "fallback": "^"
+    },
+    "prov.script": {
+      "glyph": "braces",
+      "fallback": "="
     }
   }
 }

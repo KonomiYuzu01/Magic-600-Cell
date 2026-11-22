@@ -13,6 +13,8 @@ namespace LookLab.App.Live;
 internal static class LabFrame
 {
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabDemo> Demos = new();
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabInspect> Inspects = new();
+    public static LabInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out LabInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
     public static LabDemo DemoOf(ChromeFrame frame) => Demos.TryGetValue(frame, out LabDemo? demo) ? demo : throw new InvalidOperationException("the frame has no lab session");
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
@@ -115,7 +117,7 @@ internal static class LabFrame
         find.Pressed += palette.Open; help.Pressed += sheet.Open;
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
-        LabDemo demo = null!;
+        LabDemo demo = null!; LabInspect inspect = null!;
         void Execute(string command, string? argument)
         {
             if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
@@ -126,6 +128,7 @@ internal static class LabFrame
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
                 case "transient.close":
                     if (frame.OpenOverlay is { } open) open.Close();
+                    else if (inspect.Feedback.CancelLatest()) { }
                     else if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
                     else if (frame.Model.PairMaximised) frame.Model.SetPairMaximised(false);
                     break;
@@ -146,6 +149,9 @@ internal static class LabFrame
         // The sample session: commit bar under the views, the preview view and the History dock.
         demo = new LabDemo(frame, keymap, Execute); Demos.Add(frame, demo);
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
+        inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
+        app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
+        app.ViewParts["frame.labels"] = (() => frame.Labels ? "on" : "off", v => frame.Labels = v == "on");
         frame.Contexts = () => demo.Preview.Pending != null ? new[] { "preview" } : Array.Empty<string>();
         app.ViewParts["frame.palette"] = (() => commands.Store(), v => { try { commands.Restore(v); } catch (FormatException) { } });
         // The token specimen in the left dock follows every change of the appearance.
@@ -192,7 +198,7 @@ internal static class LabFrame
         app.ViewParts["frame.workspace"] = (() => frame.Workspace, v => { if (frame.Workspaces.Stored.ContainsKey(v)) frame.SelectWorkspace(v); });
         app.ViewParts["frame.zlayout"] = (() => frame.Model.Store(), v => frame.Model.Apply(v));
         frame.Flush();
-        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout" };
+        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout", "frame.labels" };
         demo.TrackLayout(() => kept.Select(k => app.ViewParts[k].Get()).ToArray(), parts => { for (int i = 0; i < kept.Length; i++) app.ViewParts[kept[i]].Set(parts[i]); });
         return frame;
     }

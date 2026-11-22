@@ -102,6 +102,17 @@ public static class ChromeTheme
             theme.SetColor("font_color", name, dim); theme.SetColor("font_pressed_color", name, text); theme.SetColor("font_hover_color", name, text);
         }
 
+        // Inspector fields: a caption that resets on a click, and a value that is dragged or typed.
+        foreach (string name in new[] { "FieldCaption", "FieldFact", "FieldValue" })
+        {
+            theme.SetTypeVariation(name, "Button");
+            StyleBoxFlat rest = name == "FieldValue" ? Box(t, "field.background", null, "radius.control", s1) : new StyleBoxFlat { DrawCenter = false };
+            if (name != "FieldValue") rest.SetContentMarginAll(s1);
+            StyleBoxFlat over = name == "FieldFact" ? rest : Box(t, "control.hover", null, "radius.control", s1);
+            theme.SetStylebox("normal", name, rest); theme.SetStylebox("hover", name, over); theme.SetStylebox("pressed", name, over); theme.SetStylebox("disabled", name, rest);
+            theme.SetColor("font_color", name, name == "FieldCaption" ? dim : text); theme.SetColor("font_hover_color", name, text); theme.SetColor("font_pressed_color", name, text);
+        }
+
         // An entry of a radial menu: a raised box that takes the accent border under the pointer.
         theme.SetTypeVariation("RadialButton", "Button");
         theme.SetStylebox("normal", "RadialButton", Box(t, "popup.background", "panel.border", "radius.control", s2));

@@ -41,6 +41,8 @@ public sealed partial class ViewFrame : PanelContainer
     public Label Status { get; } = ChromeWidgets.Text("", "DimLabel", true);
     public HBoxContainer Tools { get; } = new();
     public bool Focused { get; private set; }
+    // With labels off a mark is its glyph alone; its words stay in the tooltip.
+    public bool ShowLabels { get; set; } = true;
     private readonly TokenSet tokens;
 
     public ViewFrame(string name, TokenSet tokens)
@@ -78,7 +80,7 @@ public sealed partial class ViewFrame : PanelContainer
         var chip = new PanelContainer { ThemeTypeVariation = "Chip", TooltipText = tooltip, MouseFilter = MouseFilterEnum.Pass };
         var row = new HBoxContainer(); chip.AddChild(row);
         Label mark = ChromeWidgets.Text(glyph, "MicroLabel"); ChromeIcons.Apply(mark, glyph, tokens.Px("icon.small")); mark.AddThemeColorOverride("font_color", tokens.C(colourToken)); row.AddChild(mark);
-        row.AddChild(ChromeWidgets.Text(text, "MicroLabel"));
+        if (ShowLabels) row.AddChild(ChromeWidgets.Text(text, "MicroLabel")); else chip.TooltipText = text + ": " + tooltip;
         Marks.AddChild(chip);
         return chip;
     }
@@ -129,7 +131,28 @@ public sealed partial class ChromeFrame : Control
     public event Action<Binding>? KeyCommand;
     // Contexts the host adds in front of the view contexts, such as "preview" while a preview waits.
     public Func<IEnumerable<string>>? Contexts { get; set; }
-    private Control? strip;
+    private Control? strip, topStrip;
+    // Labels are off by default (ADR-D01.44): tabs and marks show icons, and every word stays in a tooltip.
+    private bool labels;
+    public bool Labels { get => labels; set { if (labels != value) { labels = value; dirty = true; LabelsChanged?.Invoke(); } } }
+    public event Action? LabelsChanged;
+    private readonly Dictionary<string, (string Text, string Colour, string Tip)> badges = new(StringComparer.Ordinal);
+    // A count on a dock panel's button, shown while the panel is collapsed too (ADR-D01.27).
+    public void SetBadge(string panel, string? text, string colourToken = "text.dim", string tooltip = "")
+    {
+        if (text == null ? !badges.Remove(panel) : badges.TryGetValue(panel, out var old) && old == (text, colourToken, tooltip)) return;
+        if (text != null) badges[panel] = (text, colourToken, tooltip);
+        dirty = true;
+    }
+    public string? Badge(string panel) => badges.TryGetValue(panel, out var badge) ? badge.Text : null;
+    private Label BadgeLabel(string panel)
+    {
+        (string text, string colour, string tip) = badges[panel];
+        Label label = ChromeWidgets.Text(text, "MicroLabel"); label.AddThemeColorOverride("font_color", Tokens.C(colour)); label.TooltipText = tip; label.SetMeta("badge", panel);
+        return label;
+    }
+    // One thin strip at the top edge of the views: the inspector's first tier (ADR-D01.22).
+    public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
     // Replaces the content of a dock panel or of a pane, keeping its place.
@@ -253,7 +276,7 @@ public sealed partial class ChromeFrame : Control
         dirty = false; HoveredView = null;
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
-        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip);
+        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -268,6 +291,7 @@ public sealed partial class ChromeFrame : Control
         Notice.AddThemeColorOverride("font_color", Tokens.C(Model.Refusal != null || messageWarns ? "severity.warning" : "text.dim"));
         Notice.Visible = Model.Refusal != null || message != null; if (Model.Refusal != null) noticeLeft = 6;
         centre.AddChild(Notice);
+        if (topStrip != null && !focus) centre.AddChild(topStrip);
         Global = View("Global", globalContent); Local = View("Local", localContent);
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
         if (strip != null) centre.AddChild(strip);
@@ -286,6 +310,7 @@ public sealed partial class ChromeFrame : Control
         {
             bool modified = id == Workspace && WorkspaceModified;
             Button tab = ChromeWidgets.Tool(Workspaces.Names[id] + (modified ? " •" : ""), Hint("Workspace: " + Workspaces.Names[id] + (modified ? " (rearranged)" : ""), "workspace.set", "layout:" + id), true, "TabButton");
+            if (!Labels && ChromeIcons.Glyph("workspace." + id) != null) ChromeIcons.Apply(tab, "workspace." + id, Tokens.Px("icon.medium"));
             tab.SetPressedNoSignal(id == Workspace); tab.SetMeta("workspace", id);
             tab.Pressed += () => { if (!SelectWorkspace(id)) dirty = true; };
             row.AddChild(tab);
@@ -296,6 +321,8 @@ public sealed partial class ChromeFrame : Control
             reset.Pressed += () => SelectWorkspace(Workspace); row.AddChild(reset);
         }
         row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        Button words = ChromeWidgets.Tool("", Labels ? "Labels are on: click for icons alone" : "Labels are off: click to show them", true); words.Name = "LabelsToggle";
+        ChromeIcons.Apply(words, "labels", Tokens.Px("icon.small")); words.SetPressedNoSignal(Labels); words.Pressed += () => Labels = !Labels; row.AddChild(words);
         row.AddChild(BarTools); row.AddChild(new VSeparator()); row.AddChild(Health);
         row.AddChild(new Control { CustomMinimumSize = new Vector2(Tokens.Px("space.3"), 0) });
         return bar;
@@ -322,6 +349,7 @@ public sealed partial class ChromeFrame : Control
             button.SetPressedNoSignal(state.Open == panel.Id); button.SetMeta("dock_panel", panel.Id);
             button.Pressed += () => Model.ToggleDock(side, panel.Id);
             buttons.AddChild(button);
+            if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Ignore; badge.Position = new Vector2(Tokens.Px("rail.width") * .55f, 0); button.AddChild(badge); }
         }
         Control? content = null;
         if (dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
@@ -345,7 +373,9 @@ public sealed partial class ChromeFrame : Control
             Button tab = ChromeWidgets.Tool(panel.Title, panel.Title, true, "TabButton");
             tab.SetPressedNoSignal(state.Open == panel.Id); tab.SetMeta("dock_panel", panel.Id);
             tab.Pressed += () => Model.ToggleDock(DockSide.Bottom, panel.Id);
+            if (!Labels) ChromeIcons.Apply(tab, panel.Glyph, Tokens.Px("icon.small"));
             tabs.AddChild(tab);
+            if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Pass; tabs.AddChild(badge); }
         }
         if (dockPanels.FirstOrDefault(p => p.Side == DockSide.Bottom && p.Id == state.Open) is { } open)
         {
@@ -357,7 +387,7 @@ public sealed partial class ChromeFrame : Control
 
     private ViewFrame View(string name, Control? content)
     {
-        var view = new ViewFrame(name, Tokens);
+        var view = new ViewFrame(name, Tokens) { ShowLabels = Labels };
         if (content != null) view.SetContent(content); else view.Slot.AddChild(ChromeWidgets.Empty(name, "No view is attached."));
         return view;
     }

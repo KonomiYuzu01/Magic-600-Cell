@@ -31,7 +31,7 @@
         "docks": {
           "left": "scripts",
           "right": null,
-          "bottom": "console"
+          "bottom": null
         },
         "pair": {
           "arrangement": "stacked",

@@ -44,6 +44,8 @@ internal sealed class LabDemo
     public const string PreviewPane = "preview";
     private readonly ChromeFrame frame;
     private int nextSample;
+    // The sample that is staged, or -1.
+    public int Current { get; private set; } = -1;
     private Func<IReadOnlyList<string>>? layoutState;
     private Action<IReadOnlyList<string>>? layoutApply;
     private bool restoring;
@@ -102,7 +104,8 @@ internal sealed class LabDemo
 
     public void Stage(int? sample = null)
     {
-        Sample s = Samples[(sample ?? nextSample++) % Samples.Length];
+        Current = (sample ?? nextSample++) % Samples.Length;
+        Sample s = Samples[Current];
         Preview.Show(s.Statement, s.Source, s.Moves, s.Status, s.Reason, Orbits.Select((o, i) => new OrbitEffect(o, s.Moved[i], Totals[i])).ToArray(), s.Protection, Clock());
         if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right);
     }

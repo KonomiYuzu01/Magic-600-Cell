@@ -95,6 +95,43 @@ internal static partial class Program
         Refuse(() => again.Restore("use|theme.tune||many|1"), "palette");
     }
 
+    private static void A5InspectorFieldsAndFeedbackIndex()
+    {
+        var model = new InspectorModel(); int edits = 0; model.Edited += _ => edits++;
+        model.Select(57, "cells"); model.AddFact("selection.cells", "Cells", "57");
+        model.AddNumber(InspectorModel.View, "view.gap", "Cell gap", 0, .3, .01, .24, .3);
+        for (int i = 0; i < 8; i++) model.AddNumber(InspectorModel.Preview, "preview.p" + i, "p" + i, 0, 9, 1, 1, 1, true);
+        Equal(model.Essentials.Count(), InspectorModel.EssentialCap);
+        Refuse(() => model.AddNumber(InspectorModel.Selection, "selection.x", "x", 0, 1, .1, 0, 0), "read-only");
+        Refuse(() => model.AddNumber(InspectorModel.View, "view.gap", "again", 0, 1, .1, 0, 0), "duplicate");
+        Refuse(() => model.AddNumber(InspectorModel.View, "view.bad", "bad", 0, 1, .1, 2, 0), "range");
+        Check(model.Set("view.gap", .123) && Math.Abs(model["view.gap"].Value - .12) < 1e-12 && model["view.gap"].Provenance == Provenance.Session, "a set value is not snapped to the step");
+        Check(model.Nudge("view.gap", 100) && model["view.gap"].Value == .3 && !model.Nudge("view.gap", 1), "the ladder left the range");
+        Check(model.Nudge("view.gap", -1, 10) && Math.Abs(model["view.gap"].Value - .2) < 1e-12, "the coarse ladder step is not ten steps");
+        Check(model.Enter("view.gap", "0.9")!.Contains("outside") && model.Enter("view.gap", "abc") != null && model.Enter("view.gap", "=") != null && model.Enter("selection.cells", "3") == "puzzle state is read-only", "a bad entry was accepted");
+        Check(model.Enter("view.gap", "= turn.angle / 20") == null && model["view.gap"].Binding == "turn.angle / 20" && model["view.gap"].Provenance == Provenance.Script &&
+            model["view.gap"].Display == "= turn.angle / 20" && Math.Abs(model["view.gap"].Value - .2) < 1e-12, "a binding is not kept as its expression");
+        Equal(model.Store(), "view.gap=turn.angle / 20");
+        Check(model.Reset("view.gap") && model["view.gap"].Binding == null && model["view.gap"].Value == .24 && model["view.gap"].Provenance == Provenance.Default && !model.Reset("view.gap"), "reset did not return the default");
+        model.Restore("view.gap=a + b\nselection.cells=1\nmissing=2"); Equal(model["view.gap"].Binding, "a + b");
+        int before = edits; model.Sync("view.gap", .1, Provenance.Theme); Check(edits == before && model["view.gap"].Provenance == Provenance.Theme, "a synced value counted as an edit");
+        model.Clear(InspectorModel.Preview); Equal(model.Fields.Count, 2);
+
+        var feedback = new FeedbackModel(); var ended = new System.Collections.Generic.List<TaskState>(); feedback.Ended += t => ended.Add(t.State);
+        for (int i = 0; i < 3; i++) feedback.Report(Severity.Error, "unknown word", "a.6cs", 12);
+        feedback.Report(Severity.Warning, "protected orbit", "a.6cs", 40, "cell 117"); Problem last = feedback.Report(Severity.Error, "expected }", "b.6cs", 7);
+        Check(feedback.Problems.Count == 3 && feedback.Count(Severity.Error) == 4 && feedback.Problems.Single(p => p.Line == 12).Count == 3 && feedback.LastError == last, "repeats are not merged or the last error is wrong");
+        feedback.Filter(Severity.Error, false); Equal(feedback.Shown.Count(), 1); feedback.Filter(Severity.Error, true);
+        feedback.ClearSource("a.6cs"); Equal(feedback.Problems.Count, 1);
+        for (int i = 0; i < FeedbackModel.ConsoleKept + 5; i++) feedback.Log("line " + i);
+        Check(feedback.Console.Count == FeedbackModel.ConsoleKept && feedback.Console[0] == "line 5", "the console keeps more than its cap");
+        TaskItem reads = feedback.Start("census", "tasks", true), free = feedback.Start("render", "tasks", false), third = feedback.Start("third", "tasks", false);
+        Check(feedback.Progress(reads.Id, .4) && feedback.Running == 3 && feedback.StateChanged() == 1 && feedback.Running == 2 && feedback.Tasks[0].State == TaskState.Cancelled && feedback.Tasks[0].Progress == .4,
+            "a commit did not cancel the task that reads the state");
+        Check(feedback.CancelLatest() && feedback.Tasks[2].State == TaskState.Cancelled && feedback.Finish(free.Id, true) && feedback.Tasks[1].Progress == 1 && !feedback.Cancel(free.Id) && !feedback.CancelLatest(), "tasks did not end once");
+        Sequence(ended, new[] { TaskState.Cancelled, TaskState.Cancelled, TaskState.Ok });
+    }
+
     private static void A5SessionPreviewAndTwoHistories()
     {
         var effects = new[] { new OrbitEffect("a", 2, 10) }; string[] three = { "m1", "m2", "m3" };

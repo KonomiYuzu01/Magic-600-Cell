@@ -946,9 +946,20 @@ inside their parameter ranges, `margin` in radians, `fill` and `spread`). It
 draws only the moving cells and the cells within the margin around them,
 centred, at a fixed size and moved apart by `spread` so the inner cells show; the linked rotation turns them in 3D. Without the file Local is the
 re-framed copy of Global. The lab saves a picture of its window, `frame.png`,
-beside `view.json` four and twelve seconds after it opens. The theme follows the Windows
+beside `view.json` four and twelve seconds after it opens. The window opens at
+most of the screen.
+
+The frame carries the two inspector tiers over one field model (a strip at
+the top edge of the views and the docked inspector, collapsed by default) and
+the bottom index (Problems, Console and Tasks, collapsed, with count badges).
+The inspector's View fields are the lab's own parameters; the selection, the
+preview parameters, the problems and the task are sample data and are marked
+so. A typed `=` expression is kept as a live binding (view part
+`frame.bindings`) and is not evaluated, because the lab has no runtime.
+Labels are off by default; the tag button in the top bar turns them on (view
+part `frame.labels`). The theme follows the Windows
 light or dark setting until a choice is kept.
 
 `python tools/looklab/check.py --godot` adds one result line,
-`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=8 checks=7`, and
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=10 checks=7`, and
 three faults that must fail their own check.

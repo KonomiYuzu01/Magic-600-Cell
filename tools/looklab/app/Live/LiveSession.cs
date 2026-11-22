@@ -56,6 +56,16 @@ internal sealed partial class LiveSession : Control
         }
     }
 
+    // The window opens at most of the screen, so the frame has room at the screen's own scale.
+    public override void _Ready()
+    {
+        if (DisplayServer.GetName() == "headless") return;
+        Window window = GetWindow(); Rect2I screen = DisplayServer.ScreenGetUsableRect(window.CurrentScreen);
+        if (window.Mode != Window.ModeEnum.Windowed || window.Size.X >= screen.Size.X * .7) return;
+        var size = new Vector2I((int)(screen.Size.X * .86), (int)(screen.Size.Y * .86));
+        window.Size = size; window.Position = screen.Position + (screen.Size - size) / 2;
+    }
+
     public override void _Process(double delta)
     {
         sincePoll += delta; sinceSave += delta; open += delta;
@@ -180,7 +190,7 @@ internal static class LiveChecks
     // and a drop that would hide a main view refused with its reason on screen.
     private static void Framed(LiveSession session, string fault)
     {
-        ChromeFrame frame = session.Frame; LabApp app = session.App;
+        ChromeFrame frame = session.Frame; LabApp app = session.App; LabDemo demo = LabFrame.DemoOf(frame);
         Require(frame.Global.Slot.IsAncestorOf(app.GlobalStage) && frame.Local.Slot.IsAncestorOf(app.Linked.LocalStage!) && app.Linked.LocalStage!.Visible,
             fault, "a main view is missing from the locked pair");
         if (frame.Model.Docks[DockSide.Right].Open != LabFrame.Tune) { frame.Model.ShowDock(DockSide.Right, LabFrame.Tune); frame.Flush(); }
@@ -191,6 +201,39 @@ internal static class LiveChecks
             app.Linked.Local.Material.GetShaderParameter("projection_kind").AsInt32() == (int)ProjectionKind.Orthographic &&
             app.View.Material.GetShaderParameter("focus_cos").AsDouble() < -1.5 && app.State.Preset.Params.Choice("projection") != "",
             fault, "Local does not draw its own shape of the moving cells");
+        // The two inspector tiers read one model; a View field acts on the lab, stays in range and resets.
+        LabInspect inspect = LabFrame.InspectOf(frame);
+        double gapWas = app.State.Preset.Params.Number("gap"), gapDefault = inspect.Inspector["view.gap"].Default;
+        frame.Model.ShowDock(DockSide.Right, "inspector"); frame.Flush();
+        ValueField gapField = inspect.Panel.Fields.Single(f => f.Field.Id == "view.gap");
+        gapField.DragBy(-ValueField.DragPixels * 2);
+        bool dragged = Math.Abs(app.State.Preset.Params.Number("gap") - (gapWas - .02)) < 1e-9 && gapField.Value.Text == (gapWas - .02).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        bool refusedValue = gapField.Type("0.9") != null && frame.Notice.Text.Contains("outside", StringComparison.Ordinal) && Math.Abs(app.State.Preset.Params.Number("gap") - (gapWas - .02)) < 1e-9;
+        bool bound = gapField.Type("= 0.1 + 0.1") == null && inspect.Inspector["view.gap"].Binding == "0.1 + 0.1" && app.CaptureView().Ui["frame.bindings"] == "view.gap=0.1 + 0.1";
+        gapField.Caption.EmitSignal(BaseButton.SignalName.Pressed);
+        bool reset = app.State.Preset.Params.Number("gap") == gapDefault && inspect.Inspector["view.gap"].Provenance == Provenance.Default;
+        inspect.Inspector.Set("view.gap", gapWas);
+        Require(frame.IsAncestorOf(inspect.Strip) && frame.IsAncestorOf(inspect.Panel) && inspect.Strip.Selection.Text.EndsWith("cells", StringComparison.Ordinal) &&
+            dragged && refusedValue && bound && reset && app.State.Preset.Params.Number("gap") == gapWas, fault, "an inspector field did not drag, refuse, bind and reset");
+        demo.Execute("operation.preview", "sample:0"); frame.Flush();
+        int previewId = demo.Preview.Pending!.Id;
+        Require(inspect.Strip.Fields.Count == 4 && inspect.Inspector.Nudge("preview.repeat", 1) && demo.Preview.Pending!.Id == previewId + 1 && demo.Preview.Replaced, fault, "a preview parameter did not prepare a new preview");
+        demo.Execute("operation.preview.cancel", null);
+        Require(inspect.Strip.Fields.Count == 0 && !inspect.Inspector.Fields.Any(f => f.Section == InspectorModel.Preview), fault, "preview parameters stayed after the preview was discarded");
+        // The bottom index: merged repeats, count badges on the collapsed tabs, Find Last Error, Esc cancels a task.
+        inspect.StartTask(); frame.Flush();
+        Require(inspect.Feedback.Problems.Count == 4 && inspect.Feedback.Count(Severity.Error) == 4 && frame.Badge("problems") == "4" && frame.Badge("tasks") == "1" &&
+            frame.FindChildren("*", "Label", true, false).Any(l => l.HasMeta("badge")) && inspect.Problems.FindLastError() && inspect.Problems.Found == inspect.Feedback.LastError!.Id,
+            fault, "the bottom index does not count, badge and find its problems");
+        inspect.Tick(1);
+        Require(inspect.Feedback.Tasks[^1].Progress > 0 && frame.Press("Escape") && inspect.Feedback.Running == 0 && frame.Badge("tasks") == null &&
+            inspect.Feedback.Tasks[^1].State == TaskState.Cancelled, fault, "Esc did not cancel the running task");
+        // Labels are off by default: workspace tabs are icons and marks are glyphs; the toggle brings the words back.
+        bool iconsOnly = !frame.Labels && frame.Global.Marks.GetChild(0).GetChild(0).GetChildCount() == 1;
+        frame.Labels = true; frame.Flush();
+        Require(iconsOnly && frame.Global.Marks.GetChild(0).GetChild(0).GetChildCount() == 2 && app.CaptureView().Ui["frame.labels"] == "on", fault, "the labels toggle did not show and hide the words");
+        frame.Labels = false; frame.Flush();
+        frame.Model.ShowDock(DockSide.Right, LabFrame.Tune); frame.Flush();
         Require(frame.Model.IsOpen(LabFrame.Greybox) && frame.IsAncestorOf(app.Greybox.Canvas), fault, "the open greybox is not a pane of the frame");
         Require(frame.FindChild("TopBar", true, false) != null && frame.Workspaces.Order.SequenceEqual(new[] { "solve", "script", "analyse", "reference" }), fault, "top bar or workspaces missing");
         // The theme button: the other family, the scene behind the puzzle follows, and the choice is kept.
@@ -229,9 +272,9 @@ internal static class LiveChecks
         int swatches = frame.Tokens.Theme.Ramps.Count * ThemeFamily.Steps + frame.Tokens.System.Roles.Count;
         if (ChromeFonts.Roots.Any(r => File.Exists(Path.Combine(r, frame.Tokens.System.Type["ui"].Files["400"][0]))))
             Require(specimen.Faces["ui"] == "IBM Plex Sans" && frame.Theme.DefaultFont is FontVariation { BaseFont: FontFile }, fault, "the installed UI face is not in use");
-        // Icons: every rail button names an icon of the set; with the icon font installed it shows the glyph.
+        // Icons: every dock button, the bottom tabs included, names an icon of the set; with the icon font installed it shows the glyph.
         Button[] rail = frame.FindChildren("*", "Button", true, false).Cast<Button>().Where(b => b.HasMeta("dock_panel") && b.HasMeta("icon")).ToArray();
-        Require(rail.Length == 6 && rail.All(b => ChromeIcons.Set!.Icons.ContainsKey(b.GetMeta("icon").AsString()) &&
+        Require(rail.Length == 9 && rail.All(b => ChromeIcons.Set!.Icons.ContainsKey(b.GetMeta("icon").AsString()) &&
             b.Text == (ChromeIcons.Glyph(b.GetMeta("icon").AsString()) ?? ChromeIcons.Fallback(b.GetMeta("icon").AsString()))), fault, "a rail button has no icon");
         GD.Print("LOOKLAB_A5_ICONS installed=" + ChromeIcons.Installed + " set=" + ChromeIcons.Set!.Icons.Count);
         GD.Print("LOOKLAB_A5_SCALE system=" + panel.Look.SystemScale.ToString(System.Globalization.CultureInfo.InvariantCulture) + " body=" + frame.Theme.DefaultFontSize);
@@ -277,16 +320,16 @@ internal static class LiveChecks
         Require(frame.Press("W") && frame.Press("Escape") && !radial.IsOpen && frame.Workspace == "script" && frame.Press("1") && frame.Workspace == "solve", fault, "Esc did not close the radial menu");
         // Preview and commit: one pending preview in its own view, the pair keeps the committed state, a
         // replaced preview cannot be committed by the same key-down, and a refused one never commits.
-        LabDemo demo = LabFrame.DemoOf(frame); double now = 100; demo.Clock = () => now;
+         double now = 100; demo.Clock = () => now;
         var commitBar = (CommitBar)frame.FindChild("CommitBar", true, false);
         int marks = frame.Global.Marks.GetChildCount(), entries = demo.Moves.Entries.Count;
         Require(commitBar.Commit.Disabled && frame.Press("Ctrl+Enter") && demo.Moves.Entries.Count == entries && frame.IsAncestorOf(demo.History), fault, "a commit ran without a preview");
         ((Button)commitBar.Tools.FindChild("StageSample", true, false)).EmitSignal(BaseButton.SignalName.Pressed); frame.Flush();
-        Require(demo.Preview.Pending is { Id: 1, Status: PreviewStatus.Ready } && frame.Model.IsOpen(LabDemo.PreviewPane) && frame.IsAncestorOf(demo.PreviewView) &&
+        Require(demo.Preview.Pending is { Id: 3, Status: PreviewStatus.Ready } && frame.Model.IsOpen(LabDemo.PreviewPane) && frame.IsAncestorOf(demo.PreviewView) &&
             frame.Global.Marks.GetChildCount() == marks + 1 && frame.Global.Slot.IsAncestorOf(app.GlobalStage) && !commitBar.Commit.Disabled, fault, "the preview is not in its own view with the pair marked pending");
         demo.Execute("operation.preview", "sample:1");
         if (fault == "a5-settle-ignored") now += 1;
-        Require(demo.Preview.Replaced && demo.Preview.Pending!.Id == 2 && frame.Press("Ctrl+Enter") && demo.Preview.Pending != null && demo.Moves.Entries.Count == entries, fault, "a preview was committed as it replaced another");
+        Require(demo.Preview.Replaced && demo.Preview.Pending!.Id == 4 && frame.Press("Ctrl+Enter") && demo.Preview.Pending != null && demo.Moves.Entries.Count == entries, fault, "a preview was committed as it replaced another");
         now += 1; int moves = demo.Preview.Pending!.Moves.Count;
         Require(frame.Press("Left") && demo.Preview.Scrub == moves - 1 && frame.Press("Ctrl+Enter") && demo.Preview.Pending == null &&
             demo.Moves.Entries.Count == entries + 1 && demo.Moves.Entries[^1].Moves.Count == moves - 1 && demo.Moves.Entries[^1].Origin == "script", fault, "the prefix up to the scrub was not committed as one entry");
