@@ -132,11 +132,11 @@
         ]
       },
       "ramp": {
-        "micro": 10,
-        "small": 11,
-        "body": 12,
-        "title": 13,
-        "heading": 15
+        "micro": 11,
+        "small": 12,
+        "body": 13,
+        "title": 14,
+        "heading": 17
       },
       "tabular": true
     },
@@ -154,10 +154,10 @@
         ]
       },
       "ramp": {
-        "small": 12,
-        "body": 13,
-        "title": 16,
-        "heading": 20
+        "small": 13,
+        "body": 14,
+        "title": 17,
+        "heading": 21
       },
       "tabular": false
     },
@@ -183,9 +183,9 @@
         ]
       },
       "ramp": {
-        "small": 11,
-        "body": 12,
-        "large": 14
+        "small": 12,
+        "body": 13,
+        "large": 15
       },
       "tabular": true
     }

@@ -108,6 +108,11 @@ internal static partial class Program
             Equal(high.Colour("state.preview"), plain.Colour("state.preview"));
         }
         look.ResetKnobs(); Check(!look.Tuned, "knobs not reset");
+        // The screen's scale multiplies the user's and is not stored.
+        string beforeScale = look.Store(); double plainHeight = look.Resolve().Size("control.height") / look.DisplayScale;
+        look.SetSystemScale(1.5); Equal(look.Store(), beforeScale); Equal(look.EffectiveScale, 1.25 * 1.5);
+        Check(look.Resolve().Size("control.height") > plainHeight * 1.7 && look.Resolve().TypeSize("ui", "body") == Math.Round(Design.Type["ui"].Ramp["body"] * 1.875), "the screen scale did not scale sizes and type");
+        look.SetSystemScale(4); Equal(look.EffectiveScale, 4.0); Refuse(() => look.SetSystemScale(9), "systemScale"); look.SetSystemScale(1);
         Refuse(() => look.SetTheme("neon"), "neon"); Refuse(() => look.SetDensity("roomy"), "roomy"); Refuse(() => look.SetDisplayScale(9), "displayScale");
         Refuse(() => look.SetKnob("tone", 5), "tone"); Refuse(() => look.SetSceneLook("resting"), "resting");
         string stored = again.Store();

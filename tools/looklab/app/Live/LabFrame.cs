@@ -54,6 +54,9 @@ internal static class LabFrame
         ThemeFamily[] themes = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)
             .Select(p => ThemeFamily.Load(p, design)).ToArray();
         var look = new Appearance(design, themes);
+        // The chrome follows the scale of the screen it opens on (96 dpi is 1), in quarter steps.
+        double screen = Math.Clamp(Math.Round(DisplayServer.ScreenGetDpi() / 96.0 * 4) / 4, 1, 3);
+        look.SetSystemScale(screen);
         var frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json")));
         app.EnterFrame();
         foreach (var panel in Panels) frame.AddDockPanel(panel.Side, panel.Id, panel.Title, panel.Glyph, ChromeWidgets.Empty(panel.Title, panel.Hint));
@@ -91,7 +94,7 @@ internal static class LabFrame
         frame.Rebuilt += ShowTokens; frame.Recoloured += ShowTokens;
         app.ViewParts["frame.appearance"] = (() => look.Store(), v =>
         {
-            try { look = Appearance.Parse(v, design, themes); appearance.Show(look); ApplyLook(true, false); }
+            try { Appearance kept = Appearance.Parse(v, design, themes); kept.SetSystemScale(screen); look = kept; appearance.Show(look); ApplyLook(true, false); }
             catch (FormatException) { }
         });
         frame.Health.Text = "Look Lab · full detail · 259,800 slots";

@@ -215,6 +215,7 @@ internal static class LiveChecks
         Require(rail.Length == 6 && rail.All(b => ChromeIcons.Set!.Icons.ContainsKey(b.GetMeta("icon").AsString()) &&
             b.Text == (ChromeIcons.Glyph(b.GetMeta("icon").AsString()) ?? ChromeIcons.Fallback(b.GetMeta("icon").AsString()))), fault, "a rail button has no icon");
         GD.Print("LOOKLAB_A5_ICONS installed=" + ChromeIcons.Installed + " set=" + ChromeIcons.Set!.Icons.Count);
+        GD.Print("LOOKLAB_A5_SCALE system=" + panel.Look.SystemScale.ToString(System.Globalization.CultureInfo.InvariantCulture) + " body=" + frame.Theme.DefaultFontSize);
         GD.Print("LOOKLAB_A5_FACES " + string.Join(", ", specimen.Faces.Select(f => f.Key + "=" + f.Value)));
         Require(specimen.Swatches == swatches && specimen.Faces.Count == 3 && specimen.Faces.All(f => frame.Tokens.System.Type[f.Key].Faces.Contains(f.Value)),
             fault, "the token specimen does not show every ramp step, role and type role");

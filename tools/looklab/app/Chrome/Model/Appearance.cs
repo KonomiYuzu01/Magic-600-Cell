@@ -14,6 +14,11 @@ public sealed class Appearance
     public string Density { get; private set; }
     public double DisplayScale { get; private set; } = 1;
     public bool HighContrast { get; set; }
+    // The scale of the display the window is on, set by the host and not stored: the user's display scale
+    // multiplies it, so the same stored appearance reads the same on a dense and on a plain screen.
+    public double SystemScale { get; private set; } = 1;
+    public double EffectiveScale => Math.Clamp(DisplayScale * SystemScale, .5, 4);
+    public void SetSystemScale(double scale) { if (!(scale >= .5 && scale <= 4)) throw J.Error("systemScale", "outside 0.5..4"); SystemScale = scale; }
     public string SceneLook { get; private set; } = ThemeFamily.SceneLooks[0];
     private readonly DesignSystem system;
     private readonly IReadOnlyList<ThemeFamily> themes;
@@ -47,7 +52,7 @@ public sealed class Appearance
 
     public void ResetKnobs() => knobs.Remove(Theme);
 
-    public TokenSet Resolve() => new(system, Family, Density, DisplayScale,
+    public TokenSet Resolve() => new(system, Family, Density, EffectiveScale,
         ThemeFamily.KnobIds.ToDictionary(id => id, Knob), null, HighContrast);
 
     private static string N(double v) => v.ToString("R", CultureInfo.InvariantCulture);
