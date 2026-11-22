@@ -247,6 +247,45 @@ fn both_hosts_run_the_tool_under_the_budget_its_command_declared() {
     assert_eq!(summaries[0], summaries[1], "the meter summaries differ between the hosts");
 }
 
+/// A tool's run keeps no per-operation rows on either host. The meter does not charge its rows to the memory limit,
+/// so a run that kept them would grow with its steps: the job (`JobOptions::record`) and the in-process run
+/// (`Options::record`) are quiet. A quiet run has the counters, cleanup and stop of a run that keeps its rows: for a
+/// word that completes and for the same word under a budget of one step, each host's meter summary is that of the same
+/// job run in the child with its rows kept, less the rows.
+#[test]
+fn both_hosts_keep_no_rows_and_the_counters_and_stops_of_a_run_that_keeps_them() {
+    let tool = Tool::full_600_cell().unwrap();
+    assert!(!job(&tool, SOURCE, &[1, -2]).options.record, "the process host's job keeps no rows");
+    let mut host = process_host();
+    let mut runtime = Runtime::new(Config::new(process_support::runtime()));
+    for (case, budget) in [("completed", Budget::CEILING), ("cut off", Budget { steps: 1, ..Budget::CEILING })] {
+        let (mut layer, mut shell) = session("rows");
+        shell.budget = Some(budget);
+        let command = invoke_tool(&mut shell, &mut layer, &tool, &[1, -2]).expect("the tool's row");
+        let mut kept = job(&tool, SOURCE, &[1, -2]);
+        kept.options.limits = command.limits();
+        kept.options.record = true;
+        let run = command.run();
+        let context = tool.context(&run, &command.base());
+        let mut bridge = Bridge::new(&mut layer, &run).with_budget(command.job.budget);
+        let mut store = Store::default();
+        let mut boundary = Boundary::new(&mut bridge, &mut store, context);
+        let Ended::Ran(recorded) = runtime.run(&kept, &mut boundary, None).expect("the child answers") else {
+            panic!("{case}: the job with its rows kept runs");
+        };
+        let mut expected = recorded.summary;
+        assert!(!expected.rows.is_empty(), "{case}: the run that keeps its rows has rows");
+        expected.rows.clear();
+        for on_process in [false, true] {
+            let (mut layer, mut shell) = session("rows");
+            shell.budget = Some(budget);
+            let (ran, _, _) = run_on(on_process.then_some(&mut host), &tool, &mut layer, &mut shell, &[1, -2]);
+            let ran = ran.unwrap_or_else(|stopped| panic!("{case} (process host: {on_process}): {:?}", stopped.cause));
+            assert_eq!(ran.run.summary, expected, "{case} (process host: {on_process})");
+        }
+    }
+}
+
 /// KN7.13 (part, the tool's host): a runtime that cannot be started leaves no run, no invocation and no change, and
 /// the caller gets the fault, not a result.
 #[test]
