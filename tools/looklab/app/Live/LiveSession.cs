@@ -210,6 +210,11 @@ internal static class LiveChecks
         int swatches = frame.Tokens.Theme.Ramps.Count * ThemeFamily.Steps + frame.Tokens.System.Roles.Count;
         if (ChromeFonts.Roots.Any(r => File.Exists(Path.Combine(r, frame.Tokens.System.Type["ui"].Files["400"][0]))))
             Require(specimen.Faces["ui"] == "IBM Plex Sans" && frame.Theme.DefaultFont is FontVariation { BaseFont: FontFile }, fault, "the installed UI face is not in use");
+        // Icons: every rail button names an icon of the set; with the icon font installed it shows the glyph.
+        Button[] rail = frame.FindChildren("*", "Button", true, false).Cast<Button>().Where(b => b.HasMeta("dock_panel") && b.HasMeta("icon")).ToArray();
+        Require(rail.Length == 6 && rail.All(b => ChromeIcons.Set!.Icons.ContainsKey(b.GetMeta("icon").AsString()) &&
+            b.Text == (ChromeIcons.Glyph(b.GetMeta("icon").AsString()) ?? ChromeIcons.Fallback(b.GetMeta("icon").AsString()))), fault, "a rail button has no icon");
+        GD.Print("LOOKLAB_A5_ICONS installed=" + ChromeIcons.Installed + " set=" + ChromeIcons.Set!.Icons.Count);
         GD.Print("LOOKLAB_A5_FACES " + string.Join(", ", specimen.Faces.Select(f => f.Key + "=" + f.Value)));
         Require(specimen.Swatches == swatches && specimen.Faces.Count == 3 && specimen.Faces.All(f => frame.Tokens.System.Type[f.Key].Faces.Contains(f.Value)),
             fault, "the token specimen does not show every ramp step, role and type role");

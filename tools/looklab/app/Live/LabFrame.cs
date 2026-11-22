@@ -15,12 +15,12 @@ internal static class LabFrame
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
-        (DockSide.Left, "history", "History", "H", "Puzzle history and layout history appear here."),
-        (DockSide.Left, "scripts", "Scripts", "S", "The session's .6cs programs and panels appear here."),
-        (DockSide.Right, "inspector", "Inspector", "I", "Select a cell, a sticker or a command to inspect it."),
-        (DockSide.Bottom, "problems", "Problems", "P", "No problems."),
-        (DockSide.Bottom, "console", "Console", "C", "The 600 Cell Script console appears here."),
-        (DockSide.Bottom, "tasks", "Tasks", "T", "No task is running."),
+        (DockSide.Left, "history", "History", "panel.history", "Puzzle history and layout history appear here."),
+        (DockSide.Left, "scripts", "Scripts", "panel.scripts", "The session's .6cs programs and panels appear here."),
+        (DockSide.Right, "inspector", "Inspector", "panel.inspector", "Select a cell, a sticker or a command to inspect it."),
+        (DockSide.Bottom, "problems", "Problems", "panel.problems", "No problems."),
+        (DockSide.Bottom, "console", "Console", "panel.console", "The 600 Cell Script console appears here."),
+        (DockSide.Bottom, "tasks", "Tasks", "panel.tasks", "No task is running."),
     };
     private static readonly (string Id, string Title, string Hint)[] Panes =
     {
@@ -46,6 +46,7 @@ internal static class LabFrame
     public static ChromeFrame Attach(LabApp app, string root)
     {
         ChromeFonts.SetRoots(PackageFolders(root));
+        ChromeIcons.Use(IconSet.Load(Path.Combine(root, "tools/looklab/data/design/icons.json")));
         string folder = Path.Combine(root, "tools/looklab/data/design");
         DesignSystem design = DesignSystem.Load(Path.Combine(folder, "system.json"));
         ThemeFamily[] themes = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)
@@ -54,7 +55,7 @@ internal static class LabFrame
         var frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json")));
         app.EnterFrame();
         foreach (var panel in Panels) frame.AddDockPanel(panel.Side, panel.Id, panel.Title, panel.Glyph, ChromeWidgets.Empty(panel.Title, panel.Hint));
-        frame.AddDockPanel(DockSide.Right, Tune, "Tune", "~", app.ParameterPanel);
+        frame.AddDockPanel(DockSide.Right, Tune, "Tune", "panel.tune", app.ParameterPanel);
         foreach (var pane in Panes) frame.AddPane(pane.Id, pane.Title, ChromeWidgets.Empty(pane.Title, pane.Hint));
         frame.AddPane(Greybox, "Greybox", app.Greybox.Canvas);
         frame.SetMainViews(app.GlobalStage, app.Linked.LocalStage!);
@@ -63,7 +64,7 @@ internal static class LabFrame
         Button themeButton = ChromeWidgets.Tool(look.Family.Name, "Theme family: click for the next one"); themeButton.Name = "ThemeButton";
         frame.BarTools.AddChild(themeButton);
         var appearance = new AppearancePanel(look);
-        frame.AddDockPanel(DockSide.Right, Look, "Appearance", "A", appearance);
+        frame.AddDockPanel(DockSide.Right, Look, "Appearance", "panel.appearance", appearance);
         void ApplyScene()
         {
             foreach (var value in look.Family.Scenes[look.SceneLook])
@@ -83,7 +84,7 @@ internal static class LabFrame
         appearance.Changed += ApplyLook;
         // The token specimen in the left dock follows every change of the appearance.
         var specimen = new TokenSpecimen();
-        frame.AddDockPanel(DockSide.Left, Tokens, "Tokens", "D", specimen);
+        frame.AddDockPanel(DockSide.Left, Tokens, "Tokens", "panel.tokens", specimen);
         void ShowTokens() { if (GodotObject.IsInstanceValid(specimen)) specimen.Show(frame.Tokens); }
         frame.Rebuilt += ShowTokens; frame.Recoloured += ShowTokens;
         app.ViewParts["frame.appearance"] = (() => look.Store(), v =>
@@ -111,10 +112,10 @@ internal static class LabFrame
             foreach (ViewFrame view in new[] { frame.Global, frame.Local })
             {
                 view.ClearMarks();
-                view.AddMark("■", "committed", "state.committed", "This view shows the committed state.");
-                view.AddMark("⇄", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
+                view.AddMark("mark.committed", "committed", "state.committed", "This view shows the committed state.");
+                view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
             }
-            frame.Local.AddMark("◎", "auto-frame", "text.dim", "Local re-frames on the moving cells.");
+            frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", "Local re-frames on the moving cells.");
             frame.Global.SetStatus(null, new[] { "drag: rotate 4D" }, $"gap {F("gap")}  shrink {F("stickerShrink")}");
             frame.Local.SetStatus("moving cells", new[] { "drag: rotate 4D" }, "follows Global");
         }

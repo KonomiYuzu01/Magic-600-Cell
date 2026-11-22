@@ -77,7 +77,7 @@ public sealed partial class ViewFrame : PanelContainer
     {
         var chip = new PanelContainer { ThemeTypeVariation = "Chip", TooltipText = tooltip, MouseFilter = MouseFilterEnum.Pass };
         var row = new HBoxContainer(); chip.AddChild(row);
-        Label mark = ChromeWidgets.Text(glyph, "MicroLabel"); mark.AddThemeColorOverride("font_color", tokens.C(colourToken)); row.AddChild(mark);
+        Label mark = ChromeWidgets.Text(glyph, "MicroLabel"); ChromeIcons.Apply(mark, glyph, tokens.Px("icon.small")); mark.AddThemeColorOverride("font_color", tokens.C(colourToken)); row.AddChild(mark);
         row.AddChild(ChromeWidgets.Text(text, "MicroLabel"));
         Marks.AddChild(chip);
         return chip;
@@ -227,7 +227,7 @@ public sealed partial class ChromeFrame : Control
         }
         if (WorkspaceModified)
         {
-            Button reset = ChromeWidgets.Tool("↺", "Reset " + Workspaces.Names[Workspace] + " to its preset"); reset.Name = "WorkspaceReset";
+            Button reset = ChromeWidgets.Tool("", "Reset " + Workspaces.Names[Workspace] + " to its preset"); reset.Name = "WorkspaceReset"; ChromeIcons.Apply(reset, "workspace.reset", Tokens.Px("icon.small"));
             reset.Pressed += () => SelectWorkspace(Workspace); row.AddChild(reset);
         }
         row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
@@ -253,7 +253,7 @@ public sealed partial class ChromeFrame : Control
         var buttons = new VBoxContainer(); rail.AddChild(buttons);
         foreach (DockPanel panel in dockPanels.Where(p => p.Side == side))
         {
-            Button button = ChromeWidgets.Tool(panel.Glyph, panel.Title, true);
+            Button button = ChromeWidgets.Tool(panel.Glyph, panel.Title, true); ChromeIcons.Apply(button, panel.Glyph, Tokens.Px("icon.medium"));
             button.SetPressedNoSignal(state.Open == panel.Id); button.SetMeta("dock_panel", panel.Id);
             button.Pressed += () => Model.ToggleDock(side, panel.Id);
             buttons.AddChild(button);
@@ -313,11 +313,12 @@ public sealed partial class ChromeFrame : Control
         Global.SizeFlagsStretchRatio = (float)Model.PairRatio; Local.SizeFlagsStretchRatio = (float)(1 - Model.PairRatio);
         split.AddChild(Global); split.AddChild(Local);
         split.DragEnded += () => { if (!Model.SetPairArrangement(Model.PairArrangement, Math.Clamp(Ratio(split), .2, .8))) dirty = true; };
-        Button arrange = ChromeWidgets.Tool(side ? "=" : "||", side ? "Stack Global over Local" : "Put Global and Local side by side");
+        int icon = Tokens.Px("icon.small");
+        Button arrange = ChromeWidgets.Tool("", side ? "Stack Global over Local" : "Put Global and Local side by side"); ChromeIcons.Apply(arrange, side ? "pair.stacked" : "pair.side", icon);
         arrange.Pressed += () => Model.SetPairArrangement(side ? "stacked" : "side", Model.PairRatio);
-        Button maximise = ChromeWidgets.Tool(Model.PairMaximised ? "><" : "<>", Model.PairMaximised ? "Restore the other panes" : "Maximise the pair", true);
+        Button maximise = ChromeWidgets.Tool("", Model.PairMaximised ? "Restore the other panes" : "Maximise the pair", true); ChromeIcons.Apply(maximise, Model.PairMaximised ? "pair.restore" : "pair.maximise", icon);
         maximise.SetPressedNoSignal(Model.PairMaximised); maximise.Pressed += () => Model.SetPairMaximised(!Model.PairMaximised);
-        Button focus = ChromeWidgets.Tool("F", Model.FocusMode ? "Leave focus mode" : "Focus mode: only the pair", true);
+        Button focus = ChromeWidgets.Tool("", Model.FocusMode ? "Leave focus mode" : "Focus mode: only the pair", true); ChromeIcons.Apply(focus, "pair.focus", icon);
         focus.SetPressedNoSignal(Model.FocusMode); focus.Pressed += () => Model.SetFocusMode(!Model.FocusMode);
         Local.Tools.AddChild(arrange); Local.Tools.AddChild(maximise); Local.Tools.AddChild(focus);
         return split;
@@ -348,7 +349,7 @@ public sealed partial class ChromeFrame : Control
             tabs.AddChild(tab);
         }
         tabs.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        Button close = ChromeWidgets.Tool("x", "Close " + active); close.Pressed += () => Model.Close(active); tabs.AddChild(close);
+        Button close = ChromeWidgets.Tool("", "Close " + active); ChromeIcons.Apply(close, "pane.close", Tokens.Px("icon.small")); close.Pressed += () => Model.Close(active); tabs.AddChild(close);
         var body = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
         group.AddChild(body);
         body.AddChild(panes.TryGetValue(active, out Pane? pane) ? pane.Content : ChromeWidgets.Empty(active, "This pane is not available in this build."));

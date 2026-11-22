@@ -39,6 +39,19 @@ internal static partial class Program
         Check(frame.SetPairMaximised(true) && frame.OnlyPairShown && frame.SetPairMaximised(false) && frame.SetFocusMode(true) && frame.OnlyPairShown, "maximise or focus mode");
     }
 
+    private static void A5IconSetNamesGlyphsAndFallbacks()
+    {
+        string text = Read("data/design/icons.json");
+        IconSet icons = IconSet.Parse(text);
+        Check(icons.Font.EndsWith("lucide.woff2", StringComparison.Ordinal) && icons.Icons.Count >= 20, "icon set");
+        Equal(icons.Icons["panel.history"], new IconEntry("history", "H"));
+        Check(icons.Icons.Values.Select(i => i.Glyph).Distinct().Count() == icons.Icons.Count, "two meanings share a glyph");
+        Refuse(() => IconSet.Parse(text.Replace("\"fallback\": \"H\"", "\"fallback\": \"History\"")), "panel.history");
+        Refuse(() => IconSet.Parse(text.Replace("\"font\": \"lucide-static", "\"font\": \"../lucide-static")), "icons");
+        Refuse(() => IconSet.Parse(text.Replace("lucide.woff2", "lucide.ttf")), "icons");
+        Refuse(() => IconSet.Parse(text.Replace("\"glyph\": \"history\",", "")), "panel.history");
+    }
+
     private static void A5FrameStoredArrangementRoundTripAndWorkspaces()
     {
         FrameModel frame = Frame();

@@ -1,0 +1,96 @@
+{
+  "format": "magic600-design-icons",
+  "version": 1,
+  "font": "lucide-static/node_modules/lucide-static/font/lucide.woff2",
+  "codepoints": "lucide-static/node_modules/lucide-static/font/codepoints.json",
+  "icons": {
+    "panel.history": {
+      "glyph": "history",
+      "fallback": "H"
+    },
+    "panel.scripts": {
+      "glyph": "file-code",
+      "fallback": "S"
+    },
+    "panel.tokens": {
+      "glyph": "swatch-book",
+      "fallback": "D"
+    },
+    "panel.inspector": {
+      "glyph": "info",
+      "fallback": "I"
+    },
+    "panel.tune": {
+      "glyph": "sliders-horizontal",
+      "fallback": "~"
+    },
+    "panel.appearance": {
+      "glyph": "palette",
+      "fallback": "A"
+    },
+    "panel.problems": {
+      "glyph": "triangle-alert",
+      "fallback": "P"
+    },
+    "panel.console": {
+      "glyph": "terminal",
+      "fallback": "C"
+    },
+    "panel.tasks": {
+      "glyph": "list-checks",
+      "fallback": "T"
+    },
+    "pair.side": {
+      "glyph": "columns-2",
+      "fallback": "||"
+    },
+    "pair.stacked": {
+      "glyph": "rows-2",
+      "fallback": "="
+    },
+    "pair.maximise": {
+      "glyph": "maximize-2",
+      "fallback": "<>"
+    },
+    "pair.restore": {
+      "glyph": "minimize-2",
+      "fallback": "><"
+    },
+    "pair.focus": {
+      "glyph": "focus",
+      "fallback": "F"
+    },
+    "workspace.reset": {
+      "glyph": "rotate-ccw",
+      "fallback": "R"
+    },
+    "pane.close": {
+      "glyph": "x",
+      "fallback": "x"
+    },
+    "theme.family": {
+      "glyph": "sun-moon",
+      "fallback": "*"
+    },
+    "mark.committed": {
+      "glyph": "square",
+      "fallback": "#"
+    },
+    "mark.link": {
+      "glyph": "link-2",
+      "fallback": "="
+    },
+    "mark.autoframe": {
+      "glyph": "scan",
+      "fallback": "o"
+    },
+    "mark.protected": {
+      "glyph": "lock",
+      "fallback": "L"
+    },
+    "search": {
+      "glyph": "search",
+      "fallback": "?"
+    }
+  }
+}

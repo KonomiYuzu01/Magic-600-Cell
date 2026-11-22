@@ -285,6 +285,40 @@ public static class StatusLine
     }
 }
 
+public sealed record IconEntry(string Glyph, string Fallback);
+
+// The icons the chrome uses, by meaning (ADR-D01.52): each names a glyph of the installed icon font and the
+// short text shown when that font is missing.
+public sealed class IconSet
+{
+    public string Font { get; }
+    public string Codepoints { get; }
+    public IReadOnlyDictionary<string, IconEntry> Icons { get; }
+
+    public static IconSet Load(string path) => Parse(File.ReadAllText(path));
+    public static IconSet Parse(string text)
+    {
+        using JsonDocument d = J.Parse(text);
+        JsonElement root = J.Root(d, "magic600-design-icons", "font", "codepoints", "icons");
+        string font = J.Text(root, "font"), codepoints = J.Text(root, "codepoints");
+        foreach (string path in new[] { font, codepoints })
+            if (path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') || path.StartsWith('/') || path.Contains(':')) throw J.Error("icons", "relative paths with forward slashes required");
+        if (!font.EndsWith(".woff2", StringComparison.Ordinal) || !codepoints.EndsWith(".json", StringComparison.Ordinal)) throw J.Error("icons", "a .woff2 font and a .json codepoint table required");
+        var icons = new SortedDictionary<string, IconEntry>(StringComparer.Ordinal);
+        foreach (JsonProperty p in J.Map(root.GetProperty("icons"), "icons"))
+        {
+            J.Keys(p.Value, p.Name, "glyph", "fallback");
+            string glyph = J.Text(p.Value, "glyph"), fallback = J.Text(p.Value, "fallback");
+            if (fallback.Length is 0 or > 2 || fallback.Any(c => c > 126 || c < 33)) throw J.Error(p.Name, "a fallback of one or two ASCII characters required");
+            icons.Add(p.Name, new IconEntry(glyph, fallback));
+        }
+        if (icons.Count == 0) throw J.Error("icons", "at least one icon required");
+        return new IconSet(font, codepoints, icons);
+    }
+
+    private IconSet(string font, string codepoints, IReadOnlyDictionary<string, IconEntry> icons) { Font = font; Codepoints = codepoints; Icons = icons; }
+}
+
 // The shipped workspace presets (ADR-D01.38): Solve, Script, Analyse, Reference.
 public sealed class WorkspaceSet
 {
