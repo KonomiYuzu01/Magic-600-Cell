@@ -159,6 +159,10 @@ pub const EXPLORE_ROW: &str = "explore.set";
 /// journal entry to one of its moves, recorded as its own action naming the entry and the move, so nothing is
 /// rewritten.
 pub const PARTIAL_UNDO_ROW: &str = "session.undo.partial";
+/// ADR-D01.15's multi-step rollback (owner, 22 November 2026, item 4; draft; the integrator's ruling of 22 November
+/// 2026): one solver action that undoes or redoes the move history to the state just after a target action, as k
+/// ordinary undo or redo steps under one gesture, each its own transaction with its own admission and receipt.
+pub const ROLLBACK_ROW: &str = "session.rollback";
 /// ADR-D01.9's settle interval until Look Lab tunes it and stores it as token data (owner, 22 November 2026, item 4;
 /// draft): a preview that replaced one the solver was shown commits only once this long has passed since the first
 /// frame that shows it.
@@ -585,6 +589,27 @@ impl History {
     }
 }
 
+/// The outcome of the last multi-step rollback since the layer opened or restarted (ADR-D01.15; draft): its gesture
+/// (the press's command ID), the action whose state it rolls to (0: the session's start), the direction, the k steps
+/// it planned and the j that landed, and the status of the step that stopped it, if one did.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Rollback {
+    pub gesture: String,
+    pub target: u64,
+    pub direction: Direction,
+    pub of: u64,
+    pub landed: u64,
+    pub stop: Option<Status>,
+}
+
+/// The gesture and step of a multi-step rollback's step from its command ID, `{gesture}#{i}` with i at least 1
+/// (ADR-D01.15; draft). The history dock groups the steps by the gesture.
+pub fn rollback_step(command: &str) -> Option<(&str, u64)> {
+    let (gesture, step) = command.rsplit_once('#')?;
+    let step: u64 = step.parse().ok().filter(|&step| step >= 1)?;
+    (!gesture.is_empty() && step.to_string() == command[gesture.len() + 1..]).then_some((gesture, step))
+}
+
 /// Who turned ADR-D01.39's explore state on (draft): the solver, by `explore.set` from the shell, or a run inside a
 /// command the solver invoked. The state may only pause commits, never enable them, so no run ends a pause the solver
 /// set.
@@ -865,6 +890,11 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     /// The values the solver kept with `workspace.set`, as record name and value digest (ADR-D01.12; draft): what the
     /// one-key commit takes as the solver's own macro. A replay rebuilds them.
     kept: BTreeSet<(String, String)>,
+    /// The last multi-step rollback's outcome (ADR-D01.15; draft); a restart clears it.
+    rollback: Option<Rollback>,
+    /// The gesture, step and kind of the last action when it was a rollback's step (ADR-D01.15; draft), so a replay
+    /// admits a step after the first only when it follows the gesture's step before it.
+    last_step: Option<(String, u64, TransactionKind)>,
     /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
     /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
     blocks: BTreeMap<String, String>,
@@ -956,6 +986,8 @@ impl<S: Store> CommandLayer<S> {
             last_seen: None,
             records: BTreeMap::new(),
             kept: BTreeSet::new(),
+            rollback: None,
+            last_step: None,
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
@@ -1185,9 +1217,29 @@ impl<S: Store> CommandLayer<S> {
                     return Err(unadmitted("an undo or redo whose caller is not the shell"));
                 }
                 // The row names the history and the direction: `layout.undo` and `layout.redo` step the layout history
-                // (ADR-D01.14), `session.undo` and `session.redo` the move history.
-                let history = match History::of(&stored.row) {
-                    Some((history, named)) if named == direction => history,
+                // (ADR-D01.14), `session.undo` and `session.redo` the move history. A multi-step rollback's step is a
+                // move-history step under command `{gesture}#{i}`, and a step after the first follows its gesture's
+                // step before it in the same direction, as the live gesture writes them (ADR-D01.15).
+                let history = match (History::of(&stored.row), stored.row == ROLLBACK_ROW) {
+                    (Some((history, named)), false) if named == direction => history,
+                    (None, true) => {
+                        let Some((gesture, step)) = rollback_step(&stored.command) else {
+                            return Err(unadmitted("a rollback step whose command names no gesture and step"));
+                        };
+                        let follows = self
+                            .last_step
+                            .as_ref()
+                            .is_some_and(|(last, at, kind)| last == gesture && *at + 1 == step && *kind == stored.kind);
+                        if step > 1 && !follows {
+                            return Err(unadmitted(
+                                "a rollback step that does not follow its gesture's step before it",
+                            ));
+                        }
+                        if self.receipts.contains_key(&(stored.caller.scope(), stored.command.clone())) {
+                            return Err(unadmitted("a rollback step whose command ID an earlier action used"));
+                        }
+                        History::Moves
+                    }
                     _ => {
                         return Err(broken("an undo or redo action whose row is not its direction's undo or redo row"))
                     }
@@ -1815,6 +1867,53 @@ impl<S: Store> CommandLayer<S> {
         self.hint(History::Layout, direction)
     }
 
+    /// The multi-step rollback's hint (ADR-D01.15; draft): the current order and `target`, read together, when
+    /// `session.rollback` reaches the state just after action `target` (0: the session's start) by undoing or redoing
+    /// the move history; `None` when `target` is the head's own action or on neither of its stacks.
+    pub fn rollback_hint(&self, target: u64) -> Option<ActionHint> {
+        self.span(target).map(|_| ActionHint { order: self.order, target })
+    }
+
+    /// The outcome of the last multi-step rollback since the layer opened or restarted (ADR-D01.15; draft).
+    pub fn rollback(&self) -> Option<&Rollback> {
+        self.rollback.as_ref()
+    }
+
+    /// LI.30's lookup of a gesture's steps (ADR-D01.15; draft): the shell's receipts of `{gesture}#1`, `{gesture}#2`
+    /// and on, in order, up to the first step with none. After a crash a retry finds the complete prefix that landed;
+    /// a step whose transient receipt a restart lost answers `unknown_outcome`.
+    pub fn rollback_steps(&self, gesture: &str) -> Vec<Receipt> {
+        let scope = Caller::Shell.scope();
+        let mut steps = Vec::new();
+        for step in 1.. {
+            let key = (scope.clone(), format!("{gesture}#{step}"));
+            match (self.receipts.get(&key), self.lost.get(&key)) {
+                (Some(record), _) => steps.push(record.receipt.clone()),
+                (None, Some(request)) => {
+                    let (command, request) = (key.1, request.clone());
+                    steps.push(Receipt { command, request, job: None, status: Status::UnknownOutcome });
+                }
+                (None, None) => break,
+            }
+        }
+        steps
+    }
+
+    /// The direction and number of move-history steps that reach the state just after action `target` (0: the
+    /// session's start): an undo of every action above `target` on the undo stack (all of them for 0), or a redo of
+    /// the redo stack's actions down to and including `target`.
+    fn span(&self, target: u64) -> Option<(Direction, u64)> {
+        if target == 0 {
+            return (!self.undo.is_empty()).then_some((Direction::Undo, self.undo.len() as u64));
+        }
+        if let Some(at) = self.undo.iter().position(|&order| order == target) {
+            let steps = (self.undo.len() - 1 - at) as u64;
+            return (steps > 0).then_some((Direction::Undo, steps));
+        }
+        let at = self.redo.iter().position(|&order| order == target)?;
+        Some((Direction::Redo, (self.redo.len() - at) as u64))
+    }
+
     fn hint(&self, history: History, direction: Direction) -> Option<ActionHint> {
         self.stack(history, direction).last().map(|&target| ActionHint { order: self.order, target })
     }
@@ -2147,6 +2246,7 @@ impl<S: Store> CommandLayer<S> {
         self.frame = None;
         self.run = None;
         self.last_seen = None;
+        self.rollback = None;
         self.jobs.clear();
         self.running.clear();
         self.fenced.clear();
@@ -2359,6 +2459,15 @@ impl<S: Store> CommandLayer<S> {
                 match self.head_entry() {
                     Some((_, applied)) if applied > 0 => Ok(()),
                     _ => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
+                }
+            }
+            ROLLBACK_ROW => {
+                if self.commit_held {
+                    return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
+                }
+                match self.undo.is_empty() && self.redo.is_empty() {
+                    true => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
+                    false => Ok(()),
                 }
             }
             TWIST_ROW => match (&self.twists, self.commit_held) {
@@ -2638,6 +2747,7 @@ impl<S: Store> CommandLayer<S> {
             EXPLORE_ROW => self.set_explore(caller, &row, args),
             PARTIAL_UNDO_ROW => self.partial_undo(caller, invocation, request),
             ONE_KEY_ROW => self.one_key(caller, invocation, request),
+            ROLLBACK_ROW => self.rollback_press(caller, invocation),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
@@ -3375,6 +3485,13 @@ impl<S: Store> CommandLayer<S> {
             }
             Tree::None => {}
         }
+        // A rollback's step, for the replay's check of the next one (ADR-D01.15).
+        self.last_step = match transaction.row == ROLLBACK_ROW {
+            true => {
+                rollback_step(&transaction.command).map(|(gesture, step)| (gesture.to_owned(), step, transaction.kind))
+            }
+            false => None,
+        };
         let receipt = transaction.receipt();
         let key = (transaction.caller.scope(), transaction.command.clone());
         self.lost.remove(&key);
@@ -3855,6 +3972,95 @@ impl<S: Store> CommandLayer<S> {
         let protected = self.protected.clone();
         let adoption = self.plan_step(Meta::of(caller, invocation, request), history, direction, &protected)?;
         self.transact(adoption)
+    }
+
+    // ----- session.rollback -----
+
+    /// `session.rollback {hint, token}` (ADR-D01.15; draft; the integrator's ruling of 22 November 2026): one solver
+    /// action that rolls the move history back or forward to the state just after action `hint.target` (0: the
+    /// session's start; [`CommandLayer::rollback_hint`]). It is k ordinary undo or redo steps of the move history, each
+    /// its own transaction with its own admission and receipt under command `{gesture}#{i}`, where the gesture is the
+    /// press's command ID, and with the gesture and step i of k in its arguments; so no journal kind or format changes,
+    /// and every span has one encoding with no branch transition. The layer holds the writer for the whole gesture and
+    /// stops at the first step that does not commit, reporting j of k ([`CommandLayer::rollback`]). A crash leaves a
+    /// complete prefix of steps, which a retry finds by LI.30's lookup of the step command IDs
+    /// ([`CommandLayer::rollback_steps`]); there is no all-or-nothing across a crash.
+    ///
+    /// The token binds the hint and the state and protection revisions as `session.undo`'s does; a raced hint is
+    /// `undo_superseded` before the revisions are checked. Each step takes `session.undo`'s permission path under the
+    /// protected set in force when it runs, and the press's `confirm` confirms every release in the span (LI.26). The
+    /// press answers with the last landed step's receipt, a refusal when no step landed, or `unknown_outcome` when a
+    /// step's fate is unknown.
+    fn rollback_press(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+        let Some(hint) = invocation.args.get("hint").and_then(ActionHint::from_json) else {
+            return refused(code::ARGUMENT_FORM, "`hint` is an ActionHint");
+        };
+        if ["gesture", "step", "of"].iter().any(|name| invocation.args.get(name).is_some()) {
+            return refused(code::ARGUMENT_FORM, "only the layer names a rollback's gesture and steps");
+        }
+        let binding = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&binding, invocation)?;
+        if binding.hint != Some(hint) {
+            return refused(code::TOKEN_MISMATCH, "a rollback token binds its hint");
+        }
+        let Some((direction, of)) = self.span(hint.target).filter(|_| hint.order == self.order) else {
+            return refused(code::UNDO_SUPERSEDED, "the hint's order or target changed");
+        };
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        let scope = caller.scope();
+        let steps: Vec<Invocation> = (1..=of).map(|step| Self::rollback_invocation(invocation, step, of)).collect();
+        let taken = |key: &Key| self.receipts.contains_key(key) || self.lost.contains_key(key);
+        if steps.iter().any(|step| taken(&(scope.clone(), step.command.clone()))) {
+            return refused(code::COMMAND_ID_REUSED, "a step of the gesture would reuse a command ID");
+        }
+        let (mut landed, mut last, mut stop) = (0, None, None);
+        for step in &steps {
+            let request = self.request(caller, step, &[]);
+            let protected = self.protected.clone();
+            let meta = Meta::of(caller, step, &request);
+            let outcome = self.plan_step(meta, History::Moves, direction, &protected).and_then(|a| self.transact(a));
+            let (job, status) = outcome.unwrap_or_else(|error| (None, Status::Refused(error)));
+            let receipt =
+                Receipt { command: step.command.clone(), request: request.clone(), job, status: status.clone() };
+            let record = Record { request, receipt, durable: false };
+            self.receipts.entry((scope.clone(), step.command.clone())).or_insert(record);
+            if !matches!(status, Status::Committed(_)) {
+                stop = Some(status);
+                break;
+            }
+            landed += 1;
+            last = Some((job, status));
+        }
+        let gesture = invocation.command.clone();
+        self.rollback = Some(Rollback { gesture, target: hint.target, direction, of, landed, stop: stop.clone() });
+        self.generation += 1;
+        match (stop, last) {
+            (Some(Status::UnknownOutcome), _) => Ok((None, Status::UnknownOutcome)),
+            (_, Some(answer)) => Ok(answer),
+            (Some(Status::Refused(error)), None) => Err(error),
+            (Some(status), None) => Ok((None, status)),
+            (None, None) => refused(code::UNDO_SUPERSEDED, "no eligible target"),
+        }
+    }
+
+    /// Step `step` of `of` of the rollback `invocation` presses: command `{gesture}#{step}` on the same row, with the
+    /// press's arguments, the gesture and the step in its arguments, and the press's token and epoch.
+    fn rollback_invocation(invocation: &Invocation, step: u64, of: u64) -> Invocation {
+        let mut args = invocation.args.as_object().cloned().unwrap_or_default();
+        args.insert("gesture".to_owned(), Value::String(invocation.command.clone()));
+        args.insert("step".to_owned(), Value::Int(step as i64));
+        args.insert("of".to_owned(), Value::Int(of as i64));
+        Invocation {
+            command: format!("{}#{step}", invocation.command),
+            row: ROLLBACK_ROW.to_owned(),
+            args: Value::Object(args),
+            token: invocation.token.clone(),
+            epoch: invocation.epoch,
+            budget: None,
+        }
     }
 
     // ----- explore.set -----

@@ -506,8 +506,8 @@ class CommandTableTests(unittest.TestCase):
         counts = Counter(r["kind"] for r in self.table["commands"])
         # 175 commands at the LP3 freeze, plus ADR-D01's 14 workspace and 4 view rows (owner, 22 November 2026,
         # item 3) and its commit rows (item 4), which also make work.layout.set and work.layout.reset workspace rows.
-        self.assertEqual(len(self.table["commands"]), 197)
-        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (83, 47, 18))
+        self.assertEqual(len(self.table["commands"]), 198)
+        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (83, 47, 19))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -674,6 +674,34 @@ class CommandTableTests(unittest.TestCase):
             next(r for r in mutant["add"] if r["id"] == builder.ONE_KEY_ROW).update(changes)
             with self.subTest(changes=changes), self.assertRaisesRegex(builder.TableError, message):
                 self.build(delta=[self.delta, self.language, self.design, mutant], draft_without_jumbling=False)
+
+    def test_adr_d01_rollback_row(self):
+        # Owner, 22 November 2026, item 4; ADR-D01.15 and the integrator's ruling of 22 November 2026: one gesture of
+        # ordinary undo or redo steps of the move history to a target action, from LI.9's ActionHint, with the gesture
+        # and step i of k that only the layer fills, as an ungated journal commit with the by_target slot map.
+        row = self.by_id[builder.ROLLBACK_ROW]
+        self.assertEqual((row["kind"], row["lane"], row["undo"], row["preview"], row["gates"], row["job"]),
+                         ("commit", "commit", "journal", "none", [], False))
+        self.assertEqual(row["arguments"], builder.ROLLBACK_ARGUMENTS)
+        self.assertEqual((row["action_guard"], row["slot_map"], row["source"], row["key_0_4"]),
+                         ("action_hint", "by_target", ADR_D01_SOURCE, None))
+        self.assertIn("ADR-D01.15", row["note"])
+        for changes, message in (
+                ({"gates": ["protection"]}, "multi-step rollback"),
+                ({"arguments": {"hint": "ActionHint", "token": "UserActionToken"}}, "multi-step rollback"),
+                ({"key_0_4": "Ctrl+Shift+Z"}, "multi-step rollback"),
+                ({"slot_map": "preserve"}, "multi-step rollback"),
+                ({"arguments": {"hint": "ActionHint?", "gesture": "Text?", "step": "Nat?", "of": "Nat?",
+                                "token": "UserActionToken"}},
+                 "required arguments")):
+            mutant = deepcopy(self.commit)
+            next(r for r in mutant["add"] if r["id"] == builder.ROLLBACK_ROW).update(changes)
+            with self.subTest(changes=changes), self.assertRaisesRegex(builder.TableError, message):
+                self.build(delta=[self.delta, self.language, self.design, mutant], draft_without_jumbling=False)
+        mutant = deepcopy(self.commit)
+        next(r for r in mutant["add"] if r["id"] == builder.ONE_KEY_ROW)["slot_map"] = "by_target"
+        with self.assertRaisesRegex(builder.TableError, "restores a target's recorded map"):
+            self.build(delta=[self.delta, self.language, self.design, mutant], draft_without_jumbling=False)
 
     def test_a_field_amended_in_two_deltas_is_refused(self):
         again = deepcopy(next(r for r in self.language["amend"] if r["id"] == "twist.apply"))

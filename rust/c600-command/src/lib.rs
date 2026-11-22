@@ -596,8 +596,9 @@ pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPre
 pub use journal::{EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT, JOURNAL_ROW};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 pub use layer::{
-    Caller, Clock, CommandLayer, Invocation, JobOutput, MonotonicClock, Preview, PreviewState, ProgramJob, EXPLORE_ROW,
-    LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW, SETTLE_DRAFT,
+    rollback_step, Caller, Clock, CommandLayer, Invocation, JobOutput, MonotonicClock, Preview, PreviewState,
+    ProgramJob, Rollback, EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
+    ROLLBACK_ROW, SETTLE_DRAFT,
 };
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,

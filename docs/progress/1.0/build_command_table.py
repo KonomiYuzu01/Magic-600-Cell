@@ -39,6 +39,12 @@ PARTIAL_UNDO_ARGUMENTS = {"entry": "ActionNumber", "move": "Nat", "token": "User
 # operation.execute makes, and no default key.
 ONE_KEY_ROW = "operation.preview.commit"
 ONE_KEY_ARGUMENTS = {"draft": "ResolvedDraftRef", "token": "UserActionToken"}
+# ADR-D01.15's multi-step rollback: one gesture of ordinary undo or redo steps of the move history, each its own
+# transaction and receipt under the gesture's command ID, with the gesture and step i of k in its arguments (the
+# integrator's ruling of 22 November 2026). Only the layer names the gesture and the steps, so they are optional.
+ROLLBACK_ROW = "session.rollback"
+ROLLBACK_ARGUMENTS = {"hint": "ActionHint", "gesture": "Text?", "step": "Nat?", "of": "Nat?",
+                      "token": "UserActionToken"}
 # CM.15 and JI.32/JI.33: required names, independent of the generating delta.
 # Optional parameters remain in the delta's full schemas.
 DELTA_REQUIRED_ARGUMENTS = {
@@ -73,6 +79,7 @@ DELTA_REQUIRED_ARGUMENTS = {
     "twist.apply": {"cap", "rotation", "token"},
     "session.undo.partial": {"entry", "move", "token"},
     "operation.preview.commit": {"draft", "token"},
+    "session.rollback": {"hint", "token"},
     "workspace.set": {"record", "payload", "provenance"},
     "set.save": {"members", "kind", "name"},
     "theme.select": set(),
@@ -791,7 +798,7 @@ def validate_rows(candidate, inventory_ids):
             raise TableError(f"{name}: invalid slot_map")
         if row.get("slot_map") == "rebind" and name != "grip.rebind":
             raise TableError(f"{name}: only grip.rebind replaces the slot map")
-        if row.get("slot_map") == "by_target" and name not in UNDO_ROWS:
+        if row.get("slot_map") == "by_target" and name not in UNDO_ROWS | {ROLLBACK_ROW}:
             raise TableError(f"{name}: only session undo/redo restores a target's recorded map")
         arguments = row["arguments"]
         if not isinstance(arguments, dict) or any(not isinstance(k, str) or not k or not isinstance(v, str) or not v for k, v in arguments.items()):
@@ -826,6 +833,12 @@ def validate_rows(candidate, inventory_ids):
                                     or row["key_0_4"] is not None or row.get("slot_map", "preserve") != "preserve"):
             raise TableError(f"{name}: one-key preview-and-commit must be a live journal commit of a record draft with "
                              "the protection gate and no default key (ADR-D01.12)")
+        if name == ROLLBACK_ROW and (row["kind"] != "commit" or row["lane"] != "commit" or row["preview"] != "none"
+                                     or row["undo"] != "journal" or row["gates"] or row.get("action_guard") != "action_hint"
+                                     or arguments != ROLLBACK_ARGUMENTS or row["key_0_4"] is not None
+                                     or row.get("slot_map") != "by_target"):
+            raise TableError(f"{name}: multi-step rollback must be an ungated journal commit with ActionHint, the "
+                             "by_target slot map and no default key (ADR-D01.15)")
         if name in {"workspace.undo", "workspace.redo", "jumble.preview.scrub"}:
             raise TableError(f"{name}: duplicate purpose; use the shared session or view entry")
         if name == "twist.apply" and (row["preview"] != "none" or row["undo"] != "journal" or "protection" not in row["gates"]):

@@ -103,6 +103,34 @@
         "token": "UserActionToken"
       },
       "slot_map": "preserve"
+    },
+    {
+      "id": "session.rollback",
+      "label": "Roll back to action",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "One solver action rolls the move history back or forward to the state just after a target action (0: the session's start), from an ActionHint whose target names that action (ADR-D01.15). It is k ordinary session.undo or session.redo steps, each its own transaction with its own admission and receipt under the command ID {gesture}#{i}, and the layer adds the gesture, step i and the count k to each step's arguments, so the journal gains no action kind and every span has one encoding. The layer holds the writer for the whole gesture and stops at the first step that does not commit, reporting j of k; each step takes its original permission path, and the press's confirm confirms every release in the span (LI.26). A crash leaves a complete prefix, which a retry finds by LI.30's lookup of the step IDs; there is no all-or-nothing across a crash. The history dock groups the steps by gesture. No run or recording reaches it, and the explore state pauses it. No default key.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "hint": "ActionHint",
+        "gesture": "Text?",
+        "step": "Nat?",
+        "of": "Nat?",
+        "token": "UserActionToken"
+      },
+      "action_guard": "action_hint",
+      "slot_map": "by_target"
     }
   ],
   "amend": [
