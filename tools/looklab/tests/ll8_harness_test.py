@@ -69,7 +69,8 @@ class CurrentHarnessTests(previous.CurrentHarnessTests):
     def test_cpu_and_gpu_lane_schedules(self):
         calls, extensions = self.schedule("--godot")
         self.assertEqual(extensions, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless"),
-                                      ("lane_ll6.py", "run"), ("lane_ll7.py", "run"), ("lane_ll8.py", "run")])
+                                      ("lane_ll6.py", "run"), ("lane_ll7.py", "run"), ("lane_ll8.py", "run"),
+                                      ("lane_a5.py", "run")])
         self.assertEqual(len(calls), 33)
         self.assertTrue(all("--headless" in args for args, _ in calls))
         self.assertEqual([kwargs["expected_failure"] for _, kwargs in calls if "expected_failure" in kwargs],

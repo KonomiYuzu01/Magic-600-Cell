@@ -917,3 +917,24 @@ integrator runs the GPU probe and `--shot` after integration.
 
 Clips are not made until the owner approves FFmpeg. Renders and manifests
 stay private and are never committed.
+
+## A5: live data and the kept view
+
+The interactive lab (`python tools/looklab/check.py --run`) polls the JSON files
+under `tools/looklab/data/` and `tools/looklab/presets/` and the command table
+twice a second. When one changes and has been quiet for one poll, the lab is
+rebuilt from the files in the same window. A file the lab refuses leaves the
+last good lab on screen, with the reason in the notice line at the top left.
+
+The camera, the look being edited and the panel state are kept across a rebuild
+and across a restart in `work/loop-memory/looklab/view.json` (format
+`magic600-look-view`, version 1: `q` and `spin` as 16 numbers each, the sha256
+of the default preset the look was edited from as `defaultPreset`, the look as
+`preset`, and panel state as strings under `ui`). The file is written at most
+once a second and when the window closes. When `presets/default.json` changes
+on disk, the new default is shown instead of the kept look. A panel adds its
+state through `LabApp.ViewParts`.
+
+`python tools/looklab/check.py --godot` adds one result line,
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=4 checks=1`, and
+three faults that must fail their own check.

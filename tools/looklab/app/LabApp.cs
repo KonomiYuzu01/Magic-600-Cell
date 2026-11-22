@@ -22,11 +22,17 @@ internal sealed partial class LabApp : Control
     private readonly PresetFiles files;
     private readonly FileDialog load;
     private readonly FileDialog save;
+    private readonly ScrollContainer parameterScroll;
+    // Panel state that a reload or a restart keeps: each part reads and restores one value as text.
+    internal System.Collections.Generic.SortedDictionary<string, (Func<string> Get, Action<string> Set)> ViewParts { get; } = new(StringComparer.Ordinal);
+    public string DefaultDigest { get; }
 
     public LabApp(string root)
     {
         var schema = ParameterSchema.Load(System.IO.Path.Combine(root, "tools/looklab/data/parameters.json"));
-        State = new LookState(schema, Presets.Load(System.IO.Path.Combine(root, "tools/looklab/presets/default.json"), schema));
+        byte[] defaultBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(root, "tools/looklab/presets/default.json"));
+        DefaultDigest = ViewStates.Digest(defaultBytes);
+        State = new LookState(schema, Presets.Parse(System.Text.Encoding.UTF8.GetString(defaultBytes), schema));
         View = new LookViewport(root, State);
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Theme = new Theme();
@@ -49,7 +55,9 @@ internal sealed partial class LabApp : Control
         buttons.AddChild(loadButton); buttons.AddChild(saveButton);
         LL3.ModeControls.Attach(this, root, column);
         var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        column.AddChild(scroll);
+        column.AddChild(scroll); parameterScroll = scroll;
+        ViewParts["parameters.scroll"] = (() => scroll.ScrollVertical.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            v => { if (int.TryParse(v, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int y)) scroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, y); });
         Panels = new ParameterPanels(State) { SizeFlagsHorizontal = SizeFlags.ExpandFill }; scroll.AddChild(Panels);
         files = new PresetFiles(root, schema);
         load = Dialog(FileDialog.FileModeEnum.OpenFile); save = Dialog(FileDialog.FileModeEnum.SaveFile);
@@ -73,6 +81,24 @@ internal sealed partial class LabApp : Control
         Resized += Layout;
         ApplyStyle(); Layout();
         LL4.GreyboxControls.Attach(this, panel, Panels, root);
+    }
+
+    internal ViewState CaptureView()
+    {
+        var ui = new System.Collections.Generic.SortedDictionary<string, string>(StringComparer.Ordinal);
+        foreach (var part in ViewParts) ui[part.Key] = part.Value.Get();
+        return new ViewState(Array.AsReadOnly((double[])View.Q.Clone()), Array.AsReadOnly((double[])View.Spin.Clone()), DefaultDigest, State.Preset, ui);
+    }
+
+    // Camera, look and panel state from before a reload or restart. A part this build does not have is ignored.
+    internal void RestoreView(ViewState kept)
+    {
+        Preset look = ViewStates.Resolve(kept, State.Preset, DefaultDigest);
+        if (!ReferenceEquals(look, State.Preset)) { State.Load(look); name.Text = State.Preset.Name; }
+        for (int i = 0; i < 16; i++) { View.Q[i] = kept.Q[i]; View.Spin[i] = kept.Spin[i]; }
+        if (Linked.Local is { } local) { Array.Copy(View.Q, local.Q, 16); Array.Copy(View.Spin, local.Spin, 16); }
+        foreach (var entry in kept.Ui)
+            if (ViewParts.TryGetValue(entry.Key, out var part)) part.Set(entry.Value);
     }
 
     private FileDialog Dialog(FileDialog.FileModeEnum mode) => new()

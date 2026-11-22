@@ -70,7 +70,16 @@ internal sealed partial class GreyboxControls : VBoxContainer
         SaveButton.Pressed += SaveReport;
         app.State.Changed += Change;
         app.Resized += ResizeViews;
+        app.ViewParts["greybox.open"] = (() => Toggle.ButtonPressed ? "1" : "0", v => Toggle.ButtonPressed = v == "1");
+        app.ViewParts["greybox.context"] = (() => Catalogue.Contexts[ContextChoice.Selected], v => Choose(ContextChoice, Catalogue.Contexts.ToList().IndexOf(v)));
+        app.ViewParts["greybox.flow"] = (() => Flows[FlowChoice.Selected].Id, v => Choose(FlowChoice, Array.FindIndex(Flows, f => f.Id == v)));
         RefreshCanvas();
+    }
+
+    private static void Choose(OptionButton choice, int index)
+    {
+        if (index < 0 || index == choice.Selected) return;
+        choice.Select(index); choice.EmitSignal(OptionButton.SignalName.ItemSelected, index);
     }
 
     public bool StartFlow(FlowScript flow, LayoutSpec layout)
