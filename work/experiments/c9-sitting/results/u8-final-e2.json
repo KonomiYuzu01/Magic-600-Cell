@@ -1,0 +1,3777 @@
+{
+  "format": "magic600-c9-measure-record-v1",
+  "measurement": "charter-e2-key-to-frame",
+  "evidence_kind": "performance",
+  "synthetic": false,
+  "created_utc": "2026-11-21T16:57:03Z",
+  "build_identity": "c9-product-2efda50d54592f20",
+  "inputs": [
+    {
+      "role": "20261121T133423Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 125674734,
+      "sha256": "6b612b337060fb092f06d87552db4ebf8c270469248134cb07b1571ebefce25b"
+    },
+    {
+      "role": "20261121T133423Z:presentmon.csv",
+      "name": "presentmon.csv",
+      "bytes": 202227129,
+      "sha256": "fe5a02263225c44e7f9b5cfc356644d857e3272ed7963b4215d0a7858d18a330"
+    },
+    {
+      "role": "20261121T151540Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 125857571,
+      "sha256": "28749300b0699860017493d3ff920690d5a43ca4dc4bf858189ad65d54ccf8f7"
+    },
+    {
+      "role": "20261121T151540Z:presentmon.csv",
+      "name": "presentmon.csv",
+      "bytes": 202346956,
+      "sha256": "d2db4ddf47e70b95484155de099cae47bbb77ce2d82615d144699458a94f8e62"
+    }
+  ],
+  "tools": {
+    "python": "3.15.1",
+    "implementation": "CPython",
+    "tool": {
+      "name": "key_to_frame.py",
+      "sha256": "35fa0305d5f1d1f8c162e1913c7c20551c5573a2e25650f392d888be032611b7"
+    },
+    "helpers": {
+      "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
+      "b412_summary.py": "40015c19b73771181dac836f6aeb8979724a775cb239c20b9857aa23de936acc",
+      "renderer_gate.py": "46d28b14d318b0c297fa02b2fbe2472ceb327a2cc3d9b51338e20eff177b0a7e"
+    }
+  },
+  "command": [
+    "python",
+    "-B",
+    "tools/perf/c9/key_to_frame.py",
+    "work/c9-runs/u8-off-final",
+    "work/c9-runs/u8-on-final",
+    "--out",
+    "work/c9-runs/u8-final-e2.json"
+  ],
+  "bar": {
+    "text": "Charter E2: A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the target machine.",
+    "rule": "key press to the core-confirmed present of the first frame carrying it; nearest-rank p95 <= 100 ms over at least 100 confirmed keys of valid runs of one build; met only if the pooled p95 and every valid run's p95 meet it; a key without a confirmed frame counts as one failed key above 100 ms in its run's and the pooled p95, its run stays valid, and it is never filled in",
+    "limit_ms": 100.0,
+    "observations_min": 100,
+    "source": [
+      "charter E2",
+      "RTE.43",
+      "V11.1",
+      "B4-12 method",
+      "PHS.64",
+      "owner decision 2026-11-18 (route B)",
+      "owner decision 2026-11-20 (LP3 exit, item 2)"
+    ]
+  },
+  "result": {
+    "runs": [
+      {
+        "run_id": "20261121T133423Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "keys": 301,
+        "confirmed": 301,
+        "unconfirmed": 0,
+        "no_frame": 0,
+        "unconfirmed_keys": [],
+        "contradictions": [],
+        "per_key": [
+          {
+            "seq": 0,
+            "frame_id": 1164,
+            "status": "confirmed",
+            "latency_ms": 81.903
+          },
+          {
+            "seq": 1,
+            "frame_id": 2371,
+            "status": "confirmed",
+            "latency_ms": 82.3927
+          },
+          {
+            "seq": 2,
+            "frame_id": 3577,
+            "status": "confirmed",
+            "latency_ms": 82.0424
+          },
+          {
+            "seq": 3,
+            "frame_id": 4784,
+            "status": "confirmed",
+            "latency_ms": 82.2924
+          },
+          {
+            "seq": 4,
+            "frame_id": 5991,
+            "status": "confirmed",
+            "latency_ms": 82.1149
+          },
+          {
+            "seq": 5,
+            "frame_id": 7198,
+            "status": "confirmed",
+            "latency_ms": 82.6018
+          },
+          {
+            "seq": 6,
+            "frame_id": 8405,
+            "status": "confirmed",
+            "latency_ms": 82.2701
+          },
+          {
+            "seq": 7,
+            "frame_id": 9612,
+            "status": "confirmed",
+            "latency_ms": 82.2809
+          },
+          {
+            "seq": 8,
+            "frame_id": 10818,
+            "status": "confirmed",
+            "latency_ms": 82.2038
+          },
+          {
+            "seq": 9,
+            "frame_id": 12025,
+            "status": "confirmed",
+            "latency_ms": 82.115
+          },
+          {
+            "seq": 10,
+            "frame_id": 13232,
+            "status": "confirmed",
+            "latency_ms": 82.1313
+          },
+          {
+            "seq": 11,
+            "frame_id": 14438,
+            "status": "confirmed",
+            "latency_ms": 82.1544
+          },
+          {
+            "seq": 12,
+            "frame_id": 15645,
+            "status": "confirmed",
+            "latency_ms": 67.2895
+          },
+          {
+            "seq": 13,
+            "frame_id": 16852,
+            "status": "confirmed",
+            "latency_ms": 82.1553
+          },
+          {
+            "seq": 14,
+            "frame_id": 18059,
+            "status": "confirmed",
+            "latency_ms": 82.1356
+          },
+          {
+            "seq": 15,
+            "frame_id": 19266,
+            "status": "confirmed",
+            "latency_ms": 82.1127
+          },
+          {
+            "seq": 16,
+            "frame_id": 20473,
+            "status": "confirmed",
+            "latency_ms": 82.381
+          },
+          {
+            "seq": 17,
+            "frame_id": 21679,
+            "status": "confirmed",
+            "latency_ms": 82.4935
+          },
+          {
+            "seq": 18,
+            "frame_id": 22885,
+            "status": "confirmed",
+            "latency_ms": 82.074
+          },
+          {
+            "seq": 19,
+            "frame_id": 24091,
+            "status": "confirmed",
+            "latency_ms": 82.1212
+          },
+          {
+            "seq": 20,
+            "frame_id": 25296,
+            "status": "confirmed",
+            "latency_ms": 82.3979
+          },
+          {
+            "seq": 21,
+            "frame_id": 26503,
+            "status": "confirmed",
+            "latency_ms": 82.2544
+          },
+          {
+            "seq": 22,
+            "frame_id": 27710,
+            "status": "confirmed",
+            "latency_ms": 82.1205
+          },
+          {
+            "seq": 23,
+            "frame_id": 28917,
+            "status": "confirmed",
+            "latency_ms": 82.4257
+          },
+          {
+            "seq": 24,
+            "frame_id": 30124,
+            "status": "confirmed",
+            "latency_ms": 82.3126
+          },
+          {
+            "seq": 25,
+            "frame_id": 31331,
+            "status": "confirmed",
+            "latency_ms": 82.2596
+          },
+          {
+            "seq": 26,
+            "frame_id": 32537,
+            "status": "confirmed",
+            "latency_ms": 82.3327
+          },
+          {
+            "seq": 27,
+            "frame_id": 33744,
+            "status": "confirmed",
+            "latency_ms": 82.6186
+          },
+          {
+            "seq": 28,
+            "frame_id": 34951,
+            "status": "confirmed",
+            "latency_ms": 82.5625
+          },
+          {
+            "seq": 29,
+            "frame_id": 36158,
+            "status": "confirmed",
+            "latency_ms": 82.5174
+          },
+          {
+            "seq": 30,
+            "frame_id": 37365,
+            "status": "confirmed",
+            "latency_ms": 82.2246
+          },
+          {
+            "seq": 31,
+            "frame_id": 38572,
+            "status": "confirmed",
+            "latency_ms": 82.1684
+          },
+          {
+            "seq": 32,
+            "frame_id": 39778,
+            "status": "confirmed",
+            "latency_ms": 82.1849
+          },
+          {
+            "seq": 33,
+            "frame_id": 40985,
+            "status": "confirmed",
+            "latency_ms": 67.6676
+          },
+          {
+            "seq": 34,
+            "frame_id": 42192,
+            "status": "confirmed",
+            "latency_ms": 67.1128
+          },
+          {
+            "seq": 35,
+            "frame_id": 43399,
+            "status": "confirmed",
+            "latency_ms": 82.2079
+          },
+          {
+            "seq": 36,
+            "frame_id": 44605,
+            "status": "confirmed",
+            "latency_ms": 82.322
+          },
+          {
+            "seq": 37,
+            "frame_id": 45812,
+            "status": "confirmed",
+            "latency_ms": 82.1889
+          },
+          {
+            "seq": 38,
+            "frame_id": 47018,
+            "status": "confirmed",
+            "latency_ms": 82.1478
+          },
+          {
+            "seq": 39,
+            "frame_id": 48225,
+            "status": "confirmed",
+            "latency_ms": 82.1457
+          },
+          {
+            "seq": 40,
+            "frame_id": 49431,
+            "status": "confirmed",
+            "latency_ms": 67.4547
+          },
+          {
+            "seq": 41,
+            "frame_id": 50638,
+            "status": "confirmed",
+            "latency_ms": 82.5491
+          },
+          {
+            "seq": 42,
+            "frame_id": 51845,
+            "status": "confirmed",
+            "latency_ms": 82.3215
+          },
+          {
+            "seq": 43,
+            "frame_id": 53052,
+            "status": "confirmed",
+            "latency_ms": 82.2848
+          },
+          {
+            "seq": 44,
+            "frame_id": 54259,
+            "status": "confirmed",
+            "latency_ms": 82.6058
+          },
+          {
+            "seq": 45,
+            "frame_id": 55466,
+            "status": "confirmed",
+            "latency_ms": 82.6773
+          },
+          {
+            "seq": 46,
+            "frame_id": 56673,
+            "status": "confirmed",
+            "latency_ms": 82.6614
+          },
+          {
+            "seq": 47,
+            "frame_id": 57879,
+            "status": "confirmed",
+            "latency_ms": 82.4637
+          },
+          {
+            "seq": 48,
+            "frame_id": 59084,
+            "status": "confirmed",
+            "latency_ms": 82.22
+          },
+          {
+            "seq": 49,
+            "frame_id": 60288,
+            "status": "confirmed",
+            "latency_ms": 82.1136
+          },
+          {
+            "seq": 50,
+            "frame_id": 61493,
+            "status": "confirmed",
+            "latency_ms": 82.6334
+          },
+          {
+            "seq": 51,
+            "frame_id": 62698,
+            "status": "confirmed",
+            "latency_ms": 82.2726
+          },
+          {
+            "seq": 52,
+            "frame_id": 63904,
+            "status": "confirmed",
+            "latency_ms": 82.1346
+          },
+          {
+            "seq": 53,
+            "frame_id": 65110,
+            "status": "confirmed",
+            "latency_ms": 81.7402
+          },
+          {
+            "seq": 54,
+            "frame_id": 66317,
+            "status": "confirmed",
+            "latency_ms": 82.1283
+          },
+          {
+            "seq": 55,
+            "frame_id": 67525,
+            "status": "confirmed",
+            "latency_ms": 82.1002
+          },
+          {
+            "seq": 56,
+            "frame_id": 68731,
+            "status": "confirmed",
+            "latency_ms": 82.2162
+          },
+          {
+            "seq": 57,
+            "frame_id": 69939,
+            "status": "confirmed",
+            "latency_ms": 82.4564
+          },
+          {
+            "seq": 58,
+            "frame_id": 71146,
+            "status": "confirmed",
+            "latency_ms": 82.5336
+          },
+          {
+            "seq": 59,
+            "frame_id": 72339,
+            "status": "confirmed",
+            "latency_ms": 82.2348
+          },
+          {
+            "seq": 60,
+            "frame_id": 73546,
+            "status": "confirmed",
+            "latency_ms": 82.4519
+          },
+          {
+            "seq": 61,
+            "frame_id": 74752,
+            "status": "confirmed",
+            "latency_ms": 82.5463
+          },
+          {
+            "seq": 62,
+            "frame_id": 75959,
+            "status": "confirmed",
+            "latency_ms": 82.3284
+          },
+          {
+            "seq": 63,
+            "frame_id": 77166,
+            "status": "confirmed",
+            "latency_ms": 82.0201
+          },
+          {
+            "seq": 64,
+            "frame_id": 78373,
+            "status": "confirmed",
+            "latency_ms": 82.5231
+          },
+          {
+            "seq": 65,
+            "frame_id": 79580,
+            "status": "confirmed",
+            "latency_ms": 82.3779
+          },
+          {
+            "seq": 66,
+            "frame_id": 80787,
+            "status": "confirmed",
+            "latency_ms": 82.3015
+          },
+          {
+            "seq": 67,
+            "frame_id": 81994,
+            "status": "confirmed",
+            "latency_ms": 82.1975
+          },
+          {
+            "seq": 68,
+            "frame_id": 83201,
+            "status": "confirmed",
+            "latency_ms": 82.5182
+          },
+          {
+            "seq": 69,
+            "frame_id": 84408,
+            "status": "confirmed",
+            "latency_ms": 82.6501
+          },
+          {
+            "seq": 70,
+            "frame_id": 85614,
+            "status": "confirmed",
+            "latency_ms": 82.3548
+          },
+          {
+            "seq": 71,
+            "frame_id": 86821,
+            "status": "confirmed",
+            "latency_ms": 82.1376
+          },
+          {
+            "seq": 72,
+            "frame_id": 88027,
+            "status": "confirmed",
+            "latency_ms": 82.6411
+          },
+          {
+            "seq": 73,
+            "frame_id": 89234,
+            "status": "confirmed",
+            "latency_ms": 82.1339
+          },
+          {
+            "seq": 74,
+            "frame_id": 90441,
+            "status": "confirmed",
+            "latency_ms": 82.4279
+          },
+          {
+            "seq": 75,
+            "frame_id": 91648,
+            "status": "confirmed",
+            "latency_ms": 82.5784
+          },
+          {
+            "seq": 76,
+            "frame_id": 92855,
+            "status": "confirmed",
+            "latency_ms": 82.1243
+          },
+          {
+            "seq": 77,
+            "frame_id": 94062,
+            "status": "confirmed",
+            "latency_ms": 82.1895
+          },
+          {
+            "seq": 78,
+            "frame_id": 95268,
+            "status": "confirmed",
+            "latency_ms": 82.133
+          },
+          {
+            "seq": 79,
+            "frame_id": 96475,
+            "status": "confirmed",
+            "latency_ms": 82.3534
+          },
+          {
+            "seq": 80,
+            "frame_id": 97682,
+            "status": "confirmed",
+            "latency_ms": 67.472
+          },
+          {
+            "seq": 81,
+            "frame_id": 98886,
+            "status": "confirmed",
+            "latency_ms": 82.5445
+          },
+          {
+            "seq": 82,
+            "frame_id": 100090,
+            "status": "confirmed",
+            "latency_ms": 82.588
+          },
+          {
+            "seq": 83,
+            "frame_id": 101297,
+            "status": "confirmed",
+            "latency_ms": 82.1566
+          },
+          {
+            "seq": 84,
+            "frame_id": 102503,
+            "status": "confirmed",
+            "latency_ms": 82.3969
+          },
+          {
+            "seq": 85,
+            "frame_id": 103710,
+            "status": "confirmed",
+            "latency_ms": 82.297
+          },
+          {
+            "seq": 86,
+            "frame_id": 104917,
+            "status": "confirmed",
+            "latency_ms": 82.38
+          },
+          {
+            "seq": 87,
+            "frame_id": 106124,
+            "status": "confirmed",
+            "latency_ms": 82.3522
+          },
+          {
+            "seq": 88,
+            "frame_id": 107330,
+            "status": "confirmed",
+            "latency_ms": 67.3515
+          },
+          {
+            "seq": 89,
+            "frame_id": 108537,
+            "status": "confirmed",
+            "latency_ms": 67.0532
+          },
+          {
+            "seq": 90,
+            "frame_id": 109743,
+            "status": "confirmed",
+            "latency_ms": 82.6923
+          },
+          {
+            "seq": 91,
+            "frame_id": 110949,
+            "status": "confirmed",
+            "latency_ms": 82.1182
+          },
+          {
+            "seq": 92,
+            "frame_id": 112156,
+            "status": "confirmed",
+            "latency_ms": 82.6052
+          },
+          {
+            "seq": 93,
+            "frame_id": 113362,
+            "status": "confirmed",
+            "latency_ms": 82.1613
+          },
+          {
+            "seq": 94,
+            "frame_id": 114569,
+            "status": "confirmed",
+            "latency_ms": 82.4322
+          },
+          {
+            "seq": 95,
+            "frame_id": 115775,
+            "status": "confirmed",
+            "latency_ms": 67.5313
+          },
+          {
+            "seq": 96,
+            "frame_id": 116981,
+            "status": "confirmed",
+            "latency_ms": 99.1937
+          },
+          {
+            "seq": 97,
+            "frame_id": 118187,
+            "status": "confirmed",
+            "latency_ms": 82.3165
+          },
+          {
+            "seq": 98,
+            "frame_id": 119394,
+            "status": "confirmed",
+            "latency_ms": 82.2062
+          },
+          {
+            "seq": 99,
+            "frame_id": 120600,
+            "status": "confirmed",
+            "latency_ms": 82.2899
+          },
+          {
+            "seq": 100,
+            "frame_id": 121806,
+            "status": "confirmed",
+            "latency_ms": 82.6208
+          },
+          {
+            "seq": 101,
+            "frame_id": 123013,
+            "status": "confirmed",
+            "latency_ms": 82.1714
+          },
+          {
+            "seq": 102,
+            "frame_id": 124220,
+            "status": "confirmed",
+            "latency_ms": 82.614
+          },
+          {
+            "seq": 103,
+            "frame_id": 125426,
+            "status": "confirmed",
+            "latency_ms": 82.646
+          },
+          {
+            "seq": 104,
+            "frame_id": 126634,
+            "status": "confirmed",
+            "latency_ms": 82.257
+          },
+          {
+            "seq": 105,
+            "frame_id": 127840,
+            "status": "confirmed",
+            "latency_ms": 82.3528
+          },
+          {
+            "seq": 106,
+            "frame_id": 129047,
+            "status": "confirmed",
+            "latency_ms": 82.1388
+          },
+          {
+            "seq": 107,
+            "frame_id": 130254,
+            "status": "confirmed",
+            "latency_ms": 82.1046
+          },
+          {
+            "seq": 108,
+            "frame_id": 131461,
+            "status": "confirmed",
+            "latency_ms": 115.6484
+          },
+          {
+            "seq": 109,
+            "frame_id": 132667,
+            "status": "confirmed",
+            "latency_ms": 82.2268
+          },
+          {
+            "seq": 110,
+            "frame_id": 133873,
+            "status": "confirmed",
+            "latency_ms": 82.4168
+          },
+          {
+            "seq": 111,
+            "frame_id": 135080,
+            "status": "confirmed",
+            "latency_ms": 82.2374
+          },
+          {
+            "seq": 112,
+            "frame_id": 136287,
+            "status": "confirmed",
+            "latency_ms": 82.4864
+          },
+          {
+            "seq": 113,
+            "frame_id": 137494,
+            "status": "confirmed",
+            "latency_ms": 82.5467
+          },
+          {
+            "seq": 114,
+            "frame_id": 138701,
+            "status": "confirmed",
+            "latency_ms": 82.2045
+          },
+          {
+            "seq": 115,
+            "frame_id": 139908,
+            "status": "confirmed",
+            "latency_ms": 82.1506
+          },
+          {
+            "seq": 116,
+            "frame_id": 141115,
+            "status": "confirmed",
+            "latency_ms": 82.0557
+          },
+          {
+            "seq": 117,
+            "frame_id": 142321,
+            "status": "confirmed",
+            "latency_ms": 82.0807
+          },
+          {
+            "seq": 118,
+            "frame_id": 143527,
+            "status": "confirmed",
+            "latency_ms": 82.5938
+          },
+          {
+            "seq": 119,
+            "frame_id": 144733,
+            "status": "confirmed",
+            "latency_ms": 82.6151
+          },
+          {
+            "seq": 120,
+            "frame_id": 145938,
+            "status": "confirmed",
+            "latency_ms": 82.1122
+          },
+          {
+            "seq": 121,
+            "frame_id": 147144,
+            "status": "confirmed",
+            "latency_ms": 67.5329
+          },
+          {
+            "seq": 122,
+            "frame_id": 148351,
+            "status": "confirmed",
+            "latency_ms": 67.4376
+          },
+          {
+            "seq": 123,
+            "frame_id": 149558,
+            "status": "confirmed",
+            "latency_ms": 82.496
+          },
+          {
+            "seq": 124,
+            "frame_id": 150765,
+            "status": "confirmed",
+            "latency_ms": 82.3756
+          },
+          {
+            "seq": 125,
+            "frame_id": 151971,
+            "status": "confirmed",
+            "latency_ms": 82.5747
+          },
+          {
+            "seq": 126,
+            "frame_id": 153178,
+            "status": "confirmed",
+            "latency_ms": 82.6207
+          },
+          {
+            "seq": 127,
+            "frame_id": 154385,
+            "status": "confirmed",
+            "latency_ms": 82.0466
+          },
+          {
+            "seq": 128,
+            "frame_id": 155592,
+            "status": "confirmed",
+            "latency_ms": 82.3722
+          },
+          {
+            "seq": 129,
+            "frame_id": 156798,
+            "status": "confirmed",
+            "latency_ms": 82.4954
+          },
+          {
+            "seq": 130,
+            "frame_id": 158005,
+            "status": "confirmed",
+            "latency_ms": 82.299
+          },
+          {
+            "seq": 131,
+            "frame_id": 159212,
+            "status": "confirmed",
+            "latency_ms": 82.5321
+          },
+          {
+            "seq": 132,
+            "frame_id": 160419,
+            "status": "confirmed",
+            "latency_ms": 67.1217
+          },
+          {
+            "seq": 133,
+            "frame_id": 161626,
+            "status": "confirmed",
+            "latency_ms": 82.4635
+          },
+          {
+            "seq": 134,
+            "frame_id": 162832,
+            "status": "confirmed",
+            "latency_ms": 67.3689
+          },
+          {
+            "seq": 135,
+            "frame_id": 164039,
+            "status": "confirmed",
+            "latency_ms": 67.3387
+          },
+          {
+            "seq": 136,
+            "frame_id": 165246,
+            "status": "confirmed",
+            "latency_ms": 82.2625
+          },
+          {
+            "seq": 137,
+            "frame_id": 166452,
+            "status": "confirmed",
+            "latency_ms": 82.3029
+          },
+          {
+            "seq": 138,
+            "frame_id": 167659,
+            "status": "confirmed",
+            "latency_ms": 82.1431
+          },
+          {
+            "seq": 139,
+            "frame_id": 168866,
+            "status": "confirmed",
+            "latency_ms": 82.0774
+          },
+          {
+            "seq": 140,
+            "frame_id": 170072,
+            "status": "confirmed",
+            "latency_ms": 82.4573
+          },
+          {
+            "seq": 141,
+            "frame_id": 171279,
+            "status": "confirmed",
+            "latency_ms": 82.637
+          },
+          {
+            "seq": 142,
+            "frame_id": 172486,
+            "status": "confirmed",
+            "latency_ms": 67.6074
+          },
+          {
+            "seq": 143,
+            "frame_id": 173693,
+            "status": "confirmed",
+            "latency_ms": 82.5509
+          },
+          {
+            "seq": 144,
+            "frame_id": 174900,
+            "status": "confirmed",
+            "latency_ms": 82.1352
+          },
+          {
+            "seq": 145,
+            "frame_id": 176107,
+            "status": "confirmed",
+            "latency_ms": 82.4094
+          },
+          {
+            "seq": 146,
+            "frame_id": 177313,
+            "status": "confirmed",
+            "latency_ms": 82.4966
+          },
+          {
+            "seq": 147,
+            "frame_id": 178520,
+            "status": "confirmed",
+            "latency_ms": 82.3828
+          },
+          {
+            "seq": 148,
+            "frame_id": 179727,
+            "status": "confirmed",
+            "latency_ms": 82.153
+          },
+          {
+            "seq": 149,
+            "frame_id": 180934,
+            "status": "confirmed",
+            "latency_ms": 82.1737
+          },
+          {
+            "seq": 150,
+            "frame_id": 182140,
+            "status": "confirmed",
+            "latency_ms": 82.1513
+          },
+          {
+            "seq": 151,
+            "frame_id": 183346,
+            "status": "confirmed",
+            "latency_ms": 67.5556
+          },
+          {
+            "seq": 152,
+            "frame_id": 184552,
+            "status": "confirmed",
+            "latency_ms": 82.2106
+          },
+          {
+            "seq": 153,
+            "frame_id": 185759,
+            "status": "confirmed",
+            "latency_ms": 82.0868
+          },
+          {
+            "seq": 154,
+            "frame_id": 186965,
+            "status": "confirmed",
+            "latency_ms": 82.1649
+          },
+          {
+            "seq": 155,
+            "frame_id": 188172,
+            "status": "confirmed",
+            "latency_ms": 82.5268
+          },
+          {
+            "seq": 156,
+            "frame_id": 189379,
+            "status": "confirmed",
+            "latency_ms": 82.351
+          },
+          {
+            "seq": 157,
+            "frame_id": 190586,
+            "status": "confirmed",
+            "latency_ms": 82.2675
+          },
+          {
+            "seq": 158,
+            "frame_id": 191793,
+            "status": "confirmed",
+            "latency_ms": 98.808
+          },
+          {
+            "seq": 159,
+            "frame_id": 192999,
+            "status": "confirmed",
+            "latency_ms": 82.49
+          },
+          {
+            "seq": 160,
+            "frame_id": 194206,
+            "status": "confirmed",
+            "latency_ms": 67.3487
+          },
+          {
+            "seq": 161,
+            "frame_id": 195412,
+            "status": "confirmed",
+            "latency_ms": 82.462
+          },
+          {
+            "seq": 162,
+            "frame_id": 196620,
+            "status": "confirmed",
+            "latency_ms": 82.1888
+          },
+          {
+            "seq": 163,
+            "frame_id": 197827,
+            "status": "confirmed",
+            "latency_ms": 82.4132
+          },
+          {
+            "seq": 164,
+            "frame_id": 199033,
+            "status": "confirmed",
+            "latency_ms": 67.4295
+          },
+          {
+            "seq": 165,
+            "frame_id": 200240,
+            "status": "confirmed",
+            "latency_ms": 82.1369
+          },
+          {
+            "seq": 166,
+            "frame_id": 201447,
+            "status": "confirmed",
+            "latency_ms": 82.6051
+          },
+          {
+            "seq": 167,
+            "frame_id": 202654,
+            "status": "confirmed",
+            "latency_ms": 82.6194
+          },
+          {
+            "seq": 168,
+            "frame_id": 203861,
+            "status": "confirmed",
+            "latency_ms": 82.4331
+          },
+          {
+            "seq": 169,
+            "frame_id": 205068,
+            "status": "confirmed",
+            "latency_ms": 82.5637
+          },
+          {
+            "seq": 170,
+            "frame_id": 206275,
+            "status": "confirmed",
+            "latency_ms": 67.3073
+          },
+          {
+            "seq": 171,
+            "frame_id": 207482,
+            "status": "confirmed",
+            "latency_ms": 67.6537
+          },
+          {
+            "seq": 172,
+            "frame_id": 208689,
+            "status": "confirmed",
+            "latency_ms": 82.4041
+          },
+          {
+            "seq": 173,
+            "frame_id": 209895,
+            "status": "confirmed",
+            "latency_ms": 82.63
+          },
+          {
+            "seq": 174,
+            "frame_id": 211102,
+            "status": "confirmed",
+            "latency_ms": 82.5632
+          },
+          {
+            "seq": 175,
+            "frame_id": 212309,
+            "status": "confirmed",
+            "latency_ms": 82.1902
+          },
+          {
+            "seq": 176,
+            "frame_id": 213516,
+            "status": "confirmed",
+            "latency_ms": 82.11
+          },
+          {
+            "seq": 177,
+            "frame_id": 214723,
+            "status": "confirmed",
+            "latency_ms": 82.3967
+          },
+          {
+            "seq": 178,
+            "frame_id": 215930,
+            "status": "confirmed",
+            "latency_ms": 82.3352
+          },
+          {
+            "seq": 179,
+            "frame_id": 217137,
+            "status": "confirmed",
+            "latency_ms": 67.2675
+          },
+          {
+            "seq": 180,
+            "frame_id": 218343,
+            "status": "confirmed",
+            "latency_ms": 82.2622
+          },
+          {
+            "seq": 181,
+            "frame_id": 219549,
+            "status": "confirmed",
+            "latency_ms": 82.3111
+          },
+          {
+            "seq": 182,
+            "frame_id": 220754,
+            "status": "confirmed",
+            "latency_ms": 82.3388
+          },
+          {
+            "seq": 183,
+            "frame_id": 221961,
+            "status": "confirmed",
+            "latency_ms": 82.416
+          },
+          {
+            "seq": 184,
+            "frame_id": 223166,
+            "status": "confirmed",
+            "latency_ms": 82.0988
+          },
+          {
+            "seq": 185,
+            "frame_id": 224373,
+            "status": "confirmed",
+            "latency_ms": 82.2348
+          },
+          {
+            "seq": 186,
+            "frame_id": 225580,
+            "status": "confirmed",
+            "latency_ms": 82.3965
+          },
+          {
+            "seq": 187,
+            "frame_id": 226786,
+            "status": "confirmed",
+            "latency_ms": 82.4105
+          },
+          {
+            "seq": 188,
+            "frame_id": 227993,
+            "status": "confirmed",
+            "latency_ms": 82.6687
+          },
+          {
+            "seq": 189,
+            "frame_id": 229200,
+            "status": "confirmed",
+            "latency_ms": 82.1961
+          },
+          {
+            "seq": 190,
+            "frame_id": 230406,
+            "status": "confirmed",
+            "latency_ms": 82.6789
+          },
+          {
+            "seq": 191,
+            "frame_id": 231613,
+            "status": "confirmed",
+            "latency_ms": 82.1551
+          },
+          {
+            "seq": 192,
+            "frame_id": 232819,
+            "status": "confirmed",
+            "latency_ms": 67.1051
+          },
+          {
+            "seq": 193,
+            "frame_id": 234025,
+            "status": "confirmed",
+            "latency_ms": 82.6628
+          },
+          {
+            "seq": 194,
+            "frame_id": 235230,
+            "status": "confirmed",
+            "latency_ms": 82.4598
+          },
+          {
+            "seq": 195,
+            "frame_id": 236437,
+            "status": "confirmed",
+            "latency_ms": 82.3554
+          },
+          {
+            "seq": 196,
+            "frame_id": 237643,
+            "status": "confirmed",
+            "latency_ms": 82.3753
+          },
+          {
+            "seq": 197,
+            "frame_id": 238849,
+            "status": "confirmed",
+            "latency_ms": 82.4199
+          },
+          {
+            "seq": 198,
+            "frame_id": 240056,
+            "status": "confirmed",
+            "latency_ms": 67.2807
+          },
+          {
+            "seq": 199,
+            "frame_id": 241263,
+            "status": "confirmed",
+            "latency_ms": 98.6713
+          },
+          {
+            "seq": 200,
+            "frame_id": 242469,
+            "status": "confirmed",
+            "latency_ms": 82.5612
+          },
+          {
+            "seq": 201,
+            "frame_id": 243676,
+            "status": "confirmed",
+            "latency_ms": 82.3489
+          },
+          {
+            "seq": 202,
+            "frame_id": 244882,
+            "status": "confirmed",
+            "latency_ms": 82.5552
+          },
+          {
+            "seq": 203,
+            "frame_id": 246089,
+            "status": "confirmed",
+            "latency_ms": 67.3201
+          },
+          {
+            "seq": 204,
+            "frame_id": 247296,
+            "status": "confirmed",
+            "latency_ms": 82.4521
+          },
+          {
+            "seq": 205,
+            "frame_id": 248503,
+            "status": "confirmed",
+            "latency_ms": 81.9935
+          },
+          {
+            "seq": 206,
+            "frame_id": 249710,
+            "status": "confirmed",
+            "latency_ms": 82.6328
+          },
+          {
+            "seq": 207,
+            "frame_id": 250916,
+            "status": "confirmed",
+            "latency_ms": 82.4958
+          },
+          {
+            "seq": 208,
+            "frame_id": 252123,
+            "status": "confirmed",
+            "latency_ms": 82.2338
+          },
+          {
+            "seq": 209,
+            "frame_id": 253331,
+            "status": "confirmed",
+            "latency_ms": 82.0975
+          },
+          {
+            "seq": 210,
+            "frame_id": 254538,
+            "status": "confirmed",
+            "latency_ms": 82.2756
+          },
+          {
+            "seq": 211,
+            "frame_id": 255745,
+            "status": "confirmed",
+            "latency_ms": 82.1981
+          },
+          {
+            "seq": 212,
+            "frame_id": 256951,
+            "status": "confirmed",
+            "latency_ms": 82.3769
+          },
+          {
+            "seq": 213,
+            "frame_id": 258158,
+            "status": "confirmed",
+            "latency_ms": 82.5481
+          },
+          {
+            "seq": 214,
+            "frame_id": 259364,
+            "status": "confirmed",
+            "latency_ms": 82.6339
+          },
+          {
+            "seq": 215,
+            "frame_id": 260571,
+            "status": "confirmed",
+            "latency_ms": 115.3427
+          },
+          {
+            "seq": 216,
+            "frame_id": 261777,
+            "status": "confirmed",
+            "latency_ms": 82.6391
+          },
+          {
+            "seq": 217,
+            "frame_id": 262983,
+            "status": "confirmed",
+            "latency_ms": 67.6041
+          },
+          {
+            "seq": 218,
+            "frame_id": 264190,
+            "status": "confirmed",
+            "latency_ms": 82.5223
+          },
+          {
+            "seq": 219,
+            "frame_id": 265396,
+            "status": "confirmed",
+            "latency_ms": 82.2395
+          },
+          {
+            "seq": 220,
+            "frame_id": 266603,
+            "status": "confirmed",
+            "latency_ms": 82.3425
+          },
+          {
+            "seq": 221,
+            "frame_id": 267809,
+            "status": "confirmed",
+            "latency_ms": 82.3748
+          },
+          {
+            "seq": 222,
+            "frame_id": 269016,
+            "status": "confirmed",
+            "latency_ms": 82.271
+          },
+          {
+            "seq": 223,
+            "frame_id": 270222,
+            "status": "confirmed",
+            "latency_ms": 82.2892
+          },
+          {
+            "seq": 224,
+            "frame_id": 271429,
+            "status": "confirmed",
+            "latency_ms": 82.0772
+          },
+          {
+            "seq": 225,
+            "frame_id": 272636,
+            "status": "confirmed",
+            "latency_ms": 82.3902
+          },
+          {
+            "seq": 226,
+            "frame_id": 273843,
+            "status": "confirmed",
+            "latency_ms": 82.5363
+          },
+          {
+            "seq": 227,
+            "frame_id": 275050,
+            "status": "confirmed",
+            "latency_ms": 82.2502
+          },
+          {
+            "seq": 228,
+            "frame_id": 276257,
+            "status": "confirmed",
+            "latency_ms": 82.3029
+          },
+          {
+            "seq": 229,
+            "frame_id": 277464,
+            "status": "confirmed",
+            "latency_ms": 82.674
+          },
+          {
+            "seq": 230,
+            "frame_id": 278670,
+            "status": "confirmed",
+            "latency_ms": 82.568
+          },
+          {
+            "seq": 231,
+            "frame_id": 279877,
+            "status": "confirmed",
+            "latency_ms": 82.3754
+          },
+          {
+            "seq": 232,
+            "frame_id": 281084,
+            "status": "confirmed",
+            "latency_ms": 82.6609
+          },
+          {
+            "seq": 233,
+            "frame_id": 282291,
+            "status": "confirmed",
+            "latency_ms": 82.1072
+          },
+          {
+            "seq": 234,
+            "frame_id": 283497,
+            "status": "confirmed",
+            "latency_ms": 82.2767
+          },
+          {
+            "seq": 235,
+            "frame_id": 284704,
+            "status": "confirmed",
+            "latency_ms": 82.4852
+          },
+          {
+            "seq": 236,
+            "frame_id": 285911,
+            "status": "confirmed",
+            "latency_ms": 82.5878
+          },
+          {
+            "seq": 237,
+            "frame_id": 287118,
+            "status": "confirmed",
+            "latency_ms": 82.1496
+          },
+          {
+            "seq": 238,
+            "frame_id": 288324,
+            "status": "confirmed",
+            "latency_ms": 82.5894
+          },
+          {
+            "seq": 239,
+            "frame_id": 289531,
+            "status": "confirmed",
+            "latency_ms": 82.2889
+          },
+          {
+            "seq": 240,
+            "frame_id": 290738,
+            "status": "confirmed",
+            "latency_ms": 82.1259
+          },
+          {
+            "seq": 241,
+            "frame_id": 291945,
+            "status": "confirmed",
+            "latency_ms": 82.6399
+          },
+          {
+            "seq": 242,
+            "frame_id": 293151,
+            "status": "confirmed",
+            "latency_ms": 82.5085
+          },
+          {
+            "seq": 243,
+            "frame_id": 294358,
+            "status": "confirmed",
+            "latency_ms": 82.3878
+          },
+          {
+            "seq": 244,
+            "frame_id": 295565,
+            "status": "confirmed",
+            "latency_ms": 82.3732
+          },
+          {
+            "seq": 245,
+            "frame_id": 296772,
+            "status": "confirmed",
+            "latency_ms": 82.0692
+          },
+          {
+            "seq": 246,
+            "frame_id": 297978,
+            "status": "confirmed",
+            "latency_ms": 82.2325
+          },
+          {
+            "seq": 247,
+            "frame_id": 299185,
+            "status": "confirmed",
+            "latency_ms": 82.0048
+          },
+          {
+            "seq": 248,
+            "frame_id": 300392,
+            "status": "confirmed",
+            "latency_ms": 82.3704
+          },
+          {
+            "seq": 249,
+            "frame_id": 301599,
+            "status": "confirmed",
+            "latency_ms": 82.4191
+          },
+          {
+            "seq": 250,
+            "frame_id": 302805,
+            "status": "confirmed",
+            "latency_ms": 82.2508
+          },
+          {
+            "seq": 251,
+            "frame_id": 304012,
+            "status": "confirmed",
+            "latency_ms": 82.2357
+          },
+          {
+            "seq": 252,
+            "frame_id": 305218,
+            "status": "confirmed",
+            "latency_ms": 82.4585
+          },
+          {
+            "seq": 253,
+            "frame_id": 306424,
+            "status": "confirmed",
+            "latency_ms": 82.2086
+          },
+          {
+            "seq": 254,
+            "frame_id": 307631,
+            "status": "confirmed",
+            "latency_ms": 67.2365
+          },
+          {
+            "seq": 255,
+            "frame_id": 308838,
+            "status": "confirmed",
+            "latency_ms": 82.37
+          },
+          {
+            "seq": 256,
+            "frame_id": 310045,
+            "status": "confirmed",
+            "latency_ms": 82.4422
+          },
+          {
+            "seq": 257,
+            "frame_id": 311251,
+            "status": "confirmed",
+            "latency_ms": 82.6162
+          },
+          {
+            "seq": 258,
+            "frame_id": 312458,
+            "status": "confirmed",
+            "latency_ms": 82.4106
+          },
+          {
+            "seq": 259,
+            "frame_id": 313665,
+            "status": "confirmed",
+            "latency_ms": 82.1902
+          },
+          {
+            "seq": 260,
+            "frame_id": 314871,
+            "status": "confirmed",
+            "latency_ms": 67.363
+          },
+          {
+            "seq": 261,
+            "frame_id": 316078,
+            "status": "confirmed",
+            "latency_ms": 81.9785
+          },
+          {
+            "seq": 262,
+            "frame_id": 317285,
+            "status": "confirmed",
+            "latency_ms": 82.4272
+          },
+          {
+            "seq": 263,
+            "frame_id": 318492,
+            "status": "confirmed",
+            "latency_ms": 82.3072
+          },
+          {
+            "seq": 264,
+            "frame_id": 319699,
+            "status": "confirmed",
+            "latency_ms": 82.5127
+          },
+          {
+            "seq": 265,
+            "frame_id": 320906,
+            "status": "confirmed",
+            "latency_ms": 82.1977
+          },
+          {
+            "seq": 266,
+            "frame_id": 322113,
+            "status": "confirmed",
+            "latency_ms": 82.5009
+          },
+          {
+            "seq": 267,
+            "frame_id": 323320,
+            "status": "confirmed",
+            "latency_ms": 67.6092
+          },
+          {
+            "seq": 268,
+            "frame_id": 324527,
+            "status": "confirmed",
+            "latency_ms": 82.2942
+          },
+          {
+            "seq": 269,
+            "frame_id": 325733,
+            "status": "confirmed",
+            "latency_ms": 82.2189
+          },
+          {
+            "seq": 270,
+            "frame_id": 326940,
+            "status": "confirmed",
+            "latency_ms": 82.5391
+          },
+          {
+            "seq": 271,
+            "frame_id": 328147,
+            "status": "confirmed",
+            "latency_ms": 82.6461
+          },
+          {
+            "seq": 272,
+            "frame_id": 329354,
+            "status": "confirmed",
+            "latency_ms": 82.3391
+          },
+          {
+            "seq": 273,
+            "frame_id": 330560,
+            "status": "confirmed",
+            "latency_ms": 67.455
+          },
+          {
+            "seq": 274,
+            "frame_id": 331767,
+            "status": "confirmed",
+            "latency_ms": 82.6276
+          },
+          {
+            "seq": 275,
+            "frame_id": 332974,
+            "status": "confirmed",
+            "latency_ms": 82.2222
+          },
+          {
+            "seq": 276,
+            "frame_id": 334181,
+            "status": "confirmed",
+            "latency_ms": 67.6691
+          },
+          {
+            "seq": 277,
+            "frame_id": 335388,
+            "status": "confirmed",
+            "latency_ms": 98.8965
+          },
+          {
+            "seq": 278,
+            "frame_id": 336593,
+            "status": "confirmed",
+            "latency_ms": 82.3395
+          },
+          {
+            "seq": 279,
+            "frame_id": 337800,
+            "status": "confirmed",
+            "latency_ms": 82.2606
+          },
+          {
+            "seq": 280,
+            "frame_id": 339007,
+            "status": "confirmed",
+            "latency_ms": 82.1447
+          },
+          {
+            "seq": 281,
+            "frame_id": 340213,
+            "status": "confirmed",
+            "latency_ms": 82.218
+          },
+          {
+            "seq": 282,
+            "frame_id": 341419,
+            "status": "confirmed",
+            "latency_ms": 82.2262
+          },
+          {
+            "seq": 283,
+            "frame_id": 342625,
+            "status": "confirmed",
+            "latency_ms": 82.3111
+          },
+          {
+            "seq": 284,
+            "frame_id": 343831,
+            "status": "confirmed",
+            "latency_ms": 82.4069
+          },
+          {
+            "seq": 285,
+            "frame_id": 345037,
+            "status": "confirmed",
+            "latency_ms": 82.4327
+          },
+          {
+            "seq": 286,
+            "frame_id": 346245,
+            "status": "confirmed",
+            "latency_ms": 82.5644
+          },
+          {
+            "seq": 287,
+            "frame_id": 347451,
+            "status": "confirmed",
+            "latency_ms": 81.3037
+          },
+          {
+            "seq": 288,
+            "frame_id": 348658,
+            "status": "confirmed",
+            "latency_ms": 82.3295
+          },
+          {
+            "seq": 289,
+            "frame_id": 349865,
+            "status": "confirmed",
+            "latency_ms": 82.347
+          },
+          {
+            "seq": 290,
+            "frame_id": 351072,
+            "status": "confirmed",
+            "latency_ms": 82.29
+          },
+          {
+            "seq": 291,
+            "frame_id": 352278,
+            "status": "confirmed",
+            "latency_ms": 82.4078
+          },
+          {
+            "seq": 292,
+            "frame_id": 353485,
+            "status": "confirmed",
+            "latency_ms": 67.653
+          },
+          {
+            "seq": 293,
+            "frame_id": 354691,
+            "status": "confirmed",
+            "latency_ms": 82.1773
+          },
+          {
+            "seq": 294,
+            "frame_id": 355897,
+            "status": "confirmed",
+            "latency_ms": 82.3047
+          },
+          {
+            "seq": 295,
+            "frame_id": 357103,
+            "status": "confirmed",
+            "latency_ms": 82.3753
+          },
+          {
+            "seq": 296,
+            "frame_id": 358310,
+            "status": "confirmed",
+            "latency_ms": 82.17
+          },
+          {
+            "seq": 297,
+            "frame_id": 359516,
+            "status": "confirmed",
+            "latency_ms": 82.623
+          },
+          {
+            "seq": 298,
+            "frame_id": 360722,
+            "status": "confirmed",
+            "latency_ms": 82.3157
+          },
+          {
+            "seq": 299,
+            "frame_id": 361928,
+            "status": "confirmed",
+            "latency_ms": 82.3628
+          },
+          {
+            "seq": 300,
+            "frame_id": 363134,
+            "status": "confirmed",
+            "latency_ms": 82.2768
+          }
+        ],
+        "stats": {
+          "n": 301,
+          "confirmed": 301,
+          "failed_keys": 0,
+          "mean": 81.29084983388704,
+          "p50": 82.3047,
+          "p95": 82.6461,
+          "p99": 98.8965,
+          "max": 115.6484,
+          "p95_met": true
+        },
+        "presentmon": {
+          "frames_checked": 301,
+          "disagreements": 0,
+          "presentmon_presents": 363298
+        },
+        "status": "valid",
+        "reasons": []
+      },
+      {
+        "run_id": "20261121T151540Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "keys": 301,
+        "confirmed": 300,
+        "unconfirmed": 1,
+        "no_frame": 0,
+        "unconfirmed_keys": [
+          188
+        ],
+        "contradictions": [],
+        "per_key": [
+          {
+            "seq": 0,
+            "frame_id": 1165,
+            "status": "confirmed",
+            "latency_ms": 65.3478
+          },
+          {
+            "seq": 1,
+            "frame_id": 2373,
+            "status": "confirmed",
+            "latency_ms": 65.7965
+          },
+          {
+            "seq": 2,
+            "frame_id": 3581,
+            "status": "confirmed",
+            "latency_ms": 65.6327
+          },
+          {
+            "seq": 3,
+            "frame_id": 4789,
+            "status": "confirmed",
+            "latency_ms": 65.5535
+          },
+          {
+            "seq": 4,
+            "frame_id": 5996,
+            "status": "confirmed",
+            "latency_ms": 65.6205
+          },
+          {
+            "seq": 5,
+            "frame_id": 7203,
+            "status": "confirmed",
+            "latency_ms": 65.7065
+          },
+          {
+            "seq": 6,
+            "frame_id": 8411,
+            "status": "confirmed",
+            "latency_ms": 65.9075
+          },
+          {
+            "seq": 7,
+            "frame_id": 9619,
+            "status": "confirmed",
+            "latency_ms": 65.4205
+          },
+          {
+            "seq": 8,
+            "frame_id": 10827,
+            "status": "confirmed",
+            "latency_ms": 65.7424
+          },
+          {
+            "seq": 9,
+            "frame_id": 12035,
+            "status": "confirmed",
+            "latency_ms": 65.5424
+          },
+          {
+            "seq": 10,
+            "frame_id": 13243,
+            "status": "confirmed",
+            "latency_ms": 65.9257
+          },
+          {
+            "seq": 11,
+            "frame_id": 14451,
+            "status": "confirmed",
+            "latency_ms": 65.4523
+          },
+          {
+            "seq": 12,
+            "frame_id": 15658,
+            "status": "confirmed",
+            "latency_ms": 65.855
+          },
+          {
+            "seq": 13,
+            "frame_id": 16866,
+            "status": "confirmed",
+            "latency_ms": 65.6764
+          },
+          {
+            "seq": 14,
+            "frame_id": 18073,
+            "status": "confirmed",
+            "latency_ms": 65.989
+          },
+          {
+            "seq": 15,
+            "frame_id": 19281,
+            "status": "confirmed",
+            "latency_ms": 65.9905
+          },
+          {
+            "seq": 16,
+            "frame_id": 20489,
+            "status": "confirmed",
+            "latency_ms": 65.5975
+          },
+          {
+            "seq": 17,
+            "frame_id": 21695,
+            "status": "confirmed",
+            "latency_ms": 65.9057
+          },
+          {
+            "seq": 18,
+            "frame_id": 22902,
+            "status": "confirmed",
+            "latency_ms": 65.9174
+          },
+          {
+            "seq": 19,
+            "frame_id": 24109,
+            "status": "confirmed",
+            "latency_ms": 65.9321
+          },
+          {
+            "seq": 20,
+            "frame_id": 25315,
+            "status": "confirmed",
+            "latency_ms": 65.5652
+          },
+          {
+            "seq": 21,
+            "frame_id": 26521,
+            "status": "confirmed",
+            "latency_ms": 65.4396
+          },
+          {
+            "seq": 22,
+            "frame_id": 27729,
+            "status": "confirmed",
+            "latency_ms": 65.7711
+          },
+          {
+            "seq": 23,
+            "frame_id": 28936,
+            "status": "confirmed",
+            "latency_ms": 66.016
+          },
+          {
+            "seq": 24,
+            "frame_id": 30144,
+            "status": "confirmed",
+            "latency_ms": 65.585
+          },
+          {
+            "seq": 25,
+            "frame_id": 31352,
+            "status": "confirmed",
+            "latency_ms": 65.9192
+          },
+          {
+            "seq": 26,
+            "frame_id": 32560,
+            "status": "confirmed",
+            "latency_ms": 65.4743
+          },
+          {
+            "seq": 27,
+            "frame_id": 33767,
+            "status": "confirmed",
+            "latency_ms": 65.4908
+          },
+          {
+            "seq": 28,
+            "frame_id": 34975,
+            "status": "confirmed",
+            "latency_ms": 65.8551
+          },
+          {
+            "seq": 29,
+            "frame_id": 36183,
+            "status": "confirmed",
+            "latency_ms": 65.5831
+          },
+          {
+            "seq": 30,
+            "frame_id": 37390,
+            "status": "confirmed",
+            "latency_ms": 65.973
+          },
+          {
+            "seq": 31,
+            "frame_id": 38597,
+            "status": "confirmed",
+            "latency_ms": 65.8309
+          },
+          {
+            "seq": 32,
+            "frame_id": 39805,
+            "status": "confirmed",
+            "latency_ms": 65.6172
+          },
+          {
+            "seq": 33,
+            "frame_id": 41013,
+            "status": "confirmed",
+            "latency_ms": 65.506
+          },
+          {
+            "seq": 34,
+            "frame_id": 42221,
+            "status": "confirmed",
+            "latency_ms": 65.4205
+          },
+          {
+            "seq": 35,
+            "frame_id": 43429,
+            "status": "confirmed",
+            "latency_ms": 65.976
+          },
+          {
+            "seq": 36,
+            "frame_id": 44636,
+            "status": "confirmed",
+            "latency_ms": 65.8031
+          },
+          {
+            "seq": 37,
+            "frame_id": 45844,
+            "status": "confirmed",
+            "latency_ms": 65.6943
+          },
+          {
+            "seq": 38,
+            "frame_id": 47052,
+            "status": "confirmed",
+            "latency_ms": 65.5906
+          },
+          {
+            "seq": 39,
+            "frame_id": 48259,
+            "status": "confirmed",
+            "latency_ms": 115.6036
+          },
+          {
+            "seq": 40,
+            "frame_id": 49464,
+            "status": "confirmed",
+            "latency_ms": 65.4815
+          },
+          {
+            "seq": 41,
+            "frame_id": 50671,
+            "status": "confirmed",
+            "latency_ms": 65.8469
+          },
+          {
+            "seq": 42,
+            "frame_id": 51879,
+            "status": "confirmed",
+            "latency_ms": 65.3556
+          },
+          {
+            "seq": 43,
+            "frame_id": 53087,
+            "status": "confirmed",
+            "latency_ms": 65.7119
+          },
+          {
+            "seq": 44,
+            "frame_id": 54295,
+            "status": "confirmed",
+            "latency_ms": 65.7141
+          },
+          {
+            "seq": 45,
+            "frame_id": 55502,
+            "status": "confirmed",
+            "latency_ms": 65.6667
+          },
+          {
+            "seq": 46,
+            "frame_id": 56710,
+            "status": "confirmed",
+            "latency_ms": 65.9729
+          },
+          {
+            "seq": 47,
+            "frame_id": 57918,
+            "status": "confirmed",
+            "latency_ms": 65.8257
+          },
+          {
+            "seq": 48,
+            "frame_id": 59124,
+            "status": "confirmed",
+            "latency_ms": 65.523
+          },
+          {
+            "seq": 49,
+            "frame_id": 60330,
+            "status": "confirmed",
+            "latency_ms": 65.8925
+          },
+          {
+            "seq": 50,
+            "frame_id": 61536,
+            "status": "confirmed",
+            "latency_ms": 65.6479
+          },
+          {
+            "seq": 51,
+            "frame_id": 62742,
+            "status": "confirmed",
+            "latency_ms": 65.4208
+          },
+          {
+            "seq": 52,
+            "frame_id": 63949,
+            "status": "confirmed",
+            "latency_ms": 82.493
+          },
+          {
+            "seq": 53,
+            "frame_id": 65154,
+            "status": "confirmed",
+            "latency_ms": 65.9439
+          },
+          {
+            "seq": 54,
+            "frame_id": 66362,
+            "status": "confirmed",
+            "latency_ms": 65.6242
+          },
+          {
+            "seq": 55,
+            "frame_id": 67570,
+            "status": "confirmed",
+            "latency_ms": 65.921
+          },
+          {
+            "seq": 56,
+            "frame_id": 68778,
+            "status": "confirmed",
+            "latency_ms": 65.4999
+          },
+          {
+            "seq": 57,
+            "frame_id": 69985,
+            "status": "confirmed",
+            "latency_ms": 65.6803
+          },
+          {
+            "seq": 58,
+            "frame_id": 71193,
+            "status": "confirmed",
+            "latency_ms": 82.3836
+          },
+          {
+            "seq": 59,
+            "frame_id": 72400,
+            "status": "confirmed",
+            "latency_ms": 65.6798
+          },
+          {
+            "seq": 60,
+            "frame_id": 73607,
+            "status": "confirmed",
+            "latency_ms": 65.875
+          },
+          {
+            "seq": 61,
+            "frame_id": 74815,
+            "status": "confirmed",
+            "latency_ms": 82.1739
+          },
+          {
+            "seq": 62,
+            "frame_id": 76022,
+            "status": "confirmed",
+            "latency_ms": 65.8626
+          },
+          {
+            "seq": 63,
+            "frame_id": 77230,
+            "status": "confirmed",
+            "latency_ms": 65.7977
+          },
+          {
+            "seq": 64,
+            "frame_id": 78437,
+            "status": "confirmed",
+            "latency_ms": 65.7907
+          },
+          {
+            "seq": 65,
+            "frame_id": 79645,
+            "status": "confirmed",
+            "latency_ms": 65.7322
+          },
+          {
+            "seq": 66,
+            "frame_id": 80852,
+            "status": "confirmed",
+            "latency_ms": 65.6325
+          },
+          {
+            "seq": 67,
+            "frame_id": 82060,
+            "status": "confirmed",
+            "latency_ms": 65.6177
+          },
+          {
+            "seq": 68,
+            "frame_id": 83268,
+            "status": "confirmed",
+            "latency_ms": 82.1308
+          },
+          {
+            "seq": 69,
+            "frame_id": 84475,
+            "status": "confirmed",
+            "latency_ms": 66.0226
+          },
+          {
+            "seq": 70,
+            "frame_id": 85682,
+            "status": "confirmed",
+            "latency_ms": 65.9062
+          },
+          {
+            "seq": 71,
+            "frame_id": 86890,
+            "status": "confirmed",
+            "latency_ms": 66.0169
+          },
+          {
+            "seq": 72,
+            "frame_id": 88098,
+            "status": "confirmed",
+            "latency_ms": 65.9228
+          },
+          {
+            "seq": 73,
+            "frame_id": 89306,
+            "status": "confirmed",
+            "latency_ms": 65.378
+          },
+          {
+            "seq": 74,
+            "frame_id": 90514,
+            "status": "confirmed",
+            "latency_ms": 82.3862
+          },
+          {
+            "seq": 75,
+            "frame_id": 91720,
+            "status": "confirmed",
+            "latency_ms": 65.9826
+          },
+          {
+            "seq": 76,
+            "frame_id": 92928,
+            "status": "confirmed",
+            "latency_ms": 65.9548
+          },
+          {
+            "seq": 77,
+            "frame_id": 94136,
+            "status": "confirmed",
+            "latency_ms": 65.5936
+          },
+          {
+            "seq": 78,
+            "frame_id": 95344,
+            "status": "confirmed",
+            "latency_ms": 65.9548
+          },
+          {
+            "seq": 79,
+            "frame_id": 96551,
+            "status": "confirmed",
+            "latency_ms": 65.5967
+          },
+          {
+            "seq": 80,
+            "frame_id": 97759,
+            "status": "confirmed",
+            "latency_ms": 65.188
+          },
+          {
+            "seq": 81,
+            "frame_id": 98962,
+            "status": "confirmed",
+            "latency_ms": 65.9867
+          },
+          {
+            "seq": 82,
+            "frame_id": 100166,
+            "status": "confirmed",
+            "latency_ms": 65.7254
+          },
+          {
+            "seq": 83,
+            "frame_id": 101373,
+            "status": "confirmed",
+            "latency_ms": 65.7416
+          },
+          {
+            "seq": 84,
+            "frame_id": 102579,
+            "status": "confirmed",
+            "latency_ms": 65.544
+          },
+          {
+            "seq": 85,
+            "frame_id": 103787,
+            "status": "confirmed",
+            "latency_ms": 65.4805
+          },
+          {
+            "seq": 86,
+            "frame_id": 104995,
+            "status": "confirmed",
+            "latency_ms": 65.7708
+          },
+          {
+            "seq": 87,
+            "frame_id": 106202,
+            "status": "confirmed",
+            "latency_ms": 65.6939
+          },
+          {
+            "seq": 88,
+            "frame_id": 107410,
+            "status": "confirmed",
+            "latency_ms": 65.6121
+          },
+          {
+            "seq": 89,
+            "frame_id": 108618,
+            "status": "confirmed",
+            "latency_ms": 65.502
+          },
+          {
+            "seq": 90,
+            "frame_id": 109825,
+            "status": "confirmed",
+            "latency_ms": 65.9463
+          },
+          {
+            "seq": 91,
+            "frame_id": 111033,
+            "status": "confirmed",
+            "latency_ms": 65.7437
+          },
+          {
+            "seq": 92,
+            "frame_id": 112240,
+            "status": "confirmed",
+            "latency_ms": 65.5421
+          },
+          {
+            "seq": 93,
+            "frame_id": 113447,
+            "status": "confirmed",
+            "latency_ms": 65.843
+          },
+          {
+            "seq": 94,
+            "frame_id": 114655,
+            "status": "confirmed",
+            "latency_ms": 65.4835
+          },
+          {
+            "seq": 95,
+            "frame_id": 115861,
+            "status": "confirmed",
+            "latency_ms": 65.8888
+          },
+          {
+            "seq": 96,
+            "frame_id": 117069,
+            "status": "confirmed",
+            "latency_ms": 65.4959
+          },
+          {
+            "seq": 97,
+            "frame_id": 118276,
+            "status": "confirmed",
+            "latency_ms": 65.638
+          },
+          {
+            "seq": 98,
+            "frame_id": 119483,
+            "status": "confirmed",
+            "latency_ms": 65.6622
+          },
+          {
+            "seq": 99,
+            "frame_id": 120690,
+            "status": "confirmed",
+            "latency_ms": 65.7413
+          },
+          {
+            "seq": 100,
+            "frame_id": 121898,
+            "status": "confirmed",
+            "latency_ms": 65.9008
+          },
+          {
+            "seq": 101,
+            "frame_id": 123105,
+            "status": "confirmed",
+            "latency_ms": 65.7442
+          },
+          {
+            "seq": 102,
+            "frame_id": 124313,
+            "status": "confirmed",
+            "latency_ms": 65.4497
+          },
+          {
+            "seq": 103,
+            "frame_id": 125521,
+            "status": "confirmed",
+            "latency_ms": 148.8935
+          },
+          {
+            "seq": 104,
+            "frame_id": 126724,
+            "status": "confirmed",
+            "latency_ms": 65.7376
+          },
+          {
+            "seq": 105,
+            "frame_id": 127932,
+            "status": "confirmed",
+            "latency_ms": 65.8247
+          },
+          {
+            "seq": 106,
+            "frame_id": 129140,
+            "status": "confirmed",
+            "latency_ms": 65.4251
+          },
+          {
+            "seq": 107,
+            "frame_id": 130347,
+            "status": "confirmed",
+            "latency_ms": 65.4761
+          },
+          {
+            "seq": 108,
+            "frame_id": 131555,
+            "status": "confirmed",
+            "latency_ms": 65.4696
+          },
+          {
+            "seq": 109,
+            "frame_id": 132762,
+            "status": "confirmed",
+            "latency_ms": 65.9746
+          },
+          {
+            "seq": 110,
+            "frame_id": 133970,
+            "status": "confirmed",
+            "latency_ms": 65.9182
+          },
+          {
+            "seq": 111,
+            "frame_id": 135178,
+            "status": "confirmed",
+            "latency_ms": 65.9591
+          },
+          {
+            "seq": 112,
+            "frame_id": 136385,
+            "status": "confirmed",
+            "latency_ms": 65.8982
+          },
+          {
+            "seq": 113,
+            "frame_id": 137593,
+            "status": "confirmed",
+            "latency_ms": 65.9439
+          },
+          {
+            "seq": 114,
+            "frame_id": 138801,
+            "status": "confirmed",
+            "latency_ms": 65.5868
+          },
+          {
+            "seq": 115,
+            "frame_id": 140009,
+            "status": "confirmed",
+            "latency_ms": 65.9751
+          },
+          {
+            "seq": 116,
+            "frame_id": 141217,
+            "status": "confirmed",
+            "latency_ms": 65.7825
+          },
+          {
+            "seq": 117,
+            "frame_id": 142424,
+            "status": "confirmed",
+            "latency_ms": 65.8775
+          },
+          {
+            "seq": 118,
+            "frame_id": 143631,
+            "status": "confirmed",
+            "latency_ms": 65.834
+          },
+          {
+            "seq": 119,
+            "frame_id": 144839,
+            "status": "confirmed",
+            "latency_ms": 65.7451
+          },
+          {
+            "seq": 120,
+            "frame_id": 146046,
+            "status": "confirmed",
+            "latency_ms": 65.96
+          },
+          {
+            "seq": 121,
+            "frame_id": 147253,
+            "status": "confirmed",
+            "latency_ms": 65.9151
+          },
+          {
+            "seq": 122,
+            "frame_id": 148461,
+            "status": "confirmed",
+            "latency_ms": 65.6369
+          },
+          {
+            "seq": 123,
+            "frame_id": 149668,
+            "status": "confirmed",
+            "latency_ms": 65.7195
+          },
+          {
+            "seq": 124,
+            "frame_id": 150876,
+            "status": "confirmed",
+            "latency_ms": 65.5392
+          },
+          {
+            "seq": 125,
+            "frame_id": 152084,
+            "status": "confirmed",
+            "latency_ms": 65.8854
+          },
+          {
+            "seq": 126,
+            "frame_id": 153291,
+            "status": "confirmed",
+            "latency_ms": 65.2337
+          },
+          {
+            "seq": 127,
+            "frame_id": 154499,
+            "status": "confirmed",
+            "latency_ms": 65.8323
+          },
+          {
+            "seq": 128,
+            "frame_id": 155707,
+            "status": "confirmed",
+            "latency_ms": 65.0918
+          },
+          {
+            "seq": 129,
+            "frame_id": 156915,
+            "status": "confirmed",
+            "latency_ms": 65.6612
+          },
+          {
+            "seq": 130,
+            "frame_id": 158123,
+            "status": "confirmed",
+            "latency_ms": 82.5156
+          },
+          {
+            "seq": 131,
+            "frame_id": 159330,
+            "status": "confirmed",
+            "latency_ms": 65.4299
+          },
+          {
+            "seq": 132,
+            "frame_id": 160537,
+            "status": "confirmed",
+            "latency_ms": 65.8922
+          },
+          {
+            "seq": 133,
+            "frame_id": 161745,
+            "status": "confirmed",
+            "latency_ms": 65.8313
+          },
+          {
+            "seq": 134,
+            "frame_id": 162953,
+            "status": "confirmed",
+            "latency_ms": 65.6328
+          },
+          {
+            "seq": 135,
+            "frame_id": 164160,
+            "status": "confirmed",
+            "latency_ms": 65.7144
+          },
+          {
+            "seq": 136,
+            "frame_id": 165368,
+            "status": "confirmed",
+            "latency_ms": 65.6295
+          },
+          {
+            "seq": 137,
+            "frame_id": 166575,
+            "status": "confirmed",
+            "latency_ms": 65.642
+          },
+          {
+            "seq": 138,
+            "frame_id": 167783,
+            "status": "confirmed",
+            "latency_ms": 65.5452
+          },
+          {
+            "seq": 139,
+            "frame_id": 168991,
+            "status": "confirmed",
+            "latency_ms": 65.9189
+          },
+          {
+            "seq": 140,
+            "frame_id": 170198,
+            "status": "confirmed",
+            "latency_ms": 65.4256
+          },
+          {
+            "seq": 141,
+            "frame_id": 171406,
+            "status": "confirmed",
+            "latency_ms": 65.767
+          },
+          {
+            "seq": 142,
+            "frame_id": 172614,
+            "status": "confirmed",
+            "latency_ms": 65.6358
+          },
+          {
+            "seq": 143,
+            "frame_id": 173822,
+            "status": "confirmed",
+            "latency_ms": 65.5132
+          },
+          {
+            "seq": 144,
+            "frame_id": 175029,
+            "status": "confirmed",
+            "latency_ms": 65.5062
+          },
+          {
+            "seq": 145,
+            "frame_id": 176237,
+            "status": "confirmed",
+            "latency_ms": 65.5224
+          },
+          {
+            "seq": 146,
+            "frame_id": 177445,
+            "status": "confirmed",
+            "latency_ms": 65.7928
+          },
+          {
+            "seq": 147,
+            "frame_id": 178653,
+            "status": "confirmed",
+            "latency_ms": 82.6104
+          },
+          {
+            "seq": 148,
+            "frame_id": 179859,
+            "status": "confirmed",
+            "latency_ms": 65.7046
+          },
+          {
+            "seq": 149,
+            "frame_id": 181066,
+            "status": "confirmed",
+            "latency_ms": 65.797
+          },
+          {
+            "seq": 150,
+            "frame_id": 182273,
+            "status": "confirmed",
+            "latency_ms": 65.3976
+          },
+          {
+            "seq": 151,
+            "frame_id": 183480,
+            "status": "confirmed",
+            "latency_ms": 65.4504
+          },
+          {
+            "seq": 152,
+            "frame_id": 184687,
+            "status": "confirmed",
+            "latency_ms": 65.375
+          },
+          {
+            "seq": 153,
+            "frame_id": 185894,
+            "status": "confirmed",
+            "latency_ms": 82.0208
+          },
+          {
+            "seq": 154,
+            "frame_id": 187101,
+            "status": "confirmed",
+            "latency_ms": 65.649
+          },
+          {
+            "seq": 155,
+            "frame_id": 188309,
+            "status": "confirmed",
+            "latency_ms": 65.8903
+          },
+          {
+            "seq": 156,
+            "frame_id": 189517,
+            "status": "confirmed",
+            "latency_ms": 65.6253
+          },
+          {
+            "seq": 157,
+            "frame_id": 190724,
+            "status": "confirmed",
+            "latency_ms": 65.7508
+          },
+          {
+            "seq": 158,
+            "frame_id": 191932,
+            "status": "confirmed",
+            "latency_ms": 65.608
+          },
+          {
+            "seq": 159,
+            "frame_id": 193139,
+            "status": "confirmed",
+            "latency_ms": 65.6597
+          },
+          {
+            "seq": 160,
+            "frame_id": 194347,
+            "status": "confirmed",
+            "latency_ms": 65.4833
+          },
+          {
+            "seq": 161,
+            "frame_id": 195555,
+            "status": "confirmed",
+            "latency_ms": 65.9369
+          },
+          {
+            "seq": 162,
+            "frame_id": 196763,
+            "status": "confirmed",
+            "latency_ms": 65.9193
+          },
+          {
+            "seq": 163,
+            "frame_id": 197971,
+            "status": "confirmed",
+            "latency_ms": 65.6152
+          },
+          {
+            "seq": 164,
+            "frame_id": 199178,
+            "status": "confirmed",
+            "latency_ms": 82.1623
+          },
+          {
+            "seq": 165,
+            "frame_id": 200386,
+            "status": "confirmed",
+            "latency_ms": 65.8337
+          },
+          {
+            "seq": 166,
+            "frame_id": 201594,
+            "status": "confirmed",
+            "latency_ms": 65.6271
+          },
+          {
+            "seq": 167,
+            "frame_id": 202802,
+            "status": "confirmed",
+            "latency_ms": 215.4185
+          },
+          {
+            "seq": 168,
+            "frame_id": 204001,
+            "status": "confirmed",
+            "latency_ms": 65.3915
+          },
+          {
+            "seq": 169,
+            "frame_id": 205208,
+            "status": "confirmed",
+            "latency_ms": 65.7652
+          },
+          {
+            "seq": 170,
+            "frame_id": 206417,
+            "status": "confirmed",
+            "latency_ms": 66.0008
+          },
+          {
+            "seq": 171,
+            "frame_id": 207624,
+            "status": "confirmed",
+            "latency_ms": 65.8556
+          },
+          {
+            "seq": 172,
+            "frame_id": 208832,
+            "status": "confirmed",
+            "latency_ms": 65.5332
+          },
+          {
+            "seq": 173,
+            "frame_id": 210040,
+            "status": "confirmed",
+            "latency_ms": 65.4934
+          },
+          {
+            "seq": 174,
+            "frame_id": 211248,
+            "status": "confirmed",
+            "latency_ms": 65.8261
+          },
+          {
+            "seq": 175,
+            "frame_id": 212456,
+            "status": "confirmed",
+            "latency_ms": 65.7159
+          },
+          {
+            "seq": 176,
+            "frame_id": 213663,
+            "status": "confirmed",
+            "latency_ms": 65.5832
+          },
+          {
+            "seq": 177,
+            "frame_id": 214871,
+            "status": "confirmed",
+            "latency_ms": 65.5142
+          },
+          {
+            "seq": 178,
+            "frame_id": 216079,
+            "status": "confirmed",
+            "latency_ms": 65.4533
+          },
+          {
+            "seq": 179,
+            "frame_id": 217287,
+            "status": "confirmed",
+            "latency_ms": 65.7977
+          },
+          {
+            "seq": 180,
+            "frame_id": 218493,
+            "status": "confirmed",
+            "latency_ms": 65.5658
+          },
+          {
+            "seq": 181,
+            "frame_id": 219701,
+            "status": "confirmed",
+            "latency_ms": 65.448
+          },
+          {
+            "seq": 182,
+            "frame_id": 220908,
+            "status": "confirmed",
+            "latency_ms": 82.2152
+          },
+          {
+            "seq": 183,
+            "frame_id": 222114,
+            "status": "confirmed",
+            "latency_ms": 65.8973
+          },
+          {
+            "seq": 184,
+            "frame_id": 223321,
+            "status": "confirmed",
+            "latency_ms": 65.6073
+          },
+          {
+            "seq": 185,
+            "frame_id": 224528,
+            "status": "confirmed",
+            "latency_ms": 65.7001
+          },
+          {
+            "seq": 186,
+            "frame_id": 225736,
+            "status": "confirmed",
+            "latency_ms": 65.4161
+          },
+          {
+            "seq": 187,
+            "frame_id": 226944,
+            "status": "confirmed",
+            "latency_ms": 65.9083
+          },
+          {
+            "seq": 188,
+            "frame_id": 228152,
+            "status": "unconfirmed",
+            "latency_ms": null
+          },
+          {
+            "seq": 189,
+            "frame_id": 229360,
+            "status": "confirmed",
+            "latency_ms": 65.6059
+          },
+          {
+            "seq": 190,
+            "frame_id": 230567,
+            "status": "confirmed",
+            "latency_ms": 65.5594
+          },
+          {
+            "seq": 191,
+            "frame_id": 231775,
+            "status": "confirmed",
+            "latency_ms": 82.278
+          },
+          {
+            "seq": 192,
+            "frame_id": 232982,
+            "status": "confirmed",
+            "latency_ms": 65.4491
+          },
+          {
+            "seq": 193,
+            "frame_id": 234189,
+            "status": "confirmed",
+            "latency_ms": 65.9097
+          },
+          {
+            "seq": 194,
+            "frame_id": 235397,
+            "status": "confirmed",
+            "latency_ms": 65.8728
+          },
+          {
+            "seq": 195,
+            "frame_id": 236604,
+            "status": "confirmed",
+            "latency_ms": 65.8357
+          },
+          {
+            "seq": 196,
+            "frame_id": 237811,
+            "status": "confirmed",
+            "latency_ms": 65.8979
+          },
+          {
+            "seq": 197,
+            "frame_id": 239019,
+            "status": "confirmed",
+            "latency_ms": 65.7672
+          },
+          {
+            "seq": 198,
+            "frame_id": 240226,
+            "status": "confirmed",
+            "latency_ms": 65.8227
+          },
+          {
+            "seq": 199,
+            "frame_id": 241434,
+            "status": "confirmed",
+            "latency_ms": 65.5698
+          },
+          {
+            "seq": 200,
+            "frame_id": 242641,
+            "status": "confirmed",
+            "latency_ms": 65.9836
+          },
+          {
+            "seq": 201,
+            "frame_id": 243849,
+            "status": "confirmed",
+            "latency_ms": 65.5382
+          },
+          {
+            "seq": 202,
+            "frame_id": 245057,
+            "status": "confirmed",
+            "latency_ms": 65.5201
+          },
+          {
+            "seq": 203,
+            "frame_id": 246265,
+            "status": "confirmed",
+            "latency_ms": 65.5513
+          },
+          {
+            "seq": 204,
+            "frame_id": 247472,
+            "status": "confirmed",
+            "latency_ms": 65.4538
+          },
+          {
+            "seq": 205,
+            "frame_id": 248680,
+            "status": "confirmed",
+            "latency_ms": 65.8183
+          },
+          {
+            "seq": 206,
+            "frame_id": 249888,
+            "status": "confirmed",
+            "latency_ms": 65.6189
+          },
+          {
+            "seq": 207,
+            "frame_id": 251095,
+            "status": "confirmed",
+            "latency_ms": 65.7378
+          },
+          {
+            "seq": 208,
+            "frame_id": 252303,
+            "status": "confirmed",
+            "latency_ms": 65.5488
+          },
+          {
+            "seq": 209,
+            "frame_id": 253511,
+            "status": "confirmed",
+            "latency_ms": 82.1947
+          },
+          {
+            "seq": 210,
+            "frame_id": 254718,
+            "status": "confirmed",
+            "latency_ms": 65.8687
+          },
+          {
+            "seq": 211,
+            "frame_id": 255925,
+            "status": "confirmed",
+            "latency_ms": 65.911
+          },
+          {
+            "seq": 212,
+            "frame_id": 257133,
+            "status": "confirmed",
+            "latency_ms": 65.9364
+          },
+          {
+            "seq": 213,
+            "frame_id": 258341,
+            "status": "confirmed",
+            "latency_ms": 65.4619
+          },
+          {
+            "seq": 214,
+            "frame_id": 259549,
+            "status": "confirmed",
+            "latency_ms": 65.8868
+          },
+          {
+            "seq": 215,
+            "frame_id": 260756,
+            "status": "confirmed",
+            "latency_ms": 65.4116
+          },
+          {
+            "seq": 216,
+            "frame_id": 261964,
+            "status": "confirmed",
+            "latency_ms": 65.4087
+          },
+          {
+            "seq": 217,
+            "frame_id": 263172,
+            "status": "confirmed",
+            "latency_ms": 65.98
+          },
+          {
+            "seq": 218,
+            "frame_id": 264379,
+            "status": "confirmed",
+            "latency_ms": 65.723
+          },
+          {
+            "seq": 219,
+            "frame_id": 265586,
+            "status": "confirmed",
+            "latency_ms": 65.8441
+          },
+          {
+            "seq": 220,
+            "frame_id": 266794,
+            "status": "confirmed",
+            "latency_ms": 65.721
+          },
+          {
+            "seq": 221,
+            "frame_id": 268001,
+            "status": "confirmed",
+            "latency_ms": 65.9314
+          },
+          {
+            "seq": 222,
+            "frame_id": 269208,
+            "status": "confirmed",
+            "latency_ms": 65.701
+          },
+          {
+            "seq": 223,
+            "frame_id": 270416,
+            "status": "confirmed",
+            "latency_ms": 65.7077
+          },
+          {
+            "seq": 224,
+            "frame_id": 271624,
+            "status": "confirmed",
+            "latency_ms": 65.9592
+          },
+          {
+            "seq": 225,
+            "frame_id": 272832,
+            "status": "confirmed",
+            "latency_ms": 65.9769
+          },
+          {
+            "seq": 226,
+            "frame_id": 274039,
+            "status": "confirmed",
+            "latency_ms": 65.5001
+          },
+          {
+            "seq": 227,
+            "frame_id": 275247,
+            "status": "confirmed",
+            "latency_ms": 65.5953
+          },
+          {
+            "seq": 228,
+            "frame_id": 276455,
+            "status": "confirmed",
+            "latency_ms": 65.985
+          },
+          {
+            "seq": 229,
+            "frame_id": 277663,
+            "status": "confirmed",
+            "latency_ms": 65.5247
+          },
+          {
+            "seq": 230,
+            "frame_id": 278871,
+            "status": "confirmed",
+            "latency_ms": 65.5038
+          },
+          {
+            "seq": 231,
+            "frame_id": 280078,
+            "status": "confirmed",
+            "latency_ms": 248.897
+          },
+          {
+            "seq": 232,
+            "frame_id": 281275,
+            "status": "confirmed",
+            "latency_ms": 65.8189
+          },
+          {
+            "seq": 233,
+            "frame_id": 282482,
+            "status": "confirmed",
+            "latency_ms": 65.4569
+          },
+          {
+            "seq": 234,
+            "frame_id": 283690,
+            "status": "confirmed",
+            "latency_ms": 65.7058
+          },
+          {
+            "seq": 235,
+            "frame_id": 284898,
+            "status": "confirmed",
+            "latency_ms": 65.5725
+          },
+          {
+            "seq": 236,
+            "frame_id": 286106,
+            "status": "confirmed",
+            "latency_ms": 65.9236
+          },
+          {
+            "seq": 237,
+            "frame_id": 287313,
+            "status": "confirmed",
+            "latency_ms": 65.5499
+          },
+          {
+            "seq": 238,
+            "frame_id": 288521,
+            "status": "confirmed",
+            "latency_ms": 65.4518
+          },
+          {
+            "seq": 239,
+            "frame_id": 289729,
+            "status": "confirmed",
+            "latency_ms": 65.9301
+          },
+          {
+            "seq": 240,
+            "frame_id": 290937,
+            "status": "confirmed",
+            "latency_ms": 65.8971
+          },
+          {
+            "seq": 241,
+            "frame_id": 292144,
+            "status": "confirmed",
+            "latency_ms": 82.4168
+          },
+          {
+            "seq": 242,
+            "frame_id": 293351,
+            "status": "confirmed",
+            "latency_ms": 65.9668
+          },
+          {
+            "seq": 243,
+            "frame_id": 294559,
+            "status": "confirmed",
+            "latency_ms": 82.5158
+          },
+          {
+            "seq": 244,
+            "frame_id": 295766,
+            "status": "confirmed",
+            "latency_ms": 65.2636
+          },
+          {
+            "seq": 245,
+            "frame_id": 296973,
+            "status": "confirmed",
+            "latency_ms": 65.9743
+          },
+          {
+            "seq": 246,
+            "frame_id": 298181,
+            "status": "confirmed",
+            "latency_ms": 65.6319
+          },
+          {
+            "seq": 247,
+            "frame_id": 299388,
+            "status": "confirmed",
+            "latency_ms": 65.6952
+          },
+          {
+            "seq": 248,
+            "frame_id": 300595,
+            "status": "confirmed",
+            "latency_ms": 65.4269
+          },
+          {
+            "seq": 249,
+            "frame_id": 301803,
+            "status": "confirmed",
+            "latency_ms": 65.7594
+          },
+          {
+            "seq": 250,
+            "frame_id": 303010,
+            "status": "confirmed",
+            "latency_ms": 64.6989
+          },
+          {
+            "seq": 251,
+            "frame_id": 304217,
+            "status": "confirmed",
+            "latency_ms": 65.794
+          },
+          {
+            "seq": 252,
+            "frame_id": 305425,
+            "status": "confirmed",
+            "latency_ms": 65.8902
+          },
+          {
+            "seq": 253,
+            "frame_id": 306633,
+            "status": "confirmed",
+            "latency_ms": 65.9328
+          },
+          {
+            "seq": 254,
+            "frame_id": 307840,
+            "status": "confirmed",
+            "latency_ms": 65.61
+          },
+          {
+            "seq": 255,
+            "frame_id": 309048,
+            "status": "confirmed",
+            "latency_ms": 65.8361
+          },
+          {
+            "seq": 256,
+            "frame_id": 310256,
+            "status": "confirmed",
+            "latency_ms": 65.2672
+          },
+          {
+            "seq": 257,
+            "frame_id": 311463,
+            "status": "confirmed",
+            "latency_ms": 65.9264
+          },
+          {
+            "seq": 258,
+            "frame_id": 312671,
+            "status": "confirmed",
+            "latency_ms": 65.7305
+          },
+          {
+            "seq": 259,
+            "frame_id": 313879,
+            "status": "confirmed",
+            "latency_ms": 65.9894
+          },
+          {
+            "seq": 260,
+            "frame_id": 315086,
+            "status": "confirmed",
+            "latency_ms": 65.8748
+          },
+          {
+            "seq": 261,
+            "frame_id": 316294,
+            "status": "confirmed",
+            "latency_ms": 65.5863
+          },
+          {
+            "seq": 262,
+            "frame_id": 317502,
+            "status": "confirmed",
+            "latency_ms": 65.5703
+          },
+          {
+            "seq": 263,
+            "frame_id": 318710,
+            "status": "confirmed",
+            "latency_ms": 65.6319
+          },
+          {
+            "seq": 264,
+            "frame_id": 319918,
+            "status": "confirmed",
+            "latency_ms": 65.6611
+          },
+          {
+            "seq": 265,
+            "frame_id": 321123,
+            "status": "confirmed",
+            "latency_ms": 65.7792
+          },
+          {
+            "seq": 266,
+            "frame_id": 322330,
+            "status": "confirmed",
+            "latency_ms": 65.5898
+          },
+          {
+            "seq": 267,
+            "frame_id": 323538,
+            "status": "confirmed",
+            "latency_ms": 65.7634
+          },
+          {
+            "seq": 268,
+            "frame_id": 324746,
+            "status": "confirmed",
+            "latency_ms": 65.7324
+          },
+          {
+            "seq": 269,
+            "frame_id": 325954,
+            "status": "confirmed",
+            "latency_ms": 65.6138
+          },
+          {
+            "seq": 270,
+            "frame_id": 327162,
+            "status": "confirmed",
+            "latency_ms": 65.904
+          },
+          {
+            "seq": 271,
+            "frame_id": 328370,
+            "status": "confirmed",
+            "latency_ms": 65.8273
+          },
+          {
+            "seq": 272,
+            "frame_id": 329578,
+            "status": "confirmed",
+            "latency_ms": 65.9516
+          },
+          {
+            "seq": 273,
+            "frame_id": 330786,
+            "status": "confirmed",
+            "latency_ms": 65.7033
+          },
+          {
+            "seq": 274,
+            "frame_id": 331994,
+            "status": "confirmed",
+            "latency_ms": 65.8054
+          },
+          {
+            "seq": 275,
+            "frame_id": 333201,
+            "status": "confirmed",
+            "latency_ms": 65.4969
+          },
+          {
+            "seq": 276,
+            "frame_id": 334409,
+            "status": "confirmed",
+            "latency_ms": 65.4821
+          },
+          {
+            "seq": 277,
+            "frame_id": 335617,
+            "status": "confirmed",
+            "latency_ms": 65.9645
+          },
+          {
+            "seq": 278,
+            "frame_id": 336824,
+            "status": "confirmed",
+            "latency_ms": 65.5491
+          },
+          {
+            "seq": 279,
+            "frame_id": 338032,
+            "status": "confirmed",
+            "latency_ms": 65.609
+          },
+          {
+            "seq": 280,
+            "frame_id": 339239,
+            "status": "confirmed",
+            "latency_ms": 65.7845
+          },
+          {
+            "seq": 281,
+            "frame_id": 340446,
+            "status": "confirmed",
+            "latency_ms": 65.7237
+          },
+          {
+            "seq": 282,
+            "frame_id": 341653,
+            "status": "confirmed",
+            "latency_ms": 65.8988
+          },
+          {
+            "seq": 283,
+            "frame_id": 342859,
+            "status": "confirmed",
+            "latency_ms": 65.7521
+          },
+          {
+            "seq": 284,
+            "frame_id": 344066,
+            "status": "confirmed",
+            "latency_ms": 65.9827
+          },
+          {
+            "seq": 285,
+            "frame_id": 345274,
+            "status": "confirmed",
+            "latency_ms": 65.9474
+          },
+          {
+            "seq": 286,
+            "frame_id": 346482,
+            "status": "confirmed",
+            "latency_ms": 65.4055
+          },
+          {
+            "seq": 287,
+            "frame_id": 347690,
+            "status": "confirmed",
+            "latency_ms": 65.699
+          },
+          {
+            "seq": 288,
+            "frame_id": 348898,
+            "status": "confirmed",
+            "latency_ms": 65.9676
+          },
+          {
+            "seq": 289,
+            "frame_id": 350105,
+            "status": "confirmed",
+            "latency_ms": 65.6753
+          },
+          {
+            "seq": 290,
+            "frame_id": 351313,
+            "status": "confirmed",
+            "latency_ms": 66.0095
+          },
+          {
+            "seq": 291,
+            "frame_id": 352520,
+            "status": "confirmed",
+            "latency_ms": 65.6459
+          },
+          {
+            "seq": 292,
+            "frame_id": 353728,
+            "status": "confirmed",
+            "latency_ms": 65.9923
+          },
+          {
+            "seq": 293,
+            "frame_id": 354935,
+            "status": "confirmed",
+            "latency_ms": 65.4927
+          },
+          {
+            "seq": 294,
+            "frame_id": 356142,
+            "status": "confirmed",
+            "latency_ms": 65.4109
+          },
+          {
+            "seq": 295,
+            "frame_id": 357349,
+            "status": "confirmed",
+            "latency_ms": 282.412
+          },
+          {
+            "seq": 296,
+            "frame_id": 358544,
+            "status": "confirmed",
+            "latency_ms": 65.8806
+          },
+          {
+            "seq": 297,
+            "frame_id": 359751,
+            "status": "confirmed",
+            "latency_ms": 65.9711
+          },
+          {
+            "seq": 298,
+            "frame_id": 360959,
+            "status": "confirmed",
+            "latency_ms": 65.2862
+          },
+          {
+            "seq": 299,
+            "frame_id": 362166,
+            "status": "confirmed",
+            "latency_ms": 65.9271
+          },
+          {
+            "seq": 300,
+            "frame_id": 363373,
+            "status": "confirmed",
+            "latency_ms": 65.9698
+          }
+        ],
+        "stats": {
+          "n": 301,
+          "confirmed": 300,
+          "failed_keys": 1,
+          "mean": null,
+          "p50": 65.7376,
+          "p95": 82.1947,
+          "p99": null,
+          "max": null,
+          "p95_met": true
+        },
+        "presentmon": {
+          "frames_checked": 300,
+          "disagreements": 0,
+          "presentmon_presents": 363515
+        },
+        "status": "valid",
+        "reasons": []
+      }
+    ],
+    "pooled": {
+      "n": 602,
+      "confirmed": 601,
+      "failed_keys": 1,
+      "mean": null,
+      "p50": 67.472,
+      "p95": 82.63,
+      "p99": null,
+      "max": null,
+      "p95_met": true
+    },
+    "valid_runs": 2,
+    "invalid_runs": 0,
+    "unconfirmed_keys": 1,
+    "confirmed_keys": 601,
+    "failed_keys": 1
+  },
+  "verdict": "met",
+  "reasons": [],
+  "passes_bar": true,
+  "drafts": [
+    "log schema magic600-c9-shell-events-v1",
+    "press time = shell key-down receipt",
+    "PresentMon cross-check by present order (route B chain reported Dropped)",
+    "one run of 100 presses suffices"
+  ],
+  "redactions": 0
+}

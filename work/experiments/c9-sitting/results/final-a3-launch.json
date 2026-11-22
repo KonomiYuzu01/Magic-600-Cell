@@ -1,0 +1,26 @@
+{
+  "format": "magic600-c9-launch-v1",
+  "run_id": "20261122T015545Z",
+  "build_identity": "c9-product-2efda50d54592f20",
+  "echo": false,
+  "puzzle": "jumble-off",
+  "lx4": false,
+  "lx4_fixtures": null,
+  "lx2_injection": null,
+  "cold_start": false,
+  "command": [
+    "Godot_v4.7.2-stable_mono_win64.exe",
+    "--path",
+    "<build>/shell/project",
+    "--rendering-driver",
+    "d3d12",
+    "--render-thread",
+    "safe",
+    "--windowed",
+    "--log-file",
+    "<out>/godot.log"
+  ],
+  "started_utc": "2026-11-22T01:55:45Z",
+  "seconds": 109.242,
+  "exit_code": 0
+}

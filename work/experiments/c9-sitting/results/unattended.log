@@ -1,0 +1,76 @@
+2026-11-20T14:24:55Z start exit=0 run=- | head 2263d2b41168; steps U1,U2,U3,U4,U5,U6,U7,U8
+2026-11-20T15:08:28Z U1 exit=0 run=-
+2026-11-20T15:23:21Z U2.1 exit=0 run=-
+2026-11-20T15:24:34Z U2.2 exit=0 run=-
+2026-11-20T15:25:47Z U2.3 exit=0 run=-
+2026-11-20T15:34:56Z U3 exit=0 run=work\c9-runs\u3 | closed at 540 s; shell time 541 s; PresentMon stopped, exit 0; capture copied
+2026-11-20T15:34:57Z U3/ui_skew exit=4 run=work\c9-runs\u3-skew.json
+2026-11-20T16:05:19Z U4/S4.1 exit=error run=work\loop-memory\c9-acceptance\20261120T160134470Z | The finalizer refused this run.
+2026-11-20T16:09:24Z U4/S4.2 exit=error run=work\loop-memory\c9-acceptance\20261120T160540933Z | The finalizer refused this run.
+2026-11-20T16:13:11Z U4/S4.3 exit=error run=work\loop-memory\c9-acceptance\20261120T160928051Z | The finalizer refused this run.
+2026-11-20T16:13:11Z U4/S4/gate exit=1 run=work\loop-memory\c9-acceptance\S4-summary.json
+2026-11-20T16:16:58Z U4/I_a.1 exit=error run=work\loop-memory\c9-acceptance\20261120T161315261Z | The finalizer refused this run.
+2026-11-20T16:20:45Z U4/I_a.2 exit=error run=work\loop-memory\c9-acceptance\20261120T161702287Z | The finalizer refused this run.
+2026-11-20T16:26:21Z U4/I_a.3 exit=error run=work\loop-memory\c9-acceptance\20261120T162238158Z | The finalizer refused this run.
+2026-11-20T16:26:21Z U4/I_a/gate exit=1 run=work\loop-memory\c9-acceptance\I_a-summary.json
+2026-11-20T16:30:09Z U4/I_b.1 exit=error run=work\loop-memory\c9-acceptance\20261120T162625656Z | The finalizer refused this run.
+2026-11-20T16:33:56Z U4/I_b.2 exit=error run=work\loop-memory\c9-acceptance\20261120T163013063Z | The finalizer refused this run.
+2026-11-20T16:37:43Z U4/I_b.3 exit=error run=work\loop-memory\c9-acceptance\20261120T163400123Z | The finalizer refused this run.
+2026-11-20T16:37:43Z U4/I_b/gate exit=1 run=work\loop-memory\c9-acceptance\I_b-summary.json
+2026-11-20T16:41:29Z U4/w3.1 exit=error run=work\loop-memory\c9-acceptance\20261120T163747254Z | The finalizer refused this run.
+2026-11-20T16:45:15Z U4/w3.2 exit=error run=work\loop-memory\c9-acceptance\20261120T164133159Z | The finalizer refused this run.
+2026-11-20T16:49:01Z U4/w3.3 exit=error run=work\loop-memory\c9-acceptance\20261120T164519016Z | The finalizer refused this run.
+2026-11-20T16:49:01Z U4/w3/gate exit=1 run=work\loop-memory\c9-acceptance\w3-summary.json
+2026-11-20T16:52:49Z U5/w3-stages.1 exit=error run=work\loop-memory\c9-acceptance\20261120T164906095Z | The finalizer refused this run.
+2026-11-20T16:56:35Z U5/w3-stages.2 exit=error run=work\loop-memory\c9-acceptance\20261120T165253003Z | The finalizer refused this run.
+2026-11-20T17:00:21Z U5/w3-stages.3 exit=error run=work\loop-memory\c9-acceptance\20261120T165639342Z | The finalizer refused this run.
+2026-11-20T17:00:22Z U5/gate exit=1 run=work\loop-memory\c9-acceptance\w3-stages-summary.json
+2026-11-20T17:00:29Z U6.1 exit=0 run=work\c9-runs\e3-1 | shell time 4 s
+2026-11-20T17:00:52Z U6.2 exit=0 run=work\c9-runs\e3-2 | shell time 21 s
+2026-11-20T17:27:49Z U6.3 exit=0 run=work\c9-runs\e3-3 | shell time 4 s
+2026-11-20T17:27:49Z U6/cold_start exit=3 run=work\c9-runs\e3.json
+2026-11-20T17:28:45Z U7/faults exit=0 run=work\c9-runs\u7-faults.json
+2026-11-20T17:47:29Z U7 exit=0 run=work\c9-runs\u7 | shell time 1116 s; poster exit 3; PresentMon stopped, exit 0; capture copied
+2026-11-20T17:47:32Z U7/analyze exit=4 run=work\c9-runs\u7-lx2.json
+2026-11-21T11:39:36Z start exit=0 run=- | head 013900ffc013; steps U1,U2,U3,U4,U5,U6,U7,U8; suffix 'final'; builds scene 'work\build\c9-acceptance\20261121T013621Z' stage 'work\build\c9-acceptance\20261121T013637Z' product 'work\build\c9-product\20261121T013546Z'
+2026-11-21T12:03:26Z U1 exit=0 run=-
+2026-11-21T12:04:41Z U2.1 exit=0 run=-
+2026-11-21T12:05:54Z U2.2 exit=0 run=-
+2026-11-21T12:07:07Z U2.3 exit=0 run=-
+2026-11-21T12:16:17Z U3 exit=0 run=work\c9-runs\u3-final | closed at 540 s; shell time 541 s; PresentMon stopped, exit 0; capture copied
+2026-11-21T12:16:18Z U3/ui_skew exit=0 run=work\c9-runs\u3-final-skew.json
+2026-11-21T12:20:07Z U4/S4.1 exit=0 run=work\loop-memory\c9-acceptance\20261121T121622858Z
+2026-11-21T12:23:54Z U4/S4.2 exit=0 run=work\loop-memory\c9-acceptance\20261121T122010900Z
+2026-11-21T12:27:42Z U4/S4.3 exit=0 run=work\loop-memory\c9-acceptance\20261121T122358308Z
+2026-11-21T12:27:42Z U4/S4/gate exit=0 run=work\loop-memory\c9-acceptance\S4-summary-final.json
+2026-11-21T12:31:30Z U4/I_a.1 exit=0 run=work\loop-memory\c9-acceptance\20261121T122746341Z
+2026-11-21T12:35:17Z U4/I_a.2 exit=0 run=work\loop-memory\c9-acceptance\20261121T123133771Z
+2026-11-21T12:39:05Z U4/I_a.3 exit=0 run=work\loop-memory\c9-acceptance\20261121T123521319Z
+2026-11-21T12:39:05Z U4/I_a/gate exit=0 run=work\loop-memory\c9-acceptance\I_a-summary-final.json
+2026-11-21T12:42:52Z U4/I_b.1 exit=0 run=work\loop-memory\c9-acceptance\20261121T123909306Z
+2026-11-21T12:46:40Z U4/I_b.2 exit=0 run=work\loop-memory\c9-acceptance\20261121T124256630Z
+2026-11-21T12:50:27Z U4/I_b.3 exit=0 run=work\loop-memory\c9-acceptance\20261121T124643998Z
+2026-11-21T12:50:28Z U4/I_b/gate exit=0 run=work\loop-memory\c9-acceptance\I_b-summary-final.json
+2026-11-21T12:54:14Z U4/w3.1 exit=0 run=work\loop-memory\c9-acceptance\20261121T125031927Z
+2026-11-21T12:58:00Z U4/w3.2 exit=0 run=work\loop-memory\c9-acceptance\20261121T125418156Z
+2026-11-21T13:01:46Z U4/w3.3 exit=0 run=work\loop-memory\c9-acceptance\20261121T125804236Z
+2026-11-21T13:01:47Z U4/w3/gate exit=0 run=work\loop-memory\c9-acceptance\w3-summary-final.json
+2026-11-21T13:05:34Z U5/w3-stages.1 exit=0 run=work\loop-memory\c9-acceptance\20261121T130151464Z
+2026-11-21T13:09:21Z U5/w3-stages.2 exit=0 run=work\loop-memory\c9-acceptance\20261121T130538341Z
+2026-11-21T13:13:07Z U5/w3-stages.3 exit=0 run=work\loop-memory\c9-acceptance\20261121T130924889Z
+2026-11-21T13:13:08Z U5/gate exit=0 run=work\loop-memory\c9-acceptance\w3-stages-summary-final.json
+2026-11-21T13:13:14Z U6.warmup exit=0 run=work\c9-runs\e3-final-warmup | shell time 3 s
+2026-11-21T13:13:14Z U6/warmup exit=3 run=work\c9-runs\e3-final-warmup.json
+2026-11-21T13:13:36Z U6.1 exit=0 run=work\c9-runs\e3-final-1 | shell time 19 s
+2026-11-21T13:13:59Z U6.2 exit=0 run=work\c9-runs\e3-final-2 | shell time 19 s
+2026-11-21T13:14:21Z U6.3 exit=0 run=work\c9-runs\e3-final-3 | shell time 19 s
+2026-11-21T13:14:21Z U6/cold_start exit=0 run=work\c9-runs\e3-final.json
+2026-11-21T13:14:22Z U7/error-mode exit=0 run=- | this process 32769 -> 32771 for U7 (SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX)
+2026-11-21T13:14:34Z U7/faults exit=0 run=work\c9-runs\u7-final-faults.json
+2026-11-21T13:34:11Z U7 exit=0 run=work\c9-runs\u7-final | shell time 1169 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-21T13:34:17Z U7/analyze exit=3 run=work\c9-runs\u7-final-lx2.json
+2026-11-21T15:15:33Z U8/jumble-off exit=0 run=work\c9-runs\u8-off-final | closed after the poster exited 0; shell time 6067 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-21T16:56:47Z U8/jumble-on exit=0 run=work\c9-runs\u8-on-final | closed after the poster exited 0; shell time 6066 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-21T16:57:03Z U8/key_to_frame exit=0 run=work\c9-runs\u8-final-e2.json
+2026-11-21T16:57:14Z U8/analyze exit=4 run=work\c9-runs\u8-final-lx4.json
+2026-11-21T16:57:14Z end exit=0 run=- | steps U1,U2,U3,U4,U5,U6,U7,U8

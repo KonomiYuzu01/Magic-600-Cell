@@ -1,0 +1,259 @@
+{
+  "format": "magic600-c9-measure-record-v1",
+  "measurement": "lx4-editor-latency",
+  "evidence_kind": "performance",
+  "synthetic": false,
+  "created_utc": "2026-11-21T16:57:14Z",
+  "build_identity": null,
+  "inputs": [
+    {
+      "role": "20261121T133423Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 125674734,
+      "sha256": "6b612b337060fb092f06d87552db4ebf8c270469248134cb07b1571ebefce25b"
+    },
+    {
+      "role": "20261121T133423Z:lx4-posts.jsonl",
+      "name": "lx4-posts.jsonl",
+      "bytes": 24124117,
+      "sha256": "b4aee23a0c2702a6d4a49d3ae5065aaf44ec888cd509fbd6d0ab4dbe036a719c"
+    },
+    {
+      "role": "20261121T151540Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 125857571,
+      "sha256": "28749300b0699860017493d3ff920690d5a43ca4dc4bf858189ad65d54ccf8f7"
+    },
+    {
+      "role": "20261121T151540Z:lx4-posts.jsonl",
+      "name": "lx4-posts.jsonl",
+      "bytes": 24124116,
+      "sha256": "075678c88fb7e7d0310334b3d41cb6cadd4fc9489158b2bebf95971094201aa3"
+    },
+    {
+      "role": "e2",
+      "name": "u8-final-e2.json",
+      "bytes": 94624,
+      "sha256": "92f7ee7877c719b2571c6d34ddb4adb322fc7ccaa6610331c3521e9499dd86f6"
+    },
+    {
+      "role": "gate-reference",
+      "name": "w3-summary-final.json",
+      "bytes": 5592,
+      "sha256": "c7a43ae68505f1c4df5d59400189070346765dad5a119333533e6a2ac968a0ca"
+    }
+  ],
+  "tools": {
+    "python": "3.15.1",
+    "implementation": "CPython",
+    "tool": {
+      "name": "lx4.py",
+      "sha256": "44aeeb5626a6b779c59e0ff93800b0df8020ec6417d2b4273a17d1f2eea75589"
+    },
+    "helpers": {
+      "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
+      "b412_summary.py": "40015c19b73771181dac836f6aeb8979724a775cb239c20b9857aa23de936acc",
+      "c9/key_to_frame.py": "35fa0305d5f1d1f8c162e1913c7c20551c5573a2e25650f392d888be032611b7"
+    }
+  },
+  "command": [
+    "python",
+    "-B",
+    "tools/perf/c9/lx4.py",
+    "analyze",
+    "--fixtures",
+    "work/loop-memory/c9-acceptance/lx4-fixtures",
+    "work/c9-runs/u8-off-final",
+    "work/c9-runs/u8-on-final",
+    "--e2",
+    "work/c9-runs/u8-final-e2.json",
+    "--out",
+    "work/c9-runs/u8-final-lx4.json",
+    "--gate-reference",
+    "work/loop-memory/c9-acceptance/w3-summary-final.json"
+  ],
+  "bar": {
+    "text": "RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1,000/1,500 ms; RTE.53: every bar in each of three series at S, M and L on both puzzles, with the renderer gate and charter E2 in the same runs",
+    "rule": "timed post to the core-confirmed present of the first frame showing the endpoint, matched by frame id; nearest-rank p95 and p99 per puzzle, series, size and metric; 10,800 timed S/M/L samples",
+    "bars_ms": {
+      "echo": {
+        "S": [
+          50,
+          67
+        ],
+        "M": [
+          50,
+          67
+        ],
+        "L": [
+          50,
+          67
+        ]
+      },
+      "syntax": {
+        "S": [
+          67,
+          100
+        ],
+        "M": [
+          67,
+          100
+        ],
+        "L": [
+          100,
+          150
+        ]
+      },
+      "completion": {
+        "S": [
+          100,
+          150
+        ],
+        "M": [
+          100,
+          150
+        ],
+        "L": [
+          150,
+          250
+        ]
+      },
+      "diagnostics": {
+        "S": [
+          150,
+          250
+        ],
+        "M": [
+          200,
+          300
+        ],
+        "L": [
+          500,
+          750
+        ]
+      },
+      "stale": {
+        "S": [
+          100,
+          150
+        ],
+        "M": [
+          100,
+          150
+        ],
+        "L": [
+          100,
+          150
+        ]
+      },
+      "rerun": {
+        "S": [
+          250,
+          400
+        ],
+        "M": [
+          250,
+          400
+        ],
+        "L": [
+          500,
+          750
+        ]
+      },
+      "dependents": {
+        "W": [
+          1000,
+          1500
+        ]
+      }
+    },
+    "samples": 10800,
+    "source": [
+      "RTE.47",
+      "RTE.48",
+      "RTE.49",
+      "RTE.51",
+      "RTE.52",
+      "RTE.53",
+      "CT-RTE-12",
+      "CT-EV1-06"
+    ]
+  },
+  "result": {
+    "fixtures": {
+      "manifest_sha256": "59fda7577046e47d90f46c2fa1fb29ed2227ebd01c1222892d002bd8d0eb7511",
+      "edits_sha256": "03f50471fcb0e3358ed884ec10b3b9a7cf4225cf287b874cee9435dfd173a88a",
+      "modules": 53,
+      "edits": 16
+    },
+    "runs": [
+      {
+        "run_id": "20261121T133423Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "puzzle": "jumble-off",
+        "failures": {
+          "unconfirmed": 9
+        },
+        "contradictions": [],
+        "status": "invalid",
+        "reasons": [
+          "unconfirmed-or-failed-samples"
+        ]
+      },
+      {
+        "run_id": "20261121T151540Z",
+        "build_identity": "c9-product-2efda50d54592f20",
+        "synthetic": false,
+        "puzzle": "jumble-on",
+        "failures": {
+          "unconfirmed": 7
+        },
+        "contradictions": [],
+        "status": "invalid",
+        "reasons": [
+          "unconfirmed-or-failed-samples"
+        ]
+      }
+    ],
+    "decision": null,
+    "series": [],
+    "accounting": {
+      "sml_samples": 10800,
+      "w_samples": 600,
+      "turns": 600,
+      "smoke_samples": 40
+    },
+    "timed_sml_samples": 0,
+    "gate_same_run_checked": false,
+    "gate_reference": {
+      "counted_as_gate": false,
+      "build_identities": [
+        "fb7dbd6e82e5edd7e7beb1447b90ac27f081e997f9101e4fd3681ddfb02afab0"
+      ],
+      "verdicts": {
+        "w3": "met"
+      }
+    },
+    "limitations": [
+      "the module set's views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged",
+      "the rerun endpoint's frame is the first confirmed frame that drew the run's reference publication; the host does not draw the run's value yet"
+    ]
+  },
+  "verdict": "invalid",
+  "reasons": [
+    "one-valid-run-per-puzzle-needed"
+  ],
+  "passes_bar": false,
+  "drafts": [
+    "metric to edit-kind mapping",
+    "schedule order and smoke series",
+    "message protocol Magic600.LX4.*",
+    "lx4 rows in magic600-c9-shell-events-v1",
+    "unconfirmed sample invalidates its run",
+    "post timeout 10 s, pace 1 s",
+    "gate summary checked for build and verdict only",
+    "fixture set DRAFT until RTE.51 step 1 freezes it"
+  ],
+  "redactions": 0
+}
