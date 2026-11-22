@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] update | The owner's report on C9's A1 and A2
+The owner reported that A1 and A2 of the C9 sitting were normal (the window resized normally, and the echo panel showed the presses), so both are recorded as passing on the [results](evidence/c9-sitting-results.md) page; the logs alone cannot show those items.
+
 ## [2026-11-22] update | C9 sitting results on the frozen candidate
 The C9 sitting ran once on the frozen candidate 013900ff, U1 to U8 unattended on 21 November and A1 to A3 attended on 22 November: E3, E2 and every renderer gate summary are met, LX-2 is not met and LX-4 is invalid ([results](evidence/c9-sitting-results.md)). The records are in `work/experiments/c9-sitting/results/`, and E3 cites the owner's cold definition ([decision](decisions/owner-decisions-2026-11-21-ceilings-e3.md)).
 

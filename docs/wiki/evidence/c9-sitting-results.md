@@ -59,8 +59,8 @@ logs show (PHS.64), and none of them is a phase pass on its own (PHS.66).
 
 | Step | Check | Verdict | Numbers |
 | --- | --- | --- | --- |
-| A1 | ABI 5 GPU smoke, part 2: the shell's first launch | logs as required | Exit 0 after 38.5 s; 2,071 frames, 1,961 with a core-confirmed present, one device epoch and one surface; foreground throughout |
-| A2 | Route B check B1: input through the transparent window | logs as required | Exit 0 after 61.7 s; 79 key presses and 30 clicks in `input.jsonl`; foreground throughout |
+| A1 | ABI 5 GPU smoke, part 2: the shell's first launch | **pass** (logs and the owner's report) | Exit 0 after 38.5 s; 2,071 frames, 1,961 with a core-confirmed present, one device epoch and one surface; foreground throughout |
+| A2 | Route B check B1: input through the transparent window | **pass** (logs and the owner's report) | Exit 0 after 61.7 s; 79 key presses and 30 clicks in `input.jsonl`; foreground throughout |
 | A3 | Charter E2 | **met** | 222 keys, all confirmed; p95 82.7 ms, p99 82.8 ms, max 115.7 ms; PresentMon cross-check 0 disagreements |
 | U1 | ABI 5 GPU smoke, part 1: the core self-test | ok | `check_core: ok (CPU, WARP and hardware)`, 35 CPU checks, identity recomputed |
 | U2 | Route B check B3: three present-probe runs | exit 0 three times | Probe evidence, not a gate; see below |
@@ -84,7 +84,8 @@ Some of A1's and A2's pass items are only visible on screen:
 - each press and click on the echo panel.
 
 The logs cannot show these: the shell writes no resize row, and `input.jsonl` records what Godot received, not what the
-echo panel drew. They rest on the owner's observation.
+echo panel drew. They rest on the owner's observation. After the sitting, on 22 November 2026, the owner reported in
+chat that A1 and A2 were normal: the window resized normally, and the echo panel showed the presses.
 
 ## E3 and its cold definition
 
@@ -175,4 +176,4 @@ Two limitations are in the record:
 - It is not LP3's exit. C10 needs the whole index on the frozen candidate and the owner's sign-off.
 - It gives no LX-4 verdict on the bars, and no ruling on the gate reference.
 - It gives no result for other hardware, resolutions or refresh rates, frame generation, or long sessions.
-- It shows no A1 or A2 item that only the screen shows, beyond the owner's observation.
+- For A1 and A2, the items that only the screen shows rest on the owner's report, not on a log or a capture.
