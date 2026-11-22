@@ -370,6 +370,13 @@ def present(entry: dict) -> bool:
     probe = entry.get("probe")
     if not probe:
         return False
+    if entry["method"] == "npm-ci" and not probe[0].startswith("{prefix}/"):
+        # A data-only package (fonts, icons) has no command of its own and is probed through the shared node,
+        # which says nothing about the package: its own node_modules folder decides.
+        try:
+            return (safe_dest(entry["prefix"]) / "node_modules").is_dir()
+        except Refused:
+            return False
     if probe[0] == "{python}" and len(probe) > 2 and probe[1] == "-m":
         return importlib.util.find_spec(probe[2]) is not None
     try:
