@@ -165,13 +165,13 @@ class WorkbenchUiTests(unittest.TestCase):
         def fake_progress(doc, sessions):
             no_checklist = doc.get("schema") != 2
             tracks = []
-            for tid in checklist.TRACKS:
+            for tid, title in checklist.tracks(doc):
                 steps = [s for s in doc.get("steps", []) if s["track"] == tid]
                 if not steps:
                     continue
                 current = next((s for s in steps if s["id"] == doc["current"]), steps[0])
                 percent = lambda s: None if no_checklist else checklist.step_percent(s)
-                tracks.append({"id": tid, "title": f"Track {tid}", "percent": checklist.track_percent(doc, tid),
+                tracks.append({"id": tid, "title": title, "percent": checklist.track_percent(doc, tid),
                                "steps": [{"id": s["id"], "title": s["title"], "status": s["status"], "percent": percent(s),
                                           "done": sum(checklist.counted(i) for i in s.get("items", [])),
                                           "total": len(s.get("items", []))} for s in steps],
