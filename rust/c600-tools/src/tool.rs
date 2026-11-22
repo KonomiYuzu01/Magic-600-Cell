@@ -270,7 +270,8 @@ impl Tool {
     }
 
     /// Runs the entry on a literal word through a boundary onto `engine` under `limits`: a job's run is under its
-    /// budget's ([`limits`]).
+    /// budget's ([`limits`]). The run keeps no per-operation rows (`Options::record`): the meter does not charge them
+    /// to the memory limit, so they would grow with the run's steps, and a quiet run has the same counters and stops.
     pub fn run_under(
         &self,
         word: &[i32],
@@ -281,7 +282,8 @@ impl Tool {
     ) -> Result<Ran, Refusal> {
         let mut boundary = Boundary::new(engine, store, context);
         let (module, entry) = (self.manifest.module, self.manifest.entry);
-        let run = self.loaded.run(module, entry, vec![Value::word(word)], &mut boundary, &Options::new(limits))?;
+        let options = Options { record: false, ..Options::new(limits) };
+        let run = self.loaded.run(module, entry, vec![Value::word(word)], &mut boundary, &options)?;
         Ok(Ran { run, shell: boundary.shell, captures: boundary.captures })
     }
 

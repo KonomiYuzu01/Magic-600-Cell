@@ -119,18 +119,20 @@ pub fn job(tool: &Tool, source: &str, word: &[i32]) -> Job {
 }
 
 /// The job of one run of `tool` on a literal word under `limits`: the source bytes, the manifest's module and entry,
-/// the word as the entry's one argument, `limits`, the test tariffs and no source ranges, as [`Tool::run_under`] runs
-/// it in process. The job runs in the solving profile and names the tool's class rows ([`class_rows`],
-/// `JobOptions::built_in`), so the child admits the entry in the built-in column with `c600_check::admit_built_in`, as
-/// [`Tool::new`] does in this process (chapter 07 section 8). Solving is the profile of the place where LP3's hosts
-/// start a run, a command in a solving session (BND.17). The tool editor and a research workspace, which would set the
-/// other two, do not exist yet, and in a session of another profile the layer refuses a run's `operation.preview`
-/// (BND.16, BND.60).
+/// the word as the entry's one argument, `limits`, the test tariffs, no source ranges and no per-operation rows
+/// (`JobOptions::record`), as [`Tool::run_under`] runs it in process. The meter does not charge its rows to the memory
+/// limit, so a run that kept them would grow with its steps; a quiet run has the same counters and stops. The job runs
+/// in the solving profile and names the tool's class rows ([`class_rows`], `JobOptions::built_in`), so the child
+/// admits the entry in the built-in column with `c600_check::admit_built_in`, as [`Tool::new`] does in this process
+/// (chapter 07 section 8). Solving is the profile of the place where LP3's hosts start a run, a command in a solving
+/// session (BND.17). The tool editor and a research workspace, which would set the other two, do not exist yet, and in
+/// a session of another profile the layer refuses a run's `operation.preview` (BND.16, BND.60).
 pub fn job_under(tool: &Tool, source: &str, word: &[i32], limits: Amounts) -> Job {
     let mut options = JobOptions::new(limits);
     options.profile = Profile::Solving;
     options.built_in = Some(class_rows(&tool.manifest));
     options.source_ranges = false;
+    options.record = false;
     Job {
         sources: vec![source.as_bytes().to_vec()],
         module: tool.manifest.module.into(),
