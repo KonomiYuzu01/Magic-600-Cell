@@ -237,8 +237,8 @@ const KEEPER: &str = "export fn keep(w: Word) -> Unit effects [workspace, file] 
     export fn go_file() -> Text effects [file, preview] {\n    \
     return receipt_id(propose(file_read<Word>(\"kept.6cw\"), target(\"t\")));\n}\n";
 
-/// CT-LB7-01 (part: views, save/load and import; not run: the undoable action of an invoked workspace command, which
-/// waits for the session store, M6, and the command layer, LP3): a view cannot write a record; research output saved
+/// CT-LB7-01 (part: views, save/load and import; the undoable action of an invoked workspace command runs in
+/// `c600-command`'s `job_output.rs` and `filter_apply.rs`): a view cannot write a record; research output saved
 /// through the workspace and a file and loaded by a later solving run keeps its block, so its preview is refused at
 /// admission; an imported word saved the same way keeps its import block and previews.
 #[test]

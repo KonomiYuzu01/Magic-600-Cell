@@ -144,8 +144,9 @@ impl Fixture {
     }
 }
 
-/// CT-LB2-02 (part: the command route on 600-cell-Full; the kernel half is in `c600-kernel/tests/kernel.rs`; not run:
-/// the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`, which are LP3's library rows),
+/// CT-LB2-02 (part: the command route on 600-cell-Full; the kernel half is in `c600-kernel/tests/kernel.rs`;
+/// not run here: the captured lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`, which run whole
+/// in `c600-tools/tests/ct_lb2_02.rs`),
 /// KN2.4, KN2.7, KN5.9, LB2.3. A session starts under Net. With an orbit protected, a word with an identity net map and
 /// a moving prefix commits under Net; after `protection.policy.set` to Strict, a workspace action that keeps the state,
 /// the same word builds a preview whose summary names the mode and the first refused prefix, and its commit is refused

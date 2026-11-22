@@ -5,6 +5,11 @@
 //!
 //! The persisted-word cases use the in-memory store of `c600-run`. The durable leg, a word read back from M6's
 //! session store, runs in `c600-durable`'s tests (C7, `ct_rte_08_persisted_word.rs`).
+//!
+//! CT-RTE-08 (source, part: approval bound to the executed bytes, substitution and dynamic code refused, and the
+//! module, branch, preview-outcome and persisted-word cases on `c600-run`'s in-memory store; not run here: the
+//! persisted word read back from M6's session store, in `c600-durable/tests/ct_rte_08_persisted_word.rs`, which with
+//! this file is the whole by union).
 
 mod support;
 

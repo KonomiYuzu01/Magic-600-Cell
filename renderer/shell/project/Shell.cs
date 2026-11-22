@@ -207,6 +207,7 @@ public partial class Shell : Control
         }
         var chord = KeyChord.Chord(key, code);
         var answer = library.KeyDown(_host, chord, key.Echo, out var result);
+        var handled = EventLog.Now();
         if (answer != HostLibrary.Ok)
         {
             GD.PushWarning($"m6h_key_down {chord}: {answer}: {library.LastError(_host)}");
@@ -214,11 +215,11 @@ public partial class Shell : Control
         }
         if (result.Press == HostLibrary.PressCommitted)
         {
-            _log?.Press(qpc, result.EngineRevision);
+            _log?.Press(qpc, handled, result.EngineRevision);
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
-            _log?.Press(qpc, 0);
+            _log?.Press(qpc, handled, 0);
         }
     }
 
@@ -323,9 +324,10 @@ public partial class Shell : Control
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);
+        var returned = EventLog.Now();
         if (code == HostLibrary.Ok)
         {
-            _log?.Frame(frame, submitted);
+            _log?.Frame(frame, submitted, returned);
             _submittedThisFrame = frame.Sequence;
             if (_session && _firstSubmitted is null && frame.EngineRevision >= _openRevision
                 && frame.PublicationRevision >= _openRevision)

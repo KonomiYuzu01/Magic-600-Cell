@@ -2,6 +2,10 @@
 //! route (LP3, C5's next piece, acceptance items 3 and 4; the Strict half on the command layer's Strict mode, LP2's
 //! pull request 198). Each test runs the tool on the in-process host and on the process host. Neither ID runs whole
 //! here: each test's comment names the part it covers and the part that is not built.
+//!
+//! CT-LB2-03 (part: the oversize refusal and chunked transport on both routes; not run here: named work-sheet reuse,
+//! in `c600-command/tests/worksheet.rs` and `c600-durable/tests/ct_lb2_03_work_sheet_reuse.rs`; the kernel half is in
+//! `c600-kernel/tests/kernel.rs`, and the four files together are the whole by union).
 
 mod process_support;
 
@@ -155,19 +159,20 @@ fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_t
     }
 }
 
-/// CT-LB2-02 (part: the Strict half through the 600-cell-Full tool's route, on both hosts; not run: the captured lock,
-/// LB2.3's coverage report and `LB2:protection.incomplete_coverage`, which are LP3's library rows), the Strict half
-/// (LB2.3: Strict tests every executed literal prefix; KN2.4, KN2.7). The protected set is the Net half's, the orbits
-/// a generator `g` moves, and the shell sets the session's policy to Strict with `protection.policy.set` before the
-/// tool runs. On either host the tool's proposal of `g -g` or `g h -h -g`, which pass Net above, builds a preview
-/// whose protection row is the kernel's `strict_protection` of the word over the layer's protected set: mode Strict
-/// at level labels, verdict moves, the conflicts of the first refused prefix and its length, 1, the shortest prefix
-/// whose net map moves a protected orbit. The preview's summary adds `mode: "strict"` and `first_refused_prefix: 1`
-/// to verdict `moves` and a null end, and the shell's chord is refused with the kernel's protection code: the state
-/// and the journal stay where they were. The command route's preview of the same recipe under Strict has the same
-/// summary, protection row and operation (literal, expansion and net digests, count and end state), and its commit
-/// gets the same refusal. Without a protected orbit Strict clears every prefix: on either host the word previews
-/// clear with a null `first_refused_prefix` and commits as one transaction that leaves the state where it was.
+/// CT-LB2-02 (part: the Strict half through the 600-cell-Full tool's route, on both hosts; not run here: the captured
+/// lock, LB2.3's coverage report and `LB2:protection.incomplete_coverage`, which run whole in `tests/ct_lb2_02.rs`),
+/// the Strict half (LB2.3: Strict tests every executed literal prefix; KN2.4, KN2.7). The protected set is the Net
+/// half's, the orbits a generator `g` moves, and the shell sets the session's policy to Strict with
+/// `protection.policy.set` before the tool runs. On either host the tool's proposal of `g -g` or `g h -h -g`, which
+/// pass Net above, builds a preview whose protection row is the kernel's `strict_protection` of the word over the
+/// layer's protected set: mode Strict at level labels, verdict moves, the conflicts of the first refused prefix and its
+/// length, 1, the shortest prefix whose net map moves a protected orbit. The preview's summary adds `mode: "strict"`
+/// and `first_refused_prefix: 1` to verdict `moves` and a null end, and the shell's chord is refused with the kernel's
+/// protection code: the state and the journal stay where they were. The command route's preview of the same recipe
+/// under Strict has the same summary, protection row and operation (literal, expansion and net digests, count and end
+/// state), and its commit gets the same refusal. Without a protected orbit Strict clears every prefix: on either host
+/// the word previews clear with a null `first_refused_prefix` and commits as one transaction that leaves the state
+/// where it was.
 ///
 /// Not built through the tool's route: "an incomplete prefix check never returns safe" and "the relevant captured
 /// lock". The captured lock of LB2's row "Net and Strict protection", LB2.3's coverage report and

@@ -1,9 +1,9 @@
-//! CT-RPI-19 (source): one reproducibility key gives equal exact plan fields and approximate values within declared
-//! precision, including maths-library-sensitive cases (RPI.56, LX-3). The maths-library-sensitive cases are camera
-//! turns built with the platform's `sin`, `cos` and `sqrt`, compared with exact images in Q(√5). Both legs run these
-//! same tests against the same pinned key: the Windows leg on the headless shards and the headless Linux leg in the
-//! Linux Rust job (`.github/workflows/linux-rust.yml`), which both run this crate's tests. Bitwise equality of floats
-//! across platforms is not claimed (RPI.56).
+//! CT-RPI-19 (source, whole): one reproducibility key gives equal exact plan fields and approximate values within
+//! declared precision, including maths-library-sensitive cases (RPI.56, LX-3). The maths-library-sensitive cases are
+//! camera turns built with the platform's `sin`, `cos` and `sqrt`, compared with exact images in Q(√5). Both legs run
+//! these same tests against the same pinned key: the Windows leg on the headless shards and the headless Linux leg in
+//! the Linux Rust job (`.github/workflows/linux-rust.yml`), which both run this crate's tests. Bitwise equality of
+//! floats across platforms is not claimed (RPI.56).
 
 mod common;
 

@@ -381,12 +381,12 @@ fn a_work_sheets_record_previews_its_complete_operation() {
 }
 
 /// CT-LB2-03 (part: named work-sheet reuse invalidates the old preview, with its piece roles placed again and a fresh
-/// engine preview; not run: M6's session store; `worksheet.compare` runs in the tests below), LB7.2, KN0.8,
-/// solving workflow section 4.2 (draft). A reuse at the same state writes the sheet again, unchanged, at its next
-/// version, so the preview that read the sheet stays presented but is stale: the commit row is unavailable, the press
-/// prepared before the reuse is `revision_changed`, and so is a reuse that names the sheet's earlier version. The sheet
-/// stores no preview or analysis that could stand in for a fresh one: a fresh engine preview of the reused sheet
-/// commits its complete operation.
+/// engine preview; not run here: M6's session store, which `c600-durable/tests/ct_lb2_03_work_sheet_reuse.rs` runs;
+/// `worksheet.compare` runs in the tests below), LB7.2, KN0.8, solving workflow section 4.2 (draft). A reuse at the
+/// same state writes the sheet again, unchanged, at its next version, so the preview that read the sheet stays
+/// presented but is stale: the commit row is unavailable, the press prepared before the reuse is `revision_changed`,
+/// and so is a reuse that names the sheet's earlier version. The sheet stores no preview or analysis that could stand
+/// in for a fresh one: a fresh engine preview of the reused sheet commits its complete operation.
 #[test]
 fn reusing_a_named_work_sheet_invalidates_the_old_preview() {
     let mut f = fixture();

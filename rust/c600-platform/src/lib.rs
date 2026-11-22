@@ -5,13 +5,15 @@
 //!
 //! Its first interface is the session lock file's open (the owner's reading of finding E1 of the KN5 boundary
 //! attack, 18 November 2026, `docs/wiki/decisions/owner-decisions-2026-11-18.md`; the layer-boundary change approved
-//! under PHS.52). It uses std only.
+//! under PHS.52). Its second, under process ownership, keeps a console program that a caller starts from opening a
+//! console window of its own ([`no_console_window`]), for the language runtime's child. It uses std only.
 
 #![forbid(unsafe_code)]
 
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::path::Path;
+use std::process::Command;
 
 /// Opens the session lock file at `path` for reading and writing, creating it empty when `create` is set and it is
 /// missing, for the caller to lock with `File::try_lock`.
@@ -41,11 +43,46 @@ fn keep_name_while_open(options: &mut OpenOptions) {
 #[cfg(not(windows))]
 fn keep_name_while_open(_: &mut OpenOptions) {}
 
+/// Keeps the console program that `command` starts from opening a console window of its own, and returns `command`.
+///
+/// On Windows a console program started by a program that has no console, such as the shell, gets a new console
+/// window each time it starts. The language runtime's parent pipes its child's three streams and starts a new child
+/// after every fault, so such a window would only open and close over the shell. Here the child starts with
+/// `CREATE_NO_WINDOW`. Elsewhere `command` is unchanged.
+pub fn no_console_window(command: &mut Command) -> &mut Command {
+    hide_console_window(command);
+    command
+}
+
+#[cfg(windows)]
+fn hide_console_window(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    // `CREATE_NO_WINDOW`: a console program runs without a console window.
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    command.creation_flags(CREATE_NO_WINDOW);
+}
+
+#[cfg(not(windows))]
+fn hide_console_window(_: &mut Command) {}
+
 #[cfg(test)]
 mod tests {
-    use super::open_lock_file;
+    use super::{no_console_window, open_lock_file};
     use std::fs;
     use std::path::PathBuf;
+    use std::process::{Command, Stdio};
+
+    /// A program started without a console window still runs with its streams piped: the test binary lists its own
+    /// tests to its parent. Whether a window opens is not visible here; a device run shows that.
+    #[test]
+    fn a_child_without_a_console_window_still_answers_through_its_pipes() {
+        let mut command = Command::new(std::env::current_exe().expect("the test binary"));
+        command.arg("--list").stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+        let output = no_console_window(&mut command).output().expect("the child starts");
+        assert!(output.status.success(), "{output:?}");
+        let listed = String::from_utf8_lossy(&output.stdout);
+        assert!(listed.contains("a_child_without_a_console_window_still_answers_through_its_pipes"), "{listed}");
+    }
 
     fn directory(name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("c600-platform-{name}-{}", std::process::id()));

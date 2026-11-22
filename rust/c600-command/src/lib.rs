@@ -376,9 +376,10 @@
 //! - A record write answers `completed(workspace)`, and its undo and redo answer `committed` with equal puzzle hashes,
 //!   advancing the workspace revision and the record's version (KN5.20). An undo of a record's first write leaves the
 //!   record with no value. The journal keeps the record's value after each of these actions (`Transaction::record`).
-//! - A workspace overlay's completion is one durable action with its receipt (KN5.23). Only a stored row whose undo
-//!   class is `workspace` makes it undoable (filter previews, below); a language-defined row's is not. A rolled-back
-//!   transaction's `failed` receipt is transient.
+//! - A workspace overlay's completion is one durable action with its receipt (KN5.23). A row whose undo class is
+//!   `workspace` makes it undoable: every language-defined workspace row (LG3.5, LB7.2; LP2's reading 18) and a stored
+//!   row whose undo class in H-08 is `workspace` (filter previews, below). A rolled-back transaction's `failed` receipt
+//!   is transient.
 //! - A run reaches no workspace-kind row (findings B3 and B4 of the KN5 boundary attack). Of the rows an entry
 //!   runs, an overlay row or a served row, the runtime may invoke a query or view row only. A workspace or file row is
 //!   refused with `LG3:capability.not_granted`, as `workspace.set` is, before read-only recovery, the arguments and
@@ -484,9 +485,9 @@
 //!   - A workspace row's records are written in its completion's one durable action, in the order of their names:
 //!     each record's version advances, and the workspace revision advances once. The journal keeps them
 //!     (`Transaction::records`), so a reopen writes them again.
-//!   - No undo reaches the writes of a job of a language-defined row or of a stored row whose undo class is `none`.
-//!     So that an undo or redo of an earlier write of the same record cannot write over them, the earlier actions that
-//!     wrote one leave the undo and redo stacks. The cut runs on: walked from each stack's top, an action that leaves
+//!   - No undo reaches the writes of a job of a stored row whose undo class is `none`. So that an undo or redo of an
+//!     earlier write of the same record cannot write over them, the earlier actions that wrote one leave the undo and
+//!     redo stacks. The cut runs on: walked from each stack's top, an action that leaves
 //!     adds the records it wrote, so the actions beneath it that wrote one of them leave too, while those above it keep
 //!     their place.
 //!   - Drafts for LP3's amendment list (PHS.52): the digest's form, the code for a record from another row, the
@@ -540,15 +541,18 @@
 //!     word-preview slot nor a presentation. Missing or stale, the row is refused with `KN5:stale.filter_preview` when
 //!     the job is admitted; a preview that goes stale while the job runs fails the job with that code when its output
 //!     is published, and nothing is written.
-//!   - A workspace completion of a stored row whose undo class is `workspace` is one undoable action: `filter.apply`'s,
-//!     and since the command table's freeze `set.save`'s, `filter.save`'s and `structure.layer`'s too (LB7.2, CM.17).
-//!     `session.undo` and `session.redo` write each of its records' values before or after it again as one action,
-//!     answering `committed` with equal puzzle hashes and advancing the workspace revision and the records' versions
-//!     (LI.26). The journal keeps the writes in `records`, where an undo's value is `null` when it leaves the record
-//!     empty. A replay decides undoability from H-08's table, before the host serves its rows. A completion that writes
-//!     no record changes nothing an undo could restore, so it takes no undo entry. A predicate job that later writes
-//!     one of an applied filter's records is an undoable action of its own above the apply, which keeps its place; a
-//!     job of a language-defined row that does takes the apply off both stacks, as above.
+//!   - A workspace completion of a row whose undo class is `workspace` is one undoable action: a language-defined
+//!     workspace row's (LG3.5, LB7.2; LP2's reading 18), `filter.apply`'s, and since the command table's freeze
+//!     `set.save`'s, `filter.save`'s and `structure.layer`'s too (LB7.2, CM.17). `session.undo` and `session.redo`
+//!     write each of its records' values before or after it again as one action, answering `committed` with equal
+//!     puzzle hashes and advancing the workspace revision and the records' versions (LI.26). The journal keeps the
+//!     writes in `records`, where an undo's value is `null` when it leaves the record empty. A replay decides
+//!     undoability from the table it opens with, before the host serves its rows and registers its language-defined
+//!     rows again: a stored row's undo class is H-08's, and a row the table does not hold is a language-defined one. A
+//!     completion that writes no record changes nothing an undo could restore, so it takes no undo entry. A predicate
+//!     job or a job of a language-defined row that later writes one of an applied filter's records is an undoable
+//!     action of its own above the apply, which keeps its place; a job of a stored row whose undo class is `none` that
+//!     does takes the apply off both stacks, as above.
 //!   - The gate is answered by [`CommandLayer::availability_for`] too, after the `FilterRef`s.
 //! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
 //!   or the `test-hooks` feature (L15).

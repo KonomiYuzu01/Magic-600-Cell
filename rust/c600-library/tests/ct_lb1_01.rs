@@ -27,6 +27,10 @@
 //! CT-LB1-01's quaternion factor reconstruction and tree outputs run in `ct_lb1_01_trees.rs` (pull request 347), so the
 //! test runs whole across the two files. Not built: kernels (null spaces), and ranks and solutions over Z, Q and Q(√5).
 //! A pass is source and fixture evidence.
+//!
+//! CT-LB1-01 (source, part: F2 and F5 ranks and solutions, exact Q(√5) signs and no puzzle reachability; not run
+//! here: quaternion factor reconstruction and tree outputs, in `ct_lb1_01_trees.rs`, which with this file is the
+//! whole by union).
 
 mod common;
 

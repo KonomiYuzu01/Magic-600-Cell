@@ -184,19 +184,19 @@ fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_na
 }
 
 /// CT-LB6-03 (part, the representations tool: the declared class is reviewed against the exact entry definitions, and
-/// LX-3's storage-laundering and state-based target selection cases are refused under capability separation and at
-/// the preview sink). The shipped entries pass the review. A variant that stores a word read from state is refused by
-/// the built-in column at the write, because a stored word too must be one the solver named (LP2's column), though the
-/// workspace sink refuses nothing on labels (BND.26); the class review finds it as well: a view aid stores what the
-/// solver named. The variants that preview the stored word, read directly or through a declassifier, are refused with
-/// `LG3:capability.not_granted` at the entry and at the proposal, and with the declassifier enabled still at the
-/// proposal; a variant that reads its target from state is refused at the entry twice, for the separation and for a
-/// row the checker cannot name. The column's checks here use a class that also lists the variants' rows, so that each
-/// refusal shown is the rule under test; under the tool's own class ([`class_rows`]) the store's rows are refused too.
-/// The review finds each as choosing a target. An exported function the manifest does not list is found, so no entry
-/// escapes the review by being left out of the manifest. Not run: LX-3's correction solve, which is the 600-cell-Full
-/// tool's case, and any run of a variant; the shipped entries run through the command and source routes in
-/// `served_rows.rs`.
+/// LX-3's storage-laundering and state-based target selection cases are refused under capability separation and at the
+/// preview sink; not run: BM5's review and its record, when the tools ship). The shipped entries pass the review. A
+/// variant that stores a word read from state is refused by the built-in column at the write, because a stored word too
+/// must be one the solver named (LP2's column), though the workspace sink refuses nothing on labels (BND.26); the class
+/// review finds it as well: a view aid stores what the solver named. The variants that preview the stored word, read
+/// directly or through a declassifier, are refused with `LG3:capability.not_granted` at the entry and at the proposal,
+/// and with the declassifier enabled still at the proposal; a variant that reads its target from state is refused at
+/// the entry twice, for the separation and for a row the checker cannot name. The column's checks here use a class that
+/// also lists the variants' rows, so that each refusal shown is the rule under test; under the tool's own class
+/// ([`class_rows`]) the store's rows are refused too. The review finds each as choosing a target. An exported function
+/// the manifest does not list is found, so no entry escapes the review by being left out of the manifest. Not run:
+/// LX-3's correction solve, which is the 600-cell-Full tool's case, and any run of a variant; the shipped entries run
+/// through the command and source routes in `served_rows.rs`.
 #[test]
 fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_laundering_refused() {
     let table = Table::h08();

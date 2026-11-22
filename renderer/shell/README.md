@@ -31,6 +31,8 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
       revision R over a publication of revision R or later (the conservative DRAFT reading); a refused press, and a
       press no frame showed before the close, names no frame, which `key_to_frame.py` counts as unconfirmed. `frame`
       rows carry `engine_revision` and `publication_revision` as extra fields.
+    - Two more extra fields time the core's calls: a `key` row's `handled_qpc` is read when `m6h_key_down` returned,
+      and a `frame` row's `returned_qpc` when `m6h_frame` returned, so a slow call stands apart from a slow present.
     - `correctness` is the session's correctness control, `journal-reopen-and-kernel-replay`, with its record as
       `correctness_detail`: the live state, the state a reopen of the journal replays, and the kernel's own replay of
       every committed press from the solved state must agree, and the newest presented frame's revision must show

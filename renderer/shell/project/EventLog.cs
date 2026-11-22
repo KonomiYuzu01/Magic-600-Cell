@@ -55,8 +55,11 @@ public sealed class EventLog : IDisposable
     private readonly string _buildIdentity;
     private FileStream? _body;
     private bool _foreground = true;
-    /// <summary>Presses without their frame yet, in press order: QPC and revision (0 for a refused press).</summary>
-    private readonly Queue<(long Qpc, ulong Revision)> _pending = new();
+    /// <summary>
+    /// Presses without their frame yet, in press order: QPC, the QPC when m6h_key_down returned, and revision (0 for
+    /// a refused press).
+    /// </summary>
+    private readonly Queue<(long Qpc, long Handled, ulong Revision)> _pending = new();
     private long _keys;
     private long _uiFrames;
     /// <summary>The core's swap chains in the order the shell saw them; null where the core gave no address.</summary>
@@ -136,12 +139,13 @@ public sealed class EventLog : IDisposable
     public void LostForeground() => _foreground = false;
 
     /// <summary>
-    /// A measured press at <paramref name="qpc"/> (read when the key-down arrived): committed and adopted at
-    /// <paramref name="revision"/>, or refused when it is 0. Its key row waits for the frame that shows it.
+    /// A measured press at <paramref name="qpc"/> (read when the key-down arrived), whose m6h_key_down returned at
+    /// <paramref name="handled"/>: committed and adopted at <paramref name="revision"/>, or refused when it is 0. Its
+    /// key row waits for the frame that shows it.
     /// </summary>
-    public void Press(long qpc, ulong revision)
+    public void Press(long qpc, long handled, ulong revision)
     {
-        _pending.Enqueue((qpc, revision));
+        _pending.Enqueue((qpc, handled, revision));
         Drain(null);
     }
 
@@ -153,8 +157,11 @@ public sealed class EventLog : IDisposable
         _detail = string.IsNullOrEmpty(detail) ? null : detail;
     }
 
-    /// <summary>A frame handed to the core, at the QPC read just before the call.</summary>
-    public void Frame(HostLibrary.Submitted frame, long qpc)
+    /// <summary>
+    /// A frame handed to the core, at the QPC read just before the call; <paramref name="returned"/> is the QPC read
+    /// when m6h_frame returned.
+    /// </summary>
+    public void Frame(HostLibrary.Submitted frame, long qpc, long returned)
     {
         Write(json =>
         {
@@ -165,6 +172,7 @@ public sealed class EventLog : IDisposable
             json.WriteNumber("surface", frame.Surface);
             json.WriteNumber("engine_revision", frame.EngineRevision);
             json.WriteNumber("publication_revision", frame.PublicationRevision);
+            json.WriteNumber("returned_qpc", returned);
         });
         Drain(frame);
     }
@@ -191,11 +199,11 @@ public sealed class EventLog : IDisposable
                 return;
             }
             _pending.Dequeue();
-            WriteKey(press.Qpc, frameId);
+            WriteKey(press.Qpc, press.Handled, frameId);
         }
     }
 
-    private void WriteKey(long qpc, ulong? frameId)
+    private void WriteKey(long qpc, long handled, ulong? frameId)
     {
         var seq = _keys++;
         Write(json =>
@@ -203,6 +211,7 @@ public sealed class EventLog : IDisposable
             json.WriteString("t", "key");
             json.WriteNumber("seq", seq);
             json.WriteNumber("qpc", qpc);
+            json.WriteNumber("handled_qpc", handled);
             if (frameId is { } id)
             {
                 json.WriteNumber("frame_id", id);
@@ -297,7 +306,7 @@ public sealed class EventLog : IDisposable
         }
         while (_pending.TryDequeue(out var press))
         {
-            WriteKey(press.Qpc, null);
+            WriteKey(press.Qpc, press.Handled, null);
         }
         _body = null;
         body.Dispose();

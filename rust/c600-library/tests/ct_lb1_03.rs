@@ -12,6 +12,9 @@
 //! when no orbit is protected, and ends where `Kernel::derive` ends); and the inverse part (a library-built word and
 //! its inverse retrace one path, prefix by prefix, from solved and from a scrambled state).
 //!
+//! CT-LB1-03 (source, part: the 600-cell-Full half, all three sentences on the pinned model; not run here: the
+//! jumbling half, in `c600-jumble-tool`'s `tests/ct_lb1_03.rs`, `tests/library.rs` and `tests/rows.rs`).
+//!
 //! Not run here: the jumbling half, which C8 runs on Rust constructors over one pinned menu
 //! (`c600-jumble-tool/tests/ct_lb1_03.rs`) and in the language on its library's menu words
 //! (`c600-jumble-tool/tests/library.rs`); and the refusal `LB1:input.incompatible_alphabet`, which the checker gives,

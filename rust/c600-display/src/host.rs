@@ -13,7 +13,7 @@
 //! The host also drives RM.14's other adapter operations: engine adoption through the backend (RM.16), frame reports
 //! that show a fallback on the view (RM.41), and picks, which go request, poll, then RPI.25's resolution.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::canonical;
 use crate::error::{codes, Error, Form};
@@ -454,6 +454,9 @@ pub enum Picked {
     Done(Option<Partial<Resolution>>),
 }
 
+/// A command the host has answered. A terminal command keeps what its receipt and KN5.23's lookup read (request,
+/// job, status, outcome and ticket) and drops what it was prepared from: the stamp, the publication and its
+/// validation move to the view when it installs, and are dropped when it ends otherwise.
 #[derive(Clone, Debug)]
 struct Command {
     request: String,
@@ -474,6 +477,9 @@ pub struct Host<B: Backend> {
     pub ctx: Context,
     views: BTreeMap<ViewId, View>,
     commands: BTreeMap<CommandId, Command>,
+    /// The commands that are not terminal yet, in ID order: what [`Host::pump`], [`Host::set_dependency`] and
+    /// [`Host::device_lost`] look at, so their work does not grow with the commands already answered.
+    active: BTreeSet<CommandId>,
     events: Vec<(CommandId, Status)>,
     current: BTreeMap<String, String>,
     adopted: RevisionRef,
@@ -496,6 +502,7 @@ impl<B: Backend> Host<B> {
             ctx,
             views: BTreeMap::new(),
             commands: BTreeMap::new(),
+            active: BTreeSet::new(),
             events: Vec::new(),
             current,
             adopted,
@@ -611,11 +618,13 @@ impl<B: Backend> Host<B> {
     pub fn set_dependency(&mut self, key: &str, value: &str) {
         self.current.insert(key.to_owned(), value.to_owned());
         let moved: Vec<CommandId> = self
-            .commands
+            .active
             .iter()
-            .filter(|(_, c)| !c.status.is_terminal())
-            .filter(|(_, c)| c.stamp.as_ref().is_some_and(|s| s.dependencies.get(key).is_some_and(|v| v != value)))
-            .map(|(id, _)| *id)
+            .filter(|id| {
+                let stamp = self.commands.get(id).and_then(|c| c.stamp.as_ref());
+                stamp.is_some_and(|s| s.dependencies.get(key).is_some_and(|v| v != value))
+            })
+            .copied()
             .collect();
         for command in moved {
             self.cancel_with(command, CancelReason::ReplacedRevision);
@@ -676,13 +685,18 @@ impl<B: Backend> Host<B> {
         &self.events
     }
 
-    /// Sets a terminal status unless one is already set. Returns whether it was set.
+    /// Sets a terminal status unless one is already set. Returns whether it was set. The command drops what it was
+    /// prepared from, which nothing reads once it is terminal.
     fn finish(&mut self, command: CommandId, status: Status) -> bool {
         let Some(entry) = self.commands.get_mut(&command) else { return false };
         if entry.status.is_terminal() {
             return false;
         }
         entry.status = status.clone();
+        entry.stamp = None;
+        entry.publication = None;
+        entry.validated = None;
+        self.active.remove(&command);
         let view = entry.view;
         self.events.push((command, status));
         if let Some(v) = self.views.get_mut(&view) {
@@ -754,7 +768,10 @@ impl<B: Backend> Host<B> {
             },
         );
         if terminal {
+            self.active.remove(&command);
             self.events.push((command, status));
+        } else {
+            self.active.insert(command);
         }
     }
 
@@ -901,12 +918,8 @@ impl<B: Backend> Host<B> {
         if self.backend.describe_backend().is_err() && !self.lost {
             self.device_lost();
         }
-        let active: Vec<(CommandId, Ticket)> = self
-            .commands
-            .iter()
-            .filter(|(_, c)| !c.status.is_terminal())
-            .filter_map(|(id, c)| c.ticket.map(|t| (*id, t)))
-            .collect();
+        let active: Vec<(CommandId, Ticket)> =
+            self.active.iter().filter_map(|id| self.commands.get(id)?.ticket.map(|t| (*id, t))).collect();
         for (command, ticket) in active {
             match self.backend.poll(ticket) {
                 Poll::Pending => {}
@@ -919,17 +932,26 @@ impl<B: Backend> Host<B> {
     }
 
     /// RM.20's atomic installation: a bounded compare-and-swap while the command is the newest accepted one and its
-    /// dependencies, view generation and device epoch still match.
+    /// dependencies, view generation and device epoch still match. Once the payload moves out of the command, every
+    /// path below ends it: the payload goes to the view when it installs, and is dropped otherwise.
     fn install(&mut self, command: CommandId, resources: ResourceSet) {
-        let entry = self.commands.get(&command).expect("present").clone();
-        let (Some(stamp), Some(publication), Some(validated)) = (entry.stamp, entry.publication, entry.validated)
-        else {
+        let entry = self.commands.get_mut(&command).expect("present");
+        // `prepare` sets all three before the ticket that brought the command here; nothing is taken without them.
+        if entry.stamp.is_none() || entry.publication.is_none() || entry.validated.is_none() {
             return;
-        };
-        let view = self.views.get(&entry.view).expect("view").clone();
-        if view.newest != Some(command) {
+        }
+        let (stamp, publication, validated) = (
+            entry.stamp.take().expect("checked"),
+            entry.publication.take().expect("checked"),
+            entry.validated.take().expect("checked"),
+        );
+        let (target, job) = (entry.view, entry.job);
+        let view = self.views.get(&target).expect("view");
+        let (newest, view_generation, open, publication_generation) =
+            (view.newest, view.generation, view.open, view.publication_generation);
+        if newest != Some(command) {
             self.backend.retire(resources);
-            let by = view.newest.unwrap_or(command);
+            let by = newest.unwrap_or(command);
             self.end(command, JobOutcome::Cancelled(CancelReason::Superseded { by }));
             return;
         }
@@ -938,7 +960,7 @@ impl<B: Backend> Host<B> {
             self.end(command, JobOutcome::Cancelled(CancelReason::ReplacedRevision));
             return;
         }
-        if view.generation != stamp.view_generation || !view.open {
+        if view_generation != stamp.view_generation || !open {
             self.backend.retire(resources);
             self.end(command, JobOutcome::Cancelled(CancelReason::ByUser));
             return;
@@ -953,23 +975,19 @@ impl<B: Backend> Host<B> {
             self.fail(command, error);
             return;
         }
-        let generation = view.publication_generation + 1;
+        let generation = publication_generation + 1;
         let completion = Completion {
             revision: publication.base.clone(),
             result: ResultRef {
-                job: entry.job,
+                job,
                 digest: validated.digest.clone(),
-                covered: Covered {
-                    view: entry.view,
-                    view_generation: view.generation,
-                    publication_generation: generation,
-                },
+                covered: Covered { view: target, view_generation, publication_generation: generation },
             },
         };
         let installed = Installed {
             command,
             generation,
-            view_generation: view.generation,
+            view_generation,
             publication,
             validated,
             resources,
@@ -977,7 +995,7 @@ impl<B: Backend> Host<B> {
             available: true,
             fallback: None,
         };
-        let v = self.views.get_mut(&entry.view).expect("view");
+        let v = self.views.get_mut(&target).expect("view");
         v.publication_generation = generation;
         let rebind = v.rebind.take();
         let old = v.installed.replace(installed);
@@ -998,8 +1016,7 @@ impl<B: Backend> Host<B> {
     pub fn device_lost(&mut self) {
         self.lost = true;
         self.latch = None;
-        let pending: Vec<CommandId> =
-            self.commands.iter().filter(|(_, c)| !c.status.is_terminal()).map(|(id, _)| *id).collect();
+        let pending: Vec<CommandId> = self.active.iter().copied().collect();
         for command in pending {
             self.fail(command, Error::unavailable("the device was lost before installation"));
         }

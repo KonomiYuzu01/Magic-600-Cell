@@ -20,9 +20,12 @@ const COMPARE: &str = "structure.compare";
 const SCOPE: &str = "view.effect.scope";
 /// A language-defined file row the tests register.
 const EXPORT: &str = "tool.export";
-/// A language-defined workspace row the tests register: its completion writes the output's records as they are.
-/// (`set.save` writes the saved set its entry names instead: `tests/saved_sets.rs`.)
+/// A language-defined workspace row the tests register: its completion writes the output's records as they are, as one
+/// undoable action (LP2's reading 18). (`set.save` writes the saved set its entry names instead:
+/// `tests/saved_sets.rs`.)
 const STORE: &str = "tool.store";
+/// A stored workspace row whose undo class is `none`, which the tests serve: no undo reaches its job's writes.
+const PLAY: &str = "recording.play";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -70,6 +73,10 @@ fn preview_args(id: u64) -> Value {
     json::object([("preview", Value::Int(id as i64))])
 }
 
+fn play_args() -> Value {
+    json::object([("from", Value::Int(0)), ("recording", text("r1"))])
+}
+
 fn value(payload: Value, provenance: &str) -> RecordValue {
     RecordValue { payload, provenance: provenance.to_owned() }
 }
@@ -115,8 +122,8 @@ struct Fixture {
 }
 
 /// A session at the solved state that protects nothing, on H-08's table with the layer's drafts (`workspace.set`), with
-/// the representations tool's query and view rows served, a workspace overlay and a file overlay registered, and the
-/// test reader when `reader`.
+/// the representations tool's query and view rows and `recording.play` served, a workspace overlay and a file overlay
+/// registered, and the test reader when `reader`.
 fn fixture(reader: bool) -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
@@ -133,6 +140,7 @@ fn fixture(reader: bool) -> Fixture {
 fn serve(layer: &mut CommandLayer) {
     layer.serve_row(COMPARE, overlay("compare_cells")).unwrap();
     layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
+    layer.serve_row(PLAY, overlay("play")).unwrap();
     layer.register_overlay(EXPORT, Kind::File, &[], overlay("export")).unwrap();
     layer.register_overlay(STORE, Kind::Workspace, &[], overlay("store")).unwrap();
 }
@@ -248,8 +256,8 @@ fn a_value_alone_completes_as_before() {
     assert_eq!(answers[0], answers[1]);
 }
 
-/// CT-LG3-03 (part: a workspace row's completion is one durable action that moves the workspace revision once; not
-/// run: the undo of a language-defined row's action, which the layer does not give).
+/// CT-LG3-03 (part: a workspace row's completion is one durable action that moves the workspace revision once; its
+/// undo and redo are below).
 /// A workspace row's records are written in its completion's one durable action: every record's version advances,
 /// a record written before keeps counting, the workspace revision advances once, and the journal keeps the writes in
 /// the order of their names with the output's digest. A reopen without a reader writes them again, and the receipt
@@ -290,8 +298,79 @@ fn a_workspace_rows_records_are_written_in_its_one_durable_action() {
     assert_eq!(g.outcome(&started.command, &started.request), Some(done));
 }
 
+/// CT-LG3-03 and CT-LB7-01 (part: the undo half: an invoked workspace change of a language-defined row is one undoable
+/// action whose undo and redo each move the workspace revision once and keep the puzzle, before and after a reopen).
+/// A language-defined workspace row's completion that writes records is one undoable action, as `filter.apply`'s is
+/// (LG3.5, LB7.2; LP2's reading 18, the owner's decision of 22 November 2026, item 8): an undo writes back what each
+/// record held before it, an absent one included, and a redo writes the job's records again. Each answers `committed`
+/// with equal puzzle hashes and moves every written record's version and the workspace revision once, and the journal
+/// keeps the writes in `records`, an undo's absent value as `null`. A completion that writes no record takes no undo
+/// entry. An earlier record write keeps its place beneath the completion, and a reopen, which replays the completion
+/// before the host registers the row again, holds the same records and offers the same undo and redo.
+#[test]
+fn a_language_defined_rows_completion_undoes_and_redoes_in_the_workspace() {
+    let mut f = fixture(true);
+    let top = |f: &Fixture| f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
+    let same_after_reopen = |f: &Fixture, step: &str| {
+        let g = reopen(&f.layer);
+        assert_eq!(g.records(), f.layer.records(), "{step}");
+        for direction in [Direction::Undo, Direction::Redo] {
+            assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{step} {direction:?}");
+        }
+    };
+    assert!(completed(&f.write("b", letters(&[1]))));
+    let below = top(&f);
+    let (job, _) = f.start(STORE, json::object([]));
+    assert!(completed(&f.layer.finish_program_job_with(job, Ok(JobOutput::of(Value::Null))).unwrap()));
+    assert_eq!(top(&f), below, "a completion that writes no record takes no undo entry");
+
+    let (job, _) = f.start(STORE, json::object([]));
+    let out = output(Value::Null, Vec::new(), &[("b", letters(&[2]), "block"), ("a", letters(&[3, 5]), "block")]);
+    assert!(completed(&f.layer.finish_program_job_with(job, Ok(out)).unwrap()));
+    assert_eq!((f.record("a"), f.record("b")), ((1, Some(letters(&[3, 5]))), (2, Some(letters(&[2])))));
+    let completion = top(&f);
+    assert_ne!(completion, below, "the completion is the next undo's target");
+    let revision = f.layer.revision().clone();
+    same_after_reopen(&f, "the completion");
+
+    let undone = f.step(Direction::Undo);
+    let Status::Committed(record) = &undone.status else { panic!("{:?}", undone.status) };
+    assert_eq!(record.pre, record.post, "the undo keeps the puzzle");
+    assert_eq!((f.record("a"), f.record("b")), ((2, None), (3, Some(letters(&[1])))));
+    assert_eq!((f.layer.revision().workspace, f.layer.revision().state), (revision.workspace + 1, revision.state));
+    assert_eq!(top(&f), below);
+    same_after_reopen(&f, "the undo");
+
+    let redone = f.step(Direction::Redo);
+    let Status::Committed(record) = &redone.status else { panic!("{:?}", redone.status) };
+    assert_eq!(record.pre, record.post, "the redo keeps the puzzle");
+    assert_eq!((f.record("a"), f.record("b")), ((3, Some(letters(&[3, 5]))), (4, Some(letters(&[2])))));
+    assert_eq!((f.layer.revision().workspace, f.layer.revision().state), (revision.workspace + 2, revision.state));
+    assert_eq!(top(&f), completion);
+    same_after_reopen(&f, "the redo");
+
+    let log = f.layer.store().log.clone();
+    let kinds: Vec<TransactionKind> = log.iter().map(|t| t.kind).collect();
+    use TransactionKind::{Record, Redo, Undo, Workspace};
+    assert_eq!(kinds, [Record, Workspace, Workspace, Undo, Redo]);
+    let before = vec![
+        RecordWrite { name: "a".into(), value: None },
+        RecordWrite { name: "b".into(), value: Some(value(letters(&[1]), "block")) },
+    ];
+    assert_eq!(log[3].records, before);
+    assert_eq!(log[4].records, log[2].records);
+    for transaction in &log {
+        assert_eq!(Transaction::from_json(&transaction.to_json()).as_ref(), Some(transaction));
+    }
+
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert_eq!((f.record("a"), f.record("b")), ((4, None), (6, None)));
+    assert!(top(&f).is_none(), "the earlier write was the last action beneath the completion");
+}
+
 /// CT-LG3-03 and CT-LB7-01 (part: a view row's job that returns a record fails with `LG3:capability.not_granted` and
-/// writes nothing; not run: the undo of a language-defined workspace row's action).
+/// writes nothing).
 /// Only a workspace row's job writes records: a record from a query, view or file row's job fails the job with
 /// `LG3:capability.not_granted`, and nothing is written (draft).
 #[test]
@@ -348,9 +427,10 @@ fn a_workspace_rows_records_pass_the_hosts_reader_or_nothing_is_written() {
     assert_eq!(f.layer.store().log.len(), 1);
 }
 
-/// No undo reaches a job's writes, so an undo or redo of an earlier write of the same record would write over them.
-/// Those earlier writes leave both stacks when the job's records are written, and the writes of other records and the
-/// commits keep their places. A reopen cuts the history the same way (draft).
+/// No undo reaches the writes of a job of a stored row whose undo class is `none` (`recording.play`), so an undo or
+/// redo of an earlier write of the same record would write over them. Those earlier writes leave both stacks when the
+/// job's records are written, and the writes of other records and the commits keep their places. A reopen cuts the
+/// history the same way (draft).
 #[test]
 fn no_undo_or_redo_writes_over_a_jobs_records() {
     let mut f = fixture(true);
@@ -363,7 +443,7 @@ fn no_undo_or_redo_writes_over_a_jobs_records() {
     let commit = f.layer.undo_hint(Direction::Undo).unwrap().target;
     assert!(f.layer.undo_hint(Direction::Redo).is_some());
 
-    let (job, _) = f.start(STORE, json::object([]));
+    let (job, _) = f.start(PLAY, play_args());
     let out = output(Value::Null, Vec::new(), &[("a", letters(&[5]), "block")]);
     assert!(completed(&f.layer.finish_program_job_with(job, Ok(out)).unwrap()));
     assert_eq!(f.record("a"), (4, Some(letters(&[5]))));

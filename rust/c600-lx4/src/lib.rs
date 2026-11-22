@@ -16,6 +16,23 @@
 //! A module is made of whole declarations of the three tools, renamed, in a seeded order, then `#` comment padding to
 //! its exact length. The manifest lists the tools' sources by digest: when a tool changes, the module set changes, and
 //! RTE.51 step 1 freezes it again with the candidate. Until then the set is a DRAFT.
+//!
+//! U8 of LP3's C9 sitting ran LX-4 on the owner's machine with the product build of `013900ff`
+//! (`c9-product-2efda50d54592f20`, 21 November 2026) and the module set this crate generated from that candidate's
+//! tools, frozen by digest with it. The record, analysed again under the owner decision of 22 November 2026 (items 1,
+//! 2 and 10; pull request 411), is `work/experiments/c9-sitting/results/u8-final-lx4-20261122.json`:
+//!
+//! - CT-RTE-12 (performance, whole: `result.fixtures` lists the set by digest, `manifest_sha256` over 53 modules, S,
+//!   M, L and W's 50, and `edits_sha256` over 16 seeded edits; `result.runs` holds a valid run per puzzle;
+//!   `result.series` holds the smoke run and series 1 to 3 per puzzle, size and metric, each with its median (`p50`),
+//!   p95, p99 and largest value; `result.accounting` counts 10,800 S, M and L samples apart from 600 W samples, 600
+//!   turns and 40 smoke samples; `result.decision` is `all-bars` under RTE.53's S and M versus L and W rule;
+//!   `bar.rule` is step 5's timing; the gate reference is U4's W3 summary, `result.gate_reference`, owner item 2).
+//! - CT-EV1-06 (performance, whole: in `result.series` syntax feedback, completion and diagnostics meet their bars in
+//!   all three series at S, M and L on both puzzles, on the generated modules; `verdict` met).
+//! - CT-LG4-09 (performance, part: LP3's half: the editor's views were open and re-run, the `rerun` metric, with 600
+//!   E2 turns in the same runs, `verdict` met, and charter E2 met in them, `u8-final-e2.json`; not run here: LX-2's
+//!   half, in `c600-lx2`).
 
 #![forbid(unsafe_code)]
 

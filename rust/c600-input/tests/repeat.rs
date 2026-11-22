@@ -4,6 +4,14 @@
 //! Every test sends real repeat events and counts the invocations that reach the layer by asking the layer's outcome
 //! lookup for each command ID, so no leg can pass because no repeat arrived. The events are synthetic; none of this is
 //! Windows input evidence, and nothing here measures time.
+//!
+//! CT-EV4-04 (whole: the allowlist; the once-only legs for a preview job, cancel, commit, undo, redo and a twist
+//! through `twist.apply`, and a workspace append sent once by the router, which the layer answers with
+//! `KN5:input.row_not_built`; the focus-loss and busy legs; synthetic events, no Windows input evidence).
+//!
+//! CT-BND-20 (part: a held commit chord reaches the layer once, through the router, headless; the half where a program
+//! cannot obtain a token is in `c600-tools/tests/bridge.rs` and `c600-command/tests/kn5.rs`; not run: the actual
+//! Windows half, on the owner's machine (C9)).
 
 mod common;
 

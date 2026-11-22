@@ -1,5 +1,5 @@
-//! CT-RPI-22 (source), the chart half: failed chart checks affect only their display output; a failure changes no
-//! session and certifies no negative (RPI.48 to RPI.50). The limit half is in `c600-view`.
+//! CT-RPI-22 (source, part: the chart half: failed chart checks affect only their display output; a failure changes
+//! no session and certifies no negative, RPI.48 to RPI.50). The limit half is in `c600-view`'s `view_rows.rs`.
 
 mod common;
 

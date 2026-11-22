@@ -1,5 +1,12 @@
-//! Plan and publication validation (part P): CT-RPI-02, CT-RPI-04 (missing source map), CT-RPI-05, CT-RPI-08 for the
-//! 600-cell-Full primitive rows and CT-RPI-27. The jumbling rows of CT-RPI-08 wait for M5. Source-level fixtures only.
+//! Plan and publication validation (part P), with source-level fixtures only.
+//!
+//! - CT-RPI-02 (source, whole).
+//! - CT-RPI-04 (source, part: a missing source map installs nothing; the late older completion is in `publication.rs`).
+//! - CT-RPI-05 (source, whole).
+//! - CT-RPI-08 (source, part: the 600-cell-Full primitive rows, with the posed and certificate rows unsupported; the
+//!   jumbling rows are in `jumbling.rs` and `jumbling_payloads.rs`, and J10's geometry in `c600-jumble`'s `faces.rs`;
+//!   not run: J01 and J06 to J12 as a backend's supported rows, on the owner's machine (C9)).
+//! - CT-RPI-27 (source, whole).
 
 mod common;
 

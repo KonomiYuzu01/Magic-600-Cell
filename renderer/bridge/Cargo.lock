@@ -128,6 +128,7 @@ dependencies = [
  "c600-check",
  "c600-digest",
  "c600-ir",
+ "c600-platform",
  "c600-run",
  "c600-syntax",
  "num-bigint",

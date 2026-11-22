@@ -263,10 +263,11 @@ fn refused(session: &mut Session, code: &str, what: &str) {
     assert_eq!(session.fixed(), before, "{what}: the refusal changes nothing");
 }
 
-/// CT-LB3-07 (LB3.1's "Mode crossing prerequisites", the Jumble-on half). In a session at solved under I_a's menu:
-/// the solved witness through two commits, with Jumble off; Jumble on after the entry and after a pose move; the exit
-/// root of `jumble.off` with no commit and with one; and the head moved by undo and redo. In a session that started
-/// away from solved, no entrance. At each head the entry's answer is checked, and `jumble.on` pressed there agrees.
+/// CT-LB3-07 (part: LB3.1's "Mode crossing prerequisites", the Jumble-on half; not run here: the Jumble-off half, in
+/// `ct_lb3_07.rs` and `jumble_layer_verdicts.rs`). In a session at solved under I_a's menu: the solved witness through
+/// two commits, with Jumble off; Jumble on after the entry and after a pose move; the exit root of `jumble.off` with no
+/// commit and with one; and the head moved by undo and redo. In a session that started away from solved, no entrance.
+/// At each head the entry's answer is checked, and `jumble.on` pressed there agrees.
 #[test]
 fn ct_lb3_07_the_crossing_entry_reports_the_jumble_on_derivation() {
     let fixture = Fixture::load("I_a");

@@ -9,6 +9,8 @@ publish.workspace = true
 c600-check = { path = "../c600-check" }
 c600-digest = { path = "../c600-digest" }
 c600-ir = { path = "../c600-ir" }
+# The platform layer (RPI.52): the parent starts its child without a console window of its own.
+c600-platform = { path = "../c600-platform" }
 c600-run = { path = "../c600-run" }
 c600-syntax = { path = "../c600-syntax" }
 # Approved by the owner on 16 November 2026 (option A), pinned exactly; the archives are vendored in ../vendor.

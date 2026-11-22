@@ -157,6 +157,8 @@ fn spawn_thread(name: &str, f: impl FnOnce() + Send + 'static) -> bool {
 impl Process {
     fn spawn(config: &Config) -> Result<Process, Fault> {
         let mut command = Command::new(&config.program);
+        // A child starts on first use and after every fault; no console window opens for it (RPI.52).
+        c600_platform::no_console_window(&mut command);
         command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).env_remove(FAULT_VARIABLE);
         for (key, value) in &config.env {
             command.env(key, value);
