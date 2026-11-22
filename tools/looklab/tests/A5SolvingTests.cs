@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Magic600.Chrome;
@@ -116,5 +117,44 @@ internal static partial class Program
             "operation.phase.select", "operation.phase.edit", "operation.phase.append_twist" };
         string lab = File.ReadAllText(Path.Combine(Lab, "app/Live/LabSolve.cs")); string handles = lab.Substring(lab.IndexOf("public static bool Handles", StringComparison.Ordinal)); handles = handles.Substring(0, handles.IndexOf(';'));
         foreach (string id in twelve) Check(registry.Commands.ContainsKey(id) && labels.Contains("\"" + id + "\"", StringComparison.Ordinal) && handles.Contains("\"" + id + "\"", StringComparison.Ordinal), id + " still reads as not in this sample");
+    }
+
+    // The key map (ADR-D01.74): a keyboard of the keymap in force, shown while its key is held, pinnable.
+    private static void A5SolvingKeyMapHeldPinnedAndNamed()
+    {
+        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        registry.Relabel(Read("data/design/command-labels.json"));
+        Keymap keys = Keymap.Parse(Read("data/design/keymap.json"), registry);
+        // It shows while its key is held; a short press pins it and the next short press lets it go.
+        var show = new KeyMapShow(); int changes = 0; show.Changed += () => changes++;
+        Check(!show.Visible, "shown at rest");
+        show.Press(10); show.Press(10.1); Check(show.Visible && show.Held && !show.Pinned, "not shown while its key is held");
+        show.Release(11); Check(!show.Visible && !show.Pinned, "a long hold pinned it");
+        show.Press(20); show.Release(20.1); Check(show.Visible && show.Pinned && !show.Held, "a short press did not pin it");
+        show.Press(30); show.Release(31); Check(show.Visible && show.Pinned, "a long hold let the pin go");
+        show.Press(40); show.Release(40.1); Check(!show.Visible && changes == 8, "a short press did not let it go");
+        // The header names the active key set, the place and the held modifiers.
+        string[] local = { "local-view", "global" }, global = { "global-view", "global" }, none = { "global" };
+        Check(KeyMapModel.Header("default", local, false, false, false) == "Key set: default \u00b7 pointer over Local \u00b7 no modifier held", KeyMapModel.Header("default", local, false, false, false));
+        Check(KeyMapModel.Header("left-hand with your bindings", none, true, false, true) == "Key set: left-hand with your bindings \u00b7 everywhere \u00b7 with Ctrl+Shift", "the header");
+        // Every key of the keymap that has a cap is on the board once.
+        string[] caps = KeyMapModel.Rows.SelectMany(r => r).Select(k => k.Key).ToArray();
+        Check(caps.Length == caps.Distinct().Count() && caps.Length > 55, "a key is drawn twice");
+        foreach (Binding b in keys.Bindings) Check(caps.Contains(b.Key.Split('+')[^1]), b.Key + " has no cap");
+        KeyCap Cap(IReadOnlyList<string> contexts, string key, bool ctrl = false, bool alt = false, bool shift = false, params string[] down) =>
+            KeyMapModel.Caps(keys, registry, contexts, ctrl, alt, shift, down, new Dictionary<string, string> { ["F9"] = "Tour" }).SelectMany(r => r).Single(c => c.Key == key);
+        // What a key does follows the place: the same key, two meanings, each with its place named.
+        KeyCap r1 = Cap(local, "R"), r2 = Cap(global, "R"), r3 = Cap(none, "R");
+        Check(r1.State == KeyCapState.Bound && r2.State == KeyCapState.Bound && r1.Label != r2.Label && r1.Context == "local-view" && r2.Context == "global-view", "R over the two views");
+        Check(r3.State == KeyCapState.OutOfContext && r3.Label != null && r3.Context != null && KeyMapModel.Where.ContainsKey(r3.Context), "a key bound elsewhere reads as unbound or as bound here");
+        Check(Cap(local, "J").State == KeyCapState.Twist && Cap(local, "K").State == KeyCapState.Unbound && Cap(local, "K").Label == null && Cap(local, "F9").Label == "Tour" && Cap(local, "F9").Context == KeyMapModel.Host, "twist, unbound and host keys");
+        // Modifiers pick the layer; a held key is marked and keeps its meaning.
+        Check(Cap(none, "N").Label != Cap(none, "N", shift: true).Label && Cap(none, "N", alt: true).State == KeyCapState.Bound && Cap(none, "Z").State == KeyCapState.Unbound && Cap(none, "Z", ctrl: true).State == KeyCapState.Bound, "modifier layers");
+        KeyCap held = Cap(none, "E", false, false, false, "E");
+        Check(held.State == KeyCapState.Held && held.Down && held.Label == Cap(none, "E").Label, "a held key");
+        // Same key set, place and modifiers: the same meaning for every key.
+        var one = KeyMapModel.Caps(keys, registry, local, false, false, false, Array.Empty<string>()); var two = KeyMapModel.Caps(keys, registry, local, false, false, false, Array.Empty<string>());
+        Check(one.SelectMany(r => r).SequenceEqual(two.SelectMany(r => r)), "a key changed meaning with nothing named");
+        foreach (string role in new[] { "bound", "unbound", "held", "out_of_context", "twist" }) Check(Read("data/design/system.json").Contains("\"keymap.key." + role + "\"", StringComparison.Ordinal), "keymap.key." + role);
     }
 }

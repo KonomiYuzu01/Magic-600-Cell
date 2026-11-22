@@ -23,6 +23,7 @@ internal static class LabFrame
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabScripts> AllScripts = new();
     public static LabScripts ScriptsOf(ChromeFrame frame) => AllScripts.TryGetValue(frame, out LabScripts? scripts) ? scripts : throw new InvalidOperationException("the frame has no lab scripts");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabSolve> Solves = new();
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, KeyMapPanel> KeyMaps = new();
     public static LabSolve SolveOf(ChromeFrame frame) => Solves.TryGetValue(frame, out LabSolve? solve) ? solve : throw new InvalidOperationException("the frame has no solving surface");
     public static LabDemo DemoOf(ChromeFrame frame) => Demos.TryGetValue(frame, out LabDemo? demo) ? demo : throw new InvalidOperationException("the frame has no lab session");
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
@@ -165,10 +166,14 @@ internal static class LabFrame
         var radial = new RadialOverlay(registry, Unavailable, () => frame.Tokens); frame.Overlays.AddChild(radial);
         frame.OverlayCommands.Add("transient.close"); frame.OverlayCommands.Add("help.open"); frame.OverlayCommands.Add("command.find");
         Button find = ChromeWidgets.Tool("", $"Find a command ({keymap.KeysFor("command.find", null)})"); find.Name = "FindButton";
-        Button help = ChromeWidgets.Tool("", $"Keyboard shortcuts ({keymap.KeysFor("help.open", null)})"); help.Name = "ShortcutsButton";
+        Button help = ChromeWidgets.Tool("", $"Key map: hold {keymap.KeysFor("help.open", null)}, or press it shortly to pin"); help.Name = "ShortcutsButton";
         void Glyphs() { ChromeIcons.Apply(find, "search", frame.Tokens.Px("icon.small")); ChromeIcons.Apply(help, "help.keys", frame.Tokens.Px("icon.small")); }
         Glyphs(); frame.Rebuilt += Glyphs;
-        find.Pressed += palette.Open; help.Pressed += sheet.Open;
+        // The key map: shown while the help key is held, pinned by a short press or by this button.
+        var keys = new KeyMapPanel(frame, registry); frame.Overlays.AddChild(keys); keys.List += sheet.Open; KeyMaps.Add(frame, keys);
+        foreach ((string key, string label) in new[] { ("O", "Orbit jump: hold, then two digits"), ("F4", "Command bar"), ("F7", "Compare"), ("F8", "Compare"), ("F9", "Tour: next stop"), ("F10", "Inactive cells"),
+            ("F11", "Next demo state"), ("6", "Pick layer"), ("7", "Pick layer"), ("8", "Pick layer"), ("9", "Pick layer"), ("0", "Pick layer") }) keys.Host[key] = label;
+        find.Pressed += palette.Open; help.Pressed += () => keys.Shown.Pin(!keys.Shown.Pinned);
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
         LabDemo demo = null!; LabInspect inspect = null!; LabSolve solve = null!;
@@ -186,7 +191,7 @@ internal static class LabFrame
                 case "command.find": palette.Open(); break;
                 case var menu when keymap.Radials.ContainsKey(menu): radial.Open(scripts.WithContext(keymap.Radials[menu]), frame.GetLocalMousePosition()); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
-                case "transient.close":
+                case "transient.close": keys.Shown.Pin(false);
                     if (frame.OpenOverlay is { } open) open.Close();
                     else if (inspect.Feedback.CancelLatest()) { }
                     else if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
@@ -223,7 +228,9 @@ internal static class LabFrame
         // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.
         scripts = new LabScripts(frame, demo, inspect, registry, keymap, root, Execute, k =>
         {
-            keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; demo.Bar.CommitKeys = k.KeysFor("operation.preview.commit", null);
+            keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k;
+            if (scripts != null) { string set = scripts.Preset + (scripts.Overrides.Bindings.Count > 0 ? " with your bindings" : ""); if (keys.KeySet != set) { keys.KeySet = set; frame.Say("Key set: " + set); } }
+ demo.Bar.CommitKeys = k.KeysFor("operation.preview.commit", null);
         });
         AllScripts.Add(frame, scripts);
         Kits.Add(frame, new LabKit(Execute, commands, appearance, themes.Select(t => t.Id).ToArray(), design.Densities.ToArray()));
@@ -337,7 +344,8 @@ internal static class LabFrame
             ("the orbit rail: 35 cells in one admissible order, the working cell opened in place", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(solve.Demo.State.Orbit); }),
             ("the draft line: Prepare, Core and Cleanup, the Goal unmet and the commit still open; Strict fails where Net passes", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); solve.Draft.SetRoute("draft");
                 solve.Draft.Edit("prepare: twist(cell 5, axis 0, +1)"); solve.Draft.Edit("core: twist(cell 40, axis 2, -1)"); solve.Draft.SetGoal(OperationDraft.SampleGoal); solve.Draft.SetMode(CheckMode.Strict); }),
-            ("the strip and the rail at the last buffer of the endgame", () => { Home(); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),
+            ("the key map, pinned: what each key does with the pointer over Local, and the active key set", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); keys.ContextsOverride = new[] { "local-view", "global" }; keys.Shown.Pin(true); }),
+            ("the strip and the rail at the last buffer of the endgame", () => { Home(); keys.ContextsOverride = null; keys.Shown.Pin(false); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),
             ("the strip after a fresh scramble: nothing is set", () => { Home(); solve.Demo.Show("fresh"); }),
             ("the script workspace in the new body", () => { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),
         };

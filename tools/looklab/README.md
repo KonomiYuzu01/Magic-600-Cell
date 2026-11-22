@@ -1106,3 +1106,19 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
   motion row `route.switch`.
 - Not shown: inline parameters, editing a twist inside a phase by hand (the command takes a typed argument), and the
   motion of the route switch.
+
+### A5 stage 10, point 4: the key map
+
+- The keymap in force drawn as a keyboard (ADR-D01.74), over the frame and never modal: keys keep working under it.
+  Hold the help key (`Shift+/`) and it shows; let go and it leaves. A short press pins it, and so do its Pin button
+  and the keyboard button of the top bar; a short press again or `Esc` lets it go. Its List button opens the earlier
+  list of every binding, which the palette command still opens too.
+- Each cap shows what the key does where the pointer is, with the modifiers that are held. The header names the
+  active key set (the preset, and "with your bindings" when you have bound keys), the place and the modifiers; a
+  change of key set is also said in the notice line. So a key never changes meaning without a name for the change.
+- Five cap states, each with its own drawing and token slot `keymap.key.*`: a whole outline for a key bound here, a
+  double outline for a twist key, a broken outline with the place for a key bound somewhere else, a faint outline for
+  an unbound key and a filled cap for a held key. Look Lab's own keys (tour, demo state, orbit jump) show as bound.
+- Tour stop 18 shows it pinned with the pointer over Local.
+- Not shown: the ordered marks that keycaps share with the Grip frame (no Grip frame is built), key sets per orbit
+  (the presets are the two keymap files), and numpad or navigation keys.

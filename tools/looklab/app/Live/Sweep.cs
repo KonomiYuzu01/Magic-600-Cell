@@ -69,6 +69,7 @@ internal static class Sweep
         void Calm()
         {
             frame.OpenOverlay?.Close(); frame.KeyCapture = null;
+            (frame.Overlays.FindChild("KeyMap", false, false) as KeyMapPanel)?.Shown.Pin(false);
             if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
             if (frame.Model.PairMaximised) frame.Model.SetPairMaximised(false);
         }

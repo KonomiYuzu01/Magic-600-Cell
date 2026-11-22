@@ -118,6 +118,7 @@ internal static partial class Program
             ("A5SolvingStripFactsAndInvalidTuple", A5SolvingStripFactsAndInvalidTuple),
             ("A5SolvingRailOrderMarksAndJump", A5SolvingRailOrderMarksAndJump),
             ("A5SolvingDraftLineGoalAndRoute", A5SolvingDraftLineGoalAndRoute),
+            ("A5SolvingKeyMapHeldPinnedAndNamed", A5SolvingKeyMapHeldPinnedAndNamed),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

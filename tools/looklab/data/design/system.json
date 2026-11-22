@@ -574,6 +574,31 @@
       "meaning": "Commit status: the settle interval runs.",
       "cue": "a lit lamp"
     },
+    "keymap.key.bound": {
+      "group": "encoding",
+      "meaning": "Key map: a key bound where the pointer is.",
+      "cue": "a whole outline and the command"
+    },
+    "keymap.key.unbound": {
+      "group": "encoding",
+      "meaning": "Key map: a key with no binding.",
+      "cue": "a faint outline and no command"
+    },
+    "keymap.key.held": {
+      "group": "encoding",
+      "meaning": "Key map: a key that is held down.",
+      "cue": "a filled cap"
+    },
+    "keymap.key.out_of_context": {
+      "group": "encoding",
+      "meaning": "Key map: a key bound in another place.",
+      "cue": "a broken outline and the place"
+    },
+    "keymap.key.twist": {
+      "group": "encoding",
+      "meaning": "Key map: a twist key.",
+      "cue": "a double outline"
+    },
     "syntax.keyword": {
       "group": "syntax",
       "meaning": "A 600 Cell Script keyword."
@@ -874,6 +899,31 @@
     },
     {
       "text": "commit.status.settling",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.bound",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.unbound",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.held",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.out_of_context",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "keymap.key.twist",
       "surface": "surface.panel",
       "minimum": 3
     },
