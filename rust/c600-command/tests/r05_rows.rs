@@ -165,7 +165,7 @@ impl Fixture {
 
 /// CT-KN5-10 (whole): R-05 against the command layer, beside the session's rows in
 /// `c600-session/tests/conformance_rows.rs` and the layer's entry-point allowlist in `tests/kn5.rs`. With every orbit
-/// protected, each of the H-08 table's 175 rows is delivered from the shell, with its token where it takes one, and on
+/// protected, each of the H-08 table's 193 rows is delivered from the shell, with its token where it takes one, and on
 /// a run's channel, with arguments of the forms the layer knows. No delivery changes the labels' digest or the
 /// protected set. The table's `protection` gate names the four rows the restriction blocks: `operation.execute` and
 /// `twist.apply` are refused with the protection code for a word that would move an orbit, and `session.practice` and
@@ -218,7 +218,7 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     assert!(matches!(started.status, Status::Running(_)), "the tool's row: {:?}", started.status);
     let runtime = Caller::Runtime { run: f.layer.take_program_job().expect("the tool's job").run() };
     let rows: Vec<Row> = f.layer.table().rows().filter(|row| row.overlay.is_none()).cloned().collect();
-    assert_eq!(rows.len(), 175);
+    assert_eq!(rows.len(), 193);
     let mut tally: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (n, row) in rows.iter().enumerate() {
         let args = formed(row, &f.layer.revision().to_json());

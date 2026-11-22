@@ -150,7 +150,7 @@ impl Fixture {
 #[test]
 fn the_stored_table_reads() {
     let table = Table::h08();
-    assert_eq!(table.rows().count(), 175);
+    assert_eq!(table.rows().count(), 193);
     let execute = table.row("operation.execute").unwrap();
     assert_eq!((execute.kind, execute.lane, execute.preview), (Kind::Commit, Lane::Commit, PreviewRule::Required));
     assert!(execute.has_gate("fresh_preview") && execute.has_gate("protection") && execute.takes_token());

@@ -20,6 +20,7 @@ import build_command_table as builder
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 FIXTURE = ROOT / "docs/architecture/1.0/language/closure/fixtures/jumbling-rows-example.json"
+ADR_D01_SOURCE = "ADR-D01 (owner, 22 Nov 2026)"
 
 
 class CommandTableTests(unittest.TestCase):
@@ -36,7 +37,8 @@ class CommandTableTests(unittest.TestCase):
         cls.draft = builder.build_table(draft_without_jumbling=True)
         cls.delta = builder.load(HERE / "command-rows-jumbling.json")
         cls.language = builder.load(HERE / "command-rows-language.json")
-        cls.table = builder.build_table(delta=[cls.delta, cls.language])
+        cls.design = builder.load(HERE / "command-rows-design.json")
+        cls.table = builder.build_table(delta=[cls.delta, cls.language, cls.design])
         cls.by_id = {r["id"]: r for r in cls.table["commands"]}
 
     def build(self, **overrides):
@@ -448,9 +450,9 @@ class CommandTableTests(unittest.TestCase):
 
     def test_each_delta_row_rejects_each_missing_or_optional_required_argument(self):
         required = builder.DELTA_REQUIRED_ARGUMENTS
-        deltas = (self.delta, self.language)
+        deltas = (self.delta, self.language, self.design)
         self.assertEqual(set(required), {r["id"] for part in deltas for group in ("add", "amend") for r in part[group]})
-        for part in deltas:
+        for position, part in enumerate(deltas):
             for group in ("add", "amend"):
                 for index, row in enumerate(part[group]):
                     self.assertLessEqual(required[row["id"]], self.by_id[row["id"]]["arguments"].keys())
@@ -472,8 +474,7 @@ class CommandTableTests(unittest.TestCase):
                                     message = "missing required arguments|token-only"
                                 self.assertTrue(schema)
                                 with self.assertRaisesRegex(builder.TableError, message):
-                                    self.build(delta=delta if part is self.delta else [self.delta, delta],
-                                               draft_without_jumbling=False)
+                                    self.build(delta=[*deltas[:position], delta], draft_without_jumbling=False)
         delta = deepcopy(self.fixture)
         delta["add"][0]["arguments"] = {"token": "UserActionToken"}
         with self.assertRaisesRegex(builder.TableError, "token-only"):
@@ -501,8 +502,9 @@ class CommandTableTests(unittest.TestCase):
         for name in ("view.open", "view.close"):
             self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
         counts = Counter(r["kind"] for r in self.table["commands"])
-        self.assertEqual(len(self.table["commands"]), 175)
-        self.assertEqual((counts["workspace"], counts["view"]), (67, 45))
+        # 175 commands at the LP3 freeze, plus ADR-D01's 14 workspace and 4 view rows (owner, 22 November 2026).
+        self.assertEqual(len(self.table["commands"]), 193)
+        self.assertEqual((counts["workspace"], counts["view"]), (81, 49))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -531,9 +533,52 @@ class CommandTableTests(unittest.TestCase):
         self.assertEqual(self.by_id["set.save"]["arguments"],
                          {"members": "CanonicalObjectRefs", "kind": "identity|position", "name": "Text",
                           "replace": "Bool?"})
-        none = {r["id"] for r in self.table["commands"] if r["kind"] == "workspace" and r["undo"] == "none"}
+        # ADR-D01's rows have their own test below: the layout history, not session.undo, will hold them.
+        none = {r["id"] for r in self.table["commands"]
+                if r["kind"] == "workspace" and r["undo"] == "none" and r["source"] != ADR_D01_SOURCE}
         self.assertEqual(none, {"session.timer.start", "session.timer.stop", "operation.preview.cancel", "grip.select",
                                 "input.destination.set", "recording.start", "recording.stop", "recording.play"})
+
+    def test_adr_d01_view_and_workspace_rows_are_data_only(self):
+        # Owner, 22 November 2026, item 3: ordinary edits after the LP3 freeze, data only, no gate and no commit row.
+        workspace = {"theme.select", "theme.tune", "token.override.set", "token.override.reset",
+                     "density.preset.set", "type.scale.set", "motion.preset.set", "motion.reduced.set",
+                     "panel.mount", "panel.unmount", "radial.edit", "palette.pin", "palette.alias", "explore.set"}
+        view = {"view.preview.open", "view.pin", "view.compare.wipe", "history.dock.mode"}
+        added = {r["id"] for r in self.design["add"]}
+        self.assertEqual(added, workspace | view)
+        self.assertEqual(self.design["amend"], [])
+        self.assertEqual({r["id"] for r in self.table["commands"] if r["source"] == ADR_D01_SOURCE}, added)
+        for name in sorted(added):
+            row = self.by_id[name]
+            with self.subTest(row=name):
+                self.assertEqual(row["source"], ADR_D01_SOURCE)
+                self.assertNotEqual(row["kind"], "commit")
+                self.assertEqual(row["kind"], "workspace" if name in workspace else "view")
+                self.assertEqual((row["lane"], row["undo"], row["preview"], row["gates"], row["job"], row["repeat"]),
+                                 ("none" if name in workspace else "view", "none", "none", [], False, False))
+                self.assertNotIn("UserActionToken", row["arguments"].values())
+                # CT-ONE-09 in c600-command's tests: no row takes a type that names a table.
+                self.assertFalse([t for t in row["arguments"].values() if "table" in t.lower()])
+                self.assertNotIn("action_guard", row)
+                self.assertEqual(row["slot_map"], "preserve")
+                self.assertTrue(row["arguments"])
+                self.assertIn("ADR-D01.", row["note"])
+        for name in ("view.preview.open", "view.pin", "view.compare.wipe"):
+            self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
+        self.assertEqual(self.by_id["history.dock.mode"]["lane_target"], {"control": "history.dock.mode"})
+        # No duplicate purpose: a stored layout is applied by work.layout.set, and session undo/redo stay the only
+        # undo entries until the layout-history rows come with the commit work.
+        for kept in ("work.layout.set", "view.open", "view.preview.scrub", "keymap.edit"):
+            self.assertNotEqual(self.by_id[kept]["source"], ADR_D01_SOURCE)
+        self.assertFalse({"arrangement.apply", "view.back", "view.forward"} & self.by_id.keys())
+        self.assertEqual({r["id"] for r in self.table["commands"] if r["id"].endswith((".undo", ".redo"))},
+                         set(builder.UNDO_ROWS))
+        self.assertEqual(builder.DELTA_FILES[-1], "command-rows-design.json")
+        mutant = deepcopy(self.design)
+        next(r for r in mutant["add"] if r["id"] == "explore.set")["kind"] = "commit"
+        with self.assertRaisesRegex(builder.TableError, "commit requires commit lane"):
+            self.build(delta=[self.delta, self.language, mutant], draft_without_jumbling=False)
 
     def test_a_field_amended_in_two_deltas_is_refused(self):
         again = deepcopy(next(r for r in self.language["amend"] if r["id"] == "twist.apply"))
