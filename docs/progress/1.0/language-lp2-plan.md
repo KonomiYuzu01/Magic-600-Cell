@@ -371,3 +371,105 @@ Not built in M5, each with the milestone that owns it (non-applicability is no p
 Stop condition: M5 ends when items 1 to 14 pass in CI and its pull request is merged. It stops earlier, and the owner is
 told, under M1's conditions, or when J1 and the candidate differ and the difference is not the candidate's: a J1 fault
 is reported, never fixed in J1, while the research is stopped.
+
+## 12. M8: LP2's exit record
+
+Written on 22 November 2026 for the owner's sign-off, under PHS.4. It is no sign-off: LP2 is not marked exited and no
+progress item is ticked until the owner signs LP2's exit, on one card with LP3's C10
+([owner, 22 November 2026](../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 6 and 8).
+Evidence class throughout: source and fixture (PHS.19). Nothing here is Windows interaction, DirectX, long-session or
+performance evidence.
+
+- **Candidate.** `0260e6b1f17485a1e3689e867c73435c6cfe5aac`, main after
+  [pull request 401](https://github.com/KonomiYuzu01/Magic-600-Cell/pull/401). LP2 exits on it, with no new candidate
+  (item 6). Changes merged after it, pull request 404 among them, are not part of it; none of them edits a line that
+  names a CT ID, so the index's marker states are the candidate's.
+- **Products (PHS.18).**
+
+  | Product | Where |
+  | --- | --- |
+  | Kernel API over both puzzles | `c600-kernel` (600-cell-Full, M4) and `c600-jumble` (the jumbling half with the public J1 API of JI.52, M5) |
+  | 600-cell-Full candidate adapter | `c600-kernel`'s oracle adapter: O01 to O07 and N01 to N04 run through the kernel API (`tests/test_kernel_oracle.py`) |
+  | Language core | `c600-syntax` (parser, M7), `c600-ir` (typed IR draft `c600-ir-draft-1`), `c600-check` (checker, M1), `c600-run` (interpreter, `lp1-exec-draft-1` meter, budgets and cooperative cancellation, M2 and M3), `c600-session` (session store and program jobs, M6) |
+  | Conformance suite | Each crate's `tests/` with PHS.62 markers; `tools/language/ct_index.py` computes section 15.3's index from them and [the index notes](lp2-ct-index-notes.md) |
+
+- **Applicable owner decisions.** The language route (LQ8, LQ9, LQ21;
+  [14 November](../../wiki/decisions/owner-decisions-2026-11-14-language-route.md)); the freeze and LP1's sign-off
+  ([15 November](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)); big integers, LQ13, EN3's engine half,
+  LP2's questions (the headless Linux leg on CI) and five PHS.52 readings
+  ([16 November](../../wiki/decisions/owner-decisions-2026-11-16-lp2-questions.md), with the
+  [big-integer](../../wiki/decisions/owner-decisions-2026-11-16-big-integers.md),
+  [LQ13](../../wiki/decisions/owner-decisions-2026-11-16-lq13.md),
+  [EN3](../../wiki/decisions/owner-decisions-2026-11-16-en3-engine-half.md) and
+  [PHS.52](../../wiki/decisions/owner-decisions-2026-11-16-phs52.md) pages); the commit boundary's readings
+  ([18 November](../../wiki/decisions/owner-decisions-2026-11-18.md)); LP3's exit items, among them no row-answer
+  cache and form 2's vectors kept out of the run
+  ([20 November](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)); the product budget ceilings
+  ([21 November](../../wiki/decisions/owner-decisions-2026-11-21-ceilings-e3.md)); and the exit on this candidate with
+  the readings below ([22 November](../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)).
+- **Checks on the candidate**, all green:
+  - [Windows headless checks, run 44871659856](https://github.com/KonomiYuzu01/Magic-600-Cell/actions/runs/44871659856):
+    the plan, five shards and the headless job.
+  - [Linux Rust tests, run 44871659853](https://github.com/KonomiYuzu01/Magic-600-Cell/actions/runs/44871659853):
+    `cargo test` in `rust/` on ubuntu-24.04 and six J1 comparisons (attacks, M8 observations, corrections, candidate,
+    M8 levels and ν).
+  - [lp2-full, run 44871666684](https://github.com/KonomiYuzu01/Magic-600-Cell/actions/runs/44871666684), dispatched on
+    the candidate, 25 jobs: the full replay (`JUMBLING_FULL_REPLAY=1`) of the candidate, the corrections and the
+    command route; the jumbling layer on in the command layer with whole fixtures (release build, `--ignored`); ten
+    transcript checks on each of windows-2025 and ubuntu-24.04; and the comparison of the Windows transcripts against
+    the Linux ones.
+- **PHS.19's acceptance items.** Each is source evidence, and each check passed in the runs above.
+
+  | Item | Evidence on the candidate | Index |
+  | --- | --- | --- |
+  | Both oracles pass on the API | `tests/test_kernel_oracle.py` (O01 to O07, N01 to N04 through the kernel API); `tests/test_jumbling_rust_candidate.py` against J1, every record with the full replay in lp2-full; the jumbling layer's whole fixtures in lp2-full | CT-KN1-01 whole by union, CT-KN1-02 whole |
+  | Cross-platform conformance and determinism | lp2-full's transcript comparison (windows-2025 against ubuntu-24.04); the Linux Rust job | CT-PS1-01 whole (`c600-run/tests/canonical_ps1.rs`), CT-DET-15 whole (`c600-display/tests/ct_rpi_19.rs`) |
+  | Exact decision paths | `tests/test_kernel_oracle.py` and `tests/test_jumbling_rust_candidate.py`, refusals included | CT-KN2-05 whole by union |
+  | Preview swap refused | `c600-session/tests/commit.rs` | CT-KN5-01 whole |
+  | Repeatable budget exhaustion | `c600-session/tests/jobs.rs`; there are no cache or eviction variants, since 1.0's host keeps no row-answer cache (20 November, item 1) | CT-KN7-01 and CT-KN7-02 whole |
+  | Centre-0 protection | `c600-jumble/tests/crossing.rs`, `tests/test_jumbling_rust_candidate.py` | CT-KN2-03 whole |
+  | Heights and domain IDs agree | `tests/test_jumbling_rust_candidate.py`, with the long states under the full replay in lp2-full | CT-KN2-02 whole |
+  | R-11's jumbling property | `c600-jumble-tool/tests/lb3.rs`'s fixtures under LG2.14's four hypotheses, with the language and kernel halves | CT-LG2-12, CT-LG2-13 and CT-LG2-14 whole by union |
+  | Gauge transfer | `tests/test_jumbling_rust_m8_levels.py`; a pass adds no proof (KN1.14) | CT-KN2-06 whole |
+
+- **The index.** On the candidate, `ct_index.py` gave 248 IDs: 126 whole (32 of them by union), 121 part, none named
+  only, none missing, 1 waiting (CT-LI-14). Section 1 asks that all 248 run whole; 122 do not, and the owner read each
+  of them (item 8). With the readings in the index notes (this record's pull request changes notes and the tool's
+  note kinds only, no test or marker), it gives 126 whole (32 by union), 7 not applicable, 8 waiting and 107 indexed
+  elsewhere, none part. None of the 122 counts as a pass (PHS.63). The notes name each ID with its readings; 16 IDs
+  fall under more than one.
+- **The readings and their decisions** (owner, 22 November 2026, item 8; every reading takes its recommended option):
+
+  | Reading | What LP2's products cannot run | LP2 IDs | Decision | Index state |
+  | --- | --- | --- | --- | --- |
+  | 1 | A second admitted route (RT1 is the only one, LQ9) | 11 | Not applicable while RT1 is the only admitted route; reopens if another is admitted | Not applicable where no other reading applies (CT-LG4-01, CT-DET-10, CT-DET-26, CT-DET-30) |
+  | 2 | ONE.32's fields in the tool-authoring and research profiles (BND.60) | 1 | Not applicable while BND.60 stands | Not applicable (CT-BND-11) |
+  | 3 | Mixed dependency editions | 1 | Not applicable until a second edition is supported | Not applicable (CT-LG1-01) |
+  | 4 | A budgeted research search near the limit | 1 | Not applicable until the research profile budgets it | Not applicable (CT-KN3-04) |
+  | 5 | LQ2's joint setting and BND.37's class review | 8 | Waiting; the tests run when those land | Waiting |
+  | 6 | LP4's editor services | 5 | The missing halves are indexed in LP4 | Indexed elsewhere |
+  | 7 | LP5's checkers | 7 | The missing halves are indexed in LP5 | Indexed elsewhere |
+  | 8 | Form 2 (LG2.21), which has no executor | 2 | Amended under PHS.52 (chapter 12, below section 15.3's table): form 2 stays out of LP2 until it is built | Indexed elsewhere |
+  | 9 | LP3's host, shell, display and renderer | 22 | Indexed with the work that builds each piece | Indexed elsewhere |
+  | 10 | LP3's host serving frozen H-08 rows that no crate serves | 8 | Indexed with LP3's host | Indexed elsewhere |
+  | 11 | The command-layer tests | - | Closed by pull request 401 | - |
+  | 12 | M6's store and run record beyond what M6 built | 24 | Indexed with the store work that builds each row | Indexed elsewhere |
+  | 13 | The importer | 4 | Indexed with the importer once the owner places it | Indexed elsewhere |
+  | 14 | IR constructs the draft lacks | 19 | Indexed with the IR's freeze | Indexed elsewhere |
+  | 15 | Chapter 03 operations no crate builds | 3 | Indexed with chapter 03's library work | Indexed elsewhere |
+  | 16 | Kernel and jumbling calls beyond M4 and M5 | 12 | Indexed with the work that adds each call | Indexed elsewhere |
+  | 17 | Runs only the owner's machine or another platform can give | 8 | Owner-machine halves join LP3's owner-machine batch; other platforms come after 1.0 | Indexed elsewhere |
+  | 18 | Undo of a language-defined workspace row (LG3.5, LB7.2) | 2 | Option 1: LG3.5 and LB7.2 stay; the row's completion gets an undo entry like `filter.apply`'s, which LP3's command layer adds after the exit; the undo halves of CT-LG3-03 and CT-LB7-01 move to that fix (PHS.52, item 6) | Indexed elsewhere |
+
+- **What stays open.**
+  - PHS.21's items: the three-tool loop, native renderer integration, authoring services, full research corpus
+    checking and the path B importer.
+  - The 107 indexed halves, each with the work its note names, reading 18's undo fix among them.
+  - The 8 waiting IDs, until LQ2's joint setting and BND.37's class review land.
+  - The 7 not-applicable IDs, which reopen if their recorded decision changes.
+  - Form 2 (LG2.21), which is not built.
+  - The markers of CT-DET-05, CT-DET-06 and CT-DET-29 still say the headless Linux leg has no owner. Since the owner's
+    16 November answer, the Linux Rust job runs them on ubuntu-24.04 (run 44871659853). The candidate keeps the text,
+    and the index takes those IDs from their notes, not from that remark.
+  - LQ2's option set, the design-system ADR, and the syntax and IR freeze (PHS.49).
+  - The owner's sign-off of LP2's exit, on one card with C10. The integrator ticks M8's acceptance item after it.
