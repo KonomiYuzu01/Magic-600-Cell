@@ -12,7 +12,7 @@ use c600_command::{
     Status, Table, TransactionKind,
 };
 use c600_kernel::json::{self, Value};
-use c600_kernel::Kernel;
+use c600_kernel::{Kernel, Snapshot};
 
 const SECRET: [u8; 32] = [7; 32];
 
@@ -141,6 +141,16 @@ impl Fixture {
     fn unchanged(&self, order: u64, digest: &str) {
         assert_eq!(self.last_order(), order, "a refusal journaled an action");
         assert_eq!(self.digest(), digest, "a refusal moved the state");
+    }
+}
+
+/// The state after `moves` from the solved state.
+fn state_after(moves: &[i64]) -> Snapshot {
+    let k = kernel();
+    let recipe = k.recipe(&word(moves)).unwrap();
+    match k.derive(&k.solved(), &recipe, &k.protected_set(&[]).unwrap()).unwrap() {
+        c600_kernel::Derivation::Derived(d) => d.state,
+        c600_kernel::Derivation::Refused(_) => panic!("the word derives"),
     }
 }
 
@@ -399,4 +409,88 @@ fn a_reopen_rebuilds_the_places_and_refuses_a_forged_partial_undo() {
     let reopened = CommandLayer::open(kernel(), Table::h08(), Secret::fixed(SECRET), forged).unwrap();
     assert_eq!(reopened.recovery().map(|e| e.code), Some(code::UNADMITTED_JOURNAL_ACTION), "{:?}", reopened.recovery());
     assert_eq!(reopen(&f.layer).unwrap().recovery(), None, "the journal as written replays");
+}
+
+/// Guard (attack on row 3): partial undos on two branches, with undo and redo between them, reach the same place and
+/// state live and after a reopen, and a commit on top and its undo return to that place.
+#[test]
+fn partial_undos_on_two_branches_replay() {
+    let mut f = fixture(&[]);
+    let entry = f.commit(&word(&[1, 2, 3, 4]));
+    assert!(committed(&f.partial(entry, 2)));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.partial(entry, 3)));
+    assert!(f.layer.undo_hint(Direction::Redo).is_none(), "the new branch drops the redo");
+    assert!(committed(&f.partial(entry, 1)));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert!(committed(&f.step(Direction::Redo)));
+    assert_eq!(f.layer.head_entry(), Some((entry, 3)));
+    assert_eq!(f.digest(), reached(&word(&[1, 2, 3])));
+    let g = reopen(&f.layer).unwrap();
+    assert_eq!(g.recovery(), None);
+    assert_eq!(g.head_entry(), Some((entry, 3)));
+    assert_eq!(g.revision().digest, f.digest());
+    f.commit(&word(&[7]));
+    assert!(committed(&f.step(Direction::Undo)));
+    assert_eq!(f.layer.head_entry(), Some((entry, 3)));
+    assert!(committed(&f.partial(entry, 0)));
+    assert_eq!(f.digest(), kernel().solved().digest().to_owned());
+    assert_eq!(reopen(&f.layer).unwrap().recovery(), None);
+}
+
+/// Guard (attack on row 3): a partial undo rechecks the head's state against its recorded digest, so a corrupted head
+/// refuses it with `state_hash_mismatch` and journals nothing; with the head restored, it commits.
+#[test]
+fn a_corrupted_head_refuses_a_partial_undo() {
+    let mut f = fixture(&[]);
+    let entry = f.commit(&word(&[1, 2, 3]));
+    f.layer.fault_replace_head(state_after(&[9]));
+    let (order, digest) = (f.last_order(), f.digest());
+    assert_eq!(code_of(&f.partial(entry, 1)), code::STATE_HASH_MISMATCH);
+    f.unchanged(order, &digest);
+    f.layer.fault_replace_head(state_after(&[1, 2, 3]));
+    assert!(committed(&f.partial(entry, 1)));
+    assert_eq!(f.digest(), reached(&word(&[1])));
+}
+
+/// Guard (attack on row 3): a partial undo of an entry longer than one word step (two steps of 60,000 moves) commits,
+/// restores the prefix, is journaled as word steps and replays.
+#[test]
+fn a_partial_undo_longer_than_one_word_step() {
+    let step: Vec<i64> = (0..60_000).map(|i| (i % 30) as i64 + 1).collect();
+    let both = format!(r#"[{{"kind": "word", "moves": {step:?}}}, {{"kind": "word", "moves": {step:?}}}]"#);
+    let mut f = fixture(&[]);
+    let entry = f.commit(&json::parse(both.as_bytes()).unwrap());
+    assert_eq!(f.layer.head_entry(), Some((entry, 120_000)));
+    assert!(committed(&f.partial(entry, 5)));
+    let stored = &f.layer.store().log.last().unwrap().recipe;
+    assert_eq!(stored.as_array().map(|steps| steps.len()), Some(2), "two word steps");
+    assert_eq!(f.digest(), reached(&word(&step[..5])));
+    let g = reopen(&f.layer).unwrap();
+    assert_eq!(g.recovery(), None);
+    assert_eq!(g.head_entry(), Some((entry, 5)));
+}
+
+/// Guard (attack on row 3): a journal that renames an ordinary commit into a partial undo replays only when the commit
+/// is exactly the step back that the live press would have made, and then it is that partial undo; otherwise the
+/// replay stops in read-only recovery.
+#[test]
+fn a_renamed_commit_replays_only_as_the_step_back() {
+    let mut f = fixture(&[]);
+    let entry = f.commit(&word(&[1, 2]));
+    f.commit(&word(&[-2]));
+    let mut renamed = f.layer.store().clone();
+    renamed.log[1].row = PARTIAL_UNDO_ROW.to_owned();
+    let g = CommandLayer::open(kernel(), Table::h08(), Secret::fixed(SECRET), renamed).unwrap();
+    assert_eq!(g.recovery(), None);
+    assert_eq!(g.head_entry(), Some((entry, 1)), "the partial undo to the entry's first move");
+
+    let mut h = fixture(&[]);
+    h.commit(&word(&[1, 2]));
+    h.commit(&word(&[-1]));
+    let mut renamed = h.layer.store().clone();
+    renamed.log[1].row = PARTIAL_UNDO_ROW.to_owned();
+    let g = CommandLayer::open(kernel(), Table::h08(), Secret::fixed(SECRET), renamed).unwrap();
+    assert_eq!(g.recovery().map(|e| e.code), Some(code::UNADMITTED_JOURNAL_ACTION));
 }

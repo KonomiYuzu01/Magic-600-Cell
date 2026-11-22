@@ -5,6 +5,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::{CommandLayer, Receipt, Secret, Shell, Status, Table};
 use c600_kernel::json::{self, Value as Json};
@@ -34,11 +35,14 @@ pub fn secret() -> Secret {
     Secret::fixed([5; 32])
 }
 
-/// A layer named `name` at the solved state with `protected` orbits, and its shell.
+/// A layer named `name` at the solved state with `protected` orbits, and its shell. ADR-D01.9's settle interval is
+/// zero here: these tests commit a run's preview on the press after its first frame, and a preview a run prepared waits
+/// out the interval (c600-command `tests/settle.rs` covers the wait).
 pub fn session_with(name: &str, protected: ProtectedSet) -> (CommandLayer, Shell) {
     let kernel = kernel();
     let solved = kernel.solved();
-    let layer = CommandLayer::new(kernel, Table::h08(), secret(), Default::default(), name, solved, protected);
+    let mut layer = CommandLayer::new(kernel, Table::h08(), secret(), Default::default(), name, solved, protected);
+    layer.set_settle(Duration::ZERO);
     (layer, Shell::new(secret(), "shell"))
 }
 

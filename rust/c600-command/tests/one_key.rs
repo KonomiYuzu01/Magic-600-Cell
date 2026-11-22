@@ -10,13 +10,17 @@ use std::sync::{Arc, OnceLock};
 use c600_command::layer::EXPLORE_ROW;
 use c600_command::shell::default_keymap;
 use c600_command::{
-    code, draft_args, Caller, CommandLayer, Direction, Error, HeadlessFrames, Invocation, MemoryStore, PreviewState,
-    Profile, Provenance, Receipt, Revision, Secret, Shell, Status, Table, TransactionKind, ONE_KEY_ROW, RECORD_ROW,
+    code, draft_args, Caller, CommandLayer, Direction, Error, HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore,
+    Overlay, PreviewState, Profile, Provenance, Receipt, RecordValue, Revision, Secret, Shell, Status, Table,
+    TransactionKind, ONE_KEY_ROW, RECORD_ROW,
 };
 use c600_kernel::json::{self, Value};
-use c600_kernel::Kernel;
+use c600_kernel::{Kernel, Snapshot};
 
 const SECRET: [u8; 32] = [7; 32];
+/// A tool's workspace row, whose completion writes records.
+const SAVE: &str = "tool.save";
+const PLAY: &str = "recording.play";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -130,9 +134,29 @@ impl Fixture {
         self.shell.invoke(&mut self.layer, ONE_KEY_ROW, own(name)).unwrap()
     }
 
+    /// Registers a workspace tool row and serves `recording.play`, whose completions write records.
+    fn with_jobs(&mut self) {
+        let overlay = Overlay { module: "tools/save".into(), entry: "run".into() };
+        self.layer.register_overlay(SAVE, Kind::Workspace, &[], overlay).unwrap();
+        self.layer.serve_row(PLAY, Overlay { module: "tools/recording".into(), entry: "play".into() }).unwrap();
+    }
+
+    /// The solver invokes `row`, whose job the host takes; returns the job.
+    fn job(&mut self, row: &str, args: Value) -> u64 {
+        let receipt = self.shell.invoke(&mut self.layer, row, args).unwrap();
+        let Status::Running(job) = receipt.status else { panic!("{row}: {:?}", receipt.status) };
+        assert_eq!(self.layer.take_program_job().map(|program| program.job), Some(job));
+        job
+    }
+
     /// Previews and presents `moves` through `operation.preview`; returns the preview's ID.
     fn presented(&mut self, moves: &[i64]) -> u64 {
-        let receipt = self.shell.invoke(&mut self.layer, "operation.preview", draft_args(&word(moves))).unwrap();
+        self.presented_recipe(&word(moves))
+    }
+
+    /// Previews and presents `recipe` through `operation.preview`; returns the preview's ID.
+    fn presented_recipe(&mut self, recipe: &Value) -> u64 {
+        let receipt = self.shell.invoke(&mut self.layer, "operation.preview", draft_args(recipe)).unwrap();
         let Status::Running(id) = receipt.status else { panic!("preview not admitted: {:?}", receipt.status) };
         assert_eq!(self.layer.run_jobs(), 1);
         self.frames.present(&mut self.shell, &mut self.layer, id).unwrap();
@@ -175,6 +199,22 @@ impl Fixture {
         assert_eq!(self.last_order(), order, "a refusal journaled an action");
         assert_eq!(self.digest(), digest, "a refusal moved the state");
     }
+}
+
+/// The state after `moves` from the solved state.
+fn state_after(moves: &[i64]) -> Snapshot {
+    let k = kernel();
+    let recipe = k.recipe(&word(moves)).unwrap();
+    match k.derive(&k.solved(), &recipe, &k.protected_set(&[]).unwrap()).unwrap() {
+        c600_kernel::Derivation::Derived(d) => d.state,
+        c600_kernel::Derivation::Refused(_) => panic!("the word derives"),
+    }
+}
+
+/// A job's output that writes `moves` into record `name` with an admitted block.
+fn rewrite(name: &str, moves: &[i64]) -> JobOutput {
+    let record = RecordValue { payload: letters(moves), provenance: "block".to_owned() };
+    JobOutput { value: Value::Null, views: Vec::new(), records: [(name.to_owned(), record)].into() }
 }
 
 /// A letter whose move would move orbit 0.
@@ -392,4 +432,70 @@ fn a_journal_that_gives_the_commit_to_a_run_does_not_reopen_intact() {
     forged.log[index].caller = Caller::Runtime { run: "probe/2".into() };
     let reopened = CommandLayer::open(kernel(), Table::h08().with_drafts(), Secret::fixed(SECRET), forged).unwrap();
     assert_eq!(reopened.recovery().map(|e| e.code), Some(code::UNADMITTED_JOURNAL_ACTION));
+}
+
+/// Every commit rechecks the full-state hash against the head's recorded state: a head whose state no longer matches
+/// its recorded digest refuses the one-key press and the two-step commit with `state_hash_mismatch`, and nothing is
+/// journaled (attack on row 4; the two-step path built its preview from the same corrupted state, so comparing the
+/// head with the preview's base alone missed it).
+#[test]
+fn every_commit_rechecks_the_head_against_its_recorded_hash() {
+    let mut f = fixture(&[]);
+    f.keep("own", &[1]);
+    f.layer.fault_replace_head(state_after(&[3]));
+    let (order, digest) = (f.last_order(), f.digest());
+    assert_eq!(code_of(&f.one_key("own")), code::STATE_HASH_MISMATCH);
+    f.unchanged(order, &digest);
+
+    let mut g = fixture(&[]);
+    g.layer.fault_replace_head(state_after(&[3]));
+    let (order, digest) = (g.last_order(), g.digest());
+    let shown = g.presented(&[1]);
+    assert_eq!(code_of(&g.execute(shown)), code::STATE_HASH_MISMATCH);
+    g.unchanged(order, &digest);
+}
+
+/// The press commits only a value the solver kept with `workspace.set` (ADR-D01.12; the reading of row 4: no key
+/// commits a word the solver never kept). A tool's workspace completion or a recording's completion that rewrites the
+/// record is refused with `named_object_invalid`, a press minted before the rewrite included, and nothing is built or
+/// committed; once the solver keeps the new value, the press commits it.
+#[test]
+fn a_value_a_job_wrote_is_not_the_solvers_until_they_keep_it() {
+    for (row, args) in [(SAVE, json::object([])), (PLAY, json::object([("recording", text("r1"))]))] {
+        let mut f = fixture(&[]);
+        f.with_jobs();
+        f.keep("own", &[1]);
+        let job = f.job(row, args);
+        let early = f.shell.prepare(&f.layer, ONE_KEY_ROW, own("own")).unwrap();
+        let done = f.layer.finish_program_job_with(job, Ok(rewrite("own", &[2]))).unwrap();
+        assert!(matches!(done.status, Status::Completed(_)), "{row}: {:?}", done.status);
+        let (order, digest) = (f.last_order(), f.digest());
+        assert_eq!(code_of(&f.shell.send(&mut f.layer, early)), code::NAMED_OBJECT_INVALID, "{row}: minted before");
+        assert_eq!(code_of(&f.one_key("own")), code::NAMED_OBJECT_INVALID, "{row}");
+        assert!(f.layer.preview().is_none(), "{row}: no preview is built");
+        f.unchanged(order, &digest);
+        f.keep("own", &[2]);
+        assert!(committed(&f.one_key("own")), "{row}: the value the solver kept");
+        assert_eq!(f.digest(), reached(&[2]));
+    }
+}
+
+/// A reopen refuses a one-key commit that no kept record could have made (B7): a journal that renames an ordinary
+/// commit of a star step, or of a word that no record the solver kept holds, into a one-key commit stops in read-only
+/// recovery; the journal as written replays.
+#[test]
+fn a_reopen_refuses_a_one_key_commit_no_kept_record_holds() {
+    let star = json::parse(br#"[{"kind": "star", "orbit": 3, "node": 5, "sign": 1}]"#).unwrap();
+    for recipe in [star, word(&[2])] {
+        let mut f = fixture(&[]);
+        f.keep("own", &[1]);
+        let shown = f.presented_recipe(&recipe);
+        assert!(committed(&f.execute(shown)), "{recipe:?}");
+        assert_eq!(reopen(&f.layer).recovery(), None, "the journal as written");
+        let mut forged = f.layer.store().clone();
+        let index = forged.log.len() - 1;
+        forged.log[index].row = ONE_KEY_ROW.to_owned();
+        let reopened = CommandLayer::open(kernel(), Table::h08().with_drafts(), Secret::fixed(SECRET), forged).unwrap();
+        assert_eq!(reopened.recovery().map(|e| e.code), Some(code::UNADMITTED_JOURNAL_ACTION), "{recipe:?}");
+    }
 }

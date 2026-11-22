@@ -306,9 +306,6 @@ pub struct Preview {
     /// and the commit waits out the settle interval once a frame shows this one. A preview that replaces an unseen
     /// replacement keeps its mark, since the solver has seen neither. `None` when it replaced nothing the solver saw.
     pub replaced: Option<u64>,
-    /// Whether a frame the layer read has presented it, even if that presentation has lapsed since (a blank frame or
-    /// [`CommandLayer::presentation_unavailable`]): a preview that replaces it takes its ID as the mark.
-    seen: bool,
 }
 
 fn rows_json(rows: &[SupportRow]) -> Value {
@@ -858,8 +855,16 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     /// The clock and the settle interval of ADR-D01.9 ([`CommandLayer::set_clock`], [`CommandLayer::set_settle`]).
     clock: Box<dyn Clock>,
     settle_interval: Duration,
+    /// The preview the solver last saw, while no action of theirs has ended it (ADR-D01.9's mark; draft): a frame the
+    /// layer read presented it, also when that presentation has lapsed since. A preview built now carries it as the
+    /// mark of the change, also into a slot that a run's cancel emptied. The solver's cancel, a state move and a restart
+    /// clear it.
+    last_seen: Option<u64>,
     /// The workspace records by name (KN5's stage 3).
     records: BTreeMap<String, WorkspaceRecord>,
+    /// The values the solver kept with `workspace.set`, as record name and value digest (ADR-D01.12; draft): what the
+    /// one-key commit takes as the solver's own macro. A replay rebuilds them.
+    kept: BTreeSet<(String, String)>,
     /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
     /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
     blocks: BTreeMap<String, String>,
@@ -948,7 +953,9 @@ impl<S: Store> CommandLayer<S> {
             run: None,
             clock: Box::new(MonotonicClock::new()),
             settle_interval: SETTLE_DRAFT,
+            last_seen: None,
             records: BTreeMap::new(),
+            kept: BTreeSet::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
@@ -1151,6 +1158,10 @@ impl<S: Store> CommandLayer<S> {
                 // A partial undo steps back inside the head's entry, as the live path builds it (ADR-D01.15).
                 if stored.row == PARTIAL_UNDO_ROW && !self.steps_back_inside(&recipe) {
                     return Err(unadmitted("a partial undo that does not step back inside the head's entry"));
+                }
+                // A one-key commit commits the word of a value the solver kept, as the live press does (ADR-D01.12).
+                if stored.row == ONE_KEY_ROW && !self.kept_word(&recipe) {
+                    return Err(unadmitted("a one-key commit of a word that no record the solver kept holds"));
                 }
                 match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
                     Derivation::Derived(d) => self.commit_adoption(meta, recipe, d.state, d.word, None),
@@ -1586,21 +1597,24 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// The mark a preview built now takes from the pending one (ADR-D01.9): the pending preview's ID when a frame the
-    /// layer read has shown it, also when that presentation has lapsed since, the mark it carries when it is an unseen
-    /// replacement, and none otherwise. The host reports each frame before the input that follows it (RM.26), so a
-    /// preview on screen is one the layer has read.
+    /// The mark a preview built now carries (ADR-D01.9): the preview the solver last saw, while no action of theirs has
+    /// ended it (`last_seen`). A replacement of an unseen replacement, or a preview built into a slot that a
+    /// run's cancel emptied, keeps the mark of the preview the solver did see. The host reports each frame before the
+    /// input that follows it (RM.26), so a preview on screen is one the layer has read.
     fn replacing(&self) -> Option<u64> {
-        let pending = self.slot.as_ref()?;
-        match pending.seen {
-            true => Some(pending.id),
-            false => pending.replaced,
-        }
+        self.last_seen
     }
 
-    /// ADR-D01.9's settle interval: a preview that replaced one the solver was shown commits only once the interval has
-    /// passed since the layer read the first frame of its current presentation, so a key-down never commits a preview
-    /// the solver has not seen. A press inside the interval is refused before its token is spent
+    /// Whether a press of the commit key on `p` waits out the settle interval: `p` replaced a preview the solver saw
+    /// (ADR-D01.9), or a run prepared it (draft reading: a key-down never commits on its first frame a word a program
+    /// prepared, also when it replaced a preview the solver had not yet seen or filled an empty slot).
+    fn settles(p: &Preview) -> bool {
+        p.replaced.is_some() || matches!(p.caller, Caller::Runtime { .. })
+    }
+
+    /// ADR-D01.9's settle interval: a preview that waits ([`Self::settles`]) commits only once the interval has passed
+    /// since the layer read the first frame of its current presentation, so a key-down never commits a preview the
+    /// solver has not seen. A press inside the interval is refused before its token is spent
     /// (`KN5:busy.preview_settling`; draft), and the next press after it commits. A presentation that ends and starts
     /// again waits again. [`CommandLayer::settle_remaining`] says how long the pending preview still waits.
     fn settled(&self, p: &Preview) -> Result<(), Error> {
@@ -1611,8 +1625,8 @@ impl<S: Store> CommandLayer<S> {
         let shown = self.clock.now().saturating_sub(since);
         if shown < self.settle_interval {
             let (shown, interval) = (shown.as_millis(), self.settle_interval.as_millis());
-            let detail =
-                format!("preview {} replaced a shown preview and has been shown {shown} of {interval} ms", p.id);
+            let why = if p.replaced.is_some() { "replaced a shown preview" } else { "was prepared by a run" };
+            let detail = format!("preview {} {why} and has been shown {shown} of {interval} ms", p.id);
             return Err(Error::new(code::PREVIEW_SETTLING, format!("{detail} (ADR-D01.9)")));
         }
         Ok(())
@@ -1971,7 +1985,7 @@ impl<S: Store> CommandLayer<S> {
             return;
         };
         if frame.presents(&ShownPreview::of(p)) {
-            p.seen = true;
+            self.last_seen = Some(p.id);
             if p.state == PreviewState::Ready {
                 p.state = PreviewState::Presented;
                 self.generation += 1;
@@ -2032,10 +2046,11 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// How long a press of the commit key on the pending preview is still ignored (ADR-D01.9): `None` when there is no
-    /// pending preview or it replaced nothing the solver was shown; the whole interval while no frame shows it; zero
-    /// once it has settled. Availability does not change when it reaches zero, so a host that greys the key reads this.
+    /// pending preview or it does not wait (it replaced nothing the solver was shown and a run did not prepare it); the
+    /// whole interval while no frame shows it; zero once it has settled. Availability does not change when it reaches
+    /// zero, so a host that greys the key reads this.
     pub fn settle_remaining(&self) -> Option<Duration> {
-        let p = self.slot.as_ref().filter(|p| p.replaced.is_some())?;
+        let p = self.slot.as_ref().filter(|p| Self::settles(p))?;
         Some(match &self.run {
             Some((run, _, since)) if *run == p.id => {
                 self.settle_interval.saturating_sub(self.clock.now().saturating_sub(*since))
@@ -2131,6 +2146,7 @@ impl<S: Store> CommandLayer<S> {
         }
         self.frame = None;
         self.run = None;
+        self.last_seen = None;
         self.jobs.clear();
         self.running.clear();
         self.fenced.clear();
@@ -2740,6 +2756,22 @@ impl<S: Store> CommandLayer<S> {
     /// a `tool_authoring` or `research` session KN5.26 does not apply and no reader is asked, so the solver's own
     /// preview there, and a commit of it, needs no admission; a record previewed later in a solving session meets its
     /// check there (BND.61; draft). The read set holds the record's content digest and version.
+    /// Whether record `name` holds a value the solver kept with `workspace.set` (ADR-D01.12; the layer's `kept`).
+    fn kept_now(&self, name: &str) -> bool {
+        let value = self.records.get(name).and_then(|record| record.value.as_ref());
+        value.is_some_and(|value| self.kept.contains(&(name.to_owned(), digest(&value.to_json()))))
+    }
+
+    /// Whether a stored one-key commit's `recipe` is the word of a record that holds a value the solver kept: the only
+    /// commit the live press makes (ADR-D01.12).
+    fn kept_word(&self, recipe: &Recipe) -> bool {
+        self.records.iter().any(|(name, record)| {
+            let letters = record.value.as_ref().and_then(RecordValue::operation);
+            let word = letters.and_then(|letters| self.kernel.word(&letters).ok());
+            self.kept_now(name) && word.is_some_and(|word| word == *recipe)
+        })
+    }
+
     fn resolve_record(&self, draft: &Value, name: &str) -> Result<ResolvedDraft, Error> {
         let record = self.records.get(name);
         let Some(value) = record.and_then(|record| record.value.as_ref()) else {
@@ -2836,7 +2868,6 @@ impl<S: Store> CommandLayer<S> {
                     effect,
                     protection,
                     replaced: self.replacing(),
-                    seen: false,
                 };
                 let result = ResultRef { job: Some(id), digest: digest(&preview.summary()) };
                 if let Some(old) = self.slot.replace(preview) {
@@ -2881,9 +2912,15 @@ impl<S: Store> CommandLayer<S> {
             }
         }
         let done = Completion { kind: CompletionKind::Workspace, revision: self.revision.clone(), result: None };
+        // The solver's cancel ends the line of previews the mark follows; a run's cancel of its own preview does not,
+        // so the next preview still carries the mark of the one the solver saw (ADR-D01.9).
+        let solver = matches!(caller, Caller::Shell);
         if self.slot.as_ref().is_some_and(|p| p.id == id) {
             self.slot.take();
             self.history.insert(id, PreviewState::Cancelled);
+            if solver {
+                self.last_seen = None;
+            }
             self.generation += 1;
             return Ok((None, Status::Completed(done)));
         }
@@ -2891,6 +2928,9 @@ impl<S: Store> CommandLayer<S> {
             let job = self.jobs.remove(position).expect("the position is in range");
             self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ByUser));
             self.history.insert(id, PreviewState::Cancelled);
+            if solver {
+                self.last_seen = None;
+            }
             self.generation += 1;
             return Ok((None, Status::Completed(done)));
         }
@@ -2962,7 +3002,7 @@ impl<S: Store> CommandLayer<S> {
         // ADR-D01.9's settle interval ignores the press before its token is spent. It is not a gate: it ends with the
         // clock, not with an action that advances the generation (LI.21), so availability keeps the key on and a press
         // inside the interval is ignored.
-        if let Some(p) = self.slot.as_ref().filter(|p| p.id == id && p.replaced.is_some()) {
+        if let Some(p) = self.slot.as_ref().filter(|p| p.id == id && Self::settles(p)) {
             self.settled(p)?;
         }
         let binding = self.authenticate(invocation)?;
@@ -3004,13 +3044,16 @@ impl<S: Store> CommandLayer<S> {
 
     /// Steps 6 to 8 of a preview's commit, which `operation.execute` and the one-key commit share: the preview's
     /// dependencies as they stand now, and as the token bound them where it binds them (`KN5:stale.revision_changed`),
-    /// the head hash at the preview's start (`KN5:stale.state_hash_mismatch`), and the operation judged again under the
-    /// policy in force, Net its effect and Strict every executed prefix of its recipe's literal expansion
-    /// (`KN2:protection.orbit_would_move`). The answer is the state the commit adopts.
+    /// the head hash, which must be the head's recorded state and the preview's start (`KN5:stale.state_hash_mismatch`),
+    /// and the operation judged again under the policy in force, Net its effect and Strict every executed prefix of its
+    /// recipe's literal expansion (`KN2:protection.orbit_would_move`). The answer is the state the commit adopts.
     fn recheck(&self, p: &Preview, bound: Option<&PreviewDeps>) -> Result<Snapshot, Error> {
         let now = self.deps(&self.draft_now(p));
         if p.deps != now || bound.is_some_and(|deps| *deps != now) {
             return Err(Error::new(code::REVISION_CHANGED, "the preview's dependencies changed"));
+        }
+        if self.current.digest() != self.nodes[&self.head].digest {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
         }
         if self.current.digest() != p.base.digest() {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the preview's start"));
@@ -3034,7 +3077,9 @@ impl<S: Store> CommandLayer<S> {
     /// is spent), a record resolved now as `operation.preview` resolves one, so in a solving session the host's
     /// provenance reader admits it (KN5.26): no inline recipe, so no keymap a script supplies commits a word the solver
     /// never kept. After the token, the commit lane, the binding, Jumble off and the token's state and protection
-    /// revisions (LI.6), so that a stale press leaves the pending preview in place, the record is resolved and its
+    /// revisions (LI.6), so that a stale press leaves the pending preview in place, the record must hold a value the
+    /// solver kept with `workspace.set` (`KN2:input.named_object_invalid` otherwise; a value a job's completion, a
+    /// recording or a work sheet load wrote is not their own macro until they keep it), and the record is resolved and its
     /// preview built at the head, replacing the pending preview (ADR-D01.9); a draft that does not resolve, or a word
     /// the kernel refuses, builds none. Then the preview is checked as `operation.execute` checks a presented one
     /// ([`Self::recheck`]) and committed with its preview's ID. A failed recheck leaves the preview pending and
@@ -3059,6 +3104,11 @@ impl<S: Store> CommandLayer<S> {
         if binding.revision != Some((self.revision.state, self.revision.protection)) {
             return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
         }
+        if !self.kept_now(&name) {
+            let detail =
+                format!("record `{name}` does not hold a value the solver kept with `{RECORD_ROW}` (ADR-D01.12)");
+            return refused(code::NAMED_OBJECT_INVALID, detail);
+        }
         let resolved = self.resolve_record(&draft, &name)?;
         let recipe = self.kernel.word(&resolved.letters)?;
         let base = self.current.clone();
@@ -3081,7 +3131,6 @@ impl<S: Store> CommandLayer<S> {
             effect,
             protection,
             replaced: self.replacing(),
-            seen: false,
         };
         if let Some(old) = self.slot.replace(preview) {
             self.history.insert(old.id, PreviewState::Replaced);
@@ -3238,6 +3287,15 @@ impl<S: Store> CommandLayer<S> {
             record.version += 1;
             record.value = value.clone();
         }
+        // The solver's own `workspace.set` keeps its value for the one-key commit (ADR-D01.12): a value a job's
+        // completion, a recording or a work sheet load wrote is not the solver's own macro until they keep it.
+        if let (TransactionKind::Record, Caller::Shell, Some(RecordWrite { name, value: Some(value) })) =
+            (transaction.kind, &transaction.caller, &transaction.record)
+        {
+            if transaction.row == RECORD_ROW {
+                self.kept.insert((name.clone(), digest(&value.to_json())));
+            }
+        }
         // The part blocks it keeps stay for the session, an undo's included (CT-BND-27).
         for block in &transaction.blocks {
             self.blocks.entry(sha256_hex(block.as_bytes())).or_insert_with(|| block.clone());
@@ -3346,6 +3404,7 @@ impl<S: Store> CommandLayer<S> {
 
     /// Ends what read the state an action replaced: the pending preview, and every job but file jobs (KN5.18).
     fn end_revision(&mut self, committed: Option<u64>) {
+        self.last_seen = None;
         if let Some(p) = self.slot.take() {
             let state = if committed == Some(p.id) { PreviewState::Committed } else { PreviewState::Discarded };
             self.history.insert(p.id, state);

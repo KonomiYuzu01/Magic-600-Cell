@@ -4,6 +4,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::{
     code, draft_args, Caller, CommandLayer, Completion, CompletionKind, HeadlessFrames, Invocation, Kind, PreviewState,
@@ -294,11 +295,13 @@ fn a_runtime_invocation_carrying_a_token_is_refused() {
 /// chord then commits exactly the preview: its pre- and post-state are the preview's.
 ///
 /// CT-ONE-29 (part, headless: the shell binds a commit token only to a preview the built-in chain presented; no user
-/// stage is drawn here).
+/// stage is drawn here). A preview a run prepared waits out ADR-D01.9's settle interval before its token is read
+/// (c600-command `tests/settle.rs`); this test sets the interval to zero so each refusal here is the token's.
 #[test]
 fn only_a_token_the_shell_mints_commits_the_pending_preview() {
     let tool = Tool::full_600_cell().unwrap();
     let (mut layer, mut shell) = session();
+    layer.set_settle(Duration::ZERO);
     let (ran, sent, command) = run_on(&tool, &mut layer, &mut shell, &[1, -2], None);
     let proposer = command.run();
     assert_eq!(ran.run.summary.outcome, Outcome::Completed);
