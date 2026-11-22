@@ -161,7 +161,7 @@ internal static class LiveChecks
         var restarted = new LiveSession(root, folder); host.AddChild(restarted);
         Same(before, restarted.App.CaptureView(), first.State.Schema, fault, "restart");
         Framed(restarted, fault);
-        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=3");
+        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=4");
     }
 
     // The window frame around the lab: both main views in the locked pair, the lab's panel in the right dock,
@@ -182,6 +182,29 @@ internal static class LiveChecks
         Require(frame.Tokens.Theme.Id != family && frame.Tokens.C("window.background") != window && themeButton.Text == frame.Tokens.Theme.Name &&
             app.State.Preset.Params.Number("bgLightness") != ground && app.CaptureView().Ui["frame.appearance"].Contains("theme=" + frame.Tokens.Theme.Id, StringComparison.Ordinal),
             fault, "the theme button did not switch the family and the scene");
+        // The Appearance panel: density and display scale resize the frame, high contrast and a knob recolour it
+        // in place, and a value outside a knob's range changes nothing.
+        Require(frame.Model.ToggleDock(DockSide.Right, LabFrame.Look), fault, "the Appearance panel is not in the right dock");
+        frame.Flush();
+        var panel = (AppearancePanel)frame.FindChild("AppearancePanel", true, false) ?? throw new Exception("a5-live: no Appearance panel");
+        int bar = frame.Tokens.Px("bar.height"); ViewFrame global = frame.Global;
+        Require(panel.Edit(a => a.SetDensity("comfortable"), true, false) && frame.Tokens.Px("bar.height") > bar && !ReferenceEquals(frame.Global, global), fault, "density did not resize the frame");
+        bar = frame.Tokens.Px("bar.height");
+        Require(panel.Edit(a => a.SetDisplayScale(1.5), true, false) && frame.Tokens.Px("bar.height") > bar, fault, "display scale did not resize the frame");
+        global = frame.Global; Color accent = frame.Tokens.C("accent.base"), text = frame.Tokens.C("text");
+        double hue = (panel.Look.Knob("accentHue") + 120) % 360;
+        bool recoloured = panel.Edit(a => a.SetKnob("accentHue", hue), false, false) && panel.Edit(a => a.HighContrast = true, false, false);
+        if (fault == "a5-knob-ignored") recoloured = recoloured && frame.Tokens.C("accent.base") == accent;
+        Require(recoloured && frame.Tokens.C("accent.base") != accent && frame.Tokens.C("text") != text && ReferenceEquals(frame.Global, global) &&
+            frame.Tokens.ContrastIssues().Count == 0, fault, "a knob or high contrast did not recolour the frame in place");
+        string kept = panel.Look.Store();
+        Require(!panel.Edit(a => a.SetKnob("tone", 4), false, false) && panel.Look.Store() == kept && panel.Issues.Text.Contains("tone", StringComparison.Ordinal),
+            fault, "a knob left its range");
+        Require(panel.Edit(a => a.SetSceneLook("celebrating"), false, true) &&
+            app.State.Preset.Params.Number("bgHue") == frame.Tokens.Theme.Scenes["celebrating"]["bgHue"].GetDouble(), fault, "the scene look was not applied");
+        Require(panel.Edit(a => { a.SetDensity("compact"); a.SetDisplayScale(1); a.HighContrast = false; a.ResetKnobs(); }, true, false) && !panel.Look.Tuned, fault, "the appearance was not reset");
+        Require(frame.Model.ToggleDock(DockSide.Right, LabFrame.Tune), fault, "the Tune panel did not come back");
+        frame.Flush();
         string before = frame.Model.Store();
         bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);
         if (fault == "a5-pair-hidden") refused = false;

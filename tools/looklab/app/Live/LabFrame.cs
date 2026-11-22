@@ -12,7 +12,7 @@ namespace LookLab.App.Live;
 // chrome library; only this file knows about the lab.
 internal static class LabFrame
 {
-    public const string Tune = "tune", Greybox = "greybox";
+    public const string Tune = "tune", Greybox = "greybox", Look = "appearance";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
         (DockSide.Left, "history", "History", "H", "Puzzle history and layout history appear here."),
@@ -48,6 +48,8 @@ internal static class LabFrame
         // family's scene look, written through the lab's own parameters and inside their ranges.
         Button themeButton = ChromeWidgets.Tool(look.Family.Name, "Theme family: click for the next one"); themeButton.Name = "ThemeButton";
         frame.BarTools.AddChild(themeButton);
+        var appearance = new AppearancePanel(look);
+        frame.AddDockPanel(DockSide.Right, Look, "Appearance", "A", appearance);
         void ApplyScene()
         {
             foreach (var value in look.Family.Scenes[look.SceneLook])
@@ -62,11 +64,12 @@ internal static class LabFrame
         themeButton.Pressed += () =>
         {
             int next = (Array.FindIndex(themes, t => t.Id == look.Theme) + 1) % themes.Length;
-            look.SetTheme(themes[next].Id); ApplyLook(true, true);
+            appearance.Edit(a => a.SetTheme(themes[next].Id), true, true);
         };
+        appearance.Changed += ApplyLook;
         app.ViewParts["frame.appearance"] = (() => look.Store(), v =>
         {
-            try { look = Appearance.Parse(v, design, themes); ApplyLook(true, false); }
+            try { look = Appearance.Parse(v, design, themes); appearance.Show(look); ApplyLook(true, false); }
             catch (FormatException) { }
         });
         frame.Health.Text = "Look Lab · full detail · 259,800 slots";
