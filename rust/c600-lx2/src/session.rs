@@ -34,6 +34,7 @@
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 
 use c600_command::{CommandLayer, Error as LayerError, HeadlessFrames, Receipt, Secret, Shell, Status, Table};
 use c600_digest::sha256_hex;
@@ -243,6 +244,9 @@ pub fn run_session_trial(runtime: &Path, kernel: &Arc<Kernel>, folder: &Path, tr
     };
     let (secret, none) = (Secret::fixed(SECRET), ProtectedSet::none());
     let mut layer = CommandLayer::new(kernel.clone(), Table::h08(), secret, store, "lx2", kernel.solved(), none);
+    // The solver presses commit on the frame that presents the run's preview; ADR-D01.9's settle interval, which holds
+    // that press, is c600-command's `tests/settle.rs` concern and not a fault trial's.
+    layer.set_settle(Duration::ZERO);
     let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
     let (mut rt, started) = crate::start(runtime, trial);
     if let Err(fault) = started {
