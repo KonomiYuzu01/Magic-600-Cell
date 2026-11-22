@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Godot;
 using LookLab.Core;
+using Magic600.Chrome;
 
 namespace LookLab.App.Live;
 
@@ -16,6 +17,7 @@ internal sealed partial class LiveSession : Control
     public static readonly string[] WatchedFiles = { "docs/progress/1.0/command-table.json" };
     public const double PollSeconds = .5, SaveSeconds = 1;
     public LabApp App { get; private set; }
+    public ChromeFrame Frame { get; private set; }
     public Label Notice { get; }
     public int Reloads { get; private set; }
     public int Refusals { get; private set; }
@@ -32,6 +34,7 @@ internal sealed partial class LiveSession : Control
         Build = r => new LabApp(r, opening: true);
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         App = Build(root); AddChild(App);
+        Frame = LabFrame.Attach(App, root); AddChild(Frame);
         Notice = new Label { Name = "LiveNotice", Visible = false, MouseFilter = MouseFilterEnum.Ignore, Position = new Vector2(8, 6) };
         Notice.AddThemeColorOverride("font_outline_color", Colors.Black); Notice.AddThemeConstantOverride("outline_size", 6);
         AddChild(Notice);
@@ -41,7 +44,7 @@ internal sealed partial class LiveSession : Control
             try
             {
                 saved = File.ReadAllBytes(stateFile);
-                App.RestoreView(ViewStates.Parse(System.Text.Encoding.UTF8.GetString(saved), App.State.Schema));
+                App.RestoreView(ViewStates.Parse(System.Text.Encoding.UTF8.GetString(saved), App.State.Schema)); Frame.Flush();
             }
             catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
             {
@@ -68,22 +71,26 @@ internal sealed partial class LiveSession : Control
     {
         string what = files.Count == 1 ? files[0] : files.Count + " files";
         ViewState kept = App.CaptureView();
-        LabApp? next = null;
+        LabApp? next = null; ChromeFrame? frame = null;
         try
         {
             next = Build(root);
             AddChild(next); MoveChild(next, 0);
-            next.RestoreView(kept);
+            frame = LabFrame.Attach(next, root);
+            next.RestoreView(kept); frame.Flush();
         }
         catch (Exception ex)
         {
+            frame?.Free();
             if (next != null) { if (next.GetParent() == this) RemoveChild(next); next.QueueFree(); }
             Refusals++;
             Say($"Refused {what}: {ex.Message} (showing the last good data)", true);
             return false;
         }
         LabApp old = App; App = next;
-        RemoveChild(old); old.QueueFree();
+        ChromeFrame oldFrame = Frame; Frame = frame;
+        RemoveChild(oldFrame); oldFrame.Free(); RemoveChild(old); old.QueueFree();
+        AddChild(Frame); MoveChild(Frame, 1);
         Reloads++;
         Say($"Reloaded {what}", false);
         return true;
@@ -153,7 +160,30 @@ internal static class LiveChecks
         if (fault == "a5-view-not-written") File.Delete(Path.Combine(folder, "view.json"));
         var restarted = new LiveSession(root, folder); host.AddChild(restarted);
         Same(before, restarted.App.CaptureView(), first.State.Schema, fault, "restart");
-        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=1");
+        Framed(restarted, fault);
+        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=2");
+    }
+
+    // The window frame around the lab: both main views in the locked pair, the lab's panel in the right dock,
+    // and a drop that would hide a main view refused with its reason on screen.
+    private static void Framed(LiveSession session, string fault)
+    {
+        ChromeFrame frame = session.Frame; LabApp app = session.App;
+        Require(frame.Global.Slot.IsAncestorOf(app.GlobalStage) && frame.Local.Slot.IsAncestorOf(app.Linked.LocalStage!) && app.Linked.LocalStage!.Visible,
+            fault, "a main view is missing from the locked pair");
+        Require(frame.Model.Docks[DockSide.Right].Open == LabFrame.Tune && frame.IsAncestorOf(app.ParameterPanel), fault, "the Tune panel is not in the right dock");
+        Require(frame.Model.IsOpen(LabFrame.Greybox) && frame.IsAncestorOf(app.Greybox.Canvas), fault, "the open greybox is not a pane of the frame");
+        Require(frame.FindChild("TopBar", true, false) != null && frame.Workspaces.Order.SequenceEqual(new[] { "solve", "script", "analyse", "reference" }), fault, "top bar or workspaces missing");
+        string before = frame.Model.Store();
+        bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);
+        if (fault == "a5-pair-hidden") refused = false;
+        frame.Flush();
+        Require(refused && frame.Model.Store() == before && frame.Notice.Visible && frame.Notice.Text.Contains("Global and Local", StringComparison.Ordinal),
+            fault, "a change that hides a main view was not refused on screen");
+        Require(frame.SelectWorkspace("script") && frame.Model.IsOpen("editor") && frame.Model.PairArrangement == "stacked", fault, "the Script workspace was not applied");
+        frame.Model.SetFocusMode(true); frame.Flush();
+        Require(frame.FindChild("TopBar", true, false) == null && frame.Global.Slot.IsAncestorOf(app.GlobalStage) && !frame.IsAncestorOf(app.ParameterPanel),
+            fault, "focus mode shows more than the pair");
     }
 
     private static void Same(ViewState a, ViewState b, ParameterSchema schema, string fault, string step)

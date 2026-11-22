@@ -71,8 +71,16 @@ internal sealed class LinkedViews
         preview.AddView(Local);
     }
 
+    // The window frame shows both main views at all times and sizes them itself.
+    public void EnterFrame()
+    {
+        if (Local == null) CreateLocal();
+        follower.Reset(); LocalStage!.Visible = true; LocalViewport!.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
+    }
+
     public void Arrange(RegionRect stage)
     {
+        if (app.Framed) return;
         StageRect = stage;
         ViewArrangement arrangement = ViewFraming.Arrange(Layout, stage);
         Place(app.GlobalStage, arrangement.Global);

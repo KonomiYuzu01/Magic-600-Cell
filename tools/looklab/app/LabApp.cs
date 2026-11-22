@@ -13,6 +13,10 @@ internal sealed partial class LabApp : Control
     public ParameterPanels Panels { get; }
     public SubViewportContainer GlobalStage => stage;
     internal Control ParameterPanel => panel;
+    internal LL4.GreyboxControls Greybox => Panels.GetNode<LL4.GreyboxControls>("LL4Controls");
+    // Inside the window frame the frame places the views and the panel; the lab only keeps them alive.
+    internal bool Framed { get; private set; }
+    internal void EnterFrame() { Framed = true; MouseFilter = MouseFilterEnum.Ignore; Linked.EnterFrame(); }
     public LL6.LinkedViews Linked { get; }
     private readonly SubViewportContainer stage;
     private readonly SubViewport viewport;
@@ -140,7 +144,7 @@ internal sealed partial class LabApp : Control
 
     private void Layout()
     {
-        if (Size.X <= 0 || Size.Y <= 0) return;
+        if (Framed || Size.X <= 0 || Size.Y <= 0) return;
         double share = State.Preset.Params.Number("viewportShare");
         float panelWidth = Math.Min(Size.X * .65f, Math.Max(300, Size.X * (float)(1 - share)));
         bool docked = Linked.Docked;

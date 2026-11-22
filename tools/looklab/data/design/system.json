@@ -1,0 +1,561 @@
+{
+  "format": "magic600-design-system",
+  "version": 1,
+  "density": {
+    "unit": 4,
+    "presets": [
+      "compact",
+      "default",
+      "comfortable"
+    ],
+    "shipped": "compact",
+    "tokens": {
+      "space.1": [
+        0.5,
+        1,
+        1
+      ],
+      "space.2": [
+        1,
+        1.5,
+        2
+      ],
+      "space.3": [
+        2,
+        2.5,
+        3
+      ],
+      "space.4": [
+        3,
+        4,
+        5
+      ],
+      "control.height": [
+        5.5,
+        6.5,
+        7.5
+      ],
+      "row.height": [
+        5,
+        6,
+        7
+      ],
+      "bar.height": [
+        6.5,
+        7.5,
+        8.5
+      ],
+      "status.height": [
+        5,
+        5.5,
+        6.5
+      ],
+      "radius.control": [
+        0.5,
+        0.75,
+        1
+      ],
+      "radius.panel": [
+        0,
+        0.5,
+        1
+      ],
+      "border.width": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "focus.width": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "icon.small": [
+        3,
+        3.5,
+        4
+      ],
+      "icon.medium": [
+        4,
+        4,
+        5
+      ],
+      "icon.large": [
+        5,
+        6,
+        6
+      ],
+      "dock.width": [
+        64,
+        72,
+        80
+      ],
+      "dock.height": [
+        40,
+        44,
+        48
+      ],
+      "rail.width": [
+        7,
+        8,
+        9
+      ],
+      "strip.width": [
+        9,
+        10,
+        11
+      ],
+      "scrollbar.width": [
+        2,
+        2.5,
+        3
+      ],
+      "slider.height": [
+        3,
+        4,
+        4
+      ]
+    }
+  },
+  "type": {
+    "ui": {
+      "faces": [
+        "IBM Plex Sans",
+        "Segoe UI"
+      ],
+      "ramp": {
+        "micro": 10,
+        "small": 11,
+        "body": 12,
+        "title": 13,
+        "heading": 15
+      },
+      "tabular": true
+    },
+    "content": {
+      "faces": [
+        "IBM Plex Serif",
+        "Georgia"
+      ],
+      "ramp": {
+        "small": 12,
+        "body": 13,
+        "title": 16,
+        "heading": 20
+      },
+      "tabular": false
+    },
+    "code": {
+      "faces": [
+        "Lilex",
+        "Consolas"
+      ],
+      "ramp": {
+        "small": 11,
+        "body": 12,
+        "large": 14
+      },
+      "tabular": true
+    }
+  },
+  "motion": {
+    "durations": {
+      "instant": 0,
+      "fast": 80,
+      "base": 140,
+      "slow": 240,
+      "twist": 220,
+      "twist.queued": 110,
+      "view": 260,
+      "flash": 320,
+      "settle": 180,
+      "debounce.caret": 150,
+      "debounce.diagnostics": 300
+    },
+    "curves": {
+      "standard": [
+        0.2,
+        0,
+        0,
+        1
+      ],
+      "enter": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "exit": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    }
+  },
+  "roles": {
+    "surface.window": {
+      "group": "chrome",
+      "meaning": "The window behind every panel."
+    },
+    "surface.panel": {
+      "group": "chrome",
+      "meaning": "A docked panel or bar."
+    },
+    "surface.control": {
+      "group": "chrome",
+      "meaning": "A control at rest."
+    },
+    "surface.raised": {
+      "group": "chrome",
+      "meaning": "A hovered control, a popup or a tooltip."
+    },
+    "surface.sunken": {
+      "group": "chrome",
+      "meaning": "A pressed control or an editable field."
+    },
+    "border.subtle": {
+      "group": "chrome",
+      "meaning": "The line between regions and around controls."
+    },
+    "border.strong": {
+      "group": "chrome",
+      "meaning": "The line around popups and the grabbers of scrollbars."
+    },
+    "text.primary": {
+      "group": "chrome",
+      "meaning": "Text and icons that are read."
+    },
+    "text.secondary": {
+      "group": "chrome",
+      "meaning": "Supporting text and idle icons."
+    },
+    "text.disabled": {
+      "group": "chrome",
+      "meaning": "Text of a control that cannot be used now."
+    },
+    "accent.base": {
+      "group": "chrome",
+      "meaning": "The one accent: the active choice, a filled slider, the text selection."
+    },
+    "accent.strong": {
+      "group": "chrome",
+      "meaning": "The accent as text or as a thin line on a surface."
+    },
+    "accent.text": {
+      "group": "chrome",
+      "meaning": "Text on the accent."
+    },
+    "focus.ring": {
+      "group": "chrome",
+      "meaning": "The keyboard focus indicator."
+    },
+    "grid.line": {
+      "group": "chrome",
+      "meaning": "Grid and guide lines; their strength follows the grid intensity knob."
+    },
+    "script.frame": {
+      "group": "chrome",
+      "meaning": "The frame around every area a script draws."
+    },
+    "state.committed": {
+      "group": "state",
+      "meaning": "The committed puzzle state.",
+      "cue": "solid outline, no label"
+    },
+    "state.preview": {
+      "group": "state",
+      "meaning": "A pending preview that is not committed.",
+      "cue": "dashed outline and the label \"preview\""
+    },
+    "state.pending": {
+      "group": "state",
+      "meaning": "A preview is waiting; shown on the main views.",
+      "cue": "ring marker at the view corner"
+    },
+    "state.stale": {
+      "group": "state",
+      "meaning": "Applied, display stale: computed before the current state.",
+      "cue": "hatched fill and the label \"stale\""
+    },
+    "state.invalid": {
+      "group": "state",
+      "meaning": "Impossible or refused.",
+      "cue": "struck-through outline and the reason as text"
+    },
+    "state.selected": {
+      "group": "state",
+      "meaning": "The selection.",
+      "cue": "corner brackets"
+    },
+    "state.protected": {
+      "group": "state",
+      "meaning": "A protected orbit or position.",
+      "cue": "lock glyph"
+    },
+    "severity.error": {
+      "group": "state",
+      "meaning": "An error.",
+      "cue": "octagon"
+    },
+    "severity.warning": {
+      "group": "state",
+      "meaning": "A warning.",
+      "cue": "triangle"
+    },
+    "severity.info": {
+      "group": "state",
+      "meaning": "A note.",
+      "cue": "circle"
+    },
+    "strip.destination": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the destination.",
+      "cue": "first place in the strip and a target glyph"
+    },
+    "strip.occupant": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the current occupant.",
+      "cue": "second place in the strip and a filled-cell glyph"
+    },
+    "strip.wanted": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the wanted piece.",
+      "cue": "third place in the strip and an outlined-cell glyph"
+    },
+    "strip.buffer": {
+      "group": "encoding",
+      "meaning": "Relationship strip: a buffer.",
+      "cue": "fourth place in the strip and a bracket glyph"
+    },
+    "strip.frame": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the frame.",
+      "cue": "fifth place in the strip and an axes glyph"
+    },
+    "strip.residual": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the residual.",
+      "cue": "last place in the strip and a delta glyph"
+    },
+    "syntax.keyword": {
+      "group": "syntax",
+      "meaning": "A 600 Cell Script keyword."
+    },
+    "syntax.identifier": {
+      "group": "syntax",
+      "meaning": "A name."
+    },
+    "syntax.type": {
+      "group": "syntax",
+      "meaning": "A type name."
+    },
+    "syntax.number": {
+      "group": "syntax",
+      "meaning": "A number."
+    },
+    "syntax.string": {
+      "group": "syntax",
+      "meaning": "A string."
+    },
+    "syntax.operator": {
+      "group": "syntax",
+      "meaning": "An operator or a maths symbol."
+    },
+    "syntax.reference": {
+      "group": "syntax",
+      "meaning": "A typed reference to a cell, sticker, orbit or macro."
+    },
+    "syntax.comment": {
+      "group": "syntax",
+      "meaning": "A comment."
+    }
+  },
+  "components": {
+    "window.background": "surface.window",
+    "panel.background": "surface.panel",
+    "panel.border": "border.subtle",
+    "control.background": "surface.control",
+    "control.hover": "surface.raised",
+    "control.pressed": "surface.sunken",
+    "control.border": "border.subtle",
+    "control.focus": "focus.ring",
+    "field.background": "surface.sunken",
+    "text": "text.primary",
+    "text.dim": "text.secondary",
+    "text.off": "text.disabled",
+    "tab.selected": "surface.panel",
+    "tab.idle": "surface.window",
+    "separator": "border.subtle",
+    "selection.background": "accent.base",
+    "selection.text": "accent.text",
+    "slider.fill": "accent.base",
+    "popup.background": "surface.raised",
+    "popup.border": "border.strong",
+    "scrollbar.grabber": "border.strong",
+    "tooltip.background": "surface.raised"
+  },
+  "contrast": [
+    {
+      "text": "text.primary",
+      "surface": "surface.window",
+      "minimum": 7
+    },
+    {
+      "text": "text.primary",
+      "surface": "surface.panel",
+      "minimum": 7
+    },
+    {
+      "text": "text.primary",
+      "surface": "surface.raised",
+      "minimum": 7
+    },
+    {
+      "text": "text.secondary",
+      "surface": "surface.panel",
+      "minimum": 4.5
+    },
+    {
+      "text": "accent.text",
+      "surface": "accent.base",
+      "minimum": 4.5
+    },
+    {
+      "text": "accent.strong",
+      "surface": "surface.panel",
+      "minimum": 4.5
+    },
+    {
+      "text": "focus.ring",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.committed",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.preview",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.pending",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.stale",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.invalid",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.selected",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "state.protected",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.error",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.warning",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "severity.info",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.destination",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.occupant",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.wanted",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.buffer",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.frame",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.residual",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.keyword",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.identifier",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.type",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.number",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.string",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.operator",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.reference",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "syntax.comment",
+      "surface": "surface.panel",
+      "minimum": 3
+    }
+  ]
+}

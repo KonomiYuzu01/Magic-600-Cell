@@ -1,0 +1,156 @@
+{
+  "format": "magic600-design-theme",
+  "version": 1,
+  "id": "paper",
+  "name": "Paper",
+  "scheme": "light",
+  "ladder": [
+    0.975,
+    0.95,
+    0.925,
+    0.895,
+    0.86,
+    0.81,
+    0.74,
+    0.63,
+    0.5,
+    0.42,
+    0.32,
+    0.18
+  ],
+  "ramps": {
+    "neutral": {
+      "hue": 85,
+      "chroma": 0.01
+    },
+    "accent": {
+      "hue": 250,
+      "chroma": 0.14
+    },
+    "blue": {
+      "hue": 250,
+      "chroma": 0.14
+    },
+    "teal": {
+      "hue": 195,
+      "chroma": 0.14
+    },
+    "green": {
+      "hue": 150,
+      "chroma": 0.14
+    },
+    "amber": {
+      "hue": 80,
+      "chroma": 0.14
+    },
+    "orange": {
+      "hue": 50,
+      "chroma": 0.14
+    },
+    "red": {
+      "hue": 25,
+      "chroma": 0.14
+    },
+    "magenta": {
+      "hue": 345,
+      "chroma": 0.14
+    },
+    "violet": {
+      "hue": 300,
+      "chroma": 0.14
+    }
+  },
+  "knobs": {
+    "tone": {
+      "min": -0.06,
+      "max": 0.06,
+      "value": 0
+    },
+    "contrast": {
+      "min": 0.85,
+      "max": 1.2,
+      "value": 1
+    },
+    "blackLevel": {
+      "min": 0,
+      "max": 0.12,
+      "value": 0
+    },
+    "accentHue": {
+      "min": 0,
+      "max": 360,
+      "value": 250
+    },
+    "gridIntensity": {
+      "min": 0,
+      "max": 1,
+      "value": 0.5
+    }
+  },
+  "roles": {
+    "surface.window": "neutral.0",
+    "surface.panel": "neutral.1",
+    "surface.control": "neutral.2",
+    "surface.raised": "neutral.3",
+    "surface.sunken": "neutral.0",
+    "border.subtle": "neutral.4",
+    "border.strong": "neutral.6",
+    "text.primary": "neutral.11",
+    "text.secondary": "neutral.9",
+    "text.disabled": "neutral.7",
+    "accent.base": "accent.8",
+    "accent.strong": "accent.9",
+    "accent.text": "neutral.0",
+    "focus.ring": "accent.9",
+    "grid.line": {
+      "mix": [
+        "surface.window",
+        "text.primary"
+      ],
+      "knob": "gridIntensity",
+      "scale": 0.4
+    },
+    "script.frame": "magenta.8",
+    "state.committed": "neutral.10",
+    "state.preview": "violet.8",
+    "state.pending": "violet.9",
+    "state.stale": "amber.8",
+    "state.invalid": "red.8",
+    "state.selected": "accent.9",
+    "state.protected": "green.8",
+    "severity.error": "red.8",
+    "severity.warning": "amber.8",
+    "severity.info": "blue.8",
+    "strip.destination": "blue.8",
+    "strip.occupant": "amber.9",
+    "strip.wanted": "magenta.8",
+    "strip.buffer": "teal.8",
+    "strip.frame": "neutral.9",
+    "strip.residual": "orange.8",
+    "syntax.keyword": "violet.9",
+    "syntax.identifier": "neutral.11",
+    "syntax.type": "teal.9",
+    "syntax.number": "orange.9",
+    "syntax.string": "green.9",
+    "syntax.operator": "neutral.10",
+    "syntax.reference": "blue.9",
+    "syntax.comment": "neutral.8"
+  },
+  "sceneLooks": {
+    "solving": {
+      "bgLightness": 0.93,
+      "bgHue": 85,
+      "bgTint": 0.01
+    },
+    "inspecting": {
+      "bgLightness": 0.88,
+      "bgHue": 85,
+      "bgTint": 0.01
+    },
+    "celebrating": {
+      "bgLightness": 0.95,
+      "bgHue": 60,
+      "bgTint": 0.03
+    }
+  }
+}

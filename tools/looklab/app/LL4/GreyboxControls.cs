@@ -117,7 +117,7 @@ internal sealed partial class GreyboxControls : VBoxContainer
 
     private void ResizeViews()
     {
-        if (app.Size.X <= 0 || app.Size.Y <= 0) return;
+        if (app.Framed || app.Size.X <= 0 || app.Size.Y <= 0) return;
         if (Toggle.ButtonPressed)
         {
             float width = panel.Position.X / 2;
