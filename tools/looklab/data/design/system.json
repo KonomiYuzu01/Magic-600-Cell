@@ -514,6 +514,66 @@
       "meaning": "Orbit rail: the completion moment, in place on its own cell.",
       "cue": "the solved mark appears on the cell"
     },
+    "mark.route.draft": {
+      "group": "encoding",
+      "meaning": "The route mark: Draft. Twists go to the active phase.",
+      "cue": "a broken outline"
+    },
+    "mark.route.direct": {
+      "group": "encoding",
+      "meaning": "The route mark: Direct. A twist is one complete operation.",
+      "cue": "a whole outline"
+    },
+    "draft.phase.prepare": {
+      "group": "encoding",
+      "meaning": "Draft line: the Prepare phase.",
+      "cue": "first segment"
+    },
+    "draft.phase.core": {
+      "group": "encoding",
+      "meaning": "Draft line: the Core phase.",
+      "cue": "middle segment"
+    },
+    "draft.phase.cleanup": {
+      "group": "encoding",
+      "meaning": "Draft line: the Cleanup phase.",
+      "cue": "last segment"
+    },
+    "commit.goal.unset": {
+      "group": "encoding",
+      "meaning": "Goal: none declared.",
+      "cue": "the word unset"
+    },
+    "commit.goal.met": {
+      "group": "encoding",
+      "meaning": "Goal: met over the head and the staged effect.",
+      "cue": "the word met and a filled mark"
+    },
+    "commit.goal.unmet": {
+      "group": "encoding",
+      "meaning": "Goal: not met. It never gates a commit.",
+      "cue": "the word unmet and an empty mark"
+    },
+    "commit.goal.unknown": {
+      "group": "encoding",
+      "meaning": "Goal: not evaluated.",
+      "cue": "the word unknown and a hatched mark"
+    },
+    "chip.check_mode.net": {
+      "group": "encoding",
+      "meaning": "Check mode: Net.",
+      "cue": "the word Net"
+    },
+    "chip.check_mode.strict": {
+      "group": "encoding",
+      "meaning": "Check mode: Strict.",
+      "cue": "the word Strict"
+    },
+    "commit.status.settling": {
+      "group": "encoding",
+      "meaning": "Commit status: the settle interval runs.",
+      "cue": "a lit lamp"
+    },
     "syntax.keyword": {
       "group": "syntax",
       "meaning": "A 600 Cell Script keyword."
@@ -754,6 +814,66 @@
     },
     {
       "text": "rail.cell.working",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "mark.route.draft",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "mark.route.direct",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "draft.phase.prepare",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "draft.phase.core",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "draft.phase.cleanup",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.unset",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.met",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.unmet",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.goal.unknown",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "chip.check_mode.net",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "chip.check_mode.strict",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "commit.status.settling",
       "surface": "surface.panel",
       "minimum": 3
     },

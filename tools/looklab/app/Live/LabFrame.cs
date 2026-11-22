@@ -217,7 +217,8 @@ internal static class LabFrame
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
         inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
         // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
-        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute); Solves.Add(frame, solve);
+        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute, demo); Solves.Add(frame, solve);
+        frame.SetStrip(solve.Bars(demo.Bar));
         app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
         // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.
         scripts = new LabScripts(frame, demo, inspect, registry, keymap, root, Execute, k =>
@@ -334,6 +335,8 @@ internal static class LabFrame
             ("a radial menu", () => { Home(); Execute("radial.view", null); }),
             ("the relationship strip on the seam, mid-solve: Wanted is in A", () => { Home(); solve.Demo.Show("mid"); if (!solve.Strip.Expanded) solve.Strip.ToggleResidual(); }),
             ("the orbit rail: 35 cells in one admissible order, the working cell opened in place", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(solve.Demo.State.Orbit); }),
+            ("the draft line: Prepare, Core and Cleanup, the Goal unmet and the commit still open; Strict fails where Net passes", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); solve.Draft.SetRoute("draft");
+                solve.Draft.Edit("prepare: twist(cell 5, axis 0, +1)"); solve.Draft.Edit("core: twist(cell 40, axis 2, -1)"); solve.Draft.SetGoal(OperationDraft.SampleGoal); solve.Draft.SetMode(CheckMode.Strict); }),
             ("the strip and the rail at the last buffer of the endgame", () => { Home(); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),
             ("the strip after a fresh scramble: nothing is set", () => { Home(); solve.Demo.Show("fresh"); }),
             ("the script workspace in the new body", () => { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),

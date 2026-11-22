@@ -128,6 +128,17 @@ internal sealed class LabDemo
 
     private Sample Of(Preview preview) => Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal)) ?? Samples[^1];
 
+    // A preview that is not one of the samples names its own history entry.
+    public Func<Preview, (string Origin, string Name)?>? Named { get; set; }
+    public void StageDraft(string statement, IReadOnlyList<string> moves) =>
+        Preview.Show(statement, "draft", moves, PreviewStatus.Ready, null, Array.Empty<OrbitEffect>(), "not checked (demo)", Clock());
+    public void CommitDirect(string twist)
+    {
+        if (Moves.CommitRefusal is { } why) { frame.Say("Not committed: " + why, true); return; }
+        HistoryEntry entry = Moves.Commit("hand", twist, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), "commit " + twist, new[] { twist })!;
+        frame.Say($"Direct: committed {entry.Id}: {entry.Name}");
+    }
+
     public void Execute(string command, string? argument)
     {
         void Nothing(bool done, string text) { if (!done) frame.Say(text, true); }
@@ -145,7 +156,8 @@ internal sealed class LabDemo
             case "operation.preview.commit":
                 if ((Preview.CommitRefusal(Clock()) ?? Moves.CommitRefusal) is { } why) { frame.Say("Not committed: " + why, true); break; }
                 Preview taken = Preview.Take(Clock())!; Sample from = Of(taken);
-                HistoryEntry entry = Moves.Commit(from.Origin, from.Name, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), taken.Statement.Replace("preview ", "commit "), taken.Moves)!;
+                (string Origin, string Name) named = Named?.Invoke(taken) ?? (from.Origin, from.Name);
+                HistoryEntry entry = Moves.Commit(named.Origin, named.Name, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), taken.Statement.Replace("preview ", "commit "), taken.Moves)!;
                 frame.Say($"Committed {entry.Id}: {entry.Name} ({entry.Moves.Count} moves)");
                 break;
             case "view.preview.open":

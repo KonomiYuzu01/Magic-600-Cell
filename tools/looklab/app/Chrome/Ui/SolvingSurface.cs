@@ -234,6 +234,8 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
 public sealed partial class AnchorLayer : Control
 {
     private readonly RelationStrip strip; private readonly Func<TokenSet> tokens; private readonly bool marker; private readonly Func<Vector2> seam;
+    // The grip marker of the Local view takes the route's pattern: broken for Draft, whole for Direct. Null draws none.
+    public Func<bool>? GripDraft { get; set; }
 
     // marker: the smaller marks of the Global view. seam: the point of this view's edge that lies on the seam, 0 to 1.
     public AnchorLayer(RelationStrip strip, Func<TokenSet> tokens, bool marker, Func<Vector2> seam)
@@ -263,6 +265,11 @@ public sealed partial class AnchorLayer : Control
     public override void _Draw()
     {
         TokenSet t = tokens(); float size = t.Px("icon.small") * (marker ? .8f : 1.2f);
+        if (GripDraft is { } route)
+        {
+            bool draft = route(); float grip = size * 2.2f;
+            RouteMark.Draw(this, new Rect2(Size / 2 - new Vector2(grip, grip) / 2, new Vector2(grip, grip)), draft, t.C(draft ? "mark.route.draft" : "mark.route.direct"), 2);
+        }
         foreach (var anchor in Anchors())
         {
             Vector2 at = anchor.Value.At * Size; bool linked = strip.Linked == anchor.Key || (strip.Linked == "occupant" && anchor.Key == "target");

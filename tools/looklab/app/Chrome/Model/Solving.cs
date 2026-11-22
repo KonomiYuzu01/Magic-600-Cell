@@ -381,3 +381,91 @@ public sealed class OrbitJump
         return orbit < OrbitAtlas.Count ? orbit : null;
     }
 }
+
+public enum InputRoute { Draft, Direct }
+public enum GoalResult { Unset, Met, Unmet, Unknown }
+public enum CheckMode { Net, Strict }
+public enum CheckResult { Unchecked, Passed, Failed }
+
+// The draft line (ADR-D01.66): the operation draft in three phases, the route, the Goal and the check mode.
+// The Goal has its own result and never gates a commit: permission is not progress.
+public sealed class OperationDraft
+{
+    public static readonly IReadOnlyList<string> Phases = Array.AsReadOnly(new[] { "Prepare", "Core", "Cleanup" });
+    private readonly List<string>[] twists = { new(), new(), new() };
+    private readonly HashSet<string> held = new(StringComparer.Ordinal);
+    public InputRoute Route { get; private set; } = InputRoute.Draft;
+    public int Active { get; private set; } = 1;
+    public string? Goal { get; private set; }
+    public CheckMode Mode { get; private set; } = CheckMode.Net;
+    public IReadOnlyCollection<string> Held => held;
+    public event Action? Changed;
+    // Raised when the route changes: every held key is let go.
+    public event Action? HeldCleared;
+
+    public IReadOnlyList<string> Twists(int phase) => twists[phase];
+    public int Count => twists.Sum(t => t.Count);
+    public IReadOnlyList<string> Word => twists.SelectMany(t => t).ToArray();
+    public void Hold(string key) => held.Add(key);
+    public void Release(string key) => held.Remove(key);
+
+    // Demo evaluation, marked as demo wherever it shows: no engine reads the head here.
+    public GoalResult GoalResult => Goal == null ? GoalResult.Unset : Count == 0 ? GoalResult.Unknown : twists[1].Count % 2 == 0 ? GoalResult.Met : GoalResult.Unmet;
+    // A word can pass Net and fail Strict: here a Prepare without a Cleanup fails Strict.
+    public CheckResult Result(CheckMode mode) => Count == 0 ? CheckResult.Unchecked : mode == CheckMode.Net || twists[0].Count == twists[2].Count ? CheckResult.Passed : CheckResult.Failed;
+    public CheckResult Checked => Result(Mode);
+    // The complete operation is what a commit takes. Nothing about the Goal is asked here.
+    public bool CanCommit => Route == InputRoute.Draft && Count > 0;
+
+    // The staged .6cs statement is the draft's projection.
+    public string Statement => "preview operation { " + string.Join(" ", Phases.Select((name, i) => $"{name.ToLowerInvariant()} {{ {string.Join("; ", twists[i])} }}")) + " }";
+
+    private static int Phase(string? name) => name == null ? -1 : Phases.ToList().FindIndex(p => string.Equals(p, name.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    public string? SetRoute(string? argument)
+    {
+        InputRoute to;
+        switch (argument?.Trim().ToLowerInvariant())
+        {
+            case null: to = Route == InputRoute.Draft ? InputRoute.Direct : InputRoute.Draft; break;
+            case "draft": to = InputRoute.Draft; break;
+            case "direct": case "live": to = InputRoute.Direct; break;
+            default: return "it needs Draft or Direct";
+        }
+        Route = to; held.Clear(); Safe.Raise(HeldCleared); Safe.Raise(Changed); return null;
+    }
+
+    public string? SelectPhase(string? argument)
+    {
+        int to = argument == null ? (Active + 1) % Phases.Count : Phase(argument);
+        if (to < 0) return "it needs Prepare, Core or Cleanup";
+        Active = to; Safe.Raise(Changed); return null;
+    }
+
+    // In Draft a twist joins the active phase. In Direct it is one complete operation: the caller commits it.
+    public bool Append(string twist)
+    {
+        if (Route == InputRoute.Direct || string.IsNullOrWhiteSpace(twist)) return false;
+        twists[Active].Add(twist.Trim()); Safe.Raise(Changed); return true;
+    }
+
+    // "phase: twist; twist" replaces a phase; no argument takes the last twist of the active phase away.
+    public string? Edit(string? argument)
+    {
+        if (argument == null)
+        {
+            if (twists[Active].Count == 0) return $"{Phases[Active]} has no twist";
+            twists[Active].RemoveAt(twists[Active].Count - 1); Safe.Raise(Changed); return null;
+        }
+        int cut = argument.IndexOf(':'); int phase = cut < 0 ? -1 : Phase(argument.Substring(0, cut));
+        if (phase < 0) return "it needs a phase and its twists, such as core: twist; twist";
+        twists[phase].Clear(); twists[phase].AddRange(argument.Substring(cut + 1).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        Safe.Raise(Changed); return null;
+    }
+
+    public const string SampleGoal = "Wanted in Target";
+    // No argument declares the sample Goal, or takes the declared one away.
+    public void SetGoal(string? argument) { Goal = argument == null ? (Goal == null ? SampleGoal : null) : string.IsNullOrWhiteSpace(argument) ? null : argument.Trim(); Safe.Raise(Changed); }
+    public void SetMode(CheckMode mode) { Mode = mode; Safe.Raise(Changed); }
+    public void Clear() { foreach (var t in twists) t.Clear(); Active = 1; Safe.Raise(Changed); }
+}

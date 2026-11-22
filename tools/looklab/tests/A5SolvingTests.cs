@@ -85,4 +85,36 @@ internal static partial class Program
         Check(jump.Digit(9) == null && jump.Digit(9) == null && jump.Digit(3) == null && jump.Digit(4) == 34, "O then 99 names no orbit");
         jump.Digit(1); jump.Release(); Check(!jump.Held && jump.Typed == "" && jump.Digit(2) == null, "releasing the key");
     }
+
+    // The draft line (ADR-D01.66): three phases, the route, a Goal that never gates, Net and Strict.
+    private static void A5SolvingDraftLineGoalAndRoute()
+    {
+        var draft = new OperationDraft(); int changes = 0, cleared = 0; draft.Changed += () => changes++; draft.HeldCleared += () => cleared++;
+        Sequence(OperationDraft.Phases, new[] { "Prepare", "Core", "Cleanup" });
+        Check(draft.Route == InputRoute.Draft && OperationDraft.Phases[draft.Active] == "Core" && !draft.CanCommit && draft.GoalResult == GoalResult.Unset && draft.Checked == CheckResult.Unchecked, "an empty draft");
+        // Twists join the active phase; the statement is the draft's projection.
+        Check(draft.Append("a") && draft.SelectPhase("prepare") == null && draft.Append("s") && draft.SelectPhase(null) == null && draft.Active == 1 && draft.SelectPhase("middle") != null, "phases");
+        Check(draft.Statement == "preview operation { prepare { s } core { a } cleanup {  } }" && draft.Word.SequenceEqual(new[] { "s", "a" }), draft.Statement);
+        // An unmet Goal leaves the commit open: the Goal has its own result.
+        draft.SetGoal(null);
+        Check(draft.Goal == OperationDraft.SampleGoal && draft.GoalResult == GoalResult.Unmet && draft.CanCommit, "an unmet Goal closed the commit");
+        draft.Append("b"); Check(draft.GoalResult == GoalResult.Met && draft.CanCommit, "a met Goal");
+        draft.SetGoal(null); Check(draft.GoalResult == GoalResult.Unset && draft.CanCommit, "no Goal");
+        // A word can pass Net and fail Strict; the chip never says one "safe".
+        Check(draft.Result(CheckMode.Net) == CheckResult.Passed && draft.Result(CheckMode.Strict) == CheckResult.Failed && draft.Checked == CheckResult.Passed, "Net and Strict are one result");
+        draft.SetMode(CheckMode.Strict); Check(draft.Checked == CheckResult.Failed && draft.CanCommit, "Strict");
+        Check(draft.Edit("cleanup: s'") == null && draft.Checked == CheckResult.Passed && draft.Edit("nowhere: x") != null && draft.Edit(null) == null && draft.Twists(1).Count == 1, "editing a phase");
+        // The Draft/Direct switch clears held keys, and in Direct no twist joins a phase.
+        draft.Hold("O"); draft.Hold("Shift");
+        Check(draft.SetRoute(null) == null && draft.Route == InputRoute.Direct && draft.Held.Count == 0 && cleared == 1, "the switch kept a held key");
+        int count = draft.Count; Check(!draft.Append("c") && draft.Count == count && !draft.CanCommit, "a Direct twist joined the draft");
+        draft.Hold("O"); Check(draft.SetRoute("draft") == null && draft.Held.Count == 0 && cleared == 2 && draft.SetRoute("sideways") != null && draft.CanCommit && changes > 8, "back to Draft");
+        // The twelve commands of the solving surface have the owner's words and are handled by the lab.
+        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        string labels = Read("data/design/command-labels.json"); registry.Relabel(labels);
+        string[] twelve = { "target.current.set", "target.next.set", "target.next.activate", "target.next.clear", "buffer.assign", "target.frame.set", "orbit.switch", "input.destination.set", "intent.set",
+            "operation.phase.select", "operation.phase.edit", "operation.phase.append_twist" };
+        string lab = File.ReadAllText(Path.Combine(Lab, "app/Live/LabSolve.cs")); string handles = lab.Substring(lab.IndexOf("public static bool Handles", StringComparison.Ordinal)); handles = handles.Substring(0, handles.IndexOf(';'));
+        foreach (string id in twelve) Check(registry.Commands.ContainsKey(id) && labels.Contains("\"" + id + "\"", StringComparison.Ordinal) && handles.Contains("\"" + id + "\"", StringComparison.Ordinal), id + " still reads as not in this sample");
+    }
 }

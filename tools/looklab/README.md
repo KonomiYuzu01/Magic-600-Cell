@@ -1086,3 +1086,23 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
 - Not shown: setting a lock on a cell, and the completion moment (no demo action completes an orbit). The list of
   unfinished positions shows the first 120 and counts the rest.
 - The tour key now also works while a radial menu is open.
+
+### A5 stage 10, point 3: the draft line
+
+- A row over the commit bar, under the pair (ADR-D01.66): the route switch (Draft or Direct) with the route mark, the
+  three phases Prepare, Core and Cleanup with the active one marked, the Goal slot with its own result, the check-mode
+  chip (Net or Strict) and the settling lamp. The line draws no commit control: Commit stays on the host's bar.
+- In Draft a twist joins the active phase and the draft is staged as the preview, so the commit bar commits it and a
+  commit or a discard empties the draft. In Direct a twist is one complete operation and is committed at once.
+- The Goal never gates a commit: an unmet Goal leaves Commit enabled. The switch between Draft and Direct lets go of
+  every held key (the orbit jump among them) and changes the grip marker in Local: broken for Draft, whole for Direct.
+- Keys: `Q` Draft or Direct, `P` next phase, `J` append a sample twist, `U` take the last twist of the active phase
+  away, `Y` declare the sample Goal or take it away. The five commands `input.destination.set`, `intent.set`,
+  `operation.phase.select`, `operation.phase.edit` and `operation.phase.append_twist` also run from the palette, so
+  all twelve commands of the solving surface work on the demo state.
+- Demo data: the twists, the Goal result (met or unmet by a fixed rule) and the Net and Strict results (a Prepare
+  without a Cleanup passes Net and fails Strict). No engine evaluates them.
+- Token slots: `mark.route.*`, `draft.phase.*`, `commit.goal.*`, `chip.check_mode.*`, `commit.status.settling`;
+  motion row `route.switch`.
+- Not shown: inline parameters, editing a twist inside a phase by hand (the command takes a typed argument), and the
+  motion of the route switch.

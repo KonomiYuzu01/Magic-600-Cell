@@ -269,6 +269,31 @@
       "key": "Alt+N",
       "context": "global",
       "command": "target.next.clear"
+    },
+    {
+      "key": "Q",
+      "context": "global",
+      "command": "input.destination.set"
+    },
+    {
+      "key": "P",
+      "context": "global",
+      "command": "operation.phase.select"
+    },
+    {
+      "key": "J",
+      "context": "global",
+      "command": "operation.phase.append_twist"
+    },
+    {
+      "key": "U",
+      "context": "global",
+      "command": "operation.phase.edit"
+    },
+    {
+      "key": "Y",
+      "context": "global",
+      "command": "intent.set"
     }
   ]
 }
