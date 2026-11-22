@@ -8,6 +8,8 @@
 
 mod common;
 
+use std::sync::Arc;
+
 use c600_display::codes;
 use c600_display::host::{Backend, Host, MockBackend, Poll, ResourceSet, Ticket};
 use c600_display::pick::{PickMode, PickReply, Presented, PreviewShown, Requested};
@@ -535,5 +537,46 @@ fn ct_rm_03_receipts_replay_and_refuse_reuse() {
     assert!(error.summary.contains("not open"), "{}", error.summary);
     finish(&mut host, 1);
     assert_eq!(host.installed(V1).expect("A").resources, ResourceSet(host.ticket(CommandId(1)).expect("t").0));
+    one_terminal_each(&host);
+}
+
+/// A terminal command keeps its receipt and none of the publication it was prepared from, so the host does not hold
+/// one more publication for every command it has answered (the C9 sitting's slower frames while the runtime was lost
+/// and restarted). The pinned source bytes count a publication's copies: an accepted command holds one until it ends,
+/// the installed publication is the only copy left after it installs, and a superseded, replaced or repeated one
+/// leaves none. Receipts, the repeated request's answer and the terminal log are unchanged.
+#[test]
+fn a_terminal_command_keeps_its_receipt_and_drops_its_publication() {
+    let copies = |publication: &Publication| Arc::clone(&publication.sources[SOURCE_DIGEST]);
+    let base = revision(12);
+    let mut host = host(&base);
+
+    let first = sheet(1, &base, 2);
+    let a = copies(&first);
+    assert_eq!(host.publish(CommandId(1), first).status, Status::Accepted);
+    assert_eq!(Arc::strong_count(&a), 2, "the accepted command holds its publication");
+    let second = sheet_from(1, &base, 10, 3);
+    let b = copies(&second);
+    assert_eq!(host.publish(CommandId(2), second).status, Status::Accepted);
+    let superseded = Status::Cancelled(CancelReason::Superseded { by: CommandId(2) });
+    assert_eq!(status(&host, 1), superseded);
+    assert_eq!(Arc::strong_count(&a), 1, "a superseded command keeps no publication");
+
+    finish(&mut host, 2);
+    assert!(matches!(status(&host, 2), Status::Completed(_)), "{:?}", status(&host, 2));
+    assert_eq!(Arc::strong_count(&b), 2, "the installed publication is the view's only copy");
+
+    install(&mut host, 3, sheet(1, &base, 1));
+    assert_eq!(host.installed(V1).expect("C").command, CommandId(3));
+    assert_eq!(Arc::strong_count(&b), 1, "a replaced publication is dropped");
+
+    let repeated = sheet(1, &base, 2);
+    let r = copies(&repeated);
+    assert_eq!(host.publish(CommandId(1), repeated).status, superseded, "the same terminal for the same request");
+    assert_eq!(Arc::strong_count(&r), 1, "a repeated request is answered from the receipt and not kept");
+    let receipt = host.receipt(CommandId(2)).expect("retained");
+    assert_eq!(host.outcome(CommandId(2), &receipt.request), Some(receipt.clone()));
+    assert!(matches!(receipt.status, Status::Completed(_)));
+    assert_eq!(host.events().len(), 3);
     one_terminal_each(&host);
 }
