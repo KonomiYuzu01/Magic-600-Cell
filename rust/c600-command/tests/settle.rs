@@ -1,0 +1,389 @@
+//! ADR-D01.9's replacement of a shown preview (owner, 22 November 2026, item 4; draft): a new preview may replace the
+//! one the solver is shown, by a command the solver invokes; the replacement takes a new preview ID when it builds,
+//! carries the mark of the change, and the replaced preview can no longer be committed. After a replacement the commit
+//! key is ignored for a settle interval, so a key-down never commits a preview the solver has not seen. A recording
+//! never replaces a preview.
+
+use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, OnceLock};
+use std::time::Duration;
+
+use c600_command::{
+    code, draft_args, word_draft, Caller, Clock, CommandLayer, Error, FrameChain, HeadlessFrames, Invocation, Kind,
+    MemoryStore, Overlay, PreviewState, Provenance, Receipt, Secret, Shell, Status, Table, ONE_KEY_ROW, RECORD_ROW,
+    SETTLE_DRAFT,
+};
+use c600_kernel::json::{self, Value};
+use c600_kernel::Kernel;
+
+const SECRET: [u8; 32] = [7; 32];
+/// A tool's query row, which the solver invokes to run the tool.
+const TOOL: &str = "tool.propose";
+const PLAY: &str = "recording.play";
+
+fn kernel() -> Arc<Kernel> {
+    static KERNEL: OnceLock<Arc<Kernel>> = OnceLock::new();
+    Arc::clone(KERNEL.get_or_init(|| {
+        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..").join("assets");
+        Arc::new(Kernel::load(&assets).unwrap_or_else(|e| panic!("the model in assets/ does not load: {e}")))
+    }))
+}
+
+fn word(letters: &[i64]) -> Value {
+    json::parse(format!(r#"[{{"kind": "word", "moves": {letters:?}}}]"#).as_bytes()).unwrap()
+}
+
+fn text(s: &str) -> Value {
+    Value::String(s.to_owned())
+}
+
+/// A clock the test moves by hand, in milliseconds.
+#[derive(Clone, Default)]
+struct Manual(Arc<AtomicU64>);
+
+impl Manual {
+    fn advance(&self, ms: u64) {
+        self.0.fetch_add(ms, Ordering::SeqCst);
+    }
+}
+
+impl Clock for Manual {
+    fn now(&self) -> Duration {
+        Duration::from_millis(self.0.load(Ordering::SeqCst))
+    }
+}
+
+struct Reader;
+
+impl Provenance for Reader {
+    fn check(&self, _: &[u8]) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn admit(&self, _: &[u8]) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+struct Fixture {
+    layer: CommandLayer,
+    shell: Shell,
+    frames: HeadlessFrames,
+    clock: Manual,
+    sent: u64,
+}
+
+/// A session at the solved state that protects nothing, with the test reader, a tool row, a served `recording.play`
+/// and the manual clock at zero.
+fn fixture() -> Fixture {
+    let k = kernel();
+    let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
+    let table = Table::h08().with_drafts();
+    let mut layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
+    layer.set_provenance(Box::new(Reader));
+    let overlay = Overlay { module: "tools/propose".into(), entry: "run".into() };
+    layer.register_overlay(TOOL, Kind::Query, &[], overlay).unwrap();
+    layer.serve_row(PLAY, Overlay { module: "tools/recording".into(), entry: "play".into() }).unwrap();
+    let clock = Manual::default();
+    layer.set_clock(Box::new(clock.clone()));
+    let shell = Shell::new(Secret::fixed(SECRET), "shell");
+    Fixture { layer, shell, frames: HeadlessFrames::new(), clock, sent: 0 }
+}
+
+impl Fixture {
+    /// The run of a command the solver invoked: the shell invokes `row`, and the host takes the job and runs it.
+    fn solver_run(&mut self, row: &str, args: Value) -> String {
+        let receipt = self.shell.invoke(&mut self.layer, row, args).unwrap();
+        let Status::Running(job) = receipt.status else { panic!("{row}: {:?}", receipt.status) };
+        let program = self.layer.take_program_job().expect("the row's job");
+        assert_eq!(program.job, job);
+        program.run()
+    }
+
+    fn tool_run(&mut self) -> String {
+        self.solver_run(TOOL, json::object([]))
+    }
+
+    /// One envelope on run `run`'s channel, with no token.
+    fn runtime(&mut self, run: &str, row: &str, args: Value) -> Receipt {
+        self.sent += 1;
+        let served = self.layer.table().row(row).is_some_and(|found| found.overlay.is_some());
+        let invocation = Invocation {
+            command: format!("{run}/{}", self.sent),
+            row: row.to_owned(),
+            args,
+            token: None,
+            epoch: self.layer.revision().epoch,
+            budget: served.then_some(c600_command::Budget::CEILING),
+        };
+        self.layer.invoke(&Caller::Runtime { run: run.to_owned() }, invocation)
+    }
+
+    /// Run `run` prepares a preview of `moves`, which builds; returns its ID.
+    fn run_preview(&mut self, run: &str, moves: &[i64]) -> u64 {
+        let receipt = self.runtime(run, "operation.preview", draft_args(&word(moves)));
+        let Status::Running(id) = receipt.status else { panic!("the run's preview: {:?}", receipt.status) };
+        assert_eq!(self.layer.run_jobs(), 1);
+        id
+    }
+
+    /// The solver previews `moves` from the editor's draft with the preview key; the preview builds, and no frame shows
+    /// it yet. Returns its ID.
+    fn solver_preview(&mut self, moves: &[i64]) -> u64 {
+        self.shell.draft = Some(word_draft(&word(moves)));
+        let receipt = self.shell.press(&mut self.layer, "Ctrl+Enter", false).unwrap().unwrap();
+        let Status::Running(id) = receipt.status else { panic!("not admitted: {:?}", receipt.status) };
+        assert_eq!(self.layer.run_jobs(), 1);
+        id
+    }
+
+    /// The display's next frame, which shows the pending preview `id`.
+    fn show(&mut self, id: u64) {
+        self.frames.present(&mut self.shell, &mut self.layer, id).unwrap();
+        assert_eq!(self.layer.preview_state(id), Some(PreviewState::Presented));
+    }
+
+    /// The solver's commit chord, pressed for the preview the shell holds as presented.
+    fn chord(&mut self) -> Receipt {
+        self.shell.press(&mut self.layer, "Ctrl+Shift+Enter", false).unwrap().unwrap()
+    }
+
+    fn execute(&mut self, id: u64) -> Receipt {
+        let args = json::object([("preview", Value::Int(id as i64))]);
+        self.shell.invoke(&mut self.layer, "operation.execute", args).unwrap()
+    }
+
+    fn transactions(&self) -> usize {
+        self.layer.store().log.len()
+    }
+}
+
+fn code_of(receipt: &Receipt) -> Option<&'static str> {
+    receipt.status.code()
+}
+
+fn committed(receipt: &Receipt) -> bool {
+    matches!(receipt.status, Status::Committed(_))
+}
+
+/// The state digest after `moves` from the solved state.
+fn end_of(moves: &[i64]) -> String {
+    let k = kernel();
+    let recipe = k.recipe(&word(moves)).unwrap();
+    match k.derive(&k.solved(), &recipe, &k.protected_set(&[]).unwrap()).unwrap() {
+        c600_kernel::Derivation::Derived(d) => d.state.digest().to_owned(),
+        c600_kernel::Derivation::Refused(_) => panic!("the word derives"),
+    }
+}
+
+/// The run of a command the solver invoked replaces the preview the solver is shown. The replacement takes a new ID
+/// when it builds, names the preview it replaced in its summary, and the replaced preview ends: the chord, pressed for
+/// it, commits nothing, and a commit that names it is `preview_replaced`.
+#[test]
+fn a_run_replaces_the_shown_preview_with_a_new_id_and_the_mark() {
+    let mut f = fixture();
+    let solved = f.layer.revision().digest.clone();
+    let run = f.tool_run();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    assert_eq!(f.layer.preview().unwrap().replaced, None, "the first preview replaced nothing");
+    assert!(f.layer.preview().unwrap().summary().get("replaced").is_none());
+
+    let theirs = f.run_preview(&run, &[2]);
+    assert_ne!(theirs, mine);
+    let pending = f.layer.preview().unwrap();
+    assert_eq!((pending.id, pending.state, pending.replaced), (theirs, PreviewState::Ready, Some(mine)));
+    assert_eq!(pending.summary().get("replaced"), Some(&Value::Int(mine as i64)), "the preview view's mark");
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Replaced));
+
+    let journal = f.transactions();
+    let press = f.chord();
+    assert!(!committed(&press), "the chord for the replaced preview: {:?}", press.status);
+    let named = f.execute(mine);
+    assert_eq!(code_of(&named), Some(code::PREVIEW_REPLACED), "{:?}", named.status);
+    assert_eq!(f.transactions(), journal);
+    assert_eq!(f.layer.revision().digest, solved, "nothing was committed");
+}
+
+/// After the replacement is shown, the commit key is ignored for the settle interval: a press on the first frame, or
+/// any press before the interval has passed, is `busy.preview_settling`, journals nothing and leaves the preview
+/// pending and presented. The first press after the interval commits the replacement. The key stays available
+/// throughout, since the interval ends with the clock and not with an action; `settle_remaining` says how long is left.
+#[test]
+fn the_commit_key_is_ignored_for_the_settle_interval() {
+    let mut f = fixture();
+    assert_eq!(f.layer.settle_interval(), SETTLE_DRAFT);
+    let run = f.tool_run();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    assert_eq!(f.layer.settle_remaining(), None, "a preview that replaced nothing does not wait");
+    let theirs = f.run_preview(&run, &[2]);
+    assert_eq!(f.layer.settle_remaining(), Some(SETTLE_DRAFT), "no frame shows the replacement yet");
+    f.show(theirs);
+
+    let journal = f.transactions();
+    for (wait, left) in [(0, 250), (100, 150), (149, 1)] {
+        f.clock.advance(wait);
+        assert_eq!(f.layer.settle_remaining(), Some(Duration::from_millis(left)));
+        assert!(f.layer.availability("operation.execute").is_ok(), "the key stays available");
+        let press = f.chord();
+        assert_eq!(code_of(&press), Some(code::PREVIEW_SETTLING), "{left} ms left: {:?}", press.status);
+        assert!(matches!(press.status, Status::Refused(_)));
+        assert_eq!(f.transactions(), journal, "an ignored press journals nothing");
+        assert_eq!(f.layer.preview_state(theirs), Some(PreviewState::Presented));
+    }
+    f.clock.advance(1);
+    assert_eq!(f.layer.settle_remaining(), Some(Duration::ZERO));
+    assert!(committed(&f.chord()), "the first press after the interval commits");
+    assert_eq!(f.layer.revision().digest, end_of(&[2]));
+    assert_eq!(f.layer.preview_state(theirs), Some(PreviewState::Committed));
+}
+
+/// The interval counts from the first frame that shows the replacement, not from its build: time that passes while no
+/// frame shows it does not count, and a presentation that ends and starts again, or moves to a new device epoch,
+/// waits the whole interval again.
+#[test]
+fn the_interval_counts_from_the_frame_that_shows_the_replacement() {
+    let mut f = fixture();
+    let run = f.tool_run();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    let theirs = f.run_preview(&run, &[2]);
+    f.clock.advance(10_000);
+    f.show(theirs);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING), "built long ago, shown now");
+
+    f.clock.advance(300);
+    let blank = f.frames.other(None, FrameChain::BuiltIn);
+    assert!(f.shell.present(&mut f.layer, theirs, &blank).is_err(), "the frame shows no preview");
+    assert_eq!(f.layer.preview_state(theirs), Some(PreviewState::Ready));
+    f.show(theirs);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING), "shown again: the interval starts again");
+
+    f.clock.advance(300);
+    f.frames.recover();
+    f.show(theirs);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING), "a new device epoch starts a new presentation");
+
+    f.clock.advance(100);
+    f.show(theirs);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING), "a later frame of the same run does not restart it");
+    f.clock.advance(150);
+    f.show(theirs);
+    assert!(committed(&f.chord()), "250 ms after the presentation started");
+}
+
+/// A replacement of a replacement the solver never saw keeps the mark of the preview they did see, so the settle
+/// interval still applies; a preview that replaces only previews nobody was shown carries no mark and commits on its
+/// first presented press, as before ADR-D01.9.
+#[test]
+fn the_mark_names_the_preview_the_solver_last_saw() {
+    let mut f = fixture();
+    let run = f.tool_run();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    let first = f.run_preview(&run, &[2]);
+    let second = f.run_preview(&run, &[3]);
+    assert_eq!(f.layer.preview_state(first), Some(PreviewState::Replaced));
+    assert_eq!(f.layer.preview().map(|p| (p.id, p.replaced)), Some((second, Some(mine))));
+    f.show(second);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING));
+
+    let mut g = fixture();
+    let unseen = g.solver_preview(&[1]);
+    let again = g.solver_preview(&[2]);
+    assert_eq!(g.layer.preview_state(unseen), Some(PreviewState::Replaced));
+    assert_eq!(g.layer.preview().map(|p| (p.id, p.replaced)), Some((again, None)));
+    g.show(again);
+    assert_eq!(g.layer.settle_remaining(), None);
+    assert!(committed(&g.chord()), "no shown preview was replaced, so nothing waits");
+}
+
+/// The settle interval applies to every replacement of a shown preview, the solver's own preview key included: the
+/// key-down that commits may come before the solver has seen the new preview.
+#[test]
+fn the_solvers_own_replacement_also_settles() {
+    let mut f = fixture();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    let next = f.solver_preview(&[2]);
+    assert_eq!(f.layer.preview().map(|p| p.replaced), Some(Some(mine)));
+    f.show(next);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING));
+    f.clock.advance(SETTLE_DRAFT.as_millis() as u64);
+    assert!(committed(&f.chord()));
+    assert_eq!(f.layer.revision().digest, end_of(&[2]));
+}
+
+/// The interval is the host's to set from the tuned token data: a zero interval waits for nothing beyond the
+/// presentation, and a longer one is kept.
+#[test]
+fn the_host_sets_the_interval() {
+    let mut f = fixture();
+    f.layer.set_settle(Duration::from_millis(400));
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    let next = f.solver_preview(&[2]);
+    f.show(next);
+    f.clock.advance(399);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING));
+    f.layer.set_settle(Duration::ZERO);
+    assert!(committed(&f.chord()), "a zero interval");
+}
+
+/// A recording never replaces a preview: a run inside a `recording.play` job is refused with `not_granted` while a
+/// preview is pending, shown or not, and the pending preview stays. Once the playback is reported, a tool's run
+/// replaces the shown preview as before. With no preview pending, the recording's run prepares one, which replaced
+/// nothing. (The layer also refuses a run that the recording's run invoked; the program lane holds one job, so no
+/// such run starts today.)
+#[test]
+fn a_recording_never_replaces_a_preview() {
+    let mut f = fixture();
+    let playback = f.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let mine = f.solver_preview(&[1]);
+    let refused = f.runtime(&playback, "operation.preview", draft_args(&word(&[2])));
+    assert_eq!(code_of(&refused), Some(code::NOT_GRANTED), "{:?}", refused.status);
+    assert_eq!(f.layer.preview().map(|p| p.id), Some(mine), "the ready preview stays");
+    f.show(mine);
+    let refused = f.runtime(&playback, "operation.preview", draft_args(&word(&[2])));
+    assert_eq!(code_of(&refused), Some(code::NOT_GRANTED), "{:?}", refused.status);
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented), "the shown preview stays");
+
+    // The playback ends; a tool's run replaces the shown preview.
+    let job = playback.strip_prefix("job-").and_then(|n| n.parse().ok()).expect("a job's run");
+    f.layer.finish_program_job(job, Ok(Value::Null)).expect("the playback is reported");
+    let tool = f.tool_run();
+    let theirs = f.run_preview(&tool, &[2]);
+    assert_eq!(f.layer.preview().map(|p| p.replaced), Some(Some(mine)));
+    f.show(theirs);
+    f.clock.advance(SETTLE_DRAFT.as_millis() as u64);
+    assert!(committed(&f.chord()));
+
+    let mut g = fixture();
+    let playback = g.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let played = g.run_preview(&playback, &[3]);
+    assert_eq!(g.layer.preview().map(|p| (p.id, p.replaced)), Some((played, None)));
+}
+
+/// ADR-D01.12's one-key press commits the solver's own macro while a replacement waits out its interval: it is the
+/// solver's own press on their own record, not the commit key on a preview they may not have seen.
+#[test]
+fn the_one_key_press_does_not_wait_for_a_replacement() {
+    let mut f = fixture();
+    let letters = Value::Array(vec![Value::Int(3)]);
+    let args = json::object([("payload", letters), ("provenance", text("block")), ("record", text("own"))]);
+    let receipt = f.shell.invoke(&mut f.layer, RECORD_ROW, args).unwrap();
+    assert!(matches!(receipt.status, Status::Completed(_)), "{:?}", receipt.status);
+
+    let run = f.tool_run();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    let theirs = f.run_preview(&run, &[2]);
+    f.show(theirs);
+    let press =
+        f.shell.invoke(&mut f.layer, ONE_KEY_ROW, json::object([("draft", json::object([("record", text("own"))]))]));
+    assert!(committed(&press.unwrap()), "the one-key press");
+    assert_eq!(f.layer.revision().digest, end_of(&[3]));
+    assert_eq!(f.layer.preview_state(theirs), Some(PreviewState::Replaced));
+}

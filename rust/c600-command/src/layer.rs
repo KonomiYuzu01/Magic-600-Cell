@@ -99,6 +99,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use c600_digest::sha256_hex;
 use c600_jumble::codes::MENU_WORD_NEEDS_JUMBLE_ON;
@@ -158,6 +159,40 @@ pub const EXPLORE_ROW: &str = "explore.set";
 /// journal entry to one of its moves, recorded as its own action naming the entry and the move, so nothing is
 /// rewritten.
 pub const PARTIAL_UNDO_ROW: &str = "session.undo.partial";
+/// ADR-D01.9's settle interval until Look Lab tunes it and stores it as token data (owner, 22 November 2026, item 4;
+/// draft): a preview that replaced one the solver was shown commits only once this long has passed since the first
+/// frame that shows it.
+pub const SETTLE_DRAFT: Duration = Duration::from_millis(250);
+/// The stored row that plays a recording; a run inside its job never replaces a preview (ADR-D01.9).
+const RECORDING_PLAY_ROW: &str = "recording.play";
+
+/// The monotonic clock the layer measures ADR-D01.9's settle interval with: the time since a fixed start. The layer
+/// starts with the process's clock ([`MonotonicClock`]); a host may give it another ([`CommandLayer::set_clock`]).
+pub trait Clock: Send + Sync {
+    fn now(&self) -> Duration;
+}
+
+/// The process's monotonic clock, the layer's default.
+#[derive(Debug)]
+pub struct MonotonicClock(Instant);
+
+impl MonotonicClock {
+    pub fn new() -> MonotonicClock {
+        MonotonicClock(Instant::now())
+    }
+}
+
+impl Default for MonotonicClock {
+    fn default() -> Self {
+        MonotonicClock::new()
+    }
+}
+
+impl Clock for MonotonicClock {
+    fn now(&self) -> Duration {
+        self.0.elapsed()
+    }
+}
 /// 0.4's word limit: a partial undo's inverse enters the kernel in word steps of at most this many letters, since an
 /// entry's expansion may be longer than one word step allows.
 const WORD_CHUNK: usize = 100_000;
@@ -267,6 +302,10 @@ pub struct Preview {
     pub recipe: Recipe,
     pub effect: Effect,
     pub protection: Protection,
+    /// The preview the solver was shown that this one replaced (ADR-D01.9; draft): the preview view marks the change,
+    /// and the commit waits out the settle interval once a frame shows this one. A preview that replaces an unseen
+    /// replacement keeps its mark, since the solver has seen neither. `None` when it replaced nothing the solver saw.
+    pub replaced: Option<u64>,
 }
 
 fn rows_json(rows: &[SupportRow]) -> Value {
@@ -310,6 +349,10 @@ impl Preview {
             fields.insert("mode".to_owned(), Value::String(policy_name(ProtectionMode::Strict).to_owned()));
             let prefix = self.protection.first_refused_prefix.map_or(Value::Null, |n| Value::Int(n as i64));
             fields.insert("first_refused_prefix".to_owned(), prefix);
+        }
+        // ADR-D01.9's mark: only a replacement names the preview it replaced, so every other summary is as before.
+        if let (Value::Object(fields), Some(replaced)) = (&mut summary, self.replaced) {
+            fields.insert("replaced".to_owned(), Value::Int(replaced as i64));
         }
         summary
     }
@@ -806,8 +849,12 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     slot: Option<Preview>,
     /// The newest frame the adapter reported (RM.26).
     frame: Option<PresentedFrame>,
-    /// The pending preview's presentation run: its ID and the stamp of the frame that started showing it (ONE.41).
-    run: Option<(u64, FrameStamp)>,
+    /// The pending preview's presentation run: its ID, the stamp of the frame that started showing it (ONE.41) and the
+    /// clock's time when the layer read that frame (ADR-D01.9's settle interval).
+    run: Option<(u64, FrameStamp, Duration)>,
+    /// The clock and the settle interval of ADR-D01.9 ([`CommandLayer::set_clock`], [`CommandLayer::set_settle`]).
+    clock: Box<dyn Clock>,
+    settle_interval: Duration,
     /// The workspace records by name (KN5's stage 3).
     records: BTreeMap<String, WorkspaceRecord>,
     /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
@@ -896,6 +943,8 @@ impl<S: Store> CommandLayer<S> {
             slot: None,
             frame: None,
             run: None,
+            clock: Box::new(MonotonicClock::new()),
+            settle_interval: SETTLE_DRAFT,
             records: BTreeMap::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
@@ -1492,19 +1541,74 @@ impl<S: Store> CommandLayer<S> {
         self.slot.as_ref().filter(|p| p.state == PreviewState::Presented)
     }
 
-    /// Whether run `run` may prepare a preview now (the owner's readings of 18 November 2026,
-    /// `docs/wiki/decisions/owner-decisions-2026-11-18.md`). Only inside a command the solver invoked (finding B2 of the
-    /// KN5 boundary attack, ONE.34): the one check is here, not in each host, and it is on
-    /// ([`SOLVER_COMMAND_CHECK`]). And not while the solver is shown a preview, which only the solver's action ends
-    /// (findings B1 and L17, KN5.12, ONE.42 option (a)).
+    /// Whether run `run` may prepare a preview now. Only inside a command the solver invoked (finding B2 of the KN5
+    /// boundary attack, ONE.34; the owner's reading of 18 November 2026, `docs/wiki/decisions/owner-decisions-2026-11-18.md`):
+    /// the one check is here, not in each host, and it is on ([`SOLVER_COMMAND_CHECK`]). Such a run may replace the
+    /// preview the solver is shown (ADR-D01.9, which answers KN5.12; owner, 22 November 2026, and supersedes the
+    /// refusal of findings B1 and L17's reading): the replacement takes a new ID when it builds, carries the mark of the
+    /// change ([`Preview::replaced`]), and its commit waits out the settle interval ([`Self::settled`]). A recording
+    /// never replaces a preview: a run inside a `recording.play` job is refused while a preview is pending
+    /// (`LG3:capability.not_granted`).
     fn run_may_preview(&self, run: &str) -> Result<(), Error> {
         if SOLVER_COMMAND_CHECK && !self.inside_solver_command(run) {
             let detail = format!("run `{run}` is not inside a command the solver invoked (ONE.34)");
             return Err(Error::new(code::OUTSIDE_SOLVER_COMMAND, detail));
         }
-        if let Some(shown) = self.shown() {
-            let detail = format!("preview {} is shown to the solver; only the solver ends it", shown.id);
-            return Err(Error::new(code::PREVIEW_SHOWN, detail));
+        if let Some(pending) = self.slot.as_ref().filter(|_| self.in_recording(run)) {
+            let detail = format!("a recording never replaces a preview (ADR-D01.9): preview {} is pending", pending.id);
+            return Err(Error::new(code::NOT_GRANTED, detail));
+        }
+        Ok(())
+    }
+
+    /// Whether run `run` runs inside a `recording.play` job: its job, or a job of a run that invoked it, plays a
+    /// recording. A chain that does not get older is not followed.
+    fn in_recording(&self, run: &str) -> bool {
+        let mut run = run.to_owned();
+        let mut below = u64::MAX;
+        loop {
+            let Some(job) = ProgramJob::job_of(&run).filter(|&job| job < below) else {
+                return false;
+            };
+            let Some(program) = self.running.get(&job) else {
+                return false;
+            };
+            if program.row == RECORDING_PLAY_ROW {
+                return true;
+            }
+            match &program.caller {
+                Caller::Shell => return false,
+                Caller::Runtime { run: parent } => (run, below) = (parent.clone(), job),
+            }
+        }
+    }
+
+    /// The mark a preview built now takes from the pending one (ADR-D01.9): the pending preview's ID when the solver is
+    /// shown it, the mark it carries when it is an unseen replacement, and none otherwise.
+    fn replacing(&self) -> Option<u64> {
+        let pending = self.slot.as_ref()?;
+        match pending.state {
+            PreviewState::Presented => Some(pending.id),
+            _ => pending.replaced,
+        }
+    }
+
+    /// ADR-D01.9's settle interval: a preview that replaced one the solver was shown commits only once the interval has
+    /// passed since the layer read the first frame of its current presentation, so a key-down never commits a preview
+    /// the solver has not seen. A press inside the interval is refused before its token is spent
+    /// (`KN5:busy.preview_settling`; draft), and the next press after it commits. A presentation that ends and starts
+    /// again waits again. [`CommandLayer::settle_remaining`] says how long the pending preview still waits.
+    fn settled(&self, p: &Preview) -> Result<(), Error> {
+        let since = match &self.run {
+            Some((run, _, since)) if *run == p.id => *since,
+            _ => return Err(Error::new(code::NO_FRESH_PREVIEW, format!("preview {} is not presented", p.id))),
+        };
+        let shown = self.clock.now().saturating_sub(since);
+        if shown < self.settle_interval {
+            let (shown, interval) = (shown.as_millis(), self.settle_interval.as_millis());
+            let detail =
+                format!("preview {} replaced a shown preview and has been shown {shown} of {interval} ms", p.id);
+            return Err(Error::new(code::PREVIEW_SETTLING, format!("{detail} (ADR-D01.9)")));
         }
         Ok(())
     }
@@ -1867,9 +1971,9 @@ impl<S: Store> CommandLayer<S> {
                 self.generation += 1;
             }
             let continued =
-                self.run.as_ref().is_some_and(|(run, first)| *run == p.id && first.same_surface(&frame.stamp));
+                self.run.as_ref().is_some_and(|(run, first, _)| *run == p.id && first.same_surface(&frame.stamp));
             if !continued {
-                self.run = Some((p.id, frame.stamp.clone()));
+                self.run = Some((p.id, frame.stamp.clone(), self.clock.now()));
             }
         } else {
             if p.state == PreviewState::Presented {
@@ -1889,7 +1993,7 @@ impl<S: Store> CommandLayer<S> {
     /// surface and surface generation, no older than the frame that started the run and no newer than the newest frame
     /// reported (ONE.41).
     fn in_run(&self, id: u64, stamp: &FrameStamp) -> bool {
-        let (Some((run, first)), Some(newest)) = (&self.run, &self.frame) else {
+        let (Some((run, first, _)), Some(newest)) = (&self.run, &self.frame) else {
             return false;
         };
         *run == id
@@ -1897,6 +2001,41 @@ impl<S: Store> CommandLayer<S> {
             && newest.stamp.same_surface(stamp)
             && first.sequence <= stamp.sequence
             && stamp.sequence <= newest.stamp.sequence
+    }
+
+    /// Gives the layer the clock it measures ADR-D01.9's settle interval with; until then it is the process's
+    /// [`MonotonicClock`]. A presentation already running waits the whole interval again on the new clock.
+    pub fn set_clock(&mut self, clock: Box<dyn Clock>) {
+        self.clock = clock;
+        if let Some((_, _, since)) = &mut self.run {
+            *since = self.clock.now();
+        }
+        self.generation += 1;
+    }
+
+    /// Sets ADR-D01.9's settle interval, which the host reads from the tuned token data; until then it is
+    /// [`SETTLE_DRAFT`]. A zero interval waits for nothing beyond the presentation.
+    pub fn set_settle(&mut self, interval: Duration) {
+        self.settle_interval = interval;
+        self.generation += 1;
+    }
+
+    /// ADR-D01.9's settle interval in force.
+    pub fn settle_interval(&self) -> Duration {
+        self.settle_interval
+    }
+
+    /// How long a press of the commit key on the pending preview is still ignored (ADR-D01.9): `None` when there is no
+    /// pending preview or it replaced nothing the solver was shown; the whole interval while no frame shows it; zero
+    /// once it has settled. Availability does not change when it reaches zero, so a host that greys the key reads this.
+    pub fn settle_remaining(&self) -> Option<Duration> {
+        let p = self.slot.as_ref().filter(|p| p.replaced.is_some())?;
+        Some(match &self.run {
+            Some((run, _, since)) if *run == p.id => {
+                self.settle_interval.saturating_sub(self.clock.now().saturating_sub(*since))
+            }
+            _ => self.settle_interval,
+        })
     }
 
     /// Gives the layer the host's provenance reader (PS1.16, KN5.26). Without one, `workspace.set` and a draft that
@@ -2660,8 +2799,8 @@ impl<S: Store> CommandLayer<S> {
         caller: Caller,
     ) {
         let key = (caller.scope(), command.to_owned());
-        // A run's preview is checked again when it builds: a frame may have presented the solver's preview since the
-        // run's job was admitted, and only the solver's action ends a shown preview (findings B1 and L17).
+        // A run's preview is checked again when it builds: the run may have ended, or a recording's run may find a
+        // preview pending that was not when its job was admitted.
         if let Caller::Runtime { run } = &caller {
             if let Err(error) = self.run_may_preview(run) {
                 self.settle(&key, Status::Failed(error));
@@ -2690,6 +2829,7 @@ impl<S: Store> CommandLayer<S> {
                     recipe,
                     effect,
                     protection,
+                    replaced: self.replacing(),
                 };
                 let result = ResultRef { job: Some(id), digest: digest(&preview.summary()) };
                 if let Some(old) = self.slot.replace(preview) {
@@ -2801,6 +2941,12 @@ impl<S: Store> CommandLayer<S> {
         let Some(id) = nat(invocation.args.get("preview")) else {
             return refused(code::ARGUMENT_FORM, "`preview` is a preview ID");
         };
+        // ADR-D01.9's settle interval ignores the press before its token is spent. It is not a gate: it ends with the
+        // clock, not with an action that advances the generation (LI.21), so availability keeps the key on and a press
+        // inside the interval is ignored.
+        if let Some(p) = self.slot.as_ref().filter(|p| p.id == id && p.replaced.is_some()) {
+            self.settled(p)?;
+        }
         let binding = self.authenticate(invocation)?;
         self.commit_lane()?;
         self.bound(&binding, invocation)?;
@@ -2911,6 +3057,7 @@ impl<S: Store> CommandLayer<S> {
             recipe,
             effect,
             protection,
+            replaced: self.replacing(),
         };
         if let Some(old) = self.slot.replace(preview) {
             self.history.insert(old.id, PreviewState::Replaced);

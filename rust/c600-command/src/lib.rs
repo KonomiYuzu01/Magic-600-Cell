@@ -48,10 +48,14 @@
 //!   before it with `KN5:consistency.unadmitted_journal_action`, so the session does not open as an
 //!   intact writable one. The journal carries no authentication: an edit that rewrites a program-made action as the
 //!   solver's own is not detected.
-//! - Findings B1 and L17 (KN5.12, ONE.42 option (a)): a run cannot replace or cancel a preview the solver is shown;
-//!   only the solver's action ends it. While a frame presents the pending preview, a run's preview and a run's cancel
-//!   of it are refused with `KN5:capability.preview_shown`, also for the run of a command the solver
-//!   invoked.
+//! - Findings B1 and L17 (KN5.12): a run cannot cancel a preview the solver is shown; only the solver's action ends
+//!   it, and a run's cancel of it is refused with `KN5:capability.preview_shown`, also for the run of a command the
+//!   solver invoked. ADR-D01.9 (owner, 22 November 2026, item 4; draft) answers KN5.12's replacement: the run of a
+//!   command the solver invoked may replace the shown preview. The replacement takes a new ID when it builds and names
+//!   the preview it replaced ([`Preview::replaced`]), and the commit key ignores a press on it for a settle interval
+//!   from the first frame that shows it (`KN5:busy.preview_settling`; [`SETTLE_DRAFT`] until Look Lab tunes it, the
+//!   host's [`Clock`]), so a key-down never commits a preview the solver has not seen. A recording never replaces a
+//!   preview: a run inside a `recording.play` job is refused with `LG3:capability.not_granted` while one is pending.
 //! - Finding B2 (ONE.34): a run prepares a preview only inside a command the solver invoked, and the one check is in
 //!   the layer, not in each host. The run must be the run of a program job ([`ProgramJob::run`], `job-<id>`) that the
 //!   host has taken and not yet reported, invoked by the shell or by a run that is itself inside such a command.
@@ -592,8 +596,8 @@ pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPre
 pub use journal::{EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT, JOURNAL_ROW};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 pub use layer::{
-    Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, EXPLORE_ROW, LAYOUT_REDO_ROW,
-    LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
+    Caller, Clock, CommandLayer, Invocation, JobOutput, MonotonicClock, Preview, PreviewState, ProgramJob, EXPLORE_ROW,
+    LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW, SETTLE_DRAFT,
 };
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,

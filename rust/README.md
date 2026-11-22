@@ -1729,7 +1729,11 @@ run or not applicable is no pass (PHS.63).
   - Findings B1 and L17 (KN5.12, ONE.42 option (a)): only the solver's action ends a preview the solver is shown.
     While a frame presents the pending preview, a run's preview and a run's cancel of it are refused with
     `KN5:capability.preview_shown` (a draft code until LP3's freeze registered it), also for the run of a command the
-    solver invoked.
+    solver invoked. ADR-D01.9 (owner, 22 November 2026, item 4) replaces the refusal of the run's preview: the run of
+    a command the solver invoked may replace the shown preview, the replacement names the preview it replaced, and the
+    commit key ignores a press on it for a settle interval from the first frame that shows it
+    (`KN5:busy.preview_settling`, a draft; 250 ms until Look Lab tunes it). A run's cancel stays refused, and a
+    recording's run never replaces a preview (`LG3:capability.not_granted`).
   - Finding B2 (ONE.34): one check in the layer, not in each host. A run prepares a preview only as the run of a
     program job the host has taken and not yet reported (`ProgramJob::run`, `job-<id>`), invoked by the shell or by a
     run that is itself inside such a command; otherwise `KN5:capability.outside_solver_command` (registered at LP3's

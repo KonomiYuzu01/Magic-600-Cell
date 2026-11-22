@@ -4,6 +4,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::token::args_digest;
 use c600_command::{
@@ -103,8 +104,10 @@ fn fixture(protected: &[i64]) -> Fixture {
     let k = kernel();
     let protected = k.protected_set(protected).unwrap();
     let start = k.solved();
-    let layer =
+    let mut layer =
         CommandLayer::new(k, Table::h08(), Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
+    // ADR-D01.9's settle interval is tested in tests/settle.rs; these sessions commit on the first presented press.
+    layer.set_settle(Duration::ZERO);
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
 }
 
@@ -703,6 +706,9 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("present", false),
         // RM.26's other adapter report: presentation cannot be confirmed.
         ("presentation_unavailable", false),
+        // ADR-D01.9's settle interval (owner, 22 November 2026, item 4): the host's clock and the tuned interval.
+        ("set_clock", false),
+        ("set_settle", false),
         ("set_provenance", false),
         ("set_views", false),
         ("pin_menu", false),

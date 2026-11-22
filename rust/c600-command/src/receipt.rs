@@ -62,10 +62,14 @@ pub mod code {
     /// a protected orbit without its confirmation (finding B7 of the KN5 boundary attack; the owner's reading of
     /// 18 November 2026). The session opens in read-only recovery before it (KN5.23).
     pub const UNADMITTED_JOURNAL_ACTION: &str = "KN5:consistency.unadmitted_journal_action";
-    /// A run's `operation.preview` or `operation.preview.cancel` while the solver is shown a preview: only the solver's
-    /// action ends a shown preview (findings B1 and L17 of the KN5 boundary attack, KN5.12, ONE.42; the owner's reading
-    /// of 18 November 2026).
+    /// A run's `operation.preview.cancel` of the preview the solver is shown: only the solver's action ends a shown
+    /// preview (findings B1 and L17 of the KN5 boundary attack, KN5.12; the owner's reading of 18 November 2026). A
+    /// run's preview may replace it since ADR-D01.9 ([`PREVIEW_SETTLING`]).
     pub const PREVIEW_SHOWN: &str = "KN5:capability.preview_shown";
+    /// A press of the commit key on a preview that replaced one the solver was shown, inside ADR-D01.9's settle interval
+    /// (owner, 22 November 2026, item 4; draft until chapter 13 registers it): the press is ignored before its token is
+    /// spent, and a press after the interval commits.
+    pub const PREVIEW_SETTLING: &str = "KN5:busy.preview_settling";
     /// A run's `operation.preview` outside a command the solver invoked: a preview is prepared only inside one (finding
     /// B2 of the KN5 boundary attack, ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must
     /// start its runs inside a solver command.

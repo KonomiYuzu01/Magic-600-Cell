@@ -5,10 +5,11 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use c600_command::{
-    code, draft_args, word_draft, Caller, CommandLayer, Direction, Error, HeadlessFrames, Invocation, JobOutput, Kind,
-    MemoryStore, Overlay, PreviewState, Provenance, Receipt, RecordValue, Reopen, Secret, Shell, Status, Table,
+    code, draft_args, word_draft, Caller, Clock, CommandLayer, Direction, Error, HeadlessFrames, Invocation, JobOutput,
+    Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, RecordValue, Reopen, Secret, Shell, Status, Table,
     RECORD_ROW,
 };
 use c600_kernel::json::{self, Value};
@@ -49,6 +50,15 @@ impl Provenance for Reader {
 
     fn admit(&self, _: &[u8]) -> Result<(), Error> {
         Ok(())
+    }
+}
+
+/// A clock that never moves: ADR-D01.9's settle interval never ends on it.
+struct Frozen;
+
+impl Clock for Frozen {
+    fn now(&self) -> Duration {
+        Duration::ZERO
     }
 }
 
@@ -160,12 +170,15 @@ fn b2_a_preview_outside_a_command_the_solver_invoked_is_refused() {
 ///
 /// Observed on 4c20ce30: the press answers `committed`, and the head is the end state of the run's word `[2]`.
 ///
-/// Fixed under option (a), the owner's reading of 18 November 2026: a run cannot replace a preview the solver is shown,
-/// even the run of a command the solver invoked; its preview is refused with `KN5:capability.preview_shown`, and the
-/// chord commits the solver's own word.
+/// Fixed under option (a) on 18 November 2026, when the run's preview was refused. ADR-D01.9 (owner, 22 November 2026,
+/// item 4) answers KN5.12 with a version of option (b): the run of a command the solver invoked replaces the shown
+/// preview, the replacement names the preview it replaced, and the commit key ignores a press on it for a settle
+/// interval from the first frame that shows it. The chord on that first frame is `KN5:busy.preview_settling`, journals
+/// nothing, and the head stays at the solved state. The clock here never moves, so the interval never ends.
 #[test]
 fn b1_the_commit_chord_does_not_commit_a_word_a_run_swapped_in_one_frame_before() {
     let mut f = fixture();
+    f.layer.set_clock(Box::new(Frozen));
     let k = kernel();
     let (solvers, runs) = (word(&[1]), word(&[2]));
     let (_, run) = f.solver_run();
@@ -181,33 +194,32 @@ fn b1_the_commit_chord_does_not_commit_a_word_a_run_swapped_in_one_frame_before(
 
     // The run's proposal, on its own channel, while the solver looks at their preview.
     let swap = f.runtime(&run, "operation.preview", draft_args(&runs));
-    let Status::Running(theirs) = swap.status else {
-        // Option (a) of ONE.42: the replacement is refused, and the solver's preview stays.
-        assert!(refused(&swap));
-        assert_eq!(swap.status.code(), Some(code::PREVIEW_SHOWN), "{:?}", swap.status);
-        assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
-        let press = f.shell.press(&mut f.layer, "Ctrl+Shift+Enter", false);
-        assert!(matches!(&press, Ok(Some(r)) if matches!(r.status, Status::Committed(_))), "{press:?}");
-        assert_eq!(f.layer.revision().digest, end_of(&solvers), "the chord commits the solver's own word");
-        return;
-    };
+    let Status::Running(theirs) = swap.status else { panic!("the run's replacement: {:?}", swap.status) };
     f.layer.run_jobs();
+    assert_eq!(f.layer.preview().map(|p| (p.id, p.replaced)), Some((theirs, Some(mine))), "the mark");
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Replaced));
     // The display's next frame shows the pending preview, now the run's.
-    let _ = f.frames.present(&mut f.shell, &mut f.layer, theirs);
+    f.frames.present(&mut f.shell, &mut f.layer, theirs).unwrap();
 
     // The solver's chord, pressed for the preview they previewed and read.
+    let journal = f.transactions();
     let press = f.shell.press(&mut f.layer, "Ctrl+Shift+Enter", false);
     let committed = matches!(&press, Ok(Some(receipt)) if matches!(receipt.status, Status::Committed(_)));
     assert!(!committed, "the chord committed on the first frame after the swap: {press:?}");
+    assert!(matches!(&press, Ok(Some(r)) if r.status.code() == Some(code::PREVIEW_SETTLING)), "{press:?}");
+    assert_eq!(f.transactions(), journal);
     assert_ne!(f.layer.revision().digest, end_of(&runs), "the head is the end state of the run's word");
 }
 
 /// B1 when the timing differs: the run's preview is admitted while the solver's preview is ready and not yet shown, and a
-/// frame presents the solver's preview before the run's job builds. The layer checks again when the job builds, so the
-/// run's preview fails with `KN5:capability.preview_shown` and the solver's shown preview stays in the slot.
+/// frame presents the solver's preview before the run's job builds. Under ADR-D01.9 the job still builds and replaces
+/// the shown preview: the replacement takes its new ID when it builds and names the preview the solver saw, the
+/// solver's preview ends, and the chord pressed for it commits nothing. Once a frame shows the replacement, the chord
+/// on it waits out the settle interval.
 #[test]
-fn b1_a_runs_preview_admitted_before_the_frame_does_not_replace_the_shown_preview() {
+fn b1_a_runs_preview_admitted_before_the_frame_replaces_the_shown_preview_with_the_mark() {
     let mut f = fixture();
+    f.layer.set_clock(Box::new(Frozen));
     let (_, run) = f.solver_run();
     f.shell.draft = Some(word_draft(&word(&[1])));
     let receipt = f.shell.press(&mut f.layer, "Ctrl+Enter", false).unwrap().unwrap();
@@ -218,27 +230,20 @@ fn b1_a_runs_preview_admitted_before_the_frame_does_not_replace_the_shown_previe
     // The run's preview is admitted: the solver's preview is not shown yet.
     let swap = f.runtime(&run, "operation.preview", draft_args(&word(&[2])));
     let Status::Running(theirs) = swap.status else { panic!("the run's preview: {:?}", swap.status) };
-    let command = format!("{run}/{}", f.sent);
     // The display's next frame shows the solver's preview; then the run's job builds.
     f.frames.present(&mut f.shell, &mut f.layer, mine).unwrap();
     assert_eq!(f.layer.run_jobs(), 1);
 
-    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented));
-    assert_eq!(f.layer.preview().map(|p| p.id), Some(mine), "the slot holds the solver's preview");
-    assert_eq!(f.layer.preview_state(theirs), None, "the run's preview was never built");
-    // The same command ID and request answer the stored receipt.
-    let args = draft_args(&word(&[2]));
-    let again = Invocation {
-        command,
-        row: "operation.preview".into(),
-        args,
-        token: None,
-        epoch: f.layer.revision().epoch,
-        budget: None,
-    };
-    let settled = f.layer.invoke(&Caller::Runtime { run: run.clone() }, again);
-    assert!(matches!(settled.status, Status::Failed(_)), "the run's job: {:?}", settled.status);
-    assert_eq!(settled.status.code(), Some(code::PREVIEW_SHOWN));
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Replaced));
+    let pending = f.layer.preview().expect("the run's preview is pending");
+    assert_eq!((pending.id, pending.state, pending.replaced), (theirs, PreviewState::Ready, Some(mine)));
+    let (journal, digest) = (f.transactions(), f.layer.revision().digest.clone());
+    let press = f.shell.press(&mut f.layer, "Ctrl+Shift+Enter", false);
+    assert!(matches!(&press, Ok(Some(r)) if refused(r)), "the chord for the solver's ended preview: {press:?}");
+    f.frames.present(&mut f.shell, &mut f.layer, theirs).unwrap();
+    let press = f.shell.press(&mut f.layer, "Ctrl+Shift+Enter", false);
+    assert!(matches!(&press, Ok(Some(r)) if r.status.code() == Some(code::PREVIEW_SETTLING)), "{press:?}");
+    assert_eq!((f.transactions(), &f.layer.revision().digest), (journal, &digest));
 }
 
 /// B6 (class G, attacker 4 or a wire that forwards the row; the bridge's proposals cannot name these arguments).

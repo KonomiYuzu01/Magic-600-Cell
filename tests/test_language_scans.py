@@ -67,10 +67,12 @@ RESERVED_NAMES = (
 # chapter 13, PHS.52). ERR.1 is not run for them, and the list is exact: a code that becomes registered or leaves its
 # source fails the scan until the list follows. Chapter 13's amendment at LP3's command-table freeze (section 9;
 # PHS.52, PHS.53; owner, 16 and 20 November 2026) registered the eleven drafts that LP3's command layer and LP2's
-# session store named. ADR-D01's explore state (owner, 22 November 2026, item 4; ADR-D01.39) names one new draft: the
-# refusal of a commit row while the state pauses commits.
+# session store named. ADR-D01 (owner, 22 November 2026, item 4) names two new drafts: the refusal of a commit row
+# while the explore state pauses commits (ADR-D01.39), and a commit key press inside the settle interval after a
+# preview replaced a shown one (ADR-D01.9).
 UNREGISTERED_DRAFTS: frozenset[tuple[str, str]] = frozenset({
     ("rust/c600-command/src/receipt.rs", "KN5:capability.commits_paused"),
+    ("rust/c600-command/src/receipt.rs", "KN5:busy.preview_settling"),
 })
 
 CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2,3}[0-9]?):([a-z_]+)\.([a-z0-9_]+)(?![A-Za-z0-9_])")

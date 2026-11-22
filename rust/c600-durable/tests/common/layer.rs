@@ -2,6 +2,8 @@
 //! host's table (H-08 with the layer's draft rows) and C5's provenance reader (`c600_tools::workspace::Reader`) under
 //! the fixture's policy pins, with a shell and a headless display.
 
+use std::time::Duration;
+
 use c600_command::{
     ActionHint, CommandLayer, Completion, CompletionKind, Direction, HeadlessFrames, Invocation, Receipt, Secret,
     Shell, Status, RECORD_ROW,
@@ -86,6 +88,9 @@ impl Fixture {
     fn with(mut layer: CommandLayer<JournalStore>) -> Fixture {
         let reader = Reader::new(pins());
         layer.set_provenance(Box::new(reader.clone()));
+        // ADR-D01.9's settle interval is tested in c600-command's tests/settle.rs; these sessions commit on the first
+        // presented press.
+        layer.set_settle(Duration::ZERO);
         Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new(), reader }
     }
 
