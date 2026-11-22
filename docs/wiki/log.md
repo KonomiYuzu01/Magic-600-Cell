@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] update | C9 sitting results on the frozen candidate
+The C9 sitting ran once on the frozen candidate 013900ff, U1 to U8 unattended on 21 November and A1 to A3 attended on 22 November: E3, E2 and every renderer gate summary are met, LX-2 is not met and LX-4 is invalid ([results](evidence/c9-sitting-results.md)). The records are in `work/experiments/c9-sitting/results/`, and E3 cites the owner's cold definition ([decision](decisions/owner-decisions-2026-11-21-ceilings-e3.md)).
+
 ## [2026-11-21] decision | Product budget ceilings, E3's cold start and the C9 sitting
 The owner took every recommended option on the card sent after the command-table freeze: one product budget ceiling for all three profiles (steps 2^21, memory 2^27, output 2^24; kernel_cost stays at the draft 2^40 until the rows are priced), the draft E3 cold definition with one untimed warm-up launch, and one C9 sitting on the frozen candidate 013900ff with its unattended part overnight ([record](decisions/owner-decisions-2026-11-21-ceilings-e3.md)).
 
