@@ -2,6 +2,8 @@
   "format": "magic600-look-opening",
   "version": 1,
   "params": {
+    "projection": "hopfRings",
+    "fieldOfView": 0.85,
     "gap": 0.3,
     "stickerShrink": 0.55
   }

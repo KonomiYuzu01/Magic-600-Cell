@@ -56,6 +56,7 @@ internal static class LabFrame
         ThemeFamily[] themes = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)
             .Select(p => ThemeFamily.Load(p, design)).ToArray();
         var look = new Appearance(design, themes);
+        if (DisplayServer.IsDarkModeSupported()) look.FollowSystem(DisplayServer.IsDarkMode());
         // The chrome follows the scale of the screen it opens on (96 dpi is 1), in quarter steps.
         double screen = Math.Clamp(Math.Round(DisplayServer.ScreenGetDpi() / 96.0 * 4) / 4, 1, 3);
         look.SetSystemScale(screen);
@@ -159,8 +160,8 @@ internal static class LabFrame
         });
         frame.Health.Text = "Look Lab · full detail · 259,800 slots";
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
-        // The lab opens on its own panel; every other default comes from the workspace.
-        frame.Model.ShowDock(DockSide.Right, Tune); frame.MarkBaseline();
+        // Every default comes from the workspace; the right dock starts collapsed (ADR-D01.22).
+        frame.MarkBaseline();
         // The greybox canvas is a pane beside the pair while its switch is on.
         void ShowGreybox(bool on)
         {
@@ -181,9 +182,9 @@ internal static class LabFrame
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
                 view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
             }
-            frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", "Local re-frames on the moving cells.");
+            frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", app.Linked.Shape != null ? "Local stays on the moving cells and the cells around them. Its shape is the data file local-view.json." : "Local re-frames on the moving cells.");
             frame.Global.SetStatus(null, new[] { "drag: rotate 4D" }, $"gap {F("gap")}  shrink {F("stickerShrink")}");
-            frame.Local.SetStatus("moving cells", new[] { "drag: rotate 4D" }, "follows Global");
+            frame.Local.SetStatus(app.Linked.Shape != null ? $"{app.Linked.FocusCells} moving cells + neighbours" : "moving cells", new[] { app.Linked.Shape != null ? "drag: turn" : "drag: rotate 4D" }, app.Linked.Shape != null ? "own shape" : "follows Global");
         }
         frame.Rebuilt += Describe; frame.Recoloured += Describe;
         demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Describe(); };

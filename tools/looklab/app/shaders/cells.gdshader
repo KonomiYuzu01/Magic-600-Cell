@@ -52,6 +52,9 @@ uniform float turn_angle;
 uniform float hemisphere_offset;
 uniform float hemisphere_scale;
 uniform float hemisphere_clamp;
+// A view may draw only the cells whose centre lies within a cap around an axis; off by default.
+uniform vec4 focus_axis = vec4(0.0, 0.0, 0.0, 1.0);
+uniform float focus_cos = -2.0;
 
 varying vec3 projected;
 varying float visible_w;
@@ -125,6 +128,7 @@ void vertex() {
     clip.xy = (clip.xy - view_frame.xy * clip.w) * view_frame.z;
     geometry_value = vec3(clip.x / clip.w, clip.y / clip.w, clip.w);
     POSITION = clip;
+    if (focus_cos > -1.5 && dot(normalize(texelFetch(cell_layout, ivec2(INSTANCE_ID, 0), 0)), focus_axis) < focus_cos) POSITION = vec4(2.0, 2.0, 2.0, 1.0);
     int label = int(texelFetch(labels, slot_texel, 0).r);
     int colour_class = int(texelFetch(cell_classes, ivec2(label / 433, 0), 0).r);
     sticker_colour = texelFetch(palette, ivec2(colour_class, 0), 0).rgb;

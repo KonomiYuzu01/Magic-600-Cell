@@ -50,10 +50,37 @@ internal static partial class Program
         Preset opened = OpeningLook.Apply(preset, text, Schema);
         Check(opened.Params.Number("gap") > preset.Params.Number("gap") && opened.Params.Number("stickerShrink") < preset.Params.Number("stickerShrink"),
             "the opening look does not make cells and stickers smaller");
-        Equal(opened.Params.Values.Count(v => !Equals(v.Value, preset.Params.Values[v.Key])), 2);
+        Equal(opened.Params.Values.Count(v => !Equals(v.Value, preset.Params.Values[v.Key])), 4);
+        Equal(opened.Params.Choice("projection"), "hopfRings");
         Refuse(() => OpeningLook.Apply(preset, text.Replace("0.3", "0.31"), Schema), "gap");
         Refuse(() => OpeningLook.Apply(preset, text.Replace("\"gap\"", "\"mystery\""), Schema), "mystery");
         Refuse(() => OpeningLook.Apply(preset, text.Replace("magic600-look-opening", "magic600-look-preset"), Schema), "format");
+    }
+
+    private static void A5LocalShapeCentresTheFocusCells()
+    {
+        string text = Read("data/local-view.json");
+        LocalShape shape = LocalShape.Parse(text, Schema);
+        // Three cells near one another: the frame takes their middle to +w and draws a cap around them.
+        float[] centres = { .6f, 0, 0, .8f, 0, .6f, 0, .8f, 0, 0, .6f, .8f, 0, 0, 0, -1 };
+        LocalFrame frame = shape.Frame(centres, new[] { 0, 1, 2, 1 }, Geometry.Identity(), 2);
+        double[] turned = new double[4];
+        for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++) turned[i] += frame.Q[j * 4 + i] * frame.Axis[j];
+        Check(Math.Abs(turned[3] - 1) < 1e-9 && Math.Abs(turned[0]) < 1e-9 && Math.Abs(turned[1]) < 1e-9 && Math.Abs(turned[2]) < 1e-9, "the focus is not turned to the middle of the view");
+        for (int a = 0; a < 4; a++) for (int b = 0; b < 4; b++)
+        {
+            double dot = 0; for (int i = 0; i < 4; i++) dot += frame.Q[a * 4 + i] * frame.Q[b * 4 + i];
+            Check(Math.Abs(dot - (a == b ? 1 : 0)) < 1e-9, "the Local frame is not a rotation");
+        }
+        double widest = Math.Acos(.6 * frame.Axis[0] + .8 * frame.Axis[3]);
+        Check(Math.Abs(Math.Acos(frame.CapCos) - widest - shape.Margin) < 1e-6, "the cap is not the focus cells plus the margin");
+        Check(frame.CapCos > -.99 * 1 && .6 * 0 + -1 * frame.Axis[3] < frame.CapCos, "the far cell is inside the cap");
+        Check(frame.Zoom > 0 && shape.Frame(centres, new[] { 0 }, Geometry.Identity(), 2).Zoom > frame.Zoom, "a smaller focus is not drawn larger");
+        Equal(shape.Frame(centres, new[] { 3 }, Geometry.Identity(), 1).Q[15], -1.0);
+        Refuse(() => LocalShape.Parse(text.Replace("0.25", "0.31"), Schema), "gap");
+        Refuse(() => LocalShape.Parse(text.Replace("orthographic", "hopfRings"), Schema), "projection");
+        Refuse(() => LocalShape.Parse(text.Replace("0.86", "1.2"), Schema), "fill");
+        Refuse(() => LocalShape.Parse(text.Replace("magic600-look-local-view", "magic600-look-opening"), Schema), "format");
     }
 
     private static void A5DataWatchReportsAddedChangedAndRemoved()

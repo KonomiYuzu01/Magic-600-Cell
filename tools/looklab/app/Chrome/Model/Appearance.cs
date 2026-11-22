@@ -36,6 +36,8 @@ public sealed class Appearance
     public double Knob(string id) => knobs.TryGetValue(Theme, out var set) && set.TryGetValue(id, out double v) ? v : Family.Knobs[id].Default;
     public bool Tuned => knobs.TryGetValue(Theme, out var set) && set.Any(k => k.Value != Family.Knobs[k.Key].Default);
 
+    // The theme follows the system's light or dark setting until a choice is stored (ADR-D01.50).
+    public void FollowSystem(bool dark) => Theme = themes.FirstOrDefault(t => t.Scheme == (dark ? "dark" : "light"))?.Id ?? Theme;
     public void SetTheme(string id) { if (themes.All(t => t.Id != id)) throw J.Error(id, "unknown theme family"); Theme = id; }
     public void SetDensity(string preset) { system.Density(preset, DisplayScale); Density = preset; }
     public void SetDisplayScale(double scale) { system.Density(Density, scale); DisplayScale = scale; }

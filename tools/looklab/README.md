@@ -934,9 +934,20 @@ of the default preset the look was edited from as `defaultPreset`, the look as
 once a second and when the window closes. When `presets/default.json` changes
 on disk, the new default is shown instead of the kept look. The interactive lab
 opens with the values of `tools/looklab/data/opening.json` (format
-`magic600-look-opening`) over the default preset: smaller cells and stickers,
-so the structure is easier to read. Checks, stills and shots do not read it. A panel adds its
+`magic600-look-opening`) over the default preset: the Hopf-ring layout drawn
+large, with smaller cells and stickers, so every cell is the same size and the
+structure is easy to read. Checks, stills and shots do not read it. A panel adds its
 state through `LabApp.ViewParts`.
+
+Inside the window frame the Local view has its own shape, read from
+`tools/looklab/data/local-view.json` (format `magic600-look-local-view`:
+`projection` perspective or orthographic, `d4`, `gap` and `stickerShrink`
+inside their parameter ranges, `margin` in radians and `fill`). It draws only
+the moving cells and the cells within the margin around them, centred and at a
+fixed size; the linked rotation turns them in 3D. Without the file Local is the
+re-framed copy of Global. The lab saves one picture of its window, `frame.png`,
+beside `view.json` four seconds after it opens. The theme follows the Windows
+light or dark setting until a choice is kept.
 
 `python tools/looklab/check.py --godot` adds one result line,
 `LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=8 checks=7`, and

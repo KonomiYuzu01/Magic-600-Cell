@@ -8,7 +8,7 @@
       "arrangement": {
         "docks": {
           "left": "history",
-          "right": "inspector",
+          "right": null,
           "bottom": null
         },
         "pair": {
@@ -40,16 +40,16 @@
         "focus": false,
         "centre": {
           "split": "horizontal",
-          "ratio": 0.45,
+          "ratio": 0.58,
           "a": {
             "tabs": [
-              "editor"
+              "pair"
             ],
             "active": 0
           },
           "b": {
             "tabs": [
-              "pair"
+              "editor"
             ],
             "active": 0
           }

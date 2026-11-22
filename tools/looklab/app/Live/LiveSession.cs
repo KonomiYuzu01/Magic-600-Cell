@@ -25,12 +25,15 @@ internal sealed partial class LiveSession : Control
     private readonly string root, stateFile;
     private readonly DataWatch watch;
     private readonly List<string> pending = new();
-    private double sincePoll, sinceSave;
+    private double sincePoll, sinceSave, open;
+    private bool pictured;
+    private readonly string pictureFile;
+    public const double PictureSeconds = 4;
     private byte[] saved = Array.Empty<byte>();
 
     public LiveSession(string root, string stateFolder)
     {
-        this.root = root; stateFile = Path.Combine(stateFolder, "view.json");
+        this.root = root; stateFile = Path.Combine(stateFolder, "view.json"); pictureFile = Path.Combine(stateFolder, "frame.png");
         Build = r => new LabApp(r, opening: true);
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         App = Build(root); AddChild(App);
@@ -55,7 +58,14 @@ internal sealed partial class LiveSession : Control
 
     public override void _Process(double delta)
     {
-        sincePoll += delta; sinceSave += delta;
+        sincePoll += delta; sinceSave += delta; open += delta;
+        // One picture of the window, a few seconds after it opened, beside the kept view: what the lab looked like.
+        if (!pictured && open >= PictureSeconds && DisplayServer.GetName() != "headless")
+        {
+            pictured = true;
+            try { GetViewport().GetTexture().GetImage().SavePng(pictureFile); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { }
+        }
         if (sincePoll >= PollSeconds)
         {
             sincePoll = 0;
@@ -173,7 +183,14 @@ internal static class LiveChecks
         ChromeFrame frame = session.Frame; LabApp app = session.App;
         Require(frame.Global.Slot.IsAncestorOf(app.GlobalStage) && frame.Local.Slot.IsAncestorOf(app.Linked.LocalStage!) && app.Linked.LocalStage!.Visible,
             fault, "a main view is missing from the locked pair");
+        if (frame.Model.Docks[DockSide.Right].Open != LabFrame.Tune) { frame.Model.ShowDock(DockSide.Right, LabFrame.Tune); frame.Flush(); }
         Require(frame.Model.Docks[DockSide.Right].Open == LabFrame.Tune && frame.IsAncestorOf(app.ParameterPanel), fault, "the Tune panel is not in the right dock");
+        // Local has its own shape: an orthographic cap around the moving cells; Global draws every cell.
+        app.View._Process(0);
+        Require(app.Linked.Shape != null && app.Linked.Local!.Material.GetShaderParameter("focus_cos").AsDouble() > -1 &&
+            app.Linked.Local.Material.GetShaderParameter("projection_kind").AsInt32() == (int)ProjectionKind.Orthographic &&
+            app.View.Material.GetShaderParameter("focus_cos").AsDouble() < -1.5 && app.State.Preset.Params.Choice("projection") != "",
+            fault, "Local does not draw its own shape of the moving cells");
         Require(frame.Model.IsOpen(LabFrame.Greybox) && frame.IsAncestorOf(app.Greybox.Canvas), fault, "the open greybox is not a pane of the frame");
         Require(frame.FindChild("TopBar", true, false) != null && frame.Workspaces.Order.SequenceEqual(new[] { "solve", "script", "analyse", "reference" }), fault, "top bar or workspaces missing");
         // The theme button: the other family, the scene behind the puzzle follows, and the choice is kept.

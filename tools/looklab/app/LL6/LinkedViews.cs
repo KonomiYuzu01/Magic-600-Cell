@@ -16,6 +16,12 @@ internal sealed class LinkedViews
     private double cachedGap = double.NaN;
     private double[] anchors = Array.Empty<double>();
     private readonly int[] cells;
+    private readonly int[] focus;
+    private readonly float[] centres;
+    // The Local view's own shape, used inside the window frame; null keeps the re-framed copy of Global.
+    public LocalShape? Shape { get; }
+    public int FocusCells => focus.Length;
+    public const string ShapeFile = "tools/looklab/data/local-view.json";
     public LayoutSpec[] Layouts { get; }
     public LayoutSpec Layout => Layouts.Single(l => l.Id == app.State.Preset.Params.Choice("layoutId"));
     // A paired layout keeps both views clear of the parameter panel in either placement.
@@ -37,6 +43,10 @@ internal sealed class LinkedViews
     {
         this.app = app; this.root = root; this.preview = preview;
         cells = ViewFraming.MovingRestCells(app.View.Turn);
+        focus = cells.Distinct().ToArray();
+        centres = app.View.Layout.CellLayout(app.View.Turn).AsSpan(0, Geometry.Cells * 4).ToArray();
+        string shape = Path.Combine(root, ShapeFile);
+        if (File.Exists(shape)) Shape = LocalShape.Parse(File.ReadAllText(shape), app.State.Schema);
         var catalogue = CommandCatalogue.Load(Path.Combine(root, "docs/progress/1.0/command-table.json"));
         Layouts = Directory.GetFiles(Path.Combine(root, "tools/looklab/data/layouts"), "*.json")
             .OrderBy(p => p, StringComparer.Ordinal).Select(p => LayoutSpec.Load(p, catalogue)).ToArray();
@@ -126,8 +136,21 @@ internal sealed class LinkedViews
         Local.Material.SetShaderParameter("q", LookViewport.Matrix(Local.Q));
         Local.Material.SetShaderParameter("spin", LookViewport.Matrix(Local.Spin));
         Vector2I size = LocalViewport!.Size;
-        Local.Material.SetShaderParameter("aspect", size.Y > 0 ? (float)size.X / size.Y : 1);
-        if (FramingEnabled) Local.SetViewFrame(follower.Step(Target(), dt));
+        double aspect = size.Y > 0 ? (double)size.X / size.Y : 1;
+        Local.Material.SetShaderParameter("aspect", (float)aspect);
+        if (app.Framed && Shape != null)
+        {
+            // Local keeps the moving cells and the cells around them centred; the linked rotation turns them in 3D.
+            LocalFrame frame = Shape.Frame(centres, focus, app.View.Spin, aspect);
+            ShaderMaterial m = Local.Material;
+            m.SetShaderParameter("q", LookViewport.Matrix(frame.Q));
+            m.SetShaderParameter("projection_kind", (int)frame.Projection);
+            m.SetShaderParameter("cs", (float)frame.Cs); m.SetShaderParameter("ss", (float)frame.Ss);
+            m.SetShaderParameter("d4", (float)frame.D4); m.SetShaderParameter("zoom", (float)frame.Zoom);
+            m.SetShaderParameter("focus_axis", LookViewport.Vector4(frame.Axis)); m.SetShaderParameter("focus_cos", (float)frame.CapCos);
+            Local.SetViewFrame(FocusFrame.Neutral);
+        }
+        else if (FramingEnabled) Local.SetViewFrame(follower.Step(Target(), dt));
     }
 
     public void Detach()

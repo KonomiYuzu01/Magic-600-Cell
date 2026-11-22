@@ -97,6 +97,7 @@ internal static partial class Program
             ("A5KeptLookFollowsTheDefaultOnDisk", A5KeptLookFollowsTheDefaultOnDisk),
             ("A5DataWatchReportsAddedChangedAndRemoved", A5DataWatchReportsAddedChangedAndRemoved),
             ("A5OpeningLookAppliesInRangeValuesOnly", A5OpeningLookAppliesInRangeValuesOnly),
+            ("A5LocalShapeCentresTheFocusCells", A5LocalShapeCentresTheFocusCells),
             ("A5TokensEveryThemeAssignsEveryRoleAndPassesContrast", A5TokensEveryThemeAssignsEveryRoleAndPassesContrast),
             ("A5TokensDensityFromOneUnitAndDisplayScale", A5TokensDensityFromOneUnitAndDisplayScale),
             ("A5TokensKnobsMoveSeedsInsideTheirRanges", A5TokensKnobsMoveSeedsInsideTheirRanges),
