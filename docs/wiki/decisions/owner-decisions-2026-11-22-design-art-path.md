@@ -118,3 +118,12 @@ owner's working days; no target day is set ([3 November 2026](owner-decisions-20
 - ADR-D01's accepted text enters the repository at A7. ADR-D01's overrules of frozen clauses are recorded separately
   ([owner-decisions-2026-11-22-adr-d01-overrules](owner-decisions-2026-11-22-adr-d01-overrules.md)).
 - The human-solve boundary is unchanged. No look, motion, sound or focus suggests where to twist next.
+- The briefing records these decisions. It is an input of the format packet, so its pin is refreshed under FP.1:
+  - `docs/development-guide/AGENT_BRIEFING.md`, SHA-256
+    `455a465758b7842a42d07a9d963faf0082b87211ccc0152ef71d26faabceb11a` to
+    `2d0b042513f9657491ad980142e53daa6a08bf88fbb1cf84d7d051cdb6a271bf`;
+  - `input_commit`, `f58e1242f1ad2654c7450e8d89b67f8f38901b2c` to `57ea15b6364502f4640da722274b4988ed0cd2d0`, the
+    commit that edits the briefing.
+
+  The packet cites none of the edited lines. The candidate files, `candidate_sha256` and every other pin are
+  unchanged.
